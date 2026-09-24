@@ -1,0 +1,6 @@
+.pio/
+build/
+*.bmp
+*.png
+!docs/*.png
+.DS_Store

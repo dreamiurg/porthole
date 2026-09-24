@@ -1,0 +1,46 @@
+# Chaos during adoption: a fresh device mashed from the splash on (names, ages, colors, secret codes, the
+# street). Runs under ASan/UBSan; after each run the game must be on a real screen with stats in 0..100.
+# seed 11: from the intro
+reset
+wait 2000
+expect-screen intro
+monkey 600 11
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100
+# seed 22: from the intro
+reset
+wait 2000
+expect-screen intro
+monkey 600 22
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100
+# seed 33: from the street, next to an empty lot
+newgame Sam Biscuit
+wait 2000
+tap 27 52
+wait 200
+expect-screen street
+monkey 600 33
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100

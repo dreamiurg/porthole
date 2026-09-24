@@ -1,0 +1,50 @@
+# Fetch: the kid cannot see the bones, so the finger sweeps the grass for 30 s. The round must end on its own and
+# go home on a tap with fun up (+20 + bones), energy -15, food -5.
+newgame Sam Biscuit
+wait 2000
+dbg hungry
+expect fun=25
+expect energy=22
+# play button, bottom row second
+tap 66 129
+wait 200
+expect-screen playmenu
+tap 80 60
+wait 100
+expect-screen fetch
+expect score=0
+snap 01_fetch_start
+down 20 124
+# 15 sweeps of 1.9 s: left to right and back
+repeat 15
+move 20 124
+wait 200
+move 50 124
+wait 200
+move 80 124
+wait 200
+move 110 124
+wait 200
+move 140 124
+wait 200
+move 110 124
+wait 200
+move 80 124
+wait 200
+move 50 124
+wait 200
+end
+up
+wait 1500
+# the round is over: the results panel waits for a tap
+expect-screen fetch
+expect left=0
+expect score>0
+snap 02_fetch_done
+tap 80 80
+wait 300
+expect-screen home
+expect fun>45
+expect energy=7
+expect food=15
+sheet fetch

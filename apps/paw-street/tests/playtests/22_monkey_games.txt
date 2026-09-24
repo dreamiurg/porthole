@@ -1,0 +1,58 @@
+# Chaos inside the mini-games: 600 random gestures dropped into Fetch, Word Fetch at age 9 (6-8 letter words)
+# and Word Fetch at age 6 (3-4 letters). Runs under ASan/UBSan; afterwards: a real screen, stats in 0..100.
+# seed 7: Fetch
+newgame Sam Biscuit
+wait 2000
+tap 66 129
+wait 200
+tap 80 60
+wait 100
+expect-screen fetch
+monkey 600 7
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100
+# seed 8: Word Fetch, age 9
+newgame Sam Biscuit
+wait 2000
+dbg older
+tap 66 129
+wait 200
+tap 80 108
+wait 200
+expect-screen words
+monkey 600 8
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100
+# seed 9: Word Fetch, age 6
+newgame Sam Biscuit
+wait 2000
+dbg younger
+tap 66 129
+wait 200
+tap 80 108
+wait 200
+expect-screen words
+monkey 600 9
+expect-screen *
+expect food>=0
+expect food<=100
+expect fun>=0
+expect fun<=100
+expect energy>=0
+expect energy<=100
+expect clean>=0
+expect clean<=100

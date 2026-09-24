@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#eee8f8" />
+    <meta name="description" content="Meet Biscuit: a little dog with a big bookshelf. A cozy pixel pet for kids who love dogs and books." />
+    <title>Biscuit — a little dog, a big adventure</title>
+    <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -- inline data: URI, nothing is fetched -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23e4d4fa'/%3E%3Cpath d='M8 12h7v5h10v-5h7v17h-7v5H15v-5H8z' fill='%23b97740'/%3E%3Cpath d='M15 21h3v3h-3m7-3h3v3h-3m-4 4h6v3h-6' fill='%23423544'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-paw" viewBox="0 0 24 24"><path d="M8 3h3v5H7V4h1m6-1h3v1h1v4h-4M3 8h3v6H2V9h1m15-1h3v1h1v5h-4M8 12h8v3h3v6H5v-6h3Z"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M3 4h6v2h6V4h6v2h2v7h-3v3h-3v3h-3v3h-4v-3H7v-3H4v-3H1V6h2Z"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 6C9 3 5 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-3-1-7-1-10 2v15M5 8h4m-4 4h4m6-4h4m-4 4h4"/></symbol>
+      <symbol id="i-bowl" viewBox="0 0 24 24"><path d="M3 11h18l2 9H1l2-9Zm2-5h4v4H5V6Zm5-3h4v7h-4V3Zm5 3h4v4h-4V6Z"/></symbol>
+      <symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 5c6 0 4 7 8 8s5 3 6 5M3 13c3-1 4-4 4-8M12 21c1-4 5-6 9-5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M16 2H9v3H6v3H3v9h3v3h3v2h10v-3h3v-5h-7v-3h-3V5h4V2Z"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M10 1h4v6h7v5h-4v4h2v6h-5v-4h-4v4H5v-6h2v-4H3V7h7Z"/></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M2 9h5l6-5v16l-6-5H2Z"/><path d="M17 8q5 4 0 8m3-12q8 8 0 16" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="m12 2 11 10h-4v10h-5v-7h-4v7H5V12H1L12 2Z"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7M7 12h15" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    </svg>
+
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="Biscuit home"><span class="logo-mark"><svg><use href="#i-paw"/></svg></span> biscuit<span class="wordmark-dot">.</span></a>
+      <div class="header-note"><span class="status-dot"></span> a tiny world, just for you</div>
+      <button class="help-toggle quiet-button" id="help-button"><span>How to play</span><span class="help-mark">?</span></button>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div class="eyebrow"><span class="tiny-spark">✦</span> YOUR POCKET-SIZED BEST FRIEND</div>
+        <h1 id="page-title">Little paws.<br class="mobile-break" /> <span>Big adventures.</span></h1>
+        <p>A snack, a story, a little love. That’s Biscuit’s kind of day.</p>
+      </section>
+
+      <div class="playground">
+        <aside class="companion-note" aria-label="Meet your puppy">
+          <span class="note-tape" aria-hidden="true"></span>
+          <div class="note-kicker">YOUR LITTLE BOOKWORM</div>
+          <h2>Biscuit</h2>
+          <div class="personality">Big curiosity.<br />Little muddy paws.</div>
+          <div class="little-dog" aria-hidden="true"><canvas id="portrait" width="160" height="160"></canvas></div>
+          <p>“You turn the pages.<br />I’ll keep your toes warm.”</p>
+          <div class="note-bottom"><svg><use href="#i-heart"/></svg><span>LOVES: YOU & GOOD BOOKS</span></div>
+        </aside>
+
+        <section class="emulator" aria-label="Biscuit round screen emulator">
+          <div class="device-wrap">
+            <div class="device">
+              <div class="device-top"><span class="power-light"></span><span>YOUR LITTLE WORLD</span><span class="speaker-dots" aria-hidden="true">⋮⋮⋮</span></div>
+              <div class="screen-rim">
+                <div class="screen" id="screen">
+                  <canvas id="scene" width="160" height="160" aria-hidden="true"></canvas>
+                  <div class="screen-shade" aria-hidden="true"></div>
+                  <div class="game-hud" id="game-hud">
+                    <div class="pet-heading"><button class="pet-name" id="pet-profile" aria-label="Open Biscuit’s world">BISCUIT <span>⌄</span></button><span class="pet-mood" id="pet-mood">happy little pup</span></div>
+                    <div class="needs" aria-label="Biscuit's needs">
+                      <div class="need" title="Tummy"><svg><use href="#i-bowl"/></svg><meter id="fullness-meter" min="0" max="100" value="78" aria-label="Tummy"></meter><span id="fullness-value">78</span></div>
+                      <div class="need heart-need" title="Happiness"><svg><use href="#i-heart"/></svg><meter id="happiness-meter" min="0" max="100" value="86" aria-label="Happiness"></meter><span id="happiness-value">86</span></div>
+                      <div class="need energy-need" title="Energy"><svg><use href="#i-moon"/></svg><meter id="energy-meter" min="0" max="100" value="80" aria-label="Energy"></meter><span id="energy-value">80</span></div>
+                    </div>
+                  </div>
+                  <button id="pet-button" class="pet-hitbox" aria-label="Pet Biscuit" title="Give Biscuit a little love"></button>
+                  <button id="fetch-ball" class="fetch-ball" aria-label="Catch the ball" hidden></button>
+                  <button id="stop-play" class="stop-play" hidden>All done</button>
+                  <p id="speech" class="speech" role="status" aria-live="polite">Hi, friend! Let’s make a little magic.</p>
+                  <nav class="game-actions" id="game-actions" aria-label="Care for Biscuit">
+                    <button data-action="feed" aria-label="Feed Biscuit"><svg><use href="#i-bowl"/></svg><span>Feed</span></button>
+                    <button data-action="read" aria-label="Read with Biscuit"><svg><use href="#i-book"/></svg><span>Read</span></button>
+                    <button data-action="play" aria-label="Play fetch"><svg><use href="#i-ball"/></svg><span>Play</span></button>
+                    <button data-action="more" id="more-button" aria-label="Biscuit’s world: adventures, tricks, and naps"><svg><use href="#i-paw"/></svg><span>More</span></button>
+                  </nav>
+                  <section class="screen-panel" id="screen-panel" aria-label="Biscuit's bookshelf" hidden></section>
+                  <div class="screen-glint" aria-hidden="true"></div>
+                </div>
+              </div>
+              <div class="device-brand">biscuit<span>✦</span></div>
+              <div class="touch-label">A LITTLE WORLD AT YOUR FINGERTIPS</div>
+            </div>
+          </div>
+          <div class="emulator-caption"><span class="caption-line"></span><span>SMALL SCREEN. WHOLE LOT OF HEART.</span><span class="caption-line"></span></div>
+          <details class="display-preview"><summary>Hardware preview · 480 × 480</summary><p>RGB565 palette · bundled Montserrat · single touch · artwork capped at 10 fps. Browser font edges and speed still differ from the device.</p><label><input id="physical-size" type="checkbox"> Approximate 2.1-inch screen</label><div id="size-calibration" hidden><label for="screen-size">Calibrate against a ruler: the lit circle should measure 53.3 mm across.</label><input id="screen-size" type="range" min="150" max="400" value="202" step="1"></div><p>Display profile only. Touch latency, viewing angles, backlight, and firmware performance need testing on the board.</p></details>
+        </section>
+
+        <aside class="reading-corner" aria-label="Reading progress">
+          <div class="section-kicker"><svg><use href="#i-book"/></svg> THE READING NOOK</div>
+          <h2>One more chapter?</h2>
+          <p>Every little story is an<br />adventure together.</p>
+          <div class="book-stack" id="book-stack">
+            <button class="book-spine moon-book" data-story="moon"><span class="spine-star">✦</span><span>The Moon Biscuit</span><span class="book-check" aria-label="Not yet read">○</span></button>
+            <button class="book-spine library-book" data-story="library"><span class="spine-star">✿</span><span>The Secret Library</span><span class="book-check" aria-label="Not yet read">○</span></button>
+            <button class="book-spine dragon-book" data-story="dragon"><span class="spine-star">✧</span><span>A Dragon’s Bedtime</span><span class="book-check" aria-label="Not yet read">○</span></button>
+          </div>
+          <div class="reading-reward"><span class="reward-icon"><svg><use href="#i-star"/></svg></span><div><strong id="reading-title">Seven stories waiting for us</strong><span id="reading-progress">0 of 7 stories discovered</span></div></div>
+          <div class="gentle-reminder"><span>growing together.</span><div id="friendship-progress">Day 1 together · 0 friendship</div>New tricks. New stories. The same best friend.</div>
+        </aside>
+      </div>
+
+      <section class="help-panel" id="help-panel" aria-labelledby="help-title" hidden>
+        <div><h2 id="help-title">A little life, together</h2><p>Feed, read, play fetch, and tap Biscuit for a cuddle. Tap <strong>More</strong> for daily adventures, trick lessons, your scrapbook, sound, and naps. Every control is on the screen. Use Tab and Enter for keyboard play.</p></div>
+        <div><h3>Something new as you grow.</h3><p>Biscuit grows across days you spend together. Learn six tricks, discover seven stories, and collect twelve stickers. Missing days never takes anything away. Progress stays in this browser; Biscuit is always glad you’re back.</p></div>
+        <button class="quiet-button" id="close-help" aria-label="Close help">Close ×</button>
+      </section>
+    </main>
+
+    <footer><span>Made with a little pixel magic.</span><span id="save-status"><span class="status-dot"></span> Progress saved on this device</span></footer>
+    <noscript>This little world needs JavaScript. Please enable it to meet Biscuit.</noscript>
+  </body>
+</html>

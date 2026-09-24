@@ -1,0 +1,15 @@
+node_modules/
+build/
+output/
+firmware/.pio/
+.impeccable/
+.playwright-cli/
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+
+# Generated at build time by firmware/tools/export-assets.mjs (PlatformIO pre-build hook).
+firmware/generated/assets.h
+firmware/generated/assets.cpp
+firmware/generated/manifest.json

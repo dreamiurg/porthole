@@ -1,0 +1,133 @@
+# Paw Street: two houses (the second locked with 1234), the front door, a wrong then right code, the nap after
+# 6 minutes of play, and the street in between.
+wait 2000
+# house 0: Sam, 8, first colors, no code
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+tap 97 98
+tap 25 62
+tap 115 80
+tap 134 116
+wait 200
+tap 37 101
+wait 200
+tap 132 40
+tap 134 116
+wait 200
+tap 32 78
+wait 200
+tap 54 119
+wait 900
+tap 80 80
+wait 300
+expect-screen home
+expect house=0/1
+# out of the front door
+tap 27 52
+wait 200
+expect-screen street
+expect house=-1/1
+snap 01_street_one
+# the empty lot next door starts a new adoption
+tap 80 91
+wait 300
+expect-screen intro
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+# K A I, age 6, a random pup name, third colors, code 1 2 3 4
+tap 79 80
+tap 25 62
+tap 43 80
+tap 134 116
+wait 200
+tap 79 69
+wait 200
+tap 132 40
+tap 134 116
+wait 200
+tap 96 78
+wait 200
+expect-screen pin_set
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 900
+tap 80 80
+wait 300
+expect-screen home
+expect house=1/2
+expect age=6
+tap 27 52
+wait 200
+expect-screen street
+snap 02_street_two
+# Sam's house has no code
+tap 40 91
+wait 300
+expect-screen home
+expect house=0/2
+tap 27 52
+wait 200
+# Kai's house asks for the code; the home button goes back to the street
+tap 80 91
+wait 300
+expect-screen pin_enter
+tap 80 12
+wait 200
+expect-screen street
+tap 80 91
+wait 300
+# wrong code 1111: stays, shakes
+tap 54 59
+tap 54 59
+tap 54 59
+tap 54 59
+tap 102 119
+wait 300
+expect-screen pin_enter
+snap 03_wrong_code
+wait 1000
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen home
+expect house=1/2
+# six minutes of play with two houses: the pup naps for ten
+dbg tired
+wait 200
+expect-screen rest
+expect rest>500
+snap 04_rest
+tap 80 130
+wait 200
+expect-screen street
+expect house=-1/2
+snap 05_street_resting
+# the napping house still asks for its code, then shows the nap
+tap 80 91
+wait 300
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen rest
+tap 80 130
+wait 200
+# the other kid's turn
+tap 40 91
+wait 300
+expect-screen home
+expect house=0/2
+expect rest=0
+sheet houses

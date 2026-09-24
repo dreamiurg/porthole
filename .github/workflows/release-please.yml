@@ -1,0 +1,61 @@
+name: Release Please
+
+# Conventional commits to main accumulate in one release PR per app. Merging that
+# PR tags `<app>-v<version>`, publishes a GitHub release, and attaches a merged
+# factory image that flashes at 0x0 (e.g. from https://espressif.github.io/esptool-js/).
+#
+# PRs opened with the default GITHUB_TOKEN do not trigger CI, so the release PR
+# cannot satisfy "Required Checks" by itself. Add a fine-grained PAT (contents +
+# pull requests: read/write) as the RELEASE_PLEASE_TOKEN secret, or merge the
+# release PR as an admin.
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      paths: ${{ steps.release.outputs.paths_released }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7  # v5.0.0
+        id: release
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+  factory-image:
+    needs: release-please
+    if: needs.release-please.outputs.paths != '' && needs.release-please.outputs.paths != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        path: ${{ fromJSON(needs.release-please.outputs.paths) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: pip install -r platform/requirements.txt
+      - run: make -C "${{ matrix.path }}" factory
+      - name: Attach factory image to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_PATH: ${{ matrix.path }}
+        run: |
+          app=$(basename "$APP_PATH")
+          version=$(jq -r --arg p "$APP_PATH" '.[$p]' .release-please-manifest.json)
+          image=$(find "$APP_PATH" -path '*/.pio/build/firmware/factory.bin' | head -n1)
+          cp "$image" "$app-$version-factory.bin"
+          gh release upload "$app-v$version" "$app-$version-factory.bin" --clobber

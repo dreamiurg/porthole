@@ -1,0 +1,376 @@
+# UI audit: every reachable screen, and the busy variants of home, through ui-check, with contact sheets.
+# One house locked with 1234 (for pin_enter) and a second house (for the nap screen).
+reset
+ui-check splash
+snap a01_splash
+wait 2000
+ui-check intro-parcel
+snap a02_intro
+tap 80 80
+wait 1000
+ui-check intro-puppy
+tap 80 80
+wait 200
+ui-check name_kid
+tap 97 116
+tap 25 98
+tap 97 62
+ui-check name_kid-typed
+snap a03_name_kid
+tap 134 116
+wait 200
+ui-check age
+snap a04_age
+tap 37 101
+wait 200
+ui-check name_pet
+tap 132 40
+wait 100
+snap a05_name_pet
+tap 134 116
+wait 200
+ui-check theme
+snap a06_theme
+tap 32 78
+wait 200
+ui-check pin_set
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+ui-check pin_set-full
+snap a07_pin_set
+tap 102 119
+wait 100
+expect-screen celebrate
+ui-check celebrate-welcome
+snap a08_welcome
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+ui-check home
+snap a09_home
+sheet adoption
+# home asleep
+tap 23 79
+wait 100
+ui-check home-asleep
+snap b01_home_asleep
+tap 23 79
+wait 100
+# feed, then three cookies: the fourth visit shows the no-more-cookies line
+tap 40 129
+wait 200
+expect-screen feed
+ui-check feed
+snap b02_feed
+tap 120 70
+wait 2400
+expect-screen celebrate
+wait 800
+tap 80 80
+wait 300
+tap 40 129
+wait 200
+tap 120 70
+wait 2400
+tap 40 129
+wait 200
+tap 120 70
+wait 2400
+tap 40 129
+wait 200
+expect-screen feed
+ui-check feed-no-cookies
+tap 80 12
+wait 200
+# play menu, fetch, fetch results
+tap 66 129
+wait 200
+expect-screen playmenu
+ui-check playmenu
+snap b03_playmenu
+tap 80 60
+wait 300
+expect-screen fetch
+ui-check fetch
+snap b04_fetch
+wait 31000
+ui-check fetch-done
+snap b05_fetch_done
+tap 80 80
+wait 300
+expect-screen home
+# word fetch (age 8), all five words
+tap 66 129
+wait 200
+tap 80 108
+wait 200
+expect-screen words
+ui-check words
+snap b06_words
+solve-word
+wait 400
+ui-check words-solved
+snap b07_words_solved
+wait 1400
+solve-word
+wait 1800
+solve-word
+wait 1800
+solve-word
+wait 1800
+solve-word
+wait 1800
+ui-check words-done
+snap b08_words_done
+wait 600
+tap 80 80
+wait 300
+expect-screen home
+sheet play
+# library and a story
+tap 92 129
+wait 200
+expect-screen library
+ui-check library
+snap c01_library
+tap 80 130
+wait 200
+ui-check read-page
+snap c02_read_page
+tap 120 80
+tap 120 80
+tap 120 80
+tap 120 80
+tap 120 80
+wait 200
+ui-check read-question
+snap c03_read_question
+answer-book
+wait 300
+ui-check read-answered
+snap c04_read_answered
+wait 1400
+expect-screen celebrate
+ui-check celebrate-the-end
+snap c05_the_end
+wait 800
+tap 80 80
+wait 300
+expect-screen celebrate
+ui-check celebrate-sticker
+snap c06_sticker
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+# tricks and a lesson screen (left before the end, so no lesson is used up)
+tap 118 129
+wait 200
+expect-screen tricks
+ui-check tricks
+snap c07_tricks
+tap 50 44
+wait 200
+expect-screen train
+ui-check train-intro
+snap c08_train_intro
+wait 400
+tap 80 80
+wait 2400
+expect phase=2
+ui-check train-input
+snap c09_train_input
+tap 80 12
+wait 200
+expect-screen tricks
+tap 80 12
+wait 200
+sheet read_tricks
+# stats, stickers, hats, start over (answered No)
+tap 80 21
+wait 200
+expect-screen stats
+ui-check stats
+snap d01_stats
+tap 45 123
+wait 200
+ui-check stickers
+snap d02_stickers
+tap 80 12
+wait 200
+dbg hats
+tap 90 123
+wait 200
+tap 134 80
+wait 100
+ui-check hats
+snap d03_hats
+tap 80 12
+wait 200
+hold 80 148
+wait 100
+expect-screen confirm_reset
+ui-check confirm_reset
+snap d04_confirm_reset
+tap 45 102
+wait 200
+tap 80 12
+wait 200
+expect-screen home
+sheet care
+# next day: poop and a gift parcel on the window sill
+dbg poop
+skip 86400
+wait 300
+ui-check home-busy
+snap e01_home_busy
+tap 90 57
+wait 400
+expect-screen gift
+ui-check gift
+snap e02_gift
+tap 80 80
+wait 200
+ui-check gift-open
+snap e03_gift_open
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+# the street and the locked house
+tap 27 52
+wait 200
+expect-screen street
+ui-check street
+snap e04_street
+tap 40 91
+wait 300
+expect-screen pin_enter
+ui-check pin_enter
+snap e05_pin_enter
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen home
+# a second house, then its nap screen
+tap 27 52
+wait 200
+tap 80 91
+wait 300
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+tap 79 80
+tap 25 62
+tap 43 80
+tap 134 116
+wait 200
+tap 79 69
+wait 200
+tap 132 40
+tap 134 116
+wait 200
+tap 96 78
+wait 200
+tap 54 119
+wait 900
+tap 80 80
+wait 300
+expect-screen home
+expect house=1/2
+ui-check home-theme3
+snap e06_home_theme3
+dbg tired
+wait 200
+expect-screen rest
+ui-check rest
+snap e07_rest
+tap 80 130
+wait 200
+ui-check street-two
+snap e08_street_two
+sheet days_street
+# the grown dog: bigger sprite, bigger hotspots
+tap 40 91
+wait 300
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+dbg grown
+wait 1100
+expect-screen celebrate
+ui-check celebrate-grown
+snap f01_grown
+wait 800
+tap 80 80
+wait 300
+# growing up also earns the All Grown Up sticker
+expect-screen celebrate
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+ui-check home-grown
+snap f02_home_grown
+tap 118 129
+wait 200
+tap 50 44
+wait 600
+tap 80 80
+wait 2400
+expect phase=2
+ui-check train-grown
+snap f03_train_grown
+sheet grown
+# bath, last: a fresh muddy pup is tapped where it starts, so the audit sees the tub before any rubbing
+# (the floor sweep of 07_bath rubs the mud off by itself once the tub is open)
+newgame Sam Biscuit
+wait 2000
+dbg dirty
+tap 72 104
+wait 200
+expect-screen bath
+expect spots=6
+ui-check bath
+snap g01_bath
+down 40 70
+move 56 70
+move 72 70
+move 88 70
+move 104 70
+move 120 70
+move 120 86
+move 104 86
+move 88 86
+move 72 86
+move 56 86
+move 40 86
+move 40 102
+move 56 102
+move 72 102
+move 88 102
+move 104 102
+move 120 102
+move 120 118
+move 104 118
+move 88 118
+move 72 118
+move 56 118
+move 40 118
+up
+expect spots=0
+ui-check bath-done
+snap g02_bath_done
+wait 2000
+expect-screen home
+sheet bath

@@ -1,0 +1,17 @@
+{
+  "name": "biscuit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A little dog with a big bookshelf. A round-screen virtual pet for kids who love dogs and reading.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "check": "make check"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14"
+  }
+}

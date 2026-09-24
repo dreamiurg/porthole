@@ -1,0 +1,74 @@
+# Reading: library -> a story page by page (back works, not before page 1) -> question -> answer -> The End -> home.
+newgame Sam Biscuit
+wait 2000
+expect books=0/3
+# book button, bottom row third
+tap 92 129
+wait 200
+expect-screen library
+expect page=0
+snap 01_library
+tap 80 130
+wait 200
+expect-screen read
+expect page=0
+snap 02_page
+# the left half on the first page does nothing
+tap 40 80
+expect page=0
+tap 120 80
+tap 120 80
+expect page=2
+# the left half turns back
+tap 40 80
+expect page=1
+tap 120 80
+tap 120 80
+tap 120 80
+tap 120 80
+wait 200
+expect-screen read
+expect page=5
+snap 03_question
+answer-book
+wait 200
+# mashing every answer while the pick is shown changes nothing
+tap 80 83
+tap 80 105
+tap 80 127
+snap 04_answered
+wait 1400
+expect-screen celebrate
+snap 05_the_end
+wait 800
+tap 80 80
+wait 300
+# first story ever: the First Story sticker
+expect-screen celebrate
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+expect books=1
+expect books=1/3
+# first read +15 bond, right answer +5
+expect bond=20
+expect stickers=2
+sheet read
+# a double tap acts once: the library button opens the library (not the story behind the second tap)
+newgame Sam Biscuit
+wait 2000
+tap 92 129
+tap 92 129
+wait 200
+expect-screen library
+# and a double tap on "Read to me!" opens page 1 (page=0), not page 2
+newgame Sam Biscuit
+wait 2000
+tap 92 129
+wait 300
+tap 80 130
+tap 80 130
+wait 200
+expect-screen read
+expect page=0

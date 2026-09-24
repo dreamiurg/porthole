@@ -1,0 +1,11 @@
+# PlatformIO Core plus the Python modules the pinned pioarduino builder imports.
+# Core 6.1.x is required by pioarduino 54.03.21; click 8.2 breaks Core 6.1's CLI.
+platformio==6.1.19
+click<8.2
+rich-click
+PyYAML
+intelhex
+rich
+pyserial
+wheel
+esp-idf-size==1.6.1

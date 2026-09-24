@@ -1,0 +1,73 @@
+# Adoption on a fresh device: splash -> parcel -> kid name -> age -> pup name -> house -> secret code -> welcome -> home.
+wait 2000
+expect-screen intro
+ui-check intro-parcel
+snap 01_intro
+tap 80 80
+wait 1000
+ui-check intro-puppy
+tap 80 80
+wait 200
+expect-screen name_kid
+# OK on an empty name does nothing
+tap 134 116
+wait 100
+expect-screen name_kid
+ui-check
+# S A X, backspace, M -> "Sam"
+tap 97 98
+tap 25 62
+tap 61 116
+tap 115 116
+tap 115 80
+snap 02_name_kid
+tap 134 116
+wait 200
+expect-screen age
+ui-check
+snap 03_age
+# age 8
+tap 37 101
+wait 200
+expect-screen name_pet
+ui-check
+# the "?" button picks a random pup name
+tap 132 40
+wait 100
+snap 04_name_pet
+tap 134 116
+wait 200
+expect-screen theme
+ui-check
+snap 05_theme
+# first house
+tap 32 78
+wait 200
+expect-screen pin_set
+ui-check
+snap 06_pin_set
+# skip the secret code
+tap 54 119
+wait 100
+expect-screen celebrate
+ui-check welcome
+snap 07_welcome
+# the welcome ignores taps for 700 ms
+tap 80 80
+expect-screen celebrate
+wait 800
+tap 80 80
+wait 300
+expect-screen home
+ui-check
+snap 08_home
+expect house=0/1
+expect age=8
+expect books=0/3
+expect food=70
+expect fun=80
+expect energy=90
+expect clean=100
+expect streak=1
+expect stage=0
+sheet adoption

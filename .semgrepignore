@@ -1,0 +1,7 @@
+apps/*/build/
+apps/*/node_modules/
+apps/biscuit/firmware/generated/
+apps/biscuit/firmware/.pio/
+apps/paw-street/.pio/
+apps/paw-street/src/game/sprites.h
+apps/paw-street/src/game/font8x8_basic.h

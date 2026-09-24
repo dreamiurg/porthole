@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "packages": {
+    "apps/paw-street": { "release-type": "simple", "component": "paw-street" },
+    "apps/biscuit": { "release-type": "node", "component": "biscuit" }
+  }
+}

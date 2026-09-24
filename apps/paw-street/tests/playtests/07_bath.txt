@@ -1,0 +1,50 @@
+# Bath: a muddy pup goes to the tub when tapped; rubbing clears the six mud spots; home clean.
+newgame Sam Biscuit
+wait 2000
+dbg dirty
+expect dirty=1
+# tap along the floor band the pup walks on (y=93 misses the bowl, lamp, shelf and ball)
+tap 40 93
+tap 50 93
+tap 60 93
+tap 70 93
+tap 80 93
+tap 90 93
+tap 100 93
+tap 108 93
+wait 200
+expect-screen bath
+snap 01_bath
+# zigzag over the pup, 16 px rows and steps (the rub radius is 15 px)
+down 40 70
+move 56 70
+move 72 70
+move 88 70
+move 104 70
+move 120 70
+move 120 86
+move 104 86
+move 88 86
+move 72 86
+move 56 86
+move 40 86
+move 40 102
+move 56 102
+move 72 102
+move 88 102
+move 104 102
+move 120 102
+move 120 118
+move 104 118
+move 88 118
+move 72 118
+move 56 118
+move 40 118
+up
+expect spots=0
+snap 02_shake
+wait 2000
+expect-screen home
+expect dirty=0
+expect clean=100
+sheet bath

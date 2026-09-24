@@ -1,0 +1,40 @@
+# Word Fetch: five words spelled from the letter tiles, the results panel, then home with fun +10 +3 per word.
+newgame Sam Biscuit
+wait 2000
+dbg hungry
+expect fun=25
+tap 66 129
+wait 200
+expect-screen playmenu
+# Word Fetch button
+tap 80 108
+wait 200
+expect-screen words
+expect typed=0
+snap 01_word
+# a tap on the clue (not a tile) types nothing
+tap 80 40
+expect typed=0
+solve-word
+wait 400
+snap 02_solved
+wait 1400
+solve-word
+wait 1800
+solve-word
+wait 1800
+solve-word
+wait 1800
+solve-word
+wait 1800
+expect-screen words
+snap 03_done
+# the results panel ignores taps for its first 600 ms
+wait 600
+tap 80 80
+wait 300
+expect-screen home
+# 25 + 10 + 5 words x 3 = 50; bond 6 + 5 words x 2 = 16
+expect fun=50
+expect bond=16
+sheet words
