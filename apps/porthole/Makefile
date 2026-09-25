@@ -21,6 +21,8 @@ SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
 test_shell_SRC := shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+# games/biscuit/pet.h is header-only: test_biscuit links nothing else
+test_biscuit_SRC :=
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
