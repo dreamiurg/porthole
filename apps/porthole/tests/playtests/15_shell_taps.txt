@@ -40,7 +40,7 @@ reset
 profile Sam 8
 profile Kai 6
 profile Ava 7
-profile Zoe 9
+profile Mia 9
 tap 80 32
 wait 450
 hold 110 119
