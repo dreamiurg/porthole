@@ -16,6 +16,8 @@ CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
 # (a ResourceWarning from a finalizer). Our scripts only; PlatformIO and gcovr run their own interpreters.
 PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
+# Biscuit's art generator is Node (22+, no npm packages), a dev-machine tool: lint skips it, loudly, where node is missing.
+NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
@@ -23,6 +25,7 @@ test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
 test_shell_SRC := shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
+test_biscuit_content_SRC := games/biscuit/personalize.cpp games/biscuit/art.cpp
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
@@ -55,6 +58,9 @@ lint: snap
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
+	$(PY) games/biscuit/tools/check_content.py
+	@command -v node >/dev/null || { echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
+	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
 
 # What pre-commit runs: seconds, not minutes.
 check: lint test
@@ -92,6 +98,7 @@ coverage:
 art:
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
+	node $(NODE_ART)
 
 webemu: snap
 	python3 tools/webemu.py
