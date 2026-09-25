@@ -9,6 +9,7 @@ so nothing can spill past a button or the round bezel. Everything must be ASCII 
 import os
 import re
 import sys
+from pathlib import Path
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # every path below is relative to the Porthole app, wherever this runs from
 FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_level3_words.h"]
@@ -17,7 +18,7 @@ BOXES = dict(page=(122, 7), title=(108, 2), question=(116, 2), answer=(102, 2), 
 
 
 def load_font():
-    src = open("os/font8x8_basic.h", encoding="utf-8").read()
+    src = Path("os/font8x8_basic.h").read_text(encoding="utf-8")
     rows = re.findall(r"\{\s*((?:0x[0-9A-Fa-f]{2},?\s*){8})\}", src)
     glyphs = [[int(v, 16) for v in re.findall(r"0x[0-9A-Fa-f]{2}", r)] for r in rows][:128]
     widths = []
@@ -70,7 +71,7 @@ def main():
     errors, titles, words = [], {}, {}
     for path in FILES:
         try:
-            text = open(path, encoding="utf-8").read()
+            text = Path(path).read_text(encoding="utf-8")
         except FileNotFoundError:
             continue
         for i, ch in enumerate(text):

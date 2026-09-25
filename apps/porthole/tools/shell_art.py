@@ -11,6 +11,7 @@ Run from apps/porthole/ (or anywhere: it chdirs there). `--check` exits 1 if the
 import os
 import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "games", "pets-club", "tools"))
 from art import K, T, ascii_img  # noqa: E402
@@ -276,7 +277,7 @@ def emit(check=False):
     text = "\n".join(out) + "\n"
     if check:
         try:
-            current = open(HEADER).read()
+            current = Path(HEADER).read_text(encoding="utf-8")
         except FileNotFoundError:
             current = ""
         if current != text:
@@ -296,7 +297,7 @@ def preview(avatars, icons):
     except ImportError:
         print("Pillow missing; skipping preview")
         return
-    src = open("os/palette.h").read()
+    src = Path("os/palette.h").read_text(encoding="utf-8")
     pal = [int(h, 16) for h in re.findall(r"0x[0-9A-Fa-f]{6}", src[src.index("PALETTE_RGB") :])[:32]]
     # Row 1: avatars at 8x zoom. Row 2: avatars + icons at 3x (true device size), icons on a button-ish bg.
     Z, D, pad = 8, 3, 4

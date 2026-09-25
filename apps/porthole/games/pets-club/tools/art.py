@@ -8,6 +8,7 @@ Emits games/pets-club/sprites.h and a preview sheet at build/art/sheet.png (need
 
 import os
 import sys
+from pathlib import Path
 
 SPRITES = "games/pets-club/sprites.h"
 T = 255
@@ -820,7 +821,7 @@ def emit(check=False):
     text = "\n".join(out) + "\n"
     if check:
         try:
-            current = open(SPRITES).read()
+            current = Path(SPRITES).read_text(encoding="utf-8")
         except FileNotFoundError:
             current = ""
         if current != text:
