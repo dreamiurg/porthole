@@ -23,6 +23,13 @@ static const uint32_t PALETTE_RGB[C_COUNT] = {
 // Tint modes applied at flip time.
 enum Tint : uint8_t { TINT_DAY = 0, TINT_EVENING, TINT_NIGHT, TINT_COUNT };
 
+// The time of day for a local wall-clock epoch: night 21:00-6:00, evening 18:00-21:00 and 6:00-7:00. The shell and
+// the games share it so moving between them never changes the light.
+static inline Tint clockTint(uint32_t t) {
+  int h = (int)((t / 3600u) % 24u);
+  return h >= 21 || h < 6 ? TINT_NIGHT : h >= 18 || h < 7 ? TINT_EVENING : TINT_DAY;
+}
+
 // Build an RGB888 palette for a tint mode.
 static inline void palette_build(Tint tint, uint32_t out[C_COUNT]) {
   for (int i = 0; i < C_COUNT; i++) {

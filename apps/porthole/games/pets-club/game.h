@@ -110,7 +110,7 @@ class Game : public App {
   void updateIntro(); void drawIntro();
   void updateNamePet(); void drawNamePet();
   void updateHome(); void drawHome();
-  int poopX() const; int walkClamp(int x) const; void dogBox(int& x, int& y, int& w, int& h) const;
+  int poopX() const; int walkClamp(int x) const; void dogBox(int& x, int& y, int& w, int& h) const; bool butterflyClear(const ui::Box& b) const;
   void homeBrain(); void keepToRug(); void pickIdle(); void homeWalk(); void homeEvents(); void homeTouches(); void homeFurniture(); void toggleLamp(); void tapDog();
   void updateFeed(); void drawFeed();
   void updatePlayMenu(); void drawPlayMenu();

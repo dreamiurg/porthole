@@ -21,7 +21,7 @@ expect-screen stickers
 tap 80 12
 wait 450
 expect-screen stats
-tap 90 123
+tap 114 123
 wait 450
 expect-screen hats
 # no hats yet: the arrows stay on None
@@ -33,7 +33,7 @@ tap 80 12
 wait 450
 expect-screen stats
 dbg hats
-tap 90 123
+tap 114 123
 wait 450
 tap 134 80
 wait 450

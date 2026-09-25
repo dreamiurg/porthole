@@ -80,10 +80,7 @@ void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ 
 Tint Game::tint() const {
   if (screen_ <= SC_NAME_PET || screen_ == SC_THEME) return TINT_DAY;
   if (save_.asleep && screen_ == SC_HOME) return TINT_NIGHT;
-  int h = pet::hourOf(now_);
-  if (h >= 21 || h < 6) return TINT_NIGHT;
-  if (h >= 18 || h < 7) return TINT_EVENING;
-  return TINT_DAY;
+  return clockTint(now_);
 }
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
@@ -130,6 +127,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "grown")) save_.adoptedAt -= 10 * 86400;
   else if (!strcmp(cmd, "dog")) save_.adoptedAt -= 4 * 86400;
   else if (!strcmp(cmd, "sleepy")) save_.energy = 15;
+  else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
   else if (!strcmp(cmd, "younger")) { save_.kidAge = 6; refreshBookList(); }
   else if (!strcmp(cmd, "older")) { save_.kidAge = 9; refreshBookList(); }
   markDirty();
@@ -434,6 +432,13 @@ static const int PIPS_L = 30, PIPS_R = 106, PIPS_Y = 19;
 // or the ball, and the dog then keeps to its own side of it.
 static const int WALK_L = 52, WALK_R = 114;
 static const int POOP_L = 48, POOP_R = 94, POOP_Y = 94, POOP_W = 24, POOP_H = 22;
+static const ui::Box DOOR = {15, 39, 24, 24}, GIFT = {76, 46, 28, 22}, LAMP = {10, 65, 26, 26}, BOWL = {18, 93, 28, 23},
+                     BALL = {120, 94, 26, 22}, SHELF = {110, 39, 40, 44}, PIPS_LBOX = {PIPS_L - 4, PIPS_Y - 4, 36, 22},
+                     PIPS_RBOX = {PIPS_R - 6, PIPS_Y - 4, 36, 22};
+static bool tapBox(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
+static bool apart(const ui::Box& a, const ui::Box& b) {   // at least the audit's 2 px spacing between them
+  return a.x + a.w + 2 <= b.x || b.x + b.w + 2 <= a.x || a.y + a.h + 2 <= b.y || b.y + b.h + 2 <= a.y;
+}
 int Game::poopX() const { return dogX_ + dogFrame(P_IDLE0).w / 2 > 83 ? POOP_L : POOP_R; }
 int Game::walkClamp(int x) const {
   int w = dogFrame(P_IDLE0).w, lo = WALK_L, hi = WALK_R - w;
@@ -445,7 +450,7 @@ void Game::dogBox(int& x, int& y, int& w, int& h) const {   // from 4 px above t
 }
 void Game::updateHome() {
   if (backButton()) { wantsHome_ = true; return; }
-  if (in_.tapIn(15, 39, 24, 24)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street
+  if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street
   homeBrain();
   homeEvents();
   homeTouches();
@@ -495,23 +500,35 @@ void Game::homeEvents() {   // butterflies, the squirrel at the window, rain
 void Game::homeTouches() {
   int bx, by, bw, bh; dogBox(bx, by, bw, bh);
   bool onDog = in_.tapIn(bx, by, bw, bh);
-  if (event_ == 1 && inCircle(eventX_ + 4, eventY_ + 3, 14) && in_.tapIn(eventX_ - 8, eventY_ - 8, 24, 22)) {  // caught the butterfly's attention (once it is on the glass)
+  ui::Box fly = {eventX_ - 8, eventY_ - 8, 24, 22};
+  if (event_ == 1 && butterflyClear(fly) && tapBox(in_, fly)) {  // caught the butterfly's attention
     event_ = 0; dogAct_ = 3; dogActUntil_ = ms_ + 1500; spawn(in_.x, in_.y, 1, 6);
     save_.fun = (uint8_t)clampi(save_.fun + 5, 0, 100); pet::addBond(save_, now_, 2); markDirty();
   } else if (save_.poop && in_.tapIn(poopX(), POOP_Y, POOP_W, POOP_H)) {
     pet::cleanPoop(save_, now_); spawn(in_.x, in_.y, 1, 8); toast("All clean!"); markDirty();
-  } else if (pet::giftReady(save_, now_) && in_.tapIn(76, 46, 28, 22)) {
+  } else if (pet::giftReady(save_, now_) && tapBox(in_, GIFT)) {
     giftOpened_ = false; go(SC_GIFT);
-  } else if (in_.tapIn(10, 65, 26, 26)) toggleLamp();
+  } else if (tapBox(in_, LAMP)) toggleLamp();
   else if (save_.asleep && in_.tap) toast("Shh... sleeping");
   else if (onDog) tapDog();
   else homeFurniture();
 }
 void Game::homeFurniture() {   // the floor bowl, the toy ball, the bookshelf and the stat pips open their pages
-  if (in_.tapIn(18, 93, 28, 23)) { go(SC_FEED); feedAnimFood_ = -1; }
-  else if (in_.tapIn(120, 94, 26, 22)) { go(SC_PLAYMENU); }
-  else if (in_.tapIn(110, 39, 40, 44)) { go(SC_LIBRARY); }
-  else if (in_.tapIn(PIPS_L - 4, PIPS_Y - 4, 36, 22) || in_.tapIn(PIPS_R - 6, PIPS_Y - 4, 36, 22)) { statsPage_ = 0; go(SC_STATS); }
+  if (tapBox(in_, BOWL)) { go(SC_FEED); feedAnimFood_ = -1; }
+  else if (tapBox(in_, BALL)) { go(SC_PLAYMENU); }
+  else if (tapBox(in_, SHELF)) { go(SC_LIBRARY); }
+  else if (tapBox(in_, PIPS_LBOX) || tapBox(in_, PIPS_RBOX)) { statsPage_ = 0; go(SC_STATS); }
+}
+// The butterfly crosses the whole room, so it is a hotspot only while it is on the glass and 2 px clear of every
+// other one (the back button needs no check: the butterfly's box starts at row 32, the button's ends at 27).
+bool Game::butterflyClear(const ui::Box& b) const {
+  if (!inCircle(eventX_ + 4, eventY_ + 3, 14)) return false;
+  static const ui::Box FIXED[] = {DOOR, LAMP, BOWL, BALL, SHELF, PIPS_LBOX, PIPS_RBOX};
+  for (const ui::Box& o : FIXED) if (!apart(b, o)) return false;
+  if (pet::giftReady(save_, now_) && !apart(b, GIFT)) return false;
+  if (save_.poop && !apart(b, {poopX(), POOP_Y, POOP_W, POOP_H})) return false;
+  ui::Box dog; dogBox(dog.x, dog.y, dog.w, dog.h);
+  return apart(b, dog);
 }
 void Game::toggleLamp() {
   if (save_.asleep) {
@@ -1085,10 +1102,12 @@ void Game::drawBath() {
 }
 
 // ---------------------------------------------------------------- stats / stickers / hats
+// "Stickers" (54 px) gets 5 px either side; the row's bottom corners (24,134) and (136,134) are 78 px from the middle.
+static const ui::Box STICKERS_BTN = {24, 112, 64, 22}, HATS_BTN = {92, 112, 44, 22};
 void Game::updateStats() {
   if (backButton()) { go(SC_HOME); return; }
-  if (in_.tapIn(26, 112, 54, 22)) { go(SC_STICKERS); }
-  if (in_.tapIn(84, 112, 50, 22)) { hatSel_ = save_.hat; go(SC_HATS); }
+  if (tapBox(in_, STICKERS_BTN)) { go(SC_STICKERS); }
+  if (tapBox(in_, HATS_BTN)) { hatSel_ = save_.hat; go(SC_HATS); }
   if (in_.longPress && in_.hit(60, 140, 40, 16)) go(SC_CONFIRM_RESET);
 }
 void Game::drawStats() {
@@ -1107,8 +1126,8 @@ void Game::drawStats() {
   snprintf(b, sizeof b, "%d book%s, %d trick%s", save_.booksRead, save_.booksRead == 1 ? "" : "s", nt, nt == 1 ? "" : "s"); textCentered(80, 91, b, C_NAVY);
   snprintf(b, sizeof b, "%d day streak", save_.streak); textCentered(80, 100, b, C_NAVY);
   if (save_.streak >= 3) blit(SPR_STAR, 80 + textWidth(b) / 2 + 4, 99);
-  ui::button(in_, {{26, 112, 54, 22}, "Stickers", nullptr, C_PINK});
-  ui::button(in_, {{84, 112, 50, 22}, "Hats", nullptr, C_PLUM});
+  ui::button(in_, {STICKERS_BTN, "Stickers", nullptr, C_PINK});
+  ui::button(in_, {HATS_BTN, "Hats", nullptr, C_PLUM});
   snprintf(b, sizeof b, "%s, age %d", save_.kidName, save_.kidAge); textCentered(80, 136, b, C_DKGRAY);
   drawBackButton();
 }
