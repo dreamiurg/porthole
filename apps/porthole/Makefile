@@ -59,7 +59,8 @@ lint: snap
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
-	@command -v node >/dev/null || { echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
+	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
+	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
 
 # What pre-commit runs: seconds, not minutes.
