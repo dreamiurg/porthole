@@ -53,9 +53,10 @@ static_assert(sizeof NAME == 12 && sizeof PET == NAME_LIMIT + 1, "the longest na
 static uint16_t g_fb[gfx565::W * gfx565::H];
 static int failures = 0;
 
-static const char* filled(const char* s) {
+static const char* filled(const char* s) {   // the screens fill into 256 bytes: never cut there
   static char out[1024];
-  assert(personalize(s, NAME, PET, out, sizeof out) + 1 < sizeof out);   // never cut
+  const size_t n = personalize(s, NAME, PET, out, sizeof out);
+  if (n >= 256) { printf("content gate: %zu bytes filled, the screens hold 255: \"%s\"\n", n, out); failures++; }
   return out;
 }
 // No taller than l.box.h, and every pixel textBox paints (it clips like the device's label) is on the glass.
@@ -126,11 +127,18 @@ static void dailyGate() {
     const Trick& t = TRICKS[i];
     fits(HEADER, t.id, t.name);
     snprintf(text, sizeof text, "%s   Day %d", t.name, trickUnlockDay(i));
-    fits(TRICK_BUTTON, t.id, text);
+    fits(ROW_LABEL, t.id, text);
     snprintf(text, sizeof text, "%s   3/3", t.name);
-    fits(TRICK_BUTTON, t.id, text);
+    fits(ROW_LABEL, t.id, text);
   }
-  for (const char* s : STICKERS) fits(STICKER, s, s);
+  Label album = STICKER;   // the lowest of the album's rows
+  album.y = (int16_t)(album.y + (STICKER_ROWS - 1) * STICKER_STEP);
+  for (const char* s : STICKERS) fits(album, s, s);
+  fits(album, "album", "A little surprise awaits");
+  for (int bit = 0; bit < 6; bit++) {   // Today's activities, once done too
+    snprintf(text, sizeof text, "* %s", ACTIVITIES[bit]);
+    fits(TODAY_BUTTON, ACTIVITIES[bit], text);
+  }
 }
 // The pup's own lines and the screens' status text, at the widest names and the biggest counts a save allows.
 static void homeGate() {
@@ -150,6 +158,45 @@ static void homeGate() {
   snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u story stars", big, big, stars);
   fits(BOOK_LINES, "scrapbook", filled(text));
 }
+// The words the new screens compose around the content: titles, button labels, counters, World's tiles.
+static Label inTile(const Label& l, const Box& tile) {
+  return {l.box, (int16_t)(tile.x * 3 + l.x), (int16_t)(tile.y * 3 + l.y), l.middle};
+}
+static void screensGate() {
+  static const char* const TITLES[] = {"Our bookshelf", "Story time", "The story continues", "What shall we do?",
+                                       "Little discoveries", "Our little notebook", "So much to explore",
+                                       "Where we found it", "Our sticker album", "Our scrapbook",
+                                       "Little paws, big ideas"};
+  for (const char* t : TITLES) fits(HEADER, "title", t);
+  static const char* const PAIRS[] = {"Discoveries", "Notebook", "Topics", "Today's three"};
+  for (const char* t : PAIRS) fits(PAIR_LABEL, "pair", t);
+  static const char* const NAVS[] = {"Previous", "Next", "Choose", "The end", "Source", "Keep", "Our stickers", "Rename pup"};
+  for (const char* t : NAVS) { fits(buttonLabel(PREV, &FONT20), "prev", t); fits(buttonLabel(NEXT, &FONT20), "next", t); }
+  static const char* const WIDES[] = {"Let's find out", "Back to our book", "Back to today", "My turn", "Peek again"};
+  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "wide", t);
+  fits(TODAY_BUTTON, "word", "A lovely word");
+  fits(WONDER_TITLE, "wonder", "I wonder...");
+  fits(NOTEBOOK_EMPTY, "notebook", "A place for all the things we find together.");
+  static_assert(STORY_PAGES * PAGE_SCREENS <= MAX_PAGES && NUM_DISCOVERIES / 2 <= MAX_PAGES, "the counters' widest");
+  char s[16];
+  for (int count = 1; count <= MAX_PAGES; count++)
+    for (int page = 0; page < count; page++) {
+      pageNumber(s, page, count);
+      if (font::textWidth(*PAGE_NUMBER.box.font, s) > PAGE_NUMBER.box.w) { printf("content gate: counter \"%s\" is too wide\n", s); failures++; }
+    }
+  pageNumber(s, MAX_PAGES - 1, MAX_PAGES);
+  fits(PAGE_NUMBER, "counter", s);
+  const Box tiles[] = {WORLD_TRICKS, WORLD_NAP, WORLD_BOOK, WORLD_TODAY};
+  const char* const tileTitles[4][2] = {{"Learn tricks", nullptr}, {"Cozy nap", "Wake up"}, {"Our scrapbook", nullptr},
+                                        {"Today's adventure", nullptr}};
+  const char* const tileDetails[4][2] = {{"6 of 6 mastered", nullptr}, {"A lovely place to pause", nullptr},
+                                         {"Growing up, page by page", nullptr}, {"Something to discover", "Sticker earned!"}};
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 2; j++) {
+      if (tileTitles[i][j]) fits(inTile(TILE_TITLE, tiles[i]), "tile", tileTitles[i][j]);
+      if (tileDetails[i][j]) fits(inTile(TILE_DETAIL, tiles[i]), "tile", tileDetails[i][j]);
+    }
+}
 static void pixelGate() {
   const font::Font* F[4] = {&FONT16, &FONT20, &FONT24, &FONT28};
   for (const font::Font* f : F)
@@ -163,6 +210,7 @@ static void pixelGate() {
   discoveryGate();
   dailyGate();
   homeGate();
+  screensGate();
   if (failures) printf("content gate: %d strings do not fit (widest names: {name} %s, {pet} %s)\n", failures, NAME, PET);
   assert(failures == 0);
 }

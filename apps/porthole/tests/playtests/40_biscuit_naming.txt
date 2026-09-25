@@ -55,17 +55,17 @@ expect named=0
 tap 119 125
 wait 450
 expect pet=Biscuit
-tap 94 129
+tap 80 75
 expect pets=1
 # the scrapbook: rename Kai's pup to Bo, keeping the care it had
 tap 121 129
 wait 450
-tap 79 99
+tap 50 99
 wait 450
 expect-screen biscuit_profile
 ui-check biscuit_profile
 snap n04_profile
-tap 80 132
+tap 108 132
 wait 450
 expect-screen biscuit_rename_pet
 ui-check biscuit_rename_pet
@@ -82,7 +82,7 @@ expect pet=Bo
 expect pets=1
 snap n05_renamed
 # back from a rename changes nothing
-tap 80 132
+tap 108 132
 wait 450
 tap 93 125
 tap 80 12

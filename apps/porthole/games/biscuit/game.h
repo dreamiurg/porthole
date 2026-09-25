@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include "app.h"
 #include "content_daily.h"
+#include "content_stories.h"
+#include "layout.h"
 #include "pet.h"
 #include "ui.h"
 
@@ -24,13 +26,17 @@ class Game : public App {
   bool soundOn(uint32_t) override { return false; }   // Biscuit never drives the buzzer
   bool takeSave(const void** data, size_t* len, bool allowed) override;
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
-  void leave() override { if (save_.named) dirty_ = true; fetch_ = -1; }
+  void leave() override { if (save_.named) dirty_ = true; fetch_ = -1; shelfAtMs_ = 0; }
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;   // "hungry" "unlock" "young" "grown" "tricks" "practiced": test states
+  // test states: "hungry" "unlock" "young" "grown" "tricks" "practiced" "read" (every story and discovery done)
+  void debugCmd(const char* cmd) override;
 
   // shared by the screens (screens_*.cpp)
-  enum Screen : uint8_t { SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_COUNT };
+  enum Screen : uint8_t {
+    SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
+    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_COUNT
+  };
 
  private:
   Save save_{}, out_{};                       // the working pup, and the sealed copy takeSave hands out
@@ -46,9 +52,19 @@ class Game : public App {
   uint8_t activity_ = 0;                      // SceneActivity
   uint32_t sayUntilMs_ = 0, actUntilMs_ = 0, actStartMs_ = 0, lastSurpriseMs_ = 0;   // 0 = nothing pending
   int fetch_ = -1;                            // catches so far, -1 = not playing fetch
-  int page_ = 0;                              // Tricks: the list page
+  uint32_t shelfAtMs_ = 0;                    // the shelf was tapped: the Library opens then (0 = not pending)
+  int page_ = 0;                              // Tricks, Library, Discoveries, Topics, Stickers: the list page
   int trick_ = 0, step_ = 0; bool watching_ = true;   // Training
   char nameBuf_[ui::NAME_LEN + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
+  // Reading (a story's pages, an ending's, a discovery's): each content page is split into at most PAGE_SCREENS
+  // screens, counted across all of them. at_ is the screen shown; a discovery also has its cover (-1) and its wonder
+  // page (total_).
+  const char* const* pages_ = nullptr; int pageCount_ = 0, total_ = 0, at_ = 0;
+  uint8_t screens_[STORY_PAGES] = {0};
+  char text_[256] = {0}; const char* shown_[PAGE_SCREENS] = {nullptr}; int textPage_ = -1;   // at_'s page, filled
+  int story_ = 0, choice_ = 0;
+  enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
+  FactList facts_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
@@ -71,5 +87,22 @@ class Game : public App {
   void updateProfile(); void drawProfile();
   void updateRenamePet(); void drawRenamePet();
   void toggleNap();
+  void updateLibrary(); void drawLibrary();
+  void openStory(int id);
+  void updateStory(); void drawStory();       // the story's pages and, as SC_ENDING, the chosen ending's
+  void updateChoice(); void drawChoice();
+  void openPages(const char* const* pages, int count, int at);   // at < 0: from the end
+  const char* pageText();                     // at_'s screen, personalized
+  void updateDiscoveries(); void drawDiscoveries();
+  void showFacts(FactList which, int topic);
+  int factList(uint8_t* ids) const;           // the discoveries the list shows, in order
+  void updateTopics(); void drawTopics();
+  void openFact(int id);
+  void updateDiscovery(); void drawDiscovery();
+  void updateSource(); void drawSource();
+  void updateToday(); void drawToday();
+  void todayActivity(int bit);
+  void updateWord(); void drawWord();
+  void updateStickers(); void drawStickers();
 };
 }  // namespace biscuit

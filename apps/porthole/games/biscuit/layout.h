@@ -9,6 +9,7 @@
 // the UI audit (make playtest) holds every screen to that at zero findings. That floor moved several of the LVGL
 // build's controls (Back 86x56 -> 90x66, rows 56 -> 66, Previous/Next 128x56 -> 120x66), and the labels with them.
 #pragma once
+#include <stdio.h>
 #include "font.h"
 #include "generated/fonts.h"
 #include "ui.h"
@@ -28,40 +29,65 @@ inline constexpr Label HEADER = {{&FONT24, 340, 35, 4, Align::CENTER}, 70, 112, 
 // Previous / page / Next along the bottom chord
 constexpr Box PREV = {32, 121, 40, 22}, NEXT = {88, 121, 40, 22};
 inline constexpr Label PAGE_NUMBER = {{&FONT16, 48, 17, 4, Align::CENTER}, 216, 387, false};
-// A wide button under the content, above the bottom chord (My turn, Peek again, Rename pup).
+// A wide button under the content, above the bottom chord (My turn, Peek again, Let's find out, Back to today).
 constexpr Box WIDE = {37, 121, 86, 22};
+// A button's label, as the LVGL build laid it out: 14 px narrower than the button, 5 px in from its top and bottom,
+// centered, line space 0.
+constexpr Label buttonLabel(const Box& b, const font::Font* f) {
+  return {{f, (int16_t)(b.w * 3 - 14), (int16_t)(b.h * 3 - 10), 0, Align::CENTER}, (int16_t)(b.x * 3 + 7), (int16_t)(b.y * 3 + 5), true};
+}
+
+// Lists: a pair of buttons under the title, then rows (three, or the pair and two) above Previous / Next.
+constexpr Box PAIR[2] = {{28, 49, 51, 22}, {81, 49, 51, 22}};
+constexpr int ROWS = 3;
+constexpr Box ROW[ROWS] = {{28, 49, 104, 22}, {28, 73, 104, 22}, {28, 97, 104, 22}};
+inline constexpr Label ROW_LABEL = buttonLabel(ROW[2], &FONT20);            // the lowest row: the tightest chord
+inline constexpr Label PAIR_LABEL = buttonLabel(PAIR[0], &FONT20);
+// "n / m" between Previous and Next; "n/m" when that is wider than its box (a long notebook).
+inline void pageNumber(char (&s)[16], int page, int count) {
+  snprintf(s, sizeof s, "%d / %d", page + 1, count);
+  if (font::textWidth(*PAGE_NUMBER.box.font, s) > PAGE_NUMBER.box.w) snprintf(s, sizeof s, "%d/%d", page + 1, count);
+}
 
 // Story, ending and discovery pages. The screen splits a content page with font::pageBreaks into at most
-// PAGE_SCREENS screens and shows "n / m" under it, as the LVGL build did ("1 / 2" on a discovery).
+// PAGE_SCREENS screens and counts them all, "n / m", between Previous and Next.
 inline constexpr Label PAGE = {{&FONT24, 352, 176, 4, Align::LEFT}, 64, 146, false};
 constexpr int PAGE_SCREENS = 2;
-// TODO(biscuit 7b): the Library, Choice, Discovery, Source, Today and Sticker screens re-tune these to the 8 mm
-// controls the way HEADER and TRICK_BUTTON already are; until then they are the LVGL build's.
-// Library: two story buttons (60, 213 + 66j, 360x60), "Day N: <title>" while locked, "<title> *" once read.
-inline constexpr Label STORY_BUTTON = {{&FONT20, 346, 50, 0, Align::CENTER}, 67, 284, true};
+// The most pages any list or reader counts: the notebook with every discovery kept, two to a page.
+constexpr int MAX_PAGES = 48;
+// Library: Discoveries and Notebook, then two story rows: "Day N: <title>" while locked, "<title> *" once read.
+inline constexpr Label STORY_BUTTON = ROW_LABEL;
 // Not drawn by the LVGL firmware (only its web version showed it, under the title): one small line, button wide.
 inline constexpr Label SUBTITLE = {{&FONT16, 346, 17, 0, Align::CENTER}, 67, 284, false};
-// Choice: the prompt above two choice buttons (78, 256 + 80j, 324x68).
+// Choice: the prompt above two choice rows, lower than the list rows (nothing else is at the bottom).
+constexpr Box CHOICE[2] = {{28, 86, 104, 22}, {28, 110, 104, 22}};
 inline constexpr Label PROMPT = {{&FONT24, 352, 108, 4, Align::CENTER}, 64, 148, false};
-inline constexpr Label CHOICE_BUTTON = {{&FONT20, 310, 58, 0, Align::CENTER}, 85, 341, true};
-// A discovery's first page, above its picture at y 228. The firmware used FONT24 when the title fit in 76 px, else
-// this FONT20 box: the gate checks the fallback.
-inline constexpr Label FACT_TITLE = {{&FONT20, 348, 82, 4, Align::CENTER}, 66, 146, false};
-// Discovery list: two buttons (66, 210 + 70j, 348x64), the picture on the left, the title in a 230 px label at the
-// right. FONT20 when the title fit in 52 px, else this FONT16 box: the gate checks the fallback.
-inline constexpr Label FACT_BUTTON = {{&FONT16, 230, 54, 0, Align::CENTER}, 179, 285, true};
-// Topics list: three buttons (82, 153 + 61j, 316x56), the picture on the left, the name in a 200 px label.
-inline constexpr Label TOPIC_BUTTON = {{&FONT20, 200, 46, 0, Align::CENTER}, 193, 280, true};
-// The wonder page, under "I wonder..." and above Source / Keep at y 374.
-inline constexpr Label WONDER = {{&FONT24, 352, 180, 4, Align::CENTER}, 64, 194, false};
-// The source page: its name, then its address.
+inline constexpr Label CHOICE_BUTTON = buttonLabel(CHOICE[1], &FONT20);
+// A discovery's cover: its title (FONT24 when that takes two lines at most, else this FONT20 box: the gate checks
+// the fallback), the picture at 3x under it, Let's find out.
+inline constexpr Label FACT_TITLE = {{&FONT20, 348, 76, 4, Align::CENTER}, 66, 142, false};
+constexpr int COVER_X = 96, COVER_Y = 218;
+// Discovery and topic rows: the picture (96x48) at the left, the text in the rest. FONT20 when a title takes two
+// lines at most, else this FONT16 box: the gate checks the fallback.
+constexpr int ROW_PICTURE_X = 7, ROW_PICTURE_Y = 9;   // in the row, physical
+inline constexpr Label FACT_BUTTON = {{&FONT16, 196, 56, 0, Align::CENTER}, 193, 296, true};
+inline constexpr Label TOPIC_BUTTON = {{&FONT20, 196, 56, 0, Align::CENTER}, 193, 296, true};
+// The notebook before anything is kept.
+inline constexpr Label NOTEBOOK_EMPTY = {{&FONT24, 340, 90, 4, Align::CENTER}, 70, 226, false};
+// The wonder page: "I wonder..." over the question, Source / Keep where Previous / Next are.
+inline constexpr Label WONDER_TITLE = {{&FONT28, 328, 29, 4, Align::CENTER}, 76, 148, false};
+inline constexpr Label WONDER = {{&FONT24, 352, 176, 4, Align::CENTER}, 64, 182, false};
+// The source page: its name, then its address, then Back to our book.
 inline constexpr Label SOURCE_NAME = {{&FONT24, 352, 64, 4, Align::CENTER}, 64, 156, false};
-inline constexpr Label SOURCE_URL = {{&FONT16, 332, 154, 4, Align::LEFT}, 74, 220, false};
-// Today: the adventure's description above its three action buttons at y 228.
+inline constexpr Label SOURCE_URL = {{&FONT16, 332, 138, 4, Align::LEFT}, 74, 220, false};
+// Today: the adventure's description, then its three activities and A lovely word, two by two.
 inline constexpr Label ADVENTURE = {{&FONT16, 350, 81, 4, Align::CENTER}, 65, 147, false};
-// The pocket word's meaning, above Back to today at y 374.
-inline constexpr Label MEANING = {{&FONT24, 352, 218, 4, Align::LEFT}, 64, 156, false};
+constexpr Box TODAY[4] = {{28, 80, 51, 22}, {81, 80, 51, 22}, {28, 104, 51, 22}, {81, 104, 51, 22}};
+inline constexpr Label TODAY_BUTTON = buttonLabel(TODAY[2], &FONT20);
+// The pocket word's meaning, above Back to today.
+inline constexpr Label MEANING = {{&FONT24, 352, 206, 4, Align::LEFT}, 64, 150, false};
 // Sticker album: three rows 56 px apart from y 164, one line each.
+constexpr int STICKER_ROWS = 3, STICKER_STEP = 56;
 inline constexpr Label STICKER = {{&FONT24, 320, 52, 4, Align::CENTER}, 80, 164, false};
 
 // ---- Home
@@ -89,14 +115,12 @@ constexpr Box ALL_DONE = {50, 124, 60, 22};
 constexpr Box WORLD_BACK = {31, 18, 24, 22};
 inline constexpr Label WORLD_NAMES = {{&FONT16, 222, 17, 4, Align::CENTER}, 172, 64, false};   // just the pup's if wider
 inline constexpr Label WORLD_LINE = {{&FONT16, 352, 17, 4, Align::CENTER}, 64, 124, false};    // day, stage, stars
-constexpr Box WORLD_TRICKS = {22, 48, 57, 32}, WORLD_NAP = {81, 48, 57, 32}, WORLD_BOOK = {51, 83, 57, 32};
+constexpr Box WORLD_TRICKS = {22, 48, 57, 32}, WORLD_NAP = {81, 48, 57, 32}, WORLD_BOOK = {22, 83, 57, 32},
+              WORLD_TODAY = {81, 83, 57, 32};
 inline constexpr Label TILE_TITLE = {{&FONT20, 118, 44, 0, Align::LEFT}, 42, 10, false};   // inside the tile
 inline constexpr Label TILE_DETAIL = {{&FONT16, 150, 34, 0, Align::LEFT}, 10, 58, false};
 
-// ---- Tricks: three rows a page, two pages; "<name>   N/3", or "<name>   Day N" while locked
-constexpr int TRICK_ROWS = 3;
-constexpr Box TRICK_ROW[TRICK_ROWS] = {{28, 49, 104, 22}, {28, 73, 104, 22}, {28, 97, 104, 22}};
-inline constexpr Label TRICK_BUTTON = {{&FONT20, 298, 56, 0, Align::CENTER}, 91, 296, true};   // the lowest row
+// ---- Tricks: the three rows a page, two pages; "<name>   N/3", or "<name>   Day N" while locked
 
 // ---- Training: watch the cues, then tap them on the pad
 inline constexpr Label TRAIN_HINT = {{&FONT24, 352, 60, 4, Align::CENTER}, 64, 160, false};
@@ -104,7 +128,7 @@ inline constexpr Label TRAIN_CUES = {{&FONT28, 348, 100, 4, Align::CENTER}, 66, 
 constexpr Box CUE_KEY[5] = {   // indexed by Cue: Left, Up, Right, Down, Paw
   {31, 73, 30, 22}, {65, 49, 30, 22}, {99, 73, 30, 22}, {65, 97, 30, 22}, {65, 73, 30, 22}};
 
-// ---- Scrapbook (the profile page)
+// ---- Scrapbook (the profile page): Our stickers and Rename pup where Previous and Next are
 inline constexpr Label BOOK_BADGE = {{&FONT24, 330, 30, 4, Align::CENTER}, 75, 150, false};
 inline constexpr Label BOOK_LINES = {{&FONT20, 340, 130, 4, Align::CENTER}, 70, 196, false};   // 5 lines: long names wrap
 }  // namespace biscuit

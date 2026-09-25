@@ -1,5 +1,6 @@
 #include "ui565.h"
 #include <stdio.h>
+#include "generated/discovery_art.h"
 #include "gfx565.h"
 
 namespace biscuit::ui565 {
@@ -58,9 +59,7 @@ void text(const Label& l, const char* s, uint16_t color) {
 bool tapped(const Input& in, const Button& b) { return b.enabled && in.tapIn(b.box.x, b.box.y, b.box.w, b.box.h); }
 void button(const Input& in, const Button& b) {
   frame(in, b);
-  // an LVGL button's label: 14 px narrower than the button, 5 px in from its top and bottom, centered, line space 0
-  const int16_t w = (int16_t)(b.box.w * 3 - 14), h = (int16_t)(b.box.h * 3 - 10);
-  text({{b.font, w, h, 0, Align::CENTER}, (int16_t)(b.box.x * 3 + 7), (int16_t)(b.box.y * 3 + 5), true}, b.label, INK);
+  text(buttonLabel(b.box, b.font), b.label, INK);
 }
 void actionButton(const Input& in, const Button& b, Icon glyph) {
   frame(in, b);
@@ -111,14 +110,29 @@ void top(const Input& in, const char* title, int stars) {
   text(STARS, s, INK);
   text(HEADER, title, INK);
 }
-static Button prev(int page) { return {PREV, "Previous", &FONT20, PURPLE, page > 0}; }
-static Button next(int page, int count) { return {NEXT, "Next", &FONT20, PURPLE, page + 1 < count}; }
-int navTapped(const Input& in, int page, int count) { return tapped(in, prev(page)) ? -1 : tapped(in, next(page, count)) ? 1 : 0; }
-void nav(const Input& in, int page, int count) {
-  char s[32]; snprintf(s, sizeof s, "%d / %d", page + 1, count);
+static Button prev(const Nav& n) { return {PREV, n.prev, &FONT20, PURPLE, n.prevOn}; }
+static Button next(const Nav& n) { return {NEXT, n.next, &FONT20, PURPLE, n.nextOn}; }
+static Nav list(int page, int count) { return {"Previous", "Next", page > 0, page + 1 < count}; }
+int navTapped(const Input& in, const Nav& n) {
+  const bool back = tapped(in, prev(n)), on = tapped(in, next(n));   // both asked: the audit sees both
+  return back ? -1 : on ? 1 : 0;
+}
+void nav(const Input& in, const Nav& n, int page, int count) {
+  char s[16]; pageNumber(s, page, count);
   text(PAGE_NUMBER, s, INK);
-  button(in, prev(page));
-  button(in, next(page, count));
+  button(in, prev(n));
+  button(in, next(n));
+}
+int navTapped(const Input& in, int page, int count) { return navTapped(in, list(page, count)); }
+void nav(const Input& in, int page, int count) { nav(in, list(page, count), page, count); }
+void picture(int id, int x, int y, int scale) { gfx565::blit(DISCOVERY_ART[id], x, y, scale); }
+void pictureRow(const Input& in, const Box& b, int id, const char* label) {
+  frame(in, {b, label, &FONT20, PURPLE, true});
+  picture(id, b.x * 3 + ROW_PICTURE_X, b.y * 3 + ROW_PICTURE_Y, 1);
+  Label l = FACT_BUTTON;   // placed like the lowest row's: moved to this one
+  l.x = (int16_t)(l.x - ROW[ROWS - 1].x * 3 + b.x * 3); l.y = (int16_t)(l.y - ROW[ROWS - 1].y * 3 + b.y * 3);
+  if (font::textHeight(FONT20, label, l.box.w, 0) <= 2 * FONT20.lineHeight) l.box.font = &FONT20;
+  text(l, label, INK);
 }
 void need(int slot, Icon glyph, int value, uint16_t color) {
   const int x = NEED_X[slot], y = NEED_Y;

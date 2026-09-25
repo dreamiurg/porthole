@@ -55,7 +55,7 @@ inline constexpr const char* STAGES[] = {"Puppy", "Young pup", "Story dog"};
 // personalize(). SAY_IDLE is the line it goes back to.
 enum Say : uint8_t {
   SAY_IDLE, SAY_HELLO, SAY_FED, SAY_PETTED, SAY_FETCHED, SAY_NIGHT, SAY_MORNING, SAY_FERN, SAY_SHOW_OFF, SAY_LESSON,
-  SAY_MASTERED, SAY_COUNT
+  SAY_MASTERED, SAY_STORY, SAY_COUNT
 };
 inline constexpr const char* SAY[SAY_COUNT] = {
   "Books, biscuits, and you. My favorite things.",
@@ -69,6 +69,12 @@ inline constexpr const char* SAY[SAY_COUNT] = {
   "{name}, look! I've been practicing.",
   "We've got that bit! A little wag for both of us.",
   "We did it! Watch my little paws.",
+  "A story shared. Shall we try the other ending sometime?",
+};
+
+// Today's activities as the adventure lists them, by Action bit (Feed, Play, Petting, Read, Train, Rest).
+inline constexpr const char* ACTIVITIES[] = {
+  "A little snack", "Play fetch", "A cuddle", "Read together", "Try a trick", "A cozy nap",
 };
 
 inline constexpr const char* STICKERS[] = {

@@ -1,4 +1,5 @@
-// The pup's name (first naming and renaming, on the shell's indexed name keyboard) and the scrapbook page.
+// The pup's name (first naming and renaming, on the shell's indexed name keyboard), the scrapbook page and the
+// sticker album.
 #include <stdio.h>
 #include <string.h>
 #include "game.h"
@@ -11,7 +12,8 @@
 namespace biscuit {
 using namespace ui565;
 namespace {
-constexpr Button RENAME = {WIDE, "Rename pup", &FONT20, PURPLE, true};
+constexpr Button ALBUM = {PREV, "Our stickers", &FONT20, PEACH, true}, RENAME = {NEXT, "Rename pup", &FONT20, PURPLE, true};
+constexpr int STICKER_PAGES = (NUM_STICKERS + STICKER_ROWS - 1) / STICKER_ROWS;
 }  // namespace
 
 // The keyboard types up to ui::NAME_LEN letters: a longer name (from before Porthole) starts the field empty.
@@ -50,6 +52,7 @@ void Game::drawRenamePet() {
 // ---------------------------------------------------------------- the scrapbook
 void Game::updateProfile() {
   if (tapped(in_, BACK_BUTTON)) { go(SC_WORLD); return; }
+  if (tapped(in_, ALBUM)) { page_ = 0; go(SC_STICKERS); return; }
   if (tapped(in_, RENAME)) { startNaming(save_.petName); go(SC_RENAME_PET); }
 }
 void Game::drawProfile() {
@@ -64,6 +67,25 @@ void Game::drawProfile() {
            (unsigned)save_.friendship, stars(save_));
   personalize(s, who_.name, save_.petName, lines, sizeof lines);
   text(BOOK_LINES, lines, INK);
+  button(in_, ALBUM);
   button(in_, RENAME);
+}
+
+// ---------------------------------------------------------------- the sticker album: one a completed day's adventure
+void Game::updateStickers() {
+  if (tapped(in_, BACK_BUTTON)) { go(SC_PROFILE); return; }
+  const int turn = navTapped(in_, page_, STICKER_PAGES);
+  if (turn) page_ += turn;
+}
+void Game::drawStickers() {
+  gfx565::clear(PAPER);
+  top(in_, "Our sticker album", stars(save_));
+  for (int row = 0; row < STICKER_ROWS; row++) {
+    const int i = page_ * STICKER_ROWS + row;
+    Label l = STICKER;
+    l.y = (int16_t)(l.y + row * STICKER_STEP);
+    text(l, save_.stickers & (1u << i) ? STICKERS[i] : "A little surprise awaits", INK);
+  }
+  nav(in_, page_, STICKER_PAGES);
 }
 }  // namespace biscuit

@@ -22,7 +22,7 @@ void Game::enter(const AppEnter& e) {
   biscuit::tick(save_, now_);
   dirty_ = save_.named; wantsHome_ = false;   // the visit (and its new day, if any) is saved right away
   lastTickSec_ = lastCheckpointSec_ = now_; lastSurpriseMs_ = ms_;
-  fetch_ = -1; quiet();
+  fetch_ = -1; shelfAtMs_ = 0; quiet();
   if (save_.named) go(SC_HOME);
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
@@ -64,8 +64,11 @@ void Game::surprise() {
 
 using ScreenFn = void (Game::*)();
 void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
-  static const ScreenFn UPDATE[] = {&Game::updateSetupPet, &Game::updateHome, &Game::updateWorld, &Game::updateTricks,
-                                    &Game::updateTraining, &Game::updateProfile, &Game::updateRenamePet};
+  static const ScreenFn UPDATE[] = {
+    &Game::updateSetupPet, &Game::updateHome, &Game::updateWorld, &Game::updateTricks, &Game::updateTraining,
+    &Game::updateProfile, &Game::updateRenamePet, &Game::updateLibrary, &Game::updateStory, &Game::updateChoice,
+    &Game::updateStory, &Game::updateDiscoveries, &Game::updateTopics, &Game::updateDiscovery, &Game::updateSource,
+    &Game::updateToday, &Game::updateWord, &Game::updateStickers};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -74,12 +77,19 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   if (sayUntilMs_ && (int32_t)(ms_ - sayUntilMs_) >= 0) { personalize(SAY[SAY_IDLE], who_.name, save_.petName, speech_, sizeof speech_); sayUntilMs_ = 0; }
   if (fetch_ < 0 && actUntilMs_ && (int32_t)(ms_ - actUntilMs_) >= 0) animate(SCENE_IDLE);
   surprise();
+  if (shelfAtMs_ && (int32_t)(ms_ - shelfAtMs_) >= 0) {   // the pup has pulled out a book: the Library
+    shelfAtMs_ = 0;
+    if (screen_ == SC_HOME && awake(save_) && fetch_ < 0) { page_ = 0; go(SC_LIBRARY); }
+  }
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
 }
 void Game::render() {
-  static const ScreenFn DRAW[] = {&Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks,
-                                  &Game::drawTraining, &Game::drawProfile, &Game::drawRenamePet};
+  static const ScreenFn DRAW[] = {
+    &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
+    &Game::drawRenamePet, &Game::drawLibrary, &Game::drawStory, &Game::drawChoice, &Game::drawStory,
+    &Game::drawDiscoveries, &Game::drawTopics, &Game::drawDiscovery, &Game::drawSource, &Game::drawToday,
+    &Game::drawWord, &Game::drawStickers};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
@@ -102,7 +112,9 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 
 const char* Game::screenName() const {
   static const char* N[] = {"biscuit_setup_pet", "biscuit_home", "biscuit_world", "biscuit_tricks", "biscuit_training",
-                            "biscuit_profile", "biscuit_rename_pet"};
+                            "biscuit_profile", "biscuit_rename_pet", "biscuit_library", "biscuit_story",
+                            "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
+                            "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per screen");
   return N[screen_];
 }
@@ -114,6 +126,10 @@ void Game::debugPrint() {
   printf("screen=%s fetch=%d activity=%d feeds=%u plays=%u pets=%u daily=%u tricks=%d%d%d%d%d%d trick=%d step=%d watching=%d page=%d\n",
          screenName(), fetch_, activity_, (unsigned)p.careCounts[0], (unsigned)p.careCounts[1], (unsigned)p.careCounts[2],
          p.dailyCompleted, p.tricks[0], p.tricks[1], p.tricks[2], p.tricks[3], p.tricks[4], p.tricks[5], trick_, step_, watching_, page_);
+  int kept = 0;
+  for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
+  printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u\n",
+         p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed);
 }
 void Game::debugCmd(const char* cmd) {
   if (!save_.named) return;
@@ -123,6 +139,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "grown")) { save_.daysTogether = 7; save_.friendship = 60; }
   else if (!strcmp(cmd, "tricks")) memset(save_.tricks, 3, sizeof save_.tricks);
   else if (!strcmp(cmd, "practiced")) memset(save_.tricks, 2, sizeof save_.tricks);   // every trick on its last lesson
+  else if (!strcmp(cmd, "read")) { save_.stories = 0x7f; for (int i = 0; i < NUM_DISCOVERIES; i++) save_.discoveries[i / 32] |= 1u << (i % 32); }
   else return;
   markDirty();
 }
