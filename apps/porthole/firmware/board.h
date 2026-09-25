@@ -25,7 +25,7 @@ void buzzer(bool on);
 bool saveBlob(const char* ns, const char* key, const void* data, size_t len);
 size_t loadBlob(const char* ns, const char* key, void* data, size_t maxLen);  // 0 if missing or bigger than maxLen
 void eraseBlob(const char* ns, const char* key);
-void eraseAll();  // every namespace in NAMESPACES (board.cpp)
+void eraseNamespace(const char* ns);  // every key in ns
 
 uint32_t freeHeap();
 }  // namespace board

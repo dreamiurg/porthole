@@ -1,37 +1,23 @@
 # UI audit: every reachable screen, and the busy variants of home, through ui-check, with contact sheets.
-# One house locked with 1234 (for pin_enter) and a second house (for the nap screen).
+# The shell's screens (new profile, picker, code, launcher, rest, delete) and Pets Club's, for two kids.
 reset
-ui-check splash
-snap a01_splash
-wait 2000
-ui-check intro-parcel
-snap a02_intro
-tap 80 80
-wait 1000
-ui-check intro-puppy
-tap 80 80
 wait 200
-ui-check name_kid
-tap 97 116
-tap 25 98
-tap 97 62
-ui-check name_kid-typed
-snap a03_name_kid
-tap 134 116
+ui-check new_name
+snap a01_new_name
+tap 120 96
+tap 30 48
+tap 140 72
+ui-check new_name-typed
+snap a02_name_typed
+tap 92 144
+wait 200
+ui-check new_avatar
+snap a03_avatar
+tap 34 57
 wait 200
 ui-check age
 snap a04_age
 tap 37 101
-wait 200
-ui-check name_pet
-tap 132 40
-wait 100
-snap a05_name_pet
-tap 134 116
-wait 200
-ui-check theme
-snap a06_theme
-tap 32 78
 wait 200
 ui-check pin_set
 tap 54 59
@@ -39,18 +25,56 @@ tap 78 59
 tap 102 59
 tap 54 79
 ui-check pin_set-full
-snap a07_pin_set
+snap a05_pin_set
 tap 102 119
+wait 200
+ui-check pin_again
+snap a06_pin_again
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 200
+expect-screen launcher
+ui-check launcher
+snap a07_launcher
+tap 80 128
+wait 200
+ui-check launcher-muted
+tap 80 128
+wait 200
+tap 80 76
+wait 100
+ui-check splash
+snap a08_splash
+wait 2000
+ui-check intro-parcel
+snap a09_intro
+tap 80 80
+wait 1000
+ui-check intro-puppy
+tap 80 80
+wait 200
+ui-check name_pet
+tap 126 28
+wait 100
+snap a10_name_pet
+tap 92 144
+wait 200
+ui-check theme
+snap a11_theme
+tap 32 78
 wait 100
 expect-screen celebrate
 ui-check celebrate-welcome
-snap a08_welcome
+snap a12_welcome
 wait 800
 tap 80 80
 wait 300
 expect-screen home
 ui-check home
-snap a09_home
+snap a13_home
 sheet adoption
 # home asleep
 tap 23 79
@@ -190,7 +214,7 @@ tap 80 12
 wait 200
 sheet read_tricks
 # stats, stickers, hats, start over (answered No)
-tap 80 21
+tap 40 27
 wait 200
 expect-screen stats
 ui-check stats
@@ -240,72 +264,89 @@ wait 800
 tap 80 80
 wait 300
 expect-screen home
-# the street and the locked house
-tap 27 52
+# Kai: a second profile, the picker, the code screen, then Kai's pup in the third colors
+tap 80 12
 wait 200
-expect-screen street
-ui-check street
-snap e04_street
-tap 40 91
-wait 300
-expect-screen pin_enter
-ui-check pin_enter
-snap e05_pin_enter
+profile Kai 6 1234
+tap 80 32
+wait 200
+expect-screen picker
+ui-check picker
+snap e04_picker
+tap 80 80
+wait 200
+expect-screen pin
+ui-check pin
+snap e05_pin
 tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
 tap 102 119
 wait 300
-expect-screen home
-# a second house, then its nap screen
-tap 27 52
-wait 200
-tap 80 91
-wait 300
+expect-screen launcher
+tap 80 76
+wait 2000
 tap 80 80
 wait 1000
 tap 80 80
 wait 200
-tap 79 80
-tap 25 62
-tap 43 80
-tap 134 116
-wait 200
-tap 79 69
-wait 200
-tap 132 40
-tap 134 116
+tap 126 28
+tap 92 144
 wait 200
 tap 96 78
-wait 200
-tap 54 119
 wait 900
 tap 80 80
 wait 300
 expect-screen home
-expect house=1/2
+expect profile=1/2
 ui-check home-theme3
 snap e06_home_theme3
-dbg tired
+# Paw Street with a neighbour
+tap 27 52
 wait 200
+expect-screen street
+ui-check street-two
+snap e07_street_two
+tap 80 12
+wait 200
+# six minutes of play: the rest screen
+dbg tired
+wait 1100
 expect-screen rest
 ui-check rest
-snap e07_rest
-tap 80 130
+snap e08_rest
+tap 80 132
 wait 200
-ui-check street-two
-snap e08_street_two
-sheet days_street
-# the grown dog: bigger sprite, bigger hotspots
-tap 40 91
-wait 300
+# a long press on Sam: Sam's code, then the delete question (answered No)
+hold 80 54
+wait 100
 tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
 tap 102 119
 wait 300
+expect-screen delete
+ui-check delete
+snap e09_delete
+tap 45 102
+wait 200
+expect-screen picker
+sheet days_street
+# the grown dog: bigger sprite, bigger hotspots
+tap 80 54
+wait 200
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+tap 80 76
+wait 2000
+expect-screen home
+expect profile=0/2
 dbg grown
 wait 1100
 expect-screen celebrate

@@ -179,9 +179,6 @@ void rtcSet(uint32_t e) {
 void setBacklight(uint8_t pct) { if (pct > 100) pct = 100; ledcWrite(PIN_BL, pct == 100 ? 1023 : pct * 10); }
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 
-// Every NVS namespace the firmware writes; eraseAll() clears exactly these. "crago" is Pets Club's
-// legacy namespace: renaming it orphans every save already on a device.
-static const char* const NAMESPACES[] = {"crago"};
 // Each call opens its namespace read-write (creating it, as the old boot-time begin() did) and the
 // Preferences destructor closes it again; saves come at most every few seconds, so the open is cheap.
 bool saveBlob(const char* ns, const char* key, const void* d, size_t n) { Preferences p; return p.begin(ns, false) && p.putBytes(key, d, n) == n; }
@@ -190,7 +187,7 @@ size_t loadBlob(const char* ns, const char* key, void* d, size_t n) {
   size_t have = p.getBytesLength(key); return have && have <= n ? p.getBytes(key, d, have) : 0;
 }
 void eraseBlob(const char* ns, const char* key) { Preferences p; if (p.begin(ns, false)) p.remove(key); }
-void eraseAll() { for (const char* ns : NAMESPACES) { Preferences p; if (p.begin(ns, false)) p.clear(); } }
+void eraseNamespace(const char* ns) { Preferences p; if (p.begin(ns, false)) p.clear(); }
 uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
 
 void init() {

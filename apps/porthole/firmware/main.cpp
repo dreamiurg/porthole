@@ -1,20 +1,29 @@
-// Pets Club firmware entry point.
+// Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include "board.h"
 #include "game.h"
+#include "shell.h"
 
-static Game g_game;
+// The shell's storage is the board's NVS, addressed by (namespace, key).
+struct NvsStore : shell::Store {
+  size_t load(const char* ns, const char* key, void* buf, size_t max) override { return board::loadBlob(ns, key, buf, max); }
+  void save(const char* ns, const char* key, const void* data, size_t len) override { board::saveBlob(ns, key, data, len); }
+  void erase(const char* ns, const char* key) override { board::eraseBlob(ns, key); }
+};
+
+static Game g_pets;
+static App* const APPS[] = {&g_pets};
+static const int N_APPS = sizeof APPS / sizeof APPS[0];
+static NvsStore g_store;
+static Shell g_shell;
 static InputTracker g_input;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
-static uint32_t g_lastSaveMs = 0, g_lastTouchMs = 0;
+static uint32_t g_lastTouchMs = 0;
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
-// Pets Club's NVS namespace, one "s<n>" key per house. Never rename: it orphans every save on a device.
-static const char* const NS = "crago";
-static const char* slotKey(int slot) { static char k[4]; snprintf(k, sizeof k, "s%d", slot); return k; }
 
-// Wall clock: RTC if it runs, else continue from the last save so the pet's day count keeps going.
+// Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
   return g_bootLocalEpoch + (millis() - g_bootMillis) / 1000u;
 }
@@ -33,39 +42,48 @@ static uint32_t buildEpoch() {
   return days * 86400u + (uint32_t)(hh * 3600 + mm * 60 + ss);
 }
 
-static void playSound(int id) { g_game.platformSoundStart(id); }
-
 void setup() {
   Serial.begin(115200);
   delay(50);
-  Serial.println("\n[pets-club] boot");
+  Serial.println("\n[porthole] boot");
   board::init();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
-  Save houses[MAX_HOUSES]; int nHouses = 0; uint8_t blob[256]; uint32_t lastSeen = 0;
-  for (int slot = 0; slot < MAX_HOUSES; slot++) {
-    size_t got = board::loadBlob(NS, slotKey(slot), blob, sizeof blob);
-    if (got && pet::loadBlob(blob, got, houses[nHouses])) nHouses++;
-  }
-  if (nHouses == 0) {  // first boot after the multi-house update: adopt the old single "save" key as house 0
-    size_t got = board::loadBlob(NS, "save", blob, sizeof blob);
-    if (got && pet::loadBlob(blob, got, houses[0])) { nHouses = 1; board::saveBlob(NS, slotKey(0), &houses[0], sizeof(Save)); Serial.println("[pets-club] migrated save -> s0"); }
-  }
-  for (int i = 0; i < nHouses; i++) if (houses[i].lastSeen > lastSeen) lastSeen = houses[i].lastSeen;
-  uint32_t now;
+  g_shell.begin(g_store, APPS, N_APPS);   // first boot after Pets Club: its houses become profiles here
+  uint32_t lastSeen = g_shell.lastSeen(), now;
   if (board::rtcValid()) now = board::rtcNow();
   else {
-    now = nHouses ? lastSeen + 60 : buildEpoch();
+    now = lastSeen ? lastSeen + 60 : buildEpoch();
     if (now < buildEpoch()) now = buildEpoch();
     board::rtcSet(now);
-    Serial.println("[pets-club] RTC was not running; clock restored");
+    Serial.println("[porthole] RTC was not running; clock restored");
   }
   g_bootLocalEpoch = now; g_bootMillis = millis();
-  Serial.printf("[pets-club] houses=%d now=%lu heap=%lu\n", nHouses, (unsigned long)now, (unsigned long)board::freeHeap());
-  g_game.begin(now, millis(), houses, nHouses);
+  Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
   g_lastTouchMs = millis();
+}
+
+// Idle dimming (no physical buttons: the screen is the only power control).
+static void dimWhenIdle(uint32_t ms) {
+  uint32_t idle = ms - g_lastTouchMs;
+  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > 60000 ? 30 : 100);
+  if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
+}
+
+// Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
+// saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch).
+static void serialCommand(int c) {
+  if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
+  else if (c == 'R') {
+    board::eraseNamespace(shell::NS);
+    for (App* a : APPS) board::eraseNamespace(a->store());
+    Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
+  }
+  else if (c == 'P') { int n = Serial.parseInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n); }
+  else if (c == 'S') { g_shell.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
+  else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[porthole] touch log %s\n", g_touchLog ? "on" : "off"); }
 }
 
 void loop() {
@@ -78,32 +96,10 @@ void loop() {
   } else swallow = false;
   Input in = g_input.step(t.down && !swallow, t.x / 3, t.y / 3, ms);
   if (in.pressed && g_touchLog) Serial.printf("[touch] %d,%d\n", t.x, t.y);
-  g_game.update(nowSec(), ms, in);
-  g_game.render();
-  board::present(gfx::fb, g_pal[g_game.tint()]);
-
-  // sound: simple on/off pattern player for the active buzzer
-  board::buzzer(g_game.soundOn(ms));
-
-  // save when the game asks, at most once per 5 s per house
-  Save out; int slot;
-  if (g_game.takeSave(&out, &slot, ms - g_lastSaveMs > 5000)) { board::saveBlob(NS, slotKey(slot), &out, sizeof out); g_lastSaveMs = ms; }
-  if (g_game.takeErase(&slot)) board::eraseBlob(NS, slotKey(slot));
-
-  // idle dimming (no physical buttons: the screen is the only power control)
-  uint32_t idle = ms - g_lastTouchMs;
-  uint8_t want = g_game.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > 60000 ? 30 : 100);
-  if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
-
-  // serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every house, "S" prints stats,
-  // "D" toggles touch logging, "P<n>" clears house n's secret code (a parent's escape hatch)
-  while (Serial.available()) {
-    int c = Serial.read();
-    if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[pets-club] clock set"); } }
-    else if (c == 'R') { board::eraseAll(); Serial.println("[pets-club] all houses erased, rebooting"); delay(100); ESP.restart(); }
-    else if (c == 'P') { int n = Serial.parseInt(); g_game.clearPin(n); Serial.printf("[pets-club] house %d code cleared\n", n); }
-    else if (c == 'S') { g_game.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
-    else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[pets-club] touch log %s\n", g_touchLog ? "on" : "off"); }
-  }
-  (void)playSound;
+  g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  g_shell.render();
+  board::present(gfx::fb, g_pal[g_shell.tint()]);
+  board::buzzer(g_shell.soundOn(ms));
+  dimWhenIdle(ms);
+  while (Serial.available()) serialCommand(Serial.read());
 }

@@ -1,33 +1,8 @@
-# Start over: a long press under the stats opens the confirm page; No keeps the house, Yes deletes it.
-# With two houses the street remains; deleting the last house returns to the adoption intro.
+# Start over (Pets Club): a long press under the stats opens the question; No keeps the pup, Yes lets it go and the
+# adoption starts again. Only the pup goes: the profile stays, and the store forgets the pup too.
 newgame Sam Biscuit
 wait 2000
-# a second house through the street: A, age 5, random pup, first colors, no code
-tap 27 52
-wait 200
-tap 80 91
-wait 300
-tap 80 80
-wait 1000
-tap 80 80
-wait 200
-tap 25 62
-tap 134 116
-wait 200
-tap 41 68
-wait 200
-tap 132 40
-tap 134 116
-wait 200
-tap 32 78
-wait 200
-tap 54 119
-wait 900
-tap 80 80
-wait 300
-expect-screen home
-expect house=1/2
-tap 80 21
+tap 40 27
 wait 200
 expect-screen stats
 hold 80 148
@@ -37,26 +12,45 @@ snap 01_confirm
 tap 45 102
 wait 200
 expect-screen stats
-expect house=1/2
+expect food=70
 hold 80 148
 wait 100
 tap 115 102
 wait 300
-expect-screen street
-expect house=-1/1
-snap 02_street_left
-# the last house
-tap 40 91
+expect-screen intro
+expect profile=0/1
+snap 02_intro_again
+# adopting again right away: the new pup is what gets saved, not the pending erase
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+tap 126 28
+tap 92 144
+wait 200
+tap 32 78
+wait 900
+tap 80 80
 wait 300
 expect-screen home
-expect house=0/1
-tap 80 21
+tap 80 12
+wait 200
+expect-screen launcher
+tap 80 76
+wait 2000
+expect-screen home
+# start over once more, straight out to the launcher and back in: the parcel, nothing was left in the store
+tap 40 27
 wait 200
 hold 80 148
 wait 100
 tap 115 102
 wait 300
 expect-screen intro
-expect house=-1/0
-snap 03_intro_again
+tap 80 12
+wait 200
+expect-screen launcher
+tap 80 76
+wait 2000
+expect-screen intro
 sheet reset

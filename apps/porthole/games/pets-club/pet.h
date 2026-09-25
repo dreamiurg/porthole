@@ -19,7 +19,7 @@ enum Sticker : uint8_t {
 constexpr uint32_t SAVE_MAGIC = 0x4F475243;  // "CRGO"
 constexpr uint16_t SAVE_VERSION = 2;
 constexpr size_t SAVE_V1_SIZE = 140;      // layout before the house/age fields; still accepted on load
-constexpr int MAX_HOUSES = 3;
+constexpr int MAX_HOUSES = 3;             // houses (s0..s2) before Porthole: only the shell's migration reads them
 struct Save {
   uint32_t magic;
   uint16_t version, size;
@@ -40,7 +40,9 @@ struct Save {
   uint8_t treatsToday, petsToday, want, wantSince;  // wantSince: minutes/10 since want began (display only)
   uint16_t treatsDay;
   uint32_t seed;
-  // ---- v2: houses, reading level, turn taking
+  // ---- v2: houses, reading level, turn taking. Since Porthole the profile owns the kid's name, age, code, mute and
+  // rest budget: kidName/kidAge are copied in from the profile on entry; muted, pin, restUntil and playSec are only
+  // read once, by the shell's migration. The fields stay: the layout is append-only.
   uint8_t kidAge, theme, reserved0, reserved1;   // kidAge 0 = not asked yet; theme = room color scheme
   uint16_t pin, reserved2;                       // 4-digit secret code, 0 = none
   uint32_t restUntil, playSec;                   // turn taking: resting until / seconds played this session
@@ -61,14 +63,11 @@ constexpr int STAGE_DOG_DAYS = 4, STAGE_GROWN_DAYS = 10;
 constexpr int STARTER_BOOKS = 3;
 static const uint8_t TRICK_UNLOCK_HEARTS[NUM_TRICKS] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;   // play for 6 min, then the pup rests 10 min
 uint32_t crc32(const void* d, size_t n);
 bool valid(const Save& s);
 bool loadBlob(const void* data, size_t n, Save& out);   // accepts v1 (migrates) and v2 blobs
 void levelRange(int age, int& lo, int& hi);             // story levels 1..3 offered for a kid's age
 void wordLenRange(int age, int& lo, int& hi);           // spelling word lengths for a kid's age
-inline bool resting(const Save& s, uint32_t now) { return s.restUntil > now; }
-inline bool sessionExpired(const Save& s) { return s.playSec >= SESSION_SEC; }
 int bookListFor(const Save& s, uint8_t* out);          // story indices this kid may read (by age), widened if too few
 void seal(Save& s);                          // sets magic/version/size/crc
 void adopt(Save& s, uint32_t now, const char* kid, const char* pet);

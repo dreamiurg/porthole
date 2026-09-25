@@ -1,14 +1,11 @@
 #include "pet.h"
 #include "content.h"
+#include "crc32.h"
 
 static_assert(NUM_BOOKS <= 32, "booksDoneMask is 32 bits: split or widen before adding more stories");
 
 namespace pet {
-uint32_t crc32(const void* d, size_t n) {
-  const uint8_t* p = (const uint8_t*)d; uint32_t c = 0xFFFFFFFFu;
-  for (size_t i = 0; i < n; i++) { c ^= p[i]; for (int k = 0; k < 8; k++) c = (c >> 1) ^ (0xEDB88320u & (0u - (c & 1))); }
-  return ~c;
-}
+uint32_t crc32(const void* d, size_t n) { return os::crc32(d, n); }
 bool valid(const Save& s) {
   return s.magic == SAVE_MAGIC && s.version == SAVE_VERSION && s.size == sizeof(Save) &&
          s.crc == crc32(&s, sizeof(Save) - sizeof(uint32_t));

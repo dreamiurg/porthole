@@ -1,8 +1,8 @@
-# Stats page: stickers, hats (none owned, then all owned: wear one, take it off), the mute toggle, back home.
+# Stats page: stickers, hats (none owned, then all owned: wear one, take it off), back home. (Mute is on the launcher.)
 newgame Sam Biscuit
 wait 2000
 # the stat pips at the top
-tap 80 21
+tap 40 27
 wait 200
 expect-screen stats
 snap 01_stats
@@ -49,19 +49,13 @@ expect hat=0
 tap 80 12
 wait 200
 expect-screen stats
-# mute on, then off
-tap 126 123
-wait 100
-snap 04_muted
-tap 126 123
-wait 100
-expect-screen stats
+snap 04_stats_again
 tap 80 12
 wait 200
 expect-screen home
 sheet stats
 # a double tap acts once: the stat pips open the stats page and it stays open
-tap 80 21
-tap 80 21
+tap 40 27
+tap 40 27
 wait 200
 expect-screen stats

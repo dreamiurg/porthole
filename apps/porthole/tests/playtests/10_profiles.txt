@@ -1,0 +1,226 @@
+# Profiles: three kids (one with a code), the code gate (wrong, then right), back-navigation picker <-> launcher <->
+# game, the mute switch, Paw Street with the neighbours, and the rest timer carried across the picker.
+reset
+wait 200
+# Sam: the dog face, age 8, no code
+tap 120 96
+tap 30 48
+tap 140 72
+tap 92 144
+wait 200
+tap 34 57
+wait 200
+tap 37 101
+wait 200
+tap 54 119
+wait 200
+expect-screen launcher
+expect profile=0/1
+# Sam adopts in Pets Club
+tap 80 76
+wait 2000
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+tap 126 28
+tap 92 144
+wait 200
+tap 32 78
+wait 900
+tap 80 80
+wait 300
+expect-screen home
+# home -> launcher -> picker
+tap 80 12
+wait 200
+expect-screen launcher
+tap 80 32
+wait 200
+expect-screen picker
+expect profile=-1/1
+snap 01_picker_one
+# Kai: the cat, age 6, code 1234 (a different second try starts the code over)
+tap 80 93
+wait 200
+expect-screen new_name
+tap 100 72
+tap 30 48
+tap 60 72
+tap 92 144
+wait 200
+tap 64 57
+wait 200
+tap 79 69
+wait 200
+expect-screen pin_set
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 200
+expect-screen pin_again
+ui-check
+tap 54 59
+tap 54 59
+tap 54 59
+tap 54 59
+tap 102 119
+wait 200
+expect-screen pin_set
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 200
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 200
+expect-screen launcher
+expect profile=1/2
+# the mute switch, on and off again
+tap 80 128
+wait 200
+expect muted=1
+snap 02_launcher_muted
+tap 80 128
+wait 200
+expect muted=0
+# Ava, made by the sim
+profile Ava 7
+expect-screen launcher
+expect profile=2/3
+tap 80 32
+wait 200
+expect-screen picker
+snap 03_picker_three
+# Kai's row asks for the code; the home button goes back to the picker
+tap 80 67
+wait 200
+expect-screen pin
+tap 80 12
+wait 200
+expect-screen picker
+tap 80 67
+wait 200
+# wrong code 1111: stays, shakes
+tap 54 59
+tap 54 59
+tap 54 59
+tap 54 59
+tap 102 119
+wait 300
+expect-screen pin
+expect profile=-1/3
+snap 04_wrong_code
+wait 1000
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen launcher
+expect profile=1/3
+# Kai has no pup yet: the parcel, and the home button backs out of the adoption
+tap 80 76
+wait 2000
+expect-screen intro
+tap 80 12
+wait 200
+expect-screen launcher
+tap 80 76
+wait 2000
+tap 80 80
+wait 1000
+tap 80 80
+wait 200
+tap 126 28
+tap 92 144
+wait 200
+tap 96 78
+wait 900
+tap 80 80
+wait 300
+expect-screen home
+expect age=6
+# Paw Street: Sam's house with Sam's pup, Ava's empty house; only Kai's own house opens
+tap 27 52
+wait 200
+expect-screen street
+ui-check street-three
+snap 05_street
+tap 50 60
+wait 200
+expect-screen street
+tap 110 60
+wait 200
+expect-screen home
+# six minutes of play with three profiles: Kai rests, even after going through the picker
+dbg tired
+wait 1100
+expect-screen rest
+expect rest>500
+snap 06_rest
+tap 80 132
+wait 200
+expect-screen picker
+tap 80 67
+wait 200
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen rest
+tap 80 132
+wait 200
+# Sam's budget is his own
+tap 80 41
+wait 200
+expect-screen launcher
+expect rest=0
+tap 80 76
+wait 2000
+expect-screen home
+expect profile=0/3
+# ten minutes later Kai may play again
+skip 600
+wait 200
+tap 80 12
+wait 200
+tap 80 32
+wait 200
+tap 80 67
+wait 200
+tap 54 59
+tap 78 59
+tap 102 59
+tap 54 79
+tap 102 119
+wait 300
+expect-screen launcher
+expect profile=1/3
+expect rest=0
+expect play=0
+# a profile migrated from an old Pets Club save has no age yet: it is asked once, then the launcher
+profile Zoe 0
+expect-screen age
+ui-check age-migrated
+snap 07_age_migrated
+tap 79 101
+wait 200
+expect-screen launcher
+expect age=9
+tap 80 32
+wait 200
+tap 80 119
+wait 200
+expect-screen launcher
+sheet profiles

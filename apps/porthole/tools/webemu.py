@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Browser emulator for Pets Club. Wraps `build/host/snap --serve` behind a tiny
+"""Browser emulator for Porthole (the profile shell and Pets Club). Wraps `build/host/snap --serve` behind a tiny
 HTTP server so the game can be played with a mouse/touch, no hardware needed.
 
 Run: make webemu        (or: python3 tools/webemu.py)
@@ -99,7 +99,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pets Club</title>
+<title>Porthole</title>
 <style>
   html, body { background:#111; color:#ccc; font-family:-apple-system,Helvetica,sans-serif;
                margin:0; padding:24px 12px; display:flex; flex-direction:column; align-items:center; }
@@ -114,13 +114,13 @@ PAGE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>Pets Club</h1>
+<h1>Porthole</h1>
 <canvas id="screen" width="480" height="480"></canvas>
 <div id="buttons">
   <button data-cmd="hour">+1 hour</button>
   <button data-cmd="night">+8 hours</button>
   <button data-cmd="day">+1 day</button>
-  <button data-cmd="reset">Reset game</button>
+  <button data-cmd="reset">Wipe all profiles</button>
   <span style="width:100%"></span>
   <button data-cmd="dbg:hungry">make hungry</button>
   <button data-cmd="dbg:sleepy">make sleepy</button>

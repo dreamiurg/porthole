@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pets Club playtest runner: scripted playthroughs with assertions, a UI audit, and sanitizer monkey runs.
+"""Porthole playtest runner (the shell and Pets Club): scripted playthroughs with assertions, a UI audit, and sanitizer monkey runs.
 
   python3 tools/playtest.py            every scenario in tests/playtests/ (make playtest builds the sims first)
   python3 tools/playtest.py 06 monkey  only scenarios whose file name contains one of the words
@@ -37,7 +37,11 @@ def _block(pattern: str, text: str) -> str:
 
 PALETTE = [int(h, 16) for h in re.findall(r"0x([0-9A-Fa-f]{6})", _block(r"PALETTE_RGB\[C_COUNT\] = \{(.*?)\};", _pal))]
 COLOR = [n.lower() for n in re.findall(r"\bC_([A-Z]+)\b", _block(r"enum Col : uint8_t \{(.*?)\};", _pal))][: len(PALETTE)]
-SCREENS = set(re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / "games/pets-club/game.cpp").read_text())))
+SCREENS = {  # the shell's screens and every game's (each lists its names in a `static const char* N[]`)
+    name
+    for src in ("shell/shell.cpp", "games/pets-club/game.cpp")
+    for name in re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / src).read_text()))
+}
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
@@ -167,7 +171,7 @@ def plan(d, seg, where):
 
 
 def compare(key, got, op, want):
-    if key in ("books", "house") and "/" not in want:
+    if key in ("books", "profile") and "/" not in want:
         got = got.split("/")[0]
     if key == "play":
         got, want = got.rstrip("s"), want.rstrip("s")

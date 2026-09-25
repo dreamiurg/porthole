@@ -3,11 +3,14 @@
 # The monorepo's root Makefile and CI call these as `make -C apps/porthole <target>`:
 #   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
-# os/ is the shared runtime (renderer, input, palette); games/<name>/ compile against it.
+# os/ is the shared runtime (renderer, input, palette, widgets, the App contract); shell/ is the profile picker and
+# launcher; games/<name>/ compile against os/ only.
 GAME := games/pets-club
-INCLUDES := -Ios -I$(GAME)
+INCLUDES := -Ios -Ishell -I$(GAME)
 CXXFLAGS ?= -std=c++17 -O1 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers $(INCLUDES) -DHOST_BUILD
-SRC := $(wildcard os/*.cpp) $(wildcard $(GAME)/*.cpp)
+SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard $(GAME)/*.cpp)
+PET_TEST_SRC := $(wildcard os/*.cpp) $(GAME)/pet.cpp
+SHELL_TEST_SRC := shell/profiles.cpp shell/migrate.cpp $(GAME)/pet.cpp
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
@@ -31,13 +34,15 @@ snap-asan: $(BUILD) $(SRC) host/sim.cpp
 playtest: snap snap-asan
 	python3 tools/playtest.py
 
-test: $(BUILD) $(SRC) host/test_pet.cpp
-	$(CXX) $(CXXFLAGS) $(filter-out $(GAME)/game.cpp,$(SRC)) host/test_pet.cpp -o $(BUILD)/test_pet && $(BUILD)/test_pet
+test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp
+	$(CXX) $(CXXFLAGS) $(PET_TEST_SRC) host/test_pet.cpp -o $(BUILD)/test_pet && $(BUILD)/test_pet
+	$(CXX) $(CXXFLAGS) $(SHELL_TEST_SRC) host/test_shell.cpp -o $(BUILD)/test_shell && $(BUILD)/test_shell
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 lint: $(BUILD)
 	python3 $(GAME)/tools/check_content.py
 	python3 $(GAME)/tools/art.py --check
+	python3 tools/shell_art.py --check
 	$(CXX) $(CXXFLAGS) -Werror $(SRC) host/sim.cpp -o $(BUILD)/snap-werror
 
 # What pre-commit runs: seconds, not minutes.
@@ -46,7 +51,7 @@ check: lint test
 # Everything CI runs for this app except the firmware build.
 ci: check playtest coverage
 
-# Line coverage of os/*.cpp and games/*/*.cpp from test_pet plus the non-monkey playtests, as Cobertura XML.
+# Line coverage of os/, shell/ and games/*/ from test_pet, test_shell plus the non-monkey playtests, as Cobertura XML.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: baseline
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
@@ -64,16 +69,19 @@ endif
 
 coverage:
 	rm -rf $(COV) && mkdir -p $(COV)/obj
-	for f in $(SRC) host/sim.cpp host/test_pet.cpp; do $(CXX) $(COV_CXXFLAGS) -c $$f -o $(COV)/obj/$$(basename $$f .cpp).o || exit 1; done
-	$(CXX) --coverage $(call COV_OBJ,$(filter-out $(GAME)/game.cpp,$(SRC))) $(COV)/obj/test_pet.o -o $(COV)/test_pet
+	for f in $(SRC) host/sim.cpp host/test_pet.cpp host/test_shell.cpp; do $(CXX) $(COV_CXXFLAGS) -c $$f -o $(COV)/obj/$$(basename $$f .cpp).o || exit 1; done
+	$(CXX) --coverage $(call COV_OBJ,$(PET_TEST_SRC)) $(COV)/obj/test_pet.o -o $(COV)/test_pet
+	$(CXX) --coverage $(call COV_OBJ,$(SHELL_TEST_SRC)) $(COV)/obj/test_shell.o -o $(COV)/test_shell
 	$(CXX) --coverage $(call COV_OBJ,$(SRC)) $(COV)/obj/sim.o -o $(COV)/snap
 	$(COV)/test_pet
+	$(COV)/test_shell
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest python3 tools/playtest.py $(COV_SCENARIOS)
-	$(GCOVR) --root . --filter '(os|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+	$(GCOVR) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
 	python3 $(GAME)/tools/art.py
+	python3 tools/shell_art.py
 
 webemu: snap
 	python3 tools/webemu.py
