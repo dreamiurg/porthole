@@ -26,7 +26,7 @@ Output:
 
 A scenario fails on a failed directive, a crash or non-zero exit, any sanitizer report (`ERROR: AddressSanitizer`,
 `ERROR: LeakSanitizer`, `runtime error:`), an unknown sim command, a timeout (30 s, or 120 s for monkeys), or a
-hard (FAIL) UI finding. WARN findings are reported but never fail a run. `make ci` (what CI runs for this app)
+UI finding of either severity: FAIL and WARN both fail the run (warnings are errors). `make ci` (what CI runs for this app)
 includes `make playtest`, so an open FAIL finding fails CI.
 
 `make coverage` reruns the non-monkey scenarios against a coverage-instrumented sim (`PLAYTEST_SNAP` points the
