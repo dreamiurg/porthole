@@ -39,5 +39,5 @@ make check                                 # lint + fast tests for every app
 - Each app's `README.md` explains how to play and build it. Its `CLAUDE.md`
   lists the constraints its code must respect.
 - `docs/hardware.md` covers the board. `docs/new-app.md` explains how to add an app.
-- No board yet? Both apps run on a computer. Pets Club has a browser emulator
-  and Biscuit started as a web page.
+- No board yet? Porthole runs on a computer: a host simulator and a browser
+  emulator (`make -C apps/porthole webemu`).

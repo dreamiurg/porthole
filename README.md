@@ -41,7 +41,6 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
 | [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. A profile for each kid, up to four per device. | Browser emulator |
-| [Biscuit](#biscuit) | Story dog with branching mysteries and 96 illustrated discoveries. | Web app |
 
 ### Porthole
 
@@ -60,20 +59,6 @@ C++, no libraries: a 160x160 indexed framebuffer scaled 3x, with a host
 simulator, a browser emulator and scripted playtests that audit every screen
 for tap-target size, bezel clipping and contrast.
 **[Read more](apps/porthole/README.md)** · try it: `make -C apps/porthole webemu`
-
-### Biscuit
-
-[![Biscuit screenshots](apps/biscuit/docs/preview.png)](apps/biscuit/)
-
-A little dog with a big bookshelf, for strong young readers. Seven branching
-mysteries with two ways to investigate each, 96 illustrated and sourced
-discoveries across 12 topics, a discovery notebook, six tricks, daily
-adventures and a scrapbook. Needs have a gentle floor, and days away never
-cost friendship.
-
-Plain HTML, CSS and JavaScript in the browser. The native firmware uses LVGL
-and runs the same stories, pixel art and discoveries on the board.
-**[Read more](apps/biscuit/README.md)** · try it: `cd apps/biscuit && npm start`
 
 ## Get a board
 
@@ -99,9 +84,9 @@ other hardware myself. This is a fun side project, so hack away. We live in the
 era of AI agents: fork the repo, point Claude Code or Codex at
 [docs/hardware.md](docs/hardware.md) and the app you like, and ask it to adapt
 the code to your board. Most of the hardware-specific code sits in
-`apps/porthole/firmware/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
+`apps/porthole/firmware/board.cpp` and the
 shared PlatformIO settings in `platform/waveshare-round.ini`. A screen of a
-different size or shape also means reworking the layouts, since both games are
+different size or shape also means reworking the layouts, since the games are
 drawn for a 480x480 circle. If you get another board working, send a
 pull request. If you get stuck, open an issue and ask.
 
@@ -131,7 +116,7 @@ Flash a board over USB-C. PlatformIO finds the port when one board is plugged in
 
 ```sh
 make flash APP=porthole
-make flash APP=biscuit PORT=/dev/ttyUSB0
+make flash APP=porthole PORT=/dev/ttyUSB0
 make monitor
 ```
 

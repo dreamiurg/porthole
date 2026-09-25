@@ -5,7 +5,6 @@ default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
 exclude: |
   (?x)^(
-    apps/biscuit/firmware/generated/.*|
     apps/porthole/games/pets-club/sprites\.h|
     apps/porthole/os/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
@@ -81,12 +80,6 @@ repos:
         language: system
         pass_filenames: false
         files: ^apps/porthole/
-      - id: biscuit-check
-        name: biscuit make check
-        entry: make -C apps/biscuit check
-        language: system
-        pass_filenames: false
-        files: ^apps/biscuit/
 
       # Pre-push: everything CI would run for what you changed, so CI rarely finds anything new.
       - id: complexity
@@ -104,13 +97,6 @@ repos:
         pass_filenames: false
         files: ^apps/porthole/|^tools/fail-on-warning\.sh$
         stages: [pre-push]
-      - id: biscuit-ci
-        name: biscuit make ci (coverage)
-        entry: make -C apps/biscuit ci
-        language: system
-        pass_filenames: false
-        files: ^apps/biscuit/
-        stages: [pre-push]
       # Firmware builds are incremental locally (seconds) and skipped without PlatformIO.
       - id: porthole-firmware
         name: porthole firmware build
@@ -118,11 +104,4 @@ repos:
         language: system
         pass_filenames: false
         files: ^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
-        stages: [pre-push]
-      - id: biscuit-firmware
-        name: biscuit firmware build + layout test
-        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/biscuit firmware firmware-test'
-        language: system
-        pass_filenames: false
-        files: ^apps/biscuit/(firmware/|src/|package(-lock)?\.json$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
         stages: [pre-push]

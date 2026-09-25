@@ -39,7 +39,7 @@ sources (framework and library code are untouched). Host builds and tests use
 `-Werror` too, and `lint` must pass with zero warnings.
 
 Paths are relative to the PlatformIO project directory. If the project lives in
-a subdirectory, as `apps/biscuit/firmware` does, add another `../`.
+a subdirectory (say `apps/<app>/firmware`), add another `../`.
 
 ## Screenshots
 

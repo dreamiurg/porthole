@@ -1,7 +1,5 @@
 apps/*/build/
 apps/*/node_modules/
-apps/biscuit/firmware/generated/
-apps/biscuit/firmware/.pio/
 apps/porthole/.pio/
 apps/porthole/games/pets-club/sprites.h
 apps/porthole/os/font8x8_basic.h

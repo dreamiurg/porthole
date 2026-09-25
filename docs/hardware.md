@@ -56,7 +56,6 @@ points for a new app or feature.
 The display comes up in two steps: an init sequence over 9-bit SPI, then the
 RGB panel through ESP-IDF's `esp_lcd` RGB driver with frame buffers in PSRAM.
 `apps/porthole/firmware/board.cpp` does this without extra libraries.
-`apps/biscuit/firmware/src/board.cpp` does the same under LVGL.
 
 ## Toolchain
 

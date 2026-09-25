@@ -10,7 +10,6 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 | Path | What it holds |
 | --- | --- |
 | `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/porthole/CLAUDE.md`. |
-| `apps/biscuit/` | Biscuit: story dog with branching mysteries and illustrated discoveries. Browser game (plain JS) + LVGL firmware in `firmware/`. See `apps/biscuit/README.md` and `apps/biscuit/firmware/README.md`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract). |
@@ -57,7 +56,7 @@ Per-app targets are listed in `docs/new-app.md`.
 
 - `main` is protected: branch, open a PR, squash-merge after **Required
   Checks** passes. Hooks block commits on `main`. Never skip hooks with `--no-verify`.
-- Conventional commit titles (`feat(porthole): ...`, `fix(biscuit): ...`).
+- Conventional commit titles (`feat(porthole): ...`, `fix(porthole): ...`).
   After each merge, `.github/workflows/release.yml` runs `tools/release.py`: every
   app with new `feat`/`fix` commits under its folder (or `platform/`) gets a
   `<app>-vX.Y.Z` tag, a GitHub release with generated notes and a flashable
@@ -82,6 +81,3 @@ Per-app targets are listed in `docs/new-app.md`.
 | New stories or spelling words | `story-writer` | sonnet |
 | UX/QA pass on a screen or flow | `playtester` | opus |
 | Review before a push | `reviewer` | opus |
-
-The roster was written for Pets Club. For Biscuit, brief the same roles with
-Biscuit's paths and read its README first.
