@@ -5,9 +5,9 @@ Commands run from `apps/pets-club/` (or `make -C apps/pets-club <target>` from t
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:
 
-* **Playthroughs** (`01`–`12`): scripted sessions a kid would play, with assertions on the game state. They
+* **Playthroughs** (`01`-`12`): scripted sessions a kid would play, with assertions on the game state. They
   include the things kids do by accident: double taps, a finger that slides off a button, taps during animations.
-* **Chaos monkeys** (`20`–`22`): 600 random gestures per seed from three starting points, under the sanitizers.
+* **Chaos monkeys** (`20`-`22`): 600 random gestures per seed from three starting points, under the sanitizers.
 * **UI audit** (`30`, plus the creation screens in `01`): every reachable screen is measured against the rules
   below.
 
@@ -118,14 +118,14 @@ sheets are there for those; look at them.
 
 ## Chaos monkey
 
-`monkey N SEED` performs N gestures at random points inside radius 78, with 40–500 ms pauses between them:
+`monkey N SEED` performs N gestures at random points inside radius 78, with 40-500 ms pauses between them:
 
 | Share | Gesture |
 | --- | --- |
 | 65% | tap (finger down 80 ms) |
 | 10% | double tap: two taps on the same point, presses 120 ms apart |
-| 10% | drag: down, 4–8 moves toward another random point, up |
-| 10% | slow tap: finger down 30–200 ms |
+| 10% | drag: down, 4-8 moves toward another random point, up |
+| 10% | slow tap: finger down 30-200 ms |
 | 5% | long press: 700 ms |
 
 It prints `monkey <n> screen=<name>` every 100 gestures and `monkey done` at the end. Gestures come from the

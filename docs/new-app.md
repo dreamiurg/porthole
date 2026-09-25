@@ -53,11 +53,13 @@ Add `--pixel` for pixel art so it stays crisp. Re-shoot them when the screens ch
 
 ## Wiring it in
 
-1. Add a job for the app to `.github/workflows/ci.yml`, add the app to the
-   firmware matrix, and add the new job to `needs:` of `Required Checks`.
-2. Add `<app>-check` and `<app>-ci` hooks to `.pre-commit-config.yaml`,
-   copied from an existing app.
-3. Add the app to `release-please-config.json` and `.release-please-manifest.json`.
+1. In `.github/workflows/ci.yml`, add the app's two change-detection lines to
+   the `static` job (app and firmware paths), a job for the app copied from an
+   existing one, and the job to `needs:` of `Required Checks`.
+2. Add `<app>-check`, `<app>-ci` and `<app>-firmware` hooks to
+   `.pre-commit-config.yaml`, copied from an existing app.
+3. Releases need no wiring: `tools/release.py` finds every `apps/*/Makefile`.
+   The app's first `feat:` or `fix:` after merge releases `<app>-v0.1.0`.
 4. In the root `README.md`, add a row to the app table and a section under
    **Apps**: a `### Name` heading, the linked `preview.png`, one paragraph on what
    it is, one on how it is built, and a "Read more" link plus the one command that

@@ -53,7 +53,7 @@ Run `python firmware/tests/device_flow.py --port PORT` for the complete USB-driv
 
 ### Verified on hardware
 
-On an ESP32-S3 (revision 0.2, 16MB flash, 8MB PSRAM) the display, touch, expander and RTC initialize; home animation runs at four frames per second with touch polling around 27–46Hz and about 272KB internal heap free. The USB-driven flow above passed end to end, and saves and the clock survived a hardware reset. Physical finger accuracy, LCD appearance, battery endurance and timekeeping through complete power loss are unverified.
+On an ESP32-S3 (revision 0.2, 16MB flash, 8MB PSRAM) the display, touch, expander and RTC initialize; home animation runs at four frames per second with touch polling around 27-46Hz and about 272KB internal heap free. The USB-driven flow above passed end to end, and saves and the clock survived a hardware reset. Physical finger accuracy, LCD appearance, battery endurance and timekeeping through complete power loss are unverified.
 
 ## Hardware sources and licenses
 
