@@ -26,7 +26,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen launcher
 tap 80 76
@@ -36,7 +36,7 @@ wait 1000
 tap 80 80
 wait 450
 tap 123 28
-tap 92 144
+tap 119 125
 wait 450
 tap 64 78
 wait 900
@@ -56,7 +56,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen delete
 ui-check
@@ -72,7 +72,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen delete
 hold 80 42
@@ -85,15 +85,16 @@ snap 03_after_delete
 tap 80 119
 wait 450
 expect-screen new_name
-tap 50 48
-tap 40 96
-tap 92 144
+tap 67 53
+tap 67 125
+tap 67 53
+tap 119 125
 wait 450
 tap 124 57
 wait 450
 tap 79 69
 wait 450
-tap 54 119
+tap 138 82
 wait 450
 expect-screen launcher
 expect profile=1/4

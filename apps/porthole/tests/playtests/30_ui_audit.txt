@@ -4,12 +4,14 @@ reset
 wait 450
 ui-check new_name
 snap a01_new_name
-tap 120 96
-tap 30 48
-tap 140 72
+tap 67 125
+tap 67 77
+tap 67 125
+tap 41 53
+tap 41 125
 ui-check new_name-typed
 snap a02_name_typed
-tap 92 144
+tap 119 125
 wait 450
 ui-check new_avatar
 snap a03_avatar
@@ -26,7 +28,7 @@ tap 102 59
 tap 54 79
 ui-check pin_set-full
 snap a05_pin_set
-tap 102 119
+tap 102 121
 wait 450
 ui-check pin_again
 snap a06_pin_again
@@ -34,7 +36,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen launcher
 ui-check launcher
@@ -60,7 +62,7 @@ ui-check name_pet
 tap 123 28
 wait 450
 snap a10_name_pet
-tap 92 144
+tap 119 125
 wait 450
 ui-check theme
 snap a11_theme
@@ -282,7 +284,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen launcher
 tap 80 76
@@ -292,7 +294,7 @@ wait 1000
 tap 80 80
 wait 450
 tap 123 28
-tap 92 144
+tap 119 125
 wait 450
 tap 96 78
 wait 900
@@ -325,7 +327,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 expect-screen delete
 ui-check delete
@@ -341,7 +343,7 @@ tap 54 59
 tap 78 59
 tap 102 59
 tap 54 79
-tap 102 119
+tap 102 121
 wait 450
 tap 80 76
 wait 2400

@@ -20,11 +20,12 @@ void toast(const char* text);   // a one-line note in a white panel across the m
 void drawBack();
 bool back(const Input& in);
 
-// Name keyboard: a field on top, A-Z in four rows, backspace and OK below. Every key is 20x24 logical px
-// (the audit's 24x20 area floor); the rows follow the round edge. Names are up to 8 letters, first one capital.
+// Name keyboard: a field on top, then two pages of letters (A-M, N-Z) as a 4x4 grid of 24x22 keys with the page
+// switch, backspace and OK on the last row. `page` is the caller's (0 or 1; reset it with the name). Names are up to
+// 8 letters, first one capital.
 constexpr int NAME_LEN = 8;
-bool keyboard(const Input& in, char* buf, int& len);   // true when OK is tapped with at least one letter
-void drawKeyboard(const Input& in, const char* buf, const char* hint, uint32_t ms);   // hint shows while empty
+bool keyboard(const Input& in, char* buf, int& len, uint8_t& page);   // true when OK is tapped with at least one letter
+void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, uint32_t ms);   // hint shows while empty
 
 // A fresh screen ignores every touch until a press begins FRESH_MS after it appeared: the finger that changed it
 // (still down after a long press) and the second tap of a kid's slow double tap (300-400 ms apart) would otherwise

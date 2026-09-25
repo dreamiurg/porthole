@@ -54,7 +54,7 @@ class Game : public App {
   uint32_t nextIdleMs_ = 0, nextEventMs_ = 0; uint8_t event_ = 0; int eventX_ = 0, eventY_ = 0; uint32_t eventUntil_ = 0;
   uint8_t weather_ = 0;  // 0 clear 1 rain
   // keyboard
-  char nameBuf_[12] = {0}; int nameLen_ = 0;
+  char nameBuf_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   // feed
   int feedAnimFood_ = -1; uint32_t feedAnimUntil_ = 0;
   // fetch minigame
@@ -110,6 +110,7 @@ class Game : public App {
   void updateIntro(); void drawIntro();
   void updateNamePet(); void drawNamePet();
   void updateHome(); void drawHome();
+  int poopX() const; int walkClamp(int x) const; void dogBox(int& x, int& y, int& w, int& h) const;
   void homeBrain(); void pickIdle(); void homeWalk(); void homeEvents(); void homeTouches(); void homeFurniture(); void toggleLamp(); void tapDog();
   void updateFeed(); void drawFeed();
   void updatePlayMenu(); void drawPlayMenu();
