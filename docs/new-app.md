@@ -29,9 +29,14 @@ extra_configs = ../../platform/waveshare-round.ini
 
 [env:firmware]
 extends = waveshare_round
-build_flags = ${waveshare_round.build_flags} -Wall -Wextra
+build_flags = ${waveshare_round.build_flags}
+build_src_flags = ${waveshare_round.src_warnings}
 extra_scripts = post:../../platform/factory_image.py
 ```
+
+Warnings are errors: `src_warnings` is `-Wall -Wextra -Werror` for your own
+sources (framework and library code are untouched). Host builds and tests use
+`-Werror` too, and `lint` must pass with zero warnings.
 
 Paths are relative to the PlatformIO project directory. If the project lives in
 a subdirectory, as `apps/biscuit/firmware` does, add another `../`.

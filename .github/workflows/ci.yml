@@ -35,7 +35,7 @@ env:
 jobs:
   static:
     name: Static checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       porthole: ${{ steps.changes.outputs.porthole }}
@@ -55,13 +55,13 @@ jobs:
             files=ALL
           fi
           code=$(printf '%s\n' "$files" | grep -Ev '\.md$|(^|/)docs/' || true)
-          shared='^(ALL$|\.github/|platform/|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$|\.node-version$)'
+          shared='^(ALL$|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$|\.node-version$)'
           hit() { printf '%s\n' "$code" | grep -Eq "$shared|$1" && echo true || echo false; }
           {
             echo "porthole=$(hit '^apps/porthole/')"
-            echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|games/|platformio\.ini$)')"
+            echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)')"
             echo "biscuit=$(hit '^apps/biscuit/')"
-            echo "biscuit-firmware=$(hit '^apps/biscuit/(firmware/|src/|package(-lock)?\.json$)')"
+            echo "biscuit-firmware=$(hit '^apps/biscuit/(firmware/|src/|package(-lock)?\.json$|Makefile$)')"
           } | tee -a "$GITHUB_OUTPUT"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
@@ -84,7 +84,7 @@ jobs:
     name: Porthole
     needs: static
     if: needs.static.outputs.porthole == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -128,7 +128,7 @@ jobs:
     name: Biscuit
     needs: static
     if: needs.static.outputs.biscuit == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -172,7 +172,7 @@ jobs:
   # The only check branch protection requires. Skipped jobs (nothing changed) count as passing.
   required-checks:
     name: Required Checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     needs: [static, porthole, biscuit]
     if: always()
