@@ -9,6 +9,10 @@ constexpr int LCD_W = 480, LCD_H = 480;
 void init();
 // Upscale a 160x160 indexed frame 3x through pal565 into the back buffer and swap on vsync.
 void present(const uint8_t* fb160, const uint16_t* pal565);
+// RGB565 apps draw straight into the panel: render into backBuffer(), then presentHires() swaps it in on vsync.
+uint16_t* backBuffer();
+void presentHires();
+const uint16_t* frontBuffer();   // the frame on the glass (the serial frame dump)
 
 struct Touch { bool down; int x, y; };  // physical pixels
 Touch readTouch();

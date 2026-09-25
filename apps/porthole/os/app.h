@@ -16,6 +16,11 @@ struct SaveSlot { const void* data; size_t len; };                             /
 // saves[i] belongs to all[i]; a game may read other profiles' saves (Paw Street) but only writes who's.
 struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; };
 
+// What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
+// full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() paints every pixel: the target is one of the
+// panel's two buffers and still holds an older frame.
+enum Surface : uint8_t { SURFACE_INDEXED, SURFACE_RGB565 };
+
 class App {
  public:
   virtual const char* name() const = 0;          // launcher label
@@ -24,6 +29,7 @@ class App {
   virtual void enter(const AppEnter& e) = 0;
   virtual void update(uint32_t nowSec, uint32_t ms, const Input& in) = 0;
   virtual void render() = 0;
+  virtual Surface surface() const { return SURFACE_INDEXED; }   // polled every frame: a game may switch per screen
   virtual Tint tint() const = 0;
   virtual bool asleep() const = 0;               // backlight dimming policy
   virtual bool soundOn(uint32_t ms) = 0;         // the shell gates this with the profile's mute

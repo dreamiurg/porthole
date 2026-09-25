@@ -106,8 +106,8 @@ Landed:
   `art` skill for the generator and its `--check`.
 - `tools/check_content.py`: the content gate -- glyph set, token validity, required
   fields, fixed counts, unique ids, discovery order vs. `DiscoveryId`, and a per-field
-  character-count ceiling that stands in for a real pixel-fit check until `generated/
-  fonts.h` exists. See the `content` skill for exactly what it checks.
+  character-count ceiling that stands in for a real pixel-fit check against `generated/
+  fonts.h` (landing next). See the `content` skill for exactly what it checks.
 - `host/test_biscuit_content.cpp` (shared `host/` directory, not inside this game's own):
   `personalize()` and the generated art tables. Wording, glyphs and id order are the
   content gate's job, not this test's.

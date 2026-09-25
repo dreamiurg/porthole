@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "games/pets-club/game.h"
+#include "gfx565.h"
 #include "shell.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
@@ -39,6 +40,7 @@ static Shell g_shell;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
+static uint16_t g_fb565[gfx565::W * gfx565::H];   // the RGB565 apps' surface (the panel's back buffer on the device)
 
 static uint32_t now() { return g_epoch + g_ms / 1000; }
 static void wipe() {   // every namespace, every key: all the .sav files
@@ -52,20 +54,27 @@ static void wipe() {   // every namespace, every key: all the .sav files
 static void boot() { g_shell.begin(g_store, APPS, (int)(sizeof APPS / sizeof APPS[0])); }
 static void reset() { wipe(); boot(); }
 
+// Physical pixel (x, y) of the panel as RGB888: the indexed frame upscaled 3x through the tint's palette, or the RGB565
+// surface as is, with the round glass masked. Snapshots, the web emulator and the window all show this.
+static uint32_t framePixel(int x, int y) {
+  int dx = x - 240, dy = y - 240;
+  if (dx * dx + dy * dy > 240 * 240) return 0x202020;   // outside the round glass: dark
+  if (g_shell.surface() == SURFACE_RGB565) return gfx565::rgb888(g_fb565[y * gfx565::W + x]);
+  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];
+}
+
 static void writeBMP(const char* path) {
-  const int S = 3, W = gfx::W * S, H = gfx::H * S;
+  const int W = gfx565::W, H = gfx565::H;
   FILE* f = fopen(path, "wb"); if (!f) { perror(path); return; }
   uint32_t rowBytes = (uint32_t)W * 3, fileSize = 54 + rowBytes * (uint32_t)H;
   uint8_t hdr[54] = {'B', 'M'}; memcpy(hdr + 2, &fileSize, 4); uint32_t off = 54; memcpy(hdr + 10, &off, 4);
   uint32_t dib = 40; memcpy(hdr + 14, &dib, 4); int32_t w = W, h = H; memcpy(hdr + 18, &w, 4); memcpy(hdr + 22, &h, 4);
   uint16_t planes = 1, bpp = 24; memcpy(hdr + 26, &planes, 2); memcpy(hdr + 28, &bpp, 2);
   fwrite(hdr, 1, 54, f);
-  const uint32_t* pal = g_pal[g_shell.tint()];
   std::vector<uint8_t> row(rowBytes);
   for (int y = H - 1; y >= 0; y--) {
     for (int x = 0; x < W; x++) {
-      int lx = x / S, ly = y / S; int dx = x - 240, dy = y - 240;
-      uint32_t c = dx * dx + dy * dy <= 240 * 240 ? pal[gfx::fb[ly * gfx::W + lx]] : 0x202020;  // outside the round glass: dark
+      uint32_t c = framePixel(x, y);
       row[x * 3 + 0] = c & 255; row[x * 3 + 1] = (c >> 8) & 255; row[x * 3 + 2] = (c >> 16) & 255;
     }
     fwrite(row.data(), 1, rowBytes, f);
@@ -76,19 +85,18 @@ static void writeBMP(const char* path) {
 static void frame(bool down, int x, int y) {   // the shell writes saves itself, through g_store
   Input in = g_tracker.step(down, x, y, g_ms);
   g_shell.update(now(), g_ms, in);
+  if (g_shell.surface() == SURFACE_RGB565) gfx565::clear(0xF81F);   // magenta: the device's buffer holds an older frame, so a gap shows
   g_shell.render();
 }
 
-// Same upscale+round-mask+tint as writeBMP, but raw RGB triples (PPM order) to stdout.
+// The same frame as writeBMP, as raw RGB triples (PPM order) to stdout.
 static void writePPM() {
-  const int S = 3, W = gfx::W * S, H = gfx::H * S;
-  const uint32_t* pal = g_pal[g_shell.tint()];
+  const int W = gfx565::W, H = gfx565::H;
   std::vector<uint8_t> buf((size_t)W * H * 3);
   size_t i = 0;
   for (int y = 0; y < H; y++) {
     for (int x = 0; x < W; x++) {
-      int lx = x / S, ly = y / S; int dx = x - 240, dy = y - 240;
-      uint32_t c = dx * dx + dy * dy <= 240 * 240 ? pal[gfx::fb[ly * gfx::W + lx]] : 0x202020;  // outside the round glass: dark
+      uint32_t c = framePixel(x, y);
       buf[i++] = (c >> 16) & 255; buf[i++] = (c >> 8) & 255; buf[i++] = c & 255;
     }
   }
@@ -161,7 +169,11 @@ static void audit(const Finger& f) {  // one audited frame: every hit region and
   step(f.down, f.x, f.y);
   printf("ui screen=%s regions=%d texts=%d\n", g_shell.screenName(), UiAudit::count, gfx::textLogCount);
   for (int i = 0; i < UiAudit::count; i++) printf("region %d %d %d %d\n", UiAudit::regions[i].x, UiAudit::regions[i].y, UiAudit::regions[i].w, UiAudit::regions[i].h);
-  for (int i = 0; i < gfx::textLogCount; i++) printf("text %d %d %d %d color=%d bg=%d\n", gfx::textLog[i].x, gfx::textLog[i].y, gfx::textLog[i].w, gfx::textLog[i].h, gfx::textLog[i].color, gfx::textLog[i].bg);
+  for (int i = 0; i < gfx::textLogCount; i++) {
+    const gfx::TextBox& t = gfx::textLog[i];
+    if (t.rgb) printf("text %d %d %d %d rgb=%06X bg=%06X\n", t.x, t.y, t.w, t.h, (unsigned)t.color, (unsigned)t.bg);
+    else printf("text %d %d %d %d color=%u bg=%u\n", t.x, t.y, t.w, t.h, (unsigned)t.color, (unsigned)t.bg);
+  }
   UiAudit::enabled = false; gfx::textLogEnabled = false;
 }
 // newgame KID PET: a fresh device with one profile (age 8) whose pup is already adopted, opened in Pets Club (splash).
@@ -226,9 +238,9 @@ static void runWindow() {
   SDL_Init(SDL_INIT_VIDEO);
   SDL_Window* win = SDL_CreateWindow("Porthole", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 480, 480, SDL_WINDOW_ALLOW_HIGHDPI);
   SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, gfx::W, gfx::H);
+  SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, gfx565::W, gfx565::H);
   bool run = true, down = false; int mx = 0, my = 0; uint32_t start = SDL_GetTicks();
-  static uint32_t pix[gfx::W * gfx::H];
+  static uint32_t pix[gfx565::W * gfx565::H];
   while (run) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -240,12 +252,8 @@ static void runWindow() {
     }
     g_ms = SDL_GetTicks() - start;
     frame(down, mx, my);
-    const uint32_t* pal = g_pal[g_shell.tint()];
-    for (int i = 0; i < gfx::W * gfx::H; i++) {
-      int x = i % gfx::W - 80, y = i / gfx::W - 80;
-      pix[i] = (x * x + y * y <= 80 * 80) ? (0xFF000000u | pal[gfx::fb[i]]) : 0xFF202020u;
-    }
-    SDL_UpdateTexture(tex, nullptr, pix, gfx::W * 4);
+    for (int i = 0; i < gfx565::W * gfx565::H; i++) pix[i] = 0xFF000000u | framePixel(i % gfx565::W, i / gfx565::W);   // the panel's own pixels
+    SDL_UpdateTexture(tex, nullptr, pix, gfx565::W * 4);
     SDL_RenderClear(ren); SDL_RenderCopy(ren, tex, nullptr, nullptr); SDL_RenderPresent(ren);
   }
   SDL_Quit();
@@ -256,6 +264,7 @@ static void runWindow() { fprintf(stderr, "built without SDL; use --script\n"); 
 
 int main(int argc, char** argv) {
   for (int t = 0; t < TINT_COUNT; t++) palette_build((Tint)t, g_pal[t]);
+  gfx565::target(g_fb565);
   // Default clock: a fixed Tuesday 16:00 local so snapshots are deterministic; --now overrides.
   g_epoch = 1790000000u - (1790000000u % 86400u) + 16 * 3600;
   const char* script = nullptr; bool serve = false;

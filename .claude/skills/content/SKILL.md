@@ -24,8 +24,8 @@ from its source tool; never hand-edit a generated header.
 ## Biscuit (`apps/porthole/games/biscuit/`)
 
 Content and its gate landed in #33 (`content_stories.h`, `content_discoveries.h`,
-`content_daily.h`, `tools/check_content.py`); the game that reads them (screens, `pet.h`,
-the RGB565 surface) is still landing with later PRs.
+`content_daily.h`, `tools/check_content.py`); the rules (`pet.h`) and the RGB565 surface are in too;
+the screens that read them are still landing.
 
 1. Content types, see `games/biscuit/CLAUDE.md` for the exact module map: `content_stories.h` (7 branching stories, `Story{id, title, subtitle, unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`), `content_discoveries.h` (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12 topics), `content_daily.h` (7 daily adventures with a word and meaning, 6 tricks with 3 cue-pattern lessons each, 12 sticker names).
 2. The gate: `games/biscuit/tools/check_content.py` checks every string's glyphs against the bundled font's actual set (ASCII 32-126 plus e-acute, o-umlaut, the middle dot), that a `{...}` token is only `{name}` or `{pet}` and only inside a field the game personalizes (page/prompt/fact_page/wonder/description/meaning), the fixed counts (7 stories, 96 discoveries across 12 topics x 8, 7 adventures, 6 tricks, 12 stickers), unique ids, and that `content_discoveries.h`'s id order matches the `DiscoveryId` enum in `generated/discovery_art.h`. Its length limit per field is a character-count stand-in (see the file's own `TODO(font gate)` comment) -- the real pixel-accurate check (measuring with `generated/fonts.h`'s advances and kerning, the runtime's page-break rule for story/discovery pages: 352x176 box, font24, 4px spacing, and the round-screen rule for every other box) lands once the RGB565 font table exists. Don't treat today's character ceilings as the real limit when judging fit by eye -- they're deliberately loose.

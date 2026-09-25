@@ -110,7 +110,7 @@ static void logText(int x, int y, const char* s, uint8_t c, int scale) {
   int hist[256] = {0};
   for (int yy = y; yy < y + h; yy++) for (int xx = x; xx < x + w; xx++) if ((unsigned)xx < W && (unsigned)yy < H) hist[fb[yy * W + xx]]++;
   int bg = 0; for (int i = 0; i < 256; i++) if (hist[i] > hist[bg]) bg = i;
-  textLog[textLogCount++] = {(int16_t)x, (int16_t)y, (int16_t)w, (int16_t)h, c, (uint8_t)bg};
+  textLog[textLogCount++] = {(int16_t)x, (int16_t)y, (int16_t)w, (int16_t)h, c, (uint32_t)bg, false};
 }
 int text(int x, int y, const char* s, uint8_t c, int scale) {
   fontInit();

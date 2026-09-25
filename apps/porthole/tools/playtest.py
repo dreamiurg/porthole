@@ -76,13 +76,21 @@ class Fail(Exception):
         self.context = list(context)
 
 
-def contrast(a, b):  # WCAG 2 contrast ratio of two palette indices
+def rgb(c):  # a text color from the audit: a palette index (indexed games) or "#rrggbb" (RGB565 games)
+    return PALETTE[c] if isinstance(c, int) else int(c[1:], 16)
+
+
+def color_name(c):
+    return COLOR[c] if isinstance(c, int) else c
+
+
+def contrast(a, b):  # WCAG 2 contrast ratio of two audit colors
     def lum(c):
         r, g, b = (v / 255 for v in ((c >> 16) & 255, (c >> 8) & 255, c & 255))
         r, g, b = (v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in (r, g, b))
         return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
-    hi, lo = sorted((lum(PALETTE[a]), lum(PALETTE[b])), reverse=True)
+    hi, lo = sorted((lum(rgb(a)), lum(rgb(b))), reverse=True)
     return (hi + 0.05) / (lo + 0.05)
 
 
@@ -125,19 +133,25 @@ def audit(tag, screen, regions, texts, full):
             elif math.hypot(max(0, -ox), max(0, -oy)) < 2:
                 add("WARN", "spacing", f"{name(a)} and {name(b)} are {math.hypot(max(0, -ox), max(0, -oy)):.0f} px apart")
     for i, (x, y, w, h, c, bg) in enumerate(texts):
-        if i + 1 < len(texts) and texts[i + 1][:4] == (x - h // 8, y - h // 8, w, h):
+        indexed = isinstance(c, int)  # textShadow is the 8x8 font's; RGB565 boxes are not scaled glyphs
+        if indexed and i + 1 < len(texts) and texts[i + 1][:4] == (x - h // 8, y - h // 8, w, h):
             continue  # a textShadow shadow (drawn first, offset by the scale): judged with its letters below
-        t = f"text {x},{y} {w}x{h} {COLOR[c]}"
-        sh = texts[i - 1] if i and texts[i - 1][:4] == (x + h // 8, y + h // 8, w, h) else None
-        t += f" (with a {COLOR[sh[4]]} shadow)" if sh else ""
+        t = f"text {x},{y} {w}x{h} {color_name(c)}"
+        sh = texts[i - 1] if indexed and i and texts[i - 1][:4] == (x + h // 8, y + h // 8, w, h) else None
+        t += f" (with a {color_name(sh[4])} shadow)" if sh else ""
         far = max(math.hypot(px - 80, py - 80) for px in (x, x + w) for py in (y, y + h))
         if far > 79:
             add("FAIL", "clipped text", f"{t}: a corner is {far:.1f} px from the middle (> 79)")
         if c != bg:  # equal means the sampler saw the text itself: unknown
             k = contrast(c, bg)
             if k < 4:
-                add("FAIL" if k < 2.5 else "WARN", "contrast", f"{t} on {COLOR[bg]}: {k:.2f}:1 (< {'2.5' if k < 2.5 else '4.0'})")
+                add("FAIL" if k < 2.5 else "WARN", "contrast", f"{t} on {color_name(bg)}: {k:.2f}:1 (< {'2.5' if k < 2.5 else '4.0'})")
     return out
+
+
+def text_colors(line):  # "color=I bg=J" (palette indices) or "rgb=RRGGBB bg=RRGGBB"
+    kv = dict(re.findall(r"(\w+)=(\w+)", line))
+    return ("#" + kv["rgb"].lower(), "#" + kv["bg"].lower()) if "rgb" in kv else (int(kv["color"]), int(kv["bg"]))
 
 
 def segments(out):  # output between `echo @@<id>` and `echo @@`, per id
@@ -215,12 +229,22 @@ def unroll(text):  # (line number, line) with `repeat N` ... `end` blocks unroll
     return out
 
 
+def thumb(im):  # 320 px: a 3x-upscaled 160 px frame stays crisp (NEAREST), a real 480 px frame is filtered (LANCZOS)
+    from PIL import Image, ImageChops, ImageDraw
+
+    small = im.resize((160, 160), Image.NEAREST)
+    glass = Image.new("L", im.size)
+    ImageDraw.Draw(glass).ellipse((4, 4, im.width - 4, im.height - 4), fill=255)  # the mask edge cuts 3x3 blocks: skip it
+    diff = Image.composite(ImageChops.difference(im, small.resize(im.size, Image.NEAREST)), Image.new("RGB", im.size), glass)
+    return small.resize((320, 320), Image.NEAREST) if diff.getbbox() is None else im.resize((320, 320), Image.LANCZOS)
+
+
 def make_sheet(snaps, dest):
     try:
         from PIL import Image, ImageDraw
     except ImportError:  # sheets are optional
         return False
-    shots = [(p.stem, Image.open(p).convert("RGB").resize((160, 160), Image.NEAREST).resize((320, 320), Image.NEAREST)) for p in snaps if p.exists()]
+    shots = [(p.stem, thumb(Image.open(p).convert("RGB"))) for p in snaps if p.exists()]
     if not shots:
         return False
     cols = min(4, len(shots))
@@ -329,7 +353,7 @@ def play(path, cwd, res, start):
         elif kind == "ui-check":
             head = pairs(s[:1])
             regions = [tuple(map(int, ln.split()[1:5])) for ln in s if ln.startswith("region ")]
-            texts = [tuple(map(int, ln.split()[1:5])) + tuple(int(v) for v in re.findall(r"=(\d+)", ln)) for ln in s if ln.startswith("text ")]
+            texts = [tuple(map(int, ln.split()[1:5])) + text_colors(ln) for ln in s if ln.startswith("text ")]
             full = int(head.get("regions", 0)) >= 96 or int(head.get("texts", 0)) >= 64
             screen = head.get("screen", "?")
             tag = data if data.startswith(screen) else f"{data} ({screen})" if data else screen  # a tag never hides the real screen

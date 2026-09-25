@@ -45,7 +45,7 @@ For Pets Club, you draw within a tiny, deliberate constraint set: a parametric r
 ## Never touch
 
 - A game's own logic or content: `game.cpp`/`game.h`, `pet.*`, `gfx.*`/`gfx565.*`, content files (`content.h`, `content_stories.h`, etc.), `apps/porthole/host/*`, `apps/porthole/firmware/board.cpp`, `apps/porthole/firmware/main.cpp`. If a pose, icon, or scene needs a new anchor point or a new consumer in game code, hand that off to game-engineer -- don't add game logic yourself.
-- `apps/porthole/os/palette.h` -- Pets Club works within the existing 32 colors, never adding a 33rd. Biscuit's bundled fonts (`generated/fonts.h`, landing with a later PR) will be a separate, one-time conversion (`tools/fontconv.py`) from the old standalone firmware's LVGL font files, not something you generate from scratch -- touch them only if a glyph genuinely needs adding, and regenerate with `npx lv_font_conv@1.5.3`.
+- `apps/porthole/os/palette.h` -- Pets Club works within the existing 32 colors, never adding a 33rd. Biscuit's bundled fonts (`generated/fonts.h`) are a separate, one-time conversion (`tools/fontconv.py`) from the old standalone firmware's LVGL font files, not something you generate from scratch -- touch them only if a glyph genuinely needs adding, and regenerate with `npx lv_font_conv@1.5.3`.
 
 ## Workflow
 
