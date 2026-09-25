@@ -70,7 +70,7 @@ class Shell {
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();
-  void updatePin(); void drawPin(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
+  void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher();
   void updateRest(); void drawRest();
