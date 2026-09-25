@@ -92,7 +92,7 @@ static void lcdInitPanel() {
   cfg.timings.vsync_pulse_width = 3; cfg.timings.vsync_back_porch = 8; cfg.timings.vsync_front_porch = 8;
   cfg.timings.flags.pclk_active_neg = 0;
   cfg.data_width = 16; cfg.bits_per_pixel = 16; cfg.num_fbs = 2;
-  cfg.bounce_buffer_size_px = 10 * LCD_W; cfg.psram_trans_align = 64;
+  cfg.bounce_buffer_size_px = 10 * LCD_W; cfg.dma_burst_size = 64;
   cfg.hsync_gpio_num = PIN_HSYNC; cfg.vsync_gpio_num = PIN_VSYNC; cfg.de_gpio_num = PIN_DE; cfg.pclk_gpio_num = PIN_PCLK; cfg.disp_gpio_num = -1;
   for (int i = 0; i < 16; i++) cfg.data_gpio_nums[i] = PIN_DATA[i];
   cfg.flags.fb_in_psram = 1; cfg.flags.double_fb = 1;

@@ -34,6 +34,10 @@ layout, the pet never dies) are hard rules, not style.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible.
+6. **Warnings are errors.** Every hook and CI job fails on any warning: `-Werror`
+   on host and firmware builds (firmware: our sources via `build_src_flags`),
+   biome `--error-on-warnings`, Python `-W error`, and `tools/fail-on-warning.sh`
+   for tools with no fail switch. Fix the cause; never silence or skip it.
 
 ## Commands
 

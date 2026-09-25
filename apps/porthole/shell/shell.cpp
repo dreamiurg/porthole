@@ -253,7 +253,7 @@ void Shell::drawPin() {
   }
   for (int k = 0; k < 12; k++) {
     char l[8]; uint8_t col = C_WHITE;
-    if (k < 9) snprintf(l, sizeof l, "%d", k + 1); else if (k == 10) snprintf(l, sizeof l, "0");
+    if (k < 9) snprintf(l, sizeof l, "%c", '1' + k); else if (k == 10) snprintf(l, sizeof l, "0");
     else if (k == 9) { snprintf(l, sizeof l, "%s", screen_ == SH_PIN_SET ? "skip" : "<"); col = C_LTGRAY; }
     else { snprintf(l, sizeof l, "OK"); col = pinLen_ == 4 ? C_GREEN : C_LTGRAY; }
     drawPinKey(k, l, col);

@@ -69,10 +69,10 @@ repos:
     hooks:
       - id: release-tool
         name: release planner self-test
-        entry: python3 tools/test_release.py
+        entry: "tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error tools/test_release.py"
         language: system
         pass_filenames: false
-        files: ^tools/(release|test_release)\.py$
+        files: ^tools/((release|test_release)\.py|fail-on-warning\.sh)$
 
       # Per-app gates: each runs only when that app's files change.
       - id: porthole-check
@@ -102,7 +102,7 @@ repos:
         entry: make -C apps/porthole ci
         language: system
         pass_filenames: false
-        files: ^apps/porthole/
+        files: ^apps/porthole/|^tools/fail-on-warning\.sh$
         stages: [pre-push]
       - id: biscuit-ci
         name: biscuit make ci (coverage)
@@ -117,12 +117,12 @@ repos:
         entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/porthole firmware'
         language: system
         pass_filenames: false
-        files: ^apps/porthole/(firmware/|os/|games/|platformio\.ini$)|^platform/
+        files: ^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
         stages: [pre-push]
       - id: biscuit-firmware
         name: biscuit firmware build + layout test
         entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/biscuit firmware firmware-test'
         language: system
         pass_filenames: false
-        files: ^apps/biscuit/(firmware/|src/|package(-lock)?\.json$)|^platform/
+        files: ^apps/biscuit/(firmware/|src/|package(-lock)?\.json$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
         stages: [pre-push]

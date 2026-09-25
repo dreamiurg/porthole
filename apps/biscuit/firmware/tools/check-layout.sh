@@ -31,7 +31,7 @@ for relative in misc/lv_txt.c misc/lv_mem.c misc/lv_gc.c misc/lv_utils.c misc/lv
 done
 for size in 16 20 24 28; do
   object="$build_dir/font$size.o"
-  "${CC:-clang}" -std=c11 -O1 "${includes[@]}" -c "$firmware_dir/generated/font$size.c" -o "$object"
+  "${CC:-clang}" -std=c11 -O1 -Wall -Wextra -Werror "${includes[@]}" -c "$firmware_dir/generated/font$size.c" -o "$object"
   objects+=("$object")
 done
 "${CXX:-clang++}" -std=c++17 -O1 -Wall -Wextra -Werror "${includes[@]}" \

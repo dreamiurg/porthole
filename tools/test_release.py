@@ -2,9 +2,15 @@
 """Self-check for tools/release.py against a throwaway git repo. Run: python3 tools/test_release.py"""
 
 import importlib.util
+import os
 import subprocess
 import tempfile
 from pathlib import Path
+
+# Run from a git hook, GIT_DIR / GIT_INDEX_FILE point at the real repository; left in place, the throwaway
+# repo's `git init`, `config` and `add` would write to the real index and config. Drop them all.
+for key in [k for k in os.environ if k.startswith("GIT_")]:
+    del os.environ[key]
 
 spec = importlib.util.spec_from_file_location("release", Path(__file__).with_name("release.py"))
 assert spec and spec.loader

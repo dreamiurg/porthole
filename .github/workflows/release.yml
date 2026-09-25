@@ -24,7 +24,7 @@ env:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 3
     outputs:
       releases: ${{ steps.plan.outputs.releases }}
@@ -41,7 +41,7 @@ jobs:
   release:
     needs: plan
     if: needs.plan.outputs.releases != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write
