@@ -63,6 +63,16 @@
     .note p:last-child { margin-bottom: 0; }
     .small { font-size: 15px; color: var(--muted); }
 
+    .board { display: grid; grid-template-columns: 1fr 250px; gap: 20px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; margin: 16px 0; }
+    .specs { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 16px; }
+    .specs dt { color: var(--muted); font-weight: 700; }
+    .specs dd { margin: 0; }
+    .buy { background: var(--soft); border-radius: 12px; padding: 14px 16px; }
+    .buy p { margin: 0 0 8px; }
+    .buy .price { font-weight: 800; font-size: 19px; }
+    .buy .links { line-height: 1.9; font-weight: 700; }
+    @media (max-width: 640px) { .board { grid-template-columns: 1fr; } }
+    code { font-size: 0.92em; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
     .apps { display: grid; gap: 20px; }
     .app { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
     .app img { width: 100%; height: auto; display: block; margin-bottom: 16px; border-radius: 8px; }
@@ -114,6 +124,29 @@
 {{GAMES}}
   </div>
 
+  <h2 id="board"><span lang="en">The board</span><span lang="uk">Плата</span></h2>
+  <p><span lang="en">Every game here runs on one board, and only this one is supported: the <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, the version with the <mark>flat 2.1-inch</mark> round screen. It's a round touchscreen with a small computer behind it. In a 3D-printed case it becomes a pocket gadget with no buttons at all.</span><span lang="uk">Усі ігри тут працюють на одній платі, і підтримується лише вона: <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, версія з <mark>пласким круглим екраном 2,1 дюйма</mark>. Це круглий сенсорний екран із маленьким комп&rsquo;ютером позаду. У надрукованому на 3D-принтері корпусі він стає кишеньковою іграшкою зовсім без кнопок.</span></p>
+  <div class="board">
+    <dl class="specs">
+      <dt><span lang="en">Screen</span><span lang="uk">Екран</span></dt><dd><span lang="en">2.1" round IPS, 480x480, capacitive touch</span><span lang="uk">Круглий IPS 2,1", 480x480, ємнісний сенсор</span></dd>
+      <dt><span lang="en">Chip</span><span lang="uk">Чип</span></dt><dd><span lang="en">ESP32-S3, dual-core 240 MHz</span><span lang="uk">ESP32-S3, два ядра 240 МГц</span></dd>
+      <dt><span lang="en">Memory</span><span lang="uk">Пам&rsquo;ять</span></dt><dd><span lang="en">16 MB flash, 8 MB PSRAM</span><span lang="uk">16 МБ флеш, 8 МБ PSRAM</span></dd>
+      <dt><span lang="en">Clock</span><span lang="uk">Годинник</span></dt><dd><span lang="en">Real-time clock that keeps time on a backup cell</span><span lang="uk">Годинник реального часу, що йде від резервної батарейки</span></dd>
+      <dt><span lang="en">Sound</span><span lang="uk">Звук</span></dt><dd><span lang="en">A small single-tone buzzer</span><span lang="uk">Маленька однотонна пищалка</span></dd>
+      <dt><span lang="en">Radio</span><span lang="uk">Зв&rsquo;язок</span></dt><dd><span lang="en">Wi-Fi and Bluetooth LE</span><span lang="uk">Wi-Fi і Bluetooth LE</span></dd>
+      <dt><span lang="en">Also on board</span><span lang="uk">Ще на платі</span></dt><dd><span lang="en">Motion sensor, microSD slot, battery connector with charging</span><span lang="uk">Датчик руху, слот microSD, роз&rsquo;єм для акумулятора із зарядкою</span></dd>
+      <dt><span lang="en">Cable</span><span lang="uk">Кабель</span></dt><dd><span lang="en">One USB-C for power and installing games</span><span lang="uk">Один USB-C для живлення і запису ігор</span></dd>
+    </dl>
+    <div class="buy">
+      <p class="price"><span lang="en">About $45</span><span lang="uk">Близько $45</span></p>
+      <p class="links"><a href="https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20"><span lang="en">Amazon</span><span lang="uk">Amazon</span></a> <span class="small"><span lang="en">(affiliate link)</span><span lang="uk">(партнерське посилання)</span></span><br>
+        <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a> <span class="small"><span lang="en">(a little cheaper)</span><span lang="uk">(трохи дешевше)</span></span></p>
+      <p class="small"><span lang="en">If you buy through the Amazon link, I earn a small commission and you pay the same price.</span><span lang="uk">Якщо купите через посилання на Amazon, я отримаю невелику комісію, а ціна для вас не зміниться.</span> As an Amazon Associate I earn from qualifying purchases.</p>
+    </div>
+  </div>
+  <p><span lang="en">Watch out for look-alikes. Waveshare also sells round boards in 1.28, 1.85 and 2.8 inch, and those won't run these games. The 2.1B has curved glass over the same screen; nobody has tried the games on it yet.</span><span lang="uk">Остерігайтеся схожих плат. Waveshare продає й круглі плати на 1,28, 1,85 і 2,8 дюйма, і на них ці ігри не запрацюють. У 2.1B вигнуте скло над тим самим екраном; ігри на ній ще ніхто не пробував.</span></p>
+  <p><span lang="en">The games use the screen, the touch, the clock and the buzzer. The rest is still free to play with: the motion sensor could wake a pet with a shake, Bluetooth could let two pets meet, Wi-Fi could set the clock or bring new stories, and a small battery would make it cordless.</span><span lang="uk">Ігри використовують екран, сенсор, годинник і пищалку. Решта ще вільна для експериментів: датчик руху може будити улюбленця, коли пристрій потрусити, Bluetooth може познайомити двох улюбленців, Wi-Fi може налаштовувати годинник чи завантажувати нові історії, а невеликий акумулятор зробить пристрій бездротовим.</span></p>
+
   <h2><span lang="en">How to install</span><span lang="uk">Як записати гру на плату</span></h2>
   <ol class="steps">
     <li><span lang="en">Open this page on a computer in <strong>Chrome</strong> or <strong>Edge</strong>. Phones, Safari and Firefox can't talk to the board.</span><span lang="uk">Відкрийте цю сторінку на комп&rsquo;ютері в <strong>Chrome</strong> або <strong>Edge</strong>. Телефони, Safari і Firefox не вміють працювати з платою.</span></li>
@@ -123,33 +156,30 @@
   <div class="note">
     <p><span lang="en">Updating a game you already have keeps your saved progress. Leave <em>Erase device</em> unticked when the installer asks. Switching to a different game starts it fresh.</span><span lang="uk">Оновлення гри, яка вже є на платі, зберігає прогрес. Не ставте позначку <em>Erase device</em>, коли установник спитає. Інша гра починається з нуля.</span></p>
   </div>
-
-  <h2 id="board"><span lang="en">Which board</span><span lang="uk">Яка плата</span></h2>
-  <p><span lang="en">The games run on one board: the <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, the version with the <mark>flat 2.1-inch</mark> round screen. It costs about $45 on
-    <a href="https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20">Amazon</a>, or a little less from
-    <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a>.
-    Waveshare also sells round boards in 1.28, 1.85 and 2.8 inch and a curved 2.1B, and those won't run these games.</span><span lang="uk">Ігри працюють на одній платі: <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, версії з <mark>пласким круглим екраном 2,1 дюйма</mark>. Вона коштує близько $45 на
-    <a href="https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20">Amazon</a> або трохи менше у
-    <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a>.
-    Waveshare продає й круглі плати на 1,28, 1,85 і 2,8 дюйма та вигнуту 2.1B, і на них ці ігри не запрацюють.</span></p>
-  <p class="small"><span lang="en">The Amazon link is an affiliate link, so I earn a small commission if you buy through it, at no extra cost to you. The Waveshare link isn't.</span><span lang="uk">Посилання на Amazon партнерське: якщо купите через нього, я отримаю невелику комісію, а ціна для вас не зміниться. Посилання на Waveshare не партнерське.</span> As an Amazon Associate I earn from qualifying purchases.</p>
-  <p><span lang="en">Have a different board? I only support the one on my desk, but the code is open. Point Claude Code or Codex at <a href="https://github.com/dreamiurg/porthole">the repo</a> and ask it to adapt the games to your hardware. If you get one working, send a pull request.</span><span lang="uk">Маєте іншу плату? Я підтримую лише ту, що лежить у мене на столі, але код відкритий. Попросіть Claude Code чи Codex адаптувати ігри з <a href="https://github.com/dreamiurg/porthole">репозиторію</a> під ваше залізо. Якщо вийде, надішліть pull request.</span></p>
-
-  <h2><span lang="en">If something doesn't work</span><span lang="uk">Якщо щось не працює</span></h2>
-  <p><span lang="en">If the board doesn't show up in the list, try another USB-C cable: some cables only charge. Close any other program that might be using the board, then reload this page.</span><span lang="uk">Якщо плати немає у списку, спробуйте інший кабель USB-C: деякі кабелі лише заряджають. Закрийте інші програми, які можуть використовувати плату, і перезавантажте сторінку.</span></p>
-  <p><span lang="en">If the install stops halfway, press Install again. Nothing on the board can break; it just gets written again.</span><span lang="uk">Якщо запис зупинився на півдорозі, натисніть Install ще раз. Зламати плату неможливо, гра просто запишеться знову.</span></p>
+  <p><span lang="en"><strong>If the board doesn't show up</strong> in the list, try another USB-C cable: some cables only charge. Close any other program that might be using the board, then reload this page.</span><span lang="uk"><strong>Якщо плати немає у списку,</strong> спробуйте інший кабель USB-C: деякі кабелі лише заряджають. Закрийте інші програми, які можуть використовувати плату, і перезавантажте сторінку.</span></p>
+  <p><span lang="en"><strong>If the install stops halfway,</strong> press Install again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Якщо запис зупинився на півдорозі,</strong> натисніть Install ще раз. Зламати плату неможливо, гра просто запишеться знову.</span></p>
 
   <h2><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></h2>
-  <p lang="en">It started with a small MakerWorld project by MatixYo: a
-    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">plane radar</a>
-    on a tiny round screen. I built one with my kids and showed them how to change it with Claude Code.
-    Then we bought this bigger round screen and made a couple of games for it in one sitting. The kids
-    loved them, and so did our friends' kids, so here they are. If you like to tinker, have fun with it.</p>
-  <p lang="uk">Усе почалося з невеликого проєкту MatixYo на MakerWorld:
-    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">радара літаків</a>
-    на крихітному круглому екрані. Я зібрав такий із дітьми й показав їм, як змінювати його за допомогою Claude Code.
-    Потім ми купили цей більший круглий екран і за один раз зробили для нього кілька ігор. Дітям вони сподобалися,
-    дітям наших друзів теж, тож ось вони. Якщо любите майструвати, розважайтеся.</p>
+  <p lang="en">It started with a small project on MakerWorld,
+    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo.
+    A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar.
+    I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on
+    the little screen. I loved that.</p>
+  <p lang="uk">Усе почалося з невеликого проєкту на MakerWorld,
+    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> від MatixYo.
+    Крихітна плата ESP32 з круглим екраном 1,28 дюйма бере з інтернету дані про польоти й малює літаки над головою на маленькому радарі.
+    Я зібрав такий із дітьми, а потім показав їм, як змінювати його за допомогою Claude Code. Вони просили зміни й дивилися, як ті
+    з&rsquo;являються на маленькому екрані. Мені це дуже сподобалося.</p>
+  <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had
+    a couple of games running on it. My kids loved them so much that I shared them with friends, and their kids had a blast too.
+    This page is where those games live now, and the <a href="https://github.com/dreamiurg/porthole">repo</a> is set up so anyone can add the next one.</p>
+  <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали
+    кілька ігор. Моїм дітям вони так сподобалися, що я поділився ними з друзями, і їхні діти теж були в захваті.
+    Тепер ці ігри живуть тут, а <a href="https://github.com/dreamiurg/porthole">репозиторій</a> налаштований так, щоб будь-хто міг додати наступну.</p>
+  <p><span lang="en">If you like to tinker and have about $45 for a board, or a spare one lying in a drawer, have fun with it. Enjoy the new era of tinkering.</span><span lang="uk">Якщо любите майструвати і маєте близько $45 на плату або зайву в шухляді, розважайтеся. Насолоджуйтеся новою ерою майстрування.</span></p>
+
+  <h2><span lang="en">Different board? Fork it</span><span lang="uk">Інша плата? Форкніть</span></h2>
+  <p><span lang="en">This is a side project, and I only support the board on my desk. I'm not porting the games myself, so hack away: point Claude Code or Codex at <a href="https://github.com/dreamiurg/porthole">the repo</a> and ask it to adapt the code to your hardware. Most of the hardware code sits in each game's <code>board.cpp</code>; a screen of another size or shape also means redoing the layouts. Got one working? Send a pull request, or just ask me a question.</span><span lang="uk">Це побічний проєкт, і я підтримую лише плату, що лежить у мене на столі. Сам я ігри не переноситиму, тож експериментуйте: попросіть Claude Code чи Codex адаптувати код із <a href="https://github.com/dreamiurg/porthole">репозиторію</a> під ваше залізо. Більшість коду для заліза лежить у <code>board.cpp</code> кожної гри; екран іншого розміру чи форми потребує нових макетів. Запустили? Надішліть pull request або просто поставте мені питання.</span></p>
 
   <h2><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></h2>
   <div class="more">
