@@ -1,54 +1,54 @@
 # Sleep: the lamp tucks the pup in; a sleeping pup only shushes; the lamp wakes it once it has 40 energy.
 newgame Sam Biscuit
-wait 2000
+wait 2400
 expect asleep=0
 # lamp
 tap 23 79
-wait 100
+wait 450
 expect asleep=1
 expect bond=1
 snap 01_asleep
 # petting a sleeping pup: a toast, nothing else
 tap 72 104
-wait 100
+wait 450
 expect asleep=1
 expect bond=1
 expect fun=80
 # the food menu opens but the pup does not eat
 tap 40 129
-wait 200
+wait 450
 expect-screen feed
 tap 40 70
-wait 300
+wait 450
 expect-screen feed
 expect food=70
 tap 80 12
-wait 200
+wait 450
 # lamp again: rested pup wakes up
 tap 23 79
-wait 100
+wait 450
 expect asleep=0
 # a tired pup (15 energy) cannot be woken
 dbg sleepy
 tap 23 79
-wait 100
+wait 450
 expect asleep=1
 tap 23 79
-wait 100
+wait 450
 expect asleep=1
 # a watched sleeping pup gains 30 energy a minute
 wait 60000
 expect energy>=40
 tap 23 79
-wait 100
+wait 450
 expect asleep=0
 # an hour away asleep, then the lamp
 tap 23 79
-wait 100
+wait 450
 skip 3600
-wait 100
+wait 450
 expect asleep=1
 tap 23 79
-wait 100
+wait 450
 expect asleep=0
 sheet sleep

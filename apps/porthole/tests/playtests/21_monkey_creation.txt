@@ -2,13 +2,13 @@
 # the launcher, and Pets Club's adoption. Runs under ASan/UBSan; afterwards the device must be on a real screen.
 # seed 11: from the first "new profile" screen
 reset
-wait 200
+wait 450
 expect-screen new_name
 monkey 600 11
 expect-screen *
 # seed 22: from the first "new profile" screen
 reset
-wait 200
+wait 450
 expect-screen new_name
 monkey 600 22
 expect-screen *
@@ -18,26 +18,26 @@ profile Sam 8
 profile Kai 6 1234
 profile Ava 7
 tap 80 32
-wait 200
+wait 450
 expect-screen picker
 monkey 600 33
 expect-screen *
 # seed 44: from Paw Street with three neighbours
 newgame Sam Biscuit
-wait 2000
+wait 2400
 tap 80 12
-wait 200
+wait 450
 profile Kai 6
 profile Ava 7
 tap 80 32
-wait 200
+wait 450
 tap 80 41
-wait 200
+wait 450
 tap 80 76
-wait 2000
+wait 2400
 expect-screen home
 tap 27 52
-wait 200
+wait 450
 expect-screen street
 monkey 600 44
 expect-screen *

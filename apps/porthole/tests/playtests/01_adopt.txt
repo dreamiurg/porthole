@@ -1,12 +1,12 @@
 # A fresh device: straight into a new profile (name, face, age, code), the launcher, then Pets Club's adoption
 # (parcel, pup name, house) and home.
-wait 200
+wait 450
 expect-screen new_name
 ui-check new_name
 snap 01_new_name
 # OK on an empty name does nothing
 tap 92 144
-wait 100
+wait 450
 expect-screen new_name
 # S A X, backspace, M -> "Sam"
 tap 120 96
@@ -17,34 +17,34 @@ tap 140 72
 ui-check new_name-typed
 snap 02_name_typed
 tap 92 144
-wait 200
+wait 450
 expect-screen new_avatar
 ui-check
 snap 03_avatar
 # the dog face
 tap 34 57
-wait 200
+wait 450
 expect-screen age
 ui-check
 snap 04_age
 # age 8
 tap 37 101
-wait 200
+wait 450
 expect-screen pin_set
 ui-check
 snap 05_pin_set
 # skip the secret code
 tap 54 119
-wait 200
+wait 450
 expect-screen launcher
 ui-check
 snap 06_launcher
 expect profile=0/1
 # Pets Club: the splash, then the parcel (no pup for this profile yet)
 tap 80 76
-wait 200
+wait 450
 expect-screen splash
-wait 2000
+wait 2400
 expect-screen intro
 ui-check intro-parcel
 snap 07_intro
@@ -52,21 +52,21 @@ tap 80 80
 wait 1000
 ui-check intro-puppy
 tap 80 80
-wait 200
+wait 450
 expect-screen name_pet
 ui-check
 # the "?" button picks a random pup name
 tap 123 28
-wait 100
+wait 450
 snap 08_name_pet
 tap 92 144
-wait 200
+wait 450
 expect-screen theme
 ui-check
 snap 09_theme
 # first house
 tap 32 78
-wait 100
+wait 450
 expect-screen celebrate
 ui-check welcome
 snap 10_welcome
@@ -75,7 +75,7 @@ tap 80 80
 expect-screen celebrate
 wait 800
 tap 80 80
-wait 300
+wait 450
 expect-screen home
 ui-check
 snap 11_home

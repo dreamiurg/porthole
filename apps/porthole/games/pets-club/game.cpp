@@ -74,7 +74,7 @@ void Game::finishAdoption() {
 }
 const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
 
-void Game::go(Screen s) { screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; }  // a tap acts on one screen only
+void Game::go(Screen s) { screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_); }  // a tap acts on one screen only
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
 
 Tint Game::tint() const {
@@ -252,7 +252,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateConfirmReset, &Game::updateHats, &Game::updateStreet, &Game::updateTheme};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_THEME + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
-  tapGuard_.filter(in_, ms_, screen_);
+  gate_.filter(in_, ms_);
   if (haveSave_ && now_ != lastTickSec_) tick();
   if (in_.pressed && haveSave_ && screen_ != SC_SPLASH) pet::touchDay(save_, now_);
   updateParticles();
