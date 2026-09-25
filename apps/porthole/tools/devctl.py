@@ -47,7 +47,7 @@ def press(p: serial.Serial, x: int, y: int, ms: int) -> None:
 
 def rgb565(c: int) -> tuple[int, int, int]:
     r, g, b = (c >> 11) & 31, (c >> 5) & 63, c & 31
-    return (r * 255 // 31, g * 255 // 63, b * 255 // 31)
+    return (r << 3 | r >> 2, g << 2 | g >> 4, b << 3 | b >> 2)  # bit replication, as the sim's snapshots
 
 
 def frame(p: serial.Serial) -> tuple[int, int, list[tuple[int, int, int]]]:
@@ -62,11 +62,13 @@ def frame(p: serial.Serial) -> tuple[int, int, list[tuple[int, int, int]]]:
             break
     head = line.split()
     w, h, kind = int(head[1]), int(head[2]), head[3].decode() if len(head) > 3 else "idx"
-    if kind == "565":  # (count, color) runs: slow at 115200 baud, so no fixed timeout
+    if kind == "565":  # (count, color) runs; 115200 baud moves about 11 KB/s, so the timeout follows the size
         runs, timeout = int(head[4]), p.timeout
-        p.timeout = None
+        p.timeout = 5 + runs * 4 / 10_000
         data = p.read(runs * 4)
         p.timeout = timeout
+        if len(data) != runs * 4:
+            sys.exit(f"short frame: {len(data)} of {runs * 4} run bytes")
         out = [px for n, c in struct.iter_unpack("<HH", data) for px in [rgb565(c)] * n]
         if len(out) != w * h:
             sys.exit(f"short frame: {len(out)} of {w * h} px")

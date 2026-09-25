@@ -38,6 +38,12 @@ void circle(int cx, int cy, int r, uint16_t c) {   // same disc as gfx::circle, 
   }
 }
 void blit(const Image565& im, int x, int y, int scale) {
+  if (scale == 1) {   // row copies: full-screen images are drawn every frame
+    int x0 = x < 0 ? -x : 0, x1 = x + im.width > W ? W - x : im.width;
+    for (int sy = y < 0 ? -y : 0; sy < im.height && y + sy < H && x1 > x0; sy++)
+      memcpy(fb + (y + sy) * W + x + x0, im.pixels + sy * im.width + x0, (size_t)(x1 - x0) * 2);
+    return;
+  }
   for (int sy = 0; sy < im.height; sy++) {
     const uint16_t* row = im.pixels + sy * im.width;
     for (int sx = 0; sx < im.width; sx++) rect(x + sx * scale, y + sy * scale, scale, scale, row[sx]);

@@ -14,19 +14,21 @@ struct Font {
   const Glyph* glyphs;              // [0] unused, [1..95] ASCII 32..126, then one per `extras` code point
   const uint16_t* extras; uint8_t extraCount;   // ascending
   const uint8_t* kernLeft; const uint8_t* kernRight;   // glyph -> kerning class, 0 = none
-  const int8_t* kernValues; uint8_t kernRightClasses;  // [(left - 1) * kernRightClasses + right - 1], 1/16 px
+  const int8_t* kernValues; uint8_t kernRightClasses;  // [(left - 1) * kernRightClasses + right - 1], 1/16 px; all required
   uint8_t lineHeight, baseLine;     // baseLine: from the bottom of the line
 };
-enum Align : uint8_t { LEFT, CENTER, RIGHT };
+enum class Align : uint8_t { LEFT, CENTER, RIGHT };
 // A label: `w` wide, lines `spacing` px apart (LVGL line_space). `h` is only the page height for pageBreaks;
 // textBox is as tall as its text.
 struct Box { const Font* font; int16_t w, h; int8_t spacing; Align align; };
 
 int glyphIndex(const Font& f, uint32_t cp);   // 0 = not in the font
 int textWidth(const Font& f, const char* s);  // as one line
-// One line with its top-left at (x, y): an LVGL label of content size (textWidth x lineHeight). Returns the end x.
+// One line with its top-left at (x, y): an LVGL label of content size (textWidth x lineHeight); '\n' draws nothing,
+// use textBox for several lines. Returns the end x.
 int text(const Font& f, const char* s, int x, int y, uint16_t fg);
-// Word-wraps s at `width`: returns the line count and stores up to maxLines line starts (byte offsets).
+// Word-wraps s at `width`: returns the line count and stores up to maxLines line starts (byte offsets, so s is
+// under 64 KB).
 int wrap(const Font& f, const char* s, int width, uint16_t* starts, int maxLines);
 int textHeight(const Font& f, const char* s, int width, int spacing);   // lv_txt_get_size's height
 // Wrapped and aligned in the box (x, y, b.w, its text height), an LVGL LONG_WRAP label. Returns that height.

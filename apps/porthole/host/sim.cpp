@@ -85,6 +85,7 @@ static void writeBMP(const char* path) {
 static void frame(bool down, int x, int y) {   // the shell writes saves itself, through g_store
   Input in = g_tracker.step(down, x, y, g_ms);
   g_shell.update(now(), g_ms, in);
+  if (g_shell.surface() == SURFACE_RGB565) gfx565::clear(0xF81F);   // magenta: the device's buffer holds an older frame, so a gap shows
   g_shell.render();
 }
 

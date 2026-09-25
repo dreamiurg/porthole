@@ -23,6 +23,7 @@ uint32_t next(const char* s, uint32_t& i) {   // _lv_txt_utf8_next: a malformed 
   }
   return cp;
 }
+bool invisible(uint32_t cp) { return cp < 0x20 || cp == 0xF8FF || cp == 0x200C; }   // LVGL: no width, no placeholder
 int kern(const Font& f, int left, int right) {   // get_kern_value, class tables
   int l = f.kernLeft[left], r = f.kernRight[right];
   return l && r ? f.kernValues[(l - 1) * f.kernRightClasses + r - 1] : 0;
@@ -30,7 +31,7 @@ int kern(const Font& f, int left, int right) {   // get_kern_value, class tables
 int advance(const Font& f, uint32_t cp, uint32_t nextCp) {   // lv_font_get_glyph_width: kerned, rounded per glyph
   bool tab = cp == '\t';
   int g = glyphIndex(f, tab ? ' ' : cp);
-  if (!g) return cp < 0x20 ? 0 : f.lineHeight / 2 + 2;   // the placeholder box
+  if (!g) return invisible(cp) ? 0 : f.lineHeight / 2 + 2;   // the placeholder box
   int n = glyphIndex(f, nextCp);
   return (f.glyphs[g].advW * (tab ? 2 : 1) + (n ? kern(f, g, n) : 0) + 8) >> 4;
 }
@@ -105,7 +106,7 @@ void drawGlyph(const Font& f, uint32_t cp, const Pen& p) {   // lv_draw_sw_lette
   int gi = glyphIndex(f, cp);
   if (!gi) {   // LVGL's placeholder: a 1 px outline, (lineHeight/2 + 1) x (lineHeight + 1)
     int w = f.lineHeight / 2 + 1, h = f.lineHeight + 1;
-    if (cp >= 0x20) { fill(p, p.x, p.y, w, 1); fill(p, p.x, p.y + h - 1, w, 1); fill(p, p.x, p.y, 1, h); fill(p, p.x + w - 1, p.y, 1, h); }
+    if (!invisible(cp)) { fill(p, p.x, p.y, w, 1); fill(p, p.x, p.y + h - 1, w, 1); fill(p, p.x, p.y, 1, h); fill(p, p.x + w - 1, p.y, 1, h); }
     return;
   }
   const Glyph& g = f.glyphs[gi];
@@ -138,7 +139,7 @@ int floor3(int v) { return v / 3 - (v % 3 < 0); }
 // taken before the glyphs by majority vote. ponytail: a vote, not a histogram (no 128 KB table on the device); a
 // line over a busy picture with no majority color reports an arbitrary pixel of it.
 void logLine(const Font& f, int x, int y, int w, uint16_t fg) {
-  if (!gfx::textLogEnabled || gfx::textLogCount >= 64 || w <= 0) return;
+  if (!gfx::textLogEnabled || gfx::textLogCount >= (int)(sizeof gfx::textLog / sizeof *gfx::textLog) || w <= 0) return;
   uint16_t bg = fg; int votes = 0;
   for (int yy = y; yy < y + f.lineHeight; yy++) for (int xx = x; xx < x + w; xx++) {
     if ((unsigned)xx >= gfx565::W || (unsigned)yy >= gfx565::H) continue;
@@ -190,7 +191,7 @@ int textBox(const Box& b, const char* s, int x, int y, uint16_t fg) {   // lv_dr
   p.fg = fg;
   for (uint32_t at = 0, len; (len = nextLine(f, s + at, b.w)) != 0; at += len) {
     int lw = lineWidth(f, s + at, len);
-    p.x = x + (b.align == CENTER ? (b.w - lw) / 2 : b.align == RIGHT ? b.w - lw : 0);
+    p.x = x + (b.align == Align::CENTER ? (b.w - lw) / 2 : b.align == Align::RIGHT ? b.w - lw : 0);
     logLine(f, p.x, p.y, lw, fg);
     drawLine(f, s + at, len, p);
     p.y += f.lineHeight + b.spacing;

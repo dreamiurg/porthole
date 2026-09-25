@@ -43,6 +43,7 @@ static void widths() {
   assert(kernedPairs >= 4 && sum == font::textWidth(f, s));
   assert(font::glyphIndex(f, 'A') == 34 && font::glyphIndex(f, 0xB7) == 96 && font::glyphIndex(f, 0xF6) == 98 && font::glyphIndex(f, 0x2019) == 0);
   assert(font::textWidth(f, "\x01") == 0 && font::textWidth(f, "\xff") == 0);   // control and malformed bytes: no width
+  assert(font::textWidth(f, "\xef\xa3\xbf\xe2\x80\x8c") == 0);                   // nor LVGL's symbol dummy and the ZWNJ
   assert(font::textWidth(f, "\t") == (2 * f.glyphs[1].advW + 8) >> 4);         // a tab: one space glyph, twice as wide
 }
 
@@ -54,7 +55,7 @@ static void pages() {
                 "carry rulers?\"\n\n";
   char moon[sizeof MOON];
   memcpy(moon, MOON, sizeof MOON);
-  const font::Box story = {&biscuit::FONT24, 352, 176, 4, font::LEFT};
+  const font::Box story = {&biscuit::FONT24, 352, 176, 4, font::Align::LEFT};
   assert(font::textHeight(biscuit::FONT24, moon, 352, 4) == 536);   // lv_txt_get_size, trailing newlines included
   const char* p[4];
   assert(font::pageBreaks(story, moon, p, 4) == 3);
@@ -77,7 +78,7 @@ static void pages() {
   assert(font::pageBreaks(story, sun, p, 4) == 2);
   clear(PAPER);
   font::textBox(story, p[0], 64, 146, INK);
-  font::textBox({&biscuit::FONT16, 120, 0, 4, font::CENTER}, "1 / 2", 180, 337, INK);
+  font::textBox({&biscuit::FONT16, 120, 0, 4, font::Align::CENTER}, "1 / 2", 180, 337, INK);
   assert(regionCrc(50, 136, 430, 336) == 0x57929d01u);
 
   char empty[] = " \n ";
@@ -119,7 +120,7 @@ static void drawing() {
   }
   assert(x0[1] - x0[0] == (200 - ww) / 2);
   assert(x0[2] - x0[0] == 200 - ww);
-  assert(font::textBox({&f, 200, 0, 4, font::LEFT}, "one\ntwo", 0, 200, 0xFFFF) == 2 * f.lineHeight + 4);
+  assert(font::textBox({&f, 200, 0, 4, font::Align::LEFT}, "one\ntwo", 0, 200, 0xFFFF) == 2 * f.lineHeight + 4);
 
   clear(0);   // a missing glyph is LVGL's outlined placeholder box
   font::text(f, "\xe2\x80\x99", 10, 10, 0xFFFF);
@@ -182,12 +183,18 @@ static void images() {
   blitRle(rle, -3, 0, 3);   // 3x blocks, clipped on the left
   assert(fb[0] == 0x1111 && fb[2 * W + 8] == 0x1111 && fb[3 * W + 0] == 0x2222 && fb[3 * W + 3] == 0x2222 && fb[5 * W + 8] == 0x2222);
   assert(fb[6 * W + 0] == 0x3333 && fb[8 * W + 8] == 0x3333 && !fb[9 * W]);
+}
+
+static void pictures() {
   static const uint16_t px[4] = {1, 2, 3, 4};
-  clear(0);
+  target(g_fb); clear(0);
   blit({2, 2, px}, 0, 0, 3);
   assert(fb[0] == 1 && fb[2 * W + 5] == 2 && fb[3 * W + 2] == 3 && fb[5 * W + 5] == 4 && !fb[6 * W]);
   blit({2, 2, px}, 478, 478, 1);   // clipped at the corner
   assert(fb[478 * W + 478] == 1 && fb[479 * W + 479] == 4);
+  clear(0);
+  blit({2, 2, px}, -1, -1, 1);   // clipped at the origin: only the last pixel lands
+  assert(fb[0] == 4 && !fb[1] && !fb[W]);
 }
 
 int main() {
@@ -198,6 +205,7 @@ int main() {
   roundRects();
   shapes();
   images();
+  pictures();
   puts("test_gfx565: all checks passed");
   return 0;
 }

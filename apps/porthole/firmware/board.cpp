@@ -127,6 +127,9 @@ void present(const uint8_t* fb160, const uint16_t* pal565) {
 uint16_t* backBuffer() { return g_fbs[1 - g_front]; }
 const uint16_t* frontBuffer() { return g_fbs[g_front]; }
 void presentHires() {
+  // A vsync given while the loop was busy would end the wait below at once, and the next frame would be drawn into the
+  // buffer still being scanned out. Drop it: the wait then ends at the swap.
+  xSemaphoreTake(g_vsync, 0);
   esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer());  // pointer is a panel fb: swaps at next vsync
   g_front = 1 - g_front;
   xSemaphoreTake(g_vsync, pdMS_TO_TICKS(40));
