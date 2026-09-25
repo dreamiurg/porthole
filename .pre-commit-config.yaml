@@ -6,6 +6,7 @@ default_stages: [pre-commit]
 exclude: |
   (?x)^(
     apps/porthole/games/pets-club/sprites\.h|
+    apps/porthole/games/biscuit/generated/.*|
     apps/porthole/os/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
   )$
@@ -103,5 +104,5 @@ repos:
         entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/porthole firmware'
         language: system
         pass_filenames: false
-        files: ^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
+        files: ^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|partitions\.csv$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
         stages: [pre-push]

@@ -1,7 +1,9 @@
 # Adding an app
 
 An app is a directory under `apps/` with its own `Makefile`, `platformio.ini`
-and `README.md`. The root `Makefile`, the pre-commit hooks and CI find apps by
+and `README.md`. A new game for the Porthole firmware is not an app: it is a
+directory under `apps/porthole/games/`, built into the same image and added to
+`APPS[]` (see `apps/porthole/CLAUDE.md`). The root `Makefile`, the pre-commit hooks and CI find apps by
 their Makefile, so a new app only has to follow this contract.
 
 ## Makefile targets

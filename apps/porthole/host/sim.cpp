@@ -12,7 +12,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
-#include "game.h"
+#include "games/pets-club/game.h"
 #include "shell.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
