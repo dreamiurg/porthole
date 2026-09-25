@@ -256,7 +256,8 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   if (haveSave_ && now_ != lastTickSec_) tick();
   if (in_.pressed && haveSave_ && screen_ != SC_SPLASH) pet::touchDay(save_, now_);
   updateParticles();
-  (this->*UPDATE[screen_])();
+  const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
+  (this->*fn)();
   if (screen_ == SC_HOME) checkStickers();
 }
 void Game::tick() {
@@ -277,7 +278,8 @@ void Game::render() {
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
     &Game::drawConfirmReset, &Game::drawHats, &Game::drawStreet, &Game::drawTheme};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_THEME + 1, "one draw per screen, in Screen order");
-  (this->*DRAW[screen_])();
+  const ScreenFn fn = DRAW[screen_];     // see update()
+  (this->*fn)();
   drawParticles();
   drawToast();
 }

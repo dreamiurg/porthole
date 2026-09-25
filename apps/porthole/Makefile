@@ -11,9 +11,8 @@ INCLUDES := -Ios -Ishell -I$(GAME)
 WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers
 CXXFLAGS ?= -std=c++17 -O1 -g
 CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
-# GCC documents that sanitizers cause -Wmaybe-uninitialized false positives (gcc 13 flags the screen dispatch
-# tables under ASan); the plain snap and test builds keep that warning fatal. Clang has no such flag.
-ASAN_WNO := $(if $(shell $(CXX) --version 2>/dev/null | grep -q clang || echo gcc),-Wno-maybe-uninitialized)
+# snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
+# with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
 # (a ResourceWarning from a finalizer). Our scripts only; PlatformIO and gcovr run their own interpreters.
 PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
@@ -37,7 +36,7 @@ snap: $(BUILD) $(SRC) host/sim.cpp
 
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
 snap-asan: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(ASAN_WNO) $(SRC) host/sim.cpp -o $(BUILD)/snap-asan
+	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
