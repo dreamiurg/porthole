@@ -23,7 +23,9 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr review "$PR_URL" --approve
+          # The ruleset needs no approving review, and Actions may not approve PRs in this repo.
+          # Try anyway (harmless if a future ruleset wants one), but never let it block the merge.
+          gh pr review "$PR_URL" --approve || echo "approval not permitted; auto-merge waits for required checks"
           gh pr merge --auto --squash "$PR_URL"
 
       - name: Comment on major updates
