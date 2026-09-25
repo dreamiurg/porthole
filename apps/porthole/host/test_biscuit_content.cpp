@@ -96,13 +96,15 @@ static void stream(const char* where, const char* const* pages, int count, const
   if (k > READ_SCREENS) { printf("content gate: %s takes %d screens, the reader holds %d\n", where, k, READ_SCREENS); failures++; return; }
   for (int i = 0; i < k; i++) fits(PAGE, where, screens[i]);
   if (words(screens[k - 1]) < MIN_LAST_WORDS) {
-    printf("content gate: %s ends on a %d-word screen (%s / %s): \"%s\"\n", where, words(screens[k - 1]), name, pet, screens[k - 1]);
+    printf("content gate: %s ends on a %d-word screen: \"%s\"\n", where, words(screens[k - 1]), screens[k - 1]);
     failures++;
   }
 }
 static void stream(const char* where, const char* const* pages, int count) {
+  char shortNames[80];
+  snprintf(shortNames, sizeof shortNames, "%s (Sam / Pip)", where);
   stream(where, pages, count, NAME, PET);
-  stream(where, pages, count, "Sam", "Pip");
+  stream(shortNames, pages, count, "Sam", "Pip");
 }
 static void storyGate() {
   char where[64], text[128];

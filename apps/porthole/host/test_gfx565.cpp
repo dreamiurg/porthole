@@ -85,9 +85,11 @@ static void pages() {
   assert(font::pageBreaks(story, empty, p, 4) == 1 && !*p[0]);
   memcpy(moon, MOON, sizeof MOON);
   assert(font::pageBreaks(story, moon, p, 1) == 3 && p[0] == moon);   // stores what fits, still counts every page
-  memcpy(moon, MOON, sizeof MOON);   // minLast: the last page (7 words) takes a word from the end of the one before
-  assert(font::pageBreaks(story, moon, p, 4, 8) == 3 && !strcmp(p[2], "crumbs go everywhere. Do these mice carry rulers?\""));
-  assert(!strcmp(p[1] + strlen(p[1]) - 9, "bites! My"));
+  memcpy(moon, MOON, sizeof MOON);   // minLast: the last page (7 words) takes 3 from the end of the one before
+  assert(font::pageBreaks(story, moon, p, 4, 10) == 3 && !strcmp(p[2], "bites! My crumbs go everywhere. Do these mice carry rulers?\""));
+  assert(!strcmp(p[1] + strlen(p[1]) - 10, "\"Such tidy"));
+  memcpy(moon, MOON, sizeof MOON);   // the same when only the first pages are stored
+  assert(font::pageBreaks(story, moon, p, 2, 10) == 3 && !strcmp(p[1] + strlen(p[1]) - 10, "\"Such tidy"));
   memcpy(moon, MOON, sizeof MOON);   // but not when the page before would be left with fewer than minLast
   assert(font::pageBreaks(story, moon, p, 4, 40) == 3 && !strcmp(p[2], "go everywhere. Do these mice carry rulers?\""));
   const font::Box line = {&biscuit::FONT24, (int16_t)font::textWidth(biscuit::FONT24, "Supercalifragilistic"),

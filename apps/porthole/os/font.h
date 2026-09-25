@@ -35,8 +35,8 @@ int textHeight(const Font& f, const char* s, int width, int spacing);   // lv_tx
 int textBox(const Box& b, const char* s, int x, int y, uint16_t fg);
 // Splits s into pages that fit b.w x b.h, word by word, the way the LVGL build's paginate() did: s is rewritten in
 // place (whitespace runs become one space, ends trimmed, each page NUL-terminated) and pages[] points into it.
-// Returns the page count (at least 1) and stores up to maxPages. minLast > 0 keeps a lone word or two off the last
-// page: when it holds fewer than minLast words, words move onto it from the end of the page before, if that page
-// keeps minLast and the last one still fits (else it stays short). The page count never changes.
+// Returns the page count (at least 1) and stores up to maxPages. minLast > 0 keeps the last page from holding fewer
+// than minLast words: words move onto it from the end of the page before, if that page keeps minLast and the last
+// one still fits (else it stays short). The page count never changes.
 int pageBreaks(const Box& b, char* s, const char** pages, int maxPages, int minLast = 0);
 }  // namespace font

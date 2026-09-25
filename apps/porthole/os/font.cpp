@@ -163,7 +163,9 @@ void squeeze(char* s) {   // paginate() split on isspace and joined with single 
   *o = 0;
 }
 // Moves words off the end of the page before `last` onto it until it holds minLast, if that page keeps minLast
-// itself and the last one still fits. Returns where the last page now starts.
+// itself and the last one still fits. Returns where the last page now starts. The shorter page needs no measuring:
+// pageBreaks measured every prefix of it that ends at a word, and each one fit.
+// ponytail: all or nothing; moving fewer words when all of them don't fit never happens with Biscuit's content.
 char* balance(const Box& b, char* prev, char* last, int minLast) {
   int need = minLast - words(last);
   if (need <= 0 || words(prev) - need < minLast) return last;
