@@ -1,28 +1,28 @@
 # A new day: the gift parcel appears, opens to a new book (the first gift), the streak grows on the first touch.
 newgame Sam Biscuit
-wait 2000
+wait 2400
 expect gift=0
 expect streak=1
 expect books=0/3
 skip 86400
-wait 300
+wait 450
 expect-screen home
 expect gift=1
 expect day=1
 snap 01_gift_waiting
 # the parcel on the window sill
 tap 90 57
-wait 400
+wait 450
 expect-screen gift
 snap 02_gift
 tap 80 80
-wait 200
+wait 450
 expect-screen gift
 expect books=0/4
 snap 03_gift_open
 wait 800
 tap 80 80
-wait 300
+wait 450
 expect-screen home
 expect gift=0
 expect streak=2

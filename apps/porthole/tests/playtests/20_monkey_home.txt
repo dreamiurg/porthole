@@ -2,7 +2,7 @@
 # long presses). Runs under ASan/UBSan; after each run the game must be on a real screen with stats in 0..100.
 # seed 101: a plain home
 newgame Sam Biscuit
-wait 2000
+wait 2400
 expect-screen home
 monkey 600 101
 expect-screen *
@@ -16,11 +16,11 @@ expect clean>=0
 expect clean<=100
 # seed 202: a busy home: muddy pup, poop, a gift waiting
 newgame Sam Biscuit
-wait 2000
+wait 2400
 dbg dirty
 dbg poop
 skip 86400
-wait 200
+wait 450
 expect gift=1
 monkey 600 202
 expect-screen *
@@ -34,13 +34,13 @@ expect clean>=0
 expect clean<=100
 # seed 303: a grown dog with every hat, four tricks and all books
 newgame Sam Biscuit
-wait 2000
+wait 2400
 dbg hearts
 dbg tricks
 dbg hats
 dbg books
 dbg grown
-wait 1100
+wait 1500
 expect stage=2
 monkey 600 303
 expect-screen *

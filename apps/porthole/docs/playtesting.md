@@ -92,8 +92,9 @@ screen, or the game's while one is open.
 
 Several screens ignore taps for a moment after they open, so a scenario has to wait before tapping: a trick
 lesson 400 ms, fetch and Word Fetch results 600 ms, a celebration 700 ms, a gift 300 ms (700 ms once open), the
-adoption parcel 900 ms after it opens. Screens without such a guard act on the second tap of a double tap, which
-is exactly what `05_read` and `11_stats` check.
+adoption parcel 900 ms after it opens. On top of those, every screen change (shell and game) ignores touches until
+a press begins 450 ms after the new screen appeared (`ui::FreshGate`), so a tap right after a screen change needs
+`wait 450` first, and a double tap acts once: `05_read`, `11_stats` and `15_shell_taps` check that.
 
 ## UI rules
 

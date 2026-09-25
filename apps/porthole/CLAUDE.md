@@ -30,7 +30,7 @@ In `games/pets-club/`:
 In `os/`, the shared runtime:
 
 - `app.h`: the contract between the shell and a game (`App`, `Profile`, `SaveSlot`, `AppEnter`, `MAX_PROFILES`).
-- `ui.h` / `ui.cpp`: the shared widgets (panel, button, icon button, the orange back button, toast, the name keyboard, `TapGuard`).
+- `ui.h` / `ui.cpp`: the shared widgets (panel, button, icon button, the orange back button, toast, the name keyboard, `FreshGate`: every screen change ignores touches for 450 ms).
 - `crc32.h`: the checksum every persisted blob uses.
 - `gfx.h` / `gfx.cpp`: the renderer. A 160x160 indexed-color framebuffer (`gfx::fb`), drawing primitives, the 8x8 font, the round-mask test (`gfx::inCircle`), and the `UiAudit` hit-region log / text-box log that the `ui` sim command and the playtester agent read.
 - `input.h`: turns raw touch samples into tap/long-press/drag edges (`InputTracker`); shared verbatim by firmware and host.

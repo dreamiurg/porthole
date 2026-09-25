@@ -1,0 +1,188 @@
+# Shell edge cases a kid hits: an empty name, backspace on nothing, typing past eight letters, the longest names
+# (on the face step, the launcher, the picker, the code pad and the delete question), back from the face step, the
+# "10+" age, a second code that does not match followed by skip, faces 5-8, the four-profile limit, deleting down to
+# zero, and one profile playing past the session budget without a rest.
+reset
+wait 450
+expect-screen new_name
+expect profile=-1/0
+# OK with no letters and backspace on an empty name both do nothing
+tap 92 144
+wait 450
+tap 68 144
+wait 450
+expect-screen new_name
+# ten taps on W: the name stops at eight letters; a backspace and an L make it "Wwwwwwwl"
+repeat 10
+tap 70 120
+end
+tap 68 144
+tap 120 72
+wait 450
+snap 01_name_full
+ui-check new_name-full
+tap 92 144
+wait 450
+expect-screen new_avatar
+ui-check new_avatar-long-name
+# back from the face step keeps the name
+tap 80 12
+wait 450
+expect-screen new_name
+tap 92 144
+wait 450
+expect-screen new_avatar
+# face 5 (bear), age 10+
+tap 34 89
+wait 450
+expect-screen age
+ui-check age
+snap 02_age
+tap 121 101
+wait 450
+expect-screen pin_set
+# 1234, then 9999 on the second try: back to the first step, then skip (no code)
+tap 54 61
+tap 78 61
+tap 102 61
+tap 54 81
+tap 102 121
+wait 450
+expect-screen pin_again
+tap 102 101
+tap 102 101
+tap 102 101
+tap 102 101
+tap 102 121
+wait 450
+expect-screen pin_set
+tap 48 121
+wait 450
+expect-screen launcher
+expect profile=0/1
+expect age=10
+ui-check launcher-long-name
+snap 03_launcher_long
+# second kid: "Mmmmmmmm", face 6 (owl), age 5, code 0000 (a real code)
+tap 80 42
+wait 450
+expect-screen picker
+tap 80 93
+wait 450
+expect-screen new_name
+repeat 8
+tap 140 72
+end
+tap 92 144
+wait 450
+tap 64 89
+wait 450
+tap 37 69
+wait 450
+repeat 4
+tap 78 121
+end
+tap 102 121
+wait 450
+repeat 4
+tap 78 121
+end
+tap 102 121
+wait 450
+expect-screen launcher
+expect profile=1/2
+expect age=5
+tap 80 42
+wait 450
+expect-screen picker
+ui-check picker-long-names
+snap 04_picker_long
+# the code pad and the delete question with the longest name
+tap 80 80
+wait 450
+expect-screen pin
+ui-check pin-long-name
+snap 05_pin_long
+tap 80 12
+wait 450
+hold 80 80
+wait 450
+expect-screen pin
+repeat 4
+tap 78 121
+end
+tap 102 121
+wait 450
+expect-screen delete
+ui-check delete-long-name
+snap 06_delete_long
+tap 80 80
+wait 450
+expect-screen picker
+expect profile=-1/2
+# third and fourth kids: faces 7 (frog) and 8 (panda); four profiles hide the "+" row
+tap 80 106
+wait 450
+tap 30 48
+tap 92 144
+wait 450
+tap 94 89
+wait 450
+tap 121 69
+wait 450
+tap 48 121
+wait 450
+expect profile=2/3
+tap 80 42
+wait 450
+tap 80 119
+wait 450
+tap 130 120
+tap 92 144
+wait 450
+tap 124 89
+wait 450
+tap 79 101
+wait 450
+tap 48 121
+wait 450
+expect profile=3/4
+tap 80 42
+wait 450
+expect-screen picker
+ui-check picker-full
+snap 07_picker_full
+tap 80 119
+wait 450
+expect-screen launcher
+expect profile=3/4
+sheet create
+# deleting the only profile opens "new profile"; its home button shows an empty picker with just "+"
+reset
+profile Solo 8
+tap 80 42
+wait 450
+expect-screen picker
+hold 80 67
+wait 450
+expect-screen delete
+hold 80 116
+wait 450
+expect-screen new_name
+expect profile=-1/0
+tap 80 12
+wait 450
+expect-screen picker
+ui-check picker-empty
+snap 08_picker_empty
+tap 80 80
+wait 450
+expect-screen new_name
+# one profile: seven minutes of play and no rest
+newgame Solo Biscuit
+wait 2400
+expect-screen home
+wait 420000
+expect-screen home
+expect rest=0
+sheet delete

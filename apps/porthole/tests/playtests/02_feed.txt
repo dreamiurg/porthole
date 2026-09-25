@@ -1,56 +1,56 @@
 # Feeding: cookies stop at three a day, a double tap feeds once, kibble raises food, a full pup refuses twice.
 newgame Sam Biscuit
-wait 2000
+wait 2400
 expect-screen home
 # a press that slides off the bowl button does not open it; a 3 px wobble still counts as a tap
 down 40 129
 move 40 110
 move 40 90
 up
-wait 100
+wait 450
 expect-screen home
 down 40 129
 move 43 131
 up
-wait 200
+wait 450
 expect-screen feed
 tap 80 12
-wait 200
+wait 450
 dbg hungry
 expect food=20
 expect fun=25
 # bowl button, bottom row first
 tap 40 129
-wait 200
+wait 450
 expect-screen feed
 snap 01_feed
 # cookie 1: +10 food, +20 fun, then the First Meal sticker on the way home
 tap 120 70
-wait 2400
+wait 2800
 expect-screen celebrate
 expect food=30
 expect fun=45
 wait 800
 tap 80 80
-wait 300
+wait 450
 expect-screen home
 # cookies 2 and 3
 tap 40 129
-wait 200
+wait 450
 tap 120 70
-wait 2400
+wait 2800
 tap 40 129
-wait 200
+wait 450
 tap 120 70
-wait 2400
+wait 2800
 expect-screen home
 expect food=50
 expect fun=85
 # cookie 4 is refused: no eating, food and fun unchanged
 tap 40 129
-wait 200
+wait 450
 tap 120 70
-wait 300
+wait 450
 expect-screen feed
 expect food=50
 expect fun=85
@@ -58,30 +58,30 @@ snap 02_no_more_cookies
 # a kid double-taps the kibble: one meal (+35), not two
 tap 40 70
 tap 40 70
-wait 2400
+wait 2800
 expect-screen home
 expect food=85
 # kibble through the floor bowl this time: 85+35 is capped at 100
 tap 32 106
-wait 200
+wait 450
 expect-screen feed
 tap 40 70
-wait 2400
+wait 2800
 expect food=100
 # overfeed twice: refused, food stays 100, still on the feed screen
 tap 40 129
-wait 200
+wait 450
 tap 40 70
-wait 300
+wait 450
 expect-screen feed
 expect food=100
 snap 03_full
 tap 80 70
-wait 300
+wait 450
 expect-screen feed
 expect food=100
 # home button
 tap 80 12
-wait 200
+wait 450
 expect-screen home
 sheet feed

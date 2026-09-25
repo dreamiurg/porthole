@@ -40,7 +40,7 @@ class Game : public App {
   // every profile on the device, for Paw Street; kids_[self_] is the one playing
   Profile kids_[MAX_PROFILES] = {}; Save kidSaves_[MAX_PROFILES]; bool kidHas_[MAX_PROFILES] = {}; int nKids_ = 0, self_ = 0;
   bool dirty_ = false, haveSave_ = false, wantsHome_ = false;   // dirty without a pup: erase the save
-  ui::TapGuard tapGuard_;
+  ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTickSec_ = 0;

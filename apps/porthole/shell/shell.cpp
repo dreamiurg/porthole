@@ -11,6 +11,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps) {
   st_ = &st; apps_ = apps; nApps_ = nApps; app_ = nullptr; active_ = target_ = -1;
   shell::loadAll(st, prof_);
   if (prof_.count()) go(SH_PICK); else startNew();   // a fresh device goes straight to making the first profile
+  gate_.closed = false;   // boot: no finger to guard against
 }
 uint32_t Shell::lastSeen() const {
   uint32_t t = 0;
@@ -19,6 +20,7 @@ uint32_t Shell::lastSeen() const {
 }
 void Shell::go(Screen s) {
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
+  gate_.shown(ms_);
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
 }
 void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toastUntil_ = ms_ + 1500; }
@@ -29,7 +31,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
-  tapGuard_.filter(in_, ms_, screen_);   // the game's screens count as one: it guards its own
+  gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   (this->*UPDATE[screen_])();
 }
 void Shell::render() {
@@ -51,12 +53,16 @@ void Shell::choose(int id, bool del) {
   target_ = id; deleting_ = del;
   if (prof_.rec[id].pin) { resetPin(); go(SH_PIN); } else authorized();
 }
-void Shell::authorized() { if (deleting_) go(SH_DELETE); else select(target_); }
+void Shell::authorized() {
+  if (!deleting_) { select(target_); return; }
+  holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's OK) is where "No" is safe
+}
+bool Shell::restingNow() const { return prof_.count() >= 2 && shell::resting(prof_.rec[active_], now_); }
 void Shell::select(int id) {
   active_ = id;
   shell::recharge(rec(), now_);
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
-  go(shell::resting(rec(), now_) ? SH_REST : SH_LAUNCHER);
+  go(restingNow() ? SH_REST : SH_LAUNCHER);
 }
 void Shell::finishCreate(uint16_t pin) {
   draft_.pin = pin;
@@ -75,6 +81,7 @@ int Shell::createProfile(const char* name, uint8_t age, const char* code) {
   snprintf(draft_.name, sizeof draft_.name, "%s", name); draft_.age = age;
   for (int id = 0; id < MAX_PROFILES; id++) if (!prof_.used[id]) { draft_.avatar = (uint8_t)(id % NUM_AVATARS); break; }
   finishCreate(shell::pinCode(code));
+  gate_.closed = false;   // a hook, not a touch
   return screen_ == SH_PICK ? -1 : active_;
 }
 static bool sameName(const char* a, const char* b) {   // "pets-club" matches "Pets Club"
@@ -87,7 +94,7 @@ static bool sameName(const char* a, const char* b) {   // "pets-club" matches "P
 }
 bool Shell::openApp(const char* name) {
   if (active_ < 0 || screen_ == SH_APP) return false;
-  for (int k = 0; k < nApps_; k++) if (sameName(apps_[k]->name(), name)) { openIdx(k); return true; }
+  for (int k = 0; k < nApps_; k++) if (sameName(apps_[k]->name(), name)) { openIdx(k); gate_.closed = false; return true; }
   return false;
 }
 void Shell::openIdx(int k) {
@@ -260,22 +267,33 @@ void Shell::drawPinKey(int k, const char* l, uint8_t col) {
 }
 
 // ---------------------------------------------------------------- delete a profile (long press on the picker)
+// "No" is big and central; deleting takes a deliberate HOLD_MS press on a button in the half the finger was not on,
+// so neither the long press that got here nor one more tap can delete.
+static const uint32_t HOLD_MS = 900;   // under the sim's 1 s `hold`, still a clear press-and-hold for a kid
+static const ui::Box DEL_NO = {30, 66, 100, 28};
+static ui::Box delHold(bool top) { return {32, top ? 30 : 104, 96, 24}; }
 void Shell::updateDelete() {
-  if (ui::button(in_, {{20, 90, 50, 24}, "No!", nullptr, C_GREEN})) { go(SH_PICK); return; }
-  if (!ui::button(in_, {{90, 90, 50, 24}, "Yes", nullptr, C_RED})) return;
+  if (ui::button(in_, {DEL_NO, "No, keep!", nullptr, C_GREEN})) { go(SH_PICK); return; }
+  ui::Box h = delHold(holdTop_);
+  bool began = in_.downX >= h.x && in_.downX < h.x + h.w && in_.downY >= h.y && in_.downY < h.y + h.h;
+  if (!(in_.down && in_.hit(h.x, h.y, h.w, h.h) && began && in_.heldMs >= HOLD_MS)) return;
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
   if (prof_.count()) go(SH_PICK); else startNew();
 }
 void Shell::drawDelete() {
-  clear(C_PLUM);
+  clear(C_NAVY);
   const Record& r = prof_.rec[target_];
-  char b[32]; snprintf(b, sizeof b, "Delete %s?", r.name); textCentered(80, 40, b, C_WHITE);
-  textCentered(80, 56, "Their pets and games", C_YELLOW);
-  textCentered(80, 66, "will be gone.", C_YELLOW);
-  ui::drawButton({{20, 90, 50, 24}, "No!", nullptr, C_GREEN}, in_.down && in_.hit(20, 90, 50, 24));
-  ui::drawButton({{90, 90, 50, 24}, "Yes", nullptr, C_RED}, in_.down && in_.hit(90, 90, 50, 24));
-  blit(SPR_AVATARS[r.avatar % NUM_AVATARS], 70, 124);
+  int ty = holdTop_ ? 98 : 30;
+  char b[32]; snprintf(b, sizeof b, "Delete %s?", r.name); textCentered(80, ty, b, C_WHITE);
+  textCentered(80, ty + 12, "Their pets and games", C_YELLOW);
+  textCentered(80, ty + 22, "will be gone.", C_YELLOW);
+  ui::drawButton({DEL_NO, "No, keep!", nullptr, C_GREEN}, in_.down && in_.hit(DEL_NO.x, DEL_NO.y, DEL_NO.w, DEL_NO.h));
+  ui::Box h = delHold(holdTop_); bool pr = in_.down && in_.hit(h.x, h.y, h.w, h.h);
+  ui::drawButton({h, nullptr, nullptr, C_PLUM}, pr);   // white on plum and on the brown fill: both >= 4.5:1
+  int fill = pr ? (int)(in_.heldMs >= HOLD_MS ? h.w - 2 : in_.heldMs * (uint32_t)(h.w - 2) / HOLD_MS) : 0;
+  if (fill > 0) roundRect(h.x + 1, h.y + 2, fill, h.h - 3, C_BROWN);
+  textCentered(80, h.y + (h.h - 7) / 2 + (pr ? 1 : 0), "Hold to delete", C_WHITE);
 }
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
@@ -310,7 +328,7 @@ void Shell::drawLauncher() {
 
 // ---------------------------------------------------------------- resting: the play budget ran out
 void Shell::updateRest() {
-  if (!shell::resting(rec(), now_)) { go(SH_LAUNCHER); return; }
+  if (!restingNow()) { go(SH_PICK); return; }   // over while showing: whoever is here next picks
   if (ui::button(in_, {{50, 120, 60, 24}, "OK", nullptr, C_GREEN})) go(SH_PICK);
 }
 void Shell::drawRest() {
@@ -350,7 +368,7 @@ void Shell::debugPrint() {
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   printf("[shell profile=%d/%d age=%d muted=%d play=%lus rest=%lu]\n", active_, prof_.count(), r ? r->age : 0, r ? r->muted : 0,
-         (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && shell::resting(*r, now_) ? r->restUntil - now_ : 0));
+         (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && restingNow() ? r->restUntil - now_ : 0));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
