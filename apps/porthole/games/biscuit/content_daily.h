@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 namespace biscuit {
+// TODO(screens PR): the rules port (pet.h, PR #35) carries the same numbers: LESSONS, TRICK_UNLOCK_DAY and DAILY_MASKS.
+// Keep pet.h's (the rules and their tests use them) and drop Trick::lessons/unlockDay and Adventure::actions here,
+// leaving this file the display text only. Until then, keep both in step.
 // ADVENTURES[local day ordinal % 7] is today's. Finishing its three actions earns STICKERS[ordinal % 12].
 struct Adventure {
   const char* title;

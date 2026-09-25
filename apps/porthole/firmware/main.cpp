@@ -1,7 +1,7 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include "board.h"
-#include "game.h"
+#include "games/pets-club/game.h"
 #include "shell.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
@@ -60,6 +60,7 @@ void setup() {
     now = lastSeen ? lastSeen + 60 : buildEpoch();
     if (now < buildEpoch()) now = buildEpoch();
     board::rtcSet(now);
+    g_shell.clockRestored();   // else a kid capped today stays on "Back tomorrow": the guess is always that same day
     Serial.println("[porthole] RTC was not running; clock restored");
   }
   g_bootLocalEpoch = now; g_bootMillis = millis();
@@ -68,9 +69,10 @@ void setup() {
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control).
+static const uint32_t DIM_MS = 60000;   // first dim step; the same minute as shell::IDLE_MS today, not the same rule
 static void dimWhenIdle(uint32_t ms) {
   uint32_t idle = ms - g_lastTouchMs;
-  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > 60000 ? 30 : 100);
+  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
 }
 

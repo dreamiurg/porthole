@@ -4,9 +4,9 @@
 #   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 # os/ is the shared runtime (renderer, input, palette, widgets, the App contract); shell/ is the profile picker and
-# launcher; games/<name>/ compile against os/ only.
-GAME := games/pets-club
-INCLUDES := -Ios -Ishell -I$(GAME)
+# launcher; games/<name>/ compile against os/ only. Every directory under games/ is built in: a game includes its own
+# headers by bare name (same directory), hosts and tests by path (games/pets-club/game.h), hence -I.
+INCLUDES := -Ios -Ishell -I.
 # Warnings are errors in every host build: sim, snap, snap-asan, the tests and the coverage objects.
 WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers
 CXXFLAGS ?= -std=c++17 -O1 -g
@@ -18,9 +18,12 @@ CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
 # Biscuit's art generator is Node (22+, no npm packages), a dev-machine tool: lint skips it, loudly, where node is missing.
 NODE_ART := games/biscuit/tools/art/export-assets.mjs
-SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard $(GAME)/*.cpp)
-PET_TEST_SRC := $(wildcard os/*.cpp) $(GAME)/pet.cpp
-SHELL_TEST_SRC := shell/profiles.cpp shell/migrate.cpp $(GAME)/pet.cpp
+SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
+# Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
+TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
+test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
+test_shell_SRC := shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+test_biscuit_content_SRC := games/biscuit/personalize.cpp games/biscuit/art.cpp
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
@@ -44,16 +47,14 @@ snap-asan: $(BUILD) $(SRC) host/sim.cpp
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
-test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp host/test_biscuit_content.cpp
-	$(CXX) $(CXXFLAGS) $(PET_TEST_SRC) host/test_pet.cpp -o $(BUILD)/test_pet && $(BUILD)/test_pet
-	$(CXX) $(CXXFLAGS) $(SHELL_TEST_SRC) host/test_shell.cpp -o $(BUILD)/test_shell && $(BUILD)/test_shell
-	$(CXX) $(CXXFLAGS) -I. games/biscuit/personalize.cpp games/biscuit/art.cpp host/test_biscuit_content.cpp -o $(BUILD)/test_biscuit_content && $(BUILD)/test_biscuit_content
+test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
+	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) && $(BUILD)/$(t) &&) true
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
-	$(PY) $(GAME)/tools/check_content.py
-	$(PY) $(GAME)/tools/art.py --check
+	$(PY) games/pets-club/tools/check_content.py
+	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
 	@command -v node >/dev/null || { echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
@@ -65,13 +66,14 @@ check: lint test
 # Everything CI runs for this app except the firmware build.
 ci: check playtest coverage
 
-# Line coverage of os/, shell/ and games/*/ from test_pet, test_shell plus the non-monkey playtests, as Cobertura XML.
-# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: baseline
+# Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
+# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang; they mirror the source tree
+# (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
 COV_MIN := 91
 COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(WARNINGS) $(INCLUDES) -DHOST_BUILD
-COV_OBJ = $(addprefix $(COV)/obj/,$(notdir $(1:.cpp=.o)))
+COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 GCOVR ?= $(shell command -v gcovr 2>/dev/null || echo uvx gcovr)
@@ -84,18 +86,15 @@ endif
 
 coverage:
 	rm -rf $(COV) && mkdir -p $(COV)/obj
-	for f in $(SRC) host/sim.cpp host/test_pet.cpp host/test_shell.cpp; do $(CXX) $(COV_CXXFLAGS) -c $$f -o $(COV)/obj/$$(basename $$f .cpp).o || exit 1; done
-	$(CXX) --coverage $(call COV_OBJ,$(PET_TEST_SRC)) $(COV)/obj/test_pet.o -o $(COV)/test_pet
-	$(CXX) --coverage $(call COV_OBJ,$(SHELL_TEST_SRC)) $(COV)/obj/test_shell.o -o $(COV)/test_shell
-	$(CXX) --coverage $(call COV_OBJ,$(SRC)) $(COV)/obj/sim.o -o $(COV)/snap
-	$(COV)/test_pet
-	$(COV)/test_shell
+	for f in $(SRC) host/sim.cpp $(TESTS:%=host/%.cpp); do o=$(COV)/obj/$${f%.cpp}.o; mkdir -p $$(dirname $$o) && $(CXX) $(COV_CXXFLAGS) -c $$f -o $$o || exit 1; done
+	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) && $(COV)/$(t) &&) true
+	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
-	python3 $(GAME)/tools/art.py
+	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	node $(NODE_ART)
 
