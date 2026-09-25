@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Browser emulator for Paw Street. Wraps `build/host/snap --serve` behind a tiny
+"""Browser emulator for Pets Club. Wraps `build/host/snap --serve` behind a tiny
 HTTP server so the game can be played with a mouse/touch, no hardware needed.
 
 Run: make webemu        (or: python3 tools/webemu.py)
@@ -99,7 +99,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Paw Street</title>
+<title>Pets Club</title>
 <style>
   html, body { background:#111; color:#ccc; font-family:-apple-system,Helvetica,sans-serif;
                margin:0; padding:24px 12px; display:flex; flex-direction:column; align-items:center; }
@@ -114,7 +114,7 @@ PAGE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>Paw Street</h1>
+<h1>Pets Club</h1>
 <canvas id="screen" width="480" height="480"></canvas>
 <div id="buttons">
   <button data-cmd="hour">+1 hour</button>
@@ -247,7 +247,7 @@ def main():
     global sim
     sim = Sim()
     httpd = http.server.ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"Paw Street web emulator: http://{HOST}:{PORT}")
+    print(f"Pets Club web emulator: http://{HOST}:{PORT}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

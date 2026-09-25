@@ -398,10 +398,10 @@ void Game::updateSplash() {
 void Game::drawSplash() {
   clear(C_NAVY);
   for (int i = 0; i < 24; i++) { int x = (i * 53) % 160, y = (i * 29) % 160; if (((ms_ / 300) + i) % 4) pixel(x, y, C_WHITE); }
-  blitTint(SPR_PAW, 44, 44, C_PEACH); blitTint(SPR_PAW, 108, 44, C_PEACH);
-  // two lines: "PAW STREET" at scale 2 is 142 px, wider than the chord at any title row
-  textCenteredShadow(80, 38, "PAW", C_YELLOW, C_PLUM, 2);
-  textCenteredShadow(80, 56, "STREET", C_YELLOW, C_PLUM, 2);
+  blitTint(SPR_PAW, 36, 44, C_PEACH); blitTint(SPR_PAW, 116, 44, C_PEACH);
+  // two stacked lines read as a logo; paws sit outside "PETS" (58 px at scale 2)
+  textCenteredShadow(80, 38, "PETS", C_YELLOW, C_PLUM, 2);
+  textCenteredShadow(80, 56, "CLUB", C_YELLOW, C_PLUM, 2);
   textCentered(80, 80, "a pixel puppy", C_LTGRAY);
   blit(DOG_FRAMES[SZ_DOG][(ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0], 64, 92);
   if ((ms_ / 500) % 2) textCentered(80, 126, "tap to start", C_WHITE);

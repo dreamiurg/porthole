@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pixel-art generator for Paw Street.
+"""Pixel-art generator for Pets Club.
 
 Dogs are drawn by a tiny parametric rig (ellipses + rects + inner outline) so every pose exists at
 three sizes (puppy / dog / grown) with one consistent style. Icons are hand-drawn ASCII.
