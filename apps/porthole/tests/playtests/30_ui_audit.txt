@@ -57,7 +57,7 @@ ui-check intro-puppy
 tap 80 80
 wait 200
 ui-check name_pet
-tap 126 28
+tap 123 28
 wait 100
 snap a10_name_pet
 tap 92 144
@@ -291,7 +291,7 @@ tap 80 80
 wait 1000
 tap 80 80
 wait 200
-tap 126 28
+tap 123 28
 tap 92 144
 wait 200
 tap 96 78

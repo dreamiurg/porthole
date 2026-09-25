@@ -596,37 +596,6 @@ qqq
 kkkk..
 .kk...
 """,
-    "SPEAKER": """
-...k....k
-..kk..k.k
-.kkk.k.k.
-kkkk.k.k.
-kkkk.k.k.
-.kkk.k.k.
-..kk..k.k
-...k....k
-""",
-    "SPEAKER_OFF": """
-...k.....
-..kk.k.k.
-.kkk..k..
-kkkk.k.k.
-kkkk.....
-.kkk.....
-..kk.....
-...k.....
-""",
-    "GEAR": """
-...kkk...
-.k.kkk.k.
-kkkkkkkkk
-.kkk.kkk.
-kkk...kkk
-.kkk.kkk.
-kkkkkkkkk
-.k.kkk.k.
-...kkk...
-""",
     "SPARKLE": """
 ..y..
 ..y..
@@ -688,16 +657,6 @@ cc......
 wwwwwwwwwwww
 wwwwwwwwwwww
 .wwwwwwwwww.
-""",
-    "HOME": """
-....k....
-...kkk...
-..kkkkk..
-.kkkkkkk.
-kkkkkkkkk
-.kkkkkkk.
-.kkk.kkk.
-.kkk.kkk.
 """,
     "HAT_BOW": """
 rr...rr

@@ -72,7 +72,7 @@ class Game : public App {
   struct Spot { int8_t x, y; bool on; } spots_[6]; int spotsLeft_ = 0; uint32_t bathDoneMs_ = 0;
   // gift / celebrate
   pet::Gift gift_{}; bool giftOpened_ = false; char celebTitle_[24] = {0}, celebText_[48] = {0}; int celebIcon_ = 0;
-  uint8_t pendingStickers_ = 0; uint16_t stickersSeen_ = 0;
+  uint16_t stickersSeen_ = 0;
   int statsPage_ = 0; int hatSel_ = 0;
 
   // ---- helpers

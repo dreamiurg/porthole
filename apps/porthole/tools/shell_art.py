@@ -3,7 +3,7 @@
 
 Reuses the ASCII helpers of games/pets-club/tools/art.py. Avatars are drawn as the left half of a 20x20
 face, mirrored, then given the same 1-px inner outline as the dog rig. Icons are single-color masks meant
-for gfx::blitTint, like Pets Club's SPEAKER/CHECK/ARROW.
+for gfx::blitTint, like Pets Club's CHECK/ARROW.
 Emits shell/shell_sprites.h and a preview sheet at build/art/shell_sheet.png (needs Pillow for the preview).
 Run from apps/porthole/ (or anywhere: it chdirs there). `--check` exits 1 if the header is stale.
 """

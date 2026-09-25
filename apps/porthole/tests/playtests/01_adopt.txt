@@ -56,7 +56,7 @@ wait 200
 expect-screen name_pet
 ui-check
 # the "?" button picks a random pup name
-tap 126 28
+tap 123 28
 wait 100
 snap 08_name_pet
 tap 92 144

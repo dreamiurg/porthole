@@ -349,7 +349,7 @@ void Game::drawIntro() {
 // ---------------------------------------------------------------- pup name (the kid's name comes from the profile)
 void Game::updateNamePet() {
   if (backButton()) { wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
-  if (in_.tapInCircle(126, 28, 12)) {                  // random name
+  if (in_.tapInCircle(123, 28, 12)) {                  // random name (hit circle ends 0.5 px inside the bezel)
     const char* n = PET_NAME_IDEAS[pet::rnd(save_) % 9]; strncpy(nameBuf_, n, ui::NAME_LEN); nameBuf_[ui::NAME_LEN] = 0; nameLen_ = (int)strlen(nameBuf_);
   }
   if (ui::keyboard(in_, nameBuf_, nameLen_)) { strncpy(save_.petName, nameBuf_, sizeof save_.petName - 1); go(SC_THEME); }
@@ -357,7 +357,7 @@ void Game::updateNamePet() {
 void Game::drawNamePet() {
   clear(C_WALL);
   ui::drawKeyboard(in_, nameBuf_, "Pup's name", ms_);
-  circle(126, 29, 9, C_DKBROWN); circle(126, 28, 8, C_PINK); textCentered(126, 25, "?", C_DKBROWN);
+  circle(123, 29, 9, C_DKBROWN); circle(123, 28, 8, C_PINK); textCentered(123, 25, "?", C_DKBROWN);
   drawBackButton();
 }
 
