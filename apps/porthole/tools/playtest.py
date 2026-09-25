@@ -40,12 +40,17 @@ COLOR = [n.lower() for n in re.findall(r"\bC_([A-Z]+)\b", _block(r"enum Col : ui
 
 
 def _screens() -> set:
-    """The shell's screen names and every game's (each lists its names in a `static const char* N[]`).
+    """The shell's screen names and every game's (each lists its names in a `static const char* N[]`, in any of the
+    game's .cpp files: a game split into screen files keeps its table wherever screenName() lives).
 
     expect-screen matches by name alone, so a name two sources share is ambiguous: fail and ask for a game prefix."""
+    table = r"static const char\* N\[\] = \{(.*?)\};"
+    tables = [("shell/shell.cpp", _block(table, (ROOT / "shell/shell.cpp").read_text()))]
+    for path in sorted(ROOT.glob("games/*/*.cpp")):
+        tables += [(path.relative_to(ROOT).as_posix(), t) for t in re.findall(table, path.read_text(), re.S)]
     owner: dict = {}
-    for src in ["shell/shell.cpp", *sorted(p.relative_to(ROOT).as_posix() for p in ROOT.glob("games/*/game.cpp"))]:
-        for name in re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / src).read_text())):
+    for src, names in tables:
+        for name in re.findall(r'"(\w+)"', names):
             if owner.setdefault(name, src) != src:
                 raise SystemExit(f"playtest: screen name {name!r} is in {owner[name]} and {src}; prefix the game's")
     return set(owner)
