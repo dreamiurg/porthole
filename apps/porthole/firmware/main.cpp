@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "board.h"
 #include "games/pets-club/game.h"
+#include "gfx565.h"
 #include "shell.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
@@ -21,6 +22,7 @@ static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static uint32_t g_lastTouchMs = 0;
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
+static bool g_hires = false;   // the last frame was an RGB565 app's
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
 // Test harness (tools/devctl.py): a synthetic finger held at logical (x, y) until `until`, then released.
 static struct { bool on; int x, y; uint32_t until; } g_fake = {};
@@ -76,6 +78,32 @@ static void dimWhenIdle(uint32_t ms) {
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
 }
 
+// The frame on the glass for tools/devctl.py. Indexed: "FB 160 160 idx\n", 160*160 palette indices, then the tint's 32
+// RGB565 colours. RGB565: "FB 480 480 565 <runs>\n", then <runs> (count, color) uint16 pairs, little endian: the raw
+// 460 KB would take 40 s at 115200 baud, flat UI art compresses to a few seconds.
+static void dumpFrame() {
+  if (!g_hires) {
+    Serial.printf("FB %d %d idx\n", gfx::W, gfx::H);
+    Serial.write(gfx::fb, gfx::W * gfx::H);
+    Serial.write((const uint8_t*)g_pal[g_shell.tint()], sizeof g_pal[0]);
+    Serial.flush();
+    return;
+  }
+  const uint16_t* px = board::frontBuffer();
+  const int n = gfx565::W * gfx565::H;
+  for (int pass = 0, runs = 0; pass < 2; pass++) {   // count the runs, then send them
+    if (pass) Serial.printf("FB %d %d 565 %d\n", gfx565::W, gfx565::H, runs);
+    for (int i = 0; i < n;) {
+      int j = i + 1;
+      while (j < n && j - i < 65535 && px[j] == px[i]) j++;
+      if (pass) { uint16_t run[2] = {(uint16_t)(j - i), px[i]}; Serial.write((const uint8_t*)run, sizeof run); }
+      else runs++;
+      i = j;
+    }
+  }
+  Serial.flush();
+}
+
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py).
@@ -96,12 +124,7 @@ static void serialCommand(int c) {
     int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();
     g_fake = {true, x, y, millis() + (uint32_t)(dur > 0 ? dur : 80)};
   }
-  else if (c == 'F') {  // F: dump the frame as "FB <w> <h>\n", w*h palette indices, then that tint's 32 RGB565 colours
-    Serial.printf("FB %d %d\n", gfx::W, gfx::H);
-    Serial.write(gfx::fb, gfx::W * gfx::H);
-    Serial.write((const uint8_t*)g_pal[g_shell.tint()], sizeof g_pal[0]);
-    Serial.flush();
-  }
+  else if (c == 'F') dumpFrame();
   else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[porthole] touch log %s\n", g_touchLog ? "on" : "off"); }
 }
 
@@ -120,8 +143,10 @@ void loop() {
   Input in = g_input.step(t.down && !swallow, t.x / 3, t.y / 3, ms);
   if (in.pressed && g_touchLog) Serial.printf("[touch] %d,%d\n", t.x, t.y);
   g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  g_hires = g_shell.surface() == SURFACE_RGB565;
+  if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
   g_shell.render();
-  board::present(gfx::fb, g_pal[g_shell.tint()]);
+  if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
   board::buzzer(g_shell.soundOn(ms));
   dimWhenIdle(ms);
   while (Serial.available()) serialCommand(Serial.read());

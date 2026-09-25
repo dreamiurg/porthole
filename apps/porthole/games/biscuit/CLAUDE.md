@@ -105,12 +105,15 @@ Landed:
   firmware's). `art.cpp` is the one translation unit that includes `art_data.inc`. See the
   `art` skill for the generator and its `--check`.
 - `tools/check_content.py`: the content gate -- glyph set, token validity, required
-  fields, fixed counts, unique ids, discovery order vs. `DiscoveryId`, and a per-field
-  character-count ceiling that stands in for a real pixel-fit check until `generated/
-  fonts.h` exists. See the `content` skill for exactly what it checks.
+  fields, fixed counts, unique ids, discovery order vs. `DiscoveryId`. Fit is the pixel
+  gate's job (below). See the `content` skill for exactly what each checks.
+- `layout.h`: the label box (font, width, most height, spacing, alignment, position) of
+  every screen that draws content, from the LVGL firmware's layouts. The screens draw with
+  these constants and the pixel gate measures against them: re-tune a box here.
 - `host/test_biscuit_content.cpp` (shared `host/` directory, not inside this game's own):
-  `personalize()` and the generated art tables. Wording, glyphs and id order are the
-  content gate's job, not this test's.
+  `personalize()`, the generated art tables, and the pixel gate: every string, tokens
+  filled with the widest names, measured and drawn by `os/font.cpp` in its `layout.h` box
+  and inside the round glass.
 
 Still landing:
 
@@ -134,19 +137,16 @@ Still landing:
   `iconButton`, `top`, `nav`, `need`, `speechBubble`, `worldButton`, `picture`, small ASCII
   icons, the tennis ball at 3x scale). Hit boxes are logical px, same convention as the
   indexed games. Game-local for now; promote to `os/` if a second RGB565 game shows up.
-- `generated/fonts.h`, and the pixel-accurate version of `tools/check_content.py` that
-  reads it -- see the `art` and `content` skills for what each will do once it lands.
 
 ## Content limits (first release)
 
 Full parity with the standalone firmware's content: 7 branching stories, 96 illustrated
 sourced discoveries across 12 topics, 6 tricks (three lessons each to mastery), 12
-stickers, 7 daily adventures with a pocket word each -- all landed with #33. Today
-`tools/check_content.py` enforces a per-field character-count ceiling as a stand-in; the
-real limit, measured against the runtime's actual page box (352x176, font24, 4px line
-spacing) plus the round-screen rule for every other box, lands once `generated/fonts.h`
-exists. See the `content` skill for the authoring workflow and exactly what the gate
-checks today versus later.
+stickers, 7 daily adventures with a pocket word each -- all landed with #33. The limit is
+the box each string is drawn in (`layout.h`), measured in pixels by `os/font.cpp` with the
+widest names filled in: a story, ending or discovery page may take at most `PAGE_SCREENS`
+(2) screens of the 352x176 font24 page box, every other string its own box, all of it
+inside the round glass. See the `content` skill for the authoring workflow.
 
 ## Layout: re-tuned, not copied
 
@@ -155,4 +155,5 @@ is 24x22 logical (8 mm) -- see the shared app brief's constraint 1. Every Biscui
 layout gets re-tuned to that floor, not ported as-is: Back grows 86x56 -> 86x66,
 Previous/Next 128x56 -> 128x66, list rows 56/60 -> 66, the training cue pad and room
 hotspots re-flowed to fit. The UI audit (`make playtest`) at zero FAIL and zero WARN is
-the acceptance test for this, not a visual comparison to the old screenshots.
+the acceptance test for this, not a visual comparison to the old screenshots. A box that
+holds content lives in `layout.h`: re-tune it there, and the content gate measures the new box.
