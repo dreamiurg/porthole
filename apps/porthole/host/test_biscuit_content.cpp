@@ -9,6 +9,7 @@
 #include "games/biscuit/generated/discovery_art.h"
 #include "games/biscuit/generated/scenes.h"
 #include "games/biscuit/personalize.h"
+#include "games/biscuit/pet.h"
 
 using namespace biscuit;
 
@@ -41,6 +42,10 @@ static void art() {
 int main() {
   personalizing();
   art();
+  // The rules and the content count the same things (and share one namespace without clashing).
+  static_assert(NUM_STORIES == STORY_COUNT && NUM_DISCOVERIES == DISCOVERY_COUNT && NUM_TRICKS == TRICK_COUNT &&
+                NUM_STICKERS == STICKER_COUNT, "pet.h and the content agree");
+  for (int i = 0; i < TRICK_COUNT; i++) assert(TRICKS[i].unlockDay == TRICK_UNLOCK_DAY[i]);
   assert(STORY_COUNT == 7 && TOPIC_COUNT == 12 && ADVENTURE_COUNT == 7 && TRICK_COUNT == 6 && STICKER_COUNT == 12);
   printf("biscuit content: all checks passed\n");
   return 0;
