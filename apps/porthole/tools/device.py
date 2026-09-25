@@ -11,7 +11,7 @@ Script commands (a subset of the sim's): tap X Y | hold X Y | wait MS | snap NAM
 | raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png,
 upscaled 3x with the round mask, like the sim's snapshots. Firmware side: "X<x>,<y>,<ms>" and "F" in
 firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
-Opening the port does not reset the board (DTR/RTS are held low before open).
+Opening the port does not reset the board (DTR/RTS are left alone).
 """
 
 import glob
@@ -31,10 +31,10 @@ def open_port() -> serial.Serial:
     port = os.environ.get("PORT") or next(iter(sorted(glob.glob("/dev/cu.usbmodem*") + glob.glob("/dev/ttyACM*"))), None)
     if not port:
         sys.exit("no board found; set PORT=...")
-    p = serial.Serial()
-    p.port, p.baudrate, p.timeout = port, 115200, 3
-    p.dtr = p.rts = False  # a DTR/RTS pulse on open would reset the ESP32 through the CH343 auto-reset circuit
-    p.open()
+    # Leave DTR/RTS at the OS default (both asserted = neutral for the auto-reset transistors). Setting them
+    # one at a time passes through DTR=0/RTS=1, which pulls EN low and reboots the board, or strands it in
+    # download mode (blank, unresponsive screen) if IO0 is caught low.
+    p = serial.Serial(port, 115200, timeout=3)
     time.sleep(0.05)
     p.reset_input_buffer()
     return p
