@@ -10,6 +10,8 @@ Each input is a square capture of the 480x480 panel (or a web capture of it). Ti
 masked to the round screen, 320 px each, 20 px apart, on a transparent background so
 they read on GitHub's light and dark themes. --pixel keeps pixel art crisp: it samples
 the capture down to --native px with nearest-neighbour, then scales up by an integer.
+A shot written pixel:<path> gets that treatment alone, so one strip can mix pixel art
+with full-resolution screens.
 --inset trims a rim off web captures before masking.
 """
 
@@ -44,7 +46,7 @@ def main() -> None:
     ap.add_argument("--native", type=int, default=160, help="logical resolution for --pixel (default 160)")
     ap.add_argument("--inset", type=int, default=0, help="px to trim from each edge before masking")
     a = ap.parse_args()
-    tiles = [tile(p, a.pixel, a.native, a.inset) for p in a.shots]
+    tiles = [tile(p.removeprefix("pixel:"), a.pixel or p.startswith("pixel:"), a.native, a.inset) for p in a.shots]
     cols = min(a.cols, len(tiles))
     rows = (len(tiles) + cols - 1) // cols
     sheet = Image.new("RGBA", (cols * TILE + (cols - 1) * GAP, rows * TILE + (rows - 1) * GAP), (0, 0, 0, 0))

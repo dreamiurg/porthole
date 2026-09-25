@@ -56,7 +56,8 @@ python3 tools/gallery.py --cols 3 apps/<app>/docs/screenshots.png home.png a.png
 
 `preview.png` is the four-tile strip in the root README's catalog.
 `screenshots.png` is the six-tile gallery at the top of the app's own README.
-Add `--pixel` for pixel art so it stays crisp. Re-shoot them when the screens change.
+Add `--pixel` for pixel art so it stays crisp, or write one shot as `pixel:<path>` when a
+strip mixes pixel art with full-resolution screens. Re-shoot them when the screens change.
 
 ## Wiring it in
 
