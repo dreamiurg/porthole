@@ -132,6 +132,24 @@ static void dailyGate() {
   }
   for (const char* s : STICKERS) fits(STICKER, s, s);
 }
+// The pup's own lines and the screens' status text, at the widest names and the biggest counts a save allows.
+static void homeGate() {
+  char text[160];
+  const unsigned big = MAX_COUNT, stars = NUM_STORIES * 3;
+  for (int i = 0; i < SAY_COUNT; i++) { snprintf(text, sizeof text, "SAY[%d]", i); fits(BUBBLE, text, filled(SAY[i])); }
+  for (const char* stage : STAGES) {
+    snprintf(text, sizeof text, "Day %u \xC2\xB7 %s", big, stage);             // Home's mood (a lowercase first letter)
+    fits(HOME_MOOD, stage, text);
+    snprintf(text, sizeof text, "Day %u \xC2\xB7 %s \xC2\xB7 %u stars", big, stage, stars);   // World
+    fits(WORLD_LINE, stage, text);
+    snprintf(text, sizeof text, "%s - Cuddlebug", stage);                        // the scrapbook's badge
+    fits(BOOK_BADGE, stage, text);
+  }
+  fits(HOME_MOOD, "asleep", "dreaming of stories");
+  fits(WORLD_NAMES, "pet alone", PET);   // World shows "{pet} & {name}" only when it fits, else the pup's name
+  snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u story stars", big, big, stars);
+  fits(BOOK_LINES, "scrapbook", filled(text));
+}
 static void pixelGate() {
   const font::Font* F[4] = {&FONT16, &FONT20, &FONT24, &FONT28};
   for (const font::Font* f : F)
@@ -144,6 +162,7 @@ static void pixelGate() {
   storyGate();
   discoveryGate();
   dailyGate();
+  homeGate();
   if (failures) printf("content gate: %d strings do not fit (widest names: {name} %s, {pet} %s)\n", failures, NAME, PET);
   assert(failures == 0);
 }

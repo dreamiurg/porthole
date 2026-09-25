@@ -48,6 +48,29 @@ inline constexpr Trick TRICKS[] = {
 };
 constexpr int TRICK_COUNT = sizeof TRICKS / sizeof TRICKS[0];
 
+// The pup's stages (Stage order), capitalized: Home lowers the first letter.
+inline constexpr const char* STAGES[] = {"Puppy", "Young pup", "Story dog"};
+
+// What the pup says at home, in the speech bubble (two lines at most with the widest names). Run through
+// personalize(). SAY_IDLE is the line it goes back to.
+enum Say : uint8_t {
+  SAY_IDLE, SAY_HELLO, SAY_FED, SAY_PETTED, SAY_FETCHED, SAY_NIGHT, SAY_MORNING, SAY_FERN, SAY_SHOW_OFF, SAY_LESSON,
+  SAY_MASTERED, SAY_COUNT
+};
+inline constexpr const char* SAY[SAY_COUNT] = {
+  "Books, biscuits, and you. My favorite things.",
+  "Hi, {name}! I'm {pet}. A cuddle?",
+  "Happy tummy, happy tail. Thank you, {name}!",
+  "Your hand is my favorite place to put my head.",
+  "Five catches! My tail would like to keep playing.",
+  "One little yawn... Night, {name}.",
+  "I dreamed we could fly. You brought snacks.",
+  "The fern tickled my nose. Achoo!",
+  "{name}, look! I've been practicing.",
+  "We've got that bit! A little wag for both of us.",
+  "We did it! Watch my little paws.",
+};
+
 inline constexpr const char* STICKERS[] = {
   "Moonbeam",
   "Little library",

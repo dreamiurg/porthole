@@ -6,6 +6,7 @@ wait 450
 tap 119 125
 wait 450
 tap 67 129
+wait 450
 expect fetch=0
 expect activity=4
 ui-check biscuit_home-fetch
@@ -30,14 +31,17 @@ wait 4100
 expect activity=0
 # two catches, then All done: no play counted, back home
 tap 67 129
+wait 450
 tap 47 70
 tap 113 78
 tap 80 135
+wait 450
 expect fetch=-1
 expect plays=1
 ui-check biscuit_home-after-fetch
 # the home button mid-game
 tap 67 129
+wait 450
 tap 47 70
 tap 80 12
 wait 450

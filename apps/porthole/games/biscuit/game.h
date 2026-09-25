@@ -5,6 +5,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "content_daily.h"
 #include "pet.h"
 #include "ui.h"
 
@@ -50,13 +51,15 @@ class Game : public App {
   char nameBuf_[ui::NAME_LEN + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
 
   void go(Screen s);
+  void fresh();                               // the layout under the finger changed
   void markDirty() { dirty_ = true; }
-  void say(const char* line, uint8_t activity);   // personalized, with what the pup does meanwhile
+  void say(Say line, uint8_t activity);   // personalized, with what the pup does meanwhile
   void animate(uint8_t activity);             // SCENE_IDLE: nothing
   void quiet();                               // the idle line, idling
   void tick();
   void surprise();
   void startNaming(const char* current);
+  int timeOfDay() const { return (int)tint(); }   // the scenes' light: 0 day, 1 evening, 2 night
   // screens
   void updateSetupPet(); void drawSetupPet();
   void updateHome(); void drawHome();

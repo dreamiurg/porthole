@@ -31,14 +31,17 @@ expect watching=1
 ui-check biscuit_training-watch
 snap t02_watch
 tap 80 132
+wait 450
 expect watching=0
 ui-check biscuit_training-do
 snap t03_do
 # Up is wrong: the lesson shows again
 tap 80 60
+wait 450
 expect watching=1
 expect tricks=0
 tap 80 132
+wait 450
 tap 80 84
 expect step=1
 tap 80 108
@@ -58,11 +61,14 @@ wait 450
 tap 80 60
 wait 450
 tap 80 132
+wait 450
 tap 80 60
 tap 80 132
+wait 450
 expect watching=1
 expect step=0
 tap 80 132
+wait 450
 tap 80 60
 tap 80 84
 tap 80 108
@@ -78,6 +84,7 @@ wait 450
 tap 80 60
 wait 450
 tap 80 132
+wait 450
 tap 80 60
 tap 80 84
 tap 46 84
@@ -118,6 +125,7 @@ wait 450
 expect-screen biscuit_training
 expect trick=2
 tap 80 132
+wait 450
 tap 46 84
 tap 80 60
 tap 114 84

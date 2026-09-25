@@ -70,7 +70,7 @@ constexpr int HOME_CX = 80, HOME_CY = 12, HOME_HIT_R = 16;   // logical, like ui
 // The pup's name in capitals, left of the mood line ("Day 3 · puppy"), one line each: the name gets what the mood
 // leaves (less a gap), in FONT20, else FONT16, else FONT16 as typed.
 inline constexpr Label HOME_NAME = {{&FONT20, 150, 22, 4, Align::LEFT}, 96, 72, false};
-inline constexpr Label HOME_MOOD = {{&FONT16, 160, 17, 4, Align::RIGHT}, 232, 74, false};
+inline constexpr Label HOME_MOOD = {{&FONT16, 212, 17, 4, Align::RIGHT}, 180, 74, false};
 constexpr int HOME_NAME_GAP = 10;
 constexpr int NEED_X[3] = {72, 188, 304}, NEED_Y = 100, NEED_W = 104, NEED_H = 34;
 inline constexpr Label NEED_VALUE = {{&FONT16, 40, 17, 4, Align::CENTER}, 58, 6, false};   // inside the card
@@ -88,7 +88,7 @@ constexpr Box ALL_DONE = {50, 124, 60, 22};
 // ---- World
 constexpr Box WORLD_BACK = {31, 18, 24, 22};
 inline constexpr Label WORLD_NAMES = {{&FONT16, 222, 17, 4, Align::CENTER}, 172, 64, false};   // just the pup's if wider
-inline constexpr Label WORLD_LINE = {{&FONT16, 352, 17, 4, Align::CENTER}, 64, 124, false};    // day, stage, friendship, stars
+inline constexpr Label WORLD_LINE = {{&FONT16, 352, 17, 4, Align::CENTER}, 64, 124, false};    // day, stage, stars
 constexpr Box WORLD_TRICKS = {22, 48, 57, 32}, WORLD_NAP = {81, 48, 57, 32}, WORLD_BOOK = {51, 83, 57, 32};
 inline constexpr Label TILE_TITLE = {{&FONT20, 118, 44, 0, Align::LEFT}, 42, 10, false};   // inside the tile
 inline constexpr Label TILE_DETAIL = {{&FONT16, 150, 34, 0, Align::LEFT}, 10, 58, false};
@@ -106,5 +106,5 @@ constexpr Box CUE_KEY[5] = {   // indexed by Cue: Left, Up, Right, Down, Paw
 
 // ---- Scrapbook (the profile page)
 inline constexpr Label BOOK_BADGE = {{&FONT24, 330, 30, 4, Align::CENTER}, 75, 150, false};
-inline constexpr Label BOOK_LINES = {{&FONT20, 340, 110, 4, Align::CENTER}, 70, 196, false};
+inline constexpr Label BOOK_LINES = {{&FONT20, 340, 130, 4, Align::CENTER}, 70, 196, false};   // 5 lines: long names wrap
 }  // namespace biscuit

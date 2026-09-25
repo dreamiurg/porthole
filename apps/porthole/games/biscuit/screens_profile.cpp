@@ -5,6 +5,7 @@
 #include "generated/scenes.h"
 #include "gfx.h"
 #include "gfx565.h"
+#include "personalize.h"
 #include "ui565.h"
 
 namespace biscuit {
@@ -27,7 +28,7 @@ void Game::updateSetupPet() {
   if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty(); lastTickSec_ = lastCheckpointSec_ = now_;
   go(SC_HOME);
-  say("Hi, {name}! I'm {pet}. A cuddle?", SCENE_IDLE);
+  say(SAY_HELLO, SCENE_IDLE);
 }
 void Game::drawSetupPet() {
   gfx::clear(C_WALL);
@@ -52,16 +53,17 @@ void Game::updateProfile() {
   if (tapped(in_, RENAME)) { startNaming(save_.petName); go(SC_RENAME_PET); }
 }
 void Game::drawProfile() {
-  static const char* const STAGE[3] = {"Puppy", "Young pup", "Story dog"};
   gfx565::clear(PAPER);
   top(in_, "Our scrapbook", stars(save_));
   char s[96];
   const bool bookworm = save_.stories & (save_.stories - 1);   // two stories or more
-  snprintf(s, sizeof s, "%s - %s", STAGE[(int)stage(save_)], bookworm ? "Bookworm" : "Cuddlebug");
+  snprintf(s, sizeof s, "%s - %s", STAGES[(int)stage(save_)], bookworm ? "Bookworm" : "Cuddlebug");
   text(BOOK_BADGE, s, INK);
-  snprintf(s, sizeof s, "%s & %s\nDay %u together\n%u friendship\n%d story stars", who_.name, save_.petName,
-           (unsigned)save_.daysTogether, (unsigned)save_.friendship, stars(save_));
-  text(BOOK_LINES, s, INK);
+  char lines[128];   // the numbers first: personalize() then fills the names (letters only, never a %)
+  snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d story stars", (unsigned)save_.daysTogether,
+           (unsigned)save_.friendship, stars(save_));
+  personalize(s, who_.name, save_.petName, lines, sizeof lines);
+  text(BOOK_LINES, lines, INK);
   button(in_, RENAME);
 }
 }  // namespace biscuit

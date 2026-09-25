@@ -60,6 +60,7 @@ expect trick=5
 ui-check biscuit_training-six-cues
 snap v08_watch_six
 tap 80 132
+wait 450
 ui-check biscuit_training-pad
 snap v09_pad
 tap 51 25
@@ -84,14 +85,22 @@ expect tint=evening
 ui-check biscuit_home-evening
 snap v12_evening
 tap 67 129
+wait 450
 ui-check biscuit_home-evening-fetch
 snap v13_evening_fetch
 tap 80 135
+wait 450
 skip 10800
 wait 100
 expect tint=night
 ui-check biscuit_home-night
 snap v14_night
+tap 67 129
+wait 450
+ui-check biscuit_home-night-fetch
+snap v14b_night_fetch
+tap 80 135
+wait 450
 tap 121 129
 wait 450
 ui-check biscuit_world-night

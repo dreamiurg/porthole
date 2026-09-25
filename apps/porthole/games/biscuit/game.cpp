@@ -1,4 +1,5 @@
 #include "game.h"
+#include "content_daily.h"
 #include <stdio.h>
 #include <string.h>
 #include "generated/icon.h"
@@ -9,7 +10,6 @@ namespace biscuit {
 namespace {
 constexpr uint32_t TICK_SEC = 30, CHECKPOINT_SEC = 300;   // needs move every 30 s; a quiet pup is saved every 5 min
 constexpr uint32_t SAY_MS = 4000, ONE_SHOT_MS = 800, SURPRISE_MS = 90000;
-constexpr const char* IDLE_LINE = "Books, biscuits, and you. My favorite things.";
 }  // namespace
 
 const gfx::Sprite& Game::icon() const { return SPR_BISCUIT_ICON; }
@@ -27,12 +27,12 @@ void Game::enter(const AppEnter& e) {
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
 
-void Game::go(Screen s) {
-  screen_ = s; gate_.shown(ms_);
-  in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
-}
-void Game::say(const char* line, uint8_t activity) {
-  personalize(line, who_.name, save_.petName, speech_, sizeof speech_);
+void Game::go(Screen s) { screen_ = s; fresh(); }
+// The controls under the finger just changed (a new screen, or fetch, the cue pad, a nap on this one): a tap acts on
+// one layout only, and the next one waits for the fresh-screen pause (os/ui.h).
+void Game::fresh() { gate_.shown(ms_); in_.tap = in_.pressed = in_.longPress = false; }
+void Game::say(Say line, uint8_t activity) {
+  personalize(SAY[line], who_.name, save_.petName, speech_, sizeof speech_);
   sayUntilMs_ = (ms_ + SAY_MS) | 1;   // | 1: 0 means nothing pending
   lastSurpriseMs_ = ms_;
   animate(activity);
@@ -41,7 +41,7 @@ void Game::animate(uint8_t activity) {
   const bool oneShot = activity == SCENE_SHELF || activity == SCENE_FERN;
   activity_ = activity; actStartMs_ = ms_; actUntilMs_ = activity == SCENE_IDLE ? 0 : (ms_ + (oneShot ? ONE_SHOT_MS : SAY_MS)) | 1;
 }
-void Game::quiet() { snprintf(speech_, sizeof speech_, "%s", IDLE_LINE); sayUntilMs_ = 0; animate(SCENE_IDLE); }
+void Game::quiet() { personalize(SAY[SAY_IDLE], who_.name, save_.petName, speech_, sizeof speech_); sayUntilMs_ = 0; animate(SCENE_IDLE); }
 
 // Needs and the day move on every TICK_SEC. The shell writes a dirty save within 5 s, so a quiet pup only marks one
 // at a new day or a checkpoint; every care action marks its own.
@@ -58,7 +58,7 @@ void Game::surprise() {
   lastSurpriseMs_ = ms_;
   for (int n = 0; n < NUM_TRICKS; n++) {
     const int id = (int)((ms_ / SURPRISE_MS + n) % NUM_TRICKS);
-    if (save_.tricks[id] >= 3) { say("{name}, look! I've been practicing.", (uint8_t)(SCENE_SIT + id)); return; }
+    if (save_.tricks[id] >= 3) { say(SAY_SHOW_OFF, (uint8_t)(SCENE_SIT + id)); return; }
   }
 }
 
@@ -71,7 +71,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   gate_.filter(in_, ms_);
   if (in_.pressed) lastSurpriseMs_ = ms_;
   tick();
-  if (sayUntilMs_ && (int32_t)(ms_ - sayUntilMs_) >= 0) { snprintf(speech_, sizeof speech_, "%s", IDLE_LINE); sayUntilMs_ = 0; }
+  if (sayUntilMs_ && (int32_t)(ms_ - sayUntilMs_) >= 0) { personalize(SAY[SAY_IDLE], who_.name, save_.petName, speech_, sizeof speech_); sayUntilMs_ = 0; }
   if (fetch_ < 0 && actUntilMs_ && (int32_t)(ms_ - actUntilMs_) >= 0) animate(SCENE_IDLE);
   surprise();
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it

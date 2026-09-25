@@ -50,21 +50,20 @@ void Game::openTrick(int id) {
   if (save_.tricks[id] < 3) { go(SC_TRAINING); return; }
   practice(save_, (uint8_t)id, now_); markDirty();
   go(SC_HOME);
-  say("{name}, look! I've been practicing.", (uint8_t)(SCENE_SIT + id));
+  say(SAY_SHOW_OFF, (uint8_t)(SCENE_SIT + id));
 }
 void Game::updateTraining() {
   if (tapped(in_, BACK_BUTTON)) { go(SC_TRICKS); return; }
-  if (watching_) { if (tapped(in_, MY_TURN)) { watching_ = false; step_ = 0; } return; }
-  if (tapped(in_, PEEK)) { watching_ = true; step_ = 0; return; }
+  if (watching_) { if (tapped(in_, MY_TURN)) { watching_ = false; step_ = 0; fresh(); } return; }   // the pad appears
+  if (tapped(in_, PEEK)) { watching_ = true; step_ = 0; fresh(); return; }
   const Lesson l = current(save_, trick_);
   for (int c = 0; c < 5; c++) {
     if (!tapped(in_, {CUE_KEY[c], CUE_NAME[c], &FONT20, PURPLE, true})) continue;
-    if (c != (int)l.cues[step_]) { watching_ = true; step_ = 0; return; }   // show it again, nothing lost
+    if (c != (int)l.cues[step_]) { watching_ = true; step_ = 0; fresh(); return; }   // show it again, nothing lost
     if (++step_ < l.length) return;
     practice(save_, (uint8_t)trick_, now_); markDirty();
     go(SC_HOME);
-    say(save_.tricks[trick_] >= 3 ? "We did it! Watch my little paws." : "We've got that bit! A little wag for both of us.",
-        (uint8_t)(SCENE_SIT + trick_));
+    say(save_.tricks[trick_] >= 3 ? SAY_MASTERED : SAY_LESSON, (uint8_t)(SCENE_SIT + trick_));
     return;
   }
 }
