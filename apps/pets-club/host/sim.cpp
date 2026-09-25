@@ -19,7 +19,7 @@ static Game g_game;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
-static const char* savePath(int slot) { static char p[64]; snprintf(p, sizeof p, "build/host/paw-street%d.sav", slot); return p; }
+static const char* savePath(int slot) { static char p[64]; snprintf(p, sizeof p, "build/host/pets-club%d.sav", slot); return p; }
 static int loadSaves(Save* out) {
   int n = 0; uint8_t blob[256];
   for (int slot = 0; slot < MAX_HOUSES; slot++) {
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
   if (serve) { runServe(); return 0; }
 #ifdef HAVE_SDL
   SDL_Init(SDL_INIT_VIDEO);
-  SDL_Window* win = SDL_CreateWindow("Paw Street", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 480, 480, SDL_WINDOW_ALLOW_HIGHDPI);
+  SDL_Window* win = SDL_CreateWindow("Pets Club", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 480, 480, SDL_WINDOW_ALLOW_HIGHDPI);
   SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
   SDL_Texture* tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, gfx::W, gfx::H);
   bool run = true, down = false; int mx = 0, my = 0; uint32_t start = SDL_GetTicks();

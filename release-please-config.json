@@ -3,7 +3,7 @@
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
   "packages": {
-    "apps/paw-street": { "release-type": "simple", "component": "paw-street" },
+    "apps/pets-club": { "release-type": "simple", "component": "pets-club" },
     "apps/biscuit": { "release-type": "node", "component": "biscuit" }
   }
 }

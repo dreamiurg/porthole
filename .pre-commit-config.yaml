@@ -6,8 +6,8 @@ default_stages: [pre-commit]
 exclude: |
   (?x)^(
     apps/biscuit/firmware/generated/.*|
-    apps/paw-street/src/game/sprites\.h|
-    apps/paw-street/src/game/font8x8_basic\.h|
+    apps/pets-club/src/game/sprites\.h|
+    apps/pets-club/src/game/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
   )$
 
@@ -65,12 +65,12 @@ repos:
         require_serial: true
 
       # Per-app gates: each runs only when that app's files change.
-      - id: paw-street-check
-        name: paw-street make check
-        entry: make -C apps/paw-street check
+      - id: pets-club-check
+        name: pets-club make check
+        entry: make -C apps/pets-club check
         language: system
         pass_filenames: false
-        files: ^apps/paw-street/
+        files: ^apps/pets-club/
       - id: biscuit-check
         name: biscuit make check
         entry: make -C apps/biscuit check
@@ -85,12 +85,12 @@ repos:
         pass_filenames: false
         files: \.(cpp|h|c|js|mjs|py)$
         stages: [pre-push]
-      - id: paw-street-ci
-        name: paw-street make ci (playtests, coverage)
-        entry: make -C apps/paw-street ci
+      - id: pets-club-ci
+        name: pets-club make ci (playtests, coverage)
+        entry: make -C apps/pets-club ci
         language: system
         pass_filenames: false
-        files: ^apps/paw-street/
+        files: ^apps/pets-club/
         stages: [pre-push]
       - id: biscuit-ci
         name: biscuit make ci (coverage)

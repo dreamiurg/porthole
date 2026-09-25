@@ -1,5 +1,5 @@
-# Paw Street: host simulator, pet self-test, checks and coverage; firmware through PlatformIO.
-# The monorepo's root Makefile and CI call these as `make -C apps/paw-street <target>`:
+# Pets Club: host simulator, pet self-test, checks and coverage; firmware through PlatformIO.
+# The monorepo's root Makefile and CI call these as `make -C apps/pets-club <target>`:
 #   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 CXXFLAGS ?= -std=c++17 -O1 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Isrc/game -DHOST_BUILD

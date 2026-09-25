@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Paw Street playtest runner: scripted playthroughs with assertions, a UI audit, and sanitizer monkey runs.
+"""Pets Club playtest runner: scripted playthroughs with assertions, a UI audit, and sanitizer monkey runs.
 
   python3 tools/playtest.py            every scenario in tests/playtests/ (make playtest builds the sims first)
   python3 tools/playtest.py 06 monkey  only scenarios whose file name contains one of the words
@@ -335,7 +335,7 @@ def report(results):
     except OSError:
         rev = ""
     md = [
-        "# Paw Street playtest report",
+        "# Pets Club playtest report",
         "",
         f"`python3 tools/playtest.py` at {rev or 'unknown revision'}, {time.strftime('%Y-%m-%d %H:%M %Z')}: "
         f"{sum(not failed(r) for r in results)} of {len(results)} scenarios pass. A scenario fails on a failed directive, a crash, "

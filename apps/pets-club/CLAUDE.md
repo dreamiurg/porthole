@@ -1,10 +1,10 @@
-# Paw Street — agent brief
+# Pets Club — agent brief
 
 ## What this is
 
-Paw Street is a touch-only, Tamagotchi-style dog companion for the Waveshare ESP32-S3-Touch-LCD-2.1, a round 480x480 capacitive-touch panel with no physical buttons. It is built for kids aged 5-10 who like reading and dogs: the pet grows over real calendar days, learns eight tricks over three lessons each, and is read twenty-plus original stories from a library that unlocks with daily gifts. Up to three kids can share one device as separate "houses," each with its own pet, room, and reading level. Everything renders into a 160x160 indexed-color framebuffer (32-color palette) that gets upscaled 3x to the physical panel. The pet never dies, never runs away, and never resets — stats decay toward floors, not through them.
+Pets Club is a touch-only, Tamagotchi-style dog companion for the Waveshare ESP32-S3-Touch-LCD-2.1, a round 480x480 capacitive-touch panel with no physical buttons. It is built for kids aged 5-10 who like reading and dogs: the pet grows over real calendar days, learns eight tricks over three lessons each, and is read twenty-plus original stories from a library that unlocks with daily gifts. Up to three kids can share one device as separate "houses," each with its own pet, room, and reading level. Everything renders into a 160x160 indexed-color framebuffer (32-color palette) that gets upscaled 3x to the physical panel. The pet never dies, never runs away, and never resets — stats decay toward floors, not through them.
 
-It lives at `apps/paw-street/` in the porthole monorepo (apps for this board sharing build/test/deploy infrastructure). Every path below is relative to `apps/paw-street/`, and every command runs from there (or as `make -C apps/paw-street <target>` from the repo root). The shared PlatformIO board base is `../../platform/waveshare-round.ini`.
+It lives at `apps/pets-club/` in the porthole monorepo (apps for this board sharing build/test/deploy infrastructure). Every path below is relative to `apps/pets-club/`, and every command runs from there (or as `make -C apps/pets-club <target>` from the repo root). The shared PlatformIO board base is `../../platform/waveshare-round.ini`.
 
 ## Architecture map
 
@@ -91,11 +91,11 @@ See the `flash` skill for the PlatformIO-venv Python-dependency caveat and how t
 
 ### Hooks and CI
 
-Hooks are managed by the repo-root pre-commit config, not by this app: it runs ruff and shellcheck repo-wide and `make -C apps/paw-street check` for this app. CI runs `make ci` plus the firmware build. Run `make ci` yourself before pushing anything that touches gameplay or UI; a red CI run is a worse time to find out.
+Hooks are managed by the repo-root pre-commit config, not by this app: it runs ruff and shellcheck repo-wide and `make -C apps/pets-club check` for this app. CI runs `make ci` plus the firmware build. Run `make ci` yourself before pushing anything that touches gameplay or UI; a red CI run is a worse time to find out.
 
 ### Skills
 
-Project skills live under the repo-root `.claude/skills/` (agents under `.claude/agents/`), with paths written as `apps/paw-street/...`: `playtest`, `flash`, `art`, `new-story`, `tour`. Each is a short, imperative how-to for its workflow. Load the matching skill instead of re-deriving the steps.
+Project skills live under the repo-root `.claude/skills/` (agents under `.claude/agents/`), with paths written as `apps/pets-club/...`: `playtest`, `flash`, `art`, `new-story`, `tour`. Each is a short, imperative how-to for its workflow. Load the matching skill instead of re-deriving the steps.
 
 ## Delegation table
 
