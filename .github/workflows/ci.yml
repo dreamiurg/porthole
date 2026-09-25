@@ -3,8 +3,9 @@ name: CI
 # CI is a backstop, not the first line of defense: the pre-commit and pre-push hooks
 # run everything here on the author's machine first (see CONTRIBUTING.md). To keep
 # GitHub minutes low it runs once per PR (not again on merge: the ruleset requires
-# branches to be up to date, so main gets exactly what the PR tested), runs cheap
-# gates before expensive ones, and only builds what the PR touched.
+# branches to be up to date, so main gets exactly what the PR tested), only builds what
+# the PR touched. A few-second `changes` job decides that, so lint (static) and the app
+# suites run in parallel instead of the suites waiting for lint.
 #
 # Caches: a PR can only restore caches saved on main or on its own branch. So PRs only
 # restore the PlatformIO cache (1.4 GB; PR-scoped copies were evicting main's from the 10 GB
@@ -33,15 +34,13 @@ env:
   PLATFORMIO_CACHE_DIR: /tmp/pio-downloads
 
 jobs:
-  static:
-    name: Static checks
+  changes:
+    name: Changes
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 2
     outputs:
       porthole: ${{ steps.changes.outputs.porthole }}
       porthole-firmware: ${{ steps.changes.outputs.porthole-firmware }}
-      biscuit: ${{ steps.changes.outputs.biscuit }}
-      biscuit-firmware: ${{ steps.changes.outputs.biscuit-firmware }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -55,14 +54,19 @@ jobs:
             files=ALL
           fi
           code=$(printf '%s\n' "$files" | grep -Ev '\.md$|(^|/)docs/' || true)
-          shared='^(ALL$|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$|\.node-version$)'
+          shared='^(ALL$|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$)'
           hit() { printf '%s\n' "$code" | grep -Eq "$shared|$1" && echo true || echo false; }
           {
             echo "porthole=$(hit '^apps/porthole/')"
             echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)')"
-            echo "biscuit=$(hit '^apps/biscuit/')"
-            echo "biscuit-firmware=$(hit '^apps/biscuit/(firmware/|src/|package(-lock)?\.json$|Makefile$)')"
           } | tee -a "$GITHUB_OUTPUT"
+
+  static:
+    name: Static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
@@ -76,14 +80,14 @@ jobs:
       # Same hooks as a local commit and push. App suites run in their own jobs below.
       - run: pre-commit run --all-files --show-diff-on-failure
         env:
-          SKIP: no-commit-to-branch,porthole-check,biscuit-check,gitleaks
+          SKIP: no-commit-to-branch,porthole-check,gitleaks
       - run: pre-commit run complexity --all-files --hook-stage pre-push
       - run: pre-commit gc  # drop envs of bumped-away hook revisions before the cache is saved
 
   porthole:
     name: Porthole
-    needs: static
-    if: needs.static.outputs.porthole == 'true'
+    needs: changes
+    if: needs.changes.outputs.porthole == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -107,63 +111,18 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/porthole/build/coverage/coverage.xml
           flags: porthole
-      - if: needs.static.outputs.porthole-firmware == 'true'
+      - if: needs.changes.outputs.porthole-firmware == 'true'
         id: pio
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
           key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # shared by every app: toolchains come from the platform pin
-      - if: needs.static.outputs.porthole-firmware == 'true'
+      - if: needs.changes.outputs.porthole-firmware == 'true'
         run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
-      - if: needs.static.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+      - if: needs.changes.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
         name: Prune the PlatformIO cache before saving it (main only)
         run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
-      - if: needs.static.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: ~/.platformio
-          key: ${{ steps.pio.outputs.cache-primary-key }}
-
-  biscuit:
-    name: Biscuit
-    needs: static
-    if: needs.static.outputs.biscuit == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: apps/biscuit/package-lock.json
-      - run: npm ci
-        working-directory: apps/biscuit
-      - run: make -C apps/biscuit ci
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
-        if: env.CODECOV_TOKEN != ''
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: apps/biscuit/build/coverage/lcov.info
-          flags: biscuit
-      - if: needs.static.outputs.biscuit-firmware == 'true'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.11"
-      - if: needs.static.outputs.biscuit-firmware == 'true'
-        id: pio
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # same key as the porthole job
-      - if: needs.static.outputs.biscuit-firmware == 'true'
-        run: pip install -r platform/requirements.txt && make -C apps/biscuit firmware firmware-test
-      - if: needs.static.outputs.biscuit-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
-        name: Prune the PlatformIO cache before saving it (main only)
-        run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
-      - if: needs.static.outputs.biscuit-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+      - if: needs.changes.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
@@ -174,7 +133,7 @@ jobs:
     name: Required Checks
     runs-on: ubuntu-24.04
     timeout-minutes: 2
-    needs: [static, porthole, biscuit]
+    needs: [changes, static, porthole]
     if: always()
     steps:
       - name: Check results

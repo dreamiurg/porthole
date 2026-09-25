@@ -1,33 +1,5 @@
 # Functions already over the complexity thresholds (CCN 15, 60 lines, 5 params) when the
 # gate was added. Do not add entries. When you touch one, split it up and delete its line.
-apps/biscuit/firmware/include/pet.h:pet::valid
-apps/biscuit/firmware/src/board.cpp:boardBegin
-apps/biscuit/firmware/src/board.cpp:boardClockRead
-apps/biscuit/firmware/src/main.cpp:button
-apps/biscuit/firmware/src/main.cpp:command
-apps/biscuit/firmware/src/main.cpp:iconButton
-apps/biscuit/firmware/src/main.cpp:label
-apps/biscuit/firmware/src/main.cpp:loop
-apps/biscuit/firmware/src/main.cpp:render
-apps/biscuit/firmware/src/main.cpp:serialCommands
-apps/biscuit/firmware/src/main.cpp:setup
-apps/biscuit/firmware/src/main.cpp:worldButton
-apps/biscuit/firmware/tests/device_flow.py:run
-apps/biscuit/firmware/tests/layout_test.cpp:button
-apps/biscuit/firmware/tests/layout_test.cpp:fit
-apps/biscuit/firmware/tests/layout_test.cpp:main
-apps/biscuit/firmware/tests/pet_test.cpp:careAndElapsedTime
-apps/biscuit/firmware/tools/device.py:self_test
-apps/biscuit/src/app.js:(anonymous)
-apps/biscuit/src/app.js:draw
-apps/biscuit/src/art.js:puppy
-apps/biscuit/src/art.js:rect
-apps/biscuit/src/art.js:renderScene
-apps/biscuit/src/art.js:room
-apps/biscuit/src/discovery-art-culture.js:book
-apps/biscuit/src/discovery-art-culture.js:box
-apps/biscuit/src/discovery-art-culture.js:braille
-apps/biscuit/src/discovery-art-culture.js:wave
 apps/porthole/games/pets-club/game.cpp:Game::drawHat
 apps/porthole/games/pets-club/game.cpp:Game::drawTrain
 apps/porthole/games/pets-club/game.cpp:Game::idlePose
