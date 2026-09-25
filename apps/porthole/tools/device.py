@@ -66,14 +66,17 @@ def frame(p: serial.Serial) -> tuple[int, int, bytes, list[tuple[int, int, int]]
     return w, h, px, pal
 
 
-def write_png(path: Path, w: int, h: int, px: bytes, pal: list[tuple[int, int, int]], scale: int = 3) -> None:
-    W, H, r = w * scale, h * scale, w * scale / 2
+PNG_SCALE = 3  # logical px -> PNG px, the panel's own upscale
+
+
+def write_png(path: Path, w: int, h: int, px: bytes, pal: list[tuple[int, int, int]]) -> None:
+    W, H, r = w * PNG_SCALE, h * PNG_SCALE, w * PNG_SCALE / 2
     rows = bytearray()
     for y in range(H):
         rows.append(0)
         for x in range(W):
             inside = (x - r + 0.5) ** 2 + (y - r + 0.5) ** 2 <= r * r
-            idx = px[(y // scale) * w + x // scale]
+            idx = px[(y // PNG_SCALE) * w + x // PNG_SCALE]
             rows += bytes(pal[idx] if inside and idx < len(pal) else (32, 32, 32))
 
     def chunk(kind: bytes, data: bytes) -> bytes:
