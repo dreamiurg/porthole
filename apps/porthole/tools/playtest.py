@@ -89,8 +89,8 @@ def audit(tag, screen, regions, texts, full):
         x, y, w, h = r
         if min(w, h) < 18:
             add("FAIL", "target size", f"{name(r)}: {min(w, h)} px < 18 px (6 mm)")
-        elif min(w, h) < 24 and w * h < 24 * 20:
-            add("WARN", "target size", f"{name(r)}: {min(w, h)} px < 24 px (8 mm) and {w * h} px2 < 480")
+        elif w < 24 or h < 22:
+            add("WARN", "target size", f"{name(r)}: under 24x22 px (8 mm)")
         inside = sum((px + 0.5 - 80) ** 2 + (py + 0.5 - 80) ** 2 <= 6400 for px in range(x, x + w) for py in range(y, y + h)) / max(1, w * h)
         dist = math.hypot(x + w / 2 - 80, y + h / 2 - 80)
         if inside < 0.85 or dist > 70:
