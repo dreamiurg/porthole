@@ -74,13 +74,21 @@ static void fits(const Label& l, const char* where, const char* s) {
         return;
       }
 }
-static void page(const char* where, const char* s) {   // filled, in at most PAGE_SCREENS screens
-  char buf[1024];
-  snprintf(buf, sizeof buf, "%s", filled(s));
-  const char* screens[PAGE_SCREENS];
-  int n = font::pageBreaks(PAGE.box, buf, screens, PAGE_SCREENS);
-  if (n > PAGE_SCREENS) { printf("content gate: %s takes %d screens: \"%s\"\n", where, n, filled(s)); failures++; return; }
-  for (int i = 0; i < n; i++) fits(PAGE, where, screens[i]);
+// A story up to its choice, an ending or a discovery, filled and joined with a space as Game::openPages does, in at
+// most READ_BYTES and READ_SCREENS screens of PAGE. No minimum words per screen: the flow fills every screen but the
+// last until the next word no longer fits, so only a text's last screen can be short.
+static void stream(const char* where, const char* const* pages, int count) {
+  static char buf[4 * READ_BYTES];
+  size_t n = 0;
+  for (int i = 0; i < count; i++) {
+    if (i) buf[n++] = ' ';
+    n += personalize(pages[i], NAME, PET, buf + n, sizeof buf - n);
+  }
+  if (n >= READ_BYTES) { printf("content gate: %s fills %zu bytes, the reader holds %d\n", where, n, READ_BYTES - 1); failures++; return; }
+  const char* screens[READ_SCREENS];
+  const int k = font::pageBreaks(PAGE.box, buf, screens, READ_SCREENS);
+  if (k > READ_SCREENS) { printf("content gate: %s takes %d screens, the reader holds %d\n", where, k, READ_SCREENS); failures++; return; }
+  for (int i = 0; i < k; i++) fits(PAGE, where, screens[i]);
 }
 static void storyGate() {
   char where[64], text[128];
@@ -90,15 +98,14 @@ static void storyGate() {
     snprintf(text, sizeof text, "%s *", st.title);
     fits(STORY_BUTTON, st.id, text);
     fits(SUBTITLE, st.id, st.subtitle);
-    for (int i = 0; i < STORY_PAGES; i++) { snprintf(where, sizeof where, "%s page %d", st.id, i + 1); page(where, st.pages[i]); }
+    snprintf(where, sizeof where, "%s story", st.id);
+    stream(where, st.pages, STORY_PAGES);
     snprintf(where, sizeof where, "%s prompt", st.id);
     fits(PROMPT, where, filled(st.prompt));
     for (const StoryChoice& c : st.choices) {
       fits(CHOICE_BUTTON, st.id, c.label);
-      for (int i = 0; i < ENDING_PAGES; i++) {
-        snprintf(where, sizeof where, "%s '%s' page %d", st.id, c.label, i + 1);
-        page(where, c.ending[i]);
-      }
+      snprintf(where, sizeof where, "%s '%s'", st.id, c.label);
+      stream(where, c.ending, ENDING_PAGES);
     }
   }
 }
@@ -108,7 +115,7 @@ static void discoveryGate() {
   for (const Discovery& d : DISCOVERIES) {
     fits(coverTitle(d.title), d.id, d.title);
     fits(rowText(d.title), d.id, d.title);
-    for (int i = 0; i < 2; i++) { snprintf(where, sizeof where, "%s page %d", d.id, i + 1); page(where, d.pages[i]); }
+    stream(d.id, d.pages, 2);
     snprintf(where, sizeof where, "%s wonder", d.id);
     fits(WONDER, where, filled(d.wonder));
     fits(SOURCE_NAME, d.id, d.sourceName);
@@ -180,7 +187,7 @@ static void screensGate() {
   fits(TODAY_BUTTON, "word", "A lovely word");
   fits(WONDER_TITLE, "wonder", "I wonder...");
   fits(NOTEBOOK_EMPTY, "notebook", "A place for all the things we find together.");
-  static_assert(STORY_PAGES * PAGE_SCREENS <= MAX_PAGES && NUM_DISCOVERIES / 2 <= MAX_PAGES, "the counters' widest");
+  static_assert(READ_SCREENS <= MAX_PAGES && NUM_DISCOVERIES / 2 <= MAX_PAGES, "the counters' widest");
   char s[16];
   for (int count = 1; count <= MAX_PAGES; count++)
     for (int page = 0; page < count; page++) {

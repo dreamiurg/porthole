@@ -131,10 +131,12 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   a topic's eight or the notebook of kept ones; Topics; a discovery's cover, pages and
   wonder page, Source; Today and its Word), `screens_profile.cpp` (the scrapbook with Our
   stickers and Rename pup, the sticker album, SetupPet, RenamePet).
-  - Reading: each story, ending or discovery page is filled with the names (a 256-byte
-    buffer) and split by `font::pageBreaks` into at most `PAGE_SCREENS` screens; the
-    counter between Previous and Next counts screens across the whole story (a story is
-    about 20, an ending 8). Next becomes Choose on a story's last screen and The end on an
+  - Reading: as the old firmware read them, a story's ten pages (up to the choice), an
+    ending's four or a discovery's two are filled with the names and joined into one text
+    (`openPages`, `READ_BYTES`) and flowed by `font::pageBreaks` onto screens: each
+    ends where the next word no longer fits, never at a content page's end. The counter
+    between Previous and Next counts those screens (a story is 12-14, an ending 5-6, a
+    discovery 1-3). Next becomes Choose on a story's last screen and The end on an
     ending's; an ending's first Previous goes back to the choice, the choice's Back to the
     story's last screen. The end brings the pup home (`finishStory`: today's reading, and
     the first finish of a story its three stars). A discovery's cover, pages and wonder
@@ -166,8 +168,9 @@ Full parity with the standalone firmware's content: 7 branching stories, 96 illu
 sourced discoveries across 12 topics, 6 tricks (three lessons each to mastery), 12
 stickers, 7 daily adventures with a pocket word each -- all landed with #33. The limit is
 the box each string is drawn in (`layout.h`), measured in pixels by `os/font.cpp` with the
-widest names filled in: a story, ending or discovery page may take at most `PAGE_SCREENS`
-(2) screens of the 352x176 font24 page box, every other string its own box, all of it
+widest names filled in: a story up to its choice, an ending or a discovery, joined, may fill
+at most `READ_BYTES` and take at most `READ_SCREENS` screens of the 352x176 font24 page
+box, every other string its own box, all of it
 inside the round glass. See the `content` skill for the authoring workflow.
 
 ## Layout: re-tuned, not copied

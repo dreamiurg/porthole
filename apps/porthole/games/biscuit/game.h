@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include "app.h"
 #include "content_daily.h"
-#include "content_stories.h"
 #include "layout.h"
 #include "pet.h"
 #include "ui.h"
@@ -59,12 +58,11 @@ class Game : public App {
   int page_ = 0;                              // Tricks, Library, Discoveries, Topics, Stickers: the list page
   int trick_ = 0, step_ = 0; bool watching_ = true;   // Training
   char nameBuf_[ui::NAME_LEN + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
-  // Reading (a story's pages, an ending's, a discovery's): each content page is split into at most PAGE_SCREENS
-  // screens, counted across all of them. at_ is the screen shown; a discovery also has its cover (-1) and its wonder
+  // Reading (a story up to its choice, an ending, a discovery): its pages filled and joined into read_, flowed onto
+  // total_ screens (layout.h, PAGE). at_ is the screen shown; a discovery also has its cover (-1) and its wonder
   // page (total_).
-  const char* const* pages_ = nullptr; int pageCount_ = 0, total_ = 0, at_ = 0;
-  uint8_t screens_[STORY_PAGES] = {0};
-  char text_[256] = {0}; const char* shown_[PAGE_SCREENS] = {nullptr}; int textPage_ = -1;   // at_'s page, filled
+  int total_ = 0, at_ = 0;
+  char read_[READ_BYTES] = {0}; const char* shown_[READ_SCREENS] = {nullptr};
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
   FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
@@ -95,7 +93,7 @@ class Game : public App {
   void updateStory(); void drawStory();       // the story's pages and, as SC_ENDING, the chosen ending's
   void updateChoice(); void drawChoice();
   void openPages(const char* const* pages, int count, int at);   // at < 0: from the end
-  const char* pageText();                     // at_'s screen, personalized
+  const char* pageText() const;               // at_'s screen
   void updateDiscoveries(); void drawDiscoveries();
   void showFacts(FactList which, int topic);
   int factList(uint8_t* ids) const;           // the discoveries the list shows, in order
