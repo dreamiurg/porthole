@@ -21,7 +21,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # paths belo
 GAME = Path("games/biscuit")
 GLYPHS = {chr(c) for c in range(32, 127)} | {"é", "ö", "·"}
 TOKEN = re.compile(r"\{(\w*)\}")
-CUES, ACTIONS = set("LURDP"), {"feed", "play", "pet", "read", "train", "rest"}
 # Longest string of each kind, in characters (TODO(font gate) above).
 LIMITS = dict(
     story_title=24,
@@ -162,22 +161,16 @@ def daily(g):
     adventures = table("content_daily.h", "ADVENTURES")
     g.count("ADVENTURES", adventures, 7)
     g.unique("ADVENTURES", [a[0] for a in adventures])
-    for title, description, actions, word, meaning in adventures:
+    for title, description, word, meaning in adventures:
         g.text(title, "adv_title", title)
         g.text(title, "description", description)
         g.text(title, "word", word)
         g.text(title, "meaning", meaning)
-        if len(set(actions)) != 3 or not set(actions) <= ACTIONS:
-            g.errors.append(f"{title}: actions {actions} must be three different of {sorted(ACTIONS)}")
     tricks = table("content_daily.h", "TRICKS")
     g.count("TRICKS", tricks, 6)
     g.unique("TRICKS", [t[0] for t in tricks])
-    for tid, name, _day, lessons in tricks:
+    for tid, name in tricks:  # their lessons and unlock days are rules: pet.h, tested by host/test_biscuit.cpp
         g.text(tid, "trick", name)
-        g.count(f"{tid} lessons", lessons, 3)
-        for cues in lessons:
-            if not 3 <= len(cues) <= 6 or not set(cues) <= CUES:
-                g.errors.append(f"{tid}: lesson {cues!r} must be 3-6 of L U R D P")
     stickers = table("content_daily.h", "STICKERS")
     g.count("STICKERS", stickers, 12)
     for s in stickers:

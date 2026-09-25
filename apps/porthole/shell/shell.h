@@ -35,6 +35,7 @@ class Shell {
   shell::Store* st_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
+  bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about

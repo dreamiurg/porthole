@@ -8,7 +8,8 @@ using namespace gfx;
 using shell::Record;
 
 void Shell::begin(shell::Store& st, App* const* apps, int nApps) {
-  st_ = &st; apps_ = apps; nApps_ = nApps; app_ = nullptr; active_ = target_ = -1;
+  st_ = &st; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
+  for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
   if (prof_.count()) go(SH_PICK); else startNew();   // a fresh device goes straight to making the first profile
   gate_.closed = false;   // boot: no finger to guard against
@@ -106,7 +107,7 @@ bool Shell::openApp(const char* name) {
   return false;
 }
 void Shell::openIdx(int k) {
-  app_ = apps_[k];
+  app_ = apps_[k]; opened_[k] = true;
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
   for (int id; (id = prof_.nth(n)) >= 0; n++) {
     all[n] = shell::toProfile(prof_, id);
@@ -311,7 +312,8 @@ void Shell::drawDelete() {
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
 static const ui::Box HEADER = {30, 30, 100, 24};   // 2 px below the home button's hit box (rows -4..27)
-static ui::Box appButton(int k, int n) { return {56 - (n - 1) * 28 + k * 56, 57, 48, 44}; }
+// Game tiles 64 px apart, centered: the labels under two tiles ("Pets Club", "Biscuit") keep a gap. Two fit the glass.
+static ui::Box appButton(int k, int n) { return {56 + (2 * k - (n - 1)) * 32, 57, 48, 44}; }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
   if (ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN)) {
@@ -381,8 +383,9 @@ const char* Shell::screenName() const {
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
 void Shell::debugPrint() {
-  // The open game first (or the last one: its pet's stats stay checkable from the shell), then the profile, whose
-  // keys (age, screen) win over a game's stale ones.
+  // Every game's pet (a kid may have wandered from one game into another), the open or last one last so its keys win
+  // where two games share a name, then the profile, whose keys (age, screen) win over a game's stale ones.
+  for (int k = 0; k < nApps_; k++) if (opened_[k] && apps_[k] != app_) apps_[k]->debugPrint();
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};

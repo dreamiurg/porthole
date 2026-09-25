@@ -1,0 +1,92 @@
+# Biscuit's first visit: the name keyboard (the shell's, indexed) with "Biscuit" already typed. The home button
+# leaves with nothing saved; a typed name meets the pup at home and sticks across a relaunch. Each profile has its
+# own pup, and the scrapbook renames it, keeping everything else.
+profile Sam 8
+tap 112 79
+wait 450
+expect-screen biscuit_setup_pet
+expect named=0
+ui-check biscuit_setup_pet
+snap n01_setup
+# home button: back to the launcher, still unnamed on return
+tap 80 12
+wait 450
+expect-screen launcher
+tap 112 79
+wait 450
+expect-screen biscuit_setup_pet
+expect named=0
+# delete "Biscuit", then P (page N-Z) i (page A-M) p: "Pip"
+repeat 7
+tap 93 125
+end
+tap 67 125
+tap 93 53
+tap 67 125
+tap 41 101
+tap 67 125
+tap 93 53
+ui-check biscuit_setup_pet-typed
+snap n02_typed
+tap 119 125
+wait 450
+expect-screen biscuit_home
+expect named=1
+expect pet=Pip
+expect days=1
+ui-check biscuit_home-named
+snap n03_home
+# out and back in: the same pup
+tap 80 12
+wait 450
+expect-screen launcher
+tap 112 79
+wait 450
+expect-screen biscuit_home
+expect pet=Pip
+# Kai's Biscuit is Kai's own: a fresh pup to name
+tap 80 12
+wait 450
+profile Kai 6
+tap 112 79
+wait 450
+expect-screen biscuit_setup_pet
+expect named=0
+tap 119 125
+wait 450
+expect pet=Biscuit
+tap 94 129
+expect pets=1
+# the scrapbook: rename Kai's pup to Bo, keeping the care it had
+tap 121 129
+wait 450
+tap 79 99
+wait 450
+expect-screen biscuit_profile
+ui-check biscuit_profile
+snap n04_profile
+tap 80 132
+wait 450
+expect-screen biscuit_rename_pet
+ui-check biscuit_rename_pet
+repeat 7
+tap 93 125
+end
+tap 67 53
+tap 67 125
+tap 67 53
+tap 119 125
+wait 450
+expect-screen biscuit_profile
+expect pet=Bo
+expect pets=1
+snap n05_renamed
+# back from a rename changes nothing
+tap 80 132
+wait 450
+tap 93 125
+tap 80 12
+wait 450
+expect-screen biscuit_profile
+expect pet=Bo
+sheet naming

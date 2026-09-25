@@ -16,7 +16,9 @@ bool button(const Input& in, const Button& b);   // draws it (sunk while the fin
 // Round button of radius 11 with a one-color icon mask drawn in white; the hit circle is 4 px wider.
 bool iconButton(const Input& in, int cx, int cy, const gfx::Sprite& icon, uint8_t col);
 void toast(const char* text);   // a one-line note in a white panel across the middle of the glass
-// The orange home button at the top of the glass: every screen's way back.
+// The orange home button at the top of the glass: every screen's way back. HOME_GLYPH is its house (a mask), for a
+// game that draws the same button on another surface.
+extern const gfx::Sprite HOME_GLYPH;
 void drawBack();
 bool back(const Input& in);
 

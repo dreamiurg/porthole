@@ -151,7 +151,7 @@ static void crashDuringMigration(void (*setup)(MemStore&), int houses, int write
     st.budget = -1;
     shell::Profiles boot; shell::loadAll(st, boot);            // and comes back
     // (cut between the marker and the last erase, "save" lingers: harmless, the marker keeps it from being read)
-    assert(boot.count() == houses && st.has(shell::NS, "m") && (n == total - 1 || !st.has("crago", "save")));
+    assert(boot.count() == houses && st.has(shell::NS, "m") && (n == total - 2 || !st.has("crago", "save")));
     for (int i = 0; i < houses; i++) {
       assert(boot.used[i] && !strcmp(boot.rec[i].name, NAMES[i]) && boot.rec[i].avatar == i);
       assert(!strcmp(petIn(st, shell::key('s', i)), PETS[i]));
@@ -159,8 +159,8 @@ static void crashDuringMigration(void (*setup)(MemStore&), int houses, int write
   }
 }
 static void migrateCrash() {
-  crashDuringMigration(setupHouses, 3, 5);   // p0 p1 p2, marker, erase "save"
-  crashDuringMigration(setupLegacy, 1, 4);   // s0 (copy of "save"), p0, marker, erase "save"
+  crashDuringMigration(setupHouses, 3, 6);   // p0 p1 p2, marker, erase "save", Biscuit's marker (no old Biscuit)
+  crashDuringMigration(setupLegacy, 1, 5);   // s0 (copy of "save"), p0, marker, erase "save", Biscuit's marker
 }
 
 // Deleting every migrated profile sticks: the marker (and the erased legacy key) keep them from coming back.
@@ -245,8 +245,8 @@ static bool biscuitIn(MemStore& st, int id, const char* dog, uint32_t friendship
 static bool oldGone(MemStore& st) {
   return !st.has(OLD_NS, "pet3") && !st.has(OLD_NS, "pet2") && !st.has(OLD_NS, "pet1") && !st.has("biscuit", "pet1");
 }
-// Boot as the shell will once Biscuit is in the image: profiles (and the Pets Club migration), then Biscuit's.
-static void boot(MemStore& st, shell::Profiles& p) { shell::loadAll(st, p); shell::migrateBiscuit(st, p); }
+// Boot: profiles, the Pets Club migration, then Biscuit's (loadAll runs both).
+static void boot(MemStore& st, shell::Profiles& p) { shell::loadAll(st, p); }
 
 // The pup goes to the profile named like the kid in the save, whatever the case; the old keys go after the marker.
 static void biscuitToNamedProfile() {

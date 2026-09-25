@@ -33,7 +33,7 @@ tap 80 32
 wait 450
 tap 80 41
 wait 450
-tap 80 76
+tap 48 79
 wait 2400
 expect-screen home
 tap 27 52

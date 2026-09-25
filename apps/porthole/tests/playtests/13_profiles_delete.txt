@@ -29,7 +29,7 @@ tap 54 79
 tap 102 121
 wait 450
 expect-screen launcher
-tap 80 76
+tap 48 79
 wait 2400
 tap 80 80
 wait 1000
@@ -98,7 +98,7 @@ tap 138 82
 wait 450
 expect-screen launcher
 expect profile=1/4
-tap 80 76
+tap 48 79
 wait 2400
 expect-screen intro
 sheet delete

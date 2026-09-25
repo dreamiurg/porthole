@@ -35,6 +35,7 @@ void loadAll(Store& st, Profiles& p) {
   }
   uint8_t mark;
   if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
+  migrateBiscuit(st, p);   // after migrate: it matches the migrated names; a no-op once porthole/mb exists
 }
 void saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); st.save(NS, key('p', id), &p.rec[id], sizeof(Record)); }
 

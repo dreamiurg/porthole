@@ -1,0 +1,46 @@
+# Chaos in Biscuit: 600 random gestures from home, from fetch and from the training pad, under ASan/UBSan. The
+# monkey may wander out through the launcher, into Pets Club or the profile screens; afterwards there is a real
+# screen, and Biscuit's needs are between their floor and 100.
+# seed 11: home
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+monkey 600 11
+expect-screen *
+expect fullness>=20
+expect fullness<=100
+expect happiness>=20
+expect happiness<=100
+# seed 12: fetch
+reset
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 67 129
+monkey 600 12
+expect-screen *
+expect fullness>=20
+expect fullness<=100
+# seed 13: the training pad, every trick unlocked
+reset
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+dbg unlock
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+tap 80 60
+wait 450
+tap 80 132
+monkey 600 13
+expect-screen *
+expect energy>=20
+expect energy<=100

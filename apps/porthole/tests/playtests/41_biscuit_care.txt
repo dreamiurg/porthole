@@ -1,0 +1,81 @@
+# Biscuit's care: Feed and Pet (the button, and the pup itself) move the needs and show what the pup does; a nap
+# from the window or from World rests everything but waking; time away is capped and never goes below the floors.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+expect-screen biscuit_home
+dbg hungry
+expect fullness=20
+expect happiness=20
+tap 40 129
+expect fullness=38
+expect feeds=1
+expect activity=1
+snap c01_fed
+wait 4100
+expect activity=0
+tap 80 75
+expect pets=1
+expect happiness=26
+expect activity=2
+tap 94 129
+expect pets=2
+snap c02_petted
+# a slow double tap on Feed feeds twice, a tap that slides off feeds nothing
+tap 40 129
+wait 350
+tap 40 129
+expect feeds=3
+down 40 129
+move 40 110
+move 80 100
+up
+expect feeds=3
+# the window: a nap. Feed, Play, Pet and the pup rest; Wake wakes
+tap 126 62
+expect sleeping=1
+ui-check biscuit_home-asleep
+snap c03_asleep
+tap 40 129
+tap 67 129
+tap 94 129
+tap 80 75
+expect feeds=3
+expect pets=2
+expect fetch=-1
+tap 121 129
+expect sleeping=0
+# World's Cozy nap, then a night asleep: energy fills, a new day begins
+tap 121 129
+wait 450
+expect-screen biscuit_world
+ui-check biscuit_world
+tap 109 64
+wait 450
+expect-screen biscuit_home
+expect sleeping=1
+skip 28800
+wait 100
+expect energy=100
+expect days=2
+tap 126 62
+expect sleeping=0
+# a weekend away: at most 8 hours count, and nothing drops below 20
+skip 172800
+wait 100
+expect days=3
+expect fullness>=20
+expect happiness>=20
+expect energy>=20
+# the save holds: out to the launcher and back
+tap 80 12
+wait 450
+expect-screen launcher
+app biscuit
+wait 450
+expect-screen biscuit_home
+expect feeds=3
+expect days=3
+sheet care

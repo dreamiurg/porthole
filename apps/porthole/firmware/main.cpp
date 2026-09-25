@@ -1,6 +1,7 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include "board.h"
+#include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "gfx565.h"
 #include "shell.h"
@@ -13,7 +14,8 @@ struct NvsStore : shell::Store {
 };
 
 static Game g_pets;
-static App* const APPS[] = {&g_pets};
+static biscuit::Game g_biscuit;
+static App* const APPS[] = {&g_pets, &g_biscuit};
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static Shell g_shell;

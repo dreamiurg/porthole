@@ -12,7 +12,7 @@ expect tint = day
 skip 21600
 expect tint = night
 snap n01_launcher
-tap 80 76
+tap 48 79
 wait 2400
 expect-screen home
 expect tint = night

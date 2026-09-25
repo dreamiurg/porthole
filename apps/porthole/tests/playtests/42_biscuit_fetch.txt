@@ -1,0 +1,50 @@
+# Fetch: the ball waits at one of five spots, then the next; five catches count as play. A miss does nothing,
+# All done stops early with nothing lost, and the home button leaves from the middle of a game.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 67 129
+expect fetch=0
+expect activity=4
+ui-check biscuit_home-fetch
+snap f01_fetch
+# a miss: the ball is at its first spot
+tap 111 106
+expect fetch=0
+tap 47 70
+expect fetch=1
+tap 113 78
+expect fetch=2
+ui-check biscuit_home-fetch2
+snap f02_fetch2
+tap 79 102
+tap 45 105
+tap 111 106
+expect fetch=-1
+expect plays=1
+expect activity=4
+snap f03_caught
+wait 4100
+expect activity=0
+# two catches, then All done: no play counted, back home
+tap 67 129
+tap 47 70
+tap 113 78
+tap 80 135
+expect fetch=-1
+expect plays=1
+ui-check biscuit_home-after-fetch
+# the home button mid-game
+tap 67 129
+tap 47 70
+tap 80 12
+wait 450
+expect-screen launcher
+app biscuit
+wait 450
+expect-screen biscuit_home
+expect fetch=-1
+expect plays=1
+sheet fetch

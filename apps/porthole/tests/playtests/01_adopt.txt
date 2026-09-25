@@ -45,7 +45,7 @@ ui-check
 snap 06_launcher
 expect profile=0/1
 # Pets Club: the splash, then the parcel (no pup for this profile yet)
-tap 80 76
+tap 48 79
 wait 450
 expect-screen splash
 wait 2400

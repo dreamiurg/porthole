@@ -12,6 +12,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "gfx565.h"
 #include "shell.h"
@@ -34,7 +35,8 @@ struct FileStore : shell::Store {
 };
 
 static Game g_pets;
-static App* const APPS[] = {&g_pets};
+static biscuit::Game g_biscuit;
+static App* const APPS[] = {&g_pets, &g_biscuit};
 static FileStore g_store;
 static Shell g_shell;
 static InputTracker g_tracker;
