@@ -184,13 +184,13 @@ static void corruptNoRemigrate() {
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.
 static void migrateV1() {
   MemStore st;
-  Save s = house("Zoe", "Pip", 0, 0);
+  Save s = house("Mia", "Pip", 0, 0);
   uint8_t v1[SAVE_V1_SIZE]; memcpy(v1, &s, SAVE_V1_SIZE - 4);
   uint16_t ver = 1, size = (uint16_t)SAVE_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
   uint32_t crc = pet::crc32(v1, SAVE_V1_SIZE - 4); memcpy(v1 + SAVE_V1_SIZE - 4, &crc, 4);
   st.save("crago", "s0", v1, sizeof v1);
   shell::Profiles p; shell::loadAll(st, p);
-  assert(p.count() == 1 && !strcmp(p.rec[0].name, "Zoe") && p.rec[0].age == 0 && p.rec[0].pin == 0);
+  assert(p.count() == 1 && !strcmp(p.rec[0].name, "Mia") && p.rec[0].age == 0 && p.rec[0].pin == 0);
   assert(p.rec[0].restUntil == 0 && p.rec[0].playSec == 0);
   assert(st.load("crago", "s0", v1, sizeof v1) == SAVE_V1_SIZE);   // same key: left as it was, Pets Club reads v1
 }
