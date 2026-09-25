@@ -4,7 +4,7 @@ name: Release
 # conventional commits since its last <app>-vX.Y.Z tag (feat -> minor, fix/perf -> patch,
 # breaking -> major). Apps with releasable changes get a tag, a GitHub release with
 # generated notes, a flashable factory image and the separate flash parts the web
-# installer uses; then the Pages site is redeployed. Nothing is committed back to main.
+# installer uses. Nothing is committed back to main.
 # Code reaching main already passed CI on its PR, so this workflow does not re-test it.
 
 on:
@@ -74,11 +74,3 @@ jobs:
           printf '%s\n' "$NOTES" > notes.md
           gh release create "$TAG" "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" \
             --target "$GITHUB_SHA" --title "$APP $VERSION" --notes-file notes.md
-
-  pages:
-    needs: release
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/pages.yml
