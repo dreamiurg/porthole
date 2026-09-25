@@ -22,6 +22,8 @@ static uint32_t g_lastTouchMs = 0;
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
+// Test harness (tools/device.py): a synthetic finger held at logical (x, y) until `until`, then released.
+static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
@@ -73,7 +75,8 @@ static void dimWhenIdle(uint32_t ms) {
 }
 
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
-// saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch).
+// saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
+// "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/device.py).
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
   else if (c == 'R') {
@@ -83,12 +86,26 @@ static void serialCommand(int c) {
   }
   else if (c == 'P') { int n = Serial.parseInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n); }
   else if (c == 'S') { g_shell.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
+  else if (c == 'X') {  // X<x>,<y>,<ms>: press at logical (x, y) for ms (the harness's tap/hold)
+    int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();
+    g_fake = {true, x, y, millis() + (uint32_t)(dur > 0 ? dur : 80)};
+  }
+  else if (c == 'F') {  // F: dump the frame as "FB <w> <h>\n", w*h palette indices, then that tint's 32 RGB565 colours
+    Serial.printf("FB %d %d\n", gfx::W, gfx::H);
+    Serial.write(gfx::fb, gfx::W * gfx::H);
+    Serial.write((const uint8_t*)g_pal[g_shell.tint()], sizeof g_pal[0]);
+    Serial.flush();
+  }
   else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[porthole] touch log %s\n", g_touchLog ? "on" : "off"); }
 }
 
 void loop() {
   uint32_t ms = millis();
   board::Touch t = board::readTouch();
+  if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
+    t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
+    if (!t.down) g_fake.on = false;
+  }
   static bool swallow = false;  // the touch that wakes a dark screen is not a game input, until released
   if (t.down) {
     if (g_backlight == 0) swallow = true;
