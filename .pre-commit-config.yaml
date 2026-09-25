@@ -6,6 +6,7 @@ default_stages: [pre-commit]
 exclude: |
   (?x)^(
     apps/porthole/games/pets-club/sprites\.h|
+    apps/porthole/games/biscuit/generated/.*|
     apps/porthole/os/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
   )$

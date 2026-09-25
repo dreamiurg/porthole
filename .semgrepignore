@@ -2,4 +2,5 @@ apps/*/build/
 apps/*/node_modules/
 apps/porthole/.pio/
 apps/porthole/games/pets-club/sprites.h
+apps/porthole/games/biscuit/generated/
 apps/porthole/os/font8x8_basic.h

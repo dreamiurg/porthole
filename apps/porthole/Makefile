@@ -16,6 +16,8 @@ CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
 # (a ResourceWarning from a finalizer). Our scripts only; PlatformIO and gcovr run their own interpreters.
 PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
+# Biscuit's art generator is Node (22+, no npm packages), a dev-machine tool: lint skips it, loudly, where node is missing.
+NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard $(GAME)/*.cpp)
 PET_TEST_SRC := $(wildcard os/*.cpp) $(GAME)/pet.cpp
 SHELL_TEST_SRC := shell/profiles.cpp shell/migrate.cpp $(GAME)/pet.cpp
@@ -42,9 +44,10 @@ snap-asan: $(BUILD) $(SRC) host/sim.cpp
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
-test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp
+test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp host/test_biscuit_content.cpp
 	$(CXX) $(CXXFLAGS) $(PET_TEST_SRC) host/test_pet.cpp -o $(BUILD)/test_pet && $(BUILD)/test_pet
 	$(CXX) $(CXXFLAGS) $(SHELL_TEST_SRC) host/test_shell.cpp -o $(BUILD)/test_shell && $(BUILD)/test_shell
+	$(CXX) $(CXXFLAGS) -I. games/biscuit/personalize.cpp games/biscuit/art.cpp host/test_biscuit_content.cpp -o $(BUILD)/test_biscuit_content && $(BUILD)/test_biscuit_content
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
@@ -52,6 +55,9 @@ lint: snap
 	$(PY) $(GAME)/tools/check_content.py
 	$(PY) $(GAME)/tools/art.py --check
 	$(PY) tools/shell_art.py --check
+	$(PY) games/biscuit/tools/check_content.py
+	@command -v node >/dev/null || { echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
+	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
 
 # What pre-commit runs: seconds, not minutes.
 check: lint test
@@ -91,6 +97,7 @@ coverage:
 art:
 	python3 $(GAME)/tools/art.py
 	python3 tools/shell_art.py
+	node $(NODE_ART)
 
 webemu: snap
 	python3 tools/webemu.py
