@@ -1,5 +1,11 @@
 {
   "name": "Biscuit",
   "tagline": "A little dog with a big bookshelf: branching mysteries, 96 illustrated discoveries, tricks and daily adventures.",
-  "play": ["index.html", "style.css", "src", "assets/fonts"]
+  "play": [
+    "index.html",
+    "style.css",
+    "src",
+    "assets/fonts"
+  ],
+  "tagline_uk": "Маленький песик із великою книжковою поличкою: розгалужені детективні історії, 96 ілюстрованих відкриттів, трюки й щоденні пригоди."
 }
