@@ -40,25 +40,26 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Pets Club](#pets-club) | Pixel puppy that grows over real days, learns tricks and gets read to. Up to three kids per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. A profile for each kid, up to four per device. | Browser emulator |
 | [Biscuit](#biscuit) | Story dog with branching mysteries and 96 illustrated discoveries. | Web app |
 
-### Pets Club
+### Porthole
 
-[![Pets Club screenshots](apps/pets-club/docs/preview.png)](apps/pets-club/)
+[![Pets Club screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
 
-A Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
+The firmware that turns the round screen into a games device. Its first game is
+Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
 matched to the kid's age. Fetch and spelling games, daily gifts, stickers and
-hats keep kids coming back. Every kid gets a house on Paw Street, optionally
-behind a 4-digit code, and a pup that naps after a few minutes so the next kid
-gets a turn. Nothing ever dies.
+hats keep kids coming back. Up to four kids get a profile each (a face, an age,
+an optional 4-digit code) and their own pup and house on Paw Street; after a few
+minutes of play a kid rests so the next one gets a turn. Nothing ever dies.
 
 C++, no libraries: a 160x160 indexed framebuffer scaled 3x, with a host
 simulator, a browser emulator and scripted playtests that audit every screen
 for tap-target size, bezel clipping and contrast.
-**[Read more](apps/pets-club/README.md)** · try it: `make -C apps/pets-club webemu`
+**[Read more](apps/porthole/README.md)** · try it: `make -C apps/porthole webemu`
 
 ### Biscuit
 
@@ -98,7 +99,7 @@ other hardware myself. This is a fun side project, so hack away. We live in the
 era of AI agents: fork the repo, point Claude Code or Codex at
 [docs/hardware.md](docs/hardware.md) and the app you like, and ask it to adapt
 the code to your board. Most of the hardware-specific code sits in
-`apps/pets-club/src/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
+`apps/porthole/firmware/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
 shared PlatformIO settings in `platform/waveshare-round.ini`. A screen of a
 different size or shape also means reworking the layouts, since both games are
 drawn for a 480x480 circle. If you get another board working, send a
@@ -129,7 +130,7 @@ make check                                 # lint + tests for every app
 Flash a board over USB-C. PlatformIO finds the port when one board is plugged in.
 
 ```sh
-make flash APP=pets-club
+make flash APP=porthole
 make flash APP=biscuit PORT=/dev/ttyUSB0
 make monitor
 ```

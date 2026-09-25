@@ -22,4 +22,4 @@ SOFTWARE.
 
 Third-party files keep their own licenses: the Montserrat fonts in
 apps/biscuit/assets/fonts are under the SIL Open Font License (OFL.txt there),
-and apps/pets-club/src/game/font8x8_basic.h is public domain.
+and apps/porthole/os/font8x8_basic.h is public domain.
