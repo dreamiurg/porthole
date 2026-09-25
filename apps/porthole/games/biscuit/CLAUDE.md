@@ -46,7 +46,7 @@ activity.
 - **Personalization, not a hardcoded name.** The companion is for whichever profile is
   playing. Content copy (in fields the game personalizes) uses two tokens that
   `personalize()` (`personalize.h`/`.cpp`, landed with #33) fills at render time: `{name}`
-  for the child ("friend" when the profile has none) and `{pet}` for the dog ("Biscuit"
+  for the child ("Friend" when the profile has none) and `{pet}` for the dog ("Biscuit"
   until it is named). Never hardcode a specific child's name into game text, a test
   fixture, or a migration default.
 

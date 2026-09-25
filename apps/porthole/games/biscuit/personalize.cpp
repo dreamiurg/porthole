@@ -4,7 +4,7 @@
 namespace biscuit {
 size_t personalize(const char* text, const char* name, const char* pet, char* out, size_t cap) {
   if (!cap) return 0;
-  const char* fill[2] = {name && *name ? name : "friend", pet && *pet ? pet : "Biscuit"};
+  const char* fill[2] = {name && *name ? name : "Friend", pet && *pet ? pet : "Biscuit"};
   static const char* const TOKEN[2] = {"{name}", "{pet}"};
   size_t n = 0;
   auto put = [&](char c) { if (n + 1 < cap) out[n++] = c; };
