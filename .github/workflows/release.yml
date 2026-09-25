@@ -62,7 +62,8 @@ jobs:
       - run: pip install -r platform/requirements.txt
       - run: make -C "apps/${{ matrix.app }}" factory
       - id: play
-        run: grep -q '^play:' "apps/${{ matrix.app }}/Makefile" && echo "build=true" >> "$GITHUB_OUTPUT" || true
+        run: |
+          if grep -q '^play:' "apps/${{ matrix.app }}/Makefile"; then echo "build=true" >> "$GITHUB_OUTPUT"; fi
       - if: steps.play.outputs.build == 'true'
         uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984  # v16
         with:
