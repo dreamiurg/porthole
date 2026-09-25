@@ -63,7 +63,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `app NAME` | open a game from the launcher (`app pets-club`) |
 | `newgame KID PET` | `reset`, then profile KID (age 8) with pup PET already adopted, opened in Pets Club (its splash) |
 | `snap NAME` | write a snapshot (for `sheet`) |
-| `dbg CMD` | test hook: `tired rested younger older` (the profile's rest budget and age; `tired` rests at the next second), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older butterfly` (`butterfly` sends one across the room from the left) |
+| `dbg CMD` | test hook: `tired bedtime rested younger older` (the profile's rest budget and age; `tired` rests at the next second, `bedtime` uses up today's play so the next second shows "Back tomorrow"), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older butterfly` (`butterfly` sends one across the room from the left) |
 | `debug` / `screen` / `ui` | print the state / the screen name / one audited frame (used by the directives) |
 | `watch MS` | step like `wait`, printing `glow X Y` whenever a trick-lesson glow appears |
 | `monkey N SEED` | N random gestures, see below |
@@ -82,8 +82,8 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 
-Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play rest tint
-screen` (`tint`: `day`, `evening` or `night`, what the glass shows), then the open (or last opened) game's: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age
+Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play today rest tint
+screen` (`today`: seconds played today, `rest`: seconds until the profile may play) (`tint`: `day`, `evening` or `night`, what the glass shows), then the open (or last opened) game's: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age
 books screen tricks hat stickers`, and on the matching screens `word cols typed tiles`, `book title pages page
 correct`, `score left` (fetch), `spots` (bath), `trick phase round len seq input` (lesson). `screen` is the shell's
 screen, or the game's while one is open.

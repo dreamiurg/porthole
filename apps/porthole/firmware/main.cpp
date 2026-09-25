@@ -70,7 +70,7 @@ void setup() {
 // Idle dimming (no physical buttons: the screen is the only power control).
 static void dimWhenIdle(uint32_t ms) {
   uint32_t idle = ms - g_lastTouchMs;
-  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > 60000 ? 30 : 100);
+  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > shell::IDLE_MS ? 30 : 100);
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
 }
 

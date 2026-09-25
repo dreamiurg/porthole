@@ -24,7 +24,7 @@ class Shell {
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "rested" "younger" "older", then passed on to the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older", then passed on to the open game
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST, SH_APP };
@@ -42,6 +42,7 @@ class Shell {
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
+  uint32_t lastTouchMs_ = 0;                       // idle (shell::IDLE_MS without a touch) is not play time
   Screen screen_ = SH_PICK;
   Input in_{};
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
@@ -49,7 +50,7 @@ class Shell {
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
 
   shell::Record& rec() { return prof_.rec[active_]; }
-  bool restingNow() const;   // rest only applies while there are 2+ profiles
+  bool restingNow() const;   // the day's play is used up, or (with 2+ profiles) a turn rest
   void go(Screen s);
   void toast(const char* s);
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
