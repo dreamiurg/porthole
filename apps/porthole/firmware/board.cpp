@@ -122,7 +122,12 @@ void present(const uint8_t* fb160, const uint16_t* pal565) {
     uint16_t* row = dst + (size_t)y * 3 * LCD_W;
     memcpy(row, line, sizeof line); memcpy(row + LCD_W, line, sizeof line); memcpy(row + 2 * LCD_W, line, sizeof line);
   }
-  esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, dst);  // pointer is a panel fb: swaps at next vsync
+  presentHires();
+}
+uint16_t* backBuffer() { return g_fbs[1 - g_front]; }
+const uint16_t* frontBuffer() { return g_fbs[g_front]; }
+void presentHires() {
+  esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer());  // pointer is a panel fb: swaps at next vsync
   g_front = 1 - g_front;
   xSemaphoreTake(g_vsync, pdMS_TO_TICKS(40));
 }

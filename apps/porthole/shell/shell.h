@@ -14,6 +14,7 @@ class Shell {
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
+  Surface surface() const { return screen_ == SH_APP ? app_->surface() : SURFACE_INDEXED; }   // the shell's own screens are indexed
   bool asleep() const { return screen_ == SH_APP && app_->asleep(); }
   bool soundOn(uint32_t ms);          // the active game's buzzer, silenced by the profile's mute
   uint32_t lastSeen() const;          // newest play time on the device: restores the clock when the RTC lost it

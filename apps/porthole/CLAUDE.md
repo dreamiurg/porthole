@@ -35,6 +35,7 @@ In `os/`, the shared runtime:
 - `ui.h` / `ui.cpp`: the shared widgets (panel, button, icon button, the orange back button, toast, the name keyboard, `FreshGate`: every screen change ignores touches for 450 ms).
 - `crc32.h`: the checksum every persisted blob uses.
 - `gfx.h` / `gfx.cpp`: the renderer. A 160x160 indexed-color framebuffer (`gfx::fb`), drawing primitives, the 8x8 font, the round-mask test (`gfx::inCircle`), and the `UiAudit` hit-region log / text-box log that the `ui` sim command and the playtester agent read.
+- `gfx565.h` / `gfx565.cpp` and `font.h` / `font.cpp`: the full-resolution surface for games whose `App::surface()` is `SURFACE_RGB565`: 480x480 RGB565 primitives, image and RLE blits, and anti-aliased bitmap text that measures, wraps, paginates and draws exactly like the LVGL 8.3 build Biscuit came from (fonts in `games/biscuit/generated/fonts.h`, from `games/biscuit/tools/fontconv.py`). Physical px; hit tests stay logical. The firmware renders such a game straight into the panel's back buffer.
 - `input.h`: turns raw touch samples into tap/long-press/drag edges (`InputTracker`); shared verbatim by firmware and host.
 - `palette.h`: the fixed 32-color palette and the day/evening/night tint tables.
 - `font8x8_basic.h`: third-party public-domain font table, not normally touched.
