@@ -72,6 +72,12 @@ function encode(pixels) {
     runs.push(count, pixels[i]);
     i += count;
   }
+  const decoded = [];
+  for (let i = 0; i < runs.length; i += 2) {
+    assert(runs[i] > 0 && runs[i] <= 65535);
+    for (let n = 0; n < runs[i]; n++) decoded.push(runs[i + 1]);
+  }
+  assert.deepEqual(new Uint16Array(decoded), pixels, 'RLE must round-trip every pixel');
   return runs;
 }
 
