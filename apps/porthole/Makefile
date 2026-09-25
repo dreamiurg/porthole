@@ -25,7 +25,7 @@ test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
 test_shell_SRC := shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
-test_biscuit_content_SRC := games/biscuit/personalize.cpp games/biscuit/art.cpp
+test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
@@ -61,7 +61,8 @@ lint: snap
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
 	$(PY) games/biscuit/tools/icon.py --check
-	@command -v node >/dev/null || { echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
+	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
+	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
 
 # What pre-commit runs: seconds, not minutes.

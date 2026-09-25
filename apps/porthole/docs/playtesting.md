@@ -7,7 +7,8 @@ scenario in `tests/playtests/`. The suite has three parts:
 
 * **Playthroughs** (`01`-`13`, the shell's profiles in `10` and `13`): scripted sessions a kid would play, with assertions on the game state. They
   include the things kids do by accident: double taps, a finger that slides off a button, taps during animations.
-* **Chaos monkeys** (`20`-`22`): 600 random gestures per seed from several starting points (home, the profile screens, the picker, Paw Street, the mini-games), under the sanitizers.
+* **Chaos monkeys** (`20`-`23`): 600 random gestures per seed from several starting points (home, the profile screens, the picker, Paw Street, the mini-games, Biscuit's home, fetch and training pad), under the sanitizers. A monkey may leave through the launcher into the other game; `debug` prints every opened game's stats, the open one last.
+* **Biscuit** (`40`-`45`): naming, care, fetch, tricks to mastery, the daily cap across both games, and an audited tour of every Biscuit screen (day, evening, night, the three stages, the widest names).
 * **UI audit** (`30`, plus the creation screens in `01` and the profile screens in `10` and `13`): every reachable screen is measured against the rules
   below.
 
@@ -63,7 +64,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `app NAME` | open a game from the launcher (`app pets-club`) |
 | `newgame KID PET` | `reset`, then profile KID (age 8) with pup PET already adopted, opened in Pets Club (its splash) |
 | `snap NAME` | write a snapshot (for `sheet`) |
-| `dbg CMD` | test hook: `tired bedtime rested younger older` (the profile's rest budget and age; `tired` rests at the next second, `bedtime` uses up today's play so the next second shows "Back tomorrow"), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older butterfly` (`butterfly` sends one across the room from the left) |
+| `dbg CMD` | test hook: `tired bedtime rested younger older` (the profile's rest budget and age; `tired` rests at the next second, `bedtime` uses up today's play so the next second shows "Back tomorrow"), then to the open game: Pets Club `dirty poop hungry hearts books tricks hats grown dog sleepy younger older butterfly` (`butterfly` sends one across the room from the left), Biscuit `hungry` (needs to their floor) `unlock` (7 days: every trick) `young` `grown` (the stages) `tricks` (all mastered) `practiced` (all on their last lesson) |
 | `debug` / `screen` / `ui` | print the state / the screen name / one audited frame (used by the directives) |
 | `watch MS` | step like `wait`, printing `glow X Y` whenever a trick-lesson glow appears |
 | `monkey N SEED` | N random gestures, see below |

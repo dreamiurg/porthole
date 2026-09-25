@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """Content gate for Biscuit: stories, discoveries, adventures, tricks and stickers.
 
-Checks every string in games/biscuit/content_*.h: the glyph set of the bundled font (ASCII 32-126 plus e-acute,
-o-umlaut and the middle dot), only {name} and {pet} tokens and only in copy the game personalizes, every required
-field present, the fixed counts, unique ids, the discovery order equal to DiscoveryId in generated/discovery_art.h
-(pictures and save bits are indexed by it), and a character-count ceiling per field.
-
-TODO(font gate): the character ceilings are a cheap stand-in. Replace them with the pixel-accurate check once
-games/biscuit/generated/fonts.h exists: measure every string with its font's advances and kerning, apply the
-font::pageBreaks fill rule (352x176 box, font24, 4 px line spacing) to story and discovery pages, and the circle rule
-to every box the game draws a string in. Measure tokens at their widest fill (an 11-letter name).
+Checks every string in games/biscuit/content_*.h: only glyphs the bundled font has (ASCII 32-126 plus the extras
+generated/fonts.h lists), only {name} and {pet} tokens and only in copy the game personalizes, every required field
+present, the fixed counts, unique ids, and the discovery order equal to DiscoveryId in generated/discovery_art.h
+(pictures and save bits are indexed by it). Whether each string fits its box on the round screen is measured in
+pixels by os/font.cpp itself, in host/test_biscuit_content.cpp (make test), against games/biscuit/layout.h.
 """
 
 import os
@@ -19,28 +15,10 @@ from pathlib import Path
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # paths below are relative to apps/porthole
 GAME = Path("games/biscuit")
-GLYPHS = {chr(c) for c in range(32, 127)} | {"é", "ö", "·"}
+FONTS = (GAME / "generated/fonts.h").read_text(encoding="utf-8")
+EXTRAS = re.findall(r"EXTRAS\[\] = \{([^}]*)\}", FONTS)[0]  # the code points past ASCII the fonts carry
+GLYPHS = {chr(c) for c in range(32, 127)} | {chr(int(x, 16)) for x in EXTRAS.split(",")}
 TOKEN = re.compile(r"\{(\w*)\}")
-# Longest string of each kind, in characters (TODO(font gate) above).
-LIMITS = dict(
-    story_title=24,
-    subtitle=32,
-    page=200,
-    prompt=80,
-    label=30,
-    topic=12,
-    fact_title=52,
-    fact_page=180,
-    wonder=140,
-    source=48,
-    url=160,
-    adv_title=28,
-    description=110,
-    word=14,
-    meaning=125,
-    trick=14,
-    sticker=16,
-)
 PERSONALIZED = {"page", "prompt", "fact_page", "wonder", "description", "meaning"}
 
 LEX = re.compile(r'"((?:[^"\\]|\\.)*)"|([{},])|([\w.]+)|(\s+|//[^\n]*)', re.S)
@@ -90,8 +68,6 @@ class Gate:
                 self.errors.append(f"{where}: {kind} is drawn as written, so {{{token}}} would show literally")
             elif token not in ("name", "pet"):
                 self.errors.append(f"{where}: unknown token {{{token}}} (only {{name}} and {{pet}})")
-        if len(s) > LIMITS[kind]:
-            self.errors.append(f"{where}: {kind} is {len(s)} characters, limit {LIMITS[kind]}")
 
     def count(self, what, items, n):
         if len(items) != n:
@@ -161,7 +137,7 @@ def daily(g):
     adventures = table("content_daily.h", "ADVENTURES")
     g.count("ADVENTURES", adventures, 7)
     g.unique("ADVENTURES", [a[0] for a in adventures])
-    for title, description, word, meaning in adventures:
+    for title, description, word, meaning in adventures:  # which activities a day asks for is a rule: pet.h
         g.text(title, "adv_title", title)
         g.text(title, "description", description)
         g.text(title, "word", word)

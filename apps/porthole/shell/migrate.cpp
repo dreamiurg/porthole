@@ -1,5 +1,5 @@
-// First boot of Porthole on a Pets Club device: every Pets Club house becomes a profile. And, once Biscuit is in the
-// image, the save Biscuit had before Porthole moves into a profile.
+// First boot of Porthole on a Pets Club device: every Pets Club house becomes a profile. And the save Biscuit had
+// before Porthole moves into a profile.
 // The only shell file that knows a game's save layout. Each migration runs on every boot until its marker exists
 // (porthole/m, porthole/mb), and every write is idempotent, so power lost anywhere in it just means the next boot
 // does it again.
