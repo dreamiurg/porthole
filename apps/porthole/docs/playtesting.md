@@ -104,7 +104,7 @@ a press begins 450 ms after the new screen appeared (`ui::FreshGate`), so a tap 
 | Rule | Severity | Check | Why |
 | --- | --- | --- | --- |
 | target size | FAIL | a region's width or height < 18 px | 6 mm: the hard floor for this device; smaller targets get missed |
-| target size | WARN | width or height < 24 px, unless the area is at least 24×20 px | 8 mm: about the minimum touch target in the Apple (44 pt) and Material (48 dp) guidelines, which are written for adults |
+| target size | WARN | width < 24 px or height < 22 px | 8 mm: the device's floor (constraint 1), about the minimum touch target in the Apple (44 pt) and Material (48 dp) guidelines, which are written for adults |
 | overlap | FAIL | two regions share more than 4 px in both axes | one touch would mean two things; up to 4 px (1.3 mm) is the hit padding `button()` adds |
 | overlap | WARN | as above, but one region contains the other | nested hotspots (the dog vs. objects on the floor) work by test order, worth knowing |
 | round edge | FAIL | under 85% of a region lies inside radius 80, or its center is more than 70 px from (80,80) | the bezel hides the rim; a target has to be reachable and visibly whole |
