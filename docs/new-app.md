@@ -17,7 +17,7 @@ Run from the repository root as `make -C apps/<app> <target>`.
 | `ci` | Everything CI runs for the app except the firmware build. | pre-push, CI |
 | `firmware` | `pio run -e firmware`. | CI |
 | `flash` | Build and upload; honor an optional `PORT=`. | by hand |
-| `factory` | `pio run -e firmware -t factory`: a merged image plus the separate flash parts the web installer uses. | release workflow |
+| `factory` | `pio run -e firmware -t factory`: a merged image to write at `0x0`, plus the separate flash parts. | release workflow |
 
 ## PlatformIO
 
