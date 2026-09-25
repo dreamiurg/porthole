@@ -9,15 +9,16 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/porthole/CLAUDE.md`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`, landing with its own PRs -- design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. App brief: `apps/porthole/CLAUDE.md`; each game also has its own `CLAUDE.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
-| `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract). |
-| `.claude/` | Agent roster and skills. They currently target Pets Club; paths inside them are `apps/porthole/...`. |
+| `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
+| `.claude/` | Agent roster and skills, generalized across every game under `apps/porthole/games/<game>/`; paths inside them are `apps/porthole/...`. |
 
-When you work inside an app, read that app's brief first. Its constraints (for
-Pets Club: round-screen geometry, 32 colors and ASCII only, append-only save
-layout, the pet never dies) are hard rules, not style.
+When you work inside an app, read that app's brief first, then the specific
+game's brief if you're touching one. Their constraints (round-screen geometry,
+a flat/limited color and font set, append-only save layout, nothing in the
+game ever punishes the kid for being away) are hard rules, not style.
 
 ## Shared rules for every app
 
@@ -78,6 +79,6 @@ Per-app targets are listed in `docs/new-app.md`.
 | Implement a screen or mechanic | `game-engineer` | opus |
 | Board bring-up, pins, PlatformIO, flashing | `firmware-engineer` | opus |
 | Pixel art, icons, sprite poses | `pixel-artist` | opus |
-| New stories or spelling words | `story-writer` | sonnet |
+| New stories, spelling words, or (Biscuit) discoveries | `story-writer` | sonnet |
 | UX/QA pass on a screen or flow | `playtester` | opus |
 | Review before a push | `reviewer` | opus |
