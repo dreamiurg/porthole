@@ -1,7 +1,6 @@
 #include "shell.h"
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "shell_sprites.h"
 
@@ -19,7 +18,7 @@ uint32_t Shell::lastSeen() const {
   return t;
 }
 void Shell::go(Screen s) {
-  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
+  screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
 }
 void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toastUntil_ = ms_ + 1500; }
@@ -61,15 +60,21 @@ void Shell::select(int id) {
 }
 void Shell::finishCreate(uint16_t pin) {
   draft_.pin = pin;
-  int id = shell::create(*st_, prof_, draft_);
+  const char* stores[MAX_APPS]; int n = appStores(stores);
+  int id = shell::create(*st_, prof_, draft_, stores, n);
   if (id < 0) { go(SH_PICK); return; }   // full: the picker hides "+" at four, so only a sim script gets here
   select(id);
 }
-int Shell::createProfile(const char* name, uint8_t age, uint16_t pin) {
+int Shell::appStores(const char** out) const {
+  int n = 0;
+  for (int k = 0; k < nApps_ && n < MAX_APPS; k++) out[n++] = apps_[k]->store();
+  return n;
+}
+int Shell::createProfile(const char* name, uint8_t age, const char* code) {
   memset(&draft_, 0, sizeof draft_);
   snprintf(draft_.name, sizeof draft_.name, "%s", name); draft_.age = age;
   for (int id = 0; id < MAX_PROFILES; id++) if (!prof_.used[id]) { draft_.avatar = (uint8_t)(id % NUM_AVATARS); break; }
-  finishCreate(pin);
+  finishCreate(shell::pinCode(code));
   return screen_ == SH_PICK ? -1 : active_;
 }
 static bool sameName(const char* a, const char* b) {   // "pets-club" matches "Pets Club"
@@ -219,7 +224,7 @@ void Shell::updatePin() {
   Key key = keypad(screen_ == SH_PIN_SET);
   if (key == KEY_LEFT) { finishCreate(0); return; }   // "skip": no code
   if (key != KEY_OK) return;
-  uint16_t code = (uint16_t)atoi(pin_); if (!code) code = 1;   // 0 means "no code", so 0000 is stored as 1
+  uint16_t code = shell::pinCode(pin_);
   resetPin();
   if (screen_ == SH_PIN_SET) { firstPin_ = code; go(SH_PIN_AGAIN); }
   else if (screen_ == SH_PIN_AGAIN && code == firstPin_) finishCreate(code);
@@ -258,8 +263,7 @@ void Shell::drawPinKey(int k, const char* l, uint8_t col) {
 void Shell::updateDelete() {
   if (ui::button(in_, {{20, 90, 50, 24}, "No!", nullptr, C_GREEN})) { go(SH_PICK); return; }
   if (!ui::button(in_, {{90, 90, 50, 24}, "Yes", nullptr, C_RED})) return;
-  const char* stores[8]; int n = 0;
-  for (int k = 0; k < nApps_ && n < 8; k++) stores[n++] = apps_[k]->store();
+  const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
   if (prof_.count()) go(SH_PICK); else startNew();
 }
@@ -274,11 +278,11 @@ void Shell::drawDelete() {
   blit(SPR_AVATARS[r.avatar % NUM_AVATARS], 70, 124);
 }
 
-// ---------------------------------------------------------------- launcher: who is playing (tap: switch), the games, mute
-static const ui::Box HEADER = {30, 20, 100, 24};
-static ui::Box appButton(int k, int n) { return {56 - (n - 1) * 28 + k * 56, 52, 48, 48}; }
+// ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
+static const ui::Box HEADER = {30, 30, 100, 24};   // 2 px below the home button's hit box (rows -4..27)
+static ui::Box appButton(int k, int n) { return {56 - (n - 1) * 28 + k * 56, 57, 48, 44}; }
 void Shell::updateLauncher() {
-  if (in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
+  if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
   if (ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN)) {
     rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_);
   }
@@ -298,9 +302,10 @@ void Shell::drawLauncher() {
     int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
     const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-    textCenteredShadow(b.x + b.w / 2, b.y + b.h + 5, apps_[k]->name(), C_NAVY, C_WHITE);
+    textCenteredShadow(b.x + b.w / 2, b.y + b.h + 4, apps_[k]->name(), C_NAVY, C_WHITE);
   }
   ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+  ui::drawBack();
 }
 
 // ---------------------------------------------------------------- resting: the play budget ran out
@@ -344,7 +349,7 @@ void Shell::debugPrint() {
   // keys (age, screen) win over a game's stale ones.
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
-  printf("[shell profile=%d/%d profiles=%d age=%d muted=%d play=%lus rest=%lu]\n", active_, prof_.count(), prof_.count(), r ? r->age : 0, r ? r->muted : 0,
+  printf("[shell profile=%d/%d age=%d muted=%d play=%lus rest=%lu]\n", active_, prof_.count(), r ? r->age : 0, r ? r->muted : 0,
          (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && shell::resting(*r, now_) ? r->restUntil - now_ : 0));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }

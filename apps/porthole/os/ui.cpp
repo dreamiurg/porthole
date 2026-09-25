@@ -39,7 +39,7 @@ void toast(const char* text) {
   textCentered(80, 65, text, C_DKBROWN);
 }
 
-// The home glyph (the same pixels as Pets Club's SPR_HOME): the back button belongs to os/, not to one game.
+// The home glyph: the back button belongs to os/, not to one game.
 static const uint8_t HOME_PX[] = {
   255, 255, 255, 255, 0, 255, 255, 255, 255,  255, 255, 255, 0, 0, 0, 255, 255, 255,
   255, 255, 0, 0, 0, 0, 0, 255, 255,          255, 0, 0, 0, 0, 0, 0, 0, 255,
@@ -51,6 +51,7 @@ bool back(const Input& in) { drawBack(); return in.tapInCircle(80, 12, 16); }
 
 // ---- name keyboard
 static const char* const ROWS[4] = {"ABCDEF", "GHIJKLM", "NOPQRST", "UVWXYZ"};
+// TODO: keys are 20 wide, under the 24x22 floor (the exception recorded in apps/porthole/CLAUDE.md constraint 1).
 static const int KEY_W = 20, KEY_H = 24, TOP = 36, BOTTOM = TOP + 4 * KEY_H;
 static const Box DEL = {57, BOTTOM, 22, KEY_H}, OK = {81, BOTTOM, 22, KEY_H};
 static Box key(int r, int c) { return {80 - (int)strlen(ROWS[r]) * KEY_W / 2 + c * KEY_W, TOP + r * KEY_H, KEY_W, KEY_H}; }

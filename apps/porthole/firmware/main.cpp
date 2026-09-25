@@ -84,7 +84,11 @@ static void serialCommand(int c) {
     for (App* a : APPS) board::eraseNamespace(a->store());
     Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
   }
-  else if (c == 'P') { int n = Serial.parseInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n); }
+  else if (c == 'P') {  // a digit is required: parseInt reads a bare "P" as 0 and would clear profile 0's code
+    String arg = Serial.readStringUntil('\n'); arg.trim();
+    if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }
+    int n = arg.toInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n);
+  }
   else if (c == 'S') { g_shell.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
   else if (c == 'X') {  // X<x>,<y>,<ms>: press at logical (x, y) for ms (the harness's tap/hold)
     int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();

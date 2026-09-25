@@ -167,7 +167,7 @@ static void audit(const Finger& f) {  // one audited frame: every hit region and
 // newgame KID PET: a fresh device with one profile (age 8) whose pup is already adopted, opened in Pets Club (splash).
 static void newgame(const char* kid, const char* pup) {
   reset();
-  int id = g_shell.createProfile(kid, 8, 0);
+  int id = g_shell.createProfile(kid, 8, "");
   Save s; pet::adopt(s, now(), kid, pup); s.kidAge = 8; pet::seal(s);
   g_store.save(g_pets.store(), shell::key('s', id), &s, sizeof s);
   g_shell.openApp(g_pets.name());
@@ -187,7 +187,7 @@ static const Named COMMANDS[] = {
   {"snap", [](Finger& f, const char* a, const char*, const char*) {
      char p[256]; snprintf(p, sizeof p, "build/host/%s.bmp", a[0] ? a : "snap"); frame(f.down, f.x, f.y); writeBMP(p); printf("wrote %s\n", p); }},
   {"reset", [](Finger& f, const char*, const char*, const char*) { reset(); f.down = false; }},
-  {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), (uint16_t)atoi(c)); }},
+  {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), c); }},
   {"app", [](Finger&, const char* a, const char*, const char*) { if (!g_shell.openApp(a)) printf("app %s: not opened\n", a); }},
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
   {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); }},

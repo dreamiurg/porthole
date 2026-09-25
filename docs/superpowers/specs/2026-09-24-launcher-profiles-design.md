@@ -76,15 +76,23 @@ The shell owns persistence: it calls `takeSave` every frame (throttled to once p
 ## Profiles
 
 Persisted as `porthole/p<id>`, one blob per profile, append-only like `Save`:
-`magic, version, size, name[12], avatar, age, muted, reserved, pin(u16), reserved, restUntil, playSec, crc`.
-Ids are stable slots `0..3`; a deleted id is reused by the next new profile.
+`magic, version, size, name[12], avatar, age, muted, reserved, pin(u16), reserved, restUntil, playSec,
+lastPlayed, crc` (44 bytes, `static_assert`ed). `pin` is the typed code + 1, so 0 means none and 0000 is a
+real code. Ids are stable slots `0..3`; a deleted id is reused by the next new profile. Delete erases every
+app's `s<id>` first and the record last; create erases any `s<id>` left behind for the id it takes.
 
-**Migration (first boot of Porthole on a Pets Club device):** if no `porthole/p*` exists, load the Pets
-Club houses exactly as `main.cpp` does today (including the pre-house `save` key). House *i* becomes
-profile *i*: `name=kidName`, `age=kidAge`, `pin`, `muted`, `restUntil`, `playSec`, `avatar=i`. If a
-house was loaded from a key other than `s<i>`, rewrite it to `s<i>` and erase the old key. The old
-fields stay in `Save` (append-only) but Pets Club no longer reads them for anything but migration.
-Covered by `test_shell` with real v1 and v2 `Save` blobs, including a gap (`s0`, `s2` present).
+**Migration (first boot of Porthole on a Pets Club device):** runs on every boot until the marker key
+`porthole/m` exists. House `crago/s<n>` becomes profile *n* (the id is the original slot: no compaction,
+no save moves, gaps stay gaps): `name=kidName`, `age=kidAge`, `pin` (Pets Club's stored value *v* > 0
+becomes code *v*; Pets Club stored 0000 as 1, so a kid whose code was 0000 types 0001 afterwards),
+`muted`, `restUntil`, `playSec`, `avatar=n`. Only when no `s*` house loads, the pre-house `crago/save`
+key is copied to `s0` (before its record). Order: every `p` record, then the marker, then erase
+`crago/save` unconditionally. Every write is idempotent, so power lost anywhere re-runs the same
+migration on the next boot; once the marker exists nothing migrates again (deleting every profile, or
+corrupt records, never resurrects the houses). The old fields stay in `Save` (append-only) but Pets
+Club no longer reads them for anything but migration. Covered by `test_shell` with real v1 and v2
+`Save` blobs, a gap (`s0`, `s2` -> `p0`, `p2`), power loss after each write, delete-all, and corrupt
+records with the marker present.
 
 ## Screens (shell)
 

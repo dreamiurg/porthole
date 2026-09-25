@@ -1,4 +1,5 @@
-// Self-check for the shell's profile store: records, migration from Pets Club houses, delete, rest budget.
+// Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
+// delete, the secret code encoding, rest budget.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
@@ -6,10 +7,16 @@
 #include "pet.h"
 #include "profiles.h"
 
-// In-memory stand-in for NVS: (namespace, key) -> bytes.
+// In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
+// (saves and erases) every further write is dropped. `last` is the most recent write that landed.
 struct MemStore : shell::Store {
   struct Entry { char ns[16], key[16]; uint8_t data[shell::BLOB_MAX]; size_t len; bool used; };
   Entry e[32] = {};
+  int budget = -1, writes = 0; char last[32] = "";
+  bool land(const char* ns, const char* key) {
+    if (budget >= 0 && writes >= budget) return false;
+    writes++; snprintf(last, sizeof last, "%s/%s", ns, key); return true;
+  }
   Entry* find(const char* ns, const char* key) {
     for (auto& x : e) if (x.used && !strcmp(x.ns, ns) && !strcmp(x.key, key)) return &x;
     return nullptr;
@@ -20,16 +27,18 @@ struct MemStore : shell::Store {
     memcpy(buf, x->data, x->len); return x->len;
   }
   void save(const char* ns, const char* key, const void* data, size_t len) override {
+    if (!land(ns, key)) return;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
     assert(x && len <= shell::BLOB_MAX);
     snprintf(x->ns, sizeof x->ns, "%s", ns); snprintf(x->key, sizeof x->key, "%s", key);
     memcpy(x->data, data, len); x->len = len; x->used = true;
   }
-  void erase(const char* ns, const char* key) override { if (Entry* x = find(ns, key)) x->used = false; }
+  void erase(const char* ns, const char* key) override { if (!land(ns, key)) return; if (Entry* x = find(ns, key)) x->used = false; }
   bool has(const char* ns, const char* key) { return find(ns, key) != nullptr; }
 };
 
+static const char* const STORES[] = {"crago", "other"};
 static const uint32_t NOW = 1790000000u - (1790000000u % 86400u) + 10 * 3600;
 
 static Save house(const char* kid, const char* dog, uint8_t age, uint16_t pin) {
@@ -48,32 +57,52 @@ static void records() {
   shell::Record bad = r; bad.age ^= 1;
   assert(!shell::loadRecord(&bad, sizeof bad, out));          // CRC mismatch
   assert(!shell::loadRecord(&r, sizeof r - 1, out));          // truncated
+  memset(r.name, 'A', sizeof r.name); shell::seal(r);          // a valid CRC over an unterminated name
+  assert(shell::loadRecord(&r, sizeof r, out) && strlen(out.name) == sizeof out.name - 1);
+}
+
+// A code is stored as its value + 1 so 0 can mean "none": 0000 and 0001 are different codes.
+static void pinCodes() {
+  assert(shell::pinCode("") == 0 && shell::pinCode(nullptr) == 0);
+  assert(shell::pinCode("0000") != 0 && shell::pinCode("0000") != shell::pinCode("0001"));
+  assert(shell::pinCode("1234") == 1235 && shell::pinCode("9999") == 10000);
 }
 
 static void createAndLimit() {
   MemStore st; shell::Profiles p; shell::loadAll(st, p);
   assert(p.count() == 0);
-  for (int i = 0; i < MAX_PROFILES; i++) assert(shell::create(st, p, draft("Kid", 7, 0)) == i);
-  assert(shell::create(st, p, draft("Extra", 7, 0)) == -1);   // four is the limit
+  for (int i = 0; i < MAX_PROFILES; i++) assert(shell::create(st, p, draft("Kid", 7, 0), STORES, 2) == i);
+  assert(shell::create(st, p, draft("Extra", 7, 0), STORES, 2) == -1);   // four is the limit
   assert(st.has(shell::NS, "p3"));
   shell::Profiles again; shell::loadAll(st, again);            // round trip through the store
   assert(again.count() == MAX_PROFILES && again.rec[2].age == 7 && again.nth(3) == 3 && again.nth(4) == -1);
 }
 
-// Delete wipes the record and that id's save in every app store, keeps everyone else, and frees the id.
+// Delete wipes that id's save in every app store, then the record (last: power loss mid-delete leaves a profile
+// without a pup, never a pup waiting for whoever takes the id next), keeps everyone else, and frees the id.
 static void removal() {
   MemStore st; shell::Profiles p; shell::loadAll(st, p);
-  shell::create(st, p, draft("Sam", 8, 0)); shell::create(st, p, draft("Kai", 6, 1234));
+  shell::create(st, p, draft("Sam", 8, 0), STORES, 2); shell::create(st, p, draft("Kai", 6, 1234), STORES, 2);
   Save s = house("Kai", "Rex", 6, 0);
   st.save("crago", "s0", &s, sizeof s); st.save("crago", "s1", &s, sizeof s); st.save("other", "s1", &s, 4);
-  const char* stores[] = {"crago", "other"};
-  shell::removeProfile(st, p, 1, stores, 2);
+  shell::removeProfile(st, p, 1, STORES, 2);
+  assert(!strcmp(st.last, "porthole/p1"));
   assert(!p.used[1] && p.count() == 1 && p.nth(0) == 0 && p.nth(1) == -1);
   assert(!st.has(shell::NS, "p1") && !st.has("crago", "s1") && !st.has("other", "s1"));
   assert(st.has(shell::NS, "p0") && st.has("crago", "s0"));
   shell::Profiles again; shell::loadAll(st, again);
-  assert(again.count() == 1);                                 // no migration: p0 still exists
-  assert(shell::create(st, p, draft("Ava", 5, 0)) == 1);      // the freed id is reused
+  assert(again.count() == 1);                                 // no migration: the marker is there
+  assert(shell::create(st, p, draft("Ava", 5, 0), STORES, 2) == 1);   // the freed id is reused
+}
+
+// A new profile never inherits a save left behind under its id (a delete cut short by power loss).
+static void createClearsStale() {
+  MemStore st; shell::Profiles p; shell::loadAll(st, p);
+  shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
+  Save s = house("Old", "Ghost", 6, 0);
+  st.save("crago", "s1", &s, sizeof s); st.save("other", "s1", &s, 4); st.save("crago", "s0", &s, sizeof s);
+  assert(shell::create(st, p, draft("Kai", 6, 0), STORES, 2) == 1);
+  assert(!st.has("crago", "s1") && !st.has("other", "s1") && st.has("crago", "s0") && st.has(shell::NS, "p1"));
 }
 
 static bool same(const shell::Record& r, const char* name, int age, int avatar, int pin) {
@@ -84,19 +113,72 @@ static const char* petIn(MemStore& st, const char* key) {   // the pup name in a
   size_t n = st.load("crago", key, blob, sizeof blob);
   return n && pet::loadBlob(blob, n, got) ? got.petName : "";
 }
-// v2 houses in s0 and s2 (s1 missing): profiles 0 and 1, saves moved to s0/s1, s2 erased.
+// v2 houses in s0 and s2 (s1 missing): profiles 0 and 2, keeping their slot numbers; no save moves.
 static void migrateGap() {
   MemStore st;
   Save a = house("Sam", "Biscuit", 8, 0), b = house("Kai", "Rex", 6, 1234);
   st.save("crago", "s0", &a, sizeof a); st.save("crago", "s2", &b, sizeof b);
   shell::Profiles p; shell::loadAll(st, p);
-  assert(p.count() == 2 && p.used[0] && p.used[1] && !p.used[2]);
-  assert(same(p.rec[0], "Sam", 8, 0, 0) && same(p.rec[1], "Kai", 6, 1, 1234));
-  assert(p.rec[1].muted == 1 && p.rec[1].restUntil == NOW + 60 && p.rec[1].playSec == 42);
-  assert(!strcmp(petIn(st, "s0"), "Biscuit") && !strcmp(petIn(st, "s1"), "Rex"));
-  assert(!st.has("crago", "s2") && st.has(shell::NS, "p0") && st.has(shell::NS, "p1"));
+  assert(p.count() == 2 && p.used[0] && !p.used[1] && p.used[2] && p.nth(1) == 2);
+  assert(same(p.rec[0], "Sam", 8, 0, 0) && same(p.rec[2], "Kai", 6, 2, 1235));   // code 1234 stored as 1235
+  assert(p.rec[2].muted == 1 && p.rec[2].restUntil == NOW + 60 && p.rec[2].playSec == 42);
+  assert(!strcmp(petIn(st, "s0"), "Biscuit") && !strcmp(petIn(st, "s2"), "Rex") && !st.has("crago", "s1"));
+  assert(st.has(shell::NS, "p0") && st.has(shell::NS, "p2") && st.has(shell::NS, "m"));
   shell::Profiles again; shell::loadAll(st, again);           // second boot: records, no second migration
-  assert(again.count() == 2 && !strcmp(again.rec[1].name, "Kai"));
+  assert(again.count() == 2 && !strcmp(again.rec[2].name, "Kai"));
+  assert(shell::create(st, again, draft("Ava", 5, 0), STORES, 2) == 1 && !strcmp(petIn(st, "s2"), "Rex"));
+}
+
+// Power lost after every possible write of a migration: the next boot still ends with every house a profile,
+// each with its own pup.
+static void setupHouses(MemStore& st) {
+  Save a = house("Sam", "Biscuit", 8, 0), b = house("Kai", "Rex", 6, 1234), c = house("Ava", "Pip", 7, 0);
+  st.save("crago", "s0", &a, sizeof a); st.save("crago", "s1", &b, sizeof b); st.save("crago", "s2", &c, sizeof c);
+  st.save("crago", "save", &a, sizeof a);   // a stale pre-house save Pets Club never cleaned up
+}
+static void setupLegacy(MemStore& st) { Save a = house("Sam", "Biscuit", 8, 0); st.save("crago", "save", &a, sizeof a); }
+static void crashDuringMigration(void (*setup)(MemStore&), int houses, int writes) {
+  static const char* const NAMES[] = {"Sam", "Kai", "Ava"}, *const PETS[] = {"Biscuit", "Rex", "Pip"};
+  MemStore clean; setup(clean); int base = clean.writes;
+  shell::Profiles p; shell::loadAll(clean, p);
+  int total = clean.writes - base;
+  assert(total == writes);
+  for (int n = 0; n <= total; n++) {
+    MemStore st; setup(st); st.budget = st.writes + n;
+    shell::Profiles cut; shell::loadAll(st, cut);              // the power goes out after n writes
+    st.budget = -1;
+    shell::Profiles boot; shell::loadAll(st, boot);            // and comes back
+    // (cut between the marker and the last erase, "save" lingers: harmless, the marker keeps it from being read)
+    assert(boot.count() == houses && st.has(shell::NS, "m") && (n == total - 1 || !st.has("crago", "save")));
+    for (int i = 0; i < houses; i++) {
+      assert(boot.used[i] && !strcmp(boot.rec[i].name, NAMES[i]) && boot.rec[i].avatar == i);
+      assert(!strcmp(petIn(st, shell::key('s', i)), PETS[i]));
+    }
+  }
+}
+static void migrateCrash() {
+  crashDuringMigration(setupHouses, 3, 5);   // p0 p1 p2, marker, erase "save"
+  crashDuringMigration(setupLegacy, 1, 4);   // s0 (copy of "save"), p0, marker, erase "save"
+}
+
+// Deleting every migrated profile sticks: the marker (and the erased legacy key) keep them from coming back.
+static void deleteAllStaysDeleted() {
+  MemStore st; setupHouses(st);
+  shell::Profiles p; shell::loadAll(st, p);
+  for (int id = 0; id < 3; id++) shell::removeProfile(st, p, id, STORES, 2);
+  shell::Profiles boot; shell::loadAll(st, boot);
+  assert(boot.count() == 0 && !st.has("crago", "s0") && !st.has("crago", "save"));
+}
+
+// Every record corrupt but the marker present: the shell starts fresh, it does not migrate the houses again.
+static void corruptNoRemigrate() {
+  MemStore st; Save a = house("Sam", "Biscuit", 8, 0); st.save("crago", "s0", &a, sizeof a);
+  shell::Profiles p; shell::loadAll(st, p);
+  assert(p.count() == 1);
+  uint8_t junk[sizeof(shell::Record)] = {1, 2, 3}; st.save(shell::NS, "p0", junk, sizeof junk);
+  shell::Profiles boot; shell::loadAll(st, boot);
+  assert(boot.count() == 0 && !boot.used[0]);
+  uint8_t rec[shell::BLOB_MAX]; assert(st.load(shell::NS, "p0", rec, sizeof rec) == sizeof junk && rec[0] == 1);
 }
 
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.
@@ -120,7 +202,7 @@ static void migrateLegacyKey() {
   st.save("crago", "save", &s, sizeof s);
   shell::Profiles p; shell::loadAll(st, p);
   assert(p.count() == 1 && !strcmp(p.rec[0].name, "Sam"));
-  assert(st.has("crago", "s0") && !st.has("crago", "save"));
+  assert(!strcmp(petIn(st, "s0"), "Biscuit") && !st.has("crago", "save"));
   MemStore empty; shell::Profiles none; shell::loadAll(empty, none);
   assert(none.count() == 0);                                  // a fresh device has nothing to migrate
 }
@@ -140,13 +222,25 @@ static void restBudget() {
   b.playSec = 100; b.lastPlayed = t;
   shell::recharge(b, t + shell::REST_SEC - 1); assert(b.playSec == 100);   // a short break keeps the budget
   shell::recharge(b, t + shell::REST_SEC); assert(b.playSec == 0);         // a real break refills it
+  // A clock set backwards must not strand anyone: a rest never lasts longer than REST_SEC from now...
+  shell::Record c = draft("Ava", 7, 0);
+  c.restUntil = t + 5 * 3600; assert(!shell::resting(c, t));
+  c.restUntil = t + shell::REST_SEC; assert(shell::resting(c, t));
+  // ...and "last played in the future" is not a real break.
+  c.restUntil = 0; c.playSec = 100; c.lastPlayed = t + 3600;
+  shell::recharge(c, t); assert(c.playSec == 100);
 }
 
 int main() {
   records();
+  pinCodes();
   createAndLimit();
   removal();
+  createClearsStale();
   migrateGap();
+  migrateCrash();
+  deleteAllStaysDeleted();
+  corruptNoRemigrate();
   migrateV1();
   migrateLegacyKey();
   restBudget();

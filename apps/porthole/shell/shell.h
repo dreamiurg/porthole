@@ -6,6 +6,8 @@
 #include "profiles.h"
 #include "ui.h"
 
+constexpr int MAX_APPS = 8;
+
 class Shell {
  public:
   void begin(shell::Store& st, App* const* apps, int nApps);   // loads (or migrates) profiles, lands on the picker
@@ -18,7 +20,7 @@ class Shell {
   int profileCount() const { return prof_.count(); }
   // serial and sim hooks
   void clearPin(int id);              // parent escape hatch (serial "P<n>")
-  int createProfile(const char* name, uint8_t age, uint16_t pin);   // and select it: lands on the launcher
+  int createProfile(const char* name, uint8_t age, const char* code);   // code "1234", "" = none; lands on the launcher
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
@@ -54,6 +56,7 @@ class Shell {
   void choose(int id, bool del);
   void authorized();
   void select(int id);
+  int appStores(const char** out) const;   // every app's save namespace, for delete and create
   void finishCreate(uint16_t pin);
   void openIdx(int k);
   void closeApp();

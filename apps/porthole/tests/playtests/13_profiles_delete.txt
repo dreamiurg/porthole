@@ -9,7 +9,7 @@ expect profile=3/4
 tap 80 32
 wait 200
 expect-screen picker
-expect profiles=4
+expect profile=-1/4
 ui-check picker-full
 snap 01_four
 # no "+" row: the bottom row is Zoe
@@ -35,7 +35,7 @@ tap 80 80
 wait 1000
 tap 80 80
 wait 200
-tap 126 28
+tap 123 28
 tap 92 144
 wait 200
 tap 64 78
@@ -64,7 +64,7 @@ snap 02_delete
 tap 45 102
 wait 200
 expect-screen picker
-expect profiles=4
+expect profile=-1/4
 # Yes: Kai is gone
 hold 80 67
 wait 100
@@ -78,7 +78,7 @@ expect-screen delete
 tap 115 102
 wait 200
 expect-screen picker
-expect profiles=3
+expect profile=-1/3
 ui-check picker-after-delete
 snap 03_after_delete
 # the "+" row is back; the new profile reuses Kai's slot and finds no pup waiting

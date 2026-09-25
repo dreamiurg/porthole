@@ -17,7 +17,9 @@ void seal(Record& r) { r.magic = REC_MAGIC; r.version = REC_VERSION; r.size = si
 bool loadRecord(const void* data, size_t n, Record& out) {
   if (n != sizeof(Record)) return false;
   memcpy(&out, data, n);
-  return out.magic == REC_MAGIC && out.version == REC_VERSION && out.size == sizeof(Record) && out.crc == recCrc(out);
+  bool ok = out.magic == REC_MAGIC && out.version == REC_VERSION && out.size == sizeof(Record) && out.crc == recCrc(out);
+  out.name[sizeof out.name - 1] = 0;   // a CRC proves the bytes, not that the name ends
+  return ok;
 }
 
 void loadAll(Store& st, Profiles& p) {
@@ -27,13 +29,15 @@ void loadAll(Store& st, Profiles& p) {
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
   }
-  if (!p.count()) migrate(st, p);
+  uint8_t mark;
+  if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
 }
 void saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); st.save(NS, key('p', id), &p.rec[id], sizeof(Record)); }
 
-int create(Store& st, Profiles& p, const Record& draft) {
+int create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores) {
   for (int id = 0; id < MAX_PROFILES; id++) {
     if (p.used[id]) continue;
+    for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
     Record& r = p.rec[id];
     memset(&r, 0, sizeof r);
     memcpy(r.name, draft.name, sizeof r.name); r.name[sizeof r.name - 1] = 0;
@@ -45,8 +49,8 @@ int create(Store& st, Profiles& p, const Record& draft) {
   return -1;
 }
 void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, int nStores) {
-  st.erase(NS, key('p', id));
   for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
+  st.erase(NS, key('p', id));
   p.used[id] = false;
 }
 Profile toProfile(const Profiles& p, int id) {
@@ -56,7 +60,9 @@ Profile toProfile(const Profiles& p, int id) {
   return out;
 }
 
-void recharge(Record& r, uint32_t now) { if (!resting(r, now) && now - r.lastPlayed >= REST_SEC) r.playSec = 0; }
+void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
+  if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
+}
 bool play(Record& r, uint32_t now, uint32_t dt, int nProfiles) {
   r.lastPlayed = now;
   if (nProfiles < 2 || resting(r, now)) return false;
