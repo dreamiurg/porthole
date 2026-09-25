@@ -31,7 +31,7 @@ couple of games running on it. My kids loved them so much that I shared them
 with friends, and their kids had a blast too. This repo is the cleaned-up home
 for those games, set up so anyone can add the next one.
 
-If you like to tinker and have about $45 for a board, or a spare one lying in a
+If you like to tinker and have $35-45 for a board, or a spare one lying in a
 drawer, have fun with it. Enjoy the new era of tinkering.
 
 ## Apps
@@ -77,10 +77,10 @@ and runs the same stories, pixel art and discoveries on the board.
 
 ## Get a board
 
-Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, about $45.
+Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, $35-45.
 
-- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): usually the fastest shipping. This is an affiliate link.
-- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): the maker's own store. No affiliate link.
+- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): about $45, usually the fastest shipping. This is an affiliate link.
+- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): about $35, the maker's own store. No affiliate link.
 
 If you buy through the Amazon link, I get a small commission and you pay the
 same price. As an Amazon Associate I earn from qualifying purchases.
