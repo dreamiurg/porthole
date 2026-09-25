@@ -2,7 +2,7 @@
 // The only shell file that knows a game's save layout. It runs on every boot until porthole/m exists, and every
 // write is idempotent, so power lost anywhere in it just means the next boot does it again.
 #include <string.h>
-#include "pet.h"
+#include "games/pets-club/pet.h"
 #include "profiles.h"
 
 namespace shell {

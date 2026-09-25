@@ -2,8 +2,8 @@
 // One pup's life, in order: each step starts from the state the previous one left.
 #include <assert.h>
 #include <stdio.h>
-#include "pet.h"
-#include "content.h"
+#include "games/pets-club/pet.h"
+#include "games/pets-club/content.h"
 
 static const uint32_t day0 = 1790000000u - (1790000000u % 86400u) + 10 * 3600;  // 10:00
 
