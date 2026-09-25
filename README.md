@@ -90,6 +90,20 @@ board comes in two versions: the flat touch panel (`ESP32-S3-Touch-LCD-2.1`)
 and a curved 2.5D glass one (`ESP32-S3-Touch-LCD-2.1B`). We use the flat one
 because it looked easier to work with. We haven't tried the curved one.
 
+### Other boards
+
+Right now the apps support one board: the flat 2.1-inch
+`ESP32-S3-Touch-LCD-2.1`, the one on my desk. I'm not planning to port them to
+other hardware myself. This is a fun side project, so hack away. We live in the
+era of AI agents: fork the repo, point Claude Code or Codex at
+[docs/hardware.md](docs/hardware.md) and the app you like, and ask it to adapt
+the code to your board. Most of the hardware-specific code sits in
+`apps/pets-club/src/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
+shared PlatformIO settings in `platform/waveshare-round.ini`. A screen of a
+different size or shape also means reworking the layouts, since both games are
+drawn for a 480x480 circle. If you get another board working, send a
+pull request. If you get stuck, open an issue and ask.
+
 Why this board works well for toys like these:
 
 - The round screen feels like a toy, not a tiny phone.
