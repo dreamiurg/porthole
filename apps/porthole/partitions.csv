@@ -1,6 +1,7 @@
 # Porthole flash layout (16 MB). nvs and otadata sit exactly where PlatformIO's default_16MB.csv has them, so the
 # saves in nvs survive a reflash with this table; otadata stays for the uploader's boot_app0. One 12 MB factory app
 # instead of two 6.25 MB OTA slots (nothing here does OTA), then the core dump.
+# The factory app must stay at 0x10000: pioarduino's upload flashes firmware.bin at that fixed offset.
 # Name, Type, SubType, Offset, Size, Flags
 nvs, data, nvs, 0x9000, 0x5000,
 otadata, data, ota, 0xe000, 0x2000,

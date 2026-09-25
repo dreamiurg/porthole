@@ -31,6 +31,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
+  if (in.down) lastTouchMs_ = ms;
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
@@ -64,7 +65,7 @@ void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
   holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's OK) is where "No" is safe
 }
-bool Shell::restingNow() const { return prof_.count() >= 2 && shell::resting(prof_.rec[active_], now_); }
+bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, prof_.count()) > 0; }
 void Shell::select(int id) {
   active_ = id;
   shell::recharge(rec(), now_);
@@ -127,9 +128,9 @@ void Shell::closeApp() {
   flushApp(true);
   shell::saveRecord(*st_, prof_, active_);
 }
-void Shell::budgetTick() {   // per profile, across every game; only counts with someone to hand over to
+void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = now_ - lastTick_; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, prof_.count())) { closeApp(); go(SH_REST); return; }
+  if (shell::play(rec(), now_, dt, prof_.count(), ms_ - lastTouchMs_ >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 
@@ -338,7 +339,7 @@ void Shell::drawLauncher() {
   ui::drawBack();
 }
 
-// ---------------------------------------------------------------- resting: the play budget ran out
+// ---------------------------------------------------------------- resting: the play budget ran out (a turn, or the day)
 void Shell::updateRest() {
   if (!restingNow()) { go(SH_PICK); return; }   // over while showing: whoever is here next picks
   if (ui::button(in_, {{50, 120, 60, 24}, "OK", nullptr, C_GREEN})) go(SH_PICK);
@@ -349,10 +350,15 @@ void Shell::drawRest() {
   blitScaled(SPR_AVATARS[rec().avatar % NUM_AVATARS], 60, 24, 2);
   textCentered(106, 20 - (int)((ms_ / 400) % 3), "z", C_YELLOW);
   textCentered(80, 70, rec().name, C_YELLOW);
-  textCentered(80, 80, "is resting.", C_WHITE);
-  uint32_t left = rec().restUntil > now_ ? rec().restUntil - now_ : 0;
-  char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
-  textCentered(80, 106, "Let a friend play!", C_WHITE);
+  if (shell::playedToday(rec(), now_)) {   // bedtime is part of the game: no countdown to watch
+    textCentered(80, 80, "played today.", C_WHITE);
+    textCentered(80, 94, "Back tomorrow!", C_LTGRAY);
+  } else {
+    textCentered(80, 80, "is resting.", C_WHITE);
+    uint32_t left = shell::restLeft(rec(), now_, prof_.count());
+    char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
+    textCentered(80, 106, "Let a friend play!", C_WHITE);
+  }
   ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, in_.down && in_.hit(50, 120, 60, 24));
 }
 
@@ -380,14 +386,16 @@ void Shell::debugPrint() {
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};
-  printf("[shell profile=%d/%d age=%d muted=%d play=%lus rest=%lu tint=%s]\n", active_, prof_.count(), r ? r->age : 0, r ? r->muted : 0,
-         (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && restingNow() ? r->restUntil - now_ : 0), TINTS[tint()]);
+  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s]\n", active_, prof_.count(), r ? r->age : 0,
+         r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
+         (unsigned long)(r ? shell::restLeft(*r, now_, prof_.count()) : 0), TINTS[tint()]);
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
   if (active_ >= 0) {
     if (!strcmp(cmd, "tired")) rec().playSec = shell::SESSION_SEC;
-    else if (!strcmp(cmd, "rested")) { rec().restUntil = 0; rec().playSec = 0; }
+    else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = shell::DAILY_SEC; }
+    else if (!strcmp(cmd, "rested")) { rec().restUntil = 0; rec().playSec = 0; rec().dayPlaySec = 0; }
     else if (!strcmp(cmd, "younger")) rec().age = 6;
     else if (!strcmp(cmd, "older")) rec().age = 9;
   }

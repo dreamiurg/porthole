@@ -10,8 +10,10 @@ built on it (`games/`). Its first and, for now, only game is Pets Club.
 Power on, pick who's playing, pick a game. Up to four kids share one board, each with a profile: a
 name, one of eight animal faces, an age (it picks the reading level) and an optional 4-digit code.
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
-profile. With two or more profiles, a kid who has played for about 6 minutes rests for 10, across
-every game, so the board passes to the next kid. A long press on a profile (after its code) deletes
+profile. Each kid plays up to 25 minutes a day across every game, then the board says "Back
+tomorrow" until midnight. With two or more profiles, a kid who has played for about 6 minutes also
+rests for 10, so the board passes to the next kid. A minute without a touch does not count as play.
+A long press on a profile (after its code) deletes
 it and everything it made.
 
 ## Pets Club: a pixel puppy
