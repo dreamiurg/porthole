@@ -40,7 +40,7 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. Up to three kids per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. A profile for each kid, up to four per device. | Browser emulator |
 | [Biscuit](#biscuit) | Story dog with branching mysteries and 96 illustrated discoveries. | Web app |
 
 ### Porthole
@@ -99,7 +99,7 @@ other hardware myself. This is a fun side project, so hack away. We live in the
 era of AI agents: fork the repo, point Claude Code or Codex at
 [docs/hardware.md](docs/hardware.md) and the app you like, and ask it to adapt
 the code to your board. Most of the hardware-specific code sits in
-`apps/pets-club/src/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
+`apps/porthole/firmware/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
 shared PlatformIO settings in `platform/waveshare-round.ini`. A screen of a
 different size or shape also means reworking the layouts, since both games are
 drawn for a 480x480 circle. If you get another board working, send a
