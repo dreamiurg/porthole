@@ -330,7 +330,7 @@ def ui_count(r, sev):
 
 
 def failed(r):
-    return bool(r["fails"]) or ui_count(r, "FAIL") > 0
+    return bool(r["fails"]) or ui_count(r, "FAIL") > 0 or ui_count(r, "WARN") > 0  # warnings are errors
 
 
 def report(results):
@@ -343,7 +343,7 @@ def report(results):
         "",
         f"`python3 tools/playtest.py` at {rev or 'unknown revision'}, {time.strftime('%Y-%m-%d %H:%M %Z')}: "
         f"{sum(not failed(r) for r in results)} of {len(results)} scenarios pass. A scenario fails on a failed directive, a crash, "
-        "a sanitizer report or a hard (FAIL) UI finding; WARN findings never fail a run.",
+        "a sanitizer report or any UI finding: FAIL and WARN both fail a run (warnings are errors).",
         "",
         "| Scenario | Result | Checks | Failures | UI FAIL | UI WARN | Time |",
         "| --- | --- | --- | --- | --- | --- | --- |",
@@ -409,7 +409,7 @@ def main():
                 print(f"     {msg}")
                 for line in ctx[:40]:
                     print(f"     | {line}")
-            for (_, rule, tag, detail), where in dict.fromkeys((f, w) for f, w in r["ui"] if f[0] == "FAIL"):
+            for (_, rule, tag, detail), where in dict.fromkeys((f, w) for f, w in r["ui"]):
                 print(f"     {where}: {rule} on {tag}: {detail}")
     report(results)
     bad = sum(failed(r) for r in results)
