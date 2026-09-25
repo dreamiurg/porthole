@@ -1,10 +1,11 @@
 // Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
-// delete, the secret code encoding, rest budget.
+// delete, the secret code encoding, rest budget, daily cap.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "games/pets-club/pet.h"
+#include "crc32.h"
 #include "profiles.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
@@ -184,13 +185,13 @@ static void corruptNoRemigrate() {
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.
 static void migrateV1() {
   MemStore st;
-  Save s = house("Zoe", "Pip", 0, 0);
+  Save s = house("Mia", "Pip", 0, 0);
   uint8_t v1[SAVE_V1_SIZE]; memcpy(v1, &s, SAVE_V1_SIZE - 4);
   uint16_t ver = 1, size = (uint16_t)SAVE_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
   uint32_t crc = pet::crc32(v1, SAVE_V1_SIZE - 4); memcpy(v1 + SAVE_V1_SIZE - 4, &crc, 4);
   st.save("crago", "s0", v1, sizeof v1);
   shell::Profiles p; shell::loadAll(st, p);
-  assert(p.count() == 1 && !strcmp(p.rec[0].name, "Zoe") && p.rec[0].age == 0 && p.rec[0].pin == 0);
+  assert(p.count() == 1 && !strcmp(p.rec[0].name, "Mia") && p.rec[0].age == 0 && p.rec[0].pin == 0);
   assert(p.rec[0].restUntil == 0 && p.rec[0].playSec == 0);
   assert(st.load("crago", "s0", v1, sizeof v1) == SAVE_V1_SIZE);   // same key: left as it was, Pets Club reads v1
 }
@@ -210,13 +211,13 @@ static void migrateLegacyKey() {
 static void restBudget() {
   shell::Record r = draft("Sam", 8, 0);
   uint32_t t = NOW;
-  for (int i = 0; i < 1000; i++) assert(!shell::play(r, t += 1, 1, 1));   // one profile: nobody to hand over to
+  for (int i = 0; i < 1000; i++) assert(!shell::play(r, t += 1, 1, 1, false));   // one profile: nobody to hand over to
   assert(r.playSec == 0 && r.lastPlayed == t);
-  assert(!shell::play(r, t += 60, 60, 2) && r.playSec == 5);               // a clock jump counts 5 s at most
+  assert(!shell::play(r, t += 60, 60, 2, false) && r.playSec == 5);               // a clock jump counts 5 s at most
   r.playSec = shell::SESSION_SEC - 1;
-  assert(shell::play(r, t += 1, 1, 2));                                    // the budget runs out: rest begins
+  assert(shell::play(r, t += 1, 1, 2, false));                                    // the budget runs out: rest begins
   assert(r.playSec == 0 && shell::resting(r, t) && shell::resting(r, t + shell::REST_SEC - 1));
-  assert(!shell::play(r, t += 1, 1, 2) && r.playSec == 0);                 // resting time does not count
+  assert(!shell::play(r, t += 1, 1, 2, false) && r.playSec == 0);                 // resting time does not count
   assert(!shell::resting(r, r.restUntil));
   shell::Record b = draft("Kai", 6, 0);
   b.playSec = 100; b.lastPlayed = t;
@@ -229,6 +230,83 @@ static void restBudget() {
   // ...and "last played in the future" is not a real break.
   c.restUntil = 0; c.playSec = 100; c.lastPlayed = t + 3600;
   shell::recharge(c, t); assert(c.playSec == 100);
+}
+
+// Daily cap, v2 record fields: a v1 record (44 bytes) still loads, with nothing played today.
+static void recordV1() {
+  shell::Record r = draft("Sam", 8, 1234); r.playSec = 42; shell::seal(r);
+  uint8_t v1[shell::REC_V1_SIZE]; memcpy(v1, &r, sizeof v1 - 4);
+  uint16_t ver = 1, size = (uint16_t)shell::REC_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
+  uint32_t crc = os::crc32(v1, sizeof v1 - 4); memcpy(v1 + sizeof v1 - 4, &crc, 4);
+  shell::Record out;
+  assert(shell::loadRecord(v1, sizeof v1, out) && !strcmp(out.name, "Sam") && out.pin == 1234 && out.playSec == 42);
+  assert(out.dayPlaySec == 0 && out.playDay == 0 && out.version == shell::REC_VERSION && out.size == sizeof(shell::Record));
+  v1[10] ^= 1; assert(!shell::loadRecord(v1, sizeof v1, out));   // still CRC-checked
+  r.dayPlaySec = 600; r.playDay = NOW / shell::DAY_SEC; shell::seal(r);   // the new fields round-trip
+  assert(shell::loadRecord(&r, sizeof r, out) && out.dayPlaySec == 600 && out.playDay == NOW / shell::DAY_SEC);
+  uint8_t wrong[sizeof r]; memcpy(wrong, &r, sizeof r); memcpy(wrong + 4, &ver, 2);
+  crc = os::crc32(wrong, sizeof wrong - 4); memcpy(wrong + sizeof wrong - 4, &crc, 4);
+  assert(!shell::loadRecord(wrong, sizeof wrong, out));   // a v1 header on a v2-sized blob is not a record
+}
+
+// 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
+static void dailyCap() {
+  shell::Record r = draft("Sam", 8, 0);
+  uint32_t t = NOW;   // 10:00
+  for (uint32_t i = 1; i < shell::DAILY_SEC; i++) assert(!shell::play(r, t += 1, 1, 1, false));
+  assert(r.dayPlaySec == shell::DAILY_SEC - 1 && shell::restLeft(r, t, 1) == 0);
+  assert(shell::play(r, t += 1, 1, 1, false));                      // the last second: done for today
+  assert(shell::playedToday(r, t) && shell::restLeft(r, t, 1) == 14 * 3600 - shell::DAILY_SEC);
+  assert(shell::play(r, t += 60, 60, 1, false));                    // still done (a sim hook kept a game open)
+  uint32_t midnight = NOW - NOW % shell::DAY_SEC + shell::DAY_SEC;
+  assert(shell::restLeft(r, midnight - 1, 1) == 1 && shell::restLeft(r, midnight, 1) == 0);
+  assert(!shell::play(r, midnight, 1, 1, false) && r.dayPlaySec == 1 && r.playDay == midnight / shell::DAY_SEC);
+  // with two profiles the cap wins over a turn: it ends the session too
+  shell::Record k = draft("Kai", 6, 0);
+  k.playDay = NOW / shell::DAY_SEC; k.dayPlaySec = shell::DAILY_SEC - 1; k.playSec = 100;
+  assert(shell::play(k, NOW, 1, 2, false) && k.playSec == 0 && shell::playedToday(k, NOW) && !shell::resting(k, NOW));
+  assert(shell::restLeft(k, NOW, 2) == 14 * 3600);
+}
+
+// No touch for a minute is not play: neither budget moves, but a used-up day still ends the game.
+static void idleNotCounted() {
+  shell::Record r = draft("Sam", 8, 0);
+  uint32_t t = NOW;
+  for (int i = 0; i < 3600; i++) assert(!shell::play(r, t += 1, 1, 2, true));
+  assert(r.dayPlaySec == 0 && r.playSec == 0 && r.lastPlayed == t);
+  assert(!shell::play(r, t += 1, 1, 2, false) && r.dayPlaySec == 1 && r.playSec == 1);
+  r.dayPlaySec = shell::DAILY_SEC;
+  assert(shell::play(r, t += 1, 1, 2, true));
+}
+
+// The clock set back never strands anyone: to an earlier day it lifts the cap; within the day the rest still ends
+// at that day's midnight, so it never lasts more than a day.
+static void capClockBack() {
+  shell::Record r = draft("Sam", 8, 0);
+  r.playDay = NOW / shell::DAY_SEC; r.dayPlaySec = shell::DAILY_SEC;
+  assert(shell::restLeft(r, NOW, 1) > 0 && shell::restLeft(r, NOW - 3600, 1) == 15 * 3600);
+  assert(shell::restLeft(r, NOW - shell::DAY_SEC, 1) == 0 && !shell::playedToday(r, NOW - 2 * shell::DAY_SEC));
+  assert(!shell::play(r, NOW - shell::DAY_SEC, 1, 1, false) && r.dayPlaySec == 1);   // yesterday is a new budget
+  // a turn rest stays clamped to REST_SEC and only counts with someone to hand over to
+  shell::Record k = draft("Kai", 6, 0); k.restUntil = NOW + shell::REST_SEC;
+  assert(shell::restLeft(k, NOW, 2) == shell::REST_SEC && shell::restLeft(k, NOW, 1) == 0);
+  k.restUntil = NOW + 5 * 3600; assert(shell::restLeft(k, NOW, 2) == 0);
+}
+
+// RTC lost: the firmware guesses the clock as the newest lastPlayed + 60 s, the same day a capped kid was capped
+// (a capped kid never moves lastPlayed). liftCaps frees them, on disk too, and leaves untouched records unwritten.
+static void capAfterClockGuess() {
+  MemStore st; shell::Profiles p; shell::loadAll(st, p);
+  shell::create(st, p, draft("Sam", 8, 0), STORES, 2); shell::create(st, p, draft("Kai", 6, 0), STORES, 2);
+  shell::Record& sam = p.rec[0];
+  sam.playDay = NOW / shell::DAY_SEC; sam.dayPlaySec = shell::DAILY_SEC; sam.lastPlayed = NOW; shell::saveRecord(st, p, 0);
+  uint32_t guess = sam.lastPlayed + 60;
+  assert(shell::restLeft(sam, guess, 2) > 0);                 // without the fix: "Back tomorrow" on every cold boot
+  int before = st.writes;
+  shell::liftCaps(st, p);
+  assert(shell::restLeft(p.rec[0], guess, 2) == 0 && st.writes == before + 1 && !strcmp(st.last, "porthole/p0"));
+  shell::Profiles boot; shell::loadAll(st, boot);
+  assert(boot.rec[0].dayPlaySec == 0 && shell::restLeft(boot.rec[0], guess, 2) == 0);
 }
 
 int main() {
@@ -244,6 +322,11 @@ int main() {
   migrateV1();
   migrateLegacyKey();
   restBudget();
+  recordV1();
+  dailyCap();
+  idleNotCounted();
+  capClockBack();
+  capAfterClockGuess();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
 }

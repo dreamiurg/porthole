@@ -1,0 +1,39 @@
+# The daily cap: 25 minutes of play a day per profile, across every game, even alone on the device. Used up, the
+# rest screen says "Back tomorrow" with no countdown, the picker sends the kid back to it, and after local midnight
+# the same kid gets in again. A minute without a touch is not play.
+newgame Solo Rex
+wait 2400
+expect-screen home
+expect today>0
+expect today<10
+dbg bedtime
+wait 1500
+expect-screen rest
+expect today>=1500
+expect rest>28000
+ui-check rest-bedtime
+snap c01_bedtime
+# OK goes to the picker; picking the same kid shows the rest screen again
+tap 80 132
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen rest
+# 16:00 + 8 h: midnight, a new day, the rest screen gives way to the picker
+skip 28800
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+expect rest=0
+expect today=0
+# play, then two minutes without a touch: only the first minute counts
+tap 80 76
+wait 2400
+expect-screen home
+wait 120000
+expect today>55
+expect today<70
+sheet daily_cap

@@ -12,6 +12,11 @@ constexpr const char* MIGRATED = "m";    // porthole/m: present once the Pets Cl
 // Turn taking, same numbers Pets Club used: play 6 min, then rest 10. Only with 2+ profiles on the device.
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
 constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;
+// The daily cap: 25 min per profile per local day, across every game, even alone on the device. The clock is local
+// wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
+constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 25 * 60;
+// No touch for this long is not play (counts toward neither budget). Matches the backlight's first dimming step.
+constexpr uint32_t IDLE_MS = 60000;
 constexpr size_t BLOB_MAX = 256;         // biggest app save the shell loads (Pets Club's Save is 156 bytes)
 
 // Storage both platforms implement: firmware -> board NVS, host -> files, tests -> memory.
@@ -28,7 +33,8 @@ class Store {
 // Persisted as a raw blob, append-only like Pets Club's Save: new fields go right before crc, bump the version,
 // and teach loadRecord the older size. Never reorder or resize a field.
 constexpr uint32_t REC_MAGIC = 0x50525450;   // "PTRP"
-constexpr uint16_t REC_VERSION = 1;
+constexpr uint16_t REC_VERSION = 2;
+constexpr size_t REC_V1_SIZE = 44;           // v1: no daily cap fields; loads with them zeroed
 struct Record {
   uint32_t magic;
   uint16_t version, size;
@@ -36,9 +42,11 @@ struct Record {
   uint8_t avatar, age, muted, reserved0;   // age 0 = not asked yet (profiles migrated from v1 Pets Club saves)
   uint16_t pin, reserved1;                 // 4-digit code + 1 (pinCode), 0 = none
   uint32_t restUntil, playSec, lastPlayed; // rest budget; lastPlayed also restores the clock when the RTC is lost
+  uint32_t dayPlaySec, playDay;            // v2: play counted on local day playDay (now / DAY_SEC)
   uint32_t crc;
 };
-static_assert(sizeof(Record) == 44, "Record is persisted: append before crc, never resize");
+static_assert(sizeof(Record) == 52, "Record is persisted: append before crc, never resize");
+static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v2 fields start where v1's crc was");
 
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused
   Record rec[MAX_PROFILES];
@@ -65,6 +73,19 @@ void migrate(Store& st, Profiles& p);   // migrate.cpp: Pets Club houses -> prof
 // Rest budget.
 // Never more than REST_SEC from now: a clock set backwards must not strand a kid on the rest screen for hours.
 inline bool resting(const Record& r, uint32_t now) { return r.restUntil > now && r.restUntil - now <= REST_SEC; }
-void recharge(Record& r, uint32_t now);                         // a real break (REST_SEC away) refills the budget
-bool play(Record& r, uint32_t now, uint32_t dt, int nProfiles);  // counts play time; true when a rest just began
+// The daily cap is kept as (playDay, dayPlaySec), not as a restUntil: it ends at the next midnight by construction,
+// and a clock set back to an earlier day lifts it instead of stranding anyone.
+inline bool playedToday(const Record& r, uint32_t now) { return r.playDay == now / DAY_SEC && r.dayPlaySec >= DAILY_SEC; }
+// Seconds until this profile may play again, 0 = now. Turn taking only counts with someone to hand over to.
+inline uint32_t restLeft(const Record& r, uint32_t now, int nProfiles) {
+  if (playedToday(r, now)) return DAY_SEC - now % DAY_SEC;
+  return nProfiles >= 2 && resting(r, now) ? r.restUntil - now : 0;
+}
+// The clock was guessed (RTC lost: the firmware resumes from the newest lastPlayed, which a capped kid never moves),
+// so "today" cannot be trusted: lift every day's cap, like a clock set back. Saves only the records it changed.
+void liftCaps(Store& st, Profiles& p);
+void recharge(Record& r, uint32_t now);   // a real break (REST_SEC away) refills the session budget
+// Counts dt seconds of play (none while idle or resting); true when the profile must stop now (a rest began, or the
+// day's play is used up).
+bool play(Record& r, uint32_t now, uint32_t dt, int nProfiles, bool idle);
 }  // namespace shell
