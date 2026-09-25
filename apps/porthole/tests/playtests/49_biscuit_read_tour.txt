@@ -1,0 +1,418 @@
+# Every screen this release adds, audited at day, evening and night with the widest names a kid can type
+# (Wwwwwwww for the kid and the pup) and a save with everything read, kept and unlocked: the Library (every page,
+# the stars), a story's first and last screens, the choice, an ending, the discoveries (today's three, the
+# notebook with all 96 kept, its last page, a topic), Topics, a discovery's cover, page and wonder, its source,
+# World with Today's tile, Today and its word on the day of the longest meaning, the scrapbook and the album.
+# The evening and night passes repeat the day's visits and ui-checks.
+profile Wwwwwwww 8
+app biscuit
+wait 450
+repeat 7
+tap 93 125
+end
+tap 67 125
+repeat 8
+tap 67 101
+end
+tap 119 125
+wait 450
+expect-screen biscuit_home
+expect pet=Wwwwwwww
+dbg unlock
+dbg read
+# six days on: the adventure with the longest pocket-word meaning (Ingenuity)
+skip 518400
+wait 100
+expect stars=21
+ui-check biscuit_home-day
+snap b01_home
+tap 94 129
+wait 450
+expect-screen biscuit_library
+ui-check biscuit_library-day
+snap b02_library
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+ui-check biscuit_library-last-day
+snap b03_library_last
+tap 80 84
+wait 450
+expect-screen biscuit_story
+ui-check biscuit_story-day
+snap b04_story
+repeat 19
+tap 108 132
+wait 450
+end
+ui-check biscuit_story-last-day
+tap 108 132
+wait 450
+expect-screen biscuit_choice
+ui-check biscuit_choice-day
+snap b05_choice
+tap 80 121
+wait 450
+expect-screen biscuit_ending
+ui-check biscuit_ending-day
+tap 51 25
+wait 450
+expect-screen biscuit_library
+tap 106 60
+wait 450
+expect facts=2
+ui-check biscuit_notebook-day
+snap b06_notebook
+repeat 47
+tap 108 132
+wait 450
+end
+expect page=47
+ui-check biscuit_notebook-last-day
+snap b07_notebook_last
+tap 106 60
+wait 450
+expect facts=0
+ui-check biscuit_discoveries-three-day
+tap 53 60
+wait 450
+expect-screen biscuit_topics
+ui-check biscuit_topics-day
+snap b08_topics
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 80 60
+wait 450
+expect topic=9
+ui-check biscuit_topic-day
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+expect-screen biscuit_discovery
+ui-check biscuit_cover-day
+snap b09_cover
+tap 80 132
+wait 450
+ui-check biscuit_page-day
+snap b10_page
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+expect at=2
+ui-check biscuit_wonder-day
+snap b11_wonder
+tap 52 132
+wait 450
+expect-screen biscuit_source
+ui-check biscuit_source-day
+snap b12_source
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+expect-screen biscuit_home
+tap 121 129
+wait 450
+ui-check biscuit_world-day
+snap b13_world
+tap 109 99
+wait 450
+expect-screen biscuit_today
+ui-check biscuit_today-day
+snap b14_today
+tap 106 115
+wait 450
+expect-screen biscuit_word
+ui-check biscuit_word-day
+snap b15_word
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 50 99
+wait 450
+expect-screen biscuit_profile
+ui-check biscuit_profile-day
+snap b16_profile
+tap 52 132
+wait 450
+expect-screen biscuit_stickers
+ui-check biscuit_stickers-day
+snap b17_stickers
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 43 29
+wait 450
+expect-screen biscuit_home
+# 18:00: evening
+skip 7200
+wait 100
+expect tint=evening
+ui-check biscuit_home-evening
+tap 94 129
+wait 450
+expect-screen biscuit_library
+ui-check biscuit_library-evening
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+ui-check biscuit_library-last-evening
+tap 80 84
+wait 450
+expect-screen biscuit_story
+ui-check biscuit_story-evening
+repeat 19
+tap 108 132
+wait 450
+end
+ui-check biscuit_story-last-evening
+tap 108 132
+wait 450
+expect-screen biscuit_choice
+ui-check biscuit_choice-evening
+tap 80 121
+wait 450
+expect-screen biscuit_ending
+ui-check biscuit_ending-evening
+tap 51 25
+wait 450
+expect-screen biscuit_library
+tap 106 60
+wait 450
+expect facts=2
+ui-check biscuit_notebook-evening
+repeat 47
+tap 108 132
+wait 450
+end
+expect page=47
+ui-check biscuit_notebook-last-evening
+tap 106 60
+wait 450
+expect facts=0
+ui-check biscuit_discoveries-three-evening
+tap 53 60
+wait 450
+expect-screen biscuit_topics
+ui-check biscuit_topics-evening
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 80 60
+wait 450
+expect topic=9
+ui-check biscuit_topic-evening
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+expect-screen biscuit_discovery
+ui-check biscuit_cover-evening
+tap 80 132
+wait 450
+ui-check biscuit_page-evening
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+expect at=2
+ui-check biscuit_wonder-evening
+tap 52 132
+wait 450
+expect-screen biscuit_source
+ui-check biscuit_source-evening
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+expect-screen biscuit_home
+tap 121 129
+wait 450
+ui-check biscuit_world-evening
+tap 109 99
+wait 450
+expect-screen biscuit_today
+ui-check biscuit_today-evening
+tap 106 115
+wait 450
+expect-screen biscuit_word
+ui-check biscuit_word-evening
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 50 99
+wait 450
+expect-screen biscuit_profile
+ui-check biscuit_profile-evening
+tap 52 132
+wait 450
+expect-screen biscuit_stickers
+ui-check biscuit_stickers-evening
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 43 29
+wait 450
+expect-screen biscuit_home
+# 20:00: night
+skip 7200
+wait 100
+expect tint=night
+ui-check biscuit_home-night
+tap 94 129
+wait 450
+expect-screen biscuit_library
+ui-check biscuit_library-night
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+ui-check biscuit_library-last-night
+tap 80 84
+wait 450
+expect-screen biscuit_story
+ui-check biscuit_story-night
+repeat 19
+tap 108 132
+wait 450
+end
+ui-check biscuit_story-last-night
+tap 108 132
+wait 450
+expect-screen biscuit_choice
+ui-check biscuit_choice-night
+tap 80 121
+wait 450
+expect-screen biscuit_ending
+ui-check biscuit_ending-night
+tap 51 25
+wait 450
+expect-screen biscuit_library
+tap 106 60
+wait 450
+expect facts=2
+ui-check biscuit_notebook-night
+repeat 47
+tap 108 132
+wait 450
+end
+expect page=47
+ui-check biscuit_notebook-last-night
+tap 106 60
+wait 450
+expect facts=0
+ui-check biscuit_discoveries-three-night
+tap 53 60
+wait 450
+expect-screen biscuit_topics
+ui-check biscuit_topics-night
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 80 60
+wait 450
+expect topic=9
+ui-check biscuit_topic-night
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+expect-screen biscuit_discovery
+ui-check biscuit_cover-night
+tap 80 132
+wait 450
+ui-check biscuit_page-night
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+expect at=2
+ui-check biscuit_wonder-night
+tap 52 132
+wait 450
+expect-screen biscuit_source
+ui-check biscuit_source-night
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+expect-screen biscuit_home
+tap 121 129
+wait 450
+ui-check biscuit_world-night
+tap 109 99
+wait 450
+expect-screen biscuit_today
+ui-check biscuit_today-night
+tap 106 115
+wait 450
+expect-screen biscuit_word
+ui-check biscuit_word-night
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 50 99
+wait 450
+expect-screen biscuit_profile
+ui-check biscuit_profile-night
+tap 52 132
+wait 450
+expect-screen biscuit_stickers
+ui-check biscuit_stickers-night
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 43 29
+wait 450
+expect-screen biscuit_home
+sheet screens

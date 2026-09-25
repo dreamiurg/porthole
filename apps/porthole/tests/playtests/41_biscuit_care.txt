@@ -1,5 +1,6 @@
-# Biscuit's care: Feed and Pet (the button, and the pup itself) move the needs and show what the pup does; a nap
-# from the window or from World rests everything but waking; time away is capped and never goes below the floors.
+# Biscuit's care: Feed and petting (a tap on the pup) move the needs and show what the pup does; the bookshelf opens
+# the Library once the pup has pulled out a book; a nap from the window or from World rests everything but waking;
+# time away is capped and never goes below the floors.
 profile Sam 8
 app biscuit
 wait 450
@@ -20,7 +21,7 @@ tap 80 75
 expect pets=1
 expect happiness=26
 expect activity=2
-tap 94 129
+tap 80 75
 expect pets=2
 snap c02_petted
 # the fern: a sneeze; the bookshelf: the pup reaches for a book (a short one-shot)
@@ -33,7 +34,19 @@ expect activity=0
 tap 34 73
 expect activity=12
 wait 900
+expect-screen biscuit_library
+wait 450
+tap 51 25
+wait 450
+expect-screen biscuit_home
 expect activity=0
+# another tap before the book is out: the pup stays home
+tap 34 73
+wait 200
+tap 80 75
+wait 900
+expect-screen biscuit_home
+expect pets=3
 # a slow double tap on Feed feeds twice, a tap that slides off feeds nothing
 tap 40 129
 wait 350
@@ -54,8 +67,11 @@ tap 40 129
 tap 67 129
 tap 94 129
 tap 80 75
+tap 34 73
+wait 900
+expect-screen biscuit_home
 expect feeds=3
-expect pets=2
+expect pets=3
 expect fetch=-1
 tap 121 129
 wait 450

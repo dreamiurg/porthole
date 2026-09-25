@@ -1,6 +1,6 @@
-# Chaos in Biscuit: 600 random gestures from home, from fetch and from the training pad, under ASan/UBSan. The
-# monkey may wander out through the launcher, into Pets Club or the profile screens; afterwards there is a real
-# screen, and Biscuit's needs are between their floor and 100.
+# Chaos in Biscuit: 600 random gestures from home, from fetch, from the training pad, from a story page, from a
+# discovery and from Today's adventure, under ASan/UBSan. The monkey may wander out through the launcher, into Pets
+# Club or the profile screens; afterwards there is a real screen, and Biscuit's needs are between their floor and 100.
 # seed 11: home
 profile Sam 8
 app biscuit
@@ -44,3 +44,51 @@ monkey 600 13
 expect-screen *
 expect energy>=20
 expect energy<=100
+# seed 14: a story page, every story open
+reset
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+dbg unlock
+tap 94 129
+wait 450
+tap 80 84
+wait 450
+monkey 600 14
+expect-screen *
+expect happiness>=20
+expect happiness<=100
+# seed 15: a discovery from the notebook, all 96 kept
+reset
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+dbg read
+tap 94 129
+wait 450
+tap 106 60
+wait 450
+tap 80 84
+wait 450
+monkey 600 15
+expect-screen *
+expect kept=96
+# seed 16: Today's adventure
+reset
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 121 129
+wait 450
+tap 109 99
+wait 450
+monkey 600 16
+expect-screen *
+expect fullness>=20
+expect fullness<=100

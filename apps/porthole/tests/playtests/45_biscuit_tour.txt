@@ -28,12 +28,12 @@ wait 450
 expect-screen biscuit_world
 ui-check biscuit_world-widest
 snap v03_world
-tap 79 99
+tap 50 99
 wait 450
 expect-screen biscuit_profile
 ui-check biscuit_profile-widest
 snap v04_profile
-tap 80 132
+tap 108 132
 wait 450
 expect-screen biscuit_rename_pet
 ui-check biscuit_rename_pet

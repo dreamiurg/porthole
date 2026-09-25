@@ -38,7 +38,7 @@ For Pets Club, you draw within a tiny, deliberate constraint set: a parametric r
 ## You own
 
 - Pets Club: `apps/porthole/games/pets-club/tools/art.py` -- the `SIZES` proportion table, the `POSES` list, `draw_dog()`, `ascii_img()` icon definitions, `outline()`, `emit()`, `preview()`. Its output, `apps/porthole/games/pets-club/sprites.h`, only as a build artifact.
-- Biscuit: `apps/porthole/games/biscuit/tools/art/{art.js, discovery-art*.js, export-assets.mjs}`. Its outputs -- `generated/scenes.h`, `generated/discovery_art.h`, `generated/art_data.inc`, `generated/manifest.json` -- only as build artifacts. Landing with later PRs: `tools/icon.py` (the launcher icon, `generated/icon.h`) and the font conversion (see Never touch).
+- Biscuit: `apps/porthole/games/biscuit/tools/art/{art.js, discovery-art*.js, export-assets.mjs}`. Its outputs -- `generated/scenes.h`, `generated/discovery_art.h`, `generated/art_data.inc`, `generated/manifest.json` -- only as build artifacts. Also `tools/icon.py` (the launcher icon, `generated/icon.h`); the font conversion is in Never touch.
 
 **Never hand-edit a generated header.** Each one's own comment says "AUTO-GENERATED" and names its generator; a hand-edit is silently overwritten by the next `make -C apps/porthole art`.
 

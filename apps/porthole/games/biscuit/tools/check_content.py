@@ -151,6 +151,10 @@ def daily(g):
     g.count("STICKERS", stickers, 12)
     for s in stickers:
         g.text(s, "sticker", s)
+    activities = table("content_daily.h", "ACTIVITIES")
+    g.count("ACTIVITIES", activities, 6)  # one per Action bit in pet.h
+    for s in activities:
+        g.text(s, "activity", s)
 
 
 def main():

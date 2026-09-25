@@ -16,12 +16,12 @@ namespace {
 constexpr const char* DOT = " \xC2\xB7 ";   // " · " in UTF-8: the font has the middle dot
 constexpr uint32_t SCENE_FRAME_MS = 230, SCENE_SLEEP_MS = 600;   // the scene frame steps generated/scenes.h names
 int need(float v) { return (int)lroundf(v); }
-Button action(int i, bool sleeping) {   // Feed, Play, Pet, More (Wake while napping: nothing else then)
-  static const char* const LABEL[4] = {"Feed", "Play", "Pet", "More"};
+Button action(int i, bool sleeping) {   // Feed, Play, Read, More (Wake while napping: nothing else then)
+  static const char* const LABEL[4] = {"Feed", "Play", "Read", "More"};
   static const uint16_t FILL[4] = {PEACH, SAGE, PURPLE, PURPLE};
   return {ACTIONS[i], i == 3 && sleeping ? "Wake" : LABEL[i], &FONT20, FILL[i], i == 3 || !sleeping};
 }
-constexpr Icon ACTION_ICON[4] = {Icon::Bowl, Icon::Ball, Icon::Heart, Icon::Paw};
+constexpr Icon ACTION_ICON[4] = {Icon::Bowl, Icon::Ball, Icon::Book, Icon::Paw};
 constexpr Button ALL_DONE_BUTTON = {ALL_DONE, "All done", &FONT20, PURPLE, true};
 int mastered(const Save& p) { int n = 0; for (uint8_t t : p.tricks) n += t >= 3; return n; }
 }  // namespace
@@ -38,14 +38,18 @@ void Game::updateHome() {
   if (homeTapped(in_)) { fetch_ = -1; wantsHome_ = true; return; }   // out to the launcher, from any moment
   if (fetch_ >= 0) homeFetch(); else homeTaps();
 }
+// The pup is petted by tapping it (the old firmware's way); the shelf and Read open the Library.
 void Game::homeTaps() {
   const bool up = awake(save_);
+  if (in_.tap) shelfAtMs_ = 0;   // any other tap and the pup puts the book back
   if (tapped(in_, action(0, save_.sleeping))) {
     biscuit::act(save_, Action::Feed, now_); markDirty();
     say(SAY_FED, SCENE_FEED);
   } else if (tapped(in_, action(1, save_.sleeping))) {
     fetch_ = 0; sayUntilMs_ = 0; animate(SCENE_PLAY); fresh();
-  } else if (tapped(in_, action(2, save_.sleeping)) || (up && in_.tapIn(PUP.x, PUP.y, PUP.w, PUP.h))) {
+  } else if (tapped(in_, action(2, save_.sleeping))) {
+    openLibrary(SC_HOME);
+  } else if (up && in_.tapIn(PUP.x, PUP.y, PUP.w, PUP.h)) {
     biscuit::act(save_, Action::Petting, now_); markDirty();
     say(SAY_PETTED, SCENE_PET);
   } else if (tapped(in_, action(3, save_.sleeping))) {
@@ -55,7 +59,8 @@ void Game::homeTaps() {
   } else if (up && in_.tapIn(FERN.x, FERN.y, FERN.w, FERN.h)) {
     say(SAY_FERN, SCENE_FERN);
   } else if (up && in_.tapIn(SHELF.x, SHELF.y, SHELF.w, SHELF.h)) {
-    animate(SCENE_SHELF);   // TODO(biscuit 7b): the pup pulls out a book, then the Library opens (800 ms)
+    animate(SCENE_SHELF);   // the pup pulls out a book, then the Library opens (game.cpp)
+    shelfAtMs_ = (ms_ + 800) | 1;
   }
 }
 // Fetch: the ball waits at one of five spots; five catches and the play counts. Nothing is lost by stopping early.
@@ -112,22 +117,24 @@ void Game::drawHome() {
 }
 
 // ---------------------------------------------------------------- World
+constexpr int WORLD_TILES = 4;
 static Tile worldTile(int i, const Save& p) {
   static char tricks[24];
   snprintf(tricks, sizeof tricks, "%d of 6 mastered", mastered(p));
   if (i == 0) return {WORLD_TRICKS, "Learn tricks", tricks, Icon::Paw, SAGE};
   if (i == 1) return {WORLD_NAP, p.sleeping ? "Wake up" : "Cozy nap", "A lovely place to pause", Icon::Moon, PURPLE};
-  return {WORLD_BOOK, "Our scrapbook", "Growing up, page by page", Icon::Book, PEACH};
+  if (i == 2) return {WORLD_BOOK, "Our scrapbook", "Growing up, page by page", Icon::Book, PEACH};
+  return {WORLD_TODAY, "Today's adventure", p.dailyClaimed ? "Sticker earned!" : "Something to discover", Icon::Star, PURPLE};
 }
 void Game::updateWorld() {
   const Box& back = WORLD_BACK;
   if (in_.tapIn(back.x, back.y, back.w, back.h)) { go(SC_HOME); return; }
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < WORLD_TILES; i++) {
     const Box& b = worldTile(i, save_).box;
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    if (i == 0) { page_ = 0; go(SC_TRICKS); }
+    if (i == 0) openTricks(SC_WORLD);
     else if (i == 1) toggleNap();
-    else go(SC_PROFILE);
+    else go(i == 2 ? SC_PROFILE : SC_TODAY);
     return;
   }
 }
@@ -139,6 +146,6 @@ void Game::drawWorld() {
   text(WORLD_NAMES, font::textWidth(*WORLD_NAMES.box.font, s) > WORLD_NAMES.box.w ? save_.petName : s, INK);
   snprintf(s, sizeof s, "Day %u%s%s%s%d stars", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, stars(save_));
   text(WORLD_LINE, s, INK);
-  for (int i = 0; i < 3; i++) tile(in_, worldTile(i, save_));
+  for (int i = 0; i < WORLD_TILES; i++) tile(in_, worldTile(i, save_));
 }
 }  // namespace biscuit

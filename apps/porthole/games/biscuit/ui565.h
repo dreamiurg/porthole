@@ -35,6 +35,13 @@ constexpr Button BACK_BUTTON = {BACK, "Back", &FONT20, PURPLE, true};
 void top(const Input& in, const char* title, int stars);   // Back, the stars, a title
 int navTapped(const Input& in, int page, int count);       // Previous / page / Next: -1, +1 or 0
 void nav(const Input& in, int page, int count);
+// The same, with its own labels and when each is on (a reader's Next becomes Choose or The end)
+struct Nav { const char* prev; const char* next; bool prevOn, nextOn; };
+int navTapped(const Input& in, const Nav& n);
+void nav(const Input& in, const Nav& n, int page, int count);
+void picture(int discovery, int x, int y, int scale);      // a discovery's 96x48 picture at (x, y), physical
+// A list row: a discovery's picture at the left, the text in the rest (FONT20 while it takes two lines, else FONT16).
+void pictureRow(const Input& in, const Box& b, int discovery, const char* label);
 void need(int slot, Icon glyph, int value, uint16_t color); // one of Home's three need cards
 void bubble(const char* text);                              // Home's speech bubble
 void text(const Label& l, const char* s, uint16_t color);    // a label at its place (middle: centered in its h)

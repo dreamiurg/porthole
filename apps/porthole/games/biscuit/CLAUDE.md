@@ -1,16 +1,11 @@
 # Biscuit: game brief
 
-**Part of this does not exist in code yet.** Biscuit is being rewritten onto the Porthole
-runtime, PR by PR. Landed so far: content and its generated art (#33), the rules, save and
-legacy migration (#35, `pet.h`), the RGB565 surface (#36), and the game's first half (7a):
-it is in the launcher, with Home, care, fetch, World, Tricks and Training, the scrapbook
-and pet naming. Still to come (7b): the Library and stories, discoveries, Today and its
-pocket word, and stickers. This file describes the intended design for what isn't real
-yet so every agent building toward it works from the same contract. The full plan, with rationale and delivery order, is
-`docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md` -- read it before
-implementing anything referenced here as "landing with the Biscuit PRs" (or a specific
-PR number, where known). Once a PR lands, update the paragraph it makes real and drop the
-qualifier for that part.
+Biscuit's rewrite onto the Porthole runtime is complete: content and its generated art (#33), the rules, save
+and legacy migration (#35, `pet.h`), the RGB565 surface (#36), the first half of the screens (7a, #39: Home, care,
+fetch, World, Tricks and Training, the scrapbook, pet naming) and the second (7b: the Library and stories,
+discoveries, Today and its pocket word, stickers) -- full content parity with the standalone firmware. The plan it
+was built from, with rationale and delivery order, is
+`docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`.
 
 Biscuit previously shipped as a standalone LVGL firmware (source still at
 `~/src/dreamiurg/zoegotchi`, and in porthole history as `biscuit-v0.1.0`); it was removed
@@ -55,8 +50,6 @@ activity.
 
 Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` class and
 `namespace pet`, and two `pet.h` headers in one link would collide.
-
-Landed:
 
 - `pet.h` (#35): the rules -- decay to the `NEED_FLOOR` (20), the 8-hour `ELAPSED_CAP_SEC`
   elapsed cap, stages (`Puppy`/`YoungPup`/`StoryDog`), the 7-day daily-adventure and 12-day
@@ -124,16 +117,38 @@ Landed:
   `soundOn()` is always false: Biscuit has no buzzer sounds (shared app brief constraint 3).
   `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00. Screen
   names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
-  `debugCmd`: `hungry unlock young grown tricks practiced`.
-- Screens, split by file to stay under the complexity gate. Landed (7a): `screens_home.cpp`
-  (Home: scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the
-  shelf, window (nap), fern and the pup, Feed/Play/Pet/More, fetch, and the orange home
-  button to the launcher; World: Learn tricks, Cozy nap, Our scrapbook),
-  `screens_train.cpp` (Tricks, Training watch/do), `screens_profile.cpp` (the scrapbook
-  with Rename pup, SetupPet, RenamePet). Still landing (7b): `screens_read.cpp` (Library,
-  Story, Choice, Ending), `screens_learn.cpp` (Discoveries, Topics, Discovery
-  cover/pages/wonder, Source, Today, Word), Stickers in `screens_profile.cpp`, and the
-  World tile for Today's adventure; until then the shelf only animates (`TODO(biscuit 7b)`).
+  `debugCmd`: `hungry unlock young grown tricks practiced read` (`read`: every story finished and every
+  discovery kept).
+- Screens, split by file to stay under the complexity gate: `screens_home.cpp` (Home:
+  scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the shelf
+  (the pup pulls out a book, and 800 ms later the Library opens; any other tap first
+  cancels it), window (nap), fern and the pup (a tap pets it), Feed/Play/Read/More, fetch,
+  and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
+  scrapbook, Today's adventure), `screens_train.cpp` (Tricks, Training watch/do),
+  `screens_read.cpp` (Library: Discoveries, Notebook and the seven stories, two a page,
+  "Day N: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
+  page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
+  a topic's eight or the notebook of kept ones; Topics; a discovery's cover, pages and
+  wonder page, Source; Today and its Word), `screens_profile.cpp` (the scrapbook with Our
+  stickers and Rename pup, the sticker album, SetupPet, RenamePet).
+  - Reading: each story, ending or discovery page is filled with the names (a 256-byte
+    buffer) and split by `font::pageBreaks` into at most `PAGE_SCREENS` screens; the
+    counter between Previous and Next counts screens across the whole story (a story is
+    about 20, an ending 8). Next becomes Choose on a story's last screen and The end on an
+    ending's; an ending's first Previous goes back to the choice, the choice's Back to the
+    story's last screen. The end brings the pup home (`finishStory`: today's reading, and
+    the first finish of a story its three stars). A discovery's cover, pages and wonder
+    page, then Keep (`discover`: today's reading, and the notebook) opens the notebook on
+    its page; Source shows the name and address as text. Every reader turn waits for the
+    fresh-screen pause, since Next's meaning changes at the ends.
+  - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
+    `dailyMask`) as buttons that go and do them (a snack, fetch, a cuddle, the Library,
+    the tricks, a nap), marked `* ` once done, and A lovely word. The third earns the
+    sticker (`recordActivity`, once a day): the pup says so the next time he is home, World's
+    tile says "Sticker earned!", and the album opens on its page. The Library and Tricks
+    opened from here come back here; Topics' Back returns to the list it was opened from.
+  - Today's three discoveries follow the old firmware: one from each third of the topics,
+    `topic = family * 4 + day % 4`, the `(day / 4) % 8`-th of that topic.
   Screens the old standalone firmware had that Porthole's shell now owns instead: Settings,
   Clock, ResetConfirm, SetupChild, the idle cover, and Rest.
 - `ui565.h` / `ui565.cpp` (7a): the widgets on the RGB565 surface: `button`,
@@ -159,10 +174,16 @@ inside the round glass. See the `content` skill for the authoring workflow.
 
 The old firmware's controls ran as small as 56 logical px tall (6.2 mm); Porthole's floor
 is 24x22 logical (8 mm) -- see the shared app brief's constraint 1. Every Biscuit screen's
-layout gets re-tuned to that floor, not ported as-is. So far (7a, physical px): Back
-86x56 -> 90x66, Previous/Next 128x56 -> 120x66 with the page number between them, trick
-rows 316x56 -> 312x66, Home's actions 68x72 -> 72x66, the cue pad five 90x66 keys with the
-lesson count in the title slot, World's back disc 56 -> 66, the fern 64x46 -> 75x66, and
-the ball's box 80x64 -> 81x72. The UI audit (`make playtest`) at zero FAIL and zero WARN is
-the acceptance test for this, not a visual comparison to the old screenshots. A box that
-holds content lives in `layout.h`: re-tune it there, and the content gate measures the new box.
+layout gets re-tuned to that floor, not ported as-is (physical px). 7a: Back 86x56 -> 90x66,
+Previous/Next 128x56 -> 120x66 with the page number between them ("n/m" when "n / m" is too
+wide), trick rows 316x56 -> 312x66, Home's actions 68x72 -> 72x66, the cue pad five 90x66
+keys with the lesson count in the title slot, World's back disc 56 -> 66, the fern 64x46 ->
+75x66, and the ball's box 80x64 -> 81x72. 7b: list rows 56/60/64 -> 312x66 (three a page,
+or a pair of 153x66 buttons and two rows), the choice rows 324x68 -> 312x66 (lower: nothing
+else is at the bottom), Today's activities two by two (153x66) with A lovely word as the
+fourth, Source / Keep and the scrapbook's Our stickers / Rename pup where Previous / Next
+are, and the wonder question and the pocket word's meaning moved up to clear the bottom
+buttons (with the widest names they take six and seven lines). The UI audit (`make
+playtest`) at zero FAIL and zero WARN is the acceptance test for this, not a visual
+comparison to the old screenshots. A box that holds content lives in `layout.h`: re-tune it
+there, and the content gate measures the new box.

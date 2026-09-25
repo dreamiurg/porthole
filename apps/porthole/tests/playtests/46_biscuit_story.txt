@@ -1,0 +1,139 @@
+# A story, both ways: Read opens the Library (a story that opens on a later day waits for it), the pages turn one
+# screen at a time (Previous and Next, each turn after the fresh-screen pause), the last page asks the question, and
+# either choice reads its own ending. The end brings the pup home with the story shared: the first finish earns
+# its three stars, the second ending counts as reading again and earns nothing more. Back leaves from anywhere.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 94 129
+wait 450
+expect-screen biscuit_library
+ui-check biscuit_library
+snap s01_library
+# page 2: The Sleepy Seed opens on day 2, its row does nothing today
+tap 108 132
+wait 450
+expect page=1
+tap 80 108
+wait 450
+expect-screen biscuit_library
+snap s02_locked
+tap 52 132
+wait 450
+# The Moon Biscuit
+tap 80 84
+wait 450
+expect-screen biscuit_story
+expect story=0
+expect at=0
+expect of=20
+ui-check biscuit_story
+snap s03_page1
+# a quick second tap is the same turn: one screen on, not two
+tap 108 132
+wait 100
+tap 108 132
+wait 450
+expect at=1
+tap 52 132
+wait 450
+expect at=0
+repeat 19
+tap 108 132
+wait 450
+end
+expect at=19
+ui-check biscuit_story-last
+snap s04_last
+tap 108 132
+wait 450
+expect-screen biscuit_choice
+ui-check biscuit_choice
+snap s05_choice
+# Back from the choice: the story's last screen
+tap 51 25
+wait 450
+expect-screen biscuit_story
+expect at=19
+tap 108 132
+wait 450
+expect-screen biscuit_choice
+# the first ending
+tap 80 97
+wait 450
+expect-screen biscuit_ending
+expect choice=0
+expect at=0
+ui-check biscuit_ending
+snap s06_ending1
+# Previous on its first page: the choice again
+tap 52 132
+wait 450
+expect-screen biscuit_choice
+tap 80 97
+wait 450
+expect of=8
+repeat 7
+tap 108 132
+wait 450
+end
+expect at=7
+ui-check biscuit_ending-last
+snap s06b_the_end
+tap 108 132
+wait 450
+expect-screen biscuit_home
+expect stars=3
+expect stories=1
+expect activity=3
+expect daily=8
+snap s07_shared
+# the other ending: nothing more to earn, and the Library marks the story read
+wait 4100
+tap 94 129
+wait 450
+ui-check biscuit_library-read
+snap s08_read
+tap 80 84
+wait 450
+repeat 20
+tap 108 132
+wait 450
+end
+expect-screen biscuit_choice
+tap 80 121
+wait 450
+expect-screen biscuit_ending
+expect choice=1
+snap s09_ending2
+expect of=8
+repeat 8
+tap 108 132
+wait 450
+end
+expect-screen biscuit_home
+expect stars=3
+expect stories=1
+# Back from a story page and from the Library
+tap 94 129
+wait 450
+tap 80 108
+wait 450
+expect story=1
+tap 108 132
+wait 450
+tap 51 25
+wait 450
+expect-screen biscuit_library
+tap 51 25
+wait 450
+expect-screen biscuit_home
+# the star holds across a relaunch
+tap 80 12
+wait 450
+app biscuit
+wait 450
+expect stars=3
+sheet story

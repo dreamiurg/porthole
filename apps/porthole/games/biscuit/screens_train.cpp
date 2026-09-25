@@ -11,32 +11,32 @@
 namespace biscuit {
 using namespace ui565;
 namespace {
-constexpr int TRICK_PAGES = (NUM_TRICKS + TRICK_ROWS - 1) / TRICK_ROWS;
+constexpr int TRICK_PAGES = (NUM_TRICKS + ROWS - 1) / ROWS;
 const char* const CUE_NAME[5] = {"Left", "Up", "Right", "Down", "Paw"};   // by Cue
 constexpr Button MY_TURN = {WIDE, "My turn", &FONT20, PURPLE, true}, PEEK = {WIDE, "Peek again", &FONT20, PEACH, true};
 bool unlocked(const Save& p, int id) { return p.daysTogether >= trickUnlockDay((uint8_t)id); }
 Lesson current(const Save& p, int id) { return lesson((uint8_t)id, p.tricks[id]); }   // lesson() caps at the third
 Button trickRow(const Save& p, int row, int page, char* label, size_t cap) {
-  const int id = page * TRICK_ROWS + row;
+  const int id = page * ROWS + row;
   if (unlocked(p, id)) snprintf(label, cap, "%s   %d/3", TRICKS[id].name, p.tricks[id]);
   else snprintf(label, cap, "%s   Day %d", TRICKS[id].name, trickUnlockDay((uint8_t)id));
-  return {TRICK_ROW[row], label, &FONT20, PURPLE, unlocked(p, id)};
+  return {ROW[row], label, &FONT20, PURPLE, unlocked(p, id)};
 }
 }  // namespace
 
 void Game::updateTricks() {
-  if (tapped(in_, BACK_BUTTON)) { go(SC_WORLD); return; }
+  if (tapped(in_, BACK_BUTTON)) { go(tricksBack_); return; }
   const int turn = navTapped(in_, page_, TRICK_PAGES);
   if (turn) { page_ += turn; return; }
-  for (int row = 0; row < TRICK_ROWS; row++) {
+  for (int row = 0; row < ROWS; row++) {
     char label[48];
-    if (tapped(in_, trickRow(save_, row, page_, label, sizeof label))) { openTrick(page_ * TRICK_ROWS + row); return; }
+    if (tapped(in_, trickRow(save_, row, page_, label, sizeof label))) { openTrick(page_ * ROWS + row); return; }
   }
 }
 void Game::drawTricks() {
   gfx565::clear(PAPER);
   top(in_, "Little paws, big ideas", stars(save_));
-  for (int row = 0; row < TRICK_ROWS; row++) {
+  for (int row = 0; row < ROWS; row++) {
     char label[48];
     button(in_, trickRow(save_, row, page_, label, sizeof label));
   }

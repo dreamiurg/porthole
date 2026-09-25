@@ -40,13 +40,13 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. A profile for each kid, up to four per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware, with two games inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to, and Biscuit, a full-color pup to read stories and discover things with. A profile for each kid, up to four per device. | Browser emulator |
 
 ### Porthole
 
-[![Pets Club screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
+[![Pets Club and Biscuit screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
 
-The firmware that turns the round screen into a games device. Its first game is
+The firmware that turns the round screen into a games device, with two games. The first is
 Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
@@ -55,7 +55,14 @@ hats keep kids coming back. Up to four kids get a profile each (a face, an age,
 an optional 4-digit code) and their own pup and house on Paw Street; after a few
 minutes of play a kid rests so the next one gets a turn. Nothing ever dies.
 
-C++, no libraries: a 160x160 indexed framebuffer scaled 3x, with a host
+The second is Biscuit, a warm companion pup drawn full-color at the panel's native
+resolution. He shares seven branching stories, each with two endings to choose
+between, and 96 illustrated, sourced discoveries in 12 topics, three new ones a day.
+A small daily adventure earns stickers, and he learns six tricks. No streaks, no
+countdowns, nothing lost for time away.
+
+C++, no libraries: a 160x160 indexed framebuffer scaled 3x and a native 480x480
+RGB565 surface with anti-aliased text, with a host
 simulator, a browser emulator and scripted playtests that audit every screen
 for tap-target size, bezel clipping and contrast.
 **[Read more](apps/porthole/README.md)** · try it: `make -C apps/porthole webemu`

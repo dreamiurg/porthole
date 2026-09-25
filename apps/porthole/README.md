@@ -1,9 +1,12 @@
 # Porthole: games for a round screen
 
 Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small shared runtime
-(`os/`: 160×160 indexed framebuffer, 32-color palette, 8×8 font, touch input), the board layer
-(`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game launcher) and the games
-built on it (`games/`). Its first and, for now, only game is Pets Club.
+(`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
+RGB565 surface with smooth text, touch input), the board layer (`firmware/`), a shell (`shell/`:
+who's playing, a profile per kid, the game launcher) and the games built on it (`games/`): Pets
+Club and Biscuit.
+
+![Pets Club (top: home, a story, a trick lesson) and Biscuit (bottom: home, a story, a discovery)](docs/screenshots.png)
 
 ## Profiles and the launcher
 
@@ -24,8 +27,6 @@ grows over real days, learns tricks, and above all loves being **read to**. Ever
 own pup and a house on Paw Street.
 
 Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to the panel.
-
-![Pets Club screens: home, a story, a trick lesson, spelling fetch, a daily gift, and the street](docs/screenshots.png)
 
 ## What it does
 
@@ -54,6 +55,27 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
   5-6 up to level 3 from 9.
 * **Quiet by design.** The buzzer is harsh, so it only sounds for rare moments (growing up, a
   new trick, a gift, a sticker). Each profile can mute it on the launcher.
+
+## Biscuit: a reading companion
+
+A warm, doglike companion for the same kids, drawn full-color at the panel's native 480×480 with
+smooth text. Biscuit grows through care, shared stories, curiosity and little tricks; he talks in
+short, cozy lines and never makes anyone feel bad for being away.
+
+* **Home.** A room that changes with the time of day, where the pup naps, eats, fetches and shows
+  off his tricks. Feed, Play, Read and More; tap the pup to pet him, the window for a nap, the
+  bookshelf and he pulls out a book.
+* **Stories.** Seven branching stories that open over the first week together. Each ends on a
+  question with two choices, and each choice has its own ending. The first finish earns three
+  stars.
+* **Discoveries.** 96 illustrated facts in 12 topics (space, physics, nature, history, art,
+  languages...), each with a picture, two short pages, an "I wonder..." question to talk about and
+  the source it was checked against. Three new ones every day; the ones you keep go in a notebook.
+* **Today's adventure.** Three things to do together each day (a snack, a story, a nap...), a
+  pocket word with its meaning, and a sticker for the album once all three are done.
+* **Tricks.** Six tricks, three lessons each: watch the cues, then tap them back.
+* **Nothing is lost.** Needs stop at a floor, time away counts for at most eight hours, and there
+  are no streaks or countdowns. No sounds at all.
 
 ## Play it without the board
 
@@ -130,9 +152,13 @@ Day / evening / night are palette variants applied at flip time.
 
 ```
 os/                shared, platform-independent runtime: renderer (gfx.cpp), input, palette, font
+shell/             who's playing, profiles, the launcher, rest screens, save migrations
 games/pets-club/   Pets Club: pet simulation (pet.cpp), screens (game.cpp), stories & words
                    (content*.h), generated sprites (sprites.h), and its tools: pixel-art rig
                    (art.py), content checker (check_content.py)
+games/biscuit/     Biscuit: rules and save (pet.h), screens (screens_*.cpp), stories, discoveries
+                   and adventures (content_*.h), generated scenes, pictures and fonts, and its
+                   tools: art (tools/art/, Node), font conversion, content checker
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test
@@ -147,6 +173,7 @@ workflows.
 ## Credits
 
 * 8×8 font: `font8x8` by Daniel Hepper, public domain.
+* Biscuit's text: Montserrat by the Montserrat Project Authors, SIL Open Font License 1.1.
 * Panel init sequence and pin map: Waveshare ESP32-S3-Touch-LCD-2.1 demo code.
 * Palette: PICO-8's 16 colors plus 16 extras.
 * Stories, art rig and game design: written for this project.
