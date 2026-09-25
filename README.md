@@ -36,7 +36,7 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 ## Apps
 
-**[Install a game from your browser](https://dreamiurg.net/porthole/)**, no tools needed.
+**[How to put a game on a board](https://dreamiurg.net/porthole/)**: download it from the releases and write it from Chrome, no tools needed.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
@@ -137,13 +137,11 @@ make monitor
 
 ### Install from the browser
 
-The easiest way needs no tools at all: open **[the web installer](https://dreamiurg.net/porthole/)**
-in Chrome or Edge, plug the board in over USB-C, and press Install on a game.
-Updates keep saved progress. Biscuit can also be played right there in the browser.
-
-Each release also attaches `<app>-<version>-factory.bin`, a single image you can
-write at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/).
-It is meant for fresh installs and clears the app's saved progress.
+The easiest way needs no tools at all: download `<app>-<version>-factory.bin` from the
+[releases](https://github.com/dreamiurg/porthole/releases), plug the board in over USB-C, open
+[esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge, and write the file at
+address `0x0`. This erases the board, saved progress included. Step by step, with pictures of the
+games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
 ## Make your own app
 
