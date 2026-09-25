@@ -89,8 +89,8 @@ def audit(tag, screen, regions, texts, full):
         x, y, w, h = r
         if min(w, h) < 18:
             add("FAIL", "target size", f"{name(r)}: {min(w, h)} px < 18 px (6 mm)")
-        elif min(w, h) < 24 and w * h < 24 * 20:
-            add("WARN", "target size", f"{name(r)}: {min(w, h)} px < 24 px (8 mm) and {w * h} px2 < 480")
+        elif w < 24 or h < 22:
+            add("WARN", "target size", f"{name(r)}: under 24x22 px (8 mm)")
         inside = sum((px + 0.5 - 80) ** 2 + (py + 0.5 - 80) ** 2 <= 6400 for px in range(x, x + w) for py in range(y, y + h)) / max(1, w * h)
         dist = math.hypot(x + w / 2 - 80, y + h / 2 - 80)
         if inside < 0.85 or dist > 70:
@@ -330,7 +330,7 @@ def ui_count(r, sev):
 
 
 def failed(r):
-    return bool(r["fails"]) or ui_count(r, "FAIL") > 0
+    return bool(r["fails"]) or ui_count(r, "FAIL") > 0 or ui_count(r, "WARN") > 0  # warnings are errors
 
 
 def report(results):
@@ -343,7 +343,7 @@ def report(results):
         "",
         f"`python3 tools/playtest.py` at {rev or 'unknown revision'}, {time.strftime('%Y-%m-%d %H:%M %Z')}: "
         f"{sum(not failed(r) for r in results)} of {len(results)} scenarios pass. A scenario fails on a failed directive, a crash, "
-        "a sanitizer report or a hard (FAIL) UI finding; WARN findings never fail a run.",
+        "a sanitizer report or any UI finding: FAIL and WARN both fail a run (warnings are errors).",
         "",
         "| Scenario | Result | Checks | Failures | UI FAIL | UI WARN | Time |",
         "| --- | --- | --- | --- | --- | --- | --- |",
@@ -409,7 +409,7 @@ def main():
                 print(f"     {msg}")
                 for line in ctx[:40]:
                     print(f"     | {line}")
-            for (_, rule, tag, detail), where in dict.fromkeys((f, w) for f, w in r["ui"] if f[0] == "FAIL"):
+            for (_, rule, tag, detail), where in dict.fromkeys((f, w) for f, w in r["ui"]):
                 print(f"     {where}: {rule} on {tag}: {detail}")
     report(results)
     bad = sum(failed(r) for r in results)

@@ -3,15 +3,15 @@ newgame Sam Biscuit
 wait 2400
 dbg dirty
 expect dirty=1
-# tap along the floor band the pup walks on (y=93 misses the bowl, lamp, shelf and ball)
-tap 40 93
-tap 50 93
-tap 60 93
-tap 70 93
-tap 80 93
-tap 90 93
-tap 100 93
-tap 108 93
+# tap along the rug the pup keeps to (x 50-116 at y=104, clear of the bowl and the ball)
+tap 50 104
+tap 60 104
+tap 70 104
+tap 80 104
+tap 90 104
+tap 100 104
+tap 110 104
+tap 116 104
 wait 450
 expect-screen bath
 snap 01_bath

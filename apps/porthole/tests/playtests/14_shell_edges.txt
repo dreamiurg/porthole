@@ -7,21 +7,23 @@ wait 450
 expect-screen new_name
 expect profile=-1/0
 # OK with no letters and backspace on an empty name both do nothing
-tap 92 144
+tap 119 125
 wait 450
-tap 68 144
+tap 93 125
 wait 450
 expect-screen new_name
 # ten taps on W: the name stops at eight letters; a backspace and an L make it "Wwwwwwwl"
+tap 67 125
 repeat 10
-tap 70 120
+tap 67 101
 end
-tap 68 144
-tap 120 72
+tap 93 125
+tap 67 125
+tap 119 101
 wait 450
 snap 01_name_full
 ui-check new_name-full
-tap 92 144
+tap 119 125
 wait 450
 expect-screen new_avatar
 ui-check new_avatar-long-name
@@ -29,7 +31,7 @@ ui-check new_avatar-long-name
 tap 80 12
 wait 450
 expect-screen new_name
-tap 92 144
+tap 119 125
 wait 450
 expect-screen new_avatar
 # face 5 (bear), age 10+
@@ -56,7 +58,9 @@ tap 102 101
 tap 102 121
 wait 450
 expect-screen pin_set
-tap 48 121
+ui-check pin_set-mismatch
+snap 02b_mismatch
+tap 138 82
 wait 450
 expect-screen launcher
 expect profile=0/1
@@ -71,9 +75,9 @@ tap 80 93
 wait 450
 expect-screen new_name
 repeat 8
-tap 140 72
+tap 41 125
 end
-tap 92 144
+tap 119 125
 wait 450
 tap 64 89
 wait 450
@@ -123,28 +127,29 @@ expect profile=-1/2
 # third and fourth kids: faces 7 (frog) and 8 (panda); four profiles hide the "+" row
 tap 80 106
 wait 450
-tap 30 48
-tap 92 144
+tap 41 53
+tap 119 125
 wait 450
 tap 94 89
 wait 450
 tap 121 69
 wait 450
-tap 48 121
+tap 138 82
 wait 450
 expect profile=2/3
 tap 80 42
 wait 450
 tap 80 119
 wait 450
-tap 130 120
-tap 92 144
+tap 67 125
+tap 41 125
+tap 119 125
 wait 450
 tap 124 89
 wait 450
 tap 79 101
 wait 450
-tap 48 121
+tap 138 82
 wait 450
 expect profile=3/4
 tap 80 42

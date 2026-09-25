@@ -49,35 +49,40 @@ static const Sprite HOME = {9, 8, HOME_PX};
 void drawBack() { circle(80, 12, 11, C_DKBROWN); circle(80, 11, 10, C_ORANGE); blitTint(HOME, 76, 7, C_WHITE); }
 bool back(const Input& in) { drawBack(); return in.tapInCircle(80, 12, 16); }
 
-// ---- name keyboard
-static const char* const ROWS[4] = {"ABCDEF", "GHIJKLM", "NOPQRST", "UVWXYZ"};
-// TODO: keys are 20 wide, under the 24x22 floor (the exception recorded in apps/porthole/CLAUDE.md constraint 1).
-static const int KEY_W = 20, KEY_H = 24, TOP = 36, BOTTOM = TOP + 4 * KEY_H;
-static const Box DEL = {57, BOTTOM, 22, KEY_H}, OK = {81, BOTTOM, 22, KEY_H};
-static Box key(int r, int c) { return {80 - (int)strlen(ROWS[r]) * KEY_W / 2 + c * KEY_W, TOP + r * KEY_H, KEY_W, KEY_H}; }
+// ---- name keyboard: two pages of 13 letters, each a 4x4 grid of 24x22 keys 2 px apart (26 letters at that size do
+// not fit the round glass at once). The last row is the page's last letter, the page switch, backspace and OK.
+static const char* const PAGES[2] = {"ABCDEFGHIJKLM", "NOPQRSTUVWXYZ"};
+static const char* const FLIP[2] = {"N-Z", "A-M"};
+static const int KEY_W = 24, KEY_H = 22, GAP = 2, LEFT = 29, TOP = 42;   // rows 42..136 stay inside the chord
+static Box key(int i) { return {LEFT + (i % 4) * (KEY_W + GAP), TOP + (i / 4) * (KEY_H + GAP), KEY_W, KEY_H}; }
+enum { K_FLIP = 13, K_DEL, K_OK };
 static bool tapped(const Input& in, const Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
 
-bool keyboard(const Input& in, char* buf, int& len) {
-  for (int r = 0; r < 4; r++)
-    for (int c = 0; ROWS[r][c]; c++)
-      if (tapped(in, key(r, c)) && len < NAME_LEN) { buf[len] = len ? (char)(ROWS[r][c] + 32) : ROWS[r][c]; buf[++len] = 0; }
-  if (tapped(in, DEL) && len > 0) buf[--len] = 0;
-  return tapped(in, OK) && len > 0;
+bool keyboard(const Input& in, char* buf, int& len, uint8_t& page) {
+  page &= 1;
+  for (int i = 0; i < 13; i++)
+    if (tapped(in, key(i)) && len < NAME_LEN) { char c = PAGES[page][i]; buf[len] = len ? (char)(c + 32) : c; buf[++len] = 0; }
+  if (tapped(in, key(K_FLIP))) page ^= 1;
+  if (tapped(in, key(K_DEL)) && len > 0) buf[--len] = 0;
+  return tapped(in, key(K_OK)) && len > 0;
 }
 static void drawKey(const Input& in, const Box& b, const char* label, uint8_t col) {
   int dy = in.down && in.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-  roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, C_DKBROWN);
-  roundRect(b.x + 2, b.y + 2 + dy, b.w - 4, b.h - 4, dy ? (uint8_t)C_YELLOW : col);
-  textCentered(b.x + b.w / 2, b.y + 8 + dy, label, C_DKBROWN);
+  roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN);   // shadow
+  roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
+  roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
+  textCentered(b.x + b.w / 2, b.y + 7 + dy, label, C_DKBROWN);
 }
-void drawKeyboard(const Input& in, const char* buf, const char* hint, uint32_t ms) {
+void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, uint32_t ms) {
+  page &= 1;
   panel({42, 23, 74, 12}, C_WHITE, C_DKBROWN);
-  char shown[NAME_LEN + 2]; snprintf(shown, sizeof shown, "%s%s", buf, (ms / 400) % 2 ? "_" : "");
+  bool cursor = (int)strlen(buf) < NAME_LEN && (ms / 400) % 2;   // no cursor once the name is full
+  char shown[NAME_LEN + 2]; snprintf(shown, sizeof shown, "%s%s", buf, cursor ? "_" : "");
   if (buf[0]) textCentered(79, 25, shown, C_NAVY); else textCentered(79, 25, hint, C_DKGRAY);
-  for (int r = 0; r < 4; r++)
-    for (int c = 0; ROWS[r][c]; c++) { char l[2] = {ROWS[r][c], 0}; drawKey(in, key(r, c), l, C_WHITE); }
-  drawKey(in, DEL, "<", C_LTGRAY);
-  drawKey(in, OK, "OK", buf[0] ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY);
+  for (int i = 0; i < 13; i++) { char l[2] = {PAGES[page][i], 0}; drawKey(in, key(i), l, C_WHITE); }
+  drawKey(in, key(K_FLIP), FLIP[page], C_SKY);
+  drawKey(in, key(K_DEL), "<", C_LTGRAY);
+  drawKey(in, key(K_OK), "OK", buf[0] ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY);
 }
 
 void FreshGate::filter(Input& in, uint32_t now) {

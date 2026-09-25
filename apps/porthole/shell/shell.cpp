@@ -39,14 +39,15 @@ void Shell::render() {
     &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   (this->*DRAW[screen_])();
-  if (ms_ < toastUntil_) ui::toast(toast_);
+  bool pinScreen = screen_ >= SH_PIN_SET && screen_ <= SH_PIN;   // drawPin shows its messages in the prompt line
+  if (ms_ < toastUntil_ && !pinScreen) ui::toast(toast_);
 }
 Tint Shell::tint() const { return screen_ == SH_APP ? app_->tint() : screen_ == SH_REST ? TINT_EVENING : TINT_DAY; }
 bool Shell::soundOn(uint32_t ms) { return screen_ == SH_APP && app_->soundOn(ms) && !prof_.rec[active_].muted; }
 
 // ---------------------------------------------------------------- flow
 void Shell::startNew() {
-  memset(&draft_, 0, sizeof draft_); nameLen_ = 0; name_[0] = 0; creating_ = true;
+  memset(&draft_, 0, sizeof draft_); nameLen_ = 0; name_[0] = 0; namePage_ = 0; creating_ = true;
   go(SH_NAME);
 }
 void Shell::choose(int id, bool del) {
@@ -127,7 +128,7 @@ void Shell::budgetTick() {   // per profile, across every game; only counts with
 }
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
-static ui::Box pickRow(int i, int rows) { return {28, 80 - (rows * 26 - 2) / 2 + i * 26, 104, 24}; }
+static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
   int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
   for (int i = 0; i < rows; i++) {
@@ -158,9 +159,9 @@ void Shell::drawPick() {
 // ---------------------------------------------------------------- new profile: name -> face -> age -> code
 void Shell::updateName() {
   if (ui::back(in_)) { go(SH_PICK); return; }
-  if (ui::keyboard(in_, name_, nameLen_)) { snprintf(draft_.name, sizeof draft_.name, "%s", name_); go(SH_AVATAR); }
+  if (ui::keyboard(in_, name_, nameLen_, namePage_)) { snprintf(draft_.name, sizeof draft_.name, "%s", name_); go(SH_AVATAR); }
 }
-void Shell::drawName() { clear(C_WALL); ui::drawKeyboard(in_, name_, "Your name?", ms_); ui::drawBack(); }
+void Shell::drawName() { clear(C_WALL); ui::drawKeyboard(in_, name_, namePage_, "Your name?", ms_); ui::drawBack(); }
 
 static ui::Box avatarCell(int i) { return {20 + (i % 4) * 30, 42 + (i / 4) * 32, 28, 30}; }
 void Shell::updateAvatar() {
@@ -176,7 +177,9 @@ void Shell::drawAvatar() {
   for (int i = 0; i < NUM_AVATARS; i++) {
     ui::Box b = avatarCell(i);
     int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-    ui::drawButton({{b.x + 1, b.y + 1, b.w - 2, b.h - 4}, nullptr, nullptr, dy ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE}, dy);
+    bool taken = false;   // another profile's face: a gray tile (still allowed, faces may repeat)
+    for (int id = 0; id < MAX_PROFILES; id++) taken |= prof_.used[id] && prof_.rec[id].avatar % NUM_AVATARS == i;
+    ui::drawButton({{b.x + 1, b.y + 1, b.w - 2, b.h - 4}, nullptr, nullptr, dy ? (uint8_t)C_YELLOW : taken ? (uint8_t)C_LTGRAY : (uint8_t)C_WHITE}, dy);
     blit(SPR_AVATARS[i], b.x + 4, b.y + 4 + dy);
   }
   textCentered(80, 112, draft_.name, C_PLUM);
@@ -200,25 +203,28 @@ void Shell::drawAge() {
   clear(C_WALL);
   textCentered(80, 30, "How old are you?", C_DKBROWN);
   for (int i = 0; i < 6; i++) {
-    ui::Box b = ageButton(i); char l[4]; snprintf(l, sizeof l, i == 5 ? "10+" : "%d", AGES[i]);
+    ui::Box b = ageButton(i); char l[4]; snprintf(l, sizeof l, "%d", AGES[i]);
     bool pr = in_.down && in_.hit(b.x, b.y, b.w, b.h);
-    uint8_t col = i < 2 ? C_GREEN : i < 4 ? C_BLUE : C_PLUM;
+    uint8_t col = i < 2 ? C_GREEN : i < 4 ? C_BLUE : C_PLUM, ink = ui::inkOn(col); int y = b.y + 5 + (pr ? 1 : 0);
     ui::drawButton({b, nullptr, nullptr, col}, pr);
-    textCentered(b.x + 20, b.y + 5 + (pr ? 1 : 0), l, ui::inkOn(col), 2);
+    if (i < 5) { textCentered(b.x + 20, y, l, ink, 2); continue; }
+    int w = textWidth(l, 2) + 1 + textWidth("+");   // "10+" at full size fills the button edge to edge: a small +
+    text(text(b.x + 20 - w / 2, y, l, ink, 2) - 1, y, "+", ink);
   }
   ui::drawBack();
 }
 
 // ---------------------------------------------------------------- secret code: set twice (or skip), or asked on the picker
-static const int PIN_KX[3] = {44, 68, 92}, PIN_KY[4] = {52, 72, 92, 112};
-static ui::Box pinKey(int k) {   // the bottom-left key (skip / backspace) is wider: "skip" does not fit 20 px
-  return k == 9 ? ui::Box{32, PIN_KY[3], 32, 18} : ui::Box{PIN_KX[k % 3], PIN_KY[k / 3], 20, 18};
-}
-Shell::Key Shell::keypad(bool leftIsSkip) {
+// Keys are drawn at their real 24x22 size, 2 px apart: 1-9, then backspace, 0, OK. "skip" (no code, only while
+// choosing one) sits to the right of the pad; messages replace the prompt so they never cover a key.
+static ui::Box pinKey(int k) { return {40 + (k % 3) * 26, 48 + (k / 3) * 24, 24, 22}; }   // rows 48..142
+static const ui::Box PIN_SKIP = {121, 72, 34, 22};
+Shell::Key Shell::keypad(bool canSkip) {
+  if (canSkip && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) return KEY_SKIP;
   for (int k = 0; k < 12; k++) {
     ui::Box b = pinKey(k);
-    if (!in_.tapIn(b.x - 2, b.y - 2, b.w + 4, b.h + 4)) continue;
-    if (k == 9) { if (leftIsSkip) return KEY_LEFT; if (pinLen_ > 0) pin_[--pinLen_] = 0; return KEY_NONE; }
+    if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
+    if (k == 9) { if (pinLen_ > 0) pin_[--pinLen_] = 0; return KEY_NONE; }
     if (k == 11) return pinLen_ == 4 ? KEY_OK : KEY_NONE;
     if (pinLen_ < 4) { pin_[pinLen_++] = (char)(k == 10 ? '0' : '1' + k); pin_[pinLen_] = 0; }
     return KEY_NONE;
@@ -229,41 +235,41 @@ void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
   Key key = keypad(screen_ == SH_PIN_SET);
-  if (key == KEY_LEFT) { finishCreate(0); return; }   // "skip": no code
+  if (key == KEY_SKIP) { finishCreate(0); return; }   // "skip": no code
   if (key != KEY_OK) return;
   uint16_t code = shell::pinCode(pin_);
   resetPin();
   if (screen_ == SH_PIN_SET) { firstPin_ = code; go(SH_PIN_AGAIN); }
   else if (screen_ == SH_PIN_AGAIN && code == firstPin_) finishCreate(code);
-  else if (screen_ == SH_PIN_AGAIN) { go(SH_PIN_SET); toast("Not the same. Again!"); }
+  else if (screen_ == SH_PIN_AGAIN) { go(SH_PIN_SET); toast("Not the same!"); }
   else if (code == prof_.rec[target_].pin) authorized();
   else { pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
 }
 void Shell::drawPin() {
   clear(C_WALL);
-  char prompt[32];
-  if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
+  char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
+  if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
+  else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
-  textCentered(80, 28, prompt, C_DKBROWN);
-  bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
-  for (int i = 0; i < 4; i++) {
-    int x = 58 + i * 12 + shake; rect(x, 38, 10, 12, C_WHITE); frame(x, 38, 10, 12, wrong ? C_RED : C_DKBROWN);
-    if (i >= pinLen_) continue;
-    if (screen_ == SH_PIN) circle(x + 5, 44, 2, C_NAVY); else { char l[2] = {pin_[i], 0}; textCentered(x + 5, 40, l, C_NAVY); }
-  }
-  for (int k = 0; k < 12; k++) {
-    char l[8]; uint8_t col = C_WHITE;
-    if (k < 9) snprintf(l, sizeof l, "%c", '1' + k); else if (k == 10) snprintf(l, sizeof l, "0");
-    else if (k == 9) { snprintf(l, sizeof l, "%s", screen_ == SH_PIN_SET ? "skip" : "<"); col = C_LTGRAY; }
-    else { snprintf(l, sizeof l, "OK"); col = pinLen_ == 4 ? C_GREEN : C_LTGRAY; }
-    drawPinKey(k, l, col);
-  }
+  textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
+  drawPinDigits();
+  static const char* const LABELS[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "<", "0", "OK"};
+  for (int k = 0; k < 12; k++) drawPinKey(pinKey(k), LABELS[k], k == 9 || (k == 11 && pinLen_ < 4) ? C_LTGRAY : k == 11 ? C_GREEN : C_WHITE);
+  if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
 }
-void Shell::drawPinKey(int k, const char* l, uint8_t col) {
-  ui::Box b = pinKey(k); int dy = in_.down && in_.hit(b.x - 2, b.y - 2, b.w + 4, b.h + 4) ? 1 : 0;
+void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
+  bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
+  for (int i = 0; i < 4; i++) {
+    int x = 58 + i * 12 + shake; rect(x, 36, 10, 11, C_WHITE); frame(x, 36, 10, 11, wrong ? C_RED : C_DKBROWN);
+    if (i >= pinLen_) continue;
+    if (screen_ == SH_PIN) circle(x + 5, 41, 2, C_NAVY); else { char l[2] = {pin_[i], 0}; textCentered(x + 5, 38, l, C_NAVY); }
+  }
+}
+void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
+  int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN); roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN); roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
-  textCentered(b.x + b.w / 2, b.y + 5 + dy, l, C_DKBROWN);
+  textCentered(b.x + b.w / 2, b.y + 7 + dy, l, C_DKBROWN);
 }
 
 // ---------------------------------------------------------------- delete a profile (long press on the picker)

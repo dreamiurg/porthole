@@ -54,7 +54,7 @@ void Game::enterHouse() {
   memcpy(save_.kidName, kids_[self_].name, sizeof save_.kidName); save_.kidAge = kids_[self_].age;
   uint32_t ev = pet::simulate(save_, now_, false);
   lastTickSec_ = now_; stickersSeen_ = save_.stickersMask; refreshBookList();
-  dogX_ = dogTargetX_ = 60; dogAct_ = 0; event_ = 0; trickShow_ = -1;
+  dogX_ = 60; dogX_ = dogTargetX_ = walkClamp(dogX_); dogAct_ = 0; event_ = 0; trickShow_ = -1;
   markDirty();
   go(SC_HOME);
   if (ev & pet::EV_LONG_AWAY) {
@@ -323,7 +323,7 @@ void Game::updateIntro() {
   // phase encoded in dogAct_: 0 box wobbling, 1 opened
   if (backButton()) { wantsHome_ = true; return; }
   if (dogAct_ == 0 && in_.tap) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
-  else if (dogAct_ == 1 && ms_ - screenMs_ > 900 && in_.tap) { dogAct_ = 0; nameLen_ = 0; nameBuf_[0] = 0; memset(&save_, 0, sizeof save_); go(SC_NAME_PET); }
+  else if (dogAct_ == 1 && ms_ - screenMs_ > 900 && in_.tap) { dogAct_ = 0; nameLen_ = 0; nameBuf_[0] = 0; namePage_ = 0; memset(&save_, 0, sizeof save_); go(SC_NAME_PET); }
 }
 void Game::drawIntro() {
   clear(C_SKY);
@@ -351,13 +351,13 @@ void Game::updateNamePet() {
   if (backButton()) { wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
   if (in_.tapInCircle(123, 28, 12)) {                  // random name (hit circle ends 0.5 px inside the bezel)
     const char* n = PET_NAME_IDEAS[pet::rnd(save_) % 9]; strncpy(nameBuf_, n, ui::NAME_LEN); nameBuf_[ui::NAME_LEN] = 0; nameLen_ = (int)strlen(nameBuf_);
-    return;                                            // its hit circle overlaps key row 0: one tap, one action
+    return;
   }
-  if (ui::keyboard(in_, nameBuf_, nameLen_)) { strncpy(save_.petName, nameBuf_, sizeof save_.petName - 1); go(SC_THEME); }
+  if (ui::keyboard(in_, nameBuf_, nameLen_, namePage_)) { strncpy(save_.petName, nameBuf_, sizeof save_.petName - 1); go(SC_THEME); }
 }
 void Game::drawNamePet() {
   clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, "Pup's name", ms_);
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
   circle(123, 29, 9, C_DKBROWN); circle(123, 28, 8, C_PINK); textCentered(123, 25, "?", C_DKBROWN);
   drawBackButton();
 }
@@ -426,26 +426,46 @@ void Game::startTrickShow(int trick) { trickShow_ = trick; dogAct_ = 10; dogActU
 
 // Home layout: the back button sits top center; the stat pips (they open the stats page) stand in two pairs either side.
 static const int PIPS_L = 30, PIPS_R = 106, PIPS_Y = 19;
+// Every home hotspot is at least 2 px from the others (the UI audit's spacing), the dog's included wherever it walks:
+// it keeps to the rug between the bowl and the ball (its box x-4 .. x+w+4 stays within 48..118), under the shelf's
+// hotspot (it ends at 83, above the grown dog's box). Poop lands on the side away from the dog, 2 px clear of the bowl
+// or the ball, and the dog then keeps to its own side of it.
+static const int WALK_L = 52, WALK_R = 114;
+static const int POOP_L = 48, POOP_R = 94, POOP_Y = 94, POOP_W = 24, POOP_H = 22;
+int Game::poopX() const { return dogX_ + dogFrame(P_IDLE0).w / 2 > 83 ? POOP_L : POOP_R; }
+int Game::walkClamp(int x) const {
+  int w = dogFrame(P_IDLE0).w, lo = WALK_L, hi = WALK_R - w;
+  if (save_.poop) { if (poopX() == POOP_R) hi = POOP_R - 6 - w; else lo = POOP_L + POOP_W + 6; }
+  return clampi(x, lo, hi);
+}
+void Game::dogBox(int& x, int& y, int& w, int& h) const {   // from 4 px above the head down to the feet
+  const Sprite& f = dogFrame(P_IDLE0); x = dogX_ - 4; y = DOG_BASE_Y - f.h - 4; w = f.w + 8; h = f.h + 4;
+}
 void Game::updateHome() {
   if (backButton()) { wantsHome_ = true; return; }
-  if (in_.tapIn(16, 36, 22, 32)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street
+  if (in_.tapIn(15, 39, 24, 24)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street
   homeBrain();
   homeEvents();
   homeTouches();
   if (in_.longPress && !save_.asleep) {
-    int dogW = dogFrame(P_IDLE0).w, dogTop = DOG_BASE_Y - dogFrame(P_IDLE0).h;
-    if (in_.hit(dogX_ - 4, dogTop - 6, dogW + 8, dogFrame(P_IDLE0).h + 8) && !save_.dirty) { pet::petDog(save_, now_); spawn(in_.x, in_.y - 6, 0, 6); dogAct_ = 2; markDirty(); }
+    int bx, by, bw, bh; dogBox(bx, by, bw, bh);
+    if (in_.hit(bx, by, bw, bh) && !save_.dirty) { pet::petDog(save_, now_); spawn(in_.x, in_.y - 6, 0, 6); dogAct_ = 2; markDirty(); }
   }
 }
 void Game::homeBrain() {   // idle wandering, sitting and showing off tricks
   if (!save_.asleep && dogAct_ != 10 && ms_ >= nextIdleMs_) pickIdle();
+  if (!save_.asleep && dogAct_ != 10) keepToRug();
   if (dogAct_ == 1) homeWalk();
   if (dogAct_ == 10 && ms_ >= dogActUntil_) { dogAct_ = 0; trickShow_ = -1; if (!save_.asleep) { save_.tricksShown++; pet::addBond(save_, now_, 1); markDirty(); } }
   if ((dogAct_ == 3 || dogAct_ == 4 || dogAct_ == 5) && ms_ >= dogActUntil_) dogAct_ = 0;
 }
+void Game::keepToRug() {   // back onto the rug after growing, off the poop's side, never onto it
+  int goal = dogAct_ == 1 ? dogTargetX_ : dogX_, want = walkClamp(goal);
+  if (want != goal) { dogAct_ = 1; dogTargetX_ = want; dogFlip_ = want < dogX_; nextIdleMs_ = ms_ + 6000; }
+}
 void Game::pickIdle() {
   int r = (int)(pet::rnd(save_) % 100);
-  if (r < 35) { dogAct_ = 1; dogTargetX_ = 16 + (int)(pet::rnd(save_) % (uint32_t)(112 - dogFrame(P_IDLE0).w)); dogFlip_ = dogTargetX_ < dogX_; }
+  if (r < 35) { dogAct_ = 1; dogTargetX_ = WALK_L + (int)(pet::rnd(save_) % (uint32_t)(WALK_R - dogFrame(P_IDLE0).w - WALK_L + 1)); dogFlip_ = dogTargetX_ < dogX_; }
   else if (r < 50) dogAct_ = 2;
   else if (r < 58 && pet::learnedTrickCount(save_) > 0) { int t; do { t = (int)(pet::rnd(save_) % NUM_TRICKS); } while (!pet::trickLearned(save_, t)); startTrickShow(t); }
   else dogAct_ = 0;
@@ -471,25 +491,25 @@ void Game::homeEvents() {   // butterflies, the squirrel at the window, rain
 }
 // Every hotspot is tested each frame (the UI audit relies on it); only a tap acts, and only the first one that matches.
 void Game::homeTouches() {
-  int dogW = dogFrame(P_IDLE0).w, dogTop = DOG_BASE_Y - dogFrame(P_IDLE0).h;
-  bool onDog = in_.tapIn(dogX_ - 4, dogTop - 6, dogW + 8, dogFrame(P_IDLE0).h + 8);
+  int bx, by, bw, bh; dogBox(bx, by, bw, bh);
+  bool onDog = in_.tapIn(bx, by, bw, bh);
   if (event_ == 1 && inCircle(eventX_ + 4, eventY_ + 3, 14) && in_.tapIn(eventX_ - 8, eventY_ - 8, 24, 22)) {  // caught the butterfly's attention (once it is on the glass)
     event_ = 0; dogAct_ = 3; dogActUntil_ = ms_ + 1500; spawn(in_.x, in_.y, 1, 6);
     save_.fun = (uint8_t)clampi(save_.fun + 5, 0, 100); pet::addBond(save_, now_, 2); markDirty();
-  } else if (save_.poop && in_.tapIn(dogX_ > 70 ? 30 : 100, 98, 22, 20)) {
+  } else if (save_.poop && in_.tapIn(poopX(), POOP_Y, POOP_W, POOP_H)) {
     pet::cleanPoop(save_, now_); spawn(in_.x, in_.y, 1, 8); toast("All clean!"); markDirty();
   } else if (pet::giftReady(save_, now_) && in_.tapIn(76, 46, 28, 22)) {
     giftOpened_ = false; go(SC_GIFT);
-  } else if (in_.tapIn(10, 64, 26, 30)) toggleLamp();
+  } else if (in_.tapIn(10, 65, 26, 26)) toggleLamp();
   else if (save_.asleep && in_.tap) toast("Shh... sleeping");
   else if (onDog) tapDog();
   else homeFurniture();
 }
 void Game::homeFurniture() {   // the floor bowl, the toy ball, the bookshelf and the stat pips open their pages
-  if (in_.tapIn(16, 96, 32, 20)) { go(SC_FEED); feedAnimFood_ = -1; }
-  else if (in_.tapIn(118, 92, 28, 22)) { go(SC_PLAYMENU); }
-  else if (in_.tapIn(110, 38, 40, 56)) { go(SC_LIBRARY); }
-  else if (in_.tapIn(PIPS_L - 4, PIPS_Y - 3, 36, 18) || in_.tapIn(PIPS_R - 6, PIPS_Y - 3, 36, 18)) { statsPage_ = 0; go(SC_STATS); }
+  if (in_.tapIn(18, 93, 28, 23)) { go(SC_FEED); feedAnimFood_ = -1; }
+  else if (in_.tapIn(120, 94, 26, 22)) { go(SC_PLAYMENU); }
+  else if (in_.tapIn(110, 39, 40, 44)) { go(SC_LIBRARY); }
+  else if (in_.tapIn(PIPS_L - 4, PIPS_Y - 4, 36, 22) || in_.tapIn(PIPS_R - 6, PIPS_Y - 4, 36, 22)) { statsPage_ = 0; go(SC_STATS); }
 }
 void Game::toggleLamp() {
   if (save_.asleep) {
@@ -510,9 +530,9 @@ void Game::drawHome() {
   drawStatPips(PIPS_R, PIPS_Y + 10, save_.clean, SPR_BUBBLE, C_WATER);
   if (pet::giftReady(save_, now_)) {  // the mail arrives on the window sill
     int b = (ms_ / 300) % 2; blit(SPR_PARCEL, 83, 52 - b);
-    textCentered(90, 38 - b * 2, "!", C_RED);
+    circle(90, 41 - b * 2, 5, C_DKBROWN); circle(90, 41 - b * 2, 4, C_YELLOW); textCentered(90, 37 - b * 2, "!", C_DKBROWN);
   }
-  if (save_.poop) blit(SPR_POOP, dogX_ > 70 ? 36 : 106, 104);
+  if (save_.poop) blit(SPR_POOP, poopX() + (POOP_W - SPR_POOP.w) / 2, POOP_Y + POOP_H - SPR_POOP.h - 4);
   bool flip = dogFlip_;
   int pose = dogAct_ == 10 && trickShow_ >= 0 ? trickPose(flip) : idlePose();
   drawDog(dogX_, DOG_BASE_Y, pose, flip);
@@ -549,12 +569,12 @@ void Game::drawHomeButtons() {
   static const Sprite* BTN_ICONS[4] = {&SPR_BOWL, &SPR_BALL, &SPR_BOOK, &SPR_PAW};
   static const uint8_t BTN_COLS[4] = {C_ORANGE, C_GREEN, C_BLUE, C_PLUM};
   for (int i = 0; i < 4; i++) {
-    bool pr = in_.down && in_.hit(BTN_X[i] - 2, BTN_Y - 2, BTN_W + 4, BTN_H + 4);
+    bool pr = in_.down && in_.hit(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2);   // the drawn button and its shadow, 2 px apart
     ui::drawButton({{BTN_X[i], BTN_Y, BTN_W, BTN_H}, nullptr, nullptr, BTN_COLS[i]}, pr);
     const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
     if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
     else blitScaled(ic, ix, iy, 2);
-    if (!in_.tapIn(BTN_X[i] - 3, BTN_Y - 3, BTN_W + 6, BTN_H + 6)) continue;
+    if (!in_.tapIn(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2)) continue;
     if (i == 0) { go(SC_FEED); feedAnimFood_ = -1; } else if (i == 1) go(SC_PLAYMENU); else if (i == 2) go(SC_LIBRARY); else go(SC_TRICKS);
   }
 }
@@ -620,6 +640,7 @@ void Game::drawPlayMenu() {
 }
 
 // ---------------------------------------------------------------- fetch minigame
+static const ui::Box RESULT_OK = {56, 84, 48, 22};   // the fetch and Word Fetch results: a visible OK (any tap counts)
 void Game::startFetch() {
   for (auto& f : falling_) f.alive = 0;
   fetchScore_ = 0; fetchMiss_ = 0; fetchEndMs_ = ms_ + 30000; fetchNextSpawn_ = ms_ + 800; fetchDogX_ = 64; fetchDone_ = false;
@@ -673,17 +694,18 @@ void Game::drawFetch() {
     drawBackButton();
     return;
   }
-  ui::panel({30, 46, 100, 50}, C_CREAM, C_DKBROWN);
-  textCentered(80, 52, "Time's up!", C_DKBROWN);
-  char b[16]; snprintf(b, sizeof b, "%d bones!", fetchScore_); textCentered(80, 66, b, C_PLUM, 1);
-  textCentered(80, 80, fetchScore_ >= 12 ? "Amazing!" : fetchScore_ >= 6 ? "Great job!" : "Good try!", C_DKBROWN);
+  ui::panel({30, 36, 100, 76}, C_CREAM, C_DKBROWN);
+  textCentered(80, 42, "Time's up!", C_DKBROWN);
+  char b[16]; snprintf(b, sizeof b, "%d bones!", fetchScore_); textCentered(80, 55, b, C_PLUM, 1);
+  textCentered(80, 68, fetchScore_ >= 12 ? "Amazing!" : fetchScore_ >= 6 ? "Great job!" : "Good try!", C_DKBROWN);
+  ui::button(in_, {RESULT_OK, "OK", nullptr, C_GREEN});
 }
 void Game::drawFetchHud() {   // score and seconds left, either side of the home button
   int left = fetchDone_ ? 0 : (int)((fetchEndMs_ - ms_) / 1000);
   ui::panel({30, 14, 36, 13}, C_WHITE, C_DKBROWN);
   blit(SPR_BONE, 33, 17); char b[16]; snprintf(b, sizeof b, "%d", fetchScore_); text(46, 17, b, C_DKBROWN);
-  ui::panel({94, 14, 36, 13}, C_WHITE, C_DKBROWN);
-  snprintf(b, sizeof b, "%ds", left); textCentered(112, 17, b, left <= 5 ? C_RED : C_DKBROWN);
+  ui::panel({94, 14, 36, 13}, C_WHITE, left <= 5 ? (uint8_t)C_RED : (uint8_t)C_DKBROWN);   // red frame, readable plum digits
+  snprintf(b, sizeof b, "%ds", left); textCentered(112, 17, b, left <= 5 ? C_PLUM : C_DKBROWN);
 }
 
 // ---------------------------------------------------------------- word fetch
@@ -761,10 +783,11 @@ void Game::drawWords() {
   drawBackButton();
 }
 void Game::drawWordsDone() {
-  ui::panel({26, 40, 108, 60}, C_CREAM, C_DKBROWN);
-  textCentered(80, 46, "Word Fetch done!", C_DKBROWN);
-  char b[32]; snprintf(b, sizeof b, "%d of 5 words", wordCorrect_); textCentered(80, 62, b, C_NAVY);
-  textCentered(80, 78, "Super speller!", C_DKBROWN);
+  ui::panel({26, 36, 108, 76}, C_CREAM, C_DKBROWN);
+  textCentered(80, 42, "Word Fetch done!", C_DKBROWN);
+  char b[32]; snprintf(b, sizeof b, "%d of 5 words", wordCorrect_); textCentered(80, 55, b, C_NAVY);
+  textCentered(80, 68, "Super speller!", C_DKBROWN);
+  ui::button(in_, {RESULT_OK, "OK", nullptr, C_GREEN});
   drawDog(64, 140, P_JUMP, false);
 }
 void Game::drawWordTiles() {
@@ -788,8 +811,8 @@ void Game::updateLibrary() {
   if (bookSel_ >= n) bookSel_ = 0;
   if (in_.tapInCircle(26, 70, 16)) { bookSel_ = (bookSel_ + n - 1) % n; }
   if (in_.tapInCircle(134, 70, 16)) { bookSel_ = (bookSel_ + 1) % n; }
-  if (in_.tapIn(44, 118, 72, 30)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
-  if (in_.tapIn(56, 30, 48, 64)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
+  if (in_.tapIn(44, 118, 72, 24)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
+  if (in_.tapIn(56, 33, 48, 61)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
 }
 static void drawCover(int x, int y, int w, int h, const Book& bk, uint32_t ms) {
   rect(x + 2, y + 2, w, h, C_DKBROWN);
@@ -804,15 +827,15 @@ static void drawCover(int x, int y, int w, int h, const Book& bk, uint32_t ms) {
   else blit(*ic, cx - ic->w / 2, cy - ic->h / 2);
 }
 void Game::drawLibrary() {
-  clear(C_WOOD);
-  for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKWOOD);
+  clear(C_DKWOOD);
+  for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKBROWN);
   const Book& bk = curBook();
-  drawCover(56, 30, 48, 60, bk, ms_);
+  drawCover(56, 33, 48, 60, bk, ms_);   // 1 px under "book N of M"
   bool done = save_.booksDoneMask & (1u << bookList_[bookSel_]);
   if (!done) { blit(SPR_SPARKLE, 108, 30 + (int)((ms_ / 400) % 2)); textCentered(122, 40, "NEW!", C_YELLOW); }
   else blitTint(SPR_CHECK, 96, 84, C_GREEN);
   char lines[2][40]; int nl = wrap(bk.title, 110, lines, 2);
-  for (int i = 0; i < nl; i++) textCenteredShadow(80, 96 + i * 9, lines[i], C_WHITE, C_DKWOOD);
+  for (int i = 0; i < nl; i++) textCenteredShadow(80, 96 + i * 9, lines[i], C_WHITE, C_DKBROWN);
   circle(26, 71, 12, C_DKBROWN); circle(26, 70, 11, C_ORANGE); blitTint(SPR_ARROW, 22, 66, C_WHITE, true);
   circle(134, 71, 12, C_DKBROWN); circle(134, 70, 11, C_ORANGE); blitTint(SPR_ARROW, 132, 66, C_WHITE);
   ui::button(in_, {{44, 118, 72, 24}, done ? "Read again" : "Read to me!", nullptr, C_GREEN});
@@ -820,6 +843,7 @@ void Game::drawLibrary() {
   char b[32]; snprintf(b, sizeof b, "book %d of %d", bookSel_ + 1, shown); textCentered(80, 24, b, C_CREAM);
   drawBackButton();
 }
+static const int ANSWER_STEP = 24;   // 22 px answer buttons, 2 px apart; the lowest ends by y 137, inside the chord
 void Game::updateRead() {
   const Book& bk = curBook();
   int npages = 0; while (bk.pages[npages]) npages++;
@@ -845,9 +869,9 @@ void Game::updateRead() {
   int na = 0; while (na < 3 && bk.answers[na]) na++;
   char tl[2][40]; int tn = wrap(bk.title, 108, tl, 2); char ql[3][40]; int qn = wrap(bk.question, 116, ql, 3);
   int ay = (tn == 2 ? 44 : 36) + qn * 9 + 4;
-  for (int i = 0; i < na; i++) if (in_.tapIn(26, ay + i * 22, 108, 21)) {
+  for (int i = 0; i < na; i++) if (in_.tapIn(26, ay + i * ANSWER_STEP, 108, 22)) {
     answerPick_ = i; answerUntil_ = ms_ + 1400;
-    if (i == bk.correct) spawn(80, 84 + i * 22, 1, 8);
+    if (i == bk.correct) spawn(80, ay + i * ANSWER_STEP + 11, 1, 8);
   }
 }
 void Game::drawRead() {
@@ -881,11 +905,11 @@ void Game::drawReadQuestion(int qTop) {
   int na = 0; while (na < 3 && bk.answers[na]) na++;
   for (int i = 0; i < na; i++) {
     uint8_t col = answerPick_ < 0 ? C_BLUE : i == bk.correct ? C_GREEN : i == answerPick_ ? C_RED : C_LTGRAY;
-    bool pr = in_.down && in_.hit(26, ay + i * 22, 108, 21);
-    int by = ay + i * 22 + (pr ? 1 : 0);
-    ui::drawButton({{26, ay + i * 22, 108, 20}, nullptr, nullptr, col}, pr);
+    bool pr = in_.down && in_.hit(26, ay + i * ANSWER_STEP, 108, 22);
+    int by = ay + i * ANSWER_STEP + (pr ? 1 : 0);
+    ui::drawButton({{26, ay + i * ANSWER_STEP, 108, 22}, nullptr, nullptr, col}, pr);
     char al[2][40]; int an = wrap(bk.answers[i], 102, al, 2);
-    for (int k = 0; k < an; k++) textCentered(80, by + (an == 2 ? 2 + k * 9 : 6), al[k], inkOn(col));
+    for (int k = 0; k < an; k++) textCentered(80, by + (an == 2 ? 3 + k * 9 : 7), al[k], inkOn(col));
   }
   if (answerPick_ >= 0) drawDog(64, 158, answerPick_ == bk.correct ? P_JUMP : P_SAD, false);
 }
@@ -895,7 +919,7 @@ void Game::updateTricks() {
   if (backButton()) { go(SC_HOME); return; }
   for (int i = 0; i < NUM_TRICKS; i++) {
     int x = i % 2 ? 82 : 20, y = 34 + (i / 2) * 24;
-    if (!in_.tapIn(x - 2, y - 2, 64, 24)) continue;
+    if (!in_.tapIn(x, y, 60, 22)) continue;
     if (pet::trickLearned(save_, i)) { go(SC_HOME); startTrickShow(i); }
     else if (!pet::trickAvailable(save_, i)) { char b[32]; snprintf(b, sizeof b, "Needs %d hearts", pet::TRICK_UNLOCK_HEARTS[i]); toast(b); }
     else if (save_.asleep) { toast("Shh... sleeping"); }
@@ -905,21 +929,21 @@ void Game::updateTricks() {
 }
 void Game::drawTricks() {
   drawRoom();
-  ui::panel({18, 28, 124, 110}, C_CREAM, C_DKBROWN);
+  ui::panel({18, 28, 124, 112}, C_CREAM, C_DKBROWN);
   for (int i = 0; i < NUM_TRICKS; i++) {
     int x = i % 2 ? 82 : 20, y = 34 + (i / 2) * 24;
     bool learned = pet::trickLearned(save_, i), avail = pet::trickAvailable(save_, i);
     uint8_t col = learned ? C_GREEN : avail ? C_BLUE : C_DKGRAY, ink = inkOn(col);
-    bool pr = in_.down && in_.hit(x - 2, y - 2, 64, 24);
+    bool pr = in_.down && in_.hit(x, y, 60, 22);
     int dy = pr ? 1 : 0;
-    ui::drawButton({{x, y, 60, 21}, nullptr, nullptr, col}, pr);
+    ui::drawButton({{x, y, 60, 22}, nullptr, nullptr, col}, pr);
     char nl[2][40]; int nn = wrap(TRICK_NAMES[i], 36, nl, 2);   // "Roll Over" and "Play Dead" take two lines
     for (int k = 0; k < nn; k++) text(x + 3, y + 2 + k * 9 + dy, nl[k], ink);
     if (learned) blitTint(SPR_CHECK, x + 49, y + 12 + dy, ink);
     else if (!avail) { blit(SPR_HEART, x + 42, y + 12 + dy); char b[4]; snprintf(b, sizeof b, "%d", pet::TRICK_UNLOCK_HEARTS[i]); text(x + 51, y + 12 + dy, b, ink); }
     else { for (int k = 0; k < 3; k++) rect(x + 44 + k * 5, y + 13 + dy, 4, 4, k < save_.trickProgress[i] ? C_YELLOW : C_NAVY); }
   }
-  textCentered(80, 129, "tap to learn", C_DKBROWN);
+  textCentered(80, 131, "tap to learn", C_DKBROWN);
   drawBackButton();
 }
 
@@ -931,7 +955,7 @@ void Game::trainZones(int zx[3], int zy[3], int& scale, int& dx, int& dy) const 
   dx = 80 - s.w * scale / 2; dy = 118;
   int top = dy - s.h * scale;
   zx[0] = dx + dp.headX * scale; zy[0] = top + (dp.headY - dp.headR / 2) * scale;   // top of the head
-  zx[1] = dx + (dp.bodyX - 1) * scale; zy[1] = top + (dp.bodyY + dp.bodyRY / 2) * scale;  // belly
+  zx[1] = dx + dp.bodyX * scale; zy[1] = top + (dp.bodyY + dp.bodyRY * 2 / 3) * scale;  // low belly
   zx[2] = dx + dp.tailX * scale; zy[2] = top + dp.tailY * scale;                      // tail tip
 }
 int Game::trainHitZone(int x, int y) const {
@@ -1004,14 +1028,14 @@ void Game::drawTrain() {
   for (int z = 0; z < ZONE_N; z++) {
     uint8_t col = z == activeZone ? C_YELLOW : C_WHITE;
     if (trainPhase_ == 2 || z == activeZone) { ring(zx[z], zy[z], 10 + (z == activeZone ? (int)((ms_ / 100) % 3) : 0), col); ring(zx[z], zy[z], 9, z == activeZone ? C_ORANGE : C_DKBROWN); }
-    if (z == activeZone) { blit(SPR_SPARKLE, zx[z] - 2, zy[z] - 18); textCentered(zx[z], zy[z] + 16, ZONE_NAMES[z], C_DKBROWN); }
+    if (z == activeZone) { blit(SPR_SPARKLE, zx[z] - 2, zy[z] - 18); textCentered(zx[z], zy[z] + 16, ZONE_NAMES[z], C_NAVY); }
   }
   switch (trainPhase_) {
-    case 0: textCentered(80, 46, "Watch me glow,", C_NAVY); textCentered(80, 56, "then tap the spots!", C_NAVY); if ((ms_ / 500) % 2) textCentered(80, 138, "tap to start", C_DKBROWN); break;
+    case 0: textCentered(80, 46, "Watch me glow,", C_NAVY); textCentered(80, 56, "then tap the spots!", C_NAVY); if ((ms_ / 500) % 2) textCentered(80, 138, "tap to start", C_NAVY); break;
     case 1: textCentered(80, 46, "Watch...", C_NAVY); break;
     case 2: snprintf(b, sizeof b, "Your turn! %d of %d", seqInput_, seqLen_); textCentered(80, 46, b, C_NAVY); break;
-    case 3: textCentered(80, 46, "Good dog!", C_DKGREEN); break;
-    case 4: textCentered(80, 46, "Oops! Watch again.", C_RED); break;
+    case 3: textCentered(80, 46, "Good dog!", C_DKBROWN); break;
+    case 4: textCentered(80, 46, "Oops! Watch again.", C_PLUM); break;
   }
   drawBackButton();
 }
@@ -1030,7 +1054,7 @@ void Game::startBath() {
   bathDoneMs_ = 0; go(SC_BATH);
 }
 void Game::updateBath() {
-  if (bathDoneMs_) { if (ms_ >= bathDoneMs_) { pet::bathe(save_, now_); markDirty(); go(SC_HOME); toast("Squeaky clean!"); dogAct_ = 3; dogActUntil_ = ms_ + 1200; } return; }
+  if (bathDoneMs_) { if (ms_ >= bathDoneMs_ || backButton()) { pet::bathe(save_, now_); markDirty(); go(SC_HOME); toast("Squeaky clean!"); dogAct_ = 3; dogActUntil_ = ms_ + 1200; } return; }
   if (backButton()) { go(SC_HOME); return; }
   if (in_.down) {
     if ((ms_ / 33) % 3 == 0) spawn(in_.x, in_.y, 3, 1);
@@ -1108,7 +1132,7 @@ void Game::updateHats() {
   if (backButton()) { go(SC_STATS); return; }
   if (in_.tapInCircle(26, 80, 16)) { do { hatSel_ = (hatSel_ + 7) % 8; } while (hatSel_ && !(save_.hatsMask & (1u << hatSel_))); }
   if (in_.tapInCircle(134, 80, 16)) { do { hatSel_ = (hatSel_ + 1) % 8; } while (hatSel_ && !(save_.hatsMask & (1u << hatSel_))); }
-  if (in_.tapIn(50, 122, 60, 24)) { save_.hat = (uint8_t)hatSel_; markDirty(); toast("Looking good!"); }
+  if (in_.tapIn(50, 122, 60, 24)) { save_.hat = (uint8_t)hatSel_; markDirty(); toast("Looking good!"); }   // the button drawn below
 }
 void Game::drawHats() {
   clear(C_WALL);
@@ -1118,7 +1142,7 @@ void Game::drawHats() {
   save_.hat = keep;
   circle(26, 81, 12, C_DKBROWN); circle(26, 80, 11, C_ORANGE); blitTint(SPR_ARROW, 22, 76, C_WHITE, true);
   circle(134, 81, 12, C_DKBROWN); circle(134, 80, 11, C_ORANGE); blitTint(SPR_ARROW, 132, 76, C_WHITE);
-  ui::button(in_, {{50, 122, 60, 22}, save_.hat == hatSel_ ? "Wearing" : "Wear it", nullptr, save_.hat == hatSel_ ? C_DKGRAY : C_GREEN});
+  ui::button(in_, {{50, 122, 60, 24}, save_.hat == hatSel_ ? "Wearing" : "Wear it", nullptr, save_.hat == hatSel_ ? C_DKGRAY : C_GREEN});
   int owned = 0; for (int i = 1; i < 8; i++) if (save_.hatsMask & (1u << i)) owned++;
   char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
   drawBackButton();
@@ -1134,9 +1158,9 @@ void Game::updateConfirmReset() {
 void Game::drawConfirmReset() {
   clear(C_PLUM);
   textCentered(80, 44, "Start over?", C_WHITE);
-  char b[48]; snprintf(b, sizeof b, "%s will forget you!", save_.petName); textCentered(80, 60, b, C_PINK);
+  char b[48]; snprintf(b, sizeof b, "%s will forget you!", save_.petName); textCentered(80, 60, b, C_YELLOW);
   ui::button(in_, {{20, 90, 50, 24}, "No!", nullptr, C_GREEN});
-  ui::button(in_, {{90, 90, 50, 24}, "Yes", nullptr, C_RED});
+  ui::button(in_, {{90, 90, 50, 24}, "Yes", nullptr, C_BROWN});
 }
 
 // ---------------------------------------------------------------- gift & celebrate
@@ -1195,7 +1219,7 @@ void Game::drawCelebrate() {
 static void streetSlot(int i, int n, int& cx, int& gy) {
   int row = n > 2 ? i / 2 : 0, inRow = row ? n - 2 : (n < 2 ? n : 2);
   cx = inRow == 1 ? 80 : (i % 2 ? 110 : 50);
-  gy = n > 2 ? 74 + row * 48 : 104;
+  gy = n > 2 ? 72 + row * 52 : 104;
 }
 void Game::updateStreet() {
   if (backButton()) { go(SC_HOME); return; }
@@ -1231,14 +1255,14 @@ void Game::drawStreetHouse(int i, bool night) {   // the house, its pup by the d
 // ---------------------------------------------------------------- house colors
 void Game::updateTheme() {
   if (backButton()) { go(SC_NAME_PET); return; }
-  for (int i = 0; i < 4; i++) if (in_.tapIn(16 + i * 32, 56, 32, 44)) { save_.theme = (uint8_t)i; finishAdoption(); return; }
+  for (int i = 0; i < 4; i++) if (in_.tapIn(17 + i * 32, 56, 30, 44)) { save_.theme = (uint8_t)i; finishAdoption(); return; }
 }
 void Game::drawTheme() {
   clear(C_SKY);
   rect(0, 100, 160, 60, C_LEAF);
   textCentered(80, 30, "Pick your house!", C_NAVY);
   for (int i = 0; i < 4; i++) {
-    bool pr = in_.down && in_.hit(16 + i * 32, 56, 32, 44);
+    bool pr = in_.down && in_.hit(17 + i * 32, 56, 30, 44);
     drawHouseIcon(32 + i * 32, 100 + (pr ? 1 : 0), 24, THEMES[i], false);
   }
   char b[40]; snprintf(b, sizeof b, "for %s and %s", kids_[self_].name, save_.petName); textCentered(80, 118, b, C_NAVY);

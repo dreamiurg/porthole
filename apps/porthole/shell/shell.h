@@ -28,7 +28,7 @@ class Shell {
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST, SH_APP };
-  enum Key : uint8_t { KEY_NONE, KEY_LEFT, KEY_OK };
+  enum Key : uint8_t { KEY_NONE, KEY_SKIP, KEY_OK };
 
   shell::Store* st_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
@@ -39,7 +39,7 @@ class Shell {
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
   shell::Record draft_{};                          // the profile being created
-  char name_[12] = {0}; int nameLen_ = 0;
+  char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   Screen screen_ = SH_PICK;
@@ -64,13 +64,13 @@ class Shell {
   void closeApp();
   void flushApp(bool allowed);
   void budgetTick();
-  Key keypad(bool leftIsSkip);
+  Key keypad(bool canSkip);
   // screens
   void updatePick(); void drawPick();
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();
-  void updatePin(); void drawPin(); void drawPinKey(int k, const char* label, uint8_t col);
+  void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher();
   void updateRest(); void drawRest();

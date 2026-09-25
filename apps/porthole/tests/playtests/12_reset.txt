@@ -26,7 +26,7 @@ wait 1000
 tap 80 80
 wait 450
 tap 123 28
-tap 92 144
+tap 119 125
 wait 450
 tap 32 78
 wait 900

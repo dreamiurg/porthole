@@ -5,18 +5,22 @@ expect-screen new_name
 ui-check new_name
 snap 01_new_name
 # OK on an empty name does nothing
-tap 92 144
+tap 119 125
 wait 450
 expect-screen new_name
-# S A X, backspace, M -> "Sam"
-tap 120 96
-tap 30 48
-tap 90 120
-tap 68 144
-tap 140 72
+# S (page N-Z), A (page A-M), X, backspace, M -> "Sam"
+tap 67 125
+tap 67 77
+tap 67 125
+tap 41 53
+tap 67 125
+tap 93 101
+tap 93 125
+tap 67 125
+tap 41 125
 ui-check new_name-typed
 snap 02_name_typed
-tap 92 144
+tap 119 125
 wait 450
 expect-screen new_avatar
 ui-check
@@ -34,7 +38,7 @@ expect-screen pin_set
 ui-check
 snap 05_pin_set
 # skip the secret code
-tap 54 119
+tap 138 82
 wait 450
 expect-screen launcher
 ui-check
@@ -59,7 +63,7 @@ ui-check
 tap 123 28
 wait 450
 snap 08_name_pet
-tap 92 144
+tap 119 125
 wait 450
 expect-screen theme
 ui-check
