@@ -194,7 +194,7 @@ int monthDays(int year, int month) {
 
 bool boardBegin() {
   if (panel && touchReady) return true;
-  Serial.printf("Board: PSRAM=%u bytes\n", ESP.getPsramSize());
+  Serial.printf("Board: PSRAM=%lu bytes\n", (unsigned long)ESP.getPsramSize());
   if (!psramFound()) { Serial.println("Board: OPI PSRAM is required"); return false; }
   pinMode(kBacklight, OUTPUT);
   digitalWrite(kBacklight, LOW);

@@ -354,7 +354,7 @@ static void render() {
       button(storyPage+1<int(pages.size())?"Next":view==Story?"Choose":"The end",248,374,128,56,pack(Next)); break;
     case Choice:
       top("What shall we do?",pack(Previous)); label(a::stories[storyIndex].prompt,64,148,352);
-      for(int i=0;i<2;i++)button(a::stories[storyIndex].choices[i].label,78,256+i*80,324,68,pack(Choose,i)); break;
+      for(int i=0;i<2;i++){button(a::stories[storyIndex].choices[i].label,78,256+i*80,324,68,pack(Choose,i));} break;
     case Discoveries: {
       top(factMode==2 ? "Our little notebook" : topicIndex>=0 ? a::topics[topicIndex].name : "Little discoveries",pack(GoLibrary));
       button("Topics",76,145,156,56,pack(GoTopics)); button("Today's three",248,145,156,56,pack(GoDiscoveries));
@@ -511,11 +511,12 @@ static void command(int code) {
     case GoToday:view=Today;break;
     case GoWord:view=Word;break;
     case GoTricks:view=Tricks;listPage=0;break;
-    case OpenTrick:if(arg>=0&&arg<6&&puppy.daysTogether>=a::tricks[arg].unlockDay){trickIndex=arg;trainStep=0;trainWatching=true;if(puppy.tricks[arg]>=3){pet::practice(puppy,arg,now,day);savePet();view=Home;say("Hey, look! I've been practicing.",6+arg);}else view=Training;}break;
+    case OpenTrick:if(arg>=0&&arg<6&&puppy.daysTogether>=a::tricks[arg].unlockDay){trickIndex=arg;trainStep=0;trainWatching=true;if(puppy.tricks[arg]>=3){pet::practice(puppy,arg,now,day);savePet();view=Home;say("Hey, look! I've been practicing.",6+arg);}else{view=Training;}}break;
     case StartLesson:trainWatching=false;trainStep=0;break;
     case CueTap:{const auto& trick=a::tricks[trickIndex];int progress=std::min(2,int(puppy.tricks[trickIndex]));
       if(arg!=static_cast<int>(trick.lessons[progress][trainStep])){trainWatching=true;trainStep=0;}
-      else if(++trainStep>=trick.lessonLengths[progress]){pet::practice(puppy,trickIndex,now,day);savePet();view=Home;say(puppy.tricks[trickIndex]>=3?"We did it! Watch my little paws.":"We've got that bit! A little wag for both of us.",6+trickIndex);}break;}
+      else if(++trainStep>=trick.lessonLengths[progress]){pet::practice(puppy,trickIndex,now,day);savePet();view=Home;say(puppy.tricks[trickIndex]>=3?"We did it! Watch my little paws.":"We've got that bit! A little wag for both of us.",6+trickIndex);}
+      break;}
     case GoProfile:view=Profile;break;
     case GoStickers:view=Stickers;listPage=0;break;
     case GoSettings:view=Settings;break;
@@ -540,14 +541,14 @@ static void flush(lv_disp_drv_t* drv,const lv_area_t* area,lv_color_t* colors){
 }
 static void touch(lv_indev_drv_t*,lv_indev_data_t* data){
   ++touchReads; uint16_t x,y; bool down=boardTouch(x,y);
-  if(down&&!previousPhysical)++physicalTouches;previousPhysical=down;
+  if(down&&!previousPhysical){++physicalTouches;}previousPhysical=down;
   if(injectedUntil>uint64_t(esp_timer_get_time())){down=true;x=injectedX;y=injectedY;}
   data->state=down?LV_INDEV_STATE_PR:LV_INDEV_STATE_REL;
   if(down){data->point.x=x;data->point.y=y;}
 }
 static void status(){
   int count=0;for(int i=0;i<96;i++)count+=pet::discovered(puppy,i);
-  Serial.printf("STATUS {\"view\":%d,\"stars\":%u,\"discoveries\":%d,\"days\":%lu,\"friendship\":%lu,\"sleeping\":%u,\"saved\":%s,\"clock\":%s,\"epoch\":%llu,\"freeHeap\":%u,\"freePSRAM\":%u,\"flushes\":%lu,\"touchReads\":%lu,\"physicalTouches\":%lu,\"testing\":%s,\"checksum\":%lu,\"tricks\":[%u,%u,%u,%u,%u,%u],\"stories\":%u,\"daily\":%u,\"claimed\":%u,\"stickers\":%u,\"brightness\":%u}\n",view,pet::stars(puppy),count,(unsigned long)puppy.daysTogether,(unsigned long)puppy.friendship,puppy.sleeping,savedOK?"true":"false",clockOK?"true":"false",nowSeconds(),ESP.getFreeHeap(),ESP.getFreePsram(),(unsigned long)flushes,(unsigned long)touchReads,(unsigned long)physicalTouches,testing?"true":"false",(unsigned long)checksum(&puppy,sizeof(puppy)),puppy.tricks[0],puppy.tricks[1],puppy.tricks[2],puppy.tricks[3],puppy.tricks[4],puppy.tricks[5],puppy.stories,puppy.dailyCompleted,puppy.dailyClaimed,puppy.stickers,brightness);
+  Serial.printf("STATUS {\"view\":%d,\"stars\":%u,\"discoveries\":%d,\"days\":%lu,\"friendship\":%lu,\"sleeping\":%u,\"saved\":%s,\"clock\":%s,\"epoch\":%llu,\"freeHeap\":%lu,\"freePSRAM\":%lu,\"flushes\":%lu,\"touchReads\":%lu,\"physicalTouches\":%lu,\"testing\":%s,\"checksum\":%lu,\"tricks\":[%u,%u,%u,%u,%u,%u],\"stories\":%u,\"daily\":%u,\"claimed\":%u,\"stickers\":%u,\"brightness\":%u}\n",view,pet::stars(puppy),count,(unsigned long)puppy.daysTogether,(unsigned long)puppy.friendship,puppy.sleeping,savedOK?"true":"false",clockOK?"true":"false",nowSeconds(),(unsigned long)ESP.getFreeHeap(),(unsigned long)ESP.getFreePsram(),(unsigned long)flushes,(unsigned long)touchReads,(unsigned long)physicalTouches,testing?"true":"false",(unsigned long)checksum(&puppy,sizeof(puppy)),puppy.tricks[0],puppy.tricks[1],puppy.tricks[2],puppy.tricks[3],puppy.tricks[4],puppy.tricks[5],puppy.stories,puppy.dailyCompleted,puppy.dailyClaimed,puppy.stickers,brightness);
 }
 static void tree(lv_obj_t* object){
   uint32_t n=lv_obj_get_child_cnt(object);
@@ -585,7 +586,7 @@ static void serialCommands(){
 }
 void setup(){
   Serial.begin(115200);delay(350);
-  Serial.printf("BISCUIT boot flash=%u psram=%u reset=%d\n",ESP.getFlashChipSize(),ESP.getPsramSize(),esp_reset_reason());
+  Serial.printf("BISCUIT boot flash=%lu psram=%lu reset=%d\n",(unsigned long)ESP.getFlashChipSize(),(unsigned long)ESP.getPsramSize(),esp_reset_reason());
   if(ESP.getFlashChipSize()<16*1024*1024||ESP.getPsramSize()<8*1024*1024||!boardBegin()){
     Serial.println("FATAL board initialization failed");while(true)delay(1000);
   }
