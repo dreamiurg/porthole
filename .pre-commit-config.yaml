@@ -6,8 +6,8 @@ default_stages: [pre-commit]
 exclude: |
   (?x)^(
     apps/biscuit/firmware/generated/.*|
-    apps/pets-club/src/game/sprites\.h|
-    apps/pets-club/src/game/font8x8_basic\.h|
+    apps/porthole/games/pets-club/sprites\.h|
+    apps/porthole/os/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
   )$
 
@@ -60,7 +60,10 @@ repos:
     hooks:
       - id: mypy
         name: mypy (python tools)
-        args: [--config-file=pyproject.toml]
+        # The whole tree, not just the changed files: module-name clashes across apps (two tools/device.py)
+        # only show up when mypy sees both, which is what CI's --all-files run does.
+        args: [--config-file=pyproject.toml, .]
+        pass_filenames: false
 
   - repo: local
     hooks:
@@ -72,12 +75,12 @@ repos:
         files: ^tools/(release|test_release)\.py$
 
       # Per-app gates: each runs only when that app's files change.
-      - id: pets-club-check
-        name: pets-club make check
-        entry: make -C apps/pets-club check
+      - id: porthole-check
+        name: porthole make check
+        entry: make -C apps/porthole check
         language: system
         pass_filenames: false
-        files: ^apps/pets-club/
+        files: ^apps/porthole/
       - id: biscuit-check
         name: biscuit make check
         entry: make -C apps/biscuit check
@@ -94,12 +97,12 @@ repos:
         pass_filenames: false
         files: \.(cpp|h|c|js|mjs|py)$
         stages: [pre-push]
-      - id: pets-club-ci
-        name: pets-club make ci (playtests, coverage)
-        entry: make -C apps/pets-club ci
+      - id: porthole-ci
+        name: porthole make ci (playtests, coverage)
+        entry: make -C apps/porthole ci
         language: system
         pass_filenames: false
-        files: ^apps/pets-club/
+        files: ^apps/porthole/
         stages: [pre-push]
       - id: biscuit-ci
         name: biscuit make ci (coverage)
@@ -109,12 +112,12 @@ repos:
         files: ^apps/biscuit/
         stages: [pre-push]
       # Firmware builds are incremental locally (seconds) and skipped without PlatformIO.
-      - id: pets-club-firmware
-        name: pets-club firmware build
-        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/pets-club firmware'
+      - id: porthole-firmware
+        name: porthole firmware build
+        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/porthole firmware'
         language: system
         pass_filenames: false
-        files: ^apps/pets-club/(src/|platformio\.ini$)|^platform/
+        files: ^apps/porthole/(firmware/|os/|games/|platformio\.ini$)|^platform/
         stages: [pre-push]
       - id: biscuit-firmware
         name: biscuit firmware build + layout test

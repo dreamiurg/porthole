@@ -26,8 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      pets-club: ${{ steps.changes.outputs.pets-club }}
-      pets-club-firmware: ${{ steps.changes.outputs.pets-club-firmware }}
+      porthole: ${{ steps.changes.outputs.porthole }}
+      porthole-firmware: ${{ steps.changes.outputs.porthole-firmware }}
       biscuit: ${{ steps.changes.outputs.biscuit }}
       biscuit-firmware: ${{ steps.changes.outputs.biscuit-firmware }}
     steps:
@@ -46,8 +46,8 @@ jobs:
           shared='^(ALL$|\.github/|platform/|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$|\.node-version$)'
           hit() { printf '%s\n' "$code" | grep -Eq "$shared|$1" && echo true || echo false; }
           {
-            echo "pets-club=$(hit '^apps/pets-club/')"
-            echo "pets-club-firmware=$(hit '^apps/pets-club/(src/|platformio\.ini$)')"
+            echo "porthole=$(hit '^apps/porthole/')"
+            echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|games/|platformio\.ini$)')"
             echo "biscuit=$(hit '^apps/biscuit/')"
             echo "biscuit-firmware=$(hit '^apps/biscuit/(firmware/|src/|package(-lock)?\.json$)')"
           } | tee -a "$GITHUB_OUTPUT"
@@ -62,13 +62,13 @@ jobs:
       # Same hooks as a local commit and push. App suites run in their own jobs below.
       - run: pre-commit run --all-files --show-diff-on-failure
         env:
-          SKIP: no-commit-to-branch,pets-club-check,biscuit-check
+          SKIP: no-commit-to-branch,porthole-check,biscuit-check
       - run: pre-commit run complexity --all-files --hook-stage pre-push
 
-  pets-club:
-    name: Pets Club
+  porthole:
+    name: Porthole
     needs: static
-    if: needs.static.outputs.pets-club == 'true'
+    if: needs.static.outputs.porthole == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -77,12 +77,12 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pillow gcovr
-      - run: make -C apps/pets-club ci
+      - run: make -C apps/porthole ci
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: failure()
         with:
-          name: pets-club-playtest-report
-          path: apps/pets-club/build/playtest/
+          name: porthole-playtest-report
+          path: apps/porthole/build/playtest/
           retention-days: 7
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         if: env.CODECOV_TOKEN != ''
@@ -90,15 +90,15 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: apps/pets-club/build/coverage/coverage.xml
-          flags: pets-club
-      - if: needs.static.outputs.pets-club-firmware == 'true'
+          files: apps/porthole/build/coverage/coverage.xml
+          flags: porthole
+      - if: needs.static.outputs.porthole-firmware == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', 'apps/pets-club/platformio.ini') }}
-      - if: needs.static.outputs.pets-club-firmware == 'true'
-        run: pip install -r platform/requirements.txt && make -C apps/pets-club firmware
+          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', 'apps/porthole/platformio.ini') }}
+      - if: needs.static.outputs.porthole-firmware == 'true'
+        run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
 
   biscuit:
     name: Biscuit
@@ -141,7 +141,7 @@ jobs:
     name: Required Checks
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [static, pets-club, biscuit]
+    needs: [static, porthole, biscuit]
     if: always()
     steps:
       - name: Check results
