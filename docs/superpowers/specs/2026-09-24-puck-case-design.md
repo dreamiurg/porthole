@@ -1,6 +1,6 @@
 # Puck case: Porthole on battery
 
-Status: design approved in conversation 2026-09-24 (round puck chosen over a taller egg). Owner: Dmytro (PM). Issue: #14.
+Status: design approved 2026-09-24 (round puck); v2 controls design built in Fusion. Owner: Dmytro (PM). Issue: #14.
 
 ## Goal
 
@@ -41,25 +41,32 @@ Bambu printer, assembled with a screwdriver and no soldering. It must not block 
 USB-C and SW1 positions are nested in the STEP sub-assemblies; the model extracts them before any
 opening is placed. Coordinates are Waveshare's STEP frame (mm, origin at the board center).
 
-## Parts
+## Parts (v2, 2026-09-24)
 
-1. **Top shell**: front lip over the glass edge (outside the 2.1" active area), outer wall, and an
-   internal plate at the standoff plane. The board drops in face down; 4 M2 screws go from behind
-   through the plate into the standoffs.
-2. **Back cover**: flat, with a pocket that holds the cell against the plate. Fixed to the top
-   shell by 2-3 M2 screws into bosses placed outside the cell footprint.
-3. Bought: 2000 mAh protected cell, M2 screws (lengths set by the model), optional foam pad.
+Nothing on the front part may protrude inward below the glass: the round 75 mm glass slides in from
+the back, so every control lives in the back part, which goes on after the board.
 
-The top shell carries the board screws because the 50 x 50 mm cell overlaps the standoff circle, so
-posts cannot run from the back cover to the standoffs.
+1. **Ring**: front lip over the glass edge (outside the 2.1" active area), 5.6 mm tall.
+2. **Plate**: screws to the board's 4 standoffs (M2x4 countersunk, from below); notches let the
+   Cup's button nubs and slider fork pass on assembly.
+3. **Slider**: separate small part captured in a chord channel inside the Cup wall; thumb knob
+   outside, fork around the switch lever inside. Drops in from the seam before the Ring goes on.
+4. **Cup**: wall (3.8 mm) + floor + cell pocket; flex-tongue buttons for BOOT and RESET printed in
+   the wall (raised dot, nub pushes the side plunger along +X); ledge the Plate sits on.
+5. **Fasteners**: 3 x M2x20 pan head from the Cup floor into the Ring. They clamp the stack
+   lip - glass - board - Plate - ledge; the seam keeps a 0.2 mm gap.
+
+Overall: 83.2 mm across, 24.8 mm thick. Source of truth: `hardware/case/puck_case_fusion.py`
+(rebuilds the Fusion document, checks part/board/cell interference, both slider travel ends and
+the assembly path); exports in `hardware/case/stl/`; Fusion project "Porthole".
 
 ## Openings
 
-- USB-C at the bottom edge, with space for a recessed magnetic tip (the dock plan, #17).
-- Slide switch: a slot a finger can work, recessed so a bag doesn't flip it.
-- BOOT and RESET: pinholes (reachable with a paperclip, not by accident).
-- Charge LED: a thin printed light pipe or a window.
-- Buzzer: a small vent grid.
+- USB-C (native, 5 o'clock) and USB-C (UART, 7 o'clock), recessed, sized for a standard overmold.
+- Power slider (3 o'clock, below the buttons), BOOT and RESET flex buttons above it.
+- Charge and power LEDs: 2 mm windows in the Cup wall (the LEDs face the back of the board; print
+  translucent so the wall glows).
+- Buzzer: vent holes through the Plate and the Cup floor (position from Waveshare's photo).
 - microSD: covered (no app uses it).
 
 ## Proportions (decided 2026-09-24)
