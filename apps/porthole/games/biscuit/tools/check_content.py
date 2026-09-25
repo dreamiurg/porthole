@@ -19,7 +19,6 @@ FONTS = (GAME / "generated/fonts.h").read_text(encoding="utf-8")
 EXTRAS = re.findall(r"EXTRAS\[\] = \{([^}]*)\}", FONTS)[0]  # the code points past ASCII the fonts carry
 GLYPHS = {chr(c) for c in range(32, 127)} | {chr(int(x, 16)) for x in EXTRAS.split(",")}
 TOKEN = re.compile(r"\{(\w*)\}")
-CUES, ACTIONS = set("LURDP"), {"feed", "play", "pet", "read", "train", "rest"}
 PERSONALIZED = {"page", "prompt", "fact_page", "wonder", "description", "meaning"}
 
 LEX = re.compile(r'"((?:[^"\\]|\\.)*)"|([{},])|([\w.]+)|(\s+|//[^\n]*)', re.S)
@@ -138,22 +137,16 @@ def daily(g):
     adventures = table("content_daily.h", "ADVENTURES")
     g.count("ADVENTURES", adventures, 7)
     g.unique("ADVENTURES", [a[0] for a in adventures])
-    for title, description, actions, word, meaning in adventures:
+    for title, description, word, meaning in adventures:  # which activities a day asks for is a rule: pet.h
         g.text(title, "adv_title", title)
         g.text(title, "description", description)
         g.text(title, "word", word)
         g.text(title, "meaning", meaning)
-        if len(set(actions)) != 3 or not set(actions) <= ACTIONS:
-            g.errors.append(f"{title}: actions {actions} must be three different of {sorted(ACTIONS)}")
     tricks = table("content_daily.h", "TRICKS")
     g.count("TRICKS", tricks, 6)
     g.unique("TRICKS", [t[0] for t in tricks])
-    for tid, name, _day, lessons in tricks:
+    for tid, name in tricks:  # their lessons and unlock days are rules: pet.h, tested by host/test_biscuit.cpp
         g.text(tid, "trick", name)
-        g.count(f"{tid} lessons", lessons, 3)
-        for cues in lessons:
-            if not 3 <= len(cues) <= 6 or not set(cues) <= CUES:
-                g.errors.append(f"{tid}: lesson {cues!r} must be 3-6 of L U R D P")
     stickers = table("content_daily.h", "STICKERS")
     g.count("STICKERS", stickers, 12)
     for s in stickers:

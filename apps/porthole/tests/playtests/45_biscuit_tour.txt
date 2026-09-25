@@ -1,0 +1,112 @@
+# Every Biscuit screen of this release, by name, audited: home (day, evening, night; puppy, young pup, story dog;
+# asleep; fetch; a line on two rows), World, the scrapbook, Tricks (both pages), Training (watching a six-cue lesson,
+# the pad), and the two name keyboards. The widest names a kid can type: Wwwwwwww for the kid and for the pup.
+profile Wwwwwwww 8
+app biscuit
+wait 450
+expect-screen biscuit_setup_pet
+ui-check biscuit_setup_pet
+repeat 7
+tap 93 125
+end
+tap 67 125
+repeat 8
+tap 67 101
+end
+ui-check biscuit_setup_pet-full
+snap v01_setup_full
+tap 119 125
+wait 450
+expect-screen biscuit_home
+expect pet=Wwwwwwww
+ui-check biscuit_home-widest
+snap v02_home_widest
+tap 40 129
+ui-check biscuit_home-feeding
+tap 121 129
+wait 450
+expect-screen biscuit_world
+ui-check biscuit_world-widest
+snap v03_world
+tap 79 99
+wait 450
+expect-screen biscuit_profile
+ui-check biscuit_profile-widest
+snap v04_profile
+tap 80 132
+wait 450
+expect-screen biscuit_rename_pet
+ui-check biscuit_rename_pet
+snap v05_rename
+tap 80 12
+wait 450
+tap 51 25
+wait 450
+dbg practiced
+dbg grown
+tap 50 64
+wait 450
+expect-screen biscuit_tricks
+ui-check biscuit_tricks-grown
+snap v06_tricks
+tap 108 132
+wait 450
+ui-check biscuit_tricks-page2
+snap v07_tricks2
+tap 80 108
+wait 450
+expect-screen biscuit_training
+expect trick=5
+ui-check biscuit_training-six-cues
+snap v08_watch_six
+tap 80 132
+wait 450
+ui-check biscuit_training-pad
+snap v09_pad
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 43 29
+wait 450
+expect-screen biscuit_home
+expect stage=2
+ui-check biscuit_home-story-dog
+snap v10_story_dog
+dbg young
+wait 100
+expect stage=1
+ui-check biscuit_home-young
+snap v11_young
+# 16:00 + 1 h: evening light, then 20:00 + night
+skip 3600
+wait 100
+expect tint=evening
+ui-check biscuit_home-evening
+snap v12_evening
+tap 67 129
+wait 450
+ui-check biscuit_home-evening-fetch
+snap v13_evening_fetch
+tap 80 135
+wait 450
+skip 10800
+wait 100
+expect tint=night
+ui-check biscuit_home-night
+snap v14_night
+tap 67 129
+wait 450
+ui-check biscuit_home-night-fetch
+snap v14b_night_fetch
+tap 80 135
+wait 450
+tap 121 129
+wait 450
+ui-check biscuit_world-night
+tap 109 64
+wait 450
+expect sleeping=1
+ui-check biscuit_home-night-asleep
+snap v15_night_asleep
+sheet tour

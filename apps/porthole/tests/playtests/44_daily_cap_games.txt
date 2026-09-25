@@ -1,0 +1,40 @@
+# The daily cap counts every game: once today's 25 minutes are used up (here in Pets Club, then `dbg bedtime`),
+# Biscuit's tile on the launcher leads to the rest screen, "Back tomorrow". After local midnight Biscuit opens again.
+newgame Solo Rex
+wait 2400
+expect-screen home
+wait 2000
+expect today>0
+tap 80 12
+wait 450
+expect-screen launcher
+dbg bedtime
+tap 112 79
+wait 1500
+expect-screen rest
+expect today>=1500
+ui-check rest-bedtime-biscuit
+snap d01_rest
+tap 80 132
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen rest
+# 16:00 + 8 h: midnight. The rest screen gives way to the picker; the same kid gets in, and Biscuit opens
+skip 28800
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+expect today=0
+tap 112 79
+wait 450
+expect-screen biscuit_setup_pet
+tap 119 125
+wait 450
+expect-screen biscuit_home
+wait 3000
+expect today>0
+sheet daily_cap_games

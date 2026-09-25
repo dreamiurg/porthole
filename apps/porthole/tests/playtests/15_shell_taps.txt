@@ -61,7 +61,7 @@ wait 450
 tap 80 54
 wait 450
 dbg tired
-tap 80 76
+tap 48 79
 wait 2400
 expect-screen rest
 tap 80 132

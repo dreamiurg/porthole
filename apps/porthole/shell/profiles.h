@@ -61,7 +61,8 @@ void seal(Record& r);
 bool loadRecord(const void* data, size_t n, Record& out);
 // The stored form of a typed code ("0000".."9999"): value + 1, so 0000 is a real code; nullptr or "" = none.
 inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16_t)(atoi(digits) + 1) : 0; }
-void loadAll(Store& st, Profiles& p);   // porthole/p0..p3; migrates Pets Club houses until porthole/m exists
+// porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
+void loadAll(Store& st, Profiles& p);
 void saveRecord(Store& st, Profiles& p, int id);
 // name/avatar/age/pin from draft; erases any s<id> left in the app stores first. The id, or -1 when full.
 int  create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores);
@@ -71,9 +72,6 @@ void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, in
 Profile toProfile(const Profiles& p, int id);
 void migrate(Store& st, Profiles& p);   // migrate.cpp: Pets Club houses -> profiles; safe to re-run after power loss
 // migrate.cpp: Biscuit's pre-Porthole save -> biscuit/s<id>, once (porthole/mb); safe to re-run after power loss.
-// TODO(biscuit screens PR): call it at the end of loadAll (after migrate: it matches the migrated names) in the
-// same change that adds Biscuit to APPS. Before that no game reads biscuit/s<id>, and profile delete, create and
-// serial R do not erase it.
 void migrateBiscuit(Store& st, Profiles& p);
 
 // Rest budget.

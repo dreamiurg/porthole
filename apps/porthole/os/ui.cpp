@@ -45,8 +45,8 @@ static const uint8_t HOME_PX[] = {
   255, 255, 0, 0, 0, 0, 0, 255, 255,          255, 0, 0, 0, 0, 0, 0, 0, 255,
   0, 0, 0, 0, 0, 0, 0, 0, 0,                  255, 0, 0, 0, 0, 0, 0, 0, 255,
   255, 0, 0, 0, 255, 0, 0, 0, 255,            255, 0, 0, 0, 255, 0, 0, 0, 255};
-static const Sprite HOME = {9, 8, HOME_PX};
-void drawBack() { circle(80, 12, 11, C_DKBROWN); circle(80, 11, 10, C_ORANGE); blitTint(HOME, 76, 7, C_WHITE); }
+const Sprite HOME_GLYPH = {9, 8, HOME_PX};
+void drawBack() { circle(80, 12, 11, C_DKBROWN); circle(80, 11, 10, C_ORANGE); blitTint(HOME_GLYPH, 76, 7, C_WHITE); }
 bool back(const Input& in) { drawBack(); return in.tapInCircle(80, 12, 16); }
 
 // ---- name keyboard: two pages of 13 letters, each a 4x4 grid of 24x22 keys 2 px apart (26 letters at that size do

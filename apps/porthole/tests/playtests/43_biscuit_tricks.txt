@@ -1,0 +1,157 @@
+# Tricks: Sit to mastery over three lessons (watch the cues, then tap them on the pad). A wrong cue shows the lesson
+# again with nothing lost; a mastered trick is shown off at home; locked tricks wait for their day.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+expect-screen biscuit_tricks
+ui-check biscuit_tricks
+snap t01_tricks
+# Twirl opens on day 2: on day 1 its row does nothing
+tap 80 108
+wait 450
+expect-screen biscuit_tricks
+tap 108 132
+wait 450
+expect page=1
+ui-check biscuit_tricks-page2
+tap 52 132
+wait 450
+expect page=0
+# Sit, lesson 1: Paw Down Paw
+tap 80 60
+wait 450
+expect-screen biscuit_training
+expect watching=1
+ui-check biscuit_training-watch
+snap t02_watch
+tap 80 132
+wait 450
+expect watching=0
+ui-check biscuit_training-do
+snap t03_do
+# Up is wrong: the lesson shows again
+tap 80 60
+wait 450
+expect watching=1
+expect tricks=0
+tap 80 132
+wait 450
+tap 80 84
+expect step=1
+tap 80 108
+expect step=2
+snap t04_step2
+tap 80 84
+wait 450
+expect-screen biscuit_home
+expect tricks=100000
+expect activity=6
+snap t05_lesson1
+# lesson 2: Up Paw Down Paw (Peek again shows it once more first)
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+tap 80 60
+wait 450
+tap 80 132
+wait 450
+tap 80 60
+tap 80 132
+wait 450
+expect watching=1
+expect step=0
+tap 80 132
+wait 450
+tap 80 60
+tap 80 84
+tap 80 108
+tap 80 84
+wait 450
+expect-screen biscuit_home
+expect tricks=200000
+# lesson 3: Up Paw Left Down Paw
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+tap 80 60
+wait 450
+tap 80 132
+wait 450
+tap 80 60
+tap 80 84
+tap 46 84
+tap 80 108
+tap 80 84
+wait 450
+expect-screen biscuit_home
+expect tricks=300000
+snap t06_mastered
+# the mastered trick, opened again: shown off at home
+wait 4100
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+tap 80 60
+wait 450
+expect-screen biscuit_home
+expect activity=6
+expect tricks=300000
+# 90 s after its last line with no touch, a pup with a mastered trick shows it off (for 4 s)
+wait 4100
+expect activity=0
+wait 85000
+expect activity=0
+wait 1000
+expect activity=6
+# a week together: Twirl opens, its first lesson is Left Up Right
+dbg unlock
+wait 4100
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+ui-check biscuit_tricks-unlocked
+tap 80 108
+wait 450
+expect-screen biscuit_training
+expect trick=2
+tap 80 132
+wait 450
+tap 46 84
+tap 80 60
+tap 114 84
+wait 450
+expect-screen biscuit_home
+expect tricks=301000
+# Back from training and from the list
+tap 121 129
+wait 450
+tap 50 64
+wait 450
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+expect-screen biscuit_training
+expect trick=5
+ui-check biscuit_training-watch-long
+snap t07_watch_roll
+tap 51 25
+wait 450
+expect-screen biscuit_tricks
+tap 51 25
+wait 450
+expect-screen biscuit_world
+tap 43 29
+wait 450
+expect-screen biscuit_home
+sheet tricks

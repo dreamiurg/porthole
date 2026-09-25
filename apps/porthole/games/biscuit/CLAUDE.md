@@ -1,11 +1,12 @@
 # Biscuit: game brief
 
 **Part of this does not exist in code yet.** Biscuit is being rewritten onto the Porthole
-runtime, PR by PR. Landed so far: content and its generated art (#33), and the rules,
-save and legacy migration (#35, `pet.h`). Still to come: the RGB565 surface itself, and
-the screens (`game.h`/`game.cpp`) that put the two together into something playable. This
-file describes the intended design for what isn't real yet so every agent building toward
-it works from the same contract. The full plan, with rationale and delivery order, is
+runtime, PR by PR. Landed so far: content and its generated art (#33), the rules, save and
+legacy migration (#35, `pet.h`), the RGB565 surface (#36), and the game's first half (7a):
+it is in the launcher, with Home, care, fetch, World, Tricks and Training, the scrapbook
+and pet naming. Still to come (7b): the Library and stories, discoveries, Today and its
+pocket word, and stickers. This file describes the intended design for what isn't real
+yet so every agent building toward it works from the same contract. The full plan, with rationale and delivery order, is
 `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md` -- read it before
 implementing anything referenced here as "landing with the Biscuit PRs" (or a specific
 PR number, where known). Once a PR lands, update the paragraph it makes real and drop the
@@ -83,17 +84,16 @@ Landed:
   `zoegotchi/pet3|pet2|pet1` or `biscuit/pet1` (from `biscuit-v0.1.0`) is newer, converts
   with `fromLegacy`, and writes it to the profile named like the saved kid (first 8
   letters, case-insensitive), else the first profile, else a new one; erases only the
-  winning source's keys, and only after the marker `porthole/mb`. **Not wired yet**: it is
-  not called from `loadAll` until Biscuit joins `APPS` (`TODO(biscuit screens PR)` in
-  `shell/profiles.h`) -- so no unattended release moves a save that nothing reads yet, and
-  profile delete or serial `R` can't erase it prematurely.
+  winning source's keys, and only after the marker `porthole/mb`. `shell::loadAll` runs it
+  at every boot after the Pets Club migration (a no-op once the marker exists). Profile
+  delete and create, and serial `R`, erase `biscuit/s<id>` like every game's store in `APPS`.
 - `host/test_biscuit.cpp` (shared `host/` directory, #35): `pet.h`'s rules self-check --
   distinct from `host/test_biscuit_content.cpp` (content/art plumbing, #33).
 - Content: `content_stories.h` (7 branching stories, `Story{id, title, subtitle,
   unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`), `content_discoveries.h`
   (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12
-  topics), `content_daily.h` (7 daily adventures, 6 tricks with 3 cue-pattern lessons
-  each, 12 sticker names) -- `namespace biscuit`, `inline constexpr`, converted once from
+  topics), `content_daily.h` (7 daily adventures, 6 trick names, 12 sticker names; which
+  activities a day asks for, the trick lessons and unlock days are rules, in `pet.h`) -- `namespace biscuit`, `inline constexpr`, converted once from
   the legacy JS with ids and array order unchanged. See the `content` skill for the full
   authoring workflow and its gate.
 - `personalize.h` / `personalize.cpp`: fills the `{name}`/`{pet}` tokens (see Product
@@ -115,28 +115,35 @@ Landed:
   filled with the widest names, measured and drawn by `os/font.cpp` in its `layout.h` box
   and inside the round glass.
 
-Still landing:
-
-- `game.h` / `game.cpp` (`class Game : public App`, in `namespace biscuit`): App plumbing,
-  `enter` (decodes its own profile's blob only), state, command dispatch. `surface()` will
-  return `SURFACE_RGB565` everywhere except the naming screens, which reuse the shell's
-  indexed `ui::keyboard` rather than porting a second keyboard. `store()` will return
-  `"biscuit"`; that string is never renamed once it ships. `soundOn()` always false --
-  Biscuit has no buzzer sounds, the old firmware never drove it and the buzzer is harsh
-  (shared app brief constraint 3).
-- Screens, split by file to stay under the complexity gate: `screens_home.cpp` (Home with
-  scene, needs, speech bubble, hotspots, Feed/Read/Play/More, fetch ball; the World view),
-  `screens_read.cpp` (Library, Story, Choice, Ending), `screens_learn.cpp` (Discoveries,
-  Topics, Discovery cover/pages/wonder, Source, Today, Word), `screens_train.cpp` (Tricks,
-  Training watch/do), `screens_profile.cpp` (Profile, Stickers, SetupPet, RenamePet). 17
-  views total. Screens the old standalone firmware had that Porthole's shell now owns
-  instead: Settings, Clock, ResetConfirm, SetupChild, the idle cover, and Rest -- profiles,
-  backlight dimming, the serial clock command, profile delete, and the shell's rest screen
-  cover these.
-- `ui565.h` / `ui565.cpp`: plain-function UI helpers on the RGB565 surface (`button`,
-  `iconButton`, `top`, `nav`, `need`, `speechBubble`, `worldButton`, `picture`, small ASCII
-  icons, the tennis ball at 3x scale). Hit boxes are logical px, same convention as the
-  indexed games. Game-local for now; promote to `os/` if a second RGB565 game shows up.
+- `game.h` / `game.cpp` (`class Game : public App`, in `namespace biscuit`, 7a): App
+  plumbing, `enter` (decodes its own profile's blob only; an unnamed pup is never saved),
+  the speech line and activity timers (a line 4 s, a room one-shot 800 ms), needs ticking
+  every 30 s with a save checkpoint every 5 min or at a new day, screen dispatch.
+  `surface()` is `SURFACE_RGB565` everywhere except the two naming screens, which reuse the
+  shell's indexed `ui::keyboard` (8 letters). `store()` is `"biscuit"`, never renamed.
+  `soundOn()` is always false: Biscuit has no buzzer sounds (shared app brief constraint 3).
+  `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00. Screen
+  names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
+  `debugCmd`: `hungry unlock young grown tricks practiced`.
+- Screens, split by file to stay under the complexity gate. Landed (7a): `screens_home.cpp`
+  (Home: scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the
+  shelf, window (nap), fern and the pup, Feed/Play/Pet/More, fetch, and the orange home
+  button to the launcher; World: Learn tricks, Cozy nap, Our scrapbook),
+  `screens_train.cpp` (Tricks, Training watch/do), `screens_profile.cpp` (the scrapbook
+  with Rename pup, SetupPet, RenamePet). Still landing (7b): `screens_read.cpp` (Library,
+  Story, Choice, Ending), `screens_learn.cpp` (Discoveries, Topics, Discovery
+  cover/pages/wonder, Source, Today, Word), Stickers in `screens_profile.cpp`, and the
+  World tile for Today's adventure; until then the shelf only animates (`TODO(biscuit 7b)`).
+  Screens the old standalone firmware had that Porthole's shell now owns instead: Settings,
+  Clock, ResetConfirm, SetupChild, the idle cover, and Rest.
+- `ui565.h` / `ui565.cpp` (7a): the widgets on the RGB565 surface: `button`,
+  `actionButton`, `tile`, `hotspot`, `roundButton`, `home`, `top`, `nav`, `need`, `bubble`,
+  12x12 ASCII icons and the tennis ball at 3x. Split in two like nothing in `os/ui.h`:
+  `update()` asks `tapped()`, `render()` draws; never draw from `update()`, where on the
+  device the RGB565 target is the buffer on the glass. Hit boxes are logical px.
+  Game-local for now; promote to `os/` if a second RGB565 game shows up.
+- `tools/icon.py` -> `generated/icon.h`: the launcher icon, a 32x32 indexed sprite (the
+  launcher is the shell's), with a `--check` in `make lint`.
 
 ## Content limits (first release)
 
@@ -152,8 +159,10 @@ inside the round glass. See the `content` skill for the authoring workflow.
 
 The old firmware's controls ran as small as 56 logical px tall (6.2 mm); Porthole's floor
 is 24x22 logical (8 mm) -- see the shared app brief's constraint 1. Every Biscuit screen's
-layout gets re-tuned to that floor, not ported as-is: Back grows 86x56 -> 86x66,
-Previous/Next 128x56 -> 128x66, list rows 56/60 -> 66, the training cue pad and room
-hotspots re-flowed to fit. The UI audit (`make playtest`) at zero FAIL and zero WARN is
+layout gets re-tuned to that floor, not ported as-is. So far (7a, physical px): Back
+86x56 -> 90x66, Previous/Next 128x56 -> 120x66 with the page number between them, trick
+rows 316x56 -> 312x66, Home's actions 68x72 -> 72x66, the cue pad five 90x66 keys with the
+lesson count in the title slot, World's back disc 56 -> 66, the fern 64x46 -> 75x66, and
+the ball's box 80x64 -> 81x72. The UI audit (`make playtest`) at zero FAIL and zero WARN is
 the acceptance test for this, not a visual comparison to the old screenshots. A box that
 holds content lives in `layout.h`: re-tune it there, and the content gate measures the new box.

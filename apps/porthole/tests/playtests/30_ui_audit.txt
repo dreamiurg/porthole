@@ -46,7 +46,7 @@ wait 450
 ui-check launcher-muted
 tap 80 128
 wait 450
-tap 80 76
+tap 48 79
 wait 450
 ui-check splash
 snap a08_splash
@@ -287,7 +287,7 @@ tap 54 79
 tap 102 121
 wait 450
 expect-screen launcher
-tap 80 76
+tap 48 79
 wait 2400
 tap 80 80
 wait 1000
@@ -345,7 +345,7 @@ tap 102 59
 tap 54 79
 tap 102 121
 wait 450
-tap 80 76
+tap 48 79
 wait 2400
 expect-screen home
 expect profile=0/2
