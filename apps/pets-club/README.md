@@ -1,4 +1,4 @@
-# Pets Club — a pixel puppy for a round screen
+# Pets Club: a pixel puppy for a round screen
 
 A touch-only, Tamagotchi-style puppy for the **Waveshare ESP32-S3-Touch-LCD-2.1** (round 480×480
 IPS, capacitive touch, no buttons). Made for kids aged 5-10 who like dogs and books: the puppy

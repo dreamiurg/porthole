@@ -48,21 +48,28 @@ repos:
     hooks:
       - id: actionlint
 
-  - repo: local
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v1.178.0
     hooks:
       - id: semgrep
         name: semgrep SAST
-        entry: semgrep scan --config auto --error --quiet
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
+        args: [--config, auto, --error, --quiet, --disable-version-check, --skip-unknown-extensions]
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
       - id: mypy
         name: mypy (python tools)
-        entry: mypy
+        args: [--config-file=pyproject.toml]
+
+  - repo: local
+    hooks:
+      - id: release-tool
+        name: release planner self-test
+        entry: python3 tools/test_release.py
         language: system
-        types: [python]
-        require_serial: true
+        pass_filenames: false
+        files: ^tools/(release|test_release)\.py$
 
       # Per-app gates: each runs only when that app's files change.
       - id: pets-club-check
@@ -78,10 +85,12 @@ repos:
         pass_filenames: false
         files: ^apps/biscuit/
 
+      # Pre-push: everything CI would run for what you changed, so CI rarely finds anything new.
       - id: complexity
         name: lizard complexity gate
         entry: make complexity
-        language: system
+        language: python
+        additional_dependencies: [lizard==1.21.0]
         pass_filenames: false
         files: \.(cpp|h|c|js|mjs|py)$
         stages: [pre-push]
@@ -98,4 +107,19 @@ repos:
         language: system
         pass_filenames: false
         files: ^apps/biscuit/
+        stages: [pre-push]
+      # Firmware builds are incremental locally (seconds) and skipped without PlatformIO.
+      - id: pets-club-firmware
+        name: pets-club firmware build
+        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/pets-club firmware'
+        language: system
+        pass_filenames: false
+        files: ^apps/pets-club/(src/|platformio\.ini$)|^platform/
+        stages: [pre-push]
+      - id: biscuit-firmware
+        name: biscuit firmware build + layout test
+        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/biscuit firmware firmware-test'
+        language: system
+        pass_filenames: false
+        files: ^apps/biscuit/(firmware/|src/|package(-lock)?\.json$)|^platform/
         stages: [pre-push]
