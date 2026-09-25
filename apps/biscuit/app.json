@@ -1,5 +1,0 @@
-{
-  "name": "Biscuit",
-  "tagline": "A little dog with a big bookshelf: branching mysteries, 96 illustrated discoveries, tricks and daily adventures.",
-  "play": ["index.html", "style.css", "src", "assets/fonts"]
-}
