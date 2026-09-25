@@ -33,9 +33,9 @@ Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows 
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
 matched to the kid's age. Fetch and spelling games, daily gifts, stickers and
-hats keep kids coming back. Every kid gets a house on Paw Street, optionally
-behind a 4-digit code, and a pup that naps after a few minutes so the next kid
-gets a turn. Nothing ever dies.
+hats keep kids coming back. Up to four kids get a profile each (a face, an age,
+an optional 4-digit code) and their own pup and house on Paw Street; after a few
+minutes of play a kid rests so the next one gets a turn. Nothing ever dies.
 
 C++, no libraries: a 160x160 indexed framebuffer scaled 3x, with a host
 simulator, a browser emulator and scripted playtests that audit every screen

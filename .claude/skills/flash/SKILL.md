@@ -10,7 +10,7 @@ description: Pets Club (apps/porthole). Use when building, flashing, or bringing
    ```
 3. Find the device: `pio device list` (the on-board CH343 USB-UART bridge; macOS `/dev/cu.usbmodem*`, Linux usually `/dev/ttyACM*`). PlatformIO auto-detects it when only one board is attached.
 4. Flash: `make -C apps/porthole flash` (or `make -C apps/porthole flash PORT=<port>`).
-5. Monitor: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[pets-club] boot`, then within a couple seconds `[pets-club] houses=N now=<epoch> heap=<bytes>`.
+5. Monitor: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[porthole] boot`, then within a couple seconds `[porthole] profiles=N now=<epoch> heap=<bytes>`.
 6. Set the clock if the boot log says the RTC was not running: send `T<epoch>` over serial, e.g. `printf 'T%s\n' "$(date +%s)" > <port>`. The board treats the value as local wall-clock seconds with no timezone math, so use `date +%s` on a machine already set to the timezone you want the board to show.
-7. Other serial commands: `S` prints stats plus free heap and current epoch; `R` erases every house and reboots; `P<n>` clears house `n`'s 4-digit secret code; `D` toggles touch-position logging.
+7. Other serial commands: `S` prints the active profile and game stats plus free heap and current epoch; `R` erases every profile and every game's saves and reboots; `P<n>` clears profile `n`'s 4-digit secret code; `D` toggles touch-position logging.
 8. A clean build and a clean boot log are not a working display or touch panel. Only report those as confirmed if you or the user actually saw them work -- say explicitly which you verified and which you didn't.

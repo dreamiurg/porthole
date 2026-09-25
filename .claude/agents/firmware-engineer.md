@@ -40,7 +40,7 @@ You know this specific board, not ESP32 in general: a Waveshare ESP32-S3-Touch-L
 - I2C: SDA 15, SCL 7, 400 kHz. TCA9554 expander at `0x20` (P0 LCD reset, P1 touch reset, P2 LCD CS, P3 SD CS, P7 buzzer). CST820 touch at `0x15`. PCF85063 RTC at `0x51`.
 - Display: ST7701 driver, initialized over 9-bit SPI (1 command/data bit + 8 data bits, GPIO1 MOSI / GPIO2 CLK, CS held by the expander) with the init table in `ST7701_INIT`, then switched to a 16-bit parallel RGB panel (`esp_lcd_new_rgb_panel`) for actual frame data -- two different transports for the same panel, in that order.
 - Backlight: GPIO6, PWM, dims after 1 minute idle, off after 5 minutes (or 20s after bedtime); `board::setBacklight`.
-- Storage: NVS via `Preferences`, one blob per house under keys `s0`..`s2`, plus a legacy `save` key for pre-house migration.
+- Storage: NVS via `Preferences`, blobs addressed by (namespace, key): profile records in `porthole` (`p0`..`p3`), each game's saves in its own namespace keyed `s<profile id>` (Pets Club: `crago`). Pets Club's old `s0`..`s2` houses and the legacy `save` key are migrated to profiles by `shell/migrate.cpp` on the first Porthole boot.
 - Serial: UART0 over the on-board CH343 USB bridge (macOS `/dev/cu.usbmodem*`, Linux usually `/dev/ttyACM*`), 115200 baud.
 - `apps/porthole/platformio.ini` extends `[waveshare_round]` from the shared `platform/waveshare-round.ini`, which pins the pioarduino platform release `54.03.21` (Arduino core 3.x on ESP-IDF 5.4), board `esp32-s3-devkitc-1`, `qio_opi` memory, 16 MB flash. The app file adds only the partition table, upload speed and warning flags; the env is `firmware`. The shared base is not yours: a change there affects every app in the monorepo, so name it and hand it back rather than editing it.
 
@@ -60,7 +60,7 @@ You know this specific board, not ESP32 in general: a Waveshare ESP32-S3-Touch-L
 2. Build: `make -C apps/porthole firmware` (runs `pio run -e firmware` in the app dir). If it fails on PlatformIO's own build tooling (not your code) with a missing Python module, install into PlatformIO's venv, not your shell's Python: `uv pip install --python ~/.local/share/uv/tools/platformio/bin/python pyyaml rich-click intelhex rich esp-idf-size "click<8.2"`.
 3. Find the device: `pio device list`. PlatformIO auto-detects the port when only one board is attached.
 4. Flash: `make -C apps/porthole flash` (or `make -C apps/porthole flash PORT=<port>`).
-5. Verify over serial: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[pets-club] boot`, then `[pets-club] houses=N now=<epoch> heap=<bytes>`. Use `S`/`T<epoch>`/`R`/`P<n>`/`D` as needed (see apps/porthole/CLAUDE.md's serial command table, or the `flash` skill).
+5. Verify over serial: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[porthole] boot`, then `[porthole] profiles=N now=<epoch> heap=<bytes>`. Use `S`/`T<epoch>`/`R`/`P<n>`/`D` as needed (see apps/porthole/CLAUDE.md's serial command table, or the `flash` skill).
 6. State plainly what you verified versus assumed. A clean build and a clean serial log confirm the MCU booted and ran -- they do not confirm the display lit up or touch works. Never claim the display or touch works from a log alone; that needs an actual look at the screen (the user's, or your own if you can drive one).
 
 ## Definition of done

@@ -5,10 +5,10 @@ Commands run from `apps/porthole/` (or `make -C apps/porthole <target>` from the
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:
 
-* **Playthroughs** (`01`-`12`): scripted sessions a kid would play, with assertions on the game state. They
+* **Playthroughs** (`01`-`13`, the shell's profiles in `10` and `13`): scripted sessions a kid would play, with assertions on the game state. They
   include the things kids do by accident: double taps, a finger that slides off a button, taps during animations.
-* **Chaos monkeys** (`20`-`22`): 600 random gestures per seed from three starting points, under the sanitizers.
-* **UI audit** (`30`, plus the creation screens in `01`): every reachable screen is measured against the rules
+* **Chaos monkeys** (`20`-`22`): 600 random gestures per seed from several starting points (home, the profile screens, the picker, Paw Street, the mini-games), under the sanitizers.
+* **UI audit** (`30`, plus the creation screens in `01` and the profile screens in `10` and `13`): every reachable screen is measured against the rules
   below.
 
 ```bash
@@ -58,10 +58,12 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `down X Y` / `move X Y` / `up` | one frame each; drags are `down`, several `move`s, `up` |
 | `wait MS` | step frames for MS ms with the finger as it is |
 | `skip SEC` | move the wall clock forward (one frame) |
-| `newgame KID PET` | wipe the saves, start with one adopted house (age 8) on the splash |
-| `reset` | wipe the saves, start on the splash with no house |
+| `reset` | wipe every save: a fresh device, on the "new profile" screen |
+| `profile NAME AGE [PIN]` | create a profile (face = its slot) and select it: the launcher (or the rest screen) |
+| `app NAME` | open a game from the launcher (`app pets-club`) |
+| `newgame KID PET` | `reset`, then profile KID (age 8) with pup PET already adopted, opened in Pets Club (its splash) |
 | `snap NAME` | write a snapshot (for `sheet`) |
-| `dbg CMD` | test hook: `dirty poop hungry hearts books tricks hats grown dog sleepy tired rested younger older` |
+| `dbg CMD` | test hook: `tired rested younger older` (the profile's rest budget and age; `tired` rests at the next second), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older` |
 | `debug` / `screen` / `ui` | print the state / the screen name / one audited frame (used by the directives) |
 | `watch MS` | step like `wait`, printing `glow X Y` whenever a trick-lesson glow appears |
 | `monkey N SEED` | N random gestures, see below |
@@ -71,7 +73,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 
 | Directive | Meaning |
 | --- | --- |
-| `expect KEY OP VALUE` | runs `debug` and compares the latest `KEY=value` it printed. OP is `= != < <= > >=` (`==` too). Numbers compare as numbers, anything else as text (`=`/`!=` only). `books` and `house` compare the first number of `a/b` unless VALUE contains `/` (`expect house=0/1`); `play` ignores its trailing `s`. |
+| `expect KEY OP VALUE` | runs `debug` and compares the latest `KEY=value` it printed. OP is `= != < <= > >=` (`==` too). Numbers compare as numbers, anything else as text (`=`/`!=` only). `books` and `profile` compare the first number of `a/b` unless VALUE contains `/` (`expect profile=0/1`); `play` ignores its trailing `s`. |
 | `expect-screen NAME` | the current screen is NAME; `a\|b` accepts either, `*` any real screen |
 | `ui-check [TAG]` | audits one frame against the UI rules; TAG names the state in the report (default: the screen name; the real screen is appended when the tag does not start with it) |
 | `snap NAME` + `sheet NAME` | `sheet` puts every snapshot since the previous `sheet` into `build/playtest/<scenario>-NAME.png` |
@@ -80,9 +82,11 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 
-Keys printed by `debug`: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age house play
-rest books screen tricks hat stickers`, and on the matching screens `word cols typed tiles`, `book title pages page
-correct`, `score left` (fetch), `spots` (bath), `trick phase round len seq input` (lesson).
+Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play rest screen`,
+then the open (or last opened) game's: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age
+books screen tricks hat stickers`, and on the matching screens `word cols typed tiles`, `book title pages page
+correct`, `score left` (fetch), `spots` (bath), `trick phase round len seq input` (lesson). `screen` is the shell's
+screen, or the game's while one is open.
 
 ### Timing guards worth knowing
 
@@ -137,8 +141,9 @@ are within 0..100, while ASan and UBSan watch every frame.
 
 1. Create `tests/playtests/NN_name.txt`. Files run in name order; put `monkey` in the name to run under the
    sanitizers with the longer timeout.
-2. Start from a known state: `newgame Sam Biscuit` + `wait 2000` lands on home; `reset` + `wait 2000` on the
-   adoption intro. `dbg` hooks set up the rest (`dbg hungry`, `dbg dirty`, `skip 86400` for the next day).
+2. Start from a known state: `newgame Sam Biscuit` + `wait 2000` lands on Pets Club's home; `reset` on the "new
+   profile" screen; `profile Sam 8` on the launcher, then `app pets-club` + `wait 2000` on the adoption intro.
+   `dbg` hooks set up the rest (`dbg hungry`, `dbg dirty`, `skip 86400` for the next day).
 3. Find coordinates with a probe: a script ending in `ui` prints every region of the current screen, and
    `snap` + `sheet` show what the kid sees.
 4. Assert outcomes, not steps: `expect` the stat that should change, `expect-screen` where the kid should be.

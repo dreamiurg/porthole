@@ -4,10 +4,10 @@ description: Pets Club (apps/porthole). Use when you need screenshot evidence of
 ---
 
 1. Write a plain-text script, one command per line. This is the *raw* grammar `apps/porthole/host/sim.cpp` understands directly (see its own header comment, which is the authoritative list if this drifts):
-   `tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap NAME | reset | newgame KID PET | debug | dbg CMD | ui | screen | echo WORD | watch MS | monkey N SEED`.
+   `tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap NAME | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen | echo WORD | watch MS | monkey N SEED`.
    A line starting with `#` is a comment. Coordinates are logical px, 0-160, inside the circle of radius 80 around (80,80).
    - This is a different, lower-level language than the `expect`/`expect-screen`/`ui-check`/`follow-glow`/`solve-word`/`answer-book`/`repeat...end` directives used by `apps/porthole/tests/playtests/*.txt` and `make -C apps/porthole playtest` — those are compiled down into this raw grammar by `apps/porthole/tools/playtest.py`, not read by `sim.cpp` itself. Use this raw grammar for a one-off ad hoc script; use the directive language (see the `playtest` skill) for a scenario that should join the formal suite.
-2. Start every script with `reset` (or `newgame KID PET` to skip onboarding) so it's reproducible from a clean save.
+2. Start every script with `reset` (a fresh device: the "new profile" screen), `profile NAME AGE [PIN]` (create and select a profile: the launcher; `app pets-club` opens the game) or `newgame KID PET` (a profile with an adopted pup, straight into Pets Club) so it's reproducible from a clean save.
 3. Run it: `cd apps/porthole && make snap && ./build/host/snap --script path/to/yours.txt`. Every `snap NAME` line writes `apps/porthole/build/host/<NAME>.bmp`.
 4. Add a `ui` line right after reaching a screen you care about. It dumps that exact frame's hit regions and text boxes (logical px, plus each text box's drawn and background color index) to stdout — use this instead of eyeballing the `.bmp` for tap-target sizes or text clipping. `screen` alone just prints the current screen name; `debug` dumps the full stat line from `Game::debugPrint()`.
 5. Build a contact sheet so a whole flow can be reviewed at a glance instead of opening every file:

@@ -2,14 +2,24 @@
 
 Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small shared runtime
 (`os/`: 160×160 indexed framebuffer, 32-color palette, 8×8 font, touch input), the board layer
-(`firmware/`) and the games built on it (`games/`). Its first and, for now, only game is Pets Club.
+(`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game launcher) and the games
+built on it (`games/`). Its first and, for now, only game is Pets Club.
+
+## Profiles and the launcher
+
+Power on, pick who's playing, pick a game. Up to four kids share one board, each with a profile: a
+name, one of eight animal faces, an age (it picks the reading level) and an optional 4-digit code.
+Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
+profile. With two or more profiles, a kid who has played for about 6 minutes rests for 10, across
+every game, so the board passes to the next kid. A long press on a profile (after its code) deletes
+it and everything it made.
 
 ## Pets Club: a pixel puppy
 
 A touch-only, Tamagotchi-style puppy for the **Waveshare ESP32-S3-Touch-LCD-2.1** (round 480×480
 IPS, capacitive touch, no buttons). Made for kids aged 5-10 who like dogs and books: the puppy
-grows over real days, learns tricks, and above all loves being **read to**. Up to three kids can
-share one board, each with a house of their own on Paw Street.
+grows over real days, learns tricks, and above all loves being **read to**. Every profile gets its
+own pup and a house on Paw Street.
 
 Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to the panel.
 
@@ -17,8 +27,8 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 
 ## What it does
 
-* **Adopt.** A parcel arrives and a puppy pops out. The kid types their name, picks their age and
-  names the pup.
+* **Adopt.** A parcel arrives and a puppy pops out. The kid names the pup and picks the house
+  colors.
 * **Home.** One cosy room: a window with day, night, rain and a visiting squirrel, a bookshelf that
   fills up with unlocked books, a lamp to tuck the dog in, a food bowl, a toy ball. Four big
   buttons: **feed · play · read · tricks**. Tap the dog to pet it; hold for a belly rub.
@@ -36,13 +46,12 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
   hat, a party on day 7), a day streak, growing from puppy to dog to grown dog, sixteen stickers,
   bedtime at 8 pm. Time away counts for at most 12 hours and nights are slept through, so a
   weekend off never punishes anyone.
-* **Paw Street.** One house per kid, each with its own pup, room colors and bookshelf, optionally
-  locked with a 4-digit code. With two or more houses a pup naps after about 6 minutes of play,
-  so the board passes to the next kid.
-* **Reading level by age.** Stories and spelling words scale with the age picked at adoption:
-  level 1 at 5-6 up to level 3 from 9.
+* **Paw Street.** The front door opens onto the neighbourhood: a house for every profile on the
+  board, with that kid's pup at the door. Only your own house opens.
+* **Reading level by age.** Stories and spelling words scale with the profile's age: level 1 at
+  5-6 up to level 3 from 9.
 * **Quiet by design.** The buzzer is harsh, so it only sounds for rare moments (growing up, a
-  new trick, a gift, a sticker). Each house can mute it on the stats screen.
+  new trick, a gift, a sticker). Each profile can mute it on the launcher.
 
 ## Play it without the board
 
@@ -81,19 +90,19 @@ using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usb
 
 | Command | Effect |
 | --- | --- |
-| `S` | print stats, free heap and the current epoch |
+| `S` | print the active profile, the open game's stats, free heap and the current epoch |
 | `T<epoch>` | set the clock (local wall-clock seconds) |
-| `R` | erase every house and reboot |
-| `P<n>` | clear the secret code of house `n` (the parent escape hatch) |
+| `R` | erase every profile and every game's saves, then reboot |
+| `P<n>` | clear the secret code of profile `n` (the parent escape hatch) |
 | `D` | toggle touch-position logging |
 
 ## Checks
 
 ```bash
-make check      # content fits its pixel boxes, sprites are current, -Werror build, pet self-test (seconds)
-make playtest   # 16 scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
+make check      # content fits its pixel boxes, sprites are current, -Werror build, pet and shell self-tests (seconds)
+make playtest   # 17 scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
 make ci         # check + playtest + coverage: what CI runs for this app, minus the firmware build
-make coverage   # line coverage of os/ and games/ -> build/coverage/coverage.xml (needs gcovr, or uvx)
+make coverage   # line coverage of os/, shell/ and games/ -> build/coverage/coverage.xml (needs gcovr, or uvx)
 ```
 
 The playtest report lands in `build/playtest/report.md`, with contact sheets next to it if
@@ -108,7 +117,7 @@ Pillow is installed.
 | IO expander | TCA9554 @ 0x20: P0 LCD reset, P1 touch reset, P2 LCD CS, P7 buzzer |
 | RTC | PCF85063 @ 0x51, set from build time on first boot, restored from the save if it stops |
 | Backlight | GPIO6 PWM; dims after 1 min idle, off after 5 min (tap wakes), off 20 s after bedtime |
-| Storage | NVS (`Preferences`), one 156-byte blob per house (`s0`..`s2`) with CRC; older single-house saves migrate on first boot |
+| Storage | NVS (`Preferences`): a 44-byte record per profile (`porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
 Rendering: two 480×480 RGB565 framebuffers in PSRAM with bounce buffers; each frame the 160×160

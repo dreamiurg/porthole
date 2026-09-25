@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. First game: Pets Club (`games/pets-club/`): pixel dog, up to three kids per device, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/porthole/CLAUDE.md`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/porthole/CLAUDE.md`. |
 | `apps/biscuit/` | Biscuit: story dog with branching mysteries and illustrated discoveries. Browser game (plain JS) + LVGL firmware in `firmware/`. See `apps/biscuit/README.md` and `apps/biscuit/firmware/README.md`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `site/`, `tools/build_site.py` | The web installer on GitHub Pages (`https://dreamiurg.net/porthole/`), built from each app's latest release and its `app.json`. ESP Web Tools does the flashing. |
