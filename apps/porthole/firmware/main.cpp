@@ -1,7 +1,7 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include "board.h"
-#include "game.h"
+#include "games/pets-club/game.h"
 #include "shell.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
