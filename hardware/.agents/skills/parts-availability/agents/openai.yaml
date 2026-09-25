@@ -1,0 +1,6 @@
+interface:
+  display_name: "Parts availability"
+  short_description: "Check sourcing and stock evidence"
+  default_prompt: "Use $parts-availability to check current regional availability for these exact parts, classify each purchase channel, record dated evidence, and flag substitutes or custom dependencies."
+policy:
+  allow_implicit_invocation: true

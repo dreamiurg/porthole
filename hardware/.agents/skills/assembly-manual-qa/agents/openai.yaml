@@ -1,0 +1,6 @@
+interface:
+  display_name: "Assembly manual QA"
+  short_description: "Revise and verify mechanical manuals"
+  default_prompt: "Use $assembly-manual-qa to extract annotated PDF comments, revise the source manual, render every page, and report executable steps and visual QA findings."
+policy:
+  allow_implicit_invocation: true
