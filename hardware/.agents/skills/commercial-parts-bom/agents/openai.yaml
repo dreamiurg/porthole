@@ -1,0 +1,6 @@
+interface:
+  display_name: "Commercial-parts BOM"
+  short_description: "Reconcile hardware with Fusion interfaces"
+  default_prompt: "Use $commercial-parts-bom to reconcile this BOM line with the live Fusion interface, as-built parts, quantity, stack length, thread engagement, and verification status."
+policy:
+  allow_implicit_invocation: true

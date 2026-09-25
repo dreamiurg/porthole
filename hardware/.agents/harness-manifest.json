@@ -1,0 +1,30 @@
+{
+  "name": "commercial-fusion-assembly-harness",
+  "version": "0.1.0",
+  "scope": "Generic mechanical assemblies built from commercially available parts and Fusion models",
+  "skills": [
+    "skills/fusion-mechanical-design",
+    "skills/physical-fitup",
+    "skills/commercial-parts-bom",
+    "skills/parts-availability",
+    "skills/custom-vs-standard",
+    "skills/assembly-manual-qa"
+  ],
+  "subagents": [
+    "subagents/fusion-design-auditor.md",
+    "subagents/fitup-inspector.md",
+    "subagents/commercial-bom-auditor.md",
+    "subagents/parts-availability-researcher.md",
+    "subagents/custom-vs-standard-reviewer.md",
+    "subagents/assembly-manual-reviewer.md"
+  ],
+  "commands": [
+    "commands/commercial-assembly.md"
+  ],
+  "capabilities": {
+    "fusion_mcp": true,
+    "current_web_availability_research": true,
+    "pdf_render_and_annotation_qa": true,
+    "beads_tracking": true
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Physical fit-up"
+  short_description: "Compare as-built and Fusion datums"
+  default_prompt: "Use $physical-fitup to compare my measured assembly with the current Fusion datum, separate gap from skew or preload, and give a safe fit-up decision."
+policy:
+  allow_implicit_invocation: true
