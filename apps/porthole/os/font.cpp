@@ -149,6 +149,11 @@ void logLine(const Font& f, int x, int y, int w, uint16_t fg) {
   int x0 = floor3(x), y0 = floor3(y), x1 = -floor3(-(x + w)), y1 = -floor3(-(y + f.lineHeight));
   gfx::textLog[gfx::textLogCount++] = {(int16_t)x0, (int16_t)y0, (int16_t)(x1 - x0), (int16_t)(y1 - y0), gfx565::rgb888(fg), gfx565::rgb888(bg), true};
 }
+int words(const char* s) {   // after squeeze(): single spaces between words
+  int n = *s != 0;
+  for (; *s; s++) n += *s == ' ';
+  return n;
+}
 void squeeze(char* s) {   // paginate() split on isspace and joined with single spaces
   char* o = s;
   for (const char* p = s; *p; p++) {
@@ -156,6 +161,20 @@ void squeeze(char* s) {   // paginate() split on isspace and joined with single 
     else if (o > s && p[1] && !isspace((unsigned char)p[1])) *o++ = ' ';
   }
   *o = 0;
+}
+// Moves words off the end of the page before `last` onto it until it holds minLast, if that page keeps minLast
+// itself and the last one still fits. Returns where the last page now starts. The shorter page needs no measuring:
+// pageBreaks measured every prefix of it that ends at a word, and each one fit.
+// ponytail: all or nothing; moving fewer words when all of them don't fit never happens with Biscuit's content.
+char* balance(const Box& b, char* prev, char* last, int minLast) {
+  int need = minLast - words(last);
+  if (need <= 0 || words(prev) - need < minLast) return last;
+  char* q = last - 1;   // the NUL that ends prev
+  while (need) if (*--q == ' ') need--;
+  last[-1] = ' ';
+  if (textHeight(*b.font, q + 1, b.w, b.spacing) > b.h) { last[-1] = 0; return last; }
+  *q = 0;
+  return q + 1;
 }
 }  // namespace
 
@@ -198,10 +217,10 @@ int textBox(const Box& b, const char* s, int x, int y, uint16_t fg) {   // lv_dr
   }
   return h;
 }
-int pageBreaks(const Box& b, char* s, const char** pages, int maxPages) {   // the LVGL build's paginate()
+int pageBreaks(const Box& b, char* s, const char** pages, int maxPages, int minLast) {   // the LVGL build's paginate()
   squeeze(s);
   int n = 0;
-  char* page = s;
+  char *page = s, *prev = nullptr;
   for (char* p = s; *p;) {
     char* e = p;
     while (*e && *e != ' ') e++;
@@ -213,10 +232,12 @@ int pageBreaks(const Box& b, char* s, const char** pages, int maxPages) {   // t
       p[-1] = 0;
       if (n < maxPages) pages[n] = page;
       n++;
+      prev = page;
       page = p;
     }
     p = *e ? e + 1 : e;
   }
+  if (prev) page = balance(b, prev, page, minLast);
   if (n < maxPages) pages[n] = page;
   return n + 1;
 }

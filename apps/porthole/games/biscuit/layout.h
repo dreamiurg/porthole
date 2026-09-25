@@ -53,8 +53,11 @@ inline void pageNumber(char (&s)[16], int page, int count) {
 // discovery's are filled with the names, joined into one text (READ_BYTES at most) and flowed onto screens of this
 // box by font::pageBreaks (READ_SCREENS at most), so a screen ends where the next word no longer fits, not where a
 // content page does. The counter, "n / m", counts the screens. The content gate holds every text to both limits.
+// A text's last screen gets at least MIN_LAST_WORDS words, moved off the end of the screen before: 4 turns every
+// one- to three-word tail ("happening.") into a short phrase, and the screen that gives them up (measured: 16 words
+// or more today) keeps at least 13. The gate holds every text to it, at the widest names and at short ones.
 inline constexpr Label PAGE = {{&FONT24, 352, 176, 4, Align::LEFT}, 64, 146, false};
-constexpr int READ_BYTES = 2048, READ_SCREENS = 16;
+constexpr int READ_BYTES = 2048, READ_SCREENS = 16, MIN_LAST_WORDS = 4;
 // The most pages any list or reader counts: the notebook with every discovery kept, two to a page.
 constexpr int MAX_PAGES = 48;
 // Library: Discoveries and Notebook, then two story rows: "Day N: <title>" while locked, "<title> *" once read.
