@@ -57,6 +57,7 @@ static void frame(bool down, int x, int y) {
   Input in = g_tracker.step(down, x, y, g_ms);
   g_game.update(g_epoch + g_ms / 1000, g_ms, in);
   g_game.render();
+  g_game.soundOn(g_ms);  // no speaker here, but run the buzzer pattern player as main.cpp does so ASan covers it
   Save s; int slot;
   while (g_game.takeSave(&s, &slot, true)) storeSave(slot, s);
   while (g_game.takeErase(&slot)) remove(savePath(slot));

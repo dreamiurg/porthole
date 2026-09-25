@@ -114,10 +114,12 @@ bool Game::soundOn(uint32_t ms) {
   switch (sound_) { case SND_YIP: p = YIP; break; case SND_HAPPY: p = HAPPY; break; case SND_SAD: p = SAD; break;
     case SND_CHIME: p = CHIME; break; case SND_BARK: p = BARK; break; case SND_FANFARE: p = FANFARE; break; default: break; }
   uint32_t acc = 0;
+  // The 0 terminator may land in either slot (even or odd length): stop there, never read past it.
   for (int i = 0; ; i += 2) {
     if (p[i] == 0) { sound_ = SND_NONE; return false; }
     if (t < acc + p[i]) return true;
     acc += p[i];
+    if (p[i + 1] == 0) { sound_ = SND_NONE; return false; }
     if (t < acc + p[i + 1]) return false;
     acc += p[i + 1];
   }
