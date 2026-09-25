@@ -1,6 +1,6 @@
 # Playtesting
 
-Commands run from `apps/paw-street/` (or `make -C apps/paw-street <target>` from the repo root).
+Commands run from `apps/pets-club/` (or `make -C apps/pets-club <target>` from the repo root).
 
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:

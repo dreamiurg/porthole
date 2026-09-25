@@ -1,4 +1,4 @@
-// Paw Street palette: 32 fixed colors. Sprites and the framebuffer store palette
+// Pets Club palette: 32 fixed colors. Sprites and the framebuffer store palette
 // indices; the display layer converts to RGB565 at flip time, so day/night
 // tints are just alternate lookup tables.
 #pragma once

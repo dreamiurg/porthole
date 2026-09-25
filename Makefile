@@ -3,7 +3,7 @@
 #   make check                  lint + fast tests for every app (what pre-commit runs)
 #   make ci                     everything CI runs, minus firmware builds
 #   make firmware APP=biscuit   build one app's firmware
-#   make flash APP=paw-street [PORT=/dev/ttyUSB0]   build and flash it
+#   make flash APP=pets-club [PORT=/dev/ttyUSB0]   build and flash it
 #   make monitor [APP=...] [PORT=...]               serial console, 115200 baud
 #
 # Each app provides the same targets in its own Makefile (see docs/new-app.md).

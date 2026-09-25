@@ -1,4 +1,4 @@
-# Paw Street — a pixel puppy for a round screen
+# Pets Club — a pixel puppy for a round screen
 
 A touch-only, Tamagotchi-style puppy for the **Waveshare ESP32-S3-Touch-LCD-2.1** (round 480×480
 IPS, capacitive touch, no buttons). Made for kids aged 5-10 who like dogs and books: the puppy
@@ -7,7 +7,7 @@ share one board, each with a house of their own on Paw Street.
 
 Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to the panel.
 
-![Paw Street screens: home, a story, a trick lesson, spelling fetch, a daily gift, and the street](docs/screenshots.png)
+![Pets Club screens: home, a story, a trick lesson, spelling fetch, a daily gift, and the street](docs/screenshots.png)
 
 ## What it does
 
@@ -40,7 +40,7 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 
 ## Play it without the board
 
-You need a C++17 compiler and Python 3. From this directory (`apps/paw-street/`):
+You need a C++17 compiler and Python 3. From this directory (`apps/pets-club/`):
 
 ```bash
 make snap && python3 tools/webemu.py   # or: make webemu

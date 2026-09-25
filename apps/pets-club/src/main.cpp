@@ -1,4 +1,4 @@
-// Paw Street firmware entry point.
+// Pets Club firmware entry point.
 #include <Arduino.h>
 #include "board.h"
 #include "game.h"
@@ -35,7 +35,7 @@ static void playSound(int id) { g_game.platformSoundStart(id); }
 void setup() {
   Serial.begin(115200);
   delay(50);
-  Serial.println("\n[paw-street] boot");
+  Serial.println("\n[pets-club] boot");
   board::init();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
@@ -48,7 +48,7 @@ void setup() {
   }
   if (nHouses == 0) {  // first boot after the multi-house update: adopt the old single save as house 0
     size_t got = board::loadLegacyBlob(blob, sizeof blob);
-    if (got && pet::loadBlob(blob, got, houses[0])) { nHouses = 1; board::saveBlob(0, &houses[0], sizeof(Save)); Serial.println("[paw-street] migrated save -> s0"); }
+    if (got && pet::loadBlob(blob, got, houses[0])) { nHouses = 1; board::saveBlob(0, &houses[0], sizeof(Save)); Serial.println("[pets-club] migrated save -> s0"); }
   }
   for (int i = 0; i < nHouses; i++) if (houses[i].lastSeen > lastSeen) lastSeen = houses[i].lastSeen;
   uint32_t now;
@@ -57,10 +57,10 @@ void setup() {
     now = nHouses ? lastSeen + 60 : buildEpoch();
     if (now < buildEpoch()) now = buildEpoch();
     board::rtcSet(now);
-    Serial.println("[paw-street] RTC was not running; clock restored");
+    Serial.println("[pets-club] RTC was not running; clock restored");
   }
   g_bootLocalEpoch = now; g_bootMillis = millis();
-  Serial.printf("[paw-street] houses=%d now=%lu heap=%lu\n", nHouses, (unsigned long)now, (unsigned long)board::freeHeap());
+  Serial.printf("[pets-club] houses=%d now=%lu heap=%lu\n", nHouses, (unsigned long)now, (unsigned long)board::freeHeap());
   g_game.begin(now, millis(), houses, nHouses);
   g_lastTouchMs = millis();
 }
@@ -96,11 +96,11 @@ void loop() {
   // "D" toggles touch logging, "P<n>" clears house n's secret code (a parent's escape hatch)
   while (Serial.available()) {
     int c = Serial.read();
-    if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[paw-street] clock set"); } }
-    else if (c == 'R') { board::eraseAll(); Serial.println("[paw-street] all houses erased, rebooting"); delay(100); ESP.restart(); }
-    else if (c == 'P') { int n = Serial.parseInt(); g_game.clearPin(n); Serial.printf("[paw-street] house %d code cleared\n", n); }
+    if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[pets-club] clock set"); } }
+    else if (c == 'R') { board::eraseAll(); Serial.println("[pets-club] all houses erased, rebooting"); delay(100); ESP.restart(); }
+    else if (c == 'P') { int n = Serial.parseInt(); g_game.clearPin(n); Serial.printf("[pets-club] house %d code cleared\n", n); }
     else if (c == 'S') { g_game.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
-    else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[paw-street] touch log %s\n", g_touchLog ? "on" : "off"); }
+    else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[pets-club] touch log %s\n", g_touchLog ? "on" : "off"); }
   }
   (void)playSound;
 }

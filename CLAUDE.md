@@ -9,15 +9,15 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/paw-street/` | Paw Street: pixel dog, up to three kids per device, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/paw-street/CLAUDE.md`. |
+| `apps/pets-club/` | Pets Club: pixel dog, up to three kids per device, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/pets-club/CLAUDE.md`. |
 | `apps/biscuit/` | Biscuit: story dog with branching mysteries and illustrated discoveries. Browser game (plain JS) + LVGL firmware in `firmware/`. See `apps/biscuit/README.md` and `apps/biscuit/firmware/README.md`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract). |
-| `.claude/` | Agent roster and skills. They currently target Paw Street; paths inside them are `apps/paw-street/...`. |
+| `.claude/` | Agent roster and skills. They currently target Pets Club; paths inside them are `apps/pets-club/...`. |
 
 When you work inside an app, read that app's brief first. Its constraints (for
-Paw Street: round-screen geometry, 32 colors and ASCII only, append-only save
+Pets Club: round-screen geometry, 32 colors and ASCII only, append-only save
 layout, the pet never dies) are hard rules, not style.
 
 ## Shared rules for every app
@@ -27,7 +27,7 @@ layout, the pet never dies) are hard rules, not style.
 2. **The buzzer is harsh.** Never beep on routine taps or navigation. Keep sound
    for rare moments and give every app a mute toggle.
 3. **Saves survive firmware updates.** Never reorder or resize a persisted
-   struct, and never rename an NVS namespace that shipped. Paw Street keeps the
+   struct, and never rename an NVS namespace that shipped. Pets Club keeps the
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
    lost. No personal data: no real names, no analytics, no network calls during play.
@@ -53,7 +53,7 @@ Per-app targets are listed in `docs/new-app.md`.
 
 - `main` is protected: branch, open a PR, squash-merge after **Required
   Checks** passes. Hooks block commits on `main`. Never skip hooks with `--no-verify`.
-- Conventional commit titles (`feat(paw-street): ...`, `fix(biscuit): ...`).
+- Conventional commit titles (`feat(pets-club): ...`, `fix(biscuit): ...`).
   Release Please turns them into per-app versions, changelogs and releases with
   a flashable `factory.bin`.
 - Complexity is ratcheted. `whitelizard.txt` lists functions that were already
@@ -74,5 +74,5 @@ Per-app targets are listed in `docs/new-app.md`.
 | UX/QA pass on a screen or flow | `playtester` | opus |
 | Review before a push | `reviewer` | opus |
 
-The roster was written for Paw Street. For Biscuit, brief the same roles with
+The roster was written for Pets Club. For Biscuit, brief the same roles with
 Biscuit's paths and read its README first.

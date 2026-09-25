@@ -26,7 +26,7 @@ make check                                 # lint + fast tests for every app
 - PRs are squash-merged, so the PR title becomes the commit message. Use
   [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`,
   `docs:`, `chore:`, `refactor:`, `test:`, `ci:`. Scope by app when it helps:
-  `feat(paw-street): add a digging trick`. Release notes and version bumps are
+  `feat(pets-club): add a digging trick`. Release notes and version bumps are
   generated from these titles.
 
 ## Where to start
@@ -34,5 +34,5 @@ make check                                 # lint + fast tests for every app
 - Each app's `README.md` explains how to play and build it. Its `CLAUDE.md`
   lists the constraints its code must respect.
 - `docs/hardware.md` covers the board. `docs/new-app.md` explains how to add an app.
-- No board yet? Both apps run on a computer. Paw Street has a browser emulator
+- No board yet? Both apps run on a computer. Pets Club has a browser emulator
   and Biscuit started as a web page.
