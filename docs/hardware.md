@@ -1,8 +1,10 @@
 # The board
 
-Every app targets the **Waveshare ESP32-S3-Touch-LCD-2.1**
+Every app targets one board, and only this board is supported: the flat
+**Waveshare ESP32-S3-Touch-LCD-2.1**
 ([product page](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm),
-[wiki](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2.1)).
+[wiki](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2.1)). Porting to
+other hardware is welcome; see "Other boards" in the [README](../README.md).
 
 | Part | Detail |
 | --- | --- |
