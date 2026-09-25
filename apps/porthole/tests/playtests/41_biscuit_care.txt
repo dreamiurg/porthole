@@ -23,6 +23,17 @@ expect activity=2
 tap 94 129
 expect pets=2
 snap c02_petted
+# the fern: a sneeze; the bookshelf: the pup reaches for a book (a short one-shot)
+wait 4100
+tap 129 91
+expect activity=13
+snap c02_fern
+wait 900
+expect activity=0
+tap 34 73
+expect activity=12
+wait 900
+expect activity=0
 # a slow double tap on Feed feeds twice, a tap that slides off feeds nothing
 tap 40 129
 wait 350

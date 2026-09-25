@@ -50,10 +50,6 @@ void tennisBall(int x, int y) {
     gfx565::rect(x + c * 3, y + r * 3, 3, 3, col);
   }
 }
-void panel(int x, int y, int w, int h, uint16_t fill) {
-  gfx565::roundRect({x, y, w, h}, RADIUS, LINE);
-  gfx565::roundRect({x + 1, y + 1, w - 2, h - 2}, RADIUS - 1, fill);
-}
 void text(const Label& l, const char* s, uint16_t color) {
   const font::Box& b = l.box;
   font::textBox(b, s, l.x, l.middle ? l.y + (b.h - font::textHeight(*b.font, s, b.w, b.spacing)) / 2 : l.y, color);

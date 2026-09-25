@@ -18,7 +18,6 @@ constexpr uint16_t BOWL = rgb(0xc5965a), HEART = rgb(0xc58a94), MOON = rgb(0x9ca
 enum class Icon : uint8_t { Bowl, Heart, Moon, Book, Ball, Paw, Star };
 void icon(Icon which, int x, int y, int scale, uint16_t color);   // 12x12 mask at (x, y), physical
 void tennisBall(int x, int y);                                   // 30x30 at (x, y), physical
-void panel(int x, int y, int w, int h, uint16_t fill);           // paper-style card: fill, 1 px LINE border, radius 7
 
 struct Button { Box box; const char* label; const font::Font* font; uint16_t fill; bool enabled; };
 bool tapped(const Input& in, const Button& b);   // a disabled button never hits

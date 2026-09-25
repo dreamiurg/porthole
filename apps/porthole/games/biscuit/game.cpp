@@ -34,6 +34,7 @@ void Game::go(Screen s) {
 void Game::say(const char* line, uint8_t activity) {
   personalize(line, who_.name, save_.petName, speech_, sizeof speech_);
   sayUntilMs_ = (ms_ + SAY_MS) | 1;   // | 1: 0 means nothing pending
+  lastSurpriseMs_ = ms_;
   animate(activity);
 }
 void Game::animate(uint8_t activity) {
@@ -51,7 +52,7 @@ void Game::tick() {
   lastTickSec_ = now_;
   if (save_.lastVisitDay != day || now_ - lastCheckpointSec_ >= CHECKPOINT_SEC) { markDirty(); lastCheckpointSec_ = now_; }
 }
-// Now and then, a pup that has mastered a trick shows it off on its own.
+// A pup that has mastered a trick shows it off on its own, after SURPRISE_MS with no touch and nothing said.
 void Game::surprise() {
   if (screen_ != SC_HOME || !awake(save_) || fetch_ >= 0 || sayUntilMs_ || actUntilMs_ || ms_ - lastSurpriseMs_ < SURPRISE_MS) return;
   lastSurpriseMs_ = ms_;
@@ -68,6 +69,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
+  if (in_.pressed) lastSurpriseMs_ = ms_;
   tick();
   if (sayUntilMs_ && (int32_t)(ms_ - sayUntilMs_) >= 0) { snprintf(speech_, sizeof speech_, "%s", IDLE_LINE); sayUntilMs_ = 0; }
   if (fetch_ < 0 && actUntilMs_ && (int32_t)(ms_ - actUntilMs_) >= 0) animate(SCENE_IDLE);

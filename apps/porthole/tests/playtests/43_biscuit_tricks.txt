@@ -98,6 +98,13 @@ wait 450
 expect-screen biscuit_home
 expect activity=6
 expect tricks=300000
+# 90 s after its last line with no touch, a pup with a mastered trick shows it off (for 4 s)
+wait 4100
+expect activity=0
+wait 85000
+expect activity=0
+wait 1000
+expect activity=6
 # a week together: Twirl opens, its first lesson is Left Up Right
 dbg unlock
 wait 4100
