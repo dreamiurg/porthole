@@ -15,6 +15,25 @@ tests in CI, release images, screenshots.
 
 New apps land here as they get made. Fork it, play with them, build your own.
 
+## How this started
+
+It started with a small project on MakerWorld,
+[ESP32 Plane Radar](https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display)
+by [MatixYo](https://github.com/MatixYo/ESP32-Plane-Radar). A tiny ESP32 board
+and a 1.28-inch round screen pull live flight data from the internet and draw
+the planes overhead on a little radar. I built one with my kids, and then I
+showed them how to change it with Claude Code. They asked for changes and
+watched them show up on the little screen. I loved that.
+
+So we went one step further and bought a bigger round screen, the Waveshare
+board this repo is built for. In one sitting with Claude and Codex we had a
+couple of games running on it. My kids loved them so much that I shared them
+with friends, and their kids had a blast too. This repo is the cleaned-up home
+for those games, set up so anyone can add the next one.
+
+If you like to tinker and have about $45 for a board, or a spare one lying in a
+drawer, have fun with it. Enjoy the new era of tinkering.
+
 ## Apps
 
 **[Install a game from your browser](https://dreamiurg.net/porthole/)**, no tools needed.
@@ -55,6 +74,47 @@ cost friendship.
 Plain HTML, CSS and JavaScript in the browser. The native firmware uses LVGL
 and runs the same stories, pixel art and discoveries on the board.
 **[Read more](apps/biscuit/README.md)** · try it: `cd apps/biscuit && npm start`
+
+## Get a board
+
+Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, about $45.
+
+- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): usually the fastest shipping. This is an affiliate link.
+- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): the maker's own store. No affiliate link.
+
+If you buy through the Amazon link, I get a small commission and you pay the
+same price. As an Amazon Associate I earn from qualifying purchases.
+
+Get the exact 2.1-inch model. Waveshare sells look-alike round boards in other
+sizes (1.28, 1.85 and 2.8 inch), and those won't run these apps. The 2.1-inch
+board comes in two versions: the flat touch panel (`ESP32-S3-Touch-LCD-2.1`)
+and a curved 2.5D glass one (`ESP32-S3-Touch-LCD-2.1B`). We use the flat one
+because it looked easier to work with. We haven't tried the curved one.
+
+### Other boards
+
+Right now the apps support one board: the flat 2.1-inch
+`ESP32-S3-Touch-LCD-2.1`, the one on my desk. I'm not planning to port them to
+other hardware myself. This is a fun side project, so hack away. We live in the
+era of AI agents: fork the repo, point Claude Code or Codex at
+[docs/hardware.md](docs/hardware.md) and the app you like, and ask it to adapt
+the code to your board. Most of the hardware-specific code sits in
+`apps/pets-club/src/board.cpp`, `apps/biscuit/firmware/src/board.cpp` and the
+shared PlatformIO settings in `platform/waveshare-round.ini`. A screen of a
+different size or shape also means reworking the layouts, since both games are
+drawn for a 480x480 circle. If you get another board working, send a
+pull request. If you get stuck, open an issue and ask.
+
+Why this board works well for toys like these:
+
+- The round screen feels like a toy, not a tiny phone.
+- Touch is the only input, so it fits a 3D-printed case with no buttons.
+- It has enough memory to double-buffer the full 480x480 screen, so animation stays smooth.
+- A real-time clock keeps time while it's off, which suits anything with days and nights.
+- Plain Arduino and PlatformIO work, and one USB-C cable handles power, flashing and the serial console.
+
+It also has a motion sensor, Bluetooth and Wi-Fi that no app uses yet.
+[docs/hardware.md](docs/hardware.md) has the full specs and some ideas for them.
 
 ## Getting started
 
