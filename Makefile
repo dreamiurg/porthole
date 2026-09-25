@@ -9,8 +9,11 @@
 # Each app provides the same targets in its own Makefile (see docs/new-app.md).
 
 APPS := $(notdir $(patsubst %/Makefile,%,$(wildcard apps/*/Makefile)))
+# Biscuit's art sources (tools/art/*art*.js) came over as-is from the legacy app; their output is pinned pixel-exact by
+# generated/manifest.json, so they are data-like drawing lists, gated by that oracle instead of by lizard.
 LIZARD_ARGS := -C 15 -L 60 -a 5 -w -W whitelizard.txt \
-	-x '*/generated/*' -x '*/node_modules/*' -x '*/.pio/*' -x '*/build/*' -x '*/sprites.h' -x '*/content*.h'
+	-x '*/generated/*' -x '*/node_modules/*' -x '*/.pio/*' -x '*/build/*' -x '*/sprites.h' -x '*/content*.h' \
+	-x '*/biscuit/tools/art/*art*.js'
 
 .PHONY: help check ci test lint coverage complexity firmware flash monitor hooks apps
 
