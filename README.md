@@ -78,8 +78,11 @@ and runs the same stories, pixel art and discoveries on the board.
 
 Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, about $45.
 
-- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD): usually the fastest shipping.
-- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): the maker's own store.
+- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): usually the fastest shipping. This is an affiliate link.
+- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): the maker's own store. No affiliate link.
+
+If you buy through the Amazon link, I get a small commission and you pay the
+same price. As an Amazon Associate I earn from qualifying purchases.
 
 Get the exact 2.1-inch model. Waveshare sells look-alike round boards in other
 sizes (1.28, 1.85 and 2.8 inch), and those won't run these apps. The 2.1-inch

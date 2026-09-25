@@ -19,10 +19,11 @@ Every app targets the **Waveshare ESP32-S3-Touch-LCD-2.1**
 | Battery | MX1.25 header for a 3.7 V lithium cell, with a charging chip onboard |
 
 Buy the flat version, `ESP32-S3-Touch-LCD-2.1`
-([Amazon](https://www.amazon.com/dp/B0DDPQSKJD),
-[Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm)). The
+([Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20), an affiliate link;
+[Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm), not an affiliate link). The
 `ESP32-S3-Touch-LCD-2.1B` has curved 2.5D glass over the same size screen; no
 app here has been tested on it. Round boards in other sizes won't run these apps.
+As an Amazon Associate I earn from qualifying purchases.
 
 ## Not used yet
 
