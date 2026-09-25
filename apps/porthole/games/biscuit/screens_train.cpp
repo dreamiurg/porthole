@@ -25,7 +25,7 @@ Button trickRow(const Save& p, int row, int page, char* label, size_t cap) {
 }  // namespace
 
 void Game::updateTricks() {
-  if (tapped(in_, BACK_BUTTON)) { go(SC_WORLD); return; }
+  if (tapped(in_, BACK_BUTTON)) { go(tricksBack_); return; }
   const int turn = navTapped(in_, page_, TRICK_PAGES);
   if (turn) { page_ += turn; return; }
   for (int row = 0; row < ROWS; row++) {

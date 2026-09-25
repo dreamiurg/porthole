@@ -144,7 +144,9 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
     `dailyMask`) as buttons that go and do them (a snack, fetch, a cuddle, the Library,
     the tricks, a nap), marked `* ` once done, and A lovely word. The third earns the
-    sticker (`recordActivity`, once a day); World's tile then says "Sticker earned!".
+    sticker (`recordActivity`, once a day): the pup says so the next time he is home, World's
+    tile says "Sticker earned!", and the album opens on its page. The Library and Tricks
+    opened from here come back here; Topics' Back returns to the list it was opened from.
   - Today's three discoveries follow the old firmware: one from each third of the topics,
     `topic = family * 4 + day % 4`, the `(day / 4) % 8`-th of that topic.
   Screens the old standalone firmware had that Porthole's shell now owns instead: Settings,

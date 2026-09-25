@@ -48,7 +48,7 @@ void Game::homeTaps() {
   } else if (tapped(in_, action(1, save_.sleeping))) {
     fetch_ = 0; sayUntilMs_ = 0; animate(SCENE_PLAY); fresh();
   } else if (tapped(in_, action(2, save_.sleeping))) {
-    page_ = 0; go(SC_LIBRARY);
+    openLibrary(SC_HOME);
   } else if (up && in_.tapIn(PUP.x, PUP.y, PUP.w, PUP.h)) {
     biscuit::act(save_, Action::Petting, now_); markDirty();
     say(SAY_PETTED, SCENE_PET);
@@ -132,7 +132,7 @@ void Game::updateWorld() {
   for (int i = 0; i < WORLD_TILES; i++) {
     const Box& b = worldTile(i, save_).box;
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    if (i == 0) { page_ = 0; go(SC_TRICKS); }
+    if (i == 0) openTricks(SC_WORLD);
     else if (i == 1) toggleNap();
     else go(i == 2 ? SC_PROFILE : SC_TODAY);
     return;

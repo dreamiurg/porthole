@@ -63,15 +63,24 @@ inline constexpr Label SUBTITLE = {{&FONT16, 346, 17, 0, Align::CENTER}, 67, 284
 constexpr Box CHOICE[2] = {{28, 86, 104, 22}, {28, 110, 104, 22}};
 inline constexpr Label PROMPT = {{&FONT24, 352, 108, 4, Align::CENTER}, 64, 148, false};
 inline constexpr Label CHOICE_BUTTON = buttonLabel(CHOICE[1], &FONT20);
-// A discovery's cover: its title (FONT24 when that takes two lines at most, else this FONT20 box: the gate checks
-// the fallback), the picture at 3x under it, Let's find out.
+// A discovery's cover: its title (FONT24 when that takes two lines at most, else FONT20), the picture at 3x under
+// it, Let's find out. coverTitle() is the label the screen draws and the gate measures.
 inline constexpr Label FACT_TITLE = {{&FONT20, 348, 76, 4, Align::CENTER}, 66, 142, false};
+inline Label coverTitle(const char* s) {
+  Label l = FACT_TITLE;
+  if (font::textHeight(FONT24, s, l.box.w, l.box.spacing) <= l.box.h) l.box.font = &FONT24;
+  return l;
+}
 constexpr int COVER_X = 96, COVER_Y = 218;
-// Discovery and topic rows: the picture (96x48) at the left, the text in the rest. FONT20 when a title takes two
-// lines at most, else this FONT16 box: the gate checks the fallback.
+// Discovery and topic rows: the picture (96x48) at the left, the text in the rest, FONT20 while it takes two lines,
+// else FONT16. rowText() is that label in the lowest row, as the screens draw it and the gate measures it.
 constexpr int ROW_PICTURE_X = 7, ROW_PICTURE_Y = 9;   // in the row, physical
-inline constexpr Label FACT_BUTTON = {{&FONT16, 196, 56, 0, Align::CENTER}, 193, 296, true};
-inline constexpr Label TOPIC_BUTTON = {{&FONT20, 196, 56, 0, Align::CENTER}, 193, 296, true};
+inline constexpr Label ROW_TEXT = {{&FONT16, 196, 56, 0, Align::CENTER}, 193, 296, true};
+inline Label rowText(const char* s) {
+  Label l = ROW_TEXT;
+  if (font::textHeight(FONT20, s, l.box.w, 0) <= 2 * FONT20.lineHeight) l.box.font = &FONT20;
+  return l;
+}
 // The notebook before anything is kept.
 inline constexpr Label NOTEBOOK_EMPTY = {{&FONT24, 340, 90, 4, Align::CENTER}, 70, 226, false};
 // The wonder page: "I wonder..." over the question, Source / Keep where Previous / Next are.
@@ -104,6 +113,10 @@ constexpr int BUBBLE_X = 72, BUBBLE_Y = 304, BUBBLE_W = 336, BUBBLE_H = 42;
 inline constexpr Label BUBBLE = {{&FONT16, 322, 38, 4, Align::CENTER}, 79, 306, true};   // two lines at most
 // Feed, Play, Pet, More: 72x66 physical each, low on the glass
 constexpr Box ACTIONS[4] = {{28, 118, 24, 22}, {55, 118, 24, 22}, {82, 118, 24, 22}, {109, 118, 24, 22}};
+// An action's label: one line under its icon, as wide as the button, 5 px off its bottom.
+inline Label actionLabel(const Box& b, const font::Font* f) {
+  return {{f, (int16_t)(b.w * 3), f->lineHeight, 0, Align::CENTER}, (int16_t)(b.x * 3), (int16_t)(b.y * 3 + b.h * 3 - 5 - f->lineHeight), false};
+}
 // The room: the bookshelf, the window (nap), the fern, and the pup itself
 constexpr Box SHELF = {16, 49, 36, 49}, WINDOW = {110, 46, 32, 32}, FERN = {117, 80, 25, 22}, PUP = {54, 56, 53, 39};
 // Fetch: the ball's five spots, the score and the way out
@@ -120,7 +133,6 @@ constexpr Box WORLD_TRICKS = {22, 48, 57, 32}, WORLD_NAP = {81, 48, 57, 32}, WOR
 inline constexpr Label TILE_TITLE = {{&FONT20, 118, 44, 0, Align::LEFT}, 42, 10, false};   // inside the tile
 inline constexpr Label TILE_DETAIL = {{&FONT16, 150, 34, 0, Align::LEFT}, 10, 58, false};
 
-// ---- Tricks: the three rows a page, two pages; "<name>   N/3", or "<name>   Day N" while locked
 
 // ---- Training: watch the cues, then tap them on the pad
 inline constexpr Label TRAIN_HINT = {{&FONT24, 352, 60, 4, Align::CENTER}, 64, 160, false};

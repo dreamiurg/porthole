@@ -104,10 +104,10 @@ static void storyGate() {
 }
 static void discoveryGate() {
   char where[64];
-  for (const Topic& t : TOPICS) { fits(HEADER, t.id, t.name); fits(TOPIC_BUTTON, t.id, t.name); }
+  for (const Topic& t : TOPICS) { fits(HEADER, t.id, t.name); fits(rowText(t.name), t.id, t.name); }
   for (const Discovery& d : DISCOVERIES) {
-    fits(FACT_TITLE, d.id, d.title);
-    fits(FACT_BUTTON, d.id, d.title);
+    fits(coverTitle(d.title), d.id, d.title);
+    fits(rowText(d.title), d.id, d.title);
     for (int i = 0; i < 2; i++) { snprintf(where, sizeof where, "%s page %d", d.id, i + 1); page(where, d.pages[i]); }
     snprintf(where, sizeof where, "%s wonder", d.id);
     fits(WONDER, where, filled(d.wonder));
@@ -154,6 +154,9 @@ static void homeGate() {
     fits(BOOK_BADGE, stage, text);
   }
   fits(HOME_MOOD, "asleep", "dreaming of stories");
+  static const char* const ACTION_LABELS[4][2] = {{"Feed", nullptr}, {"Play", nullptr}, {"Read", nullptr}, {"More", "Wake"}};
+  for (int i = 0; i < 4; i++)
+    for (const char* s : ACTION_LABELS[i]) if (s) fits(actionLabel(ACTIONS[i], &FONT20), "action", s);
   fits(WORLD_NAMES, "pet alone", PET);   // World shows "{pet} & {name}" only when it fits, else the pup's name
   snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u story stars", big, big, stars);
   fits(BOOK_LINES, "scrapbook", filled(text));

@@ -50,9 +50,12 @@ class Game : public App {
   // goes back to idling.
   char speech_[256] = {0};                    // personalized: 256 holds the longest line with 12-letter names
   uint8_t activity_ = 0;                      // SceneActivity
+  uint8_t said_ = SAY_IDLE;                   // the last line said (debug output)
   uint32_t sayUntilMs_ = 0, actUntilMs_ = 0, actStartMs_ = 0, lastSurpriseMs_ = 0;   // 0 = nothing pending
   int fetch_ = -1;                            // catches so far, -1 = not playing fetch
   uint32_t shelfAtMs_ = 0;                    // the shelf was tapped: the Library opens then (0 = not pending)
+  Screen libraryBack_ = SC_HOME, tricksBack_ = SC_WORLD;   // where Back goes: Home and World, or Today's adventure
+  bool claimed_ = false, stickerNews_ = false;   // today's sticker as last seen; just earned, not yet told at home
   int page_ = 0;                              // Tricks, Library, Discoveries, Topics, Stickers: the list page
   int trick_ = 0, step_ = 0; bool watching_ = true;   // Training
   char nameBuf_[ui::NAME_LEN + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
@@ -64,7 +67,7 @@ class Game : public App {
   char text_[256] = {0}; const char* shown_[PAGE_SCREENS] = {nullptr}; int textPage_ = -1;   // at_'s page, filled
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
-  FactList facts_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;
+  FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
@@ -104,5 +107,7 @@ class Game : public App {
   void todayActivity(int bit);
   void updateWord(); void drawWord();
   void updateStickers(); void drawStickers();
+  void openLibrary(Screen back); void openTricks(Screen back);
+  void stickerNews();
 };
 }  // namespace biscuit

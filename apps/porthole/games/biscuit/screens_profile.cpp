@@ -52,7 +52,11 @@ void Game::drawRenamePet() {
 // ---------------------------------------------------------------- the scrapbook
 void Game::updateProfile() {
   if (tapped(in_, BACK_BUTTON)) { go(SC_WORLD); return; }
-  if (tapped(in_, ALBUM)) { page_ = 0; go(SC_STICKERS); return; }
+  if (tapped(in_, ALBUM)) {   // open on today's sticker once it is earned
+    page_ = save_.dailyClaimed ? dailySticker(save_.lastVisitDay) / STICKER_ROWS : 0;
+    go(SC_STICKERS);
+    return;
+  }
   if (tapped(in_, RENAME)) { startNaming(save_.petName); go(SC_RENAME_PET); }
 }
 void Game::drawProfile() {

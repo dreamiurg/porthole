@@ -53,7 +53,11 @@ void Game::updateDiscoveries() {
     if (facts_ == TOPIC) { page_ = topic_ / ROWS; go(SC_TOPICS); } else { page_ = 0; go(SC_LIBRARY); }
     return;
   }
-  if (tapped(in_, TOPICS_BUTTON)) { page_ = 0; go(SC_TOPICS); return; }
+  if (tapped(in_, TOPICS_BUTTON)) {   // Topics' Back comes back to this list (a topic's list goes back to Topics)
+    if (facts_ != TOPIC) topicsFrom_ = facts_;
+    page_ = 0; go(SC_TOPICS);
+    return;
+  }
   if (tapped(in_, THREE)) { showFacts(TODAYS_THREE, 0); fresh(); return; }   // the rows change under the finger
   uint8_t ids[NUM_DISCOVERIES];
   const int n = factList(ids), pages = n ? (n + FACT_ROWS - 1) / FACT_ROWS : 1;
@@ -80,7 +84,7 @@ void Game::drawDiscoveries() {
   nav(in_, page_, pages);
 }
 void Game::updateTopics() {
-  if (tapped(in_, BACK_BUTTON)) { showFacts(TODAYS_THREE, 0); go(SC_DISCOVERIES); return; }
+  if (tapped(in_, BACK_BUTTON)) { showFacts(topicsFrom_, 0); go(SC_DISCOVERIES); return; }
   const int turn = navTapped(in_, page_, TOPIC_PAGES);
   if (turn) { page_ += turn; return; }
   for (int row = 0; row < ROWS; row++) {
@@ -129,10 +133,8 @@ void Game::drawDiscovery() {
   const Discovery& d = DISCOVERIES[fact_];
   gfx565::clear(PAPER);
   top(in_, TOPICS[d.topic].name, stars(save_));
-  if (at_ < 0) {   // FONT24 while the title takes two lines at most, else FONT20 (the old firmware's rule)
-    Label l = FACT_TITLE;
-    if (font::textHeight(FONT24, d.title, l.box.w, l.box.spacing) <= l.box.h) l.box.font = &FONT24;
-    text(l, d.title, INK);
+  if (at_ < 0) {
+    text(coverTitle(d.title), d.title, INK);
     picture(fact_, COVER_X, COVER_Y, 3);
     button(in_, FIND_OUT);
   } else if (at_ < total_) {
@@ -177,7 +179,8 @@ void Game::todayActivity(int bit) {
   const Action a = (Action)(1u << bit);
   if (a == Action::Rest) { toggleNap(); return; }
   if (!awake(save_)) { go(SC_HOME); return; }   // nothing but waking while the pup naps
-  if (a == Action::Read || a == Action::Train) { page_ = 0; go(a == Action::Read ? SC_LIBRARY : SC_TRICKS); return; }
+  if (a == Action::Read) { openLibrary(SC_TODAY); return; }
+  if (a == Action::Train) { openTricks(SC_TODAY); return; }
   go(SC_HOME);
   if (a == Action::Play) { fetch_ = 0; sayUntilMs_ = 0; animate(SCENE_PLAY); return; }
   biscuit::act(save_, a, now_); markDirty();

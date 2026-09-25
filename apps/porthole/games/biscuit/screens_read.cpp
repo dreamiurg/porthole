@@ -60,9 +60,9 @@ const char* Game::pageText() {
 
 // ---------------------------------------------------------------- Library
 void Game::updateLibrary() {
-  if (tapped(in_, BACK_BUTTON)) { go(SC_HOME); return; }
-  if (tapped(in_, DISCOVER)) { showFacts(TODAYS_THREE, 0); go(SC_DISCOVERIES); return; }
-  if (tapped(in_, NOTEBOOK_BUTTON)) { showFacts(NOTEBOOK, 0); go(SC_DISCOVERIES); return; }
+  if (tapped(in_, BACK_BUTTON)) { go(libraryBack_); return; }
+  if (tapped(in_, DISCOVER)) { showFacts(TODAYS_THREE, 0); topicsFrom_ = TODAYS_THREE; go(SC_DISCOVERIES); return; }
+  if (tapped(in_, NOTEBOOK_BUTTON)) { showFacts(NOTEBOOK, 0); topicsFrom_ = NOTEBOOK; go(SC_DISCOVERIES); return; }
   const int turn = navTapped(in_, page_, SHELF_PAGES);
   if (turn) { page_ += turn; return; }
   for (int row = 0; row < SHELF_ROWS; row++) {

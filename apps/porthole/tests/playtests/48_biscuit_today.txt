@@ -1,6 +1,7 @@
 # Today's adventure, to its sticker: the World tile opens it, its three activities take the pup to each one (a
-# snack, a cuddle, a nap on this day), each shows a mark once done, and the third earns the day's sticker (once).
-# The pocket word has its own page. The next day brings a new adventure; the sticker stays in the album.
+# snack, a cuddle, a nap on this day), each shows a mark once done, and the third earns the day's sticker (once):
+# the pup says so at home, and the album opens on its page. The pocket word has its own page. The next day brings a
+# new adventure, whose Read together and Try a trick come back to Today; the sticker stays in the album.
 profile Sam 8
 app biscuit
 wait 450
@@ -54,6 +55,7 @@ expect sleeping=1
 expect claimed=1
 expect stickers=32
 expect friendship=10
+expect said=12
 snap y04_sticker
 tap 121 129
 wait 450
@@ -73,7 +75,7 @@ tap 121 129
 wait 450
 expect claimed=1
 expect friendship=10
-# the album: page 2 holds the sticker
+# the album opens on the sticker's page (the second)
 tap 121 129
 wait 450
 tap 50 99
@@ -81,9 +83,6 @@ wait 450
 tap 52 132
 wait 450
 expect-screen biscuit_stickers
-ui-check biscuit_stickers
-tap 108 132
-wait 450
 expect page=1
 ui-check biscuit_stickers-earned
 snap y07_album
@@ -92,6 +91,7 @@ tap 108 132
 wait 450
 end
 expect page=3
+ui-check biscuit_stickers
 tap 51 25
 wait 450
 expect-screen biscuit_profile
@@ -106,6 +106,19 @@ tap 109 99
 wait 450
 expect daily=0
 snap y08_tomorrow
+# Read together and Try a trick: their screens' Back comes back here
+tap 53 91
+wait 450
+expect-screen biscuit_library
+tap 51 25
+wait 450
+expect-screen biscuit_today
+tap 106 91
+wait 450
+expect-screen biscuit_tricks
+tap 51 25
+wait 450
+expect-screen biscuit_today
 tap 51 25
 wait 450
 expect-screen biscuit_world

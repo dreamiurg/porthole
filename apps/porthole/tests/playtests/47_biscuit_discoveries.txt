@@ -140,13 +140,17 @@ tap 51 25
 wait 450
 expect-screen biscuit_topics
 expect page=3
+# Topics' Back: the list it was opened from (the notebook), never a topic's list
 tap 51 25
 wait 450
 expect-screen biscuit_discoveries
-expect facts=0
+expect facts=2
 # the next day: three new ones
 skip 86400
 wait 100
+tap 106 60
+wait 450
+expect facts=0
 tap 80 84
 wait 450
 expect fact=11

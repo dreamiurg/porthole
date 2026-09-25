@@ -65,7 +65,7 @@ void actionButton(const Input& in, const Button& b, Icon glyph) {
   frame(in, b);
   const int x = b.box.x * 3, y = b.box.y * 3, w = b.box.w * 3;
   icon(glyph, x + (w - 24) / 2, y + 7, 2, INK);
-  font::textBox({b.font, (int16_t)w, 0, 0, Align::CENTER}, b.label, x, y + b.box.h * 3 - 5 - b.font->lineHeight, INK);
+  text(actionLabel(b.box, b.font), b.label, INK);
 }
 void tile(const Input& in, const Tile& t) {
   frame(in, {t.box, "", &FONT20, t.fill, true});
@@ -129,9 +129,8 @@ void picture(int id, int x, int y, int scale) { gfx565::blit(DISCOVERY_ART[id], 
 void pictureRow(const Input& in, const Box& b, int id, const char* label) {
   frame(in, {b, label, &FONT20, PURPLE, true});
   picture(id, b.x * 3 + ROW_PICTURE_X, b.y * 3 + ROW_PICTURE_Y, 1);
-  Label l = FACT_BUTTON;   // placed like the lowest row's: moved to this one
+  Label l = rowText(label);   // placed in the lowest row: moved to this one
   l.x = (int16_t)(l.x - ROW[ROWS - 1].x * 3 + b.x * 3); l.y = (int16_t)(l.y - ROW[ROWS - 1].y * 3 + b.y * 3);
-  if (font::textHeight(FONT20, label, l.box.w, 0) <= 2 * FONT20.lineHeight) l.box.font = &FONT20;
   text(l, label, INK);
 }
 void need(int slot, Icon glyph, int value, uint16_t color) {

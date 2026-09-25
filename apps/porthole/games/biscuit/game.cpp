@@ -22,7 +22,8 @@ void Game::enter(const AppEnter& e) {
   biscuit::tick(save_, now_);
   dirty_ = save_.named; wantsHome_ = false;   // the visit (and its new day, if any) is saved right away
   lastTickSec_ = lastCheckpointSec_ = now_; lastSurpriseMs_ = ms_;
-  fetch_ = -1; shelfAtMs_ = 0; quiet();
+  fetch_ = -1; quiet();
+  claimed_ = save_.dailyClaimed; stickerNews_ = false;
   if (save_.named) go(SC_HOME);
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
@@ -32,6 +33,7 @@ void Game::go(Screen s) { screen_ = s; fresh(); }
 // one layout only, and the next one waits for the fresh-screen pause (os/ui.h).
 void Game::fresh() { gate_.shown(ms_); in_.tap = in_.pressed = in_.longPress = false; }
 void Game::say(Say line, uint8_t activity) {
+  said_ = line;
   personalize(SAY[line], who_.name, save_.petName, speech_, sizeof speech_);
   sayUntilMs_ = (ms_ + SAY_MS) | 1;   // | 1: 0 means nothing pending
   lastSurpriseMs_ = ms_;
@@ -79,11 +81,23 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   surprise();
   if (shelfAtMs_ && (int32_t)(ms_ - shelfAtMs_) >= 0) {   // the pup has pulled out a book: the Library
     shelfAtMs_ = 0;
-    if (screen_ == SC_HOME && awake(save_) && fetch_ < 0) { page_ = 0; go(SC_LIBRARY); }
+    if (screen_ == SC_HOME && awake(save_) && fetch_ < 0) openLibrary(SC_HOME);
   }
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
+  stickerNews();
 }
+// Today's adventure done: its sticker is earned, wherever the last activity happened. The pup says so the next time
+// he is at home (over what he was saying: this is the bigger news).
+void Game::stickerNews() {
+  if (save_.dailyClaimed && !claimed_) stickerNews_ = true;
+  claimed_ = save_.dailyClaimed;   // a new day clears it
+  if (!stickerNews_ || screen_ != SC_HOME || fetch_ >= 0) return;
+  stickerNews_ = false;
+  say(SAY_STICKER, activity_);
+}
+void Game::openLibrary(Screen back) { libraryBack_ = back; page_ = 0; go(SC_LIBRARY); }
+void Game::openTricks(Screen back) { tricksBack_ = back; page_ = 0; go(SC_TRICKS); }
 void Game::render() {
   static const ScreenFn DRAW[] = {
     &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
@@ -128,8 +142,8 @@ void Game::debugPrint() {
          p.dailyCompleted, p.tricks[0], p.tricks[1], p.tricks[2], p.tricks[3], p.tricks[4], p.tricks[5], trick_, step_, watching_, page_);
   int kept = 0;
   for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
-  printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u\n",
-         p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed);
+  printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
+         p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }
 void Game::debugCmd(const char* cmd) {
   if (!save_.named) return;
@@ -139,7 +153,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "grown")) { save_.daysTogether = 7; save_.friendship = 60; }
   else if (!strcmp(cmd, "tricks")) memset(save_.tricks, 3, sizeof save_.tricks);
   else if (!strcmp(cmd, "practiced")) memset(save_.tricks, 2, sizeof save_.tricks);   // every trick on its last lesson
-  else if (!strcmp(cmd, "read")) { save_.stories = 0x7f; for (int i = 0; i < NUM_DISCOVERIES; i++) save_.discoveries[i / 32] |= 1u << (i % 32); }
+  else if (!strcmp(cmd, "read")) { save_.stories = (uint8_t)((1u << NUM_STORIES) - 1); for (int i = 0; i < NUM_DISCOVERIES; i++) save_.discoveries[i / 32] |= 1u << (i % 32); }
   else return;
   markDirty();
 }
