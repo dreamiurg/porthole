@@ -228,7 +228,7 @@ snap d02_stickers
 tap 80 12
 wait 450
 dbg hats
-tap 90 123
+tap 114 123
 wait 450
 tap 134 80
 wait 450
@@ -365,6 +365,18 @@ wait 450
 expect-screen home
 ui-check home-grown
 snap f02_home_grown
+# the butterfly crosses the room with its box on the pips' rows: sampled every 300 ms (5 px of flight), it may be a
+# hotspot only where it keeps the audit's spacing from the door, the pips, the shelf and the dog
+dbg butterfly
+repeat 14
+wait 300
+ui-check home-butterfly
+end
+snap f03_home_butterfly
+repeat 16
+wait 300
+ui-check home-butterfly
+end
 tap 118 129
 wait 450
 tap 50 44
@@ -373,7 +385,7 @@ tap 80 80
 wait 2400
 expect phase=2
 ui-check train-grown
-snap f03_train_grown
+snap f04_train_grown
 sheet grown
 # bath, last: a fresh muddy pup is tapped where it starts, so the audit sees the tub before any rubbing
 # (the floor sweep of 07_bath rubs the mud off by itself once the tub is open)

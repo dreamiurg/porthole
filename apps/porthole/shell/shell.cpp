@@ -44,7 +44,11 @@ void Shell::render() {
   bool pinScreen = screen_ >= SH_PIN_SET && screen_ <= SH_PIN;   // drawPin shows its messages in the prompt line
   if (ms_ < toastUntil_ && !pinScreen) ui::toast(toast_);
 }
-Tint Shell::tint() const { return screen_ == SH_APP ? app_->tint() : screen_ == SH_REST ? TINT_EVENING : TINT_DAY; }
+Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
+  if (screen_ == SH_APP) return app_->tint();
+  Tint t = clockTint(now_);
+  return screen_ == SH_REST && t == TINT_DAY ? TINT_EVENING : t;   // resting is never broad daylight
+}
 bool Shell::soundOn(uint32_t ms) { return screen_ == SH_APP && app_->soundOn(ms) && !prof_.rec[active_].muted; }
 
 // ---------------------------------------------------------------- flow
@@ -375,8 +379,9 @@ void Shell::debugPrint() {
   // keys (age, screen) win over a game's stale ones.
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
-  printf("[shell profile=%d/%d age=%d muted=%d play=%lus rest=%lu]\n", active_, prof_.count(), r ? r->age : 0, r ? r->muted : 0,
-         (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && restingNow() ? r->restUntil - now_ : 0));
+  static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};
+  printf("[shell profile=%d/%d age=%d muted=%d play=%lus rest=%lu tint=%s]\n", active_, prof_.count(), r ? r->age : 0, r ? r->muted : 0,
+         (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && restingNow() ? r->restUntil - now_ : 0), TINTS[tint()]);
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {

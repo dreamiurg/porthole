@@ -1,0 +1,44 @@
+# At night the shell dims with the clock, like Pets Club: leaving a night game never flashes to a daylight launcher.
+# (The UI audit measures day colors only; the sheet shows the tint.)
+newgame Sam Biscuit
+wait 2400
+expect-screen home
+expect tint = day
+tap 80 12
+wait 450
+expect-screen launcher
+expect tint = day
+# 22:00
+skip 21600
+expect tint = night
+snap n01_launcher
+tap 80 76
+wait 2400
+expect-screen home
+expect tint = night
+snap n02_home
+tap 80 12
+wait 450
+expect-screen launcher
+expect tint = night
+tap 80 42
+wait 450
+expect-screen picker
+expect tint = night
+snap n03_picker
+tap 80 92
+wait 450
+expect-screen new_name
+expect tint = night
+snap n04_new_name
+tap 80 12
+wait 450
+# a second profile, so the play budget applies: resting at night is night, not the daytime evening dusk
+profile Kai 6
+app pets-club
+dbg tired
+wait 1500
+expect-screen rest
+expect tint = night
+snap n05_rest
+sheet night

@@ -63,7 +63,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `app NAME` | open a game from the launcher (`app pets-club`) |
 | `newgame KID PET` | `reset`, then profile KID (age 8) with pup PET already adopted, opened in Pets Club (its splash) |
 | `snap NAME` | write a snapshot (for `sheet`) |
-| `dbg CMD` | test hook: `tired rested younger older` (the profile's rest budget and age; `tired` rests at the next second), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older` |
+| `dbg CMD` | test hook: `tired rested younger older` (the profile's rest budget and age; `tired` rests at the next second), then to the open game: `dirty poop hungry hearts books tricks hats grown dog sleepy younger older butterfly` (`butterfly` sends one across the room from the left) |
 | `debug` / `screen` / `ui` | print the state / the screen name / one audited frame (used by the directives) |
 | `watch MS` | step like `wait`, printing `glow X Y` whenever a trick-lesson glow appears |
 | `monkey N SEED` | N random gestures, see below |
@@ -82,8 +82,8 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 
-Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play rest screen`,
-then the open (or last opened) game's: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age
+Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play rest tint
+screen` (`tint`: `day`, `evening` or `night`, what the glass shows), then the open (or last opened) game's: `food fun energy clean bond hearts streak day stage asleep poop dirty gift age
 books screen tricks hat stickers`, and on the matching screens `word cols typed tiles`, `book title pages page
 correct`, `score left` (fetch), `spots` (bath), `trick phase round len seq input` (lesson). `screen` is the shell's
 screen, or the game's while one is open.
@@ -118,8 +118,8 @@ with `textShadow` is reported with its shadow color noted; the rule still measur
 
 What the audit cannot see: hit tests that do not go through `Input` (the trick-lesson zones in
 `trainHitZone`, rubbing in the bath, page turns in a story, dragging in fetch), text that overflows its button but
-stays on screen, text drawn over other text or under a button, and the evening and night tints. The contact
-sheets are there for those; look at them.
+stays on screen, text drawn over other text or under a button, and the evening and night tints (`16_night` checks
+the tint by name). The contact sheets are there for those; look at them.
 
 ## Chaos monkey
 
