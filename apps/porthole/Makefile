@@ -42,9 +42,10 @@ snap-asan: $(BUILD) $(SRC) host/sim.cpp
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
-test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp
+test: $(BUILD) $(SRC) host/test_pet.cpp host/test_shell.cpp host/test_biscuit.cpp
 	$(CXX) $(CXXFLAGS) $(PET_TEST_SRC) host/test_pet.cpp -o $(BUILD)/test_pet && $(BUILD)/test_pet
 	$(CXX) $(CXXFLAGS) $(SHELL_TEST_SRC) host/test_shell.cpp -o $(BUILD)/test_shell && $(BUILD)/test_shell
+	$(CXX) $(CXXFLAGS) host/test_biscuit.cpp -o $(BUILD)/test_biscuit && $(BUILD)/test_biscuit
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.

@@ -9,6 +9,7 @@
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
 constexpr const char* MIGRATED = "m";    // porthole/m: present once the Pets Club houses became profiles
+constexpr const char* MIGRATED_BISCUIT = "mb";   // porthole/mb: present once Biscuit's old save found its profile
 // Turn taking, same numbers Pets Club used: play 6 min, then rest 10. Only with 2+ profiles on the device.
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
 constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;
@@ -61,6 +62,11 @@ int  create(Store& st, Profiles& p, const Record& draft, const char* const* stor
 void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, int nStores);
 Profile toProfile(const Profiles& p, int id);
 void migrate(Store& st, Profiles& p);   // migrate.cpp: Pets Club houses -> profiles; safe to re-run after power loss
+// migrate.cpp: Biscuit's pre-Porthole save -> biscuit/s<id>, once (porthole/mb); safe to re-run after power loss.
+// TODO(biscuit screens PR): call it at the end of loadAll (after migrate: it matches the migrated names) in the
+// same change that adds Biscuit to APPS. Before that no game reads biscuit/s<id>, and profile delete, create and
+// serial R do not erase it.
+void migrateBiscuit(Store& st, Profiles& p);
 
 // Rest budget.
 // Never more than REST_SEC from now: a clock set backwards must not strand a kid on the rest screen for hours.

@@ -1,9 +1,10 @@
 // Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
-// delete, the secret code encoding, rest budget.
+// migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "../games/biscuit/pet.h"
 #include "pet.h"
 #include "profiles.h"
 
@@ -207,6 +208,136 @@ static void migrateLegacyKey() {
   assert(none.count() == 0);                                  // a fresh device has nothing to migrate
 }
 
+// ---- Biscuit's save from before Porthole ----
+// Built the way the old firmware wrote them: {magic, pet, FNV-1a over the pet} with UTC stamps, in namespace
+// "zoegotchi" (keys pet3/pet2/pet1) or "biscuit" (key pet1).
+namespace old = biscuit::legacy;
+static const char* const OLD_NS = "zoegotchi";   // the first firmware's namespace
+static uint32_t oldChecksum(const void* d, size_t n) {   // FNV-1a, the old checksum, written out again so the test checks the port
+  uint32_t h = 2166136261u; const uint8_t* p = (const uint8_t*)d;
+  while (n--) h = (h ^ *p++) * 16777619u;
+  return h;
+}
+template <class P> static void putOld(MemStore& st, const char* ns, const char* key, uint32_t magic, const P& pet) {
+  old::Blob<P> b; memset(&b, 0, sizeof b);
+  b.magic = magic; b.pet = pet; b.hash = oldChecksum(&b.pet, sizeof b.pet);
+  st.save(ns, key, &b, sizeof b);
+}
+static old::PetV1 oldPet(uint32_t friendship, uint32_t ageSec) {   // last saved ageSec before NOW
+  old::PetV1 o; memset(&o, 0, sizeof o);
+  o.updatedAt = NOW - ageSec + old::UTC_OFFSET_SEC; o.createdAt = o.updatedAt - 86400;
+  o.version = 1; o.lastVisitDay = (int32_t)(NOW / 86400);
+  o.fullness = 60; o.happiness = 70; o.energy = 80; o.friendship = friendship; o.daysTogether = 4; o.stories = 5;
+  return o;
+}
+static old::PetV3 oldNamed(const char* kid, const char* dog, uint32_t friendship, uint32_t version) {
+  old::PetV3 o; memset(&o, 0, sizeof o);
+  o.base = oldPet(friendship, 0); o.base.version = version; o.setupComplete = 1;
+  snprintf(o.playerName, sizeof o.playerName, "%s", kid); snprintf(o.petName, sizeof o.petName, "%s", dog);
+  return o;
+}
+static bool biscuitIn(MemStore& st, int id, const char* dog, uint32_t friendship) {   // biscuit/s<id> holds this pup
+  uint8_t blob[shell::BLOB_MAX]; biscuit::Save s;
+  size_t n = st.load(biscuit::STORE, shell::key('s', id), blob, sizeof blob);
+  return n && biscuit::loadBlob(blob, n, s) && !strcmp(s.petName, dog) && s.friendship == friendship;
+}
+static bool oldGone(MemStore& st) {
+  return !st.has(OLD_NS, "pet3") && !st.has(OLD_NS, "pet2") && !st.has(OLD_NS, "pet1") && !st.has("biscuit", "pet1");
+}
+// Boot as the shell will once Biscuit is in the image: profiles (and the Pets Club migration), then Biscuit's.
+static void boot(MemStore& st, shell::Profiles& p) { shell::loadAll(st, p); shell::migrateBiscuit(st, p); }
+
+// The pup goes to the profile named like the kid in the save, whatever the case; the old keys go after the marker.
+static void biscuitToNamedProfile() {
+  MemStore st;
+  Save a = house("Sam", "Rex", 8, 0), b = house("Kai", "Dot", 6, 0);
+  st.save("crago", "s0", &a, sizeof a); st.save("crago", "s1", &b, sizeof b);
+  putOld(st, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("KAI", "Pip", 30, 3));
+  putOld(st, OLD_NS, "pet1", old::MAGIC_V1, oldPet(99, 3600));   // an older generation: never read
+  shell::Profiles p; boot(st, p);
+  assert(p.count() == 2 && biscuitIn(st, 1, "Pip", 30) && !st.has(biscuit::STORE, "s0"));
+  assert(st.has(shell::NS, "mb") && oldGone(st) && !strcmp(petIn(st, "s1"), "Dot"));
+  putOld(st, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Ghost", 1, 3));
+  shell::Profiles again; boot(st, again);                   // once only: the marker stops a second run
+  assert(again.count() == 2 && biscuitIn(st, 1, "Pip", 30) && !st.has(biscuit::STORE, "s0"));
+}
+
+// No profile yet: one is made from the kid's name in the save (age unknown, asked once); a save without a name
+// (v1) gets a neutral one.
+static void biscuitNewProfile() {
+  MemStore st;
+  putOld(st, OLD_NS, "pet2", old::MAGIC_V2, oldNamed("Sam", "Pip", 30, 2));
+  shell::Profiles p; boot(st, p);
+  assert(p.count() == 1 && same(p.rec[0], "Sam", 0, 0, 0) && biscuitIn(st, 0, "Pip", 30) && oldGone(st));
+  MemStore v1; putOld(v1, "biscuit", "pet1", old::MAGIC_V1, oldPet(7, 0));
+  shell::Profiles q; boot(v1, q);
+  assert(q.count() == 1 && !strcmp(q.rec[0].name, "Friend") && q.rec[0].age == 0 && biscuitIn(v1, 0, "Biscuit", 7));
+  assert(oldGone(v1));
+}
+
+// A name longer than the shell lets a kid type: the profile gets its first ui::NAME_LEN letters, and that is also
+// what matches.
+static void biscuitLongName() {
+  MemStore st;
+  putOld(st, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Christopher", "Pip", 30, 3));
+  shell::Profiles p; boot(st, p);
+  assert(p.count() == 1 && !strcmp(p.rec[0].name, "Christop") && biscuitIn(st, 0, "Pip", 30));
+  MemStore two;
+  Save a = house("Sam", "Rex", 8, 0), b = house("CHRISTOP", "Dot", 6, 0);
+  two.save("crago", "s0", &a, sizeof a); two.save("crago", "s1", &b, sizeof b);
+  putOld(two, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Christopher", "Pip", 30, 3));
+  shell::Profiles q; boot(two, q);
+  assert(q.count() == 2 && biscuitIn(two, 1, "Pip", 30) && !two.has(biscuit::STORE, "s0"));
+}
+
+// Both old places hold a save: the newer one wins. No name to match: the first profile gets it.
+static void biscuitNewestToFirstProfile() {
+  MemStore st;
+  Save a = house("Ava", "Rex", 7, 0);
+  st.save("crago", "s2", &a, sizeof a);                               // one profile, id 2
+  putOld(st, OLD_NS, "pet1", old::MAGIC_V1, oldPet(10, 3600));
+  putOld(st, "biscuit", "pet1", old::MAGIC_V1, oldPet(20, 60));       // saved later
+  shell::Profiles p; boot(st, p);
+  assert(p.count() == 1 && biscuitIn(st, 2, "Biscuit", 20));
+  assert(!st.has("biscuit", "pet1") && st.has(OLD_NS, "pet1"));        // the other place is left alone
+  MemStore other;
+  putOld(other, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3));
+  putOld(other, "biscuit", "pet1", old::MAGIC_V1, oldPet(20, 3600));  // older than pet3
+  shell::Profiles q; boot(other, q);
+  assert(q.count() == 1 && !strcmp(q.rec[0].name, "Sam") && biscuitIn(other, 0, "Pip", 30));
+  assert(!other.has(OLD_NS, "pet3") && other.has("biscuit", "pet1"));
+}
+
+// A save that does not convert is left where it is and nothing is made from it. In the first firmware the newest key
+// decides: a damaged pet3 hides an older pet2, as it did on that firmware.
+static void biscuitCorruptIgnored() {
+  MemStore st;
+  old::PetV3 bad = oldNamed("Sam", "Pip", 30, 3); bad.base.energy = 500;
+  putOld(st, OLD_NS, "pet3", old::MAGIC_V3, bad);
+  putOld(st, OLD_NS, "pet2", old::MAGIC_V2, oldNamed("Sam", "Old", 5, 2));
+  uint8_t junk[40] = {1, 2, 3}; st.save("biscuit", "pet1", junk, sizeof junk);
+  shell::Profiles p; boot(st, p);
+  assert(p.count() == 0 && !st.has(biscuit::STORE, "s0") && st.has(shell::NS, "mb"));
+  assert(st.has(OLD_NS, "pet3") && st.has(OLD_NS, "pet2") && st.has("biscuit", "pet1"));
+}
+
+// Power lost after every write of the Biscuit migration: the next boot still ends with the one profile and its pup.
+static void biscuitCrash() {
+  auto setup = [](MemStore& st) { putOld(st, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3)); };
+  MemStore clean; setup(clean); int base = clean.writes;
+  shell::Profiles p; boot(clean, p);
+  int total = clean.writes - base;
+  assert(total == 10);   // marker, erase "save" (Pets Club); erase s0 twice, p0, biscuit/s0, marker, three erases
+  for (int n = 0; n <= total; n++) {
+    MemStore st; setup(st); st.budget = st.writes + n;
+    shell::Profiles cut; boot(st, cut);
+    st.budget = -1;
+    shell::Profiles again; boot(st, again);
+    assert(again.count() == 1 && !strcmp(again.rec[0].name, "Sam") && biscuitIn(st, 0, "Pip", 30));
+    assert(st.has(shell::NS, "mb") && (n == 7 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
+  }
+}
+
 static void restBudget() {
   shell::Record r = draft("Sam", 8, 0);
   uint32_t t = NOW;
@@ -243,6 +374,12 @@ int main() {
   corruptNoRemigrate();
   migrateV1();
   migrateLegacyKey();
+  biscuitToNamedProfile();
+  biscuitNewProfile();
+  biscuitNewestToFirstProfile();
+  biscuitLongName();
+  biscuitCorruptIgnored();
+  biscuitCrash();
   restBudget();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
