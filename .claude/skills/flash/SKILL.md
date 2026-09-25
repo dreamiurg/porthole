@@ -1,6 +1,6 @@
 ---
 name: flash
-description: Pets Club (apps/porthole). Use when building, flashing, or bringing up Pets Club firmware on the physical Waveshare board. Covers the exact build/upload/serial sequence, the PlatformIO-venv Python-dependency caveat, and how to set the clock.
+description: Any game (apps/porthole). Use when building, flashing, or bringing up Porthole firmware on the physical Waveshare board. Covers the exact build/upload/serial sequence, the PlatformIO-venv Python-dependency caveat, and how to set the clock.
 ---
 
 1. Build: `make -C apps/porthole firmware` (runs `pio run -e firmware` in the app dir; the board config extends the shared `platform/waveshare-round.ini`).
