@@ -18,7 +18,7 @@ static void personalizing() {
   assert(personalize("{pet} nudged {name}'s hand.", "Sam", "Pip", out, sizeof out) == 22);
   assert(strcmp(out, "Pip nudged Sam's hand.") == 0);
   personalize("Night, {name}. Love, {pet}", "", nullptr, out, sizeof out);   // no names yet
-  assert(strcmp(out, "Night, friend. Love, Biscuit") == 0);
+  assert(strcmp(out, "Night, Friend. Love, Biscuit") == 0);
   personalize("{named} {pe} {}", "Sam", "Pip", out, sizeof out);             // only whole tokens are filled
   assert(strcmp(out, "{named} {pe} {}") == 0);
   assert(personalize("{name}{name}{name}", "Alexandra", "Pip", out, 10) == 9);  // cut, never overrun
