@@ -16,7 +16,7 @@ Checked in the Codex in-app browser, including a 390 × 844 phone viewport:
 - Bookshelf paging shows future books with their active-day unlocks.
 - Reading advances through passages, presents both choices, shows the chosen ending, and preserves one-time book rewards on reread.
 - Passage focus introduces the new text to keyboard users. All twelve rendered Moon Biscuit opening pages and five ending pages fit at 24px without text overflow. Both choices and rereading were exercised.
-- Today’s invitation records snack, story, and fetch; completing all three earns a permanent sticker. The pocket-word page returns correctly.
+- Today's invitation records snack, story, and fetch; completing all three earns a permanent sticker. The pocket-word page returns correctly.
 - A wrong training cue gently retries. Three successful practices master Sit, which remains mastered after reload and can be demonstrated.
 - World, daily, library, tricks, scrapbook profile, and sticker views fit within the 480px logical screen without scrolling or hidden content. No horizontal overflow at the checked phone size.
 - All 96 discoveries have described pixel illustrations. Visual contact sheets were inspected across science, culture and life; the eye diagram was corrected to focus light on the retina. The illustrated list, cover, prose, return-to-picture, source, Keep, and notebook flows were exercised in the browser. Covers and topic thumbnails fit the fixed 480px screen; calibrated physical preview still measures 202 CSS pixels.
@@ -31,4 +31,4 @@ Checked in the Codex in-app browser, including a 390 × 844 phone viewport:
 
 Code review found and corrected stale-tab progress loss, unwritable-storage rollback, inconsistent cross-day saves, and mastered demonstrations not counting toward daily training. Review also corrected concurrent daily reward loss, stale discovery navigation when opening a sidebar book, and incorrect reliance on click.isPrimary. The relevant regression tests pass.
 
-Unverified: exact board variant, device frame rate/memory use, physical touch accuracy, and players’ sustained interest. The source-backed rationale and engagement assumptions are in [game-design.md](game-design.md).
+Unverified: exact board variant, device frame rate/memory use, physical touch accuracy, and players' sustained interest. The source-backed rationale and engagement assumptions are in [game-design.md](game-design.md).

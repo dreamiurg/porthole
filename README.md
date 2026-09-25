@@ -88,17 +88,18 @@ board config, a README, and two screenshot strips made with
 
 What you get for free:
 
-- **Board config, pinned.** [`platform/waveshare-round.ini`](platform/waveshare-round.ini)
+- Board config is pinned. [`platform/waveshare-round.ini`](platform/waveshare-round.ini)
   fixes the PlatformIO platform, PSRAM and flash settings, and
   [`platform/requirements.txt`](platform/requirements.txt) pins PlatformIO itself.
-- **One command set.** `make check`, `make ci`, `make firmware APP=...` and
-  `make flash APP=...` work the same for every app.
-- **Quality gates.** Pre-commit hooks for formatting, secret scanning, SAST,
-  mypy and the changed app's tests. Pre-push adds the complexity ratchet,
-  playtests and coverage. CI runs everything plus every firmware build behind
-  one required check.
-- **Releases.** Release Please versions each app separately from conventional
-  commits, and attaches a flashable factory image to every release.
+- The same commands work for every app: `make check`, `make ci`,
+  `make firmware APP=...` and `make flash APP=...`.
+- Quality gates run early. Pre-commit hooks cover formatting, secret
+  scanning, SAST, mypy and the changed app's tests. Pre-push adds the complexity
+  ratchet, playtests, coverage and the firmware build. CI repeats it once per PR
+  as a cheap backstop, only for the apps a PR touches.
+- Releases are automatic. Each merge that adds a `feat:` or `fix:` to an app
+  tags a new version of that app, publishes release notes and attaches a
+  flashable factory image. See [Releases](https://github.com/dreamiurg/porthole/releases).
 
 ## Layout
 

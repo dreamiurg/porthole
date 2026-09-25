@@ -1,0 +1,73 @@
+name: Release
+
+# Unattended releases. After every merge to main, tools/release.py looks at each app's
+# conventional commits since its last <app>-vX.Y.Z tag (feat -> minor, fix/perf -> patch,
+# breaking -> major). Apps with releasable changes get a tag, a GitHub release with
+# generated notes, and a flashable factory image. Nothing is committed back to main.
+# Code reaching main already passed CI on its PR, so this workflow does not re-test it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      releases: ${{ steps.plan.outputs.releases }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: plan
+        run: |
+          plan=$(python3 tools/release.py plan)
+          echo "releases=$plan" >> "$GITHUB_OUTPUT"
+          echo "$plan" | python3 -c 'import json,sys; [print("will release", r["tag"]) for r in json.load(sys.stdin)] or print("nothing to release")'
+
+  release:
+    needs: plan
+    if: needs.plan.outputs.releases != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.releases) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version-file: .node-version
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', format('apps/{0}/**/platformio.ini', matrix.app)) }}
+      - run: pip install -r platform/requirements.txt
+      - run: make -C "apps/${{ matrix.app }}" factory
+      - name: Tag and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ matrix.app }}
+          VERSION: ${{ matrix.version }}
+          TAG: ${{ matrix.tag }}
+          NOTES: ${{ matrix.notes }}
+        run: |
+          image=$(find "apps/$APP" -path '*/.pio/build/firmware/factory.bin' | head -n1)
+          cp "$image" "$APP-$VERSION-factory.bin"
+          printf '%s\n' "$NOTES" > notes.md
+          gh release create "$TAG" "$APP-$VERSION-factory.bin" --target "$GITHUB_SHA" --title "$APP $VERSION" --notes-file notes.md

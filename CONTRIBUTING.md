@@ -21,13 +21,18 @@ make check                                 # lint + fast tests for every app
   app's `make check`. The pre-push hook adds the complexity gate and the app's
   `make ci`, which covers playtests and coverage. If a hook fails, fix the cause
   rather than skipping the hook.
-- CI runs the same gates plus both firmware builds. One aggregate check,
-  **Required Checks**, must pass before merging.
+- The pre-push hook also builds the changed app's firmware when you have
+  PlatformIO installed. By the time you push, you have run everything CI will.
+- CI is a backstop. It runs once per PR, cheapest checks first, and only for the
+  apps the PR touches. One aggregate check, **Required Checks**, must pass
+  before merging. If CI ever catches something your hooks didn't, that's a bug in
+  the hooks: fix them too.
 - PRs are squash-merged, so the PR title becomes the commit message. Use
   [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`,
   `docs:`, `chore:`, `refactor:`, `test:`, `ci:`. Scope by app when it helps:
-  `feat(pets-club): add a digging trick`. Release notes and version bumps are
-  generated from these titles.
+  `feat(pets-club): add a digging trick`. Releases are automatic: after a merge,
+  any app with a new `feat:` (minor) or `fix:` (patch) gets a new version, release
+  notes built from these titles, and a flashable image.
 
 ## Where to start
 
