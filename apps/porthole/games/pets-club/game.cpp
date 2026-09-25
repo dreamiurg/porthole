@@ -78,7 +78,6 @@ void Game::go(Screen s) { screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
 
 Tint Game::tint() const {
-  if (screen_ <= SC_NAME_PET || screen_ == SC_THEME) return TINT_DAY;
   if (save_.asleep && screen_ == SC_HOME) return TINT_NIGHT;
   return clockTint(now_);
 }
