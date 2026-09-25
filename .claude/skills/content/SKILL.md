@@ -5,8 +5,8 @@ description: Any game (apps/porthole/games/<game>/). Use when writing or revisin
 
 Pets Club's content gate is pixel-accurate, not a character count -- it renders every
 string through the actual bundled font and word-wraps it into the exact box the game
-draws it in; Biscuit's gate (landing with #33, open) is a character-count stand-in for
-the same idea until its font table exists to measure against for real. Run the relevant
+draws it in; Biscuit's gate (#33) is a character-count stand-in for the same idea until
+its font table exists to measure against for real. Run the relevant
 gate before calling any content change done; 0 problems is the bar, not "fewer than
 before." Append new entries; never edit or remove an existing one unless explicitly asked
 to fix that entry -- ids and array order are persisted. Regenerate any generated asset
