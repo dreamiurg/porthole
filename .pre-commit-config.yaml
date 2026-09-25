@@ -116,6 +116,14 @@ repos:
         pass_filenames: false
         files: ^apps/pets-club/(src/|platformio\.ini$)|^platform/
         stages: [pre-push]
+      # The browser build ships with each release; catch a broken one before merge. Skipped without Emscripten.
+      - id: pets-club-play
+        name: pets-club browser build
+        entry: bash -c 'command -v em++ >/dev/null || { echo "Emscripten not installed, skipping (the release builds it)"; exit 0; }; make -C apps/pets-club play'
+        language: system
+        pass_filenames: false
+        files: ^apps/pets-club/(src/game/|host/web\.cpp$|web/)
+        stages: [pre-push]
       - id: biscuit-firmware
         name: biscuit firmware build + layout test
         entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/biscuit firmware firmware-test'

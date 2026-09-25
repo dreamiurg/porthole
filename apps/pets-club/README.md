@@ -50,6 +50,18 @@ Open http://127.0.0.1:8765 (`python3 tools/webemu.py 8766` for another port). Th
 finger; the buttons under the screen skip time and force states (hungry, muddy, grown...) so you
 can see a week of play in a minute.
 
+To play the real game in any browser (phone included), build it to WebAssembly with
+[Emscripten](https://emscripten.org/) (`brew install emscripten`):
+
+```bash
+make play         # -> build/play/: index.html, pets-club.js, pets-club.wasm
+make serve-play   # builds, then serves it at http://127.0.0.1:8200
+```
+
+The page works from any subpath, so `build/play/` can be copied onto a static site as is. The
+clock is the browser's local time, and each house is saved in the browser's localStorage
+(`pets-club.s0` to `pets-club.s2`); the link under the screen erases them.
+
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
 hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits.
 

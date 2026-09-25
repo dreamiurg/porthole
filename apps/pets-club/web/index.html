@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pets Club</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+         font: 14px system-ui, sans-serif; color: #666; }
+  #screen { width: 320px; height: 320px; border-radius: 50%; background: #202020; image-rendering: pixelated;
+            touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  p { margin: 0; }
+  a { color: inherit; }
+  /* ?embed: just the screen, filling the frame (the porthole site's round window) */
+  .embed body { gap: 0; background: #202020; }
+  .embed p { display: none; }
+  .embed #screen { width: 100vmin !important; height: 100vmin !important; }
+</style>
+</head>
+<body>
+<canvas id="screen" width="160" height="160"></canvas>
+<p>Tap and hold works like a finger</p>
+<p><a href="#" id="reset">Reset this browser's save</a></p>
+<script>
+  if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');
+  // Largest whole number of device pixels per game pixel that fits, so every game pixel is the same size.
+  function fit() {
+    const dpr = window.devicePixelRatio || 1, room = Math.min(innerWidth, innerHeight - 80) * dpr;
+    const px = Math.max(1, Math.floor(room / 160)) * 160 / dpr + 'px';
+    const cv = document.getElementById('screen'); cv.style.width = cv.style.height = px;
+  }
+  addEventListener('resize', fit); fit();
+  document.getElementById('reset').onclick = (e) => {
+    e.preventDefault();
+    if (!confirm('Erase every pet saved in this browser?')) return;
+    window.petsClubResetting = true;
+    try { for (let i = 0; i < 3; i++) localStorage.removeItem('pets-club.s' + i); } catch (err) {}  // storage off: nothing saved
+    location.reload();
+  };
+</script>
+<script src="pets-club.js"></script>
+</body>
+</html>

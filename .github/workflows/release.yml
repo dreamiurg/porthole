@@ -4,7 +4,8 @@ name: Release
 # conventional commits since its last <app>-vX.Y.Z tag (feat -> minor, fix/perf -> patch,
 # breaking -> major). Apps with releasable changes get a tag, a GitHub release with
 # generated notes, a flashable factory image and the separate flash parts the web
-# installer uses; then the Pages site is redeployed. Nothing is committed back to main.
+# installer uses, plus the browser build for apps with a `play` target; then the Pages
+# site is redeployed. Nothing is committed back to main.
 # Code reaching main already passed CI on its PR, so this workflow does not re-test it.
 
 on:
@@ -60,6 +61,14 @@ jobs:
           key: pio-${{ runner.os }}-${{ hashFiles('platform/*', format('apps/{0}/**/platformio.ini', matrix.app)) }}
       - run: pip install -r platform/requirements.txt
       - run: make -C "apps/${{ matrix.app }}" factory
+      - id: play
+        run: grep -q '^play:' "apps/${{ matrix.app }}/Makefile" && echo "build=true" >> "$GITHUB_OUTPUT" || true
+      - if: steps.play.outputs.build == 'true'
+        uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984  # v16
+        with:
+          version: 6.0.10
+      - if: steps.play.outputs.build == 'true'
+        run: make -C "apps/${{ matrix.app }}" play
       - name: Tag and publish
         env:
           GH_TOKEN: ${{ github.token }}
@@ -71,8 +80,13 @@ jobs:
           image=$(find "apps/$APP" -path '*/.pio/build/firmware/factory.bin' | head -n1)
           cp "$image" "$APP-$VERSION-factory.bin"
           (cd "$(dirname "$image")/web" && zip -q "$GITHUB_WORKSPACE/$APP-$VERSION-web.zip" ./*)
+          assets=("$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip")
+          if [ -d "apps/$APP/build/play" ]; then
+            (cd "apps/$APP/build/play" && zip -qr "$GITHUB_WORKSPACE/$APP-$VERSION-play.zip" .)
+            assets+=("$APP-$VERSION-play.zip")
+          fi
           printf '%s\n' "$NOTES" > notes.md
-          gh release create "$TAG" "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" \
+          gh release create "$TAG" "${assets[@]}" \
             --target "$GITHUB_SHA" --title "$APP $VERSION" --notes-file notes.md
 
   pages:

@@ -1,4 +1,7 @@
 {
   "name": "Pets Club",
-  "tagline": "A pixel puppy that grows over real days, learns tricks and loves being read to. Up to three kids share one device, each with a house on Paw Street."
+  "tagline": "A pixel puppy that grows over real days, learns tricks and loves being read to. Up to three kids share one device, each with a house on Paw Street.",
+  "tagline_uk": "Піксельне цуценя, яке росте з кожним справжнім днем, вчить трюки й любить, коли йому читають. До трьох дітей можуть ділити один пристрій, у кожного свій будиночок на Paw Street.",
+  "play": true,
+  "embed": true
 }

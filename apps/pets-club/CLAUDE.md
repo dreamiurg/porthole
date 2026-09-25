@@ -21,7 +21,7 @@ It lives at `apps/pets-club/` in the porthole monorepo (apps for this board shar
 
 `src/board.cpp`, `src/board.h`, `src/main.cpp` are the firmware. `board.h` is the hardware contract (display present/init, touch, RTC, backlight, buzzer, NVS blob storage); `board.cpp` implements it for this specific board; `main.cpp` is the Arduino `setup()`/`loop()` that wires `board::` to `Game`, times saves, dims the backlight, and parses serial commands.
 
-`host/` is the simulator and the test: `sim.cpp` (SDL2 window, or headless `--script`/`--serve` modes) and `test_pet.cpp` (the pet-simulation self-check). Both link `src/game/*.cpp` directly; neither touches `board.cpp` or `main.cpp`.
+`host/` is the simulator, the browser host and the test: `sim.cpp` (SDL2 window, or headless `--script`/`--serve` modes), `web.cpp` (the Emscripten/WebAssembly host behind `make play`; page shell in `web/index.html`) and `test_pet.cpp` (the pet-simulation self-check). All link `src/game/*.cpp` directly; none touches `board.cpp` or `main.cpp`. Only `make play` compiles `web.cpp`; the native targets name their host file explicitly.
 
 `tools/` generates assets and dev tooling: `art.py` (parametric dog rig + ASCII icons -> `src/game/sprites.h` and `build/art/sheet.png`) and `webemu.py` (serves `build/host/snap --serve` in a browser).
 
@@ -63,6 +63,7 @@ Development targets:
 - `make snap-asan`: the same headless binary built with AddressSanitizer + UBSan. Used by the chaos-monkey playtest scenarios; slower, build it only when you need sanitizer coverage.
 - `make test`: builds `host/test_pet.cpp` against `src/game/*.cpp` (minus `game.cpp`) and runs it immediately. Pure simulation self-check, no rendering. Must stay green.
 - `make webemu`: depends on `snap`; runs `tools/webemu.py`, serves the game at `http://127.0.0.1:8765` (`python3 tools/webemu.py 8766` for another port). The buttons under the canvas skip time and force debug states for testing.
+- `make play`: builds the game to WebAssembly with `em++` (Emscripten, `brew install emscripten`) into `build/play/` (`index.html`, `pets-club.js`, `pets-club.wasm`); fails if `em++` is missing. Relative URLs only, so it runs from any subpath. Saves go to localStorage (`pets-club.s0`..`s2`, hex of the `Save` blob), the clock is the browser's local wall-clock time, and the buzzer is a Web Audio square wave driven by `Game::soundOn` (so the per-house mute applies). `make serve-play` builds it and serves it at `http://127.0.0.1:8200`.
 - `make art`: runs `tools/art.py`, regenerates `src/game/sprites.h` and, if Pillow is installed, `build/art/sheet.png`. `python3 tools/art.py --check` verifies `sprites.h` is current without rewriting it.
 - `make playtest`: depends on `snap` and `snap-asan`; runs `python3 tools/playtest.py` against every scenario in `tests/playtests/*.txt`, writes `build/playtest/report.md` plus a contact-sheet PNG per scenario. See the `playtest` skill for how to read the report.
 - `make clean`: removes `build/` (not `.pio/`, the firmware build cache).

@@ -1,6 +1,6 @@
 # Pets Club: host simulator, pet self-test, checks and coverage; firmware through PlatformIO.
 # The monorepo's root Makefile and CI call these as `make -C apps/pets-club <target>`:
-#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
+#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu play serve-play clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 CXXFLAGS ?= -std=c++17 -O1 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Isrc/game -DHOST_BUILD
 GAME_SRC := $(wildcard src/game/*.cpp)
@@ -73,6 +73,18 @@ art:
 webemu: snap
 	python3 tools/webemu.py
 
+# The game in a browser: host/web.cpp compiled to WebAssembly with Emscripten, plus web/index.html.
+PLAY := build/play
+play: $(GAME_SRC) host/web.cpp web/index.html
+	@command -v em++ >/dev/null || { echo "em++ not found: install Emscripten (brew install emscripten)" >&2; exit 1; }
+	mkdir -p $(PLAY)
+	em++ -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Isrc/game \
+	  $(GAME_SRC) host/web.cpp -sENVIRONMENT=web -o $(PLAY)/pets-club.js
+	cp web/index.html $(PLAY)/index.html
+
+serve-play: play
+	python3 -m http.server -d $(PLAY) 8200
+
 firmware:
 	pio run -e firmware
 
@@ -88,4 +100,4 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu play serve-play firmware factory flash monitor clean
