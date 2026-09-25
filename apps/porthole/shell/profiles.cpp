@@ -64,6 +64,10 @@ Profile toProfile(const Profiles& p, int id) {
   return out;
 }
 
+void liftCaps(Store& st, Profiles& p) {
+  for (int id = 0; id < MAX_PROFILES; id++)
+    if (p.used[id] && p.rec[id].dayPlaySec) { p.rec[id].dayPlaySec = 0; saveRecord(st, p, id); }
+}
 void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
   if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
 }

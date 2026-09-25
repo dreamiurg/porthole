@@ -15,7 +15,7 @@ constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;
 // The daily cap: 25 min per profile per local day, across every game, even alone on the device. The clock is local
 // wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
 constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 25 * 60;
-// No touch for this long is not play (counts toward neither budget). Also the firmware's first backlight dimming step.
+// No touch for this long is not play (counts toward neither budget). Matches the backlight's first dimming step.
 constexpr uint32_t IDLE_MS = 60000;
 constexpr size_t BLOB_MAX = 256;         // biggest app save the shell loads (Pets Club's Save is 156 bytes)
 
@@ -46,6 +46,7 @@ struct Record {
   uint32_t crc;
 };
 static_assert(sizeof(Record) == 52, "Record is persisted: append before crc, never resize");
+static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v2 fields start where v1's crc was");
 
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused
   Record rec[MAX_PROFILES];
@@ -80,6 +81,9 @@ inline uint32_t restLeft(const Record& r, uint32_t now, int nProfiles) {
   if (playedToday(r, now)) return DAY_SEC - now % DAY_SEC;
   return nProfiles >= 2 && resting(r, now) ? r.restUntil - now : 0;
 }
+// The clock was guessed (RTC lost: the firmware resumes from the newest lastPlayed, which a capped kid never moves),
+// so "today" cannot be trusted: lift every day's cap, like a clock set back. Saves only the records it changed.
+void liftCaps(Store& st, Profiles& p);
 void recharge(Record& r, uint32_t now);   // a real break (REST_SEC away) refills the session budget
 // Counts dt seconds of play (none while idle or resting); true when the profile must stop now (a rest began, or the
 // day's play is used up).

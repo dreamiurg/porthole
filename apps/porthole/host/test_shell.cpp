@@ -293,6 +293,22 @@ static void capClockBack() {
   k.restUntil = NOW + 5 * 3600; assert(shell::restLeft(k, NOW, 2) == 0);
 }
 
+// RTC lost: the firmware guesses the clock as the newest lastPlayed + 60 s, the same day a capped kid was capped
+// (a capped kid never moves lastPlayed). liftCaps frees them, on disk too, and leaves untouched records unwritten.
+static void capAfterClockGuess() {
+  MemStore st; shell::Profiles p; shell::loadAll(st, p);
+  shell::create(st, p, draft("Sam", 8, 0), STORES, 2); shell::create(st, p, draft("Kai", 6, 0), STORES, 2);
+  shell::Record& sam = p.rec[0];
+  sam.playDay = NOW / shell::DAY_SEC; sam.dayPlaySec = shell::DAILY_SEC; sam.lastPlayed = NOW; shell::saveRecord(st, p, 0);
+  uint32_t guess = sam.lastPlayed + 60;
+  assert(shell::restLeft(sam, guess, 2) > 0);                 // without the fix: "Back tomorrow" on every cold boot
+  int before = st.writes;
+  shell::liftCaps(st, p);
+  assert(shell::restLeft(p.rec[0], guess, 2) == 0 && st.writes == before + 1 && !strcmp(st.last, "porthole/p0"));
+  shell::Profiles boot; shell::loadAll(st, boot);
+  assert(boot.rec[0].dayPlaySec == 0 && shell::restLeft(boot.rec[0], guess, 2) == 0);
+}
+
 int main() {
   records();
   pinCodes();
@@ -310,6 +326,7 @@ int main() {
   dailyCap();
   idleNotCounted();
   capClockBack();
+  capAfterClockGuess();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
 }

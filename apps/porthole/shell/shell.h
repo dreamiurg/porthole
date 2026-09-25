@@ -19,6 +19,7 @@ class Shell {
   uint32_t lastSeen() const;          // newest play time on the device: restores the clock when the RTC lost it
   int profileCount() const { return prof_.count(); }
   // serial and sim hooks
+  void clockRestored() { shell::liftCaps(*st_, prof_); }   // the RTC was lost and the clock guessed: no cap holds
   void clearPin(int id);              // parent escape hatch (serial "P<n>")
   int createProfile(const char* name, uint8_t age, const char* code);   // code "1234", "" = none; lands on the launcher
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
