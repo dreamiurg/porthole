@@ -11,7 +11,7 @@ The same game runs in two places:
 - **In a browser**: plain HTML/CSS/JavaScript, no install beyond Node.
 - **On the Waveshare ESP32-S3-Touch-LCD-2.1**: native firmware in [`firmware/`](firmware/README.md), fully offline, every control on the screen.
 
-The easiest way to put it on a board is the [web installer](https://dreamiurg.net/porthole/): open it in Chrome or Edge, plug the board in, press Install.
+The easiest way to put it on a board: download `biscuit-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
 
 ## Play in the browser
 

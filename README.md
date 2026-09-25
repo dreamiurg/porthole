@@ -31,12 +31,12 @@ couple of games running on it. My kids loved them so much that I shared them
 with friends, and their kids had a blast too. This repo is the cleaned-up home
 for those games, set up so anyone can add the next one.
 
-If you like to tinker and have about $45 for a board, or a spare one lying in a
+If you like to tinker and have $35-45 for a board, or a spare one lying in a
 drawer, have fun with it. Enjoy the new era of tinkering.
 
 ## Apps
 
-**[Install a game from your browser](https://dreamiurg.net/porthole/)**, no tools needed.
+**[How to put a game on a board](https://dreamiurg.net/porthole/)**: download it from the releases and write it from Chrome, no tools needed.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
@@ -77,10 +77,10 @@ and runs the same stories, pixel art and discoveries on the board.
 
 ## Get a board
 
-Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, about $45.
+Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, $35-45.
 
-- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): usually the fastest shipping. This is an affiliate link.
-- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): the maker's own store. No affiliate link.
+- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): about $45, usually the fastest shipping. This is an affiliate link.
+- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): about $35, the maker's own store. No affiliate link.
 
 If you buy through the Amazon link, I get a small commission and you pay the
 same price. As an Amazon Associate I earn from qualifying purchases.
@@ -137,13 +137,11 @@ make monitor
 
 ### Install from the browser
 
-The easiest way needs no tools at all: open **[the web installer](https://dreamiurg.net/porthole/)**
-in Chrome or Edge, plug the board in over USB-C, and press Install on a game.
-Updates keep saved progress. Biscuit can also be played right there in the browser.
-
-Each release also attaches `<app>-<version>-factory.bin`, a single image you can
-write at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/).
-It is meant for fresh installs and clears the app's saved progress.
+The easiest way needs no tools at all: download `<app>-<version>-factory.bin` from the
+[releases](https://github.com/dreamiurg/porthole/releases), plug the board in over USB-C, open
+[esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge, and write the file at
+address `0x0`. This erases the board, saved progress included. Step by step, with pictures of the
+games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
 ## Make your own app
 
