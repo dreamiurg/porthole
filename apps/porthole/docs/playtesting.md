@@ -115,6 +115,9 @@ a press begins 450 ms after the new screen appeared (`ui::FreshGate`), so a tap 
 
 Contrast is skipped when the sampled background equals the text color (the sampler cannot tell). A text drawn
 with `textShadow` is reported with its shadow color noted; the rule still measures the letter color itself.
+Text on the RGB565 surface (`os/font.h`) is logged per line as the logical box that covers it, with real colors: the
+`ui` dump prints `text X Y W H rgb=RRGGBB bg=RRGGBB` instead of `color=I bg=J`, and contrast is computed from those.
+Contact sheets keep 3x-upscaled indexed frames crisp and scale true 480 px frames down smoothly.
 
 What the audit cannot see: hit tests that do not go through `Input` (the trick-lesson zones in
 `trainHitZone`, rubbing in the bath, page turns in a story, dragging in fetch), text that overflows its button but

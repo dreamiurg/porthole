@@ -8,9 +8,9 @@
     python3 tools/devctl.py run tests/device/smoke.txt
 
 Script commands (a subset of the sim's): tap X Y | hold X Y | wait MS | snap NAME | screen | echo TEXT
-| raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png,
-upscaled 3x with the round mask, like the sim's snapshots. Firmware side: "X<x>,<y>,<ms>" and "F" in
-firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
+| raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png at
+480x480 with the round mask, like the sim's snapshots: an indexed frame upscaled 3x, an RGB565 frame as is.
+Firmware side: "X<x>,<y>,<ms>" and "F" in firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
 Opening the port does not reset the board (DTR/RTS are left alone).
 """
 
@@ -45,7 +45,13 @@ def press(p: serial.Serial, x: int, y: int, ms: int) -> None:
     time.sleep(ms / 1000 + 0.12)  # the press, then a few frames for the release to register
 
 
-def frame(p: serial.Serial) -> tuple[int, int, bytes, list[tuple[int, int, int]]]:
+def rgb565(c: int) -> tuple[int, int, int]:
+    r, g, b = (c >> 11) & 31, (c >> 5) & 63, c & 31
+    return (r << 3 | r >> 2, g << 2 | g >> 4, b << 3 | b >> 2)  # bit replication, as the sim's snapshots
+
+
+def frame(p: serial.Serial) -> tuple[int, int, list[tuple[int, int, int]]]:
+    """The frame on the glass as (w, h, w*h RGB pixels). Header "FB w h [idx|565 runs]"; no token = idx (older firmware)."""
     p.reset_input_buffer()
     p.write(b"F\n")
     while True:  # skip any log lines printed before the header
@@ -54,30 +60,36 @@ def frame(p: serial.Serial) -> tuple[int, int, bytes, list[tuple[int, int, int]]
             sys.exit("no frame from the board (is the Porthole firmware with the F command flashed?)")
         if line.startswith(b"FB "):
             break
-    w, h = (int(v) for v in line.split()[1:3])
+    head = line.split()
+    w, h, kind = int(head[1]), int(head[2]), head[3].decode() if len(head) > 3 else "idx"
+    if kind == "565":  # (count, color) runs; 115200 baud moves about 11 KB/s, so the timeout follows the size
+        runs, timeout = int(head[4]), p.timeout
+        p.timeout = 5 + runs * 4 / 10_000
+        data = p.read(runs * 4)
+        p.timeout = timeout
+        if len(data) != runs * 4:
+            sys.exit(f"short frame: {len(data)} of {runs * 4} run bytes")
+        out = [px for n, c in struct.iter_unpack("<HH", data) for px in [rgb565(c)] * n]
+        if len(out) != w * h:
+            sys.exit(f"short frame: {len(out)} of {w * h} px")
+        return w, h, out
     px = p.read(w * h)
     pal565 = p.read(64)
     if len(px) != w * h or len(pal565) != 64:
         sys.exit(f"short frame: {len(px)} px, {len(pal565)} palette bytes")
-    pal = []
-    for (c,) in struct.iter_unpack("<H", pal565):
-        r, g, b = (c >> 11) & 31, (c >> 5) & 63, c & 31
-        pal.append((r * 255 // 31, g * 255 // 63, b * 255 // 31))
-    return w, h, px, pal
+    pal = [rgb565(c) for (c,) in struct.iter_unpack("<H", pal565)]
+    return w, h, [pal[i] if i < len(pal) else (32, 32, 32) for i in px]
 
 
-PNG_SCALE = 3  # logical px -> PNG px, the panel's own upscale
-
-
-def write_png(path: Path, w: int, h: int, px: bytes, pal: list[tuple[int, int, int]]) -> None:
-    W, H, r = w * PNG_SCALE, h * PNG_SCALE, w * PNG_SCALE / 2
+def write_png(path: Path, w: int, h: int, px: list[tuple[int, int, int]]) -> None:
+    scale = 480 // w  # the panel is 480 px: an indexed frame is upscaled 3x
+    W, H, r = w * scale, h * scale, w * scale / 2
     rows = bytearray()
     for y in range(H):
         rows.append(0)
         for x in range(W):
             inside = (x - r + 0.5) ** 2 + (y - r + 0.5) ** 2 <= r * r
-            idx = px[(y // PNG_SCALE) * w + x // PNG_SCALE]
-            rows += bytes(pal[idx] if inside and idx < len(pal) else (32, 32, 32))
+            rows += bytes(px[(y // scale) * w + x // scale] if inside else (32, 32, 32))
 
     def chunk(kind: bytes, data: bytes) -> bytes:
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
