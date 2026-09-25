@@ -59,7 +59,7 @@ Every change must respect all seven. None of these are stylistic; each one maps 
 
 Note on constraint 1 and automated checks: `make playtest`'s UI audit fails a run on any finding. It still labels a target under 18 logical px (6 mm) FAIL and one under the real 24x22 (8 mm) box WARN, but warnings are errors: a WARN fails the run just like a FAIL.
 
-Note on constraint 2 and content: Pets Club's `games/pets-club/tools/check_content.py` re-renders every string through the real 8x8 font and word-wraps it into the exact box the game draws it in -- the source of truth, not a character count. Biscuit's `games/biscuit/tools/check_content.py` (landed with #33) checks the glyph set, token validity, counts and ids today; it is a character-count stand-in for the real pixel-fit check until `generated/fonts.h` lands with a later PR. See the `content` skill.
+Note on constraint 2 and content: Pets Club's `games/pets-club/tools/check_content.py` re-renders every string through the real 8x8 font and word-wraps it into the exact box the game draws it in -- the source of truth, not a character count. Biscuit's gate is two parts: `games/biscuit/tools/check_content.py` (in `make lint`) checks the glyph set (read from `generated/fonts.h`), token validity, counts and ids; `host/test_biscuit_content.cpp` (in `make test`) measures and draws every string with `os/font.cpp` itself, tokens filled with the widest names (11 and 12 W's), in the box `games/biscuit/layout.h` gives its screen, and fails on text taller than its box or ink off the round glass; a story, ending or discovery page may take at most `PAGE_SCREENS` (2) screens of the 352x176 font24 page box. See the `content` skill.
 
 ## Workflows
 
