@@ -252,21 +252,19 @@ void Shell::drawPin() {
   else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
   textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
+  drawPinDigits();
+  static const char* const LABELS[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "<", "0", "OK"};
+  for (int k = 0; k < 12; k++) drawPinKey(pinKey(k), LABELS[k], k == 9 || (k == 11 && pinLen_ < 4) ? C_LTGRAY : k == 11 ? C_GREEN : C_WHITE);
+  if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
+  ui::drawBack();
+}
+void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
   bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
   for (int i = 0; i < 4; i++) {
     int x = 58 + i * 12 + shake; rect(x, 36, 10, 11, C_WHITE); frame(x, 36, 10, 11, wrong ? C_RED : C_DKBROWN);
     if (i >= pinLen_) continue;
     if (screen_ == SH_PIN) circle(x + 5, 41, 2, C_NAVY); else { char l[2] = {pin_[i], 0}; textCentered(x + 5, 38, l, C_NAVY); }
   }
-  for (int k = 0; k < 12; k++) {
-    char l[4] = "<"; uint8_t col = C_WHITE;
-    if (k < 9) snprintf(l, sizeof l, "%c", '1' + k); else if (k == 10) snprintf(l, sizeof l, "0");
-    else if (k == 9) col = C_LTGRAY;
-    else { snprintf(l, sizeof l, "OK"); col = pinLen_ == 4 ? C_GREEN : C_LTGRAY; }
-    drawPinKey(pinKey(k), l, col);
-  }
-  if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
-  ui::drawBack();
 }
 void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
   int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;

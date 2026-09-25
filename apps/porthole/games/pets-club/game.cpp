@@ -454,13 +454,14 @@ void Game::updateHome() {
 }
 void Game::homeBrain() {   // idle wandering, sitting and showing off tricks
   if (!save_.asleep && dogAct_ != 10 && ms_ >= nextIdleMs_) pickIdle();
-  if (!save_.asleep && dogAct_ != 10) {   // back onto the rug after growing, off the poop's side, never onto it
-    int goal = dogAct_ == 1 ? dogTargetX_ : dogX_, want = walkClamp(goal);
-    if (want != goal) { dogAct_ = 1; dogTargetX_ = want; dogFlip_ = want < dogX_; nextIdleMs_ = ms_ + 6000; }
-  }
+  if (!save_.asleep && dogAct_ != 10) keepToRug();
   if (dogAct_ == 1) homeWalk();
   if (dogAct_ == 10 && ms_ >= dogActUntil_) { dogAct_ = 0; trickShow_ = -1; if (!save_.asleep) { save_.tricksShown++; pet::addBond(save_, now_, 1); markDirty(); } }
   if ((dogAct_ == 3 || dogAct_ == 4 || dogAct_ == 5) && ms_ >= dogActUntil_) dogAct_ = 0;
+}
+void Game::keepToRug() {   // back onto the rug after growing, off the poop's side, never onto it
+  int goal = dogAct_ == 1 ? dogTargetX_ : dogX_, want = walkClamp(goal);
+  if (want != goal) { dogAct_ = 1; dogTargetX_ = want; dogFlip_ = want < dogX_; nextIdleMs_ = ms_ + 6000; }
 }
 void Game::pickIdle() {
   int r = (int)(pet::rnd(save_) % 100);
