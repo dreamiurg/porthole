@@ -6,7 +6,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "../games/biscuit/pet.h"
+#include "games/biscuit/pet.h"
 
 using biscuit::Action;
 using biscuit::Save;

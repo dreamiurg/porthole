@@ -58,7 +58,7 @@ jobs:
           hit() { printf '%s\n' "$code" | grep -Eq "$shared|$1" && echo true || echo false; }
           {
             echo "porthole=$(hit '^apps/porthole/')"
-            echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|Makefile$)')"
+            echo "porthole-firmware=$(hit '^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|partitions\.csv$|Makefile$)')"
           } | tee -a "$GITHUB_OUTPUT"
 
   static:

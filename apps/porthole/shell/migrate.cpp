@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
-#include "../games/biscuit/pet.h"
-#include "pet.h"
+#include "games/biscuit/pet.h"
+#include "games/pets-club/pet.h"
 #include "profiles.h"
 #include "ui.h"
 

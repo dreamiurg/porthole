@@ -3,7 +3,7 @@
 profile Sam 8
 profile Kai 6 1234
 profile Ava 7
-profile Zoe 9
+profile Mia 9
 expect-screen launcher
 expect profile=3/4
 tap 80 32
@@ -12,7 +12,7 @@ expect-screen picker
 expect profile=-1/4
 ui-check picker-full
 snap 01_four
-# no "+" row: the bottom row is Zoe
+# no "+" row: the bottom row is Mia
 tap 80 119
 wait 450
 expect-screen launcher

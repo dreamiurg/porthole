@@ -213,7 +213,7 @@ expect profile=1/3
 expect rest=0
 expect play=0
 # a profile migrated from an old Pets Club save has no age yet: it is asked once, then the launcher
-profile Zoe 0
+profile Mia 0
 expect-screen age
 ui-check age-migrated
 snap 07_age_migrated
