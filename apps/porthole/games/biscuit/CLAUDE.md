@@ -134,7 +134,9 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   - Reading: as the old firmware read them, a story's ten pages (up to the choice), an
     ending's four or a discovery's two are filled with the names and joined into one text
     (`openPages`, `READ_BYTES`) and flowed by `font::pageBreaks` onto screens: each
-    ends where the next word no longer fits, not where a content page does. The counter
+    ends where the next word no longer fits, not where a content page does, except that
+    a text's last screen takes words off the one before until it holds `MIN_LAST_WORDS`
+    (4), so no text ends on a lone word. The counter
     between Previous and Next counts those screens (a story is 12-14, an ending 5-6, a
     discovery 1-3). Next becomes Choose on a story's last screen and The end on an
     ending's; an ending's first Previous goes back to the choice, the choice's Back to the
@@ -170,7 +172,8 @@ stickers, 7 daily adventures with a pocket word each -- all landed with #33. The
 the box each string is drawn in (`layout.h`), measured in pixels by `os/font.cpp` with the
 widest names filled in: a story up to its choice, an ending or a discovery, joined, may fill
 at most `READ_BYTES` and take at most `READ_SCREENS` screens of the 352x176 font24 page
-box, every other string its own box, all of it
+box, and its last screen must hold `MIN_LAST_WORDS` words (checked at the widest names and
+at Sam/Pip), every other string its own box, all of it
 inside the round glass. See the `content` skill for the authoring workflow.
 
 ## Layout: re-tuned, not copied

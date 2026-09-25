@@ -42,7 +42,7 @@ void Game::openPages(const char* const* pages, int count, int at) {
     if (i) read_[n++] = ' ';
     n += personalize(pages[i], who_.name, save_.petName, read_ + n, sizeof read_ - n);
   }
-  const int screens = font::pageBreaks(PAGE.box, read_, shown_, READ_SCREENS);
+  const int screens = font::pageBreaks(PAGE.box, read_, shown_, READ_SCREENS, MIN_LAST_WORDS);
   total_ = screens < READ_SCREENS ? screens : READ_SCREENS;   // the content gate holds every text to that
   at_ = at < 0 ? total_ + at : at;
 }

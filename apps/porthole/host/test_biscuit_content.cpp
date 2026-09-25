@@ -75,20 +75,34 @@ static void fits(const Label& l, const char* where, const char* s) {
       }
 }
 // A story up to its choice, an ending or a discovery, filled and joined with a space as Game::openPages does, in at
-// most READ_BYTES and READ_SCREENS screens of PAGE. No minimum words per screen: the flow fills every screen but the
-// last until the next word no longer fits, so only a text's last screen can be short.
-static void stream(const char* where, const char* const* pages, int count) {
+// most READ_BYTES and READ_SCREENS screens of PAGE, at the widest names and at short ones. The flow fills every screen
+// but the last until the next word no longer fits, and pageBreaks gives the last one MIN_LAST_WORDS words when the
+// screen before can spare them, so only the last screen can be short: it may not be.
+static int words(const char* s) {   // pageBreaks leaves single spaces between words
+  int n = *s != 0;
+  for (; *s; s++) n += *s == ' ';
+  return n;
+}
+static void stream(const char* where, const char* const* pages, int count, const char* name, const char* pet) {
   static char buf[4 * READ_BYTES];
   size_t n = 0;
   for (int i = 0; i < count && n + 1 < sizeof buf; i++) {
     if (i) buf[n++] = ' ';
-    n += personalize(pages[i], NAME, PET, buf + n, sizeof buf - n);
+    n += personalize(pages[i], name, pet, buf + n, sizeof buf - n);
   }
   if (n >= READ_BYTES) { printf("content gate: %s fills %zu bytes, the reader holds %d\n", where, n, READ_BYTES - 1); failures++; return; }
   const char* screens[READ_SCREENS];
-  const int k = font::pageBreaks(PAGE.box, buf, screens, READ_SCREENS);
+  const int k = font::pageBreaks(PAGE.box, buf, screens, READ_SCREENS, MIN_LAST_WORDS);
   if (k > READ_SCREENS) { printf("content gate: %s takes %d screens, the reader holds %d\n", where, k, READ_SCREENS); failures++; return; }
   for (int i = 0; i < k; i++) fits(PAGE, where, screens[i]);
+  if (words(screens[k - 1]) < MIN_LAST_WORDS) {
+    printf("content gate: %s ends on a %d-word screen (%s / %s): \"%s\"\n", where, words(screens[k - 1]), name, pet, screens[k - 1]);
+    failures++;
+  }
+}
+static void stream(const char* where, const char* const* pages, int count) {
+  stream(where, pages, count, NAME, PET);
+  stream(where, pages, count, "Sam", "Pip");
 }
 static void storyGate() {
   char where[64], text[128];
