@@ -1,57 +1,51 @@
 # Biscuit on the Porthole runtime: port plan
 
-Plan only. Nothing here has been implemented. Step 0 of implementation is to commit this document as
-`docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md` on the feature branch in porthole so
-every agent working there reads the same text.
-
 ## Context
 
-Dmytro built two games for the same board (Waveshare ESP32-S3-Touch-LCD-2.1: 480x480 round touch
+The owner built two games for the same board (Waveshare ESP32-S3-Touch-LCD-2.1: 480x480 round touch
 panel, no buttons). Pets Club (ex-Crago) is C++ on a home-grown 160x160 indexed renderer and now lives
 in the `porthole` monorepo as the first game on a shared runtime (`apps/porthole/os` + `shell`) with
-profiles, a launcher, hooks, CI, unattended releases and a web installer. Zoegotchi (Codex-built) is a
-browser JS prototype plus an Arduino+LVGL 8.3 firmware drawing at native 480x480 RGB565 with smooth
-Montserrat text and full-color pre-rendered scenes. It was copied into porthole verbatim as
-`apps/biscuit`, then removed in PR #24 because it shared nothing with the runtime; the approved launcher
-spec says "Biscuit will be rewritten later on the same runtime". This is that rewrite plus the harness
-merge.
+profiles, a launcher, hooks, CI, unattended releases and a web installer. The old standalone firmware
+(Codex-built; repo and NVS namespace `zoegotchi`) is a browser JS prototype plus an Arduino+LVGL 8.3
+firmware drawing at native 480x480 RGB565 with smooth Montserrat text and full-color pre-rendered
+scenes. It was copied into porthole verbatim as `apps/biscuit`, then removed in PR #24 because it
+shared nothing with the runtime; the approved launcher spec says "Biscuit will be rewritten later on
+the same runtime". This is that rewrite plus the harness merge.
 
 Goal: Biscuit is the second game inside the single porthole firmware image, on the shared runtime,
 sharing emulator, playtests, build, CI, release and installer, and keeping the look it has on the
-device today. Zoegotchi's harness (two Codex skills, product contract, verification discipline) merges
-into porthole's skills and agents, which are generalized from "Pets Club only" to "any game".
+device today. The old standalone firmware's harness (two Codex skills, product contract, verification
+discipline) merges into porthole's skills and agents, which are generalized from "Pets Club only" to
+"any game".
 
-Where: `~/src/dreamiurg/porthole`, feature branches off `origin/main` (local main is 3 commits behind;
-pull first). Other worktrees (`ci-fast`, `puck-case`) are live; the untracked `apps/biscuit/` and
-`apps/pets-club/` in the main worktree are stale build leftovers and can be deleted. The old code stays
-at `~/src/dreamiurg/zoegotchi` (12 commits, clean) and in porthole history (`biscuit-v0.1.0`, commit
-`1870956`). The crago worktree this session ran in is planning-only; crago is archived.
+Where: `~/src/dreamiurg/porthole`, feature branches off `origin/main`. The old code stays at
+`~/src/dreamiurg/zoegotchi` (12 commits, clean) and in porthole history (`biscuit-v0.1.0`, commit
+`1870956`).
 
-## Decisions taken with Dmytro (2026-09-25)
+## Decisions taken with the owner (2026-09-25)
 
 | Question | Decision |
 | --- | --- |
-| Zoegotchi's 25-minute daily play cap | Lives in the shell, per profile, counted across every game. Pets Club gets it too. |
-| The old Zoegotchi save on the board (NVS namespace `zoegotchi`, key `pet3`) | Migrate it into one profile, the way Pets Club houses became profiles. |
+| The old standalone firmware's 25-minute daily play cap | Lives in the shell, per profile, counted across every game. Pets Club gets it too. |
+| The old standalone firmware's save on the board (NVS namespace `zoegotchi`, key `pet3`) | Migrate it into one profile, the way Pets Club houses became profiles. |
 | Biscuit's look (smooth text, full color) vs the Pets Club pixel look | Keep Biscuit's look. The shared runtime grows a full-resolution RGB565 surface; Biscuit's generated fonts and images carry over. Pets Club is untouched. |
 | Content in the first release | Full parity: 7 branching stories, 96 illustrated sourced discoveries, 6 tricks, 12 stickers, 7 daily adventures with pocket words. |
-| Who implements | Plan only from this session. |
 
-Assumptions not validated with Dmytro (state them at the start of implementation):
+Assumptions not validated with the owner (state them at the start of implementation):
 
 - One firmware image, two games, picked from the launcher. Not a separate `apps/biscuit` firmware.
 - The browser prototype is not kept. One implementation, C++ on the runtime; `make webemu` replaces it.
-- Kid name and age come from the shell profile. Zoegotchi's SetupChild, Settings/brightness, Clock,
-  ResetConfirm, idle cover and in-game Rest screens are dropped: the shell and firmware own those
-  (profiles, backlight dimming, serial `T` for the clock, profile delete, rest screens). Pet naming
-  and renaming stay in Biscuit.
+- Kid name and age come from the shell profile. The old standalone firmware's SetupChild,
+  Settings/brightness, Clock, ResetConfirm, idle cover and in-game Rest screens are dropped: the shell
+  and firmware own those (profiles, backlight dimming, serial `T` for the clock, profile delete, rest
+  screens). Pet naming and renaming stay in Biscuit.
 - Biscuit has no buzzer sounds (the old firmware never drove it; the buzzer is harsh).
-- Porthole's 8 mm tap-target rule (24x22 logical = 72x66 physical px) applies to Biscuit. Most
-  Zoegotchi controls are 56 px tall (6.2 mm) and would fail the UI audit, so Biscuit's layouts get
-  re-tuned, not copied.
-- De-identification: the kid's real name is in Zoegotchi source, tests, migration defaults and
-  dialogue fallbacks. Every occurrence becomes the profile name, or "friend" when there is none.
-  Test fixtures use a neutral name.
+- Porthole's 8 mm tap-target rule (24x22 logical = 72x66 physical px) applies to Biscuit. Most of the
+  old standalone firmware's controls are 56 px tall (6.2 mm) and would fail the UI audit, so Biscuit's
+  layouts get re-tuned, not copied.
+- De-identification: the kid's real name is in the old standalone firmware's source, tests, migration
+  defaults and dialogue fallbacks. Every occurrence becomes the profile name, or "friend" when there
+  is none. Test fixtures use a neutral name.
 
 ## Inventory that drives the design
 
@@ -60,8 +54,7 @@ Porthole today (all under `apps/porthole/`):
 - `os/gfx.*`: one global `uint8_t fb[160*160]`, palette-index primitives, 8x8 font, `textLog` audit.
   `os/palette.h`: 32 colors, `Tint`, palette built per tint at flip time. `os/input.h`: `InputTracker`,
   `UiAudit` hit regions in 160-logical px. `os/ui.h`: indexed widgets incl. a keyboard. `os/app.h`: the
-  `App` interface (verbatim in the porthole agent report; `icon()` returns an indexed `gfx::Sprite`,
-  `render()` takes no surface argument).
+  `App` interface (`icon()` returns an indexed `gfx::Sprite`, `render()` takes no surface argument).
 - `firmware/board.cpp`: the RGB panel already has two 480x480 RGB565 frame buffers in PSRAM
   (`num_fbs=2`, `fb_in_psram`, 10-line bounce buffer, 16 MHz pclk). `present(fb160, pal565)` upscales
   3x nearest into the back buffer and calls `esp_lcd_panel_draw_bitmap` + swap + vsync wait. A native
@@ -78,14 +71,14 @@ Porthole today (all under `apps/porthole/`):
   `-Igames/pets-club`; partitions are PlatformIO's `default_16MB.csv` (app slot 6.25 MB, two OTA slots).
 - `shell/profiles.h`: `Record` is 44 bytes, append-before-`crc`, with `restUntil, playSec, lastPlayed`;
   `play()` gives 6 min play / 10 min rest only with 2+ profiles; `resting()` clamps to `REST_SEC`.
-  `shell/migrate.cpp` is the one-time idempotent namespace-to-profile migration pattern (38 lines,
-  quoted in the porthole agent report). `BLOB_MAX = 256`. `Shell::begin` already takes an app array.
+  `shell/migrate.cpp` is the one-time idempotent namespace-to-profile migration pattern (38 lines).
+  `BLOB_MAX = 256`. `Shell::begin` already takes an app array.
 - Both `firmware/main.cpp` and `host/sim.cpp` hold `static Game g_pets; static App* const APPS[] = {&g_pets};`.
 
-Zoegotchi firmware (under `~/src/dreamiurg/zoegotchi/firmware/`):
+The old standalone firmware (under `~/src/dreamiurg/zoegotchi/firmware/`):
 
-- Rules: `include/pet.h`, header-only `namespace pet`, `Pet` POD 112 bytes v3 (fields quoted in the
-  Biscuit agent report), decay 4/2/3 per hour awake, 8-hour elapsed cap, needs floor 20, stages
+- Rules: `include/pet.h`, header-only `namespace pet`, `Pet` POD 112 bytes v3, decay 4/2/3 per hour
+  awake, 8-hour elapsed cap, needs floor 20, stages
   Puppy/YoungPup/StoryDog, trick unlock days {1,1,2,3,5,7}, 7-day adventure and 12-day sticker cycles.
   Save wrapper `{magic 0x5a4f4533, Pet, FNV-1a over Pet}`, 120 bytes, NVS `zoegotchi/pet3`.
 - UI: `src/main.cpp` 955 lines, 23 views, LVGL widget helpers, layout numbers per view quoted in the
@@ -160,14 +153,14 @@ New `os/gfx565.h/.cpp` and `os/font.h`. The indexed path is untouched.
   the loader to zero-fill older records (the `size` field already exists for this). Add the round-trip
   case to `host/test_shell.cpp`.
 - `shell::play()`: `DAILY_SEC = 25*60`. Reset `dayPlaySec` when `now/86400 != playDay` (porthole's clock
-  is local wall-clock seconds, so no timezone rule; Zoegotchi's hardcoded Pacific rule goes away).
+  is local wall-clock seconds, so no timezone rule; the old standalone firmware's hardcoded Pacific rule goes away).
   Accumulate; at the cap set `restUntil = (playDay+1)*86400` (next local midnight). Unconditional (1+
   profiles), unlike the 6/10 turn-taking rule which stays 2+.
 - `shell::resting()`: the backward-clock clamp becomes `restUntil - now <= 86400 + REST_SEC`.
 - Idle time does not count: the shell skips `play()` while no touch for 60 s (matches the backlight
   dimming step). Fixes both budgets.
 - Rest screen: when `restUntil - now > REST_SEC`, draw "<name> played today. Back tomorrow" with no
-  countdown (Zoegotchi's bedtime rule: the child sees bedtime as part of the game). Otherwise the
+  countdown (the old standalone firmware's bedtime rule: the child sees bedtime as part of the game). Otherwise the
   existing "Back in N min".
 - `Shell::debugCmd`: add `bedtime` (fill today's budget) for playtests.
 - Playtest scenario: play to the cap in Pets Club, switch to Biscuit, expect the rest screen; new day,
@@ -239,7 +232,7 @@ link would collide).
   the font's 98. Also checks `content_discoveries.h` ids equal `generated/discovery_art.h`'s enum
   order. Runs in `lint`.
 - Flash: ~5.2 MB of assets plus code does not fit the 6.25 MB OTA slot. `apps/porthole/partitions.csv`
-  = Zoegotchi's proven table (nvs 0x9000/0x5000 unchanged so every save survives, otadata kept for
+  = the old standalone firmware's proven table (nvs 0x9000/0x5000 unchanged so every save survives, otadata kept for
   the uploader, one 12 MB factory app, coredump), `board_build.partitions` and
   `board_upload.maximum_size = 12582912` in `platformio.ini`. `platform/factory_image.py` and the web
   installer read offsets from PlatformIO, so they follow. If flash ever gets tight, scenes can be
@@ -264,7 +257,7 @@ link would collide).
 | Result | Built from | Notes |
 | --- | --- | --- |
 | Root `CLAUDE.md` and `apps/porthole/CLAUDE.md` | porthole's | Architecture map gains `games/biscuit/`, the RGB565 surface, `Surface`, the partition table, the daily cap. Hard rule 2 becomes per surface: indexed games keep 32 colors + 8x8 ASCII; RGB565 games keep flat fills, the bundled font's glyph set, and the same round-screen and 8 mm rules. Delegation table lists both games. |
-| `apps/porthole/games/biscuit/CLAUDE.md`, `games/pets-club/CLAUDE.md` | new | Per-game briefs. Biscuit's carries Zoegotchi's product contract (companion, not mini-games; no death, guilt, streaks, countdowns, lost progress; warm doglike voice; sourced facts; stable ids and array order), its module map and its content limits. Pets Club's takes the reading-level tables and Save notes out of the app brief. |
+| `apps/porthole/games/biscuit/CLAUDE.md`, `games/pets-club/CLAUDE.md` | new | Per-game briefs. Biscuit's carries the old standalone firmware's product contract (companion, not mini-games; no death, guilt, streaks, countdowns, lost progress; warm doglike voice; sourced facts; stable ids and array order), its module map and its content limits. Pets Club's takes the reading-level tables and Save notes out of the app brief. |
 | skill `feature` | `zoegotchi-feature` | Generalized to any game: state the feature contract before editing (entry, play, completion, replay, sleep, Back; one-time vs repeat rewards; midnight, clock rollback, duplicate action; saved fields, stable ids, migration), failing rule-level test first, the proof list (rules and migration tests, restart/replay/time changes, every screen reachable and escapable by touch, playtest at zero findings). Browser parity, LVGL and `device.py` steps dropped. |
 | skill `content` | `new-story` + `zoegotchi-content` | One skill with a game section each: Pets Club books and spelling words with `check_content.py`; Biscuit stories, discoveries, adventures and words with theirs; the claim ledger for factual entries (kept under ignored `build/content-review/`), duplicate and diversity review, the voice guide with the good/bad lines, "regenerate, never hand-edit generated", append-only ids. |
 | skills `playtest`, `tour`, `flash`, `art` | porthole's | Frontmatter and prose stop saying "Pets Club"; `tour` documents `app biscuit`; `art` covers both generators and the RGB565 rules; `playtest` documents the RGB text audit line and the sheet rule. |
@@ -304,7 +297,7 @@ change in 6; story-writer (sonnet) for the content conversion in 6; the harness 
 
 - Gates stay `make -C apps/porthole check` (lint at zero warnings, `test` = both games' self-checks
   and the shell tests) and `ci` (playtests, coverage floor 91 on `os/`, `shell/`, `games/*/`).
-- `host/test_biscuit.cpp` ports Zoegotchi's `pet_test.cpp` cases: names and setup, rename preserves
+- `host/test_biscuit.cpp` ports the old standalone firmware's `pet_test.cpp` cases: names and setup, rename preserves
   the companion, legacy ZOE3 migration, care and elapsed time (decay, 8-hour cap, floors, sleep),
   permanent reading progress (idempotent stars, 96 discovery bits, out-of-range no-op), adventures,
   tricks and growth (unlock days, mastery saturation, 12-day sticker loop, stage thresholds, negative
@@ -321,10 +314,24 @@ change in 6; story-writer (sonnet) for the content conversion in 6; the harness 
   `expect-screen` tour of all 17 views. UI audit at zero FAIL and zero WARN, `make playtest` green.
 - Device: `make -C apps/porthole flash`; `tools/devctl.py` tour of both games with `F` dumps; on the
   board that still holds `zoegotchi/pet3`, confirm the migration lands on the right profile and
-  `S` shows free heap and PSRAM headroom; check IRAM in the build output (Zoegotchi's LVGL build sat
+  `S` shows free heap and PSRAM headroom; check IRAM in the build output (the old standalone firmware's LVGL build sat
   at 99.99%); look at scene animation and text on the panel with eyes (tearing, color).
 - Screenshots: `tools/gallery.py` (no `--pixel` for Biscuit) into `apps/porthole/docs/preview.png` and
   `screenshots.png` showing both games; root README catalog section updated.
+
+## Changes during implementation
+
+Kept here rather than edited into the sections above, so the original plan and what actually shipped
+stay distinguishable.
+
+- The daily play cap (PR #31) is kept in `shell::Record` as `(playDay, dayPlaySec)`, not as the
+  `restUntil`-deadline scheme section C sketched -- a new day or a clock set back just resets the
+  counter, instead of needing a special backward-clock clamp.
+- Two legacy save locations need migrating, not one: the pre-porthole standalone firmware's NVS
+  `zoegotchi/pet3` (section D), and the short-lived in-monorepo `apps/biscuit` (`biscuit-v0.1.0`,
+  removed in PR #24), whose own save lived at NVS `biscuit/pet1`.
+- The content PR (#33) adds a second personalization token, `{pet}` (the dog's own name, falling back
+  to "Biscuit"), alongside `{name}` (section E).
 
 ## Risks and open points
 
@@ -338,12 +345,3 @@ change in 6; story-writer (sonnet) for the content conversion in 6; the harness 
   pass the gate; expect a batch of one-word edits.
 - Not decided: whether Biscuit's World screen keeps a "Settings" entry once brightness and clock are
   gone (recommend: drop, mute lives on the launcher).
-
-## Estimate (provisional, Calle calibration)
-
-Epic: a runtime capability, a shell rule with a record migration, a save migration, a full content port
-on a new text renderer, seven screens files, and a harness rewrite. Agent-assisted implementation
-1.5-3 weeks; calendar 3-4 weeks with device QA and review latency. Widened by user-visible UI on
-hardware, an irreversible migration, and 96+7 content items to re-verify. Narrowed by mechanical ports
-(rules, assets, fonts) and an existing sim, playtest and CI. Conventional pre-agent baseline for this
-shape would be about 4 weeks of implementation.

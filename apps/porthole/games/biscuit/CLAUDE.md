@@ -1,11 +1,14 @@
 # Biscuit: game brief
 
-**None of this exists in code yet.** Biscuit is being rewritten onto the Porthole runtime;
-this file describes the intended design so every agent building toward it works from the
-same contract. The full plan, with rationale and delivery order, is
+**Most of this does not exist in code yet.** Biscuit is being rewritten onto the Porthole
+runtime; this file describes the intended design so every agent building toward it works
+from the same contract. Content and its generated art (#33, open) are the first pieces
+that are real; the RGB565 surface, `pet.h`, and the screens that read this content are
+still to come. The full plan, with rationale and delivery order, is
 `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md` -- read it before
-implementing anything referenced here as "landing with the Biscuit PRs." Once a PR lands,
-update the paragraph it makes real and drop the qualifier for that part.
+implementing anything referenced here as "landing with the Biscuit PRs" (or a specific
+PR number, where known). Once a PR lands, update the paragraph it makes real and drop the
+qualifier for that part.
 
 Biscuit previously shipped as a standalone LVGL firmware (source still at
 `~/src/dreamiurg/zoegotchi`, and in porthole history as `biscuit-v0.1.0`); it was removed
@@ -28,47 +31,69 @@ activity.
   pattern as Pets Club's `pet::FLOOR_*` constants -- see the shared app brief's constraint
   5. A wrong answer or a miss shows the right thing and moves on; it never blocks progress
   or resets state.
-- **Warm, doglike voice.** Biscuit speaks in short, natural sentences. He notices smells,
-  sounds, naps, paws, snacks, closeness, and the child's mood. He may ask a sharp question,
-  but he never sounds like an investigator, teacher, mission controller, or corporate
-  assistant. Good: "You read the tiny marks. I'll keep your toes warm." Bad: "Supplies
-  secured. What are we investigating?" Not every discovery needs a Biscuit line -- warmth
-  can come from the surrounding interaction; don't force dialogue where it doesn't belong.
+- **Warm, doglike voice.** Biscuit speaks in short, natural sentences, never like an
+  investigator, teacher, mission controller, or corporate assistant. See the `content`
+  skill's Biscuit section for the full voice guide with good/bad examples -- this brief
+  states the principle, not the how.
 - **Sourced facts, with a claim ledger.** Every discovery's factual claim traces to an
-  authoritative source (museum, university, science agency, standards body, original
-  research) that supports that specific claim, not just its general topic. While drafting,
-  keep a compact ledger (claim, exact URL plus page/section, supporting passage, confidence,
-  visual implication) under ignored `build/content-review/` until review is done -- don't
-  copy long source passages into it. Separate established fact from interpretation,
-  reconstruction, legend and open scholarly question; avoid unsupported superlatives
-  ("first," "oldest," "proved"). Automated checks validate structure and URLs, not truth --
-  reopen every source and compare it against the final text by hand before shipping.
+  authoritative source that supports that specific claim, not just its general topic. See
+  the `content` skill's Biscuit section for the ledger format and the review workflow --
+  this brief states the principle, not the how.
 - **Stable ids, stable array order.** Story and discovery ids and their array order are
   persisted -- a save encodes progress by index. Never reorder or resize an existing entry;
   append, and add explicit migration coverage for anything that isn't a pure append.
 - **Personalization, not a hardcoded name.** The companion is for whichever profile is
-  playing. Copy in content files uses a `{name}` token that `personalize()` fills from the
-  profile at render time; never hardcode a specific child's name into game text, a test
-  fixture, or a migration default. Use "friend" as the fallback when there is no name yet.
+  playing. Content copy (in fields the game personalizes) uses two tokens that
+  `personalize()` (`personalize.h`/`.cpp`, landed with #33) fills at render time: `{name}`
+  for the child ("friend" when the profile has none) and `{pet}` for the dog ("Biscuit"
+  until it is named). Never hardcode a specific child's name into game text, a test
+  fixture, or a migration default.
 
-## Module map (landing with the Biscuit PRs)
+## Module map
 
 Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` class and
 `namespace pet`, and two `pet.h` headers in one link would collide.
 
+Landed (#33, open):
+
+- Content: `content_stories.h` (7 branching stories, `Story{id, title, subtitle,
+  unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`), `content_discoveries.h`
+  (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12
+  topics), `content_daily.h` (7 daily adventures, 6 tricks with 3 cue-pattern lessons
+  each, 12 sticker names) -- `namespace biscuit`, `inline constexpr`, converted once from
+  the legacy JS with ids and array order unchanged. See the `content` skill for the full
+  authoring workflow and its gate.
+- `personalize.h` / `personalize.cpp`: fills the `{name}`/`{pet}` tokens (see Product
+  contract above) into a caller-supplied buffer.
+- Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
+  [frame]`, RLE RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
+  `Image565`), the pixel data itself in `generated/art_data.inc`, and
+  `generated/manifest.json` (a SHA-256 per scene/picture, all matching the legacy
+  firmware's). `art.cpp` is the one translation unit that includes `art_data.inc`. See the
+  `art` skill for the generator and its `--check`.
+- `tools/check_content.py`: the content gate -- glyph set, token validity, required
+  fields, fixed counts, unique ids, discovery order vs. `DiscoveryId`, and a per-field
+  character-count ceiling that stands in for a real pixel-fit check until `generated/
+  fonts.h` exists. See the `content` skill for exactly what it checks.
+- `host/test_biscuit_content.cpp` (shared `host/` directory, not inside this game's own):
+  `personalize()` and the generated art tables. Wording, glyphs and id order are the
+  content gate's job, not this test's.
+
+Still landing:
+
 - `pet.h` / `pet.cpp`: the rules -- decay, floors, stages, trick/adventure/sticker unlock
-  cycles, `valid()`. Save struct: `magic, version, size` header; `createdAt, updatedAt,
-  lastVisitDay, fullness/happiness/energy, friendship, daysTogether, careCounts[3],
-  discoveries[3], stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping,
-  petName[13], named`; `crc` last. Under `BLOB_MAX` (256 bytes), same append-only rule as
-  every other game -- see the shared app brief's constraint 4. `fromLegacy(const
-  LegacySave&, Save&)` accepts only the old standalone firmware's save layout (FNV-1a
-  checksum verified) and converts it once, from `shell/migrate.cpp`, into a profile's
-  Biscuit save.
+  cycles, `valid()`. Intended save struct: `magic, version, size` header; `createdAt,
+  updatedAt, lastVisitDay, fullness/happiness/energy, friendship, daysTogether,
+  careCounts[3], discoveries[3], stickers, stories, tricks[6], dailyCompleted,
+  dailyClaimed, sleeping, petName[13], named`; `crc` last. Under `BLOB_MAX` (256 bytes),
+  same append-only rule as every other game -- see the shared app brief's constraint 4.
+  `fromLegacy(const LegacySave&, Save&)` will accept only the old standalone firmware's
+  save layout (FNV-1a checksum verified) and convert it once, from `shell/migrate.cpp`,
+  into a profile's Biscuit save.
 - `game.h` / `game.cpp` (`class Game : public App`, in `namespace biscuit`): App plumbing,
-  `enter` (decodes its own profile's blob only), state, command dispatch. `surface()`
-  returns `SURFACE_RGB565` everywhere except the naming screens, which reuse the shell's
-  indexed `ui::keyboard` rather than porting a second keyboard. `store()` returns
+  `enter` (decodes its own profile's blob only), state, command dispatch. `surface()` will
+  return `SURFACE_RGB565` everywhere except the naming screens, which reuse the shell's
+  indexed `ui::keyboard` rather than porting a second keyboard. `store()` will return
   `"biscuit"`; that string is never renamed once it ships. `soundOn()` always false --
   Biscuit has no buzzer sounds, the old firmware never drove it and the buzzer is harsh
   (shared app brief constraint 3).
@@ -85,27 +110,21 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `iconButton`, `top`, `nav`, `need`, `speechBubble`, `worldButton`, `picture`, small ASCII
   icons, the tennis ball at 3x scale). Hit boxes are logical px, same convention as the
   indexed games. Game-local for now; promote to `os/` if a second RGB565 game shows up.
-- Content: `content_stories.h` (7 branching stories), `content_discoveries.h` (96
-  discoveries across 12 topics), `content_daily.h` (7 daily adventures, 6 tricks, 12
-  sticker names) -- see Content limits below and the `content` skill.
-- Generated art and fonts, never hand-edited: `generated/scenes.h`, `generated/
-  discovery_art.h` (from `tools/art/{art.js, discovery-art*.js, export-assets.mjs}`, run by
-  `make -C apps/porthole art`) and `generated/fonts.h` (from the four bundled LVGL font
-  files via `tools/fontconv.py`, regenerated only if a glyph is ever added). Regenerating
-  needs Node 22+ and `npx lv_font_conv@1.5.3` on the dev machine only -- neither is a hook
-  or CI dependency, since the generated headers are committed.
-- `tools/check_content.py`: the content gate. Reads `generated/fonts.h` for advance widths
-  and kerning, applies the same page-fill rule as `font::pageBreaks` (352x176 box, font24,
-  4px spacing) and the round-screen rule to every string in every box the game draws it in,
-  rejects any glyph outside the font's 98, and checks `content_discoveries.h`'s ids match
-  `generated/discovery_art.h`'s enum order.
+- `generated/fonts.h`, and the pixel-accurate version of `tools/check_content.py` that
+  reads it -- see the `art` and `content` skills for what each will do once it lands.
+- `host/test_biscuit.cpp` (shared `host/` directory): the rules self-check, distinct from
+  today's `host/test_biscuit_content.cpp`.
 
 ## Content limits (first release)
 
 Full parity with the standalone firmware's content: 7 branching stories, 96 illustrated
 sourced discoveries across 12 topics, 6 tricks (three lessons each to mastery), 12
-stickers, 7 daily adventures with a pocket word each. See the `content` skill for the
-authoring workflow and the exact per-box pixel limits `check_content.py` enforces.
+stickers, 7 daily adventures with a pocket word each -- all landed with #33. Today
+`tools/check_content.py` enforces a per-field character-count ceiling as a stand-in; the
+real limit, measured against the runtime's actual page box (352x176, font24, 4px line
+spacing) plus the round-screen rule for every other box, lands once `generated/fonts.h`
+exists. See the `content` skill for the authoring workflow and exactly what the gate
+checks today versus later.
 
 ## Layout: re-tuned, not copied
 

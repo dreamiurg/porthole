@@ -41,7 +41,7 @@ Read the target game's own `apps/porthole/games/<game>/CLAUDE.md` first -- it na
 
 - `apps/porthole/os/gfx.h`, `apps/porthole/os/gfx.cpp`, `apps/porthole/os/input.h`, and (once Biscuit lands) `apps/porthole/os/gfx565.h`/`.cpp` and `apps/porthole/os/font.h` -- the shared runtime.
 - A game's `game.h`/`game.cpp` (e.g. `apps/porthole/games/pets-club/game.h`), and its `pet.h`/`pet.cpp`, **except** the calibration-constants block (Pets Club: under `// ---- calibration knobs ----`) -- that's game-designer's to tune; you still implement whatever those constants require (new decay logic, a new floor, a new `Save` field) and you keep the loader's migration correct.
-- `apps/porthole/host/sim.cpp` and a game's `host/test_*.cpp`, when a new feature needs a new host-only hook (a new `dbg` subcommand, a new script command) or a new simulation test case.
+- `apps/porthole/host/sim.cpp` and a game's test binary, `apps/porthole/host/test_<name>.cpp` (shared `host/` directory, named per game -- not inside the game's own directory) plus its `test_<name>_SRC :=` line in the Makefile, when a new feature needs a new host-only hook (a new `dbg` subcommand, a new script command) or a new simulation test case.
 - A game's content struct **definitions** (Pets Club: `Book`, `WordClue`, and the `TRICK_NAMES`/`HAT_NAMES`/`STICKER_NAMES` tables in `content.h`) -- structural, not content.
 
 ## Never touch
@@ -54,7 +54,7 @@ Read the target game's own `apps/porthole/games/<game>/CLAUDE.md` first -- it na
 ## Workflow
 
 1. Read `game.h`, the relevant screen's `update`/`draw` pair, and `pet.h`'s function declarations before editing. Trace the full state machine path the change touches, including how the screen is entered and left.
-2. Implement the smallest diff that fits the existing style. If you add a `Save` field: put it immediately before `crc`, bump the version constant, extend the loader so every older blob still loads, and add a migration-path assertion to that game's `host/test_*.cpp` following its existing precedent (Pets Club: the v1->v2 case in `test_pet.cpp`).
+2. Implement the smallest diff that fits the existing style. If you add a `Save` field: put it immediately before `crc`, bump the version constant, extend the loader so every older blob still loads, and add a migration-path assertion to that game's `apps/porthole/host/test_<name>.cpp` following its existing precedent (Pets Club: the v1->v2 case in `test_pet.cpp`).
 3. Run `make -C apps/porthole test`. It must pass before you move on.
 4. For any visible or behavioral change, run a script tour: `cd apps/porthole && make snap && ./build/host/snap --script <script>.txt` (write a short script under `apps/porthole/build/host/` or the scratch dir if none already covers this screen -- see the `tour` skill for the command grammar). Read the resulting `.bmp` screenshots.
 5. Check round-screen geometry by hand for anything new: every tap target inside the game's `inCircle`, at least 24x22 logical px; every text draw checked against the chord half-width at its row.
@@ -67,7 +67,7 @@ Read the target game's own `apps/porthole/games/<game>/CLAUDE.md` first -- it na
 - `make -C apps/porthole test` is green.
 - `make -C apps/porthole snap` builds and runs without crashing.
 - A script tour's screenshots show the feature working and respecting round-screen geometry.
-- Any `Save` change has a migration path and a test case covering it in that game's `host/test_*.cpp`.
+- Any `Save` change has a migration path and a test case covering it in that game's `apps/porthole/host/test_<name>.cpp`.
 - No debug prints or dead code left behind.
 
 ## Report format

@@ -37,11 +37,21 @@ def _block(pattern: str, text: str) -> str:
 
 PALETTE = [int(h, 16) for h in re.findall(r"0x([0-9A-Fa-f]{6})", _block(r"PALETTE_RGB\[C_COUNT\] = \{(.*?)\};", _pal))]
 COLOR = [n.lower() for n in re.findall(r"\bC_([A-Z]+)\b", _block(r"enum Col : uint8_t \{(.*?)\};", _pal))][: len(PALETTE)]
-SCREENS = {  # the shell's screens and every game's (each lists its names in a `static const char* N[]`)
-    name
-    for src in ("shell/shell.cpp", "games/pets-club/game.cpp")
-    for name in re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / src).read_text()))
-}
+
+
+def _screens() -> set:
+    """The shell's screen names and every game's (each lists its names in a `static const char* N[]`).
+
+    expect-screen matches by name alone, so a name two sources share is ambiguous: fail and ask for a game prefix."""
+    owner: dict = {}
+    for src in ["shell/shell.cpp", *sorted(p.relative_to(ROOT).as_posix() for p in ROOT.glob("games/*/game.cpp"))]:
+        for name in re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / src).read_text())):
+            if owner.setdefault(name, src) != src:
+                raise SystemExit(f"playtest: screen name {name!r} is in {owner[name]} and {src}; prefix the game's")
+    return set(owner)
+
+
+SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
