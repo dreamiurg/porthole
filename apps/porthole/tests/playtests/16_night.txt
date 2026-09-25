@@ -1,4 +1,4 @@
-# At night the shell dims with the clock, like Pets Club: leaving a night game never flashes to a daylight launcher.
+# At night the shell and every Pets Club screen, adoption included, dim with the clock: no daylight flash anywhere.
 # (The UI audit measures day colors only; the sheet shows the tint.)
 newgame Sam Biscuit
 wait 2400
@@ -36,9 +36,12 @@ wait 450
 # a second profile, so the play budget applies: resting at night is night, not the daytime evening dusk
 profile Kai 6
 app pets-club
+# Kai has no pup yet: the adoption flow dims with the clock too
+expect tint = night
+snap n05_adopt
 dbg tired
 wait 1500
 expect-screen rest
 expect tint = night
-snap n05_rest
+snap n06_rest
 sheet night
