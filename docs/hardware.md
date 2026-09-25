@@ -13,6 +13,30 @@ Every app targets the **Waveshare ESP32-S3-Touch-LCD-2.1**
 | Clock | PCF85063 RTC, I2C `0x51`, keeps time on the backup cell |
 | Buzzer | Single-tone piezo on the expander. It is harsh: use it rarely. |
 | USB | USB-C through a CH343 USB-UART bridge, so `Serial` is UART0, not USB CDC |
+| Radio | 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth 5 LE, onboard antenna |
+| Motion | QMI8658 6-axis accelerometer and gyroscope |
+| Storage | microSD (TF) card slot |
+| Battery | MX1.25 header for a 3.7 V lithium cell, with a charging chip onboard |
+
+Buy the flat version, `ESP32-S3-Touch-LCD-2.1`
+([Amazon](https://www.amazon.com/dp/B0DDPQSKJD),
+[Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm)). The
+`ESP32-S3-Touch-LCD-2.1B` has curved 2.5D glass over the same size screen; no
+app here has been tested on it. Round boards in other sizes won't run these apps.
+
+## Not used yet
+
+These parts are on the board but no app uses them yet. They're good starting
+points for a new app or feature.
+
+- Motion sensor: shake to wake a pet, tilt to steer in a minigame, or count steps
+  when someone carries the device around.
+- Bluetooth LE: two devices near each other could let pets meet, play together
+  or trade stickers.
+- Wi-Fi: set the clock automatically, update firmware without a cable, or
+  download new stories.
+- microSD slot: room for more stories, art or sound than the 16 MB flash holds.
+- Battery header: a small lithium cell would make the device fully cordless.
 
 ## Pins that matter
 
