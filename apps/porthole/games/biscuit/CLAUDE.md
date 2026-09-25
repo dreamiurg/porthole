@@ -134,7 +134,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   - Reading: as the old firmware read them, a story's ten pages (up to the choice), an
     ending's four or a discovery's two are filled with the names and joined into one text
     (`openPages`, `READ_BYTES`) and flowed by `font::pageBreaks` onto screens: each
-    ends where the next word no longer fits, never at a content page's end. The counter
+    ends where the next word no longer fits, not where a content page does. The counter
     between Previous and Next counts those screens (a story is 12-14, an ending 5-6, a
     discovery 1-3). Next becomes Choose on a story's last screen and The end on an
     ending's; an ending's first Previous goes back to the choice, the choice's Back to the

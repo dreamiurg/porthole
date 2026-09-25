@@ -44,10 +44,12 @@ wait 450
 expect-screen biscuit_story
 ui-check biscuit_story-day
 snap b04_story
-repeat 12
+repeat 11
 tap 108 132
 wait 450
 end
+expect at=11
+expect of=12
 ui-check biscuit_story-last-day
 tap 108 132
 wait 450
@@ -183,10 +185,12 @@ tap 80 84
 wait 450
 expect-screen biscuit_story
 ui-check biscuit_story-evening
-repeat 12
+repeat 11
 tap 108 132
 wait 450
 end
+expect at=11
+expect of=12
 ui-check biscuit_story-last-evening
 tap 108 132
 wait 450
@@ -309,10 +313,12 @@ tap 80 84
 wait 450
 expect-screen biscuit_story
 ui-check biscuit_story-night
-repeat 12
+repeat 11
 tap 108 132
 wait 450
 end
+expect at=11
+expect of=12
 ui-check biscuit_story-last-night
 tap 108 132
 wait 450

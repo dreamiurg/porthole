@@ -80,7 +80,7 @@ static void fits(const Label& l, const char* where, const char* s) {
 static void stream(const char* where, const char* const* pages, int count) {
   static char buf[4 * READ_BYTES];
   size_t n = 0;
-  for (int i = 0; i < count; i++) {
+  for (int i = 0; i < count && n + 1 < sizeof buf; i++) {
     if (i) buf[n++] = ' ';
     n += personalize(pages[i], NAME, PET, buf + n, sizeof buf - n);
   }
