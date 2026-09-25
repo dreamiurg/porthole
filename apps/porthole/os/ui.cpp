@@ -80,10 +80,9 @@ void drawKeyboard(const Input& in, const char* buf, const char* hint, uint32_t m
   drawKey(in, OK, "OK", buf[0] ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY);
 }
 
-void TapGuard::filter(Input& in, uint32_t now, int cur) {
-  if (!in.tap) return;
-  int dx = in.x - x, dy = in.y - y;
-  if (dx > -12 && dx < 12 && dy > -12 && dy < 12 && now - ms < 300 && screen != cur) { in.tap = false; return; }
-  ms = now; x = in.x; y = in.y; screen = cur;
+void FreshGate::filter(Input& in, uint32_t now) {
+  if (!closed) return;
+  if (in.pressed && now - shownMs >= FRESH_MS) { closed = false; return; }
+  in.down = in.pressed = in.released = in.tap = in.longPress = false;   // a held finger stays invisible until lifted
 }
 }  // namespace ui

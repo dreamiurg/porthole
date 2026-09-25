@@ -36,6 +36,7 @@ class Shell {
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
+  bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
   shell::Record draft_{};                          // the profile being created
   char name_[12] = {0}; int nameLen_ = 0;
@@ -43,11 +44,12 @@ class Shell {
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   Screen screen_ = SH_PICK;
   Input in_{};
-  ui::TapGuard tapGuard_;
+  ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
   char toast_[40] = {0}; uint32_t toastUntil_ = 0;
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
 
   shell::Record& rec() { return prof_.rec[active_]; }
+  bool restingNow() const;   // rest only applies while there are 2+ profiles
   void go(Screen s);
   void toast(const char* s);
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }

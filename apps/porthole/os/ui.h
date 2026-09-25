@@ -26,9 +26,13 @@ constexpr int NAME_LEN = 8;
 bool keyboard(const Input& in, char* buf, int& len);   // true when OK is tapped with at least one letter
 void drawKeyboard(const Input& in, const char* buf, const char* hint, uint32_t ms);   // hint shows while empty
 
-// A double tap whose first tap changed the screen must not act on whatever now sits under the finger.
-struct TapGuard {
-  uint32_t ms = 0; int x = 0, y = 0, screen = -1;
-  void filter(Input& in, uint32_t now, int cur);
+// A fresh screen ignores every touch until a press begins FRESH_MS after it appeared: the finger that changed it
+// (still down after a long press) and the second tap of a kid's slow double tap (300-400 ms apart) would otherwise
+// act on whatever now sits under them. Call shown() on every screen change and filter() on every frame's input.
+struct FreshGate {
+  static constexpr uint32_t FRESH_MS = 450;
+  uint32_t shownMs = 0; bool closed = false;
+  void shown(uint32_t now) { shownMs = now; closed = true; }
+  void filter(Input& in, uint32_t now);
 };
 }  // namespace ui
