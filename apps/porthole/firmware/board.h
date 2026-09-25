@@ -21,12 +21,11 @@ void rtcSet(uint32_t localEpoch);
 void setBacklight(uint8_t percent);
 void buzzer(bool on);
 
-// One blob per house ("s0".."s2"); "save" is the pre-house key, read once for migration.
-bool saveBlob(int slot, const void* data, size_t len);
-size_t loadBlob(int slot, void* data, size_t maxLen);
-size_t loadLegacyBlob(void* data, size_t maxLen);
-void eraseBlob(int slot);
-void eraseAll();
+// NVS blobs addressed by (namespace, key). Namespaces are at most 15 chars, keys at most 15.
+bool saveBlob(const char* ns, const char* key, const void* data, size_t len);
+size_t loadBlob(const char* ns, const char* key, void* data, size_t maxLen);  // 0 if missing or bigger than maxLen
+void eraseBlob(const char* ns, const char* key);
+void eraseAll();  // every namespace in NAMESPACES (board.cpp)
 
 uint32_t freeHeap();
 }  // namespace board

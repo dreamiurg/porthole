@@ -10,6 +10,9 @@ static uint32_t g_lastSaveMs = 0, g_lastTouchMs = 0;
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
+// Pets Club's NVS namespace, one "s<n>" key per house. Never rename: it orphans every save on a device.
+static const char* const NS = "crago";
+static const char* slotKey(int slot) { static char k[4]; snprintf(k, sizeof k, "s%d", slot); return k; }
 
 // Wall clock: RTC if it runs, else continue from the last save so the pet's day count keeps going.
 static uint32_t nowSec() {
@@ -43,12 +46,12 @@ void setup() {
   }
   Save houses[MAX_HOUSES]; int nHouses = 0; uint8_t blob[256]; uint32_t lastSeen = 0;
   for (int slot = 0; slot < MAX_HOUSES; slot++) {
-    size_t got = board::loadBlob(slot, blob, sizeof blob);
+    size_t got = board::loadBlob(NS, slotKey(slot), blob, sizeof blob);
     if (got && pet::loadBlob(blob, got, houses[nHouses])) nHouses++;
   }
-  if (nHouses == 0) {  // first boot after the multi-house update: adopt the old single save as house 0
-    size_t got = board::loadLegacyBlob(blob, sizeof blob);
-    if (got && pet::loadBlob(blob, got, houses[0])) { nHouses = 1; board::saveBlob(0, &houses[0], sizeof(Save)); Serial.println("[pets-club] migrated save -> s0"); }
+  if (nHouses == 0) {  // first boot after the multi-house update: adopt the old single "save" key as house 0
+    size_t got = board::loadBlob(NS, "save", blob, sizeof blob);
+    if (got && pet::loadBlob(blob, got, houses[0])) { nHouses = 1; board::saveBlob(NS, slotKey(0), &houses[0], sizeof(Save)); Serial.println("[pets-club] migrated save -> s0"); }
   }
   for (int i = 0; i < nHouses; i++) if (houses[i].lastSeen > lastSeen) lastSeen = houses[i].lastSeen;
   uint32_t now;
@@ -84,8 +87,8 @@ void loop() {
 
   // save when the game asks, at most once per 5 s per house
   Save out; int slot;
-  if (g_game.takeSave(&out, &slot, ms - g_lastSaveMs > 5000)) { board::saveBlob(slot, &out, sizeof out); g_lastSaveMs = ms; }
-  if (g_game.takeErase(&slot)) board::eraseBlob(slot);
+  if (g_game.takeSave(&out, &slot, ms - g_lastSaveMs > 5000)) { board::saveBlob(NS, slotKey(slot), &out, sizeof out); g_lastSaveMs = ms; }
+  if (g_game.takeErase(&slot)) board::eraseBlob(NS, slotKey(slot));
 
   // idle dimming (no physical buttons: the screen is the only power control)
   uint32_t idle = ms - g_lastTouchMs;

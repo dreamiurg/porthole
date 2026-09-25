@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(os.environ.get("PLAYTEST_OUT") or ROOT / "build" / "playtest").resolve()
 SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap").resolve()
-_pal = (ROOT / "src/game/palette.h").read_text()
+_pal = (ROOT / "os/palette.h").read_text()
 
 
 def _block(pattern: str, text: str) -> str:
@@ -37,7 +37,7 @@ def _block(pattern: str, text: str) -> str:
 
 PALETTE = [int(h, 16) for h in re.findall(r"0x([0-9A-Fa-f]{6})", _block(r"PALETTE_RGB\[C_COUNT\] = \{(.*?)\};", _pal))]
 COLOR = [n.lower() for n in re.findall(r"\bC_([A-Z]+)\b", _block(r"enum Col : uint8_t \{(.*?)\};", _pal))][: len(PALETTE)]
-SCREENS = set(re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / "src/game/game.cpp").read_text())))
+SCREENS = set(re.findall(r'"(\w+)"', _block(r"static const char\* N\[\] = \{(.*?)\};", (ROOT / "games/pets-club/game.cpp").read_text())))
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {

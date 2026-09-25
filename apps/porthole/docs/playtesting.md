@@ -1,6 +1,6 @@
 # Playtesting
 
-Commands run from `apps/pets-club/` (or `make -C apps/pets-club <target>` from the repo root).
+Commands run from `apps/porthole/` (or `make -C apps/porthole <target>` from the repo root).
 
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:
@@ -105,7 +105,7 @@ is exactly what `05_read` and `11_stats` check.
 | round edge | FAIL | under 85% of a region lies inside radius 80, or its center is more than 70 px from (80,80) | the bezel hides the rim; a target has to be reachable and visibly whole |
 | spacing | WARN | two regions that do not intersect are less than 2 px apart | 0.7 mm between separate targets invites mis-taps |
 | clipped text | FAIL | a corner of a text box is more than 79 px from (80,80) | the bezel cuts the glyphs |
-| contrast | FAIL / WARN | WCAG 2 contrast of the text color on the dominant color under the box, below 2.5 / below 4.0 | new readers need crisp letters; the palette comes from `src/game/palette.h` (day colors) |
+| contrast | FAIL / WARN | WCAG 2 contrast of the text color on the dominant color under the box, below 2.5 / below 4.0 | new readers need crisp letters; the palette comes from `os/palette.h` (day colors) |
 | dead screen | WARN | nothing tappable, on any screen but splash, intro, celebrate and gift | a kid has no way forward or back |
 
 Contrast is skipped when the sampled background equals the text color (the sampler cannot tell). A text drawn

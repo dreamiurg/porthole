@@ -10,14 +10,14 @@ import os
 import re
 import sys
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")  # every path below is relative to the app, wherever this runs from
-FILES = ["src/game/content.h", "src/game/content_level3_books.h", "src/game/content_level3_words.h"]
-# Boxes the game actually draws into (logical px, lines). Widths follow src/game/game.cpp.
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # every path below is relative to the Porthole app, wherever this runs from
+FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_level3_words.h"]
+# Boxes the game actually draws into (logical px, lines). Widths follow games/pets-club/game.cpp.
 BOXES = dict(page=(122, 7), title=(108, 2), question=(116, 2), answer=(102, 2), clue=(118, 2))
 
 
 def load_font():
-    src = open("src/game/font8x8_basic.h", encoding="utf-8").read()
+    src = open("os/font8x8_basic.h", encoding="utf-8").read()
     rows = re.findall(r"\{\s*((?:0x[0-9A-Fa-f]{2},?\s*){8})\}", src)
     glyphs = [[int(v, 16) for v in re.findall(r"0x[0-9A-Fa-f]{2}", r)] for r in rows][:128]
     widths = []

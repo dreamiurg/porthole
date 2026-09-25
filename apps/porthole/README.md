@@ -1,4 +1,10 @@
-# Pets Club: a pixel puppy for a round screen
+# Porthole: games for a round screen
+
+Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small shared runtime
+(`os/`: 160×160 indexed framebuffer, 32-color palette, 8×8 font, touch input), the board layer
+(`firmware/`) and the games built on it (`games/`). Its first and, for now, only game is Pets Club.
+
+## Pets Club: a pixel puppy
 
 A touch-only, Tamagotchi-style puppy for the **Waveshare ESP32-S3-Touch-LCD-2.1** (round 480×480
 IPS, capacitive touch, no buttons). Made for kids aged 5-10 who like dogs and books: the puppy
@@ -40,7 +46,7 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 
 ## Play it without the board
 
-You need a C++17 compiler and Python 3. From this directory (`apps/pets-club/`):
+You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
 
 ```bash
 make snap && python3 tools/webemu.py   # or: make webemu
@@ -87,7 +93,7 @@ using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usb
 make check      # content fits its pixel boxes, sprites are current, -Werror build, pet self-test (seconds)
 make playtest   # 16 scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
 make ci         # check + playtest + coverage: what CI runs for this app, minus the firmware build
-make coverage   # line coverage of src/game/*.cpp -> build/coverage/coverage.xml (needs gcovr, or uvx)
+make coverage   # line coverage of os/ and games/ -> build/coverage/coverage.xml (needs gcovr, or uvx)
 ```
 
 The playtest report lands in `build/playtest/report.md`, with contact sheets next to it if
@@ -112,13 +118,15 @@ Day / evening / night are palette variants applied at flip time.
 ## Layout
 
 ```
-src/game/      platform-independent game: pet simulation (pet.cpp), screens (game.cpp),
-               renderer (gfx.cpp), stories & words (content*.h), generated sprites (sprites.h)
-src/board.cpp  Waveshare board layer (display, touch, expander, RTC, buzzer, NVS)
-src/main.cpp   firmware entry: input, saves, idle dimming, serial commands
-host/          SDL2 / headless simulator and the pet self-test
-tests/         playtest scenarios
-tools/         pixel-art rig (art.py), browser emulator, playtest runner, content checker
+os/                shared, platform-independent runtime: renderer (gfx.cpp), input, palette, font
+games/pets-club/   Pets Club: pet simulation (pet.cpp), screens (game.cpp), stories & words
+                   (content*.h), generated sprites (sprites.h), and its tools: pixel-art rig
+                   (art.py), content checker (check_content.py)
+firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
+                   and the entry point (main.cpp: input, saves, idle dimming, serial commands)
+host/              SDL2 / headless simulator and the pet self-test
+tests/             playtest scenarios
+tools/             browser emulator, playtest runner
 ```
 
 Contributing, or pointing an AI agent at it? Read [CLAUDE.md](CLAUDE.md) first: it has the hard

@@ -19,18 +19,21 @@ static Game g_game;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
-static const char* savePath(int slot) { static char p[64]; snprintf(p, sizeof p, "build/host/pets-club%d.sav", slot); return p; }
+// Stands in for the board's NVS (namespace, key) blobs as build/host/<ns>-<key>.sav; Pets Club is "crago", "s<n>".
+static const char* const NS = "crago";
+static const char* slotKey(int slot) { static char k[4]; snprintf(k, sizeof k, "s%d", slot); return k; }
+static const char* savePath(const char* ns, const char* key) { static char p[64]; snprintf(p, sizeof p, "build/host/%s-%s.sav", ns, key); return p; }
 static int loadSaves(Save* out) {
   int n = 0; uint8_t blob[256];
   for (int slot = 0; slot < MAX_HOUSES; slot++) {
-    FILE* f = fopen(savePath(slot), "rb"); if (!f) continue;
+    FILE* f = fopen(savePath(NS, slotKey(slot)), "rb"); if (!f) continue;
     size_t got = fread(blob, 1, sizeof blob, f); fclose(f);
     if (got && pet::loadBlob(blob, got, out[n])) n++;
   }
   return n;
 }
-static void storeSave(int slot, const Save& s) { FILE* f = fopen(savePath(slot), "wb"); if (f) { fwrite(&s, 1, sizeof s, f); fclose(f); } }
-static void removeSaves() { for (int slot = 0; slot < MAX_HOUSES; slot++) remove(savePath(slot)); }
+static void storeSave(int slot, const Save& s) { FILE* f = fopen(savePath(NS, slotKey(slot)), "wb"); if (f) { fwrite(&s, 1, sizeof s, f); fclose(f); } }
+static void removeSaves() { for (int slot = 0; slot < MAX_HOUSES; slot++) remove(savePath(NS, slotKey(slot))); }
 
 static void writeBMP(const char* path) {
   const int S = 3, W = gfx::W * S, H = gfx::H * S;
@@ -59,7 +62,7 @@ static void frame(bool down, int x, int y) {
   g_game.render();
   Save s; int slot;
   while (g_game.takeSave(&s, &slot, true)) storeSave(slot, s);
-  while (g_game.takeErase(&slot)) remove(savePath(slot));
+  while (g_game.takeErase(&slot)) remove(savePath(NS, slotKey(slot)));
 }
 
 // Same upscale+round-mask+tint as writeBMP, but raw RGB triples (PPM order) to stdout.

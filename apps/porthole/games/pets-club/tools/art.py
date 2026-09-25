@@ -3,12 +3,13 @@
 
 Dogs are drawn by a tiny parametric rig (ellipses + rects + inner outline) so every pose exists at
 three sizes (puppy / dog / grown) with one consistent style. Icons are hand-drawn ASCII.
-Emits src/game/sprites.h and a preview sheet at build/art/sheet.png (needs Pillow for the preview).
+Emits games/pets-club/sprites.h and a preview sheet at build/art/sheet.png (needs Pillow for the preview).
 """
 
 import os
 import sys
 
+SPRITES = "games/pets-club/sprites.h"
 T = 255
 # palette indices (see palette.h)
 K, NAVY, PLUM, DKGREEN, BROWN, DKGRAY, LTGRAY, WHITE, RED, ORANGE, YELLOW, GREEN, BLUE, LAV, PINK, PEACH = range(16)
@@ -825,7 +826,7 @@ def emit(check=False):
     text = "\n".join(out) + "\n"
     if check:
         try:
-            current = open("src/game/sprites.h").read()
+            current = open(SPRITES).read()
         except FileNotFoundError:
             current = ""
         if current != text:
@@ -833,10 +834,9 @@ def emit(check=False):
             sys.exit(1)
         print("sprites.h up to date")
         return
-    os.makedirs("src/game", exist_ok=True)
-    with open("src/game/sprites.h", "w") as f:
+    with open(SPRITES, "w") as f:
         f.write(text)
-    print(f"wrote src/game/sprites.h ({len(frames)} dog frames, {len(icons)} icons)")
+    print(f"wrote {SPRITES} ({len(frames)} dog frames, {len(icons)} icons)")
     preview(frames, icons)
 
 
@@ -916,5 +916,5 @@ def preview(frames, icons):
 
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
+    os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # the Porthole app root, wherever this runs from
     emit(check="--check" in sys.argv)

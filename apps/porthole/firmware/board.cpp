@@ -27,7 +27,6 @@ static esp_lcd_panel_handle_t g_panel = nullptr;
 static uint16_t* g_fbs[2] = {nullptr, nullptr};
 static int g_front = 0;
 static SemaphoreHandle_t g_vsync = nullptr;
-static Preferences g_prefs;
 
 static void i2cWrite(uint8_t addr, uint8_t reg, const uint8_t* d, size_t n) {
   Wire.beginTransmission(addr); Wire.write(reg); for (size_t i = 0; i < n; i++) Wire.write(d[i]); Wire.endTransmission(true);
@@ -180,12 +179,18 @@ void rtcSet(uint32_t e) {
 void setBacklight(uint8_t pct) { if (pct > 100) pct = 100; ledcWrite(PIN_BL, pct == 100 ? 1023 : pct * 10); }
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 
-static const char* slotKey(int slot) { static char k[4]; snprintf(k, sizeof k, "s%d", slot); return k; }
-bool saveBlob(int slot, const void* d, size_t n) { return g_prefs.putBytes(slotKey(slot), d, n) == n; }
-size_t loadBlob(int slot, void* d, size_t n) { size_t have = g_prefs.getBytesLength(slotKey(slot)); return have && have <= n ? g_prefs.getBytes(slotKey(slot), d, have) : 0; }
-size_t loadLegacyBlob(void* d, size_t n) { size_t have = g_prefs.getBytesLength("save"); return have && have <= n ? g_prefs.getBytes("save", d, have) : 0; }
-void eraseBlob(int slot) { g_prefs.remove(slotKey(slot)); }
-void eraseAll() { g_prefs.clear(); }
+// Every NVS namespace the firmware writes; eraseAll() clears exactly these. "crago" is Pets Club's
+// legacy namespace: renaming it orphans every save already on a device.
+static const char* const NAMESPACES[] = {"crago"};
+// Each call opens its namespace read-write (creating it, as the old boot-time begin() did) and the
+// Preferences destructor closes it again; saves come at most every few seconds, so the open is cheap.
+bool saveBlob(const char* ns, const char* key, const void* d, size_t n) { Preferences p; return p.begin(ns, false) && p.putBytes(key, d, n) == n; }
+size_t loadBlob(const char* ns, const char* key, void* d, size_t n) {
+  Preferences p; if (!p.begin(ns, false)) return 0;
+  size_t have = p.getBytesLength(key); return have && have <= n ? p.getBytes(key, d, have) : 0;
+}
+void eraseBlob(const char* ns, const char* key) { Preferences p; if (p.begin(ns, false)) p.remove(key); }
+void eraseAll() { for (const char* ns : NAMESPACES) { Preferences p; if (p.begin(ns, false)) p.clear(); } }
 uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
 
 void init() {
@@ -199,7 +204,6 @@ void init() {
   // touch reset + disable auto-sleep
   expSet(EX_TP_RST, false); delay(10); expSet(EX_TP_RST, true); delay(60);
   uint8_t noSleep = 0xFF; i2cWrite(TP_ADDR, 0xFE, &noSleep, 1);
-  g_prefs.begin("crago", false);  // legacy NVS namespace: renaming it orphans every save already on a device
   setBacklight(100);
 }
 }  // namespace board

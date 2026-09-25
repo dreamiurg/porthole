@@ -21,14 +21,15 @@ New apps land here as they get made. Fork it, play with them, build your own.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Pets Club](#pets-club) | Pixel puppy that grows over real days, learns tricks and gets read to. Up to three kids per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware. First game inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to. Up to three kids per device. | Browser emulator |
 | [Biscuit](#biscuit) | Story dog with branching mysteries and 96 illustrated discoveries. | Web app |
 
-### Pets Club
+### Porthole
 
-[![Pets Club screenshots](apps/pets-club/docs/preview.png)](apps/pets-club/)
+[![Pets Club screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
 
-A Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
+The firmware that turns the round screen into a games device. Its first game is
+Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
 matched to the kid's age. Fetch and spelling games, daily gifts, stickers and
@@ -39,7 +40,7 @@ gets a turn. Nothing ever dies.
 C++, no libraries: a 160x160 indexed framebuffer scaled 3x, with a host
 simulator, a browser emulator and scripted playtests that audit every screen
 for tap-target size, bezel clipping and contrast.
-**[Read more](apps/pets-club/README.md)** · try it: `make -C apps/pets-club webemu`
+**[Read more](apps/porthole/README.md)** · try it: `make -C apps/porthole webemu`
 
 ### Biscuit
 
@@ -69,7 +70,7 @@ make check                                 # lint + tests for every app
 Flash a board over USB-C. PlatformIO finds the port when one board is plugged in.
 
 ```sh
-make flash APP=pets-club
+make flash APP=porthole
 make flash APP=biscuit PORT=/dev/ttyUSB0
 make monitor
 ```
