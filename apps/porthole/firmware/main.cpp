@@ -22,7 +22,7 @@ static uint32_t g_lastTouchMs = 0;
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
-// Test harness (tools/device.py): a synthetic finger held at logical (x, y) until `until`, then released.
+// Test harness (tools/devctl.py): a synthetic finger held at logical (x, y) until `until`, then released.
 static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
@@ -76,7 +76,7 @@ static void dimWhenIdle(uint32_t ms) {
 
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
-// "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/device.py).
+// "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py).
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
   else if (c == 'R') {

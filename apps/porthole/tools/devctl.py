@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Drive the real board over serial: tap it, read what it shows, run playtest-style scripts.
 
-    python3 tools/device.py shot build/device/now.png
-    python3 tools/device.py tap 80 120            # logical px, same as the sim scripts
-    python3 tools/device.py hold 80 120
-    python3 tools/device.py stats                 # the firmware's "S" output
-    python3 tools/device.py run tests/device/smoke.txt
+    python3 tools/devctl.py shot build/device/now.png
+    python3 tools/devctl.py tap 80 120            # logical px, same as the sim scripts
+    python3 tools/devctl.py hold 80 120
+    python3 tools/devctl.py stats                 # the firmware's "S" output
+    python3 tools/devctl.py run tests/device/smoke.txt
 
 Script commands (a subset of the sim's): tap X Y | hold X Y | wait MS | snap NAME | screen | echo TEXT
 | raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png,

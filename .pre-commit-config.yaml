@@ -60,7 +60,10 @@ repos:
     hooks:
       - id: mypy
         name: mypy (python tools)
-        args: [--config-file=pyproject.toml]
+        # The whole tree, not just the changed files: module-name clashes across apps (two tools/device.py)
+        # only show up when mypy sees both, which is what CI's --all-files run does.
+        args: [--config-file=pyproject.toml, .]
+        pass_filenames: false
 
   - repo: local
     hooks:
