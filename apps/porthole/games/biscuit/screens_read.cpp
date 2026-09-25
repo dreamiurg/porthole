@@ -37,26 +37,16 @@ Button choiceButton(int story, int i) { return {CHOICE[i], STORIES[story].choice
 
 // ---------------------------------------------------------------- the page reader
 void Game::openPages(const char* const* pages, int count, int at) {
-  pages_ = pages; pageCount_ = count < STORY_PAGES ? count : STORY_PAGES; total_ = 0; textPage_ = -1;
-  for (int i = 0; i < pageCount_; i++) {
-    personalize(pages[i], who_.name, save_.petName, text_, sizeof text_);
-    const int n = font::pageBreaks(PAGE.box, text_, shown_, PAGE_SCREENS);
-    screens_[i] = (uint8_t)(n < PAGE_SCREENS ? n : PAGE_SCREENS);   // the content gate holds every page to that
-    total_ += screens_[i];
+  size_t n = 0;   // the pages filled and joined with a space (the content gate joins them the same way)
+  for (int i = 0; i < count && n + 1 < sizeof read_; i++) {
+    if (i) read_[n++] = ' ';
+    n += personalize(pages[i], who_.name, save_.petName, read_ + n, sizeof read_ - n);
   }
+  const int screens = font::pageBreaks(PAGE.box, read_, shown_, READ_SCREENS);
+  total_ = screens < READ_SCREENS ? screens : READ_SCREENS;   // the content gate holds every text to that
   at_ = at < 0 ? total_ + at : at;
 }
-const char* Game::pageText() {
-  int page = 0, first = 0;
-  while (page + 1 < pageCount_ && first + screens_[page] <= at_) first += screens_[page++];
-  if (textPage_ != page) {   // filled and split once per content page, not every frame
-    personalize(pages_[page], who_.name, save_.petName, text_, sizeof text_);
-    font::pageBreaks(PAGE.box, text_, shown_, PAGE_SCREENS);
-    textPage_ = page;
-  }
-  const int s = at_ - first;
-  return s >= 0 && s < screens_[page] ? shown_[s] : "";
-}
+const char* Game::pageText() const { return at_ >= 0 && at_ < total_ ? shown_[at_] : ""; }
 
 // ---------------------------------------------------------------- Library
 void Game::updateLibrary() {

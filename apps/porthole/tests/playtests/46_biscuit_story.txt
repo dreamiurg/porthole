@@ -28,7 +28,7 @@ wait 450
 expect-screen biscuit_story
 expect story=0
 expect at=0
-expect of=20
+expect of=12
 ui-check biscuit_story
 snap s03_page1
 # a quick second tap is the same turn: one screen on, not two
@@ -40,11 +40,11 @@ expect at=1
 tap 52 132
 wait 450
 expect at=0
-repeat 19
+repeat 11
 tap 108 132
 wait 450
 end
-expect at=19
+expect at=11
 ui-check biscuit_story-last
 snap s04_last
 tap 108 132
@@ -56,7 +56,7 @@ snap s05_choice
 tap 51 25
 wait 450
 expect-screen biscuit_story
-expect at=19
+expect at=11
 tap 108 132
 wait 450
 expect-screen biscuit_choice
@@ -74,12 +74,12 @@ wait 450
 expect-screen biscuit_choice
 tap 80 97
 wait 450
-expect of=8
-repeat 7
+expect of=5
+repeat 4
 tap 108 132
 wait 450
 end
-expect at=7
+expect at=4
 ui-check biscuit_ending-last
 snap s06b_the_end
 tap 108 132
@@ -98,7 +98,7 @@ ui-check biscuit_library-read
 snap s08_read
 tap 80 84
 wait 450
-repeat 20
+repeat 12
 tap 108 132
 wait 450
 end
@@ -108,8 +108,8 @@ wait 450
 expect-screen biscuit_ending
 expect choice=1
 snap s09_ending2
-expect of=8
-repeat 8
+expect of=5
+repeat 5
 tap 108 132
 wait 450
 end

@@ -49,10 +49,12 @@ inline void pageNumber(char (&s)[16], int page, int count) {
   if (font::textWidth(*PAGE_NUMBER.box.font, s) > PAGE_NUMBER.box.w) snprintf(s, sizeof s, "%d/%d", page + 1, count);
 }
 
-// Story, ending and discovery pages. The screen splits a content page with font::pageBreaks into at most
-// PAGE_SCREENS screens and counts them all, "n / m", between Previous and Next.
+// Story, ending and discovery text, as the old firmware read it: a story's pages up to the choice, an ending's or a
+// discovery's are filled with the names, joined into one text (READ_BYTES at most) and flowed onto screens of this
+// box by font::pageBreaks (READ_SCREENS at most), so a screen ends where the next word no longer fits, not where a
+// content page does. The counter, "n / m", counts the screens. The content gate holds every text to both limits.
 inline constexpr Label PAGE = {{&FONT24, 352, 176, 4, Align::LEFT}, 64, 146, false};
-constexpr int PAGE_SCREENS = 2;
+constexpr int READ_BYTES = 2048, READ_SCREENS = 16;
 // The most pages any list or reader counts: the notebook with every discovery kept, two to a page.
 constexpr int MAX_PAGES = 48;
 // Library: Discoveries and Notebook, then two story rows: "Day N: <title>" while locked, "<title> *" once read.
