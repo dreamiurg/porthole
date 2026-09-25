@@ -351,6 +351,7 @@ void Game::updateNamePet() {
   if (backButton()) { wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
   if (in_.tapInCircle(123, 28, 12)) {                  // random name (hit circle ends 0.5 px inside the bezel)
     const char* n = PET_NAME_IDEAS[pet::rnd(save_) % 9]; strncpy(nameBuf_, n, ui::NAME_LEN); nameBuf_[ui::NAME_LEN] = 0; nameLen_ = (int)strlen(nameBuf_);
+    return;                                            // its hit circle overlaps key row 0: one tap, one action
   }
   if (ui::keyboard(in_, nameBuf_, nameLen_)) { strncpy(save_.petName, nameBuf_, sizeof save_.petName - 1); go(SC_THEME); }
 }
