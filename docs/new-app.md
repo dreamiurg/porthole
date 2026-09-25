@@ -36,25 +36,6 @@ extra_scripts = post:../../platform/factory_image.py
 Paths are relative to the PlatformIO project directory. If the project lives in
 a subdirectory, as `apps/biscuit/firmware` does, add another `../`.
 
-## app.json
-
-A two- or three-field file that puts the app on the web installer
-(`https://dreamiurg.net/porthole/`):
-
-```json
-{
-  "name": "Pets Club",
-  "tagline": "One or two plain sentences for a non-technical reader.",
-  "play": ["index.html", "style.css", "src"]
-}
-```
-
-`play` is optional. It lists files and folders that make a static browser version;
-the site serves them at `<app>/play/`, taken from the same release tag as the
-firmware. The installer card appears automatically after the app's first
-release; before that it shows "Coming soon". Preview the site locally with
-`make site` (needs `gh` signed in).
-
 ## Screenshots
 
 Every app ships two images in `apps/<app>/docs/`, built from 480x480 panel
