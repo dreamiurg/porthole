@@ -19,6 +19,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  PLATFORMIO_CACHE_DIR: /tmp/pio-downloads  # keep downloaded archives out of the cached ~/.platformio (see ci.yml)
+
 jobs:
   plan:
     runs-on: ubuntu-latest
@@ -57,9 +60,10 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', format('apps/{0}/**/platformio.ini', matrix.app)) }}
+          key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # same key as ci.yml
       - run: pip install -r platform/requirements.txt
       - run: make -C "apps/${{ matrix.app }}" factory
+      - run: rm -rf ~/.platformio/tools ~/.platformio/dist  # not needed to build; keep them out of the cache (see ci.yml)
       - name: Tag and publish
         env:
           GH_TOKEN: ${{ github.token }}

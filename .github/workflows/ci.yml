@@ -5,10 +5,18 @@ name: CI
 # GitHub minutes low it runs once per PR (not again on merge: the ruleset requires
 # branches to be up to date, so main gets exactly what the PR tested), runs cheap
 # gates before expensive ones, and only builds what the PR touched.
+#
+# Caches: a PR can only restore caches saved on main or on its own branch. So PRs only
+# restore the PlatformIO cache (1.4 GB; PR-scoped copies were evicting main's from the 10 GB
+# quota), and main saves it: the weekly run, plus a full run on a push that changes a file
+# the cache keys depend on. Before this, PRs mostly missed and rebuilt everything.
 
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+    paths: [.pre-commit-config.yaml, "platform/*.ini", .github/workflows/ci.yml]
   schedule:
     - cron: "0 6 * * 0"  # weekly full run on main: catches toolchain and runner drift, feeds the badge
   workflow_dispatch:
@@ -19,6 +27,10 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  # PlatformIO keeps downloaded archives in ~/.platformio/.cache; keep them out of the cached dir.
+  PLATFORMIO_CACHE_DIR: /tmp/pio-downloads
 
 jobs:
   static:
@@ -59,11 +71,14 @@ jobs:
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: pre-commit-${{ runner.os }}-  # after a hook bump, only the bumped envs rebuild
+      # gitleaks scans only staged changes (--staged), so in CI it checks nothing; it runs in the local hook.
       # Same hooks as a local commit and push. App suites run in their own jobs below.
       - run: pre-commit run --all-files --show-diff-on-failure
         env:
-          SKIP: no-commit-to-branch,porthole-check,biscuit-check
+          SKIP: no-commit-to-branch,porthole-check,biscuit-check,gitleaks
       - run: pre-commit run complexity --all-files --hook-stage pre-push
+      - run: pre-commit gc  # drop envs of bumped-away hook revisions before the cache is saved
 
   porthole:
     name: Porthole
@@ -93,12 +108,21 @@ jobs:
           files: apps/porthole/build/coverage/coverage.xml
           flags: porthole
       - if: needs.static.outputs.porthole-firmware == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: pio
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', 'apps/porthole/platformio.ini') }}
+          key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # shared by every app: toolchains come from the platform pin
       - if: needs.static.outputs.porthole-firmware == 'true'
         run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
+      - if: needs.static.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+        name: Prune the PlatformIO cache before saving it (main only)
+        run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
+      - if: needs.static.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.platformio
+          key: ${{ steps.pio.outputs.cache-primary-key }}
 
   biscuit:
     name: Biscuit
@@ -129,12 +153,21 @@ jobs:
         with:
           python-version: "3.11"
       - if: needs.static.outputs.biscuit-firmware == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: pio
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*', 'apps/biscuit/firmware/platformio.ini') }}
+          key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # same key as the porthole job
       - if: needs.static.outputs.biscuit-firmware == 'true'
         run: pip install -r platform/requirements.txt && make -C apps/biscuit firmware firmware-test
+      - if: needs.static.outputs.biscuit-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+        name: Prune the PlatformIO cache before saving it (main only)
+        run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
+      - if: needs.static.outputs.biscuit-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.platformio
+          key: ${{ steps.pio.outputs.cache-primary-key }}
 
   # The only check branch protection requires. Skipped jobs (nothing changed) count as passing.
   required-checks:
