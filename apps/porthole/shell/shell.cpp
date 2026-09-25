@@ -32,13 +32,15 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
-  (this->*UPDATE[screen_])();
+  const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
+  (this->*fn)();
 }
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
     &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
-  (this->*DRAW[screen_])();
+  const ScreenFn fn = DRAW[screen_];     // see update()
+  (this->*fn)();
   bool pinScreen = screen_ >= SH_PIN_SET && screen_ <= SH_PIN;   // drawPin shows its messages in the prompt line
   if (ms_ < toastUntil_ && !pinScreen) ui::toast(toast_);
 }
