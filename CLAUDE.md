@@ -12,6 +12,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 | `apps/pets-club/` | Pets Club: pixel dog, up to three kids per device, tricks, stories, spelling. C++ core + host simulator + browser emulator. Its own brief: `apps/pets-club/CLAUDE.md`. |
 | `apps/biscuit/` | Biscuit: story dog with branching mysteries and illustrated discoveries. Browser game (plain JS) + LVGL firmware in `firmware/`. See `apps/biscuit/README.md` and `apps/biscuit/firmware/README.md`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
+| `site/`, `tools/build_site.py` | The web installer on GitHub Pages (`https://dreamiurg.net/porthole/`), built from each app's latest release and its `app.json`. ESP Web Tools does the flashing. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract). |
 | `.claude/` | Agent roster and skills. They currently target Pets Club; paths inside them are `apps/pets-club/...`. |

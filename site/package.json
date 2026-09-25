@@ -1,0 +1,8 @@
+{
+  "name": "porthole-site",
+  "private": true,
+  "description": "Web installer page. esp-web-tools is copied into the site at build time by tools/build_site.py.",
+  "dependencies": {
+    "esp-web-tools": "10.4.0"
+  }
+}

@@ -53,6 +53,8 @@ can see a week of play in a minute.
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
 hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits.
 
+The easiest way to put it on a board is the [web installer](https://dreamiurg.net/porthole/): open it in Chrome or Edge, plug the board in, press Install.
+
 ## Build and flash
 
 Needs [PlatformIO](https://platformio.org/). The board config is shared across the monorepo

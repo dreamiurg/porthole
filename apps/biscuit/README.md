@@ -11,6 +11,8 @@ The same game runs in two places:
 - **In a browser**: plain HTML/CSS/JavaScript, no install beyond Node.
 - **On the Waveshare ESP32-S3-Touch-LCD-2.1**: native firmware in [`firmware/`](firmware/README.md), fully offline, every control on the screen.
 
+The easiest way to put it on a board is the [web installer](https://dreamiurg.net/porthole/): open it in Chrome or Edge, plug the board in, press Install.
+
 ## Play in the browser
 
 Needs Node.js 22 or newer.

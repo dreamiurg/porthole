@@ -17,6 +17,8 @@ New apps land here as they get made. Fork it, play with them, build your own.
 
 ## Apps
 
+**[Install a game from your browser](https://dreamiurg.net/porthole/)**, no tools needed.
+
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
 | [Pets Club](#pets-club) | Pixel puppy that grows over real days, learns tricks and gets read to. Up to three kids per device. | Browser emulator |
@@ -72,11 +74,15 @@ make flash APP=biscuit PORT=/dev/ttyUSB0
 make monitor
 ```
 
-**No toolchain?** Each release attaches `<app>-<version>-factory.bin`. Open
-[esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge,
-connect the board and write the file at address `0x0`. A factory image is for a
-fresh install: it also clears the app's saved progress. To update a board
-without losing saves, use `make flash`.
+### Install from the browser
+
+The easiest way needs no tools at all: open **[the web installer](https://dreamiurg.net/porthole/)**
+in Chrome or Edge, plug the board in over USB-C, and press Install on a game.
+Updates keep saved progress. Biscuit can also be played right there in the browser.
+
+Each release also attaches `<app>-<version>-factory.bin`, a single image you can
+write at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/).
+It is meant for fresh installs and clears the app's saved progress.
 
 ## Make your own app
 
