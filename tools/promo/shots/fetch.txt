@@ -1,0 +1,32 @@
+newgame Sam Biscuit
+rec off
+wait 2400
+rec on
+caption No buttons. Just a round screen.
+wait 800
+tap 66 129
+wait 600
+caption Fetch: slide to catch the bones
+tap 80 60
+wait 700
+down 20 124
+repeat 3
+move 20 124
+wait 400
+move 50 124
+wait 400
+move 80 124
+wait 400
+move 110 124
+wait 400
+move 140 124
+wait 400
+move 110 124
+wait 400
+move 80 124
+wait 400
+move 50 124
+wait 400
+end
+up
+wait 1500
