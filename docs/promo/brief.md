@@ -148,14 +148,15 @@ No AI-generated music, no AI voice, per constraints. Music first, then cut to it
 
 ## 8. Phone footage and the seam
 
-The author's real-device clips (hands only) are the "photo" that made the Pokeball post work. Plan
-for them now; the rendered cut must also stand alone.
+The author's real-device clips are the "photo" that made the Pokeball post work. Plan for them now;
+the rendered cut must also stand alone. Hard rule: the kids never appear, not even their hands. Only
+the author's own hands (and, if he chooses, his face).
 
 Reserved slots, in priority order:
 1. Before beat 1, 1.5-2 s: the gadget on a table, a thumb taps it awake. Optional. If used, it
    becomes the first frame, and the case decides the bezel color.
-2. Replacing or extending beat 6, 3 s: one hand passes the gadget to another hand. Says "four
-   kids, one board" better than the picker does.
+2. Extending beat 6, 3 s: the author's hand sets the puck down on a shelf or charging spot at
+   "Back tomorrow!". No second hand: nobody else is ever in frame.
 3. Inside beat 4, 2 s: a hand turning a story page. Only if the shot is clean; text on a phone
    camera at feed size is usually mush.
 
@@ -170,7 +171,7 @@ Seam rules so the two sources cut together:
 - Music does not change at the seam; the phone clips are silent.
 - Phone clips at the rendered frame's scale: the screen's circle should occupy roughly the same
   fraction of the frame in both. Crop the phone clip, don't scale the render.
-- No kids' faces, no names on screen that are real. Profile names in the render are invented.
+- No kids on camera at all (faces or hands), no real names on screen. Profile names are invented.
 
 ## 9. Deliverables
 
@@ -206,7 +207,7 @@ r/tamagotchi
 r/daddit
 - Looks like another screen for kids. Fix: the daily cap and "Back tomorrow!" must be in the
   video, not just the post; the title is about reading to a dog, not about ESP32 anything.
-- Any kid's face or real name is a hard failure. Invented profile names only.
+- Any kid on camera (face or hands) or a real name is a hard failure. Invented profile names only.
 - The AI line lands either way here; keep it to one sentence and make it about the kids asking for
   changes and watching them appear.
 
