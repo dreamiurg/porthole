@@ -38,7 +38,7 @@ expect-screen pin_set
 ui-check
 snap 05_pin_set
 # skip the secret code
-tap 138 82
+tap 80 145
 wait 450
 expect-screen launcher
 ui-check

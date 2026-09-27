@@ -10,18 +10,17 @@ profile Ava 7
 tap 80 32
 wait 450
 expect-screen picker
-# 1a: Kai's code row, slow double tap (second press 220 ms after the first lifts), then 1234 + OK opens Kai
+# 1a: Kai's code row, slow double tap (second press 220 ms after the first lifts), then 1234 opens Kai
 tap 80 67
 wait 220
 tap 80 67
 wait 450
 expect-screen pin
-tap 54 61
-tap 78 61
-tap 102 61
-tap 54 81
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 expect profile=1/3
 # 1b: Kai double-taps his own header slowly: the picker, not Sam's launcher

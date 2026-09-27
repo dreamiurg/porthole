@@ -30,7 +30,6 @@ class Shell {
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST, SH_APP };
-  enum Key : uint8_t { KEY_NONE, KEY_SKIP, KEY_OK };
 
   shell::Store* st_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
@@ -43,7 +42,7 @@ class Shell {
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
   shell::Record draft_{};                          // the profile being created
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
-  char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0;
+  char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0, pinMs_ = 0;   // pinMs_: the last digit
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   uint32_t lastTouchMs_ = 0;                       // idle (shell::IDLE_MS without a touch) is not play time
   Screen screen_ = SH_PICK;
@@ -68,7 +67,7 @@ class Shell {
   void closeApp();
   void flushApp(bool allowed);
   void budgetTick();
-  Key keypad(bool canSkip);
+  void submitPin();
   // screens
   void updatePick(); void drawPick();
   void updateName(); void drawName();

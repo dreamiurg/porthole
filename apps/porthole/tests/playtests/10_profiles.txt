@@ -14,7 +14,7 @@ tap 34 57
 wait 450
 tap 37 101
 wait 450
-tap 138 82
+tap 80 145
 wait 450
 expect-screen launcher
 expect profile=0/1
@@ -56,33 +56,32 @@ wait 450
 tap 79 69
 wait 450
 expect-screen pin_set
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+# no OK: the fourth digit stays on show a moment, then the code moves on by itself
+wait 200
+expect-screen pin_set
+wait 700
 expect-screen pin_again
 ui-check
-tap 54 59
-tap 54 59
-tap 54 59
-tap 54 59
-tap 102 121
-wait 450
+tap 41 62
+tap 41 62
+tap 41 62
+tap 41 62
+wait 900
 expect-screen pin_set
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 expect profile=1/2
 # the mute switch, on and off again
@@ -111,23 +110,21 @@ expect-screen picker
 tap 80 67
 wait 450
 # wrong code 1111: stays, shakes
-tap 54 59
-tap 54 59
-tap 54 59
-tap 54 59
-tap 102 121
-wait 450
+tap 41 62
+tap 41 62
+tap 41 62
+tap 41 62
+wait 900
 expect-screen pin
 expect profile=-1/3
 ui-check pin-wrong
 snap 04_wrong_code
 wait 1000
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 expect profile=1/3
 # Kai has no pup yet: the parcel, and the home button backs out of the adoption
@@ -175,12 +172,11 @@ wait 450
 expect-screen picker
 tap 80 67
 wait 450
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen rest
 tap 80 132
 wait 450
@@ -202,12 +198,11 @@ tap 80 32
 wait 450
 tap 80 67
 wait 450
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 expect profile=1/3
 expect rest=0
