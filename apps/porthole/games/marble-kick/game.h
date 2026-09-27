@@ -1,8 +1,9 @@
 // Marble Kick: a wooden labyrinth toy seen from above, a felt pitch inside. Tilt the device and the ball rolls; roll it
 // past the pegs into the goal cut into the rim. Tilt is the only control: during play a brush of the glass does
-// nothing, and leaving takes holding the home knob. Nothing punishes: no timer, no holes, no lives; a level is only not
-// finished yet. Runs as an App in the Porthole shell, all on the RGB565 surface. Rules: physics.h, levels.h, tune.h;
-// save: save.h; look: render.h. Design: docs/superpowers/specs/2026-09-27-marble-kick-design.md.
+// nothing, and leaving takes holding the home knob. Nothing punishes: no timer, no lives; a hole only sends the ball
+// back to the start; a level is only not finished yet. Runs as an App in the Porthole shell, all on the RGB565 surface.
+// Rules: physics.h, levels.h, tune.h; save: save.h; look: render.h.
+// Design: docs/superpowers/specs/2026-09-27-marble-kick-design.md.
 #pragma once
 #include <stdint.h>
 #include "app.h"

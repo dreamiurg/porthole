@@ -23,8 +23,13 @@ no other screen time.
 - **Tilt is the only control in slices 1-2.** One tap arrives in slice 3 as a short kick, and never more than one.
   Difficulty grows from the pegs, never from the controls.
 - **Neutral is how the kid holds the device.** The Calibrate page records the resting angle before each session.
-- **Nothing punishes.** No timer, no holes, no lives, nothing takes the ball away. A peg only nudges the ball. A
-  level is never failed, only not finished yet.
+- **A puzzle, not a funnel.** Playing the first build showed that tilting straight at the goal and waiting won every
+  level. From level 3 on a greedy tilt at the goal must not score: walls and cups make the kid go round, holes sit
+  on the straight line, and a keeper and a moving goal want timing. Three optional stars per level reward the long
+  way round.
+- **Nothing punishes.** No timer, no lives, no score. A peg only nudges the ball; a hole sinks it and puts it back
+  at the level's start a second later, keeping the stars already picked up. A level is never failed, only not
+  finished yet.
 - **Its own look (root rule 7):** walnut rim, maple tray, green felt, red lacquered pegs, brass goalposts, wooden
   letter blocks for the few words. Drawn on the RGB565 surface in its own flat colors, sharing nothing with Pets Club, Biscuit or
   Tilt FC.
@@ -47,7 +52,8 @@ stateDiagram-v2
 - **Calibrate page:** "Hold me how you like, then tap." A bubble shows the current tilt so the kid sees it move.
 - **Play page:** the tray, the pegs, the ball, the level number on a brass coin, the back button.
 - **Goal page:** flags, "GOAL!", then the next level. Slice 4 adds a sticker here.
-- **Done page:** shown after the last level of the current set: "You did them all!" (no score), tap to replay.
+- **Done page:** shown after the last level: confetti, then a coin per level with its best stars; a coin replays
+  that level.
 - Slice 3 adds a **Levels page** so the kid can replay any level already reached.
 
 ## Physics
@@ -69,18 +75,13 @@ cannot tunnel through a peg.
 
 ## Levels
 
-A level is a constant table: ball start, goal gap (angle and width), pegs `{x, y, r, motion}` where motion is
-`NONE`, `LINE(a, b, period)` or `DRIFT(speed)` (drift slowly toward the ball, slice 3). Slice 1 ships six static
-levels:
+A level is a constant table: ball start, goal width and motion (`FIXED`, `SPIN` turning back every period, or
+`SWING` between two angles), pegs (static, a defender pacing a line, or the keeper across the mouth), rails
+(capsule walls), holes, three stars and a recorded solution. Twelve levels ship, ramped: 1-2 teach tilting, 3-4 walls
+and detours (the first hole), 5-6 defenders, 7-8 the keeper and a swinging goal, 9-12 everything together. The level
+list, geometry rules and per-level greedy results live in `games/marble-kick/CLAUDE.md` and `levels.h`.
 
-1. empty pitch, just roll the ball in;
-2. one peg in the way;
-3. two pegs;
-4. a wall of three pegs with a gap;
-5. pegs guarding the goal mouth;
-6. a slalom.
-
-Slice 3 adds moving and drifting pegs and a one-tap kick, for 12+ levels in total.
+Slice 3 adds drifting pegs, the one-tap kick and a Levels page.
 
 ## Architecture
 
@@ -128,7 +129,7 @@ Each slice is playable end to end, has its own PR, and ends with `make ci` green
 | --- | --- | --- | --- |
 | 1. Roll | The game registered; Calibrate, Play, Goal and Done pages; 6 static levels; level reached saved | emulator | feature, 2-3 days |
 | 2. On the board | Settle the x/y axis mapping with one physical tilt; tune dead zone, acceleration and friction on the real device in its case; the kid plays it | device (shared with the Sand Jar session) | story, 1 day plus tuning |
-| 3. Harder | moving and drifting pegs, the one-tap kick, 12+ levels, Levels page | emulator, then device | feature, 2-3 days |
+| 3. Harder | drifting pegs, the one-tap kick, Levels page (walls, holes, defenders, keeper, moving goals, stars and 12 levels landed early, after the first play felt too easy) | emulator, then device | feature, 1-2 days |
 | 4. Together | best-run ghost, a level made for someone else, stickers | emulator, then device | feature, 2-4 days |
 
 Slice 2 is the real test of the idea: if tilt feels bad in the case,
@@ -162,4 +163,4 @@ we learn it here, before Tilt FC.
 
 ## Out of scope
 
-Holes, timers, lives, scores, levels that can be failed, network, and anything that makes time away cost something.
+Timers, lives, scores, levels that can be failed, network, and anything that makes time away cost something.

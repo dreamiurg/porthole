@@ -1,6 +1,7 @@
-// Marble Kick's save: the highest level reached. Persisted as a raw blob per profile (marblekick/s<id>, written by the
-// shell). Append-only from this first version: a new field goes right before crc (its zero must be a sensible
-// default, loadBlob zero-fills it for older blobs), SAVE_VERSION goes up, nothing is reordered or resized.
+// Marble Kick's save: the level to play next and the best stars per level. Persisted as a raw blob per profile
+// (marblekick/s<id>, written by the shell). Append-only from this first version: a new field goes right before crc (its
+// zero must be a sensible default, loadBlob zero-fills it for older blobs), SAVE_VERSION goes up, nothing is reordered
+// or resized.
 // Header-only, like Biscuit's pet.h.
 //
 // A downgrade loses progress: once a later version appends a field, an older firmware sees a blob bigger than its Save
