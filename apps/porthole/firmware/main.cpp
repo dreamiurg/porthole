@@ -24,7 +24,7 @@ static NvsStore g_store;
 static Shell g_shell;
 static InputTracker g_input;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
-static uint32_t g_lastTouchMs = 0;
+static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
@@ -81,13 +81,13 @@ void setup() {
   }
   g_bootLocalEpoch = now; g_bootMillis = millis();
   Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
-  g_lastTouchMs = millis();
+  g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control).
-static const uint32_t DIM_MS = 60000;   // first dim step; the same minute as shell::IDLE_MS today, not the same rule
+static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and activity rule as shell::IDLE_MS
 static void dimWhenIdle(uint32_t ms) {
-  uint32_t idle = ms - g_lastTouchMs;
+  uint32_t idle = g_activity.idleMs(ms);
   uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
 }
@@ -186,14 +186,13 @@ void loop() {
     if (!t.down) g_fake.on = false;
   }
   static bool swallow = false;  // the touch that wakes a dark screen is not a game input, until released
-  if (t.down) {
-    if (g_backlight == 0) swallow = true;
-    g_lastTouchMs = ms;
-  } else swallow = false;
+  if (!t.down) swallow = false;
+  else if (g_backlight == 0) swallow = true;
   Input in = g_input.step(t.down && !swallow, t.x / 3, t.y / 3, ms);
   if (in.pressed && g_touchLog) Serial.printf("[touch] %d,%d\n", t.x, t.y);
   if (!g_gravFake) board::readAccel(g_grav[0], g_grav[1], g_grav[2]);   // keeps the last good value on a failed read
   in.gx = g_grav[0]; in.gy = g_grav[1]; in.gz = g_grav[2];
+  g_activity.step(in, t.down, ms);   // picking up a dark board lights it; only a touch gets swallowed
   uint32_t t1 = micros();
   g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
   uint32_t t2 = micros();

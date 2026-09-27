@@ -1,6 +1,6 @@
 # The daily cap: 25 minutes of play a day per profile, across every game, even alone on the device. Used up, the
 # rest screen says "Back tomorrow" with no countdown, the picker sends the kid back to it, and after local midnight
-# the same kid gets in again. A minute without a touch is not play.
+# the same kid gets in again. A minute without a touch (the board lying still) is not play.
 newgame Solo Rex
 wait 2400
 expect-screen home

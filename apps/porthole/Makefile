@@ -22,7 +22,7 @@ SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
-test_shell_SRC := shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
