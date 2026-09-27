@@ -165,7 +165,8 @@ void Game::tick() {
   const uint32_t dt = ms_ - lastMs_;
   acc_ += dt; lastMs_ = ms_;
   if (dt > LATE_MS) slowUntil_ = ms_ + SLOW_MS;
-  const int most = (int32_t)(slowUntil_ - ms_) > 0 ? 1 : MAX_STEPS;
+  if ((int32_t)(slowUntil_ - ms_) <= 0) slowUntil_ = ms_;   // kept at "now" once passed, so 2^31 ms later it can't read as future
+  const int most = slowUntil_ != ms_ ? 1 : MAX_STEPS;
   int steps = (int)(acc_ / STEP_MS);
   if (steps > most) { steps = most; acc_ = 0; } else acc_ -= (uint32_t)steps * STEP_MS;
   if (!steps) return;
