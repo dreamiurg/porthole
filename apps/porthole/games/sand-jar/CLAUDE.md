@@ -33,11 +33,11 @@ reserved all the same), no clock, no personal data.
   cells); `occ[]` holds each cell's grain index + 1, or `EMPTY`, `WALL` (outside the glass), `FINGER`. Grain position
   and velocity are 8.8 fixed point (`uint16_t`/`int16_t`); a look byte packs kind (sand, water, bubble), shade and
   tone. Orbits' bodies are floats in panel px. The grains and (Orbits) the bodies plus the renderer's trail light share
-  one union: the whole Jar is ~150 KB and must stay in the board's internal RAM (random access in PSRAM is ~14x
+  one union: the whole Jar is ~153 KB and must stay in the board's internal RAM (random access in PSRAM is ~14x
   slower), so it is a member of the static game object, never heap.
 - `game.h` / `game.cpp` (`class Game`, `namespace sandjar`): App plumbing, the motion sensor (`Input::gx/gy/gz`), the
   touch, the physics clock, and the renderer.
-- In `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`. On the board the game object (~163 KB, the Jar in it) is
+- In `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`. On the board the game object (~166 KB, the Jar in it) is
   static in internal RAM, the two `seen_` histories are `new`ed once and land in PSRAM (the heap puts blocks over 4 KB
   there), and both files build at `-O2` (a `#pragma`, board only: the firmware is `-Os`).
 - `tools/icon.py` -> `generated/icon.h`: the launcher icon (32x32 indexed, a jar of sand), `--check` in `make lint`.

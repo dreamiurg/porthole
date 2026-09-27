@@ -320,10 +320,7 @@ void Game::drawModes(bool modeDown) const {
   }
 }
 
-const char* Game::screenName() const {
-  static const char* N[] = {"sandjar_jar"};
-  return N[0];
-}
+const char* Game::screenName() const { return "sandjar_jar"; }
 void Game::debugPrint() {
   int kinds[3] = {};
   if (jar_.mode != MODE_ORBITS) for (int i = 0; i < jar_.n; i++) kinds[kindOf(jar_.g.look[i])]++;

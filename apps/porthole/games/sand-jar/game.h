@@ -46,7 +46,7 @@ class Game : public App {
   static constexpr int BG_N = 802;   // background rings: (2dx)^2 + (2dy)^2 >> 5 from the middle, the last one black
   struct Shine { uint16_t cell; uint8_t add; };
 
-  Jar jar_;                       // ~150 KB: the game object is static, so this stays in internal RAM
+  Jar jar_;                       // ~153 KB: the game object is static, so this stays in internal RAM
   Seen seen_[2] = {};
   int nextSeen_ = 0;
   bool started_ = false, wantsHome_ = false;
