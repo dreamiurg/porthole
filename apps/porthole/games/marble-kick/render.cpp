@@ -21,7 +21,8 @@ constexpr Shades makeShades() {
   return s;
 }
 constexpr Shades SHADES = makeShades();
-constexpr uint16_t BRASS = c565(0xD9A441), BRASS_DARK = c565(0xA67A24), BRASS_HI = c565(0xF2CF7A);
+constexpr uint32_t BRASS_RGB = 0xD9A441;
+constexpr uint16_t BRASS = c565(BRASS_RGB), BRASS_DARK = c565(0xA67A24), BRASS_HI = c565(0xF2CF7A);
 constexpr uint16_t PEG = c565(0xB5452F), PEG_HI = c565(0xD8664B), PEG_DARK = c565(0x86301F), SHINE = c565(0xF6E3C8);
 constexpr uint16_t BALL = c565(0xF7F2E6), BALL_EDGE = c565(0xC9BFA8), PENT = c565(0x2A2420), WHITE = c565(0xFFFFFF);
 constexpr uint16_t LIQUID = c565(0xD4E2A0), LIQUID_DARK = c565(0xA7BA72), BUBBLE = c565(0xFBFBF1), BUBBLE_EDGE = c565(0x9FB36A);
@@ -76,13 +77,13 @@ void poly(const int* p, int n, uint16_t c) {
     if (r >= l) span(y, (int)lroundf(l), (int)lroundf(r) + 1, c);
   }
 }
-void roundBox(int x, int y, int w, int h, int r, uint16_t c) {
-  int y0 = y, y1 = y + h;
+void roundBox(const Box& b, int r, uint16_t c) {
+  int y0 = b.y0, y1 = b.y1;
   rows(y0, y1);
-  for (int yy = y0; yy < y1; yy++) {
-    const int k = yy - y < r ? r - (yy - y) : yy - (y + h - 1 - r) > 0 ? yy - (y + h - 1 - r) : 0;   // rows into a corner
+  for (int y = y0; y < y1; y++) {
+    const int k = y - b.y0 < r ? r - (y - b.y0) : y - (b.y1 - 1 - r) > 0 ? y - (b.y1 - 1 - r) : 0;   // rows into a corner
     const int in = k ? r - isqrt(r * r - k * k) : 0;
-    span(yy, x + in, x + w - in, c);
+    span(y, b.x0 + in, b.x1 - in, c);
   }
 }
 
@@ -91,30 +92,34 @@ uint16_t felt(int y, int ring, bool shade) {
   const int m = line ? CHALK : (y / 40) % 2 ? FELT_B : FELT_A;
   return SHADES.c[m][shade || ring == WALL_SHADE];
 }
-// One run of one ring's material. In the rim above the middle, the goal's mouth shows the net instead.
-void fill(int y, int x0, int x1, int ring, bool shade, int goalHalf) {
+// A row of the tray being painted: lit or in shade, and how wide the goal's mouth is.
+struct Row { int y; bool shade; int goalHalf; };
+void net(const Row& row, int x0, int x1) {   // the goal's net: a 9 px mesh
   if (x0 < clip_.x0) x0 = clip_.x0;
   if (x1 > clip_.x1) x1 = clip_.x1;
-  if (x1 <= x0) return;
-  const Ring& g = RINGS[ring];
-  if (g.mat < 0) { span(y, x0, x1, felt(y, g.mat, shade)); return; }
-  const int gl = 240 - goalHalf, gr = 240 + goalHalf;
-  if (g.r <= PITCH_R || y >= 240 || x1 <= gl || x0 >= gr) { span(y, x0, x1, SHADES.c[g.mat][shade]); return; }
-  if (x0 < gl) span(y, x0, gl, SHADES.c[g.mat][shade]);
-  if (x1 > gr) span(y, gr, x1, SHADES.c[g.mat][shade]);
-  const bool rowLine = y % 9 == 0;
-  for (int x = x0 > gl ? x0 : gl; x < (x1 < gr ? x1 : gr); x++)   // the net: a 9 px mesh
-    gfx565::pixel(x, y, SHADES.c[rowLine || (x - 240 + 900) % 9 == 0 ? NET_LINE : NET][shade]);
+  const bool line = row.y % 9 == 0;
+  for (int x = x0; x < x1; x++) gfx565::pixel(x, row.y, SHADES.c[line || (x - 240 + 900) % 9 == 0 ? NET_LINE : NET][row.shade]);
 }
-// The tray along row y from x0 to x1: each ring's part of the row, left and right of the next ring in, never twice.
-void trayRow(int y, int x0, int x1, bool shade, int goalHalf) {
-  const int dy = y - 240;
+// One run of one ring's material, x1 exclusive. In the rim above the middle, the goal's mouth shows the net instead.
+void fill(const Row& row, int x0, int x1, int ring) {
+  const Ring& g = RINGS[ring];
+  if (g.mat < 0) { span(row.y, x0, x1, felt(row.y, g.mat, row.shade)); return; }
+  const uint16_t c = SHADES.c[g.mat][row.shade];
+  const int gl = 240 - row.goalHalf, gr = 240 + row.goalHalf;
+  if (g.r <= PITCH_R || row.y >= 240 || x1 <= gl || x0 >= gr) { span(row.y, x0, x1, c); return; }
+  span(row.y, x0, gl, c);
+  span(row.y, gr, x1, c);
+  net(row, x0 > gl ? x0 : gl, x1 < gr ? x1 : gr);
+}
+// The tray along a row from x0 to x1: each ring's part of the row, left and right of the next ring in, never twice.
+void trayRow(const Row& row, int x0, int x1) {
+  const int dy = row.y - 240;
   int h = 1000;
   for (int i = 0; i < NRINGS; i++) {
     const int in = i + 1 < NRINGS ? isqrt(RINGS[i + 1].r * RINGS[i + 1].r - dy * dy - 1) : -1;
-    if (in < 0) { fill(y, x0 > 240 - h ? x0 : 240 - h, x1 < 241 + h ? x1 : 241 + h, i, shade, goalHalf); return; }
-    fill(y, x0 > 240 - h ? x0 : 240 - h, x1 < 240 - in ? x1 : 240 - in, i, shade, goalHalf);
-    fill(y, x0 > 241 + in ? x0 : 241 + in, x1 < 241 + h ? x1 : 241 + h, i, shade, goalHalf);
+    if (in < 0) { fill(row, x0 > 240 - h ? x0 : 240 - h, x1 < 241 + h ? x1 : 241 + h, i); return; }
+    fill(row, x0 > 240 - h ? x0 : 240 - h, x1 < 240 - in ? x1 : 240 - in, i);
+    fill(row, x0 > 241 + in ? x0 : 241 + in, x1 < 241 + h ? x1 : 241 + h, i);
     h = in;
   }
 }
@@ -132,17 +137,20 @@ const Glyph* glyph(char c) {
   for (const Glyph& g : GLYPHS) if (g.c == c) return &g;
   return nullptr;
 }
-// The audit's view of a glyph (gfx::textLog, logical px): its ink box, the ink and the face it sits on.
-void logText(int x, int y, int w, int h, uint32_t ink, uint32_t bg) {
+// How a glyph is drawn: its cell size in px, its ink, and the face under it (both RGB888, for the UI audit).
+struct Pen { int cell; uint32_t ink, bg; };
+// The audit's view of a glyph (gfx::textLog, logical px, rounded outward): its ink box and colors.
+void logText(const Box& b, const Pen& p) {
   if (!gfx::textLogEnabled || gfx::textLogCount >= (int)(sizeof gfx::textLog / sizeof *gfx::textLog)) return;
-  gfx::textLog[gfx::textLogCount++] = {(int16_t)(x / 3), (int16_t)(y / 3), (int16_t)((x + w + 2) / 3 - x / 3),
-                                       (int16_t)((y + h + 2) / 3 - y / 3), ink, bg, true};
+  gfx::textLog[gfx::textLogCount++] = {(int16_t)(b.x0 / 3), (int16_t)(b.y0 / 3), (int16_t)((b.x1 + 2) / 3 - b.x0 / 3),
+                                       (int16_t)((b.y1 + 2) / 3 - b.y0 / 3), p.ink, p.bg, true};
 }
-void drawGlyph(const Glyph& g, int x, int y, int cell, uint32_t ink, uint32_t bg) {
+void drawGlyph(const Glyph& g, int x, int y, const Pen& p) {
+  const int s = p.cell;
   for (int r = 0; r < 7; r++)
     for (int c = 0; c < 5; c++)
-      if (g.rows[r] >> (4 - c) & 1) roundBox(x + c * cell, y + r * cell, cell, cell, 0, c565(ink));
-  logText(x, y, 5 * cell, 7 * cell, ink, bg);
+      if (g.rows[r] >> (4 - c) & 1) roundBox({x + c * s, y + r * s, x + c * s + s, y + r * s + s}, 0, c565(p.ink));
+  logText({x, y, x + 5 * s, y + 7 * s}, p);
 }
 }  // namespace
 
@@ -156,7 +164,7 @@ void clip(const Box& b) {
 }
 
 void tray(int goalHalf) {
-  for (int y = clip_.y0; y < clip_.y1; y++) trayRow(y, clip_.x0, clip_.x1, false, goalHalf);
+  for (int y = clip_.y0; y < clip_.y1; y++) trayRow({y, false, goalHalf}, clip_.x0, clip_.x1);
 }
 void shadow(int x, int y, int r, int goalHalf) {
   const int cx = x + SHADOW_DX, cy = y + SHADOW_DY;
@@ -164,7 +172,7 @@ void shadow(int x, int y, int r, int goalHalf) {
   rows(y0, y1);
   for (int yy = y0; yy < y1; yy++) {
     const int h = isqrt(r * r + r - (yy - cy) * (yy - cy));
-    trayRow(yy, cx - h < clip_.x0 ? clip_.x0 : cx - h, cx + h + 1 > clip_.x1 ? clip_.x1 : cx + h + 1, true, goalHalf);
+    trayRow({yy, true, goalHalf}, cx - h < clip_.x0 ? clip_.x0 : cx - h, cx + h + 1 > clip_.x1 ? clip_.x1 : cx + h + 1);
   }
 }
 void peg(int x, int y, int r) {
@@ -202,8 +210,8 @@ void coin(int x, int y, int number) {
   const int cell = 4, digits = number >= 10 ? 2 : 1, w = digits * 5 * cell + (digits - 1) * cell;
   const Glyph* tens = glyph((char)('0' + number / 10 % 10));
   const Glyph* ones = glyph((char)('0' + number % 10));
-  if (digits == 2) drawGlyph(*tens, x - w / 2, y - 14, cell, INK_RGB[0], 0xD9A441);
-  drawGlyph(*ones, x + w / 2 - 5 * cell, y - 14, cell, INK_RGB[0], 0xD9A441);
+  if (digits == 2) drawGlyph(*tens, x - w / 2, y - 14, {cell, INK_RGB[0], BRASS_RGB});
+  drawGlyph(*ones, x + w / 2 - 5 * cell, y - 14, {cell, INK_RGB[0], BRASS_RGB});
 }
 void playButton(int x, int y) {
   disc(x, y, 40, PEG_DARK);
@@ -241,9 +249,9 @@ void blocks(const char* s, int x, int y, int cell) {
   for (int i = 0; i < n; i++, bx += w + gap) {
     const Glyph* g = glyph(s[i]);
     if (!g) continue;
-    roundBox(bx, y + cell, w, 7 * cell + 2 * cell, cell * 2, SIDE);   // the block's side, below its face
-    roundBox(bx, y, w, 7 * cell + 2 * cell, cell * 2, FACE);
-    drawGlyph(*g, bx + cell, y + cell, cell, INK_RGB[i % 3], FACE_RGB);
+    roundBox({bx, y + cell, bx + w, y + 10 * cell}, cell * 2, SIDE);   // the block's side, below its face
+    roundBox({bx, y, bx + w, y + 9 * cell}, cell * 2, FACE);
+    drawGlyph(*g, bx + cell, y + cell, {cell, INK_RGB[i % 3], FACE_RGB});
   }
 }
 }  // namespace marble::paint
