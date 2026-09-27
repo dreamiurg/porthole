@@ -212,7 +212,8 @@ uint16_t Game::grain(int i, int c, int ring) const {
   if (kindOf(look) != SAND) return water(i, c, ring);
   const float sp = sqrtf(Jar::vel(jar_.g.vx[i]) * Jar::vel(jar_.g.vx[i]) + Jar::vel(jar_.g.vy[i]) * Jar::vel(jar_.g.vy[i])) / F;
   if (sp > 0.5f && (i * 7 + jar_.frame) % 19 == 0) return rgb(0xfff6dc);
-  const Rgb& p = (jar_.mode == MODE_RAINBOW ? STRATA : SANDS)[shadeOf(look)];
+  const Rgb* palette = jar_.mode == MODE_RAINBOW ? STRATA : SANDS;
+  const Rgb& p = palette[shadeOf(look)];
   const int up = jar_.occ[c + upStep_];
   float m = 0.89f + toneOf(look) * (0.22f / 7);
   if (up == EMPTY) m *= 1.2f;
