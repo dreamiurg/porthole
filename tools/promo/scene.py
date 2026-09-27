@@ -28,6 +28,9 @@ R_OUT = 41.6 * MM
 
 # A look = the table, the case plastic, the light. Colours are linear albedo.
 LOOKS: dict[str, dict] = {  # values are mixed: numbers, colours, names
+    "home": dict(  # a kids' playroom by day: window light, real reflections; pair with --table and --case
+        table="dark_wood", tile=4, hdri="empty_play_room", sky=0.9, case=(0.8, 0.8, 0.78), rough=0.55, key=(14, (1.0, 0.98, 0.95)), fill=2, rim=5, screen=1.2
+    ),
     "studio": dict(  # neutral, for comparing materials: pair with --table and --case
         table="concrete_floor_02", tile=3, hdri="studio_small_08", sky=0.45, case=(0.5, 0.5, 0.5), rough=0.55, key=(22, (1.0, 0.97, 0.93)), fill=4, rim=8, screen=1.1
     ),
@@ -70,6 +73,8 @@ a.add_argument("--res", type=int, default=1080)
 a.add_argument("--smooth", action="store_true")  # Biscuit: native 480 art, linear filtering
 a.add_argument("--eevee", action="store_true")  # fast previews
 a.add_argument("--table", help="override the look's table: a Poly Haven texture from fetch.sh, or #rrggbb for seamless paper")
+a.add_argument("--exposure", type=float, default=-0.7, help="EV; the looks were lit bright, -0.7 reads like a real room")
+a.add_argument("--rough", type=float, help="override the case plastic's roughness: ~0.6 matte PLA, ~0.35 satin PETG")
 a.add_argument("--case", help="override the look's case colour, #rrggbb (sRGB, as a filament swatch reads)")
 args = a.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 LOOK = dict(LOOKS[args.look])
@@ -85,6 +90,8 @@ if args.table:
     LOOK["table"] = args.table
 if args.case:
     LOOK["case"] = linear(args.case)
+if args.rough is not None:
+    LOOK["rough"] = args.rough
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
@@ -191,7 +198,7 @@ tex.image_user.frame_duration = len(files)
 tex.image_user.use_auto_refresh = True
 tex.image_user.use_cyclic = True  # loops when the shot outlasts the frames
 emi = nt.nodes.new("ShaderNodeEmission")
-emi.inputs["Strength"].default_value = LOOK["screen"]
+emi.inputs["Strength"].default_value = LOOK["screen"] * 2**-args.exposure  # a lit panel keeps its brightness when the room is darker
 coat = nt.nodes.new("ShaderNodeBsdfPrincipled")
 coat.inputs["Base Color"].default_value = (0.004, 0.004, 0.005, 1)
 coat.inputs["Roughness"].default_value = 0.06
@@ -342,6 +349,7 @@ sc.cycles.use_denoising = True
 sc.render.resolution_x = sc.render.resolution_y = args.res
 sc.render.fps = 25
 sc.view_settings.view_transform = "Khronos PBR Neutral"  # true base colours, soft highlight roll-off
+sc.view_settings.exposure = args.exposure
 sc.frame_start, sc.frame_end = 1, ASSEMBLY_END if args.shot == "assembly" else len(files)
 sc.render.filepath = args.out
 if args.anim:

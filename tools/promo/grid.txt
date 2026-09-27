@@ -1,16 +1,16 @@
-01|#AEBBA3|#5F7B5E|sage on sage (mono)
-02|#E9C9C1|#B5505E|raspberry on blush (mono)
-03|#C3D4E0|#3F5E88|blue on powder blue (mono)
-04|#F1E1A6|#D8A12A|mustard on butter (mono)
-05|red_plaster_weathered|#7E9DB8|dusty blue on terracotta
-06|blue_painted_planks|#E5B22E|yellow on blue planks
-07|dark_wood|#8FA68A|sage on walnut
-08|dark_wood|#EDE6D6|cream on walnut
-09|white_plaster_02|#2B2B2E|charcoal on white plaster
-10|marble_01|#1B1B1D|black on marble
-11|plywood|#E8612C|orange on birch ply
-12|concrete_floor_02|#E57F6B|coral on concrete
-13|leather_white|#AE9CD0|lavender on white leather
-14|painted_plaster_wall|#2E8B88|teal on painted plaster
-15|denim_fabric|#EFE9DF|off-white on denim
-16|brown_leather|#E3D7BF|ivory on tan leather
+01|dark_wood|#F2F0EB|0.6|walnut table, white PLA
+02|dark_wood|#B9BCBE|0.35|walnut table, grey PETG
+03|dark_wood|#9DB09A|0.6|walnut table, sage PLA
+04|dark_wood|#1E1E20|0.3|walnut table, black PETG
+05|wood_table_001|#F2F0EB|0.6|wood table, white PLA
+06|wood_table_001|#B9BCBE|0.35|wood table, grey PETG
+07|wood_table_001|#9DB09A|0.6|wood table, sage PLA
+08|wood_table_001|#1E1E20|0.3|wood table, black PETG
+09|kitchen_wood|#F2F0EB|0.6|kitchen counter, white PLA
+10|kitchen_wood|#B9BCBE|0.35|kitchen counter, grey PETG
+11|kitchen_wood|#9DB09A|0.6|kitchen counter, sage PLA
+12|kitchen_wood|#1E1E20|0.3|kitchen counter, black PETG
+13|#E9E7E2|#F2F0EB|0.6|white desk, white PLA
+14|#E9E7E2|#B9BCBE|0.35|white desk, grey PETG
+15|#E9E7E2|#9DB09A|0.6|white desk, sage PLA
+16|#E9E7E2|#1E1E20|0.3|white desk, black PETG
