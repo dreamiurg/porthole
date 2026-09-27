@@ -1,16 +1,19 @@
 // Self-check for Sand Jar's physics (games/sand-jar/physics.h): the jar keeps every grain, one per cell and all inside
 // the glass; at 0 g nothing at rest moves; water levels out at any angle; a small change of tilt never lifts sand; the
-// finger clears its disc; Orbits' bodies stay on the glass; the same inputs replay the same jar.
+// finger clears its disc; Orbits' bodies stay on the glass; the same inputs replay the same jar. And its renderer
+// (game.cpp): drawing only the cells that changed shows exactly what a full redraw would.
 // Run: make test
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <initializer_list>
+#include "games/sand-jar/game.h"
 #include "games/sand-jar/physics.h"
+#include "gfx565.h"
 
 using namespace sandjar;
-static Jar a, b;   // ~170 KB each: static, like the game's one allocation
+static Jar a, b;   // ~153 KB each: static, like the game's
 
 static int cellOf(const Jar& j, int i) { return (j.g.y[i] >> 8) * G + (j.g.x[i] >> 8); }
 static float along(const Jar& j, int i, float gx, float gy) {   // height below the middle, along gravity (cells)
@@ -201,6 +204,46 @@ static void replays() {
   puts("replay: the same inputs make the same jar");
 }
 
+// The renderer writes a cell only when it differs from what that panel buffer already holds (the buffers alternate,
+// each two frames behind). After frames of flowing sand and water, a moving finger, a shake and a button held down,
+// the buffer on the glass must equal a full redraw of the same state into a fresh buffer, pixel for pixel.
+static sandjar::Game game;
+static uint16_t panel[3][gfx565::W * gfx565::H];   // the panel's two buffers, and a fresh one for the full redraw
+static void matchesFullRedraw(int shown) {   // shown: the buffer the last frame drew into
+  for (uint16_t& p : panel[2]) p = 0xF81F;   // magenta: a pixel the full redraw forgets shows up
+  gfx565::target(panel[2]);
+  game.render();
+  int differ = 0;
+  for (int k = 0; k < gfx565::W * gfx565::H; k++) differ += panel[shown][k] != panel[2][k];
+  assert(differ == 0);
+}
+static void incrementalIsFull() {
+  for (uint16_t* p : {panel[0], panel[1]}) for (int k = 0; k < gfx565::W * gfx565::H; k++) p[k] = 0xF81F;
+  uint32_t ms = 1000;
+  AppEnter e{}; e.ms = ms;
+  game.enter(e);
+  InputTracker touch;
+  for (const char* mode : {"beach", "sand", "rainbow", "orbits"}) {
+    game.debugCmd(mode);
+    for (int f = 0; f < 270; f++) {
+      ms += 34;   // the board's two vsyncs: two physics steps a frame
+      const int t = f % 90, phase = f / 90;
+      // A finger sweeps the jar and lifts; then one holds home and slides off it (no tap). Upright, then tilting to and
+      // fro, then shaken and turned nearly upside down: grains flow under both buttons.
+      const bool down = (t >= 10 && t < 50) || (t >= 52 && t < 70);
+      Input in = t < 50 ? touch.step(down, 30 + 2 * t, 120 - t / 2, ms) : touch.step(down, 80, t < 60 ? 12 : 40, ms);
+      const float deg = phase == 0 ? 0 : phase == 1 ? 50.0f * sinf(f * 0.07f) : 160;
+      in.gx = (int16_t)(1000 * sinf(deg * 3.14159265f / 180)); in.gy = (int16_t)(1000 * cosf(deg * 3.14159265f / 180)); in.gz = 0;
+      if (phase == 2 && t < 4) { in.gx = t & 1 ? 1800 : -1800; in.gz = 900; }
+      game.update(ms / 1000, ms, in);
+      gfx565::target(panel[f & 1]);
+      game.render();
+      if (t == 58 || t == 89) matchesFullRedraw(f & 1);   // home held down, and a while after
+    }
+  }
+  puts("render: drawing only what changed shows what a full redraw does");
+}
+
 int main() {
   filled();
   restsAtZeroG();
@@ -211,6 +254,7 @@ int main() {
   shakeScatters();
   orbitsStayOnGlass();
   replays();
+  incrementalIsFull();
   puts("test_sand_jar: all passed");
   return 0;
 }
