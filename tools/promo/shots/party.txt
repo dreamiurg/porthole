@@ -1,0 +1,48 @@
+# Day 7: the party gift opened, the pup fed and cleaned up, home in its party hat. The hero still.
+rec off
+newgame Sam Pip
+wait 2400
+skip 86400
+wait 600
+skip 86400
+wait 600
+skip 86400
+wait 600
+skip 86400
+wait 600
+tap 80 80
+wait 900
+skip 86400
+wait 600
+skip 86400
+wait 600
+skip 86400
+wait 600
+tap 90 57
+wait 600
+tap 80 80
+wait 700
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+wait 1200
+wait 900
+tap 80 80
+wait 900
+tap 105 108
+wait 900
+tap 40 129
+wait 600
+tap 120 70
+wait 2800
+tap 80 80
+wait 900
+tap 40 129
+wait 600
+tap 40 70
+wait 2800
+wait 900
+rec on
+wait 2000

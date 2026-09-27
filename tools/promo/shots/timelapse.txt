@@ -1,0 +1,41 @@
+newgame Sam Biscuit
+rec off
+wait 2400
+rec on
+caption Day 1
+wait 1400
+caption Day 2
+skip 86400
+wait 700
+caption Day 3
+skip 86400
+wait 700
+caption Day 4
+skip 86400
+wait 700
+caption Day 5
+skip 86400
+wait 1800
+tap 80 80
+wait 700
+caption Day 6
+skip 86400
+wait 500
+caption Day 7
+skip 86400
+wait 500
+caption Day 8
+skip 86400
+wait 500
+caption Day 9
+skip 86400
+wait 500
+caption Day 10
+skip 86400
+wait 500
+caption Day 11
+skip 86400
+wait 2000
+caption It grows up over real days.
+tap 80 80
+wait 2200

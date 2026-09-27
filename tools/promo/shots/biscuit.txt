@@ -1,0 +1,46 @@
+profile Sam 8
+app biscuit
+rec off
+wait 450
+tap 119 125
+wait 450
+rec on
+caption Biscuit: a pup to read with
+wait 1600
+tap 94 129
+wait 900
+tap 80 84
+wait 2000
+tap 108 132
+wait 2000
+rec off
+repeat 10
+tap 108 132
+wait 450
+end
+tap 108 132
+wait 450
+rec on
+caption You pick the ending
+wait 1800
+tap 80 97
+wait 2200
+rec off
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 51 25
+wait 450
+tap 94 129
+wait 450
+rec on
+caption A few new discoveries each day
+tap 106 60
+wait 450
+tap 106 60
+wait 1200
+tap 80 84
+wait 1800
+tap 80 132
+wait 2400
