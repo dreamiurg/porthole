@@ -210,6 +210,11 @@ static void noBallSizedGaps() {
 }
 // The goalposts sit in the wall, clear of the lane a ball rolls along the rim in: a ball pressed to the rim slides
 // past them.
+// Every goal stays clear of the level coin on the rim at the lower right (about 131 degrees): the net never slides under it.
+static void goalsClearOfTheCoin() {
+  for (const Level& l : LEVELS)
+    for (uint32_t ms = 0; ms < 60000; ms += 100) CHECK(fabsf(goalAngle(l, ms) * 180 / 3.14159265f) < 90);
+}
 static void postsClearOfTheRimLane() {
   for (const Level& l : LEVELS)
     for (uint32_t ms = 0; ms < 20000; ms += 1250)
@@ -641,6 +646,7 @@ int main(int argc, char** argv) {
   holesSendBack();
   goalMoves();
   postsClearOfTheRimLane();
+  goalsClearOfTheCoin();
   noParking();
   saveBlob();
   saveMigration();

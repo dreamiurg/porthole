@@ -16,7 +16,8 @@ constexpr int COIN_HX[4] = {41, 67, 93, 119}, COIN_HY[3] = {38, 64, 90}, COIN_HA
 static_assert(NUM_LEVELS <= 12, "the Done page holds twelve coins");
 static_assert(NUM_LEVELS <= STAR_LEVELS, "the save holds stars for every level");
 constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics coordinates are relative to it
-constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 390, COIN_Y = 90;
+// The level's coin sits on the rim at the lower right, where no goal ever turns (they stay between -45 and 60 degrees).
+constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 392, COIN_Y = 376;
 constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves, however the finger wobbles on it
 constexpr uint32_t STEADY_MS = 300;     // the neutral is the average gravity over this long
 constexpr int STEADY_MIN = 800, STEADY_MAX = 1200;   // milli-g: a reading outside is a jolt, not a way of holding it
