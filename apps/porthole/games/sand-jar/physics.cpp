@@ -13,7 +13,6 @@ constexpr float LEN[8] = {1, SQ2, 1, SQ2, 1, SQ2, 1, SQ2};
 // these instead.
 constexpr float INV_LEN[8] = {1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2};
 constexpr float INV_STEPS[5] = {0, 1, 1.0f / 2, 1.0f / 3, 1.0f / 4};   // travel's sub-steps (at most ceil(3.6 * F) = 3)
-constexpr int NEIGHBOR[8] = {1, G + 1, G, G - 1, -1, -G - 1, -G, -G + 1};   // DX/DY as cell offsets
 constexpr float F = 2.0f / 3;          // the prototype's speeds are in its 2 px grains; ours are 3 px
 constexpr float GS = 0.15f * F;        // speed 1 g adds a step
 constexpr float RC = G / 2 - 1.5f;     // the glass's radius in cells
@@ -39,7 +38,11 @@ struct Field {
 struct Mover { int i, c; Kind k; float x, y, ux, uy; };   // a grain being moved: cell, position, velocity
 struct Try { int cx, cy; float tx, ty; };                 // the cell it tried to enter, and where in it
 
-float rnd(Jar& j) { uint32_t s = j.rng; s ^= s << 13; s ^= s >> 17; s ^= s << 5; j.rng = s; return (float)(s >> 8) * (1.0f / 16777216); }
+// rnd, open and pull run per grain or body; the board's compiler kept them as calls, which cost as much as they do.
+[[gnu::always_inline]] inline float rnd(Jar& j) {
+  uint32_t s = j.rng; s ^= s << 13; s ^= s >> 17; s ^= s << 5; j.rng = s;
+  return (float)(s >> 8) * (1.0f / 16777216);
+}
 uint16_t pos16(float v) { return (uint16_t)(v * 256); }
 int16_t vel16(float v) { v *= 256; return (int16_t)(v > 32000 ? 32000 : v < -32000 ? -32000 : v >= 0 ? (int)(v + 0.5f) : -(int)(0.5f - v)); }
 float center(int cell) { return cell + 0.5f; }
@@ -160,7 +163,7 @@ void accelerate(Jar& j, const Field& f, Mover& m) {
 }
 void moveTo(Jar& j, Mover& m, int c) { j.occ[m.c] = EMPTY; j.occ[c] = (int16_t)(m.i + 1); m.c = c; }
 // Where a stopped grain may go: an empty cell, or for sand, now and then, water (it sinks through, and slides under).
-bool open(Jar& j, const Mover& m, int c) {
+[[gnu::always_inline]] inline bool open(Jar& j, const Mover& m, int c) {
   const int o = j.occ[c];
   return o == EMPTY || (m.k == SAND && o > 0 && kindAt(j, o - 1) != SAND && rnd(j) < 0.3f);
 }
@@ -274,13 +277,15 @@ void settle(Jar& j, const Field& f, Mover& m) {
 }
 
 // Every neighbor taken (for sand in Beach, by sand: it may sink into water): the grain can go nowhere this step, and has
-// stopped as a hit would stop it. Most of a settled heap is buried, and this check is far cheaper than a move.
+// stopped as a hit would stop it. Most of a jar is buried, so this runs for nearly every grain every step: sand is the
+// grains below j.sand (no look-up to tell it from water), and the eight reads are spelled out (the board's compiler
+// kept a loop over their offsets, reloading each).
 bool buried(const Jar& j, int c, bool wet) {
-  for (int e = 0; e < 8; e++) {
-    const int o = j.occ[c + NEIGHBOR[e]];
-    if (o == EMPTY || (wet && o > 0 && kindAt(j, o - 1) != SAND)) return false;
-  }
-  return true;
+  const int most = wet ? j.sand : INT16_MAX;   // occ above this is a grain the sand may sink into
+  const int16_t* p = j.occ + c;
+  const auto room = [most](int o) { return o == EMPTY || o > most; };
+  return !(room(p[-G]) || room(p[-G - 1]) || room(p[-G + 1]) || room(p[-1]) || room(p[1]) || room(p[G - 1]) ||
+           room(p[G + 1]) || room(p[G]));
 }
 
 void moveGrain(Jar& j, const Field& f, int i) {
@@ -296,8 +301,8 @@ void moveGrain(Jar& j, const Field& f, int i) {
 }
 
 // Orbits: free bodies in panel px, pulled by a dim sun at the center and, while touched, a heavy star under the finger.
-void pull(float& ax, float& ay, float dx, float dy, float gm) {
-  const float d2 = dx * dx + dy * dy + 16 * 16, a = gm / (d2 * sqrtf(d2));   // softened within 16 px
+[[gnu::always_inline]] inline void pull(float& ax, float& ay, float dx, float dy, float gm) {
+  const float d2 = dx * dx + dy * dy + 16 * 16, r = invSqrt(d2), a = gm * r * r * r;   // softened within 16 px
   ax += dx * a; ay += dy * a;
 }
 void orbit(Jar& j, Body& b) {
@@ -337,7 +342,7 @@ uint8_t lookFor(Jar& j, int i) {
     for (; band < 5; band++) if (i < (end += (int)lroundf(j.n * STRATA[band] / 6.0f))) break;
     return makeLook(SAND, band, tone);
   }
-  if (j.mode == MODE_BEACH && i >= (int)lroundf(j.n * BEACH_SAND)) return makeLook(rnd(j) < 0.008f ? BUBBLE : WATER, 0, tone);
+  if (i >= j.sand) return makeLook(rnd(j) < 0.008f ? BUBBLE : WATER, 0, tone);
   return makeLook(SAND, shade, tone);
 }
 // Row by row from the bottom edge (the one gravity points at most), each row in random order: a level heap.
@@ -380,6 +385,7 @@ void Jar::reset(Mode m, uint32_t seed) {
   walls(*this);
   const int want = inside * FILL_PCT[m] / 100, most = m == MODE_ORBITS ? MAX_BODIES : MAX_GRAINS;
   n = want < most ? want : most;
+  sand = m == MODE_BEACH ? (int)lroundf(n * BEACH_SAND) : n;
   if (m == MODE_ORBITS) launch(*this); else fill(*this);
 }
 

@@ -46,6 +46,7 @@ struct Jar {
   // state
   Mode mode = MODE_SAND;
   int n = 0;                    // grains, or Orbits' bodies
+  int sand = 0;                 // grains [0, sand) are sand, the rest (Beach) water or bubbles: none ever turns into the other
   int inside = 0;               // cells inside the glass
   uint32_t frame = 0;           // steps since reset
   uint32_t rng = 1;
@@ -71,6 +72,17 @@ struct Jar {
   uint16_t count[KEYS + 1];
   uint16_t fingerCells[FINGER_MAX]; int fingerCount = 0;
 };
+
+// 1 / sqrt(x) for x > 0 with no library call: the board's sqrtf and divide are each a ~100-cycle call, too slow per
+// body, grain or cell. The classic bit trick and two Newton steps: within 5e-6 of the true value. At 0 it is finite,
+// so v2 * invSqrt(v2) (a length) is 0 there too.
+inline float invSqrt(float x) {
+  union { float f; uint32_t i; } u = {x};   // GCC and clang define reading the other member; the board's memcpy is a call
+  u.i = 0x5f3759df - (u.i >> 1);
+  float y = u.f;
+  y *= 1.5f - 0.5f * x * y * y;
+  return y * (1.5f - 0.5f * x * y * y);
+}
 
 // The eight grid neighbors, clockwise on screen from +x.
 constexpr int DX[8] = {1, 1, 0, -1, -1, -1, 0, 1}, DY[8] = {0, 1, 1, 1, 0, -1, -1, -1};
