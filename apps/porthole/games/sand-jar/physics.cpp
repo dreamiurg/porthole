@@ -1,11 +1,19 @@
 #include "physics.h"
 #include <math.h>
 #include <string.h>
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; the per-grain loops run ~1.5x faster at -O2
+#endif
 
 namespace sandjar {
 namespace {
 constexpr float SQ2 = 1.41421356f, PI = 3.14159265f;
 constexpr float LEN[8] = {1, SQ2, 1, SQ2, 1, SQ2, 1, SQ2};
+// The board's FPU has no divide or square root (each is a ~100-cycle library call): the per-grain paths multiply by
+// these instead.
+constexpr float INV_LEN[8] = {1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2};
+constexpr float INV_STEPS[5] = {0, 1, 1.0f / 2, 1.0f / 3, 1.0f / 4};   // travel's sub-steps (at most ceil(3.6 * F) = 3)
+constexpr int NEIGHBOR[8] = {1, G + 1, G, G - 1, -1, -G - 1, -G, -G + 1};   // DX/DY as cell offsets
 constexpr float F = 2.0f / 3;          // the prototype's speeds are in its 2 px grains; ours are 3 px
 constexpr float GS = 0.15f * F;        // speed 1 g adds a step
 constexpr float RC = G / 2 - 1.5f;     // the glass's radius in cells
@@ -23,6 +31,7 @@ constexpr Param PARAM[3] = {
 // This step's gravity as the grid sees it.
 struct Field {
   float gx, gy, geff;          // the tilt (magnitude 0..1 g)
+  float settle;                // chance a blocked grain tries to settle: grows with the tilt
   float dot[8]; int ord[8];    // cosine of each neighbor direction to gravity; directions ranked most downhill first
   int pe0[2], pe1[2]; float pfr[2];   // the level line on each side lies between pe0 and pe1: take pe1 on pfr of steps
   int down;                    // cell offset of ord[0]
@@ -32,7 +41,7 @@ struct Try { int cx, cy; float tx, ty; };                 // the cell it tried t
 
 float rnd(Jar& j) { uint32_t s = j.rng; s ^= s << 13; s ^= s >> 17; s ^= s << 5; j.rng = s; return (float)(s >> 8) * (1.0f / 16777216); }
 uint16_t pos16(float v) { return (uint16_t)(v * 256); }
-int16_t vel16(float v) { v *= 256; return (int16_t)lrintf(v > 32000 ? 32000 : v < -32000 ? -32000 : v); }
+int16_t vel16(float v) { v *= 256; return (int16_t)(v > 32000 ? 32000 : v < -32000 ? -32000 : v >= 0 ? (int)(v + 0.5f) : -(int)(0.5f - v)); }
 float center(int cell) { return cell + 0.5f; }
 Kind kindAt(const Jar& j, int i) { return kindOf(j.g.look[i]); }
 void setKind(Jar& j, int i, Kind k) { j.g.look[i] = (uint8_t)((j.g.look[i] & 0x3F) | k << 6); }
@@ -41,6 +50,7 @@ void field(Jar& j, Field& f) {
   f.gx = j.tiltX; f.gy = j.tiltY;
   const float m = sqrtf(f.gx * f.gx + f.gy * f.gy);
   f.geff = m;   // rolling and spilling scale with it: at 0 g nothing avalanches, grains only keep their momentum
+  f.settle = fminf(1, m * 1.5f);
   if (m > 0.03f) {
     j.gxn = f.gx / m; j.gyn = f.gy / m;
     j.upDir = (uint8_t)(((int)lroundf(atan2f(f.gy, f.gx) / (PI / 4)) + 4) & 7);
@@ -61,16 +71,19 @@ void field(Jar& j, Field& f) {
 }
 
 // Counting sort by height along gravity, O(n): order[] runs from the top of the pile to the bottom, and the step moves
-// the bottom grains first so the ones above fall into the room they leave.
-int keyOf(const Jar& j, int i) {
-  const int k = (int)(((Jar::pos(j.g.x[i]) - G / 2) * j.gxn + (Jar::pos(j.g.y[i]) - G / 2) * j.gyn + G / 2) * 4);
-  return k < 0 ? 0 : k >= Jar::KEYS ? Jar::KEYS - 1 : k;
+// the bottom grains first so the ones above fall into the room they leave. The key is a quarter cell of height, in
+// integers (gravity's direction to 1/1024): it runs twice over every grain each step.
+struct Key { int kx, ky; };
+int keyOf(const Jar& j, const Key& k, int i) {
+  const int h = ((j.g.x[i] - G / 2 * 256) * k.kx + (j.g.y[i] - G / 2 * 256) * k.ky + G / 2 * 262144) >> 16;
+  return h < 0 ? 0 : h >= Jar::KEYS ? Jar::KEYS - 1 : h;
 }
 void sortDownhill(Jar& j) {
+  const Key k = {(int)lroundf(j.gxn * 1024), (int)lroundf(j.gyn * 1024)};
   memset(j.count, 0, sizeof j.count);
-  for (int i = 0; i < j.n; i++) j.count[keyOf(j, i) + 1]++;
-  for (int k = 1; k <= Jar::KEYS; k++) j.count[k] = (uint16_t)(j.count[k] + j.count[k - 1]);
-  for (int i = 0; i < j.n; i++) j.g.order[j.count[keyOf(j, i)]++] = (uint16_t)i;
+  for (int i = 0; i < j.n; i++) j.count[keyOf(j, k, i) + 1]++;
+  for (int c = 1; c <= Jar::KEYS; c++) j.count[c] = (uint16_t)(j.count[c] + j.count[c - 1]);
+  for (int i = 0; i < j.n; i++) j.g.order[j.count[keyOf(j, k, i)]++] = (uint16_t)i;
 }
 
 // The finger is a solid disc. A grain inside it is pushed out along the ray from its center (bent toward where the
@@ -138,7 +151,7 @@ void accelerate(Jar& j, const Field& f, Mover& m) {
   if (j.finger.on) {   // the wake: a moving finger drags what touches its rim (water a lot, sand barely)
     const float dx = m.x - j.finger.x, dy = m.y - j.finger.y, d2 = dx * dx + dy * dy, fr = FINGER_R + WAKE;
     if (d2 < fr * fr) {
-      const float w = fminf(1, 1 - (sqrtf(d2) - FINGER_R) / WAKE) * (m.k == SAND ? 0.06f : 0.3f);
+      const float w = fminf(1, 1 - (sqrtf(d2) - FINGER_R) * (1 / WAKE)) * (m.k == SAND ? 0.06f : 0.3f);
       m.ux += j.finger.vx * w; m.uy += j.finger.vy * w;
     }
   }
@@ -186,9 +199,11 @@ void hit(Jar& j, Mover& m, const Try& t) {
 }
 // Moves along the velocity one cell at a time. True when something stopped it.
 bool travel(Jar& j, Mover& m) {
-  const int steps = (int)ceilf(fmaxf(fabsf(m.ux), fabsf(m.uy)));
+  const float ax = fabsf(m.ux), ay = fabsf(m.uy), most = ax > ay ? ax : ay;
+  int steps = (int)most;
+  steps += steps < most;   // ceil
   if (!steps) return true;
-  const float sx = m.ux / steps, sy = m.uy / steps;
+  const float sx = m.ux * INV_STEPS[steps], sy = m.uy * INV_STEPS[steps];
   for (int s = 0; s < steps; s++) {
     const Try t = {(int)(m.x + sx), (int)(m.y + sy), m.x + sx, m.y + sy};
     const int nc = t.cy * G + t.cx, o = j.occ[nc];
@@ -217,7 +232,7 @@ int spread(Jar& j, const Field& f, Mover& m, int cells) {
       c = next; walked++; last = e;
       if (j.occ[c + f.down] == EMPTY) break;
     }
-    if (walked) { const float v = 0.45f * F / LEN[last]; m.ux = DX[last] * v; m.uy = DY[last] * v; return c; }
+    if (walked) { const float v = 0.45f * F * INV_LEN[last]; m.ux = DX[last] * v; m.uy = DY[last] * v; return c; }
   }
   return -1;
 }
@@ -234,7 +249,7 @@ int rollOver(Jar& j, const Field& f, Mover& m) {
       const float drop = dx * j.gxn + dy * j.gyn;
       if (drop < ROLL_DROP || (dx * dx <= 1 && dy * dy <= 1)) continue;   // a neighbor: settle() already tried it
       const int c = over + DY[e2] * G + DX[e2];
-      if (open(j, m, c)) { const float v = 0.3f * F / LEN[e2]; m.ux = DX[e2] * v; m.uy = DY[e2] * v; return c; }
+      if (open(j, m, c)) { const float v = 0.3f * F * INV_LEN[e2]; m.ux = DX[e2] * v; m.uy = DY[e2] * v; return c; }
     }
   }
   return -1;
@@ -251,20 +266,32 @@ void settle(Jar& j, const Field& f, Mover& m) {
   for (int e : cand) {
     if (f.dot[e] < 0.3f || (e != f.ord[0] && rnd(j) > P.slide)) continue;
     const int c = (ccy + DY[e]) * G + ccx + DX[e];
-    if (open(j, m, c)) { moved = c; const float v = 0.3f * F / LEN[e]; m.ux = DX[e] * v; m.uy = DY[e] * v; break; }
+    if (open(j, m, c)) { moved = c; const float v = 0.3f * F * INV_LEN[e]; m.ux = DX[e] * v; m.uy = DY[e] * v; break; }
   }
   if (moved < 0 && m.k == SAND && rnd(j) < P.slide) moved = rollOver(j, f, m);
   if (moved < 0 && P.spread) moved = spread(j, f, m, P.spread);
   if (moved >= 0) { take(j, m, moved); m.x = center(moved % G); m.y = center(moved / G); }
 }
 
+// Every neighbor taken (for sand in Beach, by sand: it may sink into water): the grain can go nowhere this step, and has
+// stopped as a hit would stop it. Most of a settled heap is buried, and this check is far cheaper than a move.
+bool buried(const Jar& j, int c, bool wet) {
+  for (int e = 0; e < 8; e++) {
+    const int o = j.occ[c + NEIGHBOR[e]];
+    if (o == EMPTY || (wet && o > 0 && kindAt(j, o - 1) != SAND)) return false;
+  }
+  return true;
+}
+
 void moveGrain(Jar& j, const Field& f, int i) {
-  Mover m = {i, 0, kindAt(j, i), Jar::pos(j.g.x[i]), Jar::pos(j.g.y[i]), Jar::vel(j.g.vx[i]), Jar::vel(j.g.vy[i])};
-  m.c = (int)m.y * G + (int)m.x;
+  const Kind k = kindAt(j, i);
+  const int c = (j.g.y[i] >> 8) * G + (j.g.x[i] >> 8);
+  if (k != BUBBLE && buried(j, c, k == SAND && j.mode == MODE_BEACH)) { j.g.vx[i] = j.g.vy[i] = 0; return; }
+  Mover m = {i, c, k, Jar::pos(j.g.x[i]), Jar::pos(j.g.y[i]), Jar::vel(j.g.vx[i]), Jar::vel(j.g.vy[i])};
   const int start = m.c;
   accelerate(j, f, m);
   const bool blocked = travel(j, m) || m.c == start;
-  if (blocked && f.geff > 0.02f && m.k != BUBBLE && rnd(j) < fminf(1, f.geff * 1.5f)) settle(j, f, m);
+  if (blocked && f.geff > 0.02f && m.k != BUBBLE && rnd(j) < f.settle) settle(j, f, m);
   j.g.x[i] = pos16(m.x); j.g.y[i] = pos16(m.y); j.g.vx[i] = vel16(m.ux); j.g.vy[i] = vel16(m.uy);
 }
 
@@ -279,12 +306,12 @@ void orbit(Jar& j, Body& b) {
   if (j.finger.on) pull(ax, ay, j.finger.x * 3 - b.x, j.finger.y * 3 - b.y, ORB_STAR);
   if (j.shaking > 0.01f) { ax += (rnd(j) - 0.5f) * j.shaking * 0.5f; ay += (rnd(j) - 0.5f) * j.shaking * 0.5f; }
   float ux = (b.vx + ax * 0.5f) * 0.9995f, uy = (b.vy + ay * 0.5f) * 0.9995f;
-  const float sp = sqrtf(ux * ux + uy * uy);
-  if (sp > 9) { ux *= 9 / sp; uy *= 9 / sp; }
+  const float sp2 = ux * ux + uy * uy;
+  if (sp2 > 81) { const float s = 9 / sqrtf(sp2); ux *= s; uy *= s; }
   float x = b.x + ux * 0.5f, y = b.y + uy * 0.5f;
-  const float rx = x - 240, ry = y - 240, r = sqrtf(rx * rx + ry * ry);
-  if (r > 232) {   // bounce off the glass, losing a little
-    const float nx = rx / r, ny = ry / r, vn = ux * nx + uy * ny;
+  const float rx = x - 240, ry = y - 240, r2 = rx * rx + ry * ry;
+  if (r2 > 232 * 232) {   // bounce off the glass, losing a little
+    const float r = sqrtf(r2), nx = rx / r, ny = ry / r, vn = ux * nx + uy * ny;
     if (vn > 0) { ux -= 1.7f * vn * nx; uy -= 1.7f * vn * ny; }
     x = 240 + nx * 232; y = 240 + ny * 232;
   }
