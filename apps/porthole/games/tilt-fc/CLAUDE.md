@@ -87,14 +87,13 @@ Everything is in `namespace fc` (Pets Club owns the global `Game`).
   `OFL.txt`. `generated/fonts.h`: 18, 36 and 64 px, converted by `tools/fontconv.py --game tiltfc`
   (commands in its docstring), bitmaps only for `GLYPHS` (" !0123456789AGLO").
 - `host/test_tiltfc.cpp`: the rules (dead zone from three grips, the pass cone, control switching, goals, kickoff,
-  tackles and slides, keeper room, the whistle, the kickoff wait, a tap held level), the challenge (each level no
-  easier than the last within seed noise, the top level harder than the first), the save, the full-time save and
-  level, the result saved once the moment the match is decided (a leave on that very frame included), the court's
-  pages without a fresh-page pause and the leave hold, taps that cannot skip the Goal or Full time page (a press
-  begun on the unlit go sign included), the strings, every incrementally drawn frame equal to a full repaint (Full time included, tilting), and the
-  playtests' `# match from X Y Z`
-  blocks (the passing bot's recorded moves to a goal) in step with the rules: `build/host/test_tiltfc
-  --write-playtests` rewrites them after a rules or tuning change.
+  tackles and slides, keeper room, the whistle, the kickoff wait, a tap held level), the challenge (each level no easier
+  than the last within seed noise, the top level harder than the first), the save, the full-time save and level, the
+  result saved once the moment the match is decided (a leave on that very frame included), the court's pages without a
+  fresh-page pause and the leave hold, taps that cannot skip the Goal or Full time page (a press begun on the unlit go
+  sign included), the strings, every incrementally drawn frame equal to a full repaint (Full time included, tilting),
+  and the playtests' `# match from X Y Z` blocks (the passing bot's recorded moves to a goal) in step with the rules:
+  `build/host/test_tiltfc --write-playtests` rewrites them after a rules or tuning change.
 - Playtests: `tests/playtests/60_tiltfc_calibrate.txt` (calibrate, jolt, leaving), `61_tiltfc_goal.txt` (a recorded
   goal, coral's kickoff), `62_tiltfc_fulltime.txt` (a win to Full time from a leaned grip, the whistle, the saved
   level), `63_tiltfc_monkey.txt` (chaos under ASan), `64_tiltfc_kid_taps.txt` (a 6-year-old's taps: through the
@@ -117,8 +116,8 @@ version's save, and the kid starts again from level 0 with no wins.
   of Marble Kick's and a playing frame about a quarter (Marble Kick runs at 55 fps on the board). Slice 3 measures it
   (`devctl.py metrics`) and tunes `DEAD_MG`, the speeds and the cone with the kid.
 - The balance was set against bots in the host test, not a 6-year-old. At level 0 a greedy kid (straight at the goal,
-  shooting at its middle) scores once every three to ten matches (wins 1 to 5 of 30) and concedes one or two a
-  match, while one who aims for a corner or passes wins every time; whether that is gentle enough is for the first real playtest. Level 4 is on
-  a knife edge in the bots' eyes (coral's speed 112 instead of 114 turns the passing bot from about 23 wins of 30 to
-  under 10): retune it in small steps.
+  shooting at its middle) scores once every three to ten matches (wins 1 to 5 of 30) and concedes one or two a match,
+  while one who aims for a corner or passes wins every time; whether that is gentle enough is for the first real
+  playtest. Level 4 is on a knife edge in the bots' eyes (coral's speed 112 instead of 114 turns the passing bot from
+  about 23 wins of 30 to under 10): retune it in small steps.
 - No keeper dive or save moment, no possession cap beyond coral's 6 s, no kits or real teams (slices 2 and 4).
