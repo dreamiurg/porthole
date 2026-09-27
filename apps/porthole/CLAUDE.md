@@ -23,6 +23,8 @@ In `shell/`:
 
 Each game lives at `games/<game>/` and owns its own `CLAUDE.md` with its Save layout, content limits and any game-specific detail; this file only covers what every game shares.
 
+Each game also owns its look (root `CLAUDE.md`, rule 7). `os/palette.h` is the palette Pets Club and the shell's indexed UI share, not a default for new games: a new game draws on the RGB565 surface with its own colors, fonts and art (or first proposes a per-game palette in `os/`), and never reuses another game's sprites, palette or style.
+
 A game is a directory under `games/`: the Makefile and PlatformIO build every `games/*/*.cpp`, so adding one means the directory, an `App` subclass, and a `static` instance appended to `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`; its `screenName()` values must not repeat another game's or the shell's (`tools/playtest.py` fails on a clash; prefix them). A host test is `apps/porthole/host/test_<name>.cpp` plus one `test_<name>_SRC :=` line in the Makefile -- host tests live in the shared `host/` directory, named per game, not inside the game's own directory.
 
 - `games/pets-club/`: the shipped indexed-color game. Brief: `games/pets-club/CLAUDE.md`.

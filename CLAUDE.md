@@ -38,6 +38,12 @@ game ever punishes the kid for being away) are hard rules, not style.
    on host and firmware builds (firmware: our sources via `build_src_flags`),
    biome `--error-on-warnings`, Python `-W error`, and `tools/fail-on-warning.sh`
    for tools with no fail switch. Fix the cause; never silence or skip it.
+7. **Every game looks like itself.** The device's limits are shared, the look is
+   not. Each game gets its own palette, art style, typography and characters,
+   and never borrows another game's sprites, palette, colors or visual idiom,
+   even when reuse would be faster. Two games side by side in the launcher must
+   never look like twins. Reusing runtime, shell widgets and tooling is fine;
+   what the kid sees inside a game is not shared.
 
 ## Commands
 
