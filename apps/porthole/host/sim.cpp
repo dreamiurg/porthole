@@ -19,6 +19,7 @@
 #include <vector>
 #include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
+#include "games/sand-jar/game.h"
 #include "gfx565.h"
 #include "shell.h"
 #ifdef HAVE_SDL
@@ -41,7 +42,8 @@ struct FileStore : shell::Store {
 
 static Game g_pets;
 static biscuit::Game g_biscuit;
-static App* const APPS[] = {&g_pets, &g_biscuit};
+static sandjar::Game g_sandjar;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_sandjar};
 static FileStore g_store;
 static Shell g_shell;
 static InputTracker g_tracker;

@@ -62,6 +62,7 @@ lint: snap
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
 	$(PY) games/biscuit/tools/icon.py --check
+	$(PY) games/sand-jar/tools/icon.py --check
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
 	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
@@ -103,6 +104,7 @@ art:
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py
+	python3 games/sand-jar/tools/icon.py
 	node $(NODE_ART)
 
 webemu: snap
