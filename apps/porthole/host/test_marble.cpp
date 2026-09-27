@@ -1,11 +1,15 @@
-// Self-check for Marble Kick's rules (games/marble-kick/physics.*, levels.h, save.h): the tilt mapping, the ball
-// staying on the tray except through the goal, no tunneling through a peg, goal detection, the save blob, and every
-// level's recorded solution replayed to a goal.
+// Self-check for Marble Kick (games/marble-kick/): the tilt mapping, the ball staying on the tray except through the
+// goal, no tunneling through a peg, no pockets or parking spots, goal detection, the save blob, every level's recorded
+// solution replayed to a goal from three grips (and kept in step with the playtests), and the renderer's shortcut:
+// every frame drawn incrementally into the panel's two buffers equals the frame painted whole.
 // Run: make test
 #include <assert.h>
+#include <dirent.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <string>
+#include "games/marble-kick/game.h"
 #include "games/marble-kick/physics.h"
 #include "games/marble-kick/save.h"
 
@@ -223,6 +227,69 @@ static void everyLevelSolvable() {
     }
 }
 
+// The playtests replay the same solutions through the sim, as `tilt` lines: every block in tests/playtests/*.txt
+// from "# solution <level> from <x> <y> <z>" (the grip it was calibrated in, one of NEUTRALS) to "# end solution" must
+// be exactly what this writes, so a changed level or solution fails here until `build/host/test_marble
+// --write-playtests` rewrites them. Returns how many blocks there were, per neutral in `seen`.
+static std::string block(int level, Grav n) {
+  std::string out = "wait 80\n";   // a still frame first: the sim's snap renders one without moving the clock
+  char line[64];
+  const Level& l = LEVELS[level - 1];
+  for (int i = 0; i < l.steps; i++) {
+    const Grav g = gravityFor(l.solution[i].tx, l.solution[i].ty, n);
+    snprintf(line, sizeof line, "tilt %d %d %d\nwait %d\n", g.x, g.y, g.z, l.solution[i].ms);
+    out += line;
+  }
+  snprintf(line, sizeof line, "tilt %d %d %d\n", n.x, n.y, n.z);   // back to the grip, still
+  return out + line;
+}
+static int neutralIndex(Grav g) {
+  for (int i = 0; i < 3; i++) if (NEUTRALS[i].x == g.x && NEUTRALS[i].y == g.y && NEUTRALS[i].z == g.z) return i;
+  return -1;
+}
+// One file: its text with every block as it should be; counts blocks per neutral, and the ones that differ.
+static std::string fixBlocks(const std::string& text, int seen[3], int* stale) {
+  std::string out;
+  size_t at = 0;
+  while (at < text.size()) {
+    const size_t eol = text.find('\n', at), next = eol == std::string::npos ? text.size() : eol + 1;
+    const std::string line = text.substr(at, next - at);
+    out += line;
+    at = next;
+    int level; Grav n;
+    if (sscanf(line.c_str(), "# solution %d from %d %d %d", &level, &n.x, &n.y, &n.z) != 4) continue;
+    const size_t end = text.find("# end solution", at);
+    const int k = neutralIndex(n);
+    CHECK(level >= 1 && level <= NUM_LEVELS && k >= 0 && end != std::string::npos);
+    seen[k]++;
+    const std::string want = block(level, n);
+    *stale += text.compare(at, end - at, want) != 0;
+    out += want;
+    at = end;
+  }
+  return out;
+}
+static void playtestSolutions(bool write) {
+  int seen[3] = {0, 0, 0}, stale = 0;
+  DIR* d = opendir("tests/playtests");
+  assert(d);
+  while (dirent* e = readdir(d)) {
+    const std::string path = std::string("tests/playtests/") + e->d_name;
+    if (path.size() < 4 || path.compare(path.size() - 4, 4, ".txt")) continue;
+    FILE* f = fopen(path.c_str(), "rb");
+    std::string text;
+    for (int c; (c = fgetc(f)) != EOF;) text += (char)c;
+    fclose(f);
+    const int before = stale;
+    const std::string fixed = fixBlocks(text, seen, &stale);
+    if (write && stale != before) { f = fopen(path.c_str(), "wb"); fputs(fixed.c_str(), f); fclose(f); printf("rewrote %s\n", path.c_str()); }
+  }
+  closedir(d);
+  if (stale && !write) printf("test_marble: %d playtest solution blocks are stale: run build/host/test_marble --write-playtests\n", stale);
+  CHECK(write || stale == 0);
+  CHECK(seen[1] > 0 && seen[2] > 0);   // played from a 45 degree grip and from upright, at least once each
+}
+
 static void saveBlob() {
   Save s{};
   s.level = 4;
@@ -245,7 +312,89 @@ static void saveBlob() {
   CHECK(!loadBlob(&bad, sizeof bad, back) && back.level == 7);
 }
 
-int main() {
+// Drives the game like the sim drives the device, frame by frame, with two panel buffers used by turns: random real
+// tilts (and jolts), taps, holds and brushes anywhere and on its buttons, frames of 0 ms and stalls of 500 ms, and from
+// time to time a level's solution replayed so every page comes up. After each frame the buffer just drawn must equal
+// the same frame painted whole into a third buffer by a copy of the game.
+struct Driver {
+  uint32_t rng = 12345, ms = 1000;
+  int rand(int n) { rng = rng * 1664525u + 1013904223u; return (int)((rng >> 8) % (uint32_t)n); }
+  Grav grav = UPRIGHT;
+  bool down = false; int x = 0, y = 0, frames = 0;
+  int level = -1; uint32_t solveMs = 0;   // a solution being replayed (level index), and how far into it
+  void touch() {
+    if (down) { if (--frames <= 0) down = false; return; }
+    if (rand(25)) return;
+    static const int SPOTS[][2] = {{80, 110}, {80, 145}, {50, 50}, {110, 78}, {80, 60}, {30, 90}};
+    const int k = rand(8);
+    x = k < 6 ? SPOTS[k][0] : 20 + rand(120); y = k < 6 ? SPOTS[k][1] : 20 + rand(120);
+    down = true; frames = 1 + rand(3) + (rand(6) ? 0 : 20);   // mostly taps, sometimes a hold past 600 ms
+  }
+  void tilt(uint32_t dt) {
+    if (level >= 0) {   // the solution's step at this time, as the sim's playtests feed it
+      const Level& l = LEVELS[level];
+      uint32_t at = solveMs += dt;
+      for (int s = 0; s < l.steps; s++, at -= l.solution[s - 1].ms)
+        if (at < l.solution[s].ms) { grav = gravityFor(l.solution[s].tx, l.solution[s].ty, UPRIGHT); return; }
+      level = -1; grav = UPRIGHT;
+      return;
+    }
+    if (!rand(15)) grav = rand(12) ? gravityFor(rand(1400) - 700, rand(1400) - 700, UPRIGHT) : Grav{1800, 0, 900};
+  }
+};
+// Now and then (not mid-solution), calibrate as held upright and play a level through.
+static void maybeSolve(Driver& d, marble::Game& game, InputTracker& tracker) {
+  if (d.level >= 0 || d.rand(300)) return;
+  d.grav = UPRIGHT; d.level = d.rand(NUM_LEVELS); d.solveMs = 0; d.down = false;
+  Input held = tracker.step(false, 0, 0, d.ms);   // a frame in the grip it calibrates in
+  held.gx = (int16_t)UPRIGHT.x; held.gy = (int16_t)UPRIGHT.y; held.gz = (int16_t)UPRIGHT.z;
+  game.update(d.ms / 1000, d.ms, held);
+  char cmd[16];
+  snprintf(cmd, sizeof cmd, "level%d", d.level + 1);
+  game.debugCmd(cmd);
+}
+// Draws the frame into the panel buffer `shown` as the game does, and whole into `whole` by a copy: true if equal.
+static bool drawnRight(marble::Game& game, uint16_t* shown, uint16_t* whole) {
+  gfx565::target(shown);
+  game.render();
+  marble::Game copy = game;
+  gfx565::target(whole);
+  copy.render();
+  if (!memcmp(shown, whole, gfx565::W * gfx565::H * 2)) return true;
+  memcpy(shown, whole, gfx565::W * gfx565::H * 2);   // report each mistake once
+  return false;
+}
+static void incrementalEqualsFull() {
+  static uint16_t bufs[2][gfx565::W * gfx565::H], whole[gfx565::W * gfx565::H];
+  static const char* const PAGES[] = {"mk_calibrate", "mk_play", "mk_goal", "mk_done"};
+  for (auto& b : bufs) for (uint16_t& p : b) p = 0xF81F;
+  static marble::Game game;
+  const Profile kid = {0, "Sam", 0, 6, 0};
+  const SaveSlot none = {nullptr, 0};
+  Driver d;
+  InputTracker tracker;
+  game.enter({&kid, &kid, &none, 1, 0, d.ms});
+  int bad = 0, seen[marble::Game::SC_COUNT] = {};
+  for (int f = 0; f < 6000; f++) {
+    const uint32_t dt = d.level >= 0 || d.rand(10) ? 40 : d.rand(5) ? 0 : 500;
+    d.ms += dt;
+    d.tilt(dt);
+    if (d.level < 0) d.touch();
+    maybeSolve(d, game, tracker);
+    Input in = tracker.step(d.down && d.level < 0, d.x, d.y, d.ms);
+    in.gx = (int16_t)d.grav.x; in.gy = (int16_t)d.grav.y; in.gz = (int16_t)d.grav.z;
+    game.update(d.ms / 1000, d.ms, in);
+    if (game.wantsHome()) { game.leave(); game.enter({&kid, &kid, &none, 1, 0, d.ms}); }
+    for (int s = 0; s < marble::Game::SC_COUNT; s++) seen[s] += !strcmp(game.screenName(), PAGES[s]);
+    if (!drawnRight(game, bufs[f & 1], whole) && bad++ < 5) printf("frame %d on %s: the incremental frame differs\n", f, game.screenName());
+  }
+  printf("render check: %d frames differ; frames per page %d %d %d %d\n", bad, seen[0], seen[1], seen[2], seen[3]);
+  CHECK(bad == 0);
+  for (int s : seen) CHECK(s > 0);   // every page was drawn both ways
+}
+
+int main(int argc, char** argv) {
+  if (argc > 1 && !strcmp(argv[1], "--write-playtests")) { playtestSolutions(true); return 0; }
   tiltMapping();
   neverLeavesTheTray();
   noTunneling();
@@ -255,6 +404,8 @@ int main() {
   noParking();
   saveBlob();
   everyLevelSolvable();
+  incrementalEqualsFull();
+  playtestSolutions(false);
   printf("test_marble: all %d checks passed (%d levels, sizeof Save = %zu)\n", checks, NUM_LEVELS, sizeof(Save));
   return 0;
 }
