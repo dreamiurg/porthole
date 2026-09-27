@@ -51,10 +51,13 @@ static Shell g_shell;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
-// The RGB565 apps' surface, as on the device: the panel's two buffers, rendered into by turns, so each holds the frame
-// from two renders ago. Magenta once at start, never cleared: a pixel a render forgets shows up.
+static uint16_t g_pal565[TINT_COUNT][C_COUNT];   // the same, as the firmware hands it to board::present
+// The panel's two buffers, as on the device: every present flips them, an indexed frame's too (upscaled into the one it
+// presents), so an RGB565 render's target holds the frame from two presents ago. Magenta once at start, never cleared:
+// a pixel a render forgets shows up.
 static uint16_t g_fb565[2][gfx565::W * gfx565::H];
-static int g_shown = 0;                          // the buffer rendered last: what the glass shows
+static int g_shown = 0;                          // the buffer presented last: what the glass shows
+static bool g_hires = false;                     // that frame was an RGB565 app's
 static int16_t g_gravity[3] = {0, 1000, 0};      // the motion sensor: held upright
 static int g_shakeFrames = 0;                    // frames of shaking left
 static double g_updateMs = 0, g_renderMs = 0; static int g_perfFrames = 0;
@@ -83,8 +86,8 @@ static void reset() { wipe(); boot(); }
 static uint32_t framePixel(int x, int y) {
   int dx = x - 240, dy = y - 240;
   if (dx * dx + dy * dy > 240 * 240) return 0x202020;   // outside the round glass: dark
-  if (g_shell.surface() == SURFACE_RGB565) return gfx565::rgb888(g_fb565[g_shown][y * gfx565::W + x]);
-  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];
+  if (g_hires) return gfx565::rgb888(g_fb565[g_shown][y * gfx565::W + x]);
+  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];   // at full RGB888, as snapshots always were
 }
 
 static void writeBMP(const char* path) {
@@ -106,6 +109,10 @@ static void writeBMP(const char* path) {
   fclose(f);
 }
 
+// board::present: the 160x160 indexed frame, 3x, into the buffer about to be shown.
+static void upscale(uint16_t* dst, const uint16_t* pal) {
+  for (int y = 0; y < gfx565::H; y++) for (int x = 0; x < gfx565::W; x++) dst[y * gfx565::W + x] = pal[gfx::fb[(y / 3) * gfx::W + x / 3]];
+}
 static double since(std::chrono::steady_clock::time_point t) {
   return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
 }
@@ -117,11 +124,16 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
   g_shell.update(now(), g_ms, in);
   g_updateMs += since(t);
   t = std::chrono::steady_clock::now();
-  if (g_shell.surface() == SURFACE_RGB565) { g_shown ^= 1; gfx565::target(g_fb565[g_shown]); }
+  g_shown ^= 1;
+  g_hires = g_shell.surface() == SURFACE_RGB565;
+  if (g_hires) gfx565::target(g_fb565[g_shown]);
   g_shell.render();
   g_renderMs += since(t); g_perfFrames++;
+  if (!g_hires) upscale(g_fb565[g_shown], g_pal565[g_shell.tint()]);
 }
-static void tilt(const char* x, const char* y, const char* z) { g_gravity[0] = (int16_t)atoi(x); g_gravity[1] = (int16_t)atoi(y); g_gravity[2] = (int16_t)atoi(z); }
+// Clamped to the sensor's +-4 g full scale: nothing past it ever reaches Input on the device.
+static int16_t mg(const char* s) { int v = atoi(s); return (int16_t)(v < -4000 ? -4000 : v > 4000 ? 4000 : v); }
+static void tilt(const char* x, const char* y, const char* z) { g_gravity[0] = mg(x); g_gravity[1] = mg(y); g_gravity[2] = mg(z); }
 static void perf() {
   const int n = g_perfFrames ? g_perfFrames : 1;
   printf("perf frames=%d update=%.3fms render=%.3fms\n", g_perfFrames, g_updateMs / n, g_renderMs / n);
@@ -317,7 +329,10 @@ static void runWindow() { fprintf(stderr, "built without SDL; use --script\n"); 
 #endif
 
 int main(int argc, char** argv) {
-  for (int t = 0; t < TINT_COUNT; t++) palette_build((Tint)t, g_pal[t]);
+  for (int t = 0; t < TINT_COUNT; t++) {
+    palette_build((Tint)t, g_pal[t]);
+    for (int i = 0; i < C_COUNT; i++) g_pal565[t][i] = rgb888_to_565(g_pal[t][i]);
+  }
   for (auto& b : g_fb565) for (uint16_t& p : b) p = 0xF81F;
   gfx565::target(g_fb565[0]);
   // Default clock: a fixed Tuesday 16:00 local so snapshots are deterministic; --now overrides.

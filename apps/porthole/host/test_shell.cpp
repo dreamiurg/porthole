@@ -438,6 +438,12 @@ static void tiltIsActivity() {
   Input in; in.gy = 1000; in.gz = 0;
   for (int f = 0; f < 3000; f++) { in.gx = (int16_t)(f / 20); b.step(in, false, ms += 40); }   // 150 mg over two minutes
   assert(b.idleMs(ms) >= shell::IDLE_MS);                    // drift is not play (the first frame, from lying flat, was)
+  // The widest swing int16 axes allow: three squares of 65535 wrap a 32-bit int negative, which read as "no move".
+  ActivityTracker c; Input e; e.gx = e.gz = -32768; e.gy = 32767;
+  c.step(e, true, 0);
+  e.gx = e.gz = 32767; e.gy = -32768;
+  c.step(e, false, 70000);
+  assert(c.idleMs(70000) == 0);
 }
 
 // The clock set back never strands anyone: to an earlier day it lifts the cap; within the day the rest still ends
