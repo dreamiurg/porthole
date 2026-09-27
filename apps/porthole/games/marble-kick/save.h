@@ -15,17 +15,21 @@
 namespace marble {
 constexpr const char* STORE = "marblekick";   // NVS namespace: never renamed once shipped
 constexpr uint32_t SAVE_MAGIC = 0x4B524D4D;   // "MMRK"
-constexpr uint16_t SAVE_VERSION = 1;
-constexpr size_t SAVE_V1_SIZE = 16;
+constexpr uint16_t SAVE_VERSION = 2;
+constexpr size_t SAVE_V1_SIZE = 16, SAVE_V2_SIZE = 48;
+constexpr size_t SAVE_SIZES[] = {0, SAVE_V1_SIZE, SAVE_V2_SIZE};   // by version: a blob is exactly its version's size
+constexpr int STAR_LEVELS = 32;                                    // room for this many levels' stars
 struct Save {
   uint32_t magic;
   uint16_t version, size;
   uint8_t level;         // levels finished in a row from the first: the index of the level to play next, up to
                          // NUM_LEVELS (all done). Kept as is when it exceeds this build's levels (a newer firmware's).
   uint8_t reserved[3];   // zero; explicit so the layout has no hidden padding
+  uint8_t stars[STAR_LEVELS];   // v2: the most stars picked up in one go at each level (0-3), by level index
   uint32_t crc;
 };
-static_assert(sizeof(Save) == SAVE_V1_SIZE, "Save is persisted: append before crc, never resize");
+static_assert(sizeof(Save) == SAVE_V2_SIZE, "Save is persisted: append before crc, never resize");
+static_assert(sizeof SAVE_SIZES / sizeof SAVE_SIZES[0] == SAVE_VERSION + 1, "one size per version");
 
 inline void seal(Save& s) {
   s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); memset(s.reserved, 0, sizeof s.reserved);
@@ -40,7 +44,8 @@ inline bool loadBlob(const void* data, size_t n, Save& out) {
   memcpy(&crc, b + n - 4, 4);
   Save s{};
   memcpy(&s, b, n - 4);
-  if (s.magic != SAVE_MAGIC || s.size != n || !s.version || s.version > SAVE_VERSION || crc != os::crc32(b, n - 4)) return false;
+  if (s.magic != SAVE_MAGIC || !s.version || s.version > SAVE_VERSION || s.size != n || n != SAVE_SIZES[s.version] ||
+      crc != os::crc32(b, n - 4)) return false;
   seal(s);
   out = s;
   return true;
