@@ -28,6 +28,9 @@ R_OUT = 41.6 * MM
 
 # A look = the table, the case plastic, the light. Colours are linear albedo.
 LOOKS: dict[str, dict] = {  # values are mixed: numbers, colours, names
+    "studio": dict(  # neutral, for comparing materials: pair with --table and --case
+        table="concrete_floor_02", tile=3, hdri="studio_small_08", sky=0.45, case=(0.5, 0.5, 0.5), rough=0.55, key=(22, (1.0, 0.97, 0.93)), fill=4, rim=8, screen=1.1
+    ),
     "oak-day": dict(
         table="oak_veneer_01", tile=6, hdri="studio_small_08", sky=0.5, case=(0.70, 0.67, 0.62), rough=0.5, key=(30, (1.0, 0.94, 0.86)), fill=6, rim=10, screen=1.0
     ),
@@ -66,8 +69,22 @@ a.add_argument("--samples", type=int, default=96)
 a.add_argument("--res", type=int, default=1080)
 a.add_argument("--smooth", action="store_true")  # Biscuit: native 480 art, linear filtering
 a.add_argument("--eevee", action="store_true")  # fast previews
+a.add_argument("--table", help="override the look's table: a Poly Haven texture from fetch.sh, or #rrggbb for seamless paper")
+a.add_argument("--case", help="override the look's case colour, #rrggbb (sRGB, as a filament swatch reads)")
 args = a.parse_args(sys.argv[sys.argv.index("--") + 1 :])
-LOOK = LOOKS[args.look]
+LOOK = dict(LOOKS[args.look])
+
+
+def linear(hex_rgb):
+    """#rrggbb (sRGB) -> linear RGB, what the Principled BSDF expects."""
+    c = [int(hex_rgb.lstrip("#")[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    return tuple(v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in c)
+
+
+if args.table:
+    LOOK["table"] = args.table
+if args.case:
+    LOOK["case"] = linear(args.case)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
@@ -248,11 +265,15 @@ def table_map(kind, colorspace):
     return t.outputs["Color"]
 
 
-link(nt, table_map("Diffuse", "sRGB"), b.inputs["Base Color"])
-link(nt, table_map("Rough", "Non-Color"), b.inputs["Roughness"])
-nmap = nt.nodes.new("ShaderNodeNormalMap")
-link(nt, table_map("nor_gl", "Non-Color"), nmap.inputs["Color"])
-link(nt, nmap.outputs["Normal"], b.inputs["Normal"])
+if LOOK["table"].startswith("#"):  # seamless paper: flat colour, matte
+    b.inputs["Base Color"].default_value = linear(LOOK["table"]) + (1.0,)
+    b.inputs["Roughness"].default_value = 0.85
+else:
+    link(nt, table_map("Diffuse", "sRGB"), b.inputs["Base Color"])
+    link(nt, table_map("Rough", "Non-Color"), b.inputs["Roughness"])
+    nmap = nt.nodes.new("ShaderNodeNormalMap")
+    link(nt, table_map("nor_gl", "Non-Color"), nmap.inputs["Color"])
+    link(nt, nmap.outputs["Normal"], b.inputs["Normal"])
 table.data.materials.append(tm)
 
 # ---- light: the look's HDRI, a soft key upper left, a fill right, a rim behind --------------------------------

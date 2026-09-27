@@ -23,6 +23,7 @@ for m, ext in maps.items():
     [ -f "$out" ] || curl -sSL -o "$out" "$url"
   done
 }
-for t in oak_veneer_01 dark_wood concrete_floor_02 concrete_floor_worn_001; do ph tex "$t"; done
+for t in oak_veneer_01 dark_wood concrete_floor_02 concrete_floor_worn_001 marble_01 plywood white_plaster_02 \
+  painted_plaster_wall blue_painted_planks red_plaster_weathered leather_white denim_fabric brown_leather; do ph tex "$t"; done
 for h in studio_small_08 studio_small_03 fireplace; do ph hdri "$h"; done
 ls -1 "$A"
