@@ -250,6 +250,7 @@ void Game::draw() {
   const DrawFn fn = DRAW[screen_];   // never (this->*TABLE[i])(): see Biscuit's game.cpp
   (this->*fn)();
 }
+static int area(const paint::Box& b) { return paint::empty(b) ? 0 : (b.x1 - b.x0) * (b.y1 - b.y0); }
 void Game::render() {
   Mover now[MAX_MOVERS];
   const int n = movers(now);
@@ -260,6 +261,8 @@ void Game::render() {
   else
     for (int i = 0; i < n; i++) {   // each thing that moved: where it was, and where it is
       if (paint::same(now[i].box, h->movers[i].box) && now[i].key == h->movers[i].key) continue;
+      const paint::Box u = paint::unite(h->movers[i].box, now[i].box);   // overlapping boxes: one pass, not two
+      if (area(u) <= area(h->movers[i].box) + area(now[i].box)) { paint::clip(u); draw(); continue; }
       paint::clip(h->movers[i].box);
       draw();
       paint::clip(now[i].box);
