@@ -27,6 +27,7 @@ test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/profiles.cpp shell/
 test_biscuit_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
+test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
