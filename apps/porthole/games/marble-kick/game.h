@@ -52,6 +52,7 @@ class Game : public App {
   float ref_[3] = {0, 0, -1000};
   bool refSet_ = false, starting_ = false;   // starting_: the button was pressed, play starts once held steady
   Vec dish_{}, dishV_{};
+  uint32_t dishMs_ = 0;           // the dish's time not yet simulated, under one STEP_MS
   // What each of the panel's two buffers holds (os/app.h): this page, its moving part (the ball, the dish's ball) at
   // `moving`, and the rest of its state as `look` (pressed buttons, the hold ring, the dish's glow, the confetti's
   // frame). A buffer not listed (fb null after a page change) or with another look gets the whole page; one listed
@@ -64,6 +65,8 @@ class Game : public App {
   void remember();                // this frame's gravity, for the steady neutral
   bool steady(Grav* neutral) const;
   bool pressing(int cx, int cy, int r) const;   // the finger went down in this logical circle and is still in it
+  bool pressingBox(int cx, int cy, int half) const;
+  bool goPressed() const;
   bool leaving();
   float hold() const;             // Play: how far holding the knob has got to leaving, 0..1
   int pressedCoin() const;        // Done: the coin under the finger, or -1

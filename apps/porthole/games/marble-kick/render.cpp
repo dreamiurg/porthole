@@ -212,7 +212,7 @@ void knob(int x, int y, bool pressed, float hold) {
   for (int i = 0; hold > 0 && i < 24; i++) {
     const float a = -1.5708f + i * 0.2618f;
     disc(x + (int)lroundf(cosf(a) * (KNOB_R + 7)), y + (int)lroundf(sinf(a) * (KNOB_R + 7)), 3,
-         i < hold * 24 ? SHADES.c[CHALK][0] : SHADES.c[WALNUT_EDGE][0]);
+         i < (int)(hold * 24) ? SHADES.c[CHALK][0] : SHADES.c[WALNUT_EDGE][0]);   // look() rounds the same way
   }
 }
 void coin(int x, int y, int number, int r) {

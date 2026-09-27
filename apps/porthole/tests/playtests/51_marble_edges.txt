@@ -48,10 +48,14 @@ wait 320
 ui-check mk_play-holding
 snap mk_e02_holding
 up
-# a full hold leaves; nothing finished, so the next visit is level 1 again, from its start
-hold 80 145
-wait 100
+# a full hold leaves, even when the finger drifts on the knob (the reviewer's repro: the ring filled, nothing left);
+# nothing finished, so the next visit is level 1 again, from its start
+down 80 145
+move 89 146
+wait 700
 expect-screen launcher
+up
+wait 100
 app marble-kick
 wait 500
 expect level=1

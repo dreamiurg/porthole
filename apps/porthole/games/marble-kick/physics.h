@@ -1,7 +1,7 @@
-// The marble: tilt to acceleration, rolling on felt, bouncing off the rim, pegs, goalposts and the back knob, and the
-// goal. No drawing, so host/test_marble.cpp runs it as is. Floats in panel px from the tray's center (+y down), at a
-// fixed STEP_MS substep: at V_MAX the ball moves 3 px a substep, and the thinnest thing it can hit (a goalpost) is
-// a 7 px peg is 27 px from the ball's center at contact, so it cannot pass through anything.
+// The marble: tilt to acceleration, rolling on felt, bouncing off the pegs, the home knob and the rim (open in the
+// goal's mouth), and the goal. No drawing, so host/test_marble.cpp runs it as is. Floats in panel px from the tray's
+// center (+y down), at a fixed STEP_MS substep: at V_MAX the ball moves 3 px a substep, and even a 7 px peg is 27 px
+// from the ball's center at contact, so it cannot pass through anything.
 #pragma once
 #include "levels.h"
 #include "tune.h"

@@ -14,7 +14,7 @@ constexpr int GO_HX = 80, GO_HY = 110, GO_HR = 14;
 constexpr int COIN_HX[3] = {50, 80, 110}, COIN_HY[2] = {50, 78}, COIN_HALF = 12;
 constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics coordinates are relative to it
 constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 390, COIN_Y = 90;
-constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves (InputTracker's long press)
+constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves, however the finger wobbles on it
 constexpr uint32_t STEADY_MS = 300;     // the neutral is the average gravity over this long
 constexpr int STEADY_MIN = 800, STEADY_MAX = 1200;   // milli-g: a reading outside is a jolt, not a way of holding it
 constexpr float DISH_GAIN = 1.2f, DISH_SPRING = 9, DISH_DAMP = 3.5f;   // the dish: 1/s^2, 1/s
@@ -68,7 +68,7 @@ void Game::enter(const AppEnter& e) {
   level_ = save_.level < NUM_LEVELS ? save_.level : 0;
   dirty_ = wantsHome_ = false;
   ball_ = start(LEVELS[level_]);
-  sampleCount_ = 0; refSet_ = false; dish_ = dishV_ = {0, 0};
+  sampleCount_ = 0; refSet_ = false; dish_ = dishV_ = {0, 0}; dishMs_ = 0;
   go(SC_CALIBRATE);
 }
 
@@ -103,11 +103,17 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 bool Game::pressing(int cx, int cy, int r) const {
   return in_.down && within(in_.downX, in_.downY, cx, cy, r) && within(in_.x, in_.y, cx, cy, r);
 }
+bool Game::pressingBox(int cx, int cy, int half) const {   // the same, for a square: a Done page coin's tap box
+  return in_.down && abs(in_.downX - cx) <= half && abs(in_.downY - cy) <= half && abs(in_.x - cx) <= half && abs(in_.y - cy) <= half;
+}
+bool Game::goPressed() const {   // the red button: under the finger, or on Calibrate pressed and waiting for a steady grip
+  return pressing(GO_HX, GO_HY, GO_HR) || (screen_ == SC_CALIBRATE && starting_);
+}
 // Home: a tap on the knob, except during play, where a hand on the case may brush it: there it takes a hold.
 bool Game::leaving() {
   if (screen_ != SC_PLAY) return in_.tapInCircle(KNOB_HX, KNOB_HY, KNOB_HR);
   in_.hit(KNOB_HX - KNOB_HR, KNOB_HY - KNOB_HR, 2 * KNOB_HR, 2 * KNOB_HR);   // for the UI audit
-  return in_.longPress && pressing(KNOB_HX, KNOB_HY, KNOB_HR);
+  return pressing(KNOB_HX, KNOB_HY, KNOB_HR) && in_.heldMs >= HOLD_MS;   // the ring's rule, not the tracker's long press
 }
 float Game::hold() const {
   if (screen_ != SC_PLAY || !pressing(KNOB_HX, KNOB_HY, KNOB_HR)) return 0;
@@ -148,7 +154,8 @@ void Game::updateCalibrate(uint32_t dt) {
 void Game::rollDish(uint32_t dt) {
   const Vec a = tiltAccel({in_.gx, in_.gy, in_.gz}, {(int)lroundf(ref_[0]), (int)lroundf(ref_[1]), (int)lroundf(ref_[2])});
   const float h = STEP_MS / 1000.0f;
-  for (uint32_t t = 0; t < (dt > MAX_FRAME_MS ? MAX_FRAME_MS : dt); t += STEP_MS) {
+  dishMs_ += dt > MAX_FRAME_MS ? MAX_FRAME_MS : dt;
+  for (; dishMs_ >= STEP_MS; dishMs_ -= STEP_MS) {   // whole substeps, the rest carried to the next frame
     dishV_ = {dishV_.x + (a.x * DISH_GAIN - dish_.x * DISH_SPRING - dishV_.x * DISH_DAMP) * h,
               dishV_.y + (a.y * DISH_GAIN - dish_.y * DISH_SPRING - dishV_.y * DISH_DAMP) * h};
     dish_ = {dish_.x + dishV_.x * h, dish_.y + dishV_.y * h};
@@ -180,7 +187,7 @@ void Game::updateDone() {
   if (in_.tapInCircle(GO_HX, GO_HY, GO_HR)) play(0);
 }
 int Game::pressedCoin() const {
-  for (int i = 0; screen_ == SC_DONE && i < NUM_LEVELS; i++) if (pressing(coinX(i), coinY(i), COIN_HALF)) return i;
+  for (int i = 0; screen_ == SC_DONE && i < NUM_LEVELS; i++) if (pressingBox(coinX(i), coinY(i), COIN_HALF)) return i;
   return -1;
 }
 
@@ -193,7 +200,7 @@ paint::Box Game::moving() const {
 uint32_t Game::look() const {
   const uint32_t since = ms_ - pageMs_;
   uint32_t k = pressing(KNOB_HX, KNOB_HY, KNOB_HR) | (uint32_t)(hold() * 24) << 1;
-  if (screen_ == SC_CALIBRATE || screen_ == SC_DONE) k |= (uint32_t)pressing(GO_HX, GO_HY, GO_HR) << 6;
+  if (screen_ == SC_CALIBRATE || screen_ == SC_DONE) k |= (uint32_t)goPressed() << 6;
   if (screen_ == SC_CALIBRATE) k |= (uint32_t)ready() << 7;
   if (screen_ == SC_DONE) k |= (uint32_t)(pressedCoin() + 1) << 8 | (since < paint::CONFETTI_MS ? since + 1 : 0) << 12;
   return k;
@@ -237,7 +244,7 @@ void Game::drawCalibrate() {
   drawTray(false);
   paint::coin(COIN_X, COIN_Y, level_ + 1, 22);
   paint::dish(DISH_X, DISH_Y, (int)lroundf(dish_.x), (int)lroundf(dish_.y), ready());
-  paint::playButton(GO_HX * 3, GO_HY * 3, pressing(GO_HX, GO_HY, GO_HR));
+  paint::playButton(GO_HX * 3, GO_HY * 3, goPressed());
 }
 void Game::drawPlay() {
   drawTray(true);

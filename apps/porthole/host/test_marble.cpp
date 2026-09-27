@@ -70,6 +70,20 @@ static void tiltMapping() {
   CHECK(tiltAccel({0, 866, -500}, UPRIGHT).y < -ACCEL_FULL + 1 && tiltAccel({0, 866, 500}, UPRIGHT).y > ACCEL_FULL - 1);
   const Vec wheel = tiltAccel({342, 940, 0}, UPRIGHT);
   CHECK(wheel.x > 0 && fabsf(wheel.y) < 0.5f * wheel.x);
+  // Leaned back 45 degrees, checked with plain rotations rather than gravityFor (which is tiltFrom's own inverse):
+  // gravity in the device's frame is (0, cos a, -sin a) leaned back by a from upright, so tipping the top edge 20
+  // degrees further away rolls the ball up and 20 degrees back toward you rolls it down; turning about the screen's
+  // up axis so the right edge drops 20 degrees, gravity (0, 707, -707) becomes (707 sin 20, 707, -707 cos 20), and
+  // the ball rolls right.
+  const float deg = 3.14159265f / 180;
+  const Grav away = {0, (int)lroundf(1000 * cosf(65 * deg)), (int)lroundf(-1000 * sinf(65 * deg))};
+  const Grav toward = {0, (int)lroundf(1000 * cosf(25 * deg)), (int)lroundf(-1000 * sinf(25 * deg))};
+  const Grav rightDown = {(int)lroundf(707 * sinf(20 * deg)), 707, (int)lroundf(-707 * cosf(20 * deg))};
+  // 20 degrees from the grip is a 1000 sin 20 = 342 mg tilt; the turn, about an axis leaned 45 degrees, 707 sin 20 = 242
+  const Vec up = tiltFrom(away, LEANED), down = tiltFrom(toward, LEANED), right = tiltFrom(rightDown, LEANED);
+  CHECK(fabsf(up.y + 342) < 3 && fabsf(up.x) < 3 && fabsf(down.y - 342) < 3 && fabsf(down.x) < 3);
+  CHECK(fabsf(right.x - 242) < 3 && fabsf(right.y) < 0.2f * right.x);
+  CHECK(tiltAccel(away, LEANED).y < 0 && tiltAccel(toward, LEANED).y > 0 && tiltAccel(rightDown, LEANED).x > 0);
 }
 
 // A made-up level for the rules: one post-sized peg (the thinnest thing on any tray) in the middle.
@@ -134,7 +148,6 @@ static void goalDetection() {
   b = start(PIN);
   for (int i = 0; i < 2000; i++) step(b, {0, ACCEL_FULL});
   CHECK(!b.goal && b.p.y > 0);
-  // the gap is only at the top, between the posts
   // the gap is the mouth between the posts, where the whole ball fits: at the top, the ball's center clear of each post
   const float mouth = PIN.goalHalf - POST_R - BALL_R;
   CHECK(inGap(PIN, {0, -180}) && inGap(PIN, {-(mouth - 1), -170}) && !inGap(PIN, {mouth + 1, -170}) && !inGap(PIN, {0, 180}));
@@ -272,17 +285,25 @@ static std::string fixBlocks(const std::string& text, int seen[3], int* stale) {
 static void playtestSolutions(bool write) {
   int seen[3] = {0, 0, 0}, stale = 0;
   DIR* d = opendir("tests/playtests");
-  assert(d);
+  if (!d) printf("test_marble: no tests/playtests here (run from apps/porthole)\n");
+  CHECK(d);
   while (dirent* e = readdir(d)) {
     const std::string path = std::string("tests/playtests/") + e->d_name;
     if (path.size() < 4 || path.compare(path.size() - 4, 4, ".txt")) continue;
     FILE* f = fopen(path.c_str(), "rb");
+    if (!f) { printf("test_marble: cannot read %s (run from apps/porthole)\n", path.c_str()); CHECK(false); }
     std::string text;
     for (int c; (c = fgetc(f)) != EOF;) text += (char)c;
     fclose(f);
     const int before = stale;
     const std::string fixed = fixBlocks(text, seen, &stale);
-    if (write && stale != before) { f = fopen(path.c_str(), "wb"); fputs(fixed.c_str(), f); fclose(f); printf("rewrote %s\n", path.c_str()); }
+    if (write && stale != before) {
+      f = fopen(path.c_str(), "wb");
+      if (!f) { printf("test_marble: cannot write %s\n", path.c_str()); CHECK(false); }
+      fputs(fixed.c_str(), f);
+      fclose(f);
+      printf("rewrote %s\n", path.c_str());
+    }
   }
   closedir(d);
   if (stale && !write) printf("test_marble: %d playtest solution blocks are stale: run build/host/test_marble --write-playtests\n", stale);
