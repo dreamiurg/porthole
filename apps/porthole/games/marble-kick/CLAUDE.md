@@ -89,8 +89,9 @@ future Save change resets progress (see `save.h`).
 - Measured on the board (2026-09-27, levels driven through the serial gravity override `G`): 55 fps while the ball
   rolls, render ~2 ms, present ~16 ms (vsync); levels 1 and 2 scored. So `V_MAX` (600 px/s) moves the ball ~11 px a
   frame and stays as it is.
-- The QMI8658's x/y mapping to the panel is unverified on the board (it needs a hand to tilt it), and the knobs in
-  `tune.h` and the calibration dish were set in the sim. Slice 2 settles both with the kid playing on the device.
+- The QMI8658's axes were measured by hand on the board (2026-09-27, `SCREEN_FROM_CHIP` in `firmware/board.cpp`), so
+  a tilt rolls the ball the way the device leans. The knobs in `tune.h` and the calibration dish were set in the sim;
+  slice 2 tunes them with the kid playing on the device.
 - Left as they are on purpose after the first review, to revisit: the launcher and shell text spacing, and the night
   tint (`tint()` follows the clock, but the RGB565 page draws its own daylight colors).
 - Held within about 10-20 degrees of face down (lying on your back, the device overhead), which way a tilt rolls the
