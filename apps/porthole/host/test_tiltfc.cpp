@@ -1,9 +1,10 @@
 // Self-check for Tilt FC (games/tilt-fc/): the tilt's dead zone from any grip, pass targeting in the cone, control
-// switching, goals, the kickoff, tackles and slides, the keeper's room, the whistle; the challenge (a greedy player
-// scores clearly less than one who passes and aims and does not win, a player who does nothing is not scored on in a
-// hurry, and the levels get harder); the save; every drawn string in the font; every incrementally drawn frame equal
-// to a full repaint; and the playtests' recorded matches in step with the rules (`build/host/test_tiltfc
-// --write-playtests` rewrites them).
+// switching, goals, the kickoff, tackles and slides, the keeper's room and throw, the whistle, a tap held level; the
+// challenge (a greedy player scores clearly less than one who passes and aims and does not win, a player who does
+// nothing is not scored on in a hurry, and each level is at least as hard as the last); the save, the result saved the
+// moment the match is decided; the court's pages without a fresh-page pause, the leave hold, pages mashing cannot skip;
+// every drawn string in the font; every incrementally drawn frame equal to a full repaint; and the playtests' recorded
+// matches in step with the rules (`build/host/test_tiltfc --write-playtests` rewrites them).
 // Run: make test
 #include <assert.h>
 #include <dirent.h>
@@ -122,6 +123,21 @@ static void controlSwitch() {
   CHECK(m.control == 0);
 }
 
+// A tap without a tilt while carrying: the aim is where he faces, and when nobody is that way it goes to the teammate
+// instead of rolling on to whoever stands ahead (at a teal kickoff that was coral's #8).
+static void levelTap() {
+  Match m = start(0, 1);
+  CHECK(aimDir(m, {0, 0}).y == -1 && aim(m, 0, {0, -1}).kind == Kick::ROLL);
+  CHECK(kidKick(m, {0, 0}).kind == Kick::PASS && kidKick(m, {0, 0}).to == 1);
+  step(m, {0, 0}, true);
+  CHECK(m.ball.owner < 0 && m.ball.passTo == 1);
+  CHECK(kidKick(parked(HOME, 0), tiltAt({-1, 0})).kind == Kick::ROLL);   // a tilt nobody stands along still rolls it
+  Vec at[PLAYERS];
+  memcpy(at, HOME, sizeof at);
+  at[0] = {20, -60};   // facing their goal in range: still a shot
+  CHECK(kidKick(parked(at, 0), {0, 0}).kind == Kick::SHOOT);
+}
+
 // A goal once the ball's middle crosses a goal line between the posts, then the ball rests in the net and nothing
 // moves until the kickoff; wide of a post, the wall. Own goals count for the other side.
 static void goals() {
@@ -192,6 +208,19 @@ static void tackles() {
   m = parked(at, CORAL_KEEPER);
   step(m, {0, 0}, false);
   CHECK(m.ball.owner == CORAL_KEEPER && dist(m.pl[0].p, m.pl[CORAL_KEEPER].p) >= KEEPER_ROOM - 0.01f);
+}
+
+// A keeper throws up the court, never back past himself: the kid running down behind his own keeper is not thrown the
+// ball into his own net.
+static void keeperThrowsForward() {
+  Vec at[PLAYERS];
+  memcpy(at, HOME, sizeof at);
+  at[0] = {40, HALF_H - PLAYER_R};                // #10 behind his keeper, by the goal line
+  at[1] = {-100, -20}; at[3] = {-80, -20};        // #9 up the court, closely marked
+  at[4] = {100, -150};
+  Match m = parked(at, TEAL_KEEPER);
+  for (int n = 0; n < 300 && m.scored < 0; n++) step(m, tiltAt({0, 1}), false);   // he keeps running at the line
+  CHECK(m.scored < 0);
 }
 
 // At the whistle a teal attack plays on, up to EXTRA_MS; anything else ends the match there.
@@ -305,23 +334,26 @@ static Tally series(Brain brain, uint8_t level) {
   return t;
 }
 // Thirty seeded matches per way of playing, at every level. The bounds are the design, not measurements: see the
-// spec's "Challenge" section for the numbers they are set against.
+// spec's "Challenge" section for the numbers they are set against. Each level is at least as hard as the one before:
+// passing wins no more, and an idle player is scored on no less.
 static void challenge() {
-  float passWinsFirst = 0, passWinsLast = 0;
+  Tally prevP = {}, prevI = {};
+  int passWinsFirst = 0;
   for (uint8_t level = 0; level < LEVELS; level++) {
     const Tally g = series(greedy, level), p = series(passer, level), i = series(idle, level);
     printf("level %d: greedy %.2f-%.2f won %2d | passing %.2f-%.2f won %2d | idle scored on %.2f a match, first after %.0f s "
            "(soonest %.1f s)\n", level, g.goalsFor, g.goalsAgainst, g.wins, p.goalsFor, p.goalsAgainst, p.wins,
            i.goalsAgainst, i.firstAgainstS, i.soonestS);
     CHECK(g.goalsFor * 2 <= p.goalsFor && p.goalsFor - g.goalsFor >= 1.5f);   // straight at the goal: half as much...
-    CHECK(g.wins <= 6);                           // ...and no reliable win (one in five at most)
+    CHECK(g.wins <= 3);   // ...and no reliable win: the design allows one in five; held to one in ten, for room to spare
     CHECK(p.wins >= 15);                          // playing well wins at every level, not always at the top
     CHECK(i.soonestS * 1000 >= KICKOFF_WAIT_MS + 1500);   // nobody is scored on before he could have moved
     CHECK(i.firstAgainstS >= 20);
-    if (level == 0) passWinsFirst = (float)p.wins;
-    passWinsLast = (float)p.wins;
+    if (level) CHECK(p.wins <= prevP.wins && i.goalsAgainst >= prevI.goalsAgainst);   // never easier than the last level
+    if (!level) passWinsFirst = p.wins;
+    prevP = p; prevI = i;
   }
-  CHECK(passWinsLast < passWinsFirst);   // and the levels do get harder
+  CHECK(prevP.wins < passWinsFirst);   // and the top level is harder than the first
 }
 
 // ---- the save
@@ -360,22 +392,32 @@ struct Rig {
   void tap(int x, int y) { frame(true, x, y); frame(true, x, y); frame(false, x, y); }   // the sim's `tap`: 80 ms
   bool on(const char* screen) const { return !strcmp(game.screenName(), screen); }
 };
+// Where the signs are, logical px: the leave sign on the left, the go sign on the Full time page.
+constexpr int LEAVE_X = 17, LEAVE_Y = 80, GO_X = 80, FT_GO_Y = 125;
+static void toMatch(Rig& r) {   // calibrated as held, through the Kickoff page's 3-2-1
+  r.wait(200);
+  r.game.debugCmd("kickoff");
+  r.wait(KICKOFF_MS + 40);
+}
+static void toFullTime(Rig& r, const char* score) {   // the score set, then the whistle (a teal attack plays on)
+  toMatch(r);
+  r.game.debugCmd(score);
+  r.game.debugCmd("clock0");
+  for (int f = 0; f < 400 && !r.on("fc_fulltime"); f++) r.frame(false);
+}
+static bool saved(Rig& r, Save* s) {
+  const void* data; size_t n;
+  return r.game.takeSave(&data, &n, true) && loadBlob(data, n, *s);
+}
 // Full time counts a win and raises the level; a loss by two lowers it (never below 0); the save carries both.
 static void fullTimeSaves() {
   Rig r;
   r.enter({nullptr, 0});
-  r.wait(200);
-  r.game.debugCmd("kickoff");
-  r.wait(KICKOFF_MS + 40);
-  r.game.debugCmd("score2-0");
-  r.game.debugCmd("clock0");
-  r.wait(EXTRA_MS + 400);   // teal on the ball at the whistle: plays on, then full time
+  toFullTime(r, "score2-0");
   CHECK(r.on("fc_fulltime"));
-  const void* data; size_t n;
-  CHECK(r.game.takeSave(&data, &n, true) && n == sizeof(Save));
   Save s;
-  CHECK(loadBlob(data, n, s) && s.wins == 1 && s.level == 1);
-  CHECK(!r.game.takeSave(&data, &n, true));   // nothing new since
+  CHECK(saved(r, &s) && s.wins == 1 && s.level == 1);
+  CHECK(!saved(r, &s));   // nothing new since
   static Save blob;
   blob = s;
   Rig again;
@@ -387,11 +429,111 @@ static void fullTimeSaves() {
   again.game.debugCmd("score0-2");
   again.game.debugCmd("clock0");
   again.wait(EXTRA_MS + 400);
-  CHECK(again.on("fc_fulltime") && again.game.takeSave(&data, &n, true) && loadBlob(data, n, s) && s.level == 0 && s.wins == 1);
-  again.tap(130, 40);   // after the fresh-page pause, a tap anywhere plays on: the Calibrate page
-  again.wait(500);
-  again.tap(130, 40);
-  CHECK(again.on("fc_calibrate"));
+  CHECK(again.on("fc_fulltime") && saved(again, &s) && s.level == 0 && s.wins == 1);
+}
+
+// The result counts the moment the match is decided, once: a third goal is saved while GOAL! still shows, so leaving
+// then (or the shell closing the game) keeps the win, and Full time after it adds nothing.
+static bool botToGoal(Rig& r) {   // the passing bot plays until a goal, deciding every 5 frames
+  for (int f = 0; f < 4000 && !r.on("fc_goal"); f += 5) {
+    Vec t = {0, 0};
+    bool tap = false;
+    if (r.on("fc_match")) passer(r.game.match(), &t, &tap);
+    r.grav = gravityFor((int)lroundf(t.x), (int)lroundf(t.y), UPRIGHT);
+    if (tap) { r.tap(130, 40); r.frame(false); r.frame(false); continue; }
+    for (int k = 0; k < 5; k++) r.frame(false);
+  }
+  r.grav = UPRIGHT;
+  return r.on("fc_goal");
+}
+static void decidedOnce() {
+  Rig r;
+  r.enter({nullptr, 0});
+  toMatch(r);
+  r.game.debugCmd("score2-0");
+  CHECK(botToGoal(r) && r.game.match().score[TEAL] == 3);
+  Save s;
+  CHECK(saved(r, &s) && s.wins == 1 && s.level == 1);   // on the Goal page already
+  r.wait(GOAL_MS + 80);
+  CHECK(r.on("fc_fulltime") && !saved(r, &s));
+  Rig left;   // the same, leaving while GOAL! shows
+  left.enter({nullptr, 0});
+  toMatch(left);
+  left.game.debugCmd("score2-0");
+  CHECK(botToGoal(left));
+  bool gone = false;
+  for (int f = 0; f < 20 && !gone; f++) { left.frame(true, LEAVE_X, LEAVE_Y); gone = left.game.wantsHome(); }
+  CHECK(gone && left.on("fc_goal") && saved(left, &s) && s.wins == 1);
+}
+
+// Kickoff, Match and Goal are one court: no fresh-page pause between them, so a press at the first moment of the match
+// plays and a hold on the leave sign carries on from one to the next. The hold counts from when the finger is on the
+// sign: a press that drifts off and back starts over, and one that starts on the court never leaves.
+static void firstTapPlays() {
+  Rig r;
+  r.enter({nullptr, 0});
+  r.wait(200);
+  r.game.debugCmd("kickoff");
+  for (int f = 0; f < 200 && r.on("fc_kickoff"); f++) r.frame(false);
+  r.frame(true, 130, 40);   // the first frame of the match
+  r.frame(false, 130, 40);
+  CHECK(r.game.match().ball.owner != 0 && r.game.match().ball.passTo == 1);
+}
+static void holdCarriesOn() {
+  Rig h;
+  h.enter({nullptr, 0});
+  h.wait(200);
+  h.game.debugCmd("kickoff");
+  h.wait(KICKOFF_MS - 280);
+  int f = 0;
+  for (; f < 30 && !h.game.wantsHome(); f++) h.frame(true, LEAVE_X, LEAVE_Y);   // over the page change
+  CHECK(h.on("fc_match") && f * 40 >= (int)ui::HOLD_MS && f * 40 <= (int)ui::HOLD_MS + 80);
+}
+static void holdCountsOnTheSign() {
+  Rig d;
+  int f = 0;
+  d.enter({nullptr, 0});
+  toMatch(d);
+  for (int k = 0; k < 10; k++) d.frame(true, LEAVE_X, LEAVE_Y);   // 400 ms on the sign
+  for (int k = 0; k < 5; k++) d.frame(true, 45, 80);              // drifts off
+  for (f = 0; f < 30 && !d.game.wantsHome(); f++) d.frame(true, LEAVE_X, LEAVE_Y);   // and back: from the start
+  CHECK(f * 40 >= (int)ui::HOLD_MS && f * 40 <= (int)ui::HOLD_MS + 80);
+  d.frame(false);
+  d.enter({nullptr, 0});
+  toMatch(d);
+  for (int k = 0; k < 2; k++) d.frame(true, 45, 80);   // down on the court, then onto the sign
+  for (f = 0; f < 30 && !d.game.wantsHome(); f++) d.frame(true, LEAVE_X, LEAVE_Y);
+  CHECK(f == 30 && d.on("fc_match"));
+}
+
+// Mashing does not skip what the kid should see: the Goal page ignores taps and moves on after GOAL_MS; Full time
+// moves on only by the go sign, once the result has shown for FT_READY_MS. The go sign and the leave sign off the
+// match take a tap or a long press let go on them.
+static void noSkipping() {
+  Rig r;
+  r.enter({nullptr, 0});
+  toMatch(r);
+  CHECK(botToGoal(r));
+  for (int k = 0; k < 10; k++) { r.tap(130, 40); r.frame(false); }   // 1.6 s of taps
+  CHECK(r.on("fc_goal"));
+  r.wait(GOAL_MS);
+  CHECK(r.on("fc_kickoff"));
+  Rig ft;
+  ft.enter({nullptr, 0});
+  toFullTime(ft, "score2-0");
+  CHECK(ft.on("fc_fulltime"));
+  for (int k = 0; k < 6; k++) { ft.tap(130, 40); ft.frame(false); }
+  ft.tap(GO_X, FT_GO_Y);   // too soon, even on the sign
+  CHECK(ft.on("fc_fulltime"));
+  ft.wait(FT_READY_MS);
+  for (int k = 0; k < 20; k++) ft.frame(true, GO_X, FT_GO_Y);   // a long press, let go on the sign
+  ft.frame(false, GO_X, FT_GO_Y);
+  CHECK(ft.on("fc_calibrate"));
+  ft.wait(600);
+  for (int k = 0; k < 20; k++) ft.frame(true, LEAVE_X, LEAVE_Y);
+  CHECK(!ft.game.wantsHome());
+  ft.frame(false, LEAVE_X, LEAVE_Y);
+  CHECK(ft.game.wantsHome());
 }
 
 // Every string drawn is in the font's glyphs (a glyph outside them draws nothing), and fits on a shirt or a tile.
@@ -407,7 +549,7 @@ static void strings() {
 // ---- drawing: every frame drawn into the panel's two buffers by turns, repainting only what moved, equals the frame
 // painted whole. The drive: random tilts and jolts, taps, holds and brushes anywhere and on the signs, frames of 0 ms
 // and stalls of 500 ms, and from time to time a match the passing bot plays (goals, the Goal page), or one sent
-// straight to its whistle (Full time).
+// straight to its whistle (Full time); then a match the kid carries through the extra time to Full time, tilting on.
 struct Driver {
   Rig rig;
   uint32_t rng = 4242;
@@ -468,6 +610,22 @@ static bool drawnRight(Game& game, uint16_t* shown, uint16_t* whole) {
   memcpy(shown, whole, gfx565::W * gfx565::H * 2);   // report each mistake once
   return false;
 }
+// The kid carries the ball through the extra time to Full time, then tilts back and forth there: the frames drawn wrong.
+static int tiltingAtFullTime(Rig& r, uint16_t (*bufs)[gfx565::W * gfx565::H], uint16_t* whole) {
+  int bad = 0;
+  r.grav = UPRIGHT;
+  r.enter({nullptr, 0});
+  toMatch(r);
+  r.game.debugCmd("clock-9");   // a second of extra time left, teal on the ball
+  for (int f = 0; f < 60 && !r.on("fc_fulltime"); f++) { r.frame(false); bad += !drawnRight(r.game, bufs[f & 1], whole); }
+  CHECK(r.on("fc_fulltime") && r.game.match().ball.owner == 0);
+  for (int f = 0; f < 40; f++) {
+    r.grav = gravityFor(f % 4 < 2 ? -150 : 300, f % 4 < 2 ? -300 : 0, UPRIGHT);
+    r.frame(false);
+    if (!drawnRight(r.game, bufs[f & 1], whole) && bad++ < 5) printf("Full time frame %d: the incremental frame differs\n", f);
+  }
+  return bad;
+}
 static void incrementalEqualsFull() {
   static const char* const PAGES[Game::SC_COUNT] = {"fc_calibrate", "fc_kickoff", "fc_match", "fc_goal", "fc_fulltime"};
   static uint16_t bufs[2][gfx565::W * gfx565::H], whole[gfx565::W * gfx565::H];
@@ -482,6 +640,7 @@ static void incrementalEqualsFull() {
     for (int s = 0; s < Game::SC_COUNT; s++) seen[s] += d.rig.on(PAGES[s]);
     if (!drawnRight(d.rig.game, bufs[f & 1], whole) && bad++ < 5) printf("frame %d: the incremental frame differs\n", f);
   }
+  bad += tiltingAtFullTime(d.rig, bufs, whole);
   printf("render check: %d frames differ; frames per page %d %d %d %d %d\n", bad, seen[0], seen[1], seen[2], seen[3], seen[4]);
   CHECK(bad == 0);
   for (int s : seen) CHECK(s > 20);   // every page was drawn both ways
@@ -581,11 +740,18 @@ int main(int argc, char** argv) {
   goals();
   kickoffReset();
   tackles();
+  keeperThrowsForward();
   whistle();
   kickoffWait();
+  levelTap();
   challenge();
   saveBlob();
   fullTimeSaves();
+  decidedOnce();
+  firstTapPlays();
+  holdCarriesOn();
+  holdCountsOnTheSign();
+  noSkipping();
   strings();
   incrementalEqualsFull();
   playtestMatches(false);

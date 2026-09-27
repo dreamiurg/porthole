@@ -1,0 +1,98 @@
+# Tilt FC played like a 6-year-old: taps all through the Kickoff 3-2-1 leave the ball on the spot, and the first tap of
+# the match, held level, plays at once and passes to #9 (not up the court to coral's #8); in the match a press on the
+# leave sign that drifts off, one that drifts off and back, and a press on the court that drifts onto the sign never
+# leave; a loss goes to Full time with the level kept, where mashing does nothing until the result has shown, then a
+# long press on the go sign plays on and a quick second tap lands on the Calibrate page without starting a match; a
+# hold on the leave sign from the end of the 3-2-1 into the match leaves; coming back starts over on the Calibrate page
+# at 0-0.
+tilt 0 1000 0
+profile Sam 6
+app tilt-fc
+wait 600
+dbg kickoff
+tap 130 40
+wait 200
+tap 80 125
+wait 200
+tap 130 40
+wait 200
+expect-screen fc_kickoff
+expect owner=0
+expect bx=0
+expect by=0
+snap fc_k01_kickoff_taps
+wait 1600
+expect-screen fc_match
+tap 130 40
+wait 200
+expect control=1
+snap fc_k02_first_tap
+down 17 80
+wait 300
+move 45 80
+wait 500
+up
+wait 100
+expect-screen fc_match
+down 17 80
+wait 400
+move 45 80
+wait 200
+move 17 80
+wait 300
+expect-screen fc_match
+up
+wait 100
+down 45 80
+wait 60
+move 17 80
+wait 800
+up
+wait 100
+expect-screen fc_match
+# a loss at the whistle, the extra time already used up
+dbg score0-2
+dbg clock-10
+wait 100
+expect-screen fc_fulltime
+expect level=0
+expect wins=0
+ui-check fc_fulltime-loss
+snap fc_k03_fulltime_loss
+wait 500
+tap 130 40
+wait 100
+tap 80 125
+wait 100
+tap 130 40
+wait 100
+expect-screen fc_fulltime
+wait 900
+down 80 125
+wait 800
+up
+wait 60
+tap 80 116
+wait 100
+expect-screen fc_calibrate
+expect starting=0
+wait 600
+expect-screen fc_calibrate
+# a hold on the leave sign from the end of the 3-2-1 into a match at 2-1 leaves
+dbg kickoff
+dbg score2-1
+wait 2000
+down 17 80
+wait 440
+expect-screen fc_match
+wait 300
+up
+wait 100
+expect-screen launcher
+app tilt-fc
+wait 600
+expect-screen fc_calibrate
+expect teal=0
+expect coral=0
+snap fc_k04_back
+sheet kid_taps

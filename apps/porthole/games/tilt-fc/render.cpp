@@ -239,11 +239,10 @@ void scoreboard(int teal, int coral) {
   tile({BOARD_X - TILE / 2, CY + 21, BOARD_X + TILE / 2, CY + 21 + TILE}, 9, KITS[KIT_TEAL], digit(teal), FONT36);
 }
 // A chalk dial with the time played filling it clockwise from the top in dark asphalt.
-void clock(float used) {
+void clock(int steps) {
   disc(BOARD_X, CY, CLOCK_R, INK);
   disc(BOARD_X, CY, CLOCK_R - 2, SH.c[CHALK][0]);
-  const int steps = (int)(used * 24 + 0.5f);
-  for (int i = 0; i < steps && i < 24; i++) {
+  for (int i = 0; i < steps && i < CLOCK_STEPS; i++) {
     const float a0 = -1.5708f + i * 0.2618f, a1 = a0 + 0.2618f, r = CLOCK_R - 2;
     const int t[6] = {BOARD_X, CY, BOARD_X + (int)lroundf(cosf(a0) * r), CY + (int)lroundf(sinf(a0) * r),
                       BOARD_X + (int)lroundf(cosf(a1) * r), CY + (int)lroundf(sinf(a1) * r)};
@@ -265,18 +264,41 @@ void leaveSign(bool pressed, float hold) {
   poly(head, 3, WHITE);
   roundBox({x - 3, y - 4, x + 14, y + 5}, 0, WHITE);
 }
-void goSign(int x, int y, bool pressed) {
+void goSign(int x, int y, bool pressed, bool ready) {
   if (pressed) y += 2;
   const int shadow[8] = {x + 5, y - 38, x + 49, y + 6, x + 5, y + 50, x - 39, y + 6};
   const int edge[8] = {x, y - 44, x + 44, y, x, y + 44, x - 44, y};
   const int face[8] = {x, y - 38, x + 38, y, x, y + 38, x - 38, y};
   const int go[6] = {x - 10, y - 16, x + 17, y, x - 10, y + 16};
   shadePoly(shadow, 4);
-  poly(edge, 4, INK);
-  poly(face, 4, SUN);
-  poly(go, 3, INK);
+  poly(edge, 4, ready ? INK : SH.c[CURB][1]);
+  poly(face, 4, ready ? SUN : SH.c[CURB][0]);
+  poly(go, 3, ready ? INK : SH.c[CURB][1]);
 }
-void banner(const char* s, int y) { label(FONT64, s, CX, y, SUN); }
+// The plate: a white rim round the leave sign's dark blue, its shadow on the court, sun-yellow words (6.5:1).
+void banner(const char* s, int top) {
+  constexpr int BANG_GAP = 7, PAD_X = 18, PAD_Y = 13, RIM = 5;
+  const font::Font& f = FONT64;
+  char w[8] = {};
+  int n = 0;
+  for (; s[n] && n < 7; n++) w[n] = s[n];
+  const bool bang = n > 1 && w[n - 1] == '!';
+  if (bang) w[--n] = 0;
+  const font::Glyph &last = f.glyphs[(uint8_t)w[n - 1] - 31], &b = f.glyphs['!' - 31], &d = f.glyphs['0' - 31];
+  const int wordW = font::textWidth(f, w), inkEnd = wordW - ((last.advW + 8) >> 4) + last.ofsX + last.boxW;
+  const int width = bang ? inkEnd + BANG_GAP + b.boxW : wordW, x = CX - width / 2;
+  const int inkTop = top + f.lineHeight - f.baseLine - d.ofsY - d.boxH;   // digits and capitals: one height
+  const Box plate = {x - PAD_X, inkTop - PAD_Y, x + width + PAD_X, inkTop + d.boxH + PAD_Y};
+  for (int y = plate.y0 + 7; y < plate.y1 + 7; y++) {   // its shadow: the same round box, 6 right and 7 down
+    const int k = y - plate.y0 - 7 < 16 ? 16 - (y - plate.y0 - 7) : y - (plate.y1 + 6 - 16) > 0 ? y - (plate.y1 + 6 - 16) : 0;
+    const int in = k ? 16 - isqrt(256 - k * k) : 0;
+    shade(y, plate.x0 + 6 + in, plate.x1 + 6 - in);
+  }
+  roundBox(plate, 16, WHITE);
+  roundBox({plate.x0 + RIM, plate.y0 + RIM, plate.x1 - RIM, plate.y1 - RIM}, 16 - RIM, SIGN_FACE);
+  font::text(f, w, x, top, SUN);
+  if (bang) font::text(f, "!", x + inkEnd + BANG_GAP - b.ofsX, top, SUN);
+}
 void result(int teal, int coral, bool won) {
   tile({CX - 110, CY - 48, CX - 14, CY + 48}, 16, KITS[KIT_TEAL], digit(teal), FONT64);
   tile({CX + 14, CY - 48, CX + 110, CY + 48}, 16, KITS[KIT_CORAL], digit(coral), FONT64);

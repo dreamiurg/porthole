@@ -49,6 +49,7 @@ struct Match {
   int8_t scored;      // the team that just scored (the match waits for kickoff()), or -1
   uint8_t level;      // difficulty, 0..LEVELS-1 (tune.h)
   bool over;          // the clock ran out
+  bool kickoffOn;     // a kickoff still on: the ball not yet off the spot (nor KICKOFF_WAIT_MS gone by)
   uint32_t ms;        // time played (the clock)
   uint32_t rng;       // the coral players' coin flips and aim errors, and each shot's keeper reaction
   uint16_t reactMs;   // how much slower than his best the keeper is to react to the ball in the air (a draw per kick)
@@ -65,6 +66,7 @@ void kickoff(Match& m, int team);            // everyone back in place, `team` o
 Vec heading(Vec tilt);                       // the tilt's direction (a unit vector) past the dead zone, else (0, 0)
 Vec aimDir(const Match& m, Vec tilt);        // the kid's aim: the tilt past the dead zone, else where he faces
 Kick aim(const Match& m, int who, Vec dir);  // a kick from `who` along the unit vector `dir`
+Kick kidKick(const Match& m, Vec tilt);      // what a tap by the kid's player would do now (with the ball)
 void step(Match& m, Vec tilt, bool tap);     // one STEP_MS; tilt from tilt::from (milli-g), tap: pressed this step
 inline bool timeUp(const Match& m) { return m.ms >= MATCH_MS; }
 inline bool finished(const Match& m) {       // after a goal (or at the whistle): no kickoff, the Full time page

@@ -31,8 +31,8 @@ class Game : public App {
   void leave() override {}
   const char* screenName() const override;
   void debugPrint() override;
-  // "kickoff": calibrate as held now and start a match; "score<T>-<C>": set the score (T, C 0-2); "clock<S>": S seconds
-  // of the clock left.
+  // "kickoff": calibrate as held now and start a match (seeded by its number alone); "score<T>-<C>": set the score (T,
+  // C 0-2); "clock<S>": S seconds of the clock left (negative: that far into the extra time).
   void debugCmd(const char* cmd) override;
   const Match& match() const { return match_; }   // for host/test_tiltfc.cpp
 
@@ -43,7 +43,8 @@ class Game : public App {
   bool dirty_ = false, wantsHome_ = false;
   uint32_t now_ = 0, ms_ = 0, pageMs_ = 0;   // pageMs_: when this page appeared
   Input in_{};
-  ui::FreshGate gate_;            // every page change ignores touches for a moment (os/ui.h)
+  ui::FreshGate gate_;            // stepping onto the court or off it ignores touches for a moment (os/ui.h)
+  ui::Hold hold_;                 // the leave sign held during play
   Screen screen_ = SC_CALIBRATE;
   tilt::Grav neutral_ = {0, 0, -1000};   // gravity as the kid held the device when the match started
   Vec tilt_{};                    // this frame's tilt away from it (milli-g)
@@ -55,7 +56,8 @@ class Game : public App {
   Match match_{};
   uint32_t stepMs_ = 0;           // time not yet played, under one STEP_MS
   bool tapPending_ = false;       // a press not yet played (a frame too short for a step)
-  uint16_t matchNo_ = 0;          // matches started this visit: the seed of the next one
+  uint32_t seed_ = 0;             // the visit's: when it began
+  uint16_t matchNo_ = 0;          // matches started this visit: with seed_, the seed of the next one
   // What each of the panel's two buffers holds (os/canvas.h): this page, its movers (players, ball, the aim spot, the
   // clock; the Calibrate arrow) as boxes with keys, and the rest of its state as `look` (the score, the countdown, a
   // pressed sign, the hold).
@@ -65,15 +67,20 @@ class Game : public App {
 
   void go(Screen s);
   void newMatch();
-  void finish();                  // the Full time page, and the save: a win, the next level
+  void decide();                  // the match is decided: the save gets a win, the next level
   bool pressing(int cx, int cy, int r) const { return ui::pressing(in_, cx, cy, r); }
+  bool released(int cx, int cy, int r) const;   // a tap, or a long press let go, on this logical circle
   bool onSign(int x, int y) const;
   bool leaving();
+  bool goPressed() const;
+  bool ftReady() const;           // Full time: shown long enough for the go sign to play on
   float hold() const;             // how far holding the leave sign has got, 0..1 (Kickoff, Match, Goal)
   bool inPlay() const { return screen_ == SC_KICKOFF || screen_ == SC_MATCH || screen_ == SC_GOAL; }
   tilt::Vec calTilt() const;      // Calibrate: the tilt away from the slow reference
   bool ready() const;             // Calibrate: held still
   Kick kidAim() const;            // what a tap would do now (for the aim spot and the pass target)
+  int clockSteps() const;         // the clock dial's steps filled (its mover key, and what it draws)
+  uint32_t countdown() const;     // Kickoff: 3, 2, 1
   int movers(Mover* out) const;
   uint32_t look() const;
   void updateCalibrate(uint32_t dt);

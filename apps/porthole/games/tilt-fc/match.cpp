@@ -161,19 +161,22 @@ void carry(Match& m, int i) {
   }
   run(c, add(c.p, mul(want, 40)), speedOf(m, i) * 0.92f, accelOf(m, i));
 }
-// A caught ball goes out to the teammate with the most room whose lane is open, once one has room; else, after a
-// while, it is rolled out wide on the side away from the nearest opponent.
+// A caught ball goes out to the teammate with the most room whose lane is open, once one has room and is up the court
+// from the ball (never back toward his own goal line: a throw to a player running behind the keeper went in); else,
+// after a while, it is rolled out wide on the side away from the nearest opponent.
 constexpr float THROW_ROOM = 45;   // px from the receiver to his nearest opponent, at least
+constexpr float THROW_AHEAD = 20;  // px up the court from the ball the throw's target must be, at least
 void throwOut(Match& m, int k) {
   const int t = teamOf(k), them = firstOutfield(1 - t);
   int to = -1;
   float room = THROW_ROOM;
+  Vec at = {0, 0};
   for (int j = firstOutfield(t), n = 0; n < 2; j++, n++) {
-    const Vec p = m.pl[j].p;
+    const Vec p = m.pl[j].p, lead = add(p, mul(m.pl[j].v, LEAD_S));
     const float r = fminf(dist(p, m.pl[them].p), dist(p, m.pl[them + 1].p));
-    if (r > room && laneOpen(m, p, t)) { room = r; to = j; }
+    if (r > room && dot(sub(lead, m.ball.p), forward(t)) >= THROW_AHEAD && laneOpen(m, p, t)) { room = r; to = j; at = lead; }
   }
-  if (to >= 0) { kick(m, k, add(m.pl[to].p, mul(m.pl[to].v, LEAD_S)), PASS_SPEED * 0.9f, to); return; }
+  if (to >= 0) { kick(m, k, at, PASS_SPEED * 0.9f, to); return; }
   if (m.ball.heldMs < 2 * KEEPER_HOLD_MS) return;
   const float side = m.pl[nearestOpponent(m, k)].p.x > m.pl[k].p.x ? -1.0f : 1.0f;
   kick(m, k, add({side * 110, m.pl[k].p.y}, mul(forward(t), 110)), PASS_SPEED * 0.9f, -1);
@@ -198,11 +201,11 @@ void keeper(Match& m, int i) {
   x = clampf(x, -(GOAL_HALF - 10.0f), GOAL_HALF - 10.0f);
   k.v = toward(k.p, {x, ky}, teal ? TEAL_KEEPER_SPEED : KEEPER_SPEED[m.level]);
 }
-// A kickoff: until the taker has moved the ball (or KICKOFF_WAIT_MS has gone by), the other team keeps out of the centre
-// circle, so a kid still finding his grip is not robbed on the spot.
+// A kickoff, either side's: until the taker has moved the ball off the spot (or KICKOFF_WAIT_MS has gone by), the other
+// team keeps out of the centre circle, so a kid still finding his grip is not robbed on the spot.
 bool kickoffWait(const Match& m, int i) {
   const Ball& b = m.ball;
-  return b.owner >= 0 && teamOf(b.owner) != teamOf(i) && len(b.p) < 1 && b.heldMs < KICKOFF_WAIT_MS;
+  return m.kickoffOn && b.owner >= 0 && teamOf(b.owner) != teamOf(i);
 }
 Vec outsideCircle(Vec p) { return len(p) >= CIRCLE_R + PLAYER_R ? p : mul(unit(p, Vec{0, -1}), CIRCLE_R + PLAYER_R); }
 void think(Match& m, int i) {
@@ -233,10 +236,10 @@ void steerKid(Match& m, Vec tilt) {
   if (b.owner < 0 && b.passTo == m.control) h = unit(sub(b.p, k.p), h);   // a pass to him: he runs to meet it himself
   k.v = mul(h, k.slowMs ? SLOW_SPEED : RUN_SPEED);
 }
-// With the ball: pass, shoot or roll it along the aim. Without: slide along the tilt (or where he faces).
+// With the ball: pass, shoot or roll it along the aim (kidKick). Without: slide along the tilt (or where he faces).
 void kidTap(Match& m, Vec tilt) {
   Player& k = m.pl[m.control];
-  if (m.ball.owner == m.control) { play(m, m.control, aim(m, m.control, aimDir(m, tilt))); return; }
+  if (m.ball.owner == m.control) { play(m, m.control, kidKick(m, tilt)); return; }
   if (k.slideMs || k.slowMs) return;
   k.face = aimDir(m, tilt);
   k.slideMs = SLIDE_MS;
@@ -253,6 +256,7 @@ void timers(Match& m) {
   Ball& b = m.ball;
   b.heldMs += STEP_MS;
   if (b.owner < 0 && b.passTo >= 0 && b.heldMs > PASS_MS) b.passTo = -1;
+  if (b.owner < 0 || len(b.p) >= 1 || b.heldMs >= KICKOFF_WAIT_MS) m.kickoffOn = false;
 }
 void separate(Match& m) {   // bodies do not overlap: two players touching push each other apart evenly
   for (int i = 0; i < PLAYERS; i++)
@@ -266,7 +270,7 @@ void separate(Match& m) {   // bodies do not overlap: two players touching push 
       m.pl[j].p = add(m.pl[j].p, mul(n, push));
     }
 }
-// Room the rules give the side on the ball: a keeper holding it (nobody camps on him and takes his throw), and a teal
+// Room the rules give the side on the ball: a keeper holding it (nobody camps on him and takes his throw), and a
 // kickoff until the ball moves (kickoffWait). Opponents are kept out, whatever their run.
 void room(Match& m) {
   const int k = m.ball.owner;
@@ -382,6 +386,7 @@ void kickoff(Match& m, int team) {
   m.ball = {{0, 0}, {0, 0}, (int8_t)taker, -1, (int8_t)taker, 0};
   m.control = 0;
   m.scored = -1;
+  m.kickoffOn = true;
 }
 Match start(uint8_t level, uint32_t seed) {
   Match m{};
@@ -414,6 +419,15 @@ Kick aim(const Match& m, int who, Vec dir) {
   }
   if (to >= 0) return {Kick::PASS, (int8_t)to, add(m.pl[to].p, mul(m.pl[to].v, LEAD_S))};
   return {Kick::ROLL, -1, add(from, mul(dir, 100))};
+}
+// A tap without a tilt aims where the kid's player faces; when that finds nobody it passes to his teammate rather than
+// rolling the ball on to whoever stands ahead (at a teal kickoff, coral's #8).
+Kick kidKick(const Match& m, Vec tilt) {
+  const Vec h = heading(tilt);
+  const Kick k = aim(m, m.control, aimDir(m, tilt));
+  if (k.kind != Kick::ROLL || h.x != 0 || h.y != 0) return k;
+  const Player& mate = m.pl[mateOf(m.control)];
+  return {Kick::PASS, (int8_t)mateOf(m.control), add(mate.p, mul(mate.v, LEAD_S))};
 }
 void step(Match& m, Vec tilt, bool tap) {
   if (m.scored >= 0 || m.over) return;

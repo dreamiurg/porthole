@@ -8,9 +8,10 @@
 namespace fc {
 namespace {
 // Logical hit areas (the audit sees each as its box): the leave sign on the left of every page, the go sign under the
-// centre circle on the Calibrate page (and drawn, as a hint, on the Full time page, where a tap anywhere plays on).
+// centre circle on the Calibrate page and under the result on the Full time page.
 constexpr int SIGN_HX = paint::SIGN_X / 3, SIGN_HY = paint::SIGN_Y / 3, SIGN_HR = 12;
-constexpr int GO_X = paint::CX, GO_Y = 348, FT_GO_Y = 376, GO_HX = GO_X / 3, GO_HY = GO_Y / 3, GO_HALF = 14;
+constexpr int GO_X = paint::CX, GO_Y = 348, FT_GO_Y = 376, GO_HX = GO_X / 3, GO_HY = GO_Y / 3, FT_GO_HY = FT_GO_Y / 3;
+constexpr int GO_HR = 14;
 constexpr int CX = paint::CX, CY = paint::CY;
 constexpr int COUNTDOWN_Y = 92, GOAL_Y = 160;   // the big words' line tops
 // Who is who besides the shirt numbers (paint::NUMBERS): hair and kits.
@@ -77,16 +78,20 @@ void Game::enter(const AppEnter& e) {
     if (e.all[i].id == e.who->id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);
   if (save_.level >= LEVELS) save_.level = LEVELS - 1;
   dirty_ = wantsHome_ = false;
+  seed_ = e.ms;   // the time the game opened: another visit, other matches
   matchNo_ = 0;
-  match_ = start(save_.level, 0);
+  match_ = {};    // no match until the go sign: 0-0
   steady_ = {};
   go(SC_CALIBRATE);
 }
 
-// A new page: every touch waits for the fresh-page pause, and both panel buffers get the whole page.
+// A new page: both panel buffers get the whole page. Stepping onto the court or off it, every touch waits for the
+// fresh-page pause; Kickoff, Match and Goal are one court, where a press plays at once and a hold on the leave sign
+// carries on across a page change.
 void Game::go(Screen s) {
+  const bool wasInPlay = inPlay();
   screen_ = s;
-  gate_.shown(ms_);
+  if (!wasInPlay || !inPlay()) gate_.shown(ms_);
   pageMs_ = ms_;
   starting_ = tapPending_ = false;
   ref_.reset();
@@ -94,16 +99,16 @@ void Game::go(Screen s) {
   frames_.reset();
 }
 void Game::newMatch() {
-  match_ = start(save_.level, ++matchNo_);
+  match_ = start(save_.level, seed_ + ++matchNo_);
   go(SC_KICKOFF);
 }
-// Full time: a win counts and makes the next match a little harder; a loss by two or more makes it a little easier.
-void Game::finish() {
+// The match is decided (the third goal, or the whistle): into the save at once, before GOAL! or Full time shows, so
+// leaving then keeps it. A win counts and makes the next match a little harder; a loss by two or more a little easier.
+void Game::decide() {
   const int teal = match_.score[TEAL], coral = match_.score[CORAL];
   if (teal > coral) { save_.wins++; if (save_.level + 1 < LEVELS) save_.level++; }
   else if (coral - teal >= 2 && save_.level > 0) save_.level--;
   dirty_ = true;
-  go(SC_FULLTIME);
 }
 
 void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
@@ -112,6 +117,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   gate_.filter(in_, ms_);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   tilt_ = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
+  hold_.step(inPlay() && pressing(SIGN_HX, SIGN_HY, SIGN_HR), ms_);
   if (leaving()) { wantsHome_ = true; return; }
   switch (screen_) {
     case SC_CALIBRATE: updateCalibrate(dt); break;
@@ -122,14 +128,20 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   }
 }
 bool Game::onSign(int x, int y) const { return within(x, y, SIGN_HX, SIGN_HY, SIGN_HR); }
-// Leaving: a tap on the sign, except in a match (Kickoff, Match, Goal), where a hand on the case may brush it: there it
-// takes a hold.
+// A sign taken by a tap, or by a long press let go on it (a kid often holds a sign down): the finger went down on it and
+// came up on it.
+bool Game::released(int cx, int cy, int r) const {
+  UiAudit::add(cx - r, cy - r, 2 * r, 2 * r);
+  return in_.released && within(in_.downX, in_.downY, cx, cy, r) && within(in_.x, in_.y, cx, cy, r);
+}
+// Leaving: the sign let go on, except in a match (Kickoff, Match, Goal), where a hand on the case may brush it: there
+// it takes a hold (os/ui.h).
 bool Game::leaving() {
-  if (!inPlay()) return in_.tapInCircle(SIGN_HX, SIGN_HY, SIGN_HR);
-  in_.hit(SIGN_HX - SIGN_HR, SIGN_HY - SIGN_HR, 2 * SIGN_HR, 2 * SIGN_HR);   // for the UI audit
+  if (!inPlay()) return released(SIGN_HX, SIGN_HY, SIGN_HR);
+  UiAudit::add(SIGN_HX - SIGN_HR, SIGN_HY - SIGN_HR, 2 * SIGN_HR, 2 * SIGN_HR);
   return hold() >= 1;
 }
-float Game::hold() const { return ui::holdProgress(in_, inPlay() && pressing(SIGN_HX, SIGN_HY, SIGN_HR)); }
+float Game::hold() const { return inPlay() ? hold_.progress() : 0; }
 
 tilt::Vec Game::calTilt() const {
   return tilt::from({in_.gx, in_.gy, in_.gz}, ref_.get());
@@ -139,7 +151,7 @@ bool Game::ready() const { return arrowFor(calTilt()).ready; }
 // run, holding still settles it. The go sign starts the match once the grip is steady (tilt::Steady).
 void Game::updateCalibrate(uint32_t dt) {
   ref_.add(in_.gx, in_.gy, in_.gz, dt);
-  if (in_.tapIn(GO_HX - GO_HALF, GO_HY - GO_HALF, 2 * GO_HALF, 2 * GO_HALF)) starting_ = true;
+  if (released(GO_HX, GO_HY, GO_HR)) starting_ = true;
   tilt::Grav n;
   if (starting_ && steady_.get(ms_, &n)) { neutral_ = n; newMatch(); }
 }
@@ -154,28 +166,41 @@ void Game::updateMatch(uint32_t dt) {
     step(match_, tilt_, tapPending_);
     tapPending_ = false;
   }
-  if (match_.scored >= 0) go(SC_GOAL);
-  else if (match_.over) finish();
+  if (match_.scored < 0 && !match_.over) return;
+  if (finished(match_)) decide();
+  go(match_.scored >= 0 ? SC_GOAL : SC_FULLTIME);
 }
+// GOAL! stays up for GOAL_MS whatever the kid taps: a kid mashing the glass still sees it.
 void Game::updateGoal() {
-  if (!(in_.tap && !onSign(in_.x, in_.y)) && ms_ - pageMs_ < GOAL_MS) return;
-  if (finished(match_)) { finish(); return; }
+  if (ms_ - pageMs_ < GOAL_MS) return;
+  if (finished(match_)) { go(SC_FULLTIME); return; }
   kickoff(match_, 1 - match_.scored);
   go(SC_KICKOFF);
 }
+// Only the go sign plays on, and only once the result has shown for FT_READY_MS.
+bool Game::ftReady() const { return screen_ == SC_FULLTIME && ms_ - pageMs_ >= FT_READY_MS; }
 void Game::updateFullTime() {
-  in_.hit(GO_HX - GO_HALF, FT_GO_Y / 3 - GO_HALF, 2 * GO_HALF, 2 * GO_HALF);   // the hint; a tap anywhere plays on
-  if (in_.tap && !onSign(in_.x, in_.y)) go(SC_CALIBRATE);
+  if (released(GO_HX, FT_GO_HY, GO_HR) && ftReady()) go(SC_CALIBRATE);
 }
 
+// The aim spot and the pass marker show only while the kid can kick: on the Kickoff and Match pages.
 Kick Game::kidAim() const {
-  if (match_.ball.owner != match_.control) return {Kick::ROLL, -1, {0, 0}};
-  return aim(match_, match_.control, aimDir(match_, tilt_));
+  const bool live = screen_ == SC_KICKOFF || screen_ == SC_MATCH;
+  if (!live || match_.ball.owner != match_.control) return {Kick::ROLL, -1, {0, 0}};
+  return kidKick(match_, tilt_);
+}
+int Game::clockSteps() const {   // the clock dial's 24 steps, filled so far (the extra time: all of them)
+  const int s = (int)((float)match_.ms / MATCH_MS * paint::CLOCK_STEPS + 0.5f);
+  return s < paint::CLOCK_STEPS ? s : paint::CLOCK_STEPS;
+}
+uint32_t Game::countdown() const {   // the Kickoff page's 3-2-1, the digit showing
+  const uint32_t left = 3 - (ms_ - pageMs_) * 3 / KICKOFF_MS;
+  return left < 1 ? 1 : left > 3 ? 3 : left;
 }
 // What moves on this page, each with a box (shadow included) and a key: the pixels in the box are fully named by the
 // box and the key, so an unchanged pair needs no repaint.
 int Game::movers(Mover* out) const {
-  if (screen_ == SC_FULLTIME) return 0;
+  if (screen_ == SC_FULLTIME) return 0;   // nothing moves on an empty court
   if (screen_ == SC_CALIBRATE) {
     const Arrow a = arrowFor(calTilt());
     const Vec d = arrowDir(a.dir);
@@ -193,14 +218,17 @@ int Game::movers(Mover* out) const {
   }
   out[n++] = {paint::ballBox(sx(match_.ball.p.x), sy(match_.ball.p.y)), 0};
   out[n++] = {k.kind == Kick::SHOOT ? paint::aimBox(sx(k.at.x), sy(k.at.y) - NET_DEPTH / 2) : paint::NONE, 0};
-  out[n++] = {paint::clockBox(), (int)((float)match_.ms / MATCH_MS * 24 + 0.5f)};
+  out[n++] = {paint::clockBox(), clockSteps()};
   return n;
 }
+bool Game::goPressed() const {
+  if (screen_ == SC_FULLTIME) return ftReady() && pressing(GO_HX, FT_GO_HY, GO_HR);
+  return screen_ == SC_CALIBRATE && (pressing(GO_HX, GO_HY, GO_HR) || starting_);
+}
 uint32_t Game::look() const {
-  const bool goPressed = screen_ == SC_CALIBRATE && (pressing(GO_HX, GO_HY, GO_HALF) || starting_);
-  const uint32_t countdown = screen_ == SC_KICKOFF ? 3 - (ms_ - pageMs_) * 3 / KICKOFF_MS : 0;
+  const uint32_t count = screen_ == SC_KICKOFF ? countdown() : 0;
   return (uint32_t)pressing(SIGN_HX, SIGN_HY, SIGN_HR) | (uint32_t)(hold() * 24) << 1 | (uint32_t)match_.score[TEAL] << 6 |
-         (uint32_t)match_.score[CORAL] << 9 | countdown << 12 | (uint32_t)goPressed << 14;
+         (uint32_t)match_.score[CORAL] << 9 | count << 12 | (uint32_t)goPressed() << 14 | (uint32_t)ftReady() << 15;
 }
 
 using DrawFn = void (Game::*)();
@@ -241,7 +269,7 @@ void Game::drawPitch() {
   }
   paint::ball(sx(b.p.x), sy(b.p.y));
   paint::scoreboard(match_.score[TEAL], match_.score[CORAL]);
-  paint::clock((float)match_.ms / MATCH_MS);
+  paint::clock(clockSteps());
   paint::leaveSign(pressing(SIGN_HX, SIGN_HY, SIGN_HR), hold());
 }
 // The kid's number 10 alone in the centre circle, an arrow the way a tilt would send him (a ring of sun when held
@@ -253,23 +281,24 @@ void Game::drawCalibrate() {
   if (a.ready) paint::readyRing(CX, CY);
   else paint::arrow(CX, CY, arrowDir(a.dir), a.len);
   paint::player(CX, CY, {0, -1}, {paint::KIT_TEAL, HAIR[0], paint::NUMBERS[0], false, false});
-  paint::goSign(GO_X, GO_Y, pressing(GO_HX, GO_HY, GO_HALF) || starting_);
+  paint::goSign(GO_X, GO_Y, goPressed(), true);
   paint::leaveSign(pressing(SIGN_HX, SIGN_HY, SIGN_HR), 0);
 }
 void Game::drawKickoff() {
   static const char* const COUNT[] = {"1", "2", "3"};
   drawPitch();
-  const uint32_t left = 3 - (ms_ - pageMs_) * 3 / KICKOFF_MS;   // look() counts down the same way
-  paint::banner(COUNT[(left < 1 ? 1 : left > 3 ? 3 : left) - 1], COUNTDOWN_Y);
+  paint::banner(COUNT[countdown() - 1], COUNTDOWN_Y);
 }
 void Game::drawGoal() {
   drawPitch();
   paint::banner(paint::GOAL_WORD, GOAL_Y);
 }
+// The court cleared: the cup for a win, the score on the two teams' tiles, the go sign (unlit until FT_READY_MS).
 void Game::drawFullTime() {
-  drawPitch();
+  paint::court();
   paint::result(match_.score[TEAL], match_.score[CORAL], match_.score[TEAL] > match_.score[CORAL]);
-  paint::goSign(GO_X, FT_GO_Y, false);
+  paint::goSign(GO_X, FT_GO_Y, goPressed(), ftReady());
+  paint::leaveSign(pressing(SIGN_HX, SIGN_HY, SIGN_HR), 0);
 }
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
@@ -295,12 +324,18 @@ void Game::debugPrint() {
   printf("screen=%s\n", screenName());
 }
 void Game::debugCmd(const char* cmd) {
-  if (!strcmp(cmd, "kickoff")) { neutral_ = {in_.gx, in_.gy, in_.gz}; newMatch(); return; }
+  if (!strcmp(cmd, "kickoff")) {   // the match seeded by its number alone, as the playtests recorded it
+    neutral_ = {in_.gx, in_.gy, in_.gz};
+    seed_ = 0;
+    newMatch();
+    return;
+  }
   int t, c;
   if (sscanf(cmd, "score%d-%d", &t, &c) == 2 && t >= 0 && c >= 0 && t < GOALS_TO_WIN && c < GOALS_TO_WIN) {
     match_.score[TEAL] = (uint8_t)t; match_.score[CORAL] = (uint8_t)c;
     return;
   }
-  if (sscanf(cmd, "clock%d", &t) == 1 && t >= 0 && (uint32_t)t * 1000 <= MATCH_MS) match_.ms = MATCH_MS - (uint32_t)t * 1000;
+  if (sscanf(cmd, "clock%d", &t) == 1 && t >= -(int)(EXTRA_MS / 1000) && t <= (int)(MATCH_MS / 1000))
+    match_.ms = (uint32_t)((int)MATCH_MS - t * 1000);
 }
 }  // namespace fc

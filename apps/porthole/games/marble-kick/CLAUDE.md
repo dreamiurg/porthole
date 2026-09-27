@@ -13,8 +13,9 @@ contract, module map and Save layout.
 ## Product contract
 
 - **Tilt is the only control.** During play every tap is ignored: a hand holding the case may brush the glass.
-  Leaving the Play page takes holding the home knob for 0.6 s (a ring fills around it; letting go early does
-  nothing, and so does a finger that drifts on the knob: it still counts). Taps move on from the Calibrate, Goal and
+  Leaving the Play page takes holding the home knob for 0.6 s (`ui::Hold`, os/ui.h, shared with Tilt FC: a ring
+  fills around it; letting go early does nothing, a finger that drifts on the knob still counts, and one that drifts
+  off and back starts over). Taps move on from the Calibrate, Goal and
   Done pages, and the knob there is a plain tap. A press on the red button that waits for a steady grip stays shown
   pressed until play starts.
 - **Neutral is how the kid holds it, any way.** Every visit starts on the Calibrate page. Pressing the red button

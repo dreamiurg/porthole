@@ -99,6 +99,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
+  hold_.step(screen_ == SC_PLAY && pressing(KNOB_HX, KNOB_HY, KNOB_HR), ms_);
   if (leaving()) { wantsHome_ = true; return; }
   switch (screen_) {
     case SC_CALIBRATE: updateCalibrate(dt); break;
@@ -120,7 +121,7 @@ bool Game::leaving() {
   in_.hit(KNOB_HX - KNOB_HR, KNOB_HY - KNOB_HR, 2 * KNOB_HR, 2 * KNOB_HR);   // for the UI audit
   return hold() >= 1;   // the ring's rule (os/ui.h), not the tracker's long press
 }
-float Game::hold() const { return ui::holdProgress(in_, screen_ == SC_PLAY && pressing(KNOB_HX, KNOB_HY, KNOB_HR)); }
+float Game::hold() const { return screen_ == SC_PLAY ? hold_.progress() : 0; }
 
 // The dish shows the tilt away from where the device has been held lately: a move rolls its ball the way the game's
 // will, holding still lets it settle in the middle. Pressing the button starts play once the hold is steady.

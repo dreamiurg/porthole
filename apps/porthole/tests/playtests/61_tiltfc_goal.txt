@@ -7,115 +7,34 @@ app tilt-fc
 wait 500
 dbg kickoff
 # match from 0 1000 0
-wait 1200
+wait 2400
 tilt 0 917 -400
 wait 200
 tilt -281 916 285
 tap 130 40
 wait 80
-tilt -399 917 28
-tap 130 40
-wait 80
-tilt -337 917 215
-tap 130 40
-wait 80
-tilt 366 916 -162
-tap 130 40
-wait 80
-tilt -304 917 -260
-wait 200
-tilt -298 917 -266
-wait 200
-tilt 359 916 177
-wait 200
-tilt -10 916 400
-wait 200
-tilt 377 917 -133
-wait 200
-tilt 43 916 -398
-tap 130 40
-wait 80
-tilt 24 917 -399
-wait 200
-tilt 19 916 -400
+tilt 194 916 -350
 wait 400
-tilt 173 916 -361
+tilt 382 916 120
+wait 200
+tilt -360 917 174
+wait 200
+tilt -271 917 -294
+wait 200
+tilt -231 917 -326
+wait 200
+tilt -191 916 -352
+wait 200
+tilt 231 916 -327
+wait 200
+tilt 182 917 -356
+wait 200
+tilt 192 916 -351
+wait 200
+tilt 293 917 -272
 tap 130 40
 wait 80
-tilt -37 917 -398
-wait 200
-tilt -43 916 -398
-wait 200
-tilt -37 917 -398
-wait 200
-tilt -32 916 -399
-wait 200
-tilt -27 917 -399
-wait 200
-tilt -364 917 -165
-wait 200
-tilt -340 916 211
-wait 200
-tilt -110 916 385
-tap 130 40
-wait 80
-tilt -245 917 316
-wait 200
-tilt -287 916 279
-tap 130 40
-wait 80
-tilt -189 916 353
-wait 200
-tilt -99 916 388
-wait 200
-tilt -46 917 397
-wait 200
-tilt 1 917 400
-wait 200
-tilt 46 917 397
-wait 200
-tilt 93 917 389
-wait 200
-tilt 147 917 372
-wait 200
-tilt 241 917 319
-wait 200
-tilt 263 917 301
-wait 200
-tilt 314 916 248
-wait 200
-tilt 355 916 185
-wait 200
-tilt 367 917 159
-wait 200
-tilt 384 916 113
-wait 200
-tilt 398 917 38
-wait 200
-tilt -219 916 -335
-tap 130 40
-wait 80
-tilt 160 916 367
-tap 130 40
-wait 80
-tilt 238 917 -321
-wait 200
-tilt -182 917 -356
-wait 200
-tilt 219 916 -335
-wait 200
-tilt 163 917 -365
-wait 200
-tilt -235 917 -323
-wait 200
-tilt -209 917 -341
-wait 200
-tilt -212 917 -339
-wait 600
-tilt -294 917 -271
-tap 130 40
-wait 80
-tilt -270 917 -295
+tilt 264 916 -301
 wait 200
 tilt 0 1000 0
 # end match
@@ -129,7 +48,7 @@ expect-screen fc_kickoff
 expect owner=3
 ui-check fc_kickoff-coral
 snap fc_g02_kickoff_coral
-wait 1300
+wait 2500
 expect-screen fc_match
 wait 1500
 ui-check fc_match-coral

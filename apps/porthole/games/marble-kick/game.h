@@ -42,6 +42,7 @@ class Game : public App {
   uint32_t now_ = 0, ms_ = 0, pageMs_ = 0;   // pageMs_: when this page appeared (the goal, the celebration)
   Input in_{};
   ui::FreshGate gate_;            // every page change ignores touches for a moment (os/ui.h)
+  ui::Hold hold_;                 // Play: the home knob held
   Screen screen_ = SC_CALIBRATE;
   int level_ = 0;                 // the level on the tray (index into LEVELS)
   Grav neutral_ = {0, 0, -1000};  // gravity as the kid held the device when play started
@@ -67,7 +68,7 @@ class Game : public App {
   bool pressingBox(int cx, int cy, int half) const;
   bool goPressed() const;
   bool leaving();
-  float hold() const;             // Play: how far holding the knob has got to leaving, 0..1
+  float hold() const;             // Play: how far holding the knob has got to leaving, 0..1 (os/ui.h)
   int pressedCoin() const;        // Done: the coin under the finger, or -1
   bool ready() const;             // Calibrate: the dish's ball has settled in the middle
   Mover ballMover() const;

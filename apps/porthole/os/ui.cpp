@@ -89,10 +89,6 @@ bool pressing(const Input& in, int cx, int cy, int r) {
   const int dx = in.downX - cx, dy = in.downY - cy, ex = in.x - cx, ey = in.y - cy;
   return in.down && dx * dx + dy * dy <= r * r && ex * ex + ey * ey <= r * r;
 }
-float holdProgress(const Input& in, bool on) {
-  if (!on) return 0;
-  return in.heldMs >= HOLD_MS ? 1 : (float)in.heldMs / HOLD_MS;
-}
 void FreshGate::filter(Input& in, uint32_t now) {
   if (!closed) return;
   if (in.pressed && now - shownMs >= FRESH_MS) { closed = false; return; }

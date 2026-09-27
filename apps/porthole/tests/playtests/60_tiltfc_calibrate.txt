@@ -30,7 +30,7 @@ expect coral=0
 expect owner=0
 ui-check fc_kickoff
 snap fc03_kickoff
-wait 1300
+wait 2500
 expect-screen fc_match
 # leaning back from that grip runs #10 up the court
 tilt 423 687 -591

@@ -54,7 +54,7 @@ As built in slice 1 (the Save moment is still to come):
 stateDiagram-v2
     [*] --> Calibrate: open game
     Calibrate --> Kickoff: tap the go sign, once the grip is steady (neutral stored)
-    Kickoff --> Match: 3-2-1 (1.2 s)
+    Kickoff --> Match: 3-2-1 (2.4 s)
     state Match {
         Attack --> Attack: pass (control moves to the receiver)
         Attack --> Loose: tackled / shot / pass intercepted
@@ -63,19 +63,20 @@ stateDiagram-v2
         Defend --> Loose: a tackle or slide knocks it loose / coral shoots
     }
     Match --> Goal: the ball crosses a goal line between the posts
-    Goal --> Kickoff: tap or 2 s (the side that conceded kicks off)
-    Goal --> FullTime: tap or 2 s, someone has 3 or the clock is out
+    Goal --> Kickoff: 2 s (the side that conceded kicks off)
+    Goal --> FullTime: 2 s, someone has 3 or the clock is out
     Match --> FullTime: the clock runs out (a teal attack plays on, 10 s at most)
-    FullTime --> Calibrate: tap anywhere
+    FullTime --> Calibrate: the go sign, once lit (1.5 s)
     Calibrate --> [*]: tap the leave sign
     Match --> [*]: hold the leave sign 0.6 s
     FullTime --> [*]: tap the leave sign
 ```
 
 Pages the kid sees: **Calibrate page**, **Kickoff page**, **Match page** (Attack, Loose and Defend are states of
-this one page), **Goal page**, **Full time page**. The leave sign on every page leads out: a tap on the Calibrate and
-Full time pages, a 0.6 s hold on the Kickoff, Match and Goal pages (a hand on the case brushes the glass). The match
-in progress is not saved; the result is (wins and the next level).
+this one page), **Goal page**, **Full time page**. The leave sign on every page leads out: a tap (or a long press let
+go on it) on the Calibrate and Full time pages, a 0.6 s hold on the Kickoff, Match and Goal pages (a hand on the case
+brushes the glass). The match in progress is not saved; the result is (wins and the next level), the moment the match
+is decided.
 
 ## Architecture
 
@@ -163,12 +164,20 @@ Decisions made where this spec was open, and why.
   a defender (keeper included), pass when pressed and the lane is open, and shoot in range or after 6 s. Keepers
   stay on their line, level with the ball, and move for a shot only after a reaction time drawn fresh for every kick,
   so a save is a chance, not a certainty. A keeper holding the ball gets room (opponents kept 80 px away) and throws
-  to a teammate with an open lane and room, else rolls it out wide.
+  to a teammate with an open lane and room up the court from him (never back toward his own line: a throw to the kid
+  running behind his keeper once went in), else rolls it out wide.
 - **Steals without fouls.** Touching the ball an opponent carries knocks it loose (softly, so it stays near the
   tackler); the carrier cannot take it straight back for half a second. The kid's slide reaches a little further; a
   slide that wins nothing costs half a second.
-- **Kickoff rule.** At a teal kickoff coral wait outside the centre circle until the ball moves, for 3 s at most, so a
-  kid still finding his grip is not robbed on the spot.
+- **Kickoff rule.** At every kickoff the side not on the ball waits outside the centre circle until the ball leaves
+  the spot, for 3 s at most, so a kid still finding his grip is not robbed on the spot.
+- **A kid's taps and presses.** Kickoff, Match and Goal are one court: no fresh-page pause between them, so the first
+  tap of a match plays, and a hold on the leave sign carries on across them; the hold counts from when the finger is
+  on the sign, so drifting off and back starts it over. The 3-2-1 takes 0.8 s a digit. Mashing skips nothing: the
+  Goal page ignores taps for its 2 s, and Full time (an empty court, the cup, the two score tiles) moves on only by
+  its go sign, unlit for the first 1.5 s. Signs off the court take a tap or a long press let go on them. A tap held
+  level with the ball and nobody that way passes to the teammate (at a teal kickoff it used to roll up to coral).
+  Big words sit on a street-name plate so they read over any player.
 - **Difficulty.** Five levels (`tune.h`): coral's speed and turning, their keeper's speed and reaction, the speed and
   accuracy of their shots. A win moves up one, a loss by two or more down one; the kid's own keeper does not get
   better or worse.
@@ -183,17 +192,26 @@ keeper is not in. Idle: no tilt, no taps. Both active bots defend the same way (
 
 | Level | Greedy: goals for-against a match, wins of 30 | Passing: goals, wins of 30 | Idle: goals against a match, first after (mean, soonest) |
 | --- | --- | --- | --- |
-| 0 | 0.83-1.73, 4 | 3.00-0.13, 30 | 0.37, 151 s, 5.5 s |
-| 1 | 1.10-2.10, 6 | 2.73-0.73, 27 | 0.73, 130 s, 5.3 s |
-| 2 | 0.03-2.53, 0 | 3.00-0.17, 30 | 2.53, 46 s, 5.1 s |
-| 3 | 0.00-3.00, 0 | 3.00-1.20, 30 | 1.93, 23 s, 5.1 s |
-| 4 | 0.00-3.00, 0 | 2.53-1.90, 20 | 1.70, 35 s, 5.0 s |
+| 0 | 0.13-1.47, 1 | 3.00-0.00, 30 | 0.13, 157 s, 5.6 s |
+| 1 | 0.17-1.67, 1 | 3.00-0.00, 30 | 0.23, 153 s, 5.4 s |
+| 2 | 0.10-2.70, 0 | 3.00-0.67, 30 | 0.77, 113 s, 5.4 s |
+| 3 | 0.00-2.97, 0 | 2.97-1.23, 29 | 1.40, 71 s, 5.3 s |
+| 4 | 0.00-3.00, 0 | 2.73-1.43, 24 | 2.53, 33 s, 5.2 s |
 
 The bounds the test holds at every level, set from the design rather than these numbers: passing scores at least
-twice what greedy does and 1.5 goals a match more; greedy wins at most one match in five; passing wins at least
-half; an idle player is not scored on before 4.5 s (the kickoff wait plus 1.5 s) and on average not before 20 s; and
-passing wins fewer at the top level than at the first. Greedy's goals at levels 0-1 are central shots spammed forty
-times a match that slip past a slow keeper: a new kid scores now and then, and learns to aim for a corner.
+twice what greedy does and 1.5 goals a match more; greedy wins at most one match in ten (the design allows one in five;
+the test keeps half of that as room); passing wins at least half; an idle player is not scored on before 4.5 s (the
+kickoff wait plus 1.5 s) and on average not before 20 s. Each level is at least as hard as the one before (passing
+wins no more, an idle player is scored on no less), and passing wins fewer at the top level than at the first.
+
+The levels were tuned (coral's speed, turning and shots, their keeper) against those bounds on 180 seeds in windows of
+thirty, not just the test's thirty: greedy never won more than 2 of 30 in any window, passing never won more at a
+level than at the one before, an idle player was never scored on first before 24 s on average, and idle's goals
+against rose level by level in every window but one (a 0.04 goal dip between levels 1 and 2). Greedy's goals at level
+0 are central shots that slip past the keeper now and then, one every five to ten matches: a new kid scores rarely
+until he aims for a corner or passes. The earlier tuning let greedy win 6 of 30 at level 1, on the bound, and levels
+2-4 were not in order. The ladder is sensitive at the top: coral's level-4 speed at 112 instead of 114 drops the
+passing bot from about 24 wins of 30 to under 10, so retune level 4 in small steps and rerun the test.
 
 ## Testing
 
@@ -203,10 +221,11 @@ times a match that slip past a slow keeper: a new kid scores now and then, and l
   kickoff reset, tackles, slides and the keeper's room, the whistle, the kickoff wait, the challenge (above), the save
   and the level it carries, every drawn string in the font, and every incrementally drawn frame equal to a full
   repaint. It stays deterministic by seeding the AI and fixing the timestep. `host/test_tilt.cpp` covers `os/tilt.h`.
-- `tests/playtests/60_tiltfc_*.txt` to `63_tiltfc_*.txt`: calibrate (with a jolt), leave by hold and by tap, a
+- `tests/playtests/60_tiltfc_*.txt` to `64_tiltfc_*.txt`: calibrate (with a jolt), leave by hold and by tap, a
   recorded match to a goal from upright and one to Full time from a 45 degree grip (the passing bot's moves as `tilt`,
   `wait` and `tap` lines, written by `build/host/test_tiltfc --write-playtests` and checked by the test), the whistle,
-  the saved level, `ui-check` on every page, and a monkey under ASan.
+  the saved level, `ui-check` on every page, a monkey under ASan, and a 6-year-old's taps (through the 3-2-1, the first
+  tap of the match, drifting on and off the leave sign, mashing Full time, a hold from the 3-2-1 into the match).
 - Coverage thresholds in the Makefile must not drop. The new code carries its own tests.
 - Every gameplay change is verified with a script tour and screenshots before it is called done. A tour cannot say
   whether tilt feels good, so slice 3 ends with the kid playing it.

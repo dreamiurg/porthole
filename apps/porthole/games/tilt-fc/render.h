@@ -40,10 +40,14 @@ void arrow(int x, int y, Vec dir, int length);   // Calibrate: a chalk arrow fro
 void readyRing(int x, int y);                    // Calibrate: held steady
 // The right-hand scoreboard: coral's goals above (their end), teal's below, the match clock between.
 void scoreboard(int teal, int coral);
-void clock(float used);                          // 0..1 of the match played: a chalk dial filling with asphalt
+constexpr int CLOCK_STEPS = 24;
+void clock(int steps);                           // the match played, 0..CLOCK_STEPS: a chalk dial filling with asphalt
 void leaveSign(bool pressed, float hold);        // the way out, on the left: hold 0..1 fills its rim (in the match)
-void goSign(int x, int y, bool pressed);         // a sun-yellow diamond road sign with a go arrow
-void banner(const char* s, int y);               // big words across the court (GOAL!, the countdown), centered
+// A sun-yellow diamond road sign with a go arrow; not ready yet, the same sign unlit (bare concrete, no sun).
+void goSign(int x, int y, bool pressed, bool ready);
+// Big words (GOAL!, the countdown) on a street-name plate over the court, centered, line top y: readable over any
+// player. A closing "!" is set up close.
+void banner(const char* s, int y);
 void result(int teal, int coral, bool won);      // the Full time page: two big score tiles, a cup for a win
 constexpr int SIGN_X = 52, SIGN_Y = CY, SIGN_R = 30;          // the leave sign's middle and radius
 constexpr int BOARD_X = 428, TILE = 46, CLOCK_R = 17;         // the scoreboard's column and sizes
