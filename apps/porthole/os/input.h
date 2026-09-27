@@ -26,10 +26,6 @@ struct Input {
   int downX = 0, downY = 0; // where the press started
   int px = 0, py = 0;       // previous frame position (for drags)
   uint32_t heldMs = 0;
-  // Device tilt, set by the platform after InputTracker::step (the tracker never touches it): where a marble would
-  // roll, in screen axes, milli-g (+x toward the right edge, +y toward the bottom). A game subtracts its own neutral.
-  bool hasTilt = false;
-  int16_t tiltX = 0, tiltY = 0;
   bool hit(int rx, int ry, int rw, int rh) const { UiAudit::add(rx, ry, rw, rh); return x >= rx && y >= ry && x < rx + rw && y < ry + rh; }
   bool tapIn(int rx, int ry, int rw, int rh) const { bool h = hit(rx, ry, rw, rh); return tap && h; }
   bool tapInCircle(int cx, int cy, int r) const { UiAudit::add(cx - r, cy - r, 2 * r, 2 * r); int dx = x - cx, dy = y - cy; return tap && dx * dx + dy * dy <= r * r; }

@@ -83,11 +83,6 @@ class Sim:
         with self.lock:
             self._cmd("up" if kind == "up" else f"{kind} {lx} {ly}")
 
-    def tilt(self, x, y):
-        tx, ty = (max(-1000, min(1000, int(v))) for v in (x, y))
-        with self.lock:
-            self._cmd(f"tilt {tx} {ty}")
-
     def control(self, cmd):
         secs = {"hour": 3600, "night": 8 * 3600, "day": 86400}
         with self.lock:
@@ -116,18 +111,11 @@ PAGE = """<!doctype html>
            padding:9px 14px; font-size:14px; cursor:pointer; }
   button:hover { background:#3a3a3a; }
   button:active { background:#222; }
-  #tilt { margin-top:18px; width:120px; height:120px; border-radius:50%; background:#1b1b1b;
-          box-shadow:inset 0 0 0 2px #333; position:relative; touch-action:none; cursor:grab; }
-  #knob { position:absolute; width:28px; height:28px; border-radius:50%; background:#6a6a6a;
-          left:46px; top:46px; pointer-events:none; }
-  #tilthint { font-size:12px; color:#777; margin-top:6px; }
 </style>
 </head>
 <body>
 <h1>Porthole</h1>
 <canvas id="screen" width="480" height="480"></canvas>
-<div id="tilt"><div id="knob"></div></div>
-<div id="tilthint">tilt: arrow keys or drag the dot</div>
 <div id="buttons">
   <button data-cmd="hour">+1 hour</button>
   <button data-cmd="night">+8 hours</button>
@@ -196,29 +184,6 @@ for (const btn of document.querySelectorAll('#buttons button')) {
   btn.addEventListener('click', () => post('/control', { cmd: btn.dataset.cmd }));
 }
 
-// Tilt: the pad (drag the dot, it springs back) or the arrow keys, 400 mg per key like the SDL window.
-const pad = document.getElementById('tilt'), knob = document.getElementById('knob');
-const keys = new Set();
-let padTilt = null;
-function sendTilt() {
-  let x = 0, y = 0;
-  if (padTilt) ({ x, y } = padTilt);
-  else { x = 400 * (keys.has('ArrowRight') - keys.has('ArrowLeft')); y = 400 * (keys.has('ArrowDown') - keys.has('ArrowUp')); }
-  knob.style.left = (46 + x * 46 / 1000) + 'px'; knob.style.top = (46 + y * 46 / 1000) + 'px';
-  post('/tilt', { x, y });
-}
-function padXY(e) {
-  const r = pad.getBoundingClientRect(), t = e.touches ? e.touches[0] : e;
-  const dx = (t.clientX - r.left - 60) / 60, dy = (t.clientY - r.top - 60) / 60, m = Math.max(1, Math.hypot(dx, dy));
-  return { x: Math.round(1000 * dx / m), y: Math.round(1000 * dy / m) };
-}
-let padDown = false;
-pad.addEventListener('pointerdown', (e) => { padDown = true; pad.setPointerCapture(e.pointerId); padTilt = padXY(e); sendTilt(); });
-pad.addEventListener('pointermove', (e) => { if (padDown) { padTilt = padXY(e); sendTilt(); } });
-pad.addEventListener('pointerup', () => { padDown = false; padTilt = null; sendTilt(); });
-window.addEventListener('keydown', (e) => { if (e.key.startsWith('Arrow')) { e.preventDefault(); if (!keys.has(e.key)) { keys.add(e.key); sendTilt(); } } });
-window.addEventListener('keyup', (e) => { if (keys.delete(e.key)) sendTilt(); });
-
 async function pollFrame() {
   try {
     const res = await fetch('/frame.png?t=' + Date.now());
@@ -267,9 +232,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         if self.path == "/input":
             sim.input(data.get("type"), data.get("x", 0), data.get("y", 0))
-            self._send(200, "application/json", b"{}")
-        elif self.path == "/tilt":
-            sim.tilt(data.get("x", 0), data.get("y", 0))
             self._send(200, "application/json", b"{}")
         elif self.path == "/control":
             sim.control(data.get("cmd", ""))

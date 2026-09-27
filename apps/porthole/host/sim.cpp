@@ -3,12 +3,9 @@
 // Also a --serve mode (stdin/stdout protocol) that tools/webemu.py drives to serve the device in a browser.
 //   sim                      interactive (SDL)
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
-//                            | tilt X Y (milli-g, persists)
 //                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
 //                            | echo WORD | watch MS | monkey N SEED
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
-//                            | tilt X Y
-// Tilt (Input::tiltX/Y, milli-g): the window's arrow keys, or the tilt command in both headless modes.
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +41,6 @@ static FileStore g_store;
 static Shell g_shell;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
-static int16_t g_tiltX = 0, g_tiltY = 0;   // the sim always has a "sensor": arrow keys or the tilt command
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
 static uint16_t g_fb565[gfx565::W * gfx565::H];   // the RGB565 apps' surface (the panel's back buffer on the device)
 
@@ -90,7 +86,6 @@ static void writeBMP(const char* path) {
 
 static void frame(bool down, int x, int y) {   // the shell writes saves itself, through g_store
   Input in = g_tracker.step(down, x, y, g_ms);
-  in.hasTilt = true; in.tiltX = g_tiltX; in.tiltY = g_tiltY;
   g_shell.update(now(), g_ms, in);
   if (g_shell.surface() == SURFACE_RGB565) gfx565::clear(0xF81F);   // magenta: the device's buffer holds an older frame, so a gap shows
   g_shell.render();
@@ -128,7 +123,6 @@ static void runServe() {
     else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
     else if (!strcmp(cmd, "frame")) writePPM();
     else if (!strcmp(cmd, "dbg")) { g_shell.debugCmd(a); puts("ok"); }
-    else if (!strcmp(cmd, "tilt")) { g_tiltX = (int16_t)atoi(a); g_tiltY = (int16_t)atoi(b); puts("ok"); }
     else puts("ok");
     fflush(stdout);
   }
@@ -214,7 +208,6 @@ static const Named COMMANDS[] = {
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
   {"dbg", [](Finger&, const char* a, const char*, const char*) { g_shell.debugCmd(a); }},
   {"screen", [](Finger&, const char*, const char*, const char*) { printf("screen=%s\n", g_shell.screenName()); }},
-  {"tilt", [](Finger&, const char* a, const char* b, const char*) { g_tiltX = (int16_t)atoi(a); g_tiltY = (int16_t)atoi(b); }},
   {"echo", [](Finger&, const char* a, const char*, const char*) { puts(a); }},
   {"watch", [](Finger& f, const char* a, const char*, const char*) { watch(atoi(a), f); }},
   {"monkey", [](Finger& f, const char* a, const char* b, const char*) { monkey(atoi(a), (uint32_t)strtoul(b, nullptr, 10)); f.down = false; }},
@@ -259,9 +252,6 @@ static void runWindow() {
       if (e.type == SDL_MOUSEMOTION) { mx = e.motion.x / 3; my = e.motion.y / 3; }
       if (e.type == SDL_KEYDOWN) onKey(e.key.keysym.sym, run);
     }
-    const Uint8* keys = SDL_GetKeyboardState(nullptr);   // arrow keys tilt the "device" 400 mg each way
-    g_tiltX = (int16_t)(400 * (keys[SDL_SCANCODE_RIGHT] - keys[SDL_SCANCODE_LEFT]));
-    g_tiltY = (int16_t)(400 * (keys[SDL_SCANCODE_DOWN] - keys[SDL_SCANCODE_UP]));
     g_ms = SDL_GetTicks() - start;
     frame(down, mx, my);
     for (int i = 0; i < gfx565::W * gfx565::H; i++) pix[i] = 0xFF000000u | framePixel(i % gfx565::W, i / gfx565::W);   // the panel's own pixels
