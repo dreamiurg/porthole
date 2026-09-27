@@ -5,12 +5,16 @@
     python3 tools/devctl.py tap 80 120            # logical px, same as the sim scripts
     python3 tools/devctl.py hold 80 120
     python3 tools/devctl.py stats                 # the firmware's "S" output
+    python3 tools/devctl.py metrics               # "M": frame timings (last 64 frames) and free memory
+    python3 tools/devctl.py tilt 0 1000 0         # hold gravity (milli-g, screen frame: +x right, +y down, +z out)
+    python3 tools/devctl.py untilt                # back to the motion sensor
     python3 tools/devctl.py run tests/device/smoke.txt
 
 Script commands (a subset of the sim's): tap X Y | hold X Y | wait MS | snap NAME | screen | echo TEXT
+| tilt X Y Z | untilt | metrics
 | raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png at
 480x480 with the round mask, like the sim's snapshots: an indexed frame upscaled 3x, an RGB565 frame as is.
-Firmware side: "X<x>,<y>,<ms>" and "F" in firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
+Firmware side: "X<x>,<y>,<ms>", "F", "G<x>,<y>,<z>" / "G" and "M" in firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
 Opening the port does not reset the board (DTR/RTS are left alone).
 """
 
@@ -103,11 +107,21 @@ def shot(p: serial.Serial, path: Path) -> None:
     print(f"snap {path}")
 
 
-def stats(p: serial.Serial) -> str:
+def ask(p: serial.Serial, cmd: str) -> str:
+    """Send a firmware serial command and return what it printed."""
     p.reset_input_buffer()
-    p.write(b"S\n")
+    p.write(f"{cmd}\n".encode())
     time.sleep(0.4)
     return p.read(p.in_waiting).decode(errors="replace")
+
+
+def stats(p: serial.Serial) -> str:
+    return ask(p, "S")
+
+
+def tilt(args: list[str]) -> str:
+    """The firmware's gravity override: "tilt X Y Z" -> "G<x>,<y>,<z>", "untilt" (no args) -> a bare "G"."""
+    return "G" + ",".join(str(int(a)) for a in args)
 
 
 def run(p: serial.Serial, script: Path) -> None:
@@ -127,6 +141,10 @@ def run(p: serial.Serial, script: Path) -> None:
             print(line)
         elif cmd == "echo":
             print(" ".join(args))
+        elif cmd in ("tilt", "untilt"):
+            print(ask(p, tilt(args if cmd == "tilt" else [])).strip())
+        elif cmd == "metrics":
+            print(ask(p, "M").strip())
         elif cmd == "raw":
             p.write((" ".join(args) + "\n").encode())
             time.sleep(0.3)
@@ -145,6 +163,10 @@ def main() -> None:
         press(p, int(args[0]), int(args[1]), 80 if cmd == "tap" else 1000)
     elif cmd == "stats":
         print(stats(p))
+    elif cmd in ("tilt", "untilt"):
+        print(ask(p, tilt(args if cmd == "tilt" else [])).strip())
+    elif cmd == "metrics":
+        print(ask(p, "M").strip())
     elif cmd == "run":
         run(p, Path(args[0]))
     else:
