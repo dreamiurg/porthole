@@ -30,6 +30,7 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;   // "level<N>": calibrate as held now and play level N (1-based)
+  const Ball& ball() const { return ball_; }   // for host/test_marble.cpp's render check
 
   enum Screen : uint8_t { SC_CALIBRATE, SC_PLAY, SC_GOAL, SC_DONE, SC_COUNT };
 
@@ -53,11 +54,14 @@ class Game : public App {
   bool refSet_ = false, starting_ = false;   // starting_: the button was pressed, play starts once held steady
   Vec dish_{}, dishV_{};
   uint32_t dishMs_ = 0;           // the dish's time not yet simulated, under one STEP_MS
-  // What each of the panel's two buffers holds (os/app.h): this page, its moving part (the ball, the dish's ball) at
-  // `moving`, and the rest of its state as `look` (pressed buttons, the hold ring, the dish's glow, the confetti's
-  // frame). A buffer not listed (fb null after a page change) or with another look gets the whole page; one listed
-  // gets only the moving part's old and new boxes, and nothing at all when they are the same.
-  struct Held { const uint16_t* fb; paint::Box moving; uint32_t look; };
+  // What each of the panel's two buffers holds (os/app.h): this page, its movers (the ball, the moving pegs, a moving
+  // goal; the dish's ball) as boxes with keys, and the rest of its state as `look` (pressed buttons, the hold ring, the
+  // dish's glow, stars picked up, the confetti's frame). A buffer not listed (fb null after a page change) or with
+  // another look gets the whole page; one listed gets each changed mover's old and new boxes, and nothing when none
+  // changed.
+  static constexpr int MAX_MOVERS = 2 + MAX_PEGS;
+  struct Mover { paint::Box box; int key; };
+  struct Held { const uint16_t* fb; Mover movers[MAX_MOVERS]; int n; uint32_t look; };
   Held held_[2] = {};
 
   void go(Screen s);
@@ -71,13 +75,19 @@ class Game : public App {
   float hold() const;             // Play: how far holding the knob has got to leaving, 0..1
   int pressedCoin() const;        // Done: the coin under the finger, or -1
   bool ready() const;             // Calibrate: the dish's ball has settled in the middle
-  paint::Box moving() const;
+  Mover ballMover() const;
+  int movers(Mover* out) const;
   uint32_t look() const;
+  void draw();
   void updateCalibrate(uint32_t dt); void drawCalibrate();
   void rollDish(uint32_t dt);
   void updatePlay(uint32_t dt); void drawPlay();
   void updateGoal(); void drawGoal();
   void updateDone(); void drawDone();
-  void drawTray(bool pegs);       // the tray, the level's pegs (or none), the goalposts, the knob
+  void drawTray(bool things);     // the tray, the level's things (or none), the goalposts, the ball, the knob
+  void drawShadows(bool things, const paint::Mouth& m) const;
+  void drawThings() const;
+  void drawBall() const;
+  void drawFlags() const;
 };
 }  // namespace marble

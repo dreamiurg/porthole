@@ -8,10 +8,13 @@
 namespace marble {
 namespace {
 // Logical hit areas (the audit sees each as its box): the home knob on the wall at the bottom, the big button on the
-// Calibrate and Done pages, and the Done page's coins, two rows of three.
+// Calibrate page (and a little lower and smaller on the Done page, under its coins), and the Done page's coins, three
+// rows of four.
 constexpr int KNOB_HX = 80, KNOB_HY = 145, KNOB_HR = 12;
-constexpr int GO_HX = 80, GO_HY = 110, GO_HR = 14;
-constexpr int COIN_HX[3] = {50, 80, 110}, COIN_HY[2] = {50, 78}, COIN_HALF = 12;
+constexpr int GO_HX = 80, GO_HY = 110, GO_HR = 14, DONE_GO_HY = 117, DONE_GO_HR = 12;
+constexpr int COIN_HX[4] = {41, 67, 93, 119}, COIN_HY[3] = {38, 64, 90}, COIN_HALF = 12;
+static_assert(NUM_LEVELS <= 12, "the Done page holds twelve coins");
+static_assert(NUM_LEVELS <= STAR_LEVELS, "the save holds stars for every level");
 constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics coordinates are relative to it
 constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 390, COIN_Y = 90;
 constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves, however the finger wobbles on it
@@ -53,8 +56,15 @@ const gfx::Sprite ICON = {32, 32, ICON_PX.px};
 
 int px(float v) { return CX + (int)lroundf(v); }
 bool within(int x, int y, int cx, int cy, int r) { return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r; }
-int coinX(int i) { return COIN_HX[i % 3]; }
-int coinY(int i) { return COIN_HY[i / 3]; }
+int coinX(int i) { return COIN_HX[i % 4]; }
+int coinY(int i) { return COIN_HY[i / 4]; }
+// A goalpost where the goal is drawn: at the quarter degree its net is drawn at (paint::Mouth), so the posts never
+// move without the key that says the net did.
+Vec postOnScreen(const Level& l, int side, const paint::Mouth& m) {
+  const float lx = (float)(side * l.goalHalf), ly = -sqrtf((float)(POST_RING * POST_RING - l.goalHalf * l.goalHalf));
+  return {CX + lx * m.c - ly * m.s, CY + lx * m.s + ly * m.c};
+}
+Rail onScreen(const Rail& r) { return {(int16_t)(CX + r.x0), (int16_t)(CY + r.y0), (int16_t)(CX + r.x1), (int16_t)(CY + r.y1)}; }
 }  // namespace
 
 const gfx::Sprite& Game::icon() const { return ICON; }
@@ -107,7 +117,8 @@ bool Game::pressingBox(int cx, int cy, int half) const {   // the same, for a sq
   return in_.down && abs(in_.downX - cx) <= half && abs(in_.downY - cy) <= half && abs(in_.x - cx) <= half && abs(in_.y - cy) <= half;
 }
 bool Game::goPressed() const {   // the red button: under the finger, or on Calibrate pressed and waiting for a steady grip
-  return pressing(GO_HX, GO_HY, GO_HR) || (screen_ == SC_CALIBRATE && starting_);
+  if (screen_ == SC_DONE) return pressing(GO_HX, DONE_GO_HY, DONE_GO_HR);
+  return pressing(GO_HX, GO_HY, GO_HR) || starting_;
 }
 // Home: a tap on the knob, except during play, where a hand on the case may brush it: there it takes a hold.
 bool Game::leaving() {
@@ -173,6 +184,8 @@ void Game::updatePlay(uint32_t dt) {
   for (; stepMs_ >= STEP_MS && !ball_.goal; stepMs_ -= STEP_MS) step(ball_, a);
   if (!ball_.goal) return;
   if (save_.level < level_ + 1) { save_.level = (uint8_t)(level_ + 1); dirty_ = true; }
+  const uint8_t got = (uint8_t)starCount(ball_.stars);
+  if (save_.stars[level_] < got) { save_.stars[level_] = got; dirty_ = true; }
   go(SC_GOAL);
 }
 void Game::updateGoal() {
@@ -184,64 +197,132 @@ void Game::updateGoal() {
 void Game::updateDone() {
   for (int i = 0; i < NUM_LEVELS; i++)
     if (in_.tapIn(coinX(i) - COIN_HALF, coinY(i) - COIN_HALF, 2 * COIN_HALF, 2 * COIN_HALF)) { play(i); return; }
-  if (in_.tapInCircle(GO_HX, GO_HY, GO_HR)) play(0);
+  if (in_.tapInCircle(GO_HX, DONE_GO_HY, DONE_GO_HR)) play(0);
 }
 int Game::pressedCoin() const {
   for (int i = 0; screen_ == SC_DONE && i < NUM_LEVELS; i++) if (pressingBox(coinX(i), coinY(i), COIN_HALF)) return i;
   return -1;
 }
 
-paint::Box Game::moving() const {
-  if (screen_ == SC_PLAY) return paint::ballBox(px(ball_.p.x), px(ball_.p.y));
-  if (screen_ != SC_CALIBRATE) return paint::NONE;
-  const int x = DISH_X + (int)lroundf(dish_.x), y = DISH_Y + (int)lroundf(dish_.y), r = paint::DISH_BALL_R + 2;
-  return {x - r, y - r, x + r + 1, y + r + 1};
+// What moves on this page, each with a box (shadow included) and a key: the pixels in the box are fully named by the
+// box and the key, so an unchanged pair needs no repaint.
+Game::Mover Game::ballMover() const {
+  if (sinking(ball_) && ball_.sinkMs >= SINK_MS) return {paint::NONE, -1};   // gone into the hole, not back yet
+  return {paint::ballBox(px(ball_.p.x), px(ball_.p.y)), ball_.sinkMs};
+}
+int Game::movers(Mover* out) const {
+  if (screen_ == SC_CALIBRATE) {
+    const int x = DISH_X + (int)lroundf(dish_.x), y = DISH_Y + (int)lroundf(dish_.y), r = paint::DISH_BALL_R + 2;
+    out[0] = {{x - r, y - r, x + r + 1, y + r + 1}, 0};
+    return 1;
+  }
+  if (screen_ != SC_PLAY) return 0;
+  const Level& l = LEVELS[level_];
+  int n = 0;
+  out[n++] = ballMover();
+  for (int i = 0; i < l.pegCount; i++) {
+    if (l.pegs[i].kind == STILL) continue;
+    const Vec c = pegAt(l, l.pegs[i], ball_.ms);
+    const int x = px(c.x), y = px(c.y), r = l.pegs[i].r;
+    out[n++] = {{x - r - 1, y - r - 1, x + r + paint::SHADOW_DX + 2, y + r + paint::SHADOW_DY + 2}, 0};
+  }
+  if (l.goal.mode != FIXED) {
+    const paint::Mouth m = paint::mouth(l.goalHalf, goalAngle(l, ball_.ms));
+    out[n++] = {m.box, m.key};
+  }
+  return n;
 }
 uint32_t Game::look() const {
   const uint32_t since = ms_ - pageMs_;
   uint32_t k = pressing(KNOB_HX, KNOB_HY, KNOB_HR) | (uint32_t)(hold() * 24) << 1;
   if (screen_ == SC_CALIBRATE || screen_ == SC_DONE) k |= (uint32_t)goPressed() << 6;
   if (screen_ == SC_CALIBRATE) k |= (uint32_t)ready() << 7;
-  if (screen_ == SC_DONE) k |= (uint32_t)(pressedCoin() + 1) << 8 | (since < paint::CONFETTI_MS ? since + 1 : 0) << 12;
+  if (screen_ == SC_PLAY) k |= (uint32_t)ball_.stars << 8;   // a star picked up
+  if (screen_ == SC_DONE) k |= (uint32_t)(pressedCoin() + 1) << 8 | (since < paint::CONFETTI_MS ? since + 1 : 0) << 13;
   return k;
 }
 
 using DrawFn = void (Game::*)();
-void Game::render() {
+void Game::draw() {
   static const DrawFn DRAW[] = {&Game::drawCalibrate, &Game::drawPlay, &Game::drawGoal, &Game::drawDone};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per page, in Screen order");
-  const paint::Box now = moving();
-  const uint32_t lk = look();
-  Held* h = held_[0].fb == gfx565::fb ? &held_[0] : held_[1].fb == gfx565::fb ? &held_[1] : nullptr;
-  if (!h) { h = &held_[held_[0].fb ? 1 : 0]; h->fb = gfx565::fb; paint::clip(paint::FULL); }
-  else if (gfx::textLogEnabled || lk != h->look) paint::clip(paint::FULL);   // the UI audit's frame logs every glyph
-  else if (paint::same(now, h->moving)) return;                               // this buffer already shows this frame
-  else paint::clip(paint::unite(now, h->moving));
   const DrawFn fn = DRAW[screen_];   // never (this->*TABLE[i])(): see Biscuit's game.cpp
   (this->*fn)();
-  h->moving = now;
+}
+void Game::render() {
+  Mover now[MAX_MOVERS];
+  const int n = movers(now);
+  const uint32_t lk = look();
+  Held* h = held_[0].fb == gfx565::fb ? &held_[0] : held_[1].fb == gfx565::fb ? &held_[1] : nullptr;
+  if (!h) { h = &held_[held_[0].fb ? 1 : 0]; h->fb = gfx565::fb; h->n = -1; }
+  if (gfx::textLogEnabled || lk != h->look || n != h->n) { paint::clip(paint::FULL); draw(); }   // the audit logs every glyph
+  else
+    for (int i = 0; i < n; i++) {   // each thing that moved: where it was, and where it is
+      if (paint::same(now[i].box, h->movers[i].box) && now[i].key == h->movers[i].key) continue;
+      paint::clip(h->movers[i].box);
+      draw();
+      paint::clip(now[i].box);
+      draw();
+    }
+  for (int i = 0; i < n; i++) h->movers[i] = now[i];
+  h->n = n;
   h->look = lk;
 }
 
-// Every shadow first, then what casts them, so a shadow never lies on top of a peg.
-void Game::drawTray(bool pegs) {
+// Every shadow first, then what casts them, so a shadow never lies on top of a peg; holes and stars lie flat on the
+// felt. `things`: the level's pegs, rails, holes and stars (the Done page shows a bare tray).
+void Game::drawTray(bool things) {
   const Level& l = LEVELS[level_];
-  const Vec left = postAt(l, -1), right = postAt(l, 1);
-  const bool ball = screen_ == SC_PLAY || screen_ == SC_GOAL;
-  paint::tray(l.goalHalf);
-  for (int i = 0; pegs && i < l.pegCount; i++) paint::shadow(CX + l.pegs[i].x, CY + l.pegs[i].y, l.pegs[i].r, l.goalHalf);
-  paint::shadow(px(left.x), px(left.y), POST_R, l.goalHalf);
-  paint::shadow(px(right.x), px(right.y), POST_R, l.goalHalf);
-  paint::shadow(CX, CY + KNOB_Y, KNOB_R, l.goalHalf);
-  if (ball) paint::shadow(px(ball_.p.x), px(ball_.p.y), BALL_R, l.goalHalf);
-  for (int i = 0; pegs && i < l.pegCount; i++) paint::peg(CX + l.pegs[i].x, CY + l.pegs[i].y, l.pegs[i].r);
-  paint::post(px(left.x), px(left.y));
-  paint::post(px(right.x), px(right.y));
-  if (ball) paint::ball(px(ball_.p.x), px(ball_.p.y), BALL_R);
+  const paint::Mouth m = paint::mouth(l.goalHalf, goalAngle(l, ball_.ms));
+  paint::tray(m);
+  if (things) for (int i = 0; i < l.pegCount; i++)
+    if (l.pegs[i].kind == DEFENDER) paint::groove(onScreen({l.pegs[i].x, l.pegs[i].y, l.pegs[i].bx, l.pegs[i].by}), m);
+  drawShadows(things, m);
+  if (things) drawThings();
+  for (int side = -1; side <= 1; side += 2) { const Vec p = postOnScreen(l, side, m); paint::post((int)lroundf(p.x), (int)lroundf(p.y)); }
+  if (screen_ == SC_PLAY || screen_ == SC_GOAL) drawBall();
   paint::knob(CX, CY + KNOB_Y, pressing(KNOB_HX, KNOB_HY, KNOB_HR), hold());
 }
+void Game::drawShadows(bool things, const paint::Mouth& m) const {
+  const Level& l = LEVELS[level_];
+  for (int i = 0; things && i < l.pegCount; i++) {
+    const Vec c = pegAt(l, l.pegs[i], ball_.ms);
+    paint::shadow(px(c.x), px(c.y), l.pegs[i].r, m);
+  }
+  for (int i = 0; things && i < l.railCount; i++) paint::railShadow(onScreen(l.rails[i]), m);
+  for (int side = -1; side <= 1; side += 2) { const Vec p = postOnScreen(l, side, m); paint::shadow((int)lroundf(p.x), (int)lroundf(p.y), POST_R, m); }
+  paint::shadow(CX, CY + KNOB_Y, KNOB_R, m);
+  if ((screen_ == SC_PLAY || screen_ == SC_GOAL) && !sinking(ball_)) paint::shadow(px(ball_.p.x), px(ball_.p.y), BALL_R, m);
+}
+void Game::drawThings() const {
+  const Level& l = LEVELS[level_];
+  for (int i = 0; i < l.holeCount; i++) paint::hole(CX + l.holes[i].x, CY + l.holes[i].y, l.holes[i].r);
+  for (int i = 0; i < STARS; i++) if (!(ball_.stars >> i & 1)) paint::star(CX + l.stars[i].x, CY + l.stars[i].y, STAR_R, true);
+  for (int i = 0; i < l.railCount; i++) paint::rail(onScreen(l.rails[i]));
+  for (int i = 0; i < l.pegCount; i++) {
+    const Vec c = pegAt(l, l.pegs[i], ball_.ms);
+    if (l.pegs[i].kind == KEEPER) paint::keeper(px(c.x), px(c.y));
+    else paint::peg(px(c.x), px(c.y), l.pegs[i].r);
+  }
+}
+// The ball; dropping into a hole, it shrinks and darkens for SINK_MS, then is gone until it comes back at the start.
+void Game::drawBall() const {
+  if (!sinking(ball_)) { paint::ball(px(ball_.p.x), px(ball_.p.y), BALL_R, 0); return; }
+  if (ball_.sinkMs >= SINK_MS) return;
+  const int r = BALL_R - BALL_R * 2 / 3 * ball_.sinkMs / SINK_MS, dark = ball_.sinkMs < 150 ? 0 : ball_.sinkMs < 330 ? 1 : 2;
+  paint::ball(px(ball_.p.x), px(ball_.p.y), r, dark);
+}
+void Game::drawFlags() const {
+  const Level& l = LEVELS[level_];
+  const paint::Mouth m = paint::mouth(l.goalHalf, goalAngle(l, ball_.ms));
+  const float a = atan2f(m.s, m.c);
+  for (int side = -1; side <= 1; side += 2) {
+    const Vec p = postOnScreen(l, side, m);
+    paint::flag((int)lroundf(p.x), (int)lroundf(p.y), a, side);
+  }
+}
 void Game::drawCalibrate() {
-  drawTray(false);
+  drawTray(true);
   paint::coin(COIN_X, COIN_Y, level_ + 1, 22);
   paint::dish(DISH_X, DISH_Y, (int)lroundf(dish_.x), (int)lroundf(dish_.y), ready());
   paint::playButton(GO_HX * 3, GO_HY * 3, goPressed());
@@ -250,22 +331,25 @@ void Game::drawPlay() {
   drawTray(true);
   paint::coin(COIN_X, COIN_Y, level_ + 1, 22);
 }
+// GOAL! on wooden blocks, pennants on the posts, and the three stars of this run: picked up ones in brass.
 void Game::drawGoal() {
   drawPlay();
-  const Level& l = LEVELS[level_];
-  paint::flag(px(postAt(l, -1).x), px(postAt(l, -1).y), -1);
-  paint::flag(px(postAt(l, 1).x), px(postAt(l, 1).y), 1);
+  drawFlags();
   paint::blocks("GOAL!", CX, 206, 7);
+  for (int i = 0; i < STARS; i++) paint::star(CX - 56 + 56 * i, 306, 20, ball_.stars >> i & 1);
 }
-// All done: pennants up, confetti, every level's coin to play again, and the button to start over.
+// All done: pennants up, confetti, every level's coin (its best stars under it) to play again, and the button to
+// start over.
 void Game::drawDone() {
   drawTray(false);
-  const Level& l = LEVELS[level_];
-  paint::flag(px(postAt(l, -1).x), px(postAt(l, -1).y), -1);
-  paint::flag(px(postAt(l, 1).x), px(postAt(l, 1).y), 1);
+  drawFlags();
   const int pressed = pressedCoin();
-  for (int i = 0; i < NUM_LEVELS; i++) paint::coin(coinX(i) * 3, coinY(i) * 3 + (i == pressed ? 2 : 0), i + 1, 30);
-  paint::playButton(GO_HX * 3, GO_HY * 3, pressing(GO_HX, GO_HY, GO_HR));
+  for (int i = 0; i < NUM_LEVELS; i++) {
+    const int x = coinX(i) * 3, y = coinY(i) * 3 + (i == pressed ? 2 : 0);
+    paint::coin(x, y, i + 1, 27);
+    for (int k = 0; k < STARS; k++) paint::star(x - 14 + 14 * k, y + 33, 6, k < save_.stars[i]);
+  }
+  paint::playButton(GO_HX * 3, DONE_GO_HY * 3, goPressed());
   paint::confetti(ms_ - pageMs_);
 }
 
@@ -287,6 +371,8 @@ void Game::debugPrint() {
          level_ + 1, (unsigned)save_.level, (int)lroundf(ball_.p.x), (int)lroundf(ball_.p.y),
          (int)lroundf(sqrtf(ball_.v.x * ball_.v.x + ball_.v.y * ball_.v.y)), ball_.goal, neutral_.x, neutral_.y,
          neutral_.z, ready(), starting_);
+  printf("stars=%d best=%u sinking=%d clock=%u\n", starCount(ball_.stars), (unsigned)save_.stars[level_], sinking(ball_),
+         (unsigned)ball_.ms);
   printf("screen=%s\n", screenName());
 }
 void Game::debugCmd(const char* cmd) {

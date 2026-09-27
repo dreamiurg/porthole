@@ -74,21 +74,41 @@ expect x=0
 expect y=110
 # solution 1 from 0 1000 0
 wait 80
-tilt 0 903 -430
+tilt -310 912 -270
 wait 240
-tilt 0 966 -260
+tilt -170 974 -150
 wait 240
-tilt 0 975 -220
+tilt -160 976 -150
 wait 240
-tilt 0 973 -230
+tilt -90 992 -90
 wait 240
-tilt 0 975 -220
+tilt 430 902 -30
+wait 240
+tilt 260 964 -60
+wait 240
+tilt 210 975 -70
+wait 240
+tilt 200 977 -70
 wait 480
-tilt 0 973 -230
+tilt 170 984 -60
 wait 240
-tilt 0 975 -220
+tilt 0 1000 0
 wait 240
-tilt 0 984 -180
+tilt -400 904 -150
+wait 240
+tilt -250 963 -100
+wait 240
+tilt -190 977 -100
+wait 240
+tilt -110 992 -60
+wait 240
+tilt 130 935 -330
+wait 240
+tilt 50 974 -220
+wait 240
+tilt 20 982 -190
+wait 240
+tilt 0 1000 0
 wait 240
 tilt 0 1000 0
 # end solution
@@ -100,27 +120,31 @@ expect-screen mk_play
 expect level=2
 # solution 2 from 0 1000 0
 wait 80
-tilt -290 905 -310
+tilt -220 911 -350
 wait 240
-tilt -180 965 -190
+tilt -120 974 -190
 wait 240
-tilt -130 982 -140
+tilt -110 977 -180
 wait 240
-tilt 90 991 100
+tilt -110 979 -170
 wait 240
-tilt 200 903 -380
+tilt 0 1000 0
 wait 240
-tilt 60 976 -210
+tilt 300 926 -230
 wait 240
-tilt 60 974 -220
+tilt 160 974 -160
 wait 240
-tilt 40 983 -180
+tilt 130 977 -170
 wait 240
-tilt 160 965 -210
+tilt 110 984 -140
 wait 240
-tilt 90 976 -200
+tilt 0 1000 0
 wait 240
-tilt 80 984 -160
+tilt -90 943 -320
+wait 240
+tilt -60 980 -190
+wait 240
+tilt 0 1000 0
 wait 240
 tilt 0 1000 0
 # end solution
@@ -137,52 +161,88 @@ expect level=3
 expect reached=2
 snap mk_e03_calibrate3
 # all six done: the Done page's red button starts over from level 1
-dbg level6
-# solution 6 from 0 1000 0
+dbg level12
+# solution 12 from 0 1000 0
 wait 80
-tilt 290 912 290
+tilt 400 914 -70
 wait 240
-tilt 110 905 -410
+tilt 190 981 -40
 wait 240
-tilt -70 971 -230
+tilt 0 1000 0
 wait 240
-tilt 420 906 -50
+tilt 260 952 -160
 wait 240
-tilt 420 903 -90
+tilt 160 983 -90
 wait 240
-tilt 430 902 30
+tilt 0 1000 0
 wait 240
-tilt 390 901 190
+tilt -120 943 -310
 wait 240
-tilt -40 975 220
+tilt -110 988 -110
 wait 240
-tilt -340 904 -260
+tilt -150 959 -240
 wait 240
-tilt -330 905 -270
+tilt -90 992 -90
 wait 240
-tilt -100 991 -90
+tilt -340 930 140
 wait 240
-tilt -280 954 -110
+tilt -220 975 40
 wait 240
-tilt -170 977 -130
+tilt -210 977 20
 wait 240
-tilt 100 993 60
+tilt -120 993 0
 wait 240
-tilt 410 905 -110
+tilt -270 963 -10
 wait 240
-tilt 360 926 -110
+tilt -220 975 0
 wait 240
-tilt 270 901 -340
+tilt -210 978 0
 wait 240
-tilt 160 907 -390
+tilt -190 982 0
 wait 240
-tilt -120 949 -290
+tilt 0 1000 0
 wait 240
-tilt -140 930 -340
+tilt 140 930 -340
 wait 240
-tilt 30 979 -200
+tilt 120 984 -130
 wait 240
-tilt -10 991 -130
+tilt 220 957 -190
+wait 240
+tilt 130 983 -130
+wait 240
+tilt -50 984 -170
+wait 240
+tilt -430 903 10
+wait 240
+tilt -430 902 -30
+wait 240
+tilt -420 905 -70
+wait 240
+tilt -400 911 -100
+wait 240
+tilt -300 949 -100
+wait 240
+tilt -230 970 -80
+wait 240
+tilt -120 992 -50
+wait 240
+tilt 420 906 -60
+wait 240
+tilt 280 957 -80
+wait 240
+tilt 200 976 -90
+wait 240
+tilt 180 977 -110
+wait 240
+tilt 410 903 -130
+wait 240
+tilt 260 958 -120
+wait 240
+tilt 260 961 -90
+wait 240
+tilt 70 966 -250
+wait 240
+tilt -170 980 -100
 wait 240
 tilt 0 1000 0
 # end solution
@@ -191,8 +251,8 @@ wait 500
 tap 80 60
 expect-screen mk_done
 wait 500
-tap 80 110
+tap 80 117
 expect-screen mk_play
 expect level=1
-expect reached=6
+expect reached=12
 sheet edges

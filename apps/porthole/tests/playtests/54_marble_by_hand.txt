@@ -1,22 +1,46 @@
-# Level 5, calibrated upright (the sim's default grip), every tilt a real 1 g vector: the reviewer's repro. Leaned
-# back 30 degrees and turned 17 (a natural "up toward the goal") used to wedge the ball for good; it scores now.
-# Then every way a kid can hold it, from the next level's tray: the game keeps going and the ball stays on the tray.
+# Marble Kick played by hand from an upright grip, the way a kid would, every tilt a real 1 g reading: straight at the
+# goal first, which from level 3 on does not work, then the way round. Leaning back 30 degrees is 0 866 -500, turning
+# left 30 degrees -500 866 0.
 profile Sam 6
 app marble-kick
 wait 500
 tilt 0 1000 0
 wait 80
-dbg level5
+dbg level3
 wait 40
-tilt -150 500 -852
-wait 2500
-expect-screen mk_goal
-expect reached=5
-snap mk_r01_level5_goal
-tilt 0 1000 0
-wait 2100
+# level 3, straight at the goal: the wall stops the ball in the middle, and there it stays
+tilt 0 866 -500
+wait 3000
 expect-screen mk_play
-expect level=6
+expect y>0
+snap mk_h01_stuck_under_the_wall
+# along the wall and round its end, up, and in from the side
+tilt -500 866 0
+wait 1000
+tilt 0 866 -500
+wait 1200
+tilt 400 866 -300
+wait 1500
+expect-screen mk_goal
+snap mk_h02_goal
+tilt 0 1000 0
+wait 80
+# level 4, straight at the goal: into the hole on the way; it sinks and comes back at the start, nothing else lost
+dbg level4
+wait 40
+tilt 0 866 -500
+wait 600
+expect sinking=1
+snap mk_h03_sinking
+wait 900
+expect sinking=0
+expect x=0
+expect y>=100
+tilt 0 1000 0
+wait 1000
+# every way a kid can hold it, on level 6: the game keeps going and the ball stays on the tray
+dbg level6
+wait 40
 tilt 1000 0 0
 wait 1500
 tilt 707 707 0
@@ -35,4 +59,4 @@ expect-screen mk_play|mk_goal
 expect x>=-170
 expect x<=170
 expect y<=170
-sheet trap_repro
+sheet by_hand

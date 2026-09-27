@@ -15,4 +15,8 @@ constexpr float PEG_BOUNCE = 0.5f;  // off a peg, a goalpost or the back knob
 constexpr int STEP_MS = 5;          // fixed physics substep: frame rate never changes the rolling
 constexpr int MAX_FRAME_MS = 100;   // a stalled frame catches up at most this much (no burst of substeps)
 constexpr int GOAL_MS = 2000;       // the Goal page moves on by itself after this
+// Holes: a ball slower than this drops in (faster, it skims over); it sinks for SINK_MS and is back at the level's start,
+// still, at RESPAWN_MS. Nothing else changes: stars stay picked up, the clock runs on.
+constexpr float HOLE_SKIM = 380;    // px/s
+constexpr int SINK_MS = 500, RESPAWN_MS = 1000;
 }  // namespace marble

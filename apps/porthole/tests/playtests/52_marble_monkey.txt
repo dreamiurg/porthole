@@ -32,58 +32,94 @@ tilt 0 1000 0
 expect-screen mk_goal
 monkey 300 23
 expect-screen *
-# seed 24: the Done page, reached by playing level 6 through
+# seed 24: the Done page, reached by playing level 12 through
 reset
 tilt 0 1000 0
 profile Sam 6
 app marble-kick
 wait 500
-dbg level6
-# solution 6 from 0 1000 0
+dbg level12
+# solution 12 from 0 1000 0
 wait 80
-tilt 290 912 290
+tilt 400 914 -70
 wait 240
-tilt 110 905 -410
+tilt 190 981 -40
 wait 240
-tilt -70 971 -230
+tilt 0 1000 0
 wait 240
-tilt 420 906 -50
+tilt 260 952 -160
 wait 240
-tilt 420 903 -90
+tilt 160 983 -90
 wait 240
-tilt 430 902 30
+tilt 0 1000 0
 wait 240
-tilt 390 901 190
+tilt -120 943 -310
 wait 240
-tilt -40 975 220
+tilt -110 988 -110
 wait 240
-tilt -340 904 -260
+tilt -150 959 -240
 wait 240
-tilt -330 905 -270
+tilt -90 992 -90
 wait 240
-tilt -100 991 -90
+tilt -340 930 140
 wait 240
-tilt -280 954 -110
+tilt -220 975 40
 wait 240
-tilt -170 977 -130
+tilt -210 977 20
 wait 240
-tilt 100 993 60
+tilt -120 993 0
 wait 240
-tilt 410 905 -110
+tilt -270 963 -10
 wait 240
-tilt 360 926 -110
+tilt -220 975 0
 wait 240
-tilt 270 901 -340
+tilt -210 978 0
 wait 240
-tilt 160 907 -390
+tilt -190 982 0
 wait 240
-tilt -120 949 -290
+tilt 0 1000 0
 wait 240
-tilt -140 930 -340
+tilt 140 930 -340
 wait 240
-tilt 30 979 -200
+tilt 120 984 -130
 wait 240
-tilt -10 991 -130
+tilt 220 957 -190
+wait 240
+tilt 130 983 -130
+wait 240
+tilt -50 984 -170
+wait 240
+tilt -430 903 10
+wait 240
+tilt -430 902 -30
+wait 240
+tilt -420 905 -70
+wait 240
+tilt -400 911 -100
+wait 240
+tilt -300 949 -100
+wait 240
+tilt -230 970 -80
+wait 240
+tilt -120 992 -50
+wait 240
+tilt 420 906 -60
+wait 240
+tilt 280 957 -80
+wait 240
+tilt 200 976 -90
+wait 240
+tilt 180 977 -110
+wait 240
+tilt 410 903 -130
+wait 240
+tilt 260 958 -120
+wait 240
+tilt 260 961 -90
+wait 240
+tilt 70 966 -250
+wait 240
+tilt -170 980 -100
 wait 240
 tilt 0 1000 0
 # end solution

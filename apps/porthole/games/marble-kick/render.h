@@ -7,6 +7,7 @@
 // what lets the game redraw only the ball's old and new spots in each of the panel's two buffers (game.cpp, render()).
 // Panel px, absolute (the tray's center is 240,240).
 #pragma once
+#include <math.h>
 #include <stdint.h>
 #include "gfx565.h"
 #include "physics.h"
@@ -26,15 +27,26 @@ inline Box ballBox(int x, int y) {
   return {x - BALL_R - 1, y - BALL_R - 1, x + BALL_R + SHADOW_DX + 2, y + BALL_R + SHADOW_DY + 2};
 }
 
-void tray(int goalHalf);                     // the whole tray, the goal's net cut into the rim above the middle
-void shadow(int x, int y, int r, int goalHalf);   // the tray in shade under a round thing of radius r at (x, y)
+// Where the goal is, for the tray's net: drawn at the nearest quarter degree (`key`, which names what the pixels show),
+// and the screen box its net and posts can reach.
+struct Mouth { int half; float c, s; int key; Box box; };
+inline int angleKey(float radians) { return (int)lroundf(radians * 720 / 3.14159265f); }
+Mouth mouth(int goalHalf, float angle);
+void tray(const Mouth& m);                   // the whole tray, the goal's net cut into the rim where the goal is
+void shadow(int x, int y, int r, const Mouth& m);   // the tray in shade under a round thing of radius r at (x, y)
+void railShadow(const Rail& r, const Mouth& m);
+void rail(const Rail& r);                    // a wooden bar (panel px)
+void groove(const Rail& line, const Mouth& m);   // a defender's track in the felt
+void hole(int x, int y, int r);
+void star(int x, int y, int r, bool lit);
 void peg(int x, int y, int r);
+void keeper(int x, int y);
 void post(int x, int y);
-void ball(int x, int y, int r);             // the cream ball with its dark pentagon (BALL_R on the tray)
+void ball(int x, int y, int r, int dark);    // the cream ball with its dark pentagon; dark 1-2: sinking into a hole
 void knob(int x, int y, bool pressed, float hold);   // the way home; hold 0..1 fills a ring around it (Play)
 void coin(int x, int y, int number, int r);  // a level's number, carved in a brass coin
 void playButton(int x, int y, bool pressed); // a red lacquer button with a cream arrow
-void flag(int x, int y, int dir);            // a pennant on a goalpost, flying outward (dir -1 left, +1 right)
+void flag(int x, int y, float angle, int dir);   // a pennant on a goalpost, flying outward (dir -1 left, +1 right)
 // The Calibrate page's dish: a small ball that rolls the way the game's will, settling in the middle (ready: the
 // middle ring turns brass).
 constexpr int DISH_R = 64, DISH_BALL_R = 12, DISH_TRAVEL = DISH_R - DISH_BALL_R - 4;

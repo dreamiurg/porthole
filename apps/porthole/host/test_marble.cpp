@@ -15,7 +15,8 @@
 
 using namespace marble;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
+static bool lab = false;   // --levels: report every level's checks, fail none (for designing levels)
+#define CHECK(c) (lab || (assert(c), true), checks++)
 
 static float len(Vec v) { return sqrtf(v.x * v.x + v.y * v.y); }
 static bool near(float a, float b) { return fabsf(a - b) < 0.01f; }
@@ -91,11 +92,11 @@ static void tiltMapping() {
 }
 
 // A made-up level for the rules: one post-sized peg (the thinnest thing on any tray) in the middle.
-static const Level PIN = {0, 120, 60, 1, {{0, 0, POST_R}}, nullptr, 0};
+static const Level PIN = {0, 120, 60, TOP, 1, {peg(0, 0, POST_R)}, 0, {}, 0, {}, {}, nullptr, 0};
 
 static bool onTray(const Ball& b) {
   const float d = len(b.p);
-  return d <= PITCH_R - BALL_R + 0.01f || (inGap(*b.level, b.p) && d <= PITCH_R);
+  return d <= PITCH_R - BALL_R + 0.01f || (inGap(*b.level, b.p, b.ms) && d <= PITCH_R);
 }
 
 // Full tilt in a direction that turns a little every quarter second, for a minute, from every level: the ball stays on
@@ -107,7 +108,7 @@ static void neverLeavesTheTray() {
     for (int i = 0; i < 12000; i++) {
       const float angle = (float)(i / 50) * 2.4f;
       step(b, {cosf(angle) * ACCEL_FULL, sinf(angle) * ACCEL_FULL});
-      if (b.goal) { CHECK(inGap(l, b.p) && len(b.p) > PITCH_R); b = start(l); continue; }
+      if (b.goal) { CHECK(inGap(l, b.p, b.ms) && len(b.p) > PITCH_R); b = start(l); continue; }
       assert(onTray(b) && len(b.v) <= V_MAX + 0.01f);
     }
     checks++;
@@ -118,7 +119,7 @@ static void neverLeavesTheTray() {
     b.p = {cosf(angle) * 150, sinf(angle) * 150};
     b.v = {cosf(angle) * V_MAX, sinf(angle) * V_MAX};
     for (int i = 0; i < 200 && !b.goal; i++) { step(b, {cosf(angle) * ACCEL_FULL, sinf(angle) * ACCEL_FULL}); assert(b.goal || onTray(b)); }
-    CHECK(b.goal == inGap(PIN, b.p));
+    CHECK(b.goal == inGap(PIN, b.p, b.ms));
   }
 }
 
@@ -144,7 +145,7 @@ static void goalDetection() {
   b.p = {30, 60};   // clear of the pin in the middle
   int n = 0;
   while (!b.goal && n < 2000) { step(b, {0, -ACCEL_FULL}); n++; }
-  CHECK(b.goal && len(b.p) > PITCH_R && inGap(PIN, b.p));
+  CHECK(b.goal && len(b.p) > PITCH_R && inGap(PIN, b.p, b.ms));
   const Vec at = b.p;
   step(b, {ACCEL_FULL, 0});
   CHECK(b.p.x == at.x && b.p.y == at.y);
@@ -154,50 +155,68 @@ static void goalDetection() {
   CHECK(!b.goal && b.p.y > 0);
   // the gap is the mouth between the posts, where the whole ball fits: at the top, the ball's center clear of each post
   const float mouth = PIN.goalHalf - POST_R - BALL_R;
-  CHECK(inGap(PIN, {0, -180}) && inGap(PIN, {-(mouth - 1), -170}) && !inGap(PIN, {mouth + 1, -170}) && !inGap(PIN, {0, 180}));
-  CHECK(near(len(postAt(PIN, -1)), POST_RING) && near(postAt(PIN, 1).x, PIN.goalHalf) && postAt(PIN, -1).y < 0);
+  CHECK(inGap(PIN, {0, -180}, 0) && inGap(PIN, {-(mouth - 1), -170}, 0) && !inGap(PIN, {mouth + 1, -170}, 0) && !inGap(PIN, {0, 180}, 0));
+  CHECK(near(len(postAt(PIN, -1, 0)), POST_RING) && near(postAt(PIN, 1, 0).x, PIN.goalHalf) && postAt(PIN, -1, 0).y < 0);
   // a ball resting in the dead zone stays where it is: nothing drifts it on its own
   b = start(LEVELS[0]);
   for (int i = 0; i < 1000; i++) step(b, tiltAccel(gravityFor(40, -40, UPRIGHT), UPRIGHT));
   CHECK(b.p.x == LEVELS[0].startX && b.p.y == LEVELS[0].startY);
 }
 
-// No pockets by construction: every gap the ball could try, between a peg, a goalpost or the back knob and the rim or
-// each other, is closed (under 2 px) or wide enough to roll through with room to spare (the ball's width + 8 px). A
-// gap in between is where a ball gets wedged.
-static void noPockets() {
-  constexpr float CLOSED = 2, OPEN = 2 * BALL_R + 8;
-  int pockets = 0;
+// No gap the size of the ball, where it would wedge: between still pegs, rails, the home knob and the rim, every gap is
+// either narrower than the ball (a wedge it cannot enter; neverStuck below shows it always backs out) or wide enough to
+// roll through with room to spare. Moving pegs pass; they are not checked here.
+struct Shape { Vec a, b; float r; };   // a capsule; a circle has a == b
+static float segDist(Vec p, Vec a, Vec b) {
+  const Vec ab = {b.x - a.x, b.y - a.y};
+  const float l2 = ab.x * ab.x + ab.y * ab.y, t = l2 > 0 ? ((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / l2 : 0;
+  const float k = t < 0 ? 0 : t > 1 ? 1 : t;
+  return len({p.x - a.x - ab.x * k, p.y - a.y - ab.y * k});
+}
+static float gap(const Shape& s, const Shape& t) {   // sampled along s every px: plenty for a rule about 40 px gaps
+  const float n = fmaxf(1, len({s.b.x - s.a.x, s.b.y - s.a.y}));
+  float best = 1e9f;
+  for (float k = 0; k <= n; k++) {
+    const Vec p = {s.a.x + (s.b.x - s.a.x) * k / n, s.a.y + (s.b.y - s.a.y) * k / n};
+    best = fminf(best, segDist(p, t.a, t.b));
+  }
+  return best - s.r - t.r;
+}
+static int shapes(const Level& l, Shape* out) {
+  int n = 0;
+  for (int i = 0; i < l.pegCount; i++)
+    if (l.pegs[i].kind == STILL) { const Vec c = {(float)l.pegs[i].x, (float)l.pegs[i].y}; out[n++] = {c, c, (float)l.pegs[i].r}; }
+  for (int i = 0; i < l.railCount; i++)
+    out[n++] = {{(float)l.rails[i].x0, (float)l.rails[i].y0}, {(float)l.rails[i].x1, (float)l.rails[i].y1}, RAIL_R};
+  out[n++] = {{0, KNOB_Y}, {0, KNOB_Y}, KNOB_R};
+  return n;
+}
+static void noBallSizedGaps() {
+  constexpr float WEDGE = 2 * BALL_R - 2, OPEN = 2 * BALL_R + 8;
+  int bad = 0;
   for (const Level& l : LEVELS) {
-    struct Round { Vec c; float r; } things[12];
-    int n = 0;
-    for (int i = 0; i < l.pegCount; i++) things[n++] = {{(float)l.pegs[i].x, (float)l.pegs[i].y}, (float)l.pegs[i].r};
-    things[n++] = {postAt(l, -1), POST_R};
-    things[n++] = {postAt(l, 1), POST_R};
-    things[n++] = {{0, KNOB_Y}, KNOB_R};
+    Shape sh[MAX_PEGS + MAX_RAILS + 1];
+    const int n = shapes(l, sh);
     for (int i = 0; i < n; i++) {
-      const float rim = PITCH_R - len(things[i].c) - things[i].r;
-      if (rim >= CLOSED && rim < OPEN) printf("level %d: thing %d is %.1f px from the rim\n", (int)(&l - LEVELS) + 1, i, rim);
-      pockets += rim >= CLOSED && rim < OPEN;
+      const float rim = PITCH_R - fmaxf(len(sh[i].a), len(sh[i].b)) - sh[i].r;
+      if (rim >= WEDGE && rim < OPEN) { printf("level %d: shape %d is %.1f px from the rim\n", (int)(&l - LEVELS) + 1, i, rim); bad++; }
       for (int j = i + 1; j < n; j++) {
-        const float gap = len({things[i].c.x - things[j].c.x, things[i].c.y - things[j].c.y}) - things[i].r - things[j].r;
-        if (gap >= CLOSED && gap < OPEN) printf("level %d: things %d and %d are %.1f px apart\n", (int)(&l - LEVELS) + 1, i, j, gap);
-        pockets += gap >= CLOSED && gap < OPEN;
+        const float g = gap(sh[i], sh[j]);
+        if (g >= WEDGE && g < OPEN) { printf("level %d: shapes %d and %d are %.1f px apart\n", (int)(&l - LEVELS) + 1, i, j, g); bad++; }
       }
     }
   }
-  CHECK(pockets == 0);
+  CHECK(bad == 0);
 }
 // The goalposts sit in the wall, clear of the lane a ball rolls along the rim in: a ball pressed to the rim slides
 // past them.
 static void postsClearOfTheRimLane() {
   for (const Level& l : LEVELS)
-    for (int side = -1; side <= 1; side += 2) CHECK(len(postAt(l, side)) - POST_R >= PITCH_R);
+    for (uint32_t ms = 0; ms < 20000; ms += 1250)
+      for (int side = -1; side <= 1; side += 2) CHECK(len(postAt(l, side, ms)) - POST_R >= PITCH_R - 0.01f);
 }
 
-// Holding one natural tilt toward the goal gets there. Level 5 from upright, leaned back 30 degrees and turned 17
-// (the reviewer's repro: it used to wedge the ball against a guard for good); and a ball pressed to the rim on level 1
-// slides up it into the goal (it used to park on a goalpost).
+// A ball pressed to the rim on level 1 slides up it into the goal (it used to park on a goalpost).
 static int holdTilt(const Level& l, Vec from, Grav g, Grav neutral, int ms) {
   Ball b = start(l);
   b.p = from;
@@ -206,9 +225,139 @@ static int holdTilt(const Level& l, Vec from, Grav g, Grav neutral, int ms) {
   return -1;
 }
 static void noParking() {
-  CHECK(holdTilt(LEVELS[4], {LEVELS[4].startX, LEVELS[4].startY}, {-150, 500, -852}, UPRIGHT, 2500) >= 0);
   for (int side = -1; side <= 1; side += 2)
     CHECK(holdTilt(LEVELS[0], {side * (PITCH_R - BALL_R - 1.0f), 0}, gravityFor(0, -FULL_MG, FLAT), FLAT, 3000) >= 0);
+}
+
+// ---- the level elements, one made-up level each ----
+// A rail stops the ball from every side at top speed, and never lets it through.
+static const Level BAR = {0, 120, 60, TOP, 0, {}, 1, {{-60, 0, 60, 0}}, 0, {}, {}, nullptr, 0};
+static void railsHold() {
+  for (float angle = 0; angle < 6.28f; angle += 0.1f) {
+    const Vec dir = {cosf(angle), sinf(angle)};
+    if (fabsf(dir.y) < 0.5f) continue;   // shots along the bar round its end, rightly
+    Ball b = start(BAR);
+    b.p = {dir.x * 70, dir.y * 70};
+    b.v = {-dir.x * V_MAX, -dir.y * V_MAX};
+    for (int i = 0; i < 400; i++) {
+      const Vec was = b.p;
+      step(b, {-dir.x * ACCEL_FULL, -dir.y * ACCEL_FULL});
+      assert(segDist(b.p, {-60, 0}, {60, 0}) >= RAIL_R + BALL_R - 0.01f);          // never inside the bar
+      assert(!(was.y * b.p.y <= 0 && fabsf(was.x) <= 60 && fabsf(b.p.x) <= 60));   // never across it where it is
+    }
+    checks++;
+  }
+}
+// Nothing moves until the kid tilts; then a defender walks into a resting ball and pushes it along, the same way
+// every time.
+static const Level WALKER = {0, 60, 60, TOP, 1, {defender(-100, 0, 100, 0, 4000)}, 0, {}, 0, {}, {}, nullptr, 0};
+static void defendersNudge() {
+  Ball b = start(WALKER);
+  b.p = {0, 0};
+  for (int i = 0; i < 400; i++) step(b, {0, 0});
+  CHECK(!b.started && b.ms == 0 && pegAt(WALKER, WALKER.pegs[0], b.ms).x == -100);
+  step(b, {0, 50});   // a tilt just past the dead zone: too gentle to beat the felt, but the clock starts
+  CHECK(b.started && b.ms == STEP_MS);
+  float before = 0, after = 0;
+  Ball twin = b;
+  for (int i = 0; i < 400; i++) { step(b, {0, 0}); step(twin, {0, 0}); }   // 2 s: across the middle to the far end
+  before = b.p.x; after = twin.p.x;
+  CHECK(before > 5 && before == after);   // pushed right, identically
+  CHECK(len(pegAt(WALKER, WALKER.pegs[0], 1000)) < 1 && near(pegAt(WALKER, WALKER.pegs[0], 2000).x, 100));
+}
+// A slow ball over a hole drops in, sinks, and comes back at the start, still, its stars kept; a fast one skims over.
+static const Level PIT = {0, 120, 60, TOP, 0, {}, 0, {}, 1, {{0, 0, 24}}, {{0, 60}, {100, 100}, {-100, 100}}, nullptr, 0};
+static void holesSendBack() {
+  Ball b = start(PIT);
+  b.p = {0, 90};
+  int t = 0;
+  while (!sinking(b) && t < 3000) { step(b, {0, -150}); t += STEP_MS; }
+  CHECK(sinking(b) && (b.stars & 1) && len(b.p) < 24);
+  while (sinking(b)) { step(b, {0, -ACCEL_FULL}); t += STEP_MS; }
+  CHECK(b.p.x == PIT.startX && b.p.y == PIT.startY && b.v.x == 0 && b.v.y == 0 && (b.stars & 1));
+  b = start(PIT);
+  b.p = {0, 60};
+  b.v = {0, -V_MAX};
+  for (int i = 0; i < 30; i++) step(b, {0, -ACCEL_FULL});
+  CHECK(!sinking(b) && b.p.y < -20);   // skimmed over at top speed
+  CHECK(starCount(7) == 3 && starCount(5) == 2 && starCount(0) == 0);
+}
+// The goal moves round the rim on the level's clock, its posts and the keeper with it; a ball can only score through
+// the mouth where it is now.
+static const Level TURN = {0, 120, 60, {SPIN, 0, 30, 0}, 1, {keeper(-150, 40, 3000)}, 0, {}, 0, {}, {}, nullptr, 0};
+static const Level SWAY = {0, 120, 60, {SWING, -40, 40, 8000}, 0, {}, 0, {}, 0, {}, {}, nullptr, 0};
+static void goalMoves() {
+  const float deg = 3.14159265f / 180;
+  CHECK(near(goalAngle(TURN, 0), 0) && near(goalAngle(TURN, 3000), 90 * deg));
+  CHECK(near(goalAngle(SWAY, 0), -40 * deg) && near(goalAngle(SWAY, 4000), 40 * deg) && near(goalAngle(SWAY, 8000), -40 * deg));
+  const Vec m = mouthAt(TURN, 3000), post = postAt(TURN, -1, 3000), k = pegAt(TURN, TURN.pegs[0], 3000);
+  CHECK(fabsf(m.x - PITCH_R) < 0.1f && fabsf(m.y) < 0.1f);   // at 3 o'clock
+  CHECK(near(len(post), POST_RING) && post.x > 0 && k.x > 100);
+  CHECK(inGap(TURN, {180, 0}, 3000) && !inGap(TURN, {0, -180}, 3000));
+  // held still at 3 o'clock, the mouth comes round and the ball rolls into it... only when it is there
+  Ball b = start(SWAY);
+  b.p = {0, 0};
+  int t = 0;
+  while (!b.goal && t < 20000) { const Vec at = mouthAt(SWAY, b.ms); const float d = len({at.x - b.p.x, at.y - b.p.y});
+    step(b, {(at.x - b.p.x) / d * ACCEL_FULL, (at.y - b.p.y) / d * ACCEL_FULL}); t += STEP_MS; }
+  CHECK(b.goal && inGap(SWAY, b.p, b.ms));
+}
+
+// ---- challenge ----
+// The greedy player: always full tilt straight at the goal's mouth, wherever it is now, re-aimed every frame, from
+// each grip. It may win the first two levels (they teach tilting); from level 3 on it must not within 20 s: every
+// level asks for a route, some patience, or both.
+static bool greedyScores(const Level& l, Grav grip, int ms) {
+  Ball b = start(l);
+  for (int t = 0; t < ms; t += 40) {
+    const Vec at = mouthAt(l, b.ms);
+    const float d = fmaxf(1, len({at.x - b.p.x, at.y - b.p.y}));
+    const Vec a = tiltAccel(gravityFor((int)lroundf((at.x - b.p.x) / d * 600), (int)lroundf((at.y - b.p.y) / d * 600), grip), grip);
+    for (int k = 0; k < 8; k++) { step(b, a); if (b.goal) return true; }
+  }
+  return false;
+}
+static void greedyFails() {
+  printf("greedy wins of 3 grips, by level:");
+  int bad = 0;
+  for (int i = 0; i < NUM_LEVELS; i++) {
+    int wins = 0;
+    for (Grav n : NEUTRALS) wins += greedyScores(LEVELS[i], n, 20000);
+    printf(" %d:%d", i + 1, wins);
+    bad += i >= 2 && wins;
+  }
+  printf("\n");
+  CHECK(bad == 0);
+}
+// Never stuck: wherever the ball comes to rest under some tilt (pinned in a cup, a corner, a wedge), some other tilt
+// gets it well away within 3 s. Resting in a hole does not count: the hole sends it back to the start.
+static bool freed(Ball b) {
+  const Vec at = b.p;
+  for (int k = 0; k < 8; k++) {
+    Ball t = b;
+    const Vec a = {cosf(k * 0.785f) * ACCEL_FULL, sinf(k * 0.785f) * ACCEL_FULL};
+    for (int i = 0; i < 600 && !t.goal; i++) step(t, a);
+    if (t.goal || len({t.p.x - at.x, t.p.y - at.y}) > 2 * BALL_R) return true;
+  }
+  return false;
+}
+static void neverStuck() {
+  uint32_t rng = 7;
+  auto rnd = [&rng](int n) { rng = rng * 1664525u + 1013904223u; return (int)((rng >> 8) % (uint32_t)n); };
+  int spots = 0, stuck = 0;
+  for (const Level& l : LEVELS)
+    for (int trial = 0; trial < 40; trial++) {
+      Ball b = start(l);
+      for (int hold = 0; hold < 3 && !b.goal; hold++) {   // three random holds of 1.5 s, the last one kept on
+        const float ang = rnd(628) / 100.0f, k = 0.4f + rnd(60) / 100.0f;
+        for (int i = 0; i < 300 && !b.goal; i++) step(b, {cosf(ang) * ACCEL_FULL * k, sinf(ang) * ACCEL_FULL * k});
+      }
+      if (b.goal || sinking(b) || len(b.v) > 5) continue;
+      spots++;
+      if (!freed(b)) { stuck++; printf("level %d: stuck at %.0f,%.0f\n", (int)(&l - LEVELS) + 1, b.p.x, b.p.y); }
+    }
+  printf("never stuck: %d resting spots, %d stuck\n", spots, stuck);
+  CHECK(spots > 50 && stuck == 0);
 }
 
 // Replays a level's solution as the game gets it: each step a real 1 g reading (whole milli-g) held for whole frames
@@ -236,12 +385,14 @@ static int replay(const Level& l, Grav neutral, int* total) {
 // Each level's solution scores from every way of holding the device, and in its last second: the playtests stop
 // tilting when the sequence ends, before the Goal page moves on.
 static void everyLevelSolvable() {
+  int bad = 0;
   for (const Level& l : LEVELS)
     for (Grav n : NEUTRALS) {
       int total;
       const int goalMs = replay(l, n, &total);
-      CHECK(goalMs >= 0 && total - goalMs <= 1000);
+      bad += !(goalMs >= 0 && total - goalMs <= 1000);
     }
+  CHECK(bad == 0);
 }
 
 // The playtests replay the same solutions through the sim, as `tilt` lines: every block in tests/playtests/*.txt
@@ -336,6 +487,27 @@ static void saveBlob() {
   bad = s; bad.version = SAVE_VERSION + 1; bad.crc = os::crc32(&bad, sizeof bad - 4);
   CHECK(!loadBlob(&bad, sizeof bad, back) && back.level == 7);
 }
+// Version 2 adds the best stars per level; a version 1 save still loads.
+static void saveMigration() {
+  Save s{}, back{};
+  s.level = 3; s.stars[0] = 3; s.stars[2] = 1; s.stars[31] = 2;
+  seal(s);
+  CHECK(loadBlob(&s, sizeof s, back) && back.stars[0] == 3 && back.stars[1] == 0 && back.stars[2] == 1 && back.stars[31] == 2);
+  // version 1 (16 bytes, before stars) still loads: its level kept, no stars yet, sealed as today's version
+  struct V1 { uint32_t magic; uint16_t version, size; uint8_t level, reserved[3]; uint32_t crc; };
+  static_assert(sizeof(V1) == SAVE_V1_SIZE, "version 1 as it shipped");
+  V1 v1 = {SAVE_MAGIC, 1, SAVE_V1_SIZE, 5, {0, 0, 0}, 0};
+  v1.crc = os::crc32(&v1, sizeof v1 - 4);
+  Save up;
+  memset(&up, 0xAA, sizeof up);
+  CHECK(loadBlob(&v1, sizeof v1, up) && up.level == 5 && up.version == SAVE_VERSION && up.size == sizeof(Save));
+  int stars = 0;
+  for (uint8_t st : up.stars) stars += st;
+  CHECK(stars == 0);
+  // a blob whose size does not match its version (version 1 padded to today's size) is not a save
+  Save odd = s; odd.version = 1; odd.crc = os::crc32(&odd, sizeof odd - 4);
+  CHECK(!loadBlob(&odd, sizeof odd, back));
+}
 
 // Drives the game like the sim drives the device, frame by frame, with two panel buffers used by turns: random real
 // tilts (and jolts), taps, holds and brushes anywhere and on its buttons, frames of 0 ms and stalls of 500 ms, and from
@@ -347,6 +519,8 @@ struct Driver {
   Grav grav = UPRIGHT;
   bool down = false; int x = 0, y = 0, frames = 0;
   int level = -1; uint32_t solveMs = 0;   // a solution being replayed (level index), and how far into it
+  int greedy = 0;                          // frames left of playing greedy (straight at the goal: into the holes)
+  int runs = 0;
   void touch() {
     if (down) { if (--frames <= 0) down = false; return; }
     if (rand(25)) return;
@@ -355,10 +529,19 @@ struct Driver {
     x = k < 6 ? SPOTS[k][0] : 20 + rand(120); y = k < 6 ? SPOTS[k][1] : 20 + rand(120);
     down = true; frames = 1 + rand(3) + (rand(6) ? 0 : 20);   // mostly taps, sometimes a hold past 600 ms
   }
-  void tilt(uint32_t dt) {
+  void tilt(uint32_t dt, const marble::Game& game) {
+    if (greedy > 0) {
+      greedy--;
+      const Ball& b = game.ball();
+      const Vec at = mouthAt(*b.level, b.ms);
+      const float d = fmaxf(1, len({at.x - b.p.x, at.y - b.p.y}));
+      grav = gravityFor((int)lroundf((at.x - b.p.x) / d * 600), (int)lroundf((at.y - b.p.y) / d * 600), UPRIGHT);
+      return;
+    }
     if (level >= 0) {   // the solution's step at this time, as the sim's playtests feed it
       const Level& l = LEVELS[level];
-      uint32_t at = solveMs += dt;
+      uint32_t at = solveMs;   // the frame's start: its substeps run on the step in force then
+      solveMs += dt;
       for (int s = 0; s < l.steps; s++, at -= l.solution[s - 1].ms)
         if (at < l.solution[s].ms) { grav = gravityFor(l.solution[s].tx, l.solution[s].ty, UPRIGHT); return; }
       level = -1; grav = UPRIGHT;
@@ -367,15 +550,19 @@ struct Driver {
     if (!rand(15)) grav = rand(12) ? gravityFor(rand(1400) - 700, rand(1400) - 700, UPRIGHT) : Grav{1800, 0, 900};
   }
 };
-// Now and then (not mid-solution), calibrate as held upright and play a level through.
+// Now and then (not mid-run), calibrate as held upright and play a level: through with its solution, or greedily for
+// 3 s (which drops the ball into a level's holes).
 static void maybeSolve(Driver& d, marble::Game& game, InputTracker& tracker) {
-  if (d.level >= 0 || d.rand(300)) return;
+  if (d.level >= 0 || d.greedy > 0 || d.rand(300)) return;
   d.grav = UPRIGHT; d.level = d.rand(NUM_LEVELS); d.solveMs = 0; d.down = false;
+  if (d.runs++ % 3 == 0) d.level = NUM_LEVELS - 1;   // the last level often: its goal leads to the Done page
+  const int pick = d.level;
+  if (d.runs % 2) { d.greedy = 75; d.level = -1; }
   Input held = tracker.step(false, 0, 0, d.ms);   // a frame in the grip it calibrates in
   held.gx = (int16_t)UPRIGHT.x; held.gy = (int16_t)UPRIGHT.y; held.gz = (int16_t)UPRIGHT.z;
   game.update(d.ms / 1000, d.ms, held);
   char cmd[16];
-  snprintf(cmd, sizeof cmd, "level%d", d.level + 1);
+  snprintf(cmd, sizeof cmd, "level%d", pick + 1);
   game.debugCmd(cmd);
 }
 // Draws the frame into the panel buffer `shown` as the game does, and whole into `whole` by a copy: true if equal.
@@ -386,12 +573,40 @@ static bool drawnRight(marble::Game& game, uint16_t* shown, uint16_t* whole) {
   gfx565::target(whole);
   copy.render();
   if (!memcmp(shown, whole, gfx565::W * gfx565::H * 2)) return true;
+  int x0 = 999, y0 = 999, x1 = -1, y1 = -1;
+  for (int i = 0; i < gfx565::W * gfx565::H; i++)
+    if (shown[i] != whole[i]) { const int x = i % gfx565::W, y = i / gfx565::W; x0 = x < x0 ? x : x0; y0 = y < y0 ? y : y0; x1 = x > x1 ? x : x1; y1 = y > y1 ? y : y1; }
+  const Ball& b = game.ball();
+  printf("  level %d, ball %.0f,%.0f sinking %d, clock %u: pixels differ in %d,%d-%d,%d\n", (int)(b.level - LEVELS) + 1,
+         b.p.x, b.p.y, b.sinkMs, (unsigned)b.ms, x0, y0, x1, y1);
   memcpy(shown, whole, gfx565::W * gfx565::H * 2);   // report each mistake once
   return false;
 }
+// One frame of the drive: maybe a new run, the time, the tilt, a touch, and the game's update.
+static void oneFrame(Driver& d, marble::Game& game, InputTracker& tracker) {
+  maybeSolve(d, game, tracker);   // calibrated at the last frame's time: the run's first frame is a whole one
+  const bool driven = d.level >= 0 || d.greedy > 0;
+  const uint32_t dt = driven || d.rand(10) ? 40 : d.rand(5) ? 0 : 500;
+  d.ms += dt;
+  d.tilt(dt, game);
+  if (!driven) d.touch();
+  Input in = tracker.step(d.down && !driven, d.x, d.y, d.ms);
+  in.gx = (int16_t)d.grav.x; in.gy = (int16_t)d.grav.y; in.gz = (int16_t)d.grav.z;
+  game.update(d.ms / 1000, d.ms, in);
+}
+// What the drive covered: frames per page, with the ball sinking, with the goal on the move, and frames drawn wrong.
+struct Tally {
+  int seen[marble::Game::SC_COUNT] = {}, sinkFrames = 0, turningFrames = 0, bad = 0;
+  void count(const marble::Game& game) {
+    static const char* const PAGES[] = {"mk_calibrate", "mk_play", "mk_goal", "mk_done"};
+    for (int s = 0; s < marble::Game::SC_COUNT; s++) seen[s] += !strcmp(game.screenName(), PAGES[s]);
+    const bool playing = !strcmp(game.screenName(), "mk_play");
+    sinkFrames += playing && sinking(game.ball());
+    turningFrames += playing && game.ball().started && game.ball().level->goal.mode != FIXED;
+  }
+};
 static void incrementalEqualsFull() {
   static uint16_t bufs[2][gfx565::W * gfx565::H], whole[gfx565::W * gfx565::H];
-  static const char* const PAGES[] = {"mk_calibrate", "mk_play", "mk_goal", "mk_done"};
   for (auto& b : bufs) for (uint16_t& p : b) p = 0xF81F;
   static marble::Game game;
   const Profile kid = {0, "Sam", 0, 6, 0};
@@ -399,35 +614,38 @@ static void incrementalEqualsFull() {
   Driver d;
   InputTracker tracker;
   game.enter({&kid, &kid, &none, 1, 0, d.ms});
-  int bad = 0, seen[marble::Game::SC_COUNT] = {};
-  for (int f = 0; f < 6000; f++) {
-    const uint32_t dt = d.level >= 0 || d.rand(10) ? 40 : d.rand(5) ? 0 : 500;
-    d.ms += dt;
-    d.tilt(dt);
-    if (d.level < 0) d.touch();
-    maybeSolve(d, game, tracker);
-    Input in = tracker.step(d.down && d.level < 0, d.x, d.y, d.ms);
-    in.gx = (int16_t)d.grav.x; in.gy = (int16_t)d.grav.y; in.gz = (int16_t)d.grav.z;
-    game.update(d.ms / 1000, d.ms, in);
+  Tally t;
+  for (int f = 0; f < 8000; f++) {
+    oneFrame(d, game, tracker);
     if (game.wantsHome()) { game.leave(); game.enter({&kid, &kid, &none, 1, 0, d.ms}); }
-    for (int s = 0; s < marble::Game::SC_COUNT; s++) seen[s] += !strcmp(game.screenName(), PAGES[s]);
-    if (!drawnRight(game, bufs[f & 1], whole) && bad++ < 5) printf("frame %d on %s: the incremental frame differs\n", f, game.screenName());
+    t.count(game);
+    if (!drawnRight(game, bufs[f & 1], whole) && t.bad++ < 5) printf("frame %d on %s: the incremental frame differs\n", f, game.screenName());
   }
-  printf("render check: %d frames differ; frames per page %d %d %d %d\n", bad, seen[0], seen[1], seen[2], seen[3]);
-  CHECK(bad == 0);
-  for (int s : seen) CHECK(s > 0);   // every page was drawn both ways
+  printf("render check: %d frames differ; frames per page %d %d %d %d, sinking %d, goal moving %d\n", t.bad, t.seen[0],
+         t.seen[1], t.seen[2], t.seen[3], t.sinkFrames, t.turningFrames);
+  CHECK(t.bad == 0);
+  for (int s : t.seen) CHECK(s > 0);   // every page was drawn both ways
+  CHECK(t.sinkFrames > 20 && t.turningFrames > 100);   // and the ball sinking into a hole, and a goal on the move
 }
 
 int main(int argc, char** argv) {
   if (argc > 1 && !strcmp(argv[1], "--write-playtests")) { playtestSolutions(true); return 0; }
+  if (argc > 1 && !strcmp(argv[1], "--levels")) { lab = true; noBallSizedGaps(); greedyFails(); neverStuck(); everyLevelSolvable(); return 0; }
   tiltMapping();
   neverLeavesTheTray();
   noTunneling();
   goalDetection();
-  noPockets();
+  noBallSizedGaps();
+  railsHold();
+  defendersNudge();
+  holesSendBack();
+  goalMoves();
   postsClearOfTheRimLane();
   noParking();
   saveBlob();
+  saveMigration();
+  greedyFails();
+  neverStuck();
   everyLevelSolvable();
   incrementalEqualsFull();
   playtestSolutions(false);

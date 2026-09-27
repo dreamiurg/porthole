@@ -1,7 +1,8 @@
 # Marble Kick, every level by tilting, held leaned back 45 degrees the whole time (the grip it calibrates in): each
-# level's recorded solution (levels.h) as real 1 g readings, the Goal page, a tap on to the next level. After the
-# sixth, the Done page: confetti, then its coins play a level again, and the next visit starts over from level 1.
-# The solution blocks are written by `build/host/test_marble --write-playtests`; test_marble fails when they drift.
+# level's recorded solution (levels.h) as real 1 g readings, the Goal page with its stars, a tap on to the next level.
+# After the twelfth, the Done page: confetti, then a coin plays its level again, and the next visit starts over from
+# level 1. The solution blocks are written by `build/host/test_marble --write-playtests`; test_marble fails when they
+# drift.
 tilt 0 707 -707
 profile Sam 6
 app marble-kick
@@ -20,26 +21,47 @@ ui-check mk_play
 snap mk02_play1
 # solution 1 from 0 707 -707
 wait 80
-tilt 0 334 -942
+tilt -310 454 -836
 wait 240
-tilt 0 499 -867
+tilt -170 583 -795
 wait 240
-tilt 0 534 -845
+tilt -160 584 -796
 wait 240
-tilt 0 526 -851
+tilt -90 638 -765
 wait 240
-tilt 0 534 -845
+tilt 430 617 -659
+wait 240
+tilt 260 639 -724
+wait 240
+tilt 210 640 -739
+wait 240
+tilt 200 642 -741
 wait 480
-tilt 0 526 -851
+tilt 170 653 -738
 wait 240
-tilt 0 534 -845
+tilt 0 707 -707
 wait 240
-tilt 0 568 -823
+tilt -400 533 -745
+wait 240
+tilt -250 610 -752
+wait 240
+tilt -190 620 -761
+wait 240
+tilt -110 659 -744
+wait 240
+tilt 130 428 -894
+wait 240
+tilt 50 533 -844
+wait 240
+tilt 20 560 -828
+wait 240
+tilt 0 707 -707
 wait 240
 tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=1
+expect stars=3
 ui-check mk_goal
 snap mk03_goal
 wait 500
@@ -49,27 +71,31 @@ expect level=2
 expect reached=1
 # solution 2 from 0 707 -707
 wait 80
-tilt -290 421 -859
+tilt -220 396 -891
 wait 240
-tilt -180 548 -817
+tilt -120 555 -823
 wait 240
-tilt -130 595 -793
+tilt -110 564 -818
 wait 240
-tilt 90 771 -630
+tilt -110 572 -813
 wait 240
-tilt 200 370 -907
+tilt 0 707 -707
 wait 240
-tilt 60 542 -839
+tilt 300 492 -817
 wait 240
-tilt 60 533 -844
+tilt 160 576 -802
 wait 240
-tilt 40 568 -822
+tilt 130 571 -811
 wait 240
-tilt 160 534 -831
+tilt 110 597 -795
 wait 240
-tilt 90 548 -831
+tilt 0 707 -707
 wait 240
-tilt 80 583 -809
+tilt -90 441 -893
+wait 240
+tilt -60 559 -827
+wait 240
+tilt 0 707 -707
 wait 240
 tilt 0 707 -707
 # end solution
@@ -82,27 +108,39 @@ expect level=3
 expect reached=2
 # solution 3 from 0 707 -707
 wait 80
-tilt 100 341 -935
+tilt -370 526 -766
 wait 240
-tilt 70 506 -860
+tilt -210 617 -758
 wait 240
-tilt -30 787 -617
+tilt -190 628 -755
 wait 240
-tilt -140 407 -902
+tilt -190 620 -761
 wait 240
-tilt -30 543 -840
+tilt -150 648 -747
 wait 240
-tilt -40 551 -834
+tilt 100 440 -892
 wait 240
-tilt 30 793 -609
+tilt 90 590 -802
 wait 240
-tilt -60 414 -909
+tilt 240 556 -796
+wait 240
+tilt 150 577 -803
+wait 240
+tilt 110 636 -764
+wait 240
+tilt 300 709 -638
+wait 240
+tilt 220 683 -697
+wait 240
+tilt 180 688 -703
 wait 240
 tilt 0 707 -707
 wait 240
-tilt 110 430 -896
+tilt -130 369 -920
 wait 240
-tilt 60 616 -786
+tilt -60 533 -844
+wait 240
+tilt -50 592 -804
 wait 240
 tilt 0 707 -707
 # end solution
@@ -117,27 +155,63 @@ ui-check mk_play-level4
 snap mk04_play4
 # solution 4 from 0 707 -707
 wait 80
-tilt 240 383 -892
+tilt 400 597 -696
 wait 240
-tilt 120 563 -818
+tilt 190 665 -722
 wait 240
-tilt -70 773 -631
+tilt 0 707 -707
 wait 240
-tilt -90 362 -928
+tilt 260 560 -786
 wait 240
-tilt -10 551 -834
+tilt 160 631 -759
 wait 240
-tilt -10 525 -851
+tilt 0 707 -707
 wait 240
-tilt 0 793 -609
+tilt -120 448 -886
 wait 240
-tilt -210 427 -880
+tilt -110 621 -776
 wait 240
-tilt -70 623 -779
+tilt -150 508 -848
 wait 240
-tilt 30 462 -886
+tilt -90 638 -765
 wait 240
-tilt -10 568 -823
+tilt -340 757 -559
+wait 240
+tilt -220 717 -661
+wait 240
+tilt -210 705 -677
+wait 240
+tilt -120 702 -702
+wait 240
+tilt -270 674 -688
+wait 240
+tilt -220 690 -690
+wait 240
+tilt -210 691 -691
+wait 240
+tilt -190 694 -694
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 140 417 -898
+wait 240
+tilt 120 604 -788
+wait 240
+tilt 220 542 -811
+wait 240
+tilt 130 603 -787
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 250 554 -794
+wait 240
+tilt 170 591 -789
+wait 240
+tilt 100 513 -852
+wait 240
+tilt -20 499 -866
+wait 240
+tilt -110 629 -770
 wait 240
 tilt 0 707 -707
 # end solution
@@ -150,27 +224,37 @@ expect level=5
 expect reached=4
 # solution 5 from 0 707 -707
 wait 80
-tilt -190 371 -909
+tilt 380 539 -751
 wait 240
-tilt -120 511 -851
+tilt 210 625 -752
+wait 240
+tilt 200 634 -747
+wait 480
+tilt 140 664 -735
+wait 240
+tilt -120 419 -900
+wait 240
+tilt -50 533 -844
+wait 240
+tilt -90 653 -752
+wait 240
+tilt -150 500 -853
+wait 240
+tilt -90 548 -831
+wait 240
+tilt -80 549 -832
 wait 240
 tilt 0 707 -707
 wait 240
-tilt 50 424 -904
+tilt -230 629 -742
 wait 240
-tilt -10 543 -840
+tilt -120 702 -702
 wait 240
-tilt -20 525 -851
+tilt -200 520 -831
 wait 240
-tilt -20 617 -787
+tilt -70 479 -875
 wait 240
-tilt 300 509 -806
-wait 240
-tilt 120 620 -775
-wait 240
-tilt -10 472 -882
-wait 240
-tilt -90 771 -630
+tilt 80 566 -821
 wait 240
 tilt 0 707 -707
 # end solution
@@ -181,53 +265,41 @@ tap 80 60
 expect-screen mk_play
 expect level=6
 expect reached=5
-ui-check mk_play-level6
-snap mk06_play6
 # solution 6 from 0 707 -707
 wait 80
-tilt 290 850 -440
+tilt -420 567 -709
 wait 240
-tilt 110 350 -930
+tilt -250 633 -732
 wait 240
-tilt -70 524 -849
+tilt -220 654 -724
 wait 240
-tilt 420 605 -676
+tilt 0 707 -707
 wait 240
-tilt 420 575 -702
+tilt 170 364 -916
 wait 240
-tilt 430 659 -617
+tilt 40 507 -861
 wait 240
-tilt 390 771 -503
+tilt 10 534 -845
 wait 240
-tilt -40 845 -534
+tilt 0 707 -707
 wait 240
-tilt -340 455 -823
+tilt 130 447 -885
 wait 240
-tilt -330 449 -831
+tilt 50 592 -804
 wait 240
-tilt -100 637 -764
+tilt 300 419 -857
 wait 240
-tilt -280 597 -752
+tilt 230 523 -820
 wait 240
-tilt -170 599 -783
+tilt 370 698 -613
 wait 240
-tilt 100 745 -660
+tilt 180 674 -716
 wait 240
-tilt 410 562 -718
+tilt -120 736 -666
 wait 240
-tilt 360 577 -733
+tilt -150 356 -922
 wait 240
-tilt 270 397 -877
-wait 240
-tilt 160 365 -917
-wait 240
-tilt -120 466 -876
-wait 240
-tilt -140 417 -898
-wait 240
-tilt 30 551 -834
-wait 240
-tilt -10 609 -793
+tilt -130 650 -749
 wait 240
 tilt 0 707 -707
 # end solution
@@ -235,19 +307,395 @@ expect-screen mk_goal
 expect reached=6
 wait 500
 tap 80 60
-expect-screen mk_done
+expect-screen mk_play
+expect level=7
 expect reached=6
+ui-check mk_play-level7
+snap mk07_play7
+# solution 7 from 0 707 -707
+wait 80
+tilt -370 517 -772
+wait 240
+tilt -200 611 -766
+wait 240
+tilt -190 628 -755
+wait 240
+tilt -190 620 -761
+wait 240
+tilt -120 658 -743
+wait 240
+tilt 100 430 -897
+wait 240
+tilt 100 598 -796
+wait 240
+tilt 270 575 -773
+wait 240
+tilt 170 583 -795
+wait 240
+tilt 110 629 -770
+wait 240
+tilt 290 718 -633
+wait 240
+tilt 220 697 -683
+wait 240
+tilt 110 731 -674
+wait 240
+tilt -140 368 -919
+wait 240
+tilt -60 533 -844
+wait 240
+tilt -30 560 -828
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=7
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=8
+expect reached=7
+# solution 8 from 0 707 -707
+wait 80
+tilt -410 609 -679
+wait 240
+tilt -220 668 -711
+wait 240
+tilt 0 707 -707
+wait 240
+tilt -190 495 -848
+wait 240
+tilt -130 579 -805
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 110 430 -896
+wait 240
+tilt 60 550 -833
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 310 574 -758
+wait 240
+tilt 190 604 -774
+wait 240
+tilt 150 625 -766
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 310 686 -658
+wait 240
+tilt 130 736 -665
+wait 240
+tilt 180 514 -839
+wait 240
+tilt 200 626 -754
+wait 240
+tilt 220 668 -711
+wait 240
+tilt 220 704 -675
+wait 240
+tilt 110 770 -629
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=8
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=9
+expect reached=8
+# solution 9 from 0 707 -707
+wait 80
+tilt 400 597 -696
+wait 240
+tilt 190 665 -722
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 260 560 -786
+wait 240
+tilt 160 631 -759
+wait 240
+tilt 0 707 -707
+wait 240
+tilt -120 448 -886
+wait 240
+tilt -110 621 -776
+wait 240
+tilt -150 508 -848
+wait 240
+tilt -90 638 -765
+wait 240
+tilt -340 757 -559
+wait 240
+tilt -220 717 -661
+wait 240
+tilt -210 705 -677
+wait 240
+tilt -120 702 -702
+wait 240
+tilt -270 674 -688
+wait 240
+tilt -220 690 -690
+wait 240
+tilt -210 691 -691
+wait 240
+tilt -190 694 -694
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 70 423 -904
+wait 240
+tilt 90 598 -796
+wait 240
+tilt 30 508 -861
+wait 240
+tilt -160 608 -778
+wait 240
+tilt 320 442 -838
+wait 240
+tilt 260 501 -826
+wait 240
+tilt 170 583 -795
+wait 240
+tilt 120 620 -775
+wait 240
+tilt -30 481 -876
+wait 240
+tilt -300 623 -722
+wait 240
+tilt -240 772 -588
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=9
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=10
+expect reached=9
+ui-check mk_play-level10
+snap mk10_play10
+# solution 10 from 0 707 -707
+wait 80
+tilt -360 503 -786
+wait 240
+tilt -200 611 -766
+wait 240
+tilt -190 620 -761
+wait 240
+tilt -130 657 -742
+wait 240
+tilt 140 427 -893
+wait 240
+tilt 40 534 -845
+wait 240
+tilt 20 543 -840
+wait 240
+tilt 0 609 -793
+wait 240
+tilt 230 549 -804
+wait 240
+tilt 10 462 -887
+wait 240
+tilt -80 523 -848
+wait 240
+tilt -140 649 -748
+wait 240
+tilt 80 441 -894
+wait 240
+tilt 400 709 -581
+wait 240
+tilt 180 598 -781
+wait 240
+tilt 20 609 -793
+wait 240
+tilt -130 389 -912
+wait 240
+tilt 0 490 -872
+wait 240
+tilt 10 585 -811
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=10
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=11
+expect reached=10
+# solution 11 from 0 707 -707
+wait 80
+tilt 410 616 -673
+wait 240
+tilt 230 674 -702
+wait 240
+tilt 200 679 -707
+wait 240
+tilt 0 707 -707
+wait 240
+tilt -130 369 -920
+wait 240
+tilt -60 533 -844
+wait 240
+tilt -50 608 -792
+wait 240
+tilt -380 708 -595
+wait 240
+tilt -220 690 -690
+wait 240
+tilt -210 677 -705
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 40 462 -886
+wait 240
+tilt -220 387 -896
+wait 240
+tilt -190 401 -896
+wait 240
+tilt -80 583 -809
+wait 240
+tilt 60 470 -880
+wait 240
+tilt 20 534 -845
+wait 240
+tilt 10 601 -799
+wait 240
+tilt -200 545 -814
+wait 240
+tilt 370 628 -685
+wait 240
+tilt 220 661 -717
+wait 240
+tilt 210 648 -732
+wait 240
+tilt 200 634 -747
+wait 240
+tilt 170 607 -776
+wait 240
+tilt -20 444 -896
+wait 240
+tilt -250 587 -770
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=11
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=12
+expect reached=11
+# solution 12 from 0 707 -707
+wait 80
+tilt 400 597 -696
+wait 240
+tilt 190 665 -722
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 260 560 -786
+wait 240
+tilt 160 631 -759
+wait 240
+tilt 0 707 -707
+wait 240
+tilt -120 448 -886
+wait 240
+tilt -110 621 -776
+wait 240
+tilt -150 508 -848
+wait 240
+tilt -90 638 -765
+wait 240
+tilt -340 757 -559
+wait 240
+tilt -220 717 -661
+wait 240
+tilt -210 705 -677
+wait 240
+tilt -120 702 -702
+wait 240
+tilt -270 674 -688
+wait 240
+tilt -220 690 -690
+wait 240
+tilt -210 691 -691
+wait 240
+tilt -190 694 -694
+wait 240
+tilt 0 707 -707
+wait 240
+tilt 140 417 -898
+wait 240
+tilt 120 604 -788
+wait 240
+tilt 220 542 -811
+wait 240
+tilt 130 603 -787
+wait 240
+tilt -50 576 -816
+wait 240
+tilt -430 645 -631
+wait 240
+tilt -430 617 -659
+wait 240
+tilt -420 590 -689
+wait 240
+tilt -400 573 -715
+wait 240
+tilt -300 600 -742
+wait 240
+tilt -230 629 -742
+wait 240
+tilt -120 666 -736
+wait 240
+tilt 420 598 -683
+wait 240
+tilt 280 620 -733
+wait 240
+tilt 200 626 -754
+wait 240
+tilt 180 613 -769
+wait 240
+tilt 410 546 -730
+wait 240
+tilt 260 593 -762
+wait 240
+tilt 260 616 -743
+wait 240
+tilt 70 506 -860
+wait 240
+tilt -170 623 -764
+wait 240
+tilt 0 707 -707
+# end solution
+expect-screen mk_goal
+expect reached=12
+wait 500
+tap 80 60
+expect-screen mk_done
+expect reached=12
 wait 400
 ui-check mk_done-confetti
-snap mk07_done_confetti
+snap mk13_done_confetti
 wait 3000
 ui-check mk_done
-snap mk08_done
+snap mk14_done
 # the coin with a 3 on it plays level 3 again
-tap 110 50
+tap 93 38
 expect-screen mk_play
 expect level=3
-expect reached=6
+expect reached=12
 # leaving (a hold on the home knob, after the fresh-page pause); the next visit starts over from level 1
 wait 500
 hold 80 145
@@ -257,5 +705,5 @@ app marble-kick
 wait 500
 expect-screen mk_calibrate
 expect level=1
-expect reached=6
+expect reached=12
 sheet levels
