@@ -309,14 +309,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             sim.input(data.get("type"), data.get("x", 0), data.get("y", 0))
             self._send(200, "application/json", b"{}")
         elif self.path == "/tilt":
-            try:
-                x, y = float(data.get("x", 0)), float(data.get("y", 1))
-            except (TypeError, ValueError):
-                x = y = math.nan
-            if not (math.isfinite(x) and math.isfinite(y)):  # JSON allows NaN and Infinity; round() would raise on them
-                self.send_error(400, "bad tilt")
-                return
-            sim.tilt(x, y)
+            sim.tilt(float(data.get("x", 0)), float(data.get("y", 1)))
             self._send(200, "application/json", b"{}")
         elif self.path == "/control":
             sim.control(data.get("cmd", ""))
