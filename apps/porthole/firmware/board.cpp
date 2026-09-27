@@ -94,7 +94,8 @@ static void lcdInitPanel() {
 static void rgbPanelOnCore0() {
   TaskHandle_t caller = xTaskGetCurrentTaskHandle();
   auto run = [](void* arg) { rgbPanelStart(); xTaskNotifyGive((TaskHandle_t)arg); vTaskDelete(nullptr); };
-  xTaskCreatePinnedToCore(run, "lcd", 4096, caller, 5, nullptr, 0);
+  // No task (out of memory): start the panel here instead of waiting forever for a notify that never comes.
+  if (xTaskCreatePinnedToCore(run, "lcd", 4096, caller, 5, nullptr, 0) != pdPASS) { rgbPanelStart(); return; }
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
