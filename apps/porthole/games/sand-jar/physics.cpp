@@ -146,6 +146,19 @@ void accelerate(Jar& j, const Field& f, Mover& m) {
   if (sp2 > vm * vm) { const float s = vm / sqrtf(sp2); m.ux *= s; m.uy *= s; }
 }
 void moveTo(Jar& j, Mover& m, int c) { j.occ[m.c] = EMPTY; j.occ[c] = (int16_t)(m.i + 1); m.c = c; }
+// Where a stopped grain may go: an empty cell, or for sand, now and then, water (it sinks through, and slides under).
+bool open(Jar& j, const Mover& m, int c) {
+  const int o = j.occ[c];
+  return o == EMPTY || (m.k == SAND && o > 0 && kindAt(j, o - 1) != SAND && rnd(j) < 0.3f);
+}
+// Into cell c; the water there, if any, takes the grain's old cell.
+void take(Jar& j, Mover& m, int c) {
+  const int o = j.occ[c];
+  if (o <= 0) { moveTo(j, m, c); return; }
+  j.occ[m.c] = (int16_t)o;
+  j.g.x[o - 1] = pos16(center(m.c % G)); j.g.y[o - 1] = pos16(center(m.c / G));
+  j.occ[c] = (int16_t)(m.i + 1); m.c = c;
+}
 // Sand sinks through water (now and then), a bubble rises through it: the two trade places.
 bool swapped(Jar& j, Mover& m, const Try& t, int o) {
   const int other = o - 1;
@@ -214,14 +227,14 @@ int spread(Jar& j, const Field& f, Mover& m, int cells) {
 int rollOver(Jar& j, const Field& f, Mover& m) {
   const int first = rnd(j) < 0.5f ? 3 : 4;
   for (int t = 0; t < 2; t++) {
-    const int e1 = f.ord[t ? 7 - first : first], over = m.c + DY[e1] * G + DX[e1];
-    if (j.occ[over] != EMPTY) continue;
+    const int e1 = f.ord[t ? 7 - first : first], over = m.c + DY[e1] * G + DX[e1], o = j.occ[over];
+    if (o != EMPTY && (o < 0 || kindAt(j, o - 1) == SAND)) continue;   // over empty glass or water, not sand
     for (int k = 0; k < 3; k++) {
       const int e2 = f.ord[k], dx = DX[e1] + DX[e2], dy = DY[e1] + DY[e2];
       const float drop = dx * j.gxn + dy * j.gyn;
       if (drop < ROLL_DROP || (dx * dx <= 1 && dy * dy <= 1)) continue;   // a neighbor: settle() already tried it
       const int c = over + DY[e2] * G + DX[e2];
-      if (j.occ[c] == EMPTY) { const float v = 0.3f * F / LEN[e2]; m.ux = DX[e2] * v; m.uy = DY[e2] * v; return c; }
+      if (open(j, m, c)) { const float v = 0.3f * F / LEN[e2]; m.ux = DX[e2] * v; m.uy = DY[e2] * v; return c; }
     }
   }
   return -1;
@@ -238,11 +251,11 @@ void settle(Jar& j, const Field& f, Mover& m) {
   for (int e : cand) {
     if (f.dot[e] < 0.3f || (e != f.ord[0] && rnd(j) > P.slide)) continue;
     const int c = (ccy + DY[e]) * G + ccx + DX[e];
-    if (j.occ[c] == EMPTY) { moved = c; const float v = 0.3f * F / LEN[e]; m.ux = DX[e] * v; m.uy = DY[e] * v; break; }
+    if (open(j, m, c)) { moved = c; const float v = 0.3f * F / LEN[e]; m.ux = DX[e] * v; m.uy = DY[e] * v; break; }
   }
   if (moved < 0 && m.k == SAND && rnd(j) < P.slide) moved = rollOver(j, f, m);
   if (moved < 0 && P.spread) moved = spread(j, f, m, P.spread);
-  if (moved >= 0) { moveTo(j, m, moved); m.x = center(moved % G); m.y = center(moved / G); }
+  if (moved >= 0) { take(j, m, moved); m.x = center(moved % G); m.y = center(moved / G); }
 }
 
 void moveGrain(Jar& j, const Field& f, int i) {

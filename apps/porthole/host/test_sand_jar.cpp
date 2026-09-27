@@ -143,6 +143,24 @@ static void fingerClears() {
   puts("finger: its disc is cleared and nothing is lost");
 }
 
+// Sand sinks through water, and slides under it: Beach poured with gravity to the left heaps its sand on the left,
+// water on it; tipped to straight down, the sand has to end up under the water, not stand beside it as a wall.
+static void sandSinks() {
+  tilt(a, -90);
+  a.reset(MODE_BEACH, 6);
+  tilt(a, 0);
+  run(a, 2500);   // ~15 cells apart by now, ~23 (fully layered) by 5000; without sliding under, water ends deeper
+  double sand = 0, water = 0;
+  int ns = 0, nw = 0;
+  for (int i = 0; i < a.n; i++) {
+    const float h = along(a, i, 0, 1);
+    if (kindOf(a.g.look[i]) == SAND) { sand += h; ns++; } else { water += h; nw++; }
+  }
+  printf("sink: mean depth of sand %.1f, of water %.1f cells\n", sand / ns, water / nw);
+  assert(sand / ns > water / nw + 10);
+  consistent(a, ns, nw);
+}
+
 static void shakeScatters() {
   tilt(a, 0);
   a.reset(MODE_BEACH, 4);
@@ -189,6 +207,7 @@ int main() {
   waterLevels();
   neverClimbs();
   fingerClears();
+  sandSinks();
   shakeScatters();
   orbitsStayOnGlass();
   replays();
