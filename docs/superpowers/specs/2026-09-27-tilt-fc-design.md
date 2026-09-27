@@ -118,6 +118,22 @@ header: kit colors, pattern, number, sticker bits, records. It is append-only fr
 Challenges for "together, taking turns" live in the challenger's own save, and others read them through
 `AppEnter.saves` (the Paw Street pattern). Nobody writes someone else's save.
 
+## Real teams and numbers (slice 4)
+
+The kit is a small window onto real football, since the kid watches none on TV. The Team page flips through real
+home kits with the team's name and flag: **USA, Ukraine and Argentina are required**; Mexico, Brazil, France, Spain,
+Real Madrid, Barcelona and Inter Miami are candidates. The last entry, "My colors", opens the custom Kit and Pattern
+pages. On the Number page a number that a famous player wears for the chosen team shows his name under the shirt
+(Argentina 10: MESSI, the kid's favorite).
+
+- Every (team, number, player) triple and every kit color is a factual claim. Each one gets a source and an "as of
+  season" date in a claim ledger, the way Biscuit's discoveries do, and is rechecked each season. A triple without
+  a source is left out: no hint is better than a wrong one.
+- Names and colors only: no crests, logos, photos or faces. Flags and kits are drawn in the game's own style.
+  Names in uppercase ASCII without diacritics, within the game's font.
+- The root rule "no real names" is about the kids' data. Public footballers' names are content, not personal data.
+- Everything ships in the firmware; there is no network.
+
 ## Slices
 
 Each slice is playable end to end, has its own PR, and ends with `make ci` green.
@@ -127,7 +143,7 @@ Each slice is playable end to end, has its own PR, and ends with `make ci` green
 | 1. Kickabout | Tilt in `Input` (sim keys, script `tilt`, webemu); the game registered; Calibrate/Kickoff/Match/Goal pages; you + 1 teammate + a keeper who only stands and blocks; pass-to-cone, control switch, shot, goal, kickoff | emulator | feature, 2-4 days |
 | 2. Match | 3 v 3 (two outfield players and a keeper each); defense as above; 6-8 s possession cap; Save moment; match clock; Full time page | emulator | feature, 3-5 days |
 | 3. On the board | `board::readTilt()` for the QMI8658, axis mapping, filtering; tuning dead zone, speed and cone on the real device in its case | device (firmware-engineer, needs the board) | story-to-feature, 1-2 days plus tuning |
-| 4. Own team | Kit, Pattern and Number pages; stickers and album; records and ghosts for taking turns | emulator, then device | feature, 2-4 days |
+| 4. Own team | Team page (real national teams and clubs), Kit and Pattern pages for custom colors, Number page with the famous player for that team and number; stickers and album; records and ghosts for taking turns | emulator, then device | feature, 2-4 days |
 
 Slice 3 depends only on slice 1's `Input` fields, so it can run in parallel with slice 2 once slice 1 merges.
 The overall shape is an epic: about 1-2 weeks of agent-assisted work, with calendar time dominated by tuning on the
