@@ -12,7 +12,9 @@ contract, module map and Save layout.
 
 - **Tilt is the only control.** During play every tap is ignored: a hand holding the case may brush the glass.
   Leaving the Play page takes holding the home knob for 0.6 s (a ring fills around it; letting go early does
-  nothing). Taps move on from the Calibrate, Goal and Done pages, and the knob there is a plain tap.
+  nothing, and so does a finger that drifts on the knob: it still counts). Taps move on from the Calibrate, Goal and
+  Done pages, and the knob there is a plain tap. A press on the red button that waits for a steady grip stays shown
+  pressed until play starts.
 - **Neutral is how the kid holds it, any way.** Every visit starts on the Calibrate page. Pressing the red button
   stores the average gravity of the last 300 ms as level, and waits while any reading in it is not a plausible 1 g
   (800-1200 mg), so a jolt never becomes level. Tilt is gravity turned by the rotation that lays that neutral flat:
@@ -20,7 +22,9 @@ contract, module map and Save layout.
 - **Nothing punishes.** No timer, no holes, no lives, no score. A peg only nudges the ball; a level is only not
   finished yet. No level can trap the ball: every gap between pegs, goalposts, the knob and the rim is closed or a
   ball's width plus 8 px, the goal's mouth has no corner to park in, and every level ships with a recorded solution
-  that `host/test_marble.cpp` replays to a goal from three grips.
+  that `host/test_marble.cpp` replays to a goal. The replay runs from three grips, each tilt turned into a real 1 g
+  reading by the test's own inverse of the tilt mapping, so it shows the solutions survive whole-milli-g rounding
+  at each grip; that the mapping itself tilts the right way is checked separately, against plain rotations.
 - **Its own look** (root rule 7): walnut rim, maple tray with turned grain, striped felt with chalk lines, red lacquer
   pegs, brass posts, home knob (a carved house) and coins, a cream ball, wooden letter blocks. Colors live in
   `render.cpp` only. No font: the few glyphs (digits, `GOAL!`) are 5x7 cells drawn in code, each logged to
@@ -53,8 +57,8 @@ Everything is in `namespace marble` (Pets Club owns the global `Game`).
   substep against a 27 px contact distance at a 7 px peg: no tunneling. No drawing.
 - `levels.h`: `LEVELS[]` and each level's solution (`Step{tx, ty, ms}`: milli-g from neutral, whole 40 ms frames).
   Array order is persisted (the save holds an index): append levels, never reorder or remove. A changed level must
-  keep every gap closed or at least 48 px (`noPockets` in the test) and its solution must still score from lying
-  flat, 45 degrees and upright. The playtests replay the same solutions: each `# solution N from X Y Z` block in
+  keep every gap closed or at least 48 px (`noPockets` in the test) and its solution must still score when replayed
+  from lying flat, 45 degrees and upright (see the Nothing punishes point above for what that replay proves). The playtests replay the same solutions: each `# solution N from X Y Z` block in
   `tests/playtests/` must match what `levels.h` gives for that grip, and `build/host/test_marble --write-playtests`
   rewrites them (the recorder that made the solutions was a throwaway steering controller, not kept).
 - `save.h`: the Save (below), `seal`, `loadBlob`. Header-only.
@@ -89,3 +93,6 @@ future Save change resets progress (see `save.h`).
   `tune.h` and the calibration dish were set in the sim. Slice 2 settles both with the kid playing on the device.
 - Left as they are on purpose after the first review, to revisit: the launcher and shell text spacing, and the night
   tint (`tint()` follows the clock, but the RGB565 page draws its own daylight colors).
+- Held within about 10-20 degrees of face down (lying on your back, the device overhead), which way a tilt rolls the
+  ball depends on the exact grip it was calibrated in: the rotation that lays that grip flat turns sharply there (it
+  is undefined at exactly face down, where `tiltFrom` falls back to half a turn about x). No fix for now.
