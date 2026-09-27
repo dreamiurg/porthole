@@ -82,8 +82,10 @@ future Save change resets progress (see `save.h`).
 
 ## Known gaps (slice 1)
 
-- The QMI8658's x/y mapping to the panel is unverified on the board, and the knobs in `tune.h` were set in the sim.
-  Slice 2 settles both with the kid playing on the device.
-- Left as they are on purpose after the first review, to revisit: `V_MAX` (600 px/s, until the device's frame rate
-  is measured), the launcher and shell text spacing, and the night tint (`tint()` follows the clock, but the RGB565
-  page draws its own daylight colors).
+- Measured on the board (2026-09-27, levels driven through the serial gravity override `G`): 55 fps while the ball
+  rolls, render ~2 ms, present ~16 ms (vsync); levels 1 and 2 scored. So `V_MAX` (600 px/s) moves the ball ~11 px a
+  frame and stays as it is.
+- The QMI8658's x/y mapping to the panel is unverified on the board (it needs a hand to tilt it), and the knobs in
+  `tune.h` and the calibration dish were set in the sim. Slice 2 settles both with the kid playing on the device.
+- Left as they are on purpose after the first review, to revisit: the launcher and shell text spacing, and the night
+  tint (`tint()` follows the clock, but the RGB565 page draws its own daylight colors).
