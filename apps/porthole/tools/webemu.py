@@ -88,6 +88,8 @@ class Sim:
 
     def tilt(self, x, y):
         """In-plane gravity (x right, y down, in g, at most 1): the rest of 1 g points into the glass, face up."""
+        if not (math.isfinite(x) and math.isfinite(y)):  # json.loads takes NaN and Infinity; round() would raise
+            return
         m = math.hypot(x, y)
         if m > 1:
             x, y, m = x / m, y / m, 1.0

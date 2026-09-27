@@ -12,7 +12,8 @@
 
 Script commands (a subset of the sim's): tap X Y | hold X Y | wait MS | snap NAME | screen | echo TEXT
 | tilt X Y Z | untilt | metrics
-| raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). Snaps go to build/device/NAME.png at
+| raw CMD (send a firmware serial command as-is, e.g. "raw T1790300000"). A run always ends with a bare "G" (untilt),
+even on an error, so a script's tilt never outlives it. Snaps go to build/device/NAME.png at
 480x480 with the round mask, like the sim's snapshots: an indexed frame upscaled 3x, an RGB565 frame as is.
 Firmware side: "X<x>,<y>,<ms>", "F", "G<x>,<y>,<z>" / "G" and "M" in firmware/main.cpp. The port defaults to the first /dev/cu.usbmodem*; override with PORT=...
 Opening the port does not reset the board (DTR/RTS are left alone).
@@ -125,6 +126,13 @@ def tilt(args: list[str]) -> str:
 
 
 def run(p: serial.Serial, script: Path) -> None:
+    try:
+        run_lines(p, script)
+    finally:
+        ask(p, tilt([]))  # a held gravity would otherwise stay on until the next reboot
+
+
+def run_lines(p: serial.Serial, script: Path) -> None:
     for n, raw in enumerate(script.read_text().splitlines(), 1):
         words = raw.split("#", 1)[0].split()
         if not words:

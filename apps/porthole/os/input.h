@@ -44,7 +44,8 @@ class ActivityTracker {
  public:
   static constexpr int MOVE_MG = 200;
   void step(const Input& in, bool touching, uint32_t ms) {   // touching: the raw finger (the firmware swallows some)
-    int dx = in.gx - ref_[0], dy = in.gy - ref_[1], dz = in.gz - ref_[2];
+    // 64-bit: an axis can differ by up to 65535, and three squares of that overflow an int.
+    int64_t dx = in.gx - ref_[0], dy = in.gy - ref_[1], dz = in.gz - ref_[2];
     if (!touching && dx * dx + dy * dy + dz * dz <= MOVE_MG * MOVE_MG) return;
     ref_[0] = in.gx; ref_[1] = in.gy; ref_[2] = in.gz; lastMs_ = ms;
   }
