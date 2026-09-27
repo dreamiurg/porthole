@@ -5,6 +5,7 @@
 #include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "games/sand-jar/game.h"
+#include "font8x8_basic.h"
 #include "gfx565.h"
 #include "shell.h"
 
@@ -40,6 +41,23 @@ enum { MT_FRAME, MT_UPDATE, MT_RENDER, MT_PRESENT, MT_COUNT };
 static const int MT_N = 64;
 static uint32_t g_mt[MT_N][MT_COUNT];
 static int g_mtAt = 0;
+static bool g_fpsOn = false;   // "O": the frame rate over the last MT_N frames, top left of the glass (off at boot)
+
+// Drawn over the frame after render, so it isn't counted as render time. An RGB565 game that redraws only what changed
+// (Sand Jar) doesn't know these pixels changed: after "O" turns it off, the digits linger until the game repaints there.
+static void drawFps() {
+  uint32_t sum = 0;
+  for (auto& f : g_mt) sum += f[MT_FRAME];
+  char s[8]; snprintf(s, sizeof s, "%.1f", sum ? 1e6f * MT_N / sum : 0.0f);
+  if (!g_hires) { gfx::rect(34, 20, 34, 12, C_BLACK); gfx::textShadow(36, 22, s, C_YELLOW, C_BLACK); return; }
+  const int X = 104, Y = 62, S = 2, n = (int)strlen(s);   // physical px, 16 px digits, inside the glass
+  uint16_t* fb = board::backBuffer();
+  for (int y = Y - 3; y < Y + 8 * S + 3; y++) for (int x = X - 3; x < X + n * 8 * S + 3; x++) fb[y * board::LCD_W + x] = 0;
+  for (int i = 0; i < n; i++)
+    for (int r = 0; r < 8 * S; r++)
+      for (int c = 0; c < 8 * S; c++)
+        if (font8x8_basic[(uint8_t)s[i]][r / S] >> (c / S) & 1) fb[(Y + r) * board::LCD_W + X + i * 8 * S + c] = 0xFFE0;
+}
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
@@ -121,7 +139,7 @@ static void dumpFrame() {
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
-// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics.
+// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics, "O" toggles the on-glass frame rate.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
   for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
@@ -153,6 +171,7 @@ static void motionCommand(int c) {   // A, G, M: split out of serialCommand for 
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
+  else if (c == 'O') { g_fpsOn = !g_fpsOn; Serial.printf("[porthole] fps overlay %s\n", g_fpsOn ? "on" : "off"); }
 }
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
@@ -202,6 +221,7 @@ void loop() {
   if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
   g_shell.render();
   uint32_t t3 = micros();
+  if (g_fpsOn) drawFps();
   if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;

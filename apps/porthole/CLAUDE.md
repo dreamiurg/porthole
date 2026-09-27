@@ -115,6 +115,7 @@ See the `flash` skill for the PlatformIO-venv Python-dependency caveat and how t
 | `A` | Print the accelerometer: raw chip axes (LSB, 8192 = 1 g) and the mapped gravity `gx,gy,gz` (milli-g, screen frame, what `Input` gets) |
 | `G<x>,<y>,<z>` / `G` | Hold `Input`'s gravity at that vector (milli-g, screen frame, each axis clamped to the sensor's +-4000) for testing; a bare `G` returns to the sensor (`devctl.py tilt X Y Z` / `untilt`; `devctl.py run` always ends with one) |
 | `M` | Frame metrics over the last 64 frames: loop period and fps (plus the worst frame), time in shell update, render and present (present includes the vsync wait), free heap, free PSRAM, largest free internal block (`devctl.py metrics`) |
+| `O` | Toggle a frame-rate overlay (the last 64 frames' fps, top left of the glass; off at boot). A game that redraws only what changed may keep the digits until it repaints there |
 
 ### Hooks and CI
 
