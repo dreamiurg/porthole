@@ -76,17 +76,16 @@ void field(Jar& j, Field& f) {
 // Counting sort by height along gravity, O(n): order[] runs from the top of the pile to the bottom, and the step moves
 // the bottom grains first so the ones above fall into the room they leave. The key is a quarter cell of height, in
 // integers (gravity's direction to 1/1024): it runs twice over every grain each step.
-struct Key { int kx, ky; };
-int keyOf(const Jar& j, const Key& k, int i) {
-  const int h = ((j.g.x[i] - G / 2 * 256) * k.kx + (j.g.y[i] - G / 2 * 256) * k.ky + G / 2 * 262144) >> 16;
+int keyOf(const Jar& j, int i) {
+  const int h = ((j.g.x[i] - G / 2 * 256) * j.keyX + (j.g.y[i] - G / 2 * 256) * j.keyY + G / 2 * 262144) >> 16;
   return h < 0 ? 0 : h >= Jar::KEYS ? Jar::KEYS - 1 : h;
 }
 void sortDownhill(Jar& j) {
-  const Key k = {(int)lroundf(j.gxn * 1024), (int)lroundf(j.gyn * 1024)};
+  j.keyX = (int)lroundf(j.gxn * 1024); j.keyY = (int)lroundf(j.gyn * 1024);
   memset(j.count, 0, sizeof j.count);
-  for (int i = 0; i < j.n; i++) j.count[keyOf(j, k, i) + 1]++;
+  for (int i = 0; i < j.n; i++) j.count[keyOf(j, i) + 1]++;
   for (int c = 1; c <= Jar::KEYS; c++) j.count[c] = (uint16_t)(j.count[c] + j.count[c - 1]);
-  for (int i = 0; i < j.n; i++) j.g.order[j.count[keyOf(j, k, i)]++] = (uint16_t)i;
+  for (int i = 0; i < j.n; i++) j.g.order[j.count[keyOf(j, i)]++] = (uint16_t)i;
 }
 
 // The finger is a solid disc. A grain inside it is pushed out along the ray from its center (bent toward where the
@@ -136,13 +135,17 @@ void stampFinger(Jar& j) {
   }
 }
 
-// A bubble reached the surface: it turns back into water, and a new one starts deep down.
+// A bubble reached the surface: it turns back into water, and a new one starts deep down: the deepest of a few water
+// grains picked at random. (The prototype picked among the bottom quarter of all the grains, which in Beach is sand:
+// its bubbles were gone a few seconds after a pour.)
 void popBubble(Jar& j, int i) {
   setKind(j, i, WATER);
+  int deepest = -1, most = -1;
   for (int tries = 0; tries < 6; tries++) {
-    const int k = j.g.order[j.n - 1 - (int)(rnd(j) * j.n * 0.25f)];
-    if (kindAt(j, k) == WATER) { setKind(j, k, BUBBLE); return; }
+    const int k = j.sand + (int)(rnd(j) * (j.n - j.sand)), h = keyOf(j, k);
+    if (kindAt(j, k) == WATER && h > most) { deepest = k; most = h; }
   }
+  if (deepest >= 0) setKind(j, deepest, BUBBLE);
 }
 
 void accelerate(Jar& j, const Field& f, Mover& m) {

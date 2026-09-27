@@ -70,6 +70,7 @@ struct Jar {
   // scratch, kept here so a step never allocates
   static constexpr int KEYS = 4 * G + 4, FINGER_MAX = 720;
   uint16_t count[KEYS + 1];
+  int keyX = 0, keyY = 0;       // this step's gravity for the sort's height key (to 1/1024)
   uint16_t fingerCells[FINGER_MAX]; int fingerCount = 0;
 };
 
