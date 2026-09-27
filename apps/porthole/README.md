@@ -159,6 +159,8 @@ games/pets-club/   Pets Club: pet simulation (pet.cpp), screens (game.cpp), stor
 games/biscuit/     Biscuit: rules and save (pet.h), screens (screens_*.cpp), stories, discoveries
                    and adventures (content_*.h), generated scenes, pictures and fonts, and its
                    tools: art (tools/art/, Node), font conversion, content checker
+games/marble-kick/ Marble Kick: tilt physics and levels (physics.*, levels.h, tune.h), save (save.h),
+                   its look drawn in code (render.*), pages (game.*)
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test
