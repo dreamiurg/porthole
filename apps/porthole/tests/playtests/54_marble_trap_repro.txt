@@ -1,0 +1,38 @@
+# Level 5, calibrated upright (the sim's default grip), every tilt a real 1 g vector: the reviewer's repro. Leaned
+# back 30 degrees and turned 17 (a natural "up toward the goal") used to wedge the ball for good; it scores now.
+# Then every way a kid can hold it, from the next level's tray: the game keeps going and the ball stays on the tray.
+profile Sam 6
+app marble-kick
+wait 500
+tilt 0 1000 0
+wait 80
+dbg level5
+wait 40
+tilt -150 500 -852
+wait 2500
+expect-screen mk_goal
+expect reached=5
+snap mk_r01_level5_goal
+tilt 0 1000 0
+wait 2100
+expect-screen mk_play
+expect level=6
+tilt 1000 0 0
+wait 1500
+tilt 707 707 0
+wait 1500
+tilt 707 0 -707
+wait 1500
+tilt 500 500 707
+wait 1500
+tilt 0 -1000 0
+wait 1500
+tilt 0 0 -1000
+wait 1500
+tilt 0 0 1000
+wait 1500
+expect-screen mk_play|mk_goal
+expect x>=-170
+expect x<=170
+expect y<=170
+sheet trap_repro

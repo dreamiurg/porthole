@@ -1,98 +1,127 @@
-# Marble Kick's edges: Back from every page goes to the launcher with the level reached kept (the save), and coming
-# back asks for calibration again and plays that level; a device held tilted while calibrating is level from then on;
-# taps on the tray do nothing during play; the Goal page moves on by itself after 2 s.
+# Marble Kick's edges, held upright (the sim's default grip): home from every page (a tap, or on the Play page a
+# hold, where a brush or a hold let go early does nothing), the level reached kept and played on the next visit; a
+# grip held tilted while calibrating is level from then on; a jolt while pressing play waits for a steady grip; the
+# Goal page moves on by itself after 2 s; the Done page's button starts over from level 1.
 profile Sam 6
 app marble-kick
 wait 500
-# Back from Calibrate
+# home from Calibrate: a tap
 tap 80 145
 wait 100
 expect-screen launcher
 app marble-kick
 wait 500
-# calibrated held tilted (right and lying back): that is level now, and the ball stays put
+# calibrated held turned and leaned back: that is level now, and the ball stays put
 tilt 300 800 -520
+wait 400
 tap 80 110
 expect-screen mk_play
 expect neutralX=300
 expect neutralY=800
+expect neutralZ=-520
 wait 1000
 expect x=0
 expect y=110
-# taps on the tray do nothing during play, not even where the Calibrate button was
+# taps on the tray, a brush of the home knob, and a hold let go early: nothing
 tap 80 40
 tap 30 80
 tap 130 80
 tap 80 110
+wait 500
+tap 80 145
+wait 100
+down 80 145
+wait 400
+up
 wait 100
 expect-screen mk_play
 expect x=0
 expect y=110
-# held upright again, which from that neutral is tilted left: the ball rolls left
+# held upright again, which from that grip is turned left: the ball rolls left
 tilt 0 1000 0
 wait 600
 expect x<0
 ui-check mk_play-rolling
 snap mk_e01_rolling
-# Back from Play, nothing finished yet: level 1 again, from its start
-tap 80 145
+down 80 145
+wait 320
+ui-check mk_play-holding
+snap mk_e02_holding
+up
+# a full hold leaves; nothing finished, so the next visit is level 1 again, from its start
+hold 80 145
 wait 100
 expect-screen launcher
 app marble-kick
 wait 500
 expect level=1
 expect reached=0
+# a jolt just before pressing play: it waits for a steady grip, then starts with it as level
+shake
 tap 80 110
+expect-screen mk_calibrate
+expect starting=1
+wait 400
+expect-screen mk_play
+expect neutralX=0
+expect neutralY=1000
+expect neutralZ=0
 expect x=0
 expect y=110
-# level 1's recorded solution (levels.h SOLVE_1), after a still frame
+# solution 1 from 0 1000 0
 wait 80
-tilt 0 570 0
+tilt 0 903 -430
 wait 240
-tilt 0 660 0
+tilt 0 966 -260
 wait 240
-tilt 0 770 0
+tilt 0 975 -220
 wait 240
-tilt 0 750 0
+tilt 0 973 -230
+wait 240
+tilt 0 975 -220
 wait 480
-tilt 0 760 0
+tilt 0 973 -230
 wait 240
-tilt 0 750 0
+tilt 0 975 -220
 wait 240
-tilt 0 880 0
+tilt 0 984 -180
 wait 240
 tilt 0 1000 0
+# end solution
 expect-screen mk_goal
 expect reached=1
 # the Goal page moves on by itself
 wait 2100
 expect-screen mk_play
 expect level=2
-# level 2's recorded solution (levels.h SOLVE_2), after a still frame
+# solution 2 from 0 1000 0
 wait 80
-tilt -260 660 0
+tilt -290 905 -310
 wait 240
-tilt -210 730 0
+tilt -180 965 -190
 wait 240
-tilt -90 910 0
+tilt -130 982 -140
 wait 240
-tilt 250 660 0
+tilt 90 991 100
 wait 240
-tilt 70 760 0
+tilt 200 903 -380
 wait 240
-tilt 50 760 0
+tilt 60 976 -210
 wait 240
-tilt -30 1140 0
+tilt 60 974 -220
 wait 240
-tilt 200 630 0
+tilt 40 983 -180
 wait 240
-tilt 80 820 0
+tilt 160 965 -210
 wait 240
-tilt -60 1130 0
+tilt 90 976 -200
+wait 240
+tilt 80 984 -160
 wait 240
 tilt 0 1000 0
+# end solution
 expect-screen mk_goal
-# Back from Goal (after the fresh-page pause): the level reached is kept, and the next visit starts there
+# home from Goal (after the fresh-page pause): the level reached is kept, and the next visit starts there
 wait 500
 tap 80 145
 wait 100
@@ -102,65 +131,64 @@ wait 500
 expect-screen mk_calibrate
 expect level=3
 expect reached=2
-snap mk_e02_calibrate3
-# Back from Done: all six finished, the next visit plays the last one again
+snap mk_e03_calibrate3
+# all six done: the Done page's red button starts over from level 1
 dbg level6
-# level 6's recorded solution (levels.h SOLVE_6), after a still frame
+# solution 6 from 0 1000 0
 wait 80
-tilt 240 1240 0
+tilt 290 912 290
 wait 240
-tilt 190 610 0
+tilt 110 905 -410
 wait 240
-tilt -50 850 0
+tilt -70 971 -230
 wait 240
-tilt 400 840 0
+tilt 420 906 -50
 wait 240
-tilt 420 920 0
+tilt 420 903 -90
 wait 240
-tilt 420 1050 0
+tilt 430 902 30
 wait 240
-tilt 250 1210 0
+tilt 390 901 190
 wait 240
-tilt -60 1150 0
+tilt -40 975 220
 wait 240
-tilt -340 740 0
-wait 480
+tilt -340 904 -260
+wait 240
+tilt -330 905 -270
+wait 240
+tilt -100 991 -90
+wait 240
+tilt -280 954 -110
+wait 240
+tilt -170 977 -130
+wait 240
+tilt 100 993 60
+wait 240
+tilt 410 905 -110
+wait 240
+tilt 360 926 -110
+wait 240
+tilt 270 901 -340
+wait 240
+tilt 160 907 -390
+wait 240
+tilt -120 949 -290
+wait 240
+tilt -140 930 -340
+wait 240
+tilt 30 979 -200
+wait 240
+tilt -10 991 -130
+wait 240
 tilt 0 1000 0
-wait 240
-tilt -320 830 0
-wait 240
-tilt -180 890 0
-wait 240
-tilt 120 1080 0
-wait 240
-tilt 410 880 0
-wait 240
-tilt 380 880 0
-wait 240
-tilt 300 700 0
-wait 240
-tilt 190 620 0
-wait 240
-tilt -70 710 0
-wait 240
-tilt -130 610 0
-wait 240
-tilt -30 770 0
-wait 240
-tilt 0 1000 0
-wait 240
-tilt 0 1000 0
+# end solution
 expect-screen mk_goal
 wait 500
 tap 80 60
 expect-screen mk_done
 wait 500
-tap 80 145
-wait 100
-expect-screen launcher
-app marble-kick
-wait 500
-expect-screen mk_calibrate
-expect level=6
+tap 80 110
+expect-screen mk_play
+expect level=1
 expect reached=6
 sheet edges

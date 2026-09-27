@@ -8,11 +8,12 @@
 // Panel px, absolute (the tray's center is 240,240).
 #pragma once
 #include <stdint.h>
+#include "gfx565.h"
 #include "physics.h"
 
 namespace marble::paint {
 struct Box { int x0, y0, x1, y1; };   // x1, y1 exclusive; empty when x1 <= x0
-constexpr Box FULL = {0, 0, 480, 480};
+constexpr Box FULL = {0, 0, gfx565::W, gfx565::H};
 constexpr Box NONE = {0, 0, 0, 0};
 inline bool empty(const Box& b) { return b.x1 <= b.x0 || b.y1 <= b.y0; }
 inline bool same(const Box& a, const Box& b) { return a.x0 == b.x0 && a.y0 == b.y0 && a.x1 == b.x1 && a.y1 == b.y1; }
@@ -29,13 +30,17 @@ void tray(int goalHalf);                     // the whole tray, the goal's net c
 void shadow(int x, int y, int r, int goalHalf);   // the tray in shade under a round thing of radius r at (x, y)
 void peg(int x, int y, int r);
 void post(int x, int y);
-void ball(int x, int y);
-void knob(int x, int y);                     // the back button: a brass knob with a walnut arrow
-void coin(int x, int y, int number);         // the level number, carved in a brass coin
-void playButton(int x, int y);               // a red lacquer button with a cream arrow
+void ball(int x, int y, int r);             // the cream ball with its dark pentagon (BALL_R on the tray)
+void knob(int x, int y, bool pressed, float hold);   // the way home; hold 0..1 fills a ring around it (Play)
+void coin(int x, int y, int number, int r);  // a level's number, carved in a brass coin
+void playButton(int x, int y, bool pressed); // a red lacquer button with a cream arrow
 void flag(int x, int y, int dir);            // a pennant on a goalpost, flying outward (dir -1 left, +1 right)
-void vial(int x, int y, int bubbleDx, int bubbleDy);   // the bubble level: the bubble sits off center by its offset
-constexpr int VIAL_R = 76, BUBBLE_R = 16, BUBBLE_TRAVEL = 64 - BUBBLE_R - 2;
+// The Calibrate page's dish: a small ball that rolls the way the game's will, settling in the middle (ready: the
+// middle ring turns brass).
+constexpr int DISH_R = 64, DISH_BALL_R = 12, DISH_TRAVEL = DISH_R - DISH_BALL_R - 4;
+void dish(int x, int y, int ballDx, int ballDy, bool ready);
+constexpr uint32_t CONFETTI_MS = 3000;
+void confetti(uint32_t ms);                  // the Done page's celebration, ms since it began; nothing after CONFETTI_MS
 // Wooden letter blocks, one glyph each ("0-9 G O A L !"), centered on x; each glyph's ink box goes to the UI audit.
 void blocks(const char* s, int x, int y, int cell);
 }  // namespace marble::paint

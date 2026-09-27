@@ -26,19 +26,70 @@ profile Sam 6
 app marble-kick
 wait 500
 tap 80 110
-tilt 0 500 0
+tilt 0 866 -500
 wait 1400
 tilt 0 1000 0
 expect-screen mk_goal
 monkey 300 23
 expect-screen *
-# seed 24: the Done page
+# seed 24: the Done page, reached by playing level 6 through
 reset
 tilt 0 1000 0
 profile Sam 6
 app marble-kick
 wait 500
 dbg level6
+# solution 6 from 0 1000 0
+wait 80
+tilt 290 912 290
+wait 240
+tilt 110 905 -410
+wait 240
+tilt -70 971 -230
+wait 240
+tilt 420 906 -50
+wait 240
+tilt 420 903 -90
+wait 240
+tilt 430 902 30
+wait 240
+tilt 390 901 190
+wait 240
+tilt -40 975 220
+wait 240
+tilt -340 904 -260
+wait 240
+tilt -330 905 -270
+wait 240
+tilt -100 991 -90
+wait 240
+tilt -280 954 -110
+wait 240
+tilt -170 977 -130
+wait 240
+tilt 100 993 60
+wait 240
+tilt 410 905 -110
+wait 240
+tilt 360 926 -110
+wait 240
+tilt 270 901 -340
+wait 240
+tilt 160 907 -390
+wait 240
+tilt -120 949 -290
+wait 240
+tilt -140 930 -340
+wait 240
+tilt 30 979 -200
+wait 240
+tilt -10 991 -130
+wait 240
 tilt 0 1000 0
+# end solution
+expect-screen mk_goal
+wait 500
+tap 80 60
+expect-screen mk_done
 monkey 300 24
 expect-screen *

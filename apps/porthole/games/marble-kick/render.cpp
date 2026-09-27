@@ -25,7 +25,7 @@ constexpr uint32_t BRASS_RGB = 0xD9A441;
 constexpr uint16_t BRASS = c565(BRASS_RGB), BRASS_DARK = c565(0xA67A24), BRASS_HI = c565(0xF2CF7A);
 constexpr uint16_t PEG = c565(0xB5452F), PEG_HI = c565(0xD8664B), PEG_DARK = c565(0x86301F), SHINE = c565(0xF6E3C8);
 constexpr uint16_t BALL = c565(0xF7F2E6), BALL_EDGE = c565(0xC9BFA8), PENT = c565(0x2A2420), WHITE = c565(0xFFFFFF);
-constexpr uint16_t LIQUID = c565(0xD4E2A0), LIQUID_DARK = c565(0xA7BA72), BUBBLE = c565(0xFBFBF1), BUBBLE_EDGE = c565(0x9FB36A);
+constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center
 constexpr uint32_t FACE_RGB = 0xF0D5A6;
 constexpr uint16_t FACE = c565(FACE_RGB), SIDE = c565(0xB8915C);
 constexpr uint32_t INK_RGB[3] = {0x3E2615, 0x7A2418, 0x1E5234};   // walnut, dark lacquer, dark felt: 6.5:1 or more on FACE
@@ -88,7 +88,7 @@ void roundBox(const Box& b, int r, uint16_t c) {
 }
 
 uint16_t felt(int y, int ring, bool shade) {
-  const bool line = ring == FELT && y >= 239 && y <= 241;   // the halfway line, inside the touchline only
+  const bool line = ring == FELT && y >= CY - 1 && y <= CY + 1;   // the halfway line, inside the touchline only
   const int m = line ? CHALK : (y / 40) % 2 ? FELT_B : FELT_A;
   return SHADES.c[m][shade || ring == WALL_SHADE];
 }
@@ -98,28 +98,28 @@ void net(const Row& row, int x0, int x1) {   // the goal's net: a 9 px mesh
   if (x0 < clip_.x0) x0 = clip_.x0;
   if (x1 > clip_.x1) x1 = clip_.x1;
   const bool line = row.y % 9 == 0;
-  for (int x = x0; x < x1; x++) gfx565::pixel(x, row.y, SHADES.c[line || (x - 240 + 900) % 9 == 0 ? NET_LINE : NET][row.shade]);
+  for (int x = x0; x < x1; x++) gfx565::pixel(x, row.y, SHADES.c[line || (x - CX + 900) % 9 == 0 ? NET_LINE : NET][row.shade]);
 }
 // One run of one ring's material, x1 exclusive. In the rim above the middle, the goal's mouth shows the net instead.
 void fill(const Row& row, int x0, int x1, int ring) {
   const Ring& g = RINGS[ring];
   if (g.mat < 0) { span(row.y, x0, x1, felt(row.y, g.mat, row.shade)); return; }
   const uint16_t c = SHADES.c[g.mat][row.shade];
-  const int gl = 240 - row.goalHalf, gr = 240 + row.goalHalf;
-  if (g.r <= PITCH_R || row.y >= 240 || x1 <= gl || x0 >= gr) { span(row.y, x0, x1, c); return; }
+  const int gl = CX - row.goalHalf, gr = CX + row.goalHalf;
+  if (g.r <= PITCH_R || row.y >= CY || x1 <= gl || x0 >= gr) { span(row.y, x0, x1, c); return; }
   span(row.y, x0, gl, c);
   span(row.y, gr, x1, c);
   net(row, x0 > gl ? x0 : gl, x1 < gr ? x1 : gr);
 }
 // The tray along a row from x0 to x1: each ring's part of the row, left and right of the next ring in, never twice.
 void trayRow(const Row& row, int x0, int x1) {
-  const int dy = row.y - 240;
+  const int dy = row.y - CY;
   int h = 1000;
   for (int i = 0; i < NRINGS; i++) {
     const int in = i + 1 < NRINGS ? isqrt(RINGS[i + 1].r * RINGS[i + 1].r - dy * dy - 1) : -1;
-    if (in < 0) { fill(row, x0 > 240 - h ? x0 : 240 - h, x1 < 241 + h ? x1 : 241 + h, i); return; }
-    fill(row, x0 > 240 - h ? x0 : 240 - h, x1 < 240 - in ? x1 : 240 - in, i);
-    fill(row, x0 > 241 + in ? x0 : 241 + in, x1 < 241 + h ? x1 : 241 + h, i);
+    if (in < 0) { fill(row, x0 > CX - h ? x0 : CX - h, x1 < CX + 1 + h ? x1 : CX + 1 + h, i); return; }
+    fill(row, x0 > CX - h ? x0 : CX - h, x1 < CX - in ? x1 : CX - in, i);
+    fill(row, x0 > CX + 1 + in ? x0 : CX + 1 + in, x1 < CX + 1 + h ? x1 : CX + 1 + h, i);
     h = in;
   }
 }
@@ -127,15 +127,16 @@ void trayRow(const Row& row, int x0, int x1) {
 // 5x7 glyphs for the letter blocks, a row per byte, bit 4 the leftmost column.
 struct Glyph { char c; uint8_t rows[7]; };
 constexpr Glyph GLYPHS[] = {
+  {' ', {0, 0, 0, 0, 0, 0, 0}},   // blank: what any other character draws
   {'0', {14, 17, 19, 21, 25, 17, 14}}, {'1', {4, 12, 4, 4, 4, 4, 14}},   {'2', {14, 17, 1, 2, 4, 8, 31}},
   {'3', {30, 1, 1, 14, 1, 1, 30}},     {'4', {2, 6, 10, 18, 31, 2, 2}},  {'5', {31, 16, 30, 1, 1, 17, 14}},
   {'6', {6, 8, 16, 30, 17, 17, 14}},   {'7', {31, 1, 2, 4, 8, 8, 8}},    {'8', {14, 17, 17, 14, 17, 17, 14}},
   {'9', {14, 17, 17, 15, 1, 2, 12}},   {'G', {14, 17, 16, 23, 17, 17, 15}}, {'O', {14, 17, 17, 17, 17, 17, 14}},
   {'A', {14, 17, 17, 31, 17, 17, 17}}, {'L', {16, 16, 16, 16, 16, 16, 31}}, {'!', {4, 4, 4, 4, 4, 0, 4}},
 };
-const Glyph* glyph(char c) {
-  for (const Glyph& g : GLYPHS) if (g.c == c) return &g;
-  return nullptr;
+const Glyph& glyph(char c) {
+  for (const Glyph& g : GLYPHS) if (g.c == c) return g;
+  return GLYPHS[0];
 }
 // How a glyph is drawn: its cell size in px, its ink, and the face under it (both RGB888, for the UI audit).
 struct Pen { int cell; uint32_t ink, bg; };
@@ -160,7 +161,7 @@ Box unite(const Box& a, const Box& b) {
   return {a.x0 < b.x0 ? a.x0 : b.x0, a.y0 < b.y0 ? a.y0 : b.y0, a.x1 > b.x1 ? a.x1 : b.x1, a.y1 > b.y1 ? a.y1 : b.y1};
 }
 void clip(const Box& b) {
-  clip_ = {b.x0 < 0 ? 0 : b.x0, b.y0 < 0 ? 0 : b.y0, b.x1 > 480 ? 480 : b.x1, b.y1 > 480 ? 480 : b.y1};
+  clip_ = {b.x0 < 0 ? 0 : b.x0, b.y0 < 0 ? 0 : b.y0, b.x1 > gfx565::W ? gfx565::W : b.x1, b.y1 > gfx565::H ? gfx565::H : b.y1};
 }
 
 void tray(int goalHalf) {
@@ -186,34 +187,43 @@ void post(int x, int y) {
   disc(x - 1, y - 1, POST_R - 2, BRASS);
   disc(x - 2, y - 2, 2, BRASS_HI);
 }
-void ball(int x, int y) {
-  disc(x, y, BALL_R, BALL_EDGE);
-  disc(x - 1, y - 1, BALL_R - 2, BALL);
+void ball(int x, int y, int r) {
+  disc(x, y, r, BALL_EDGE);
+  disc(x - 1, y - 1, r - 2, BALL);
   int p[10];
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {   // the dark pentagon, point up
     const float a = -1.5708f + i * 1.2566f;
-    p[2 * i] = x + (int)lroundf(cosf(a) * 8); p[2 * i + 1] = y + (int)lroundf(sinf(a) * 8);
+    p[2 * i] = x + (int)lroundf(cosf(a) * r * 0.4f); p[2 * i + 1] = y + (int)lroundf(sinf(a) * r * 0.4f);
   }
   poly(p, 5, PENT);
-  disc(x - 8, y - 9, 3, WHITE);
+  disc(x - r * 2 / 5, y - r * 9 / 20, r / 7 + 1, WHITE);
 }
-void knob(int x, int y) {
+// A house (the device's own sign for home) carved in walnut into a brass knob. Pressed, it sinks 2 px into its shadow;
+// held on the Play page, a ring of chalk dots fills around it clockwise from the top.
+void knob(int x, int y, bool pressed, float hold) {
+  if (pressed) y += 2;
   disc(x, y, KNOB_R, BRASS_DARK);
   disc(x - 1, y - 1, KNOB_R - 3, BRASS);
-  disc(x - 10, y - 11, 5, BRASS_HI);
-  const int arrow[] = {x - 15, y + 1, x + 8, y - 13, x + 8, y + 15};
-  poly(arrow, 3, c565(INK_RGB[0]));
+  disc(x - 13, y - 13, 4, BRASS_HI);
+  const int roof[] = {x - 16, y, x, y - 15, x + 16, y};
+  poly(roof, 3, c565(INK_RGB[0]));
+  roundBox({x - 10, y, x + 11, y + 14}, 0, c565(INK_RGB[0]));
+  roundBox({x - 3, y + 5, x + 4, y + 14}, 0, BRASS_DARK);   // the door
+  for (int i = 0; hold > 0 && i < 24; i++) {
+    const float a = -1.5708f + i * 0.2618f;
+    disc(x + (int)lroundf(cosf(a) * (KNOB_R + 7)), y + (int)lroundf(sinf(a) * (KNOB_R + 7)), 3,
+         i < hold * 24 ? SHADES.c[CHALK][0] : SHADES.c[WALNUT_EDGE][0]);
+  }
 }
-void coin(int x, int y, int number) {
-  disc(x, y, 22, BRASS_DARK);
-  disc(x - 1, y - 1, 19, BRASS);
-  const int cell = 4, digits = number >= 10 ? 2 : 1, w = digits * 5 * cell + (digits - 1) * cell;
-  const Glyph* tens = glyph((char)('0' + number / 10 % 10));
-  const Glyph* ones = glyph((char)('0' + number % 10));
-  if (digits == 2) drawGlyph(*tens, x - w / 2, y - 14, {cell, INK_RGB[0], BRASS_RGB});
-  drawGlyph(*ones, x + w / 2 - 5 * cell, y - 14, {cell, INK_RGB[0], BRASS_RGB});
+void coin(int x, int y, int number, int r) {
+  disc(x, y, r, BRASS_DARK);
+  disc(x - 1, y - 1, r - 3, BRASS);
+  const int cell = r >= 30 ? 5 : 4, digits = number >= 10 ? 2 : 1, w = digits * 5 * cell + (digits - 1) * cell;
+  if (digits == 2) drawGlyph(glyph((char)('0' + number / 10 % 10)), x - w / 2, y - 7 * cell / 2, {cell, INK_RGB[0], BRASS_RGB});
+  drawGlyph(glyph((char)('0' + number % 10)), x + w / 2 - 5 * cell, y - 7 * cell / 2, {cell, INK_RGB[0], BRASS_RGB});
 }
-void playButton(int x, int y) {
+void playButton(int x, int y, bool pressed) {
+  if (pressed) y += 2;
   disc(x, y, 40, PEG_DARK);
   disc(x - 1, y - 1, 37, PEG);
   disc(x - 13, y - 14, 8, PEG_HI);
@@ -227,19 +237,27 @@ void flag(int x, int y, int dir) {
   poly(stripe, 3, BALL);
   post(x, y);
 }
-void vial(int x, int y, int bubbleDx, int bubbleDy) {
-  disc(x, y, VIAL_R, BRASS_DARK);
-  disc(x - 1, y - 1, VIAL_R - 4, BRASS);
-  disc(x, y, 64, LIQUID);
-  disc(x, y, BUBBLE_R + 6, LIQUID_DARK);
-  disc(x, y, BUBBLE_R + 3, LIQUID);
-  for (int d = -1; d <= 1; d++) { span(y + d, x - 56, x - BUBBLE_R - 6, LIQUID_DARK); span(y + d, x + BUBBLE_R + 7, x + 57, LIQUID_DARK); }
-  int y0 = y - 56, y1 = y + 57;
-  rows(y0, y1);
-  for (int yy = y0; yy < y1; yy++) if (yy < y - BUBBLE_R - 6 || yy > y + BUBBLE_R + 6) span(yy, x - 1, x + 2, LIQUID_DARK);
-  disc(x + bubbleDx, y + bubbleDy, BUBBLE_R + 2, BUBBLE_EDGE);
-  disc(x + bubbleDx, y + bubbleDy, BUBBLE_R, BUBBLE);
-  disc(x + bubbleDx - 6, y + bubbleDy - 6, 4, WHITE);
+// A turned maple dish with a small ball in it; the ring in the middle turns brass when the ball has settled there.
+void dish(int x, int y, int ballDx, int ballDy, bool ready) {
+  disc(x, y, DISH_R + 9, SHADES.c[WALNUT][0]);
+  disc(x, y, DISH_R + 4, SHADES.c[GRAIN][0]);
+  disc(x, y, DISH_R, SHADES.c[MAPLE][0]);
+  disc(x, y, DISH_BALL_R + 10, ready ? BRASS_HI : SHADES.c[GRAIN][0]);
+  disc(x, y, DISH_BALL_R + (ready ? 5 : 7), SHADES.c[MAPLE][0]);
+  ball(x + ballDx, y + ballDy, DISH_BALL_R);
+}
+// Confetti falling through the whole glass for CONFETTI_MS after `ms` = 0, in the tray's own colors; then gone.
+void confetti(uint32_t ms) {
+  static const uint16_t COLORS[4] = {PEG, BRASS, SHADES.c[CHALK][0], PEG_HI};
+  if (ms >= CONFETTI_MS) return;
+  const float t = ms / 1000.0f;
+  for (int i = 0; i < 28; i++) {
+    const uint32_t h = (uint32_t)(i + 1) * 2654435761u;
+    const int x = 60 + (int)(h % 360) + (int)lroundf(sinf(t * 4 + i) * (8 + (h >> 5) % 10));
+    const int y = -20 - (int)((h >> 9) % 220) + (int)lroundf(t * (240 + (h >> 17) % 90));
+    const int w = i & 1 ? 10 : 6, hgt = i & 1 ? 6 : 10;
+    roundBox({x, y, x + w, y + hgt}, 0, COLORS[i % 4]);
+  }
 }
 void blocks(const char* s, int x, int y, int cell) {
   int n = 0;
@@ -247,11 +265,9 @@ void blocks(const char* s, int x, int y, int cell) {
   const int w = 5 * cell + 2 * cell, gap = cell;
   int bx = x - (n * w + (n - 1) * gap) / 2;
   for (int i = 0; i < n; i++, bx += w + gap) {
-    const Glyph* g = glyph(s[i]);
-    if (!g) continue;
     roundBox({bx, y + cell, bx + w, y + 10 * cell}, cell * 2, SIDE);   // the block's side, below its face
     roundBox({bx, y, bx + w, y + 9 * cell}, cell * 2, FACE);
-    drawGlyph(*g, bx + cell, y + cell, {cell, INK_RGB[i % 3], FACE_RGB});
+    drawGlyph(glyph(s[i]), bx + cell, y + cell, {cell, INK_RGB[i % 3], FACE_RGB});
   }
 }
 }  // namespace marble::paint

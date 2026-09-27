@@ -1,34 +1,43 @@
-# Marble Kick, every level by tilting: calibrate held upright (the sim's default), then each level's recorded solution
-# (games/marble-kick/levels.h) as tilt changes, the Goal page, a tap on to the next level. After the sixth, the Done
-# page, whose button plays the sixth again. The UI audit covers every page.
+# Marble Kick, every level by tilting, held leaned back 45 degrees the whole time (the grip it calibrates in): each
+# level's recorded solution (levels.h) as real 1 g readings, the Goal page, a tap on to the next level. After the
+# sixth, the Done page: confetti, then its coins play a level again, and the next visit starts over from level 1.
+# The solution blocks are written by `build/host/test_marble --write-playtests`; test_marble fails when they drift.
+tilt 0 707 -707
 profile Sam 6
 app marble-kick
-wait 500
+wait 1500
 expect-screen mk_calibrate
 expect level=1
+expect ready=1
 ui-check mk_calibrate
 snap mk01_calibrate
 tap 80 110
 expect-screen mk_play
+expect neutralX=0
+expect neutralY=707
+expect neutralZ=-707
 ui-check mk_play
 snap mk02_play1
-# level 1's recorded solution (levels.h SOLVE_1), from the sim's upright neutral
+# solution 1 from 0 707 -707
 wait 80
-tilt 0 570 0
+tilt 0 334 -942
 wait 240
-tilt 0 660 0
+tilt 0 499 -867
 wait 240
-tilt 0 770 0
+tilt 0 534 -845
 wait 240
-tilt 0 750 0
+tilt 0 526 -851
+wait 240
+tilt 0 534 -845
 wait 480
-tilt 0 760 0
+tilt 0 526 -851
 wait 240
-tilt 0 750 0
+tilt 0 534 -845
 wait 240
-tilt 0 880 0
+tilt 0 568 -823
 wait 240
-tilt 0 1000 0
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=1
 ui-check mk_goal
@@ -38,29 +47,32 @@ tap 80 60
 expect-screen mk_play
 expect level=2
 expect reached=1
-# level 2's recorded solution (levels.h SOLVE_2), from the sim's upright neutral
+# solution 2 from 0 707 -707
 wait 80
-tilt -260 660 0
+tilt -290 421 -859
 wait 240
-tilt -210 730 0
+tilt -180 548 -817
 wait 240
-tilt -90 910 0
+tilt -130 595 -793
 wait 240
-tilt 250 660 0
+tilt 90 771 -630
 wait 240
-tilt 70 760 0
+tilt 200 370 -907
 wait 240
-tilt 50 760 0
+tilt 60 542 -839
 wait 240
-tilt -30 1140 0
+tilt 60 533 -844
 wait 240
-tilt 200 630 0
+tilt 40 568 -822
 wait 240
-tilt 80 820 0
+tilt 160 534 -831
 wait 240
-tilt -60 1130 0
+tilt 90 548 -831
 wait 240
-tilt 0 1000 0
+tilt 80 583 -809
+wait 240
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=2
 wait 500
@@ -68,29 +80,32 @@ tap 80 60
 expect-screen mk_play
 expect level=3
 expect reached=2
-# level 3's recorded solution (levels.h SOLVE_3), from the sim's upright neutral
+# solution 3 from 0 707 -707
 wait 80
-tilt 100 580 0
+tilt 100 341 -935
 wait 240
-tilt 70 740 0
+tilt 70 506 -860
 wait 240
-tilt -30 1130 0
+tilt -30 787 -617
 wait 240
-tilt -130 590 0
+tilt -140 407 -902
 wait 240
-tilt -60 760 0
+tilt -30 543 -840
 wait 240
-tilt 0 1000 0
+tilt -40 551 -834
 wait 240
-tilt -60 650 0
+tilt 30 793 -609
 wait 240
-tilt 30 1130 0
+tilt -60 414 -909
 wait 240
-tilt 110 600 0
+tilt 0 707 -707
 wait 240
-tilt 0 1000 0
+tilt 110 430 -896
 wait 240
-tilt 0 1000 0
+tilt 60 616 -786
+wait 240
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=3
 wait 500
@@ -100,31 +115,32 @@ expect level=4
 expect reached=3
 ui-check mk_play-level4
 snap mk04_play4
-# level 4's recorded solution (levels.h SOLVE_4), from the sim's upright neutral
+# solution 4 from 0 707 -707
 wait 80
-tilt 240 640 0
+tilt 240 383 -892
 wait 240
-tilt 120 820 0
+tilt 120 563 -818
 wait 240
-tilt -70 1100 0
+tilt -70 773 -631
 wait 240
-tilt -80 580 0
+tilt -90 362 -928
 wait 240
-tilt -30 730 0
+tilt -10 551 -834
 wait 240
-tilt 0 1000 0
+tilt -10 525 -851
 wait 240
-tilt -190 670 0
+tilt 0 793 -609
 wait 240
-tilt -70 870 0
+tilt -210 427 -880
 wait 240
-tilt 40 1130 0
+tilt -70 623 -779
 wait 240
-tilt -10 570 0
+tilt 30 462 -886
 wait 240
-tilt 0 1000 0
+tilt -10 568 -823
 wait 240
-tilt 0 1000 0
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=4
 wait 500
@@ -132,31 +148,32 @@ tap 80 60
 expect-screen mk_play
 expect level=5
 expect reached=4
-# level 5's recorded solution (levels.h SOLVE_5), from the sim's upright neutral
+# solution 5 from 0 707 -707
 wait 80
-tilt -160 600 0
+tilt -190 371 -909
 wait 240
-tilt -130 680 0
+tilt -120 511 -851
 wait 240
-tilt -80 780 0
+tilt 0 707 -707
 wait 240
-tilt -70 860 0
+tilt 50 424 -904
 wait 240
-tilt 60 1130 0
+tilt -10 543 -840
 wait 240
-tilt 370 790 0
+tilt -20 525 -851
 wait 240
-tilt 220 910 0
+tilt -20 617 -787
 wait 240
-tilt -80 1100 0
+tilt 300 509 -806
 wait 240
-tilt -120 590 0
+tilt 120 620 -775
 wait 240
-tilt -50 710 0
+tilt -10 472 -882
 wait 240
-tilt 0 1000 0
+tilt -90 771 -630
 wait 240
-tilt 0 1000 0
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=5
 wait 500
@@ -166,62 +183,79 @@ expect level=6
 expect reached=5
 ui-check mk_play-level6
 snap mk06_play6
-# level 6's recorded solution (levels.h SOLVE_6), from the sim's upright neutral
+# solution 6 from 0 707 -707
 wait 80
-tilt 240 1240 0
+tilt 290 850 -440
 wait 240
-tilt 190 610 0
+tilt 110 350 -930
 wait 240
-tilt -50 850 0
+tilt -70 524 -849
 wait 240
-tilt 400 840 0
+tilt 420 605 -676
 wait 240
-tilt 420 920 0
+tilt 420 575 -702
 wait 240
-tilt 420 1050 0
+tilt 430 659 -617
 wait 240
-tilt 250 1210 0
+tilt 390 771 -503
 wait 240
-tilt -60 1150 0
+tilt -40 845 -534
 wait 240
-tilt -340 740 0
-wait 480
-tilt 0 1000 0
+tilt -340 455 -823
 wait 240
-tilt -320 830 0
+tilt -330 449 -831
 wait 240
-tilt -180 890 0
+tilt -100 637 -764
 wait 240
-tilt 120 1080 0
+tilt -280 597 -752
 wait 240
-tilt 410 880 0
+tilt -170 599 -783
 wait 240
-tilt 380 880 0
+tilt 100 745 -660
 wait 240
-tilt 300 700 0
+tilt 410 562 -718
 wait 240
-tilt 190 620 0
+tilt 360 577 -733
 wait 240
-tilt -70 710 0
+tilt 270 397 -877
 wait 240
-tilt -130 610 0
+tilt 160 365 -917
 wait 240
-tilt -30 770 0
+tilt -120 466 -876
 wait 240
-tilt 0 1000 0
+tilt -140 417 -898
 wait 240
-tilt 0 1000 0
+tilt 30 551 -834
+wait 240
+tilt -10 609 -793
+wait 240
+tilt 0 707 -707
+# end solution
 expect-screen mk_goal
 expect reached=6
 wait 500
 tap 80 60
 expect-screen mk_done
 expect reached=6
+wait 400
+ui-check mk_done-confetti
+snap mk07_done_confetti
+wait 3000
 ui-check mk_done
-snap mk07_done
-wait 500
-tap 80 110
+snap mk08_done
+# the coin with a 3 on it plays level 3 again
+tap 110 50
 expect-screen mk_play
-expect level=6
+expect level=3
+expect reached=6
+# leaving (a hold on the home knob, after the fresh-page pause); the next visit starts over from level 1
+wait 500
+hold 80 145
+wait 100
+expect-screen launcher
+app marble-kick
+wait 500
+expect-screen mk_calibrate
+expect level=1
 expect reached=6
 sheet levels
