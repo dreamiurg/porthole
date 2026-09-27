@@ -26,6 +26,10 @@ struct Input {
   int downX = 0, downY = 0; // where the press started
   int px = 0, py = 0;       // previous frame position (for drags)
   uint32_t heldMs = 0;
+  // Gravity from the motion sensor (where things fall), milli-g, in screen terms: +x toward the right edge, +y toward
+  // the bottom edge, +z out of the glass toward the viewer. Held upright: (0, 1000, 0); lying face up: (0, 0, -1000).
+  // The host fills it every frame (firmware: board::readAccel; sim: its `tilt` command); InputTracker leaves it alone.
+  int16_t gx = 0, gy = 0, gz = -1000;
   bool hit(int rx, int ry, int rw, int rh) const { UiAudit::add(rx, ry, rw, rh); return x >= rx && y >= ry && x < rx + rw && y < ry + rh; }
   bool tapIn(int rx, int ry, int rw, int rh) const { bool h = hit(rx, ry, rw, rh); return tap && h; }
   bool tapInCircle(int cx, int cy, int r) const { UiAudit::add(cx - r, cy - r, 2 * r, 2 * r); int dx = x - cx, dy = y - cy; return tap && dx * dx + dy * dy <= r * r; }
