@@ -217,6 +217,18 @@ static void matchesFullRedraw(int shown) {   // shown: the buffer the last frame
   for (int k = 0; k < gfx565::W * gfx565::H; k++) differ += panel[shown][k] != panel[2][k];
   assert(differ == 0);
 }
+// Frame f of 90-frame rounds: a finger sweeps the jar and lifts; then one holds home and slides off it (no tap). The
+// first round upright, the second tilting to and fro, the third shaken and turned nearly upside down: grains flow under
+// both buttons.
+static Input frameInput(InputTracker& touch, int f, uint32_t ms) {
+  const int t = f % 90, round = f / 90;
+  const bool down = (t >= 10 && t < 50) || (t >= 52 && t < 70);
+  Input in = t < 50 ? touch.step(down, 30 + 2 * t, 120 - t / 2, ms) : touch.step(down, 80, t < 60 ? 12 : 40, ms);
+  const float deg = round == 0 ? 0 : round == 1 ? 50.0f * sinf(f * 0.07f) : 160;
+  in.gx = (int16_t)(1000 * sinf(deg * 3.14159265f / 180)); in.gy = (int16_t)(1000 * cosf(deg * 3.14159265f / 180)); in.gz = 0;
+  if (round == 2 && t < 4) { in.gx = t & 1 ? 1800 : -1800; in.gz = 900; }
+  return in;
+}
 static void incrementalIsFull() {
   for (uint16_t* p : {panel[0], panel[1]}) for (int k = 0; k < gfx565::W * gfx565::H; k++) p[k] = 0xF81F;
   uint32_t ms = 1000;
@@ -227,18 +239,10 @@ static void incrementalIsFull() {
     game.debugCmd(mode);
     for (int f = 0; f < 270; f++) {
       ms += 34;   // the board's two vsyncs: two physics steps a frame
-      const int t = f % 90, phase = f / 90;
-      // A finger sweeps the jar and lifts; then one holds home and slides off it (no tap). Upright, then tilting to and
-      // fro, then shaken and turned nearly upside down: grains flow under both buttons.
-      const bool down = (t >= 10 && t < 50) || (t >= 52 && t < 70);
-      Input in = t < 50 ? touch.step(down, 30 + 2 * t, 120 - t / 2, ms) : touch.step(down, 80, t < 60 ? 12 : 40, ms);
-      const float deg = phase == 0 ? 0 : phase == 1 ? 50.0f * sinf(f * 0.07f) : 160;
-      in.gx = (int16_t)(1000 * sinf(deg * 3.14159265f / 180)); in.gy = (int16_t)(1000 * cosf(deg * 3.14159265f / 180)); in.gz = 0;
-      if (phase == 2 && t < 4) { in.gx = t & 1 ? 1800 : -1800; in.gz = 900; }
-      game.update(ms / 1000, ms, in);
+      game.update(ms / 1000, ms, frameInput(touch, f, ms));
       gfx565::target(panel[f & 1]);
       game.render();
-      if (t == 58 || t == 89) matchesFullRedraw(f & 1);   // home held down, and a while after
+      if (f % 90 == 58 || f % 90 == 89) matchesFullRedraw(f & 1);   // home held down, and a while after
     }
   }
   puts("render: drawing only what changed shows what a full redraw does");
