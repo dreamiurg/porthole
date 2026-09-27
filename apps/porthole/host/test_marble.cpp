@@ -41,30 +41,29 @@ static Grav gravityFor(int tx, int ty, Grav neutral) {
   return {(int)lroundf(gx), (int)lroundf(gy), (int)lroundf(gz)};
 }
 
-static void tiltMapping() {
-  static const Grav HOLDS[] = {FLAT, LEANED, UPRIGHT, FACE_DOWN, {500, 500, -707}};
-  for (Grav n : HOLDS) {
-    // holding the device the way it was calibrated is no tilt at all
-    CHECK(near(len(tiltAccel(n, n)), 0));
-    // every test input is a real 1 g reading
-    for (int t = -900; t <= 900; t += 150) {
-      CHECK(fabsf(mag(gravityFor(t, 0, n)) - 1000) < 2 && fabsf(mag(gravityFor(0, t, n)) - 1000) < 2);
-    }
-    // the dead zone: up to DEAD_MG away from neutral, in any direction, nothing
-    CHECK(near(len(tiltAccel(gravityFor(DEAD_MG - 3, 0, n), n)), 0));
-    CHECK(near(len(tiltAccel(gravityFor(-58, 58, n), n)), 0));   // 82 mg diagonally
-    // past it, it grows with the tilt, in the tilt's direction, the same both ways (leaning forward or back)
-    const int mid = (DEAD_MG + FULL_MG) / 2;
-    const Vec up = tiltAccel(gravityFor(0, -mid, n), n), down = tiltAccel(gravityFor(0, mid, n), n);
-    CHECK(fabsf(up.x) < 3 && up.y < 0 && fabsf(-up.y - ACCEL_FULL / 2) < 3);
-    CHECK(fabsf(down.x) < 3 && fabsf(down.y + up.y) < 3);
-    const Vec right = tiltAccel(gravityFor(200, 0, n), n);
-    CHECK(right.x > 0 && fabsf(right.y) < 3 && right.x < ACCEL_FULL);
-    // clamped at full tilt: twice as far is no faster
-    CHECK(fabsf(len(tiltAccel(gravityFor(FULL_MG + 5, 0, n), n)) - ACCEL_FULL) < 0.5f);
-    const Vec d = tiltAccel(gravityFor(-700, 700, n), n);
-    CHECK(near(len(d), ACCEL_FULL) && fabsf(d.x + d.y) < 3);
+static void tiltFromGrip(Grav n) {
+  // holding the device the way it was calibrated is no tilt at all
+  CHECK(near(len(tiltAccel(n, n)), 0));
+  // every test input is a real 1 g reading
+  for (int t = -900; t <= 900; t += 150) {
+    CHECK(fabsf(mag(gravityFor(t, 0, n)) - 1000) < 2 && fabsf(mag(gravityFor(0, t, n)) - 1000) < 2);
   }
+  // the dead zone: up to DEAD_MG away from neutral, in any direction, nothing
+  CHECK(near(len(tiltAccel(gravityFor(DEAD_MG - 3, 0, n), n)), 0));
+  CHECK(near(len(tiltAccel(gravityFor(-58, 58, n), n)), 0));   // 82 mg diagonally
+  // past it, it grows with the tilt, in the tilt's direction, the same both ways (leaning forward or back)
+  const int mid = (DEAD_MG + FULL_MG) / 2;
+  const Vec up = tiltAccel(gravityFor(0, -mid, n), n), down = tiltAccel(gravityFor(0, mid, n), n);
+  CHECK(fabsf(up.x) < 3 && up.y < 0 && fabsf(-up.y - ACCEL_FULL / 2) < 3);
+  CHECK(fabsf(down.x) < 3 && fabsf(down.y + up.y) < 3);
+  const Vec right = tiltAccel(gravityFor(200, 0, n), n);
+  CHECK(right.x > 0 && fabsf(right.y) < 3 && right.x < ACCEL_FULL);
+  // clamped at full tilt: twice as far is no faster
+  CHECK(fabsf(len(tiltAccel(gravityFor(FULL_MG + 5, 0, n), n)) - ACCEL_FULL) < 0.5f);
+  const Vec d = tiltAccel(gravityFor(-700, 700, n), n);
+  CHECK(near(len(d), ACCEL_FULL) && fabsf(d.x + d.y) < 3);
+}
+static void tiltAsHeld() {
   // held upright, the way the kid moves it: leaning back rolls the ball up, leaning forward rolls it down, turning it
   // like a steering wheel rolls it sideways (30 and 20 degrees: full tilt, well past the dead zone)
   CHECK(tiltAccel({0, 866, -500}, UPRIGHT).y < -ACCEL_FULL + 1 && tiltAccel({0, 866, 500}, UPRIGHT).y > ACCEL_FULL - 1);
@@ -84,6 +83,11 @@ static void tiltMapping() {
   CHECK(fabsf(up.y + 342) < 3 && fabsf(up.x) < 3 && fabsf(down.y - 342) < 3 && fabsf(down.x) < 3);
   CHECK(fabsf(right.x - 242) < 3 && fabsf(right.y) < 0.2f * right.x);
   CHECK(tiltAccel(away, LEANED).y < 0 && tiltAccel(toward, LEANED).y > 0 && tiltAccel(rightDown, LEANED).x > 0);
+}
+static void tiltMapping() {
+  static const Grav HOLDS[] = {FLAT, LEANED, UPRIGHT, FACE_DOWN, {500, 500, -707}};
+  for (Grav n : HOLDS) tiltFromGrip(n);
+  tiltAsHeld();
 }
 
 // A made-up level for the rules: one post-sized peg (the thinnest thing on any tray) in the middle.
