@@ -9,6 +9,7 @@
 //                            | tilt X Y Z | shake | perf
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
 // few frames, perf prints the average update and render time per frame since the last perf.
+#include <assert.h>
 #include <dirent.h>
 #include <math.h>
 #include <stdio.h>
@@ -20,6 +21,7 @@
 #include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "gfx565.h"
+#include "launcher.h"
 #include "shell.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
@@ -64,7 +66,14 @@ static void wipe() {   // every namespace, every key: all the .sav files
   }
   closedir(d);
 }
-static void boot() { g_shell.begin(g_store, APPS, (int)(sizeof APPS / sizeof APPS[0])); }
+static void boot() {
+  const int n = (int)(sizeof APPS / sizeof APPS[0]);
+  for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
+    const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
+    assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
+  }
+  g_shell.begin(g_store, APPS, n);
+}
 static void reset() { wipe(); boot(); }
 
 // Physical pixel (x, y) of the panel as RGB888: the indexed frame upscaled 3x through the tint's palette, or the RGB565

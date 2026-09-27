@@ -3,7 +3,6 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
-#include "launcher.h"
 #include "profiles.h"
 #include "ui.h"
 
@@ -79,7 +78,7 @@ class Shell {
   void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
-  bool muteTapped();   // draws the launcher's mute button too
+  bool muteButton();   // draws the launcher's mute button; true on a tap
   void updateRest(); void drawRest();
   void updateApp(); void drawApp();
 };

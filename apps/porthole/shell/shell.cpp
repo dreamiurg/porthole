@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include "launcher.h"
 #include "shell_sprites.h"
 
 using namespace gfx;
@@ -313,12 +314,13 @@ void Shell::drawDelete() {
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
 // The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
 using launcher::HEADER;
-bool Shell::muteTapped() {
+bool Shell::muteButton() {
   return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
-  if (muteTapped()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
+  if (page_ >= launcher::pages(nApps_)) page_ = 0;
+  if (muteButton()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
   if (page_ > 0 && in_.tapIn(l.x, l.y, l.w, l.h)) page_--;
   else if (page_ + 1 < launcher::pages(nApps_) && in_.tapIn(r.x, r.y, r.w, r.h)) page_++;
@@ -334,11 +336,12 @@ void Shell::drawLauncher() {
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 4, HEADER.y + 2);
   text(HEADER.x + 28, HEADER.y + 8, rec().name, C_DKBROWN);
+  if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
   if (page_ > 0) drawPageArrow(false);
   if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
-  muteTapped();
+  muteButton();
   ui::drawBack();
 }
 void Shell::drawAppTile(int k, int i, int m) {
@@ -346,11 +349,8 @@ void Shell::drawAppTile(int k, int i, int m) {
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
   ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-  const int lines = launcher::twoLines(nApps_) ? 2 : 1;   // wrapped to the narrowest line: a side name's second is shortest
-  int w = launcher::nameLine(i, m, 0).w;
-  if (lines == 2 && launcher::nameLine(i, m, 1).w < w) w = launcher::nameLine(i, m, 1).w;
-  char l[2][40]; const int n = wrap(apps_[k]->name(), w, l, lines);
-  for (int j = 0; j < n; j++) textCenteredShadow(b.x + b.w / 2, launcher::nameLine(i, m, j).y, l[j], C_NAVY, C_WHITE);
+  const launcher::Name nm = launcher::name(apps_[k]->name(), i, m, nApps_);   // the sim asserts nm.fits for every game
+  for (int j = 0; j < nm.lines; j++) textShadow(nm.at[j].x, nm.at[j].y, nm.text[j], C_NAVY, C_WHITE);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
