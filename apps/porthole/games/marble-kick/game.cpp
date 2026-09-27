@@ -91,13 +91,13 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 // The kid holds the device the way they like and taps: that is level from now on.
 void Game::updateCalibrate() {
   if (!in_.tapInCircle(GO_HX, GO_HY, GO_HR)) return;
-  neutralX_ = in_.gx; neutralY_ = in_.gy;
+  neutral_ = {in_.gx, in_.gy, in_.gz};
   play(level_);
 }
 // Fixed substeps (tune.h), the tilt as it is this frame. Taps do nothing here: a hand on the case may brush the glass.
 void Game::updatePlay(uint32_t dt) {
   stepMs_ += dt > MAX_FRAME_MS ? MAX_FRAME_MS : dt;
-  const Vec a = tiltAccel(in_.gx, in_.gy, neutralX_, neutralY_);
+  const Vec a = tiltAccel({in_.gx, in_.gy, in_.gz}, neutral_);
   for (; stepMs_ >= STEP_MS && !ball_.goal; stepMs_ -= STEP_MS) step(ball_, a);
   if (!ball_.goal) return;
   if (save_.level < level_ + 1) { save_.level = (uint8_t)(level_ + 1); dirty_ = true; }
@@ -198,16 +198,16 @@ const char* Game::screenName() const {
   return N[screen_];
 }
 void Game::debugPrint() {
-  printf("[marblekick level=%d reached=%u x=%d y=%d speed=%d goal=%d neutralX=%d neutralY=%d]\n", level_ + 1,
+  printf("[marblekick level=%d reached=%u x=%d y=%d speed=%d goal=%d neutralX=%d neutralY=%d neutralZ=%d]\n", level_ + 1,
          (unsigned)save_.level, (int)lroundf(ball_.p.x), (int)lroundf(ball_.p.y),
-         (int)lroundf(sqrtf(ball_.v.x * ball_.v.x + ball_.v.y * ball_.v.y)), ball_.goal, neutralX_, neutralY_);
+         (int)lroundf(sqrtf(ball_.v.x * ball_.v.x + ball_.v.y * ball_.v.y)), ball_.goal, neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }
 void Game::debugCmd(const char* cmd) {
   if (strncmp(cmd, "level", 5)) return;
   const int n = atoi(cmd + 5);
   if (n < 1 || n > NUM_LEVELS) return;
-  neutralX_ = in_.gx; neutralY_ = in_.gy;
+  neutral_ = {in_.gx, in_.gy, in_.gz};
   play(n - 1);
 }
 }  // namespace marble

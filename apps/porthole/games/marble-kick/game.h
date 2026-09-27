@@ -41,7 +41,7 @@ class Game : public App {
   ui::FreshGate gate_;            // every page change ignores touches for a moment (os/ui.h)
   Screen screen_ = SC_CALIBRATE;
   int level_ = 0;                 // the level on the tray (index into LEVELS)
-  int neutralX_ = 0, neutralY_ = 1000;   // gravity as the kid held the device on the Calibrate page
+  Grav neutral_ = {0, 0, -1000};  // gravity as the kid held the device on the Calibrate page
   Ball ball_{};
   uint32_t stepMs_ = 0;           // time not yet simulated, under one STEP_MS
   // What each of the panel's two buffers holds (os/app.h): this page, with its moving part drawn at `moving`. A
