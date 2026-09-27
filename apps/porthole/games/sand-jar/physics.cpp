@@ -12,9 +12,9 @@ constexpr float LEN[8] = {1, SQ2, 1, SQ2, 1, SQ2, 1, SQ2};
 // The board's FPU has no divide or square root (each is a ~100-cycle library call): the per-grain paths multiply by
 // these instead.
 constexpr float INV_LEN[8] = {1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2, 1, 1 / SQ2};
-constexpr float INV_STEPS[5] = {0, 1, 1.0f / 2, 1.0f / 3, 1.0f / 4};   // travel's sub-steps (at most ceil(3.6 * F) = 3)
+constexpr float INV_STEPS[8] = {0, 1, 1.0f / 2, 1.0f / 3, 1.0f / 4, 1.0f / 5, 1.0f / 6, 1.0f / 7};   // travel's sub-steps (at most ceil(9 * F) = 6)
 constexpr float F = 2.0f / 3;          // the prototype's speeds are in its 2 px grains; ours are 3 px
-constexpr float GS = 0.15f * F;        // speed 1 g adds a step
+constexpr float GS = 1.2f * F;        // speed 1 g adds a step
 constexpr float RC = G / 2 - 1.5f;     // the glass's radius in cells
 
 // Per kind, the prototype's PARAM: share of gravity (bubbles rise), drag a step, top speed (2 px grains a step), speed
@@ -22,8 +22,8 @@ constexpr float RC = G / 2 - 1.5f;     // the glass's radius in cells
 // roll down a diagonal when stopped, cells a liquid spreads along the level line, random jiggle. Nothing bounces.
 struct Param { float grav, drag, vmax, fric, minDot, slide; int spread; float jit; };
 constexpr Param PARAM[3] = {
-  {1.0f, 0.996f, 3.4f, SAND_FRIC, 0.3f, SAND_SLIDE, 0, 0},
-  {1.0f, 0.992f, 3.6f, 0.97f, -0.05f, 1.0f, 6, 0.015f},
+  {1.0f, 0.996f, 9.0f, SAND_FRIC, 0.3f, SAND_SLIDE, 0, 0},
+  {1.0f, 0.992f, 9.0f, 0.97f, -0.05f, 1.0f, 6, 0.015f},
   {-0.35f, 0.9f, 0.8f, 0, 1, 0, 0, 0.25f},
 };
 
