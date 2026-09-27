@@ -66,8 +66,6 @@ static const uint8_t ST7701_INIT[] = {
   0xFF,5,0x77,0x01,0x00,0x00,0x13, 0xEF,1,0x08,
   0xFF,5,0x77,0x01,0x00,0x00,0x00, 0x36,1,0x00, 0x3A,1,0x66,
 };
-static void rgbPanelOnCore0();
-static void rgbPanelStart();
 static void lcdInitPanel() {
   spi_bus_config_t bus = {}; bus.mosi_io_num = PIN_LCD_SPI_MOSI; bus.miso_io_num = -1; bus.sclk_io_num = PIN_LCD_SPI_CLK;
   bus.quadwp_io_num = -1; bus.quadhd_io_num = -1; bus.max_transfer_sz = 64;
@@ -85,20 +83,7 @@ static void lcdInitPanel() {
   lcdCmd(0x11); delay(120); lcdCmd(0x20); delay(20); lcdCmd(0x29); delay(20);
   expSet(EX_LCD_CS, true); delay(10);
   spi_bus_remove_device(g_spi); spi_bus_free(SPI2_HOST); g_spi = nullptr;
-  rgbPanelOnCore0();
-}
 
-// The RGB panel's interrupts refill its bounce buffers from the PSRAM frame, 460 KB 58 times a second, on the core that
-// installed them. From loop()'s core 1 they cost it ~15% (Sand Jar's physics, measured); core 0 is otherwise idle (no
-// WiFi), so the panel lives there.
-static void rgbPanelOnCore0() {
-  TaskHandle_t caller = xTaskGetCurrentTaskHandle();
-  auto run = [](void* arg) { rgbPanelStart(); xTaskNotifyGive((TaskHandle_t)arg); vTaskDelete(nullptr); };
-  xTaskCreatePinnedToCore(run, "lcd", 4096, caller, 5, nullptr, 0);
-  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-}
-
-static void rgbPanelStart() {
   esp_lcd_rgb_panel_config_t cfg = {};
   cfg.clk_src = LCD_CLK_SRC_DEFAULT;
   cfg.timings.pclk_hz = 16 * 1000 * 1000;
