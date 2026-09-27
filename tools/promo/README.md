@@ -53,6 +53,7 @@ blender -b -P tools/promo/scene.py -- --stl $STL --frames $FR/biscuit --smooth -
 | `--look` | Table | Case | Light |
 | --- | --- | --- | --- |
 | `walnut-night` | dark wood | charcoal | warm, low, firelit |
+| `walnut-ivory` | dark wood | ivory | warm, low, firelit |
 | `concrete-sage` | concrete | sage green, matte | soft studio |
 | `clear-slate` | worn concrete | frosted clear PETG | crisp studio |
 | `oak-day` | oak veneer | warm white | bright soft daylight |
@@ -62,9 +63,17 @@ blender -b -P tools/promo/scene.py -- --stl $STL --frames $FR/biscuit --smooth -
 | `hero` | high, nearly top-down: the screen readable |
 | `macro` | low at the side: USB-C, the power slider, 0.2 mm layer lines |
 | `orbit` | three-quarter; with `--anim`, a slow orbit and push-in over the clip |
-| `exploded` | ring, board, plate and cup pulled apart |
+| `exploded` | ring, board, plate, cell and cup pulled apart |
+| `assembly` | 16 s: each part lifts off in turn with a caption, then it all goes back together |
 
-About 10-20 s a frame on an M3 Max at 96 samples. `--from N` resumes an interrupted `--anim`. The screen is an
+The assembly clip writes its captions next to the frames; burn them in and encode:
+
+```bash
+blender -b -P tools/promo/scene.py -- --stl $STL --frames $FR/timelapse --look walnut-ivory --shot assembly --anim --out asm/f####
+python3 tools/promo/caption.py asm asm/f_captions.txt assembly.mp4
+```
+
+`--eevee --res 540` renders a quick preview of any shot. Cycles takes about 10-30 s a frame on an M3 Max at 96 samples (the board's 517 parts and clear plastic are the slow cases). `--from N` resumes an interrupted `--anim`. The screen is an
 emissive disc textured with the frames (nearest-neighbour for Pets Club, `--smooth` for Biscuit's native art).
 
 With Blender open, the official Blender Lab MCP (`claude mcp get blender`) lets an agent inspect and tweak the

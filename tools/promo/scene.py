@@ -34,6 +34,7 @@ LOOKS: dict[str, dict] = {  # values are mixed: numbers, colours, names
     "walnut-night": dict(
         table="dark_wood", tile=4, hdri="fireplace", sky=0.12, case=(0.035, 0.035, 0.04), rough=0.45, key=(6, (1.0, 0.72, 0.45)), fill=0.6, rim=5, screen=1.6
     ),
+    "walnut-ivory": dict(table="dark_wood", tile=4, hdri="fireplace", sky=0.14, case=(0.74, 0.70, 0.62), rough=0.5, key=(9, (1.0, 0.76, 0.52)), fill=0.8, rim=6, screen=1.5),
     "concrete-sage": dict(
         table="concrete_floor_02", tile=3, hdri="studio_small_08", sky=0.35, case=(0.26, 0.34, 0.26), rough=0.62, key=(22, (1.0, 0.97, 0.92)), fill=4, rim=8, screen=1.1
     ),
@@ -56,7 +57,7 @@ a = argparse.ArgumentParser()
 a.add_argument("--stl", required=True)
 a.add_argument("--frames", required=True)
 a.add_argument("--look", default="oak-day", choices=sorted(LOOKS))
-a.add_argument("--shot", default="orbit", choices=("hero", "macro", "orbit", "exploded"))
+a.add_argument("--shot", default="orbit", choices=("hero", "macro", "orbit", "exploded", "assembly"))
 a.add_argument("--frame", type=int, default=1)
 a.add_argument("--anim", action="store_true")
 a.add_argument("--from", dest="start", type=int, default=1)  # resume an interrupted --anim
@@ -64,6 +65,7 @@ a.add_argument("--out", required=True)
 a.add_argument("--samples", type=int, default=96)
 a.add_argument("--res", type=int, default=1080)
 a.add_argument("--smooth", action="store_true")  # Biscuit: native 480 art, linear filtering
+a.add_argument("--eevee", action="store_true")  # fast previews
 args = a.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 LOOK = LOOKS[args.look]
 
@@ -134,6 +136,17 @@ for m in bpy.data.materials:  # the STEP gives flat colours only: turn them into
     elif max(r, g, bl) - min(r, g, bl) < 0.03 and 0.5 <= r <= 0.9:  # neutral greys: tin, shields, pins
         b.inputs["Metallic"].default_value, b.inputs["Roughness"].default_value = 1.0, 0.3
 
+# ---- the cell: EEMB LP103454 (34.5 x 56 x 10.3 mm) where the case's pocket holds it --------------------------
+bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 1.2 * MM, -13.3 * MM))
+cell = bpy.context.object
+cell.name, cell.scale = "cell", (34.5 * MM, 56 * MM, 10.3 * MM)
+bpy.ops.object.transform_apply(scale=True)
+cell.modifiers.new("round", "BEVEL").width = 1.5 * MM
+cell.modifiers["round"].segments = 4
+pouch, _, _ = principled("pouch", **{"Base Color": (0.72, 0.73, 0.75, 1), "Metallic": 0.9, "Roughness": 0.32})
+cell.data.materials.append(pouch)
+bpy.ops.object.shade_smooth()
+
 # ---- screen: emission under a glossy coat, just above the panel's own glass ----------------------------------
 bm = bmesh.new()
 bmesh.ops.create_circle(bm, cap_ends=True, radius=GLASS_R - 0.2 * MM, segments=256)
@@ -159,6 +172,7 @@ tex.interpolation = "Linear" if args.smooth else "Closest"  # Pets Club pixels s
 tex.extension = "CLIP"  # black outside the active area
 tex.image_user.frame_duration = len(files)
 tex.image_user.use_auto_refresh = True
+tex.image_user.use_cyclic = True  # loops when the shot outlasts the frames
 emi = nt.nodes.new("ShaderNodeEmission")
 emi.inputs["Strength"].default_value = LOOK["screen"]
 coat = nt.nodes.new("ShaderNodeBsdfPrincipled")
@@ -175,8 +189,44 @@ screen.parent, screen.matrix_parent_inverse = board, board.matrix_world.inverted
 
 # ---- exploded: the stack pulled apart along Z, in assembly order ---------------------------------------------
 if args.shot == "exploded":
-    for obj, dz in ((case["ring"], 40), (board, 20), (case["plate"], 4), (case["slider"], -12), (case["cup"], -12)):
+    for obj, dz in ((case["ring"], 40), (board, 20), (case["plate"], 4), (case["slider"], -12), (case["cup"], -12), (cell, -12)):
         obj.location.z += dz * MM
+# ---- assembly: the education-video take-apart and put-back, top part first (frames at 25 fps) ------------------
+# (object, lift mm, caption while it moves); the slider slides out along its own angle instead of up.
+SLIDE_ANG = math.radians(-11.85)
+STEPS = [
+    (case["ring"], 72, "Ring: holds the round glass in place"),
+    (board, 52, 'Waveshare ESP32-S3 board, 2.1" touch screen'),
+    (case["plate"], 36, "Plate: screws to the board's four standoffs"),
+    (cell, 22, "A 3.7 V LiPo cell"),
+    (case["slider"], 0, "Power slider: moves the board's own switch"),
+]
+CAPTIONS = []  # (first frame, last frame, text)
+ASSEMBLY_END = 400
+
+
+def move(obj, lift, frame, dur, out):
+    """Keyframe obj from where it sits (out=False) to lifted (out=True), or back, over [frame, frame + dur]."""
+    rest = obj.location.copy()
+    away = rest + (Vector((math.cos(SLIDE_ANG), math.sin(SLIDE_ANG), 0)) * 14 * MM if lift == 0 else Vector((0, 0, lift * MM)))
+    for f, at in ((frame, rest if out else away), (frame + dur, away if out else rest)):
+        obj.location = at
+        obj.keyframe_insert("location", frame=f)
+    obj.location = rest
+
+
+if args.shot == "assembly":
+    for i, (obj, lift, text) in enumerate(STEPS):  # apart: one part a second
+        move(obj, lift, 20 + 30 * i, 24, True)
+        CAPTIONS.append((20 + 30 * i, 19 + 30 * (i + 1), text))
+    CAPTIONS.append((170, 239, "Four printed parts, one board, one cell"))
+    for i, (obj, lift, _) in enumerate(reversed(STEPS)):  # back together, a little quicker
+        move(obj, lift, 240 + 22 * i, 20, False)
+    CAPTIONS.append((240, 347, "Back together: three long M2 screws clamp the stack"))
+    CAPTIONS.append((348, ASSEMBLY_END, "No soldering. Print, screw, play."))
+    with open(os.path.splitext(args.out.replace("#", ""))[0].rstrip("/_") + "_captions.txt", "w") as fh:
+        fh.writelines(f"{a_}\t{b_}\t{t}\n" for a_, b_, t in CAPTIONS)
+
 bpy.context.view_layer.update()
 bottom = min((o.matrix_world @ v.co).z for o in case.values() for v in o.data.vertices)
 
@@ -248,17 +298,18 @@ SHOTS = {  # target, camera, lens, f-stop
     "macro": (polar(-28, R_OUT, -5 * MM), polar(-28, 0.20, 0.012), 100, 16),  # the slider, a USB-C port, layer lines
     "orbit": ((0, 0, GLASS_TOP), Vector((0.06, -0.17, 0.24)), 85, 11),  # three-quarter, slow orbit and push-in
     "exploded": ((0, 0, 12 * MM), polar(-60, 0.30, 0.09), 70, 11),  # side-on three-quarter, the stack apart
+    "assembly": ((0, 0, 26 * MM), polar(-70, 0.24, 0.20), 60, 11),  # tall enough for the stack at its widest
 }
 target.location, cam.location, cam.data.lens, cam.data.dof.aperture_fstop = SHOTS[args.shot]
-if args.shot == "orbit":
-    last = len(files)
-    for frame, turn, scale in ((1, -12, 1.08), (last, 10, 0.92)):
+if args.shot in ("orbit", "assembly"):
+    last = ASSEMBLY_END if args.shot == "assembly" else len(files)
+    for frame, turn, scale in ((1, -12, 1.08), (last, 10, 0.92) if args.shot == "orbit" else (last, 18, 1.0)):
         rig.rotation_euler.z, rig.scale = math.radians(turn), (scale,) * 3
         rig.keyframe_insert("rotation_euler", frame=frame)
         rig.keyframe_insert("scale", frame=frame)
 
 # ---- render --------------------------------------------------------------------------------------------------
-sc.render.engine = "CYCLES"
+sc.render.engine = "BLENDER_EEVEE" if args.eevee else "CYCLES"
 prefs = bpy.context.preferences.addons["cycles"].preferences
 prefs.compute_device_type = "METAL"
 prefs.get_devices()
@@ -270,7 +321,7 @@ sc.cycles.use_denoising = True
 sc.render.resolution_x = sc.render.resolution_y = args.res
 sc.render.fps = 25
 sc.view_settings.view_transform = "Khronos PBR Neutral"  # true base colours, soft highlight roll-off
-sc.frame_start, sc.frame_end = 1, len(files)
+sc.frame_start, sc.frame_end = 1, ASSEMBLY_END if args.shot == "assembly" else len(files)
 sc.render.filepath = args.out
 if args.anim:
     sc.frame_start = args.start
