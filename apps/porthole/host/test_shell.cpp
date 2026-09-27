@@ -1,5 +1,6 @@
 // Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
-// migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget, daily cap.
+// migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget, daily cap, what counts
+// as activity for the idle rule, and the launcher's layout for every number of games.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
@@ -7,7 +8,10 @@
 #include "games/biscuit/pet.h"
 #include "games/pets-club/pet.h"
 #include "crc32.h"
+#include "input.h"
+#include "launcher.h"
 #include "profiles.h"
+#include "shell.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
 // (saves and erases) every further write is dropped. `last` is the most recent write that landed.
@@ -410,6 +414,32 @@ static void idleNotCounted() {
   assert(shell::play(r, t += 1, 1, 2, true));
 }
 
+// A tilt game is played without a touch: moving the board is activity, so two minutes of tilting count toward both
+// budgets like touch play. A board at rest (sensor noise) or drifting slowly is idle after IDLE_MS, as before.
+static void tiltIsActivity() {
+  auto run = [](int seconds, int16_t gx, int16_t noise, ActivityTracker& a, shell::Record& r, uint32_t& t, uint32_t& ms) {
+    Input in; in.gy = 1000; in.gz = 0;   // held upright
+    for (int s = 0; s < seconds; s++) {
+      for (int f = 0; f < 25; f++, ms += 40) {   // 25 frames a second, touch never down
+        in.gx = (int16_t)(gx * ((s / 10) & 1) + (f & 1 ? noise : -noise));   // tilts to gx and back every 10 s
+        a.step(in, false, ms);
+      }
+      shell::play(r, t += 1, 1, 2, a.idleMs(ms) >= shell::IDLE_MS);
+    }
+  };
+  ActivityTracker a; shell::Record r = draft("Sam", 8, 0);
+  uint32_t t = NOW, ms = 0;
+  run(120, 250, 15, a, r, t, ms);                            // tilting: every second counts
+  assert(r.dayPlaySec == 120 && r.playSec == 120);
+  run(120, 0, 15, a, r, t, ms);                              // set down, 30 mg of jitter: only the first minute counts
+  assert(r.dayPlaySec >= 178 && r.dayPlaySec <= 180 && r.playSec == r.dayPlaySec);
+  shell::Record d = draft("Kai", 6, 0); ActivityTracker b; ms = 0;
+  run(1, 0, 0, b, d, t, ms);
+  Input in; in.gy = 1000; in.gz = 0;
+  for (int f = 0; f < 3000; f++) { in.gx = (int16_t)(f / 20); b.step(in, false, ms += 40); }   // 150 mg over two minutes
+  assert(b.idleMs(ms) >= shell::IDLE_MS);                    // drift is not play (the first frame, from lying flat, was)
+}
+
 // The clock set back never strands anyone: to an earlier day it lifts the cap; within the day the rest still ends
 // at that day's midnight, so it never lasts more than a day.
 static void capClockBack() {
@@ -440,6 +470,147 @@ static void capAfterClockGuess() {
   assert(boot.rec[0].dayPlaySec == 0 && shell::restLeft(boot.rec[0], guess, 2) == 0);
 }
 
+// The launcher for 1..MAX_APPS games: every page's tiles and arrows are whole 24x22 targets a margin inside the glass,
+// every name line keeps off the bezel like the UI audit asks, and nothing touches what it shares the screen with.
+static bool within(const ui::Box& b, int margin) {
+  return gfx::inCircle(b.x, b.y, margin) && gfx::inCircle(b.x + b.w, b.y, margin) && gfx::inCircle(b.x, b.y + b.h, margin) &&
+         gfx::inCircle(b.x + b.w, b.y + b.h, margin);
+}
+static bool target(const ui::Box& b) { return b.w >= 24 && b.h >= 22 && within(b, 2); }   // 8 mm, 2 px off the bezel
+static bool apart(const ui::Box& a, const ui::Box& b, int gap = 2) {   // targets: 2 px between them, the UI audit's spacing
+  return a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y;
+}
+static bool clear(const ui::Box& a, const ui::Box& b) { return apart(a, b, 0); }   // text: no pixel shared
+struct LauncherFixed { int n, count; ui::Box b[5]; };   // the home button, the header, the mute button, the arrows
+static bool offMute(const ui::Box& b, int n) {   // no pixel of b inside the mute button's hit circle
+  const int cx = launcher::MUTE_X, cy = launcher::muteY(n);
+  const int dx = cx < b.x ? b.x - cx : cx > b.x + b.w - 1 ? cx - (b.x + b.w - 1) : 0;
+  const int dy = cy < b.y ? b.y - cy : cy > b.y + b.h - 1 ? cy - (b.y + b.h - 1) : 0;
+  return dx * dx + dy * dy > launcher::MUTE_HIT * launcher::MUTE_HIT;
+}
+static LauncherFixed launcherFixed(int n) {
+  const int h = launcher::MUTE_HIT, p = launcher::pages(n);
+  LauncherFixed fx = {n, p > 1 ? 5 : 3, {{64, -4, 32, 32}, launcher::HEADER, {launcher::MUTE_X - h, launcher::muteY(n) - h, 2 * h, 2 * h},
+                                         launcher::arrow(false), launcher::arrow(true)}};   // ui::back's hit circle first
+  assert((n > 3) == (p > 1));   // arrows only when a row of three is not enough
+  assert(within(fx.b[2], 2));
+  for (int a = 1; a < fx.count; a++) {
+    assert(a < 3 || target(fx.b[a]));
+    for (int b = 0; b < a; b++) assert(apart(fx.b[a], fx.b[b]));
+  }
+  return fx;
+}
+struct LauncherPage { int m, lines; ui::Box tiles[3], names[3][2]; };
+static LauncherPage launcherPage(int n, int pg) {   // one page's tiles and name lines (with their shadow)
+  LauncherPage p = {launcher::count(n, pg), launcher::twoLines(n) ? 2 : 1, {}, {}};
+  const int k0 = launcher::first(n, pg), end = k0 + p.m;
+  assert(p.m >= 1 && p.m <= 3);
+  assert(launcher::pageOf(n, k0) == pg && launcher::pageOf(n, end - 1) == pg);
+  assert(pg + 1 < launcher::pages(n) ? launcher::first(n, pg + 1) == end : end == n);   // each game on one page
+  for (int i = 0; i < p.m; i++) {
+    p.tiles[i] = launcher::tile(i, p.m);
+    const ui::Box mt = launcher::tile(p.m - 1 - i, p.m);
+    assert(mt.x == 160 - p.tiles[i].x - p.tiles[i].w);   // the row mirrors about the middle
+    for (int l = 0; l < p.lines; l++) {
+      const ui::Box b = launcher::nameLine(i, p.m, l), mb = launcher::nameLine(p.m - 1 - i, p.m, l);
+      assert(b.w >= 30 && within(b, 1));   // 30: "Pets" and "Club" each fit a line
+      assert(mb.w == b.w && mb.x == 160 - b.x - b.w);   // a name on the right gets the room of its mirror on the left
+      p.names[i][l] = {b.x, b.y, b.w + 1, b.h + 1};
+    }
+  }
+  return p;
+}
+static void nameClear(const LauncherPage& p, int i, const ui::Box& nl, const LauncherFixed& fx) {
+  for (int f = 0; f < fx.count; f++) assert(f == 2 ? offMute(nl, fx.n) : clear(nl, fx.b[f]));   // two games' names pass the mute's box corner
+  for (int j = 0; j < p.m; j++) {
+    assert(clear(nl, p.tiles[j]));
+    for (int k = 0; k < p.lines && j != i; k++) assert(clear(nl, p.names[j][k]));
+  }
+}
+static void launcherLayout() {
+  const ui::Box two = launcher::tile(0, 2), three = launcher::tile(0, 3);   // two keep today's look; three, the first row of three
+  assert(two.x == 24 && two.w == 48 && launcher::tile(0, 1).x == 56 && three.x == 8 && three.w == 44 && launcher::muteY(2) == 128);
+  assert(launcher::pages(0) == 1 && launcher::count(0, 0) == 0 && launcher::count(4, 2) == 0);   // no games; past the last page
+  for (int n = 1; n <= MAX_APPS; n++) {
+    const LauncherFixed fx = launcherFixed(n);
+    for (int pg = 0; pg < launcher::pages(n); pg++) {
+      const LauncherPage p = launcherPage(n, pg);
+      for (int i = 0; i < p.m; i++) {
+        assert(target(p.tiles[i]));
+        for (int f = 0; f < fx.count; f++) assert(apart(p.tiles[i], fx.b[f]));
+        for (int j = 0; j < i; j++) assert(apart(p.tiles[i], p.tiles[j]));
+        for (int l = 0; l < p.lines; l++) nameClear(p, i, p.names[i][l], fx);
+      }
+    }
+  }
+}
+
+// Names as the launcher draws them: whole, and every line a pixel off the bezel, wherever a game may land.
+static bool nameOk(const char* s, int i, int m, int n) {
+  const launcher::Name nm = launcher::name(s, i, m, n);
+  for (int l = 0; l < nm.lines; l++) assert(!nm.fits || within(nm.at[l], 1));
+  return nm.fits;
+}
+static void launcherNames() {
+  static const char* const THREE[3] = {"Pets Club", "Biscuit", "Marble Kick"};   // the football branch's three
+  for (int i = 0; i < 3; i++) assert(nameOk(THREE[i], i, 3, 3));
+  const launcher::Name mk = launcher::name("Marble Kick", 2, 3, 3);
+  assert(mk.lines == 2 && !strcmp(mk.text[0], "Marble") && mk.at[0].x == 108 && mk.at[0].w == 43);   // the mirror of x 9
+  static const char* const ANY[] = {"Pets Club", "Sand Jar", "Marble Kick", "Tilt FC"};
+  for (const char* s : ANY) for (int m = 1; m <= 3; m++) for (int i = 0; i < m; i++) assert(nameOk(s, i, m, 6));
+  assert(nameOk("Pets Club", 0, 2, 2) && nameOk("Biscuit", 1, 2, 2));
+  assert(!nameOk("Marble Kick", 0, 2, 2));   // two games have one line: "Kick" would be dropped
+  assert(!nameOk("Football", 0, 3, 3));      // one 53 px word under a side tile would cross the bezel
+}
+
+// Paging through a Shell with five stub games (3 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
+struct StubApp : App {
+  const char* label; int entered = 0; bool home = false;
+  explicit StubApp(const char* n) : label(n) {}
+  const char* name() const override { return label; }
+  const gfx::Sprite& icon() const override { static const uint8_t px[1] = {C_T}; static const gfx::Sprite s = {1, 1, px}; return s; }
+  const char* store() const override { return "stub"; }
+  void enter(const AppEnter&) override { entered++; }
+  void update(uint32_t, uint32_t, const Input&) override {}
+  void render() override {}
+  Tint tint() const override { return TINT_DAY; }
+  bool asleep() const override { return false; }
+  bool soundOn(uint32_t) override { return false; }
+  bool takeSave(const void**, size_t*, bool) override { return false; }
+  bool wantsHome() override { const bool h = home; home = false; return h; }
+  void leave() override {}
+  const char* screenName() const override { return "stub"; }
+  void debugPrint() override {}
+  void debugCmd(const char*) override {}
+};
+static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(NOW, ms, in); sh.render(); }   // past FreshGate
+static void tapAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // the middle of b
+  Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  frame(sh, ms, in);
+}
+static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenName(), screen); }
+static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
+static void launcherPaging() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[5] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five")};
+  App* const list[5] = {&a[0], &a[1], &a[2], &a[3], &a[4]};
+  sh.begin(st, list, 5); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, "");
+  const ui::Box l = launcher::arrow(false), r = launcher::arrow(true), t2 = launcher::tile(0, 2), t3 = launcher::tile(0, 3);
+  assert(on(sh, "launcher"));
+  tapAt(sh, ms, l);                                   // page 0: no page to the left, nothing there
+  tapAt(sh, ms, t3); assert(a[0].entered == 1); home(sh, ms, a[0]);
+  tapAt(sh, ms, r);                                   // page 1: games 3 and 4
+  tapAt(sh, ms, r);                                   // the last page: no right arrow
+  tapAt(sh, ms, t2); assert(a[3].entered == 1 && on(sh, "stub")); home(sh, ms, a[3]);
+  tapAt(sh, ms, t2); assert(a[3].entered == 2); home(sh, ms, a[3]);   // back from a game: still its page
+  tapAt(sh, ms, l); tapAt(sh, ms, t3); assert(a[0].entered == 2); home(sh, ms, a[0]);
+  tapAt(sh, ms, r);                                   // page 1, then a new pick from the picker lands on page 0
+  tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
+  tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // the picker's first row
+  tapAt(sh, ms, t3); assert(a[0].entered == 3 && a[3].entered == 2);
+}
+
 int main() {
   records();
   pinCodes();
@@ -462,8 +633,12 @@ int main() {
   recordV1();
   dailyCap();
   idleNotCounted();
+  tiltIsActivity();
   capClockBack();
   capAfterClockGuess();
+  launcherLayout();
+  launcherNames();
+  launcherPaging();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
 }

@@ -38,6 +38,7 @@ class Shell {
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
+  int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
@@ -45,7 +46,7 @@ class Shell {
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
-  uint32_t lastTouchMs_ = 0;                       // idle (shell::IDLE_MS without a touch) is not play time
+  ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;
   Input in_{};
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
@@ -76,7 +77,8 @@ class Shell {
   void updateAge(); void drawAge();
   void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
-  void updateLauncher(); void drawLauncher();
+  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
+  bool muteButton();   // draws the launcher's mute button; true on a tap
   void updateRest(); void drawRest();
   void updateApp(); void drawApp();
 };
