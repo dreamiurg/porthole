@@ -197,6 +197,7 @@ tex.extension = "CLIP"  # black outside the active area
 tex.image_user.frame_duration = len(files)
 tex.image_user.use_auto_refresh = True
 tex.image_user.use_cyclic = True  # loops when the shot outlasts the frames
+tex.image_user.frame_offset = -1  # film.py numbers from f00000; scene frame 1 must show it, not a missing f<N>
 emi = nt.nodes.new("ShaderNodeEmission")
 emi.inputs["Strength"].default_value = LOOK["screen"] * 2 ** (-args.exposure / 2)  # readable in a darker room, without glowing
 coat = nt.nodes.new("ShaderNodeBsdfPrincipled")
