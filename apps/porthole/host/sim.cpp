@@ -133,7 +133,7 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
 }
 // Clamped to the sensor's +-4 g full scale: nothing past it ever reaches Input on the device.
 static int16_t mg(const char* s) { int v = atoi(s); return (int16_t)(v < -4000 ? -4000 : v > 4000 ? 4000 : v); }
-static void tilt(const char* x, const char* y, const char* z) { g_gravity[0] = mg(x); g_gravity[1] = mg(y); g_gravity[2] = mg(z); }
+static void setTilt(const char* x, const char* y, const char* z) { g_gravity[0] = mg(x); g_gravity[1] = mg(y); g_gravity[2] = mg(z); }
 static void perf() {
   const int n = g_perfFrames ? g_perfFrames : 1;
   printf("perf frames=%d update=%.3fms render=%.3fms\n", g_perfFrames, g_updateMs / n, g_renderMs / n);
@@ -172,7 +172,7 @@ static void runServe() {
     else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
     else if (!strcmp(cmd, "frame")) writePPM();
     else if (!strcmp(cmd, "dbg")) { g_shell.debugCmd(a); puts("ok"); }
-    else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); tilt(a, b, c); puts("ok"); }
+    else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
     else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
     else if (!strcmp(cmd, "perf")) perf();
     else puts("ok");
@@ -263,7 +263,7 @@ static const Named COMMANDS[] = {
   {"echo", [](Finger&, const char* a, const char*, const char*) { puts(a); }},
   {"watch", [](Finger& f, const char* a, const char*, const char*) { watch(atoi(a), f); }},
   {"monkey", [](Finger& f, const char* a, const char* b, const char*) { monkey(atoi(a), (uint32_t)strtoul(b, nullptr, 10)); f.down = false; }},
-  {"tilt", [](Finger&, const char* a, const char* b, const char* c) { tilt(a, b, c); }},
+  {"tilt", [](Finger&, const char* a, const char* b, const char* c) { setTilt(a, b, c); }},
   {"shake", [](Finger& f, const char*, const char*, const char*) { g_shakeFrames = 6; while (g_shakeFrames) step(f.down, f.x, f.y); }},
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
 };

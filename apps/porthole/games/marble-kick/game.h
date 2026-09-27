@@ -48,9 +48,7 @@ class Game : public App {
   uint32_t stepMs_ = 0;           // time not yet simulated, under one STEP_MS
   // Calibrate: the last frames' gravity (the neutral is their steady average), and the dish: a small ball rolling on
   // the tilt away from `ref_`, which follows gravity over about a second, so holding still settles it in the middle.
-  struct Sample { int16_t x, y, z; uint32_t ms; };
-  Sample samples_[24] = {};
-  int sampleCount_ = 0;
+  tilt::Steady steady_;
   float ref_[3] = {0, 0, -1000};
   bool refSet_ = false, starting_ = false;   // starting_: the button was pressed, play starts once held steady
   Vec dish_{}, dishV_{};
@@ -67,8 +65,6 @@ class Game : public App {
 
   void go(Screen s);
   void play(int level);
-  void remember();                // this frame's gravity, for the steady neutral
-  bool steady(Grav* neutral) const;
   bool pressing(int cx, int cy, int r) const;   // the finger went down in this logical circle and is still in it
   bool pressingBox(int cx, int cy, int half) const;
   bool goPressed() const;

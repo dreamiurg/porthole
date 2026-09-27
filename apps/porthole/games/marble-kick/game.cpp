@@ -19,8 +19,6 @@ constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics 
 // The level's coin sits on the rim at the lower right, where no goal ever turns (they stay between -45 and 60 degrees).
 constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 392, COIN_Y = 376;
 constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves, however the finger wobbles on it
-constexpr uint32_t STEADY_MS = 300;     // the neutral is the average gravity over this long
-constexpr int STEADY_MIN = 800, STEADY_MAX = 1200;   // milli-g: a reading outside is a jolt, not a way of holding it
 constexpr float DISH_GAIN = 1.2f, DISH_SPRING = 9, DISH_DAMP = 3.5f;   // the dish: 1/s^2, 1/s
 
 // The launcher icon, in the shell's indexed palette (the launcher is the shell's): the tray from above, the goal's net
@@ -79,7 +77,7 @@ void Game::enter(const AppEnter& e) {
   level_ = save_.level < NUM_LEVELS ? save_.level : 0;
   dirty_ = wantsHome_ = false;
   ball_ = start(LEVELS[level_]);
-  sampleCount_ = 0; refSet_ = false; dish_ = dishV_ = {0, 0}; dishMs_ = 0;
+  steady_ = {}; refSet_ = false; dish_ = dishV_ = {0, 0}; dishMs_ = 0;
   go(SC_CALIBRATE);
 }
 
@@ -102,7 +100,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   const uint32_t dt = ms - ms_;
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
-  remember();
+  steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   if (leaving()) { wantsHome_ = true; return; }
   switch (screen_) {
     case SC_CALIBRATE: updateCalibrate(dt); break;
@@ -132,26 +130,6 @@ float Game::hold() const {
   return in_.heldMs >= HOLD_MS ? 1 : (float)in_.heldMs / HOLD_MS;
 }
 
-void Game::remember() {
-  samples_[sampleCount_ % 24] = {in_.gx, in_.gy, in_.gz, ms_};
-  sampleCount_++;
-}
-// The neutral: the average gravity of the last STEADY_MS, as long as every reading in it is a plausible 1 g (a
-// jolt or a shake is not a way of holding it; the kid's press then waits until it has passed).
-bool Game::steady(Grav* neutral) const {
-  long sx = 0, sy = 0, sz = 0;
-  int n = 0;
-  for (int i = 0; i < 24 && i < sampleCount_; i++) {
-    const Sample& s = samples_[i];
-    if (ms_ - s.ms > STEADY_MS) continue;
-    const long m2 = (long)s.x * s.x + (long)s.y * s.y + (long)s.z * s.z;
-    if (m2 < (long)STEADY_MIN * STEADY_MIN || m2 > (long)STEADY_MAX * STEADY_MAX) return false;
-    sx += s.x; sy += s.y; sz += s.z; n++;
-  }
-  if (!n) return false;
-  *neutral = {(int)lroundf((float)sx / n), (int)lroundf((float)sy / n), (int)lroundf((float)sz / n)};
-  return true;
-}
 // The dish shows the tilt away from where the device has been held lately: a move rolls its ball the way the game's
 // will, holding still lets it settle in the middle. Pressing the button starts play once the hold is steady.
 void Game::updateCalibrate(uint32_t dt) {
@@ -161,7 +139,7 @@ void Game::updateCalibrate(uint32_t dt) {
   rollDish(dt);
   if (in_.tapInCircle(GO_HX, GO_HY, GO_HR)) starting_ = true;
   Grav n;
-  if (starting_ && steady(&n)) { neutral_ = n; play(level_); }
+  if (starting_ && steady_.get(ms_, &n)) { neutral_ = n; play(level_); }
 }
 void Game::rollDish(uint32_t dt) {
   const Vec a = tiltAccel({in_.gx, in_.gy, in_.gz}, {(int)lroundf(ref_[0]), (int)lroundf(ref_[1]), (int)lroundf(ref_[2])});

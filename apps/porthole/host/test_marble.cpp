@@ -12,6 +12,7 @@
 #include "games/marble-kick/game.h"
 #include "games/marble-kick/physics.h"
 #include "games/marble-kick/save.h"
+#include "host/grip.h"
 
 using namespace marble;
 static int checks = 0;
@@ -21,26 +22,8 @@ static bool lab = false;   // --levels: report every level's checks, fail none (
 static float len(Vec v) { return sqrtf(v.x * v.x + v.y * v.y); }
 static bool near(float a, float b) { return fabsf(a - b) < 0.01f; }
 
-// The ways a kid holds it: lying flat, leaned back 45 degrees, upright (the sim's default hold), and upside down.
-static const Grav FLAT = {0, 0, -1000}, LEANED = {0, 707, -707}, UPRIGHT = {0, 1000, 0}, FACE_DOWN = {0, 0, 1000};
+using namespace grip;
 static const Grav NEUTRALS[] = {FLAT, LEANED, UPRIGHT};
-static float mag(Grav g) { return sqrtf((float)(g.x * g.x + g.y * g.y + g.z * g.z)); }
-
-// The real gravity (1 g, whole milli-g, as the sensor reports it) when the device is tilted by (tx, ty) milli-g away
-// from `neutral`: the tilt as it would be lying flat, turned back by the rotation that lays the neutral flat.
-static Grav gravityFor(int tx, int ty, Grav neutral) {
-  const float n = mag(neutral), ax = neutral.x / n, ay = neutral.y / n, az = neutral.z / n;
-  const float fx = (float)tx, fy = (float)ty, fz = -sqrtf(1e6f - fx * fx - fy * fy);
-  float gx, gy, gz;
-  if (az > 0.9999f) { gx = fx; gy = -fy; gz = -fz; }   // face down: half a turn about x
-  else {   // Rodrigues with v = a x (0,0,-1) = (-ay, ax, 0), c = -az, inverted: g = f - v x f + v x (v x f) / (1 + c)
-    const float vx = -ay, vy = ax, k = 1 / (1 - az);
-    const float cx = vy * fz, cy = -vx * fz, cz = vx * fy - vy * fx;   // v x f
-    const float dx = vy * cz, dy = -vx * cz, dz = vx * cy - vy * cx;   // v x (v x f)
-    gx = fx - cx + dx * k; gy = fy - cy + dy * k; gz = fz - cz + dz * k;
-  }
-  return {(int)lroundf(gx), (int)lroundf(gy), (int)lroundf(gz)};
-}
 
 static void tiltFromGrip(Grav n) {
   // holding the device the way it was calibrated is no tilt at all
@@ -66,24 +49,11 @@ static void tiltFromGrip(Grav n) {
 }
 static void tiltAsHeld() {
   // held upright, the way the kid moves it: leaning back rolls the ball up, leaning forward rolls it down, turning it
-  // like a steering wheel rolls it sideways (30 and 20 degrees: full tilt, well past the dead zone)
+  // like a steering wheel rolls it sideways (30 and 20 degrees: full tilt, well past the dead zone). Which way tilt::from
+  // turns each grip is host/test_tilt.cpp's.
   CHECK(tiltAccel({0, 866, -500}, UPRIGHT).y < -ACCEL_FULL + 1 && tiltAccel({0, 866, 500}, UPRIGHT).y > ACCEL_FULL - 1);
   const Vec wheel = tiltAccel({342, 940, 0}, UPRIGHT);
   CHECK(wheel.x > 0 && fabsf(wheel.y) < 0.5f * wheel.x);
-  // Leaned back 45 degrees, checked with plain rotations rather than gravityFor (which is tiltFrom's own inverse):
-  // gravity in the device's frame is (0, cos a, -sin a) leaned back by a from upright, so tipping the top edge 20
-  // degrees further away rolls the ball up and 20 degrees back toward you rolls it down; turning about the screen's
-  // up axis so the right edge drops 20 degrees, gravity (0, 707, -707) becomes (707 sin 20, 707, -707 cos 20), and
-  // the ball rolls right.
-  const float deg = 3.14159265f / 180;
-  const Grav away = {0, (int)lroundf(1000 * cosf(65 * deg)), (int)lroundf(-1000 * sinf(65 * deg))};
-  const Grav toward = {0, (int)lroundf(1000 * cosf(25 * deg)), (int)lroundf(-1000 * sinf(25 * deg))};
-  const Grav rightDown = {(int)lroundf(707 * sinf(20 * deg)), 707, (int)lroundf(-707 * cosf(20 * deg))};
-  // 20 degrees from the grip is a 1000 sin 20 = 342 mg tilt; the turn, about an axis leaned 45 degrees, 707 sin 20 = 242
-  const Vec up = tiltFrom(away, LEANED), down = tiltFrom(toward, LEANED), right = tiltFrom(rightDown, LEANED);
-  CHECK(fabsf(up.y + 342) < 3 && fabsf(up.x) < 3 && fabsf(down.y - 342) < 3 && fabsf(down.x) < 3);
-  CHECK(fabsf(right.x - 242) < 3 && fabsf(right.y) < 0.2f * right.x);
-  CHECK(tiltAccel(away, LEANED).y < 0 && tiltAccel(toward, LEANED).y > 0 && tiltAccel(rightDown, LEANED).x > 0);
 }
 static void tiltMapping() {
   static const Grav HOLDS[] = {FLAT, LEANED, UPRIGHT, FACE_DOWN, {500, 500, -707}};
