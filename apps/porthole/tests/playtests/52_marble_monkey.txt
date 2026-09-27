@@ -1,0 +1,44 @@
+# Chaos in Marble Kick under ASan/UBSan: random taps, drags and long presses on every page while the device tilts
+# and shakes. The monkey may wander out through the back knob into the launcher and other games; afterwards there is
+# a real screen. The sim keeps its tilt across a reset: each run starts upright.
+# seed 21: the Calibrate page
+profile Sam 6
+app marble-kick
+wait 500
+tilt 250 900 -300
+monkey 300 21
+expect-screen *
+# seed 22: rolling, tilted hard, with a shake
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+tap 80 110
+tilt -900 1200 0
+monkey 300 22
+shake
+expect-screen *
+# seed 23: the Goal page of level 1
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+tap 80 110
+tilt 0 500 0
+wait 1400
+tilt 0 1000 0
+expect-screen mk_goal
+monkey 300 23
+expect-screen *
+# seed 24: the Done page
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+dbg level6
+tilt 0 1000 0
+monkey 300 24
+expect-screen *
