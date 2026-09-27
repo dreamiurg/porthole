@@ -69,7 +69,7 @@ Everything is in `namespace fc` (Pets Club owns the global `Game`).
   start a match), `score<T>-<C>`, `clock<S>` (seconds left); `debugPrint` reports `wins level teal coral clock control
   owner x y bx by neutralX/Y/Z ready starting`.
 - `fonts/`: Rubik Mono One (`RubikMonoOne-Regular.ttf`, from github.com/google/fonts `ofl/rubikmonoone`) and its
-  `OFL.txt`. `generated/fonts.h`: 18, 36 and 64 px, converted by `games/biscuit/tools/fontconv.py --game tiltfc`
+  `OFL.txt`. `generated/fonts.h`: 18, 36 and 64 px, converted by `tools/fontconv.py --game tiltfc`
   (commands in its docstring), bitmaps only for `GLYPHS` (" !0123456789AGLO").
 - `host/test_tiltfc.cpp`: the rules (dead zone from three grips, the pass cone, control switching, goals, kickoff,
   tackles and slides, keeper room, the whistle, the kickoff wait), the challenge, the save, the full-time save and
