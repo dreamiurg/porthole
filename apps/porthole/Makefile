@@ -30,6 +30,7 @@ test_gfx565_SRC := $(wildcard os/*.cpp)
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
 test_tilt_SRC :=
+test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
@@ -85,6 +86,9 @@ COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 GCOVR ?= $(shell command -v gcovr 2>/dev/null || echo uvx gcovr)
+# gcovr rejects a line hit more than 2^32 times as gcc bug 68080 (whose counts are garbage near 2^64). The RGB565 fill
+# loop in os/gfx565.cpp really runs that often: the render checks paint billions of pixels. 2^40 still catches the bug.
+GCOVR_HITS := --gcov-suspicious-hits-threshold 1099511627776
 # ponytail: keyed on the OS, so it assumes Apple clang on macOS and gcc elsewhere; pass GCOV=... for other mixes.
 ifeq ($(shell uname -s),Darwin)
 GCOV ?= xcrun llvm-cov gcov
@@ -98,7 +102,7 @@ coverage:
 	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) && $(COV)/$(t) &&) true
 	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:

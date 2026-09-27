@@ -57,7 +57,8 @@ Everything is in `namespace marble` (Pets Club owns the global `Game`).
 
 - `tune.h`: the feel knobs: dead zone (87 mg), full tilt (423 mg), acceleration, felt drag, rolling friction, top
   speed, rim and peg restitution, the 5 ms substep, the Goal page's 2 s. Retune here after playing on the device.
-- `physics.h` / `physics.cpp`: tilt from the 3D neutral (`tiltFrom`, Rodrigues onto face-up) to acceleration, one
+- `physics.h` / `physics.cpp`: tilt from the 3D neutral (`tilt::from` in `os/tilt.h`, Rodrigues onto face-up; the
+  Calibrate page's steady neutral is `tilt::Steady`, shared with Tilt FC) to acceleration, one
   substep (roll, move, bump off pegs (a moving one hits back with its own velocity: a nudge), rails (capsules
   `RAIL_R` thick) and the home knob, then the rim; drop into a slow-enough hole, pick up stars), goal detection. The
   ball's center may be on the felt or in the goal's mouth, a channel `goalHalf - POST_R - BALL_R` either side of the
@@ -124,4 +125,4 @@ downgrade after a Save change resets progress (see `save.h`): a v1 firmware igno
   tint (`tint()` follows the clock, but the RGB565 page draws its own daylight colors).
 - Held within about 10-20 degrees of face down (lying on your back, the device overhead), which way a tilt rolls the
   ball depends on the exact grip it was calibrated in: the rotation that lays that grip flat turns sharply there (it
-  is undefined at exactly face down, where `tiltFrom` falls back to half a turn about x). No fix for now.
+  is undefined at exactly face down, where `tilt::from` falls back to half a turn about x). No fix for now.

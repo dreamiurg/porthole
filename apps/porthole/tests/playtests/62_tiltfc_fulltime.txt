@@ -1,0 +1,154 @@
+# Tilt FC to the Full time page, held leaned back 45 degrees: at 2-0 the recorded moves score the third, the Goal page
+# gives way to Full time (a win: the cup, one win and level 1 saved), and a tap anywhere starts over on the Calibrate
+# page. Then a match sent to its whistle with the kid holding still: the clock ends it. The level is kept for the next
+# visit.
+tilt 0 707 -707
+profile Sam 6
+app tilt-fc
+wait 500
+dbg kickoff
+dbg score2-0
+# match from 0 707 -707
+wait 1200
+tilt 0 365 -931
+wait 200
+tilt -281 850 -446
+tap 130 40
+wait 80
+tilt -399 667 -629
+tap 130 40
+wait 80
+tilt -335 803 -493
+tap 130 40
+wait 80
+tilt 365 532 -764
+tap 130 40
+wait 80
+tilt -304 464 -832
+wait 200
+tilt -297 459 -838
+wait 200
+tilt 359 773 -524
+wait 200
+tilt 29 930 -366
+wait 200
+tilt 375 550 -746
+wait 200
+tilt 30 366 -930
+tap 130 40
+wait 80
+tilt 25 366 -930
+wait 200
+tilt 16 365 -931
+wait 200
+tilt 18 365 -931
+wait 200
+tilt 172 393 -903
+tap 130 40
+wait 80
+tilt -39 367 -930
+wait 200
+tilt -47 367 -929
+wait 200
+tilt -41 367 -929
+wait 200
+tilt -34 366 -930
+wait 200
+tilt -29 366 -930
+wait 200
+tilt -365 532 -764
+wait 200
+tilt -340 797 -499
+wait 200
+tilt -157 908 -388
+tap 130 40
+wait 80
+tilt -220 884 -412
+wait 200
+tilt -237 876 -420
+wait 200
+tilt -138 914 -382
+wait 200
+tilt -64 927 -369
+wait 200
+tilt -12 931 -365
+wait 200
+tilt 27 930 -366
+wait 200
+tilt 65 927 -369
+wait 200
+tilt 104 921 -375
+wait 200
+tilt 149 910 -386
+wait 200
+tilt 236 876 -420
+wait 200
+tilt 260 863 -433
+wait 200
+tilt 306 830 -466
+wait 200
+tilt 353 782 -514
+wait 200
+tilt 365 764 -532
+wait 200
+tilt 374 748 -548
+wait 200
+tilt 394 696 -600
+wait 200
+tilt 400 634 -662
+wait 200
+tilt -275 443 -853
+tap 130 40
+wait 80
+tilt 220 884 -412
+wait 200
+tilt 220 412 -884
+wait 200
+tilt -337 801 -495
+tap 130 40
+wait 80
+tilt -384 568 -728
+wait 200
+tilt -73 370 -926
+wait 200
+tilt -105 375 -921
+wait 200
+tilt -101 374 -922
+wait 200
+tilt -102 374 -922
+wait 600
+tilt -224 413 -883
+tap 130 40
+wait 80
+tilt -187 398 -898
+wait 200
+tilt 0 707 -707
+# end match
+expect-screen fc_goal
+expect teal=3
+wait 2100
+expect-screen fc_fulltime
+expect wins=1
+expect level=1
+ui-check fc_fulltime
+snap fc_f01_won
+wait 500
+tap 130 40
+expect-screen fc_calibrate
+dbg kickoff
+dbg clock1
+wait 14000
+expect-screen fc_fulltime
+expect wins=1
+expect level=1
+ui-check fc_fulltime-whistle
+snap fc_f02_whistle
+wait 500
+tap 17 80
+wait 100
+expect-screen launcher
+app tilt-fc
+wait 500
+expect level=1
+expect wins=1
+sheet fulltime
