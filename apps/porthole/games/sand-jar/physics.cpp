@@ -73,19 +73,43 @@ void field(Jar& j, Field& f) {
   f.down = DY[f.ord[0]] * G + DX[f.ord[0]];
 }
 
-// Counting sort by height along gravity, O(n): order[] runs from the top of the pile to the bottom, and the step moves
-// the bottom grains first so the ones above fall into the room they leave. The key is a quarter cell of height, in
-// integers (gravity's direction to 1/1024): it runs twice over every grain each step.
+// Bucketed by height along gravity, O(awake grains): each height (a quarter cell, in integers, gravity's direction to
+// 1/1024) has a list, and the step moves the bottom grains first so the ones above fall into the room they leave.
 int keyOf(const Jar& j, int i) {
   const int h = ((j.g.x[i] - G / 2 * 256) * j.keyX + (j.g.y[i] - G / 2 * 256) * j.keyY + G / 2 * 262144) >> 16;
   return h < 0 ? 0 : h >= Jar::KEYS ? Jar::KEYS - 1 : h;
 }
+[[gnu::always_inline]] inline bool has(const uint32_t* b, int i) { return b[i >> 5] >> (i & 31) & 1; }
+[[gnu::always_inline]] inline void put(uint32_t* b, int i) { b[i >> 5] |= 1u << (i & 31); }
+void queue(Jar& j, int i, int key) {   // onto the front of its height's list: a list runs from the highest index down
+  j.g.order[i] = j.count[key]; j.count[key] = (uint16_t)(i + 1); put(j.queued, i);
+}
+// Grain i's neighborhood changed. Asleep, and its height is still to come this step: it moves this step, as it would
+// have with every grain in the lists; otherwise it moves next step.
+void wake(Jar& j, int i) {
+  if (has(j.queued, i)) return;
+  if (j.curKey >= 0 && !has(j.done, i)) {
+    const int key = keyOf(j, i);
+    if (key <= j.curKey) { queue(j, i, key); return; }
+  }
+  put(j.awake, i);
+}
+// Cell c changed: the room around it.
+void changed(Jar& j, int c) {
+  const int16_t* p = j.occ + c;
+  static constexpr int AROUND[8] = {-G - 1, -G, -G + 1, -1, 1, G - 1, G, G + 1};
+  for (int off : AROUND) if (p[off] > 0) wake(j, p[off] - 1);
+}
 void sortDownhill(Jar& j) {
   j.keyX = (int)lroundf(j.gxn * 1024); j.keyY = (int)lroundf(j.gyn * 1024);
   memset(j.count, 0, sizeof j.count);
-  for (int i = 0; i < j.n; i++) j.count[keyOf(j, i) + 1]++;
-  for (int c = 1; c <= Jar::KEYS; c++) j.count[c] = (uint16_t)(j.count[c] + j.count[c - 1]);
-  for (int i = 0; i < j.n; i++) j.g.order[j.count[keyOf(j, i)]++] = (uint16_t)i;
+  memset(j.queued, 0, sizeof j.queued); memset(j.done, 0, sizeof j.done);
+  for (int w = 0; w < Jar::GW; w++)
+    for (uint32_t bits = j.awake[w]; bits; bits &= bits - 1) {
+      const int i = w * 32 + __builtin_ctz(bits);
+      queue(j, i, keyOf(j, i));
+    }
+  memset(j.awake, 0, sizeof j.awake);
 }
 
 // The finger is a solid disc. A grain inside it is pushed out along the ray from its center (bent toward where the
@@ -102,6 +126,7 @@ bool pushAlong(Jar& j, int i, float ex, float ey) {
     if (o == WALL) return false;
     if (o != EMPTY || (x - fg.x) * (x - fg.x) + (y - fg.y) * (y - fg.y) <= FINGER_R * FINGER_R) continue;
     j.occ[from] = EMPTY; j.occ[c] = (int16_t)(i + 1);
+    changed(j, from); changed(j, c); put(j.awake, i);
     j.g.x[i] = pos16(center(cx)); j.g.y[i] = pos16(center(cy));
     const float kick = kindAt(j, i) == SAND ? 0.35f : 0.8f;
     j.g.vx[i] = vel16(fg.vx * kick + ex * 0.3f); j.g.vy[i] = vel16(fg.vy * kick + ey * 0.3f);
@@ -121,7 +146,10 @@ bool evict(Jar& j, int i, float dx, float dy) {
   return false;
 }
 void stampFinger(Jar& j) {
-  for (int q = 0; q < j.fingerCount; q++) if (j.occ[j.fingerCells[q]] == FINGER) j.occ[j.fingerCells[q]] = EMPTY;
+  for (int q = 0; q < j.fingerCount; q++) {
+    const int c = j.fingerCells[q];
+    if (j.occ[c] == FINGER) { j.occ[c] = EMPTY; changed(j, c); }
+  }
   j.fingerCount = 0;
   if (!j.finger.on) return;
   const float R = FINGER_R, fx = j.finger.x, fy = j.finger.y;
@@ -145,7 +173,9 @@ void popBubble(Jar& j, int i) {
     const int k = j.sand + (int)(rnd(j) * (j.n - j.sand)), h = keyOf(j, k);
     if (kindAt(j, k) == WATER && h > most) { deepest = k; most = h; }
   }
-  if (deepest >= 0) setKind(j, deepest, BUBBLE);
+  if (deepest < 0) return;
+  setKind(j, deepest, BUBBLE);
+  wake(j, deepest);
 }
 
 void accelerate(Jar& j, const Field& f, Mover& m) {
@@ -164,7 +194,7 @@ void accelerate(Jar& j, const Field& f, Mover& m) {
   const float vm = P.vmax * F, sp2 = m.ux * m.ux + m.uy * m.uy;
   if (sp2 > vm * vm) { const float s = vm / sqrtf(sp2); m.ux *= s; m.uy *= s; }
 }
-void moveTo(Jar& j, Mover& m, int c) { j.occ[m.c] = EMPTY; j.occ[c] = (int16_t)(m.i + 1); m.c = c; }
+void moveTo(Jar& j, Mover& m, int c) { j.occ[m.c] = EMPTY; j.occ[c] = (int16_t)(m.i + 1); changed(j, m.c); changed(j, c); m.c = c; }
 // Where a stopped grain may go: an empty cell, or for sand, now and then, water (it sinks through, and slides under).
 [[gnu::always_inline]] inline bool open(Jar& j, const Mover& m, int c) {
   const int o = j.occ[c];
@@ -176,7 +206,8 @@ void take(Jar& j, Mover& m, int c) {
   if (o <= 0) { moveTo(j, m, c); return; }
   j.occ[m.c] = (int16_t)o;
   j.g.x[o - 1] = pos16(center(m.c % G)); j.g.y[o - 1] = pos16(center(m.c / G));
-  j.occ[c] = (int16_t)(m.i + 1); m.c = c;
+  j.occ[c] = (int16_t)(m.i + 1);
+  changed(j, m.c); changed(j, c); m.c = c;
 }
 // Sand sinks through water (now and then), a bubble rises through it: the two trade places.
 bool swapped(Jar& j, Mover& m, const Try& t, int o) {
@@ -187,7 +218,8 @@ bool swapped(Jar& j, Mover& m, const Try& t, int o) {
   j.g.x[other] = pos16(center(m.c % G)); j.g.y[other] = pos16(center(m.c / G));
   j.g.vx[other] = vel16(Jar::vel(j.g.vx[other]) * 0.3f); j.g.vy[other] = vel16(Jar::vel(j.g.vy[other]) * 0.3f);
   const int nc = t.cy * G + t.cx;
-  j.occ[nc] = (int16_t)(m.i + 1); m.c = nc; m.x = t.tx; m.y = t.ty;
+  j.occ[nc] = (int16_t)(m.i + 1);
+  changed(j, m.c); changed(j, nc); m.c = nc; m.x = t.tx; m.y = t.ty;
   return true;
 }
 // Hit something. Slide along one axis only if that axis goes downhill enough (never up the slope), keeping fric of
@@ -291,10 +323,15 @@ bool buried(const Jar& j, int c, bool wet) {
            room(p[G + 1]) || room(p[G]));
 }
 
+// Buried grains fall asleep (still, as a hit would stop them); the rest stay awake for the next step.
 void moveGrain(Jar& j, const Field& f, int i) {
   const Kind k = kindAt(j, i);
   const int c = (j.g.y[i] >> 8) * G + (j.g.x[i] >> 8);
-  if (k != BUBBLE && buried(j, c, k == SAND && j.mode == MODE_BEACH)) { j.g.vx[i] = j.g.vy[i] = 0; return; }
+  if (k != BUBBLE && buried(j, c, k == SAND && j.mode == MODE_BEACH)) {
+    j.g.vx[i] = j.g.vy[i] = 0;
+    return;
+  }
+  put(j.awake, i);
   Mover m = {i, c, k, Jar::pos(j.g.x[i]), Jar::pos(j.g.y[i]), Jar::vel(j.g.vx[i]), Jar::vel(j.g.vy[i])};
   const int start = m.c;
   accelerate(j, f, m);
@@ -382,7 +419,7 @@ void launch(Jar& j) {
 }  // namespace
 
 void Jar::reset(Mode m, uint32_t seed) {
-  mode = m; rng = seed ? seed : 1; frame = 0; shaking = 0; finger = {}; fingerCount = 0;
+  mode = m; rng = seed ? seed : 1; frame = 0; shaking = 0; finger = {}; fingerCount = 0; curKey = -1;
   const float g = sqrtf(tiltX * tiltX + tiltY * tiltY);
   if (g > 0.03f) { gxn = tiltX / g; gyn = tiltY / g; }
   walls(*this);
@@ -390,6 +427,8 @@ void Jar::reset(Mode m, uint32_t seed) {
   n = want < most ? want : most;
   sand = m == MODE_BEACH ? (int)lroundf(n * BEACH_SAND) : n;
   if (m == MODE_ORBITS) launch(*this); else fill(*this);
+  memset(awake, 0, sizeof awake);   // a fresh pour: every grain awake
+  for (int i = 0; i < n; i++) put(awake, i);
 }
 
 void Jar::step() {
@@ -401,7 +440,13 @@ void Jar::step() {
     Field f;
     field(*this, f);
     sortDownhill(*this);
-    for (int q = n - 1; q >= 0; q--) moveGrain(*this, f, g.order[q]);
+    for (curKey = KEYS - 1; curKey >= 0; curKey--)
+      while (const int h = count[curKey]) {
+        const int i = h - 1;
+        count[curKey] = g.order[i];
+        queued[i >> 5] &= ~(1u << (i & 31)); put(done, i);
+        moveGrain(*this, f, i);
+      }
   }
   shaking *= SHAKE_FADE;
 }

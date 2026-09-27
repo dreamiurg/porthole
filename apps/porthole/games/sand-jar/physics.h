@@ -60,17 +60,23 @@ struct Jar {
     uint16_t x[MAX_GRAINS], y[MAX_GRAINS];
     int16_t vx[MAX_GRAINS], vy[MAX_GRAINS];
     uint8_t look[MAX_GRAINS];
-    uint16_t order[MAX_GRAINS];   // scratch: this step's grains, from the top of the pile down to the bottom
+    uint16_t order[MAX_GRAINS];   // scratch: the next grain + 1 in the same height's list this step (0: the last)
   };
   struct Sky {
     Body body[MAX_BODIES];
     uint8_t glow[3][G * G];       // the renderer's trail light (R, G, B per cell); physics never touches it
   };
   union { Grains g; Sky sky; };
+  // Asleep: a grain whose eight neighbors are all taken can go nowhere, so it is skipped until one of them changes
+  // (every write to occ wakes the grains around that cell): a settled jar costs only its surface. One bit a grain.
+  static constexpr int GW = (MAX_GRAINS + 31) / 32;
+  uint32_t awake[GW];           // to move next step
+  uint32_t queued[GW], done[GW];   // this step: waiting in its height's list, and moved
   // scratch, kept here so a step never allocates
   static constexpr int KEYS = 4 * G + 4, FINGER_MAX = 720;
-  uint16_t count[KEYS + 1];
-  int keyX = 0, keyY = 0;       // this step's gravity for the sort's height key (to 1/1024)
+  uint16_t count[KEYS];         // this step's grains by height: each height's list head (grain + 1), linked by g.order
+  int keyX = 0, keyY = 0;       // this step's gravity for the height key (to 1/1024)
+  int curKey = -1;              // the height being moved, bottom first (-1: not moving grains)
   uint16_t fingerCells[FINGER_MAX]; int fingerCount = 0;
 };
 

@@ -63,9 +63,11 @@ reserved all the same), no clock, no personal data.
 - **Shake**: a sensor reading more than `SHAKE_MG` off 1 g, or one that jumps more than `JOLT_MG` from the frame before,
   kicks every grain randomly (`SHAKE`, fading by `SHAKE_FADE` a step).
 - A grain whose eight neighbors are all taken (for sand in Beach: taken by sand, since it may sink into water) cannot
-  move this step: it stops, as a hit would stop it, and costs a few reads. Most of a jar is buried like this.
-- Grains are moved bottom first (a counting sort by height along gravity, O(n)) so the ones above fall into the room the
-  ones below leave.
+  move this step: it stops, as a hit would stop it, and falls asleep. Most of a jar is buried like this. An asleep grain
+  costs nothing until a write to `occ` next to it wakes it (`changed`): then it moves this step if its height is still
+  to come, else the next. A settled jar only moves its surface.
+- Grains are moved bottom first (awake grains in a list per height along gravity) so the ones above fall into the room
+  the ones below leave.
 
 Three additions to the prototype, each a fix for something it got wrong, with a test:
 
