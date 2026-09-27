@@ -312,8 +312,10 @@ void Shell::drawDelete() {
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
 static const ui::Box HEADER = {30, 30, 100, 24};   // 2 px below the home button's hit box (rows -4..27)
-// Game tiles 64 px apart, centered: the labels under two tiles ("Pets Club", "Biscuit") keep a gap. Two fit the glass.
-static ui::Box appButton(int k, int n) { return {56 + (2 * k - (n - 1)) * 32, 57, 48, 44}; }
+// Game tiles in a row, centered: two are 48 wide and 64 apart; three, 44 wide and 50 apart, which only fits the glass
+// with a name wider than the gap on two lines ("Pets / Club", "Sand / Jar") clear of the mute button.
+static int appGap(int n) { return n <= 2 ? 64 : 50; }
+static ui::Box appButton(int k, int n) { const int w = n <= 2 ? 48 : 44; return {80 - w / 2 + (2 * k - (n - 1)) * appGap(n) / 2, 57, w, 44}; }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
   if (ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN)) {
@@ -326,7 +328,7 @@ void Shell::updateLauncher() {
 }
 void Shell::drawLauncher() {
   clear(C_SKY);
-  rect(0, 116, 160, 44, C_LEAF);
+  rect(0, 123, 160, 37, C_LEAF);   // under a two-line name
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 4, HEADER.y + 2);
   text(HEADER.x + 28, HEADER.y + 8, rec().name, C_DKBROWN);
@@ -335,7 +337,8 @@ void Shell::drawLauncher() {
     int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
     const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-    textCenteredShadow(b.x + b.w / 2, b.y + b.h + 4, apps_[k]->name(), C_NAVY, C_WHITE);
+    char lines[2][40]; const int n = wrap(apps_[k]->name(), appGap(nApps_) - 4, lines, 2);
+    for (int l = 0; l < n; l++) textCenteredShadow(b.x + b.w / 2, b.y + b.h + 4 + l * 9, lines[l], C_NAVY, C_WHITE);
   }
   ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
   ui::drawBack();
