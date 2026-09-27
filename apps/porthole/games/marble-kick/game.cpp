@@ -30,9 +30,12 @@ constexpr char ICON_ART[] =
   ".....kkwwwwmmmmmmmmmmwwwwkk....." "......kkwwwwwwwwwwwwwwwwkk......" "........kkwwwwwwwwwwwwkk........"
   ".........kkkkwwwwwwkkkk........." "............kkkkkkkk............";
 static_assert(sizeof ICON_ART == 32 * 32 + 1, "the launcher slot fits a 32x32 icon");
+constexpr char ICON_KEYS[] = "kwmfFngrRc";
+constexpr uint8_t ICON_COLS[] = {C_BLACK, C_DKBROWN, C_TAN, C_DKGREEN, C_LEAF, C_SLATE, C_GOLD, C_BROWN, C_PEACH, C_CREAM};
+static_assert(sizeof ICON_KEYS - 1 == sizeof ICON_COLS, "one color per key");
 constexpr uint8_t iconColor(char c) {
-  return c == 'k' ? C_BLACK : c == 'w' ? C_DKBROWN : c == 'm' ? C_TAN : c == 'f' ? C_DKGREEN : c == 'F' ? C_LEAF
-       : c == 'n' ? C_SLATE : c == 'g' ? C_GOLD : c == 'r' ? C_BROWN : c == 'R' ? C_PEACH : c == 'c' ? C_CREAM : C_T;
+  for (int i = 0; ICON_KEYS[i]; i++) if (ICON_KEYS[i] == c) return ICON_COLS[i];
+  return C_T;
 }
 struct IconPx { uint8_t px[32 * 32]; };
 constexpr IconPx makeIcon() {
