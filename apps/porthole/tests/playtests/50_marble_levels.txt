@@ -1,0 +1,227 @@
+# Marble Kick, every level by tilting: calibrate held upright (the sim's default), then each level's recorded solution
+# (games/marble-kick/levels.h) as tilt changes, the Goal page, a tap on to the next level. After the sixth, the Done
+# page, whose button plays the sixth again. The UI audit covers every page.
+profile Sam 6
+app marble-kick
+wait 500
+expect-screen mk_calibrate
+expect level=1
+ui-check mk_calibrate
+snap mk01_calibrate
+tap 80 110
+expect-screen mk_play
+ui-check mk_play
+snap mk02_play1
+# level 1's recorded solution (levels.h SOLVE_1), from the sim's upright neutral
+wait 80
+tilt 0 570 0
+wait 240
+tilt 0 660 0
+wait 240
+tilt 0 770 0
+wait 240
+tilt 0 750 0
+wait 480
+tilt 0 760 0
+wait 240
+tilt 0 750 0
+wait 240
+tilt 0 880 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=1
+ui-check mk_goal
+snap mk03_goal
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=2
+expect reached=1
+# level 2's recorded solution (levels.h SOLVE_2), from the sim's upright neutral
+wait 80
+tilt -260 660 0
+wait 240
+tilt -210 730 0
+wait 240
+tilt -90 910 0
+wait 240
+tilt 250 660 0
+wait 240
+tilt 70 760 0
+wait 240
+tilt 50 760 0
+wait 240
+tilt -30 1140 0
+wait 240
+tilt 200 630 0
+wait 240
+tilt 80 820 0
+wait 240
+tilt -60 1130 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=2
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=3
+expect reached=2
+# level 3's recorded solution (levels.h SOLVE_3), from the sim's upright neutral
+wait 80
+tilt 100 580 0
+wait 240
+tilt 70 740 0
+wait 240
+tilt -30 1130 0
+wait 240
+tilt -130 590 0
+wait 240
+tilt -60 760 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -60 650 0
+wait 240
+tilt 30 1130 0
+wait 240
+tilt 110 600 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=3
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=4
+expect reached=3
+ui-check mk_play-level4
+snap mk04_play4
+# level 4's recorded solution (levels.h SOLVE_4), from the sim's upright neutral
+wait 80
+tilt 240 640 0
+wait 240
+tilt 120 820 0
+wait 240
+tilt -70 1100 0
+wait 240
+tilt -80 580 0
+wait 240
+tilt -30 730 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -190 670 0
+wait 240
+tilt -70 870 0
+wait 240
+tilt 40 1130 0
+wait 240
+tilt -10 570 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=4
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=5
+expect reached=4
+# level 5's recorded solution (levels.h SOLVE_5), from the sim's upright neutral
+wait 80
+tilt -160 600 0
+wait 240
+tilt -130 680 0
+wait 240
+tilt -80 780 0
+wait 240
+tilt -70 860 0
+wait 240
+tilt 60 1130 0
+wait 240
+tilt 370 790 0
+wait 240
+tilt 220 910 0
+wait 240
+tilt -80 1100 0
+wait 240
+tilt -120 590 0
+wait 240
+tilt -50 710 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=5
+wait 500
+tap 80 60
+expect-screen mk_play
+expect level=6
+expect reached=5
+ui-check mk_play-level6
+snap mk06_play6
+# level 6's recorded solution (levels.h SOLVE_6), from the sim's upright neutral
+wait 80
+tilt 240 1240 0
+wait 240
+tilt 190 610 0
+wait 240
+tilt -50 850 0
+wait 240
+tilt 400 840 0
+wait 240
+tilt 420 920 0
+wait 240
+tilt 420 1050 0
+wait 240
+tilt 250 1210 0
+wait 240
+tilt -60 1150 0
+wait 240
+tilt -340 740 0
+wait 480
+tilt 0 1000 0
+wait 240
+tilt -320 830 0
+wait 240
+tilt -180 890 0
+wait 240
+tilt 120 1080 0
+wait 240
+tilt 410 880 0
+wait 240
+tilt 380 880 0
+wait 240
+tilt 300 700 0
+wait 240
+tilt 190 620 0
+wait 240
+tilt -70 710 0
+wait 240
+tilt -130 610 0
+wait 240
+tilt -30 770 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+expect-screen mk_goal
+expect reached=6
+wait 500
+tap 80 60
+expect-screen mk_done
+expect reached=6
+ui-check mk_done
+snap mk07_done
+wait 500
+tap 80 110
+expect-screen mk_play
+expect level=6
+expect reached=6
+sheet levels
