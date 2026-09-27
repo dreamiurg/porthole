@@ -273,7 +273,7 @@ void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code,
   }
 }
 void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
-  int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  int dy = pinLen_ < 4 && in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;   // no press look while the last digit shows: taps wait
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN); roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN); roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
   int s = l[1] ? 1 : 2;   // a digit at double size; "skip" fits only at one
   textCentered(b.x + b.w / 2, b.y + (b.h - 8 * s) / 2 + dy, l, C_DKBROWN, s);

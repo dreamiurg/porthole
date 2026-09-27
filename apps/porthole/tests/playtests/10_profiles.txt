@@ -60,10 +60,10 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-# no OK: the fourth digit stays on show a moment, then the code moves on by itself
-wait 200
+# no OK: the fourth digit stays on show a moment (home does nothing then), then the code moves on by itself
+tap 80 12
 expect-screen pin_set
-wait 700
+wait 900
 expect-screen pin_again
 ui-check
 tap 41 62

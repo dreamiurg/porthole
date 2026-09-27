@@ -114,4 +114,31 @@ expect-screen launcher
 tap 48 79
 wait 2400
 expect-screen intro
+# a code that ends on the top row leaves the finger up there: "Hold to delete" goes to the bottom half
+reset
+profile Sam 8
+profile Zed 7 4563
+tap 80 32
+wait 450
+expect-screen picker
+hold 80 80
+wait 450
+expect-screen pin
+tap 41 90
+tap 80 90
+tap 119 90
+tap 119 62
+wait 900
+expect-screen delete
+ui-check delete-top-finger
+snap 04_delete_top_finger
+# holding the top half, where the finger was, deletes nothing; the bottom half does
+hold 80 42
+wait 450
+expect-screen delete
+expect profile=-1/2
+hold 80 116
+wait 450
+expect-screen picker
+expect profile=-1/1
 sheet delete
