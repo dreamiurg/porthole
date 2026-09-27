@@ -17,8 +17,10 @@ struct SaveSlot { const void* data; size_t len; };                             /
 struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
-// full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() paints every pixel: the target is one of the
-// panel's two buffers and still holds an older frame.
+// full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() must leave the whole target correct, knowing
+// the target is one of the panel's two buffers, used by turns: it holds the frame from two renders ago (or anything,
+// the first time a game sees it). Painting every pixel is always right; a game may instead remember what each buffer
+// holds and write only what changed. The sim emulates this: two buffers, alternating, magenta until first drawn.
 enum Surface : uint8_t { SURFACE_INDEXED, SURFACE_RGB565 };
 
 class App {
