@@ -248,6 +248,29 @@ static void incrementalIsFull() {
   puts("render: drawing only what changed shows what a full redraw does");
 }
 
+// A late frame (the physics cost more than a frame) takes the jar to one step a frame for SLOW_MS, then back to two:
+// two steps on a late frame would only make the next one late too.
+static void lateFramesSlowDown() {
+  uint32_t ms = 1000;
+  AppEnter e{}; e.ms = ms;
+  game.enter(e);
+  game.debugCmd("sand");
+  InputTracker touch;
+  auto frame = [&](uint32_t dt) {
+    const uint32_t before = game.steps();
+    ms += dt;
+    Input in = touch.step(false, 0, 0, ms); in.gy = 1000;
+    game.update(ms / 1000, ms, in);
+    return game.steps() - before;
+  };
+  for (int f = 0; f < 5; f++) assert(frame(34) == 2);
+  assert(frame(60) == 1);
+  for (uint32_t t = 34; t < SLOW_MS; t += 34) assert(frame(34) == 1);
+  assert(frame(34) == 2);
+  assert(frame(5000) == 1);   // a stall (a screenshot on the board) is a late frame too, and never a burst of steps
+  puts("pacing: a late frame means one step a frame for a while, then two");
+}
+
 int main() {
   filled();
   restsAtZeroG();
@@ -259,6 +282,7 @@ int main() {
   orbitsStayOnGlass();
   replays();
   incrementalIsFull();
+  lateFramesSlowDown();
   puts("test_sand_jar: all passed");
   return 0;
 }

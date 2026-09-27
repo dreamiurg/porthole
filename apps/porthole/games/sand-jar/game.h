@@ -12,6 +12,8 @@ namespace sandjar {
 // ---- tuning knobs
 constexpr uint32_t STEP_MS = 16;     // physics ticks at the prototype's ~60 Hz...
 constexpr int MAX_STEPS = 2;         // ...at most this many a frame: a slow frame slows the jar down, never piles up
+constexpr uint32_t LATE_MS = 45;     // a frame longer than this (two vsyncs are 34 ms, three 51) ran late...
+constexpr uint32_t SLOW_MS = 500;    // ...so for this long the jar takes one step a frame: a brief slow motion
 constexpr float TILT_EASE = 0.35f;   // share of the way to a new sensor reading the tilt moves each frame (noise)
 constexpr float FLAT_G = 0.05f;      // in-plane gravity under this is the jar lying flat: 0 g, nothing avalanches
 constexpr int SHAKE_MG = 600;        // a reading this far off 1 g (milli-g) is a shake...
@@ -37,6 +39,7 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;   // "sand" "rainbow" "beach" "orbits": that mode, freshly poured
+  uint32_t steps() const { return jar_.frame; }   // physics steps so far (the test paces frames by it)
 
  private:
   // What one of the panel's buffers holds, per cell: render() writes a cell's 3x3 block only when it changed since it
@@ -56,6 +59,7 @@ class Game : public App {
   float tiltX_ = 0, tiltY_ = 1;   // the eased sensor reading
   float moveX_ = 0, moveY_ = 0;   // the finger's travel (cells) since the last physics step
   uint32_t ms_ = 0, lastMs_ = 0, acc_ = 0, pours_ = 0;
+  uint32_t slowUntil_ = 0;        // one physics step a frame until then (ms): the last frame ran late
   Input in_{};
   ui::FreshGate gate_;
   // renderer tables, rebuilt when the mode changes

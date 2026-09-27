@@ -84,7 +84,8 @@ In `physics.h`: `FILL_PCT` (grains per 100 cells of glass per mode: 34/42/46; Or
 579 bodies; `MAX_GRAINS`/`MAX_BODIES` bound them), `FINGER_R`, `WAKE`, `SAND_SLIDE`, `SAND_FRIC`, `ROLL_DROP`,
 `SHAKE`/`SHAKE_FADE`, `BEACH_SAND`, `ORB_SUN`/`ORB_STAR`; the per-kind `PARAM` table in `physics.cpp` (the prototype's).
 In `game.h`: `STEP_MS` (16: the prototype's 60 Hz) and `MAX_STEPS` (2 a frame; a slow frame slows the jar rather than
-piling up steps), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
+piling up steps), `LATE_MS`/`SLOW_MS` (a frame over 45 ms means one step a frame for 500 ms: a shake or a fresh pour
+runs in brief half-speed slow motion at full frame rate instead of dropping to ~15 fps), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
 
 Host cost (M3 Max, `-O2`, 34 ms frames of two steps, the fastest of repeated runs): update 0.09-0.36 ms and render
 0.04-0.12 ms a frame in the grain modes, Orbits 0.03-0.04 and 0.10; the sim's `perf` (`-O1`) is within ~1.5x of that.

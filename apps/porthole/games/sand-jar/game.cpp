@@ -67,7 +67,7 @@ const gfx::Sprite& Game::icon() const { return SPR_SANDJAR_ICON; }
 // The jar keeps its sand between visits, like a real one on a shelf; the touch, the shake and what the panel's
 // buffers hold (the shell drew its own screens into them meanwhile) start over.
 void Game::enter(const AppEnter& e) {
-  ms_ = lastMs_ = e.ms; acc_ = 0;
+  ms_ = lastMs_ = slowUntil_ = e.ms; acc_ = 0;
   wantsHome_ = buttonTouch_ = sensed_ = false;
   moveX_ = moveY_ = 0;
   jar_.finger.on = false; jar_.shaking = 0;
@@ -157,11 +157,17 @@ void Game::touch() {
   f.on = on; f.x = x; f.y = y;
 }
 
-// Physics at STEP_MS a step, whatever the frame rate; the finger's travel is spread over this frame's steps.
+// Physics at STEP_MS a step, whatever the frame rate; the finger's travel is spread over this frame's steps. A late
+// frame means the steps cost more than the frame has (a shake throws every grain in the air, a fresh pour settles),
+// and two steps a frame then only make every frame later: the jar takes one a frame for SLOW_MS, running at half
+// speed but at full frame rate, then tries two again. Lateness only ever takes steps away, so it cannot snowball.
 void Game::tick() {
-  acc_ += ms_ - lastMs_; lastMs_ = ms_;
+  const uint32_t dt = ms_ - lastMs_;
+  acc_ += dt; lastMs_ = ms_;
+  if (dt > LATE_MS) slowUntil_ = ms_ + SLOW_MS;
+  const int most = (int32_t)(slowUntil_ - ms_) > 0 ? 1 : MAX_STEPS;
   int steps = (int)(acc_ / STEP_MS);
-  if (steps > MAX_STEPS) { steps = MAX_STEPS; acc_ = 0; } else acc_ -= (uint32_t)steps * STEP_MS;
+  if (steps > most) { steps = most; acc_ = 0; } else acc_ -= (uint32_t)steps * STEP_MS;
   if (!steps) return;
   jar_.finger.vx = 0.5f * moveX_ / steps; jar_.finger.vy = 0.5f * moveY_ / steps;   // the prototype's half-a-move
   moveX_ = moveY_ = 0;
