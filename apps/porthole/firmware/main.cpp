@@ -132,10 +132,12 @@ static void printMetrics() {
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
 static void gravityCommand() {  // "G" alone clears the override; parseInt would read it as 0,0,0 after a 1 s timeout
-  String arg = Serial.readStringUntil('\n'); arg.trim();
+  String arg = Serial.readStringUntil('\n'); arg.trim();   // without a newline this stalls the loop up to 1 s (debug only)
   int x, y, z;
   if (!arg.length()) { g_gravFake = false; Serial.println("[porthole] gravity from sensor"); }
   else if (sscanf(arg.c_str(), "%d,%d,%d", &x, &y, &z) == 3) {
+    // Clamped to the sensor's +-4 g full scale, so nothing past what the chip can report reaches Input.
+    x = constrain(x, -4000, 4000); y = constrain(y, -4000, 4000); z = constrain(z, -4000, 4000);
     g_gravFake = true; g_grav[0] = (int16_t)x; g_grav[1] = (int16_t)y; g_grav[2] = (int16_t)z;
     Serial.printf("[porthole] gravity held at %d,%d,%d\n", x, y, z);
   } else Serial.println("[porthole] usage: G<x>,<y>,<z> or G");

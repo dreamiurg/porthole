@@ -18,9 +18,11 @@ struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves;
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
 // full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() must leave the whole target correct, knowing
-// the target is one of the panel's two buffers, used by turns: it holds the frame from two renders ago (or anything,
-// the first time a game sees it). Painting every pixel is always right; a game may instead remember what each buffer
-// holds and write only what changed. The sim emulates this: two buffers, alternating, magenta until first drawn.
+// the target is one of the panel's two buffers, and every present flips them, an indexed frame's too: the target holds
+// the frame from two presents ago. An indexed present (the game's own or the shell's) overwrites a buffer with its
+// upscaled frame, so after any indexed present, or right after enter(), treat both buffers as unknown. Painting every
+// pixel is always right; a game may instead remember what each buffer holds and write only what changed. The sim
+// emulates this: two buffers, flipped on every frame, magenta until first drawn.
 enum Surface : uint8_t { SURFACE_INDEXED, SURFACE_RGB565 };
 
 class App {

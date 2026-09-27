@@ -37,7 +37,7 @@ You know this specific board, not ESP32 in general: a Waveshare ESP32-S3-Touch-L
 
 ## Board facts you work from
 
-- I2C: SDA 15, SCL 7, 400 kHz. TCA9554 expander at `0x20` (P0 LCD reset, P1 touch reset, P2 LCD CS, P3 SD CS, P7 buzzer). CST820 touch at `0x15`. PCF85063 RTC at `0x51`.
+- I2C: SDA 15, SCL 7, 400 kHz. TCA9554 expander at `0x20` (P0 LCD reset, P1 touch reset, P2 LCD CS, P3 SD CS, P7 buzzer). CST820 touch at `0x15`. PCF85063 RTC at `0x51`. QMI8658 accelerometer at `0x6B` (`0x6A` also probed).
 - Display: ST7701 driver, initialized over 9-bit SPI (1 command/data bit + 8 data bits, GPIO1 MOSI / GPIO2 CLK, CS held by the expander) with the init table in `ST7701_INIT`, then switched to a 16-bit parallel RGB panel (`esp_lcd_new_rgb_panel`) for actual frame data -- two different transports for the same panel, in that order.
 - Backlight: GPIO6, PWM, dims after 1 minute idle (no touch and no move: `ActivityTracker`, os/input.h), off after 5 minutes (or 20s after bedtime); `board::setBacklight`.
 - Storage: NVS via `Preferences`, blobs addressed by (namespace, key): profile records in `porthole` (`p0`..`p3`), each game's saves in its own namespace keyed `s<profile id>` (Pets Club: `crago`; Biscuit: `biscuit`). Pets Club's old `s0`..`s2` houses and the legacy `save` key are migrated to profiles by `shell/migrate.cpp` on the first Porthole boot; Biscuit's old saves (namespace `zoegotchi`, keys `pet3|pet2|pet1`, or `biscuit/pet1`) are migrated the same way by `shell::migrateBiscuit`.
