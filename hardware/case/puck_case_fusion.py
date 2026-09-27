@@ -1,4 +1,4 @@
-"""Porthole puck case, v2 - Fusion 360 script (run via the Fusion MCP or Scripts & Add-Ins).
+"""Porthole puck case, v3 - Fusion 360 script (run via the Fusion MCP or Scripts & Add-Ins).
 
 Rebuilds the design in the active document as named bodies (Part Design documents hold one
 component). Millimetres, in the board's STEP frame: origin = board center, +Z = out of the screen,
@@ -16,6 +16,7 @@ Nothing on the Ring protrudes inward below the glass: the round glass has to sli
 """
 
 import math
+import os
 
 import adsk.core
 import adsk.fusion
@@ -33,6 +34,7 @@ LEVER = (34.8, -6.3, -3.1, 1.5, 0.7)  # slide-switch lever tip x, y, z, width (y
 SW_BODY_X = 32.5  # switch body stops here; only the lever reaches past it
 LEVER_TRAVEL = 1.0  # +/- about the travel center; not in the STEP - verify on the part
 LEDS = {"CHG": -23.3, "PWR": -30.3}  # 0603s on the back, facing -Z
+LED_Z = -4.4  # window height in the wall
 BUZZER = (-27.5, -12.3)  # from Waveshare's labelled photo; not in the STEP by name - verify
 J1 = (21.2, 8.6)  # battery socket
 
@@ -65,12 +67,19 @@ TONGUE_Z0, TONGUE_Z1 = -12.0, SEAM_Z - 0.3
 NUB = (2.0, 1.6)  # y x z section
 NUB_GAP = 0.3
 # slider (straight, in a chord channel centred on the lever's travel center)
-SL_ANG = math.degrees(math.atan2(-7.3, LEVER[0]))  # -11.85
-SL_LEN, SL_T, SL_Z = 7.0, 1.0, (-5.8, SEAM_Z - 0.3)
-CH_R = (38.6, 40.0)  # channel radial band
-KNOB = (3.0, 0.8, (-4.3, -1.9))  # width, proud of the wall, z
-PRONG_T, PRONG_Z, PRONG_R0 = 1.0, (-3.8, -2.4), 34.0
-PRONG_GAP = 0.45  # each side of the lever; the lever sits 12 deg off the slider axis
+LEVER_YC = -7.3  # switch body centre = lever travel centre
+SL_ANG = math.degrees(math.atan2(LEVER_YC, LEVER[0]))  # -11.85
+SL_LEN, SL_Z = 8.0, (-5.8, SEAM_Z - 0.3)
+CH_R = (38.4, 40.2)  # channel radial band; the slider body is 1.4 thick inside it
+KNOB = (5.0, 1.5)  # width, proud of the wall; full slider height
+NECK_W = 3.0  # web from the slider body through the inner wall to the fork
+FORK_HALF, FORK_TOP = 2.8, -2.4  # fork half-width; top stays under the PCB (z -2.1)
+FORK_X = 33.1  # fork inner face at travel centre, parallel to the switch body face (x = 32.5)
+NOTCH_GAP = 0.4  # lever clearance each side, along y (the notch is aligned with the lever)
+NOTCH_BACK = 0.9  # notch depth past the lever tip; deeper than the fork-to-body gap, so a push
+# on the knob lands on the switch body, not the lever
+PROTO_GAPS = (0.25, 0.4, 0.55)  # slider prototypes: NOTCH_GAP variants
+PROTO_TRAVELS = (1.0, 1.5)  # wall test pieces: LEVER_TRAVEL variants (travel not in the STEP)
 USB_OPEN = (13.0, 7.5)
 
 
@@ -161,11 +170,12 @@ def rounded_cyl(r, z0, z1, f0=0.0, f1=0.0):
     return body
 
 
-def lever_t():
-    """Lever centre in the slider frame (radial, tangential)."""
-    a = math.radians(SL_ANG)
-    x, y = LEVER[0], LEVER[1]
-    return x * math.cos(a) + y * math.sin(a), -x * math.sin(a) + y * math.cos(a)
+def lever_y(off):
+    """Lever y with the slider at `off` along its travel (0 = switch body centre)."""
+    return LEVER_YC + off * math.cos(math.radians(SL_ANG))
+
+
+STEP_OFF = (LEVER[1] - LEVER_YC) / math.cos(math.radians(SL_ANG))  # slider offset for the STEP lever
 
 
 def usb_tool(deg, r0=None):
@@ -184,7 +194,7 @@ def make_ring():
     return r
 
 
-def make_cup():
+def make_cup(travel=LEVER_TRAVEL, channel=True):
     c = rounded_cyl(R_OUT, BOT_Z, SEAM_Z, FILLET_BOT, 0.0)
     cut(c, cyl(R_IN, FLOOR_TOP, SEAM_Z + 1))
     add(c, ring(R_IN - LEDGE_W, R_IN + 0.01, FLOOR_TOP, PLATE_BOT))  # ledge the plate sits on
@@ -198,7 +208,7 @@ def make_cup():
     for deg in USB.values():
         cut(c, usb_tool(deg))
     for deg in LEDS.values():
-        cut(c, radial_hole(deg, -4.4, 2.0, R_IN - 1, R_OUT + 1))
+        cut(c, radial_hole(deg, LED_Z, 2.0, R_IN - 1, R_OUT + 1))
     bx, by = BUZZER
     for dx, dy in [(0, 0), (2.2, 0), (-2.2, 0), (0, 2.2), (0, -2.2)]:
         cut(c, cyl(0.75, BOT_Z - 1, FLOOR_TOP + 1, bx + dx, by + dy))
@@ -221,32 +231,58 @@ def make_cup():
         # raised dot so a finger finds the button
         add(c, TBM.createCylinderOrCone(polar(R_OUT - 0.2, deg, BTN_Z), m(1.2), polar(R_OUT + 0.5, deg, BTN_Z), m(1.0)))
     # slider channel: chord pocket in the wall, open at the seam; outer slot for the knob,
-    # inner slot for the fork prongs
-    t_trav = LEVER_TRAVEL + 0.3
-    cut(c, rt_box(SL_ANG, CH_R[0], CH_R[1], -SL_LEN / 2 - t_trav - 0.2, SL_LEN / 2 + t_trav + 0.2, SL_Z[0] - 0.2, SEAM_Z + 1))
-    cut(c, rt_box(SL_ANG, CH_R[1] - 0.1, R_OUT + 1, -KNOB[0] / 2 - t_trav, KNOB[0] / 2 + t_trav, KNOB[2][0] - 0.3, SEAM_Z + 1))
-    half = LEVER[3] / 2 + PRONG_GAP + PRONG_T
-    cut(c, rt_box(SL_ANG, R_IN - 1, CH_R[0] + 0.1, -half - t_trav, half + t_trav, PRONG_Z[0] - 0.3, SEAM_Z + 1))
+    # inner slot for the neck that carries the fork
+    if not channel:
+        return c
+    t_trav = travel + 0.3
+    z0 = SL_Z[0] - 0.2
+    cut(c, rt_box(SL_ANG, CH_R[0], CH_R[1], -SL_LEN / 2 - t_trav - 0.2, SL_LEN / 2 + t_trav + 0.2, z0, SEAM_Z + 1))
+    cut(c, rt_box(SL_ANG, CH_R[1] - 0.1, R_OUT + 1, -KNOB[0] / 2 - t_trav, KNOB[0] / 2 + t_trav, z0, SEAM_Z + 1))
+    cut(c, rt_box(SL_ANG, R_IN - 1, CH_R[0] + 0.1, -NECK_W / 2 - t_trav, NECK_W / 2 + t_trav, z0, SEAM_Z + 1))
     return c
 
 
-def make_slider(offset=None):
-    """Slider at `offset` along its travel (default: where the lever is in the STEP)."""
-    lr, lt = lever_t()
-    off = lt if offset is None else offset
-    s = rt_box(SL_ANG, CH_R[0] + 0.2, CH_R[1] - 0.2, off - SL_LEN / 2, off + SL_LEN / 2, SL_Z[0], SL_Z[1])
-    add(s, rt_box(SL_ANG, CH_R[1] - 0.3, R_OUT + KNOB[1], off - KNOB[0] / 2, off + KNOB[0] / 2, KNOB[2][0], KNOB[2][1]))
-    half = LEVER[3] / 2 + PRONG_GAP
-    for sgn in (-1, 1):
-        t0 = off + sgn * half
-        t1 = off + sgn * (half + PRONG_T)
-        add(s, rt_box(SL_ANG, PRONG_R0, CH_R[0] + 0.4, min(t0, t1), max(t0, t1), PRONG_Z[0], PRONG_Z[1]))
+def id_marks(n, r, t0, z_top):
+    """n small dimples in a row along t, to tell prototype variants apart."""
+    return [cyl(0.4, z_top - 0.8, z_top + 1, *rt_xy(SL_ANG, r, t0 + 1.4 * i)) for i in range(n)]
+
+
+def rt_xy(deg, r, t):
+    a = math.radians(deg)
+    return r * math.cos(a) - t * math.sin(a), r * math.sin(a) + t * math.cos(a)
+
+
+def make_test_piece(travel, marks=0):
+    """Cup wall section around the slider channel, to try the slider on the real switch."""
+    piece = make_cup(travel)
+    TBM.booleanOperation(piece, rt_box(SL_ANG, 30.0, R_OUT + 5, -9.0, 7.0, PLATE_BOT - 1.3, SEAM_Z + 1), INTER)
+    return cut(piece, *id_marks(marks, R_IN - LEDGE_W / 2, -8.0, PLATE_BOT))  # on the ledge
+
+
+def make_slider(offset=None, gap=NOTCH_GAP, marks=0):
+    """Slider at `offset` along its travel (default: where the lever is in the STEP).
+
+    One solid part that prints upright with no supports: body in the wall channel, thumb knob
+    outside, and a fork block inside with a notch the lever drops into from above (the Cup goes
+    on from below), so the notch walls are tied to the block behind and below them.
+    """
+    off = STEP_OFF if offset is None else offset
+    dx = -off * math.sin(math.radians(SL_ANG))  # board-x shift of the slider at this offset
+    s = rt_box(SL_ANG, CH_R[0] + 0.2, CH_R[1] - 0.2, off - SL_LEN / 2, off + SL_LEN / 2, *SL_Z)
+    add(s, rt_box(SL_ANG, CH_R[1] - 0.3, R_OUT + KNOB[1], off - KNOB[0] / 2, off + KNOB[0] / 2, *SL_Z))
     for k in (-1, 0, 1):  # grip ridges on the knob
-        add(s, rt_box(SL_ANG, R_OUT + KNOB[1] - 0.1, R_OUT + KNOB[1] + 0.4, off + k * 0.9 - 0.25, off + k * 0.9 + 0.25, KNOB[2][0], KNOB[2][1]))
-    return s
+        add(s, rt_box(SL_ANG, R_OUT + KNOB[1] - 0.1, R_OUT + KNOB[1] + 0.4, off + k * 1.5 - 0.3, off + k * 1.5 + 0.3, *SL_Z))
+    add(s, rt_box(SL_ANG, R_IN - 1.0, CH_R[0] + 0.4, off - NECK_W / 2, off + NECK_W / 2, SL_Z[0], FORK_TOP))
+    fork = rt_box(SL_ANG, 30.0, R_IN - 0.8, off - FORK_HALF, off + FORK_HALF, SL_Z[0], FORK_TOP)
+    cut(fork, box(FORK_X + dx - 10.0, LEVER_YC, 0.0, 20.0, 40.0, 40.0))
+    x1 = LEVER[0] + NOTCH_BACK + dx
+    z0 = LEVER[2] - LEVER[4] / 2 - 0.5
+    cut(fork, box((25.0 + x1) / 2, lever_y(off), (z0 + 5.0) / 2, x1 - 25.0, LEVER[3] + 2 * gap, 5.0 - z0))
+    add(s, fork)
+    return cut(s, *id_marks(marks, (CH_R[0] + CH_R[1]) / 2, off - 1.4 * (marks - 1) / 2, SL_Z[1]))
 
 
-def plate_cutters(z0, z1):
+def plate_cutters(z0, z1, fork=True):
     """Plate notches, as prisms over [z0, z1] so the same tools build the assembly keep-out."""
     tools = []
     for x, y in STANDOFFS:
@@ -256,8 +292,9 @@ def plate_cutters(z0, z1):
         tools.append(rt_box(deg, PLATE_R - 2.5, PLATE_R + 1, -USB_OPEN[0] / 2, USB_OPEN[0] / 2, z0 - 1, z1 + 1))
     for y in BUTTONS.values():  # nubs pass the plate edge when the Cup goes on
         tools.append(box(36.5, y, (z0 + z1) / 2, 5.0, NUB[0] + 1.0, z1 - z0 + 2))
-    half = LEVER[3] / 2 + PRONG_GAP + PRONG_T
-    tools.append(rt_box(SL_ANG, PRONG_R0 - 0.4, PLATE_R + 1, -half - LEVER_TRAVEL - 0.5, half + LEVER_TRAVEL + 0.5, z0 - 1, z1 + 1))
+    if fork:
+        half = FORK_HALF + LEVER_TRAVEL + 0.5  # the slider's fork passes the plate edge
+        tools.append(rt_box(SL_ANG, 30.0, PLATE_R + 1, -half, half, z0 - 1, z1 + 1))
     bx, by = BUZZER
     for dx, dy in [(0, 0), (2.2, 0), (-2.2, 0), (0, 2.2), (0, -2.2)]:
         tools.append(cyl(0.75, z0 - 1, z1 + 1, bx + dx, by + dy))
@@ -272,7 +309,7 @@ def make_plate():
     return p
 
 
-def make_board_ref():
+def make_board_ref(lever_dy=0.0):
     g = cyl(GLASS_R, 1.2, GLASS_TOP)
     add(g, cyl(33.0, -2.1, 1.2))  # PCB + LCD module (the PCB corners reach r = 35.5 only away from the controls)
     for x, y in STANDOFFS:
@@ -280,7 +317,7 @@ def make_board_ref():
     for deg in USB.values():
         add(g, rt_box(deg, 29.2, 36.8, -4.47, 4.47, -4.9, -1.64))
     add(g, box((29.4 + SW_BODY_X) / 2, -7.3, -2.75, SW_BODY_X - 29.4, 9.0, 2.7))  # switch body
-    add(g, box((SW_BODY_X + LEVER[0]) / 2, LEVER[1], LEVER[2], LEVER[0] - SW_BODY_X, LEVER[3], LEVER[4]))
+    add(g, box((SW_BODY_X + LEVER[0]) / 2, LEVER[1] + lever_dy, LEVER[2], LEVER[0] - SW_BODY_X, LEVER[3], LEVER[4]))
     for y in BUTTONS.values():
         add(g, box(32.2, y, BTN_Z, 3.6, 4.7, 2.3))
         add(g, box(33.8, y, BTN_Z, 0.4, 1.6, 0.6))
@@ -319,6 +356,24 @@ def clear(des):
             ent.deleteMe()
 
 
+def slider_checks(slider_at, cup, keepout, travel, tag, bad):
+    """The slider at both travel ends: clear of the cup and of the board with the lever moved to
+    match, and able to pass the plate when the Cup goes on."""
+    for off in (-travel, travel):
+        s = slider_at(off)
+        board = make_board_ref(lever_y(off) - LEVER[1])
+        for k, other in (("board", board), ("cup", cup), ("plate path", keepout)):
+            v = overlap_mm3(s, other)
+            if v > 1e-3:
+                bad.append(f"{tag}@{off:+.1f} x {k}: {v:.3f} mm3")
+
+
+def export_stl(des, body, path):
+    opts = des.exportManager.createSTLExportOptions(body, path)
+    opts.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
+    des.exportManager.execute(opts)
+
+
 def run(context):
     app = adsk.core.Application.get()
     des = adsk.fusion.Design.cast(app.activeProduct)
@@ -326,7 +381,6 @@ def run(context):
     clear(des)
     ring_, plate, cup, slider = make_ring(), make_plate(), make_cup(), make_slider()
     board, cell = make_board_ref(), make_cell_ref()
-    lr, lt = lever_t()
 
     parts = {"ring": ring_, "plate": plate, "cup": cup, "slider": slider}
     refs = {"board": board, "cell": cell}
@@ -340,14 +394,7 @@ def run(context):
             v = overlap_mm3(everything[a], everything[b])
             if v > 1e-3:
                 bad.append(f"{a} x {b}: {v:.3f} mm3")
-    # slider at both ends of the switch travel must still clear the board and the cup
-    for off in (-LEVER_TRAVEL, LEVER_TRAVEL):  # travel ends about the switch body centre
-        s = make_slider(offset=off)
-        for k, other in (("board", board), ("cup", cup)):
-            v = overlap_mm3(s, other)
-            if v > 1e-3 and not (k == "board"):
-                bad.append(f"slider@{off:.2f} x {k}: {v:.3f} mm3")
-    # assembly path: every Cup feature above the plate must pass the plate's outline going up
+    # assembly path: everything that goes on with the Cup must pass the plate's outline going up
     keepout = cyl(PLATE_R, PLATE_BOT, SEAM_Z)
     cut(keepout, *plate_cutters(PLATE_BOT, SEAM_Z))
     cup_above = TBM.copy(cup)
@@ -355,13 +402,27 @@ def run(context):
     v = overlap_mm3(cup_above, keepout)
     if v > 1e-3:
         bad.append(f"cup blocks plate on assembly: {v:.3f} mm3")
+    slider_checks(lambda off: make_slider(off), cup, keepout, LEVER_TRAVEL, "slider", bad)
+    # prototypes: every notch variant against every travel variant's wall piece
+    protos = {}
+    for travel in PROTO_TRAVELS:
+        piece = make_test_piece(travel)
+        protos[f"proto_wall_travel{travel:.1f}"] = make_test_piece(travel, PROTO_TRAVELS.index(travel) + 1)
+        for gap in PROTO_GAPS:
+            slider_checks(lambda off, g=gap: make_slider(off, g), piece, keepout, travel, f"gap{gap} travel{travel}", bad)
+    for i, gap in enumerate(PROTO_GAPS):
+        protos[f"proto_slider_gap{gap:.2f}"] = make_slider(0.0, gap, i + 1)
     print("interference:", "none" if not bad else bad)
-    print(f"lever in slider frame r={lr:.2f} t={lt:.2f}; slider angle {SL_ANG:.2f} deg")
 
     for name, body in (("Board (reference)", board), ("Cell (reference)", cell)):
         place(root, name, body)
-    place(root, "Ring", ring_)
-    place(root, "Plate", plate)
-    place(root, "Cup", cup)
-    place(root, "Slider", slider)
-    print(f"overall: dia {2 * R_OUT:.1f} mm, thickness {TOP_Z - BOT_Z:.1f} mm")
+    placed = {n: place(root, n.capitalize(), b) for n, b in parts.items()}
+    out = os.path.join(os.path.dirname(__file__), "stl")
+    for n, b in placed.items():
+        export_stl(des, b, os.path.join(out, f"puck_{n}.stl"))
+    os.makedirs(os.path.join(out, "proto"), exist_ok=True)
+    for n, body in protos.items():
+        b = place(root, n, body)
+        export_stl(des, b, os.path.join(out, "proto", f"{n}.stl"))
+        b.isLightBulbOn = False
+    print(f"overall: dia {2 * R_OUT:.1f} mm, thickness {TOP_Z - BOT_Z:.1f} mm; STLs in {out}")
