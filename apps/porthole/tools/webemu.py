@@ -245,7 +245,7 @@ for (const btn of document.querySelectorAll('[data-tilt]')) {
   btn.addEventListener('click', () => { const [x, y] = btn.dataset.tilt.split(',').map(Number); setTilt(x, y, true); });
 }
 window.addEventListener('keydown', (e) => {
-  if (e.target.matches('button')) return;
+  if (e.key === ' ' && e.target.matches('button')) return;   // Space clicks a focused button; arrows still tilt
   let a = Math.atan2(tilt.x, tilt.y), m = Math.hypot(tilt.x, tilt.y);
   if (e.key === 'ArrowLeft') a -= 0.15; else if (e.key === 'ArrowRight') a += 0.15;
   else if (e.key === 'ArrowUp') m = Math.max(0, m - 0.1); else if (e.key === 'ArrowDown') m = Math.min(1, m + 0.1);

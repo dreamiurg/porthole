@@ -31,8 +31,6 @@ app here has been tested on it. Round boards in other sizes won't run these apps
 These parts are on the board but no app uses them yet. They're good starting
 points for a new app or feature.
 
-- Motion sensor: shake to wake a pet, tilt to steer in a minigame, or count steps
-  when someone carries the device around.
 - Bluetooth LE: two devices near each other could let pets meet, play together
   or trade stickers.
 - Wi-Fi: set the clock automatically, update firmware without a cable, or

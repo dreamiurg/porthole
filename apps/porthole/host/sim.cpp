@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "games/biscuit/game.h"
+#include "games/marble-kick/game.h"
 #include "games/pets-club/game.h"
 #include "games/sand-jar/game.h"
 #include "gfx565.h"
@@ -45,7 +46,8 @@ struct FileStore : shell::Store {
 static Game g_pets;
 static biscuit::Game g_biscuit;
 static sandjar::Game g_sandjar;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_sandjar};
+static marble::Game g_marble;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_sandjar};
 static FileStore g_store;
 static Shell g_shell;
 static InputTracker g_tracker;
@@ -296,7 +298,7 @@ static void onKey(SDL_Keycode k, bool& run) {
 static void onArrow(SDL_Keycode k) {
   if (k != SDLK_LEFT && k != SDLK_RIGHT && k != SDLK_UP && k != SDLK_DOWN) return;
   float a = atan2f(g_gravity[0], g_gravity[1]), m = fminf(1, hypotf(g_gravity[0], g_gravity[1]) / 1000);
-  a += k == SDLK_LEFT ? 0.15f : k == SDLK_RIGHT ? -0.15f : 0;
+  a += k == SDLK_LEFT ? -0.15f : k == SDLK_RIGHT ? 0.15f : 0;
   m = fminf(1, fmaxf(0, m + (k == SDLK_DOWN ? 0.1f : k == SDLK_UP ? -0.1f : 0)));
   g_gravity[0] = (int16_t)(sinf(a) * m * 1000); g_gravity[1] = (int16_t)(cosf(a) * m * 1000); g_gravity[2] = (int16_t)(-sqrtf(1 - m * m) * 1000);
 }

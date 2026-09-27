@@ -121,7 +121,9 @@ def stats(p: serial.Serial) -> str:
 
 
 def tilt(args: list[str]) -> str:
-    """The firmware's gravity override: "tilt X Y Z" -> "G<x>,<y>,<z>", "untilt" (no args) -> a bare "G"."""
+    """The firmware's gravity override: "tilt X Y Z" -> "G<x>,<y>,<z>". A bare "G" (untilt) clears it, so never send one here."""
+    if len(args) != 3:
+        sys.exit(f"tilt needs X Y Z (milli-g), got: {' '.join(args) or 'nothing'}")
     return "G" + ",".join(str(int(a)) for a in args)
 
 
@@ -129,7 +131,7 @@ def run(p: serial.Serial, script: Path) -> None:
     try:
         run_lines(p, script)
     finally:
-        ask(p, tilt([]))  # a held gravity would otherwise stay on until the next reboot
+        ask(p, "G")  # a held gravity would otherwise stay on until the next reboot
 
 
 def run_lines(p: serial.Serial, script: Path) -> None:
@@ -150,7 +152,7 @@ def run_lines(p: serial.Serial, script: Path) -> None:
         elif cmd == "echo":
             print(" ".join(args))
         elif cmd in ("tilt", "untilt"):
-            print(ask(p, tilt(args if cmd == "tilt" else [])).strip())
+            print(ask(p, tilt(args) if cmd == "tilt" else "G").strip())
         elif cmd == "metrics":
             print(ask(p, "M").strip())
         elif cmd == "raw":
@@ -172,7 +174,7 @@ def main() -> None:
     elif cmd == "stats":
         print(stats(p))
     elif cmd in ("tilt", "untilt"):
-        print(ask(p, tilt(args if cmd == "tilt" else [])).strip())
+        print(ask(p, tilt(args) if cmd == "tilt" else "G").strip())
     elif cmd == "metrics":
         print(ask(p, "M").strip())
     elif cmd == "run":

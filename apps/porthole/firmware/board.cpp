@@ -196,7 +196,7 @@ static const int IMU_LSB_PER_G = 8192;   // +-4 g full scale
 // valid table has an odd number of -1 signs without an x/y swap, or an even number with one.
 // Measured on the board (2026-09-27, serial "A"): held upright with the home button on top, the chip read +1 g on its x;
 // turned a quarter clockwise (right edge down), -1 g on its y; lying face up, -1 g on its z. So chip +x points to the
-// screen's top, chip +y to its left, chip +z into the glass.
+// screen's top, chip +y to its right, chip +z into the glass.
 static const struct { uint8_t axis; int8_t sign; } SCREEN_FROM_CHIP[3] = {{1, +1}, {0, -1}, {2, -1}};
 static uint8_t g_imu = 0;   // the chip's I2C address, 0 = not found
 
