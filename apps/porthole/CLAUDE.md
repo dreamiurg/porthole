@@ -41,7 +41,7 @@ In `os/`, the shared runtime:
 - `palette.h`: the fixed 32-color palette and the day/evening/night tint tables. Indexed games only; an RGB565 game picks its own flat colors.
 - `font8x8_basic.h`: third-party public-domain font table, not normally touched.
 
-`firmware/board.cpp`, `firmware/board.h`, `firmware/main.cpp` are the firmware, the only code that includes Arduino headers. `board.h` is the hardware contract (display present/init, touch, RTC, backlight, buzzer, NVS blobs addressed by namespace and key); `board.cpp` implements it for this specific board; `main.cpp` is the Arduino `setup()`/`loop()` that runs the `Shell` with the static `APPS` array over an NVS `Store`, restores the clock, dims the backlight, and parses serial commands. The 12 MB single-factory-app partition table (see below) already has room for Biscuit's assets. `board::presentHires()` draws a native 480x480 buffer straight to the panel for a `SURFACE_RGB565` game, alongside today's `present()` (160x160, upscaled 3x) for indexed games.
+`firmware/board.cpp`, `firmware/board.h`, `firmware/main.cpp` are the firmware, the only code that includes Arduino headers. `board.h` is the hardware contract (display present/init, touch, the QMI8658 accelerometer as screen-frame gravity (`readAccel`; its chip-to-screen axis table sits next to the driver), RTC, backlight, buzzer, NVS blobs addressed by namespace and key); `board.cpp` implements it for this specific board; `main.cpp` is the Arduino `setup()`/`loop()` that runs the `Shell` with the static `APPS` array over an NVS `Store`, restores the clock, dims the backlight, and feeds the accelerometer's gravity into every frame's `Input`, keeps frame metrics, and parses serial commands. The 12 MB single-factory-app partition table (see below) already has room for Biscuit's assets. `board::presentHires()` draws a native 480x480 buffer straight to the panel for a `SURFACE_RGB565` game, alongside today's `present()` (160x160, upscaled 3x) for indexed games.
 
 `host/` is the simulator and the tests: `sim.cpp` (the whole shell; SDL2 window, or headless `--script`/`--serve` modes; saves go to `build/host/<namespace>-<key>.sav`), `test_pet.cpp` (the Pets Club simulation self-check), `test_shell.cpp` (profiles, migration, delete, rest budget, daily cap) and `test_biscuit.cpp` (Biscuit's rules self-check) -- a new game's host test always lives here, as `host/test_<name>.cpp`, not inside the game's own directory. None of them touches `firmware/`.
 
@@ -110,6 +110,9 @@ See the `flash` skill for the PlatformIO-venv Python-dependency caveat and how t
 | `R` | Erase every profile and every game's saves (namespaces `porthole` and each app's store), then reboot |
 | `P<n>` | Clear profile `n`'s 4-digit secret code (parent escape hatch) |
 | `D` | Toggle touch-position logging |
+| `A` | Print the accelerometer: raw chip axes (LSB, 8192 = 1 g) and the mapped gravity `gx,gy,gz` (milli-g, screen frame, what `Input` gets) |
+| `G<x>,<y>,<z>` / `G` | Hold `Input`'s gravity at that vector (milli-g, screen frame) for testing; a bare `G` returns to the sensor (`devctl.py tilt X Y Z` / `untilt`) |
+| `M` | Frame metrics over the last 64 frames: loop period and fps (plus the worst frame), time in shell update, render and present (present includes the vsync wait), free heap, free PSRAM, largest free internal block (`devctl.py metrics`) |
 
 ### Hooks and CI
 
