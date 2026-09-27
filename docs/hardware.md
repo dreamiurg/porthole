@@ -16,16 +16,15 @@ other hardware is welcome; see "Other boards" in the [README](../README.md).
 | Buzzer | Single-tone piezo on the expander. It is harsh: use it rarely. |
 | USB | USB-C through a CH343 USB-UART bridge, so `Serial` is UART0, not USB CDC |
 | Radio | 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth 5 LE, onboard antenna |
-| Motion | QMI8658 6-axis accelerometer and gyroscope |
+| Motion | QMI8658 6-axis accelerometer and gyroscope, I2C `0x6B`; Porthole reads the accelerometer as gravity (`board::readAccel`) |
 | Storage | microSD (TF) card slot |
 | Battery | MX1.25 header for a 3.7 V lithium cell, with a charging chip onboard |
 
 Buy the flat version, `ESP32-S3-Touch-LCD-2.1`
-([Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20), an affiliate link;
-[Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm), not an affiliate link). The
+([Amazon](https://www.amazon.com/dp/B0DDPQSKJD),
+[Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm)). The
 `ESP32-S3-Touch-LCD-2.1B` has curved 2.5D glass over the same size screen; no
 app here has been tested on it. Round boards in other sizes won't run these apps.
-As an Amazon Associate I earn from qualifying purchases.
 
 ## Not used yet
 
@@ -45,7 +44,7 @@ points for a new app or feature.
 
 | Signal | Where |
 | --- | --- |
-| I2C SDA / SCL (touch, expander, RTC) | GPIO15 / GPIO7 |
+| I2C SDA / SCL (touch, expander, RTC, motion) | GPIO15 / GPIO7 |
 | ST7701 init SPI: CLK / MOSI | GPIO2 / GPIO1 (9-bit SPI) |
 | ST7701 CS | expander P2 |
 | LCD reset | expander P0 |

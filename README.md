@@ -71,11 +71,8 @@ for tap-target size, bezel clipping and contrast.
 
 Every app here runs on the **Waveshare ESP32-S3-Touch-LCD-2.1**, $35-45.
 
-- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20): about $45, usually the fastest shipping. This is an affiliate link.
-- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): about $35, the maker's own store. No affiliate link.
-
-If you buy through the Amazon link, I get a small commission and you pay the
-same price. As an Amazon Associate I earn from qualifying purchases.
+- [Amazon](https://www.amazon.com/dp/B0DDPQSKJD): about $45, usually the fastest shipping.
+- [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm): about $35, the maker's own store.
 
 Get the exact 2.1-inch model. Waveshare sells look-alike round boards in other
 sizes (1.28, 1.85 and 2.8 inch), and those won't run these apps. The 2.1-inch

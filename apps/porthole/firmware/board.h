@@ -22,6 +22,11 @@ bool rtcValid();
 uint32_t rtcNow();
 void rtcSet(uint32_t localEpoch);
 
+// Motion sensor (QMI8658 accelerometer). Gravity -- where things fall -- in milli-g in screen terms: +x toward the right
+// edge, +y toward the bottom edge, +z out of the glass toward the viewer (upright: 0,1000,0; face up: 0,0,-1000).
+// False, outputs untouched, when the chip is absent or the read fails. `raw`, if given, gets the chip's own axes (LSB).
+bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw = nullptr);
+
 void setBacklight(uint8_t percent);
 void buzzer(bool on);
 
