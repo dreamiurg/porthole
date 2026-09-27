@@ -11,7 +11,6 @@ namespace {
 // centre circle on the Calibrate page (and drawn, as a hint, on the Full time page, where a tap anywhere plays on).
 constexpr int SIGN_HX = paint::SIGN_X / 3, SIGN_HY = paint::SIGN_Y / 3, SIGN_HR = 12;
 constexpr int GO_X = paint::CX, GO_Y = 348, FT_GO_Y = 376, GO_HX = GO_X / 3, GO_HY = GO_Y / 3, GO_HALF = 14;
-constexpr uint32_t HOLD_MS = 600;   // in a match, holding the leave sign this long leaves: a brush of the glass does not
 constexpr int CX = paint::CX, CY = paint::CY;
 constexpr int COUNTDOWN_Y = 92, GOAL_Y = 160;   // the big words' line tops
 // Who is who besides the shirt numbers (paint::NUMBERS): hair and kits.
@@ -89,9 +88,10 @@ void Game::go(Screen s) {
   screen_ = s;
   gate_.shown(ms_);
   pageMs_ = ms_;
-  starting_ = refSet_ = tapPending_ = false;
+  starting_ = tapPending_ = false;
+  ref_.reset();
   stepMs_ = 0;
-  held_[0].fb = held_[1].fb = nullptr;
+  frames_.reset();
 }
 void Game::newMatch() {
   match_ = start(save_.level, ++matchNo_);
@@ -121,32 +121,24 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     default: updateFullTime(); break;
   }
 }
-bool Game::pressing(int cx, int cy, int r) const {
-  return in_.down && within(in_.downX, in_.downY, cx, cy, r) && within(in_.x, in_.y, cx, cy, r);
-}
 bool Game::onSign(int x, int y) const { return within(x, y, SIGN_HX, SIGN_HY, SIGN_HR); }
 // Leaving: a tap on the sign, except in a match (Kickoff, Match, Goal), where a hand on the case may brush it: there it
 // takes a hold.
 bool Game::leaving() {
   if (!inPlay()) return in_.tapInCircle(SIGN_HX, SIGN_HY, SIGN_HR);
   in_.hit(SIGN_HX - SIGN_HR, SIGN_HY - SIGN_HR, 2 * SIGN_HR, 2 * SIGN_HR);   // for the UI audit
-  return pressing(SIGN_HX, SIGN_HY, SIGN_HR) && in_.heldMs >= HOLD_MS;
+  return hold() >= 1;
 }
-float Game::hold() const {
-  if (!inPlay() || !pressing(SIGN_HX, SIGN_HY, SIGN_HR)) return 0;
-  return in_.heldMs >= HOLD_MS ? 1 : (float)in_.heldMs / HOLD_MS;
-}
+float Game::hold() const { return ui::holdProgress(in_, inPlay() && pressing(SIGN_HX, SIGN_HY, SIGN_HR)); }
 
 tilt::Vec Game::calTilt() const {
-  return tilt::from({in_.gx, in_.gy, in_.gz}, {(int)lroundf(ref_[0]), (int)lroundf(ref_[1]), (int)lroundf(ref_[2])});
+  return tilt::from({in_.gx, in_.gy, in_.gz}, ref_.get());
 }
 bool Game::ready() const { return arrowFor(calTilt()).ready; }
 // The arrow shows the tilt away from where the device has been held lately: a move points it the way the player will
 // run, holding still settles it. The go sign starts the match once the grip is steady (tilt::Steady).
 void Game::updateCalibrate(uint32_t dt) {
-  const float g[3] = {(float)in_.gx, (float)in_.gy, (float)in_.gz}, k = dt >= 1000 ? 1 : dt / 1000.0f;
-  for (int i = 0; i < 3; i++) ref_[i] = refSet_ ? ref_[i] + (g[i] - ref_[i]) * k : g[i];
-  refSet_ = true;
+  ref_.add(in_.gx, in_.gy, in_.gz, dt);
   if (in_.tapIn(GO_HX - GO_HALF, GO_HY - GO_HALF, 2 * GO_HALF, 2 * GO_HALF)) starting_ = true;
   tilt::Grav n;
   if (starting_ && steady_.get(ms_, &n)) { neutral_ = n; newMatch(); }
@@ -218,28 +210,10 @@ void Game::draw() {
   const DrawFn fn = DRAW[screen_];   // never (this->*TABLE[i])(): see Biscuit's game.cpp
   (this->*fn)();
 }
-static int area(const paint::Box& b) { return paint::empty(b) ? 0 : (b.x1 - b.x0) * (b.y1 - b.y0); }
 void Game::render() {
   Mover now[MAX_MOVERS];
   const int n = movers(now);
-  const uint32_t lk = look();
-  Held* h = held_[0].fb == gfx565::fb ? &held_[0] : held_[1].fb == gfx565::fb ? &held_[1] : nullptr;
-  if (!h) { h = &held_[held_[0].fb ? 1 : 0]; h->fb = gfx565::fb; h->n = -1; }
-  if (gfx::textLogEnabled || lk != h->look || n != h->n) { paint::clip(paint::FULL); draw(); }   // the audit logs every glyph
-  else
-    for (int i = 0; i < n; i++) {   // each thing that moved: where it was, and where it is
-      if (paint::same(now[i].box, h->movers[i].box) && now[i].key == h->movers[i].key) continue;
-      const paint::Box u = paint::unite(h->movers[i].box, now[i].box);   // overlapping boxes: one pass, not two
-      if (area(u) <= area(h->movers[i].box) + area(now[i].box)) { paint::clip(u); draw(); continue; }
-      paint::clip(h->movers[i].box);
-      draw();
-      paint::clip(now[i].box);
-      draw();
-    }
-  paint::clip(paint::FULL);
-  for (int i = 0; i < n; i++) h->movers[i] = now[i];
-  h->n = n;
-  h->look = lk;
+  frames_.render(now, n, look(), [this] { draw(); });
 }
 
 // Shadows first, then the kid's ring on the ground, the players nearest the top first (a player lower down stands in

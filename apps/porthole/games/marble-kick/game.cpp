@@ -18,7 +18,6 @@ static_assert(NUM_LEVELS <= STAR_LEVELS, "the save holds stars for every level")
 constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics coordinates are relative to it
 // The level's coin sits on the rim at the lower right, where no goal ever turns (they stay between -45 and 60 degrees).
 constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 392, COIN_Y = 376;
-constexpr uint32_t HOLD_MS = 600;       // Play: holding the knob this long leaves, however the finger wobbles on it
 constexpr float DISH_GAIN = 1.2f, DISH_SPRING = 9, DISH_DAMP = 3.5f;   // the dish: 1/s^2, 1/s
 
 // The launcher icon, in the shell's indexed palette (the launcher is the shell's): the tray from above, the goal's net
@@ -54,7 +53,6 @@ constexpr IconPx ICON_PX = makeIcon();
 const gfx::Sprite ICON = {32, 32, ICON_PX.px};
 
 int px(float v) { return CX + (int)lroundf(v); }
-bool within(int x, int y, int cx, int cy, int r) { return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r; }
 int coinX(int i) { return COIN_HX[i % 4]; }
 int coinY(int i) { return COIN_HY[i / 4]; }
 // A goalpost where the goal is drawn: at the quarter degree its net is drawn at (paint::Mouth), so the posts never
@@ -77,7 +75,7 @@ void Game::enter(const AppEnter& e) {
   level_ = save_.level < NUM_LEVELS ? save_.level : 0;
   dirty_ = wantsHome_ = false;
   ball_ = start(LEVELS[level_]);
-  steady_ = {}; refSet_ = false; dish_ = dishV_ = {0, 0}; dishMs_ = 0;
+  steady_ = {}; ref_.reset(); dish_ = dishV_ = {0, 0}; dishMs_ = 0;
   go(SC_CALIBRATE);
 }
 
@@ -87,7 +85,7 @@ void Game::go(Screen s) {
   gate_.shown(ms_);
   pageMs_ = ms_;
   starting_ = false;
-  held_[0].fb = held_[1].fb = nullptr;
+  frames_.reset();
 }
 void Game::play(int level) {
   level_ = level;
@@ -109,9 +107,6 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     default: updateDone(); break;
   }
 }
-bool Game::pressing(int cx, int cy, int r) const {
-  return in_.down && within(in_.downX, in_.downY, cx, cy, r) && within(in_.x, in_.y, cx, cy, r);
-}
 bool Game::pressingBox(int cx, int cy, int half) const {   // the same, for a square: a Done page coin's tap box
   return in_.down && abs(in_.downX - cx) <= half && abs(in_.downY - cy) <= half && abs(in_.x - cx) <= half && abs(in_.y - cy) <= half;
 }
@@ -123,26 +118,21 @@ bool Game::goPressed() const {   // the red button: under the finger, or on Cali
 bool Game::leaving() {
   if (screen_ != SC_PLAY) return in_.tapInCircle(KNOB_HX, KNOB_HY, KNOB_HR);
   in_.hit(KNOB_HX - KNOB_HR, KNOB_HY - KNOB_HR, 2 * KNOB_HR, 2 * KNOB_HR);   // for the UI audit
-  return pressing(KNOB_HX, KNOB_HY, KNOB_HR) && in_.heldMs >= HOLD_MS;   // the ring's rule, not the tracker's long press
+  return hold() >= 1;   // the ring's rule (os/ui.h), not the tracker's long press
 }
-float Game::hold() const {
-  if (screen_ != SC_PLAY || !pressing(KNOB_HX, KNOB_HY, KNOB_HR)) return 0;
-  return in_.heldMs >= HOLD_MS ? 1 : (float)in_.heldMs / HOLD_MS;
-}
+float Game::hold() const { return ui::holdProgress(in_, screen_ == SC_PLAY && pressing(KNOB_HX, KNOB_HY, KNOB_HR)); }
 
 // The dish shows the tilt away from where the device has been held lately: a move rolls its ball the way the game's
 // will, holding still lets it settle in the middle. Pressing the button starts play once the hold is steady.
 void Game::updateCalibrate(uint32_t dt) {
-  const float g[3] = {(float)in_.gx, (float)in_.gy, (float)in_.gz}, k = dt >= 1000 ? 1 : dt / 1000.0f;
-  for (int i = 0; i < 3; i++) ref_[i] = refSet_ ? ref_[i] + (g[i] - ref_[i]) * k : g[i];
-  refSet_ = true;
+  ref_.add(in_.gx, in_.gy, in_.gz, dt);
   rollDish(dt);
   if (in_.tapInCircle(GO_HX, GO_HY, GO_HR)) starting_ = true;
   Grav n;
   if (starting_ && steady_.get(ms_, &n)) { neutral_ = n; play(level_); }
 }
 void Game::rollDish(uint32_t dt) {
-  const Vec a = tiltAccel({in_.gx, in_.gy, in_.gz}, {(int)lroundf(ref_[0]), (int)lroundf(ref_[1]), (int)lroundf(ref_[2])});
+  const Vec a = tiltAccel({in_.gx, in_.gy, in_.gz}, ref_.get());
   const float h = STEP_MS / 1000.0f;
   dishMs_ += dt > MAX_FRAME_MS ? MAX_FRAME_MS : dt;
   for (; dishMs_ >= STEP_MS; dishMs_ -= STEP_MS) {   // whole substeps, the rest carried to the next frame
@@ -228,27 +218,10 @@ void Game::draw() {
   const DrawFn fn = DRAW[screen_];   // never (this->*TABLE[i])(): see Biscuit's game.cpp
   (this->*fn)();
 }
-static int area(const paint::Box& b) { return paint::empty(b) ? 0 : (b.x1 - b.x0) * (b.y1 - b.y0); }
 void Game::render() {
   Mover now[MAX_MOVERS];
   const int n = movers(now);
-  const uint32_t lk = look();
-  Held* h = held_[0].fb == gfx565::fb ? &held_[0] : held_[1].fb == gfx565::fb ? &held_[1] : nullptr;
-  if (!h) { h = &held_[held_[0].fb ? 1 : 0]; h->fb = gfx565::fb; h->n = -1; }
-  if (gfx::textLogEnabled || lk != h->look || n != h->n) { paint::clip(paint::FULL); draw(); }   // the audit logs every glyph
-  else
-    for (int i = 0; i < n; i++) {   // each thing that moved: where it was, and where it is
-      if (paint::same(now[i].box, h->movers[i].box) && now[i].key == h->movers[i].key) continue;
-      const paint::Box u = paint::unite(h->movers[i].box, now[i].box);   // overlapping boxes: one pass, not two
-      if (area(u) <= area(h->movers[i].box) + area(now[i].box)) { paint::clip(u); draw(); continue; }
-      paint::clip(h->movers[i].box);
-      draw();
-      paint::clip(now[i].box);
-      draw();
-    }
-  for (int i = 0; i < n; i++) h->movers[i] = now[i];
-  h->n = n;
-  h->look = lk;
+  frames_.render(now, n, look(), [this] { draw(); });
 }
 
 // Every shadow first, then what casts them, so a shadow never lies on top of a peg; holes and stars lie flat on the

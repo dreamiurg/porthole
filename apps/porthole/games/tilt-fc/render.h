@@ -3,23 +3,19 @@
 // kid's team) against coral, and a low sun in the upper left throwing long shadows to the lower right. Its own flat
 // colors (render.cpp) and Rubik Mono One (generated/fonts.h), shared with no other game.
 //
-// Everything goes through one clipped span writer (and font::clip for the few words), so any rectangle can be
-// repainted alone: the court is computed row by row from the geometry in match.h, no cached image. That is what lets
+// Everything goes through the runtime's clipped span writer (os/canvas.h, which also sets font::clip for the few
+// words), so any rectangle can be repainted alone: the court is computed row by row from the geometry in match.h, no cached image. That is what lets
 // game.cpp repaint only what moved in each of the panel's two buffers. Panel px, absolute (the court's middle is
 // 240,240; match.h's positions are relative to it).
 #pragma once
 #include <stdint.h>
+#include "canvas.h"
 #include "gfx565.h"
 #include "match.h"
 
 namespace fc::paint {
-struct Box { int x0, y0, x1, y1; };   // x1, y1 exclusive; empty when x1 <= x0
-constexpr Box FULL = {0, 0, gfx565::W, gfx565::H};
-constexpr Box NONE = {0, 0, 0, 0};
-inline bool empty(const Box& b) { return b.x1 <= b.x0 || b.y1 <= b.y0; }
-inline bool same(const Box& a, const Box& b) { return a.x0 == b.x0 && a.y0 == b.y0 && a.x1 == b.x1 && a.y1 == b.y1; }
-Box unite(const Box& a, const Box& b);
-void clip(const Box& b);   // every draw below, text included, touches only this box
+// The clipped painter is the runtime's (os/canvas.h): every draw below, text included, touches only canvas::clip's box.
+using canvas::Box; using canvas::FULL; using canvas::NONE; using canvas::unite; using canvas::clip;
 
 constexpr int CX = gfx565::CX, CY = gfx565::CY;
 // What a player covers, his long shadow and the marker over his head included; a ball, its shadow included.

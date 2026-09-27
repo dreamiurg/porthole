@@ -6,6 +6,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "canvas.h"
 #include "match.h"
 #include "render.h"
 #include "save.h"
@@ -49,25 +50,23 @@ class Game : public App {
   // Calibrate: the neutral is the steady average of the last frames; the arrow shows the tilt away from `ref_`, which
   // follows gravity over about a second, so holding still settles it.
   tilt::Steady steady_;
-  float ref_[3] = {0, 0, -1000};
-  bool refSet_ = false, starting_ = false;   // starting_: the go sign was pressed, the match starts once held steady
+  tilt::Follow ref_;
+  bool starting_ = false;         // the go sign was pressed, the match starts once held steady
   Match match_{};
   uint32_t stepMs_ = 0;           // time not yet played, under one STEP_MS
   bool tapPending_ = false;       // a press not yet played (a frame too short for a step)
   uint16_t matchNo_ = 0;          // matches started this visit: the seed of the next one
-  // What each of the panel's two buffers holds (os/app.h): this page, its movers (players, ball, the aim spot, the
+  // What each of the panel's two buffers holds (os/canvas.h): this page, its movers (players, ball, the aim spot, the
   // clock; the Calibrate arrow) as boxes with keys, and the rest of its state as `look` (the score, the countdown, a
-  // pressed sign, the hold). A buffer not listed (fb null after a page change) or with another look gets the whole
-  // page; one listed gets each changed mover's old and new boxes, and nothing when none changed.
+  // pressed sign, the hold).
   static constexpr int MAX_MOVERS = PLAYERS + 3;
-  struct Mover { paint::Box box; int key; };
-  struct Held { const uint16_t* fb; Mover movers[MAX_MOVERS]; int n; uint32_t look; };
-  Held held_[2] = {};
+  using Mover = canvas::Mover;
+  canvas::Frames<MAX_MOVERS> frames_;
 
   void go(Screen s);
   void newMatch();
   void finish();                  // the Full time page, and the save: a win, the next level
-  bool pressing(int cx, int cy, int r) const;   // the finger went down in this logical circle and is still in it
+  bool pressing(int cx, int cy, int r) const { return ui::pressing(in_, cx, cy, r); }
   bool onSign(int x, int y) const;
   bool leaving();
   float hold() const;             // how far holding the leave sign has got, 0..1 (Kickoff, Match, Goal)

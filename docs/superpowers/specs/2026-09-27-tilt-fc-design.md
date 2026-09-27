@@ -92,9 +92,9 @@ from the kid's resting angle and the steady neutral are shared too (`os/tilt.h`)
 - `match.h` / `match.cpp`: the pure rules, no drawing: positions and velocities in court units (floats; the S3 has
   an FPU), possession, control switching, pass targeting, shooting, tackles, the opponent AI, the match clock.
   Everything a host test needs lives here.
-- `render.cpp`: the court, players, ball, cone and rim markers, drawn with `gfx565` primitives plus the few the
-  game needs that `gfx565` lacks (ellipse, thick line, filled triangle). They stay in the game until a second game
-  needs them.
+- `render.cpp`: the court, players, ball and markers, drawn in code on the runtime's clipped span painter
+  (`os/canvas.h`: spans, discs, convex polygons, round boxes, and the two-buffer repaint bookkeeping), which Marble
+  Kick and Tilt FC share; only the look is the game's.
 - ~~Camera follows the ball; the court is about 2 screens wide and 3 tall; rim markers point off screen.~~ Decided
   against in slice 1: the court fits one round screen (see "Slice 1 as built"), so there is no camera and nothing is
   ever off screen.

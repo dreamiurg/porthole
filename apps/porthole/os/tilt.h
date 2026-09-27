@@ -52,4 +52,21 @@ class Steady {
   Sample s_[SAMPLES] = {};
   int n_ = 0;
 };
+
+// A Calibrate page's preview: a reference that follows gravity over about a second (each frame closes dt / 1000 of the
+// gap, the first reading sets it), so a move shows as a tilt away from it and holding still settles it. Fed every frame.
+class Follow {
+ public:
+  void reset() { set_ = false; }
+  void add(int x, int y, int z, uint32_t dt) {
+    const float g[3] = {(float)x, (float)y, (float)z}, k = dt >= 1000 ? 1 : dt / 1000.0f;
+    for (int i = 0; i < 3; i++) r_[i] = set_ ? r_[i] + (g[i] - r_[i]) * k : g[i];
+    set_ = true;
+  }
+  Grav get() const { return {(int)lroundf(r_[0]), (int)lroundf(r_[1]), (int)lroundf(r_[2])}; }
+
+ private:
+  float r_[3] = {0, 0, -1000};
+  bool set_ = false;
+};
 }  // namespace tilt

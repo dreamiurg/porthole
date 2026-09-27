@@ -40,15 +40,19 @@ A game is a directory under `games/`: the Makefile and PlatformIO build every `g
 In `os/`, the shared runtime:
 
 - `app.h`: the contract between the shell and a game (`App`, `Profile`, `SaveSlot`, `AppEnter`, `MAX_PROFILES`, and `enum Surface { SURFACE_INDEXED, SURFACE_RGB565 }` plus `App::surface()`, defaulted to `SURFACE_INDEXED` so Pets Club needs no change; polled every frame, so a game may switch per screen).
-- `ui.h` / `ui.cpp`: the shared widgets (panel, button, icon button, the orange back button, toast, the name keyboard, `FreshGate`: every screen change ignores touches for 450 ms). Stay indexed even on an RGB565 game: launcher, picker, rest screen and this keyboard are always drawn by the shell.
+- `ui.h` / `ui.cpp`: the shared widgets (panel, button, icon button, the orange back button, toast, the name keyboard, `FreshGate`: every screen change ignores touches for 450 ms), and the press-and-hold rule for a way out a hand on the case may brush during play (`pressing`, `HOLD_MS`). Stay indexed even on an RGB565 game: launcher, picker, rest screen and this keyboard are always drawn by the shell.
 - `crc32.h`: the checksum every persisted blob uses.
 - `gfx.h` / `gfx.cpp`: the indexed-color renderer. A 160x160 indexed-color framebuffer (`gfx::fb`), drawing primitives, the 8x8 font, the round-mask test (`gfx::inCircle`), and the `UiAudit` hit-region log / text-box log that the `ui` sim command and the playtester agent read.
 - `gfx565.h` / `gfx565.cpp` and `font.h` / `font.cpp`: the full-resolution surface for games whose `App::surface()` is `SURFACE_RGB565`: 480x480 RGB565 primitives, image and RLE blits, and anti-aliased bitmap text that measures, wraps, paginates and draws exactly like the LVGL 8.3 build Biscuit came from (each game's own fonts in its `generated/fonts.h`, from `games/biscuit/tools/fontconv.py`: `--game tiltfc` for Tilt FC's, which keeps bitmaps only for the glyphs it draws), and `font::clip` so a game repainting part of the panel never blends a glyph's edge twice. Physical px; hit tests stay logical, and text logs into the same `gfx::textLog` in logical px so the UI audit covers both surfaces. The firmware renders such a game straight into the panel's back buffer.
+- `canvas.h` / `canvas.cpp`: the clipped span painter for RGB565 games drawn in code (Marble Kick, Tilt FC): one span
+  writer cut to a clip box (`canvas::clip` also sets `font::clip`), discs, convex polygons, round boxes, and
+  `canvas::Frames`, the two-buffer bookkeeping that repaints only the movers that changed (a page's movers as boxes
+  with keys, the rest of its state as one `look` word). The look stays in each game.
 - `input.h`: turns raw touch samples into tap/long-press/drag edges (`InputTracker`); shared verbatim by firmware and host.
 - `tilt.h`: tilt from however the kid holds the device, for every tilt game: `tilt::from` (gravity turned by the
-  rotation that lays the kid's calibrated neutral flat) and `tilt::Steady` (the neutral: the average of the last
-  300 ms, refused while a reading is not a plausible 1 g). What a tilt does stays in the game. Header-only;
-  `host/test_tilt.cpp`.
+  rotation that lays the kid's calibrated neutral flat), `tilt::Steady` (the neutral: the average of the last 300 ms,
+  refused while a reading is not a plausible 1 g) and `tilt::Follow` (a Calibrate page's slow reference). What a tilt
+  does stays in the game. Header-only; `host/test_tilt.cpp`.
 - `palette.h`: the fixed 32-color palette and the day/evening/night tint tables. Indexed games only; an RGB565 game picks its own flat colors.
 - `font8x8_basic.h`: third-party public-domain font table, not normally touched.
 

@@ -29,6 +29,13 @@ constexpr int NAME_LEN = 8;
 bool keyboard(const Input& in, char* buf, int& len, uint8_t& page);   // true when OK is tapped with at least one letter
 void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, uint32_t ms);   // hint shows while empty
 
+// A press on a logical circle: the finger went down in it and is still in it.
+bool pressing(const Input& in, int cx, int cy, int r);
+// During play a hand holding the case may brush the glass, so a game's way out there takes a hold, not a tap: HOLD_MS
+// on the sign. holdProgress: how far a press on it (`on`, from pressing) has got, 0..1.
+constexpr uint32_t HOLD_MS = 600;
+float holdProgress(const Input& in, bool on);
+
 // A fresh screen ignores every touch until a press begins FRESH_MS after it appeared: the finger that changed it
 // (still down after a long press) and the second tap of a kid's slow double tap (300-400 ms apart) would otherwise
 // act on whatever now sits under them. Call shown() on every screen change and filter() on every frame's input.

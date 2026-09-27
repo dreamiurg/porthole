@@ -1,5 +1,6 @@
 // Self-check for the shared tilt input (os/tilt.h): the tilt away from any grip turns the way the device leans, the
-// same amount both ways, and the steady neutral ignores a jolt. What each game does with a tilt is in its own test.
+// same amount both ways, the steady neutral ignores a jolt, and the Calibrate preview's reference follows gravity. What
+// each game does with a tilt is in its own test.
 // Run: make test
 #include <assert.h>
 #include <math.h>
@@ -58,11 +59,28 @@ static void steadyNeutral() {
   s.add(0, 300, -300, 0);   // weightless or falling (0.42 g) is not a way of holding it either
   CHECK(!s.get(0, &n));
 }
+// The Calibrate preview's reference: the first reading sets it, then it closes dt / 1000 of the gap a frame (all of it
+// after a stall of a second), and a reset starts over.
+static void follow() {
+  tilt::Follow f;
+  f.add(0, 1000, 0, 40);
+  Grav g = f.get();
+  CHECK(g.x == 0 && g.y == 1000 && g.z == 0);
+  f.add(500, 1000, 0, 200);
+  CHECK(f.get().x == 100);
+  f.add(0, 0, -1000, 1500);
+  g = f.get();
+  CHECK(g.x == 0 && g.y == 0 && g.z == -1000);
+  f.reset();
+  f.add(300, 0, 0, 10);
+  CHECK(f.get().x == 300);
+}
 
 int main() {
   everyGrip();
   asHeld();
   steadyNeutral();
+  follow();
   printf("test_tilt: all %d checks passed\n", checks);
   return 0;
 }

@@ -5,6 +5,7 @@
 #include "generated/fonts.h"
 
 namespace fc::paint {
+using namespace canvas;   // the painter: span, disc, poly, roundBox, isqrt, rows, discRun, clipBox
 namespace {
 constexpr uint16_t c565(uint32_t c) { return (uint16_t)((c >> 8 & 0xF800) | (c >> 5 & 0x07E0) | (c >> 3 & 0x001F)); }
 constexpr uint32_t dim(uint32_t c) {   // the same surface in the sun's shadow: 62% of each channel, baked, not blended
@@ -32,64 +33,6 @@ constexpr uint16_t BALL_WHITE = c565(0xFBFBF7), BALL_EDGE = c565(0x3C3C38), BALL
 constexpr uint16_t SIGN_FACE = c565(0x2C4A5E), CUP = c565(0xF2B632), CUP_DARK = c565(0x9E6E0E);
 constexpr int CURB_W = 6, LINE_W = 3, BOX_W = 80, BOX_Y = HALF_H - 58;
 
-Box clip_ = FULL;
-int isqrt(int n) {   // floor(sqrt(n)), -1 for a negative n
-  if (n < 0) return -1;
-  int r = (int)sqrtf((float)n);
-  while (r * r > n) r--;
-  while ((r + 1) * (r + 1) <= n) r++;
-  return r;
-}
-void span(int y, int x0, int x1, uint16_t c) {   // x1 exclusive
-  if (y < clip_.y0 || y >= clip_.y1) return;
-  if (x0 < clip_.x0) x0 = clip_.x0;
-  if (x1 > clip_.x1) x1 = clip_.x1;
-  if (x1 > x0) gfx565::hline(x0, y, x1 - x0, c);
-}
-void rows(int& y0, int& y1) { if (y0 < clip_.y0) y0 = clip_.y0; if (y1 > clip_.y1) y1 = clip_.y1; }   // y1 exclusive
-struct Run { int l, r; };   // [l, r) of a row; empty when r <= l
-Run discRun(int cx, int cy, int r, int y) {   // a disc's run on row y
-  const int h = isqrt(r * r + r - (y - cy) * (y - cy));
-  return h < 0 ? Run{0, 0} : Run{cx - h, cx + h + 1};
-}
-void disc(int cx, int cy, int r, uint16_t c) {
-  int y0 = cy - r, y1 = cy + r + 1;
-  rows(y0, y1);
-  for (int y = y0; y < y1; y++) { const Run d = discRun(cx, cy, r, y); span(y, d.l, d.r, c); }
-}
-// A convex polygon, vertices in order (x, y pairs): its rows in the clip, and each row's run [*l, *r).
-void polyRows(const int* p, int n, int* y0, int* y1) {
-  *y0 = *y1 = p[1];
-  for (int i = 1; i < n; i++) { if (p[2 * i + 1] < *y0) *y0 = p[2 * i + 1]; if (p[2 * i + 1] > *y1) *y1 = p[2 * i + 1]; }
-  ++*y1;
-  rows(*y0, *y1);
-}
-bool polyRun(const int* p, int n, int y, int* l, int* r) {
-  float lo = 1e9f, hi = -1e9f;
-  for (int i = 0; i < n; i++) {
-    const int* a = p + 2 * i; const int* b = p + 2 * ((i + 1) % n);
-    if (a[1] == b[1] || y < (a[1] < b[1] ? a[1] : b[1]) || y > (a[1] > b[1] ? a[1] : b[1])) continue;
-    const float x = a[0] + (float)(y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]);
-    if (x < lo) lo = x;
-    if (x > hi) hi = x;
-  }
-  *l = (int)lroundf(lo); *r = (int)lroundf(hi) + 1;
-  return hi >= lo;
-}
-void poly(const int* p, int n, uint16_t c) {
-  int y0, y1, l, r;
-  polyRows(p, n, &y0, &y1);
-  for (int y = y0; y < y1; y++) if (polyRun(p, n, y, &l, &r)) span(y, l, r, c);
-}
-void roundBox(const Box& b, int r, uint16_t c) {
-  int y0 = b.y0, y1 = b.y1;
-  rows(y0, y1);
-  for (int y = y0; y < y1; y++) {
-    const int k = y - b.y0 < r ? r - (y - b.y0) : y - (b.y1 - 1 - r) > 0 ? y - (b.y1 - 1 - r) : 0;   // rows into a corner
-    const int in = k ? r - isqrt(r * r - k * k) : 0;
-    span(y, b.x0 + in, b.x1 - in, c);
-  }
-}
 // A thick line from a to b, w either side.
 struct Pt { int x, y; };
 void bar(Pt a, Pt b, int w, uint16_t c) {
@@ -167,9 +110,10 @@ void net(const Row& row, int dy) {
   if (a > back) { seg(row, CX - GOAL_HALF - 3, CX + GOAL_HALF + 4, POST); return; }
   seg(row, CX - GOAL_HALF - 3, CX - GOAL_HALF + 1, POST);
   seg(row, CX + GOAL_HALF, CX + GOAL_HALF + 4, POST);
-  if (row.y < clip_.y0 || row.y >= clip_.y1) return;
+  const Box& c = clipBox();
+  if (row.y < c.y0 || row.y >= c.y1) return;
   const int x0 = row.x0 > CX - GOAL_HALF + 1 ? row.x0 : CX - GOAL_HALF + 1, x1 = row.x1 < CX + GOAL_HALF ? row.x1 : CX + GOAL_HALF;
-  for (int x = x0 > clip_.x0 ? x0 : clip_.x0; x < x1 && x < clip_.x1; x++) {
+  for (int x = x0 > c.x0 ? x0 : c.x0; x < x1 && x < c.x1; x++) {
     const int u = x - CX + 800;
     gfx565::pixel(x, row.y, SH.c[(u + a) % 8 == 0 || (u - a) % 8 == 0 ? NET_LINE : NET_BG][row.shade]);
   }
@@ -188,9 +132,10 @@ void courtRow(const Row& row) {
   net(row, dy);
 }
 void shade(int y, int l, int r) {   // the court in the sun's shadow along [l, r) of row y
-  if (y < clip_.y0 || y >= clip_.y1) return;
-  if (l < clip_.x0) l = clip_.x0;
-  if (r > clip_.x1) r = clip_.x1;
+  const Box& c = clipBox();
+  if (y < c.y0 || y >= c.y1) return;
+  if (l < c.x0) l = c.x0;
+  if (r > c.x1) r = c.x1;
   if (r > l) courtRow({y, l, r, true});
 }
 void shadeDisc(int cx, int cy, int r) {
@@ -214,18 +159,9 @@ void tile(const Box& b, int r, const KitRgb& k, const char* s, const font::Font&
 }
 }  // namespace
 
-Box unite(const Box& a, const Box& b) {
-  if (empty(a)) return b;
-  if (empty(b)) return a;
-  return {a.x0 < b.x0 ? a.x0 : b.x0, a.y0 < b.y0 ? a.y0 : b.y0, a.x1 > b.x1 ? a.x1 : b.x1, a.y1 > b.y1 ? a.y1 : b.y1};
-}
-void clip(const Box& b) {
-  clip_ = {b.x0 < 0 ? 0 : b.x0, b.y0 < 0 ? 0 : b.y0, b.x1 > gfx565::W ? gfx565::W : b.x1, b.y1 > gfx565::H ? gfx565::H : b.y1};
-  font::clip(clip_.x0, clip_.y0, clip_.x1, clip_.y1);
-}
-
 void court() {
-  for (int y = clip_.y0; y < clip_.y1; y++) courtRow({y, clip_.x0, clip_.x1, false});
+  const Box& c = clipBox();
+  for (int y = c.y0; y < c.y1; y++) courtRow({y, c.x0, c.x1, false});
 }
 // The sun is low in the upper left: a standing player's shadow reaches well past his feet to the lower right, a
 // capsule from under him to about a body and a half away.

@@ -57,16 +57,17 @@ Everything is in `namespace fc` (Pets Club owns the global `Game`).
   carrier, off-ball spots), the world (`move`, `room`, `roll`, `pickUp`, `tackle`, `whistle`). `aim()` is the one rule
   for what a tap does (the render shows it). Positions are panel px from the middle of the glass, +y down.
 - `save.h`: the Save (below), `seal`, `loadBlob`. Header-only.
-- `render.h` / `render.cpp`: the look. One clipped span writer under everything (and `font::clip` for text), so any
-  rectangle can be repainted alone; the court is painted row by row from match.h's geometry, and shadows are the
-  ground in shade (baked, 62%). Also the strings the game draws (`NUMBERS`, `GOAL_WORD`), checked against the font.
-- `game.h` / `game.cpp`: the App: the five pages, the launcher icon (a 32x32 sprite in the shell's indexed palette),
-  and `render()`'s buffer bookkeeping like Marble Kick's: each of the panel's two buffers gets the whole page after a
-  page change or a change of `look` (score, countdown, a pressed sign, the hold), otherwise each mover (six players
-  keyed by facing, control and pass target; the ball; the aim dot; the clock dial; the Calibrate arrow) that changed
-  gets its old and new boxes repainted. `debugCmd`: `kickoff` (calibrate as held now and start a match),
-  `score<T>-<C>`, `clock<S>` (seconds left); `debugPrint` reports `wins level teal coral clock control owner x y bx
-  by neutralX/Y/Z ready starting`.
+- `render.h` / `render.cpp`: the look, on the runtime's clipped span writer (`os/canvas.h`, which sets `font::clip` for
+  text), so any rectangle can be repainted alone; the court is painted row by row from match.h's geometry, and shadows
+  are the ground in shade (baked, 62%). Also the strings the game draws (`NUMBERS`, `GOAL_WORD`), checked against the
+  font.
+- `game.h` / `game.cpp`: the App: the five pages, the launcher icon (a 32x32 sprite in the shell's indexed palette), and
+  `render()`'s buffer bookkeeping (`canvas::Frames`, os/canvas.h, shared with Marble Kick): each of the panel's two
+  buffers gets the whole page after a page change or a change of `look` (score, countdown, a pressed sign, the hold),
+  otherwise each mover (six players keyed by facing, control and pass target; the ball; the aim dot; the clock dial; the
+  Calibrate arrow) that changed gets its old and new boxes repainted. `debugCmd`: `kickoff` (calibrate as held now and
+  start a match), `score<T>-<C>`, `clock<S>` (seconds left); `debugPrint` reports `wins level teal coral clock control
+  owner x y bx by neutralX/Y/Z ready starting`.
 - `fonts/`: Rubik Mono One (`RubikMonoOne-Regular.ttf`, from github.com/google/fonts `ofl/rubikmonoone`) and its
   `OFL.txt`. `generated/fonts.h`: 18, 36 and 64 px, converted by `games/biscuit/tools/fontconv.py --game tiltfc`
   (commands in its docstring), bitmaps only for `GLYPHS` (" !0123456789AGLO").

@@ -9,6 +9,7 @@
 #include "app.h"
 #include "physics.h"
 #include "render.h"
+#include "canvas.h"
 #include "save.h"
 #include "ui.h"
 
@@ -49,23 +50,20 @@ class Game : public App {
   // Calibrate: the last frames' gravity (the neutral is their steady average), and the dish: a small ball rolling on
   // the tilt away from `ref_`, which follows gravity over about a second, so holding still settles it in the middle.
   tilt::Steady steady_;
-  float ref_[3] = {0, 0, -1000};
-  bool refSet_ = false, starting_ = false;   // starting_: the button was pressed, play starts once held steady
+  tilt::Follow ref_;
+  bool starting_ = false;         // the button was pressed, play starts once held steady
   Vec dish_{}, dishV_{};
   uint32_t dishMs_ = 0;           // the dish's time not yet simulated, under one STEP_MS
-  // What each of the panel's two buffers holds (os/app.h): this page, its movers (the ball, the moving pegs, a moving
-  // goal; the dish's ball) as boxes with keys, and the rest of its state as `look` (pressed buttons, the hold ring, the
-  // dish's glow, stars picked up, the confetti's frame). A buffer not listed (fb null after a page change) or with
-  // another look gets the whole page; one listed gets each changed mover's old and new boxes, and nothing when none
-  // changed.
+  // What each of the panel's two buffers holds (os/canvas.h): this page, its movers (the ball, the moving pegs, a
+  // moving goal; the dish's ball) as boxes with keys, and the rest of its state as `look` (pressed buttons, the hold
+  // ring, the dish's glow, stars picked up, the confetti's frame).
   static constexpr int MAX_MOVERS = 2 + MAX_PEGS;
-  struct Mover { paint::Box box; int key; };
-  struct Held { const uint16_t* fb; Mover movers[MAX_MOVERS]; int n; uint32_t look; };
-  Held held_[2] = {};
+  using Mover = canvas::Mover;
+  canvas::Frames<MAX_MOVERS> frames_;
 
   void go(Screen s);
   void play(int level);
-  bool pressing(int cx, int cy, int r) const;   // the finger went down in this logical circle and is still in it
+  bool pressing(int cx, int cy, int r) const { return ui::pressing(in_, cx, cy, r); }
   bool pressingBox(int cx, int cy, int half) const;
   bool goPressed() const;
   bool leaving();
