@@ -198,10 +198,11 @@ tex.image_user.frame_duration = len(files)
 tex.image_user.use_auto_refresh = True
 tex.image_user.use_cyclic = True  # loops when the shot outlasts the frames
 emi = nt.nodes.new("ShaderNodeEmission")
-emi.inputs["Strength"].default_value = LOOK["screen"] * 2**-args.exposure  # a lit panel keeps its brightness when the room is darker
+emi.inputs["Strength"].default_value = LOOK["screen"] * 2 ** (-args.exposure / 2)  # readable in a darker room, without glowing
 coat = nt.nodes.new("ShaderNodeBsdfPrincipled")
 coat.inputs["Base Color"].default_value = (0.004, 0.004, 0.005, 1)
-coat.inputs["Roughness"].default_value = 0.06
+coat.inputs["Roughness"].default_value = 0.12
+coat.inputs["Specular IOR Level"].default_value = 0.25  # anti-glare: the window and key barely mirror in the glass
 add = nt.nodes.new("ShaderNodeAddShader")
 link(nt, tex.outputs["Color"], emi.inputs["Color"])
 link(nt, emi.outputs[0], add.inputs[0])
