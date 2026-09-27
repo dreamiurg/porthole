@@ -10,8 +10,8 @@ from above, with a felt pitch inside. **Tilt the device and the ball rolls like 
 pegs into the goal cut into the rim. Levels get harder with more pegs, then moving pegs, then pegs that drift toward
 the ball.
 
-It is built first for two reasons. It is the simplest of the concepts we liked. It also brings tilt input to the
-runtime (driver, sim, scripts, web emulator) and answers the question the whole football direction depends on:
+It is built first for two reasons. It is the simplest of the concepts we liked, and, on top of the shared tilt input
+(built with the Sand Jar session), it answers the question the whole football direction depends on:
 does tilt feel good for a 6-year-old holding the device in its case? Tilt FC reuses that input, not this game's code
 or look.
 
@@ -25,8 +25,8 @@ no other screen time.
 - **Neutral is how the kid holds the device.** The Calibrate page records the resting angle before each session.
 - **Nothing punishes.** No timer, no holes, no lives, nothing takes the ball away. A peg only nudges the ball. A
   level is never failed, only not finished yet.
-- **Its own look (root rule 7):** walnut rim, maple tray, green felt, red lacquered pegs, brass goalposts, Baloo 2
-  for the few words. Drawn on the RGB565 surface in its own flat colors, sharing nothing with Pets Club, Biscuit or
+- **Its own look (root rule 7):** walnut rim, maple tray, green felt, red lacquered pegs, brass goalposts, wooden
+  letter blocks for the few words. Drawn on the RGB565 surface in its own flat colors, sharing nothing with Pets Club, Biscuit or
   Tilt FC.
 - **Sound:** none in slice 1. Later at most one short sound on a goal, through the shell's mute.
 
@@ -84,28 +84,20 @@ Slice 3 adds moving and drifting pegs and a one-tap kick, for 12+ levels in tota
 
 ## Architecture
 
-### New: tilt in `Input` (os)
+### Tilt input (shared platform, `feat/motion-sensor`)
 
-`os/input.h`'s `Input` gains three fields; nothing else in `os/` changes and the existing games ignore them:
+Built together with the Sand Jar session on the shared branch `feat/motion-sensor`, not by this game:
 
-```cpp
-bool hasTilt = false;           // a sensor (or the sim) is supplying tilt
-int16_t tiltX = 0, tiltY = 0;   // where a marble would roll, screen axes, milli-g: +x right, +y down the screen
-```
+- `Input.gx/gy/gz`: gravity (where things fall) in milli-g, screen frame: +x right, +y toward the bottom edge, +z out
+  of the glass. Upright (0, 1000, 0), lying face up (0, 0, -1000); the default (0, 0, -1000) means no in-plane tilt.
+- Firmware: `board::readAccel()` for the QMI8658 (I2C 0x6B, WHO_AM_I 0x05, +/-4 g, 224 Hz, ~30 Hz low-pass), read
+  once per frame, verified on the board except the x/y axis mapping (`SCREEN_FROM_CHIP` in `firmware/board.cpp`).
+  Serial `A` (reading), `G<x>,<y>,<z>` (override), `M` (frame metrics); `tools/devctl.py tilt/untilt/metrics`.
+- Sim: script and `--serve` command `tilt X Y Z`, `shake`, `perf`; SDL arrow keys turn and lay the device; the web
+  emulator has a tilt pad. The sim holds the device upright (0, 1000, 0) until told otherwise.
 
-Screen axes, not sensor axes: the firmware maps the QMI8658's axes to the panel's orientation once, so every game
-reads "+y = toward the bottom of the screen". A game does its own calibration (subtracts the neutral it recorded);
-the runtime stays dumb.
-
-Sources of tilt:
-
-- **Firmware (slice 2):** `board::readTilt()` reads the QMI8658 accelerometer over the shared I2C bus (GPIO15/7,
-  alongside touch, expander and RTC) every frame, lightly low-pass filtered, and `main.cpp` copies it into `Input`.
-  The I2C address and axis orientation are **unverified** until someone checks them on the board.
-- **SDL sim:** arrow keys / WASD hold +/-400 mg per axis (diagonals allowed); release returns to 0.
-- **Scripts (`snap --script`, playtests):** new command `tilt <x> <y>` sets a persistent tilt in milli-g.
-- **Web emulator:** the `--serve` protocol gets a `tilt x y` line; `tools/webemu.py` sends it from arrow keys and
-  from a small drag pad under the canvas.
+Marble Kick's own part: the Calibrate page stores the gravity vector the kid holds as neutral, and each frame the
+in-plane tilt is `(gx - neutral.gx, gy - neutral.gy)`, then the dead zone and the clamp.
 
 ### New: the game, `games/marble-kick/`
 
@@ -117,8 +109,8 @@ Sources of tilt:
 - `render.cpp`: tray, felt, chalk lines, pegs with baked highlights and shadows, the ball, drawn with `gfx565`
   primitives (`circle`, `roundRect`, `rect`) plus an ellipse for shadows, kept inside the game until a second game
   needs it.
-- Font: Baloo 2 (OFL), converted with the existing `fontconv.py` into the game's own `generated/fonts.h`, limited
-  to the glyphs it draws. The launcher icon is a `gfx::Sprite` in the shared indexed palette, because the shell draws
+- Lettering: wooden letter blocks drawn in code (rounded cells, one glyph per block) for the few glyphs the game
+  shows (digits, GOAL!). No font file, so nothing to fetch, and a look no other game has. The launcher icon is a `gfx::Sprite` in the shared indexed palette, because the shell draws
   the launcher.
 - Registered in `APPS[]` in `firmware/main.cpp` and `host/sim.cpp`.
 
@@ -134,12 +126,12 @@ Each slice is playable end to end, has its own PR, and ends with `make ci` green
 
 | Slice | What ships | Where it runs | Size (provisional) |
 | --- | --- | --- | --- |
-| 1. Roll | Tilt in `Input` (sim keys, script `tilt`, webemu); the game registered; Calibrate, Play, Goal and Done pages; 6 static levels; level reached saved | emulator | feature, 2-3 days |
-| 2. On the board | `board::readTilt()` for the QMI8658, axis mapping, filtering; tuning dead zone, acceleration and friction on the real device in its case; the kid plays it | device (firmware-engineer, needs the board) | story-to-feature, 1-2 days plus tuning |
+| 1. Roll | The game registered; Calibrate, Play, Goal and Done pages; 6 static levels; level reached saved | emulator | feature, 2-3 days |
+| 2. On the board | Settle the x/y axis mapping with one physical tilt; tune dead zone, acceleration and friction on the real device in its case; the kid plays it | device (shared with the Sand Jar session) | story, 1 day plus tuning |
 | 3. Harder | moving and drifting pegs, the one-tap kick, 12+ levels, Levels page | emulator, then device | feature, 2-3 days |
 | 4. Together | best-run ghost, a level made for someone else, stickers | emulator, then device | feature, 2-4 days |
 
-Slice 2 depends only on slice 1's `Input` fields. It is the real test of the idea: if tilt feels bad in the case,
+Slice 2 is the real test of the idea: if tilt feels bad in the case,
 we learn it here, before Tilt FC.
 
 ## Testing
@@ -161,9 +153,10 @@ we learn it here, before Tilt FC.
 
 - **Tilt fatigue and frustration.** Mitigations: the dead zone, the kid's own neutral, strong felt friction, short
   levels, no timer. The first real answer comes in slice 2.
-- **Frame rate.** A full-screen RGB565 redraw every frame writes 460 KB to PSRAM per frame. Unlike Tilt FC, nothing
-  scrolls here, so if it is too slow the static tray can be drawn once and only the ball and pegs redrawn.
-- **Unverified hardware facts:** the QMI8658's I2C address and its axis orientation relative to the panel.
+- **Frame rate.** Measured on the board by the Sand Jar session: a full 480x480 RGB565 redraw takes ~24 ms and
+  Biscuit runs ~19.5 fps. The panel has two buffers used by turns, so Marble Kick redraws only what changed (the
+  ball, moving pegs, their old spots) in each buffer, tracking two frames of dirty rectangles.
+- **Unverified hardware fact:** the x/y axis mapping of the QMI8658 relative to the panel.
 - **Taps near the rim while tilting:** a hand holding the case may touch the glass. Play ignores taps (slices 1-2),
   except for the back button.
 

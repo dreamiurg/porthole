@@ -73,8 +73,8 @@ button on every page leads out (Match page asks nothing, it just leaves; the mat
 
 ### Tilt input (lands with Marble Kick)
 
-Marble Kick is built first and introduces tilt to the runtime: `Input.hasTilt/tiltX/tiltY` in screen axes, the
-QMI8658 driver, and tilt in the sim, scripts and web emulator. See
+Tilt input is shared platform (`Input.gx/gy/gz`, the QMI8658 driver, tilt in the sim, scripts and web emulator),
+built with the Sand Jar session on `feat/motion-sensor`. See
 `docs/superpowers/specs/2026-09-27-marble-kick-design.md`. Tilt FC only consumes it. Calibration (subtracting the
 kid's resting angle) stays per game.
 
