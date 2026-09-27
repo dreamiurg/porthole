@@ -1,6 +1,6 @@
 # Tilt FC: design
 
-Status: draft for review, 2026-09-27. Concept canvas (research, mockups, the three concepts we did not pick):
+Status: draft for review, 2026-09-27. Built second, after Marble Kick. Concept canvas (research, mockups, the other concepts):
 https://claude.ai/artifact/QVizBtdL6G9X854bVxi32S
 
 ## What and why
@@ -71,28 +71,12 @@ button on every page leads out (Match page asks nothing, it just leaves; the mat
 
 ## Architecture
 
-### New: tilt in `Input` (os)
+### Tilt input (lands with Marble Kick)
 
-`os/input.h`'s `Input` gains three fields; nothing else in `os/` changes and the existing games ignore them:
-
-```cpp
-bool hasTilt = false;       // a sensor (or the sim) is supplying tilt
-int16_t tiltX = 0, tiltY = 0;   // where a marble would roll, screen axes, milli-g: +x right, +y down the screen
-```
-
-Screen axes, not sensor axes: the firmware maps the QMI8658's axes to the panel's orientation once, so every game
-reads "+y = toward the bottom of the screen". A game does its own calibration (subtracts the neutral it
-recorded); the runtime stays dumb.
-
-Sources of tilt:
-
-- **Firmware:** `board::readTilt()` reads the QMI8658 accelerometer over the shared I2C bus (GPIO15/7, alongside
-  touch, expander and RTC) every frame, lightly low-pass filtered, and `main.cpp` copies it into `Input`.
-  The I2C address and axis orientation are **unverified** until someone checks them on the board.
-- **SDL sim:** arrow keys / WASD hold +/-600 mg per axis (diagonals allowed); release returns to 0.
-- **Scripts (`snap --script`, playtests):** new command `tilt <x> <y>` sets a persistent tilt in milli-g.
-- **Web emulator:** the `--serve` protocol gets a `tilt x y` line; `tools/webemu.py` sends it from arrow keys and
-  from a small drag pad under the canvas.
+Marble Kick is built first and introduces tilt to the runtime: `Input.hasTilt/tiltX/tiltY` in screen axes, the
+QMI8658 driver, and tilt in the sim, scripts and web emulator. See
+`docs/superpowers/specs/2026-09-27-marble-kick-design.md`. Tilt FC only consumes it. Calibration (subtracting the
+kid's resting angle) stays per game.
 
 ### New: the game, `games/tilt-fc/`
 
@@ -140,12 +124,12 @@ Each slice is playable end to end, has its own PR, and ends with `make ci` green
 
 | Slice | What ships | Where it runs | Size (provisional) |
 | --- | --- | --- | --- |
-| 1. Kickabout | Tilt in `Input` (sim keys, script `tilt`, webemu); the game registered; Calibrate/Kickoff/Match/Goal pages; you + 1 teammate + a keeper who only stands and blocks; pass-to-cone, control switch, shot, goal, kickoff | emulator | feature, 2-4 days |
+| 1. Kickabout | The game registered; Calibrate/Kickoff/Match/Goal pages; you + 1 teammate + a keeper who only stands and blocks; pass-to-cone, control switch, shot, goal, kickoff | emulator | feature, 2-4 days |
 | 2. Match | 3 v 3 (two outfield players and a keeper each); defense as above; 6-8 s possession cap; Save moment; match clock; Full time page | emulator | feature, 3-5 days |
-| 3. On the board | `board::readTilt()` for the QMI8658, axis mapping, filtering; tuning dead zone, speed and cone on the real device in its case | device (firmware-engineer, needs the board) | story-to-feature, 1-2 days plus tuning |
+| 3. On the board | Tuning dead zone, speed and cone on the real device in its case (the driver already landed with Marble Kick) | device | story, 1 day plus tuning |
 | 4. Own team | Team page (real national teams and clubs), Kit and Pattern pages for custom colors, Number page with the famous player for that team and number; stickers and album; records and ghosts for taking turns | emulator, then device | feature, 2-4 days |
 
-Slice 3 depends only on slice 1's `Input` fields, so it can run in parallel with slice 2 once slice 1 merges.
+Tilt FC starts after Marble Kick has shipped tilt input and proved on the board that tilt feels good in the case.
 The overall shape is an epic: about 1-2 weeks of agent-assisted work, with calendar time dominated by tuning on the
 device.
 
