@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch input), the board layer (`firmware/`), a shell (`shell/`:
 who's playing, a profile per kid, the game launcher) and the games built on it (`games/`): Pets
-Club and Biscuit.
+Club, Biscuit and Sand Jar.
 
 ![Pets Club (top: home, a story, a trick lesson) and Biscuit (bottom: home, a story, a discovery)](docs/screenshots.png)
 
@@ -77,6 +77,19 @@ short, cozy lines and never makes anyone feel bad for being away.
 * **Nothing is lost.** Needs stop at a floor, time away counts for at most eight hours, and there
   are no streaks or countdowns. No sounds at all.
 
+## Sand Jar: a tilt toy
+
+Hold the board and tilt it: what's inside moves like it would in a jar. No goal, nothing saved,
+no sounds. The button at the bottom of the glass switches between four jars:
+
+* **Sand Jar.** Warm sand that pours, heaps and avalanches when tipped far enough.
+* **Rainbow Sand.** Six colored layers that tilting, shaking and fingers stir into patterns.
+* **Beach.** Sand and water: the sand sinks and slides under, wet sand turns darker, bubbles rise.
+* **Orbits.** Glowing stars circling a dim sun, leaving trails; a finger is a heavy star
+  everything swings around.
+
+A finger on the glass pushes the sand aside; a shake scatters it.
+
 ## Play it without the board
 
 You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
@@ -86,11 +99,14 @@ make snap && python3 tools/webemu.py   # or: make webemu
 ```
 
 Open http://127.0.0.1:8765 (`python3 tools/webemu.py 8766` for another port). The mouse is your
-finger; the buttons under the screen skip time and force states (hungry, muddy, grown...) so you
-can see a week of play in a minute.
+finger; the ball on the round pad under the screen is the board's tilt (drag it; the middle is
+lying flat), with Upright, Flat and Shake next to it (arrow keys and space do the same); the
+buttons below skip time and force states (hungry, muddy, grown...) so you can see a week of play
+in a minute.
 
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
-hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits.
+hours, 1 day; the arrow keys tilt the board and space shakes it; `r` resets; `s` saves a
+screenshot to `build/host/shot.bmp`; `q` quits.
 
 The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
 
@@ -124,7 +140,7 @@ using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usb
 
 ```bash
 make check      # content fits its pixel boxes, sprites are current, -Werror build, pet and shell self-tests (seconds)
-make playtest   # 17 scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
+make playtest   # scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
 make ci         # check + playtest + coverage: what CI runs for this app, minus the firmware build
 make coverage   # line coverage of os/, shell/ and games/ -> build/coverage/coverage.xml (needs gcovr, or uvx)
 ```
@@ -159,6 +175,8 @@ games/pets-club/   Pets Club: pet simulation (pet.cpp), screens (game.cpp), stor
 games/biscuit/     Biscuit: rules and save (pet.h), screens (screens_*.cpp), stories, discoveries
                    and adventures (content_*.h), generated scenes, pictures and fonts, and its
                    tools: art (tools/art/, Node), font conversion, content checker
+games/sand-jar/    Sand Jar: sand, water and star physics (physics.cpp), the toy and its renderer
+                   (game.cpp), launcher icon tool
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test
