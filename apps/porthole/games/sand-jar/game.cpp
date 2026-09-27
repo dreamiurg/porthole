@@ -19,10 +19,8 @@ constexpr ui::Box HOME_CELLS = {68, 0, 25, 26}, MODE_CELLS = {55, 131, 50, 24}; 
 struct Rgb { float r, g, b; };
 constexpr uint16_t rgb(uint32_t c) { return (uint16_t)(((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x001F)); }
 constexpr Rgb hex(uint32_t c) { return {(float)(c >> 16 & 255), (float)(c >> 8 & 255), (float)(c & 255)}; }
-uint16_t pack(float r, float g, float b) {
-  const int R = r < 0 ? 0 : r > 255 ? 255 : (int)r, G8 = g < 0 ? 0 : g > 255 ? 255 : (int)g, B = b < 0 ? 0 : b > 255 ? 255 : (int)b;
-  return (uint16_t)((R >> 3) << 11 | (G8 >> 2) << 5 | B >> 3);
-}
+int byte(float v) { const int i = (int)v; return i < 0 ? 0 : i > 255 ? 255 : i; }   // clamped as an int: no float compares
+inline uint16_t pack(float r, float g, float b) { return (uint16_t)((byte(r) >> 3) << 11 | (byte(g) >> 2) << 5 | byte(b) >> 3); }
 Rgb unpack(uint16_t c) { const uint32_t v = gfx565::rgb888(c); return hex(v); }
 // lighten() for whole steps of light (the glass's reflection, Orbits' trails): no float on the board's slow path.
 uint16_t brighten(uint16_t c, int r, int g, int b) {
@@ -43,6 +41,7 @@ constexpr Dot DOTS[MODE_COUNT] = {{{0xe9c27a}, 1}, {{0xff6b9a, 0xffe066, 0x4cc3f
 
 const char* const MODES[MODE_COUNT] = {"sand", "rainbow", "beach", "orbits"};
 float SIN[256];   // the prototype's 256-step sine (Game::tables)
+Rgb WATER_AT[8];  // water's color by depth under the surface, 0..7 cells (Game::tables)
 float sine(int i) { return SIN[i & 255]; }
 Rgb mix(const Rgb& a, const Rgb& b, float u) { return {a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u}; }
 uint16_t lighten(uint16_t c, float r, float g, float b) { const Rgb p = unpack(c); return pack(p.r + r, p.g + g, p.b + b); }
@@ -60,6 +59,7 @@ bool inBox(const ui::Box& b, int c) { const int x = c % G, y = c / G; return x >
 bool underButtons(int c) { return inBox(HOME_CELLS, c) || inBox(MODE_CELLS, c); }
 bool overHome(int x, int y) { const int dx = x - HOME_CX, dy = y - HOME_CY; return dx * dx + dy * dy <= HOME_HIT_R * HOME_HIT_R; }
 bool overMode(int x, int y) { return x >= MODE_BOX.x && y >= MODE_BOX.y && x < MODE_BOX.x + MODE_BOX.w && y < MODE_BOX.y + MODE_BOX.h; }
+int bodyCell(const Body& b) { return (int)(b.y * (1.0f / 3)) * G + (int)(b.x * (1.0f / 3)); }   // bodies are in panel px
 }  // namespace
 
 const gfx::Sprite& Game::icon() const { return SPR_SANDJAR_ICON; }
@@ -106,6 +106,10 @@ void Game::tables() {
     vignette_[k] = (float)(uint8_t)(255 * (1 - 0.38f * t * t)) / 255;
   }
   for (int k = 0; k < 256; k++) SIN[k] = sinf(k / 256.0f * 2 * PI);
+  for (int d = 0; d < 8; d++) {   // lighter near the surface, deep blue below
+    const float t = d * (1.0f / 7);
+    WATER_AT[d] = t < 0.5f ? mix(WATER_TOP, WATER_MID, t * 2) : mix(WATER_MID, WATER_DEEP, t * 2 - 1);
+  }
   uint32_t s = 2463534242u;
   for (uint8_t& n : noise_) { s ^= s << 13; s ^= s >> 17; s ^= s << 5; n = (uint8_t)(s >> 30); }
   shines_ = 0;
@@ -170,15 +174,21 @@ void Game::tick() {
 // Orbits' trails: every body leaves light in its cell and a little in the four around it; all of it fades a tenth a
 // step. The prototype's 7x7 px gaussian peaks at ~16 along a body's path; a cell gets TRAIL_MID of a splat to match.
 // The fade rounds up or down by an ordered dither: always rounding down would put out a faint trail within a few
-// steps, where the prototype's float light lasts ~30.
+// steps, where the prototype's float light lasts ~30. The fade visits every cell of the glass (nothing outside it is
+// ever lit), so it runs every other step, by 0.9^2: a frame is two steps, and the panel shows the same light.
 void Game::glowStep() {
-  uint8_t* g = &jar_.sky.glow[0][0];
-  const uint32_t f = jar_.frame * 151;
-  for (int k = 0; k < 3 * G * G; k++) g[k] = (uint8_t)((g[k] * 230 + ((k * 73 + f) & 255)) >> 8);
+  if (!(jar_.frame & 1)) {
+    const uint32_t f = jar_.frame * 151;
+    for (uint8_t* g : {jar_.sky.glow[0], jar_.sky.glow[1], jar_.sky.glow[2]})
+      for (int y = 0; y < G; y++)
+        for (int k = y * G + span_[y][0], end = y * G + span_[y][1]; k < end; k++)
+          g[k] = (uint8_t)((g[k] * 207 + ((k * 73 + f) & 255)) >> 8);
+  }
   for (int i = 0; i < jar_.n; i++) {
     const Body& b = jar_.sky.body[i];
-    const int c = (int)(b.y / 3) * G + (int)(b.x / 3);   // bodies stay 8 px inside the glass: their own cell is in it
-    const float sp = fminf(1.6f, sqrtf(b.vx * b.vx + b.vy * b.vy) / 5), k = 0.05f * b.size * (0.7f + sp);
+    const int c = bodyCell(b);   // bodies stay 8 px inside the glass: their own cell is in it
+    const float v2 = b.vx * b.vx + b.vy * b.vy, s = v2 * invSqrt(v2) * 0.2f, sp = s < 1.6f ? s : 1.6f;   // fminf is a call
+    const float k = 0.05f * b.size * (0.7f + sp);
     const Rgb& p = STARS[b.shade];
     const float v[3] = {p.r * k, p.g * k, p.b * k};
     for (int ch = 0; ch < 3; ch++) {
@@ -236,7 +246,7 @@ uint16_t Game::grain(int i, int c, int ring) const {
   const uint8_t look = jar_.g.look[i];
   if (kindOf(look) != SAND) return water(i, c, ring);
   const int vx = jar_.g.vx[i], vy = jar_.g.vy[i];
-  const float sp = vx | vy ? sqrtf((float)(vx * vx + vy * vy)) * (1 / (256 * F)) : 0;   // most sand is still
+  const float v2 = (float)(vx * vx + vy * vy), sp = vx | vy ? v2 * invSqrt(v2) * (1 / (256 * F)) : 0;   // most sand is still
   if (sp > 0.5f && (i * 7 + jar_.frame) % 19 == 0) return rgb(0xfff6dc);
   const Rgb* palette = jar_.mode == MODE_RAINBOW ? STRATA : SANDS;
   const Rgb& p = palette[shadeOf(look)];
@@ -252,14 +262,13 @@ uint16_t Game::grain(int i, int c, int ring) const {
 uint16_t Game::water(int i, int c, int ring) const {
   int d = 0;
   for (int m = c; d < 7; d++) { m += upStep_; if (jar_.occ[m] <= 0) break; }
-  const float t = d * (1.0f / 7);
-  Rgb w = t < 0.5f ? mix(WATER_TOP, WATER_MID, t * 2) : mix(WATER_MID, WATER_DEEP, t * 2 - 1);
+  Rgb w = WATER_AT[d];
   const int cx = c % G, cy = c / G, f = (int)jar_.frame;
   if (d == 0) w = mix(w, FOAM, 0.65f + 0.35f * sine(cx * 9 + f * 5));
   const float s = d ? sine(cx * 5 + f * 3) + sine(cy * 4 - f * 2 + (cx >> 1)) : 0;
   const float glint = s > 1.25f ? (s - 1.25f) * 70 : 0;
   const int vx = jar_.g.vx[i], vy = jar_.g.vy[i];
-  const float sp = vx | vy ? sqrtf((float)(vx * vx + vy * vy)) * (22 / (256 * F)) : 0, lift = sp < 40 ? sp : 40;
+  const float v2 = (float)(vx * vx + vy * vy), sp = vx | vy ? v2 * invSqrt(v2) * (22 / (256 * F)) : 0, lift = sp < 40 ? sp : 40;
   w = {w.r + glint + lift, w.g + glint + lift, w.b + glint * 0.8f + lift};
   if (kindOf(jar_.g.look[i]) == BUBBLE) w = {w.r * 0.35f + 180, w.g * 0.35f + 235, w.b * 0.35f + 245};
   const float v = vignette_[ring];
@@ -275,7 +284,7 @@ uint16_t Game::sky(int c, uint16_t bg) const {
 void Game::drawCores(Seen& s) {
   for (int i = 0; i < jar_.n; i++) {
     const Body& b = jar_.sky.body[i];
-    const int c = (int)(b.y / 3) * G + (int)(b.x / 3);
+    const int c = bodyCell(b);
     const Rgb& p = STARS[b.shade];
     const float k = b.size * 0.6f * CORE, h = 36 * b.size * CORE;
     if (put(s.cells, false, c, lighten(s.cells[c], p.r * k + h, p.g * k + h, p.b * k + h)) && underButtons(c)) under_ = true;

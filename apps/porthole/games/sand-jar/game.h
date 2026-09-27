@@ -74,9 +74,10 @@ class Game : public App {
   void tick();
   void glowStep();
   Seen& seenFor(const uint16_t* target);
-  uint16_t grain(int i, int c, int ring) const;
-  uint16_t water(int i, int c, int ring) const;
-  uint16_t sky(int c, uint16_t bg) const;
+  // Per cell, so inlined into drawCells: the board's compiler kept them as calls, which cost as much as a plain cell.
+  [[gnu::always_inline]] inline uint16_t grain(int i, int c, int ring) const;
+  [[gnu::always_inline]] inline uint16_t water(int i, int c, int ring) const;
+  [[gnu::always_inline]] inline uint16_t sky(int c, uint16_t bg) const;
   void drawCells(Seen& s);
   void drawCores(Seen& s);
   void drawButtons(Seen& s);

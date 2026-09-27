@@ -86,14 +86,18 @@ In `physics.h`: `FILL_PCT` (grains per 100 cells of glass per mode: 34/42/46; Or
 In `game.h`: `STEP_MS` (16: the prototype's 60 Hz) and `MAX_STEPS` (2 a frame; a slow frame slows the jar rather than
 piling up steps), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
 
-Host cost (M3 Max, `-O2`, the fastest of repeated runs): 0.22-0.36 ms a physics step with 6.5-8.9k grains, 0.02 ms for
-Orbits; the sim's `perf` (`-O1`, 40 ms frames, 2-3 steps each) shows update 0.7-2.6 ms and render 0.1-0.5 ms a frame.
-The board (M, `tools/devctl.py metrics`) runs Sand Jar and Rainbow Sand at 29 fps settled, flowing, flat, shaken and
-under a finger (update 13-17 ms, render 11-14 ms: two vsyncs); Beach (update 19-22, render 16-20) and Orbits (update
-10-12, render 21-26) land just over two vsyncs and show at 19.5 fps (Orbits 27-29 at rest or held). The panel swaps
+Host cost (M3 Max, `-O2`, 34 ms frames of two steps, the fastest of repeated runs): update 0.09-0.36 ms and render
+0.04-0.12 ms a frame in the grain modes, Orbits 0.03-0.04 and 0.10; the sim's `perf` (`-O1`) is within ~1.5x of that.
+The host is 60-300x faster than the board, and not in proportion: it has a hardware divide and square root, and no
+PSRAM. The board (M, `tools/devctl.py metrics`), last measured before the pass that took the library calls and the
+small calls out of the per-grain, per-body and per-cell paths: Sand Jar and Rainbow Sand at 29 fps settled, flowing,
+flat, shaken and under a finger (update 13-17 ms, render 11-14 ms: two vsyncs); Beach (update 19-22, render 16-20) and
+Orbits (update 10-12, render 21-26) just over two vsyncs, at 19.5 fps (Orbits 27-29 at rest or held). The panel swaps
 at vsync (58 Hz), so a frame is 17, 34 or 51 ms. The board has no hardware float divide or square root (each is a
-library call): the per-grain and per-cell paths multiply by reciprocals and take a square root only for what moves.
-`FILL_PCT` and `STEP_MS`/`MAX_STEPS` are where to trade.
+library call, and so is `memcpy`): the per-grain, per-body and per-cell paths multiply by reciprocals and use
+`invSqrt` (`physics.h`), and their small helpers are forced inline. With two panel buffers by turns, anything that
+changes every frame or every other one (water's shimmer, a fading trail) is rewritten in both: animating it at half
+rate writes no fewer cells. `FILL_PCT` and `STEP_MS`/`MAX_STEPS` are where to trade.
 
 ## Rendering, and the constraint-2 exception
 
@@ -119,7 +123,9 @@ draws no strings at all), computed per cell, not per pixel.
   heap at 0 g stays put even when the last direction seen points elsewhere (the bug the user hit); water tipped 30, 45
   and -60 degrees levels within 8 cells (a stuck walk leaves ~40); a small tilt never lifts a grain; the finger's disc is
   cleared and nothing lost, and its cells free once lifted; sand ends under water; a shake loses nothing; Orbits' bodies
-  stay on the glass; the same inputs replay the same jar.
+  stay on the glass; the same inputs replay the same jar. And the renderer: after frames of flowing sand and water, a
+  sweeping finger, home held down, a shake and the jar upside down, in every mode, the buffer on the glass equals a full
+  redraw of the same state, pixel for pixel.
 - The sim: `tilt X Y Z` (milli-g), `shake`, `perf`, `dbg sand|rainbow|beach|orbits`; `debug` prints `mode`, `grains`,
   `sand`, `water`, `bubbles`, `tilt`, `finger`, `shaking`, `steps`. The SDL window's arrow keys turn gravity, space
   shakes; the web emulator has a tilt pad, Upright/Flat and Shake.
