@@ -40,13 +40,13 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Porthole](#porthole) | The device firmware, with two games inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to, and Biscuit, a full-color pup to read stories and discover things with. A profile for each kid, up to four per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware, with three games inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to; Biscuit, a full-color pup to read stories and discover things with; and Marble Kick, a tilt-controlled marble labyrinth. A profile for each kid, up to four per device. | Browser emulator |
 
 ### Porthole
 
-[![Pets Club and Biscuit screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
+[![Pets Club, Biscuit and Marble Kick screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
 
-The firmware that turns the round screen into a games device, with two games. The first is
+The firmware that turns the round screen into a games device, with three games. The first is
 Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
@@ -61,8 +61,15 @@ between, and 96 illustrated, sourced discoveries in 12 topics, three new ones a 
 A small daily adventure earns stickers, and he learns six tricks. No streaks, no
 countdowns, nothing lost for time away.
 
+The third is Marble Kick: tilt the device and a ball rolls like a marble through a
+wooden labyrinth seen from above, using the board's own motion sensor. Twelve puzzle
+levels ramp from a straight tilt to the goal up to walls, holes, moving defenders, a
+keeper and a moving goal, with three optional stars per level for the long way round.
+Nothing is timed or scored, and every level ships with a proven solution so it's never
+actually stuck.
+
 C++, no libraries: a 160x160 indexed framebuffer scaled 3x and a native 480x480
-RGB565 surface with anti-aliased text, with a host
+RGB565 surface with anti-aliased text, touch and tilt input, with a host
 simulator, a browser emulator and scripted playtests that audit every screen
 for tap-target size, bezel clipping and contrast.
 **[Read more](apps/porthole/README.md)** · try it: `make -C apps/porthole webemu`
@@ -102,7 +109,8 @@ Why this board works well for toys like these:
 - A real-time clock keeps time while it's off, which suits anything with days and nights.
 - Plain Arduino and PlatformIO work, and one USB-C cable handles power, flashing and the serial console.
 
-It also has a motion sensor, Bluetooth and Wi-Fi that no app uses yet.
+It also has a motion sensor (Marble Kick reads it for tilt) and Bluetooth and Wi-Fi
+that no app uses yet.
 [docs/hardware.md](docs/hardware.md) has the full specs and some ideas for them.
 
 ## Getting started

@@ -2,11 +2,11 @@
 
 Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small shared runtime
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
-RGB565 surface with smooth text, touch input), the board layer (`firmware/`), a shell (`shell/`:
-who's playing, a profile per kid, the game launcher) and the games built on it (`games/`): Pets
-Club and Biscuit.
+RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
+the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
+launcher) and the games built on it (`games/`): Pets Club, Biscuit and Marble Kick.
 
-![Pets Club (top: home, a story, a trick lesson) and Biscuit (bottom: home, a story, a discovery)](docs/screenshots.png)
+![Pets Club (top: home, a story, a trick lesson), Biscuit (middle: home, a story, a discovery) and Marble Kick (bottom: calibrate, a puzzle level, goal)](docs/screenshots.png)
 
 ## Profiles and the launcher
 
@@ -77,6 +77,24 @@ short, cozy lines and never makes anyone feel bad for being away.
 * **Nothing is lost.** Needs stop at a floor, time away counts for at most eight hours, and there
   are no streaks or countdowns. No sounds at all.
 
+## Marble Kick: a tilt labyrinth
+
+A wooden labyrinth toy seen from above: tilt the device and the ball rolls like a marble across a
+felt pitch, drawn full-color at the panel's native 480×480. Tilt is the only control; a hand
+holding the case can rest on the glass without doing anything.
+
+* **Calibrate, then play.** Every visit starts by holding the device however feels natural and
+  tapping the red button; that grip becomes neutral, so tilting always feels right no matter how
+  it's held.
+* **Twelve puzzle levels.** Levels 1-2 teach tilting straight at the goal. From level 3 on, tilting
+  straight at the goal is not enough: walls and holes are in the way, then moving defenders, then a
+  keeper and a goal that swings or spins. Three optional stars per level reward the long way round.
+* **Nothing punishes.** No timer, no lives, no score. A wall only nudges the ball, a hole only
+  sends it back to the level's start; a level is only not finished yet. Every level ships with a
+  proven solution, so the ball is never stuck for good.
+* **Its own look.** Walnut rim, maple tray, striped felt, red lacquered pegs and defenders, a brass
+  keeper, wooden letter blocks for the few words it shows.
+
 ## Play it without the board
 
 You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
@@ -87,10 +105,11 @@ make snap && python3 tools/webemu.py   # or: make webemu
 
 Open http://127.0.0.1:8765 (`python3 tools/webemu.py 8766` for another port). The mouse is your
 finger; the buttons under the screen skip time and force states (hungry, muddy, grown...) so you
-can see a week of play in a minute.
+can see a week of play in a minute. For Marble Kick, a tilt pad stands in for the motion sensor.
 
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
-hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits.
+hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits. The arrow
+keys turn and lay the device flat, for Marble Kick's tilt.
 
 The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
 
