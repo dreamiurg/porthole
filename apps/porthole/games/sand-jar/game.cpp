@@ -177,7 +177,7 @@ void Game::glowStep() {
   for (int k = 0; k < 3 * G * G; k++) g[k] = (uint8_t)((g[k] * 230 + ((k * 73 + f) & 255)) >> 8);
   for (int i = 0; i < jar_.n; i++) {
     const Body& b = jar_.sky.body[i];
-    const int c = (int)(b.y / 3) * G + (int)(b.x / 3);   // bodies stay 8 px inside the glass: all five cells exist
+    const int c = (int)(b.y / 3) * G + (int)(b.x / 3);   // bodies stay 8 px inside the glass: their own cell is in it
     const float sp = fminf(1.6f, sqrtf(b.vx * b.vx + b.vy * b.vy) / 5), k = 0.05f * b.size * (0.7f + sp);
     const Rgb& p = STARS[b.shade];
     const float v[3] = {p.r * k, p.g * k, p.b * k};
@@ -185,7 +185,9 @@ void Game::glowStep() {
       uint8_t* l = jar_.sky.glow[ch];
       const int mid = (int)(v[ch] * TRAIL_MID + 0.5f), side = (int)(v[ch] * TRAIL_SIDE + 0.5f);
       l[c] = (uint8_t)(l[c] + mid > 255 ? 255 : l[c] + mid);
-      for (int off : {1, -1, G, -G}) l[c + off] = (uint8_t)(l[c + off] + side > 255 ? 255 : l[c + off] + side);
+      for (int off : {1, -1, G, -G}) {   // a side cell may be past the rim: only a full draw shows it, and would keep it lit
+        if (jar_.occ[c + off] != WALL) l[c + off] = (uint8_t)(l[c + off] + side > 255 ? 255 : l[c + off] + side);
+      }
     }
   }
 }
