@@ -2,6 +2,10 @@
 // shell). Append-only from this first version: a new field goes right before crc (its zero must be a sensible
 // default, loadBlob zero-fills it for older blobs), SAVE_VERSION goes up, nothing is reordered or resized.
 // Header-only, like Biscuit's pet.h.
+//
+// A downgrade loses progress: once a later version appends a field, an older firmware sees a blob bigger than its Save
+// (and a version above its own) and rejects it, so the kid starts again from level 1 (the next save overwrites it).
+// Accepted while progress is a handful of levels; weigh it before appending anything a kid would miss.
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
