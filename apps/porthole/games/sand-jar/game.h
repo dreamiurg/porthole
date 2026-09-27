@@ -11,7 +11,7 @@
 namespace sandjar {
 // ---- tuning knobs
 constexpr uint32_t STEP_MS = 16;     // physics ticks at the prototype's ~60 Hz...
-constexpr int MAX_STEPS = 3;         // ...at most this many a frame: a slow frame slows the jar down, never piles up
+constexpr int MAX_STEPS = 2;         // ...at most this many a frame: a slow frame slows the jar down, never piles up
 constexpr float TILT_EASE = 0.35f;   // share of the way to a new sensor reading the tilt moves each frame (noise)
 constexpr float FLAT_G = 0.05f;      // in-plane gravity under this is the jar lying flat: 0 g, nothing avalanches
 constexpr int SHAKE_MG = 600;        // a reading this far off 1 g (milli-g) is a shake...
@@ -42,7 +42,7 @@ class Game : public App {
   // What one of the panel's buffers holds, per cell: render() writes a cell's 3x3 block only when it changed since it
   // last drew into that buffer (which holds the frame from two renders ago). Kept out of the internal RAM the jar
   // needs: allocated once, and only ever scanned in order.
-  struct Seen { const uint16_t* target; uint16_t* cells; bool valid; };
+  struct Seen { const uint16_t* target; uint16_t* cells; bool valid; int buttons; };   // buttons: the state they were drawn in
   static constexpr int BG_N = 802;   // background rings: (2dx)^2 + (2dy)^2 >> 5 from the middle, the last one black
   struct Shine { uint16_t cell; uint8_t add; };
 
@@ -60,10 +60,12 @@ class Game : public App {
   ui::FreshGate gate_;
   // renderer tables, rebuilt when the mode changes
   uint16_t bg_[4][BG_N] = {};     // the mode's background per ring, in four dither levels
-  uint8_t vignette_[BG_N] = {};   // grains darken toward the rim (x/255)
+  float vignette_[BG_N] = {};     // grains darken toward the rim (0..1)
   uint8_t noise_[256] = {};       // dither level of each cell in a 16x16 tile
   Shine shine_[640] = {}; int shines_ = 0;   // the glass's reflection, in cell order
   int upStep_ = 0;                // cell offset of "up" this frame
+  uint8_t span_[G][2] = {};       // each row's cells inside the glass: [first, last + 1)
+  bool under_ = false;            // this render changed a cell under a button
 
   void pour(Mode m);
   void tables();

@@ -37,8 +37,9 @@ reserved all the same), no clock, no personal data.
   slower), so it is a member of the static game object, never heap.
 - `game.h` / `game.cpp` (`class Game`, `namespace sandjar`): App plumbing, the motion sensor (`Input::gx/gy/gz`), the
   touch, the physics clock, and the renderer.
-- Not yet in `firmware/main.cpp`'s `APPS[]` (only the sim's): the board integration adds it, with the sensor
-  reading in `Input::gx/gy/gz` and counts tuned to the measured frame budget. The firmware already compiles both files.
+- In `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`. On the board the game object (~163 KB, the Jar in it) is
+  static in internal RAM, the two `seen_` histories are `new`ed once and land in PSRAM (the heap puts blocks over 4 KB
+  there), and both files build at `-O2` (a `#pragma`, board only: the firmware is `-Os`).
 - `tools/icon.py` -> `generated/icon.h`: the launcher icon (32x32 indexed, a jar of sand), `--check` in `make lint`.
 - `host/test_sand_jar.cpp` (shared `host/`): the physics self-check. `tests/playtests/50_sand_jar.txt` and
   `24_monkey_sand_jar.txt`: the screen, every mode audited, and chaos under ASan/UBSan.
@@ -61,6 +62,8 @@ reserved all the same), no clock, no personal data.
   touches along (water a lot, sand barely). In Orbits it is a point gravity well instead (`ORB_STAR`).
 - **Shake**: a sensor reading more than `SHAKE_MG` off 1 g, or one that jumps more than `JOLT_MG` from the frame before,
   kicks every grain randomly (`SHAKE`, fading by `SHAKE_FADE` a step).
+- A grain whose eight neighbors are all taken (for sand in Beach: taken by sand, since it may sink into water) cannot
+  move this step: it stops, as a hit would stop it, and costs a few reads. Most of a jar is buried like this.
 - Grains are moved bottom first (a counting sort by height along gravity, O(n)) so the ones above fall into the room the
   ones below leave.
 
@@ -80,12 +83,17 @@ Three additions to the prototype, each a fix for something it got wrong, with a 
 In `physics.h`: `FILL_PCT` (grains per 100 cells of glass per mode: 34/42/46; Orbits 3 -> 6568, 8114, 8887 grains and
 579 bodies; `MAX_GRAINS`/`MAX_BODIES` bound them), `FINGER_R`, `WAKE`, `SAND_SLIDE`, `SAND_FRIC`, `ROLL_DROP`,
 `SHAKE`/`SHAKE_FADE`, `BEACH_SAND`, `ORB_SUN`/`ORB_STAR`; the per-kind `PARAM` table in `physics.cpp` (the prototype's).
-In `game.h`: `STEP_MS` (16: the prototype's 60 Hz) and `MAX_STEPS` (3 a frame; a slow frame slows the jar rather than
+In `game.h`: `STEP_MS` (16: the prototype's 60 Hz) and `MAX_STEPS` (2 a frame; a slow frame slows the jar rather than
 piling up steps), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
 
 Host cost (M3 Max, `-O2`, the fastest of repeated runs): 0.22-0.36 ms a physics step with 6.5-8.9k grains, 0.02 ms for
 Orbits; the sim's `perf` (`-O1`, 40 ms frames, 2-3 steps each) shows update 0.7-2.6 ms and render 0.1-0.5 ms a frame.
-The board is far slower; `FILL_PCT` and `STEP_MS`/`MAX_STEPS` are where to trade.
+The board (M, `tools/devctl.py metrics`) runs Sand Jar and Rainbow Sand at 29 fps settled, flowing, flat, shaken and
+under a finger (update 13-17 ms, render 11-14 ms: two vsyncs); Beach (update 19-22, render 16-20) and Orbits (update
+10-12, render 21-26) land just over two vsyncs and show at 19.5 fps (Orbits 27-29 at rest or held). The panel swaps
+at vsync (58 Hz), so a frame is 17, 34 or 51 ms. The board has no hardware float divide or square root (each is a
+library call): the per-grain and per-cell paths multiply by reciprocals and take a square root only for what moves.
+`FILL_PCT` and `STEP_MS`/`MAX_STEPS` are where to trade.
 
 ## Rendering, and the constraint-2 exception
 
@@ -94,8 +102,9 @@ mode's background from a per-ring table with a 16x16 dither tile, a grain's colo
 then the glass's reflection) and writes the block only if it differs from what that panel buffer already holds. The
 panel has two buffers used by turns, each holding the frame from two renders ago (`os/app.h`); `seen_` remembers one
 cell history per buffer (two 51 KB arrays, allocated once, scanned in order, so the board may keep them in PSRAM), and
-a buffer not seen before, or the first frames after `enter()`, is drawn in full. The buttons are redrawn every frame
-over their cells, put back first. A settled jar writes almost nothing.
+a buffer not seen before, the first frames after `enter()`, or a new pour, is drawn in full; otherwise only the cells
+inside the glass are visited. The buttons are redrawn over their cells (put back first) only when a cell under them
+changed or their own state did. A settled jar writes almost nothing.
 
 **Exception to shared constraint 2.** RGB565 games keep to flat fills and pre-rendered art with no runtime blending.
 Sand Jar blends at runtime, with the user's approval, because the toy is its lighting: each grain is its palette color

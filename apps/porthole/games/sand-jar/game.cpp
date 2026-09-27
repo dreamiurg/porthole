@@ -6,6 +6,9 @@
 #include "generated/icon.h"
 #include "gfx565.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; every cell, every frame
+#endif
 namespace sandjar {
 namespace {
 constexpr float PI = 3.14159265f, F = 2.0f / 3;   // F: the prototype's speeds are in its 2 px grains
@@ -21,6 +24,12 @@ uint16_t pack(float r, float g, float b) {
   return (uint16_t)((R >> 3) << 11 | (G8 >> 2) << 5 | B >> 3);
 }
 Rgb unpack(uint16_t c) { const uint32_t v = gfx565::rgb888(c); return hex(v); }
+// lighten() for whole steps of light (the glass's reflection, Orbits' trails): no float on the board's slow path.
+uint16_t brighten(uint16_t c, int r, int g, int b) {
+  const uint32_t v = gfx565::rgb888(c);
+  r += (int)(v >> 16); g += (int)(v >> 8 & 255); b += (int)(v & 255);
+  return (uint16_t)((r > 255 ? 255 : r) >> 3 << 11 | (g > 255 ? 255 : g) >> 2 << 5 | (b > 255 ? 255 : b) >> 3);
+}
 
 // The prototype's colors. Sand Jar's warm sand, Rainbow Sand's six strata, Beach's water, Orbits' stars.
 constexpr Rgb SANDS[6] = {hex(0xe9c27a), hex(0xd9a85b), hex(0xf2d39a), hex(0xc98f48), hex(0xe3b66c), hex(0xb97e3c)};
@@ -41,11 +50,14 @@ void block(int c, uint16_t col) {   // a cell's 3x3 physical px
   uint16_t* p = gfx565::fb + (c / G) * 3 * gfx565::W + (c % G) * 3;
   for (int k = 0; k < 3; k++, p += gfx565::W) p[0] = p[1] = p[2] = col;
 }
-void put(uint16_t* seen, bool full, int c, uint16_t col) {
-  if (!full && seen[c] == col) return;
+bool put(uint16_t* seen, bool full, int c, uint16_t col) {   // true when it wrote the cell
+  if (!full && seen[c] == col) return false;
   seen[c] = col;
   block(c, col);
+  return true;
 }
+bool inBox(const ui::Box& b, int c) { const int x = c % G, y = c / G; return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; }
+bool underButtons(int c) { return inBox(HOME_CELLS, c) || inBox(MODE_CELLS, c); }
 bool overHome(int x, int y) { const int dx = x - HOME_CX, dy = y - HOME_CY; return dx * dx + dy * dy <= HOME_HIT_R * HOME_HIT_R; }
 bool overMode(int x, int y) { return x >= MODE_BOX.x && y >= MODE_BOX.y && x < MODE_BOX.x + MODE_BOX.w && y < MODE_BOX.y + MODE_BOX.h; }
 }  // namespace
@@ -69,6 +81,13 @@ void Game::enter(const AppEnter& e) {
 
 void Game::pour(Mode m) {
   jar_.reset(m, 0x9E3779B9u * ++pours_);
+  for (Seen& s : seen_) s.valid = false;   // a new background, also outside the glass, where a frame never looks again
+  for (int y = 0; y < G; y++) {   // the glass's cells, row by row: nothing outside them ever changes
+    int x0 = 0, x1 = G - 1;
+    while (x0 < G && jar_.occ[y * G + x0] == WALL) x0++;
+    while (x1 >= x0 && jar_.occ[y * G + x1] == WALL) x1--;
+    span_[y][0] = (uint8_t)x0; span_[y][1] = (uint8_t)(x1 + 1);
+  }
   if (m == MODE_ORBITS) memset(jar_.sky.glow, 0, sizeof jar_.sky.glow);   // the grains' memory until now
   const Rgb c0 = hex(BG[m][0]), c1 = hex(BG[m][1]);
   for (int k = 0; k < BG_N; k++) {   // a radial gradient, dithered the prototype's +-3.5 (in four steps)
@@ -84,7 +103,7 @@ void Game::pour(Mode m) {
 void Game::tables() {
   for (int k = 0; k < BG_N; k++) {
     const float d = sqrtf(k * 32.0f + 16) / 2 / (G / 2 - 1.5f), t = fminf(1, fmaxf(0, (d - 0.6f) / 0.4f));
-    vignette_[k] = (uint8_t)(255 * (1 - 0.38f * t * t));
+    vignette_[k] = (float)(uint8_t)(255 * (1 - 0.38f * t * t)) / 255;
   }
   for (int k = 0; k < 256; k++) SIN[k] = sinf(k / 256.0f * 2 * PI);
   uint32_t s = 2463534242u;
@@ -176,13 +195,14 @@ Game::Seen& Game::seenFor(const uint16_t* target) {
   for (Seen& s : seen_) if (s.target == target) return s;
   Seen& s = seen_[nextSeen_];   // a buffer not seen before: drawn in full
   nextSeen_ ^= 1;
-  s.target = target; s.valid = false;
+  s.target = target; s.valid = false; s.buttons = -1;
   return s;
 }
 
 void Game::render() {
   Seen& s = seenFor(gfx565::fb);
   upStep_ = DY[jar_.upDir] * G + DX[jar_.upDir];
+  under_ = !s.valid;
   drawCells(s);
   if (jar_.mode == MODE_ORBITS) drawCores(s);
   drawButtons(s);
@@ -190,18 +210,21 @@ void Game::render() {
 }
 
 // Every cell: the background, a grain, or Orbits' sky; the glass's reflection over it; written only if it changed.
+// Outside the glass nothing changes: only a full draw visits it.
 void Game::drawCells(Seen& s) {
   const bool full = !s.valid, orbits = jar_.mode == MODE_ORBITS;
   int k = 0;
-  for (int y = 0, c = 0; y < G; y++) {
+  for (int y = 0; y < G; y++) {
     const int dy = 2 * y - (G - 1), dy2 = dy * dy;
-    for (int x = 0; x < G; x++, c++) {
+    const int x1 = full ? G : span_[y][1];
+    for (int x = full ? 0 : span_[y][0], c = y * G + x; x < x1; x++, c++) {
       const int dx = 2 * x - (G - 1), r = (dx * dx + dy2) >> 5, ring = r < BG_N ? r : BG_N - 1;
       const uint16_t bg = bg_[noise_[(y & 15) * 16 + (x & 15)]][ring];
       const int o = jar_.occ[c];
       uint16_t col = orbits ? sky(c, bg) : o > 0 ? grain(o - 1, c, ring) : bg;
-      if (k < shines_ && shine_[k].cell == c) { const float a = shine_[k++].add; col = lighten(col, a, a, a); }
-      put(s.cells, full, c, col);
+      while (k < shines_ && shine_[k].cell < c) k++;
+      if (k < shines_ && shine_[k].cell == c) { const int a = shine_[k++].add; col = brighten(col, a, a, a); }
+      if (put(s.cells, full, c, col) && underButtons(c)) under_ = true;
     }
   }
 }
@@ -210,7 +233,8 @@ void Game::drawCells(Seen& s) {
 uint16_t Game::grain(int i, int c, int ring) const {
   const uint8_t look = jar_.g.look[i];
   if (kindOf(look) != SAND) return water(i, c, ring);
-  const float sp = sqrtf(Jar::vel(jar_.g.vx[i]) * Jar::vel(jar_.g.vx[i]) + Jar::vel(jar_.g.vy[i]) * Jar::vel(jar_.g.vy[i])) / F;
+  const int vx = jar_.g.vx[i], vy = jar_.g.vy[i];
+  const float sp = vx | vy ? sqrtf((float)(vx * vx + vy * vy)) * (1 / (256 * F)) : 0;   // most sand is still
   if (sp > 0.5f && (i * 7 + jar_.frame) % 19 == 0) return rgb(0xfff6dc);
   const Rgb* palette = jar_.mode == MODE_RAINBOW ? STRATA : SANDS;
   const Rgb& p = palette[shadeOf(look)];
@@ -218,7 +242,7 @@ uint16_t Game::grain(int i, int c, int ring) const {
   float m = 0.89f + toneOf(look) * (0.22f / 7);
   if (up == EMPTY) m *= 1.2f;
   else if (up > 0 && kindOf(jar_.g.look[up - 1]) != SAND) m *= 0.68f;   // wet sand under water (Beach)
-  m = (m + fminf(0.3f, sp * 0.12f)) * vignette_[ring] / 255;
+  m = (m + (sp < 2.5f ? sp * 0.12f : 0.3f)) * vignette_[ring];
   return pack(p.r * m, p.g * m, p.b * m);
 }
 
@@ -226,22 +250,23 @@ uint16_t Game::grain(int i, int c, int ring) const {
 uint16_t Game::water(int i, int c, int ring) const {
   int d = 0;
   for (int m = c; d < 7; d++) { m += upStep_; if (jar_.occ[m] <= 0) break; }
-  const float t = d / 7.0f;
+  const float t = d * (1.0f / 7);
   Rgb w = t < 0.5f ? mix(WATER_TOP, WATER_MID, t * 2) : mix(WATER_MID, WATER_DEEP, t * 2 - 1);
   const int cx = c % G, cy = c / G, f = (int)jar_.frame;
   if (d == 0) w = mix(w, FOAM, 0.65f + 0.35f * sine(cx * 9 + f * 5));
   const float s = d ? sine(cx * 5 + f * 3) + sine(cy * 4 - f * 2 + (cx >> 1)) : 0;
   const float glint = s > 1.25f ? (s - 1.25f) * 70 : 0;
-  const float vx = Jar::vel(jar_.g.vx[i]), vy = Jar::vel(jar_.g.vy[i]), lift = fminf(40, sqrtf(vx * vx + vy * vy) / F * 22);
+  const int vx = jar_.g.vx[i], vy = jar_.g.vy[i];
+  const float sp = vx | vy ? sqrtf((float)(vx * vx + vy * vy)) * (22 / (256 * F)) : 0, lift = sp < 40 ? sp : 40;
   w = {w.r + glint + lift, w.g + glint + lift, w.b + glint * 0.8f + lift};
   if (kindOf(jar_.g.look[i]) == BUBBLE) w = {w.r * 0.35f + 180, w.g * 0.35f + 235, w.b * 0.35f + 245};
-  const float v = vignette_[ring] / 255.0f;
+  const float v = vignette_[ring];
   return pack(w.r * v, w.g * v, w.b * v);
 }
 
 uint16_t Game::sky(int c, uint16_t bg) const {
   const uint8_t r = jar_.sky.glow[0][c], g = jar_.sky.glow[1][c], b = jar_.sky.glow[2][c];
-  return r | g | b ? lighten(bg, r, g, b) : bg;
+  return r | g | b ? brighten(bg, r, g, b) : bg;
 }
 
 // Orbits: each body's own cell, bright over its glow (brighter and bigger bodies brighter).
@@ -251,16 +276,21 @@ void Game::drawCores(Seen& s) {
     const int c = (int)(b.y / 3) * G + (int)(b.x / 3);
     const Rgb& p = STARS[b.shade];
     const float k = b.size * 0.6f * CORE, h = 36 * b.size * CORE;
-    put(s.cells, false, c, lighten(s.cells[c], p.r * k + h, p.g * k + h, p.b * k + h));
+    if (put(s.cells, false, c, lighten(s.cells[c], p.r * k + h, p.g * k + h, p.b * k + h)) && underButtons(c)) under_ = true;
   }
 }
 
-// The buttons, on top of the jar. The cells under them are put back first: this buffer's copy of them is two frames old.
+// The buttons, on top of the jar, redrawn only when this buffer's copy is out of date: a cell under them changed, or
+// they did (pressed, the mode). The cells under them are put back first: this buffer's copy of them is two frames old.
 void Game::drawButtons(Seen& s) {
+  const bool homeDown = in_.down && buttonTouch_ && overHome(in_.x, in_.y), modeDown = in_.down && buttonTouch_ && overMode(in_.x, in_.y);
+  const int state = jar_.mode | homeDown << 2 | modeDown << 3;
+  if (!under_ && s.buttons == state) return;
+  s.buttons = state;
   for (const ui::Box& b : {HOME_CELLS, MODE_CELLS})
     for (int y = b.y; y < b.y + b.h; y++) for (int x = b.x; x < b.x + b.w; x++) block(y * G + x, s.cells[y * G + x]);
-  drawHome(in_.down && buttonTouch_ && overHome(in_.x, in_.y));
-  drawModes(in_.down && buttonTouch_ && overMode(in_.x, in_.y));
+  drawHome(homeDown);
+  drawModes(modeDown);
 }
 // ui::drawBack at 3x (as Biscuit draws it), sunk while pressed.
 void Game::drawHome(bool homeDown) const {
