@@ -85,7 +85,7 @@ In `physics.h`: `FILL_PCT` (grains per 100 cells of glass per mode: 34/42/46; Or
 `SHAKE`/`SHAKE_FADE`, `BEACH_SAND`, `ORB_SUN`/`ORB_STAR`; the per-kind `PARAM` table in `physics.cpp` (the prototype's).
 In `game.h`: `STEP_MS` (16: the prototype's 60 Hz) and `MAX_STEPS` (2 a frame; a slow frame slows the jar rather than
 piling up steps), `LATE_MS`/`SLOW_MS` (a frame over 45 ms means one step a frame for 500 ms: a shake or a fresh pour
-runs in brief half-speed slow motion at full frame rate instead of dropping to ~15 fps), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
+runs in brief half-speed slow motion rather than making every frame later), `TILT_EASE`, `FLAT_G`, `SHAKE_MG`/`JOLT_MG`, and Orbits' `TRAIL_MID`/`TRAIL_SIDE`/`CORE`.
 
 Host cost (M3 Max, `-O2`, 34 ms frames of two steps, the fastest of repeated runs): update 0.09-0.36 ms and render
 0.04-0.12 ms a frame in the grain modes, Orbits 0.03-0.04 and 0.10; the sim's `perf` (`-O1`) is within ~1.5x of that.
@@ -93,7 +93,10 @@ The host is 60-300x faster than the board, and not in proportion: it has a hardw
 PSRAM. The board (M, `tools/devctl.py metrics`), last measured before the pass that took the library calls and the
 small calls out of the per-grain, per-body and per-cell paths: Sand Jar and Rainbow Sand at 29 fps settled, flowing,
 flat, shaken and under a finger (update 13-17 ms, render 11-14 ms: two vsyncs); Beach (update 19-22, render 16-20) and
-Orbits (update 10-12, render 21-26) just over two vsyncs, at 19.5 fps (Orbits 27-29 at rest or held). The panel swaps
+Orbits (update 10-12, render 21-26) just over two vsyncs, at 19.5 fps (Orbits 27-29 at rest or held). Since then, with
+`LATE_MS`/`SLOW_MS`: every mode 29 fps settled, flowing and right after a pour; shaken, Sand Jar and Rainbow Sand 21,
+Beach 19.5, Orbits 29. Shaken, one step is 13-19 ms and the render 21-26 (every cell changes): the render is the limit
+there now. The panel swaps
 at vsync (58 Hz), so a frame is 17, 34 or 51 ms. The board has no hardware float divide or square root (each is a
 library call, and so is `memcpy`): the per-grain, per-body and per-cell paths multiply by reciprocals and use
 `invSqrt` (`physics.h`), and their small helpers are forced inline. With two panel buffers by turns, anything that

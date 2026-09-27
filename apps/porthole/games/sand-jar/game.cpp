@@ -159,8 +159,8 @@ void Game::touch() {
 
 // Physics at STEP_MS a step, whatever the frame rate; the finger's travel is spread over this frame's steps. A late
 // frame means the steps cost more than the frame has (a shake throws every grain in the air, a fresh pour settles),
-// and two steps a frame then only make every frame later: the jar takes one a frame for SLOW_MS, running at half
-// speed but at full frame rate, then tries two again. Lateness only ever takes steps away, so it cannot snowball.
+// and two steps a frame then only make every frame later: the jar takes one a frame for SLOW_MS, a brief half-speed
+// slow motion, then tries two again. Lateness only ever takes steps away, so it cannot snowball.
 void Game::tick() {
   const uint32_t dt = ms_ - lastMs_;
   acc_ += dt; lastMs_ = ms_;
