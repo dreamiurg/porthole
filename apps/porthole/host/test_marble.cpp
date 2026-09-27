@@ -566,7 +566,7 @@ static void maybeSolve(Driver& d, marble::Game& game, InputTracker& tracker) {
   Input held = tracker.step(false, 0, 0, d.ms);   // a frame in the grip it calibrates in
   held.gx = (int16_t)UPRIGHT.x; held.gy = (int16_t)UPRIGHT.y; held.gz = (int16_t)UPRIGHT.z;
   game.update(d.ms / 1000, d.ms, held);
-  char cmd[16];
+  char cmd[24];   // "level" + any int + NUL: GCC checks the worst case
   snprintf(cmd, sizeof cmd, "level%d", pick + 1);
   game.debugCmd(cmd);
 }
