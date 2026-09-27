@@ -88,7 +88,8 @@ COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOS
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
-GCOVR ?= $(shell command -v gcovr 2>/dev/null || echo uvx gcovr)
+# GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
+GCOVR ?= $(shell gcovr --version 2>/dev/null | awk 'NR==1 { split($$2, v, "."); if (v[1] > 8 || (v[1] == 8 && v[2] >= 3)) print "gcovr" }' | grep . || echo "uvx --from 'gcovr>=8.3' gcovr")
 # gcovr rejects a line hit more than 2^32 times as gcc bug 68080 (whose counts are garbage near 2^64). The RGB565 fill
 # loop in os/gfx565.cpp really runs that often: the render checks paint billions of pixels. 2^40 still catches the bug.
 GCOVR_HITS := --gcov-suspicious-hits-threshold 1099511627776

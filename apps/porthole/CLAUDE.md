@@ -87,7 +87,7 @@ The repo root and CI call these by name; keep them working:
 - `make lint`: app-specific static checks: `games/pets-club/tools/check_content.py`, `games/pets-club/tools/art.py --check`, `tools/shell_art.py --check`, `games/biscuit/tools/check_content.py`, and a `-Werror` host build of the shell, the games and the sim. (ruff and shellcheck run from the repo-root pre-commit, not here.) Biscuit's art tool's `--check` also runs here, skipped with a message where `node` is missing (CI's runner always has it).
 - `make check`: `lint` + `test`. What pre-commit runs; a few seconds.
 - `make ci`: `check` + `playtest` + `coverage`, everything CI runs for this app except the firmware build.
-- `make coverage`: builds every `test_*` binary and `snap` with `--coverage` under `build/coverage/`, runs all the tests plus the non-monkey playtests, and writes line coverage of `os/*.cpp` and `games/*/*.cpp` to `build/coverage/coverage.xml` (Cobertura, via gcovr). Fails below `COV_MIN` in the Makefile. On macOS gcovr uses `xcrun llvm-cov gcov`; elsewhere `gcov`. Uses `gcovr` from PATH, else `uvx gcovr`.
+- `make coverage`: builds every `test_*` binary and `snap` with `--coverage` under `build/coverage/`, runs all the tests plus the non-monkey playtests, and writes line coverage of `os/*.cpp` and `games/*/*.cpp` to `build/coverage/coverage.xml` (Cobertura, via gcovr). Fails below `COV_MIN` in the Makefile. On macOS gcovr uses `xcrun llvm-cov gcov`; elsewhere `gcov`. Uses `gcovr` 8.3 or newer from PATH, else `uvx` fetches one.
 - `make firmware` / `make flash [PORT=...]` / `make monitor [PORT=...]`: `pio run -e firmware`, upload, and the 115200-baud serial monitor. PlatformIO auto-detects the port when `PORT` is not given.
 
 Development targets:
