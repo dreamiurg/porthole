@@ -1,0 +1,66 @@
+# Chaos in Sand Jar under ASan/UBSan: six fresh visits, each in a mode and a tilt (some lying flat, some shaken),
+# then 150 random gestures. A visit lasts until the monkey hits the home button (~4% of the glass), so each starts
+# over rather than one long run wandering the profile screens; afterwards there is a real screen and a whole jar.
+# seed 31: sand, tilt 500 866 0
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg sand
+tilt 500 866 0
+monkey 150 31
+expect-screen *
+expect grains>0
+# seed 32: sand, tilt 0 0 -1000, shaken
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg sand
+tilt 0 0 -1000
+shake
+monkey 150 32
+expect-screen *
+expect grains>0
+# seed 33: rainbow, tilt -866 500 0
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg rainbow
+tilt -866 500 0
+monkey 150 33
+expect-screen *
+expect grains>0
+# seed 34: beach, tilt -700 700 0, shaken
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg beach
+tilt -700 700 0
+shake
+monkey 150 34
+expect-screen *
+expect grains>0
+# seed 35: beach, tilt 900 -300 300
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg beach
+tilt 900 -300 300
+monkey 150 35
+expect-screen *
+expect grains>0
+# seed 36: orbits, tilt 0 0 -1000, shaken
+reset
+profile Sam 8
+app sand-jar
+wait 450
+dbg orbits
+tilt 0 0 -1000
+shake
+monkey 150 36
+expect-screen *
+expect grains>0
