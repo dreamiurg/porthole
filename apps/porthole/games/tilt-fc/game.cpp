@@ -115,10 +115,16 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   const uint32_t dt = ms - ms_;
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
+  if (in_.pressed) pressMs_ = ms_;
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   tilt_ = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   hold_.step(inPlay() && pressing(SIGN_HX, SIGN_HY, SIGN_HR), ms_);
-  if (leaving()) { wantsHome_ = true; return; }
+  if (leaving()) {
+    // The frame's play still happens: a third goal or the whistle in it is decided, so the save keeps the result.
+    if (screen_ == SC_MATCH) updateMatch(dt);
+    wantsHome_ = true;
+    return;
+  }
   switch (screen_) {
     case SC_CALIBRATE: updateCalibrate(dt); break;
     case SC_KICKOFF: updateKickoff(); break;
@@ -177,10 +183,12 @@ void Game::updateGoal() {
   kickoff(match_, 1 - match_.scored);
   go(SC_KICKOFF);
 }
-// Only the go sign plays on, and only once the result has shown for FT_READY_MS.
+// Only the go sign plays on, and only a press that began once the result had shown for FT_READY_MS: one that went
+// down on the unlit sign never counts, however long it is held.
 bool Game::ftReady() const { return screen_ == SC_FULLTIME && ms_ - pageMs_ >= FT_READY_MS; }
+bool Game::ftPress() const { return ftReady() && (int32_t)(pressMs_ - pageMs_) >= (int32_t)FT_READY_MS; }
 void Game::updateFullTime() {
-  if (released(GO_HX, FT_GO_HY, GO_HR) && ftReady()) go(SC_CALIBRATE);
+  if (released(GO_HX, FT_GO_HY, GO_HR) && ftPress()) go(SC_CALIBRATE);
 }
 
 // The aim spot and the pass marker show only while the kid can kick: on the Kickoff and Match pages.
@@ -193,8 +201,8 @@ int Game::clockSteps() const {   // the clock dial's 24 steps, filled so far (th
   const int s = (int)((float)match_.ms / MATCH_MS * paint::CLOCK_STEPS + 0.5f);
   return s < paint::CLOCK_STEPS ? s : paint::CLOCK_STEPS;
 }
-uint32_t Game::countdown() const {   // the Kickoff page's 3-2-1, the digit showing
-  const uint32_t left = 3 - (ms_ - pageMs_) * 3 / KICKOFF_MS;
+int Game::countdown() const {   // the Kickoff page's 3-2-1, the digit showing
+  const int left = 3 - (int)((ms_ - pageMs_) * 3 / KICKOFF_MS);
   return left < 1 ? 1 : left > 3 ? 3 : left;
 }
 // What moves on this page, each with a box (shadow included) and a key: the pixels in the box are fully named by the
@@ -222,11 +230,11 @@ int Game::movers(Mover* out) const {
   return n;
 }
 bool Game::goPressed() const {
-  if (screen_ == SC_FULLTIME) return ftReady() && pressing(GO_HX, FT_GO_HY, GO_HR);
+  if (screen_ == SC_FULLTIME) return ftPress() && pressing(GO_HX, FT_GO_HY, GO_HR);
   return screen_ == SC_CALIBRATE && (pressing(GO_HX, GO_HY, GO_HR) || starting_);
 }
 uint32_t Game::look() const {
-  const uint32_t count = screen_ == SC_KICKOFF ? countdown() : 0;
+  const uint32_t count = screen_ == SC_KICKOFF ? (uint32_t)countdown() : 0;
   return (uint32_t)pressing(SIGN_HX, SIGN_HY, SIGN_HR) | (uint32_t)(hold() * 24) << 1 | (uint32_t)match_.score[TEAL] << 6 |
          (uint32_t)match_.score[CORAL] << 9 | count << 12 | (uint32_t)goPressed() << 14 | (uint32_t)ftReady() << 15;
 }

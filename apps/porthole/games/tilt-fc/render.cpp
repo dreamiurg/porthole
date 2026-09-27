@@ -282,9 +282,10 @@ void banner(const char* s, int top) {
   char w[8] = {};
   int n = 0;
   for (; s[n] && n < 7; n++) w[n] = s[n];
+  if (!n) return;
   const bool bang = n > 1 && w[n - 1] == '!';
   if (bang) w[--n] = 0;
-  const font::Glyph &last = f.glyphs[(uint8_t)w[n - 1] - 31], &b = f.glyphs['!' - 31], &d = f.glyphs['0' - 31];
+  const font::Glyph &last = f.glyphs[font::glyphIndex(f, (uint8_t)w[n - 1])], &b = f.glyphs['!' - 31], &d = f.glyphs['0' - 31];
   const int wordW = font::textWidth(f, w), inkEnd = wordW - ((last.advW + 8) >> 4) + last.ofsX + last.boxW;
   const int width = bang ? inkEnd + BANG_GAP + b.boxW : wordW, x = CX - width / 2;
   const int inkTop = top + f.lineHeight - f.baseLine - d.ofsY - d.boxH;   // digits and capitals: one height

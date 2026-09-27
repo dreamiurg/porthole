@@ -28,13 +28,15 @@ contract, module map and Save layout.
   `host/test_tiltfc.cpp` plays thirty seeded matches per way of playing per level and holds those bounds.
 - **Nothing punishes.** Losing just shows the score; a loss by two or more makes the next match easier, a win harder
   (levels 0-4, `tune.h`); the result goes into the save the moment the match is decided (the third goal or the whistle),
-  so leaving while GOAL! shows keeps it. At every kickoff the side not on the ball waits outside the centre circle until
+  so leaving while GOAL! shows keeps it, and a leave hold that completes on the very frame of the deciding goal or
+  the whistle plays that frame first. At every kickoff the side not on the ball waits outside the centre circle until
   the ball leaves the spot (3 s at most, `Match::kickoffOn`): a kid still finding his grip is not robbed. At the whistle
   a teal attack plays on (up to 10 s). A keeper holding the ball gets room to throw it, and throws only up the court.
 - **Nothing is skipped by mashing.** Kickoff, Match and Goal are one court: no fresh-page pause between them, so the
   first tap of a match plays. The 3-2-1 takes 0.8 s a digit. The Goal page ignores taps and moves on after 2 s. Full
-  time moves on only by the go sign, and only once the result has shown for 1.5 s (`FT_READY_MS`; the sign stays
-  unlit, bare concrete, until then). Stepping onto the court or off it, touches wait out the fresh-page pause.
+  time moves on only by the go sign, and only by a press that begins once the result has shown for 1.5 s
+  (`FT_READY_MS`; the sign stays unlit, bare concrete, until then, and a press that went down on it unlit never
+  counts). Stepping onto the court or off it, touches wait out the fresh-page pause.
 - **Leaving:** the round leave sign on the left. In a match (Kickoff, Match, Goal pages) it takes a 0.6 s hold
   (`ui::Hold`: its rim fills with sun yellow; a brush of the glass does nothing). The hold counts from when the finger
   is on the sign: one that drifts off and back starts over, one that went down on the court never counts, and a hold
@@ -85,10 +87,11 @@ Everything is in `namespace fc` (Pets Club owns the global `Game`).
   `OFL.txt`. `generated/fonts.h`: 18, 36 and 64 px, converted by `tools/fontconv.py --game tiltfc`
   (commands in its docstring), bitmaps only for `GLYPHS` (" !0123456789AGLO").
 - `host/test_tiltfc.cpp`: the rules (dead zone from three grips, the pass cone, control switching, goals, kickoff,
-  tackles and slides, keeper room, the whistle, the kickoff wait, a tap held level), the challenge (each level at
-  least as hard as the last), the save, the full-time save and level, the result saved once the moment the match is
-  decided, the court's pages without a fresh-page pause and the leave hold, taps that cannot skip the Goal or Full time
-  page, the strings, every incrementally drawn frame equal to a full repaint (Full time included, tilting), and the
+  tackles and slides, keeper room, the whistle, the kickoff wait, a tap held level), the challenge (each level no
+  easier than the last within seed noise, the top level harder than the first), the save, the full-time save and
+  level, the result saved once the moment the match is decided (a leave on that very frame included), the court's
+  pages without a fresh-page pause and the leave hold, taps that cannot skip the Goal or Full time page (a press
+  begun on the unlit go sign included), the strings, every incrementally drawn frame equal to a full repaint (Full time included, tilting), and the
   playtests' `# match from X Y Z`
   blocks (the passing bot's recorded moves to a goal) in step with the rules: `build/host/test_tiltfc
   --write-playtests` rewrites them after a rules or tuning change.
@@ -114,8 +117,8 @@ version's save, and the kid starts again from level 0 with no wins.
   of Marble Kick's and a playing frame about a quarter (Marble Kick runs at 55 fps on the board). Slice 3 measures it
   (`devctl.py metrics`) and tunes `DEAD_MG`, the speeds and the cone with the kid.
 - The balance was set against bots in the host test, not a 6-year-old. At level 0 a greedy kid (straight at the goal,
-  shooting at its middle) scores once every five to ten matches and concedes one or two a match, while one who aims
-  for a corner or passes wins every time; whether that is gentle enough is for the first real playtest. Level 4 is on
-  a knife edge in the bots' eyes (coral's speed 112 instead of 114 turns the passing bot from about 24 wins of 30 to
+  shooting at its middle) scores once every three to ten matches (wins 1 to 5 of 30) and concedes one or two a
+  match, while one who aims for a corner or passes wins every time; whether that is gentle enough is for the first real playtest. Level 4 is on
+  a knife edge in the bots' eyes (coral's speed 112 instead of 114 turns the passing bot from about 23 wins of 30 to
   under 10): retune it in small steps.
 - No keeper dive or save moment, no possession cap beyond coral's 6 s, no kits or real teams (slices 2 and 4).

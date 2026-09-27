@@ -42,6 +42,7 @@ class Game : public App {
   Save save_{};
   bool dirty_ = false, wantsHome_ = false;
   uint32_t now_ = 0, ms_ = 0, pageMs_ = 0;   // pageMs_: when this page appeared
+  uint32_t pressMs_ = 0;          // when the finger last went down (Input::heldMs is 0 by the release)
   Input in_{};
   ui::FreshGate gate_;            // stepping onto the court or off it ignores touches for a moment (os/ui.h)
   ui::Hold hold_;                 // the leave sign held during play
@@ -74,13 +75,14 @@ class Game : public App {
   bool leaving();
   bool goPressed() const;
   bool ftReady() const;           // Full time: shown long enough for the go sign to play on
+  bool ftPress() const;           // Full time: the finger went down once the go sign was lit
   float hold() const;             // how far holding the leave sign has got, 0..1 (Kickoff, Match, Goal)
   bool inPlay() const { return screen_ == SC_KICKOFF || screen_ == SC_MATCH || screen_ == SC_GOAL; }
   tilt::Vec calTilt() const;      // Calibrate: the tilt away from the slow reference
   bool ready() const;             // Calibrate: held still
   Kick kidAim() const;            // what a tap would do now (for the aim spot and the pass target)
   int clockSteps() const;         // the clock dial's steps filled (its mover key, and what it draws)
-  uint32_t countdown() const;     // Kickoff: 3, 2, 1
+  int countdown() const;          // Kickoff: 3, 2, 1
   int movers(Mover* out) const;
   uint32_t look() const;
   void updateCalibrate(uint32_t dt);

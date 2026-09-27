@@ -9,8 +9,11 @@
 INCLUDES := -Ios -Ishell -I.
 # Warnings are errors in every host build: sim, snap, snap-asan, the tests and the coverage objects.
 WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers
+# -ffp-contract=off: Apple clang fuses a*b+c into one FMA by default, gcc on x86 does not, so the same seeded match
+# came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
+FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
-CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
 # with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
@@ -81,7 +84,7 @@ ci: check playtest coverage
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
 COV_MIN := 91
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
