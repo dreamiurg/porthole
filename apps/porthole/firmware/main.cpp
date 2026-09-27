@@ -1,6 +1,7 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include "board.h"
+#include "esp_heap_caps.h"
 #include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "gfx565.h"
@@ -21,13 +22,22 @@ static NvsStore g_store;
 static Shell g_shell;
 static InputTracker g_input;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
-static uint32_t g_lastTouchMs = 0;
+static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
 static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
 // Test harness (tools/devctl.py): a synthetic finger held at logical (x, y) until `until`, then released.
 static struct { bool on; int x, y; uint32_t until; } g_fake = {};
+// Gravity for Input (milli-g, screen frame): the last good sensor reading, or the harness's "G" override while it is on.
+static int16_t g_grav[3] = {0, 0, -1000};
+static bool g_gravFake = false;
+// Frame metrics for "M": per frame, in us, the loop period and the time spent in shell update, render and present, over
+// the last MT_N frames.
+enum { MT_FRAME, MT_UPDATE, MT_RENDER, MT_PRESENT, MT_COUNT };
+static const int MT_N = 64;
+static uint32_t g_mt[MT_N][MT_COUNT];
+static int g_mtAt = 0;
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
@@ -69,13 +79,13 @@ void setup() {
   }
   g_bootLocalEpoch = now; g_bootMillis = millis();
   Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
-  g_lastTouchMs = millis();
+  g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control).
-static const uint32_t DIM_MS = 60000;   // first dim step; the same minute as shell::IDLE_MS today, not the same rule
+static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and activity rule as shell::IDLE_MS
 static void dimWhenIdle(uint32_t ms) {
-  uint32_t idle = ms - g_lastTouchMs;
+  uint32_t idle = g_activity.idleMs(ms);
   uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
 }
@@ -108,7 +118,40 @@ static void dumpFrame() {
 
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
-// "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py).
+// "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
+// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics.
+static void printMetrics() {
+  uint32_t sum[MT_COUNT] = {}, worst = 0;
+  for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
+  auto ms = [&](int k) { return sum[k] / 1000.0 / MT_N; };
+  Serial.printf("[metrics] frames=%d frame=%.2fms fps=%.1f max=%.2fms update=%.2fms render=%.2fms present=%.2fms "
+                "heap=%lu psram=%lu largest_internal=%lu\n",
+                MT_N, ms(MT_FRAME), ms(MT_FRAME) > 0 ? 1000.0 / ms(MT_FRAME) : 0.0, worst / 1000.0, ms(MT_UPDATE),
+                ms(MT_RENDER), ms(MT_PRESENT), (unsigned long)board::freeHeap(),
+                (unsigned long)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+}
+static void gravityCommand() {  // "G" alone clears the override; parseInt would read it as 0,0,0 after a 1 s timeout
+  String arg = Serial.readStringUntil('\n'); arg.trim();   // without a newline this stalls the loop up to 1 s (debug only)
+  int x, y, z;
+  if (!arg.length()) { g_gravFake = false; Serial.println("[porthole] gravity from sensor"); }
+  else if (sscanf(arg.c_str(), "%d,%d,%d", &x, &y, &z) == 3) {
+    // Clamped to the sensor's +-4 g full scale, so nothing past what the chip can report reaches Input.
+    x = constrain(x, -4000, 4000); y = constrain(y, -4000, 4000); z = constrain(z, -4000, 4000);
+    g_gravFake = true; g_grav[0] = (int16_t)x; g_grav[1] = (int16_t)y; g_grav[2] = (int16_t)z;
+    Serial.printf("[porthole] gravity held at %d,%d,%d\n", x, y, z);
+  } else Serial.println("[porthole] usage: G<x>,<y>,<z> or G");
+}
+static void accelCommand() {
+  int16_t raw[3], g[3];
+  if (!board::readAccel(g[0], g[1], g[2], raw)) { Serial.println("[accel] no sensor reading"); return; }
+  Serial.printf("[accel] raw=%d,%d,%d g=%d,%d,%d%s\n", raw[0], raw[1], raw[2], g[0], g[1], g[2], g_gravFake ? " (G override on)" : "");
+}
+static void motionCommand(int c) {   // A, G, M: split out of serialCommand for the complexity gate
+  if (c == 'A') accelCommand();
+  else if (c == 'G') gravityCommand();
+  else if (c == 'M') printMetrics();
+}
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
   else if (c == 'R') {
@@ -128,9 +171,14 @@ static void serialCommand(int c) {
   }
   else if (c == 'F') dumpFrame();
   else if (c == 'D') { g_touchLog = !g_touchLog; Serial.printf("[porthole] touch log %s\n", g_touchLog ? "on" : "off"); }
+  else motionCommand(c);
 }
 
 void loop() {
+  static uint32_t prevUs = micros();
+  uint32_t* mt = g_mt[g_mtAt];
+  uint32_t t0 = micros();
+  mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
   board::Touch t = board::readTouch();
   if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
@@ -138,17 +186,23 @@ void loop() {
     if (!t.down) g_fake.on = false;
   }
   static bool swallow = false;  // the touch that wakes a dark screen is not a game input, until released
-  if (t.down) {
-    if (g_backlight == 0) swallow = true;
-    g_lastTouchMs = ms;
-  } else swallow = false;
+  if (!t.down) swallow = false;
+  else if (g_backlight == 0) swallow = true;
   Input in = g_input.step(t.down && !swallow, t.x / 3, t.y / 3, ms);
   if (in.pressed && g_touchLog) Serial.printf("[touch] %d,%d\n", t.x, t.y);
+  if (!g_gravFake) board::readAccel(g_grav[0], g_grav[1], g_grav[2]);   // keeps the last good value on a failed read
+  in.gx = g_grav[0]; in.gy = g_grav[1]; in.gz = g_grav[2];
+  g_activity.step(in, t.down, ms);   // picking up a dark board lights it; only a touch gets swallowed
+  uint32_t t1 = micros();
   g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
   if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
   g_shell.render();
+  uint32_t t3 = micros();
   if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
+  g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
   dimWhenIdle(ms);
   while (Serial.available()) serialCommand(Serial.read());

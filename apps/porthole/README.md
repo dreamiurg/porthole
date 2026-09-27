@@ -15,7 +15,7 @@ name, one of eight animal faces, an age (it picks the reading level) and an opti
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
 profile. Each kid plays up to 25 minutes a day across every game, then the board says "Back
 tomorrow" until midnight. With two or more profiles, a kid who has played for about 6 minutes also
-rests for 10, so the board passes to the next kid. A minute without a touch does not count as play.
+rests for 10, so the board passes to the next kid. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
 it and everything it made.
 
@@ -140,8 +140,9 @@ Pillow is installed.
 | Touch | CST820, I²C 0x15 on SDA 15 / SCL 7 |
 | IO expander | TCA9554 @ 0x20: P0 LCD reset, P1 touch reset, P2 LCD CS, P7 buzzer |
 | RTC | PCF85063 @ 0x51, set from build time on first boot, restored from the save if it stops |
-| Backlight | GPIO6 PWM; dims after 1 min idle, off after 5 min (tap wakes), off 20 s after bedtime |
-| Storage | NVS (`Preferences`): a 44-byte record per profile (`porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
+| Motion | QMI8658 accelerometer, I²C 0x6B (0x6A also probed), +-4 g, read every frame as screen-frame gravity |
+| Backlight | GPIO6 PWM; dims after 1 min idle (no touch, no move), off after 5 min (a tap or picking it up wakes it), off 20 s after bedtime |
+| Storage | NVS (`Preferences`): a 52-byte record per profile (v2, `porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
 Rendering: two 480×480 RGB565 framebuffers in PSRAM with bounce buffers; each frame the 160×160

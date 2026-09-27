@@ -26,9 +26,33 @@ struct Input {
   int downX = 0, downY = 0; // where the press started
   int px = 0, py = 0;       // previous frame position (for drags)
   uint32_t heldMs = 0;
+  // Gravity from the motion sensor (where things fall), milli-g, in screen terms: +x toward the right edge, +y toward
+  // the bottom edge, +z out of the glass toward the viewer. Held upright: (0, 1000, 0); lying face up: (0, 0, -1000).
+  // The host fills it every frame (firmware: board::readAccel; sim: its `tilt` command); InputTracker leaves it alone.
+  int16_t gx = 0, gy = 0, gz = -1000;
   bool hit(int rx, int ry, int rw, int rh) const { UiAudit::add(rx, ry, rw, rh); return x >= rx && y >= ry && x < rx + rw && y < ry + rh; }
   bool tapIn(int rx, int ry, int rw, int rh) const { bool h = hit(rx, ry, rw, rh); return tap && h; }
   bool tapInCircle(int cx, int cy, int r) const { UiAudit::add(cx - r, cy - r, 2 * r, 2 * r); int dx = x - cx, dy = y - cy; return tap && dx * dx + dy * dy <= r * r; }
+};
+
+// Activity for the idle rules (the shell's play time, the firmware's dimming): a touch, or the board moved. A tilt game
+// is played hands-off, so touch alone would call it idle. Moved = gravity turned more than MOVE_MG away from where it
+// was at the last activity: sensor noise at rest is 10-20 mg and a hand holding still wobbles a few tens, while 200 mg
+// is about a 12 degree tilt or any shake. The reference only moves on activity, so a board on a table never counts,
+// and neither does drift far below 200 mg; a slow tilt counts once it adds up.
+class ActivityTracker {
+ public:
+  static constexpr int MOVE_MG = 200;
+  void step(const Input& in, bool touching, uint32_t ms) {   // touching: the raw finger (the firmware swallows some)
+    // 64-bit: an axis can differ by up to 65535, and three squares of that overflow an int.
+    int64_t dx = in.gx - ref_[0], dy = in.gy - ref_[1], dz = in.gz - ref_[2];
+    if (!touching && dx * dx + dy * dy + dz * dz <= MOVE_MG * MOVE_MG) return;
+    ref_[0] = in.gx; ref_[1] = in.gy; ref_[2] = in.gz; lastMs_ = ms;
+  }
+  uint32_t idleMs(uint32_t ms) const { return ms - lastMs_; }
+ private:
+  int16_t ref_[3] = {0, 0, -1000};
+  uint32_t lastMs_ = 0;
 };
 
 class InputTracker {

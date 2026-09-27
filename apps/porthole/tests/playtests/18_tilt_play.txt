@@ -1,0 +1,28 @@
+# Tilt games are played without a touch: moving the board is activity, so hands-off tilting counts toward today's cap
+# and (two kids) the turn budget, and the idle minute only starts once the board lies still. Sensor noise is not play.
+reset
+profile Ana 8
+profile Ben 7
+app pets-club
+wait 450
+expect today<=5
+# two minutes, no touch, the board tipped left and right every 10 s: all of it counts
+repeat 6
+tilt -300 950 0
+wait 10000
+tilt 300 950 0
+wait 10000
+end
+expect today>=123
+expect play>=123
+# set down: 20 mg of jitter for two minutes; only the first idle minute counts
+repeat 60
+tilt 0 1000 -10
+wait 1000
+tilt 10 990 0
+wait 1000
+end
+expect today>=183
+expect today<=186
+expect play>=183
+expect play<=186

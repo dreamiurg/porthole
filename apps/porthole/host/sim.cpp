@@ -4,17 +4,24 @@
 //   sim                      interactive (SDL)
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
 //                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
-//                            | echo WORD | watch MS | monkey N SEED
+//                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
+//                            | tilt X Y Z | shake | perf
+// tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
+// few frames, perf prints the average update and render time per frame since the last perf.
+#include <assert.h>
 #include <dirent.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <chrono>
 #include <string>
 #include <vector>
 #include "games/biscuit/game.h"
 #include "games/pets-club/game.h"
 #include "gfx565.h"
+#include "launcher.h"
 #include "shell.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
@@ -42,7 +49,16 @@ static Shell g_shell;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
-static uint16_t g_fb565[gfx565::W * gfx565::H];   // the RGB565 apps' surface (the panel's back buffer on the device)
+static uint16_t g_pal565[TINT_COUNT][C_COUNT];   // the same, as the firmware hands it to board::present
+// The panel's two buffers, as on the device: every present flips them, an indexed frame's too (upscaled into the one it
+// presents), so an RGB565 render's target holds the frame from two presents ago. Magenta once at start, never cleared:
+// a pixel a render forgets shows up.
+static uint16_t g_fb565[2][gfx565::W * gfx565::H];
+static int g_shown = 0;                          // the buffer presented last: what the glass shows
+static bool g_hires = false;                     // that frame was an RGB565 app's
+static int16_t g_gravity[3] = {0, 1000, 0};      // the motion sensor: held upright
+static int g_shakeFrames = 0;                    // frames of shaking left
+static double g_updateMs = 0, g_renderMs = 0; static int g_perfFrames = 0;
 
 static uint32_t now() { return g_epoch + g_ms / 1000; }
 static void wipe() {   // every namespace, every key: all the .sav files
@@ -53,7 +69,14 @@ static void wipe() {   // every namespace, every key: all the .sav files
   }
   closedir(d);
 }
-static void boot() { g_shell.begin(g_store, APPS, (int)(sizeof APPS / sizeof APPS[0])); }
+static void boot() {
+  const int n = (int)(sizeof APPS / sizeof APPS[0]);
+  for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
+    const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
+    assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
+  }
+  g_shell.begin(g_store, APPS, n);
+}
 static void reset() { wipe(); boot(); }
 
 // Physical pixel (x, y) of the panel as RGB888: the indexed frame upscaled 3x through the tint's palette, or the RGB565
@@ -61,8 +84,8 @@ static void reset() { wipe(); boot(); }
 static uint32_t framePixel(int x, int y) {
   int dx = x - 240, dy = y - 240;
   if (dx * dx + dy * dy > 240 * 240) return 0x202020;   // outside the round glass: dark
-  if (g_shell.surface() == SURFACE_RGB565) return gfx565::rgb888(g_fb565[y * gfx565::W + x]);
-  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];
+  if (g_hires) return gfx565::rgb888(g_fb565[g_shown][y * gfx565::W + x]);
+  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];   // at full RGB888, as snapshots always were
 }
 
 static void writeBMP(const char* path) {
@@ -84,11 +107,35 @@ static void writeBMP(const char* path) {
   fclose(f);
 }
 
+// board::present: the 160x160 indexed frame, 3x, into the buffer about to be shown.
+static void upscale(uint16_t* dst, const uint16_t* pal) {
+  for (int y = 0; y < gfx565::H; y++) for (int x = 0; x < gfx565::W; x++) dst[y * gfx565::W + x] = pal[gfx::fb[(y / 3) * gfx::W + x / 3]];
+}
+static double since(std::chrono::steady_clock::time_point t) {
+  return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
+}
 static void frame(bool down, int x, int y) {   // the shell writes saves itself, through g_store
   Input in = g_tracker.step(down, x, y, g_ms);
+  in.gx = g_gravity[0]; in.gy = g_gravity[1]; in.gz = g_gravity[2];
+  if (g_shakeFrames > 0) { in.gx = (int16_t)(g_shakeFrames-- & 1 ? 1800 : -1800); in.gz = 900; }   // hard jolts side to side
+  auto t = std::chrono::steady_clock::now();
   g_shell.update(now(), g_ms, in);
-  if (g_shell.surface() == SURFACE_RGB565) gfx565::clear(0xF81F);   // magenta: the device's buffer holds an older frame, so a gap shows
+  g_updateMs += since(t);
+  t = std::chrono::steady_clock::now();
+  g_shown ^= 1;
+  g_hires = g_shell.surface() == SURFACE_RGB565;
+  if (g_hires) gfx565::target(g_fb565[g_shown]);
   g_shell.render();
+  g_renderMs += since(t); g_perfFrames++;
+  if (!g_hires) upscale(g_fb565[g_shown], g_pal565[g_shell.tint()]);
+}
+// Clamped to the sensor's +-4 g full scale: nothing past it ever reaches Input on the device.
+static int16_t mg(const char* s) { int v = atoi(s); return (int16_t)(v < -4000 ? -4000 : v > 4000 ? 4000 : v); }
+static void tilt(const char* x, const char* y, const char* z) { g_gravity[0] = mg(x); g_gravity[1] = mg(y); g_gravity[2] = mg(z); }
+static void perf() {
+  const int n = g_perfFrames ? g_perfFrames : 1;
+  printf("perf frames=%d update=%.3fms render=%.3fms\n", g_perfFrames, g_updateMs / n, g_renderMs / n);
+  g_updateMs = g_renderMs = 0; g_perfFrames = 0;
 }
 
 // The same frame as writeBMP, as raw RGB triples (PPM order) to stdout.
@@ -123,6 +170,9 @@ static void runServe() {
     else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
     else if (!strcmp(cmd, "frame")) writePPM();
     else if (!strcmp(cmd, "dbg")) { g_shell.debugCmd(a); puts("ok"); }
+    else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); tilt(a, b, c); puts("ok"); }
+    else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
+    else if (!strcmp(cmd, "perf")) perf();
     else puts("ok");
     fflush(stdout);
   }
@@ -211,6 +261,9 @@ static const Named COMMANDS[] = {
   {"echo", [](Finger&, const char* a, const char*, const char*) { puts(a); }},
   {"watch", [](Finger& f, const char* a, const char*, const char*) { watch(atoi(a), f); }},
   {"monkey", [](Finger& f, const char* a, const char* b, const char*) { monkey(atoi(a), (uint32_t)strtoul(b, nullptr, 10)); f.down = false; }},
+  {"tilt", [](Finger&, const char* a, const char* b, const char* c) { tilt(a, b, c); }},
+  {"shake", [](Finger& f, const char*, const char*, const char*) { g_shakeFrames = 6; while (g_shakeFrames) step(f.down, f.x, f.y); }},
+  {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
 };
 static void runScript(const char* path) {
   FILE* f = fopen(path, "r"); if (!f) { perror(path); exit(1); }
@@ -235,6 +288,15 @@ static void onKey(SDL_Keycode k, bool& run) {
   if (k == SDLK_s) { writeBMP("build/host/shot.bmp"); printf("wrote build/host/shot.bmp\n"); }
   if (k == SDLK_r) reset();
   if (k == SDLK_p) g_shell.debugPrint();
+  if (k == SDLK_SPACE) g_shakeFrames = 6;
+}
+// The motion sensor: left/right turn gravity, up lays the board flatter, down stands it up.
+static void onArrow(SDL_Keycode k) {
+  if (k != SDLK_LEFT && k != SDLK_RIGHT && k != SDLK_UP && k != SDLK_DOWN) return;
+  float a = atan2f(g_gravity[0], g_gravity[1]), m = fminf(1, hypotf(g_gravity[0], g_gravity[1]) / 1000);
+  a += k == SDLK_LEFT ? -0.15f : k == SDLK_RIGHT ? 0.15f : 0;
+  m = fminf(1, fmaxf(0, m + (k == SDLK_DOWN ? 0.1f : k == SDLK_UP ? -0.1f : 0)));
+  g_gravity[0] = (int16_t)(sinf(a) * m * 1000); g_gravity[1] = (int16_t)(cosf(a) * m * 1000); g_gravity[2] = (int16_t)(-sqrtf(1 - m * m) * 1000);
 }
 static void runWindow() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -250,7 +312,7 @@ static void runWindow() {
       if (e.type == SDL_MOUSEBUTTONDOWN) { down = true; mx = e.button.x / 3; my = e.button.y / 3; }
       if (e.type == SDL_MOUSEBUTTONUP) down = false;
       if (e.type == SDL_MOUSEMOTION) { mx = e.motion.x / 3; my = e.motion.y / 3; }
-      if (e.type == SDL_KEYDOWN) onKey(e.key.keysym.sym, run);
+      if (e.type == SDL_KEYDOWN) { onKey(e.key.keysym.sym, run); onArrow(e.key.keysym.sym); }
     }
     g_ms = SDL_GetTicks() - start;
     frame(down, mx, my);
@@ -265,8 +327,12 @@ static void runWindow() { fprintf(stderr, "built without SDL; use --script\n"); 
 #endif
 
 int main(int argc, char** argv) {
-  for (int t = 0; t < TINT_COUNT; t++) palette_build((Tint)t, g_pal[t]);
-  gfx565::target(g_fb565);
+  for (int t = 0; t < TINT_COUNT; t++) {
+    palette_build((Tint)t, g_pal[t]);
+    for (int i = 0; i < C_COUNT; i++) g_pal565[t][i] = rgb888_to_565(g_pal[t][i]);
+  }
+  for (auto& b : g_fb565) for (uint16_t& p : b) p = 0xF81F;
+  gfx565::target(g_fb565[0]);
   // Default clock: a fixed Tuesday 16:00 local so snapshots are deterministic; --now overrides.
   g_epoch = 1790000000u - (1790000000u % 86400u) + 16 * 3600;
   const char* script = nullptr; bool serve = false;

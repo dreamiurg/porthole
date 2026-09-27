@@ -16,7 +16,7 @@ other hardware is welcome; see "Other boards" in the [README](../README.md).
 | Buzzer | Single-tone piezo on the expander. It is harsh: use it rarely. |
 | USB | USB-C through a CH343 USB-UART bridge, so `Serial` is UART0, not USB CDC |
 | Radio | 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth 5 LE, onboard antenna |
-| Motion | QMI8658 6-axis accelerometer and gyroscope |
+| Motion | QMI8658 6-axis accelerometer and gyroscope, I2C `0x6B`; Porthole reads the accelerometer as gravity (`board::readAccel`) |
 | Storage | microSD (TF) card slot |
 | Battery | MX1.25 header for a 3.7 V lithium cell, with a charging chip onboard |
 
@@ -31,7 +31,7 @@ app here has been tested on it. Round boards in other sizes won't run these apps
 These parts are on the board but no app uses them yet. They're good starting
 points for a new app or feature.
 
-- Motion sensor: shake to wake a pet, tilt to steer in a minigame, or count steps
+- Motion features: shake to wake a pet, tilt to steer in a minigame, or count steps
   when someone carries the device around.
 - Bluetooth LE: two devices near each other could let pets meet, play together
   or trade stickers.
@@ -44,7 +44,7 @@ points for a new app or feature.
 
 | Signal | Where |
 | --- | --- |
-| I2C SDA / SCL (touch, expander, RTC) | GPIO15 / GPIO7 |
+| I2C SDA / SCL (touch, expander, RTC, motion) | GPIO15 / GPIO7 |
 | ST7701 init SPI: CLK / MOSI | GPIO2 / GPIO1 (9-bit SPI) |
 | ST7701 CS | expander P2 |
 | LCD reset | expander P0 |

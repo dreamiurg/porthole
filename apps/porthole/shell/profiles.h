@@ -16,7 +16,8 @@ constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;
 // The daily cap: 25 min per profile per local day, across every game, even alone on the device. The clock is local
 // wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
 constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 25 * 60;
-// No touch for this long is not play (counts toward neither budget). Matches the backlight's first dimming step.
+// No touch and no move of the board (ActivityTracker, os/input.h) for this long is not play (counts toward neither
+// budget). Matches the backlight's first dimming step.
 constexpr uint32_t IDLE_MS = 60000;
 constexpr size_t BLOB_MAX = 256;         // biggest app save the shell loads (Pets Club's Save is 156 bytes)
 

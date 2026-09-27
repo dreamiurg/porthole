@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include "launcher.h"
 #include "shell_sprites.h"
 
 using namespace gfx;
@@ -32,7 +33,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
-  if (in.down) lastTouchMs_ = ms;
+  activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
@@ -68,7 +69,7 @@ void Shell::authorized() {
 }
 bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, prof_.count()) > 0; }
 void Shell::select(int id) {
-  active_ = id;
+  active_ = id; page_ = 0;
   shell::recharge(rec(), now_);
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
   go(restingNow() ? SH_REST : SH_LAUNCHER);
@@ -107,7 +108,7 @@ bool Shell::openApp(const char* name) {
   return false;
 }
 void Shell::openIdx(int k) {
-  app_ = apps_[k]; opened_[k] = true;
+  app_ = apps_[k]; opened_[k] = true; page_ = launcher::pageOf(nApps_, k);   // back from a game: its page
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
   for (int id; (id = prof_.nth(n)) >= 0; n++) {
     all[n] = shell::toProfile(prof_, id);
@@ -131,7 +132,7 @@ void Shell::closeApp() {
 }
 void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = now_ - lastTick_; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, prof_.count(), ms_ - lastTouchMs_ >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
+  if (shell::play(rec(), now_, dt, prof_.count(), activity_.idleMs(ms_) >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 
@@ -311,34 +312,51 @@ void Shell::drawDelete() {
 }
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
-static const ui::Box HEADER = {30, 30, 100, 24};   // 2 px below the home button's hit box (rows -4..27)
-// Game tiles 64 px apart, centered: the labels under two tiles ("Pets Club", "Biscuit") keep a gap. Two fit the glass.
-static ui::Box appButton(int k, int n) { return {56 + (2 * k - (n - 1)) * 32, 57, 48, 44}; }
+// The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
+using launcher::HEADER;
+bool Shell::muteButton() {
+  return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+}
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
-  if (ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN)) {
-    rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_);
-  }
-  for (int k = 0; k < nApps_; k++) {
-    ui::Box b = appButton(k, nApps_);
-    if (in_.tapIn(b.x, b.y, b.w, b.h)) { openIdx(k); return; }
+  if (page_ >= launcher::pages(nApps_)) page_ = 0;
+  if (muteButton()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
+  const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
+  if (page_ > 0 && in_.tapIn(l.x, l.y, l.w, l.h)) page_--;
+  else if (page_ + 1 < launcher::pages(nApps_) && in_.tapIn(r.x, r.y, r.w, r.h)) page_++;
+  const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
+  for (int i = 0; i < m; i++) {
+    ui::Box b = launcher::tile(i, m);
+    if (in_.tapIn(b.x, b.y, b.w, b.h)) { openIdx(k0 + i); return; }
   }
 }
 void Shell::drawLauncher() {
   clear(C_SKY);
-  rect(0, 116, 160, 44, C_LEAF);
+  rect(0, launcher::grassY(nApps_), 160, 160 - launcher::grassY(nApps_), C_LEAF);
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 4, HEADER.y + 2);
   text(HEADER.x + 28, HEADER.y + 8, rec().name, C_DKBROWN);
-  for (int k = 0; k < nApps_; k++) {
-    ui::Box b = appButton(k, nApps_);
-    int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-    ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
-    const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-    textCenteredShadow(b.x + b.w / 2, b.y + b.h + 4, apps_[k]->name(), C_NAVY, C_WHITE);
-  }
-  ui::iconButton(in_, 80, 128, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+  if (page_ >= launcher::pages(nApps_)) page_ = 0;
+  const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
+  for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
+  if (page_ > 0) drawPageArrow(false);
+  if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
+  muteButton();
   ui::drawBack();
+}
+void Shell::drawAppTile(int k, int i, int m) {
+  const ui::Box b = launcher::tile(i, m);
+  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
+  const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
+  const launcher::Name nm = launcher::name(apps_[k]->name(), i, m, nApps_);   // the sim asserts nm.fits for every game
+  for (int j = 0; j < nm.lines; j++) textShadow(nm.at[j].x, nm.at[j].y, nm.text[j], C_NAVY, C_WHITE);
+}
+void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
+  const ui::Box b = launcher::arrow(right);
+  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0, cy = b.y + b.h / 2 + dy;
+  ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
+  for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
 }
 
 // ---------------------------------------------------------------- resting: the play budget ran out (a turn, or the day)
