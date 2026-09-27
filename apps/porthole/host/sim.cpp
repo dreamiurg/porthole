@@ -296,7 +296,7 @@ static void onKey(SDL_Keycode k, bool& run) {
 static void onArrow(SDL_Keycode k) {
   if (k != SDLK_LEFT && k != SDLK_RIGHT && k != SDLK_UP && k != SDLK_DOWN) return;
   float a = atan2f(g_gravity[0], g_gravity[1]), m = fminf(1, hypotf(g_gravity[0], g_gravity[1]) / 1000);
-  a += k == SDLK_LEFT ? 0.15f : k == SDLK_RIGHT ? -0.15f : 0;
+  a += k == SDLK_LEFT ? -0.15f : k == SDLK_RIGHT ? 0.15f : 0;
   m = fminf(1, fmaxf(0, m + (k == SDLK_DOWN ? 0.1f : k == SDLK_UP ? -0.1f : 0)));
   g_gravity[0] = (int16_t)(sinf(a) * m * 1000); g_gravity[1] = (int16_t)(cosf(a) * m * 1000); g_gravity[2] = (int16_t)(-sqrtf(1 - m * m) * 1000);
 }
