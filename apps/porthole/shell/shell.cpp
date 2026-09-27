@@ -32,7 +32,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
-  if (in.down) lastTouchMs_ = ms;
+  activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
@@ -131,7 +131,7 @@ void Shell::closeApp() {
 }
 void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = now_ - lastTick_; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, prof_.count(), ms_ - lastTouchMs_ >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
+  if (shell::play(rec(), now_, dt, prof_.count(), activity_.idleMs(ms_) >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 

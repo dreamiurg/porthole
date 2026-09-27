@@ -45,7 +45,7 @@ class Shell {
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
-  uint32_t lastTouchMs_ = 0;                       // idle (shell::IDLE_MS without a touch) is not play time
+  ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;
   Input in_{};
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)

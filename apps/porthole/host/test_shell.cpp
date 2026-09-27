@@ -1,5 +1,6 @@
 // Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
-// migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget, daily cap.
+// migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget, daily cap, and what counts
+// as activity for the idle rule.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
@@ -7,6 +8,7 @@
 #include "games/biscuit/pet.h"
 #include "games/pets-club/pet.h"
 #include "crc32.h"
+#include "input.h"
 #include "profiles.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
@@ -410,6 +412,32 @@ static void idleNotCounted() {
   assert(shell::play(r, t += 1, 1, 2, true));
 }
 
+// A tilt game is played without a touch: moving the board is activity, so two minutes of tilting count toward both
+// budgets like touch play. A board at rest (sensor noise) or drifting slowly is idle after IDLE_MS, as before.
+static void tiltIsActivity() {
+  auto run = [](int seconds, int16_t gx, int16_t noise, ActivityTracker& a, shell::Record& r, uint32_t& t, uint32_t& ms) {
+    Input in; in.gy = 1000; in.gz = 0;   // held upright
+    for (int s = 0; s < seconds; s++) {
+      for (int f = 0; f < 25; f++, ms += 40) {   // 25 frames a second, touch never down
+        in.gx = (int16_t)(gx * ((s / 10) & 1) + (f & 1 ? noise : -noise));   // tilts to gx and back every 10 s
+        a.step(in, false, ms);
+      }
+      shell::play(r, t += 1, 1, 2, a.idleMs(ms) >= shell::IDLE_MS);
+    }
+  };
+  ActivityTracker a; shell::Record r = draft("Sam", 8, 0);
+  uint32_t t = NOW, ms = 0;
+  run(120, 250, 15, a, r, t, ms);                            // tilting: every second counts
+  assert(r.dayPlaySec == 120 && r.playSec == 120);
+  run(120, 0, 15, a, r, t, ms);                              // set down, 30 mg of jitter: only the first minute counts
+  assert(r.dayPlaySec >= 178 && r.dayPlaySec <= 180 && r.playSec == r.dayPlaySec);
+  shell::Record d = draft("Kai", 6, 0); ActivityTracker b; ms = 0;
+  run(1, 0, 0, b, d, t, ms);
+  Input in; in.gy = 1000; in.gz = 0;
+  for (int f = 0; f < 3000; f++) { in.gx = (int16_t)(f / 20); b.step(in, false, ms += 40); }   // 150 mg over two minutes
+  assert(b.idleMs(ms) >= shell::IDLE_MS);                    // drift is not play (the first frame, from lying flat, was)
+}
+
 // The clock set back never strands anyone: to an earlier day it lifts the cap; within the day the rest still ends
 // at that day's midnight, so it never lasts more than a day.
 static void capClockBack() {
@@ -462,6 +490,7 @@ int main() {
   recordV1();
   dailyCap();
   idleNotCounted();
+  tiltIsActivity();
   capClockBack();
   capAfterClockGuess();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
