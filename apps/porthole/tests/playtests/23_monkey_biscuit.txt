@@ -25,7 +25,8 @@ monkey 600 12
 expect-screen *
 expect fullness>=20
 expect fullness<=100
-# seed 13: the training pad, every trick unlocked
+# seed 313: the training pad, every trick unlocked. (Was 13: once Marble Kick's Play page took a hold to leave, 13's
+# walk ended in an unadopted Pets Club, whose energy=0 is right there but is the last energy= the check below reads.)
 reset
 profile Sam 8
 app biscuit
@@ -40,7 +41,7 @@ wait 450
 tap 80 60
 wait 450
 tap 80 132
-monkey 600 13
+monkey 600 313
 expect-screen *
 expect energy>=20
 expect energy<=100
