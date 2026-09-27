@@ -46,7 +46,7 @@ expect-screen home
 tap 80 12
 wait 450
 # and a Biscuit pup too
-tap 112 79
+app Biscuit
 wait 450
 tap 119 125
 wait 450
@@ -107,7 +107,7 @@ tap 138 82
 wait 450
 expect-screen launcher
 expect profile=1/4
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_setup_pet
 expect named=0
