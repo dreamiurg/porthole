@@ -1,0 +1,35 @@
+# Chaos in Tilt FC under ASan/UBSan: random taps, drags and long presses on every page while the device tilts and
+# shakes. The monkey may wander out through the leave sign into the launcher and other games; afterwards there is a
+# real screen. The sim keeps its tilt across a reset: each run starts upright.
+# seed 61: the Calibrate page
+profile Sam 6
+app tilt-fc
+wait 500
+tilt 250 900 -300
+monkey 300 61
+expect-screen *
+# seed 62: a match, tilted hard, with a shake
+reset
+tilt 0 1000 0
+profile Sam 6
+app tilt-fc
+wait 500
+dbg kickoff
+wait 1300
+tilt -500 800 300
+monkey 300 62
+shake
+expect-screen *
+# seed 63: the Full time page, after a match sent to its whistle
+reset
+tilt 0 1000 0
+profile Sam 6
+app tilt-fc
+wait 500
+dbg kickoff
+dbg score0-2
+dbg clock0
+wait 12000
+expect-screen fc_fulltime
+monkey 300 63
+expect-screen *

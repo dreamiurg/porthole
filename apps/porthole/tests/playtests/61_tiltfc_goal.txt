@@ -1,0 +1,56 @@
+# A Tilt FC match held upright, played by tilting and tapping: the recorded moves (the passing bot's, written by
+# `build/host/test_tiltfc --write-playtests`) take teal from the kickoff to a goal. Then the Goal page, coral's
+# kickoff after the 3-2-1, and play on.
+tilt 0 1000 0
+profile Sam 6
+app tilt-fc
+wait 500
+dbg kickoff
+# match from 0 1000 0
+wait 2400
+tilt 0 917 -400
+wait 200
+tilt -281 916 285
+tap 130 40
+wait 80
+tilt 194 916 -350
+wait 400
+tilt 382 916 120
+wait 200
+tilt -360 917 174
+wait 200
+tilt -271 917 -294
+wait 200
+tilt -231 917 -326
+wait 200
+tilt -191 916 -352
+wait 200
+tilt 231 916 -327
+wait 200
+tilt 182 917 -356
+wait 200
+tilt 192 916 -351
+wait 200
+tilt 293 917 -272
+tap 130 40
+wait 80
+tilt 264 916 -301
+wait 200
+tilt 0 1000 0
+# end match
+expect-screen fc_goal
+expect teal=1
+expect coral=0
+ui-check fc_goal
+snap fc_g01_goal
+wait 2100
+expect-screen fc_kickoff
+expect owner=3
+ui-check fc_kickoff-coral
+snap fc_g02_kickoff_coral
+wait 2500
+expect-screen fc_match
+wait 1500
+ui-check fc_match-coral
+snap fc_g03_match
+sheet goal

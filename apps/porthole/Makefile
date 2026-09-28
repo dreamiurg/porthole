@@ -9,8 +9,11 @@
 INCLUDES := -Ios -Ishell -I.
 # Warnings are errors in every host build: sim, snap, snap-asan, the tests and the coverage objects.
 WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initializers
+# -ffp-contract=off: Apple clang fuses a*b+c into one FMA by default, gcc on x86 does not, so the same seeded match
+# came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
+FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
-CXXFLAGS += $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
 # with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
@@ -28,6 +31,9 @@ test_biscuit_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
+# os/tilt.h is header-only
+test_tilt_SRC :=
+test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 BUILD := build/host
@@ -78,11 +84,15 @@ ci: check playtest coverage
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
 COV_MIN := 91
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
-GCOVR ?= $(shell command -v gcovr 2>/dev/null || echo uvx gcovr)
+# GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
+GCOVR ?= $(shell gcovr --version 2>/dev/null | awk 'NR==1 { split($$2, v, "."); if (v[1] > 8 || (v[1] == 8 && v[2] >= 3)) print "gcovr" }' | grep . || echo "uvx --from 'gcovr>=8.3' gcovr")
+# gcovr rejects a line hit more than 2^32 times as gcc bug 68080 (whose counts are garbage near 2^64). The RGB565 fill
+# loop in os/gfx565.cpp really runs that often: the render checks paint billions of pixels. 2^40 still catches the bug.
+GCOVR_HITS := --gcov-suspicious-hits-threshold 1099511627776
 # ponytail: keyed on the OS, so it assumes Apple clang on macOS and gcc elsewhere; pass GCOV=... for other mixes.
 ifeq ($(shell uname -s),Darwin)
 GCOV ?= xcrun llvm-cov gcov
@@ -96,7 +106,7 @@ coverage:
 	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) && $(COV)/$(t) &&) true
 	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:

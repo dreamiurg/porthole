@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit and Marble Kick.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick and Tilt FC.
 
 ![Pets Club (top: home, a story, a trick lesson), Biscuit (middle: home, a story, a discovery) and Marble Kick (bottom: calibrate, a puzzle level, goal)](docs/screenshots.png)
 
@@ -95,6 +95,23 @@ holding the case can rest on the glass without doing anything.
 * **Its own look.** Walnut rim, maple tray, striped felt, red lacquered pegs and defenders, a brass
   keeper, wooden letter blocks for the few words it shows.
 
+## Tilt FC: street football by tilting
+
+Top-down street football, two a side plus a keeper each: tilt the device and your player runs that
+way, tap anywhere to pass or shoot. First to three goals, or three minutes.
+
+* **Tilt and tap.** Tilt sets which way your player runs, never how fast. With the ball, a tap
+  passes to the teammate you aim at, shoots when the goal is in range (a sun-yellow dot in the net
+  shows where), or rolls it on; without it, a tap slides for the ball. You always steer the player
+  with the ball or the one nearest it.
+* **A real opponent.** The other team presses the ball, stands in passing lanes and wins it back;
+  their keeper covers his goal. Running straight at the goal rarely scores: dodge, pass, aim for a
+  corner.
+* **Nothing punishes.** No fouls, nobody falls, a lost match just shows the score and the next one
+  is a little easier; a win makes the next one a little harder.
+* **Its own look.** A sunny street court with chalk lines and long shadows, teal against coral,
+  and one chunky font for GOAL! and the scores.
+
 ## Play it without the board
 
 You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
@@ -105,11 +122,11 @@ make snap && python3 tools/webemu.py   # or: make webemu
 
 Open http://127.0.0.1:8765 (`python3 tools/webemu.py 8766` for another port). The mouse is your
 finger; the buttons under the screen skip time and force states (hungry, muddy, grown...) so you
-can see a week of play in a minute. For Marble Kick, a tilt pad stands in for the motion sensor.
+can see a week of play in a minute. For Marble Kick and Tilt FC, a tilt pad stands in for the motion sensor.
 
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
 hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits. The arrow
-keys turn and lay the device flat, for Marble Kick's tilt.
+keys turn and lay the device flat, for the tilt games.
 
 The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
 
@@ -181,6 +198,8 @@ games/biscuit/     Biscuit: rules and save (pet.h), screens (screens_*.cpp), sto
                    tools: art (tools/art/, Node), font conversion, content checker
 games/marble-kick/ Marble Kick: tilt physics and levels (physics.*, levels.h, tune.h), save (save.h),
                    its look drawn in code (render.*), pages (game.*)
+games/tilt-fc/     Tilt FC: match rules and AI (match.*, tune.h), save (save.h), its look drawn
+                   in code (render.*), pages (game.*), its font (fonts/, generated/fonts.h)
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test

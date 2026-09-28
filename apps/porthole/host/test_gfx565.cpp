@@ -138,6 +138,20 @@ static void drawing() {
   assert(fb[10 * W + 10] == 0xFFFF);
   assert(fb[(10 + f.lineHeight) * W + 10 + f.lineHeight / 2] == 0xFFFF);
   assert(!fb[12 * W + 12]);
+
+  // font::clip: a label drawn in two halves, each cut to its half, is the label drawn whole
+  static uint16_t whole[W * H];
+  clear(0);
+  font::text(f, "Goal", 100, 100, 0xFFFF);
+  memcpy(whole, g_fb, sizeof whole);
+  clear(0);
+  font::clip(0, 0, 120, H);
+  font::text(f, "Goal", 100, 100, 0xFFFF);
+  assert(blank(120, 0, W, H));
+  font::clip(120, 0, W, H);
+  font::text(f, "Goal", 100, 100, 0xFFFF);
+  font::clip(0, 0, W, H);
+  assert(!memcmp(whole, g_fb, sizeof whole));
 }
 
 static void audit() {   // the text log: the logical box and RGB colors the playtest audit reads

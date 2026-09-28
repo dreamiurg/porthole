@@ -94,9 +94,10 @@ uint16_t mix(uint16_t fg, uint16_t bg, uint8_t opa) {   // lv_color_mix for 16-b
 }
 // The clip of an LVGL label: its box grown by lineHeight / 4 on every side (the label's ext draw size, room for
 // glyphs that overhang it), cut to the surface.
+int clipX0 = 0, clipY0 = 0, clipX1 = gfx565::W, clipY1 = gfx565::H;   // font::clip, inside the surface
 Pen pen(const Font& f, int x, int y, int w, int h) {
   int e = f.lineHeight / 4, x0 = x - e, y0 = y - e, x1 = x + w + e, y1 = y + h + e;
-  return {x, y, x0 < 0 ? 0 : x0, y0 < 0 ? 0 : y0, x1 > gfx565::W ? gfx565::W : x1, y1 > gfx565::H ? gfx565::H : y1, 0};
+  return {x, y, x0 < clipX0 ? clipX0 : x0, y0 < clipY0 ? clipY0 : y0, x1 > clipX1 ? clipX1 : x1, y1 > clipY1 ? clipY1 : y1, 0};
 }
 void fill(const Pen& p, int x, int y, int w, int h) {
   int x0 = x > p.x0 ? x : p.x0, y0 = y > p.y0 ? y : p.y0, x1 = x + w < p.x1 ? x + w : p.x1, y1 = y + h < p.y1 ? y + h : p.y1;
@@ -178,6 +179,10 @@ char* balance(const Box& b, char* prev, char* last, int minLast) {
 }
 }  // namespace
 
+void clip(int x0, int y0, int x1, int y1) {
+  clipX0 = x0 < 0 ? 0 : x0; clipY0 = y0 < 0 ? 0 : y0;
+  clipX1 = x1 > gfx565::W ? gfx565::W : x1; clipY1 = y1 > gfx565::H ? gfx565::H : y1;
+}
 int glyphIndex(const Font& f, uint32_t cp) {
   if (cp >= 32 && cp <= 126) return (int)cp - 31;
   for (int k = 0; k < f.extraCount; k++) if (f.extras[k] == cp) return 96 + k;
