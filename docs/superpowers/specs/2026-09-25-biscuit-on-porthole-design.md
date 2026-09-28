@@ -120,7 +120,7 @@ New `os/gfx565.h/.cpp` and `os/font.h`. The indexed path is untouched.
   `tools/playtest.py` parses both forms and computes contrast from RGB directly. Hit regions are
   unchanged: Biscuit hit-tests with `Input::hit` on logical boxes.
 - Fonts live with the first consumer: `games/biscuit/generated/fonts.h`, produced once from the four
-  LVGL `.c` files by `games/biscuit/tools/fontconv.py` (regex over the C arrays). Regeneration needs
+  LVGL `.c` files by `apps/porthole/tools/fontconv.py` (regex over the C arrays). Regeneration needs
   `npx lv_font_conv@1.5.3` only if a glyph is ever added; the content gate rejects glyphs outside the
   set, so that is rare. Node and lv_font_conv are not part of hooks or CI.
 

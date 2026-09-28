@@ -4,8 +4,8 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick and
-Sand Jar.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC
+and Sand Jar.
 
 ![Pets Club (top: home, a story, a trick lesson), Biscuit (middle: home, a story, a discovery) and Marble Kick (bottom: calibrate, a puzzle level, goal)](docs/screenshots.png)
 
@@ -95,6 +95,23 @@ holding the case can rest on the glass without doing anything.
   proven solution, so the ball is never stuck for good.
 * **Its own look.** Walnut rim, maple tray, striped felt, red lacquered pegs and defenders, a brass
   keeper, wooden letter blocks for the few words it shows.
+
+## Tilt FC: street football by tilting
+
+Top-down street football, two a side plus a keeper each: tilt the device and your player runs that
+way, tap anywhere to pass or shoot. First to three goals, or three minutes.
+
+* **Tilt and tap.** Tilt sets which way your player runs, never how fast. With the ball, a tap
+  passes to the teammate you aim at, shoots when the goal is in range (a sun-yellow dot in the net
+  shows where), or rolls it on; without it, a tap slides for the ball. You always steer the player
+  with the ball or the one nearest it.
+* **A real opponent.** The other team presses the ball, stands in passing lanes and wins it back;
+  their keeper covers his goal. Running straight at the goal rarely scores: dodge, pass, aim for a
+  corner.
+* **Nothing punishes.** No fouls, nobody falls, a lost match just shows the score and the next one
+  is a little easier; a win makes the next one a little harder.
+* **Its own look.** A sunny street court with chalk lines and long shadows, teal against coral,
+  and one chunky font for GOAL! and the scores.
 
 ## Sand Jar: a tilt toy
 
@@ -198,6 +215,8 @@ games/sand-jar/    Sand Jar: sand, water and star physics (physics.cpp), the toy
                    (game.cpp), launcher icon tool
 games/marble-kick/ Marble Kick: tilt physics and levels (physics.*, levels.h, tune.h), save (save.h),
                    its look drawn in code (render.*), pages (game.*)
+games/tilt-fc/     Tilt FC: match rules and AI (match.*, tune.h), save (save.h), its look drawn
+                   in code (render.*), pages (game.*), its font (fonts/, generated/fonts.h)
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test

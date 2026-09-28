@@ -13,8 +13,9 @@ contract, module map and Save layout.
 ## Product contract
 
 - **Tilt is the only control.** During play every tap is ignored: a hand holding the case may brush the glass.
-  Leaving the Play page takes holding the home knob for 0.6 s (a ring fills around it; letting go early does
-  nothing, and so does a finger that drifts on the knob: it still counts). Taps move on from the Calibrate, Goal and
+  Leaving the Play page takes holding the home knob for 0.6 s (`ui::Hold`, os/ui.h, shared with Tilt FC: a ring
+  fills around it; letting go early does nothing, a finger that drifts on the knob still counts, and one that drifts
+  off and back starts over). Taps move on from the Calibrate, Goal and
   Done pages, and the knob there is a plain tap. A press on the red button that waits for a steady grip stays shown
   pressed until play starts.
 - **Neutral is how the kid holds it, any way.** Every visit starts on the Calibrate page. Pressing the red button
@@ -57,7 +58,8 @@ Everything is in `namespace marble` (Pets Club owns the global `Game`).
 
 - `tune.h`: the feel knobs: dead zone (87 mg), full tilt (423 mg), acceleration, felt drag, rolling friction, top
   speed, rim and peg restitution, the 5 ms substep, the Goal page's 2 s. Retune here after playing on the device.
-- `physics.h` / `physics.cpp`: tilt from the 3D neutral (`tiltFrom`, Rodrigues onto face-up) to acceleration, one
+- `physics.h` / `physics.cpp`: tilt from the 3D neutral (`tilt::from` in `os/tilt.h`, Rodrigues onto face-up; the
+  Calibrate page's steady neutral is `tilt::Steady`, shared with Tilt FC) to acceleration, one
   substep (roll, move, bump off pegs (a moving one hits back with its own velocity: a nudge), rails (capsules
   `RAIL_R` thick) and the home knob, then the rim; drop into a slow-enough hole, pick up stars), goal detection. The
   ball's center may be on the felt or in the goal's mouth, a channel `goalHalf - POST_R - BALL_R` either side of the
@@ -81,20 +83,21 @@ Everything is in `namespace marble` (Pets Club owns the global `Game`).
   throwaway waypoint-following controller, not kept: it steered toward hand-placed waypoints round the walls and
   holes, the last one the mouth wherever it was, and kept a run that scored from all three grips.
 - `save.h`: the Save (below), `seal`, `loadBlob`. Header-only.
-- `render.h` / `render.cpp`: the look. One clipped span writer under everything; the tray is painted row by row from
-  the distance to the center (rings of wood, grain, felt and chalk; the net cut into the rim above the goal), so any
-  rectangle can be repainted without a cached image. Shadows are the tray's own colors at 70%, baked, never blended.
-  Also rails, grooves, holes, stars, the ball (sinking: smaller and darker in baked steps), pegs, the keeper, knob,
-  coins, the red button, pennants, the Calibrate dish and the Done page's confetti. The net is cut into the rim at
-  the goal's angle, drawn at the nearest quarter degree (`Mouth::key`), so a buffer's net is named by that key.
-- `game.h` / `game.cpp`: the App: the four pages, the launcher icon (a 32x32 sprite in the shell's indexed palette,
-  as ASCII art converted at compile time), and `render()`'s buffer bookkeeping: each of the panel's two buffers
-  (`os/app.h`) gets the whole page after a page change or when the page's `look` changed (a pressed button, the hold
-  ring, the dish's glow, a star picked up, a confetti frame); otherwise each mover (the ball, keyed by its sink time;
-  every moving peg; a moving goal, keyed by its drawn angle; the dish's ball) that changed gets its old and new boxes
-  repainted, and nothing when none did. `host/test_marble.cpp` checks every such frame against a full repaint, over
-  solution replays, greedy runs into holes, and moving goals.
-  `debugCmd("level<N>")` calibrates as held now and plays level N; `debugPrint` also reports `ready=` and `starting=`.
+- `render.h` / `render.cpp`: the look, on the runtime's clipped span writer (`os/canvas.h`, shared with Tilt FC); the
+  tray is painted row by row from the distance to the center (rings of wood, grain, felt and chalk; the net cut into the
+  rim above the goal), so any rectangle can be repainted without a cached image. Shadows are the tray's own colors at
+  70%, baked, never blended. Also rails, grooves, holes, stars, the ball (sinking: smaller and darker in baked steps),
+  pegs, the keeper, knob, coins, the red button, pennants, the Calibrate dish and the Done page's confetti. The net is
+  cut into the rim at the goal's angle, drawn at the nearest quarter degree (`Mouth::key`), so a buffer's net is named
+  by that key.
+- `game.h` / `game.cpp`: the App: the four pages, the launcher icon (a 32x32 sprite in the shell's indexed palette, as
+  ASCII art converted at compile time), and `render()`'s buffer bookkeeping (`canvas::Frames`, os/canvas.h): each of the
+  panel's two buffers (`os/app.h`) gets the whole page after a page change or when the page's `look` changed (a pressed
+  button, the hold ring, the dish's glow, a star picked up, a confetti frame); otherwise each mover (the ball, keyed by
+  its sink time; every moving peg; a moving goal, keyed by its drawn angle; the dish's ball) that changed gets its old
+  and new boxes repainted, and nothing when none did. `host/test_marble.cpp` checks every such frame against a full
+  repaint, over solution replays, greedy runs into holes, and moving goals. `debugCmd("level<N>")` calibrates as held
+  now and plays level N; `debugPrint` also reports `ready=` and `starting=`.
 
 ## Save layout
 
@@ -124,4 +127,4 @@ downgrade after a Save change resets progress (see `save.h`): a v1 firmware igno
   tint (`tint()` follows the clock, but the RGB565 page draws its own daylight colors).
 - Held within about 10-20 degrees of face down (lying on your back, the device overhead), which way a tilt rolls the
   ball depends on the exact grip it was calibrated in: the rotation that lays that grip flat turns sharply there (it
-  is undefined at exactly face down, where `tiltFrom` falls back to half a turn about x). No fix for now.
+  is undefined at exactly face down, where `tilt::from` falls back to half a turn about x). No fix for now.

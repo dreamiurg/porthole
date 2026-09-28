@@ -93,19 +93,8 @@ void sink(Ball& b) {
 }
 }  // namespace
 
-Vec tiltFrom(Grav g, Grav neutral) {
-  const float n = sqrtf((float)(neutral.x * neutral.x + neutral.y * neutral.y + neutral.z * neutral.z));
-  if (n < 1) return {(float)g.x, (float)g.y};   // no reading to be level with: lying flat
-  const float ax = neutral.x / n, ay = neutral.y / n, az = neutral.z / n, x = (float)g.x, y = (float)g.y, z = (float)g.z;
-  if (az > 0.9999f) return {x, -y};   // face down: half a turn about x (the rotation below is undefined there)
-  // Rodrigues, from a (the neutral) to (0, 0, -1): v = a x (0, 0, -1) = (-ay, ax, 0), cos = -az;
-  // g' = g + v x g + v x (v x g) / (1 + cos). Only x and y are needed.
-  const float vx = -ay, vy = ax, k = 1 / (1 - az);
-  const float cx = vy * z, cy = -vx * z, cz = vx * y - vy * x;   // v x g
-  return {x + cx + vy * cz * k, y + cy - vx * cz * k};
-}
 Vec tiltAccel(Grav g, Grav neutral) {
-  const Vec t = tiltFrom(g, neutral);
+  const tilt::Vec t = tilt::from(g, neutral);
   const float tx = t.x, ty = t.y, m = sqrtf(tx * tx + ty * ty);
   if (m <= DEAD_MG) return {0, 0};
   const float k = m >= FULL_MG ? 1 : (m - DEAD_MG) / (FULL_MG - DEAD_MG);

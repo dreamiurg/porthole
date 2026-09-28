@@ -7,6 +7,8 @@ exclude: |
   (?x)^(
     apps/porthole/games/pets-club/sprites\.h|
     apps/porthole/games/biscuit/generated/.*|
+    apps/porthole/games/tilt-fc/generated/.*|
+    apps/porthole/games/tilt-fc/fonts/OFL\.txt|
     apps/porthole/os/font8x8_basic\.h|
     .*\.(ttf|png|bmp)
   )$

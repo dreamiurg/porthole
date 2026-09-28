@@ -9,6 +9,7 @@
 #include "app.h"
 #include "physics.h"
 #include "render.h"
+#include "canvas.h"
 #include "save.h"
 #include "ui.h"
 
@@ -41,6 +42,7 @@ class Game : public App {
   uint32_t now_ = 0, ms_ = 0, pageMs_ = 0;   // pageMs_: when this page appeared (the goal, the celebration)
   Input in_{};
   ui::FreshGate gate_;            // every page change ignores touches for a moment (os/ui.h)
+  ui::Hold hold_;                 // Play: the home knob held
   Screen screen_ = SC_CALIBRATE;
   int level_ = 0;                 // the level on the tray (index into LEVELS)
   Grav neutral_ = {0, 0, -1000};  // gravity as the kid held the device when play started
@@ -48,32 +50,25 @@ class Game : public App {
   uint32_t stepMs_ = 0;           // time not yet simulated, under one STEP_MS
   // Calibrate: the last frames' gravity (the neutral is their steady average), and the dish: a small ball rolling on
   // the tilt away from `ref_`, which follows gravity over about a second, so holding still settles it in the middle.
-  struct Sample { int16_t x, y, z; uint32_t ms; };
-  Sample samples_[24] = {};
-  int sampleCount_ = 0;
-  float ref_[3] = {0, 0, -1000};
-  bool refSet_ = false, starting_ = false;   // starting_: the button was pressed, play starts once held steady
+  tilt::Steady steady_;
+  tilt::Follow ref_;
+  bool starting_ = false;         // the button was pressed, play starts once held steady
   Vec dish_{}, dishV_{};
   uint32_t dishMs_ = 0;           // the dish's time not yet simulated, under one STEP_MS
-  // What each of the panel's two buffers holds (os/app.h): this page, its movers (the ball, the moving pegs, a moving
-  // goal; the dish's ball) as boxes with keys, and the rest of its state as `look` (pressed buttons, the hold ring, the
-  // dish's glow, stars picked up, the confetti's frame). A buffer not listed (fb null after a page change) or with
-  // another look gets the whole page; one listed gets each changed mover's old and new boxes, and nothing when none
-  // changed.
+  // What each of the panel's two buffers holds (os/canvas.h): this page, its movers (the ball, the moving pegs, a
+  // moving goal; the dish's ball) as boxes with keys, and the rest of its state as `look` (pressed buttons, the hold
+  // ring, the dish's glow, stars picked up, the confetti's frame).
   static constexpr int MAX_MOVERS = 2 + MAX_PEGS;
-  struct Mover { paint::Box box; int key; };
-  struct Held { const uint16_t* fb; Mover movers[MAX_MOVERS]; int n; uint32_t look; };
-  Held held_[2] = {};
+  using Mover = canvas::Mover;
+  canvas::Frames<MAX_MOVERS> frames_;
 
   void go(Screen s);
   void play(int level);
-  void remember();                // this frame's gravity, for the steady neutral
-  bool steady(Grav* neutral) const;
-  bool pressing(int cx, int cy, int r) const;   // the finger went down in this logical circle and is still in it
+  bool pressing(int cx, int cy, int r) const { return ui::pressing(in_, cx, cy, r); }
   bool pressingBox(int cx, int cy, int half) const;
   bool goPressed() const;
   bool leaving();
-  float hold() const;             // Play: how far holding the knob has got to leaving, 0..1
+  float hold() const;             // Play: how far holding the knob has got to leaving, 0..1 (os/ui.h)
   int pressedCoin() const;        // Done: the coin under the finger, or -1
   bool ready() const;             // Calibrate: the dish's ball has settled in the middle
   Mover ballMover() const;

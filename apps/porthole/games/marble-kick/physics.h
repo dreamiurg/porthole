@@ -10,6 +10,7 @@
 // moves until the kid starts, and a recorded solution replays exactly however long the page waited before it.
 #pragma once
 #include "levels.h"
+#include "tilt.h"
 #include "tune.h"
 
 namespace marble {
@@ -23,7 +24,7 @@ constexpr int STAR_R = 12;     // a star is picked up when the ball's center com
 constexpr int HOLE_IN = 4;     // the ball drops in when its center is this far inside a hole's rim (and slow enough)
 
 struct Vec { float x, y; };
-struct Grav { int x, y, z; };   // gravity, milli-g, screen frame (Input::gx/gy/gz)
+using tilt::Grav;              // gravity, milli-g, screen frame (Input::gx/gy/gz)
 struct Ball {
   const Level* level;
   Vec p, v;
@@ -35,11 +36,7 @@ struct Ball {
   Vec hole;           // where it dropped in
 };
 
-// The tilt away from the kid's neutral, in milli-g: gravity turned by the rotation that lays the neutral flat (face
-// up, (0, 0, -1000)), then its x/y. So every grip gets the same range both ways: from upright, leaning back rolls the
-// ball up and leaning forward rolls it down, as far as from lying flat.
-Vec tiltFrom(Grav g, Grav neutral);
-// That tilt through the dead zone and the clamp (tune.h): px/s^2.
+// The tilt away from the kid's neutral (tilt::from, os/tilt.h) through the dead zone and the clamp (tune.h): px/s^2.
 Vec tiltAccel(Grav g, Grav neutral);
 
 float goalAngle(const Level& l, uint32_t ms);          // radians clockwise from the top

@@ -2,24 +2,21 @@
 // felt with chalk lines, red lacquered pegs, brass goalposts and knob, a cream ball, wooden letter blocks. Its own flat
 // colors (render.cpp), shared with no other game.
 //
-// Everything goes through one clipped span writer, so any page can repaint just a rectangle: the tray is computed
+// Everything goes through the runtime's clipped span writer (os/canvas.h), so any page can repaint just a rectangle: the tray is computed
 // from the distance to the center row by row (no cached image), and each thing is drawn whole but clipped. That is
 // what lets the game redraw only the ball's old and new spots in each of the panel's two buffers (game.cpp, render()).
 // Panel px, absolute (the tray's center is 240,240).
 #pragma once
 #include <math.h>
 #include <stdint.h>
+#include "canvas.h"
 #include "gfx565.h"
 #include "physics.h"
 
 namespace marble::paint {
-struct Box { int x0, y0, x1, y1; };   // x1, y1 exclusive; empty when x1 <= x0
-constexpr Box FULL = {0, 0, gfx565::W, gfx565::H};
-constexpr Box NONE = {0, 0, 0, 0};
-inline bool empty(const Box& b) { return b.x1 <= b.x0 || b.y1 <= b.y0; }
-inline bool same(const Box& a, const Box& b) { return a.x0 == b.x0 && a.y0 == b.y0 && a.x1 == b.x1 && a.y1 == b.y1; }
-Box unite(const Box& a, const Box& b);
-void clip(const Box& b);   // every draw below touches only this box
+// The clipped painter is the runtime's (os/canvas.h): every draw below touches only canvas::clip's box.
+using canvas::Box; using canvas::FULL; using canvas::NONE; using canvas::empty; using canvas::same; using canvas::unite;
+using canvas::clip;
 
 constexpr int SHADOW_DX = 5, SHADOW_DY = 6;   // where every shadow falls: light from the upper left
 // The box a ball at (x, y) covers, shadow included.
