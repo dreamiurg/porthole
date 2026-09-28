@@ -68,7 +68,7 @@ keeper and a moving goal, with three optional stars per level for the long way r
 Nothing is timed or scored, and every level ships with a proven solution so it's never
 actually stuck.
 
-The fourth is Tilt FC: top-down street football on the same round court, also steered by
+The fourth is Tilt FC: top-down street football on a round court, also steered by
 tilt. The kid's team plays a computer team; tilt runs the kid's player, and a tap passes
 to a teammate, shoots on goal, or rolls the ball ahead, depending on where it's aimed. The
 computer team defends from the first match, and levels ramp up how well it plays. Nothing
