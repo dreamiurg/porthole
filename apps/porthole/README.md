@@ -6,7 +6,7 @@ RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 m
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
 launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick and Tilt FC.
 
-![Pets Club (top: home, a story, a trick lesson), Biscuit (middle: home, a story, a discovery) and Marble Kick (bottom: calibrate, a puzzle level, goal)](docs/screenshots.png)
+![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
 ## Profiles and the launcher
 
