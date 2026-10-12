@@ -29,6 +29,9 @@ bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw = nullptr);
 
 void setBacklight(uint8_t percent);
 void buzzer(bool on);
+// The BOOT button (GPIO0, next to RESET on the board's edge): held while the chip resets it selects the flasher; once
+// running it is a plain button. The kids' UI never uses it (no physical buttons, docs/hardware.md): a developer switch.
+bool bootButton();
 
 // NVS blobs addressed by (namespace, key). Namespaces are at most 15 chars, keys at most 15.
 bool saveBlob(const char* ns, const char* key, const void* data, size_t len);

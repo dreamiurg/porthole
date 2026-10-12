@@ -47,6 +47,7 @@ static uint32_t g_mt[MT_N][MT_COUNT];
 static int g_mtAt = 0;
 static bool g_fpsOn = false;   // "O": the frame rate over the last MT_N frames, top left of the glass (off at boot)
 
+static void toggleFps() { g_fpsOn = !g_fpsOn; Serial.printf("[porthole] fps overlay %s\n", g_fpsOn ? "on" : "off"); }
 // Drawn over the frame after render, so it isn't counted as render time. An RGB565 game that redraws only what changed
 // (Sand Jar) doesn't know these pixels changed: after "O" turns it off, the digits linger until the game repaints there.
 static void drawFps() {
@@ -175,7 +176,7 @@ static void motionCommand(int c) {   // A, G, M: split out of serialCommand for 
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
-  else if (c == 'O') { g_fpsOn = !g_fpsOn; Serial.printf("[porthole] fps overlay %s\n", g_fpsOn ? "on" : "off"); }
+  else if (c == 'O') toggleFps();
 }
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
@@ -232,4 +233,7 @@ void loop() {
   board::buzzer(g_shell.soundOn(ms));
   dimWhenIdle(ms);
   while (Serial.available()) serialCommand(Serial.read());
+  static bool bootWas = false; static uint32_t bootEdgeMs = 0;   // BOOT toggles the frame-rate overlay, like "O"
+  bool boot = board::bootButton();
+  if (boot != bootWas && ms - bootEdgeMs > 40) { bootWas = boot; bootEdgeMs = ms; if (boot) toggleFps(); }
 }

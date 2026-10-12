@@ -73,5 +73,5 @@ PlatformIO auto-detects the serial port when one board is plugged in. Pass
 - The visible area is a circle. A rectangle that fits the 480x480 square can
   still lose its corners behind the bezel. Check every corner of every text box
   and button against the circle.
-- There are no physical buttons. Every screen needs a visible way back.
+- No buttons a kid uses: RESET and BOOT on the edge are developer controls (BOOT toggles the frame-rate overlay). Every screen needs a visible way back.
 - Fingers are big: aim for touch targets of at least 8 mm (72 physical px).
