@@ -2,7 +2,7 @@
 # leaves with nothing saved; a typed name meets the pup at home and sticks across a relaunch. Each profile has its
 # own pup, and the scrapbook renames it, keeping everything else.
 profile Sam 8
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_setup_pet
 expect named=0
@@ -12,7 +12,7 @@ snap n01_setup
 tap 80 12
 wait 450
 expect-screen launcher
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_setup_pet
 expect named=0
@@ -40,7 +40,7 @@ snap n03_home
 tap 80 12
 wait 450
 expect-screen launcher
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_home
 expect pet=Pip
@@ -48,7 +48,7 @@ expect pet=Pip
 tap 80 12
 wait 450
 profile Kai 6
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_setup_pet
 expect named=0

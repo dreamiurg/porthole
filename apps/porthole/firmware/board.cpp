@@ -184,6 +184,50 @@ void rtcSet(uint32_t e) {
   i2cWrite(RTC_ADDR, 0x04, b, 7);
 }
 
+// ---- motion (QMI8658, accelerometer only) ----
+// Registers: QST's QMI8658 datasheet as transcribed by SensorLib (github.com/lewisxhe/SensorLib,
+// src/sensor/imu/qmi8658/SensorQMI8658_Reg.hpp); addresses 0x6B/0x6A (SA0) from Waveshare's demo driver for this board
+// (Gyro_QMI8658.h). WHO_AM_I 0x00 = 0x05; soft reset: 0xB0 to 0x60, done when 0x4D bit 7 is set.
+static const uint8_t IMU_WHO_AM_I = 0x00, IMU_CTRL1 = 0x02, IMU_CTRL2 = 0x03, IMU_CTRL5 = 0x06, IMU_CTRL7 = 0x08;
+static const uint8_t IMU_AX_L = 0x35, IMU_RESET = 0x60, IMU_RST_RESULT = 0x4D;
+static const int IMU_LSB_PER_G = 8192;   // +-4 g full scale
+// Chip axis -> screen axis: screen x, y, z = sign * chip[axis]. Flip a sign or swap two axes here if a physical tilt test
+// disagrees. The screen frame (x right, y down, z toward the viewer) is left-handed and the chip's is right-handed, so a
+// valid table has an odd number of -1 signs without an x/y swap, or an even number with one.
+// Measured on the board (2026-09-27, serial "A"): held upright with the home button on top, the chip read +1 g on its x;
+// turned a quarter clockwise (right edge down), -1 g on its y; lying face up, -1 g on its z. So chip +x points to the
+// screen's top, chip +y to its right, chip +z into the glass.
+static const struct { uint8_t axis; int8_t sign; } SCREEN_FROM_CHIP[3] = {{1, +1}, {0, -1}, {2, -1}};
+static uint8_t g_imu = 0;   // the chip's I2C address, 0 = not found
+
+static void imuInit() {
+  for (uint8_t a : {(uint8_t)0x6B, (uint8_t)0x6A}) {
+    uint8_t id = 0;
+    if (i2cRead(a, IMU_WHO_AM_I, &id, 1) && id == 0x05) { g_imu = a; break; }
+  }
+  if (!g_imu) { Serial.println("[board] no QMI8658 motion sensor"); return; }
+  Serial.printf("[board] QMI8658 at 0x%02X\n", g_imu);
+  uint8_t v = 0xB0; i2cWrite(g_imu, IMU_RESET, &v, 1);
+  for (int i = 0; i < 50 && !(i2cRead(g_imu, IMU_RST_RESULT, &v, 1) && (v & 0x80)); i++) delay(2);
+  v = 0x40; i2cWrite(g_imu, IMU_CTRL1, &v, 1);   // register auto-increment, little endian, oscillator on
+  v = 0x15; i2cWrite(g_imu, IMU_CTRL2, &v, 1);   // +-4 g, 224 Hz
+  v = 0x07; i2cWrite(g_imu, IMU_CTRL5, &v, 1);   // accel low-pass on, mode 3 (13.37% of ODR, ~30 Hz)
+  v = 0x01; i2cWrite(g_imu, IMU_CTRL7, &v, 1);   // accelerometer only
+}
+
+bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw) {
+  uint8_t b[6];
+  if (!g_imu || !i2cRead(g_imu, IMU_AX_L, b, 6)) return false;
+  int16_t chip[3];
+  for (int i = 0; i < 3; i++) chip[i] = (int16_t)(b[2 * i] | b[2 * i + 1] << 8);
+  if (!chip[0] && !chip[1] && !chip[2]) return false;   // no sample yet (a real 0 g on all three is free fall)
+  if (raw) for (int i = 0; i < 3; i++) raw[i] = chip[i];
+  int16_t* out[3] = {&gx, &gy, &gz};
+  // The chip reports specific force (+1 g up at rest); gravity points the other way.
+  for (int i = 0; i < 3; i++) *out[i] = (int16_t)(-SCREEN_FROM_CHIP[i].sign * chip[SCREEN_FROM_CHIP[i].axis] * 1000 / IMU_LSB_PER_G);
+  return true;
+}
+
 void setBacklight(uint8_t pct) { if (pct > 100) pct = 100; ledcWrite(PIN_BL, pct == 100 ? 1023 : pct * 10); }
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 
@@ -209,6 +253,7 @@ void init() {
   // touch reset + disable auto-sleep
   expSet(EX_TP_RST, false); delay(10); expSet(EX_TP_RST, true); delay(60);
   uint8_t noSleep = 0xFF; i2cWrite(TP_ADDR, 0xFE, &noSleep, 1);
+  imuInit();
   setBacklight(100);
 }
 }  // namespace board

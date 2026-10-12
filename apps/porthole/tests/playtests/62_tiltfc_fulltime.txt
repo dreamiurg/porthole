@@ -1,0 +1,78 @@
+# Tilt FC to the Full time page, held leaned back 45 degrees: at 2-0 the recorded moves score the third, the Goal page
+# gives way to Full time (a win: the cup, one win and level 1, saved as the goal went in), and after a pause the go sign
+# starts over on the Calibrate page. Then a match sent to its whistle with the kid holding still: the clock ends it. The
+# level is kept for the next visit.
+tilt 0 707 -707
+profile Sam 6
+app tilt-fc
+wait 500
+dbg kickoff
+dbg score2-0
+# match from 0 707 -707
+wait 2400
+tilt 0 365 -931
+wait 200
+tilt -281 850 -446
+tap 130 40
+wait 80
+tilt 194 401 -896
+wait 400
+tilt 382 733 -563
+wait 200
+tilt -360 771 -525
+wait 200
+tilt -271 440 -856
+wait 200
+tilt -231 418 -879
+wait 200
+tilt 187 398 -898
+wait 200
+tilt 145 384 -912
+wait 200
+tilt 154 387 -909
+wait 200
+tilt 259 432 -864
+tap 130 40
+wait 80
+tilt 231 418 -879
+wait 200
+tilt 0 707 -707
+# end match
+expect-screen fc_goal
+expect teal=3
+# the win is saved the moment the third goal goes in
+expect wins=1
+wait 2100
+expect-screen fc_fulltime
+expect wins=1
+expect level=1
+ui-check fc_fulltime
+snap fc_f01_won
+# only the go sign plays on, once the result has shown for 1.5 s: taps before that, even on the sign, do nothing
+wait 500
+tap 130 40
+wait 100
+tap 80 125
+wait 100
+expect-screen fc_fulltime
+wait 900
+tap 80 125
+wait 100
+expect-screen fc_calibrate
+dbg kickoff
+dbg clock1
+wait 14000
+expect-screen fc_fulltime
+expect wins=1
+expect level=1
+ui-check fc_fulltime-whistle
+snap fc_f02_whistle
+wait 500
+tap 17 80
+wait 100
+expect-screen launcher
+app tilt-fc
+wait 500
+expect level=1
+expect wins=1
+sheet fulltime

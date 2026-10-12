@@ -22,6 +22,9 @@ enum class Align : uint8_t { LEFT, CENTER, RIGHT };
 // textBox is as tall as its text.
 struct Box { const Font* font; int16_t w, h; int8_t spacing; Align align; };
 
+// Every glyph drawn from now on is also cut to this box (physical px, x1 and y1 exclusive), so a game that repaints only
+// part of the panel can draw a label that straddles the part: no pixel outside it is blended twice. Default: the panel.
+void clip(int x0, int y0, int x1, int y1);
 int glyphIndex(const Font& f, uint32_t cp);   // 0 = not in the font
 int textWidth(const Font& f, const char* s);  // as one line
 // One line with its top-left at (x, y): an LVGL label of content size (textWidth x lineHeight); '\n' draws nothing,

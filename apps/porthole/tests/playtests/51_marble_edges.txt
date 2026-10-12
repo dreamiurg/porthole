@@ -1,0 +1,258 @@
+# Marble Kick's edges, held upright (the sim's default grip): home from every page (a tap, or on the Play page a
+# hold, where a brush or a hold let go early does nothing), the level reached kept and played on the next visit; a
+# grip held tilted while calibrating is level from then on; a jolt while pressing play waits for a steady grip; the
+# Goal page moves on by itself after 2 s; the Done page's button starts over from level 1.
+profile Sam 6
+app marble-kick
+wait 500
+# home from Calibrate: a tap
+tap 80 145
+wait 100
+expect-screen launcher
+app marble-kick
+wait 500
+# calibrated held turned and leaned back: that is level now, and the ball stays put
+tilt 300 800 -520
+wait 400
+tap 80 110
+expect-screen mk_play
+expect neutralX=300
+expect neutralY=800
+expect neutralZ=-520
+wait 1000
+expect x=0
+expect y=110
+# taps on the tray, a brush of the home knob, and a hold let go early: nothing
+tap 80 40
+tap 30 80
+tap 130 80
+tap 80 110
+wait 500
+tap 80 145
+wait 100
+down 80 145
+wait 400
+up
+wait 100
+expect-screen mk_play
+expect x=0
+expect y=110
+# held upright again, which from that grip is turned left: the ball rolls left
+tilt 0 1000 0
+wait 600
+expect x<0
+ui-check mk_play-rolling
+snap mk_e01_rolling
+down 80 145
+wait 320
+ui-check mk_play-holding
+snap mk_e02_holding
+up
+# a full hold leaves, even when the finger drifts on the knob (the reviewer's repro: the ring filled, nothing left);
+# nothing finished, so the next visit is level 1 again, from its start
+down 80 145
+move 89 146
+wait 700
+expect-screen launcher
+up
+wait 100
+app marble-kick
+wait 500
+expect level=1
+expect reached=0
+# a jolt just before pressing play: it waits for a steady grip, then starts with it as level
+shake
+tap 80 110
+expect-screen mk_calibrate
+expect starting=1
+wait 400
+expect-screen mk_play
+expect neutralX=0
+expect neutralY=1000
+expect neutralZ=0
+expect x=0
+expect y=110
+# solution 1 from 0 1000 0
+wait 80
+tilt -310 912 -270
+wait 240
+tilt -170 974 -150
+wait 240
+tilt -160 976 -150
+wait 240
+tilt -90 992 -90
+wait 240
+tilt 430 902 -30
+wait 240
+tilt 260 964 -60
+wait 240
+tilt 210 975 -70
+wait 240
+tilt 200 977 -70
+wait 480
+tilt 170 984 -60
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -400 904 -150
+wait 240
+tilt -250 963 -100
+wait 240
+tilt -190 977 -100
+wait 240
+tilt -110 992 -60
+wait 240
+tilt 130 935 -330
+wait 240
+tilt 50 974 -220
+wait 240
+tilt 20 982 -190
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+# end solution
+expect-screen mk_goal
+expect reached=1
+# the Goal page moves on by itself
+wait 2100
+expect-screen mk_play
+expect level=2
+# solution 2 from 0 1000 0
+wait 80
+tilt -220 911 -350
+wait 240
+tilt -120 974 -190
+wait 240
+tilt -110 977 -180
+wait 240
+tilt -110 979 -170
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 300 926 -230
+wait 240
+tilt 160 974 -160
+wait 240
+tilt 130 977 -170
+wait 240
+tilt 110 984 -140
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -90 943 -320
+wait 240
+tilt -60 980 -190
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 0 1000 0
+# end solution
+expect-screen mk_goal
+# home from Goal (after the fresh-page pause): the level reached is kept, and the next visit starts there
+wait 500
+tap 80 145
+wait 100
+expect-screen launcher
+app marble-kick
+wait 500
+expect-screen mk_calibrate
+expect level=3
+expect reached=2
+snap mk_e03_calibrate3
+# all six done: the Done page's red button starts over from level 1
+dbg level12
+# solution 12 from 0 1000 0
+wait 80
+tilt 400 914 -70
+wait 240
+tilt 190 981 -40
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 260 952 -160
+wait 240
+tilt 160 983 -90
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -120 943 -310
+wait 240
+tilt -110 988 -110
+wait 240
+tilt -150 959 -240
+wait 240
+tilt -90 992 -90
+wait 240
+tilt -340 930 140
+wait 240
+tilt -220 975 40
+wait 240
+tilt -210 977 20
+wait 240
+tilt -120 993 0
+wait 240
+tilt -270 963 -10
+wait 240
+tilt -220 975 0
+wait 240
+tilt -210 978 0
+wait 240
+tilt -190 982 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 140 930 -340
+wait 240
+tilt 120 984 -130
+wait 240
+tilt 220 957 -190
+wait 240
+tilt 130 983 -130
+wait 240
+tilt -50 984 -170
+wait 240
+tilt -430 903 10
+wait 240
+tilt -430 902 -30
+wait 240
+tilt -420 905 -70
+wait 240
+tilt -400 911 -100
+wait 240
+tilt -300 949 -100
+wait 240
+tilt -230 970 -80
+wait 240
+tilt -120 992 -50
+wait 240
+tilt 420 906 -60
+wait 240
+tilt 280 957 -80
+wait 240
+tilt 200 976 -90
+wait 240
+tilt 180 977 -110
+wait 240
+tilt 410 903 -130
+wait 240
+tilt 260 958 -120
+wait 240
+tilt 260 961 -90
+wait 240
+tilt 70 966 -250
+wait 240
+tilt -170 980 -100
+wait 240
+tilt 0 1000 0
+# end solution
+expect-screen mk_goal
+wait 500
+tap 80 60
+expect-screen mk_done
+wait 500
+tap 80 117
+expect-screen mk_play
+expect level=1
+expect reached=12
+sheet edges

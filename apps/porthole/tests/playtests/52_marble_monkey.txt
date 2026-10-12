@@ -1,0 +1,131 @@
+# Chaos in Marble Kick under ASan/UBSan: random taps, drags and long presses on every page while the device tilts
+# and shakes. The monkey may wander out through the back knob into the launcher and other games; afterwards there is
+# a real screen. The sim keeps its tilt across a reset: each run starts upright.
+# seed 21: the Calibrate page
+profile Sam 6
+app marble-kick
+wait 500
+tilt 250 900 -300
+monkey 300 21
+expect-screen *
+# seed 22: rolling, tilted hard, with a shake
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+tap 80 110
+tilt -900 1200 0
+monkey 300 22
+shake
+expect-screen *
+# seed 23: the Goal page of level 1
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+tap 80 110
+tilt 0 866 -500
+wait 1400
+tilt 0 1000 0
+expect-screen mk_goal
+monkey 300 23
+expect-screen *
+# seed 24: the Done page, reached by playing level 12 through
+reset
+tilt 0 1000 0
+profile Sam 6
+app marble-kick
+wait 500
+dbg level12
+# solution 12 from 0 1000 0
+wait 80
+tilt 400 914 -70
+wait 240
+tilt 190 981 -40
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 260 952 -160
+wait 240
+tilt 160 983 -90
+wait 240
+tilt 0 1000 0
+wait 240
+tilt -120 943 -310
+wait 240
+tilt -110 988 -110
+wait 240
+tilt -150 959 -240
+wait 240
+tilt -90 992 -90
+wait 240
+tilt -340 930 140
+wait 240
+tilt -220 975 40
+wait 240
+tilt -210 977 20
+wait 240
+tilt -120 993 0
+wait 240
+tilt -270 963 -10
+wait 240
+tilt -220 975 0
+wait 240
+tilt -210 978 0
+wait 240
+tilt -190 982 0
+wait 240
+tilt 0 1000 0
+wait 240
+tilt 140 930 -340
+wait 240
+tilt 120 984 -130
+wait 240
+tilt 220 957 -190
+wait 240
+tilt 130 983 -130
+wait 240
+tilt -50 984 -170
+wait 240
+tilt -430 903 10
+wait 240
+tilt -430 902 -30
+wait 240
+tilt -420 905 -70
+wait 240
+tilt -400 911 -100
+wait 240
+tilt -300 949 -100
+wait 240
+tilt -230 970 -80
+wait 240
+tilt -120 992 -50
+wait 240
+tilt 420 906 -60
+wait 240
+tilt 280 957 -80
+wait 240
+tilt 200 976 -90
+wait 240
+tilt 180 977 -110
+wait 240
+tilt 410 903 -130
+wait 240
+tilt 260 958 -120
+wait 240
+tilt 260 961 -90
+wait 240
+tilt 70 966 -250
+wait 240
+tilt -170 980 -100
+wait 240
+tilt 0 1000 0
+# end solution
+expect-screen mk_goal
+wait 500
+tap 80 60
+expect-screen mk_done
+monkey 300 24
+expect-screen *

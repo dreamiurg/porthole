@@ -9,7 +9,7 @@ tap 80 12
 wait 450
 expect-screen launcher
 dbg bedtime
-tap 112 79
+app Biscuit
 wait 1500
 expect-screen rest
 expect today>=1500
@@ -29,7 +29,7 @@ tap 80 67
 wait 450
 expect-screen launcher
 expect today=0
-tap 112 79
+app Biscuit
 wait 450
 expect-screen biscuit_setup_pet
 tap 119 125

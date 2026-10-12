@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. App brief: `apps/porthole/CLAUDE.md`; each game also has its own `CLAUDE.md` under `games/<game>/`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. App brief: `apps/porthole/CLAUDE.md`; each game also has its own `CLAUDE.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
@@ -38,6 +38,12 @@ game ever punishes the kid for being away) are hard rules, not style.
    on host and firmware builds (firmware: our sources via `build_src_flags`),
    biome `--error-on-warnings`, Python `-W error`, and `tools/fail-on-warning.sh`
    for tools with no fail switch. Fix the cause; never silence or skip it.
+7. **Every game looks like itself.** The device's limits are shared, the look is
+   not. Each game gets its own palette, art style, typography and characters,
+   and never borrows another game's sprites, palette, colors or visual idiom,
+   even when reuse would be faster. Two games side by side in the launcher must
+   never look like twins. Reusing runtime, shell widgets and tooling is fine;
+   what the kid sees inside a game is not shared.
 
 ## Commands
 

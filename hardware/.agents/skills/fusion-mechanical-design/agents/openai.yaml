@@ -1,0 +1,6 @@
+interface:
+  display_name: "Fusion mechanical design"
+  short_description: "Verify commercial-part assemblies in Fusion"
+  default_prompt: "Use $fusion-mechanical-design to audit the active Fusion assembly read-only, measure functional datums, and report interfaces, tolerances, and release conflicts before suggesting changes."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,63 @@
+# Tilt FC's Calibrate page and the way out, held turned and leaned back: the chalk arrow points where a tilt would send
+# the player, a sun ring shows when held still; a press on the go sign during a jolt waits for a steady grip, which
+# becomes level; a brush of the leave sign in a match does nothing, a full hold leaves; on the Calibrate page a tap
+# leaves.
+profile Sam 6
+app tilt-fc
+wait 600
+expect-screen fc_calibrate
+expect ready=1
+ui-check fc_calibrate
+snap fc01_calibrate
+tilt 350 900 -250
+wait 120
+expect ready=0
+ui-check fc_calibrate-tilted
+snap fc02_calibrate_tilted
+wait 1600
+expect ready=1
+shake
+tap 80 116
+expect-screen fc_calibrate
+expect starting=1
+wait 400
+expect-screen fc_kickoff
+expect neutralX=350
+expect neutralY=900
+expect neutralZ=-250
+expect teal=0
+expect coral=0
+expect owner=0
+ui-check fc_kickoff
+snap fc03_kickoff
+wait 2500
+expect-screen fc_match
+# leaning back from that grip runs #10 up the court
+tilt 423 687 -591
+wait 600
+expect y<0
+expect clock=0
+ui-check fc_match
+snap fc04_match
+# a brush of the leave sign, and a hold let go early: nothing
+tap 17 80
+down 17 80
+wait 400
+up
+wait 100
+expect-screen fc_match
+down 17 80
+wait 320
+ui-check fc_match-holding
+snap fc05_holding
+wait 400
+expect-screen launcher
+up
+wait 100
+# on the Calibrate page a tap on the sign leaves
+app tilt-fc
+wait 600
+tap 17 80
+wait 100
+expect-screen launcher
+sheet calibrate

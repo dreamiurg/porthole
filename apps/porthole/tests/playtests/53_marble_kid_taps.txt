@@ -1,0 +1,75 @@
+# Marble Kick as a 6-year-old taps it (playtester, 2026-09-27), written as the right behavior:
+# 1. The launcher with three games passes the UI audit (tiles, names, mute, profile bar).
+# 2. On the Calibrate page only the red button starts play: a tap on the bubble level or the level coin, a long press
+#    on the button, or a press dragged off it leaves the page as it is; a tap near the button's edge still counts.
+# 3. A double tap on the red button starts play once, and the second tap does nothing on the tray.
+# 4. A brush of the home knob during play (a thumb on the rim) does not leave the game; holding it does.
+# 5. Each kid has their own level: Sam's finished level 1 does not move Ana on, and switching back finds Sam's.
+profile Sam 6
+wait 500
+expect-screen launcher
+ui-check launcher-three-games
+snap mk_k01_launcher
+app marble-kick
+wait 500
+expect-screen mk_calibrate
+# 2: mis-taps on the Calibrate page
+tap 80 65
+tap 130 30
+hold 80 110
+wait 100
+expect-screen mk_calibrate
+down 80 110
+wait 80
+move 80 126
+wait 80
+up
+wait 100
+expect-screen mk_calibrate
+# 3: off-center double tap on the button's right edge: play, once
+tap 92 110
+tap 92 110
+wait 100
+expect-screen mk_play
+expect level=1
+expect x=0
+expect y=110
+# 4: a thumb brushing the knob
+wait 500
+tap 80 145
+wait 100
+expect-screen mk_play
+# 5: Sam finishes level 1 (leaned back 30 degrees: the ball rolls up to the goal) and leaves on level 2's tray
+tilt 0 866 -500
+wait 1500
+expect-screen mk_goal
+expect reached=1
+tilt 0 1000 0
+wait 2200
+expect-screen mk_play
+expect level=2
+wait 500
+hold 80 145
+wait 100
+expect-screen launcher
+profile Ana 7
+wait 500
+app marble-kick
+wait 500
+expect level=1
+expect reached=0
+tap 80 145
+wait 500
+# back to Sam through the picker (the name bar, then Sam's row)
+tap 80 42
+wait 500
+expect-screen picker
+tap 80 54
+wait 500
+expect-screen launcher
+app marble-kick
+wait 500
+expect-screen mk_calibrate
+expect level=2
+expect reached=1
+sheet kid_taps

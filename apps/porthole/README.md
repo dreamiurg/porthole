@@ -2,11 +2,11 @@
 
 Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small shared runtime
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
-RGB565 surface with smooth text, touch input), the board layer (`firmware/`), a shell (`shell/`:
-who's playing, a profile per kid, the game launcher) and the games built on it (`games/`): Pets
-Club and Biscuit.
+RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
+the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick and Tilt FC.
 
-![Pets Club (top: home, a story, a trick lesson) and Biscuit (bottom: home, a story, a discovery)](docs/screenshots.png)
+![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
 ## Profiles and the launcher
 
@@ -15,7 +15,7 @@ name, one of eight animal faces, an age (it picks the reading level) and an opti
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
 profile. Each kid plays up to 25 minutes a day across every game, then the board says "Back
 tomorrow" until midnight. With two or more profiles, a kid who has played for about 6 minutes also
-rests for 10, so the board passes to the next kid. A minute without a touch does not count as play.
+rests for 10, so the board passes to the next kid. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
 it and everything it made.
 
@@ -77,6 +77,41 @@ short, cozy lines and never makes anyone feel bad for being away.
 * **Nothing is lost.** Needs stop at a floor, time away counts for at most eight hours, and there
   are no streaks or countdowns. No sounds at all.
 
+## Marble Kick: a tilt labyrinth
+
+A wooden labyrinth toy seen from above: tilt the device and the ball rolls like a marble across a
+felt pitch, drawn full-color at the panel's native 480×480. Tilt is the only control; a hand
+holding the case can rest on the glass without doing anything.
+
+* **Calibrate, then play.** Every visit starts by holding the device however feels natural and
+  tapping the red button; that grip becomes neutral, so tilting always feels right no matter how
+  it's held.
+* **Twelve puzzle levels.** Levels 1-2 teach tilting straight at the goal. From level 3 on, tilting
+  straight at the goal is not enough: walls and holes are in the way, then moving defenders, then a
+  keeper and a goal that swings or spins. Three optional stars per level reward the long way round.
+* **Nothing punishes.** No timer, no lives, no score. A wall only nudges the ball, a hole only
+  sends it back to the level's start; a level is only not finished yet. Every level ships with a
+  proven solution, so the ball is never stuck for good.
+* **Its own look.** Walnut rim, maple tray, striped felt, red lacquered pegs and defenders, a brass
+  keeper, wooden letter blocks for the few words it shows.
+
+## Tilt FC: street football by tilting
+
+Top-down street football, two a side plus a keeper each: tilt the device and your player runs that
+way, tap anywhere to pass or shoot. First to three goals, or three minutes.
+
+* **Tilt and tap.** Tilt sets which way your player runs, never how fast. With the ball, a tap
+  passes to the teammate you aim at, shoots when the goal is in range (a sun-yellow dot in the net
+  shows where), or rolls it on; without it, a tap slides for the ball. You always steer the player
+  with the ball or the one nearest it.
+* **A real opponent.** The other team presses the ball, stands in passing lanes and wins it back;
+  their keeper covers his goal. Running straight at the goal rarely scores: dodge, pass, aim for a
+  corner.
+* **Nothing punishes.** No fouls, nobody falls, a lost match just shows the score and the next one
+  is a little easier; a win makes the next one a little harder.
+* **Its own look.** A sunny street court with chalk lines and long shadows, teal against coral,
+  and one chunky font for GOAL! and the scores.
+
 ## Play it without the board
 
 You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
@@ -87,10 +122,11 @@ make snap && python3 tools/webemu.py   # or: make webemu
 
 Open http://127.0.0.1:8765 (`python3 tools/webemu.py 8766` for another port). The mouse is your
 finger; the buttons under the screen skip time and force states (hungry, muddy, grown...) so you
-can see a week of play in a minute.
+can see a week of play in a minute. For Marble Kick and Tilt FC, a tilt pad stands in for the motion sensor.
 
 With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` skip 1 hour, 8
-hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits.
+hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits. The arrow
+keys turn and lay the device flat, for the tilt games.
 
 The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
 
@@ -140,8 +176,9 @@ Pillow is installed.
 | Touch | CST820, I²C 0x15 on SDA 15 / SCL 7 |
 | IO expander | TCA9554 @ 0x20: P0 LCD reset, P1 touch reset, P2 LCD CS, P7 buzzer |
 | RTC | PCF85063 @ 0x51, set from build time on first boot, restored from the save if it stops |
-| Backlight | GPIO6 PWM; dims after 1 min idle, off after 5 min (tap wakes), off 20 s after bedtime |
-| Storage | NVS (`Preferences`): a 44-byte record per profile (`porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
+| Motion | QMI8658 accelerometer, I²C 0x6B (0x6A also probed), +-4 g, read every frame as screen-frame gravity |
+| Backlight | GPIO6 PWM; dims after 1 min idle (no touch, no move), off after 5 min (a tap or picking it up wakes it), off 20 s after bedtime |
+| Storage | NVS (`Preferences`): a 52-byte record per profile (v2, `porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
 Rendering: two 480×480 RGB565 framebuffers in PSRAM with bounce buffers; each frame the 160×160
@@ -159,6 +196,10 @@ games/pets-club/   Pets Club: pet simulation (pet.cpp), screens (game.cpp), stor
 games/biscuit/     Biscuit: rules and save (pet.h), screens (screens_*.cpp), stories, discoveries
                    and adventures (content_*.h), generated scenes, pictures and fonts, and its
                    tools: art (tools/art/, Node), font conversion, content checker
+games/marble-kick/ Marble Kick: tilt physics and levels (physics.*, levels.h, tune.h), save (save.h),
+                   its look drawn in code (render.*), pages (game.*)
+games/tilt-fc/     Tilt FC: match rules and AI (match.*, tune.h), save (save.h), its look drawn
+                   in code (render.*), pages (game.*), its font (fonts/, generated/fonts.h)
 firmware/          Waveshare board layer (board.cpp: display, touch, expander, RTC, buzzer, NVS)
                    and the entry point (main.cpp: input, saves, idle dimming, serial commands)
 host/              SDL2 / headless simulator and the pet self-test
