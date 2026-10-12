@@ -77,8 +77,8 @@ The shell owns persistence: it calls `takeSave` every frame (throttled to once p
 
 Persisted as `porthole/p<id>`, one blob per profile, append-only like `Save`:
 `magic, version, size, name[12], avatar, age, muted, reserved, pin(u16), reserved, restUntil, playSec,
-lastPlayed, crc` (44 bytes, `static_assert`ed). `pin` is the typed code + 1, so 0 means none and 0000 is a
-real code. Ids are stable slots `0..3`; a deleted id is reused by the next new profile. Delete erases every
+lastPlayed, crc` (44 bytes, `static_assert`ed). `pin` is the typed code + 1, so 0 means none. The pad has keys 1-9 only, so a code
+containing 0 (a migrated one included) cannot be typed; `P<n>` clears it. Ids are stable slots `0..3`; a deleted id is reused by the next new profile. Delete erases every
 app's `s<id>` first and the record last; create erases any `s<id>` left behind for the id it takes.
 
 **Migration (first boot of Porthole on a Pets Club device):** runs on every boot until the marker key

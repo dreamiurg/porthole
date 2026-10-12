@@ -227,8 +227,7 @@ void Shell::drawAge() {
 // Nine keys, 1-9, as big as the glass holds under the prompt and the four boxes: no 0, no erase, no OK, because fewer
 // and bigger keys are what a small finger hits on this screen. The fourth digit submits by itself once its box has
 // shown for PIN_SHOW_MS (touches wait meanwhile), so a kid sees what they typed. A slip is fixed by typing on: a wrong
-// or mismatched code just starts over. "skip" (no code, only while choosing one) sits under the pad; messages replace
-// the prompt so they never cover a key.
+// or mismatched code just starts over. "skip" (no code, only while choosing one) sits under the pad.
 static const uint32_t PIN_SHOW_MS = 400;
 static ui::Box pinKey(int k) { return {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}; }   // rows 50..131
 static const ui::Box PIN_SKIP = {60, 134, 40, 22};
