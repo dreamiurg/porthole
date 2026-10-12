@@ -40,13 +40,13 @@ drawer, have fun with it. Enjoy the new era of tinkering.
 
 | App | What it is | Runs on a computer |
 | --- | --- | --- |
-| [Porthole](#porthole) | The device firmware, with three games inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to; Biscuit, a full-color pup to read stories and discover things with; and Marble Kick, a tilt-controlled marble labyrinth. A profile for each kid, up to four per device. | Browser emulator |
+| [Porthole](#porthole) | The device firmware, with four games inside: Pets Club, a pixel puppy that grows over real days, learns tricks and gets read to; Biscuit, a full-color pup to read stories and discover things with; Marble Kick, a tilt-controlled marble labyrinth; and Tilt FC, tilt-controlled street football. A profile for each kid, up to four per device. | Browser emulator |
 
 ### Porthole
 
-[![Pets Club, Biscuit and Marble Kick screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
+[![Pets Club, Biscuit, Marble Kick and Tilt FC screenshots](apps/porthole/docs/preview.png)](apps/porthole/)
 
-The firmware that turns the round screen into a games device, with three games. The first is
+The firmware that turns the round screen into a games device, with four games. The first is
 Pets Club: a Tamagotchi-style puppy drawn in a 32-color retro palette. It grows from puppy
 to grown dog over real calendar days, learns eight tricks through three lessons
 each, and loves being read to: 30 original stories across three reading levels,
@@ -67,6 +67,12 @@ levels ramp from a straight tilt to the goal up to walls, holes, moving defender
 keeper and a moving goal, with three optional stars per level for the long way round.
 Nothing is timed or scored, and every level ships with a proven solution so it's never
 actually stuck.
+
+The fourth is Tilt FC: top-down street football on a round court, also steered by
+tilt. The kid's team plays a computer team; tilt runs the kid's player, and a tap passes
+to a teammate, shoots on goal, or rolls the ball ahead, depending on where it's aimed. The
+computer team defends from the first match, and levels ramp up how well it plays. Nothing
+punishes: no lives, and losing just means playing again.
 
 C++, no libraries: a 160x160 indexed framebuffer scaled 3x and a native 480x480
 RGB565 surface with anti-aliased text, touch and tilt input, with a host
@@ -109,8 +115,8 @@ Why this board works well for toys like these:
 - A real-time clock keeps time while it's off, which suits anything with days and nights.
 - Plain Arduino and PlatformIO work, and one USB-C cable handles power, flashing and the serial console.
 
-It also has a motion sensor (Marble Kick reads it for tilt) and Bluetooth and Wi-Fi
-that no app uses yet.
+It also has a motion sensor (Marble Kick and Tilt FC both read it for tilt) and Bluetooth
+and Wi-Fi that no app uses yet.
 [docs/hardware.md](docs/hardware.md) has the full specs and some ideas for them.
 
 ## Getting started
