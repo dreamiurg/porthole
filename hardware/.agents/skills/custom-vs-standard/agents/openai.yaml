@@ -1,0 +1,6 @@
+interface:
+  display_name: "Custom versus standard"
+  short_description: "Compare catalog and custom solutions"
+  default_prompt: "Use $custom-vs-standard to compare standard, modified-standard, redesigned, and custom options for this interface, including load path, effort, cost, lead time, reversibility, and a clear user choice."
+policy:
+  allow_implicit_invocation: true
