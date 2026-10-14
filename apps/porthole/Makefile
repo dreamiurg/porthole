@@ -30,6 +30,7 @@ test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/profiles.cpp shell/
 test_biscuit_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
+test_sand_jar_SRC := $(wildcard os/*.cpp) games/sand-jar/physics.cpp games/sand-jar/game.cpp
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
 test_tilt_SRC :=
@@ -68,6 +69,7 @@ lint: snap
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
 	$(PY) games/biscuit/tools/icon.py --check
+	$(PY) games/sand-jar/tools/icon.py --check
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
 	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
@@ -113,6 +115,7 @@ art:
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py
+	python3 games/sand-jar/tools/icon.py
 	node $(NODE_ART)
 
 webemu: snap

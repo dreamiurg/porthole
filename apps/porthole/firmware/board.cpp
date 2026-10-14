@@ -16,7 +16,7 @@ static const int PIN_LCD_SPI_CLK = 2, PIN_LCD_SPI_MOSI = 1;
 static const int PIN_BL = 6;
 static const int PIN_HSYNC = 38, PIN_VSYNC = 39, PIN_DE = 40, PIN_PCLK = 41;
 static const int PIN_DATA[16] = {5, 45, 48, 47, 21, 14, 13, 12, 11, 10, 9, 46, 3, 8, 18, 17};
-static const int PIN_TP_INT = 16;
+static const int PIN_TP_INT = 16, PIN_BOOT = 0;
 // TCA9554 expander (P0..P7 == EXIO1..EXIO8)
 static const uint8_t EXP_ADDR = 0x20, EXP_OUT = 0x01, EXP_CFG = 0x03;
 static const uint8_t EX_LCD_RST = 0, EX_TP_RST = 1, EX_LCD_CS = 2, EX_SD_CS = 3, EX_BUZZER = 7;
@@ -240,6 +240,7 @@ size_t loadBlob(const char* ns, const char* key, void* d, size_t n) {
 }
 void eraseBlob(const char* ns, const char* key) { Preferences p; if (p.begin(ns, false)) p.remove(key); }
 void eraseNamespace(const char* ns) { Preferences p; if (p.begin(ns, false)) p.clear(); }
+bool bootButton() { return digitalRead(PIN_BOOT) == LOW; }
 uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
 
 void init() {
@@ -248,6 +249,7 @@ void init() {
   g_expOut = (uint8_t)((1 << EX_LCD_RST) | (1 << EX_TP_RST) | (1 << EX_LCD_CS) | (1 << EX_SD_CS));  // buzzer off
   i2cWrite(EXP_ADDR, EXP_OUT, &g_expOut, 1);
   pinMode(PIN_TP_INT, INPUT_PULLUP);
+  pinMode(PIN_BOOT, INPUT_PULLUP);
   ledcAttach(PIN_BL, 20000, 10); setBacklight(0);
   lcdInitPanel();
   // touch reset + disable auto-sleep
