@@ -127,12 +127,12 @@ draws no strings at all), computed per cell, not per pixel.
 
 - `make test` runs `host/test_sand_jar.cpp`: counts conserved and one grain per cell, all inside the glass; a settled
   heap at 0 g stays put even when the last direction seen points elsewhere (the bug the user hit); water tipped 30, 45
-  and -60 degrees levels within 8 cells (a stuck walk leaves ~40); a small tilt never lifts a grain; a level heap tipped 45 degrees flows (roll-over); the finger's disc is
-  cleared and nothing lost, and its cells free once lifted; sand ends under water; a shake loses nothing; Orbits' bodies
-  stay on the glass; the same inputs replay the same jar. And the renderer: after frames of flowing sand and water, a
-  sweeping finger, home held down, a shake and the jar upside down, in every mode, the buffer on the glass equals a full
-  redraw of the same state, pixel for pixel; a late frame drops the jar to one step a frame for `SLOW_MS`,
-  then back to two.
+  and -60 degrees levels within 8 cells (a stuck walk leaves ~40); a small tilt never lifts a grain; a level heap
+  tipped 45 degrees flows (roll-over); the finger's disc is cleared and nothing lost, and its cells free once lifted;
+  sand ends under water; a shake loses nothing; Orbits' bodies stay on the glass; the same inputs replay the same jar.
+  And the renderer: after frames of flowing sand and water, a sweeping finger, home held down, a shake and the jar
+  upside down, in every mode, the buffer on the glass equals a full redraw of the same state, pixel for pixel; a late
+  frame drops the jar to one step a frame for `SLOW_MS`, then back to two.
 - The sim: `tilt X Y Z` (milli-g), `shake`, `perf`, `dbg sand|rainbow|beach|orbits`; `debug` prints `mode`, `grains`,
   `sand`, `water`, `bubbles`, `tilt`, `finger`, `shaking`, `steps`. The SDL window's arrow keys turn gravity, space
   shakes; the web emulator has a tilt pad, Upright/Flat and Shake.

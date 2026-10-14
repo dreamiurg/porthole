@@ -1,8 +1,8 @@
 // Sand Jar's physics: sand, water and bubbles as grains on a 160x160 cell grid inside the round glass (a cell is 3
 // physical px, one logical px, so a touch is a cell as is), and Orbits' free bodies. No drawing here: game.cpp renders
 // what the Jar holds. Deterministic (its own xorshift RNG) and allocation-free: every buffer is sized at compile time
-// and lives in the Jar, a member of a static object (never heap: it must stay in internal RAM). Ported from the approved browser prototype; the rules it keeps
-// are listed in games/sand-jar/CLAUDE.md.
+// and lives in the Jar, a member of a static object (never heap: it must stay in internal RAM). Ported from the
+// approved browser prototype; the rules it keeps are listed in games/sand-jar/CLAUDE.md.
 #pragma once
 #include <stdint.h>
 

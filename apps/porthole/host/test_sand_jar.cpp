@@ -122,8 +122,8 @@ static void neverClimbs() {
   puts("climb: a small tilt never lifts a grain");
 }
 
-// Roll-over: a level heap tipped 45 degrees flows (the prototype's heap held any tilt under ~65); the 40-degree tip
-// also wakes grains that fell asleep while the heap was level.
+// Roll-over: a level heap tipped 45 degrees flows (the prototype's heap held any tilt under ~65); buried grains that
+// fell asleep while the heap was level wake as the surface above them moves.
 static const float ROLL_MIN_DROP = 3;   // ~10.7 with roll-over, ~0.1 without
 static void rollsAt45() {
   tilt(a, 0);
