@@ -81,7 +81,7 @@ static void restsAtZeroG() {
 
 // Water spreads along the true level line (the Bresenham walk between the two grid directions around it), so its
 // surface ends up level along gravity at any angle, not in grid-aligned steps. Tipped 30 degrees from a level heap it
-// takes the prototype's own ~2500 steps to settle within ~6 cells (a stuck walk leaves ~40); 45 is a grid diagonal.
+// takes the prototype's own ~2500 steps to settle within 8 cells (a stuck walk leaves ~40); 45 is a grid diagonal.
 static float surfaceSpread(float degrees) {
   tilt(a, degrees);
   a.reset(MODE_BEACH, 3);
@@ -120,6 +120,24 @@ static void neverClimbs() {
     consistent(a, a.n, 0);
   }
   puts("climb: a small tilt never lifts a grain");
+}
+
+// Roll-over: a level heap tipped 45 degrees flows (the prototype's heap held any tilt under ~65); the 40-degree tip
+// also wakes grains that fell asleep while the heap was level.
+static const float ROLL_MIN_DROP = 3;   // ~10.7 with roll-over, ~0.1 without
+static void rollsAt45() {
+  tilt(a, 0);
+  a.reset(MODE_SAND, 5);
+  run(a, 700);
+  tilt(a, 45);
+  float h0 = 0, h1 = 0;
+  for (int i = 0; i < a.n; i++) h0 += along(a, i, a.tiltX, a.tiltY);
+  run(a, 1500);
+  for (int i = 0; i < a.n; i++) h1 += along(a, i, a.tiltX, a.tiltY);
+  const float drop = (h1 - h0) / a.n;
+  printf("roll: a level heap tipped 45 degrees drops %.1f cells on average\n", drop);
+  assert(drop > ROLL_MIN_DROP);
+  consistent(a, a.n, 0);
 }
 
 // The finger is solid: after one step nothing is left inside its disc, and every grain it pushed is still in the jar.
@@ -278,6 +296,7 @@ int main() {
   restsAtZeroG();
   waterLevels();
   neverClimbs();
+  rollsAt45();
   fingerClears();
   sandSinks();
   shakeScatters();

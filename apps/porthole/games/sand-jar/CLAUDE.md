@@ -37,11 +37,11 @@ reserved all the same), no clock, no personal data.
   slower), so it is a member of the static game object, never heap.
 - `game.h` / `game.cpp` (`class Game`, `namespace sandjar`): App plumbing, the motion sensor (`Input::gx/gy/gz`), the
   touch, the physics clock, and the renderer.
-- In `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`. On the board the game object (~166 KB, the Jar in it) is
+- In `APPS[]` in both `firmware/main.cpp` and `host/sim.cpp`. On the board the game object (~165 KB, the Jar in it) is
   static in internal RAM, the two `seen_` histories are `new`ed once and land in PSRAM (the heap puts blocks over 4 KB
   there), and both files build at `-O2` (a `#pragma`, board only: the firmware is `-Os`).
 - `tools/icon.py` -> `generated/icon.h`: the launcher icon (32x32 indexed, a jar of sand), `--check` in `make lint`.
-- `host/test_sand_jar.cpp` (shared `host/`): the physics self-check. `tests/playtests/50_sand_jar.txt` and
+- `host/test_sand_jar.cpp` (shared `host/`): the physics and renderer self-check. `tests/playtests/50_sand_jar.txt` and
   `24_monkey_sand_jar.txt`: the screen, every mode audited, and chaos under ASan/UBSan.
 
 ## Physics rules (the user validated these; keep them)
@@ -127,11 +127,12 @@ draws no strings at all), computed per cell, not per pixel.
 
 - `make test` runs `host/test_sand_jar.cpp`: counts conserved and one grain per cell, all inside the glass; a settled
   heap at 0 g stays put even when the last direction seen points elsewhere (the bug the user hit); water tipped 30, 45
-  and -60 degrees levels within 8 cells (a stuck walk leaves ~40); a small tilt never lifts a grain; the finger's disc is
+  and -60 degrees levels within 8 cells (a stuck walk leaves ~40); a small tilt never lifts a grain; a level heap tipped 45 degrees flows (roll-over); the finger's disc is
   cleared and nothing lost, and its cells free once lifted; sand ends under water; a shake loses nothing; Orbits' bodies
   stay on the glass; the same inputs replay the same jar. And the renderer: after frames of flowing sand and water, a
   sweeping finger, home held down, a shake and the jar upside down, in every mode, the buffer on the glass equals a full
-  redraw of the same state, pixel for pixel.
+  redraw of the same state, pixel for pixel; a late frame drops the jar to one step a frame for `SLOW_MS`,
+  then back to two.
 - The sim: `tilt X Y Z` (milli-g), `shake`, `perf`, `dbg sand|rainbow|beach|orbits`; `debug` prints `mode`, `grains`,
   `sand`, `water`, `bubbles`, `tilt`, `finger`, `shaking`, `steps`. The SDL window's arrow keys turn gravity, space
   shakes; the web emulator has a tilt pad, Upright/Flat and Shake.

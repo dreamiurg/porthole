@@ -187,12 +187,12 @@ void accelerate(Jar& j, const Field& f, Mover& m) {
   if (j.finger.on) {   // the wake: a moving finger drags what touches its rim (water a lot, sand barely)
     const float dx = m.x - j.finger.x, dy = m.y - j.finger.y, d2 = dx * dx + dy * dy, fr = FINGER_R + WAKE;
     if (d2 < fr * fr) {
-      const float w = fminf(1, 1 - (sqrtf(d2) - FINGER_R) * (1 / WAKE)) * (m.k == SAND ? 0.06f : 0.3f);
+      const float w = fminf(1, 1 - (d2 * invSqrt(d2) - FINGER_R) * (1 / WAKE)) * (m.k == SAND ? 0.06f : 0.3f);
       m.ux += j.finger.vx * w; m.uy += j.finger.vy * w;
     }
   }
   const float vm = P.vmax * F, sp2 = m.ux * m.ux + m.uy * m.uy;
-  if (sp2 > vm * vm) { const float s = vm / sqrtf(sp2); m.ux *= s; m.uy *= s; }
+  if (sp2 > vm * vm) { const float s = vm * invSqrt(sp2); m.ux *= s; m.uy *= s; }
 }
 void moveTo(Jar& j, Mover& m, int c) { j.occ[m.c] = EMPTY; j.occ[c] = (int16_t)(m.i + 1); changed(j, m.c); changed(j, c); m.c = c; }
 // Where a stopped grain may go: an empty cell, or for sand, now and then, water (it sinks through, and slides under).
@@ -352,11 +352,11 @@ void orbit(Jar& j, Body& b) {
   if (j.shaking > 0.01f) { ax += (rnd(j) - 0.5f) * j.shaking * 0.5f; ay += (rnd(j) - 0.5f) * j.shaking * 0.5f; }
   float ux = (b.vx + ax * 0.5f) * 0.9995f, uy = (b.vy + ay * 0.5f) * 0.9995f;
   const float sp2 = ux * ux + uy * uy;
-  if (sp2 > 81) { const float s = 9 / sqrtf(sp2); ux *= s; uy *= s; }
+  if (sp2 > 81) { const float s = 9 * invSqrt(sp2); ux *= s; uy *= s; }
   float x = b.x + ux * 0.5f, y = b.y + uy * 0.5f;
   const float rx = x - 240, ry = y - 240, r2 = rx * rx + ry * ry;
   if (r2 > 232 * 232) {   // bounce off the glass, losing a little
-    const float r = sqrtf(r2), nx = rx / r, ny = ry / r, vn = ux * nx + uy * ny;
+    const float ir = invSqrt(r2), nx = rx * ir, ny = ry * ir, vn = ux * nx + uy * ny;
     if (vn > 0) { ux -= 1.7f * vn * nx; uy -= 1.7f * vn * ny; }
     x = 240 + nx * 232; y = 240 + ny * 232;
   }

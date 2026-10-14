@@ -39,7 +39,7 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;   // "sand" "rainbow" "beach" "orbits": that mode, freshly poured
-  uint32_t steps() const { return jar_.frame; }   // physics steps so far (the test paces frames by it)
+  uint32_t steps() const { return jar_.frame; }   // physics steps since the last pour (a pour resets it)
 
  private:
   // What one of the panel's buffers holds, per cell: render() writes a cell's 3x3 block only when it changed since it

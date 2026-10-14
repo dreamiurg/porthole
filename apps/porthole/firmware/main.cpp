@@ -20,7 +20,7 @@ struct NvsStore : shell::Store {
 
 static Game g_pets;
 static biscuit::Game g_biscuit;
-static sandjar::Game g_sandjar;   // ~163 KB, the jar it holds must stay in internal RAM: static, never heap
+static sandjar::Game g_sandjar;   // ~165 KB, the jar it holds must stay in internal RAM: static, never heap
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_sandjar};
@@ -48,8 +48,14 @@ static int g_mtAt = 0;
 static bool g_fpsOn = false;   // "O": the frame rate over the last MT_N frames, top left of the glass (off at boot)
 
 static void toggleFps() { g_fpsOn = !g_fpsOn; Serial.printf("[porthole] fps overlay %s\n", g_fpsOn ? "on" : "off"); }
+static void pollBootButton(uint32_t ms) {   // BOOT toggles the frame-rate overlay, like "O" (40 ms debounce)
+  static bool was = false; static uint32_t edgeMs = 0;
+  bool boot = board::bootButton();
+  if (boot != was && ms - edgeMs > 40) { was = boot; edgeMs = ms; if (boot) toggleFps(); }
+}
 // Drawn over the frame after render, so it isn't counted as render time. An RGB565 game that redraws only what changed
-// (Sand Jar) doesn't know these pixels changed: after "O" turns it off, the digits linger until the game repaints there.
+// (Sand Jar) doesn't know these pixels changed: after "O" or BOOT turns it off, the digits stay until the game next
+// draws in full (Sand Jar: a mode change or re-entering it).
 static void drawFps() {
   uint32_t sum = 0;
   for (auto& f : g_mt) sum += f[MT_FRAME];
@@ -172,7 +178,7 @@ static void accelCommand() {
   if (!board::readAccel(g[0], g[1], g[2], raw)) { Serial.println("[accel] no sensor reading"); return; }
   Serial.printf("[accel] raw=%d,%d,%d g=%d,%d,%d%s\n", raw[0], raw[1], raw[2], g[0], g[1], g[2], g_gravFake ? " (G override on)" : "");
 }
-static void motionCommand(int c) {   // A, G, M: split out of serialCommand for the complexity gate
+static void motionCommand(int c) {   // A, G, M, O: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
@@ -233,7 +239,5 @@ void loop() {
   board::buzzer(g_shell.soundOn(ms));
   dimWhenIdle(ms);
   while (Serial.available()) serialCommand(Serial.read());
-  static bool bootWas = false; static uint32_t bootEdgeMs = 0;   // BOOT toggles the frame-rate overlay, like "O"
-  bool boot = board::bootButton();
-  if (boot != bootWas && ms - bootEdgeMs > 40) { bootWas = boot; bootEdgeMs = ms; if (boot) toggleFps(); }
+  pollBootButton(ms);
 }
