@@ -44,30 +44,28 @@ tap 121 101
 wait 450
 expect-screen pin_set
 # 1234, then 9999 on the second try: back to the first step, then skip (no code)
-tap 54 61
-tap 78 61
-tap 102 61
-tap 54 81
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen pin_again
-tap 102 101
-tap 102 101
-tap 102 101
-tap 102 101
-tap 102 121
-wait 450
+tap 119 118
+tap 119 118
+tap 119 118
+tap 119 118
+wait 900
 expect-screen pin_set
 ui-check pin_set-mismatch
 snap 02b_mismatch
-tap 138 82
+tap 80 145
 wait 450
 expect-screen launcher
 expect profile=0/1
 expect age=10
 ui-check launcher-long-name
 snap 03_launcher_long
-# second kid: "Mmmmmmmm", face 6 (owl), age 5, code 0000 (a real code)
+# second kid: "Mmmmmmmm", face 6 (owl), age 5, code 5555
 tap 80 42
 wait 450
 expect-screen picker
@@ -84,15 +82,13 @@ wait 450
 tap 37 69
 wait 450
 repeat 4
-tap 78 121
+tap 80 90
 end
-tap 102 121
-wait 450
+wait 900
 repeat 4
-tap 78 121
+tap 80 90
 end
-tap 102 121
-wait 450
+wait 900
 expect-screen launcher
 expect profile=1/2
 expect age=5
@@ -113,10 +109,9 @@ hold 80 80
 wait 450
 expect-screen pin
 repeat 4
-tap 78 121
+tap 80 90
 end
-tap 102 121
-wait 450
+wait 900
 expect-screen delete
 ui-check delete-long-name
 snap 06_delete_long
@@ -134,7 +129,7 @@ tap 94 89
 wait 450
 tap 121 69
 wait 450
-tap 138 82
+tap 80 145
 wait 450
 expect profile=2/3
 tap 80 42
@@ -149,7 +144,7 @@ tap 124 89
 wait 450
 tap 79 101
 wait 450
-tap 138 82
+tap 80 145
 wait 450
 expect profile=3/4
 tap 80 42

@@ -65,7 +65,7 @@ void Shell::choose(int id, bool del) {
 }
 void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
-  holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's OK) is where "No" is safe
+  holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's last digit) is where "No" is safe
 }
 bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, prof_.count()) > 0; }
 void Shell::select(int id) {
@@ -224,28 +224,26 @@ void Shell::drawAge() {
 }
 
 // ---------------------------------------------------------------- secret code: set twice (or skip), or asked on the picker
-// Keys are drawn at their real 24x22 size, 2 px apart: 1-9, then backspace, 0, OK. "skip" (no code, only while
-// choosing one) sits to the right of the pad; messages replace the prompt so they never cover a key.
-static ui::Box pinKey(int k) { return {40 + (k % 3) * 26, 48 + (k / 3) * 24, 24, 22}; }   // rows 48..142
-static const ui::Box PIN_SKIP = {121, 72, 34, 22};
-Shell::Key Shell::keypad(bool canSkip) {
-  if (canSkip && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) return KEY_SKIP;
-  for (int k = 0; k < 12; k++) {
-    ui::Box b = pinKey(k);
-    if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    if (k == 9) { if (pinLen_ > 0) pin_[--pinLen_] = 0; return KEY_NONE; }
-    if (k == 11) return pinLen_ == 4 ? KEY_OK : KEY_NONE;
-    if (pinLen_ < 4) { pin_[pinLen_++] = (char)(k == 10 ? '0' : '1' + k); pin_[pinLen_] = 0; }
-    return KEY_NONE;
-  }
-  return KEY_NONE;
-}
+// Nine keys, 1-9, as big as the glass holds under the prompt and the four boxes: no 0, no erase, no OK, because fewer
+// and bigger keys are what a small finger hits on this screen. The fourth digit submits by itself once its box has
+// shown for PIN_SHOW_MS (touches wait meanwhile), so a kid sees what they typed. A slip is fixed by typing on: a wrong
+// or mismatched code just starts over. "skip" (no code, only while choosing one) sits under the pad.
+static const uint32_t PIN_SHOW_MS = 400;
+static ui::Box pinKey(int k) { return {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}; }   // rows 50..131
+static const ui::Box PIN_SKIP = {60, 134, 40, 22};
 void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
+  if (pinLen_ == 4) { if (ms_ - pinMs_ >= PIN_SHOW_MS) submitPin(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
-  Key key = keypad(screen_ == SH_PIN_SET);
-  if (key == KEY_SKIP) { finishCreate(0); return; }   // "skip": no code
-  if (key != KEY_OK) return;
+  if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
+  for (int k = 0; k < 9; k++) {
+    ui::Box b = pinKey(k);
+    if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
+    pin_[pinLen_++] = (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+    return;
+  }
+}
+void Shell::submitPin() {
   uint16_t code = shell::pinCode(pin_);
   resetPin();
   if (screen_ == SH_PIN_SET) { firstPin_ = code; go(SH_PIN_AGAIN); }
@@ -262,8 +260,7 @@ void Shell::drawPin() {
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
   textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
   drawPinDigits();
-  static const char* const LABELS[12] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "<", "0", "OK"};
-  for (int k = 0; k < 12; k++) drawPinKey(pinKey(k), LABELS[k], k == 9 || (k == 11 && pinLen_ < 4) ? C_LTGRAY : k == 11 ? C_GREEN : C_WHITE);
+  for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
 }
@@ -276,9 +273,10 @@ void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code,
   }
 }
 void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
-  int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  int dy = pinLen_ < 4 && in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;   // no press look while the last digit shows: taps wait
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN); roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN); roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
-  textCentered(b.x + b.w / 2, b.y + 7 + dy, l, C_DKBROWN);
+  int s = l[1] ? 1 : 2;   // a digit at double size; "skip" fits only at one
+  textCentered(b.x + b.w / 2, b.y + (b.h - 8 * s) / 2 + dy, l, C_DKBROWN, s);
 }
 
 // ---------------------------------------------------------------- delete a profile (long press on the picker)

@@ -22,22 +22,21 @@ snap a04_age
 tap 37 101
 wait 450
 ui-check pin_set
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-ui-check pin_set-full
+tap 41 62
+tap 80 62
+tap 119 62
+ui-check pin_set-typed
+# the fourth digit stays on show a moment (no touches then), then the code moves on
+tap 41 90
 snap a05_pin_set
-tap 102 121
-wait 450
+wait 900
 ui-check pin_again
 snap a06_pin_again
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 ui-check launcher
 snap a07_launcher
@@ -280,12 +279,11 @@ wait 450
 expect-screen pin
 ui-check pin
 snap e05_pin
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen launcher
 tap 48 79
 wait 2400
@@ -323,12 +321,11 @@ wait 450
 # a long press on Sam: Sam's code, then the delete question (answered No)
 hold 80 54
 wait 450
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen delete
 ui-check delete
 snap e09_delete
@@ -339,12 +336,11 @@ sheet days_street
 # the grown dog: bigger sprite, bigger hotspots
 tap 80 54
 wait 450
-tap 54 59
-tap 78 59
-tap 102 59
-tap 54 79
-tap 102 121
-wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 tap 48 79
 wait 2400
 expect-screen home
@@ -392,7 +388,10 @@ sheet grown
 newgame Sam Biscuit
 wait 2400
 dbg dirty
-tap 72 104
+# where it starts depends on the clock (the pup may already be walking): x 64 finds it anywhere on the rug's left
+# half, x 96 on the right, and a second tap lands inside the tub's fresh-screen guard, so it cannot rub
+tap 64 104
+tap 96 104
 wait 450
 expect-screen bath
 expect spots=6
