@@ -42,6 +42,8 @@ jobs:
             exit 1
           fi
           echo "promoting $TAG"
-          gh release edit "$TAG" --prerelease=false --latest
-          # --force: normally a fast-forward, but promoting an older tag (a rollback) moves stable back.
+          # Branch first: if the push fails, the release is still a pre-release and nothing changed.
+          # --force: normally a fast-forward, but promoting an older tag (a rollback) moves stable back,
+          # so `stable` must not get a fast-forward-only rule.
           git push --force origin "$TAG^{commit}:refs/heads/stable"
+          gh release edit "$TAG" --prerelease=false --latest

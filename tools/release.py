@@ -5,7 +5,8 @@
 
 prints a JSON list, one entry per app that has releasable commits since its last
 tag: {"app", "version", "tag", "notes"}. The release workflow turns each entry into
-a tag, a GitHub release and a factory image; nothing is committed back to main.
+a tag and a GitHub pre-release (beta; promote.yml makes one stable) with a factory image,
+web-installer parts, the bare OTA image and a version.txt; nothing is committed back to main.
 
 Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
