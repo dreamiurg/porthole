@@ -3,4 +3,5 @@ build/
 *.bmp
 *.png
 !docs/*.png
+!games/pumpkin-hide-seek/docs/*.png
 .DS_Store
