@@ -14,9 +14,12 @@ uint32_t searchMs(Move m) {
   return m == Move::Fast ? 3200 : m == Move::TurnBack ? 4000 : m == Move::Check ? 2000 : 5000;
 }
 // The first move is always a plain sweep from Grandma's side, so the opening teaches.
+// After that, a rustle she heard decides the move: she checks that spot.
 void pickMove(Round& r) {
   r.spot = -1;
-  if (r.elapsed <= FIRST_REST_MS) { r.move = Move::Sweep; r.fromRight = true; return; }
+  r.fromHeard = false;
+  if (r.moves++ == 0) { r.move = Move::Sweep; r.fromRight = true; return; }
+  if (r.heard >= 0) { r.fromHeard = true; r.move = Move::Check; r.spot = r.heard; r.heard = -1; return; }
   const uint32_t n = rnd(r) % 10;
   r.move = n < 3 ? Move::Sweep : n < 5 ? Move::Fast : n < 7 ? Move::TurnBack : Move::Check;
   r.fromRight = rnd(r) % 3 != 0;
@@ -55,6 +58,27 @@ void toggleHide(Round& r) {
   r.x = SPOTS[r.hidden];
   r.velocity = 0;
   r.exposure = 0;
+}
+void listen(Round& r, float roll) {
+  r.rustle = r.hidden >= 0 && fabsf(roll) > RUSTLE_MG ? r.rustle + STEP_MS : 0;
+  if (r.rustle < RUSTLE_MS) return;
+  r.heard = r.hidden;
+  r.rustle = 0;
+}
+// Something crashes across the room: whatever Grandma was doing, she goes to look.
+// A move only announced is handed back, so the teaching opener and a heard check still come next.
+void haunt(Round& r) {
+  if (r.ghostUsed) return;
+  r.ghostUsed = true;
+  r.distract = DISTRACT_MS;
+  if (r.phase == Phase::Warn) {
+    r.moves--;
+    if (r.fromHeard && r.heard < 0) r.heard = r.spot;
+  }
+  if (r.phase == Phase::Rest) { r.phaseLen += GHOST_EXTRA_MS; return; }
+  r.phase = Phase::Rest;
+  r.phaseMs = 0;
+  r.phaseLen = GHOST_REST_MS;
 }
 void collect(Round& r) {
   if (r.sinceCandy < 60000) r.sinceCandy += STEP_MS;
@@ -95,9 +119,12 @@ float beamX(const Round& r) {
   return r.fromRight ? 136 - t * 112 : 24 + t * 112;
 }
 bool doorOpen(const Round& r) { return r.got == ALL_CANDY; }
-void step(Round& r, float roll, bool action) {
+void step(Round& r, float roll, bool action, bool ghost) {
   if (r.caught || r.won) return;
   if (action) toggleHide(r);
+  if (ghost) haunt(r);
+  r.distract = r.distract > STEP_MS ? r.distract - STEP_MS : 0;
+  listen(r, roll);
   rollPumpkin(r, roll);
   collect(r);
   r.elapsed += STEP_MS;
