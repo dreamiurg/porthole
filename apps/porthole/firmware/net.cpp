@@ -40,6 +40,9 @@ struct Wifi { char ssid[33]; char pass[65]; };
 uint32_t (*g_now)() = nullptr;
 bool g_sd = false;
 uint32_t g_nextPoll = FIRST_MS;
+// RAM copies of "sys"/ssid and "sys"/chan, so the menu can read them every frame without opening NVS. Main loop only.
+char g_ssid[33] = {0};
+shell::Channel g_chan = shell::CH_STABLE;
 std::atomic<bool> g_busy{false};   // a check task exists
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
@@ -59,6 +62,7 @@ bool storeWifi(const char* ssid, const char* pass) {
   size_t n = strlen(ssid), p = strlen(pass);
   if (!n || n > 32 || p > 64) return false;
   if (!board::saveBlob(NS, "ssid", ssid, n)) return false;
+  snprintf(g_ssid, sizeof g_ssid, "%s", ssid);
   if (p) return board::saveBlob(NS, "pass", pass, p);
   board::eraseBlob(NS, "pass");
   return true;
@@ -225,6 +229,11 @@ void Updater::begin(uint32_t (*localNow)()) {
   WiFi.persistent(false);   // the network lives in "sys"; keep the wifi driver from saving its own copy
   uint32_t last = 0;
   if (board::loadBlob(NS, "last", &last, sizeof last) == sizeof last) g_st.lastCheck = last;
+  Wifi w;
+  if (loadWifi(w)) strcpy(g_ssid, w.ssid);
+  uint8_t c = 0;
+  board::loadBlob(NS, "chan", &c, 1);
+  g_chan = c == shell::CH_BETA ? shell::CH_BETA : shell::CH_STABLE;
   g_sd = board::mountSd();
   Serial.printf("[net] version %s, SD card %s\n", PORTHOLE_VERSION, g_sd ? "mounted" : "not found");
   if (g_sd) wifiFromSd();
@@ -233,8 +242,7 @@ void Updater::begin(uint32_t (*localNow)()) {
 void Updater::tick(uint32_t ms) {
   if ((int32_t)(ms - g_nextPoll) < 0) return;
   g_nextPoll = ms + POLL_MS;
-  Wifi w;
-  if (!isRelease() || !loadWifi(w) || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
+  if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
   spawn(channel());
 }
 
@@ -248,9 +256,8 @@ void Updater::info(shell::SysInfo& out) {
   snprintf(out.reset, sizeof out.reset, "%s", resetName(esp_reset_reason()));
   out.heapFree = (uint32_t)heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
   out.sd = g_sd;
-  Wifi w;
-  out.wifiSaved = loadWifi(w);
-  if (out.wifiSaved) strcpy(out.ssid, w.ssid);
+  out.wifiSaved = g_ssid[0] != 0;
+  strcpy(out.ssid, g_ssid);
 }
 
 shell::UpdStatus Updater::status() {
@@ -263,11 +270,7 @@ shell::UpdStatus Updater::status() {
 void Updater::checkNow() { spawn(channel()); }
 void Updater::restart() { ESP.restart(); }
 
-shell::Channel Updater::channel() {
-  uint8_t c = shell::CH_STABLE;
-  board::loadBlob(NS, "chan", &c, 1);
-  return c == shell::CH_BETA ? shell::CH_BETA : shell::CH_STABLE;
-}
-void Updater::setChannel(shell::Channel c) { uint8_t b = c; board::saveBlob(NS, "chan", &b, 1); }
+shell::Channel Updater::channel() { return g_chan; }
+void Updater::setChannel(shell::Channel c) { g_chan = c; uint8_t b = c; board::saveBlob(NS, "chan", &b, 1); }
 
 }  // namespace net
