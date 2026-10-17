@@ -9,6 +9,12 @@
 
 constexpr int MAX_APPS = 8;
 
+namespace shell {
+// "sys"/"ran" holds the version that booted last (its bytes, no NUL). True when version is not "dev" and differs from
+// it: an update (or a USB flash) since the last boot, so the "something new" card shows once. Stores version if new.
+bool newRun(Store& st, const char* version);
+}
+
 class Shell {
  public:
   // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null
@@ -31,7 +37,8 @@ class Shell {
   void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older", then passed on to the open game
 
  private:
-  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST, SH_APP };
+  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -53,11 +60,13 @@ class Shell {
   Input in_{};
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
   char toast_[40] = {0}; uint32_t toastUntil_ = 0;
+  shell::SysInfo info_{}; shell::UpdStatus upd_{};   // the system menu's view of sys_, read when a menu screen opens
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;   // the day's play is used up, or (with 2+ profiles) a turn rest
   void go(Screen s);
+  void land();   // the picker, or the first profile's name on a fresh device
   void toast(const char* s);
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
   // flow
@@ -83,4 +92,9 @@ class Shell {
   bool muteButton();   // draws the launcher's mute button; true on a tap
   void updateRest(); void drawRest();
   void updateApp(); void drawApp();
+  // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)
+  bool titleHeld();
+  void updateSysNew(); void drawSysNew();
+  void updateSysInfo(); void drawSysInfo();
+  void updateSysUpd(); void drawSysUpd(); void drawSysAction();
 };
