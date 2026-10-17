@@ -2,11 +2,13 @@
 #include <Arduino.h>
 #include "board.h"
 #include "esp_heap_caps.h"
+#include "esp_ota_ops.h"
 #include "games/biscuit/game.h"
 #include "games/marble-kick/game.h"
 #include "games/pets-club/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
+#include "net.h"
 #include "shell.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
@@ -23,6 +25,7 @@ static fc::Game g_tiltfc;
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc};
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
+static net::Updater g_sys;
 static Shell g_shell;
 static InputTracker g_input;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
@@ -62,16 +65,32 @@ static uint32_t buildEpoch() {
   return days * 86400u + (uint32_t)(hh * 3600 + mm * 60 + ss);
 }
 
+// Rollback: the Arduino core marks a freshly updated firmware valid before setup() unless this says "later". setup()
+// does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
+extern "C" bool verifyRollbackLater() { return true; }
+
+static void markValid() {
+  esp_ota_img_states_t st;
+  if (esp_ota_get_state_partition(esp_ota_get_running_partition(), &st) != ESP_OK || st != ESP_OTA_IMG_PENDING_VERIFY) return;
+  esp_ota_mark_app_valid_cancel_rollback();
+  Serial.println("[porthole] new firmware started; marked valid");
+}
+
 void setup() {
   Serial.begin(115200);
   delay(50);
-  Serial.println("\n[porthole] boot");
+  Serial.printf("\n[porthole] boot v=%s slot=%s\n", PORTHOLE_VERSION, esp_ota_get_running_partition()->label);
+  enableLoopWDT();   // until marked valid: a hang panics after 5 s, and the bootloader goes back to the old slot
   board::init();
+  board::presentHires();   // the first frame: the panel path works
+  // Valid before anything can write a save: a rollback to an older firmware would reject a newer save and lose it.
+  markValid();
+  disableLoopWDT();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
-  g_shell.begin(g_store, APPS, N_APPS);   // first boot after Pets Club: its houses become profiles here
+  g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   uint32_t lastSeen = g_shell.lastSeen(), now;
   if (board::rtcValid()) now = board::rtcNow();
   else {
@@ -84,6 +103,7 @@ void setup() {
   g_bootLocalEpoch = now; g_bootMillis = millis();
   Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
   g_activity.step(Input{}, true, millis());   // boot counts as activity
+  g_sys.begin(nowSec);   // the SD card's wifi.txt, then the daily update check from a minute after boot
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control).
@@ -123,7 +143,8 @@ static void dumpFrame() {
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
-// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics.
+// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
+// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background).
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
   for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
@@ -151,10 +172,32 @@ static void accelCommand() {
   if (!board::readAccel(g[0], g[1], g[2], raw)) { Serial.println("[accel] no sensor reading"); return; }
   Serial.printf("[accel] raw=%d,%d,%d g=%d,%d,%d%s\n", raw[0], raw[1], raw[2], g[0], g[1], g[2], g_gravFake ? " (G override on)" : "");
 }
-static void motionCommand(int c) {   // A, G, M: split out of serialCommand for the complexity gate
+static void wifiCommand() {   // W<ssid>\t<password>: the tab is required; an open network has nothing after it
+  String arg = Serial.readStringUntil('\n');
+  if (arg.endsWith("\r")) arg.remove(arg.length() - 1);
+  int tab = arg.indexOf('\t');
+  if (tab < 0 || !g_sys.saveWifi(arg.substring(0, tab).c_str(), arg.substring(tab + 1).c_str())) {
+    Serial.println("[porthole] usage: W<ssid><TAB><password> (ssid 1-32, password up to 64 characters)");
+    return;
+  }
+  Serial.printf("[porthole] wifi saved: %s\n", arg.substring(0, tab).c_str());
+}
+static void updateCommand() {
+  g_sys.checkNow();
+  Serial.printf("[porthole] update check started (channel %s)\n", g_sys.channel() == shell::CH_BETA ? "beta" : "stable");
+}
+static void motionCommand(int c) {   // A, G, M, W, U: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
+  else if (c == 'W') wifiCommand();
+  else if (c == 'U') updateCommand();
+}
+static void printSystem() {   // the tail of "S": version, slot and where the update stands
+  shell::UpdStatus u = g_sys.status();
+  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu\n",
+                (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
+                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck);
 }
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
@@ -168,7 +211,7 @@ static void serialCommand(int c) {
     if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }
     int n = arg.toInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n);
   }
-  else if (c == 'S') { g_shell.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
+  else if (c == 'S') { g_shell.debugPrint(); printSystem(); }
   else if (c == 'X') {  // X<x>,<y>,<ms>: press at logical (x, y) for ms (the harness's tap/hold)
     int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();
     g_fake = {true, x, y, millis() + (uint32_t)(dur > 0 ? dur : 80)};
@@ -209,5 +252,6 @@ void loop() {
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
   dimWhenIdle(ms);
+  g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
 }
