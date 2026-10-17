@@ -11,7 +11,7 @@
 // few frames, perf prints the average update and render time per frame since the last perf. reboot is a power cycle
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
 // it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed. `debug` adds its
-// sys_ver/sys_chan/sys_state/sys_checks/sys_restarts.
+// sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/sys_last. A reboot keeps lastCheck (the firmware persists it).
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -66,9 +66,10 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING || st.state == shell::UP_READY) return;
     st.state = shell::UP_IDLE; st.available[0] = 0;
   }
-  void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again
+  void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
-    st = {};
+    const uint32_t last = st.lastCheck;
+    st = {}; st.lastCheck = last;
   }
   void set(const char* what, const char* arg) {
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
@@ -84,8 +85,8 @@ struct SimSystem : shell::System {
   void print() const {
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
-    printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d]\n", version, ch == shell::CH_BETA ? "beta" : "stable",
-           S[st.state], checks, restarts);
+    printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
+           ch == shell::CH_BETA ? "beta" : "stable", S[st.state], checks, restarts, (unsigned long)st.lastCheck);
   }
 };
 

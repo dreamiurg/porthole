@@ -70,17 +70,27 @@ tap 80 125
 wait 450
 expect-screen picker
 sheet update
-# the other resting states, then Back: Updates -> Info -> picker
+# eight minutes after the restart: the status is idle again, the last check is still on record, and both screens say so
+# ("Last try 8 min ago", "Checks once a day"), not "not yet" / "Not checked yet"
+skip 480
 down 80 16
 wait 5000
 up
 wait 450
+expect-screen sys_info
+expect sys_state=idle
+expect sys_last>0
+ui-check sys_info-rebooted
+snap 08_info_rebooted
 tap 80 128
 wait 450
+ui-check sys_updates-rebooted
+snap 08b_updates_rebooted
+# the other resting states, then Back: Updates -> Info -> picker
 sys current
 wait 100
 ui-check sys_updates-current
-snap 08_current
+snap 08c_current
 sys failed
 wait 100
 ui-check sys_updates-failed
@@ -118,3 +128,26 @@ tap 80 12
 wait 450
 expect-screen picker
 sheet states
+# a dev build is never "up to date", even after a check that found a release
+sys version dev
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 80 128
+wait 450
+sys current
+sys newest 0.15.0
+wait 100
+expect sys_ver=dev
+expect sys_state=current
+ui-check sys_updates-dev
+snap 12_dev
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+sheet dev

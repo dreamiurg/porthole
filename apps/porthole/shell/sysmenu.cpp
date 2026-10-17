@@ -58,8 +58,18 @@ static void row(int y, const char* label, const char* value) {
   }
   text(COL + 6, y, v, C_WHITE);
 }
-static const char* wifiResult(UpdState s) {
-  return s == UP_IDLE ? "not yet" : s == UP_NO_WIFI ? "no wifi" : s == UP_CHECKING ? "trying" : "ok";
+static void ago(char* out, size_t n, uint32_t now, uint32_t then) {
+  uint32_t d = now > then ? now - then : 0;
+  if (!then) snprintf(out, n, "never");
+  else if (d < 60) snprintf(out, n, "just now");
+  else if (d < 3600) snprintf(out, n, "%lu min ago", (unsigned long)(d / 60));
+  else if (d < 86400) snprintf(out, n, "%lu h ago", (unsigned long)(d / 3600));
+  else snprintf(out, n, "%lu days ago", (unsigned long)(d / 86400));
+}
+// The status is RAM (IDLE after every boot) but lastCheck is persisted: an IDLE with a lastCheck tried before this boot.
+static void wifiResult(char* out, size_t n, const UpdStatus& u, uint32_t now) {
+  if (u.state == UP_IDLE && u.lastCheck) ago(out, n, now, u.lastCheck);
+  else snprintf(out, n, "%s", u.state == UP_IDLE ? "not yet" : u.state == UP_NO_WIFI ? "no wifi" : u.state == UP_CHECKING ? "trying" : "ok");
 }
 
 static const ui::Box SYS_BTN = {36, 116, 88, 24};   // the one button under the rows: Updates, Check now, Restart now
@@ -70,7 +80,8 @@ void Shell::updateSysInfo() {
 }
 void Shell::drawSysInfo() {
   clear(C_NAVY);
-  char heap[16]; snprintf(heap, sizeof heap, "%lu KB", (unsigned long)(info_.heapFree / 1024));
+  char heap[16], tried[24]; snprintf(heap, sizeof heap, "%lu KB", (unsigned long)(info_.heapFree / 1024));
+  wifiResult(tried, sizeof tried, upd_, now_);
   int y = 30;
   row(y, "Version", info_.version); y += ROW;
   row(y, "Slot", info_.slot); y += ROW;
@@ -78,7 +89,7 @@ void Shell::drawSysInfo() {
   row(y, "Free heap", heap); y += ROW;
   row(y, "SD card", info_.sd ? "yes" : "no"); y += ROW;
   row(y, "Wifi", info_.wifiSaved ? info_.ssid : "none"); y += ROW;
-  row(y, "Last try", wifiResult(upd_.state));
+  row(y, "Last try", tried);
   ui::drawButton({SYS_BTN, "Updates", nullptr, C_SKY}, in_.down && in_.hit(SYS_BTN.x, SYS_BTN.y, SYS_BTN.w, SYS_BTN.h));
   ui::drawBack();
 }
@@ -100,17 +111,18 @@ void Shell::updateSysUpd() {
   if (upd_.state == UP_READY) sys_->restart(); else sys_->checkNow();
   upd_ = sys_->status();
 }
-static void ago(char* out, size_t n, uint32_t now, uint32_t then) {
-  uint32_t d = now > then ? now - then : 0;
-  if (!then) snprintf(out, n, "never");
-  else if (d < 60) snprintf(out, n, "just now");
-  else if (d < 3600) snprintf(out, n, "%lu min ago", (unsigned long)(d / 60));
-  else if (d < 86400) snprintf(out, n, "%lu h ago", (unsigned long)(d / 3600));
-  else snprintf(out, n, "%lu days ago", (unsigned long)(d / 86400));
-}
-void Shell::drawSysUpd() {
+// The status line. Two states read differently than their names: IDLE after a boot with a check on record (the daily
+// check comes on its own), and CURRENT on a dev build (newer() never offers it anything, so it is not "up to date").
+static void statusLine(char* out, size_t n, const UpdStatus& u, const char* running) {
   static const char* const STATE[] = {"Not checked yet", "No wifi", "Checking...", "Up to date", "", "New version ready", "Check failed"};
   static_assert(sizeof STATE / sizeof STATE[0] == UP_COUNT, "one label per UpdState");
+  int v[3];
+  if (u.state == UP_DOWNLOADING) snprintf(out, n, "Downloading %u%%", (unsigned)u.pct);
+  else if (u.state == UP_IDLE && u.lastCheck) snprintf(out, n, "Checks once a day");
+  else if (u.state == UP_CURRENT && !parseVersion(running, v)) snprintf(out, n, "Dev build: no updates");
+  else snprintf(out, n, "%s", (size_t)u.state < sizeof STATE / sizeof STATE[0] ? STATE[u.state] : "");
+}
+void Shell::drawSysUpd() {
   clear(C_NAVY);
   const Channel ch = sys_->channel();
   const bool locked = chanLocked(upd_.state);
@@ -123,8 +135,7 @@ void Shell::drawSysUpd() {
   row(60, "Running", info_.version);
   row(71, "Newest", upd_.available[0] ? upd_.available : "?");
   row(82, "Checked", when);
-  char st[24]; snprintf(st, sizeof st, "%s", (size_t)upd_.state < sizeof STATE / sizeof STATE[0] ? STATE[upd_.state] : "");
-  if (upd_.state == UP_DOWNLOADING) snprintf(st, sizeof st, "Downloading %u%%", (unsigned)upd_.pct);
+  char st[24]; statusLine(st, sizeof st, upd_, info_.version);
   textCentered(80, 95, st, C_YELLOW);
   drawSysAction();
   ui::drawBack();
