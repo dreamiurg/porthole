@@ -60,7 +60,11 @@ struct SimSystem : shell::System {
   void checkNow() override { checks++; st.state = wifi ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now(); }
   void restart() override { restarts++; rebootDue = true; }   // after this frame: not from inside Shell::update
   shell::Channel channel() override { return ch; }
-  void setChannel(shell::Channel c) override { ch = c; }
+  void setChannel(shell::Channel c) override {   // the contract in shell/system.h
+    ch = c;
+    if (st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING || st.state == shell::UP_READY) return;
+    st.state = shell::UP_IDLE; st.available[0] = 0;
+  }
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     st = {};
@@ -78,6 +82,7 @@ struct SimSystem : shell::System {
   }
   void print() const {
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
+    static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d]\n", version, ch == shell::CH_BETA ? "beta" : "stable",
            S[st.state], checks, restarts);
   }

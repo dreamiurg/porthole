@@ -10,11 +10,12 @@ using namespace gfx;
 using namespace shell;
 
 bool shell::newRun(Store& st, const char* version) {
-  char ran[16] = {0};
+  char ran[16] = {0}, cur[16];
+  snprintf(cur, sizeof cur, "%s", version);   // stored and compared at 15 bytes: a longer one still matches next boot
   st.load("sys", "ran", ran, sizeof ran - 1);   // 0 (missing, or too long to be a version): never ran
-  if (!strcmp(ran, version)) return false;
-  st.save("sys", "ran", version, strlen(version));   // only on a change: no flash write on every boot
-  return strcmp(version, "dev") != 0;               // a local build is never news
+  if (!strcmp(ran, cur)) return false;
+  st.save("sys", "ran", cur, strlen(cur));   // only on a change: no flash write on every boot
+  return strcmp(cur, "dev") != 0;           // a local build is never news
 }
 
 // ---------------------------------------------------------------- the picker's title, held SYS_HOLD_MS
@@ -57,7 +58,9 @@ static void row(int y, const char* label, const char* value) {
   }
   text(COL + 6, y, v, C_WHITE);
 }
-static const char* wifiResult(UpdState s) { return s == UP_IDLE ? "not yet" : s == UP_NO_WIFI ? "no wifi" : "ok"; }
+static const char* wifiResult(UpdState s) {
+  return s == UP_IDLE ? "not yet" : s == UP_NO_WIFI ? "no wifi" : s == UP_CHECKING ? "trying" : "ok";
+}
 
 static const ui::Box SYS_BTN = {36, 116, 88, 24};   // the one button under the rows: Updates, Check now, Restart now
 void Shell::updateSysInfo() {
@@ -84,12 +87,14 @@ void Shell::drawSysInfo() {
 static ui::Box chanSeg(int c) { return {26 + c * 56, 30, 52, 24}; }
 static const char* const CHAN_NAMES[2] = {"Stable", "Beta"};
 static bool busy(UpdState s) { return s == UP_CHECKING || s == UP_DOWNLOADING; }   // no button: it is already on it
+// The channel stays put mid-check and with an image waiting: switching then would show one channel's result as another's.
+static bool chanLocked(UpdState s) { return busy(s) || s == UP_READY; }
 void Shell::updateSysUpd() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
-  for (int c = 0; c < 2; c++) {
+  for (int c = 0; c < 2 && !chanLocked(upd_.state); c++) {
     ui::Box b = chanSeg(c);
-    if (in_.tapIn(b.x, b.y, b.w, b.h)) sys_->setChannel((Channel)c);
+    if (in_.tapIn(b.x, b.y, b.w, b.h) && c != sys_->channel()) sys_->setChannel((Channel)c);
   }
   if (busy(upd_.state) || !in_.tapIn(SYS_BTN.x, SYS_BTN.y, SYS_BTN.w, SYS_BTN.h)) return;
   if (upd_.state == UP_READY) sys_->restart(); else sys_->checkNow();
@@ -105,11 +110,14 @@ static void ago(char* out, size_t n, uint32_t now, uint32_t then) {
 }
 void Shell::drawSysUpd() {
   static const char* const STATE[] = {"Not checked yet", "No wifi", "Checking...", "Up to date", "", "New version ready", "Check failed"};
+  static_assert(sizeof STATE / sizeof STATE[0] == UP_COUNT, "one label per UpdState");
   clear(C_NAVY);
   const Channel ch = sys_->channel();
+  const bool locked = chanLocked(upd_.state);
   for (int c = 0; c < 2; c++) {
     ui::Box b = chanSeg(c);
-    ui::drawButton({b, CHAN_NAMES[c], nullptr, c == ch ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY}, in_.down && in_.hit(b.x, b.y, b.w, b.h));
+    uint8_t col = c == ch ? C_GREEN : locked ? C_DKGRAY : C_LTGRAY;   // dimmed: not a choice right now
+    ui::drawButton({b, CHAN_NAMES[c], nullptr, col}, !locked && in_.down && in_.hit(b.x, b.y, b.w, b.h));
   }
   char when[24]; ago(when, sizeof when, now_, upd_.lastCheck);
   row(60, "Running", info_.version);

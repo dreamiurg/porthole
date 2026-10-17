@@ -640,6 +640,8 @@ static void somethingNew() {
   assert(shell::newRun(st, "0.16.0") && !shell::newRun(st, "0.16.0"));
   assert(!shell::newRun(st, "dev") && !shell::newRun(st, "dev"));
   assert(shell::newRun(st, "0.16.0"));   // a release over a dev build replaced it: news again
+  const char* longer = "0.16.0-beta.12345";   // past the 15 bytes kept: still news only once
+  assert(shell::newRun(st, longer) && !shell::newRun(st, longer));
 }
 
 struct StubSys : shell::System {
