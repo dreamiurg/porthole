@@ -1,0 +1,56 @@
+# Double taps do not spill into a newly opened page. Home in play requires a deliberate hold, canceled on drift.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+tap 80 131
+expect-screen pumpkin_calibrate
+expect starting=0
+wait 600
+tap 80 131
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect hidden=-1
+tap 80 19
+expect-screen pumpkin_play
+down 80 19
+wait 300
+move 80 55
+wait 500
+up
+expect-screen pumpkin_play
+down 80 19
+wait 300
+move 80 55
+wait 100
+move 80 19
+wait 300
+up
+expect-screen pumpkin_play
+down 80 55
+wait 60
+move 80 19
+wait 800
+up
+expect-screen pumpkin_play
+down 80 19
+wait 750
+up
+wait 100
+expect-screen launcher
+app pumpkin
+wait 600
+expect-screen pumpkin_intro
+tap 80 19
+wait 100
+expect-screen launcher
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 19
+wait 100
+expect-screen launcher

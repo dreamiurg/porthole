@@ -20,6 +20,7 @@
 #include <vector>
 #include "games/biscuit/game.h"
 #include "games/marble-kick/game.h"
+#include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
@@ -47,7 +48,8 @@ static Game g_pets;
 static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc};
+static pumpkin::Game g_pumpkin;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
 static FileStore g_store;
 static Shell g_shell;
 static InputTracker g_tracker;
