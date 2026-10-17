@@ -169,6 +169,10 @@ void Shell::drawPick() {
     text(b.x + 30, b.y + 9 + dy, r.name, C_DKBROWN);
     if (r.pin) blitTint(SPR_LOCK, b.x + b.w - 12, b.y + 8 + dy, C_DKGRAY);
   }
+  if (!sys_) return;   // the running firmware, small, under the rows: "v0.16.2", or "dev" for a local build
+  int v[3]; char ver[16];   // at most 10 characters: 80 px, inside the glass's 84 px chord at the text's bottom row
+  snprintf(ver, sizeof ver, "%s%.9s", shell::parseVersion(info_.version, v) ? "v" : "", info_.version);
+  textCentered(80, 140, ver, C_DKGRAY);
 }
 
 // ---------------------------------------------------------------- new profile: name -> face -> age -> code
