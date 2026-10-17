@@ -48,3 +48,6 @@ jobs:
           # so `stable` must not get a fast-forward-only rule.
           git push --force origin "$TAG^{commit}:refs/heads/stable"
           gh release edit "$TAG" --prerelease=false --latest
+          # What a board on stable does next: read Latest's version, then fetch that version's image.
+          # A failure here means stable boards now fail their daily download: promote a good tag to fix it.
+          tools/check_channel.sh porthole stable "${TAG#porthole-v}"
