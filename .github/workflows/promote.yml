@@ -1,0 +1,49 @@
+name: Promote
+
+# Moves a Porthole release from beta to stable. Every release starts as a GitHub pre-release
+# (beta). Promoting clears the flag and marks it Latest, so releases/latest (what stable boards
+# read) points at it, and moves the `stable` branch to its commit.
+# Promoting an older tag is how stable rolls back.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to promote, e.g. porthole-v0.15.0 (empty: the newest pre-release)"
+        required: false
+        default: ""
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0  # tags, to resolve the tag's commit
+      - name: Promote
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list --limit 100 --json tagName,isPrerelease \
+              --jq '[.[] | select(.isPrerelease and (.tagName | startswith("porthole-v")))][0].tagName // ""')
+          fi
+          if ! [[ "$TAG" =~ ^porthole-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::no porthole-vX.Y.Z tag to promote (got '$TAG')"
+            exit 1
+          fi
+          echo "promoting $TAG"
+          # Branch first: if the push fails, the release is still a pre-release and nothing changed.
+          # --force: normally a fast-forward, but promoting an older tag (a rollback) moves stable back,
+          # so `stable` must not get a fast-forward-only rule.
+          git push --force origin "$TAG^{commit}:refs/heads/stable"
+          gh release edit "$TAG" --prerelease=false --latest
