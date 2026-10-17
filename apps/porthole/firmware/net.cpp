@@ -70,21 +70,30 @@ bool storeWifi(const char* ssid, const char* pass) {
 
 bool isRelease() { int v[3]; return shell::parseVersion(PORTHOLE_VERSION, v); }
 
-// One HTTPS client set up the same way for every request: the CA bundle, timeouts, redirects (GitHub sends a release
-// asset from github.com to another host; HTTPClient reconnects when the host changes) and a User-Agent (the API
-// requires one).
+// One HTTPS client set up the same way for every request: the CA bundle, timeouts, redirects and a User-Agent (the API
+// requires one). Redirects are followed here, not by HTTPClient: GitHub sends a release asset from github.com to
+// another host, and on that reconnect Arduino-ESP32 3.2.1's NetworkClientSecure has lost its CA bundle
+// (stop_ssl_socket() zeroes the context, bundle callback included), so the handshake fails with "No CA Chain is set".
+// setCACertBundle() before every hop attaches it again.
 struct Https {
   NetworkClientSecure tls;
   HTTPClient http;
   int get(const char* url) {
-    tls.setCACertBundle(CA_BUNDLE, (size_t)(CA_BUNDLE_END - CA_BUNDLE));
-    tls.setHandshakeTimeout(TLS_S);
-    if (!http.begin(tls, url)) return -1;
-    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    http.setConnectTimeout(HTTP_MS);
-    http.setTimeout(HTTP_MS);
-    http.setUserAgent("porthole/" PORTHOLE_VERSION);
-    int code = http.GET();
+    String at = url;
+    int code = -1;
+    for (int hop = 0; hop < 5; hop++) {
+      tls.setCACertBundle(CA_BUNDLE, (size_t)(CA_BUNDLE_END - CA_BUNDLE));
+      tls.setHandshakeTimeout(TLS_S);
+      if (!http.begin(tls, at)) return -1;
+      http.setConnectTimeout(HTTP_MS);
+      http.setTimeout(HTTP_MS);
+      http.setUserAgent("porthole/" PORTHOLE_VERSION);
+      code = http.GET();
+      if (code < 300 || code > 399 || !http.getLocation().length()) break;
+      at = http.getLocation();
+      http.end();
+      tls.stop();   // now, before the bundle is attached again: begin() on a new host would stop it after
+    }
     if (code != 200) Serial.printf("[net] GET %s -> %d\n", url, code);
     return code;
   }
@@ -144,8 +153,10 @@ bool download(const char* ver) {
   setState(shell::UP_DOWNLOADING);
   // A known size, never UPDATE_SIZE_UNKNOWN: that erases the whole 7.9 MB slot first, stalling both cores.
   bool ok = code == 200 && size > 0 && Update.begin((size_t)size) && stream(c.http, (size_t)size) && Update.end();
-  if (!ok) { Serial.printf("[net] download failed: %s\n", Update.errorString()); Update.abort(); }
-  return ok;
+  if (ok) return true;
+  Serial.printf("[net] download failed: %s\n", Update.errorString());
+  if (Update.isRunning()) Update.abort();   // never begun, abort() would drive Update's unset LED pin: GPIO0
+  return false;
 }
 
 bool joinWifi(const Wifi& w) {
