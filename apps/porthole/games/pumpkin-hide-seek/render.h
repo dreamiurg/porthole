@@ -21,7 +21,13 @@ struct View {
   bool doorOpen = false;              // all candy collected: the door at the left wall is open
   int checking = -1;                  // spot Grandma announces (warning) or checks (searching)
   bool shiver = false, phew = false;  // beam over a hidden pumpkin / it just passed
+  bool ghostReady = true;             // the ghost at the window can still be tapped (box {22,30,24,24})
+  uint32_t distract = 0;              // ms left of the crash Grandma goes to look at ("WHAT WAS THAT?")
+  bool rustling = false;              // hidden and tilting hard: the spot shakes ("SHH!")
+  bool heard = false;                 // Grandma heard it: her next move checks that spot
+  uint8_t quip = 0;                   // which catch / pie / escape line, 0..QUIPS-1
 };
+constexpr int QUIPS = 4;
 namespace paint {
 void draw(const View& view);
 const gfx::Sprite& icon();

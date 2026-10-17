@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <vector>
 #include "games/pumpkin-hide-seek/game.h"
+#include "games/pumpkin-hide-seek/ghost.h"
 #include "gfx565.h"
 #include "host/grip.h"
 
@@ -17,7 +18,7 @@ static void tick(Round& r, int ms, float roll = 0) {
 // Hold the round in a phase until it ends, so a test can stage one exact Grandma move.
 static void stage(Round& r, Move move, int spot = -1, bool fromRight = true) {
   r.phase = Phase::Warn; r.move = move; r.spot = spot; r.fromRight = fromRight;
-  r.phaseMs = 0; r.phaseLen = 1000; r.elapsed = 20000;
+  r.phaseMs = 0; r.phaseLen = 1000; r.moves = 1;
 }
 static void controls() {
   Round r;
@@ -105,17 +106,63 @@ static void sweepsAndPhew() {
   r.hidden = 0; r.x = SPOTS[0]; tick(r, 3000);
   CHECK(!r.caught && r.exposure == 0);  // ducking mid-exposure saves it
 }
+// Wiggling hard while hidden rustles the spot: Grandma's next move checks it. It never ejects.
+static void rustle() {
+  Round r = newRound(5); r.x = SPOTS[1]; r.hidden = 1; r.phaseLen = 600000;  // a long quiet rest
+  tick(r, RUSTLE_MS - 100, 1000); CHECK(r.heard < 0 && r.rustle > 0);  // a short wiggle is fine
+  tick(r, 300); CHECK(r.rustle == 0);                                    // holding still calms it
+  tick(r, 1000, RUSTLE_MG - 50); CHECK(r.rustle == 0 && r.heard < 0);    // a gentle tilt is not a rustle
+  tick(r, RUSTLE_MS, -1000); CHECK(r.heard == 1 && r.hidden == 1 && r.x == SPOTS[1]);
+  r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS; step(r, 0, false);
+  CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.phaseLen == 3500 && r.heard < 0);
+  r = newRound(5); r.phaseLen = 600000; tick(r, 2000, 1000);
+  CHECK(r.heard < 0 && r.rustle == 0);  // rolling in the open is not rustling
+  r = newRound(5); r.x = SPOTS[0]; r.hidden = 0; tick(r, RUSTLE_MS + 100, 1000);
+  CHECK(r.heard == 0);
+  tick(r, 3000 - RUSTLE_MS - 100); CHECK(warning(r) && r.move == Move::Sweep && r.heard == 0);  // the opener still teaches
+}
+// The ghost at the window knocks something over once a round: Grandma goes to look.
+static void ghostTap() {
+  Round r; r.x = 30; stage(r, Move::Sweep);
+  step(r, 0, false, true);
+  CHECK(r.ghostUsed && r.phase == Phase::Rest && r.phaseLen == GHOST_REST_MS && r.distract > 0);
+  tick(r, GHOST_REST_MS - 100); CHECK(!warning(r) && !searching(r));
+  const uint32_t len = r.phaseLen;
+  step(r, 0, false, true); CHECK(r.phaseLen == len);  // only once a round
+  r = Round{}; r.x = 130; stage(r, Move::Sweep); tick(r, 1000 + 100); CHECK(r.exposure > 0);
+  step(r, 0, false, true); CHECK(r.exposure == 0 && !searching(r) && !r.caught);  // a mid-search rescue
+  r = Round{}; tick(r, 1000); step(r, 0, false, true);
+  CHECK(r.phase == Phase::Rest && r.phaseLen == FIRST_REST_MS + GHOST_EXTRA_MS);  // a quiet house stays quiet longer
+  tick(r, DISTRACT_MS); CHECK(r.distract == 0);
+  tick(r, FIRST_REST_MS + GHOST_EXTRA_MS - 1000 - DISTRACT_MS);
+  CHECK(warning(r) && r.move == Move::Sweep && r.fromRight);  // still the teaching opener
+  r = Round{}; r.distract = 5; step(r, 0, false); CHECK(r.distract == 0);  // saturates, never wraps
+}
+// A ghost during a warning takes back the announced move: the opener and a heard check survive the rest.
+static void ghostUndo() {
+  Round r = newRound(4); tick(r, FIRST_REST_MS + 500); CHECK(warning(r) && r.moves == 1);
+  step(r, 0, false, true); tick(r, GHOST_REST_MS);
+  CHECK(warning(r) && r.move == Move::Sweep && r.fromRight && r.moves == 1);
+  r = newRound(4); r.x = SPOTS[1]; r.hidden = 1; r.heard = 1; r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS;
+  step(r, 0, false); CHECK(warning(r) && checking(r) == 1 && r.heard < 0);
+  step(r, 0, false, true); CHECK(r.phase == Phase::Rest && r.heard == 1);
+  tick(r, GHOST_REST_MS); CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.heard < 0);
+}
 // A simple player: fetch the far candy, then head for the door, hiding whenever Grandma comes.
 struct Choice { float roll; bool action; };
-static Choice bot(const Round& r) {
+// A fidgety bot keeps tilting while hidden, so its spot rustles.
+static Choice bot(const Round& r, bool fidget = false) {
   const float toward = r.got & 4 ? -500 : 500;
   const bool danger = warning(r) || searching(r);
-  if (r.hidden >= 0) return {toward, !danger || checking(r) == r.hidden};
+  if (r.hidden >= 0) {  // holds still while hidden, so it never rustles
+    const bool leave = !danger || checking(r) == r.hidden;
+    return {leave || fidget ? toward : 0, leave};
+  }
   if (danger && nearby(r) >= 0 && nearby(r) != checking(r)) return {0, true};
   return {toward, false};
 }
 // Plays 100 seeded rounds deciding on what it saw `lateMs` ago, like a kid reacting.
-static int wins(uint32_t lateMs, uint32_t* slowest) {
+static int wins(uint32_t lateMs, uint32_t* slowest, bool fidget = false) {
   const uint32_t lag = lateMs / STEP_MS + 1;
   std::vector<Round> seen(lag);
   int won = 0;
@@ -124,7 +171,7 @@ static int wins(uint32_t lateMs, uint32_t* slowest) {
     for (uint32_t i = 0; i < lag; i++) seen[i] = r;
     for (uint32_t n = 0; !r.won && !r.caught && r.elapsed < 180000; n++) {
       seen[n % lag] = r;
-      const Choice c = bot(seen[(n + 1) % lag]);
+      const Choice c = bot(seen[(n + 1) % lag], fidget);
       step(r, c.roll, c.action && r.hidden == seen[(n + 1) % lag].hidden);
     }
     if (r.won) { won++; *slowest = r.elapsed > *slowest ? r.elapsed : *slowest; }
@@ -132,11 +179,11 @@ static int wins(uint32_t lateMs, uint32_t* slowest) {
   return won;
 }
 static void winnable() {
-  uint32_t quick = 0, late = 0;
-  const int sharp = wins(0, &quick), kid = wins(700, &late);
-  printf("pumpkin bot: %d/100 wins (slowest %us), 0.7s late: %d/100 (slowest %us)\n", sharp,
-         (unsigned)(quick / 1000), kid, (unsigned)(late / 1000));
-  CHECK(sharp >= 95 && kid >= 90);
+  uint32_t quick = 0, late = 0, fidgety = 0;
+  const int sharp = wins(0, &quick), kid = wins(700, &late), shaky = wins(0, &fidgety, true);
+  printf("pumpkin bot: %d/100 wins (slowest %us), 0.7s late: %d/100 (slowest %us), fidgety: %d/100 (slowest %us)\n",
+         sharp, (unsigned)(quick / 1000), kid, (unsigned)(late / 1000), shaky, (unsigned)(fidgety / 1000));
+  CHECK(sharp >= 95 && kid >= 90 && shaky >= 90);
 }
 static void variety() {
   int moves[4] = {}, spots[3] = {}, followed = 0, picks = 0;
@@ -233,6 +280,13 @@ static void results() {
   lost.tap(); CHECK(lost.at("pumpkin_lost"));
   lost.wait(500); lost.tap(); CHECK(lost.at("pumpkin_play"));
   CHECK(lost.game.round().elapsed == 0 && lost.game.round().exposure == 0);
+  Run haunted; haunted.start(); haunted.wait(500); haunted.tap(34, 42); haunted.frame();
+  CHECK(haunted.game.round().ghostUsed);
+  while (haunted.at("pumpkin_play")) haunted.frame();
+  haunted.wait(2200); CHECK(haunted.at("pumpkin_lost"));
+  haunted.wait(500); haunted.tap(); CHECK(haunted.at("pumpkin_play") && !haunted.game.round().ghostUsed);
+  haunted.wait(500); haunted.tap(34, 42); haunted.frame();
+  CHECK(haunted.game.round().ghostUsed);  // a new round has a new ghost
   Run won; won.start();
   for (int i = 0; i < 18000 && won.at("pumpkin_play"); i++) {
     const Choice c = bot(won.game.round());
@@ -278,12 +332,45 @@ static void auditText() {
     CHECK(gfx::inCircle(b.x, b.y + b.h - 1) && gfx::inCircle(b.x + b.w - 1, b.y + b.h - 1));
   }
 }
+// The ghost sprite, bobbed down 1 px, stays inside its tap box {22,30,24,24} and the glass.
+static void ghostSprite() {
+  const int left = 34 - ghost::W / 2;
+  for (int y = 0; y < ghost::H; y++) for (int x = 0; x < ghost::W; x++) {
+    if (ghost::PX[y * ghost::W + x] == ghost::CLEAR) continue;
+    for (int top : {31, 32}) {
+      const int px = left + x, py = top + y;
+      CHECK(px >= 22 && px < 46 && py >= 30 && py < 54 && gfx::inCircle(px, py));
+    }
+  }
+}
 static void crispBlocks() {
   bool crisp = true;
   for (int y = 0; y < 480; y += 3) for (int x = 0; x < 480; x += 3)
     for (int dy = 0; dy < 3; dy++) for (int dx = 0; dx < 3; dx++)
       crisp = crisp && pixels[y * 480 + x] == pixels[(y + dy) * 480 + x + dx];
   CHECK(crisp);
+}
+// Only the play label sits on row 49. It clears the ghost's tap box {22,30,24,24} while the ghost can be
+// tapped (centre x 92) and centres once it's used, off Grandma's glasses.
+static void labelRow() {
+  gfx565::target(pixels); gfx::textLogEnabled = true;
+  for (bool ready : {true, false}) {
+    for (int cue = 0; cue < 8; cue++) {
+      View v; v.page = Page::Play; v.ghostReady = ready; v.hidden = cue < 4 ? 1 : -1; v.x = SPOTS[1];
+      v.rustling = cue == 0 || cue == 1; v.heard = cue == 0 || cue == 2; v.exposure = cue == 3 || cue == 4 ? 0.5f : 0;
+      v.distract = cue == 5 ? 100 : 0; v.warning = cue == 6; v.checking = cue == 6 ? 2 : -1; v.doorOpen = cue == 7;
+      gfx::textLogReset(); paint::draw(v);
+      int found = 0;
+      for (int i = 0; i < gfx::textLogCount; i++) {
+        const auto b = gfx::textLog[i];
+        if (b.y != 49) continue;
+        found++;
+        CHECK(ready ? b.x >= 46 && 2 * b.x + b.w == 183 : 2 * b.x + b.w == 159);
+      }
+      CHECK(found == 1);
+    }
+  }
+  gfx::textLogEnabled = false;
 }
 static void renderPages() {
   gfx565::target(pixels); gfx::textLogEnabled = true;
@@ -311,6 +398,21 @@ static void renderPages() {
     gfx::textLogReset(); paint::draw(v); auditText(); crispBlocks();
     v.page = Page::Won; gfx::textLogReset(); paint::draw(v); auditText(); crispBlocks();
   }
+  for (int quip = 0; quip < QUIPS; quip++) {  // every ending line fits the glass
+    for (Page page : {Page::Catch, Page::Lost, Page::Won}) {
+      View v; v.page = page; v.quip = (uint8_t)quip;
+      gfx::textLogReset(); paint::draw(v); auditText(); crispBlocks();
+    }
+  }
+  for (uint32_t distract : {0u, 100u, 700u, 1400u}) {  // the ghost, its crash, rustle and heard
+    View v; v.page = Page::Play; v.ghostReady = distract == 0; v.distract = distract; v.animationMs = distract;
+    v.searching = distract == 0; v.warning = distract == 100;
+    gfx::textLogReset(); paint::draw(v); auditText(); crispBlocks();
+    for (int spot = 0; spot < 3; spot++) {
+      v.hidden = spot; v.x = SPOTS[spot]; v.rustling = true; v.heard = spot == 1;
+      gfx::textLogReset(); paint::draw(v); auditText(); crispBlocks();
+    }
+  }
   View v; v.page = Page::Calibrate; v.ready = true; v.starting = true;
   gfx::textLogReset(); paint::draw(v); auditText();
   v.page = Page::Icing;
@@ -320,6 +422,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); grips(); calibration(); gatesAndHome(); results(); heldAcrossPages(); clocks(); renderPages();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

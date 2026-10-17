@@ -65,7 +65,7 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
 	$(PY) tools/pumpkin_goldens.py
-	$(PY) games/pumpkin-hide-seek/tools/pie.py --check
+	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
@@ -116,7 +116,7 @@ art:
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py
-	python3 games/pumpkin-hide-seek/tools/pie.py
+	python3 games/pumpkin-hide-seek/tools/gpt_art.py
 	node $(NODE_ART)
 
 webemu: snap

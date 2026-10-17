@@ -1,4 +1,5 @@
 #include "render.h"
+#include "ghost.h"
 #include "pie.h"
 #include "rules.h"
 #include "gfx565.h"
@@ -12,7 +13,7 @@ constexpr uint16_t INK=rgb(0x201d32),WALL=rgb(0x463451),PURPLE=rgb(0x815573),LIL
 constexpr uint16_t WOOD=rgb(0x925743),FLOOR=rgb(0x633e43),ORANGE=rgb(0xf58b32),RUST=rgb(0xb74f30);
 constexpr uint16_t GOLD=rgb(0xffc875),CREAM=rgb(0xffedc2),SAGE=rgb(0x87a878),GREEN=rgb(0x49674d);
 constexpr uint16_t NIGHT=rgb(0x263449),BLUE=rgb(0x53637a),SKIN=rgb(0xe6b79d),GREY=rgb(0xb6acb4),BEAM=rgb(0x997752);
-constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops only
+constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops
 void box(int x,int y,int w,int h,uint16_t c) { gfx565::rect(x*3,y*3,w*3,h*3,c); }
 void oval(int x,int y,int rx,int ry,uint16_t c) {
   for(int dy=-ry;dy<=ry;++dy) {
@@ -44,17 +45,17 @@ int glyph(char c) {
  if(c=='&') return 38;
  return 39;
 }
-void text(int y,const char* s,uint16_t color,int scale=1) {
- int width=static_cast<int>(std::strlen(s))*6*scale-scale,x=(160-width)/2;
+void text(int y,const char* s,uint16_t color,int scale=1,int cx=80) {
+ int width=static_cast<int>(std::strlen(s))*6*scale-scale,x=(2*cx-width)/2;
  uint16_t bg=gfx565::fb[(y*3)*480+x*3];
  if(gfx::textLogEnabled&&gfx::textLogCount<64)
   gfx::textLog[gfx::textLogCount++]={int16_t(x),int16_t(y),int16_t(width),int16_t(7*scale),gfx565::rgb888(color),gfx565::rgb888(bg),true};
  for(int n=0;s[n];++n) for(int row=0;row<7;++row) for(int col=0;col<5;++col)
   if(GLYPHS[glyph(s[n])][row]&(16>>col)) box(x+n*6*scale+col*scale,y+row*scale,scale,scale,color);
 }
-void label(int y,const char* s) {
+void label(int y,const char* s,int cx=80) {
  int w=static_cast<int>(std::strlen(s))*6+7;
- box((160-w)/2,y-3,w,13,INK); text(y,s,CREAM);
+ box((2*cx-w)/2,y-3,w,13,INK); text(y,s,CREAM,1,cx);
 }
 void button(const char* s) {
  box(40,119,80,24,INK); box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
@@ -74,10 +75,57 @@ void candyCorn(int x,int y,bool filled) {
 // The window sits right of the door; its frame starts at x=23 so it clears the glass.
 void window() {
  box(23,30,30,40,INK); box(25,32,26,36,WOOD); box(28,35,20,30,NIGHT);
- oval(40,43,6,6,CREAM); oval(43,41,5,5,NIGHT);
- box(31,40,1,1,GOLD); box(44,57,1,1,CREAM); box(33,59,2,1,CREAM);
+ oval(43,58,4,4,CREAM); oval(45,57,3,3,NIGHT);  // the moon, in the lower right pane: the ghost has the upper left
+ box(45,38,1,1,CREAM); box(31,56,1,1,GOLD); box(32,61,2,1,CREAM);
  box(37,34,2,32,WOOD); box(27,50,22,2,WOOD); box(21,67,34,4,INK);
  box(23,67,30,2,GOLD); box(20,31,5,35,PURPLE); box(51,31,5,35,PURPLE);
+}
+// The GPT-drawn ghost at the window, centred in its once-a-round tap box {22,30,24,24}. It bobs while it can
+// be tapped (lively: in play) and holds still off play, where taps do nothing. Once used it is a two-tone
+// silhouette in the night colours, far away and plainly not a button.
+void windowGhost(bool ready,bool lively,uint32_t tick) {
+ const int left=34-ghost::W/2,top=31+(ready&&lively?int(tick/400%2):0);
+ for(int y=0;y<ghost::H;++y) for(int x=0;x<ghost::W;++x) {
+  const uint8_t c=ghost::PX[y*ghost::W+x];
+  if(c==ghost::CLEAR) continue;
+  const uint16_t color=rgb(ghost::COLORS[c]);
+  box(left+x,top+y,1,1,ready?color:color==INK?NIGHT:BLUE);
+ }
+}
+void teacup(int x,int y) {
+ box(x,y,12,9,INK); box(x+1,y+1,10,7,CREAM); box(x+3,y+3,6,2,LILAC); box(x+2,y+1,8,1,GOLD);
+ box(x+12,y+1,3,1,INK); box(x+12,y+6,3,1,INK); box(x+14,y+2,1,4,INK);
+}
+// Chunky eight-spoke starburst where the cup hit the floor, pulsing while the crash is fresh.
+void burst(int x,int y,uint32_t tick) {
+ int s=8+int(tick/100%2)*3;
+ for(int pass=0;pass<2;++pass) for(int k=0;k<8;++k) {
+  int len=k%2?s-2:s; float a=float(k)*0.7854f+0.3927f*float(tick/100%2);
+  for(int t=3;t<=len;++t) {
+   int px=x+int(std::lround(t*std::cos(a))),py=y+int(std::lround(t*std::sin(a)));
+   if(pass==0) box(px-1,py-1,3,3,INK); else box(px,py,1,1,k%2?GOLD:CREAM);
+  }
+ }
+ oval(x,y,4,4,INK); oval(x,y,3,3,GOLD); oval(x,y,1,1,CREAM);
+}
+// Grandma's teacup on a shelf at the right wall. The ghost tips it off (distract: slide, fall, crash);
+// the shards stay on the floor for the rest of the round.
+void shelf(const View& v) {
+ box(100,40,22,3,INK); box(101,41,20,1,WOOD); box(103,43,3,3,INK); box(116,43,3,3,INK);
+ int e=v.distract?int(DISTRACT_MS-v.distract):v.ghostReady?0:int(DISTRACT_MS);
+ int x=101-std::min(e,300)/50,y=31+std::max(0,std::min(e-300,400))*57/400;
+ if(e<700) { teacup(x,y); return; }
+ if(v.distract) burst(104,86,v.animationMs);
+ box(94,92,5,3,INK); box(95,92,3,2,CREAM); box(96,93,1,1,LILAC); box(101,94,6,3,INK); box(102,94,4,2,CREAM);
+ box(103,95,2,1,LILAC); box(108,91,4,4,INK); box(109,91,2,3,CREAM); box(113,93,3,1,INK); box(115,91,1,3,INK);
+}
+// A few rustle marks beside the furniture the hidden pumpkin is shaking.
+void rustleMarks(int spot,uint32_t tick) {
+ constexpr int Y[]={62,72,58};
+ int cx=static_cast<int>(SPOTS[spot]),p=int(tick/120%2)*2,y=Y[spot];
+ for(int s=spot==0?1:-1;s<=1;s+=2) {
+  int x=cx+s*(18+p); box(x,y,1,4,CREAM); box(x+s*2,y-3,1,3,CREAM); box(x+s*2,y+5,1,3,CREAM);
+ }
 }
 // The door at the left wall, x 4..17, y 57..100: the lane ends here (DOOR_X=24).
 void door(bool open,uint32_t tick) {
@@ -105,25 +153,29 @@ void room(bool doorOpen,uint32_t tick) {
  oval(80,108,68,18,INK); oval(80,106,65,16,PURPLE); oval(80,106,57,12,LILAC); oval(80,106,52,10,PURPLE);
  for(int x=33;x<132;x+=11) box(x,105,4,2,LILAC);
 }
-void chair(bool highlight) {
- box(21,59,30,39,INK); box(24,61,24,27,PURPLE); box(26,63,20,2,LILAC);
- box(27,69,2,2,LILAC); box(42,69,2,2,LILAC); box(34,78,2,2,LILAC);
- box(18,80,7,17,INK); box(20,82,3,12,LILAC); box(48,80,7,17,INK); box(50,82,3,12,LILAC);
- box(23,90,26,7,LILAC); box(24,97,4,8,INK); box(45,97,4,8,INK);
- if(highlight) box(25,94,22,2,GOLD);
+void chair(bool highlight,int dx) {
+ auto b=[dx](int x,int y,int w,int h,uint16_t c) { box(x+dx,y,w,h,c); };
+ b(21,59,30,39,INK); b(24,61,24,27,PURPLE); b(26,63,20,2,LILAC);
+ b(27,69,2,2,LILAC); b(42,69,2,2,LILAC); b(34,78,2,2,LILAC);
+ b(18,80,7,17,INK); b(20,82,3,12,LILAC); b(48,80,7,17,INK); b(50,82,3,12,LILAC);
+ b(23,90,26,7,LILAC); b(24,97,4,8,INK); b(45,97,4,8,INK);
+ if(highlight) b(25,94,22,2,GOLD);
 }
-void table(bool highlight) {
- box(61,78,38,7,INK); box(63,79,34,3,WOOD); box(65,85,4,20,INK); box(91,85,4,20,INK);
- box(67,85,2,17,WOOD); box(91,85,2,17,WOOD); box(73,76,15,2,CREAM);
- box(77,69,6,7,INK); box(78,70,4,5,GOLD); box(83,70,3,4,INK);
- if(highlight) box(70,83,20,2,GOLD);
+void table(bool highlight,int dx) {
+ auto b=[dx](int x,int y,int w,int h,uint16_t c) { box(x+dx,y,w,h,c); };
+ b(61,78,38,7,INK); b(63,79,34,3,WOOD); b(65,85,4,20,INK); b(91,85,4,20,INK);
+ b(67,85,2,17,WOOD); b(91,85,2,17,WOOD); b(73,76,15,2,CREAM);
+ b(77,69,6,7,INK); b(78,70,4,5,GOLD); b(83,70,3,4,INK);
+ if(highlight) b(70,83,20,2,GOLD);
 }
-void plant(bool highlight) {
- box(121,63,4,29,GREEN);
- oval(114,71,8,4,INK); oval(114,70,7,3,SAGE); oval(130,65,8,4,INK); oval(130,64,7,3,GREEN);
- oval(121,58,5,9,INK); oval(121,58,3,7,SAGE); oval(132,78,8,4,INK); oval(131,77,7,3,SAGE);
- box(111,87,25,6,INK); box(113,89,21,3,GOLD); box(115,93,17,12,INK); box(117,93,13,10,RUST);
- box(119,94,2,7,ORANGE); if(highlight) box(115,89,17,2,CREAM);
+void plant(bool highlight,int dx) {
+ auto b=[dx](int x,int y,int w,int h,uint16_t c) { box(x+dx,y,w,h,c); };
+ auto o=[dx](int x,int y,int rx,int ry,uint16_t c) { oval(x+dx,y,rx,ry,c); };
+ b(121,63,4,29,GREEN);
+ o(114,71,8,4,INK); o(114,70,7,3,SAGE); o(130,65,8,4,INK); o(130,64,7,3,GREEN);
+ o(121,58,5,9,INK); o(121,58,3,7,SAGE); o(132,78,8,4,INK); o(131,77,7,3,SAGE);
+ b(111,87,25,6,INK); b(113,89,21,3,GOLD); b(115,93,17,12,INK); b(117,93,13,10,RUST);
+ b(119,94,2,7,ORANGE); if(highlight) b(115,89,17,2,CREAM);
 }
 void pumpkinFace(int x,int y,int squash,bool peek) {
  int ry=peek?6:10-squash,rx=peek?9:12+squash;
@@ -141,8 +193,13 @@ void pointArm(int x,int spot) {
  int ex=x-34,ey=66+fall*4;
  box(ex-1,ey-1,6,5,INK); box(ex,ey,4,3,SKIN); box(ex-6,ey-2,6,7,INK); box(ex-5,ey-1,3,5,GOLD);
 }
-void grandma(int lean,uint32_t tick,int point) {
- int x=141-lean,bob=(tick/300)%2,look=point>=0?1:0;
+// She leans in on Catch, points when checking a spot, and looks over at the crash during the distraction.
+void grandma(const View& v) {
+ int lean=v.page==Page::Catch?int(v.pageMs/50):0,point=v.checking,x=141-lean,bob=(v.animationMs/300)%2;
+ int look=point>=0||v.distract?1:0;
+ if(v.heard) {  // "!" beside her head: she heard the rustle
+  oval(x-13,40,5,6,INK); box(x-9,41,3,2,INK); oval(x-13,40,3,4,CREAM); box(x-13,37,1,4,INK); box(x-13,42,1,1,INK);
+ }
  oval(x+6,44,6,6,INK); oval(x+6,43,4,4,GREY); oval(x,53,10,12,INK); oval(x,52,8,10,SKIN);
  box(x-7,43,13,5,GREY); box(x-10,50,9,6,INK); box(x+1,50,8,6,INK);
  box(x-8,51,5,3,CREAM); box(x+3,51,4,3,CREAM); box(x-1,52,3,1,INK);
@@ -185,13 +242,20 @@ void light(const View& v) {
  }
  oval(static_cast<int>(v.beamX),107,22,4,GOLD);
 }
+// The three hiding spots; the one hiding a rustling pumpkin jiggles 1 px.
+void furniture(const View& v) {
+ int j=v.rustling?int(v.animationMs/80%2):0;
+ chair(v.nearby==0,v.hidden==0?j:0); table(v.nearby==1,v.hidden==1?j:0); plant(v.nearby==2,v.hidden==2?j:0);
+ if(v.rustling&&v.hidden>=0) rustleMarks(v.hidden,v.animationMs);
+}
 void scene(const View& v) {
- room(v.doorOpen,v.animationMs); light(v); chair(v.nearby==0); table(v.nearby==1); plant(v.nearby==2); candies(v);
- if(v.searching||v.warning||v.page==Page::Catch) grandma(v.page==Page::Catch?int(v.pageMs/50):0,v.animationMs,v.checking);
+ room(v.doorOpen,v.animationMs); windowGhost(v.ghostReady,v.page==Page::Play,v.animationMs); light(v); shelf(v); furniture(v); candies(v);
+ // She also turns to look at the crash, so the kid sees what the ghost did (no beam: she is resting).
+ if(v.searching||v.warning||v.page==Page::Catch||v.distract) grandma(v);
  if(v.checking>=0&&v.warning) ask(v.checking,v.animationMs);
  if(v.page==Page::Won) return;
  int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
- if(v.shiver) { x+=int(v.animationMs/60%2); sweat(x,v.animationMs); }
+ if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
  pumpkinFace(x,v.hidden>=0?101:99,squash,v.hidden>=0);
  if(v.hidden>=0) box(x-10,107,21,2,INK);
  sparkle(x,v.sinceCandy);
@@ -211,20 +275,32 @@ void candyHud(uint8_t got) {
  box(60,32,40,14,INK); box(62,34,36,10,PURPLE);
  for(int i=0;i<CANDIES;++i) candyCorn(68+12*i,39,got>>i&1);
 }
+// The urgent cues, most urgent first. A rustle outranks the crash and PHEW!, since the kid's own tilt is
+// the one thing to fix.
+const char* alarm(const View& v) {
+ if(v.exposure>0) return v.hidden>=0?"RUN AWAY!":"QUICK! HIDE!";
+ if(v.heard&&v.hidden>=0&&v.rustling) return "SHE HEARD YOU!";
+ if(v.rustling) return "SHH!";
+ if(v.distract) return "WHAT WAS THAT?";
+ if(v.phew) return "PHEW!";
+ return nullptr;
+}
 const char* playLabel(const View& v) {
  constexpr const char* ASK[]={"THE CHAIR?","THE TABLE?","THE PLANT?"};
- if(v.exposure>0) return "QUICK! HIDE!";
- if(v.phew) return "PHEW!";
+ if(const char* s=alarm(v)) return s;
  if(v.checking>=0&&v.warning) return ASK[v.checking];
  if(v.warning) return "GRANDMA!";
  if(v.searching) return "HMM?";
+ if(v.heard&&v.hidden>=0) return "SHE HEARD YOU!";
  if(v.hidden>=0) return "HIDDEN!";
  if(v.doorOpen) return "TO THE DOOR!";
  return nullptr;
 }
 void play(const View& v) {
  candyHud(v.got);
- if(const char* s=playLabel(v)) label(49,s);
+ // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
+ // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
+ if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
  button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER");
 }
 void icing(uint32_t ms) {
@@ -236,7 +312,7 @@ void icing(uint32_t ms) {
   box(x,rim,1,depth,ORANGE); box(x,rim+depth-2,1,3,GOLD);
  }
 }
-// GPT-drawn, converted by tools/pie.py; it sits just under the YOU LOST plate.
+// GPT-drawn, converted by tools/gpt_art.py; it sits just under the YOU LOST plate.
 void pie() {
  const int left=80-pie::W/2,top=59;
  for(int y=0;y<pie::H;++y) for(int x=0;x<pie::W;++x) {
@@ -244,12 +320,17 @@ void pie() {
   if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb(pie::COLORS[c]));
  }
 }
+constexpr const char* CATCH_QUIP[QUIPS]={"THERE YOU ARE!","FOUND YOU!","PEEKABOO!","GOTCHA DEAR!"};
+constexpr const char* LOST_QUIP[QUIPS]={"OH MY! PIE!","PIE TIME!","SWEET PUMPKIN!","YUM YUM!"};
+constexpr const char* WON_QUIP[QUIPS][2]={{"YOU ESCAPED!","WITH THE CANDY"},{"SNEAKY PUMPKIN!","CANDY IS YOURS"},
+ {"FREEDOM!","AND ALL THE CANDY"},{"YOU DID IT!","GRANDMA IS PUZZLED"}};
 void endPage(const View& v) {
+ int q=v.quip%QUIPS;
  if(v.page==Page::Lost) {
   gfx565::clear(ORANGE); icing(1600); pie(); box(30,39,100,19,INK); text(42,"YOU LOST",CREAM,2);
-  label(108,"OH MY! PIE!"); button("TRY AGAIN");
+  label(108,LOST_QUIP[q]); button("TRY AGAIN");
  } else {
-  label(37,"YOU ESCAPED!"); label(51,"WITH THE CANDY"); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
+  label(37,WON_QUIP[q][0]); label(51,WON_QUIP[q][1]); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
   box(73,88,14,4,INK); box(75,89,10,2,CREAM); box(79,89,2,2,INK);  // a wide grin over the usual mouth
   for(int x=62;x<=98;x+=18) candyCorn(x,x==80?103:100,true);
   for(int x=32;x<136;x+=22) box(x,62+(x%13),2,3,GOLD);
@@ -265,7 +346,7 @@ void draw(const View& v) {
   case Page::Intro: intro(); break;
   case Page::Calibrate: calibrate(v); break;
   case Page::Play: play(v); break;
-  case Page::Catch: label(38,"THERE YOU ARE!"); break;
+  case Page::Catch: label(38,CATCH_QUIP[v.quip%QUIPS]); break;
   case Page::Icing: icing(v.pageMs); break;
   case Page::Lost: case Page::Won: endPage(v); break;
  }

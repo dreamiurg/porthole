@@ -29,22 +29,24 @@ still builds and runs.
 
 ## Pumpkin Hide & Seek (`apps/porthole/games/pumpkin-hide-seek/`)
 
-Most art is code-drawn in `render.cpp` (box/oval on the 160px grid). The one raster asset, the
-YOU LOST pie, comes from GPT through Codex, with a human picking it:
+Most art is code-drawn in `render.cpp` (box/oval on the 160px grid). The raster assets, the
+YOU LOST pie and the window ghost, come from GPT through Codex, with a human picking them:
 
 1. Generate 3-4 candidates with Codex's built-in image tool, which bills the user's ChatGPT plan
    and needs no API key. Run each in a scratch dir, in parallel:
    `codex exec --skip-git-repo-check --ephemeral -C <scratch> -s workspace-write "Use your built-in
    image generation tool ... flat pure #00FF00 background ... copy the PNG here as a.png"`.
    Ask for large square pixels, a #201d32 outline, no anti-aliasing and Pumpkin's palette hexes;
-   the prompt for the shipped pie is in `tools/pie.py`. If Codex says its configured model "requires
+   the prompts for the shipped assets are in `tools/gpt_art.py`. If Codex says its configured model "requires
    a newer version of Codex", the CLI is stale: ask the user to run `codex update`.
-2. Convert each candidate through the real pipeline and composite it into the real lost screen
-   (draw `View{page=Lost}` with the candidate's `pie.h`). Show the user the converted screens side
+2. Convert each candidate through the real pipeline and composite it into the real screen
+   (e.g. draw `View{page=Lost}` with the candidate's `pie.h`, or a Play view for `ghost.h`). Show the user the converted screens side
    by side with the current one, never the raw GPT images alone, and let them pick or refine.
-3. Commit the chosen PNG as `art/pie.png` and run `make -C apps/porthole art` (`tools/pie.py`
-   rewrites `pie.h`). `make check` runs `tools/pie.py --check` and the goldens; regenerate the
-   goldens with `tools/pumpkin_goldens.py --update` and review `pumpkin_lost.png`.
+3. Commit the chosen PNG under `art/` and run `make -C apps/porthole art` (`tools/gpt_art.py`
+   rewrites every header in its `ASSETS` table; a new asset is one row there). `make check` runs
+   `tools/gpt_art.py --check` and the goldens; regenerate the goldens with
+   `tools/pumpkin_goldens.py --update` and review every screen the asset appears on.
 
-Keep GPT for still set pieces. Animated or posed characters stay code-drawn: generated images
-drift between frames.
+Keep GPT for single-frame art: still set pieces, or a character that only moves as a whole (the
+ghost bobs 1 px). Characters with poses or frames stay code-drawn: generated images drift between
+frames.
