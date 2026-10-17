@@ -92,7 +92,13 @@ repos:
       # arrived from another branch is part of the PR too.
       - id: static-all-files
         name: static checks on every file (CI's static job)
-        entry: env SKIP=no-commit-to-branch,porthole-check,gitleaks pre-commit run --all-files --show-diff-on-failure
+        # It checks the working tree, so it refuses to run on uncommitted changes: what it checks is what you push.
+        # Your own SKIP still applies on top of the hooks CI skips.
+        entry: >-
+          bash -c 'git diff --quiet && git diff --cached --quiet
+          || { echo "Uncommitted changes: commit or stash them first, so this checks what you push."; exit 1; };
+          SKIP="no-commit-to-branch,porthole-check,gitleaks${SKIP:+,$SKIP}"
+          pre-commit run --all-files --show-diff-on-failure'
         language: system
         pass_filenames: false
         always_run: true
