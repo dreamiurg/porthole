@@ -30,7 +30,8 @@ game ever punishes the kid for being away) are hard rules, not style.
    struct, and never rename an NVS namespace that shipped. Pets Club keeps the
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
-   lost. No personal data: no real names, no analytics, no network calls during play.
+   lost. No personal data: no real names, no analytics. Nothing sent over the network carries anything
+   about the kid; the only traffic is the daily firmware update check, its download, and a clock sync.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible.
