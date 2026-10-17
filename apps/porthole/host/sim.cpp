@@ -4,11 +4,14 @@
 //   sim                      interactive (SDL)
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
 //                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
-//                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf
+//                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf | reboot | sys WHAT [ARG]
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
 //                            | tilt X Y Z | shake | perf
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
-// few frames, perf prints the average update and render time per frame since the last perf.
+// few frames, perf prints the average update and render time per frame since the last perf. reboot is a power cycle
+// (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
+// it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed. `debug` adds its
+// sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/sys_last. A reboot keeps lastCheck (the firmware persists it).
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -44,6 +47,49 @@ struct FileStore : shell::Store {
   void erase(const char* ns, const char* key) override { remove(path(ns, key)); }
 };
 
+// Canned wireless updates: the state is whatever a `sys` command last set. A local build, like the firmware's: "dev"
+// never shows the "something new" card, so every scenario that does not ask for it starts as before.
+static uint32_t now();
+struct SimSystem : shell::System {
+  char version[16] = "dev"; shell::UpdStatus st; shell::Channel ch = shell::CH_STABLE;
+  bool wifi = true, rebootDue = false; int slot = 0, checks = 0, restarts = 0;
+  void info(shell::SysInfo& o) override {
+    o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
+    o.heapFree = 187392; o.sd = true; o.wifiSaved = wifi; snprintf(o.ssid, sizeof o.ssid, "%s", wifi ? "Home-Network-5G-Upstairs" : "");
+  }
+  shell::UpdStatus status() override { return st; }
+  void checkNow() override { checks++; st.state = wifi ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now(); }
+  void restart() override { restarts++; rebootDue = true; }   // after this frame: not from inside Shell::update
+  shell::Channel channel() override { return ch; }
+  void setChannel(shell::Channel c) override {   // the contract in shell/system.h
+    ch = c;
+    if (st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING || st.state == shell::UP_READY) return;
+    st.state = shell::UP_IDLE; st.available[0] = 0;
+  }
+  void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
+    if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
+    const uint32_t last = st.lastCheck;
+    st = {}; st.lastCheck = last;
+  }
+  void set(const char* what, const char* arg) {
+    if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
+    else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
+    else if (!strcmp(what, "nowifi")) { wifi = false; st.state = shell::UP_NO_WIFI; }
+    else if (!strcmp(what, "current")) { st.state = shell::UP_CURRENT; snprintf(st.available, sizeof st.available, "%s", version); }
+    else if (!strcmp(what, "download")) { st.state = shell::UP_DOWNLOADING; st.pct = (uint8_t)atoi(arg); }
+    else if (!strcmp(what, "ready")) { st.state = shell::UP_READY; st.pct = 100; }
+    else if (!strcmp(what, "failed")) st.state = shell::UP_FAILED;
+    else { fprintf(stderr, "unknown command: sys %s\n", what); return; }
+    if (strcmp(what, "version") && strcmp(what, "newest")) st.lastCheck = now();
+  }
+  void print() const {
+    static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
+    static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
+    printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
+           ch == shell::CH_BETA ? "beta" : "stable", S[st.state], checks, restarts, (unsigned long)st.lastCheck);
+  }
+};
+
 static Game g_pets;
 static biscuit::Game g_biscuit;
 static marble::Game g_marble;
@@ -51,6 +97,7 @@ static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
 static FileStore g_store;
+static SimSystem g_sys;
 static Shell g_shell;
 static InputTracker g_tracker;
 static uint32_t g_ms = 0, g_epoch = 0;
@@ -81,7 +128,8 @@ static void boot() {
     const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
     assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
   }
-  g_shell.begin(g_store, APPS, n);
+  g_sys.powerOn();
+  g_shell.begin(g_store, APPS, n, &g_sys);
 }
 static void reset() { wipe(); boot(); }
 
@@ -134,6 +182,7 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
   g_shell.render();
   g_renderMs += since(t); g_perfFrames++;
   if (!g_hires) upscale(g_fb565[g_shown], g_pal565[g_shell.tint()]);
+  if (g_sys.rebootDue) { g_sys.rebootDue = false; boot(); }   // restart(): the board reboots between frames
 }
 // Clamped to the sensor's +-4 g full scale: nothing past it ever reaches Input on the device.
 static int16_t mg(const char* s) { int v = atoi(s); return (int16_t)(v < -4000 ? -4000 : v > 4000 ? 4000 : v); }
@@ -260,7 +309,7 @@ static const Named COMMANDS[] = {
   {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), c); }},
   {"app", [](Finger&, const char* a, const char*, const char*) { if (!g_shell.openApp(a)) printf("app %s: not opened\n", a); }},
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
-  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); }},
+  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); }},
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
   {"dbg", [](Finger&, const char* a, const char*, const char*) { g_shell.debugCmd(a); }},
   {"screen", [](Finger&, const char*, const char*, const char*) { printf("screen=%s\n", g_shell.screenName()); }},
@@ -270,6 +319,8 @@ static const Named COMMANDS[] = {
   {"tilt", [](Finger&, const char* a, const char* b, const char* c) { setTilt(a, b, c); }},
   {"shake", [](Finger& f, const char*, const char*, const char*) { g_shakeFrames = 6; while (g_shakeFrames) step(f.down, f.x, f.y); }},
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
+  {"reboot", [](Finger& f, const char*, const char*, const char*) { boot(); f.down = false; }},
+  {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
 };
 static void runScript(const char* path) {
   FILE* f = fopen(path, "r"); if (!f) { perror(path); exit(1); }

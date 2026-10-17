@@ -8,13 +8,15 @@
 using namespace gfx;
 using shell::Record;
 
-void Shell::begin(shell::Store& st, App* const* apps, int nApps) {
-  st_ = &st; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
+void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys) {
+  st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
-  if (prof_.count()) go(SH_PICK); else startNew();   // a fresh device goes straight to making the first profile
+  if (sys_) sys_->info(info_);
+  if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
 }
+void Shell::land() { if (prof_.count()) go(SH_PICK); else startNew(); }   // a fresh device goes straight to making the first profile
 uint32_t Shell::lastSeen() const {
   uint32_t t = 0;
   for (int id = 0; id < MAX_PROFILES; id++) if (prof_.used[id] && prof_.rec[id].lastPlayed > t) t = prof_.rec[id].lastPlayed;
@@ -24,13 +26,15 @@ void Shell::go(Screen s) {
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   gate_.shown(ms_);
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
+  if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
 void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toastUntil_ = ms_ + 1500; }
 
 using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
-    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
+    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
+    &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   activity_.step(in, in.down, ms);
@@ -40,7 +44,8 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
-    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest, &Shell::drawApp};
+    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
+    &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
@@ -139,6 +144,7 @@ void Shell::budgetTick() {   // per profile, across every game
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
+  if (titleHeld()) { go(SH_SYS_INFO); return; }
   int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
@@ -292,7 +298,7 @@ void Shell::updateDelete() {
   if (!(in_.down && in_.hit(h.x, h.y, h.w, h.h) && began && in_.heldMs >= HOLD_MS)) return;
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
-  if (prof_.count()) go(SH_PICK); else startNew();
+  land();
 }
 void Shell::drawDelete() {
   clear(C_NAVY);
@@ -395,7 +401,7 @@ void Shell::clearPin(int id) {
   prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
 }
 const char* Shell::screenName() const {
-  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest"};
+  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates"};
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
 void Shell::debugPrint() {
