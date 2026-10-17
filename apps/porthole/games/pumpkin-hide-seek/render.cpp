@@ -1,4 +1,5 @@
 #include "render.h"
+#include "pie.h"
 #include "rules.h"
 #include "gfx565.h"
 #include <algorithm>
@@ -235,12 +236,13 @@ void icing(uint32_t ms) {
   box(x,rim,1,depth,ORANGE); box(x,rim+depth-2,1,3,GOLD);
  }
 }
+// GPT-drawn, converted by tools/pie.py; it sits just under the YOU LOST plate.
 void pie() {
- oval(80,99,59,17,INK); oval(80,97,55,15,BLUE); oval(80,88,51,19,INK);
- oval(80,86,48,17,RUST); oval(80,81,48,16,GOLD);
- for(int x=36;x<=124;x+=8) oval(x,79+std::abs(80-x)/7,4,4,ORANGE);
- oval(80,78,43,14,ORANGE); oval(80,75,38,12,CREAM);
- oval(80,70,9,6,CREAM); oval(80,66,5,5,CREAM); box(78,62,4,3,GOLD); box(76,75,8,2,GOLD);
+ const int left=80-pie::W/2,top=59;
+ for(int y=0;y<pie::H;++y) for(int x=0;x<pie::W;++x) {
+  const uint8_t c=pie::PX[y*pie::W+x];
+  if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb(pie::COLORS[c]));
+ }
 }
 void endPage(const View& v) {
  if(v.page==Page::Lost) {

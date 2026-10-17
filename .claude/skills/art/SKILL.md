@@ -26,3 +26,25 @@ still builds and runs.
 4. The launcher icon (`generated/icon.h`, from `tools/icon.py`) follows the indexed style of `tools/shell_art.py`, not the RGB565 scenes -- `App::icon()` is always an indexed `gfx::Sprite` regardless of the game's own surface.
 5. Fonts are a separate, one-time conversion: `generated/fonts.h` comes from the four bundled LVGL `.c` font files via `apps/porthole/tools/fontconv.py` (a regex over the C arrays; `--game` picks the game), not from `art.js`. Regenerating needs `npx lv_font_conv@1.5.3` and is only necessary if a glyph is ever added -- the content gate (see the `content` skill) rejects any glyph outside the existing set, so this should be rare.
 6. Confirm nothing else broke: rerun with `--check` (item 2) plus `make -C apps/porthole test && make -C apps/porthole snap`.
+
+## Pumpkin Hide & Seek (`apps/porthole/games/pumpkin-hide-seek/`)
+
+Most art is code-drawn in `render.cpp` (box/oval on the 160px grid). The one raster asset, the
+YOU LOST pie, comes from GPT through Codex, with a human picking it:
+
+1. Generate 3-4 candidates with Codex's built-in image tool, which bills the user's ChatGPT plan
+   and needs no API key. Run each in a scratch dir, in parallel:
+   `codex exec --skip-git-repo-check --ephemeral -C <scratch> -s workspace-write "Use your built-in
+   image generation tool ... flat pure #00FF00 background ... copy the PNG here as a.png"`.
+   Ask for large square pixels, a #201d32 outline, no anti-aliasing and Pumpkin's palette hexes;
+   the prompt for the shipped pie is in `tools/pie.py`. If Codex says its configured model "requires
+   a newer version of Codex", the CLI is stale: ask the user to run `codex update`.
+2. Convert each candidate through the real pipeline and composite it into the real lost screen
+   (draw `View{page=Lost}` with the candidate's `pie.h`). Show the user the converted screens side
+   by side with the current one, never the raw GPT images alone, and let them pick or refine.
+3. Commit the chosen PNG as `art/pie.png` and run `make -C apps/porthole art` (`tools/pie.py`
+   rewrites `pie.h`). `make check` runs `tools/pie.py --check` and the goldens; regenerate the
+   goldens with `tools/pumpkin_goldens.py --update` and review `pumpkin_lost.png`.
+
+Keep GPT for still set pieces. Animated or posed characters stay code-drawn: generated images
+drift between frames.
