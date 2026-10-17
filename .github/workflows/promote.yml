@@ -35,7 +35,8 @@ jobs:
         run: |
           if [ -z "$TAG" ]; then
             TAG=$(gh release list --limit 100 --json tagName,isPrerelease \
-              --jq '[.[] | select(.isPrerelease and (.tagName | startswith("porthole-v")))][0].tagName // ""')
+              --jq '[.[] | select(.isPrerelease and (.tagName | test("^porthole-v[0-9]+[.][0-9]+[.][0-9]+$")))]
+                    | sort_by(.tagName | ltrimstr("porthole-v") | split(".") | map(tonumber)) | last | .tagName // ""')
           fi
           if ! [[ "$TAG" =~ ^porthole-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::no porthole-vX.Y.Z tag to promote (got '$TAG')"

@@ -35,7 +35,8 @@ The board is not powered overnight, so nothing depends on a night-time window.
   - release-please would put a release PR in front of every beta and commit a changelog to `main`.
 - **No manifest.**
   - Stable: a plain-text `porthole-version.txt` release asset.
-  - Beta: the first `tag_name` in GitHub's releases API.
+  - Beta: `porthole-version.txt` on the rolling `porthole-beta` pre-release, which the release workflow re-points at
+    every new release. (Not the releases API: on the board it turned out not to list releases newest first.)
   - Integrity: HTTPS with the built-in certificate bundle, plus the image's appended SHA256, which `Update.end()`
     checks.
 - **The SD card is optional, with one job:** `/porthole/wifi.txt`. Serial `W` is the other way to set wifi.
@@ -137,8 +138,7 @@ Done when:
   - **Wifi**: saved network and the last result.
   - **Updates**: Stable/Beta switch stored in `"sys"/chan`, running vs available version, last check, **Check now**
     with progress, then **Restart now**.
-- Beta lookup: `api.github.com/repos/dreamiurg/porthole/releases?per_page=1`, with a `User-Agent` header, reading the
-  first `"tag_name":"porthole-v` by string search.
+- Beta lookup: `releases/download/porthole-beta/porthole-version.txt`, the same plain-text read as stable.
 - SD: mount after `board::init()`. If `/porthole/wifi.txt` differs from what's saved, save it.
 - Network calls behind `board::` with host stubs. One playtest scenario across the three screens. 72 px targets
   inside the circle, and Back on every screen.
