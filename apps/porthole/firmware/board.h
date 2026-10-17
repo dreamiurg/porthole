@@ -37,5 +37,8 @@ size_t loadBlob(const char* ns, const char* key, void* data, size_t maxLen);  //
 void eraseBlob(const char* ns, const char* key);
 void eraseNamespace(const char* ns);  // every key in ns
 
+// The optional microSD card (1-bit SDMMC), mounted at SD_MMC's "/sdcard". False with no card. Only after init().
+bool mountSd();
+
 uint32_t freeHeap();
 }  // namespace board
