@@ -91,3 +91,10 @@ jobs:
               --notes "Not a release. Its $APP-version.txt names the newest beta, for boards on the beta channel."
           fi
           gh release upload "$APP-beta" "$APP-version.txt" --clobber
+      - name: Beta channel resolves to this release
+        # What a board on beta does next: read the pointer, then fetch that version's image. Catches a missing or
+        # mismatched asset here instead of on a board.
+        env:
+          APP: ${{ matrix.app }}
+          VERSION: ${{ matrix.version }}
+        run: tools/check_channel.sh "$APP" beta "$VERSION"

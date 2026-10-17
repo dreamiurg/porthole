@@ -127,6 +127,8 @@ You need Python 3.11+, Node 22, a C++17 compiler, and PlatformIO for firmware.
 git clone https://github.com/dreamiurg/porthole.git
 cd porthole
 pip install -r platform/requirements.txt   # PlatformIO Core + the pinned builder deps
+pip install pillow 'gcovr>=8.3'            # make lint (golden screenshots, art checks) and make ci (coverage)
+make hooks                                 # the same checks as CI, run on commit and push
 make check                                 # lint + tests for every app
 ```
 
@@ -145,7 +147,10 @@ The easiest way needs no tools at all: download `<app>-<version>-factory.bin` fr
 [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge, and write the file at
 address `0x0`. This erases the board, saved progress included. To keep saves, write the separate
 parts from `<app>-<version>-web.zip` at the offsets in its `parts.json` (that is what the web
-installer does), or build from source and run `make flash`. Step by step, with pictures of the
+installer does), or build from source and run `make flash`. With esptool, from the unzipped parts:
+`esptool --chip esp32s3 write-flash 0x0 bootloader.bin 0x8000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin`.
+(esptool 4 spells it `write_flash`.) Don't pass `--flash-mode`/`--flash-freq`: they rewrite the bootloader's header, and a mode the board
+can't run (`qio`) leaves it in a watchdog reset loop until the parts are written again without them. Step by step, with pictures of the
 games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
 ### Beta and stable
@@ -156,7 +161,9 @@ Actions, pick **Promote**, and run it with a tag (empty means the highest-versio
 an older tag rolls stable back for boards that have not updated yet; a board never installs an
 older version by itself, so one already on the bad build needs a USB flash. Each release also carries `<app>-<version>-ota.bin`, the app image
 on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves. A rolling
-`<app>-beta` pre-release holds a copy of the newest `<app>-version.txt`; boards on the beta channel read it there.
+`<app>-beta` pre-release holds a copy of the newest `<app>-version.txt`; boards on the beta channel read it there. `tools/check_channel.sh porthole stable|beta`
+resolves a channel the way a board does (version file, then that version's image); the release and
+promote workflows run it after they publish.
 
 ## Make your own app
 

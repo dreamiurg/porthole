@@ -16,6 +16,7 @@ class Console : public Stream {
     // Waits only while a write makes no progress, then drops output until a host reads again: a board on a USB port
     // with no terminal open stalls one write by this much, not every frame. Long enough for a frame dump to drain.
     usb_.setTxTimeoutMs(20);
+    usb_.setTxBufferSize(4096);   // the default 256 B overflows mid-reply (an S answer is ~300 B) and drops bytes
     usb_.begin();
   }
   size_t write(uint8_t c) override { usb_.write(c); return Serial0.write(c); }
