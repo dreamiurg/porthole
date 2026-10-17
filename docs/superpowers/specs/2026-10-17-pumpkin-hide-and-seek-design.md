@@ -72,6 +72,13 @@ Phase 1 gives the pumpkin a reason to move and Grandma some surprises, still in 
   pick a different spot. Every move is announced first; checks get the longest warning.
 - **Near misses:** the hidden pumpkin shivers while the beam passes over it, then PHEW!.
 
-Later phases (not built): hold still while hidden, a ghost friend's distraction, varied
-loss lines and pies, more rooms with one new idea each, and optional stars and hats.
+Later phases (not built yet): more rooms with one new idea each, and optional stars and hats.
+
+## Gameplay update: phase 2 (2026-10-17)
+
+- **Hold still while hidden:** a hard, sustained wiggle rustles the hiding spot (SHH!);
+  Grandma heard it, and her next move checks that spot, with the usual long warning.
+- **Ghost friend:** once a round, tap the ghost at the window to knock something over;
+  Grandma stops what she is doing and goes to look, buying a few safe seconds.
+- **Endings that change:** catch lines, pie captions and escape lines vary per round.
 Exact numbers live in `apps/porthole/games/pumpkin-hide-seek/CLAUDE.md`.

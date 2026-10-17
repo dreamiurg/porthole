@@ -15,7 +15,9 @@ then tap **READY** to set that grip as level. Tilt left and right to roll; near 
 table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
 then out the door on the left. A warning announces each of Grandma's moves: full or fast
 flashlight sweeps, a sweep that turns back, and checks of one hiding spot ("THE TABLE?"),
-when it's time to slip somewhere else. Every round mixes her moves and candy spots. Getting
+when it's time to slip somewhere else. Hold still while hidden: a hard wiggle rustles the
+spot and she comes to check it. Once a round, tap the ghost at the window to knock
+something over and send Grandma off to look. Every round mixes her moves and candy spots. Getting
 spotted reveals a silly pumpkin pie under orange frosting, with **TRY AGAIN** for an
 immediate fresh round.
 

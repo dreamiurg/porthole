@@ -3,7 +3,7 @@
 
 namespace pumpkin {
 namespace {
-constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24};
+constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24}, GHOST = {22, 30, 24, 24};
 bool inside(int x, int y, ui::Box b) {
   return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h;
 }
@@ -25,7 +25,7 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = actionPending_ = false;
+  starting_ = actionPending_ = ghostPending_ = false;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -53,10 +53,11 @@ void Game::calibrate() {
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
   actionPending_ = actionPending_ || action();
+  ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
-    step(round_, tilt.x, actionPending_);
-    actionPending_ = false;
+    step(round_, tilt.x, actionPending_, ghostPending_);
+    actionPending_ = ghostPending_ = false;
     stepMs_ -= STEP_MS;
   }
   if (round_.caught) go(Page::Catch);
@@ -95,6 +96,13 @@ void Game::render() {
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
   v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
+  v.ghostReady = !round_.ghostUsed;
+  // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a tilt left
+  // over from rolling in doesn't flash it.
+  const bool play = page_ == Page::Play;
+  v.distract = play ? round_.distract : 0;
+  v.rustling = play && round_.rustle >= 300; v.heard = play && round_.heard >= 0;
+  v.quip = (uint8_t)(round_.seed % QUIPS);
   paint::draw(v);
 }
 const char* Game::screenName() const {
@@ -107,6 +115,8 @@ void Game::debugPrint() {
          round_.hidden, (unsigned)round_.elapsed, (unsigned)round_.exposure, ready(), starting_);
   printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
          (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
+  printf("ghost=%d distract=%d heard=%d rustle=%d\n", round_.ghostUsed, round_.distract > 0, round_.heard,
+         round_.rustle > 0);
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }

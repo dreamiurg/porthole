@@ -35,7 +35,7 @@ class Game : public App {
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
-  bool starting_ = false, home_ = false, actionPending_ = false;
+  bool starting_ = false, home_ = false, actionPending_ = false, ghostPending_ = false;
   void go(Page page);
   void start();
   void calibrate();
