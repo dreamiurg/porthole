@@ -120,6 +120,8 @@ See the `flash` skill for the PlatformIO-venv Python-dependency caveat and how t
 
 ### Serial commands (`main.cpp` `loop()`, 115200 baud)
 
+They work on either USB-C port: `firmware/console.h` (included by `board.h`) redefines `Serial` as a console that writes to both UART0 (the CH343 "USB to UART" port) and the ESP32-S3's own USB-Serial-JTAG port, and reads from whichever has bytes.
+
 | Command | Effect |
 | --- | --- |
 | `S` | Print the active profile and the stats of every game opened since boot, the open (or last) one last (`Shell::debugPrint()`), plus free heap and current epoch |
