@@ -19,6 +19,7 @@ enum UpdState : uint8_t {
   UP_DOWNLOADING,  // writing the new image into the spare slot; pct is meaningful
   UP_READY,        // downloaded and verified; it starts on the next power-on (or restart())
   UP_FAILED,       // the check or download failed; the running firmware is untouched
+  UP_COUNT,        // not a state: the number of them (tables indexed by UpdState)
 };
 
 struct UpdStatus {
@@ -45,7 +46,9 @@ class System {
   virtual void checkNow() = 0;              // forced check + download in the background, ignoring once-a-day; returns at once
   virtual void restart() = 0;               // reboot; starts a READY update
   virtual Channel channel() = 0;
-  virtual void setChannel(Channel c) = 0;   // persisted; takes effect at the next check
+  // Persisted; takes effect at the next check. Implementations clear `available` and return to UP_IDLE (unless busy
+  // or READY): the old channel's result says nothing about the new one.
+  virtual void setChannel(Channel c) = 0;
 
  protected:
   ~System() = default;
