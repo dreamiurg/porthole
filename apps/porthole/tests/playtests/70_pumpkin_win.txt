@@ -1,0 +1,42 @@
+# A first round: learn the controls, calibrate, hide under the table, survive each search and replay.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+expect-screen pumpkin_intro
+ui-check pumpkin_intro
+snap pumpkin_intro
+tap 80 131
+wait 600
+expect-screen pumpkin_calibrate
+expect ready=1
+ui-check pumpkin_calibrate
+snap pumpkin_calibrate
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect hidden=-1
+ui-check pumpkin_play
+snap pumpkin_explore
+tap 80 131
+wait 2500
+expect hidden=1
+ui-check pumpkin_play-warning
+snap pumpkin_warning
+wait 2400
+expect-screen pumpkin_play
+expect hidden=1
+ui-check pumpkin_play-hidden
+snap pumpkin_hidden_search
+wait 35000
+expect-screen pumpkin_won
+ui-check pumpkin_won
+snap pumpkin_won
+wait 600
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect hidden=-1
+expect exposure=0
+sheet win

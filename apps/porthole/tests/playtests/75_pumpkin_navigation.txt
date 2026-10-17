@@ -1,0 +1,46 @@
+# Every end/transition state still has a way home, including the animated icing.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 8000
+expect-screen pumpkin_catch
+tap 80 19
+wait 100
+expect-screen launcher
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 8700
+expect-screen pumpkin_icing
+tap 80 19
+wait 100
+expect-screen launcher
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 11000
+expect-screen pumpkin_lost
+tap 80 19
+wait 100
+expect-screen launcher
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 41000
+expect-screen pumpkin_won
+tap 80 19
+wait 100
+expect-screen launcher
