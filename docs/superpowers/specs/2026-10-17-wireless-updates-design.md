@@ -72,7 +72,7 @@ coredump,  data, coredump, 0xFF0000, 0x10000
 ```
 
 - `board_upload.maximum_size = 8323072`. The build fails once firmware outgrows a slot.
-- v0.14.0 is 5.95 MB, which leaves 2.3 MB of room.
+- v0.14.0 was 5.95 MB; with wifi and TLS linked in it is about 6.8 MB, which leaves about 1.5 MB of room.
 
 ## Phases
 
@@ -113,12 +113,11 @@ Done when a merge creates a pre-release with both new files, and running Promote
 - `partitions.csv` with the two app slots, and `maximum_size`.
 - `firmware/main.cpp`:
   - the mark-valid ordering
-  - the "something new" card, shown when `PORTHOLE_VERSION` differs from `"sys"/ran`
   - serial `W<ssid>\t<pass>` and `U` (download now), each in its own function
-- `firmware/net.cpp` (new): `board::checkAndDownload(channel, force, progress)`.
+- `firmware/net.cpp` (new): `net::Updater`, implementing `shell::System` (`shell/system.h`); the shell owns the "something new" card and `"sys"/ran`.
   - Daily, background, low priority on core 0, starting a minute after boot.
   - Wifi off afterwards.
-  - Clock synced by NTP while connected.
+  - Clock sync by NTP is deferred: the device keeps local time with no timezone setting (TODO in `net.cpp`).
 - `shell/`: `newer(a, b)` version compare, with a host test.
 - Update CLAUDE.md rule 4 and `apps/porthole/CLAUDE.md`.
 
