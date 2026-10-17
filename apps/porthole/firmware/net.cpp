@@ -25,9 +25,12 @@ namespace {
 // NUL; no "pass" = open network), "chan" (one byte, shell::Channel), "last" (uint32 local epoch of the last attempt:
 // its day is the once-a-day gate). "ran" is reserved for the shell's "something new" card.
 const char* const NS = "sys";
-const char* const RELEASES = "https://github.com/dreamiurg/porthole/releases/";
-const char* const BETA_API = "https://api.github.com/repos/dreamiurg/porthole/releases?per_page=1";
-const char* const TAG = "\"tag_name\":\"porthole-v";
+#define RELEASES "https://github.com/dreamiurg/porthole/releases/"
+// Each channel's newest version as plain "X.Y.Z". Stable: GitHub's Latest release (pre-releases never are). Beta: the
+// rolling porthole-beta pre-release, which the release workflow re-points at every new release. The releases API is no
+// help for beta: it does not list releases newest first.
+const char* const STABLE_VERSION = RELEASES "latest/download/porthole-version.txt";
+const char* const BETA_VERSION = RELEASES "download/porthole-beta/porthole-version.txt";
 const uint32_t FIRST_MS = 60000, POLL_MS = 60000;   // first check a minute after boot, then a look once a minute
 const uint32_t WIFI_MS = 20000;                    // to join the network
 const uint16_t HTTP_MS = 15000;                    // TCP connect, and the longest wait for the next bytes
@@ -70,8 +73,8 @@ bool storeWifi(const char* ssid, const char* pass) {
 
 bool isRelease() { int v[3]; return shell::parseVersion(PORTHOLE_VERSION, v); }
 
-// One HTTPS client set up the same way for every request: the CA bundle, timeouts, redirects and a User-Agent (the API
-// requires one). Redirects are followed here, not by HTTPClient: GitHub sends a release asset from github.com to
+// One HTTPS client set up the same way for every request: the CA bundle, timeouts, redirects and a User-Agent that
+// names the firmware version. Redirects are followed here, not by HTTPClient: GitHub sends a release asset from github.com to
 // another host, and on that reconnect Arduino-ESP32 3.2.1's NetworkClientSecure has lost its CA bundle
 // (stop_ssl_socket() zeroes the context, bundle callback included), so the handshake fails with "No CA Chain is set".
 // setCACertBundle() before every hop attaches it again.
@@ -104,20 +107,14 @@ struct Https {
 
 enum Found { F_ERROR, F_NONE, F_VERSION };
 
-// The newest version on the channel into out ("X.Y.Z"). Stable: the newest non-pre-release's porthole-version.txt
-// (404 until a release that has one is promoted: nothing to offer, not a failure). Beta: the newest release of all.
+// The newest version on the channel into out ("X.Y.Z"). A 404 (no promoted release with the file yet, or no beta pointer
+// yet) is nothing to offer, not a failure.
 Found fetchAvailable(shell::Channel ch, char out[16]) {
   Https c;
-  int code = c.get(ch == shell::CH_BETA ? BETA_API : "https://github.com/dreamiurg/porthole/releases/latest/download/porthole-version.txt");
-  if (code == 404 && ch == shell::CH_STABLE) return F_NONE;
+  int code = c.get(ch == shell::CH_BETA ? BETA_VERSION : STABLE_VERSION);
+  if (code == 404) return F_NONE;
   if (code != 200) return F_ERROR;
   String body = c.http.getString();
-  if (ch == shell::CH_BETA) {
-    int at = body.indexOf(TAG);
-    if (at < 0) { Serial.println("[net] newest release is not a porthole one"); return F_NONE; }
-    at += (int)strlen(TAG);
-    body = body.substring(at, body.indexOf('"', at));
-  }
   body.trim();
   int v[3];
   if (body.length() >= 16 || !shell::parseVersion(body.c_str(), v)) { Serial.println("[net] bad version text"); return F_ERROR; }

@@ -152,10 +152,11 @@ games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
 Every release starts as a GitHub pre-release: that is **beta**. A person promotes a release to
 **stable**, which makes it GitHub's "Latest" and moves the `stable` branch to it. To promote, open
-Actions, pick **Promote**, and run it with a tag (empty means the newest pre-release). Promoting
+Actions, pick **Promote**, and run it with a tag (empty means the highest-versioned pre-release). Promoting
 an older tag rolls stable back for boards that have not updated yet; a board never installs an
 older version by itself, so one already on the bad build needs a USB flash. Each release also carries `<app>-<version>-ota.bin`, the app image
-on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves.
+on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves. A rolling
+`<app>-beta` pre-release holds a copy of the newest `<app>-version.txt`; boards on the beta channel read it there.
 
 ## Make your own app
 

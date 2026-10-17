@@ -80,6 +80,14 @@ jobs:
           printf '%s' "$VERSION" > "$APP-version.txt"  # no newline: the board compares it as-is
           (cd "$(dirname "$image")/web" && zip -q "$GITHUB_WORKSPACE/$APP-$VERSION-web.zip" ./*)
           printf '%s\n' "$NOTES" > notes.md
-          gh release create "$TAG" --prerelease \
+          # Already there on a re-run (say the beta pointer below failed): skip straight to the pointer.
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease \
             "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" "$APP-$VERSION-ota.bin" "$APP-version.txt" \
             --target "$GITHUB_SHA" --title "$APP $VERSION" --notes-file notes.md
+          # The beta channel's pointer: one rolling pre-release, <app>-beta, whose <app>-version.txt names the newest
+          # release. Boards on beta read it there; the releases API does not list releases newest first.
+          if ! gh release view "$APP-beta" >/dev/null 2>&1; then
+            gh release create "$APP-beta" --prerelease --latest=false --target "$GITHUB_SHA" --title "$APP beta channel" \
+              --notes "Not a release. Its $APP-version.txt names the newest beta, for boards on the beta channel."
+          fi
+          gh release upload "$APP-beta" "$APP-version.txt" --clobber
