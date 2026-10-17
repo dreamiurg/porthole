@@ -178,7 +178,7 @@ void checkAndDownload(shell::Channel ch) {
                 PORTHOLE_VERSION);
   if (!shell::newer(avail, PORTHOLE_VERSION)) { setState(shell::UP_CURRENT); return; }
   bool ok = download(avail);
-  setState(ok ? shell::UP_READY : shell::UP_FAILED);
+  if (ok) setState(shell::UP_READY, 100); else setState(shell::UP_FAILED);   // a ready image is all there
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
 }
 
