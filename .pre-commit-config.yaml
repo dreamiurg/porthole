@@ -76,35 +76,58 @@ repos:
         pass_filenames: false
         files: ^tools/((release|test_release)\.py|fail-on-warning\.sh)$
 
-      # Per-app gates: each runs only when that app's files change.
+      # Per-app gates: each runs only when that app's files change. language: python gives them the same
+      # Python packages CI installs (Pillow for the golden screenshots and art checks, gcovr for coverage),
+      # so they never depend on whatever the system python3 happens to have.
       - id: porthole-check
         name: porthole make check
         entry: make -C apps/porthole check
-        language: system
+        language: python
+        additional_dependencies: [pillow, gcovr>=8.3]
         pass_filenames: false
         files: ^apps/porthole/
 
-      # Pre-push: everything CI would run for what you changed, so CI rarely finds anything new.
+      # Pre-push: everything CI runs (.github/workflows/ci.yml), so CI never finds anything new.
+      # CI's static job: every pre-commit hook on every file, not just the files you changed. A file that
+      # arrived from another branch is part of the PR too.
+      - id: static-all-files
+        name: static checks on every file (CI's static job)
+        # It checks the working tree, so it refuses to run on uncommitted changes: what it checks is what you push.
+        # Your own SKIP still applies on top of the hooks CI skips.
+        entry: >-
+          bash -c 'git diff --quiet && git diff --cached --quiet
+          || { echo "Uncommitted changes: commit or stash them first, so this checks what you push."; exit 1; };
+          SKIP="no-commit-to-branch,porthole-check,gitleaks${SKIP:+,$SKIP}"
+          pre-commit run --all-files --show-diff-on-failure'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
       - id: complexity
         name: lizard complexity gate
         entry: make complexity
         language: python
         additional_dependencies: [lizard==1.21.0]
         pass_filenames: false
-        files: \.(cpp|h|c|js|mjs|py)$
+        always_run: true  # CI runs it on every PR, and it scans the whole tree anyway
         stages: [pre-push]
+      # The app suites run when CI's `changes` job would run them: the app's files, or anything shared
+      # (.github/, platform/, the root Makefile, this file, pyproject.toml), docs and Markdown excluded.
       - id: porthole-ci
         name: porthole make ci (playtests, coverage)
-        entry: make -C apps/porthole ci
-        language: system
+        entry: make -C apps/porthole ci REQUIRE_NODE=1
+        language: python
+        additional_dependencies: [pillow, gcovr>=8.3]
         pass_filenames: false
-        files: ^apps/porthole/|^tools/fail-on-warning\.sh$
+        files: ^(apps/porthole/|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$)
+        exclude: \.md$|(^|/)docs/
         stages: [pre-push]
-      # Firmware builds are incremental locally (seconds) and skipped without PlatformIO.
+      # Firmware builds are incremental locally (seconds). CI builds them, so a missing PlatformIO fails the push.
       - id: porthole-firmware
         name: porthole firmware build
-        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO not installed, skipping (CI builds it)"; exit 0; }; make -C apps/porthole firmware'
+        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO is missing, install it with pip install -r platform/requirements.txt (CI builds the firmware)"; exit 1; }; make -C apps/porthole firmware'
         language: system
         pass_filenames: false
-        files: ^apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|partitions\.csv$|Makefile$)|^platform/|^tools/fail-on-warning\.sh$
+        files: ^(apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|partitions\.csv$|Makefile$)|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$)
+        exclude: \.md$|(^|/)docs/
         stages: [pre-push]
