@@ -1,6 +1,7 @@
 // Self-check for the shell's profile store: records, migration from Pets Club houses (and power loss during it),
 // migration of Biscuit's pre-Porthole save, delete, the secret code encoding, rest budget, daily cap, what counts
-// as activity for the idle rule, and the launcher's layout for every number of games.
+// as activity for the idle rule, the launcher's layout for every number of games, version order for wireless updates,
+// the "something new" card and the hidden system menu's way in.
 // Run: make test
 #include <assert.h>
 #include <stdio.h>
@@ -617,7 +618,60 @@ static void launcherPaging() {
   tapAt(sh, ms, t3); assert(a[0].entered == 3 && a[3].entered == 2);
 }
 
+// Release order is numeric per part, and a dev build is never offered anything.
+static void versions() {
+  int v[3];
+  assert(shell::parseVersion("0.15.0", v) && v[0] == 0 && v[1] == 15 && v[2] == 0);
+  assert(shell::parseVersion("v0.15.0", v) && v[1] == 15);
+  static const char* const BAD[] = {"dev", "", "1.2", "1.2.3x", "1..2", "v", "-1.2.3", nullptr};
+  for (const char* bad : BAD) assert(!shell::parseVersion(bad, v));
+  assert(shell::newer("0.10.0", "0.9.0") && !shell::newer("0.9.0", "0.10.0"));   // 10 > 9, not "1" < "9"
+  assert(!shell::newer("v0.15.0", "0.15.0") && !shell::newer("0.15.0", "v0.15.0"));   // equal: no update
+  assert(shell::newer("1.0.0", "0.99.99"));
+  assert(!shell::newer("0.16.0", "dev") && !shell::newer("dev", "0.15.0") && !shell::newer("0.16", "0.15.0"));
+}
+
+// The card shows once per new version, never for a dev build, and a boot with nothing new writes nothing.
+static void somethingNew() {
+  MemStore st;
+  assert(shell::newRun(st, "0.15.0"));   // no "sys"/"ran" yet: this firmware is new here
+  int w = st.writes;
+  assert(!shell::newRun(st, "0.15.0") && st.writes == w);
+  assert(shell::newRun(st, "0.16.0") && !shell::newRun(st, "0.16.0"));
+  assert(!shell::newRun(st, "dev") && !shell::newRun(st, "dev"));
+  assert(shell::newRun(st, "0.16.0"));   // a release over a dev build replaced it: news again
+}
+
+struct StubSys : shell::System {
+  const char* version = "0.15.0";
+  void info(shell::SysInfo& o) override { o = {}; o.version = version; }
+  shell::UpdStatus status() override { return {}; }
+  void checkNow() override {}
+  void restart() override {}
+  shell::Channel channel() override { return shell::CH_STABLE; }
+  void setChannel(shell::Channel) override {}
+};
+static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
+  Input in{}; in.down = true; in.x = in.downX = 80; in.y = in.downY = 16; in.heldMs = heldMs; frame(sh, ms, in);
+}
+// The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
+// picker's title, and only on a device with a System.
+static void systemMenuWayIn() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp a("One"); App* const list[1] = {&a};
+  sh.begin(st, list, 1, &sys); assert(on(sh, "sys_new"));
+  tapAt(sh, ms, {45, 112, 70, 26}); assert(on(sh, "new_name"));
+  sh.createProfile("Sam", 8, "");
+  sh.begin(st, list, 1, &sys); assert(on(sh, "picker"));
+  holdTitle(sh, ms, 4900); assert(on(sh, "picker"));
+  holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
+  sh.begin(st, list, 1); assert(on(sh, "picker"));
+  holdTitle(sh, ms, 6000); assert(on(sh, "picker"));
+}
+
 int main() {
+  versions();
+  somethingNew();
+  systemMenuWayIn();
   records();
   pinCodes();
   createAndLimit();
