@@ -4,13 +4,15 @@
 #include <stdint.h>
 #include "app.h"
 #include "profiles.h"
+#include "system.h"
 #include "ui.h"
 
 constexpr int MAX_APPS = 8;
 
 class Shell {
  public:
-  void begin(shell::Store& st, App* const* apps, int nApps);   // loads (or migrates) profiles, lands on the picker
+  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null
+  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr);
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
@@ -32,6 +34,7 @@ class Shell {
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST, SH_APP };
 
   shell::Store* st_ = nullptr;
+  shell::System* sys_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets

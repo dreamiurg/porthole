@@ -8,8 +8,8 @@
 using namespace gfx;
 using shell::Record;
 
-void Shell::begin(shell::Store& st, App* const* apps, int nApps) {
-  st_ = &st; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
+void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys) {
+  st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
   if (prof_.count()) go(SH_PICK); else startNew();   // a fresh device goes straight to making the first profile
