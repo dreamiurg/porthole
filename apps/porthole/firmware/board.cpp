@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Preferences.h>
+#include <SD_MMC.h>
 #include "driver/spi_master.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
@@ -241,6 +242,13 @@ size_t loadBlob(const char* ns, const char* key, void* d, size_t n) {
 void eraseBlob(const char* ns, const char* key) { Preferences p; if (p.begin(ns, false)) p.remove(key); }
 void eraseNamespace(const char* ns) { Preferences p; if (p.begin(ns, false)) p.clear(); }
 uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
+
+// ---- microSD (1-bit SDMMC; pins from the Waveshare wiki's table, not their demo code) ----
+// CLK and CMD are GPIO2/GPIO1, the ST7701's init SPI: lcdInitPanel() frees that bus for good, and with the panel's CS
+// (expander P2) held high it ignores the card's traffic. D3 is expander P3, held high since init(), so the card starts
+// in SD mode rather than SPI.
+static const int PIN_SD_CLK = PIN_LCD_SPI_CLK, PIN_SD_CMD = PIN_LCD_SPI_MOSI, PIN_SD_D0 = 42;
+bool mountSd() { return SD_MMC.setPins(PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0) && SD_MMC.begin("/sdcard", true); }
 
 void init() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);

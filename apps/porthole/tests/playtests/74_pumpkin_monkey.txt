@@ -1,0 +1,32 @@
+# Sanitizer coverage for random taps, drags, holds and tilt on intro, active play and results.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+monkey 300 71
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+tilt -500 866 0
+monkey 300 72
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 11000
+expect-screen pumpkin_lost
+monkey 300 73
+expect-screen *

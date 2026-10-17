@@ -1,0 +1,35 @@
+# Calibrate upright, roll left to the chair, hide, emerge and roll right; shaking cannot start calibration early.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+shake
+tap 80 131
+expect-screen pumpkin_calibrate
+expect starting=1
+wait 600
+expect-screen pumpkin_play
+expect neutralX=0
+expect neutralY=1000
+expect neutralZ=0
+tilt -500 866 0
+wait 1800
+expect x<50
+tilt 0 1000 0
+wait 200
+tap 80 131
+wait 300
+expect hidden=0
+ui-check pumpkin_play-chair
+snap pumpkin_chair
+tap 80 131
+wait 300
+expect hidden=-1
+tilt 500 866 0
+wait 1300
+expect x>50
+snap pumpkin_rolling
+sheet tilt

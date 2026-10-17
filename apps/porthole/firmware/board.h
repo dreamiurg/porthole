@@ -2,6 +2,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "console.h"   // Serial on both USB-C ports
 
 namespace board {
 constexpr int LCD_W = 480, LCD_H = 480;
@@ -35,6 +36,9 @@ bool saveBlob(const char* ns, const char* key, const void* data, size_t len);
 size_t loadBlob(const char* ns, const char* key, void* data, size_t maxLen);  // 0 if missing or bigger than maxLen
 void eraseBlob(const char* ns, const char* key);
 void eraseNamespace(const char* ns);  // every key in ns
+
+// The optional microSD card (1-bit SDMMC), mounted at SD_MMC's "/sdcard". False with no card. Only after init().
+bool mountSd();
 
 uint32_t freeHeap();
 }  // namespace board
