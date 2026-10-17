@@ -271,6 +271,17 @@ void Updater::checkNow() { spawn(channel()); }
 void Updater::restart() { ESP.restart(); }
 
 shell::Channel Updater::channel() { return g_chan; }
-void Updater::setChannel(shell::Channel c) { g_chan = c; uint8_t b = c; board::saveBlob(NS, "chan", &b, 1); }
+// The last result was for the old channel: forget it, unless a run is going or an update is already waiting.
+void Updater::setChannel(shell::Channel c) {
+  g_chan = c;
+  uint8_t b = c;
+  board::saveBlob(NS, "chan", &b, 1);
+  portENTER_CRITICAL(&g_mux);
+  shell::UpdState s = g_st.state;
+  if (!g_busy && s != shell::UP_CHECKING && s != shell::UP_DOWNLOADING && s != shell::UP_READY) {
+    g_st.state = shell::UP_IDLE; g_st.pct = 0; g_st.available[0] = 0;
+  }
+  portEXIT_CRITICAL(&g_mux);
+}
 
 }  // namespace net
