@@ -34,7 +34,7 @@ class Game : public App {
   ui::Hold hold_;
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
-  uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0;
+  uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
   bool starting_ = false, home_ = false, actionPending_ = false;
   void go(Page page);
   void start();

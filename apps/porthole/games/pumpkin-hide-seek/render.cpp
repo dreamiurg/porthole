@@ -11,6 +11,7 @@ constexpr uint16_t INK=rgb(0x201d32),WALL=rgb(0x463451),PURPLE=rgb(0x815573),LIL
 constexpr uint16_t WOOD=rgb(0x925743),FLOOR=rgb(0x633e43),ORANGE=rgb(0xf58b32),RUST=rgb(0xb74f30);
 constexpr uint16_t GOLD=rgb(0xffc875),CREAM=rgb(0xffedc2),SAGE=rgb(0x87a878),GREEN=rgb(0x49674d);
 constexpr uint16_t NIGHT=rgb(0x263449),BLUE=rgb(0x53637a),SKIN=rgb(0xe6b79d),GREY=rgb(0xb6acb4),BEAM=rgb(0x997752);
+constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops only
 void box(int x,int y,int w,int h,uint16_t c) { gfx565::rect(x*3,y*3,w*3,h*3,c); }
 void oval(int x,int y,int rx,int ry,uint16_t c) {
   for(int dy=-ry;dy<=ry;++dy) {
@@ -63,14 +64,34 @@ void home(float progress) {
  box(74,17,12,2,CREAM); box(84,17,2,7,CREAM); box(76,23,8,2,CREAM);
  box(70,27,static_cast<int>(20*std::min(1.f,progress)),2,GOLD);
 }
-void window() {
- box(17,30,36,40,INK); box(19,32,32,36,WOOD); box(22,35,26,30,NIGHT);
- oval(39,43,6,6,CREAM); oval(42,41,5,5,NIGHT);
- box(26,40,1,1,GOLD); box(43,56,1,1,CREAM); box(29,58,2,1,CREAM);
- box(34,34,2,32,WOOD); box(21,50,28,2,WOOD); box(15,67,40,4,INK);
- box(17,67,36,2,GOLD); box(12,31,6,35,PURPLE); box(51,31,6,35,PURPLE);
+// Classic candy corn, point up: cream tip, orange middle, gold base; 9x8 with its outline.
+void candyCorn(int x,int y,bool filled) {
+ constexpr uint8_t EDGE[8]={3,5,5,7,7,9,9,9},FILL[7]={1,3,3,5,5,7,7};
+ for(int r=0;r<8;++r) box(x-EDGE[r]/2,y-4+r,EDGE[r],1,INK);
+ for(int r=0;r<7;++r) box(x-FILL[r]/2,y-3+r,FILL[r],1,!filled?WALL:r<2?CREAM:r<5?ORANGE:GOLD);
 }
-void room() {
+// The window sits right of the door; its frame starts at x=23 so it clears the glass.
+void window() {
+ box(23,30,30,40,INK); box(25,32,26,36,WOOD); box(28,35,20,30,NIGHT);
+ oval(40,43,6,6,CREAM); oval(43,41,5,5,NIGHT);
+ box(31,40,1,1,GOLD); box(44,57,1,1,CREAM); box(33,59,2,1,CREAM);
+ box(37,34,2,32,WOOD); box(27,50,22,2,WOOD); box(21,67,34,4,INK);
+ box(23,67,30,2,GOLD); box(20,31,5,35,PURPLE); box(51,31,5,35,PURPLE);
+}
+// The door at the left wall, x 4..17, y 57..100: the lane ends here (DOOR_X=24).
+void door(bool open,uint32_t tick) {
+ box(4,57,14,44,INK);
+ if(!open) {
+  box(6,59,10,40,WOOD); box(8,62,6,14,RUST); box(8,80,6,14,RUST); box(13,77,2,2,GOLD);
+  return;
+ }
+ box(6,59,10,40,GOLD); box(8,61,6,36,CREAM); box(6,59,2,40,ORANGE);
+ oval(16,103,12,3,GOLD); oval(14,103,8,2,CREAM);
+ int bob=int(tick/200%2);
+ for(int i=0;i<4;++i) { box(7+i+bob,78-i,2,2,INK); box(7+i+bob,77+i,2,2,INK); }
+ box(9+bob,77,6,3,INK);
+}
+void room(bool doorOpen,uint32_t tick) {
  gfx565::clear(WALL);
  for(int x=0;x<160;x+=12) box(x,0,1,88,PURPLE);
  box(0,82,160,5,INK); box(0,84,160,2,WOOD); box(0,87,160,73,FLOOR);
@@ -78,7 +99,7 @@ void room() {
   box(0,y,160,1,WOOD);
   for(int x=(y%2)*19;x<160;x+=37) box(x,y,1,12,INK);
  }
- window(); box(66,43,25,22,INK); box(68,45,21,18,GOLD); box(70,47,17,14,PURPLE);
+ window(); door(doorOpen,tick); box(66,43,25,22,INK); box(68,45,21,18,GOLD); box(70,47,17,14,PURPLE);
  oval(78,54,5,5,ORANGE); box(78,47,2,3,SAGE);
  oval(80,108,68,18,INK); oval(80,106,65,16,PURPLE); oval(80,106,57,12,LILAC); oval(80,106,52,10,PURPLE);
  for(int x=33;x<132;x+=11) box(x,105,4,2,LILAC);
@@ -111,17 +132,48 @@ void pumpkinFace(int x,int y,int squash,bool peek) {
  box(x-4,y+3,8,2,INK); box(x-2,y+5,4,1,INK); box(x-1,y+3,2,1,CREAM);
  box(x-9,y,2,2,GOLD); box(x+7,y,2,2,RUST);
 }
-void grandma(int lean,uint32_t tick) {
- int x=141-lean,bob=(tick/300)%2;
+// Her arm out, flashlight first, stepping down toward the spot she is checking.
+void pointArm(int x,int spot) {
+ int fall=spot==2?3:spot==1?1:0;
+ for(int i=0;i<5;++i) box(x-15-4*i,65+fall*i,6,5,INK);
+ for(int i=0;i<5;++i) box(x-14-4*i,66+fall*i,4,3,PURPLE);
+ int ex=x-34,ey=66+fall*4;
+ box(ex-1,ey-1,6,5,INK); box(ex,ey,4,3,SKIN); box(ex-6,ey-2,6,7,INK); box(ex-5,ey-1,3,5,GOLD);
+}
+void grandma(int lean,uint32_t tick,int point) {
+ int x=141-lean,bob=(tick/300)%2,look=point>=0?1:0;
  oval(x+6,44,6,6,INK); oval(x+6,43,4,4,GREY); oval(x,53,10,12,INK); oval(x,52,8,10,SKIN);
  box(x-7,43,13,5,GREY); box(x-10,50,9,6,INK); box(x+1,50,8,6,INK);
  box(x-8,51,5,3,CREAM); box(x+3,51,4,3,CREAM); box(x-1,52,3,1,INK);
- box(x-6,52,2,2,INK); box(x+3,52,2,2,INK); box(x-3,59,5,1,INK);
+ box(x-6-look,52,2,2,INK); box(x+3-look,52,2,2,INK); box(x-3,59,5,1,INK);
  box(x-10,64,22,27,INK); box(x-8,65,18,23,PURPLE); box(x-5,70,12,19,CREAM);
  for(int y=73;y<87;y+=5) for(int dx=-3;dx<6;dx+=5) box(x+dx,y,2,2,LILAC);
  box(x-8,91,6,8+bob,INK); box(x+5,91,5,8-bob,INK);
  box(x-10,98+bob,8,3,LILAC); box(x+4,98-bob,8,3,LILAC);
+ if(point>=0) { pointArm(x,point); return; }
  box(x-8,65,12,5,SKIN); box(x-5,63,8,6,INK); box(x-5,64,3,4,GOLD);
+}
+// A pulsing "?" bubble over the furniture Grandma just named.
+void ask(int spot,uint32_t tick) {
+ int cx=static_cast<int>(SPOTS[spot]),cy=68,p=int(tick/250%2);
+ oval(cx,cy,9+p,7+p,INK); box(cx-2,cy+6+p,4,4,INK); oval(cx,cy,7+p,5+p,CREAM); box(cx-1,cy+6+p,2,2,CREAM);
+ for(int row=0;row<7;++row) for(int col=0;col<5;++col)
+  if(GLYPHS[37][row]&(16>>col)) box(cx-2+col,cy-3+row,1,1,INK);
+}
+void candies(const View& v) {
+ for(int i=0;i<CANDIES;++i) if(!(v.got>>i&1)) candyCorn(static_cast<int>(v.candy[i]),101,true);
+}
+// Four sparks flying out from the pumpkin right after a pickup.
+void sparkle(int x,uint32_t sinceCandy) {
+ if(sinceCandy>=400) return;
+ int r=10+static_cast<int>(sinceCandy/40);
+ const int at[4][2]={{x-r,96-r/2},{x+r,96-r/2},{x-r/2,92-r},{x+r/2,92-r}};
+ for(auto& p:at) { box(p[0]-2,p[1],5,1,GOLD); box(p[0],p[1]-2,1,5,GOLD); box(p[0],p[1],1,1,CREAM); }
+}
+void sweat(int x,uint32_t tick) {
+ int bob=int(tick/120%2)*2;
+ const int at[2][2]={{x+10,88+bob},{x-12,91-bob}};
+ for(auto& p:at) { box(p[0]-1,p[1]-1,4,5,INK); box(p[0],p[1],2,3,SKY); box(p[0],p[1],1,1,CREAM); }
 }
 void light(const View& v) {
  if(!v.searching) return;
@@ -133,15 +185,19 @@ void light(const View& v) {
  oval(static_cast<int>(v.beamX),107,22,4,GOLD);
 }
 void scene(const View& v) {
- room(); light(v); chair(v.nearby==0); table(v.nearby==1); plant(v.nearby==2);
- if(v.searching||v.warning||v.page==Page::Catch) grandma(v.page==Page::Catch?int(v.pageMs/50):0,v.animationMs);
- int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0;
- if(v.page!=Page::Won) pumpkinFace(static_cast<int>(v.x),v.hidden>=0?101:99,squash,v.hidden>=0);
- if(v.hidden>=0) box(int(v.x)-10,107,21,2,INK);
+ room(v.doorOpen,v.animationMs); light(v); chair(v.nearby==0); table(v.nearby==1); plant(v.nearby==2); candies(v);
+ if(v.searching||v.warning||v.page==Page::Catch) grandma(v.page==Page::Catch?int(v.pageMs/50):0,v.animationMs,v.checking);
+ if(v.checking>=0&&v.warning) ask(v.checking,v.animationMs);
+ if(v.page==Page::Won) return;
+ int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
+ if(v.shiver) { x+=int(v.animationMs/60%2); sweat(x,v.animationMs); }
+ pumpkinFace(x,v.hidden>=0?101:99,squash,v.hidden>=0);
+ if(v.hidden>=0) box(x-10,107,21,2,INK);
+ sparkle(x,v.sinceCandy);
 }
 void intro() {
  box(40,35,80,21,INK); text(37,"PUMPKIN",GOLD); text(47,"HIDE & SEEK",CREAM);
- label(110,"TILT TO ROLL"); button("START"); label(147,"TAP HIDE");
+ label(110,"TILT TO ROLL"); button("START"); label(146,"GET CANDY");
 }
 void calibrate(const View& v) {
  label(37,"HOLD IT COMFY"); label(51,"AND STILL");
@@ -149,12 +205,25 @@ void calibrate(const View& v) {
  box(78,87,4,2,GOLD); box(65,79,5,7,SKIN); box(90,79,5,7,SKIN);
  label(108,v.ready?"READY!":"KEEP STILL"); button(v.ready?"READY":"WAIT");
 }
+// Three candy corn slots under Home: outlines fill in as the candy is picked up.
+void candyHud(uint8_t got) {
+ box(60,32,40,14,INK); box(62,34,36,10,PURPLE);
+ for(int i=0;i<CANDIES;++i) candyCorn(68+12*i,39,got>>i&1);
+}
+const char* playLabel(const View& v) {
+ constexpr const char* ASK[]={"THE CHAIR?","THE TABLE?","THE PLANT?"};
+ if(v.exposure>0) return "QUICK! HIDE!";
+ if(v.phew) return "PHEW!";
+ if(v.checking>=0&&v.warning) return ASK[v.checking];
+ if(v.warning) return "GRANDMA!";
+ if(v.searching) return "HMM?";
+ if(v.hidden>=0) return "HIDDEN!";
+ if(v.doorOpen) return "TO THE DOOR!";
+ return nullptr;
+}
 void play(const View& v) {
- char time[24]; std::snprintf(time,sizeof(time),"%u SECONDS",unsigned((ROUND_MS-std::min(v.elapsed,ROUND_MS)+999)/1000));
- label(35,time);
- if(v.hidden>=0) label(49,"HIDDEN!");
- else if(v.warning) label(49,"GRANDMA!");
- else if(v.searching) label(49,v.exposure>0?"QUICK! HIDE!":"HMM?");
+ candyHud(v.got);
+ if(const char* s=playLabel(v)) label(49,s);
  button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER");
 }
 void icing(uint32_t ms) {
@@ -178,7 +247,9 @@ void endPage(const View& v) {
   gfx565::clear(ORANGE); icing(1600); pie(); box(30,39,100,19,INK); text(42,"YOU LOST",CREAM,2);
   label(108,"OH MY! PIE!"); button("TRY AGAIN");
  } else {
-  label(37,"YOU DID IT!"); label(51,"SAFE AND SOUND"); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
+  label(37,"YOU ESCAPED!"); label(51,"WITH THE CANDY"); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
+  box(73,88,14,4,INK); box(75,89,10,2,CREAM); box(79,89,2,2,INK);  // a wide grin over the usual mouth
+  for(int x=62;x<=98;x+=18) candyCorn(x,x==80?103:100,true);
   for(int x=32;x<136;x+=22) box(x,62+(x%13),2,3,GOLD);
  }
 }

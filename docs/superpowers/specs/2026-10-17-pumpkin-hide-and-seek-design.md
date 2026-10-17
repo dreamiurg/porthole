@@ -59,3 +59,19 @@ Potential expansion later: kitchen/table, living room/sofa, attic/toy chest, hal
 - Win and retry paths work. No startling audio; honor global mute.
 - Run app `make check`, `make ci`, relevant firmware compile and scripted playtests; report actual outcomes and any gaps.
 - Follow existing project process: document UX states, create/update golden screenshots with pixel-preserving scaling, and open a PR for review. Do not merge automatically.
+
+## Gameplay update: phase 1 (2026-10-17)
+
+Playtesting the slice showed one dominant strategy: hide at once and wait out the timer.
+Phase 1 gives the pumpkin a reason to move and Grandma some surprises, still in one room:
+
+- **Goal:** collect three candy corns on the floor, then roll out the door at the left wall.
+  The 40-second timer is gone; hiding only stalls.
+- **Grandma's moves vary every round:** full sweep, fast sweep, a sweep that turns back,
+  and a spot check ("THE TABLE?") that finds a pumpkin hiding there, so the player has to
+  pick a different spot. Every move is announced first; checks get the longest warning.
+- **Near misses:** the hidden pumpkin shivers while the beam passes over it, then PHEW!.
+
+Later phases (not built): hold still while hidden, a ghost friend's distraction, varied
+loss lines and pies, more rooms with one new idea each, and optional stars and hats.
+Exact numbers live in `apps/porthole/games/pumpkin-hide-seek/CLAUDE.md`.

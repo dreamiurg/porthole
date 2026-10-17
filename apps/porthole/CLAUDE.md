@@ -37,7 +37,7 @@ A game is a directory under `games/`: the Makefile and PlatformIO build every `g
   look (`render.*`: the same repaint-only-what-moved technique as Marble Kick, its own art), pages (`game.*`:
   Calibrate, Kickoff, Match, Goal, Full time). Brief: `games/tilt-fc/CLAUDE.md`.
 
-- `games/pumpkin-hide-seek/`: Pumpkin Hide & Seek, a single-room tilt-and-touch game with original pixel art on RGB565, three hiding spots, a 40-second round and a frosting-to-pie retry sequence. No persisted state or sounds. Brief: `games/pumpkin-hide-seek/CLAUDE.md`.
+- `games/pumpkin-hide-seek/`: Pumpkin Hide & Seek, a single-room tilt-and-touch game with original pixel art on RGB565, three hiding spots, three candies to collect before escaping through the door, a seeded mix of Grandma moves (sweeps, turn-backs, spot checks) and a frosting-to-pie retry sequence. No persisted state or sounds. Brief: `games/pumpkin-hide-seek/CLAUDE.md`.
 
 In `os/`, the shared runtime:
 

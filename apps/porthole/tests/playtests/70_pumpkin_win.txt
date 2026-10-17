@@ -1,4 +1,4 @@
-# A first round: learn the controls, calibrate, hide under the table, survive each search and replay.
+# A first round: calibrate, roll right for two candies, hide in the plant through the opening sweep, then follow the beam out the door and replay.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -17,26 +17,45 @@ tap 80 131
 wait 600
 expect-screen pumpkin_play
 expect hidden=-1
+expect got=0
 ui-check pumpkin_play
 snap pumpkin_explore
+tilt 500 866 0
+wait 2400
+expect got=6
+tilt 0 1000 0
+wait 100
 tap 80 131
-wait 2500
-expect hidden=1
+wait 300
+expect hidden=2
 ui-check pumpkin_play-warning
 snap pumpkin_warning
-wait 2400
+wait 2300
 expect-screen pumpkin_play
-expect hidden=1
+expect hidden=2
 ui-check pumpkin_play-hidden
 snap pumpkin_hidden_search
-wait 35000
+wait 800
+expect phew=1
+snap pumpkin_phew
+wait 1000
+tap 80 131
+tilt -500 866 0
+wait 3300
+expect got=7
+expect door=1
+ui-check pumpkin_play-door
+snap pumpkin_door
+wait 1900
 expect-screen pumpkin_won
 ui-check pumpkin_won
 snap pumpkin_won
+tilt 0 1000 0
 wait 600
 tap 80 131
 wait 600
 expect-screen pumpkin_play
 expect hidden=-1
 expect exposure=0
+expect got=0
 sheet win

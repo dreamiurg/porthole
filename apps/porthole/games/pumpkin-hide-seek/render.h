@@ -11,10 +11,16 @@ struct View {
   Page page = Page::Intro;
   float x = 80, velocity = 0;
   int hidden = -1, nearby = -1;
-  uint32_t elapsed = 0, pageMs = 0, animationMs = 0;
+  uint32_t pageMs = 0, animationMs = 0;
   float beamX = 80;  // cone endpoint on y=99; same width (+/-20) as detection
   bool searching = false, warning = false, ready = false, starting = false;
   float exposure = 0, homeHold = 0;
+  float candy[3] = {58, 102, 134};    // candy corn centers on the lane
+  uint8_t got = 0;                    // bit i: candy i collected
+  uint32_t sinceCandy = UINT32_MAX;   // ms since the last pickup
+  bool doorOpen = false;              // all candy collected: the door at the left wall is open
+  int checking = -1;                  // spot Grandma announces (warning) or checks (searching)
+  bool shiver = false, phew = false;  // beam over a hidden pumpkin / it just passed
 };
 namespace paint {
 void draw(const View& view);

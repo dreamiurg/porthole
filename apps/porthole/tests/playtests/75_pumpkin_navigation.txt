@@ -38,9 +38,17 @@ tap 80 131
 wait 600
 tap 80 131
 wait 600
+tilt 500 866 0
+wait 2400
+tilt 0 1000 0
+wait 100
 tap 80 131
-wait 41000
+wait 4400
+tap 80 131
+tilt -500 866 0
+wait 5200
 expect-screen pumpkin_won
+tilt 0 1000 0
 tap 80 19
 wait 100
 expect-screen launcher

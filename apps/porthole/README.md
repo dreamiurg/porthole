@@ -12,9 +12,12 @@ launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick,
 
 Open **Pumpkin** on the launcher's second page. Tap to start, hold the device comfortably,
 then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
-table or plant, tap **HIDE**. Tap **COME OUT** to emerge. A warning announces Grandma's
-flashlight: stay hidden to survive the 40-second round. Getting spotted reveals a silly
-pumpkin pie under orange frosting, with **TRY AGAIN** for an immediate fresh round.
+table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
+then out the door on the left. A warning announces each of Grandma's moves: full or fast
+flashlight sweeps, a sweep that turns back, and checks of one hiding spot ("THE TABLE?"),
+when it's time to slip somewhere else. Every round mixes her moves and candy spots. Getting
+spotted reveals a silly pumpkin pie under orange frosting, with **TRY AGAIN** for an
+immediate fresh round.
 
 Original pixel art uses its own palette at 160×160, expanded exactly 3× on the RGB565
 surface. There are no lives, saved progress or sounds. Hold the home button during play;

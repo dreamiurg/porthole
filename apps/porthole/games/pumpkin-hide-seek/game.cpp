@@ -31,7 +31,7 @@ void Game::go(Page page) {
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
 }
 void Game::start() {
-  round_ = Round{};
+  round_ = newRound(ms_ * 2654435761u + ++plays_);  // a fresh layout and Grandma every round
   go(Page::Play);
 }
 bool Game::action() const { return tapped(in_, ACTION); }
@@ -86,12 +86,15 @@ void Game::render() {
   v.page = page_;
   v.x = round_.x; v.velocity = round_.velocity;
   v.hidden = round_.hidden; v.nearby = nearby(round_);
-  v.elapsed = round_.elapsed; v.pageMs = pageMs_; v.animationMs = animationMs_;
+  v.pageMs = pageMs_; v.animationMs = animationMs_;
   v.beamX = beamX(round_);
   v.searching = searching(round_); v.warning = warning(round_);
   v.ready = ready(); v.starting = starting_;
   v.exposure = (float)round_.exposure / CATCH_MS;
   v.homeHold = hold_.progress();
+  for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
+  v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
+  v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
   paint::draw(v);
 }
 const char* Game::screenName() const {
@@ -102,6 +105,8 @@ const char* Game::screenName() const {
 void Game::debugPrint() {
   printf("[pumpkin x=%d hidden=%d elapsed=%u exposure=%u ready=%d starting=%d]\n", (int)round_.x,
          round_.hidden, (unsigned)round_.elapsed, (unsigned)round_.exposure, ready(), starting_);
+  printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
+         (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }
