@@ -1,0 +1,32 @@
+# Standing exposed is forgiving for a moment, then a comic catch, top-rim icing, pie and immediate retry.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 7800
+expect-screen pumpkin_catch
+ui-check pumpkin_catch
+snap pumpkin_catch
+wait 600
+expect-screen pumpkin_icing
+ui-check pumpkin_icing
+snap pumpkin_icing_top
+wait 700
+expect-screen pumpkin_icing
+snap pumpkin_icing_middle
+wait 1000
+expect-screen pumpkin_lost
+ui-check pumpkin_lost
+snap pumpkin_lost
+wait 600
+tap 80 131
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect hidden=-1
+expect exposure=0
+sheet loss

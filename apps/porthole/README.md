@@ -4,9 +4,27 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick and Tilt FC.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC and Pumpkin Hide & Seek.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
+
+## Pumpkin Hide & Seek: a cozy Halloween game
+
+Open **Pumpkin** on the launcher's second page. Tap to start, hold the device comfortably,
+then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
+table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
+then out the door on the left. A warning announces each of Grandma's moves: full or fast
+flashlight sweeps, a sweep that turns back, and checks of one hiding spot ("THE TABLE?"),
+when it's time to slip somewhere else. Every round mixes her moves and candy spots. Getting
+spotted reveals a silly pumpkin pie under orange frosting, with **TRY AGAIN** for an
+immediate fresh round.
+
+Original pixel art uses its own palette at 160×160, expanded exactly 3× on the RGB565
+surface. There are no lives, saved progress or sounds. Hold the home button during play;
+on other screens, tap it. Every new visit starts with calibration. In `make webemu`, use
+the existing tilt pad (or arrow keys) and click the screen's buttons.
+
+Design and state contract: [game brief](games/pumpkin-hide-seek/CLAUDE.md).
 
 ## Profiles and the launcher
 

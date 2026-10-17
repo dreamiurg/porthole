@@ -33,6 +33,7 @@ test_gfx565_SRC := $(wildcard os/*.cpp)
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
 test_tilt_SRC :=
+test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
@@ -63,6 +64,8 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/pumpkin_goldens.py
+	$(PY) games/pumpkin-hide-seek/tools/pie.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
@@ -83,7 +86,7 @@ ci: check playtest coverage
 # (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
-COV_MIN := 91
+COV_MIN := 97
 COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
@@ -113,6 +116,7 @@ art:
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py
+	python3 games/pumpkin-hide-seek/tools/pie.py
 	node $(NODE_ART)
 
 webemu: snap
