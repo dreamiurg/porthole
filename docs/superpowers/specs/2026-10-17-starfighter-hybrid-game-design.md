@@ -13,7 +13,7 @@ Keep the project a **Porthole game** on the existing device, not a separate app.
 
 ## Actual display and motion constraints
 
-Verified against \`docs/hardware.md\`, \`apps/porthole/CLAUDE.md\` and \`apps/porthole/firmware/board.cpp\`:
+Verified against `docs/hardware.md`, `apps/porthole/CLAUDE.md` and `apps/porthole/firmware/board.cpp`:
 
 - **Waveshare ESP32-S3-Touch-LCD-2.1**, round **480×480** RGB565 IPS display, no hardware buttons, ESP32-S3 240 MHz, 8 MB PSRAM. A 160×160 logical pixel-art presentation scaled 3× is already supported in Porthole; its native 480×480 rendering exists too. Illustrations should *look achievable* with limited colors, discrete sprites, short loops, and simple layer shifts, not fluid 3D polygon rendering.
 - Capacitive touch is available; large targets are required (about **72 physical pixels / 8 mm**). Normal play is tap anywhere to shoot, with a separate unobtrusive press-and-hold back affordance.
