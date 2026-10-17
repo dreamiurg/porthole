@@ -86,7 +86,7 @@ ci: check playtest coverage
 # (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
-COV_MIN := 91
+COV_MIN := 97
 COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))

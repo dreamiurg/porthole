@@ -7,7 +7,8 @@ art/pie.png came from Codex's built-in image generator, approved by eye on the r
   jack-o'-lantern face pressed in darker rust, a little green stem on top, golden crust. Funny, not scary.
 
 Each grid cell takes the most common palette colour among its source pixels (green counts as
-transparent), then a 1px ink rim keeps the pie off the orange page. Needs Pillow.
+transparent), then a 1px ink rim keeps the pie off the orange page. Saturated greens read as the
+key, so a replacement image should keep its greens muted (sage, olive). Needs Pillow.
   python3 games/pumpkin-hide-seek/tools/pie.py           regenerate pie.h
   python3 games/pumpkin-hide-seek/tools/pie.py --check   fail if pie.h is stale
 """
@@ -50,9 +51,13 @@ def cells(image):
     scale = min(BOX_W / (x1 - x0), BOX_H / (y1 - y0))
     w, h = round((x1 - x0) * scale), round((y1 - y0) * scale)
 
+    def span(origin, cell, limit):  # at least one source pixel per cell, even when upscaling
+        start = min(limit - 1, origin + int(cell / scale))
+        return range(start, max(start + 1, min(limit, origin + int((cell + 1) / scale))), 2)
+
     def vote(gx, gy):
-        xs = range(x0 + int(gx / scale), min(x1, x0 + int((gx + 1) / scale)), 2)
-        ys = range(y0 + int(gy / scale), min(y1, y0 + int((gy + 1) / scale)), 2)
+        xs = span(x0, gx, x1)
+        ys = span(y0, gy, y1)
         votes = Counter(CLEAR if keyed(px[x, y]) else nearest(px[x, y]) for y in ys for x in xs)
         return votes.most_common(1)[0][0]
 

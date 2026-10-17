@@ -4,7 +4,7 @@
 namespace pumpkin {
 namespace {
 constexpr uint32_t WARN_MS = 2000, CHECK_WARN_MS = 3500, REST_MS = 2500, REST_SPAN_MS = 2000;
-constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, SPEED = 38, REACH = 7, TURN_BACK = 0.6f;
+constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, REACH = 7, TURN_BACK = 0.6f;
 float clamp(float n, float low, float high) { return n < low ? low : n > high ? high : n; }
 uint32_t rnd(Round& r) {  // xorshift32: a round needs variety, not quality
   r.seed ^= r.seed << 13; r.seed ^= r.seed >> 17; r.seed ^= r.seed << 5;
@@ -43,7 +43,7 @@ void rollPumpkin(Round& r, float roll) {
   if (r.hidden >= 0) return;
   float force = 0;
   if (fabsf(roll) > DEAD_MG) force = clamp(roll, -MAX_MG, MAX_MG) / MAX_MG;
-  r.velocity = clamp((r.velocity + force * ACCEL * STEP_MS / 1000) * FRICTION, -SPEED, SPEED);
+  r.velocity = (r.velocity + force * ACCEL * STEP_MS / 1000) * FRICTION;  // tops out near 23.5 px/s
   if (fabsf(r.velocity) < 0.02f) r.velocity = 0;
   r.x += r.velocity * STEP_MS / 1000;
   if (r.x < 24 || r.x > 136) { r.x = clamp(r.x, 24, 136); r.velocity = 0; }

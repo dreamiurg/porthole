@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <initializer_list>
+#include <vector>
 #include "games/pumpkin-hide-seek/game.h"
 #include "gfx565.h"
 #include "host/grip.h"
@@ -115,8 +116,8 @@ static Choice bot(const Round& r) {
 }
 // Plays 100 seeded rounds deciding on what it saw `lateMs` ago, like a kid reacting.
 static int wins(uint32_t lateMs, uint32_t* slowest) {
-  static Round seen[100];
   const uint32_t lag = lateMs / STEP_MS + 1;
+  std::vector<Round> seen(lag);
   int won = 0;
   for (uint32_t seed = 1; seed <= 100; seed++) {
     Round r = newRound(seed);
