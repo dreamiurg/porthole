@@ -71,7 +71,7 @@ wait 450
 expect-screen picker
 sheet update
 # eight minutes after the restart: the status is idle again, the last check is still on record, and both screens say so
-# ("Last try 8 min ago", "Checks once a day"), not "not yet" / "Not checked yet"
+# ("Checked 8 min ago", "Checks once a day"), not "not yet" / "Not checked yet"
 skip 480
 down 80 16
 wait 5000

@@ -89,7 +89,7 @@ void Shell::drawSysInfo() {
   row(y, "Free heap", heap); y += ROW;
   row(y, "SD card", info_.sd ? "yes" : "no"); y += ROW;
   row(y, "Wifi", info_.wifiSaved ? info_.ssid : "none"); y += ROW;
-  row(y, "Last try", tried);
+  row(y, upd_.state == UP_IDLE && upd_.lastCheck ? "Checked" : "Last try", tried);   // before this boot: a time, no result
   ui::drawButton({SYS_BTN, "Updates", nullptr, C_SKY}, in_.down && in_.hit(SYS_BTN.x, SYS_BTN.y, SYS_BTN.w, SYS_BTN.h));
   ui::drawBack();
 }
