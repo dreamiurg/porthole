@@ -143,8 +143,19 @@ make monitor
 The easiest way needs no tools at all: download `<app>-<version>-factory.bin` from the
 [releases](https://github.com/dreamiurg/porthole/releases), plug the board in over USB-C, open
 [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge, and write the file at
-address `0x0`. This erases the board, saved progress included. Step by step, with pictures of the
+address `0x0`. This erases the board, saved progress included. To keep saves, write the separate
+parts from `<app>-<version>-web.zip` at the offsets in its `parts.json` (that is what the web
+installer does), or build from source and run `make flash`. Step by step, with pictures of the
 games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
+
+### Beta and stable
+
+Every release starts as a GitHub pre-release: that is **beta**. A person promotes a release to
+**stable**, which makes it GitHub's "Latest" and moves the `stable` branch to it. To promote, open
+Actions, pick **Promote**, and run it with a tag (empty means the newest pre-release). Promoting
+an older tag rolls stable back for boards that have not updated yet; a board never installs an
+older version by itself, so one already on the bad build needs a USB flash. Each release also carries `<app>-<version>-ota.bin`, the app image
+on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves.
 
 ## Make your own app
 
@@ -166,8 +177,8 @@ What you get for free:
   ratchet, playtests, coverage and the firmware build. CI repeats it once per PR
   as a cheap backstop, only for the apps a PR touches.
 - Releases are automatic. Each merge that adds a `feat:` or `fix:` to an app
-  tags a new version of that app, publishes release notes and attaches a
-  flashable factory image. See [Releases](https://github.com/dreamiurg/porthole/releases).
+  tags a new version of that app, publishes a beta (pre-release) with notes and
+  attaches a flashable factory image. See [Releases](https://github.com/dreamiurg/porthole/releases).
 
 ## Layout
 
