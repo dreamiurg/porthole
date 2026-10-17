@@ -100,9 +100,11 @@ No firmware behavior changes. It can ship before Phase 0 is finished.
   - upload `porthole-version.txt`
 - `platformio.ini`: `PORTHOLE_VERSION` defaults to `"dev"`. The `S` serial output prints it.
 - New `promote.yml` (`workflow_dispatch`, input `tag`, defaulting to the newest pre-release):
-  - `gh release edit "$TAG" --prerelease=false --latest`
-  - `git push origin "$TAG^{commit}:refs/heads/stable"`
-- Promote v0.14.0 once, by hand, so stable has a starting point.
+  - `git push --force origin "$TAG^{commit}:refs/heads/stable"` (force, so promoting an older tag rolls back;
+    `stable` therefore gets no fast-forward-only rule)
+  - `gh release edit "$TAG" --prerelease=false --latest`, after the push, so a failed push changes nothing
+- Promote v0.14.0 once, by hand, so `stable` exists. It has no `porthole-version.txt`, so stable boards get a
+  404 until a release built by this workflow is promoted; the firmware treats a 404 as "no update".
 - README: what beta and stable mean, how to promote, and that `factory.bin` at `0x0` erases saves.
 
 Done when a merge creates a pre-release with both new files, and running Promote flips it to Latest and moves
