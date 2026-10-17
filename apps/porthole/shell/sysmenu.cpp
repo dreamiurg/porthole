@@ -118,8 +118,8 @@ static void statusLine(char* out, size_t n, const UpdStatus& u, const char* runn
   static_assert(sizeof STATE / sizeof STATE[0] == UP_COUNT, "one label per UpdState");
   int v[3];
   if (u.state == UP_DOWNLOADING) snprintf(out, n, "Downloading %u%%", (unsigned)u.pct);
-  else if (u.state == UP_IDLE && u.lastCheck) snprintf(out, n, "Checks once a day");
-  else if (u.state == UP_CURRENT && !parseVersion(running, v)) snprintf(out, n, "Dev build: no updates");
+  else if ((u.state == UP_IDLE || u.state == UP_CURRENT) && !parseVersion(running, v)) snprintf(out, n, "Dev build: no updates");
+  else if (u.state == UP_IDLE && u.lastCheck) snprintf(out, n, "Checks once a day");   // a dev build never does
   else snprintf(out, n, "%s", (size_t)u.state < sizeof STATE / sizeof STATE[0] ? STATE[u.state] : "");
 }
 void Shell::drawSysUpd() {
