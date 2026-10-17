@@ -12,8 +12,9 @@ namespace net {
 
 class Updater final : public shell::System {
  public:
-  // localNow: the firmware's local wall-clock seconds (main.cpp nowSec()). Mounts the optional SD card and takes
-  // /porthole/wifi.txt from it. Call once, after board::init().
+  // localNow: the firmware's local wall-clock seconds (main.cpp nowSec()), first called a minute later. Loads the "sys"
+  // settings, mounts the optional SD card and takes /porthole/wifi.txt from it. Call once, after board::init() and
+  // before Shell::begin: info() reads what this loads.
   void begin(uint32_t (*localNow)());
   // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
   void tick(uint32_t ms);

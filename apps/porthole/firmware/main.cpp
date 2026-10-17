@@ -90,6 +90,7 @@ void setup() {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
+  g_sys.begin(nowSec);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   uint32_t lastSeen = g_shell.lastSeen(), now;
   if (board::rtcValid()) now = board::rtcNow();
@@ -103,7 +104,6 @@ void setup() {
   g_bootLocalEpoch = now; g_bootMillis = millis();
   Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
   g_activity.step(Input{}, true, millis());   // boot counts as activity
-  g_sys.begin(nowSec);   // the SD card's wifi.txt, then the daily update check from a minute after boot
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control).

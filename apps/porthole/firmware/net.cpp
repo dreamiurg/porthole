@@ -198,7 +198,9 @@ void spawn(shell::Channel ch) {
   // Downloaded already: a second run would rewrite the slot that is set to boot, and a failure would leave it broken.
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
   if (ready) { g_busy = false; return; }
-  if (xTaskCreatePinnedToCore(task, "porthole-net", STACK, (void*)(uintptr_t)ch, 1, nullptr, 0) != pdPASS) {
+  // Idle priority: it time-slices with IDLE0, so a long stretch without a yield (a TLS handshake, Update.end()'s image
+  // check) cannot starve IDLE0 into the 5 s task watchdog. Wifi and lwIP run in their own, higher-priority tasks.
+  if (xTaskCreatePinnedToCore(task, "porthole-net", STACK, (void*)(uintptr_t)ch, tskIDLE_PRIORITY, nullptr, 0) != pdPASS) {
     g_busy = false;
     Serial.println("[net] no memory for the update task");
   }
