@@ -2,6 +2,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "console.h"   // Serial on both USB-C ports
 
 namespace board {
 constexpr int LCD_W = 480, LCD_H = 480;
