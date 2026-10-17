@@ -90,11 +90,13 @@ struct Https {
       http.setUserAgent("porthole/" PORTHOLE_VERSION);
       code = http.GET();
       if (code < 300 || code > 399 || !http.getLocation().length()) break;
-      at = http.getLocation();
+      String next = http.getLocation();
+      if (next.startsWith("/")) next = at.substring(0, at.indexOf('/', 8)) + next;   // relative: same scheme and host
+      at = next;
       http.end();
       tls.stop();   // now, before the bundle is attached again: begin() on a new host would stop it after
     }
-    if (code != 200) Serial.printf("[net] GET %s -> %d\n", url, code);
+    if (code != 200) Serial.printf("[net] GET %s -> %d\n", at.c_str(), code);
     return code;
   }
   ~Https() { http.end(); }
