@@ -85,6 +85,11 @@ void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hi
   drawKey(in, key(K_OK), "OK", buf[0] ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY);
 }
 
+bool clicked(const Input& in, const Box& b) {
+  UiAudit::add(b.x, b.y, b.w, b.h);
+  auto on = [&](int x, int y) { return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; };
+  return in.released && on(in.downX, in.downY) && on(in.x, in.y);
+}
 bool pressing(const Input& in, int cx, int cy, int r) {
   const int dx = in.downX - cx, dy = in.downY - cy, ex = in.x - cx, ey = in.y - cy;
   return in.down && dx * dx + dy * dy <= r * r && ex * ex + ey * ey <= r * r;

@@ -114,7 +114,8 @@ static bool sameName(const char* a, const char* b) {   // "pets-club" matches "P
 }
 bool Shell::openApp(const char* name) {
   if (active_ < 0 || screen_ == SH_APP) return false;
-  for (int k = 0; k < nApps_; k++) if (sameName(apps_[k]->name(), name)) { openIdx(k); gate_.closed = false; return true; }
+  for (int k = 0; k < nApps_; k++)   // by its label or its store (which never changes: scripts outlive a renamed label)
+    if (sameName(apps_[k]->name(), name) || sameName(apps_[k]->store(), name)) { openIdx(k); gate_.closed = false; return true; }
   return false;
 }
 void Shell::openIdx(int k) {
