@@ -748,6 +748,14 @@ static void playtestMatches(bool write) {
   CHECK(seen >= 2);
 }
 
+// 22:00: the clock's night on Auto, day once a sun is picked on the launcher (AppEnter::daylight).
+static void dayOnPickedLight() {
+  static Game game; const SaveSlot none = {nullptr, 0};
+  const uint32_t night = 1790000000u - 1790000000u % 86400u + 22 * 3600;
+  game.enter({&KID, &KID, &none, 1, night, 0}); CHECK(game.tint() == TINT_NIGHT);
+  game.enter({&KID, &KID, &none, 1, night, 0, true}); CHECK(game.tint() == TINT_DAY);
+}
+
 int main(int argc, char** argv) {
   if (argc > 1 && !strcmp(argv[1], "--write-playtests")) { playtestMatches(true); return 0; }
   deadZone();
@@ -770,6 +778,7 @@ int main(int argc, char** argv) {
   noSkipping();
   strings();
   incrementalEqualsFull();
+  dayOnPickedLight();
   playtestMatches(false);
   printf("test_tiltfc: all %d checks passed (sizeof Save = %zu)\n", checks, sizeof(Save));
   return 0;

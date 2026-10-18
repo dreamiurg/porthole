@@ -23,7 +23,7 @@ class Game : public App {
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;
   Surface surface() const override { return SURFACE_RGB565; }
-  Tint tint() const override { return clockTint(now_); }   // the launcher's light: handing back never changes it
+  Tint tint() const override { return daylight_ ? TINT_DAY : clockTint(now_); }   // the launcher's light: handing back keeps it
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }        // no sound in slice 1
   bool takeSave(const void** data, size_t* len, bool allowed) override;
@@ -40,6 +40,7 @@ class Game : public App {
   Save save_{};                   // the level reached
   bool dirty_ = false, wantsHome_ = false;
   uint32_t now_ = 0, ms_ = 0, pageMs_ = 0;   // pageMs_: when this page appeared (the goal, the celebration)
+  bool daylight_ = false;                    // AppEnter::daylight
   Input in_{};
   ui::FreshGate gate_;            // every page change ignores touches for a moment (os/ui.h)
   ui::Hold hold_;                 // Play: the home knob held

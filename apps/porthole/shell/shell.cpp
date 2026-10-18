@@ -12,6 +12,8 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
+  uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
+  light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
   if (sys_) sys_->info(info_);
   if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
@@ -34,7 +36,7 @@ using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
-    &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateApp};
+    &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateLight, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   activity_.step(in, in.down, ms);
@@ -45,7 +47,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
     &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
-    &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawApp};
+    &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawLight, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
@@ -54,6 +56,7 @@ void Shell::render() {
 }
 Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
   if (screen_ == SH_APP) return app_->tint();
+  if (light_ != shell::LIGHT_AUTO) return TINT_DAY;   // a picked brightness is daylight on every screen, resting too
   Tint t = clockTint(now_);
   return screen_ == SH_REST && t == TINT_DAY ? TINT_EVENING : t;   // resting is never broad daylight
 }
@@ -120,7 +123,7 @@ void Shell::openIdx(int k) {
     saves[n] = {blobs_[n], st_->load(app_->store(), shell::key('s', id), blobs_[n], shell::BLOB_MAX)};
     if (id == active_) who = n;
   }
-  app_->enter({&all[who], all, saves, n, now_, ms_});
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = ms_;
   go(SH_APP);
 }
@@ -322,11 +325,14 @@ void Shell::drawDelete() {
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
 // The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
 using launcher::HEADER;
+using launcher::LIGHT;
+static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
 bool Shell::muteButton() {
   return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
+  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { go(SH_LIGHT); return; }
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   if (muteButton()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
@@ -342,8 +348,11 @@ void Shell::drawLauncher() {
   clear(C_SKY);
   rect(0, launcher::grassY(nApps_), 160, 160 - launcher::grassY(nApps_), C_LEAF);
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
-  blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 4, HEADER.y + 2);
-  text(HEADER.x + 28, HEADER.y + 8, rec().name, C_DKBROWN);
+  blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
+  text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
+  const int dy = in_.down && in_.hit(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) ? 1 : 0;   // the sun shows the level picked now
+  ui::drawButton({LIGHT, nullptr, nullptr, C_WHITE}, dy);
+  const Sprite& sun = SPR_LIGHTS[light_]; blit(sun, LIGHT.x + (LIGHT.w - sun.w) / 2, LIGHT.y + (LIGHT.h - sun.h) / 2 + dy);
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
@@ -365,6 +374,37 @@ void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triang
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0, cy = b.y + b.h / 2 + dy;
   ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
   for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
+}
+
+// ---------------------------------------------------------------- brightness (the launcher's sun): three suns, big to small,
+// and Auto (a sun and a moon) under them. A tap picks, saves and goes back to the launcher, already in the new light;
+// the level picked now is the mint one.
+static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::tile(l - 1, 3); }
+void Shell::setLight(shell::Light l) {
+  if (l == light_) return;   // no flash write for the same level
+  light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);
+}
+void Shell::updateLight() {
+  if (ui::back(in_)) { go(SH_LAUNCHER); return; }
+  for (int l = 0; l < shell::LIGHT_COUNT; l++) {
+    const ui::Box b = lightBox(l);
+    if (in_.tapIn(b.x, b.y, b.w, b.h)) { setLight((shell::Light)l); go(SH_LAUNCHER); return; }
+  }
+}
+void Shell::drawLight() {
+  clear(C_SKY);
+  textCentered(80, 40, "How bright?", C_NAVY);
+  for (int l = 0; l < shell::LIGHT_COUNT; l++) {
+    const ui::Box b = lightBox(l);
+    const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    ui::drawButton({b, nullptr, nullptr, l == light_ ? (uint8_t)C_MINT : (uint8_t)C_WHITE}, dy);
+    const Sprite& sun = SPR_LIGHTS[l];
+    if (l != shell::LIGHT_AUTO) { blitScaled(sun, b.x + (b.w - 2 * sun.w) / 2, b.y + (b.h - 2 * sun.h) / 2 + dy, 2); continue; }
+    const int w = sun.w + 3 + textWidth("Auto"), x = b.x + (b.w - w) / 2;   // the icon, then its word
+    blit(sun, x, b.y + (b.h - sun.h) / 2 + dy);
+    text(x + sun.w + 3, b.y + (b.h - 8) / 2 + dy, "Auto", C_DKBROWN);
+  }
+  ui::drawBack();
 }
 
 // ---------------------------------------------------------------- resting: the play budget ran out (a turn, or the day)
@@ -405,7 +445,8 @@ void Shell::clearPin(int id) {
   prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
 }
 const char* Shell::screenName() const {
-  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates"};
+  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates", "light"};
+  static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
 void Shell::debugPrint() {
@@ -415,12 +456,15 @@ void Shell::debugPrint() {
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};
-  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s]\n", active_, prof_.count(), r ? r->age : 0,
-         r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
-         (unsigned long)(r ? shell::restLeft(*r, now_, prof_.count()) : 0), TINTS[tint()]);
+  static const char* const LIGHTS[shell::LIGHT_COUNT] = {"auto", "bright", "medium", "soft"};
+  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s bright=%s backlight=%u]\n", active_, prof_.count(),
+         r ? r->age : 0, r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0),
+         (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
+         (unsigned long)(r ? shell::restLeft(*r, now_, prof_.count()) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
+  if (!strcmp(cmd, "light")) setLight((shell::Light)((light_ + 1) % shell::LIGHT_COUNT));   // the sim's `b` key
   if (active_ >= 0) {
     if (!strcmp(cmd, "tired")) rec().playSec = shell::SESSION_SEC;
     else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = shell::DAILY_SEC; }

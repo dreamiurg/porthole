@@ -13,6 +13,22 @@ namespace shell {
 // "sys"/"ran" holds the version that booted last (its bytes, no NUL). True when version is not "dev" and differs from
 // it: an update (or a USB flash) since the last boot, so the "something new" card shows once. Stores version if new.
 bool newRun(Store& st, const char* version);
+
+// The kids' brightness, picked on the launcher's sun button: one per device, one byte in "sys"/"lite" (missing or
+// unknown: Auto). Auto is the light of the clock: evening and night tints, the games' night scenes, a full backlight.
+// The others are always daylight at their backlight %. Only the active level: the firmware still dims to 30% after a
+// minute idle and goes dark after five (a game asleep(): 40%, then dark), which the wireless updater relies on.
+// The values are what "sys"/"lite" holds: append only, a new level goes right before LIGHT_COUNT.
+enum Light : uint8_t { LIGHT_AUTO, LIGHT_BRIGHT, LIGHT_MEDIUM, LIGHT_SOFT, LIGHT_COUNT };
+constexpr uint8_t LIGHT_BACKLIGHT[LIGHT_COUNT] = {100, 100, 65, 40};   // Soft stays above the idle 30%: dimming still shows
+
+// The backlight % the firmware sets: `active` (Shell::backlight()) in use, 30 after IDLE_MS without activity, dark
+// after 5 min; a game asleep(): 40, dark after 20 s. Dark at every level: the wireless updater writes flash only then.
+constexpr uint32_t DARK_MS = 300000, ASLEEP_DARK_MS = 20000;
+inline uint8_t backlightFor(bool asleep, uint32_t idleMs, uint8_t active) {
+  if (asleep) return idleMs > ASLEEP_DARK_MS ? 0 : 40;
+  return idleMs > DARK_MS ? 0 : idleMs > IDLE_MS ? 30 : active;
+}
 }
 
 class Shell {
@@ -22,6 +38,7 @@ class Shell {
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
+  uint8_t backlight() const { return shell::LIGHT_BACKLIGHT[light_]; }   // % while active (shell::Light)
   Surface surface() const { return screen_ == SH_APP ? app_->surface() : SURFACE_INDEXED; }   // the shell's own screens are indexed
   bool asleep() const { return screen_ == SH_APP && app_->asleep(); }
   bool soundOn(uint32_t ms);          // the active game's buzzer, silenced by the profile's mute
@@ -34,11 +51,11 @@ class Shell {
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older", then passed on to the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level), then the open game
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -47,6 +64,7 @@ class Shell {
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
+  shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
@@ -90,6 +108,8 @@ class Shell {
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
   bool muteButton();   // draws the launcher's mute button; true on a tap
+  void setLight(shell::Light l);
+  void updateLight(); void drawLight();
   void updateRest(); void drawRest();
   void updateApp(); void drawApp();
   // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)

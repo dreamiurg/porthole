@@ -108,11 +108,9 @@ void setup() {
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
-// Idle dimming (no physical buttons: the screen is the only power control).
-static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and activity rule as shell::IDLE_MS
+// Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
 static void dimWhenIdle(uint32_t ms) {
-  uint32_t idle = g_activity.idleMs(ms);
-  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
+  uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
   if (want != g_backlight) {
     g_backlight = want; board::setBacklight(want);
   }
