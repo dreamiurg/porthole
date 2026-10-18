@@ -2,6 +2,7 @@
 // Design: docs/superpowers/specs/2026-10-17-wireless-updates-design.md. Settings live in NVS namespace "sys".
 #pragma once
 #include <stdint.h>
+#include "air.h"
 #include "system.h"
 
 #ifndef PORTHOLE_VERSION
@@ -36,6 +37,23 @@ class Updater final : public shell::System {
   bool startTest(const char* ssid, const char* pass) override;
   int testResult() override;
   bool saveWifi(const char* ssid, const char* pass) override;   // also serial W and the SD card's wifi.txt
+  // Home ("sys"/home), for Radar: the lookup is a radio job like a scan, sending the address once to Nominatim.
+  bool hasHome() override { return true; }
+  bool home(shell::Home& out) override;
+  bool saveHome(const shell::Home& h) override;   // also serial L
+  bool startLookup(const char* address) override;
+  int lookupResult(shell::Home& out) override;
+};
+
+// Radar's planes from adsb.fi over the saved wifi, as one more radio job: while started (and the screen is not dark)
+// a core-0 task holds the radio, polls every 5 s and drops it on stop(), on the dark (so the daily update runs) or when
+// it can't join. Lives here because it shares the radio's one-job machinery with the updater.
+class Radar final : public air::Feed {
+ public:
+  void start(float radiusKm) override;
+  void stop() override;
+  void read(air::Snapshot& out) override;
+  bool spot(double* lat, double* lon) override;
 };
 
 }  // namespace net

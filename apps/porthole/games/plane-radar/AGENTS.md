@@ -6,8 +6,8 @@ its own font (B612 Mono Bold, the cockpit typeface; `fonts/OFL.txt`, generated b
 sounds. Ported from github.com/dreamiurg/ESP32-Plane-Radar (fork of MatixYo/ESP32-Plane-Radar): the idea and the
 adsb.fi data, rewritten for this runtime.
 
-Not on the board yet: the firmware feed (wifi, adsb.fi, routes) lands separately, and until then `firmware/main.cpp`
-leaves Radar out of `APPS`. The sim and the tests run it against a canned feed.
+On the board the feed is `net::Radar` (`firmware/net.cpp`: wifi, adsb.fi every 5 s, routes from adsbdb.com; see
+`apps/porthole/AGENTS.md`); the sim and the tests run it against a canned feed.
 
 - `os/air.h`: the feed contract (`air::Feed`, `Plane`, `Snapshot`, `State`), set with `air::setFeed` by the host
   before the shell starts; a game only reads it. Planes come as km east/north of home, never as coordinates. Home is

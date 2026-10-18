@@ -35,7 +35,9 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
    lost. No personal data: no real names, no analytics. Nothing sent over the network carries anything
-   about the kid; the only traffic is the daily firmware update check, its download, and a clock sync.
+   about the kid. The only traffic is the daily firmware update check, its download, and a clock sync;
+   while Radar is open, home rounded to ~1 km goes to adsb.fi every 5 s and the callsigns it sees to
+   adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible.
