@@ -7,7 +7,11 @@
 #include "ui.h"
 
 namespace launcher {
-constexpr ui::Box HEADER = {30, 30, 100, 24};   // who is playing: 2 px below the home button's hit box (rows -4..27)
+// Who is playing, 2 px below the home button's hit box (rows -4..27), then the brightness (sun) button: the one row with
+// room for another target. The header holds the face and the widest 8-letter name (63 px, from x + 26); both outer
+// corners are 2 px off the bezel.
+constexpr ui::Box HEADER = {21, 30, 91, 24};
+constexpr ui::Box LIGHT = {114, 30, 24, 24};
 constexpr int MUTE_X = 80, MUTE_HIT = 15;       // ui::iconButton: radius 11, hit circle 4 px wider
 constexpr int NAME_Y = 105, LINE_H = 9;         // a name starts 4 px under its tile; a line is 8 px and its shadow
 

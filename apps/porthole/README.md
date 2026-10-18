@@ -33,7 +33,9 @@ Design and state contract: [game brief](games/pumpkin-hide-seek/CLAUDE.md).
 Power on, pick who's playing, pick a game. Up to four kids share one board, each with a profile: a
 name, one of eight animal faces, an age (it picks the reading level) and an optional 4-digit code.
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
-profile. Each kid plays up to 25 minutes a day across every game, then the board says "Back
+profile, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
+small sun (full, 65% or 40% backlight, always daylight colors and day scenes), or Auto (a sun and a moon: full
+backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 25 minutes a day across every game, then the board says "Back
 tomorrow" until midnight. With two or more profiles, a kid who has played for about 6 minutes also
 rests for 10, so the board passes to the next kid. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
@@ -197,13 +199,13 @@ Pillow is installed.
 | IO expander | TCA9554 @ 0x20: P0 LCD reset, P1 touch reset, P2 LCD CS, P7 buzzer |
 | RTC | PCF85063 @ 0x51, set from build time on first boot, restored from the save if it stops |
 | Motion | QMI8658 accelerometer, I²C 0x6B (0x6A also probed), +-4 g, read every frame as screen-frame gravity |
-| Backlight | GPIO6 PWM; dims after 1 min idle (no touch, no move), off after 5 min (a tap or picking it up wakes it), off 20 s after bedtime |
+| Backlight | GPIO6 PWM; the launcher's sun sets the level while in use (100/65/40%); dims to 30% after 1 min idle (no touch, no move), off after 5 min (a tap or picking it up wakes it), off 20 s after bedtime |
 | Storage | NVS (`Preferences`): a 52-byte record per profile (v2, `porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
 Rendering: two 480×480 RGB565 framebuffers in PSRAM with bounce buffers; each frame the 160×160
 indexed buffer is expanded through the palette into the back buffer and swapped on vsync.
-Day / evening / night are palette variants applied at flip time.
+Day / evening / night are palette variants applied at flip time (always day once a kid picks a sun).
 
 ## Layout
 

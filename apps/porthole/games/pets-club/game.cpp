@@ -16,7 +16,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 
 const Sprite& Game::icon() const { return SPR_APP_ICON; }
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms;
+  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
   for (int i = 0; i < nKids_; i++) {
     kids_[i] = e.all[i];
@@ -79,8 +79,10 @@ void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ 
 
 Tint Game::tint() const {
   if (save_.asleep && screen_ == SC_HOME) return TINT_NIGHT;
-  return clockTint(now_);
+  return daylight_ ? TINT_DAY : clockTint(now_);
 }
+// The window and Paw Street show stars and the moon from 20:00 to 6:00, unless the kid picked a daylight brightness.
+bool Game::nightSky() const { const int hr = pet::hourOf(now_); return !daylight_ && (hr >= 20 || hr < 6); }
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_) return false;
@@ -363,7 +365,7 @@ void Game::drawNamePet() {
 
 // ---------------------------------------------------------------- home
 void Game::drawWindow(int x, int y, int w, int h) {
-  int hr = pet::hourOf(now_); bool night = hr >= 20 || hr < 6;
+  const bool night = nightSky();
   rect(x - 2, y - 2, w + 4, h + 4, C_DKWOOD);
   rect(x, y, w, h, night ? C_NIGHT : C_SKY);
   if (night) { for (int i = 0; i < 8; i++) { int sx = x + 3 + (i * 11) % (w - 6), sy = y + 3 + (i * 7) % (h - 8); if (((ms_ / 700) + i) % 3) pixel(sx, sy, C_WHITE); } blit(SPR_MOON, x + w - 12, y + 3); }
@@ -1251,7 +1253,7 @@ static void fitName(const char* name, char* out, int maxW) {   // cut to fit a n
   while (name[n] && n < 11) { out[n] = name[n]; out[n + 1] = 0; if (textWidth(out) > maxW) { out[n] = 0; break; } n++; }
 }
 void Game::drawStreet() {
-  int hr = pet::hourOf(now_); bool night = hr >= 20 || hr < 6;
+  const bool night = nightSky();
   clear(night ? C_NIGHT : C_SKY);
   if (night) { for (int i = 0; i < 16; i++) { int x = (i * 37) % 160, y = (i * 17) % 50; if (((ms_ / 500) + i) % 3) pixel(x, y, C_WHITE); } blit(SPR_MOON, 118, 20); }
   else { blit(SPR_SUN, 112, 18); blit(SPR_CLOUD, 14 + (ms_ / 300) % 70, 40); }

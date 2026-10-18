@@ -44,6 +44,7 @@ class Game : public App {
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTickSec_ = 0;
+  bool daylight_ = false;   // AppEnter::daylight: the launcher's brightness overrides the clock's night
   Screen screen_ = SC_SPLASH, nextAfterCelebrate_ = SC_HOME;
   Input in_{};
   Sound sound_ = SND_NONE; uint32_t soundStartMs_ = 0;
@@ -94,6 +95,7 @@ class Game : public App {
   void drawStatPips(int x, int y, int value, const gfx::Sprite& icon, uint8_t col);
   void drawRoom();
   void drawWindow(int x, int y, int w, int h);
+  bool nightSky() const;
   void drawShelf(int x, int y);
   int  idlePose();
   int  trickPose(bool& flip);

@@ -72,7 +72,7 @@ const gfx::Sprite& Game::icon() const { return ICON; }
 
 // Every visit starts on the Calibrate page with the kid's own difficulty.
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; in_ = Input{};
+  now_ = e.nowSec; ms_ = e.ms; in_ = Input{}; daylight_ = e.daylight;
   save_ = Save{};
   for (int i = 0; i < e.n; i++)   // only this kid's save; a bad one starts from the first level
     if (e.all[i].id == e.who->id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);

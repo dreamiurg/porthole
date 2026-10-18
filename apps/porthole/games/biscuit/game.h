@@ -41,6 +41,7 @@ class Game : public App {
   Save save_{}, out_{};                       // the working pup, and the sealed copy takeSave hands out
   Profile who_{};                             // the kid playing: {name} in every line
   bool dirty_ = false, wantsHome_ = false;
+  bool daylight_ = false;                     // AppEnter::daylight: day scenes whatever the clock says
   uint32_t now_ = 0, ms_ = 0, lastTickSec_ = 0, lastCheckpointSec_ = 0;
   Input in_{};
   ui::FreshGate gate_;                        // every screen change ignores touches for a moment (os/ui.h)
