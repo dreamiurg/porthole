@@ -603,6 +603,14 @@ static void incrementalEqualsFull() {
   CHECK(t.sinkFrames > 20 && t.turningFrames > 100);   // and the ball sinking into a hole, and a goal on the move
 }
 
+// 22:00: the clock's night on Auto, day once a sun is picked on the launcher (AppEnter::daylight).
+static void dayOnPickedLight() {
+  static marble::Game game; const Profile kid = {0, "Sam", 0, 6, 0}; const SaveSlot none = {nullptr, 0};
+  const uint32_t night = 1790000000u - 1790000000u % 86400u + 22 * 3600;
+  game.enter({&kid, &kid, &none, 1, night, 0}); CHECK(game.tint() == TINT_NIGHT);
+  game.enter({&kid, &kid, &none, 1, night, 0, true}); CHECK(game.tint() == TINT_DAY);
+}
+
 int main(int argc, char** argv) {
   if (argc > 1 && !strcmp(argv[1], "--write-playtests")) { playtestSolutions(true); return 0; }
   if (argc > 1 && !strcmp(argv[1], "--levels")) { lab = true; noBallSizedGaps(); greedyFails(); neverStuck(); everyLevelSolvable(); return 0; }
@@ -624,6 +632,7 @@ int main(int argc, char** argv) {
   neverStuck();
   everyLevelSolvable();
   incrementalEqualsFull();
+  dayOnPickedLight();
   playtestSolutions(false);
   printf("test_marble: all %d checks passed (%d levels, sizeof Save = %zu)\n", checks, NUM_LEVELS, sizeof(Save));
   return 0;

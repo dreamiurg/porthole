@@ -68,7 +68,7 @@ const gfx::Sprite& Game::icon() const { return ICON; }
 
 // Every visit: the kid's own level, and the Calibrate page. After all of them, level 1 again.
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; in_ = Input{};
+  now_ = e.nowSec; ms_ = e.ms; in_ = Input{}; daylight_ = e.daylight;
   save_ = Save{};
   for (int i = 0; i < e.n; i++)   // only this kid's save; a bad one starts from the first level
     if (e.all[i].id == e.who->id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);

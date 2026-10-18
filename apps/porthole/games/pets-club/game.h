@@ -27,6 +27,7 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "sleepy" "younger" "older"
+  bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
@@ -44,6 +45,7 @@ class Game : public App {
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTickSec_ = 0;
+  bool daylight_ = false;   // AppEnter::daylight: the launcher's brightness overrides the clock's night
   Screen screen_ = SC_SPLASH, nextAfterCelebrate_ = SC_HOME;
   Input in_{};
   Sound sound_ = SND_NONE; uint32_t soundStartMs_ = 0;

@@ -488,7 +488,7 @@ static bool apart(const ui::Box& a, const ui::Box& b, int gap = 2) {   // target
   return a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y;
 }
 static bool clear(const ui::Box& a, const ui::Box& b) { return apart(a, b, 0); }   // text: no pixel shared
-struct LauncherFixed { int n, count; ui::Box b[5]; };   // the home button, the header, the mute button, the arrows
+struct LauncherFixed { int n, count; ui::Box b[6]; };   // the home button, the header, the mute button, the sun, the arrows
 static bool offMute(const ui::Box& b, int n) {   // no pixel of b inside the mute button's hit circle
   const int cx = launcher::MUTE_X, cy = launcher::muteY(n);
   const int dx = cx < b.x ? b.x - cx : cx > b.x + b.w - 1 ? cx - (b.x + b.w - 1) : 0;
@@ -497,8 +497,8 @@ static bool offMute(const ui::Box& b, int n) {   // no pixel of b inside the mut
 }
 static LauncherFixed launcherFixed(int n) {
   const int h = launcher::MUTE_HIT, p = launcher::pages(n);
-  LauncherFixed fx = {n, p > 1 ? 5 : 3, {{64, -4, 32, 32}, launcher::HEADER, {launcher::MUTE_X - h, launcher::muteY(n) - h, 2 * h, 2 * h},
-                                         launcher::arrow(false), launcher::arrow(true)}};   // ui::back's hit circle first
+  LauncherFixed fx = {n, p > 1 ? 6 : 4, {{64, -4, 32, 32}, launcher::HEADER, {launcher::MUTE_X - h, launcher::muteY(n) - h, 2 * h, 2 * h},
+                                         launcher::LIGHT, launcher::arrow(false), launcher::arrow(true)}};   // ui::back's hit circle first
   assert((n > 3) == (p > 1));   // arrows only when a row of three is not enough
   assert(within(fx.b[2], 2));
   for (int a = 1; a < fx.count; a++) {
@@ -534,7 +534,17 @@ static void nameClear(const LauncherPage& p, int i, const ui::Box& nl, const Lau
     for (int k = 0; k < p.lines && j != i; k++) assert(clear(nl, p.names[j][k]));
   }
 }
+static void headerName() {   // the widest name the keyboard types (its widest capital, then small letters) fits the header
+  int cap = 0, low = 0;
+  for (char c = 'A'; c <= 'Z'; c++) {
+    const char s[2] = {c, 0}, l[2] = {(char)(c + 32), 0};
+    if (gfx::textWidth(s) > cap) cap = gfx::textWidth(s);
+    if (gfx::textWidth(l) > low) low = gfx::textWidth(l);
+  }
+  assert(26 + cap + (ui::NAME_LEN - 1) * (low + 1) <= launcher::HEADER.w - 2);   // drawn at x + 26, inside the border
+}
 static void launcherLayout() {
+  headerName();
   const ui::Box two = launcher::tile(0, 2), three = launcher::tile(0, 3);   // two keep today's look; three, the first row of three
   assert(two.x == 24 && two.w == 48 && launcher::tile(0, 1).x == 56 && three.x == 8 && three.w == 44 && launcher::muteY(2) == 128);
   assert(launcher::pages(0) == 1 && launcher::count(0, 0) == 0 && launcher::count(4, 2) == 0);   // no games; past the last page
@@ -577,7 +587,8 @@ struct StubApp : App {
   const char* name() const override { return label; }
   const gfx::Sprite& icon() const override { static const uint8_t px[1] = {C_T}; static const gfx::Sprite s = {1, 1, px}; return s; }
   const char* store() const override { return "stub"; }
-  void enter(const AppEnter&) override { entered++; }
+  bool daylight = false;
+  void enter(const AppEnter& e) override { entered++; daylight = e.daylight; }
   void update(uint32_t, uint32_t, const Input&) override {}
   void render() override {}
   Tint tint() const override { return TINT_DAY; }
@@ -616,6 +627,42 @@ static void launcherPaging() {
   tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // the picker's first row
   tapAt(sh, ms, t3); assert(a[0].entered == 3 && a[3].entered == 2);
+}
+
+// The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
+// shell's screens and in the games (AppEnter::daylight) at its own backlight, kept in "sys"/"lite" across a reboot;
+// picking the level already on writes nothing, and a stray byte is Auto.
+static void brightness() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubApp a("One"); App* const list[1] = {&a};
+  const uint32_t night = NOW + 12 * 3600;
+  auto step = [&](const Input& in) { ms += 700; sh.update(night, ms, in); sh.render(); };
+  auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
+  auto pick = [&](const ui::Box& b) { tap(launcher::LIGHT); assert(on(sh, "light")); tap(b); assert(on(sh, "launcher")); };
+  sh.begin(st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
+  assert(on(sh, "launcher") && sh.tint() == TINT_NIGHT && sh.backlight() == 100);   // Auto, as before
+  tap(launcher::tile(0, 1)); assert(a.entered == 1 && !a.daylight); home(sh, ms, a);
+  static const uint8_t PCT[3] = {100, 65, 40};   // Bright, Medium, Soft: the suns left to right
+  for (int i = 0; i < 3; i++) { pick(launcher::tile(i, 3)); assert(sh.tint() == TINT_DAY && sh.backlight() == PCT[i]); }
+  tap(launcher::tile(0, 1)); assert(a.entered == 2 && a.daylight); home(sh, ms, a);
+  int w = st.writes;
+  pick(launcher::tile(2, 3)); assert(st.writes == w);   // Soft again: no flash write
+  tap(launcher::LIGHT); tap({64, -4, 32, 32}); assert(on(sh, "launcher") && sh.backlight() == 40);   // the home button keeps it
+  sh.begin(st, list, 1); step(Input{}); assert(on(sh, "picker") && sh.tint() == TINT_DAY && sh.backlight() == 40);   // reboot
+  tap({24, 55, 112, 24}); pick(launcher::LIGHT_AUTO); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
+  const uint8_t bad = shell::LIGHT_COUNT; st.save("sys", "lite", &bad, 1);
+  sh.begin(st, list, 1); step(Input{}); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
+}
+
+// The firmware's backlight at every level: the level in use, 30% after a minute idle, dark after five; a game asleep
+// 40%, dark after 20 s. Dark whatever the level, or the wireless updater never runs.
+static void backlightSteps() {
+  for (uint8_t active : shell::LIGHT_BACKLIGHT) {
+    assert(shell::backlightFor(false, 0, active) == active && shell::backlightFor(false, shell::IDLE_MS, active) == active);
+    assert(shell::backlightFor(false, shell::IDLE_MS + 1, active) == 30 && shell::backlightFor(false, 300000, active) == 30);
+    assert(shell::backlightFor(false, 300001, active) == 0 && shell::backlightFor(false, 3600000, active) == 0);
+    assert(shell::backlightFor(true, 0, active) == 40 && shell::backlightFor(true, 20000, active) == 40);
+    assert(shell::backlightFor(true, 20001, active) == 0);
+  }
 }
 
 // Release order is numeric per part, and a dev build is never offered anything.
@@ -745,6 +792,8 @@ int main() {
   launcherLayout();
   launcherNames();
   launcherPaging();
+  brightness();
+  backlightSteps();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
 }

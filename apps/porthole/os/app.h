@@ -14,7 +14,9 @@ struct SaveSlot { const void* data; size_t len; };                             /
 
 // Everything enter() gets, bundled because the complexity gate caps functions at 5 parameters.
 // saves[i] belongs to all[i]; a game may read other profiles' saves (Paw Street) but only writes who's.
-struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; };
+// daylight: the kid picked a brightness on the launcher, so the game draws day whatever the clock says (tint() returns
+// TINT_DAY, no night scenes); false is Auto, the light follows the clock. A game's own night (a pet asleep) still holds.
+struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight; };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
 // full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() must leave the whole target correct, knowing

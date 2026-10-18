@@ -115,7 +115,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `surface()` is `SURFACE_RGB565` everywhere except the two naming screens, which reuse the
   shell's indexed `ui::keyboard` (8 letters). `store()` is `"biscuit"`, never renamed.
   `soundOn()` is always false: Biscuit has no buzzer sounds (shared app brief constraint 3).
-  `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00. Screen
+  `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00, or always day when
+  `AppEnter::daylight` (a kid picked a sun on the launcher). Screen
   names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
   `debugCmd`: `hungry unlock young grown tricks practiced read` (`read`: every story finished and every
   discovery kept).

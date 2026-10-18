@@ -183,12 +183,20 @@ static void boot() {
 static void reset() { wipe(); boot(); }
 
 // Physical pixel (x, y) of the panel as RGB888: the indexed frame upscaled 3x through the tint's palette, or the RGB565
-// surface as is, with the round glass masked. Snapshots, the web emulator and the window all show this.
+// surface as is, with the round glass masked, under the active backlight (Shell::backlight(); the firmware's idle
+// dimming is not modelled). Snapshots, the web emulator and the window all show this.
+static uint32_t dimmed(uint32_t c) {
+  static int pct = 100, k = 256;
+  if (g_shell.backlight() >= 100) return c;
+  // The backlight scales light, not sRGB values: each channel by pct^(1/2.2), so Soft's 40% looks like the glass does.
+  if (g_shell.backlight() != pct) { pct = g_shell.backlight(); k = (int)(256 * powf(pct / 100.0f, 1 / 2.2f)); }
+  return (uint32_t)(((c >> 16 & 255) * k >> 8) << 16 | ((c >> 8 & 255) * k >> 8) << 8 | ((c & 255) * k >> 8));
+}
 static uint32_t framePixel(int x, int y) {
   int dx = x - 240, dy = y - 240;
   if (dx * dx + dy * dy > 240 * 240) return 0x202020;   // outside the round glass: dark
-  if (g_hires) return gfx565::rgb888(g_fb565[g_shown][y * gfx565::W + x]);
-  return g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]];   // at full RGB888, as snapshots always were
+  if (g_hires) return dimmed(gfx565::rgb888(g_fb565[g_shown][y * gfx565::W + x]));
+  return dimmed(g_pal[g_shell.tint()][gfx::fb[(y / 3) * gfx::W + x / 3]]);   // at full RGB888, as snapshots always were
 }
 
 static void writeBMP(const char* path) {
@@ -394,6 +402,7 @@ static void onKey(SDL_Keycode k, bool& run) {
   if (k == SDLK_s) { writeBMP("build/host/shot.bmp"); printf("wrote build/host/shot.bmp\n"); }
   if (k == SDLK_r) reset();
   if (k == SDLK_p) g_shell.debugPrint();
+  if (k == SDLK_b) g_shell.debugCmd("light");   // the next brightness, as the launcher's sun picks it
   if (k == SDLK_SPACE) g_shakeFrames = 6;
 }
 // The motion sensor: left/right turn gravity, up lays the board flatter, down stands it up.
