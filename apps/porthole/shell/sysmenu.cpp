@@ -198,6 +198,7 @@ static ui::Box netRow(int i) { return {22, 30 + i * 20, 116, 18}; }
 static const ui::Box NET_PREV = {28, 114, 22, 18}, RESCAN = {54, 114, 52, 18}, NET_NEXT = {110, 114, 22, 18};
 void Shell::scan() { scanRefused_ = !sys_->startScan(); nNets_ = scanRefused_ ? 0 : -1; }
 void Shell::updateSysWifi() {
+  upd_ = sys_->status();
   if (nNets_ < 0) nNets_ = sys_->scanResult(nets_, MAX_NETWORKS);
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
   const int pages = (nNets_ + NET_ROWS - 1) / NET_ROWS;
@@ -231,6 +232,7 @@ void Shell::drawSysWifi() {
   clear(C_NAVY);
   const int pages = (nNets_ + NET_ROWS - 1) / NET_ROWS;
   if (nNets_ < 0) stextC(80, 66, "Looking for wifi...", C_WHITE);
+  else if (scanRefused_ && busy(upd_.state)) { stextC(80, 60, "Busy with an update,", C_WHITE); stextC(80, 70, "Rescan when it is done", C_WHITE); }
   else if (scanRefused_) { stextC(80, 60, "Wifi is busy,", C_WHITE); stextC(80, 70, "Rescan in a moment", C_WHITE); }
   else if (!nNets_) stextC(80, 66, "No wifi found", C_WHITE);
   for (int i = 0; i < NET_ROWS && netPage_ * NET_ROWS + i < nNets_; i++) drawNetRow(i, nets_[netPage_ * NET_ROWS + i]);

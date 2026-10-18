@@ -152,6 +152,14 @@ tap 122 128
 wait 450
 sys joinfail
 wait 100
+# Back from a failed join is the keyboard, the typing kept
+tap 80 12
+wait 450
+expect-screen sys_pass
+tap 122 128
+wait 450
+sys joinfail
+wait 100
 tap 112 108
 wait 450
 expect-screen sys_info
@@ -206,7 +214,7 @@ wait 100
 sys download 42
 tap 80 79
 wait 450
-expect sys_tests=7
+expect sys_tests=8
 expect-screen sys_join
 ui-check sys_join-untested
 snap 16_untested
