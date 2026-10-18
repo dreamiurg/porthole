@@ -266,3 +266,27 @@ wait 450
 expect sys_restarts=1
 expect-screen sys_new
 sheet wifi
+# A tap in the 2 px gap between keys goes to the nearer one; a finger that rolls onto the next key types that one
+reset
+profile Sam 8
+reboot
+down 80 16
+wait 5000
+up
+wait 450
+tap 50 108
+wait 450
+sys scan
+wait 100
+tap 80 39
+wait 450
+expect-screen sys_pass
+tap 24 57
+down 29 77
+move 33 77
+up
+tap 124 117
+wait 450
+sys joinok
+wait 100
+expect sys_pass=ws

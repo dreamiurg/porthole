@@ -256,22 +256,18 @@ void Shell::drawSysWifi() {
 // widest row sits low, where the glass is widest. The 26 character keys type the page's characters (TK_SHIFT..TK_OK).
 static const char* const PAGES[3] = {"qwertyuiopasdfghjklzxcvbnm", "1234567890-/:;()$&@\".,?!'#", "[]{}%^*+=_\\|~<>`"};
 static const char* const NEXT_PAGE[3] = {"123", "#+=", "abc"};
-static const int KW = 12, KH = 18, KP = 14, KTOP = 48, KROW = 20;
+// Character keys: rows from y 48, 20 apart, keys 12 wide every 14. The controls, in TK_SHIFT..TK_OK order: shift and
+// backspace flank the third row, page, space and OK are the fourth.
+static const ui::Box CONTROL_KEYS[TK_COUNT - TK_CHARS] = {
+  {11, 88, 19, 18}, {21, 108, 26, 18}, {49, 108, 58, 18}, {130, 88, 19, 18}, {109, 108, 30, 18}};
 static ui::Box textKeyBox(int key) {
   static const int N[3] = {10, 9, 7}, X0[3] = {11, 18, 32};
-  if (key < TK_CHARS) {
-    int r = 0;
-    while (key >= N[r]) key -= N[r++];
-    return {X0[r] + key * KP, KTOP + r * KROW, KW, KH};
-  }
-  switch (key) {
-    case TK_SHIFT: return {11, KTOP + 2 * KROW, 19, KH};
-    case TK_DEL: return {130, KTOP + 2 * KROW, 19, KH};
-    case TK_PAGE: return {21, KTOP + 3 * KROW, 26, KH};
-    case TK_SPACE: return {49, KTOP + 3 * KROW, 58, KH};
-    default: return {109, KTOP + 3 * KROW, 30, KH};   // TK_OK
-  }
+  if (key >= TK_CHARS) return CONTROL_KEYS[key - TK_CHARS];
+  int r = 0;
+  while (key >= N[r]) key -= N[r++];
+  return {X0[r] + key * 14, 48 + r * 20, 12, 18};
 }
+static bool live(const TextEntry& t, int k) { return k >= TK_CHARS || textChar(t, k); }   // drawn and typing
 // The key a finger at (x, y) means: the one whose box, grown by half a gap, holds it; -1 off the keyboard.
 static int textKeyAt(int x, int y) {
   for (int k = 0; k < TK_COUNT; k++) {
@@ -298,13 +294,13 @@ bool shell::textKey(TextEntry& t, int key) {
 static bool typeInto(const Input& in, TextEntry& t) {
   for (int k = 0; k < TK_COUNT; k++) {
     const ui::Box b = textKeyBox(k);
-    if (k >= TK_CHARS || textChar(t, k)) UiAudit::add(b.x, b.y, b.w, b.h);
+    if (live(t, k)) UiAudit::add(b.x, b.y, b.w, b.h);   // what tapped() would log, for the nearest-key rule
   }
   // The key under the finger when it lifts (the one the preview showed), however long it was held, for a press that
   // began on the keyboard: on 4 mm keys a finger often rolls onto the next one.
   if (!in.released || textKeyAt(in.downX, in.downY) < 0) return false;
   const int k = textKeyAt(in.x, in.y);
-  return k >= 0 && (k >= TK_CHARS || textChar(t, k)) && textKey(t, k);
+  return k >= 0 && textKey(t, k);   // an empty slot types nothing; OK needs something typed
 }
 void Shell::updateSysPass() {
   if (ui::back(in_)) { pass_ = TextEntry{}; go(SH_SYS_WIFI); return; }
@@ -315,13 +311,13 @@ void Shell::drawKeys(const TextEntry& t) {
   const int held = in_.down ? textKeyAt(in_.x, in_.y) : -1;
   for (int k = 0; k < TK_CHARS; k++) {
     const char c[2] = {textChar(t, k), 0};
-    if (c[0]) sbutton(textKeyBox(k), c, C_WHITE, k == held, 1);
+    if (live(t, k)) sbutton(textKeyBox(k), c, C_WHITE, k == held, 1);
   }
   const char* const labels[5] = {"Aa", NEXT_PAGE[t.page % 3], "space", "<", "OK"};
   const uint8_t cols[5] = {t.upper ? (uint8_t)C_YELLOW : (uint8_t)C_LTGRAY, C_SKY, C_WHITE, C_LTGRAY,
                            t.len ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY};
   for (int k = TK_CHARS; k < TK_COUNT; k++) sbutton(textKeyBox(k), labels[k - TK_CHARS], cols[k - TK_CHARS], k == held, 1);
-  if (held < 0 || held >= TK_CHARS || !textChar(t, held)) return;
+  if (held < 0 || held >= TK_CHARS || !live(t, held)) return;
   const ui::Box b = textKeyBox(held);
   const char c[2] = {textChar(t, held), 0};
   ui::panel({b.x + b.w / 2 - 12, b.y - 27, 24, 24}, C_WHITE, C_DKBROWN);
