@@ -113,7 +113,6 @@ static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and a
 static void dimWhenIdle(uint32_t ms) {
   uint32_t idle = g_activity.idleMs(ms);
   uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
-  if (g_sys.forcesDark()) want = 0;   // a Check now run writes flash (wifi, the check, the image): keep the screen dark
   if (want != g_backlight) {
     g_backlight = want; board::setBacklight(want);
   }
