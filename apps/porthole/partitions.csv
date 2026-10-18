@@ -1,9 +1,12 @@
 # Porthole flash layout (16 MB). nvs and otadata sit exactly where PlatformIO's default_16MB.csv has them, so the
-# saves in nvs survive a reflash with this table; otadata stays for the uploader's boot_app0. One 12 MB factory app
-# instead of two 6.25 MB OTA slots (nothing here does OTA), then the core dump.
-# The factory app must stay at 0x10000: pioarduino's upload flashes firmware.bin at that fixed offset.
+# saves in nvs survive a reflash with this table. Two 7.9 MB app slots for wireless updates (firmware/net.cpp): the
+# running slot stays untouched while the next release streams into the other, and the stock bootloader goes back to
+# the old slot if the new one never marks itself valid (main.cpp setup()). Then the core dump.
+# ota_0 must stay at 0x10000: pioarduino's upload flashes firmware.bin at that fixed offset, plus boot_app0.bin into
+# otadata, which selects ota_0 again, so a USB flash always boots what it just wrote.
 # Name, Type, SubType, Offset, Size, Flags
 nvs, data, nvs, 0x9000, 0x5000,
 otadata, data, ota, 0xe000, 0x2000,
-factory, app, factory, 0x10000, 0xc00000,
-coredump, data, coredump, 0xc10000, 0x10000,
+ota_0, app, ota_0, 0x10000, 0x7F0000,
+ota_1, app, ota_1, 0x800000, 0x7F0000,
+coredump, data, coredump, 0xFF0000, 0x10000,

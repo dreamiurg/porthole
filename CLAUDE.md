@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. App brief: `apps/porthole/CLAUDE.md`; each game also has its own `CLAUDE.md` under `games/<game>/`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. App brief: `apps/porthole/CLAUDE.md`; each game also has its own `CLAUDE.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
@@ -30,7 +30,8 @@ game ever punishes the kid for being away) are hard rules, not style.
    struct, and never rename an NVS namespace that shipped. Pets Club keeps the
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
-   lost. No personal data: no real names, no analytics, no network calls during play.
+   lost. No personal data: no real names, no analytics. Nothing sent over the network carries anything
+   about the kid; the only traffic is the daily firmware update check, its download, and a clock sync.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible.
@@ -76,6 +77,10 @@ Per-app targets are listed in `docs/new-app.md`.
   touch a listed function, split it up and delete its line.
 - Coverage thresholds live in each app's Makefile. Don't lower them. Raise them
   when coverage grows.
+- Done means reviewed. Before calling any change done, marking a PR ready or
+  merging it, run `/code-review` on the diff (or the PR), fix every real finding
+  or say why it is skipped, then re-run `make check` (and `make ci` for anything
+  user-visible). Green hooks and CI are not a review.
 
 ## Delegation
 
