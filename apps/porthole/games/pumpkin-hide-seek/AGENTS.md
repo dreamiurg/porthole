@@ -1,7 +1,7 @@
 # Pumpkin Hide & Seek
 
 A silent, forgiving hide-and-seek round in one cozy Halloween room: grab three candies, escape out the door.
-The launcher label is `Pumpkin`; namespace `pumpkin` is reserved, but this slice
+The launcher label is `Spooky` ("Pumpkin" is too wide for a slot on a page of three); namespace `pumpkin` is reserved, but this slice
 writes no saves. No lives, score, offline simulation or progression to migrate.
 
 - `rules.*`: allocation-free 10 ms simulation, horizontal roll between x=24..136

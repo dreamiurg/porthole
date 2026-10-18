@@ -5,6 +5,7 @@
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
 //                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
 //                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf | reboot | sys WHAT [ARG]
+//                            | feed WHAT [ARG]
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
 //                            | tilt X Y Z | shake | perf
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
@@ -14,6 +15,8 @@
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
 // ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
+// feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
+// nospot | nowifi | joining | lost | off. `debug` adds feed_state/feed_on/feed_km/feed_starts/feed_spot.
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -27,6 +30,7 @@
 #include "games/marble-kick/game.h"
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
+#include "games/plane-radar/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
 #include "launcher.h"
@@ -139,12 +143,38 @@ struct SimSystem : shell::System {
   }
 };
 
+// Canned planes for Plane Radar: they fly on, one step per 5 s of sim time (a fetch on the board), and wrap around.
+// Between them they cover every kind, a plane with no callsign, one past the 20 km ring (a rim dot) and one near the
+// glass's edge (its tag goes on the far side).
+struct SimFeed : air::Feed {
+  air::State state = air::S_LIVE; bool on = false, empty = false, hasSpot = true; float km = 0; int starts = 0;
+  double lat = 47.62, lon = -122.35;
+  void start(float radiusKm) override { if (!on) starts++; on = true; km = radiusKm; }
+  void stop() override { on = false; }
+  void read(air::Snapshot& out) override;
+  bool spot(double* la, double* lo) override { *la = lat; *lo = lon; return hasSpot; }
+  void set(const char* what, const char*) {
+    static const char* const S[] = {"off", "nospot", "nowifi", "joining", "live", "lost"};
+    empty = !strcmp(what, "empty");
+    if (empty) { state = air::S_LIVE; return; }
+    for (int i = 0; i < air::S_COUNT; i++)
+      if (!strcmp(what, S[i])) { state = (air::State)i; if (state == air::S_NO_SPOT) hasSpot = false; return; }
+    fprintf(stderr, "unknown command: feed %s\n", what);
+  }
+  void print() const {
+    printf("[feed feed_state=%d feed_on=%d feed_km=%.1f feed_starts=%d feed_spot=%d]\n", (int)state, on, km, starts,
+           hasSpot);
+  }
+};
+static SimFeed g_feed;
+
 static Game g_pets;
 static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
+static radar::Game g_radar;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar};
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
@@ -163,6 +193,31 @@ static int g_shakeFrames = 0;                    // frames of shaking left
 static double g_updateMs = 0, g_renderMs = 0; static int g_perfFrames = 0;
 
 static uint32_t now() { return g_epoch + g_ms / 1000; }
+
+void SimFeed::read(air::Snapshot& out) {
+  static const air::Plane PLANES[] = {
+    {-9.0f, 6.0f, 95, 420, 12300, "ASA1234", "SEA-SFO", air::K_AIRLINER},
+    {4.0f, -11.0f, 340, 310, 8650, "DAL88", "SEA-ATL", air::K_AIRLINER},
+    {12.0f, 9.0f, 220, 120, 2500, "N512SP", "", air::K_SMALL},
+    {-3.0f, -4.0f, 45, 160, 4100, "", "", air::K_SMALL},
+    {6.5f, 14.5f, 180, 380, 21000, "RCH401", "", air::K_MILITARY},
+    {-18.0f, 1.5f, 70, 450, 35000, "UAL905", "SFO-NRT", air::K_AIRLINER},
+    {22.0f, -6.0f, 270, 400, 30000, "SWA77", "OAK-SEA", air::K_AIRLINER},
+  };
+  out = air::Snapshot{};
+  out.state = state;
+  if (state != air::S_LIVE) return;
+  const uint32_t step = g_ms / 5000;
+  out.gen = step + 1;
+  if (empty) return;
+  for (const air::Plane& p : PLANES) {
+    air::Plane q = p;
+    const float km = q.knots * 1.852f / 3600 * 5 * (float)(step % 24);   // 5 s a step, wrapping every 2 minutes
+    q.eastKm += sinf(q.trackDeg * 3.14159265f / 180) * km;
+    q.northKm += cosf(q.trackDeg * 3.14159265f / 180) * km;
+    out.planes[out.n++] = q;
+  }
+}
 static void wipe() {   // every namespace, every key: all the .sav files
   DIR* d = opendir("build/host"); if (!d) return;
   while (dirent* e = readdir(d)) {
@@ -178,6 +233,7 @@ static void boot() {
     assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
   }
   g_sys.powerOn();
+  air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, n, &g_sys);
 }
 static void reset() { wipe(); boot(); }
@@ -366,7 +422,7 @@ static const Named COMMANDS[] = {
   {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), c); }},
   {"app", [](Finger&, const char* a, const char*, const char*) { if (!g_shell.openApp(a)) printf("app %s: not opened\n", a); }},
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
-  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); }},
+  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); g_feed.print(); }},
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
   {"dbg", [](Finger&, const char* a, const char*, const char*) { g_shell.debugCmd(a); }},
   {"screen", [](Finger&, const char*, const char*, const char*) { printf("screen=%s\n", g_shell.screenName()); }},
@@ -378,6 +434,7 @@ static const Named COMMANDS[] = {
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
   {"reboot", [](Finger& f, const char*, const char*, const char*) { boot(); f.down = false; }},
   {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
+  {"feed", [](Finger&, const char* a, const char* b, const char*) { g_feed.set(a, b); }},
 };
 static void runScript(const char* path) {
   FILE* f = fopen(path, "r"); if (!f) { perror(path); exit(1); }

@@ -1,0 +1,8 @@
+# Radar under a kid's random taps: no crash, never stuck, the menu always gets back to the scope.
+reset
+profile Sam 6
+app radar
+wait 600
+monkey 400 7
+expect-screen *
+wait 600

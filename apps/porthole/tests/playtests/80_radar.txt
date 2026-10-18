@@ -1,0 +1,54 @@
+# Radar: every feed state, the menu, slow presses and taps on the rim all have a way out and pass the UI audit.
+reset
+profile Sam 8
+app radar
+wait 600
+expect-screen radar_live
+ui-check
+sheet
+wait 6000
+ui-check
+tap 150 80
+wait 100
+ui-check
+tap 80 80
+wait 600
+expect-screen radar_menu
+ui-check
+sheet
+tap 82 49
+tap 54 83
+tap 115 117
+wait 100
+ui-check
+tap 80 17
+wait 600
+expect-screen radar_live
+ui-check
+feed nospot
+wait 100
+expect-screen radar_nospot
+ui-check
+sheet
+feed nowifi
+wait 100
+expect-screen radar_nowifi
+ui-check
+feed joining
+wait 100
+expect-screen radar_joining
+ui-check
+feed lost
+wait 100
+expect-screen radar_lost
+ui-check
+feed empty
+wait 100
+expect-screen radar_live
+ui-check
+feed live
+down 36 124
+wait 1000
+up
+wait 100
+expect-screen launcher
