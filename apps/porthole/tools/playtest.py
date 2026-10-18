@@ -58,6 +58,9 @@ def _screens() -> set:
 
 SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
+# The hidden system menu is for grown-ups (a user decision of 2026-10-18): 18 px (6 mm) targets pass there without the
+# kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; "sys_new" is the kids' card and is not in it.
+GROWN_UPS = {"sys_info", "sys_updates", "sys_wifi", "sys_pass", "sys_join"}
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
     "=": lambda a, b: a == b,
@@ -112,7 +115,7 @@ def audit(tag, screen, regions, texts, full):
         x, y, w, h = r
         if min(w, h) < 18:
             add("FAIL", "target size", f"{name(r)}: {min(w, h)} px < 18 px (6 mm)")
-        elif w < 24 or h < 22:
+        elif (w < 24 or h < 22) and screen not in GROWN_UPS:
             add("WARN", "target size", f"{name(r)}: under 24x22 px (8 mm)")
         inside = sum((px + 0.5 - 80) ** 2 + (py + 0.5 - 80) ** 2 <= 6400 for px in range(x, x + w) for py in range(y, y + h)) / max(1, w * h)
         dist = math.hypot(x + w / 2 - 80, y + h / 2 - 80)

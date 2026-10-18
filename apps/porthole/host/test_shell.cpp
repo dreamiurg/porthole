@@ -691,6 +691,43 @@ static void somethingNew() {
   assert(shell::newRun(st, longer) && !shell::newRun(st, longer));
 }
 
+// A scan list keeps one entry per name at its strongest, strongest first, no hidden ones, and drops the weakest when full.
+static void scanList() {
+  shell::Network l[shell::MAX_NETWORKS]; int n = 0;
+  n = shell::addNetwork(l, n, "Home", -70, true);
+  n = shell::addNetwork(l, n, "", -20, true);                       // hidden
+  n = shell::addNetwork(l, n, "123456789012345678901234567890123", -20, true);   // 33 bytes: no network has it
+  n = shell::addNetwork(l, n, "Cafe", -60, false);
+  n = shell::addNetwork(l, n, "Home", -80, true);                   // a weaker copy: ignored
+  assert(n == 2 && !strcmp(l[0].ssid, "Cafe") && !strcmp(l[1].ssid, "Home") && l[1].rssi == -70);
+  n = shell::addNetwork(l, n, "Home", -50, true);                   // a stronger copy moves it up
+  assert(n == 2 && !strcmp(l[0].ssid, "Home") && l[0].rssi == -50 && !strcmp(l[1].ssid, "Cafe") && !l[1].secured);
+  char name[8];
+  for (int i = 0; i < 10; i++) { snprintf(name, sizeof name, "Far%d", i); n = shell::addNetwork(l, n, name, -80 - i, true); }
+  assert(n == shell::MAX_NETWORKS && !strcmp(l[11].ssid, "Far9"));
+  n = shell::addNetwork(l, n, "Farthest", -99, true);               // full and weakest: not listed
+  n = shell::addNetwork(l, n, "Near", -55, true);                   // full: the weakest falls off
+  assert(n == shell::MAX_NETWORKS && !strcmp(l[1].ssid, "Near") && !strcmp(l[11].ssid, "Far8"));
+}
+
+// The password keyboard: shift, the three pages, space, backspace, the length cap, OK only with something typed.
+static void textEntry() {
+  shell::TextEntry t;
+  assert(!shell::textKey(t, shell::TK_OK) && !shell::textKey(t, shell::TK_DEL) && t.len == 0);
+  shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 0);           // A
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 13);           // $ (shift leaves symbols alone)
+  shell::textKey(t, shell::TK_SPACE);
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 8);            // backslash
+  assert(shell::textChar(t, 16) == 0);                                // the third page's empty slots
+  shell::textKey(t, 16);
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 25);   // back to letters: z
+  assert(!strcmp(t.buf, "A$ \\z") && t.len == 5);
+  shell::textKey(t, shell::TK_DEL); assert(!strcmp(t.buf, "A$ \\"));
+  assert(shell::textKey(t, shell::TK_OK));
+  for (int i = 0; i < 80; i++) shell::textKey(t, 1);
+  assert(t.len == shell::TEXT_MAX && t.buf[shell::TEXT_MAX] == 0);
+}
+
 struct StubSys : shell::System {
   const char* version = "0.15.0";
   void info(shell::SysInfo& o) override { o = {}; o.version = version; }
@@ -699,6 +736,11 @@ struct StubSys : shell::System {
   void restart() override {}
   shell::Channel channel() override { return shell::CH_STABLE; }
   void setChannel(shell::Channel) override {}
+  bool startScan() override { return false; }
+  int scanResult(shell::Network*, int) override { return 0; }
+  bool startTest(const char*, const char*) override { return false; }
+  int testResult() override { return 0; }
+  bool saveWifi(const char*, const char*) override { return false; }
 };
 static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
   Input in{}; in.down = true; in.x = in.downX = 80; in.y = in.downY = 16; in.heldMs = heldMs; frame(sh, ms, in);
@@ -721,6 +763,8 @@ int main() {
   versions();
   somethingNew();
   systemMenuWayIn();
+  scanList();
+  textEntry();
   records();
   pinCodes();
   createAndLimit();

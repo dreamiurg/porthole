@@ -14,6 +14,15 @@ namespace shell {
 // it: an update (or a USB flash) since the last boot, so the "something new" card shows once. Stores version if new.
 bool newRun(Store& st, const char* version);
 
+// The system menu's text entry (a wifi password): any printable ASCII, up to TEXT_MAX bytes. Keys 0..TK_CHARS-1 type
+// the page's characters (letters, a-z or A-Z with the shift lock; digits and symbols; more symbols), then shift, the
+// page switch, space, backspace and OK.
+constexpr int TEXT_MAX = 64;
+enum TextKey { TK_CHARS = 26, TK_SHIFT = TK_CHARS, TK_PAGE, TK_SPACE, TK_DEL, TK_OK, TK_COUNT };
+struct TextEntry { char buf[TEXT_MAX + 1] = {0}; int len = 0; uint8_t page = 0; bool upper = false; };
+char textChar(const TextEntry& t, int key);   // what key types right now; 0 for none (an empty slot, a control)
+bool textKey(TextEntry& t, int key);           // applies one key; true for OK with at least one character typed
+
 // The kids' brightness, picked on the launcher's sun button: one per device, one byte in "sys"/"lite" (missing or
 // unknown: Auto). Auto is the light of the clock: evening and night tints, the games' night scenes, a full backlight.
 // The others are always daylight at their backlight %. Only the active level: the firmware still dims to 30% after a
@@ -55,7 +64,7 @@ class Shell {
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -79,6 +88,9 @@ class Shell {
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
   char toast_[40] = {0}; uint32_t toastUntil_ = 0;
   shell::SysInfo info_{}; shell::UpdStatus upd_{};   // the system menu's view of sys_, read when a menu screen opens
+  shell::Network nets_[shell::MAX_NETWORKS] = {}; int nNets_ = 0;   // the last scan; -1 while it runs
+  bool scanRefused_ = false; uint8_t netPage_ = 0;
+  shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
 
   shell::Record& rec() { return prof_.rec[active_]; }
@@ -117,4 +129,9 @@ class Shell {
   void updateSysNew(); void drawSysNew();
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();
+  void scan();
+  void updateSysWifi(); void drawSysWifi(); void drawNetRow(int i, const shell::Network& n);
+  void updateSysPass(); void drawSysPass();
+  void join(); void pollJoin(); bool save(); void saved();
+  void updateSysJoin(); void drawSysJoin();
 };

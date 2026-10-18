@@ -10,8 +10,10 @@
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
 // few frames, perf prints the average update and render time per frame since the last perf. reboot is a power cycle
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
-// it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed. `debug` adds its
-// sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/sys_last. A reboot keeps lastCheck (the firmware persists it).
+// it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed, and for wifi setup
+// scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
+// ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
+// sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -52,13 +54,57 @@ struct FileStore : shell::Store {
 static uint32_t now();
 struct SimSystem : shell::System {
   char version[16] = "dev"; shell::UpdStatus st; shell::Channel ch = shell::CH_STABLE;
-  bool wifi = true, rebootDue = false; int slot = 0, checks = 0, restarts = 0;
+  bool rebootDue = false; int slot = 0, checks = 0, restarts = 0;
+  // Wifi setup: the saved network, the last scan (-1 until `sys scan` or `sys scanempty` ends it) and the last test
+  // join (-1 until `sys joinok` or `sys joinfail`). `debug` prints the saved password: host only, never on a board.
+  char ssid[33] = "Home-Network-5G-Upstairs", pass[65] = "", tried[33] = "";
+  shell::Network nets[shell::MAX_NETWORKS]; int nNets = 0, tested = 0, scans = 0, tests = 0;
+  bool failSave = false;   // `sys savefail`: the next saveWifi fails (NVS full or broken)
+  bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
+  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0; }
   void info(shell::SysInfo& o) override {
     o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
-    o.heapFree = 187392; o.sd = true; o.wifiSaved = wifi; snprintf(o.ssid, sizeof o.ssid, "%s", wifi ? "Home-Network-5G-Upstairs" : "");
+    o.heapFree = 187392; o.sd = true; o.wifiSaved = ssid[0] != 0; snprintf(o.ssid, sizeof o.ssid, "%s", ssid);
   }
   shell::UpdStatus status() override { return st; }
-  void checkNow() override { checks++; st.state = wifi ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now(); }
+  void checkNow() override {
+    if (nNets < 0 || tested < 0) return;   // a scan or a test holds the radio: the contract says nothing happens
+    checks++; st.state = ssid[0] ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now();
+  }
+  bool startScan() override { if (!radioFree()) return false; scans++; nNets = -1; return true; }
+  int scanResult(shell::Network* out, int max) override {
+    for (int i = 0; i < nNets && i < max; i++) out[i] = nets[i];
+    return nNets < 0 ? -1 : nNets < max ? nNets : max;
+  }
+  bool startTest(const char* s, const char*) override {
+    if (!radioFree()) return false;
+    tests++; tested = -1; snprintf(tried, sizeof tried, "%s", s); return true;
+  }
+  int testResult() override { return tested; }
+  bool saveWifi(const char* s, const char* p) override {
+    if (failSave || !s[0] || strlen(s) > 32 || strlen(p) > 64) { failSave = false; return false; }
+    snprintf(ssid, sizeof ssid, "%s", s); snprintf(pass, sizeof pass, "%s", p);
+    if (st.state == shell::UP_NO_WIFI || st.state == shell::UP_FAILED) st.state = shell::UP_IDLE;   // as the firmware's
+    return true;
+  }
+  // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
+  void scanned() {
+    static const struct { const char* ssid; int rssi; bool secured; } AIR[] = {
+      {"Home-Network-5G-Upstairs", -71, true}, {"Cafe Guest", -80, false}, {"", -40, true}, {"Neighbors_2.4GHz", -66, true},
+      {"Home-Network-5G-Upstairs", -48, true}, {"Printer-Direct-7F", -77, true}, {"Library Free WiFi", -58, false},
+      {"Mesh-Node", -62, true}, {"Mesh-Node", -55, true}};
+    nNets = 0;
+    for (const auto& a : AIR) nNets = shell::addNetwork(nets, nNets, a.ssid, a.rssi, a.secured);
+  }
+  bool setWifi(const char* what) {
+    if (!strcmp(what, "scan")) scanned();
+    else if (!strcmp(what, "scanempty")) nNets = 0;
+    else if (!strcmp(what, "joinok")) tested = 1;
+    else if (!strcmp(what, "joinfail")) tested = 0;
+    else if (!strcmp(what, "savefail")) failSave = true;
+    else return false;
+    return true;
+  }
   void restart() override { restarts++; rebootDue = true; }   // after this frame: not from inside Shell::update
   shell::Channel channel() override { return ch; }
   void setChannel(shell::Channel c) override {   // the contract in shell/system.h
@@ -69,12 +115,13 @@ struct SimSystem : shell::System {
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
-    st = {}; st.lastCheck = last;
+    st = {}; st.lastCheck = last; nNets = tested = 0;
   }
   void set(const char* what, const char* arg) {
+    if (setWifi(what)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
-    else if (!strcmp(what, "nowifi")) { wifi = false; st.state = shell::UP_NO_WIFI; }
+    else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }
     else if (!strcmp(what, "current")) { st.state = shell::UP_CURRENT; snprintf(st.available, sizeof st.available, "%s", version); }
     else if (!strcmp(what, "download")) { st.state = shell::UP_DOWNLOADING; st.pct = (uint8_t)atoi(arg); }
     else if (!strcmp(what, "ready")) { st.state = shell::UP_READY; st.pct = 100; }
@@ -87,6 +134,8 @@ struct SimSystem : shell::System {
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
            ch == shell::CH_BETA ? "beta" : "stable", S[st.state], checks, restarts, (unsigned long)st.lastCheck);
+    printf("[sys sys_ssid=\"%s\" sys_pass=\"%s\" sys_scans=%d sys_nets=%d sys_tests=%d sys_tried=\"%s\" sys_tested=%d]\n", ssid,
+           pass, scans, nNets, tests, tried, tested);
   }
 };
 

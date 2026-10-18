@@ -1,6 +1,7 @@
 // Wireless updates: once a local day, a minute after boot, a low-priority task on core 0 joins the saved wifi, asks
 // GitHub for the newest release on the channel and, if it is newer, streams it into the spare OTA slot and sets that
 // slot to start on the next power-on. The game keeps running on core 1 throughout. Wifi is off again afterwards.
+// The system menu's wifi setup (a scan, a test join) runs the same way, one job on the radio at a time.
 #include "net.h"
 #include <Arduino.h>
 #include <HTTPClient.h>
@@ -52,6 +53,14 @@ std::atomic<bool> g_forced{false}; // the running check is a Check now: it write
 std::atomic<bool> g_woke{false};   // the screen came on mid-download: stopped, to resume in the next dark spell
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
+// The radio's jobs, one task at a time (g_busy): the update check (on g_checkChan, set before it starts), a scan or a
+// test join from the menu's Wifi screens. g_scanCount and g_tested are -1 while theirs runs; g_found belongs to the scan
+// task until it sets g_scanCount, and g_try (the network to test) to the test task while it runs.
+enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST };
+shell::Channel g_checkChan = shell::CH_STABLE;
+shell::Network g_found[shell::MAX_NETWORKS];
+std::atomic<int> g_scanCount{0}, g_tested{0};
+Wifi g_try;
 
 void setState(shell::UpdState s, uint8_t pct = 0) {
   portENTER_CRITICAL(&g_mux); g_st.state = s; g_st.pct = pct; portEXIT_CRITICAL(&g_mux);
@@ -164,9 +173,21 @@ bool download(const char* ver) {
 
 bool joinWifi(const Wifi& w) {
   WiFi.mode(WIFI_STA);
-  WiFi.begin(w.ssid, w.pass[0] ? w.pass : nullptr);
-  for (uint32_t t0 = millis(); WiFi.status() != WL_CONNECTED; vTaskDelay(pdMS_TO_TICKS(250)))
-    if (millis() - t0 > WIFI_MS) { Serial.printf("[net] could not join %s\n", w.ssid); return false; }
+  // Arduino-ESP32 3.2.1: begin() says WL_CONNECT_FAILED when the station would not start or take the network; after it,
+  // the disconnect reason sets WL_NO_SSID_AVAIL (no such network heard) or WL_CONNECT_FAILED (a wrong password, after
+  // the one retry of the first connect since boot). Each is final: no need to wait out WIFI_MS. Mode OFF -> STA resets
+  // the status (STA_STOP, STA_START), so neither is left over from the last attempt.
+  if (WiFi.begin(w.ssid, w.pass[0] ? w.pass : nullptr) == WL_CONNECT_FAILED) {
+    Serial.printf("[net] could not start joining %s\n", w.ssid);
+    return false;
+  }
+  for (uint32_t t0 = millis(); WiFi.status() != WL_CONNECTED; vTaskDelay(pdMS_TO_TICKS(250))) {
+    const wl_status_t s = WiFi.status();
+    const bool gaveUp = s == WL_NO_SSID_AVAIL || s == WL_CONNECT_FAILED;
+    if (!gaveUp && millis() - t0 <= WIFI_MS) continue;
+    Serial.printf("[net] could not join %s%s\n", w.ssid, s == WL_NO_SSID_AVAIL ? ": not found" : s == WL_CONNECT_FAILED ? ": refused" : "");
+    return false;
+  }
   Serial.printf("[net] joined %s rssi=%d heap_internal=%lu largest_internal=%lu\n", w.ssid, (int)WiFi.RSSI(),
                 (unsigned long)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
@@ -210,25 +231,56 @@ void run(shell::Channel ch) {
   Serial.println("[net] screen woke: download stopped, it resumes the next time the screen is dark");
 }
 
+// Wifi setup from the system menu, each a task like the update check. A scan lists what the radio hears; a test joins
+// a network the grown-up picked (not saved yet) and reports whether it could. Neither touches g_st.
+void scan() {
+  int16_t n = WiFi.scanNetworks();   // blocking, here on core 0: every channel, a few seconds; it turns the station on
+  int count = 0;
+  for (int i = 0; i < n; i++)
+    count = shell::addNetwork(g_found, count, WiFi.SSID(i).c_str(), (int)WiFi.RSSI(i),
+                              WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+  WiFi.scanDelete();
+  WiFi.mode(WIFI_OFF);
+  Serial.printf("[net] scan: %d heard, %d listed\n", (int)n, count);
+  g_scanCount = count;   // last: it hands g_found to the main loop
+}
+void test() {
+  const bool ok = joinWifi(g_try);   // logs the network, never the password
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  memset(g_try.pass, 0, sizeof g_try.pass);
+  g_tested = ok ? 1 : 0;
+}
+
 void task(void* arg) {
-  run((shell::Channel)(uintptr_t)arg);
+  const Job job = (Job)(uintptr_t)arg;
+  if (job == J_SCAN) scan();
+  else if (job == J_TEST) test();
+  else run(g_checkChan);
   g_forced = false;
   g_busy = false;
   vTaskDelete(nullptr);
 }
 
-void spawn(shell::Channel ch, bool forced) {
-  if (g_busy.exchange(true)) return;
-  g_forced = forced;
+// Starts a job on core 0. The caller holds g_busy (the radio); without memory for the task it lets go and says so.
+// Idle priority: it time-slices with IDLE0, so a long stretch without a yield (a TLS handshake, Update.end()'s image
+// check) cannot starve IDLE0 into the 5 s task watchdog. Wifi and lwIP run in their own, higher-priority tasks.
+bool spawn(Job job) {
+  if (xTaskCreatePinnedToCore(task, "porthole-net", STACK, (void*)(uintptr_t)job, tskIDLE_PRIORITY, nullptr, 0) == pdPASS) return true;
+  g_forced = false;
+  g_busy = false;
+  Serial.println("[net] no memory for the wifi task");
+  return false;
+}
+
+bool startCheck(shell::Channel ch, bool forced) {   // false: dropped
+  if (g_busy.exchange(true)) return false;   // a check, a scan or a test is running
   // Downloaded already: a second run would rewrite the slot that is set to boot, and a failure would leave it broken.
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
-  if (ready) { g_busy = false; return; }
-  // Idle priority: it time-slices with IDLE0, so a long stretch without a yield (a TLS handshake, Update.end()'s image
-  // check) cannot starve IDLE0 into the 5 s task watchdog. Wifi and lwIP run in their own, higher-priority tasks.
-  if (xTaskCreatePinnedToCore(task, "porthole-net", STACK, (void*)(uintptr_t)ch, tskIDLE_PRIORITY, nullptr, 0) != pdPASS) {
-    g_busy = false;
-    Serial.println("[net] no memory for the update task");
-  }
+  if (ready) { g_busy = false; return false; }
+  g_forced = forced;
+  g_checkChan = ch;
+  return spawn(J_CHECK);
 }
 
 // /porthole/wifi.txt on the card: line 1 the network, line 2 its password. Saved when it differs from "sys".
@@ -271,10 +323,18 @@ void Updater::tick(uint32_t ms) {
   g_nextPoll = ms + POLL_MS;
   if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
   if (!g_dark) return;   // the daily check runs while nobody is looking: it may write flash
-  spawn(channel(), false);
+  startCheck(channel(), false);
 }
 
-bool Updater::saveWifi(const char* ssid, const char* pass) { return storeWifi(ssid, pass); }
+// "No wifi" or "Check failed" was about the network before: idle again, as setChannel does. Only those resting states:
+// never a run going (CHECKING, DOWNLOADING) or an update waiting (READY).
+bool Updater::saveWifi(const char* ssid, const char* pass) {
+  if (!storeWifi(ssid, pass)) return false;
+  portENTER_CRITICAL(&g_mux);
+  if (g_st.state == shell::UP_NO_WIFI || g_st.state == shell::UP_FAILED) { g_st.state = shell::UP_IDLE; g_st.pct = 0; }
+  portEXIT_CRITICAL(&g_mux);
+  return true;
+}
 
 void Updater::info(shell::SysInfo& out) {
   out = shell::SysInfo{};
@@ -295,7 +355,32 @@ shell::UpdStatus Updater::status() {
   return s;
 }
 
-void Updater::checkNow() { spawn(channel(), true); }
+void Updater::checkNow() { startCheck(channel(), true); }
+bool Updater::tryCheckNow() { return startCheck(channel(), true); }
+
+// Without memory for the task a scan finds nothing and a test fails: the menu says so instead of waiting on it.
+bool Updater::startScan() {
+  if (g_busy.exchange(true)) return false;
+  g_scanCount = -1;
+  if (!spawn(J_SCAN)) g_scanCount = 0;
+  return true;
+}
+int Updater::scanResult(shell::Network* out, int max) {
+  const int n = g_scanCount;
+  if (n < 0) return -1;
+  const int k = n < max ? n : max;
+  for (int i = 0; i < k; i++) out[i] = g_found[i];
+  return k;
+}
+bool Updater::startTest(const char* ssid, const char* pass) {
+  if (g_busy.exchange(true)) return false;
+  snprintf(g_try.ssid, sizeof g_try.ssid, "%s", ssid);
+  snprintf(g_try.pass, sizeof g_try.pass, "%s", pass);
+  g_tested = -1;
+  if (!spawn(J_TEST)) { memset(g_try.pass, 0, sizeof g_try.pass); g_tested = 0; }
+  return true;
+}
+int Updater::testResult() { return g_tested; }
 void Updater::setDark(bool dark) { g_dark = dark; }
 void Updater::restart() { ESP.restart(); }
 
