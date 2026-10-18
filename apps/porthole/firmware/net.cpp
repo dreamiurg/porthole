@@ -48,7 +48,7 @@ char g_ssid[33] = {0};
 shell::Channel g_chan = shell::CH_STABLE;
 std::atomic<bool> g_busy{false};   // a check task exists
 std::atomic<bool> g_dark{false};   // the backlight is off (main loop, every frame)
-std::atomic<bool> g_forced{false}; // the running check is a Check now: it writes flash with the screen forced off
+std::atomic<bool> g_forced{false}; // the running check is a Check now: it writes flash even with the screen lit
 std::atomic<bool> g_woke{false};   // the screen came on mid-download: stopped, to resume in the next dark spell
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
@@ -152,7 +152,7 @@ bool download(const char* ver) {
   snprintf(url, sizeof url, "%sdownload/porthole-v%s/porthole-%s-ota.bin", RELEASES, ver, ver);
   Https c;
   int code = c.get(url), size = c.http.getSize();
-  Serial.printf("[net] downloading %s: %d bytes%s\n", ver, size, g_forced ? ", screen off until it is written" : "");
+  Serial.printf("[net] downloading %s: %d bytes\n", ver, size);
   setState(shell::UP_DOWNLOADING);
   // A known size, never UPDATE_SIZE_UNKNOWN: that erases the whole 7.9 MB slot first, stalling both cores.
   bool ok = code == 200 && size > 0 && Update.begin((size_t)size) && stream(c.http, (size_t)size) && Update.end();
@@ -297,7 +297,6 @@ shell::UpdStatus Updater::status() {
 
 void Updater::checkNow() { spawn(channel(), true); }
 void Updater::setDark(bool dark) { g_dark = dark; }
-bool Updater::forcesDark() { return g_forced && g_busy; }   // the whole run: joining wifi and the check write flash too
 void Updater::restart() { ESP.restart(); }
 
 shell::Channel Updater::channel() { return g_chan; }
