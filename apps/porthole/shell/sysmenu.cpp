@@ -110,11 +110,12 @@ static void wifiResult(char* out, size_t n, const UpdStatus& u, uint32_t now) {
   else snprintf(out, n, "%s", u.state == UP_IDLE ? "not yet" : u.state == UP_NO_WIFI ? "no wifi" : u.state == UP_CHECKING ? "trying" : "ok");
 }
 
-static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20};
+static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20}, HOME_BTN = {50, 121, 60, 20};
 void Shell::updateSysInfo() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_PICK); return; }
   if (tapped(in_, UPD_BTN)) { go(SH_SYS_UPD); return; }
+  if (sys_->hasHome() && tapped(in_, HOME_BTN)) { go(SH_SYS_HOME); return; }
   if (tapped(in_, WIFI_BTN)) { netPage_ = 0; scan(); go(SH_SYS_WIFI); }
 }
 void Shell::drawSysInfo() {
@@ -131,6 +132,7 @@ void Shell::drawSysInfo() {
   row(y, upd_.state == UP_IDLE && upd_.lastCheck ? "Checked" : "Last try", tried);   // before this boot: a time, no result
   sbutton(WIFI_BTN, "Wifi", C_SKY, down(in_, WIFI_BTN));
   sbutton(UPD_BTN, "Updates", C_SKY, down(in_, UPD_BTN));
+  if (sys_->hasHome()) sbutton(HOME_BTN, "Home", C_SKY, down(in_, HOME_BTN));
   ui::drawBack();
 }
 
@@ -389,6 +391,100 @@ void Shell::drawSysJoin() {
   if (join_ == JOIN_FAILED) {
     sbutton(JOIN_RETRY, "Try again", C_SKY, down(in_, JOIN_RETRY));
     sbutton(JOIN_SAVE, "Save anyway", C_LTGRAY, down(in_, JOIN_SAVE));
+  }
+  ui::drawBack();
+}
+
+// ---------------------------------------------------------------- Home: where the radar centers, from a street address
+// Home shows what is set; Set address types one on the keyboard (shown in full, not masked: an address is not a
+// secret), OK looks it up (a radio job: it waits while another runs), and the place found is saved only after Yes.
+enum : int8_t { L_WAITING = -2, L_LOOKING = -1, L_NONE = 0, L_FOUND = 1, L_SAVE_FAILED = 2 };
+static const ui::Box SET_BTN = {40, 104, 80, 20}, FIND_YES = {26, 104, 52, 20}, FIND_NO = {82, 104, 52, 20};
+static const ui::Box FIND_RETRY = {50, 104, 60, 20};
+// s word-wrapped into up to `lines` centered rows of at most room px from y; returns the y after the last row.
+static int wrapC(int y, const char* s, int room, int lines, uint8_t c) {
+  char line[64];
+  while (*s && lines-- > 0) {
+    int n = 0, cut = 0;
+    while (s[n] && n < 63) {
+      memcpy(line, s, (size_t)n + 1); line[n + 1] = 0;
+      if (stextW(line) > room) break;
+      n++;
+      if (!s[n] || s[n] == ' ') cut = n;
+    }
+    if (!cut || !lines) cut = n;   // one long word, or the last row: cut where it stops fitting
+    memcpy(line, s, (size_t)cut); line[cut] = 0;
+    stextC(80, y, line, c);
+    y += ROW;
+    s += cut;
+    while (*s == ' ') s++;
+  }
+  return y;
+}
+void Shell::updateSysHome() {
+  if (ui::back(in_)) { go(SH_SYS_INFO); return; }
+  if (tapped(in_, SET_BTN)) { addr_ = TextEntry{}; go(SH_SYS_ADDR); }
+}
+void Shell::drawSysHome() {
+  clear(C_NAVY);
+  stextC(80, 30, "The radar centers on", C_LTGRAY);
+  Home h;
+  if (sys_->home(h)) {
+    const int y = wrapC(44, h.name[0] ? h.name : "a place with no name", 120, 3, C_WHITE);
+    char at[32]; snprintf(at, sizeof at, "%.3f, %.3f", h.lat, h.lon);
+    stextC(80, y + 3, at, C_LTGRAY);
+  } else {
+    stextC(80, 50, "nothing yet", C_YELLOW);
+  }
+  sbutton(SET_BTN, "Set address", C_SKY, down(in_, SET_BTN));
+  ui::drawBack();
+}
+void Shell::updateSysAddr() {
+  if (ui::back(in_)) { addr_ = TextEntry{}; go(SH_SYS_HOME); return; }
+  if (typeInto(in_, addr_)) { look_ = L_WAITING; go(SH_SYS_FIND); }
+}
+void Shell::drawSysAddr() {
+  clear(C_NAVY);
+  ui::panel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
+  char shown[TEXT_MAX + 2];   // its tail, as much as fits, and a cursor
+  snprintf(shown, sizeof shown, "%s%s", addr_.buf, addr_.len < TEXT_MAX && (ms_ / 400) % 2 ? "_" : "");
+  const char* tail = shown;
+  while (stextW(tail) > 98) tail++;
+  if (addr_.len) stextC(80, 27, tail, C_NAVY); else stextC(80, 27, "Street, city", C_DKGRAY);
+  drawKeys(addr_);
+  ui::drawBack();
+}
+void Shell::pollLook() {
+  if (look_ == L_WAITING && sys_->startLookup(addr_.buf)) look_ = L_LOOKING;
+  else if (look_ == L_LOOKING) look_ = (int8_t)sys_->lookupResult(found_);
+}
+void Shell::updateSysFind() {
+  upd_ = sys_->status();
+  pollLook();
+  if (ui::back(in_)) { go(SH_SYS_ADDR); return; }   // the typing is kept
+  if (look_ == L_FOUND && tapped(in_, FIND_YES)) {
+    if (sys_->saveHome(found_)) { addr_ = TextEntry{}; go(SH_SYS_HOME); } else look_ = L_SAVE_FAILED;
+  } else if (look_ == L_FOUND && tapped(in_, FIND_NO)) go(SH_SYS_ADDR);
+  else if ((look_ == L_NONE || look_ == L_SAVE_FAILED) && tapped(in_, FIND_RETRY)) {
+    if (look_ == L_NONE) go(SH_SYS_ADDR); else if (sys_->saveHome(found_)) go(SH_SYS_HOME);
+  }
+}
+void Shell::drawSysFind() {
+  clear(C_NAVY);
+  static const char* const DOTS[] = {".", "..", "..."};
+  if (look_ < 0) {
+    stextC(80, 48, look_ == L_WAITING && busy(upd_.state) ? "Waiting for the update" : "Looking up", C_LTGRAY);
+    wrapC(60, addr_.buf, 120, 2, C_WHITE);
+    stextC(80, 82, DOTS[ms_ / 400 % 3], C_WHITE);
+  } else if (look_ == L_FOUND) {
+    stextC(80, 30, "Is this home?", C_LTGRAY);
+    wrapC(44, found_.name, 120, 4, C_WHITE);
+    sbutton(FIND_YES, "Yes", C_GREEN, down(in_, FIND_YES));
+    sbutton(FIND_NO, "No", C_LTGRAY, down(in_, FIND_NO));
+  } else {
+    stextC(80, 48, look_ == L_NONE ? "Could not find that address" : "Could not save", C_YELLOW);
+    wrapC(62, look_ == L_NONE ? "Check the spelling, or add the city" : "Nothing was changed", 120, 2, C_LTGRAY);
+    sbutton(FIND_RETRY, "Try again", C_SKY, down(in_, FIND_RETRY));
   }
   ui::drawBack();
 }
