@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "webemu",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd \"$(git rev-parse --show-toplevel)\" && exec make -C apps/porthole webemu"],
+      "port": 8765
+    }
+  ]
+}
