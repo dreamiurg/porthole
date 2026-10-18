@@ -30,16 +30,16 @@ wait 450
 expect-screen sys_info
 ui-check
 snap 02_info
-tap 80 128
+tap 110 108
 wait 450
 expect-screen sys_updates
 ui-check sys_updates-idle
 snap 03_updates
 expect sys_chan=stable
-tap 108 42
+tap 107 40
 wait 450
 expect sys_chan=beta
-tap 80 128
+tap 80 108
 wait 100
 expect sys_checks=1
 expect sys_state=checking
@@ -55,11 +55,11 @@ wait 100
 ui-check sys_updates-ready
 snap 06_ready
 # the channel stays put with an image waiting
-tap 52 42
+tap 53 40
 wait 450
 expect sys_chan=beta
 expect sys_state=ready
-tap 80 128
+tap 80 108
 wait 450
 expect sys_restarts=1
 expect sys_ver=0.16.0
@@ -82,7 +82,7 @@ expect sys_state=idle
 expect sys_last>0
 ui-check sys_info-rebooted
 snap 08_info_rebooted
-tap 80 128
+tap 110 108
 wait 450
 ui-check sys_updates-rebooted
 snap 08b_updates_rebooted
@@ -95,7 +95,7 @@ sys failed
 wait 100
 ui-check sys_updates-failed
 snap 09_failed
-tap 52 42
+tap 53 40
 wait 450
 expect sys_chan=stable
 expect sys_state=idle
@@ -115,9 +115,9 @@ wait 450
 expect-screen sys_info
 ui-check sys_info-nowifi
 snap 10_nowifi
-tap 80 128
+tap 110 108
 wait 450
-tap 80 128
+tap 80 108
 wait 100
 expect sys_state=nowifi
 ui-check sys_updates-nowifi
@@ -136,7 +136,7 @@ down 80 16
 wait 5000
 up
 wait 450
-tap 80 128
+tap 110 108
 wait 450
 sys current
 sys newest 0.15.0

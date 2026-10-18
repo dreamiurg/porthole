@@ -39,6 +39,38 @@ struct SysInfo {
   char ssid[33] = {0};          // saved network, "" if none
 };
 
+struct Network {   // one a scan found
+  char ssid[33] = {0};
+  int8_t rssi = 0;              // dBm, strongest near 0
+  bool secured = false;         // needs a password
+};
+constexpr int MAX_NETWORKS = 12;   // the most a scan reports
+
+// Adds one scan result to list (n entries), which stays strongest first with one entry per name, its strongest: a mesh
+// or a dual-band router shows one name several times. A hidden network (no name) or one with a name over 32 bytes is
+// skipped; past MAX_NETWORKS the weakest falls off. Returns the new count.
+inline int addNetwork(Network (&list)[MAX_NETWORKS], int n, const char* ssid, int rssi, bool secured) {
+  const int max = MAX_NETWORKS;
+  size_t len = ssid ? strlen(ssid) : 0;
+  if (!len || len > 32) return n;
+  rssi = rssi < -127 ? -127 : rssi > 0 ? 0 : rssi;
+  for (int i = 0; i < n; i++) {
+    if (strcmp(list[i].ssid, ssid)) continue;
+    if (list[i].rssi >= rssi) return n;   // a weaker copy of one listed
+    memmove(list + i, list + i + 1, (size_t)(n - i - 1) * sizeof *list);   // a stronger one: listed again below
+    n--;
+    break;
+  }
+  int at = 0;
+  while (at < n && list[at].rssi >= rssi) at++;
+  if (at >= max) return n;
+  if (n == max) n--;
+  memmove(list + at + 1, list + at, (size_t)(n - at) * sizeof *list);
+  memcpy(list[at].ssid, ssid, len + 1);
+  list[at].rssi = (int8_t)rssi; list[at].secured = secured;
+  return n + 1;
+}
+
 class System {
  public:
   virtual void info(SysInfo& out) = 0;
@@ -49,6 +81,20 @@ class System {
   // Persisted; takes effect at the next check. Implementations clear `available` and return to UP_IDLE (unless busy
   // or READY): the old channel's result says nothing about the new one.
   virtual void setChannel(Channel c) = 0;
+
+  // Wifi setup (the menu's Wifi screens). The radio does one job at a time, in the background (the firmware's core 0):
+  // the update check and download, a scan or a test join. startScan and startTest refuse (false, nothing started)
+  // while another job runs; checkNow and the daily check do nothing while a scan or a test runs. Wifi is off after each.
+  virtual bool startScan() = 0;
+  // -1 while a scan runs; else the last scan's networks into out (up to max, as addNetwork keeps them): 0 = none
+  // found, the scan failed, or none yet.
+  virtual int scanResult(Network* out, int max) = 0;
+  // Joins ssid with pass ("" = an open network) without saving it, then turns wifi off again.
+  virtual bool startTest(const char* ssid, const char* pass) = 0;
+  virtual int testResult() = 0;   // -1 while joining; 1 it joined; 0 it could not (or no test yet)
+  // The network the daily check joins, persisted; false (nothing saved) if ssid is empty or over 32 bytes, or pass
+  // over 64. pass "" = an open network. Never logged.
+  virtual bool saveWifi(const char* ssid, const char* pass) = 0;
 
  protected:
   ~System() = default;

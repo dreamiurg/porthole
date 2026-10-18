@@ -1,0 +1,225 @@
+# Wifi setup in the hidden system menu: Info -> Wifi scans (looking, then the networks strongest first, one per name, no
+# hidden one, two pages) -> a secured network's keyboard (upper case, digits, symbols, backspace) -> a test join ->
+# Connected, saved, on Info. A wrong password changes nothing (Try again keeps the typing; Save anyway saves it), an
+# open network skips the keyboard, a scan can find nothing, and a radio busy with a scan or an update refuses a scan
+# and saves untested. Back from every screen. The sim's System is a stub: `sys scan|scanempty|joinok|joinfail` end the
+# running scan or test (host/sim.cpp).
+reset
+profile Sam 8
+reboot
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+expect sys_ssid=Home-Network-5G-Upstairs
+tap 50 108
+wait 450
+expect-screen sys_wifi
+expect sys_scans=1
+expect sys_nets=-1
+ui-check sys_wifi-scanning
+snap 01_scanning
+# Back mid-scan: the radio is still busy, so Updates has no Check now and says why, and a second scan is refused
+tap 80 12
+wait 450
+expect-screen sys_info
+tap 110 108
+wait 450
+expect-screen sys_updates
+ui-check sys_updates-radio
+snap 02_updates_radio
+tap 80 108
+wait 100
+expect sys_checks=0
+tap 80 12
+wait 450
+tap 50 108
+wait 450
+expect sys_scans=1
+ui-check sys_wifi-refused
+snap 03_refused
+# the first scan ends; Rescan starts a new one, which finds six networks (nine heard: a dual-band name and a mesh's two
+# nodes once each, the hidden one not at all)
+sys scan
+tap 80 123
+wait 100
+expect sys_scans=2
+sys scan
+wait 100
+expect sys_nets=6
+ui-check sys_wifi-list
+snap 04_list
+tap 121 123
+wait 100
+ui-check sys_wifi-page2
+snap 05_page2
+tap 39 123
+wait 100
+# a secured network: the keyboard; Back keeps the list (no new scan)
+tap 80 39
+wait 450
+expect-screen sys_pass
+ui-check sys_pass-empty
+snap 06_keyboard
+tap 80 12
+wait 450
+expect-screen sys_wifi
+expect sys_scans=2
+tap 80 39
+wait 450
+expect-screen sys_pass
+# "Ab3$x{Y}": shift a, shift b, 123 3 $, abc x, #+= {, abc shift Y, #+= }; a stray "R" and backspace at the end
+tap 38 128
+tap 27 48
+tap 38 128
+tap 48 48
+tap 59 128
+tap 69 48
+tap 17 88
+tap 59 128
+tap 59 128
+tap 90 108
+tap 59 128
+tap 59 128
+tap 143 68
+wait 100
+ui-check sys_pass-symbols
+snap 07_symbols
+tap 59 128
+tap 38 128
+tap 111 108
+wait 100
+ui-check sys_pass-upper
+snap 08_upper
+tap 59 128
+tap 59 128
+tap 38 88
+tap 59 128
+tap 101 88
+tap 101 128
+wait 100
+snap 09_typed
+tap 122 128
+wait 450
+expect-screen sys_join
+expect sys_tests=1
+expect sys_tried=Home-Network-5G-Upstairs
+ui-check sys_join-joining
+snap 10_joining
+# wrong: nothing saved; Try again keeps the typing; Back mid-join goes back to the keyboard
+sys joinfail
+wait 100
+expect sys_tested=0
+expect sys_pass!=Ab3$x{Y}
+ui-check sys_join-failed
+snap 11_failed
+tap 48 108
+wait 450
+expect-screen sys_pass
+tap 122 128
+wait 450
+expect-screen sys_join
+expect sys_tests=2
+tap 80 12
+wait 450
+expect-screen sys_pass
+sys joinfail
+tap 122 128
+wait 450
+expect sys_tests=3
+sys joinok
+wait 100
+expect sys_pass=Ab3$x{Y}
+expect sys_ssid=Home-Network-5G-Upstairs
+ui-check sys_join-joined
+snap 12_joined
+tap 80 108
+wait 450
+expect-screen sys_info
+snap 13_info
+# Save anyway: a network out of reach keeps what was typed
+tap 50 108
+wait 450
+sys scan
+wait 100
+tap 80 99
+wait 450
+expect-screen sys_pass
+tap 111 48
+tap 132 48
+tap 122 128
+wait 450
+sys joinfail
+wait 100
+tap 112 108
+wait 450
+expect-screen sys_info
+expect sys_ssid=Neighbors_2.4GHz
+expect sys_pass=ef
+# an open network: no keyboard; Try again joins again; Back from Connected is Info
+tap 50 108
+wait 450
+sys scan
+wait 100
+tap 80 79
+wait 450
+expect-screen sys_join
+expect sys_tried=Library Free WiFi
+sys joinfail
+wait 100
+tap 48 108
+wait 450
+expect-screen sys_join
+sys joinok
+wait 100
+expect sys_ssid=Library Free WiFi
+ui-check sys_join-open
+snap 14_open
+tap 80 12
+wait 450
+expect-screen sys_info
+# Back mid-join on an open network is the list; nothing found
+tap 50 108
+wait 450
+sys scan
+wait 100
+tap 80 79
+wait 450
+tap 80 12
+wait 450
+expect-screen sys_wifi
+sys joinok
+tap 80 123
+wait 100
+sys scanempty
+wait 100
+expect sys_nets=0
+ui-check sys_wifi-none
+snap 15_none
+# an update holds the radio: a scan is refused; one picked before it started is saved without a test
+sys scan
+tap 80 123
+wait 100
+sys scan
+wait 100
+sys download 42
+tap 80 79
+wait 450
+expect sys_tests=7
+expect-screen sys_join
+ui-check sys_join-untested
+snap 16_untested
+tap 80 108
+wait 450
+expect-screen sys_info
+tap 50 108
+wait 450
+ui-check sys_wifi-updating
+snap 17_updating
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+sheet wifi

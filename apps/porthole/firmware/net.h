@@ -18,7 +18,6 @@ class Updater final : public shell::System {
   void begin(uint32_t (*localNow)());
   // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
   void tick(uint32_t ms);
-  bool saveWifi(const char* ssid, const char* pass);   // false if ssid is empty or either is too long
   // Flash is only written while the screen is dark: a flash write stalls the RGB panel's refill from PSRAM, and a lit
   // screen shows broken frames. Call setDark every loop with whether the backlight is off. The daily download starts
   // only in the dark and stops (to resume the next dark spell) if the screen wakes. A Check now download keeps going:
@@ -32,6 +31,11 @@ class Updater final : public shell::System {
   void restart() override;
   shell::Channel channel() override;
   void setChannel(shell::Channel c) override;
+  bool startScan() override;
+  int scanResult(shell::Network* out, int max) override;
+  bool startTest(const char* ssid, const char* pass) override;
+  int testResult() override;
+  bool saveWifi(const char* ssid, const char* pass) override;   // also serial W and the SD card's wifi.txt
 };
 
 }  // namespace net

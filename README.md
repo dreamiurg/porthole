@@ -157,7 +157,7 @@ games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
 You only need the USB cable once. After that, the board keeps itself up to date over wifi.
 
-![The version on "Who's playing?", the Info screen, an update ready to start, and the "something new" card](docs/updates.png)
+![The version on "Who's playing?", the Info screen, the wifi list, an update ready to start, and the "something new" card](docs/updates.png)
 
 Once a day, when nobody is playing and the screen has gone dark (it dims itself after a few minutes), the
 board looks for a new version and downloads it. If someone wakes the screen during the download, it stops and
@@ -167,13 +167,16 @@ anywhere.
 
 To give it your wifi, pick one:
 
+- **On the board (easiest).** Open the hidden menu (below), tap **Wifi**, pick your network from the list and type
+  its password. The board tries it right away and keeps it only if it connects (or if you tap **Save anyway**).
+  Networks without a password skip the typing.
 - **microSD card.** Make a file `/porthole/wifi.txt` with the network name on the first line and the password
   on the second. Put the card in the board and switch it on. It remembers the network.
 - **USB cable.** Open a serial monitor at 115200 baud (either USB-C port works) and send
   `W<network name><TAB><password>`, for example `WHomeWiFi`, then a tab, then your password.
 
 Grown-ups have a hidden menu. On "Who's playing?", press and hold the title for 5 seconds. **Info** shows the
-version, the wifi, the SD card and a few other details. **Updates** shows the running and newest version, lets you
+version, the wifi, the SD card and a few other details. **Wifi** lists the networks nearby. **Updates** shows the running and newest version, lets you
 pick Stable or Beta, and has **Check now** (it downloads right away; the screen goes dark until it's done, about a
 minute) and **Restart now** once an update is ready. The running version is also in small print at the bottom
 of "Who's playing?".

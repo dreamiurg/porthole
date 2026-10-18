@@ -38,6 +38,8 @@ int  wrap(const char* s, int maxw, char lines[][40], int maxLines, int scale = 1
 struct TextBox { int16_t x, y, w, h; uint32_t color, bg; bool rgb; };
 extern TextBox textLog[64]; extern int textLogCount; extern bool textLogEnabled;
 inline void textLogReset() { textLogCount = 0; }
+// Logs a box another font drew (or is about to: the background is sampled now), when textLogEnabled. Logical px.
+void logText(int x, int y, int w, int h, uint8_t c);
 
 // Is (x,y) inside the round visible area?
 inline bool inCircle(int x, int y, int margin = 0) {
