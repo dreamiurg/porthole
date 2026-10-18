@@ -202,6 +202,7 @@ void checkAndDownload(shell::Channel ch) {
   Serial.printf("[net] %s channel: %s, running %s\n", ch == shell::CH_BETA ? "beta" : "stable", f == F_VERSION ? avail : "none",
                 PORTHOLE_VERSION);
   if (!shell::newer(avail, PORTHOLE_VERSION)) { setState(shell::UP_CURRENT); return; }
+  if (!g_forced && !g_dark) { g_woke = true; return; }   // woken during the check: download in the next dark spell
   bool ok = download(avail);
   if (ok) setState(shell::UP_READY, 100); else setState(shell::UP_FAILED);   // a ready image is all there
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
@@ -381,7 +382,7 @@ bool Updater::startTest(const char* ssid, const char* pass) {
 }
 int Updater::testResult() { return g_tested; }
 void Updater::setDark(bool dark) { g_dark = dark; }
-bool Updater::forcesDark() { return g_forced && status().state == shell::UP_DOWNLOADING; }
+bool Updater::forcesDark() { return g_forced && g_busy; }   // the whole run: joining wifi and the check write flash too
 void Updater::restart() { ESP.restart(); }
 
 shell::Channel Updater::channel() { return g_chan; }

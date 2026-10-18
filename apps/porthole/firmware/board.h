@@ -29,6 +29,10 @@ void rtcSet(uint32_t localEpoch);
 bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw = nullptr);
 
 void setBacklight(uint8_t percent);
+// Restart the RGB panel's scan-out from the top of the frame. A long flash write (an update download, wifi calibration
+// data) stalls the panel's refill from PSRAM and can leave the picture shifted a few rows; call this before lighting
+// a screen that was dark while flash was written.
+void resyncPanel();
 void buzzer(bool on);
 
 // NVS blobs addressed by (namespace, key). Namespaces are at most 15 chars, keys at most 15.
