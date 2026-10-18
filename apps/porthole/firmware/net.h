@@ -18,12 +18,11 @@ class Updater final : public shell::System {
   void begin(uint32_t (*localNow)());
   // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
   void tick(uint32_t ms);
-  // Flash is only written while the screen is dark: a flash write stalls the RGB panel's refill from PSRAM, and a lit
-  // screen shows broken frames. Call setDark every loop with whether the backlight is off. The daily download starts
-  // only in the dark and stops (to resume the next dark spell) if the screen wakes. A Check now run keeps going, start
-  // to finish (joining wifi writes calibration data to flash too): while forcesDark() is true the backlight stays off.
+  // The daily run writes flash only while the screen is dark: a flash write stalls the RGB panel's refill from PSRAM,
+  // and a lit screen shows a broken frame or two. Call setDark every loop with whether the backlight is off. The daily
+  // download starts only in the dark and stops (to resume the next dark spell) if the screen wakes. A Check now run
+  // keeps going with the screen lit: the grown-up asked for it and watches its progress.
   void setDark(bool dark);
-  bool forcesDark();
 
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;

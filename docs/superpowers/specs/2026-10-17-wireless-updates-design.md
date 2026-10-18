@@ -61,7 +61,7 @@ The board is not powered overnight, so nothing depends on a night-time window.
 - **Flash is only written while the screen is dark** (decided on the board, 2026-10-17). Writing flash while a game
   was on screen didn't just stutter (34 ms frames became about 62 ms): the glass showed broken frames, because a
   flash write stalls the RGB panel's refill from PSRAM. The daily download starts only when the backlight is off and
-  stops if the screen wakes, resuming in the next dark spell. Check now turns the screen off until it is written.
+  stops if the screen wakes, resuming in the next dark spell. Check now keeps the screen lit.
 - **Root rule 7.** The "something new" card and the hidden menu use the shell's own widgets and palette, with
   nothing from any game.
 
