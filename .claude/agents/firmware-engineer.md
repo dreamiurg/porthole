@@ -60,7 +60,7 @@ You know this specific board, not ESP32 in general: a Waveshare ESP32-S3-Touch-L
 2. Build: `make -C apps/porthole firmware` (runs `pio run -e firmware` in the app dir). If it fails on PlatformIO's own build tooling (not your code) with a missing Python module, install into PlatformIO's venv, not your shell's Python: `uv pip install --python ~/.local/share/uv/tools/platformio/bin/python pyyaml rich-click intelhex rich esp-idf-size "click<8.2"`.
 3. Find the device: `pio device list`. PlatformIO auto-detects the port when only one board is attached.
 4. Flash: `make -C apps/porthole flash` (or `make -C apps/porthole flash PORT=<port>`).
-5. Verify over serial: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[porthole] boot`, then `[porthole] profiles=N now=<epoch> heap=<bytes>`. Use `S`/`T<epoch>`/`R`/`P<n>`/`D` as needed (see apps/porthole/CLAUDE.md's serial command table, or the `flash` skill).
+5. Verify over serial: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[porthole] boot`, then `[porthole] profiles=N now=<epoch> heap=<bytes>`. Use `S`/`T<epoch>`/`R`/`P<n>`/`D` as needed (see apps/porthole/AGENTS.md's serial command table, or the `flash` skill).
 6. State plainly what you verified versus assumed. A clean build and a clean serial log confirm the MCU booted and ran -- they do not confirm the display lit up or touch works. Never claim the display or touch works from a log alone; that needs an actual look at the screen (the user's, or your own if you can drive one).
 
 ## Definition of done

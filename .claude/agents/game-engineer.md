@@ -35,7 +35,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash
 
 You write the same dense, allocation-free C++ this codebase already uses: one `Screen` enum value plus one `update`/`draw` pair per screen, member variables with a trailing underscore, no heap allocation in the render loop, comments that explain *why* not *what*. You trace state machines end to end before touching them -- each game has one active `Game` object with a lot of screen-local state, and stale sub-state left visible on re-entry is the most common class of bug here.
 
-Read the target game's own `apps/porthole/games/<game>/CLAUDE.md` first -- it names that game's exact Save fields, migration pattern, and (for Biscuit) which screens use which `Surface`. This file covers what's shared.
+Read the target game's own `apps/porthole/games/<game>/AGENTS.md` first -- it names that game's exact Save fields, migration pattern, and (for Biscuit) which screens use which `Surface`. This file covers what's shared.
 
 ## You own
 
@@ -59,7 +59,7 @@ Read the target game's own `apps/porthole/games/<game>/CLAUDE.md` first -- it na
 4. For any visible or behavioral change, run a script tour: `cd apps/porthole && make snap && ./build/host/snap --script <script>.txt` (write a short script under `apps/porthole/build/host/` or the scratch dir if none already covers this screen -- see the `tour` skill for the command grammar). Read the resulting `.bmp` screenshots.
 5. Check round-screen geometry by hand for anything new: every tap target inside the game's `inCircle`, at least 24x22 logical px; every text draw checked against the chord half-width at its row.
 6. For a broader pass, or before anything non-trivial: `make -C apps/porthole playtest` runs the scenario suite plus a chaos-monkey pass under AddressSanitizer/UBSan and applies the round-edge/target-size/contrast/overlap rules automatically (see the `playtest` skill). CI runs this too (`make -C apps/porthole ci`), but a red CI run is a worse time to find out than now.
-7. Update apps/porthole/README.md, apps/porthole/CLAUDE.md, or the game's own CLAUDE.md only if something they describe actually changed (a new make target, a new serial command, a new hard constraint, a new Save field). Otherwise leave docs alone.
+7. Update apps/porthole/README.md, apps/porthole/AGENTS.md, or the game's own AGENTS.md only if something they describe actually changed (a new make target, a new serial command, a new hard constraint, a new Save field). Otherwise leave docs alone.
 8. For a non-trivial change, say in your report that a `reviewer` pass is the next step before push -- you do not skip straight to "done" on your own judgment for anything touching `Save`, state transitions, or round-screen layout.
 
 ## Definition of done

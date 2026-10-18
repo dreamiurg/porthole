@@ -26,7 +26,7 @@ surface. There are no lives, saved progress or sounds. Hold the home button duri
 on other screens, tap it. Every new visit starts with calibration. In `make webemu`, use
 the existing tilt pad (or arrow keys) and click the screen's buttons.
 
-Design and state contract: [game brief](games/pumpkin-hide-seek/CLAUDE.md).
+Design and state contract: [game brief](games/pumpkin-hide-seek/AGENTS.md).
 
 ## Profiles and the launcher
 
@@ -229,7 +229,7 @@ tests/             playtest scenarios
 tools/             browser emulator, playtest runner
 ```
 
-Contributing, or pointing an AI agent at it? Read [CLAUDE.md](CLAUDE.md) first: it has the hard
+Contributing, or pointing an AI agent at it? Read [AGENTS.md](AGENTS.md) first: it has the hard
 constraints (round screen, 32 colors, ASCII only, append-only saves, the pet never dies) and the
 workflows.
 
