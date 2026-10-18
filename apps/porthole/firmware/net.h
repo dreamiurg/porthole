@@ -28,6 +28,7 @@ class Updater final : public shell::System {
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;
   void checkNow() override;
+  bool tryCheckNow();   // checkNow, false when it was dropped (a run or a wifi job holds the radio, or an update is ready)
   void restart() override;
   shell::Channel channel() override;
   void setChannel(shell::Channel c) override;

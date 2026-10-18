@@ -187,7 +187,10 @@ static void wifiCommand() {   // W<ssid>\t<password>: the tab is required; an op
   Serial.printf("[porthole] wifi saved: %s\n", arg.substring(0, tab).c_str());
 }
 static void updateCommand() {
-  g_sys.checkNow();
+  if (!g_sys.tryCheckNow()) {
+    Serial.println("[porthole] update check dropped: one is running, wifi setup holds the radio, or an update is ready");
+    return;
+  }
   Serial.printf("[porthole] update check started (channel %s)\n", g_sys.channel() == shell::CH_BETA ? "beta" : "stable");
 }
 static void motionCommand(int c) {   // A, G, M, W, U: split out of serialCommand for the complexity gate

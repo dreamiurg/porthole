@@ -148,8 +148,9 @@ void Shell::updateSysUpd() {
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
   for (int c = 0; c < 2 && !chanLocked(upd_.state); c++)
     if (tapped(in_, chanSeg(c)) && c != sys_->channel()) sys_->setChannel((Channel)c);
-  if (busy(upd_.state) || radioBusy(*sys_) || !tapped(in_, SYS_BTN)) return;
-  if (upd_.state == UP_READY) sys_->restart(); else sys_->checkNow();
+  const bool ready = upd_.state == UP_READY;   // Restart now needs no radio; Check now waits for a scan or test to end
+  if (busy(upd_.state) || (!ready && radioBusy(*sys_)) || !tapped(in_, SYS_BTN)) return;
+  if (ready) sys_->restart(); else sys_->checkNow();
   upd_ = sys_->status();
 }
 // The status line. Two states read differently than their names: IDLE after a boot with a check on record (the daily
@@ -177,7 +178,7 @@ void Shell::drawSysUpd() {
   row(67, "Newest", upd_.available[0] ? upd_.available : "?");
   row(76, "Checked", when);
   char st[24]; statusLine(st, sizeof st, upd_, info_.version);
-  const bool radio = !busy(upd_.state) && radioBusy(*sys_);
+  const bool radio = !busy(upd_.state) && upd_.state != UP_READY && radioBusy(*sys_);
   stextC(80, 87, radio ? "Wifi setup busy" : st, C_YELLOW);
   if (!radio) drawSysAction();
   ui::drawBack();
@@ -305,44 +306,50 @@ void Shell::drawSysPass() {
 
 // ---------------------------------------------------------------- joining: a test with the new password, then saved
 // The test comes first, so a mistyped password never replaces a network that works; Save anyway keeps it regardless
-// (a board set up away from that wifi). While an update holds the radio there is no test: it is saved as it is. A scan
-// or an earlier test the grown-up backed out of is waited for.
-enum : int8_t { WAITING = -2, JOINING = -1, JOIN_FAILED = 0, JOINED = 1, SAVED_UNTESTED = 2 };
+// (a board set up away from that wifi). While the radio is busy (an update, a scan, an earlier test the grown-up backed
+// out of) it waits, then tests. A save that fails (NVS) says so and can be tried again.
+enum : int8_t { WAITING = -2, JOINING = -1, JOIN_FAILED = 0, JOINED = 1, SAVE_FAILED = 2 };
 static const ui::Box JOIN_OK = {50, 98, 60, 20}, JOIN_RETRY = {14, 98, 60, 20}, JOIN_SAVE = {78, 98, 68, 20};
 void Shell::join() { join_ = WAITING; go(SH_SYS_JOIN); }
-void Shell::save() { sys_->saveWifi(pick_.ssid, pick_.secured ? pass_.buf : ""); }
-void Shell::joined(bool keep) {
-  if (keep) save();
+bool Shell::save() { return sys_->saveWifi(pick_.ssid, pick_.secured ? pass_.buf : ""); }
+void Shell::saved() {   // Save anyway, or Try again after a failed save
+  if (!save()) { join_ = SAVE_FAILED; return; }
   pass_ = TextEntry{};
   go(SH_SYS_INFO);
 }
 void Shell::pollJoin() {
   if (join_ == WAITING && sys_->startTest(pick_.ssid, pick_.secured ? pass_.buf : "")) join_ = JOINING;
-  else if (join_ == WAITING && busy(sys_->status().state)) { save(); join_ = SAVED_UNTESTED; }
-  else if (join_ == JOINING && (join_ = (int8_t)sys_->testResult()) == JOINED) save();
+  else if (join_ == JOINING && (join_ = (int8_t)sys_->testResult()) == JOINED && !save()) join_ = SAVE_FAILED;
 }
 void Shell::updateSysJoin() {
+  upd_ = sys_->status();
   pollJoin();
-  const bool done = join_ == JOINED || join_ == SAVED_UNTESTED;
-  if (ui::back(in_)) { if (done) joined(false); else go(pick_.secured ? SH_SYS_PASS : SH_SYS_WIFI); return; }
-  if (done && tapped(in_, JOIN_OK)) { joined(false); return; }
+  if (ui::back(in_)) {
+    if (join_ == JOINED) { pass_ = TextEntry{}; go(SH_SYS_INFO); } else go(pick_.secured ? SH_SYS_PASS : SH_SYS_WIFI);
+    return;
+  }
+  if (join_ == JOINED && tapped(in_, JOIN_OK)) { pass_ = TextEntry{}; go(SH_SYS_INFO); return; }
+  if (join_ == SAVE_FAILED && tapped(in_, JOIN_OK)) { saved(); return; }
   if (join_ != JOIN_FAILED) return;
-  if (tapped(in_, JOIN_SAVE)) joined(true);
+  if (tapped(in_, JOIN_SAVE)) saved();
   else if (tapped(in_, JOIN_RETRY)) { if (pick_.secured) go(SH_SYS_PASS); else join(); }
 }
 void Shell::drawSysJoin() {
   clear(C_NAVY);
   char name[40]; fit(name, sizeof name, pick_.ssid, 120);
-  static const char* const HEAD[] = {"Could not connect to", "Connected to", "Busy with an update:"};
-  static const char* const TAIL[] = {"Wrong password or no signal", "Saved", "saved without a test"};
+  static const char* const HEAD[] = {"Could not connect to", "Connected to", "Could not save"};
+  static const char* const TAIL[] = {"Wrong password or no signal", "Saved", "Nothing was changed"};
   if (join_ < 0) {
     static const char* const DOTS[] = {".", "..", "..."};
-    stextC(80, 48, "Connecting to", C_LTGRAY); stextC(80, 60, name, C_WHITE); stextC(80, 72, DOTS[ms_ / 400 % 3], C_WHITE);
+    const bool updating = join_ == WAITING && busy(upd_.state);
+    stextC(80, 48, updating ? "Waiting for the update" : "Connecting to", C_LTGRAY);
+    stextC(80, 60, name, C_WHITE); stextC(80, 72, DOTS[ms_ / 400 % 3], C_WHITE);
   } else {
     stextC(80, 48, HEAD[join_], C_LTGRAY); stextC(80, 60, name, C_WHITE);
-    stextC(80, 74, TAIL[join_], join_ == JOIN_FAILED ? (uint8_t)C_YELLOW : (uint8_t)C_GREEN);
+    stextC(80, 74, TAIL[join_], join_ == JOINED ? (uint8_t)C_GREEN : (uint8_t)C_YELLOW);
   }
-  if (join_ == JOINED || join_ == SAVED_UNTESTED) sbutton(JOIN_OK, "OK", C_GREEN, down(in_, JOIN_OK));
+  if (join_ == JOINED) sbutton(JOIN_OK, "OK", C_GREEN, down(in_, JOIN_OK));
+  if (join_ == SAVE_FAILED) sbutton(JOIN_OK, "Try again", C_SKY, down(in_, JOIN_OK));
   if (join_ == JOIN_FAILED) {
     sbutton(JOIN_RETRY, "Try again", C_SKY, down(in_, JOIN_RETRY));
     sbutton(JOIN_SAVE, "Save anyway", C_LTGRAY, down(in_, JOIN_SAVE));

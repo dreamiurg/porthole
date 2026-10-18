@@ -112,6 +112,6 @@ class Shell {
   void scan();
   void updateSysWifi(); void drawSysWifi(); void drawNetRow(int i, const shell::Network& n);
   void updateSysPass(); void drawSysPass();
-  void join(); void pollJoin(); void save(); void joined(bool keep);
+  void join(); void pollJoin(); bool save(); void saved();
   void updateSysJoin(); void drawSysJoin();
 };

@@ -173,9 +173,21 @@ bool download(const char* ver) {
 
 bool joinWifi(const Wifi& w) {
   WiFi.mode(WIFI_STA);
-  WiFi.begin(w.ssid, w.pass[0] ? w.pass : nullptr);
-  for (uint32_t t0 = millis(); WiFi.status() != WL_CONNECTED; vTaskDelay(pdMS_TO_TICKS(250)))
-    if (millis() - t0 > WIFI_MS) { Serial.printf("[net] could not join %s\n", w.ssid); return false; }
+  // Arduino-ESP32 3.2.1: begin() says WL_CONNECT_FAILED when the station would not start or take the network; after it,
+  // the disconnect reason sets WL_NO_SSID_AVAIL (no such network heard) or WL_CONNECT_FAILED (a wrong password, after
+  // the one retry of the first connect since boot). Each is final: no need to wait out WIFI_MS. Mode OFF -> STA resets
+  // the status (STA_STOP, STA_START), so neither is left over from the last attempt.
+  if (WiFi.begin(w.ssid, w.pass[0] ? w.pass : nullptr) == WL_CONNECT_FAILED) {
+    Serial.printf("[net] could not start joining %s\n", w.ssid);
+    return false;
+  }
+  for (uint32_t t0 = millis(); WiFi.status() != WL_CONNECTED; vTaskDelay(pdMS_TO_TICKS(250))) {
+    const wl_status_t s = WiFi.status();
+    const bool gaveUp = s == WL_NO_SSID_AVAIL || s == WL_CONNECT_FAILED;
+    if (!gaveUp && millis() - t0 <= WIFI_MS) continue;
+    Serial.printf("[net] could not join %s%s\n", w.ssid, s == WL_NO_SSID_AVAIL ? ": not found" : s == WL_CONNECT_FAILED ? ": refused" : "");
+    return false;
+  }
   Serial.printf("[net] joined %s rssi=%d heap_internal=%lu largest_internal=%lu\n", w.ssid, (int)WiFi.RSSI(),
                 (unsigned long)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
@@ -260,14 +272,14 @@ bool spawn(Job job) {
   return false;
 }
 
-void startCheck(shell::Channel ch, bool forced) {
-  if (g_busy.exchange(true)) return;   // a check, a scan or a test is running: this one is dropped
+bool startCheck(shell::Channel ch, bool forced) {   // false: dropped
+  if (g_busy.exchange(true)) return false;   // a check, a scan or a test is running
   // Downloaded already: a second run would rewrite the slot that is set to boot, and a failure would leave it broken.
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
-  if (ready) { g_busy = false; return; }
+  if (ready) { g_busy = false; return false; }
   g_forced = forced;
   g_checkChan = ch;
-  spawn(J_CHECK);
+  return spawn(J_CHECK);
 }
 
 // /porthole/wifi.txt on the card: line 1 the network, line 2 its password. Saved when it differs from "sys".
@@ -313,7 +325,15 @@ void Updater::tick(uint32_t ms) {
   startCheck(channel(), false);
 }
 
-bool Updater::saveWifi(const char* ssid, const char* pass) { return storeWifi(ssid, pass); }
+// "No wifi" or "Check failed" was about the network before: idle again, as setChannel does. Only those resting states:
+// never a run going (CHECKING, DOWNLOADING) or an update waiting (READY).
+bool Updater::saveWifi(const char* ssid, const char* pass) {
+  if (!storeWifi(ssid, pass)) return false;
+  portENTER_CRITICAL(&g_mux);
+  if (g_st.state == shell::UP_NO_WIFI || g_st.state == shell::UP_FAILED) { g_st.state = shell::UP_IDLE; g_st.pct = 0; }
+  portEXIT_CRITICAL(&g_mux);
+  return true;
+}
 
 void Updater::info(shell::SysInfo& out) {
   out = shell::SysInfo{};
@@ -335,6 +355,7 @@ shell::UpdStatus Updater::status() {
 }
 
 void Updater::checkNow() { startCheck(channel(), true); }
+bool Updater::tryCheckNow() { return startCheck(channel(), true); }
 
 // Without memory for the task a scan finds nothing and a test fails: the menu says so instead of waiting on it.
 bool Updater::startScan() {

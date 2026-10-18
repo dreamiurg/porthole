@@ -1,9 +1,9 @@
 # Wifi setup in the hidden system menu: Info -> Wifi scans (looking, then the networks strongest first, one per name, no
 # hidden one, two pages) -> a secured network's keyboard (upper case, digits, symbols, backspace) -> a test join ->
 # Connected, saved, on Info. A wrong password changes nothing (Try again keeps the typing; Save anyway saves it), an
-# open network skips the keyboard, a scan can find nothing, and a radio busy with a scan or an update refuses a scan
-# and saves untested. Back from every screen. The sim's System is a stub: `sys scan|scanempty|joinok|joinfail` end the
-# running scan or test (host/sim.cpp).
+# open network skips the keyboard, a scan can find nothing, a failed save says so, and a radio busy with a scan or an
+# update refuses a scan and makes a join wait for it. Back from every screen. The sim's System is a stub:
+# `sys scan|scanempty|joinok|joinfail|savefail` end the running scan or test, or fail the next save (host/sim.cpp).
 reset
 profile Sam 8
 reboot
@@ -128,10 +128,13 @@ sys joinfail
 tap 122 128
 wait 450
 expect sys_tests=3
+# a failed update check was about the old network: a new one saved puts the status back to idle
+sys failed
 sys joinok
 wait 100
 expect sys_pass=Ab3$x{Y}
 expect sys_ssid=Home-Network-5G-Upstairs
+expect sys_state=idle
 ui-check sys_join-joined
 snap 12_joined
 tap 80 108
@@ -160,7 +163,15 @@ tap 122 128
 wait 450
 sys joinfail
 wait 100
+# Save anyway, and the save fails (NVS): it says so, nothing changes; Try again saves it
+sys savefail
 tap 112 108
+wait 100
+expect-screen sys_join
+expect sys_ssid=Home-Network-5G-Upstairs
+ui-check sys_join-savefailed
+snap 13b_save_failed
+tap 80 108
 wait 450
 expect-screen sys_info
 expect sys_ssid=Neighbors_2.4GHz
@@ -205,7 +216,8 @@ wait 100
 expect sys_nets=0
 ui-check sys_wifi-none
 snap 15_none
-# an update holds the radio: a scan is refused; one picked before it started is saved without a test
+# an update holds the radio: a network picked while it downloads waits for it ("Waiting for the update"), and a scan is
+# refused
 sys scan
 tap 80 123
 wait 100
@@ -214,20 +226,41 @@ wait 100
 sys download 42
 tap 80 79
 wait 450
-expect sys_tests=8
 expect-screen sys_join
-ui-check sys_join-untested
-snap 16_untested
+expect sys_tests=8
+ui-check sys_join-waiting
+snap 16_waiting
+# the update is ready: the radio is free, the test runs, the network is saved
+sys newest 0.18.3
+sys ready
+wait 100
+expect sys_tests=9
+sys joinok
+wait 100
+expect sys_ssid=Library Free WiFi
 tap 80 108
 wait 450
 expect-screen sys_info
+sys download 60
 tap 50 108
 wait 450
+expect sys_scans=7
 ui-check sys_wifi-updating
 snap 17_updating
+# Restart now needs no radio: it works while a scan runs
+sys ready
+tap 80 123
+wait 100
+expect sys_scans=8
 tap 80 12
 wait 450
-tap 80 12
+tap 110 108
 wait 450
-expect-screen picker
+expect-screen sys_updates
+ui-check sys_updates-ready-scanning
+snap 18_ready_scanning
+tap 80 108
+wait 450
+expect sys_restarts=1
+expect-screen sys_new
 sheet wifi

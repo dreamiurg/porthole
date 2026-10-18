@@ -12,8 +12,8 @@
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
 // it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed, and for wifi setup
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
-// ends so). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/sys_last and sys_ssid/sys_pass/
-// sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
+// ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
+// sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -59,6 +59,7 @@ struct SimSystem : shell::System {
   // join (-1 until `sys joinok` or `sys joinfail`). `debug` prints the saved password: host only, never on a board.
   char ssid[33] = "Home-Network-5G-Upstairs", pass[65] = "", tried[33] = "";
   shell::Network nets[shell::MAX_NETWORKS]; int nNets = 0, tested = 0, scans = 0, tests = 0;
+  bool failSave = false;   // `sys savefail`: the next saveWifi fails (NVS full or broken)
   bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
   bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0; }
   void info(shell::SysInfo& o) override {
@@ -81,8 +82,10 @@ struct SimSystem : shell::System {
   }
   int testResult() override { return tested; }
   bool saveWifi(const char* s, const char* p) override {
-    if (!s[0] || strlen(s) > 32 || strlen(p) > 64) return false;
-    snprintf(ssid, sizeof ssid, "%s", s); snprintf(pass, sizeof pass, "%s", p); return true;
+    if (failSave || !s[0] || strlen(s) > 32 || strlen(p) > 64) { failSave = false; return false; }
+    snprintf(ssid, sizeof ssid, "%s", s); snprintf(pass, sizeof pass, "%s", p);
+    if (st.state == shell::UP_NO_WIFI || st.state == shell::UP_FAILED) st.state = shell::UP_IDLE;   // as the firmware's
+    return true;
   }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
   void scanned() {
@@ -98,6 +101,7 @@ struct SimSystem : shell::System {
     else if (!strcmp(what, "scanempty")) nNets = 0;
     else if (!strcmp(what, "joinok")) tested = 1;
     else if (!strcmp(what, "joinfail")) tested = 0;
+    else if (!strcmp(what, "savefail")) failSave = true;
     else return false;
     return true;
   }
