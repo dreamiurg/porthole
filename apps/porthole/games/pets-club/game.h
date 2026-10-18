@@ -27,6 +27,7 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "sleepy" "younger" "older"
+  bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
@@ -95,7 +96,6 @@ class Game : public App {
   void drawStatPips(int x, int y, int value, const gfx::Sprite& icon, uint8_t col);
   void drawRoom();
   void drawWindow(int x, int y, int w, int h);
-  bool nightSky() const;
   void drawShelf(int x, int y);
   int  idlePose();
   int  trickPose(bool& flip);

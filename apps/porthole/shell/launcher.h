@@ -12,6 +12,7 @@ namespace launcher {
 // corners are 2 px off the bezel.
 constexpr ui::Box HEADER = {21, 30, 91, 24};
 constexpr ui::Box LIGHT = {114, 30, 24, 24};
+constexpr ui::Box LIGHT_AUTO = {50, 108, 60, 30};   // the light screen's Auto, under its row of three suns (tile(i, 3))
 constexpr int MUTE_X = 80, MUTE_HIT = 15;       // ui::iconButton: radius 11, hit circle 4 px wider
 constexpr int NAME_Y = 105, LINE_H = 9;         // a name starts 4 px under its tile; a line is 8 px and its shadow
 

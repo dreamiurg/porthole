@@ -638,7 +638,6 @@ static void brightness() {
   auto step = [&](const Input& in) { ms += 700; sh.update(night, ms, in); sh.render(); };
   auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
   auto pick = [&](const ui::Box& b) { tap(launcher::LIGHT); assert(on(sh, "light")); tap(b); assert(on(sh, "launcher")); };
-  const ui::Box AUTO = {50, 108, 60, 30};
   sh.begin(st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
   assert(on(sh, "launcher") && sh.tint() == TINT_NIGHT && sh.backlight() == 100);   // Auto, as before
   tap(launcher::tile(0, 1)); assert(a.entered == 1 && !a.daylight); home(sh, ms, a);
@@ -649,9 +648,21 @@ static void brightness() {
   pick(launcher::tile(2, 3)); assert(st.writes == w);   // Soft again: no flash write
   tap(launcher::LIGHT); tap({64, -4, 32, 32}); assert(on(sh, "launcher") && sh.backlight() == 40);   // the home button keeps it
   sh.begin(st, list, 1); step(Input{}); assert(on(sh, "picker") && sh.tint() == TINT_DAY && sh.backlight() == 40);   // reboot
-  tap({24, 55, 112, 24}); pick(AUTO); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
+  tap({24, 55, 112, 24}); pick(launcher::LIGHT_AUTO); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
   const uint8_t bad = shell::LIGHT_COUNT; st.save("sys", "lite", &bad, 1);
   sh.begin(st, list, 1); step(Input{}); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
+}
+
+// The firmware's backlight at every level: the level in use, 30% after a minute idle, dark after five; a game asleep
+// 40%, dark after 20 s. Dark whatever the level, or the wireless updater never runs.
+static void backlightSteps() {
+  for (uint8_t active : shell::LIGHT_BACKLIGHT) {
+    assert(shell::backlightFor(false, 0, active) == active && shell::backlightFor(false, shell::IDLE_MS, active) == active);
+    assert(shell::backlightFor(false, shell::IDLE_MS + 1, active) == 30 && shell::backlightFor(false, 300000, active) == 30);
+    assert(shell::backlightFor(false, 300001, active) == 0 && shell::backlightFor(false, 3600000, active) == 0);
+    assert(shell::backlightFor(true, 0, active) == 40 && shell::backlightFor(true, 20000, active) == 40);
+    assert(shell::backlightFor(true, 20001, active) == 0);
+  }
 }
 
 // Release order is numeric per part, and a dev build is never offered anything.
@@ -738,6 +749,7 @@ int main() {
   launcherNames();
   launcherPaging();
   brightness();
+  backlightSteps();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
   return 0;
 }

@@ -18,8 +18,17 @@ bool newRun(Store& st, const char* version);
 // unknown: Auto). Auto is the light of the clock: evening and night tints, the games' night scenes, a full backlight.
 // The others are always daylight at their backlight %. Only the active level: the firmware still dims to 30% after a
 // minute idle and goes dark after five (a game asleep(): 40%, then dark), which the wireless updater relies on.
+// The values are what "sys"/"lite" holds: append only, a new level goes right before LIGHT_COUNT.
 enum Light : uint8_t { LIGHT_AUTO, LIGHT_BRIGHT, LIGHT_MEDIUM, LIGHT_SOFT, LIGHT_COUNT };
 constexpr uint8_t LIGHT_BACKLIGHT[LIGHT_COUNT] = {100, 100, 65, 40};   // Soft stays above the idle 30%: dimming still shows
+
+// The backlight % the firmware sets: `active` (Shell::backlight()) in use, 30 after IDLE_MS without activity, dark
+// after 5 min; a game asleep(): 40, dark after 20 s. Dark at every level: the wireless updater writes flash only then.
+constexpr uint32_t DARK_MS = 300000, ASLEEP_DARK_MS = 20000;
+inline uint8_t backlightFor(bool asleep, uint32_t idleMs, uint8_t active) {
+  if (asleep) return idleMs > ASLEEP_DARK_MS ? 0 : 40;
+  return idleMs > DARK_MS ? 0 : idleMs > IDLE_MS ? 30 : active;
+}
 }
 
 class Shell {

@@ -326,6 +326,7 @@ void Shell::drawDelete() {
 // The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
 using launcher::HEADER;
 using launcher::LIGHT;
+static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
 bool Shell::muteButton() {
   return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
@@ -378,7 +379,7 @@ void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triang
 // ---------------------------------------------------------------- brightness (the launcher's sun): three suns, big to small,
 // and Auto (a sun and a moon) under them. A tap picks, saves and goes back to the launcher, already in the new light;
 // the level picked now is the mint one.
-static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? ui::Box{50, 108, 60, 30} : launcher::tile(l - 1, 3); }
+static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::tile(l - 1, 3); }
 void Shell::setLight(shell::Light l) {
   if (l == light_) return;   // no flash write for the same level
   light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);
@@ -445,6 +446,7 @@ void Shell::clearPin(int id) {
 }
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates", "light"};
+  static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
 void Shell::debugPrint() {
