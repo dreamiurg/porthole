@@ -226,7 +226,7 @@ platform/           shared PlatformIO base, pinned requirements, factory-image s
 tools/gallery.py    README screenshot strips from panel captures
 docs/               hardware.md (board, pins, round-screen rules), new-app.md (the app contract)
 .github/            CI, releases, Dependabot
-.claude/            agent roster and skills for AI-assisted work (see CLAUDE.md)
+.claude/            agent roster and skills for AI-assisted work (see AGENTS.md)
 ```
 
 Board details, pins and round-screen design notes: [docs/hardware.md](docs/hardware.md).

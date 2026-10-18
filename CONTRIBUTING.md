@@ -39,7 +39,7 @@ make check                                 # lint + fast tests for every app
 
 ## Where to start
 
-- Each app's `README.md` explains how to play and build it. Its `CLAUDE.md`
+- Each app's `README.md` explains how to play and build it. Its `AGENTS.md`
   lists the constraints its code must respect.
 - `docs/hardware.md` covers the board. `docs/new-app.md` explains how to add an app.
 - No board yet? Porthole runs on a computer: a host simulator and a browser

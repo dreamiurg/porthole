@@ -9,7 +9,7 @@ description: Any game (apps/porthole). Use before calling any gameplay or UI cha
    - **Scenario table**: pass/fail, check count, and UI FAIL/WARN counts per scenario. The report's own header states the rule: a scenario fails on a failed directive, a crash, a sanitizer report, or any UI finding — **FAIL and WARN both fail a run (warnings are errors)**.
    - **UI findings table**: one row per (severity, rule, screen), with example findings and which scenario saw them. `<details>` blocks below hold the complete list when there are more than a few.
 4. Know the rules the audit applies (from `apps/porthole/tools/playtest.py`'s `audit()` — check there if a threshold matters and this drifts):
-   - **target size** — FAIL if the smaller dimension is under 18 logical px (6 mm); WARN if under 24 px (8 mm) and area under 480 px². The repo's real floor (apps/porthole/CLAUDE.md hard constraint 1) is 24x22 — a WARN here is still a constraint violation, not optional polish.
+   - **target size** — FAIL if the smaller dimension is under 18 logical px (6 mm); WARN if under 24 px (8 mm) and area under 480 px². The repo's real floor (apps/porthole/AGENTS.md hard constraint 1) is 24x22 — a WARN here is still a constraint violation, not optional polish.
    - **round edge** — FAIL if less than 85% of a region's area is inside the circle, or its center is more than 70 px from (80,80).
    - **overlap** — FAIL if two regions share more than 4x4 px (WARN instead if one fully nests inside the other, e.g. a badge on a button).
    - **spacing** — WARN if two regions are under 2 px apart without overlapping.

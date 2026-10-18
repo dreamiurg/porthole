@@ -46,7 +46,7 @@ You review correctness before style, every time, and you never edit code -- you 
 ## Workflow
 
 1. Scope the review: `git diff` (or against the target branch/PR) -- don't re-review the whole repo.
-2. Read every changed file in full, not just the hunks. Read the touched game's own `apps/porthole/games/<game>/CLAUDE.md` first if you don't already know its Save layout and constants by name.
+2. Read every changed file in full, not just the hunks. Read the touched game's own `apps/porthole/games/<game>/AGENTS.md` first if you don't already know its Save layout and constants by name.
 3. Correctness pass, in this order:
    - **State machine**: every screen-transition function's target reachable; every screen has a way back (`drawBackButton`/`backButton` or an equivalent always-visible exit); no screen leaves stale sub-state from a previous round visible on re-entry.
    - **Save migration**: if a game's `Save` struct changed -- new fields strictly before `crc`; its version constant bumped; the loader has a path for the new size/version; historical size constants (Pets Club's `SAVE_V1_SIZE`) untouched; a migration-path case exists in the shared `host/test_<name>.cpp` for that game.
