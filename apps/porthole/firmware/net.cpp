@@ -137,8 +137,8 @@ struct Https {
       http.end();
       tls.stop();   // now, before the bundle is attached again: begin() on a new host would stop it after
     }
-    // Never the query: a lookup's is the typed address.
-    if (code != 200) Serial.printf("[net] GET %s -> %d\n", at.substring(0, (unsigned)at.indexOf('?')).c_str(), code);
+    // The host only: a lookup's query is the typed address, adsb.fi's path is home.
+    if (code != 200) Serial.printf("[net] GET %s -> %d\n", at.substring(0, (unsigned)at.indexOf('/', 8)).c_str(), code);
     return code;
   }
   ~Https() { http.end(); }
@@ -333,21 +333,31 @@ void foldAscii(const char* s, char* out, size_t max) {
   out[n] = 0;
 }
 
+// Only the town, the region and the country: the street address is never kept, not even as the place's name.
+void placeName(JsonObjectConst a, char* out, size_t max) {
+  const char* town = a["city"] | a["town"] | a["village"] | a["hamlet"] | a["suburb"] | "";
+  char utf8[160];
+  snprintf(utf8, sizeof utf8, "%s%s%s%s%s", town, *town ? ", " : "", a["state"] | "", a["state"].is<const char*>() ? ", " : "",
+           a["country"] | "");
+  foldAscii(utf8, out, max);
+}
+
 bool geocode(const char* address, shell::Home& out) {
-  String url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=en&q=";
+  String url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&accept-language=en&q=";
   urlEncode(address, url);
   Https c;
   c.http10 = true;
   if (c.get(url.c_str()) != 200) return false;
   JsonDocument filter(&g_psram), doc(&g_psram);
-  for (const char* k : {"lat", "lon", "display_name"}) filter[0][k] = true;
+  filter[0]["lat"] = filter[0]["lon"] = true;
+  for (const char* k : {"city", "town", "village", "hamlet", "suburb", "state", "country"}) filter[0]["address"][k] = true;
   if (deserializeJson(doc, c.http.getStream(), DeserializationOption::Filter(filter))) return false;
   const char* lat = doc[0]["lat"].as<const char*>();   // strings in Nominatim's answer; [] when nothing matched
   const char* lon = doc[0]["lon"].as<const char*>();
   if (!lat || !lon) return false;
   out.lat = strtod(lat, nullptr);
   out.lon = strtod(lon, nullptr);
-  foldAscii(doc[0]["display_name"] | "", out.name, sizeof out.name);
+  placeName(doc[0]["address"], out.name, sizeof out.name);
   return validSpot(out.lat, out.lon);
 }
 void lookup() {
@@ -425,7 +435,7 @@ bool onRoute(const Seen& s, JsonObject o, JsonObject d) {
   return fabs(xt) <= max && ap <= ab + max;
 }
 
-// One callsign's route from adsbdb: "SEA-SFO", cached; a 404 is cached as none, any other failure tries again later.
+// One callsign's route from adsbdb: "SEA-SFO", cached; a 404 or any other failure is cached as none.
 void lookupRoute(const Seen& s) {
   const char* call = s.p.call;
   for (const char* q = call; *q; q++)
@@ -433,8 +443,9 @@ void lookupRoute(const Seen& s) {
   Https c;
   c.http10 = true;
   const int code = c.get((String(ROUTES) + call).c_str());
-  if (code == 404) remember(call, "");
-  if (code != 200) return;
+  // ponytail: any failure counts as no route until the cache rolls over (a 404 for good): a struggling adsbdb is not
+  // asked again every poll, at the cost of a route that stays missing for a while.
+  if (code != 200) { remember(call, ""); return; }
   JsonDocument filter(&g_psram), doc(&g_psram);
   JsonObject a = filter["response"]["flightroute"]["origin"].to<JsonObject>();
   for (const char* k : {"iata_code", "latitude", "longitude"}) a[k] = true;
@@ -527,10 +538,17 @@ void publish() {   // g_seen, with the routes known so far, becomes what read() 
   g_phase = air::S_LIVE;
 }
 
+// A TLS handshake needs one big block, not just enough free bytes in all: hours of polling can fragment the heap.
+bool heapOk() {
+  if (heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) >= MIN_HEAP) return true;
+  Serial.println("[radar] heap low: request skipped");
+  return false;
+}
+
 void poll() {
-  if (heap_caps_get_free_size(MALLOC_CAP_INTERNAL) < MIN_HEAP) { Serial.println("[radar] heap low: poll skipped"); return; }
-  if (!fetchPlanes()) return;
+  if (!heapOk() || !fetchPlanes()) return;
   publish();
+  if (!g_want || g_dark || !heapOk()) return;   // let the radio go without waiting on a route lookup
   for (int i = 0; i < g_nSeen; i++)   // at most one route lookup a poll, the nearest plane without one; shown next poll
     if (g_seen[i].p.call[0] && !cachedRoute(g_seen[i].p.call)) { lookupRoute(g_seen[i]); break; }
 }
@@ -539,8 +557,8 @@ void radar() {
   Wifi w;
   if (!loadWifi(w) || !joinWifi(w)) g_phase = air::S_NO_WIFI;   // a dead end until Radar starts the feed again
   else {
-    // ponytail: stop() can't cut a GET short; the radio comes back after it (up to HTTP_MS), and a menu scan started
-    // in that window is refused (the menu waits and retries).
+    // ponytail: stop() can't cut a GET short; the radio comes back after the one in flight (up to its timeouts), and a
+    // menu scan started in that window is refused (the menu waits and retries).
     for (uint32_t next = millis(); g_want && !g_dark; vTaskDelay(pdMS_TO_TICKS(100))) {
       if ((int32_t)(millis() - next) < 0) continue;
       next = millis() + RADAR_MS;
@@ -729,7 +747,10 @@ int Updater::lookupResult(shell::Home& out) {
 // A second start() only changes the radius. With no home it never touches the radio.
 void Radar::start(float radiusKm) {
   g_km = radiusKm;
-  if (g_want) return;
+  if (g_want) {   // a range tap: also a retry after "No wifi" (the task already ended)
+    if (g_phase == air::S_NO_WIFI) g_phase = air::S_JOINING;
+    return;
+  }
   g_phase = g_homeSet ? air::S_JOINING : air::S_NO_SPOT;
   g_want = true;
   pokeRadar();

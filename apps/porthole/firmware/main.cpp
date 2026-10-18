@@ -202,7 +202,7 @@ static void homeCommand() {   // L<lat>,<lon>: decimal degrees; the name says wh
   char* end = nullptr;
   shell::Home h;
   h.lat = strtod(arg.c_str(), &end);
-  const bool comma = end && *end == ',';
+  const bool comma = end != arg.c_str() && *end == ',';   // "L,5" has no latitude
   if (comma) h.lon = strtod(end + 1, &end);
   snprintf(h.name, sizeof h.name, "%.4f, %.4f (set over serial)", h.lat, h.lon);
   if (!comma || *end || !g_sys.saveHome(h)) { Serial.println("[porthole] usage: L<lat>,<lon> (decimal degrees)"); return; }
