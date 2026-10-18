@@ -93,7 +93,10 @@ static void lcdInitPanel() {
   cfg.timings.vsync_pulse_width = 3; cfg.timings.vsync_back_porch = 8; cfg.timings.vsync_front_porch = 8;
   cfg.timings.flags.pclk_active_neg = 0;
   cfg.data_width = 16; cfg.bits_per_pixel = 16; cfg.num_fbs = 2;
-  cfg.bounce_buffer_size_px = 10 * LCD_W; cfg.dma_burst_size = 64;
+  // No bounce buffers: this IDF (release/v5.4 858a988d6e) never resets their index on the per-vsync DMA restart, so one
+  // EOF missed during a flash write left the picture 10 rows off for good (fixed upstream in c0fb05b37e). The DMA reads
+  // the framebuffer directly instead, and the vsync restart starts each frame from its top.
+  cfg.dma_burst_size = 64;
   cfg.hsync_gpio_num = PIN_HSYNC; cfg.vsync_gpio_num = PIN_VSYNC; cfg.de_gpio_num = PIN_DE; cfg.pclk_gpio_num = PIN_PCLK; cfg.disp_gpio_num = -1;
   for (int i = 0; i < 16; i++) cfg.data_gpio_nums[i] = PIN_DATA[i];
   cfg.flags.fb_in_psram = 1; cfg.flags.double_fb = 1;
@@ -249,8 +252,6 @@ uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
 // in SD mode rather than SPI.
 static const int PIN_SD_CLK = PIN_LCD_SPI_CLK, PIN_SD_CMD = PIN_LCD_SPI_MOSI, PIN_SD_D0 = 42;
 bool mountSd() { return SD_MMC.setPins(PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0) && SD_MMC.begin("/sdcard", true); }
-
-void resyncPanel() { if (g_panel) esp_lcd_rgb_panel_restart(g_panel); }
 
 void init() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
