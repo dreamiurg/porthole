@@ -69,38 +69,40 @@ expect sys_scans=2
 tap 80 39
 wait 450
 expect-screen sys_pass
-# "Ab3$x{Y}": shift a, shift b, 123 3 $, abc x, #+= {, abc shift Y, #+= }; a stray "R" and backspace at the end
-tap 38 128
-tap 27 48
-tap 38 128
-tap 48 48
-tap 59 128
-tap 69 48
-tap 17 88
-tap 59 128
-tap 59 128
-tap 90 108
-tap 59 128
-tap 59 128
-tap 143 68
+# "Ab3$x{Y}" on QWERTY: shift a, shift b, 123 3 $, #+= (shown), abc x, 123 #+= {, abc shift (shown) y, shift,
+# 123 #+= }, abc; a stray r and backspace at the end
+tap 20 97
+tap 24 77
+tap 20 97
+tap 94 97
+tap 34 117
+tap 45 57
+tap 108 77
+tap 34 117
 wait 100
 ui-check sys_pass-symbols
 snap 07_symbols
-tap 59 128
-tap 38 128
-tap 111 108
+tap 34 117
+tap 52 97
+tap 34 117
+tap 34 117
+tap 45 57
+tap 34 117
+tap 20 97
 wait 100
 ui-check sys_pass-upper
 snap 08_upper
-tap 59 128
-tap 59 128
-tap 38 88
-tap 59 128
-tap 101 88
-tap 101 128
+tap 87 57
+tap 20 97
+tap 34 117
+tap 34 117
+tap 59 57
+tap 34 117
+tap 59 57
+tap 139 97
 wait 100
 snap 09_typed
-tap 122 128
+tap 124 117
 wait 450
 expect-screen sys_join
 expect sys_tests=1
@@ -117,7 +119,7 @@ snap 11_failed
 tap 48 108
 wait 450
 expect-screen sys_pass
-tap 122 128
+tap 124 117
 wait 450
 expect-screen sys_join
 expect sys_tests=2
@@ -125,7 +127,7 @@ tap 80 12
 wait 450
 expect-screen sys_pass
 sys joinfail
-tap 122 128
+tap 124 117
 wait 450
 expect sys_tests=3
 # a failed update check was about the old network: a new one saved puts the status back to idle
@@ -149,9 +151,9 @@ wait 100
 tap 80 99
 wait 450
 expect-screen sys_pass
-tap 111 48
-tap 132 48
-tap 122 128
+tap 45 57
+tap 66 77
+tap 124 117
 wait 450
 sys joinfail
 wait 100
@@ -159,7 +161,7 @@ wait 100
 tap 80 12
 wait 450
 expect-screen sys_pass
-tap 122 128
+tap 124 117
 wait 450
 sys joinfail
 wait 100
@@ -264,3 +266,27 @@ wait 450
 expect sys_restarts=1
 expect-screen sys_new
 sheet wifi
+# A tap in the 2 px gap between keys goes to the nearer one; a finger that rolls onto the next key types that one
+reset
+profile Sam 8
+reboot
+down 80 16
+wait 5000
+up
+wait 450
+tap 50 108
+wait 450
+sys scan
+wait 100
+tap 80 39
+wait 450
+expect-screen sys_pass
+tap 24 57
+down 29 77
+move 33 77
+up
+tap 124 117
+wait 450
+sys joinok
+wait 100
+expect sys_pass=ws

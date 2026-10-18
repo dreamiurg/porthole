@@ -131,7 +131,7 @@ class Shell {
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();
   void scan();
   void updateSysWifi(); void drawSysWifi(); void drawNetRow(int i, const shell::Network& n);
-  void updateSysPass(); void drawSysPass();
+  void updateSysPass(); void drawSysPass(); void drawKeys(const shell::TextEntry& t);
   void join(); void pollJoin(); bool save(); void saved();
   void updateSysJoin(); void drawSysJoin();
 };
