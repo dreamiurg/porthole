@@ -153,6 +153,34 @@ installer does), or build from source and run `make flash`. With esptool, from t
 can't run (`qio`) leaves it in a watchdog reset loop until the parts are written again without them. Step by step, with pictures of the
 games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
 
+### Updates over wifi
+
+You only need the USB cable once. After that, the board keeps itself up to date over wifi.
+
+![The version on "Who's playing?", the Info screen, an update ready to start, and the "something new" card](docs/updates.png)
+
+Once a day, when nobody is playing and the screen has gone dark (it dims itself after a few minutes), the
+board looks for a new version and downloads it. If someone wakes the screen during the download, it stops and
+picks up again the next time the screen is dark. The new version starts the next time the board is switched on, and
+the kids see a "Porthole has something new!" card. Saves and profiles are kept. Nothing about the kids is sent
+anywhere.
+
+To give it your wifi, pick one:
+
+- **microSD card.** Make a file `/porthole/wifi.txt` with the network name on the first line and the password
+  on the second. Put the card in the board and switch it on. It remembers the network.
+- **USB cable.** Open a serial monitor at 115200 baud (either USB-C port works) and send
+  `W<network name><TAB><password>`, for example `WHomeWiFi`, then a tab, then your password.
+
+Grown-ups have a hidden menu. On "Who's playing?", press and hold the title for 5 seconds. **Info** shows the
+version, the wifi, the SD card and a few other details. **Updates** shows the running and newest version, lets you
+pick Stable or Beta, and has **Check now** (it downloads right away; the screen goes dark until it's done, about a
+minute) and **Restart now** once an update is ready. The running version is also in small print at the bottom
+of "Who's playing?".
+
+- **Stable** (the default) gets versions I've tried and promoted.
+- **Beta** gets every new version as soon as it's built.
+
 ### Beta and stable
 
 Every release starts as a GitHub pre-release: that is **beta**. A person promotes a release to

@@ -113,7 +113,9 @@ static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and a
 static void dimWhenIdle(uint32_t ms) {
   uint32_t idle = g_activity.idleMs(ms);
   uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
+  if (g_sys.forcesDark()) want = 0;   // a Check now download is writing flash: a lit screen would show broken frames
   if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
+  g_sys.setDark(g_backlight == 0);
 }
 
 // The frame on the glass for tools/devctl.py. Indexed: "FB 160 160 idx\n", 160*160 palette indices, then the tint's 32
