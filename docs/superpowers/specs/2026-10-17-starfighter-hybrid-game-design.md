@@ -1,8 +1,8 @@
 # Starfighter — Porthole game design brief
 
-**Status:** Design exploration / visual reference; implementation deliberately out of scope.  
-**Date:** October 17, 2026  
-**Story:** A child pilots a small X-wing-inspired rebel starfighter, shoots waves of enemy twin-wing fighters, then completes a cinematic trench run and final precision shot.  
+**Status:** Design exploration / visual reference; implementation deliberately out of scope.
+**Date:** October 17, 2026
+**Story:** A child pilots a small X-wing-inspired rebel starfighter, shoots waves of enemy twin-wing fighters, then completes a cinematic trench run and final precision shot.
 **Preferred direction:** Hybrid of the *Squadron Battle* and *Trench Run* concepts, in bright, readable retro digital / 16-bit pixel art. Strong but economical parallax is a defining visual feature.
 
 ## Design north star
