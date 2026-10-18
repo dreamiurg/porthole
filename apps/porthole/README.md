@@ -203,7 +203,7 @@ Pillow is installed.
 | Storage | NVS (`Preferences`): a 52-byte record per profile (v2, `porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
-Rendering: two 480×480 RGB565 framebuffers in PSRAM with bounce buffers; each frame the 160×160
+Rendering: two 480×480 RGB565 framebuffers in PSRAM, read by the panel DMA directly; each frame the 160×160
 indexed buffer is expanded through the palette into the back buffer and swapped on vsync.
 Day / evening / night are palette variants applied at flip time (always day once a kid picks a sun).
 

@@ -111,9 +111,7 @@ void setup() {
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
 static void dimWhenIdle(uint32_t ms) {
   uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
-  if (g_sys.forcesDark()) want = 0;   // a Check now run writes flash (wifi, the check, the image): keep the screen dark
   if (want != g_backlight) {
-    if (g_backlight == 0) board::resyncPanel();   // flash may have been written while dark: no shifted picture on wake
     g_backlight = want; board::setBacklight(want);
   }
   g_sys.setDark(g_backlight == 0);
