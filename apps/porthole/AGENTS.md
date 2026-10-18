@@ -40,6 +40,8 @@ A game is a directory under `games/`: the Makefile and PlatformIO build every `g
   look (`render.*`: the same repaint-only-what-moved technique as Marble Kick, its own art), pages (`game.*`:
   Calibrate, Kickoff, Match, Goal, Full time). Brief: `games/tilt-fc/AGENTS.md`.
 
+- `games/plane-radar/`: Radar, live airplanes around home as a radar scope, RGB565 with its own font. Reads planes from `os/air.h`'s feed (canned in the sim; the board's feed lands separately, so it is not in the firmware's `APPS` yet). Per-kid settings: range, orientation, label lines. Brief: `games/plane-radar/AGENTS.md`.
+
 - `games/pumpkin-hide-seek/`: Pumpkin Hide & Seek, a single-room tilt-and-touch game with original pixel art on RGB565, three hiding spots, three candies to collect before escaping through the door, a seeded mix of Grandma moves (sweeps, turn-backs, spot checks) and a frosting-to-pie retry sequence. No persisted state or sounds. Brief: `games/pumpkin-hide-seek/AGENTS.md`.
 
 In `os/`, the shared runtime:
@@ -54,6 +56,7 @@ In `os/`, the shared runtime:
   `canvas::Frames`, the two-buffer bookkeeping that repaints only the movers that changed (a page's movers as boxes
   with keys, the rest of its state as one `look` word). The look stays in each game.
 - `input.h`: turns raw touch samples into tap/long-press/drag edges (`InputTracker`); shared verbatim by firmware and host.
+- `air.h`: the aircraft feed Radar reads (`air::Feed`, set by the host; planes as offsets from home). Header-only.
 - `tilt.h`: tilt from however the kid holds the device, for every tilt game: `tilt::from` (gravity turned by the
   rotation that lays the kid's calibrated neutral flat), `tilt::Steady` (the neutral: the average of the last 300 ms,
   refused while a reading is not a plausible 1 g) and `tilt::Follow` (a Calibrate page's slow reference). What a tilt

@@ -41,6 +41,6 @@ static inline void palette_build(Tint tint, uint32_t out[C_COUNT]) {
     out[i] = (uint32_t)(r << 16 | g << 8 | b);
   }
 }
-static inline uint16_t rgb888_to_565(uint32_t c) {
+constexpr uint16_t rgb888_to_565(uint32_t c) {
   return (uint16_t)(((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x001F));
 }

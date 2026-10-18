@@ -34,6 +34,7 @@ test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
 test_tilt_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
+test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)

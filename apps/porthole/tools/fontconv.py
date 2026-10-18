@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Convert lv_font_conv 1.5.3 C output into a game's generated/fonts.h (os/font.h tables, no LVGL).
 
-    python3 tools/fontconv.py [--game biscuit|tiltfc] fontN.c ...
+    python3 tools/fontconv.py [--game biscuit|tiltfc|radar] fontN.c ...
 
 Run from apps/porthole. Each game's font, its output and its inputs (GAMES below):
 
@@ -23,6 +23,13 @@ draws (KEEP): every other ASCII glyph keeps its advance but has no bitmap.
         --size $n --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name tiltfc_font_$n
         --output build/fc$n.c; done
     python3 tools/fontconv.py --game tiltfc build/fc{18,36,64}.c
+
+Plane Radar: B612 Mono Bold (games/plane-radar/fonts/, from github.com/google/fonts ofl/b612mono), all of ASCII.
+
+    for n in 18 24 32; do npx lv_font_conv@1.5.3 --font games/plane-radar/fonts/B612Mono-Bold.ttf --range 0x20-0x7e
+        --size $n --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name radar_font_$n
+        --output build/radar$n.c; done
+    python3 tools/fontconv.py --game radar build/radar{18,24,32}.c
 
 The converter's layout is checked, not assumed: 4 bpp plain bitmaps, class kerning at kern_scale 16 (or none, for a
 monospace font), ASCII 32..126 as glyphs 1..95 and, if any, a sparse list of extra code points after it. Anything
@@ -60,6 +67,14 @@ GAMES = {
         "Copyright 2015 The Rubik Project Authors (mail@hubertfischer.com).",
         "see games/tilt-fc/fonts/OFL.txt",
         " !0123456789AGLO",  # GOAL!, the scores, the countdown and the shirt numbers
+    ),
+    "radar": Game(
+        "games/plane-radar/generated/fonts.h",
+        "radar",
+        "B612 Mono Bold",
+        "Copyright 2012 The B612 Project Authors (https://github.com/polarsys/b612).",
+        "see games/plane-radar/fonts/OFL.txt",
+        None,  # callsigns and plane types arrive over the air: every ASCII glyph
     ),
 }
 
