@@ -250,6 +250,8 @@ uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
 static const int PIN_SD_CLK = PIN_LCD_SPI_CLK, PIN_SD_CMD = PIN_LCD_SPI_MOSI, PIN_SD_D0 = 42;
 bool mountSd() { return SD_MMC.setPins(PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0) && SD_MMC.begin("/sdcard", true); }
 
+void resyncPanel() { if (g_panel) esp_lcd_rgb_panel_restart(g_panel); }
+
 void init() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
   uint8_t cfg = 0x00; i2cWrite(EXP_ADDR, EXP_CFG, &cfg, 1);   // all expander pins output
