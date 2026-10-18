@@ -11,7 +11,8 @@ leaves Radar out of `APPS`. The sim and the tests run it against a canned feed.
 
 - `os/air.h`: the feed contract (`air::Feed`, `Plane`, `Snapshot`, `State`), set with `air::setFeed` by the host
   before the shell starts; a game only reads it. Planes come as km east/north of home, never as coordinates. Home is
-  one per device, set by a grown-up (not in the game) and kept by the feed.
+  one per device, set by a grown-up in the system menu (Info -> Home: a street address looked up once) and read by
+  the feed (`System::home`); the game never sets it.
 - `scope.*`: geometry with no drawing. `RANGE_MI` 3/6/12/25 (outer ring), `place` (inside the ring, or a rim dot at its
   bearing), `tagFor` (a label beside its plane, toward the middle, else away, above, below; the first spot wholly on the
   glass and clear of other labels, symbols, N/E/S/W, the menu and home buttons and the range label, trying last frame's

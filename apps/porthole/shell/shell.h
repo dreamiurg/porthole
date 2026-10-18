@@ -64,7 +64,8 @@ class Shell {
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME,
+                         SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -91,6 +92,7 @@ class Shell {
   shell::Network nets_[shell::MAX_NETWORKS] = {}; int nNets_ = 0;   // the last scan; -1 while it runs
   bool scanRefused_ = false; uint8_t netPage_ = 0;
   shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
+  shell::TextEntry addr_{}; shell::Home found_{}; int8_t look_ = 0;    // the address being looked up (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
 
   shell::Record& rec() { return prof_.rec[active_]; }
@@ -134,4 +136,6 @@ class Shell {
   void updateSysPass(); void drawSysPass(); void drawKeys(const shell::TextEntry& t);
   void join(); void pollJoin(); bool save(); void saved();
   void updateSysJoin(); void drawSysJoin();
+  void updateSysHome(); void drawSysHome(); void updateSysAddr(); void drawSysAddr();
+  void pollLook(); void updateSysFind(); void drawSysFind();
 };

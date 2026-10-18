@@ -16,7 +16,8 @@
 // ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
 // feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
-// nospot | nowifi | joining | lost | off. `debug` adds feed_state/feed_on/feed_km/feed_starts/feed_spot.
+// nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
+// `debug` adds feed_state/feed_on/feed_km/feed_starts and sys_home/sys_lat/sys_lon/sys_lookups/sys_addr.
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -64,8 +65,26 @@ struct SimSystem : shell::System {
   char ssid[33] = "Home-Network-5G-Upstairs", pass[65] = "", tried[33] = "";
   shell::Network nets[shell::MAX_NETWORKS]; int nNets = 0, tested = 0, scans = 0, tests = 0;
   bool failSave = false;   // `sys savefail`: the next saveWifi fails (NVS full or broken)
+  // Home (the radar's center): set to Seattle so the radar is live; `sys nohome` clears it. A lookup runs until
+  // `sys found` (a canned place) or `sys notfound` ends it; `sys homefail` makes the next saveHome fail.
+  shell::Home homeAt = {47.62, -122.35, "Seattle, King County, Washington, United States"};
+  bool homeSet = true, failHome = false; int looked = 0, lookups = 0; char addr[65] = "";
+  bool hasHome() override { return true; }
+  bool home(shell::Home& o) override { o = homeAt; return homeSet; }
+  bool saveHome(const shell::Home& h) override {
+    if (failHome) { failHome = false; return false; }
+    homeAt = h; homeSet = true; return true;
+  }
+  bool startLookup(const char* a) override {
+    if (!radioFree() || looked < 0) return false;
+    lookups++; looked = -1; snprintf(addr, sizeof addr, "%s", a); return true;
+  }
+  int lookupResult(shell::Home& o) override {
+    if (looked == 1) o = {47.6205, -122.3493, "Space Needle, 400 Broad Street, Seattle, Washington, United States"};
+    return looked;
+  }
   bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
-  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0; }
+  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0; }
   void info(shell::SysInfo& o) override {
     o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
     o.heapFree = 187392; o.sd = true; o.wifiSaved = ssid[0] != 0; snprintf(o.ssid, sizeof o.ssid, "%s", ssid);
@@ -106,6 +125,10 @@ struct SimSystem : shell::System {
     else if (!strcmp(what, "joinok")) tested = 1;
     else if (!strcmp(what, "joinfail")) tested = 0;
     else if (!strcmp(what, "savefail")) failSave = true;
+    else if (!strcmp(what, "nohome")) homeSet = false;
+    else if (!strcmp(what, "found")) looked = 1;
+    else if (!strcmp(what, "notfound")) looked = 0;
+    else if (!strcmp(what, "homefail")) failHome = true;
     else return false;
     return true;
   }
@@ -119,7 +142,7 @@ struct SimSystem : shell::System {
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
-    st = {}; st.lastCheck = last; nNets = tested = 0;
+    st = {}; st.lastCheck = last; nNets = tested = looked = 0;
   }
   void set(const char* what, const char* arg) {
     if (setWifi(what)) return;
@@ -140,6 +163,8 @@ struct SimSystem : shell::System {
            ch == shell::CH_BETA ? "beta" : "stable", S[st.state], checks, restarts, (unsigned long)st.lastCheck);
     printf("[sys sys_ssid=\"%s\" sys_pass=\"%s\" sys_scans=%d sys_nets=%d sys_tests=%d sys_tried=\"%s\" sys_tested=%d]\n", ssid,
            pass, scans, nNets, tests, tried, tested);
+    printf("[sys sys_home=%d sys_lat=%.4f sys_lon=%.4f sys_lookups=%d sys_addr=\"%s\"]\n", homeSet, homeAt.lat, homeAt.lon,
+           lookups, addr);
   }
 };
 
@@ -147,23 +172,21 @@ struct SimSystem : shell::System {
 // Between them they cover every kind, a plane with no callsign, one past the 20 km ring (a rim dot) and one near the
 // glass's edge (its tag goes on the far side).
 struct SimFeed : air::Feed {
-  air::State state = air::S_LIVE; bool on = false, empty = false, hasSpot = true; float km = 0; int starts = 0;
-  double lat = 47.62, lon = -122.35;
+  air::State state = air::S_LIVE; bool on = false, empty = false; float km = 0; int starts = 0;
   void start(float radiusKm) override { if (!on) starts++; on = true; km = radiusKm; }
   void stop() override { on = false; }
   void read(air::Snapshot& out) override;
-  bool spot(double* la, double* lo) override { *la = lat; *lo = lon; return hasSpot; }
+  bool spot(double* la, double* lo) override;   // home, from the system menu (SimSystem)
   void set(const char* what, const char*) {
     static const char* const S[] = {"off", "nospot", "nowifi", "joining", "live", "lost"};
     empty = !strcmp(what, "empty");
     if (empty) { state = air::S_LIVE; return; }
     for (int i = 0; i < air::S_COUNT; i++)
-      if (!strcmp(what, S[i])) { state = (air::State)i; if (state == air::S_NO_SPOT) hasSpot = false; return; }
+      if (!strcmp(what, S[i])) { state = (air::State)i; return; }
     fprintf(stderr, "unknown command: feed %s\n", what);
   }
   void print() const {
-    printf("[feed feed_state=%d feed_on=%d feed_km=%.1f feed_starts=%d feed_spot=%d]\n", (int)state, on, km, starts,
-           hasSpot);
+    printf("[feed feed_state=%d feed_on=%d feed_km=%.1f feed_starts=%d]\n", (int)state, on, km, starts);
   }
 };
 static SimFeed g_feed;
@@ -179,6 +202,12 @@ static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
 static InputTracker g_tracker;
+bool SimFeed::spot(double* la, double* lo) {
+  shell::Home h;
+  const bool set = g_sys.home(h);
+  *la = h.lat; *lo = h.lon;
+  return set;
+}
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
 static uint16_t g_pal565[TINT_COUNT][C_COUNT];   // the same, as the firmware hands it to board::present

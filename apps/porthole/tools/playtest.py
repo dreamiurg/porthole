@@ -60,10 +60,10 @@ SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 # The hidden system menu is for grown-ups (a user decision of 2026-10-18): 18 px (6 mm) targets pass there without the
 # kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; "sys_new" is the kids' card and is not in it.
-GROWN_UPS = {"sys_info", "sys_updates", "sys_wifi", "sys_pass", "sys_join"}
+GROWN_UPS = {"sys_info", "sys_updates", "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find"}
 # The grown-ups' full QWERTY keyboard (a user decision of 2026-10-18): 12 px (4 mm) keys pass on these screens. Every
 # tap goes to the nearest key and the pressed key shows big above the finger; under 12 px still fails.
-KEYBOARDS = {"sys_pass"}
+KEYBOARDS = {"sys_pass", "sys_addr"}
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
     "=": lambda a, b: a == b,
