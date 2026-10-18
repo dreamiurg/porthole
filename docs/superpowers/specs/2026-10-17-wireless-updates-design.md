@@ -57,8 +57,11 @@ The board is not powered overnight, so nothing depends on a night-time window.
 - **Record the attempt date in NVS before connecting**, so a crash in the download path can't trigger a retry on
   every boot.
 - **Rule 4 changes wording, not intent.** Suggested: "No network traffic carries anything about the kid. Only a
-  daily update check and download go out." If games stutter while downloading, downloads only run on the
-  "Who's playing?" and launcher screens.
+  daily update check and download go out."
+- **Flash is only written while the screen is dark** (decided on the board, 2026-10-17). Writing flash while a game
+  was on screen didn't just stutter (34 ms frames became about 62 ms): the glass showed broken frames, because a
+  flash write stalls the RGB panel's refill from PSRAM. The daily download starts only when the backlight is off and
+  stops if the screen wakes, resuming in the next dark spell. Check now turns the screen off until it is written.
 - **Root rule 7.** The "something new" card and the hidden menu use the shell's own widgets and palette, with
   nothing from any game.
 
@@ -177,5 +180,4 @@ This is about a week of agent-assisted work in total:
 - Rollback with the pinned pioarduino 54.03.21 bootloader. The sdkconfig says it's enabled.
 - Whether `HTTPClient` follows the cross-host redirect over HTTPS.
 - Internal RAM headroom for TLS next to the display's bounce buffers.
-- Whether games stutter while flash is being written.
 - The SD pinout. It comes from Waveshare's wiki table, not their demo code.

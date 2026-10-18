@@ -47,6 +47,9 @@ uint32_t g_nextPoll = FIRST_MS;
 char g_ssid[33] = {0};
 shell::Channel g_chan = shell::CH_STABLE;
 std::atomic<bool> g_busy{false};   // a check task exists
+std::atomic<bool> g_dark{false};   // the backlight is off (main loop, every frame)
+std::atomic<bool> g_forced{false}; // the running check is a Check now: it writes flash with the screen forced off
+std::atomic<bool> g_woke{false};   // the screen came on mid-download: stopped, to resume in the next dark spell
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
 
@@ -133,6 +136,7 @@ bool stream(HTTPClient& http, size_t size) {
     if (!n) { if (!http.connected()) break; vTaskDelay(pdMS_TO_TICKS(5)); continue; }
     int r = s->read(buf.get(), std::min(std::min(n, CHUNK), size - got));
     if (r <= 0) { vTaskDelay(pdMS_TO_TICKS(5)); continue; }
+    if (!g_forced && !g_dark) { g_woke = true; return false; }   // someone woke the screen: no flash writes now
     if (Update.write(buf.get(), (size_t)r) != (size_t)r) return false;
     got += (size_t)r; last = millis();
     setState(shell::UP_DOWNLOADING, (uint8_t)(got * 100 / size));
@@ -148,12 +152,12 @@ bool download(const char* ver) {
   snprintf(url, sizeof url, "%sdownload/porthole-v%s/porthole-%s-ota.bin", RELEASES, ver, ver);
   Https c;
   int code = c.get(url), size = c.http.getSize();
-  Serial.printf("[net] downloading %s: %d bytes\n", ver, size);
+  Serial.printf("[net] downloading %s: %d bytes%s\n", ver, size, g_forced ? ", screen off until it is written" : "");
   setState(shell::UP_DOWNLOADING);
   // A known size, never UPDATE_SIZE_UNKNOWN: that erases the whole 7.9 MB slot first, stalling both cores.
   bool ok = code == 200 && size > 0 && Update.begin((size_t)size) && stream(c.http, (size_t)size) && Update.end();
   if (ok) return true;
-  Serial.printf("[net] download failed: %s\n", Update.errorString());
+  if (!g_woke) Serial.printf("[net] download failed: %s\n", Update.errorString());   // a wake is not a failure
   if (Update.isRunning()) Update.abort();   // never begun, abort() would drive Update's unset LED pin: GPIO0
   return false;
 }
@@ -187,24 +191,34 @@ void checkAndDownload(shell::Channel ch) {
 void run(shell::Channel ch) {
   Wifi w;
   if (!loadWifi(w)) { setState(shell::UP_NO_WIFI); return; }
-  uint32_t now = g_now();
+  uint32_t now = g_now(), prev = 0;
+  board::loadBlob(NS, "last", &prev, sizeof prev);
   board::saveBlob(NS, "last", &now, sizeof now);   // before connecting: a crash below can't retry on every boot
   portENTER_CRITICAL(&g_mux); g_st.lastCheck = now; portEXIT_CRITICAL(&g_mux);
   setState(shell::UP_CHECKING);
+  g_woke = false;
   if (joinWifi(w)) checkAndDownload(ch);
   else setState(shell::UP_NO_WIFI);
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
+  if (!g_woke) return;
+  // Not today's attempt after all: put the last check back so the next dark spell tries again.
+  board::saveBlob(NS, "last", &prev, sizeof prev);
+  portENTER_CRITICAL(&g_mux); g_st.lastCheck = prev; portEXIT_CRITICAL(&g_mux);
+  setState(shell::UP_IDLE);
+  Serial.println("[net] screen woke: download stopped, it resumes the next time the screen is dark");
 }
 
 void task(void* arg) {
   run((shell::Channel)(uintptr_t)arg);
+  g_forced = false;
   g_busy = false;
   vTaskDelete(nullptr);
 }
 
-void spawn(shell::Channel ch) {
+void spawn(shell::Channel ch, bool forced) {
   if (g_busy.exchange(true)) return;
+  g_forced = forced;
   // Downloaded already: a second run would rewrite the slot that is set to boot, and a failure would leave it broken.
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
   if (ready) { g_busy = false; return; }
@@ -255,7 +269,8 @@ void Updater::tick(uint32_t ms) {
   if ((int32_t)(ms - g_nextPoll) < 0) return;
   g_nextPoll = ms + POLL_MS;
   if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
-  spawn(channel());
+  if (!g_dark) return;   // the daily check runs while nobody is looking: it may write flash
+  spawn(channel(), false);
 }
 
 bool Updater::saveWifi(const char* ssid, const char* pass) { return storeWifi(ssid, pass); }
@@ -279,7 +294,9 @@ shell::UpdStatus Updater::status() {
   return s;
 }
 
-void Updater::checkNow() { spawn(channel()); }
+void Updater::checkNow() { spawn(channel(), true); }
+void Updater::setDark(bool dark) { g_dark = dark; }
+bool Updater::forcesDark() { return g_forced && status().state == shell::UP_DOWNLOADING; }
 void Updater::restart() { ESP.restart(); }
 
 shell::Channel Updater::channel() { return g_chan; }

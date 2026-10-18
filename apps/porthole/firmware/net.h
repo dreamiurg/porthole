@@ -19,6 +19,12 @@ class Updater final : public shell::System {
   // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
   void tick(uint32_t ms);
   bool saveWifi(const char* ssid, const char* pass);   // false if ssid is empty or either is too long
+  // Flash is only written while the screen is dark: a flash write stalls the RGB panel's refill from PSRAM, and a lit
+  // screen shows broken frames. Call setDark every loop with whether the backlight is off. The daily download starts
+  // only in the dark and stops (to resume the next dark spell) if the screen wakes. A Check now download keeps going:
+  // while forcesDark() is true the backlight must stay off.
+  void setDark(bool dark);
+  bool forcesDark();
 
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;
