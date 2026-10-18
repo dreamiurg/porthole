@@ -714,13 +714,13 @@ static void scanList() {
 static void textEntry() {
   shell::TextEntry t;
   assert(!shell::textKey(t, shell::TK_OK) && !shell::textKey(t, shell::TK_DEL) && t.len == 0);
-  shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 0);           // A
-  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 13);           // $ (shift leaves symbols alone)
+  shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 10);          // A (QWERTY: a starts the second row)
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 16);           // $ (shift leaves symbols alone)
   shell::textKey(t, shell::TK_SPACE);
-  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 8);            // backslash
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, 10);           // backslash
   assert(shell::textChar(t, 16) == 0);                                // the third page's empty slots
   shell::textKey(t, 16);
-  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 25);   // back to letters: z
+  shell::textKey(t, shell::TK_PAGE); shell::textKey(t, shell::TK_SHIFT); shell::textKey(t, 19);   // back to letters: z
   assert(!strcmp(t.buf, "A$ \\z") && t.len == 5);
   shell::textKey(t, shell::TK_DEL); assert(!strcmp(t.buf, "A$ \\"));
   assert(shell::textKey(t, shell::TK_OK));

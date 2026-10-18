@@ -247,17 +247,36 @@ void Shell::drawSysWifi() {
   ui::drawBack();
 }
 
-// ---------------------------------------------------------------- the password: a keyboard of 31 keys shaped to the glass
-// Rows of 6, 7, 7, 6 and 5 keys of 19x18, 2 px apart, every corner inside a 79 px circle. The first 26 type the page's
-// characters, the last row is shift, page, space, backspace and OK (TK_SHIFT..TK_OK).
-static const char* const PAGES[3] = {"abcdefghijklmnopqrstuvwxyz", "1234567890!@#$%&*-_+=.,?/:", "\"'();<>[\\]^`{|}~"};
+// ---------------------------------------------------------------- the keyboard: full QWERTY shaped to the glass
+// A user decision of 2026-10-18: full QWERTY for grown-ups, keys of 12x18 (4 x 6 mm, under the menu's 18 px floor:
+// tools/playtest.py KEYBOARDS). Every tap goes to the nearest key (the 2 px gaps belong to their neighbours), and the
+// key under the finger shows big above it. Rows of 10, 9, then shift + 7 + backspace, then page, space and OK; the
+// widest row sits low, where the glass is widest. The 26 character keys type the page's characters (TK_SHIFT..TK_OK).
+static const char* const PAGES[3] = {"qwertyuiopasdfghjklzxcvbnm", "1234567890-/:;()$&@\".,?!'#", "[]{}%^*+=_\\|~<>`"};
 static const char* const NEXT_PAGE[3] = {"123", "#+=", "abc"};
+static const int KW = 12, KH = 18, KP = 14, KTOP = 48, KROW = 20;
 static ui::Box textKeyBox(int key) {
-  static const int N[5] = {6, 7, 7, 6, 5};
-  int r = 0;
-  while (key >= N[r]) key -= N[r++];
-  const int w = N[r] * 21 - 2;
-  return {80 - w / 2 + key * 21, 39 + r * 20, 19, 18};
+  static const int N[3] = {10, 9, 7}, X0[3] = {11, 18, 32};
+  if (key < TK_CHARS) {
+    int r = 0;
+    while (key >= N[r]) key -= N[r++];
+    return {X0[r] + key * KP, KTOP + r * KROW, KW, KH};
+  }
+  switch (key) {
+    case TK_SHIFT: return {11, KTOP + 2 * KROW, 19, KH};
+    case TK_DEL: return {130, KTOP + 2 * KROW, 19, KH};
+    case TK_PAGE: return {21, KTOP + 3 * KROW, 26, KH};
+    case TK_SPACE: return {49, KTOP + 3 * KROW, 58, KH};
+    default: return {109, KTOP + 3 * KROW, 30, KH};   // TK_OK
+  }
+}
+// The key a finger at (x, y) means: the one whose box, grown by half a gap, holds it; -1 off the keyboard.
+static int textKeyAt(int x, int y) {
+  for (int k = 0; k < TK_COUNT; k++) {
+    const ui::Box b = textKeyBox(k);
+    if (x >= b.x - 1 && x < b.x + b.w + 1 && y >= b.y - 1 && y < b.y + b.h + 1) return k;
+  }
+  return -1;
 }
 char shell::textChar(const TextEntry& t, int key) {
   if (key < 0 || key >= TK_CHARS) return 0;
@@ -273,10 +292,38 @@ bool shell::textKey(TextEntry& t, int key) {
   if (key == TK_DEL && t.len > 0) t.buf[--t.len] = 0;
   return key == TK_OK && t.len > 0;
 }
+// One frame of typing into t: true when OK was tapped with something typed.
+static bool typeInto(const Input& in, TextEntry& t) {
+  for (int k = 0; k < TK_COUNT; k++) {
+    const ui::Box b = textKeyBox(k);
+    if (k >= TK_CHARS || textChar(t, k)) UiAudit::add(b.x, b.y, b.w, b.h);
+  }
+  // The key under the finger when it lifts (the one the preview showed), however long it was held, for a press that
+  // began on the keyboard: on 4 mm keys a finger often rolls onto the next one.
+  if (!in.released || textKeyAt(in.downX, in.downY) < 0) return false;
+  const int k = textKeyAt(in.x, in.y);
+  return k >= 0 && (k >= TK_CHARS || textChar(t, k)) && textKey(t, k);
+}
 void Shell::updateSysPass() {
   if (ui::back(in_)) { pass_ = TextEntry{}; go(SH_SYS_WIFI); return; }
-  for (int k = 0; k < TK_COUNT; k++)
-    if ((k >= TK_CHARS || textChar(pass_, k)) && tapped(in_, textKeyBox(k)) && textKey(pass_, k)) { join(); return; }
+  if (typeInto(in_, pass_)) join();
+}
+// The keys, and the one under the finger big above it (a finger hides the key it presses).
+void Shell::drawKeys(const TextEntry& t) {
+  const int held = in_.down ? textKeyAt(in_.x, in_.y) : -1;
+  for (int k = 0; k < TK_CHARS; k++) {
+    const char c[2] = {textChar(t, k), 0};
+    if (c[0]) sbutton(textKeyBox(k), c, C_WHITE, k == held, 1);
+  }
+  const char* const labels[5] = {"Aa", NEXT_PAGE[t.page % 3], "space", "<", "OK"};
+  const uint8_t cols[5] = {t.upper ? (uint8_t)C_YELLOW : (uint8_t)C_LTGRAY, C_SKY, C_WHITE, C_LTGRAY,
+                           t.len ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY};
+  for (int k = TK_CHARS; k < TK_COUNT; k++) sbutton(textKeyBox(k), labels[k - TK_CHARS], cols[k - TK_CHARS], k == held, 1);
+  if (held < 0 || held >= TK_CHARS || !textChar(t, held)) return;
+  const ui::Box b = textKeyBox(held);
+  const char c[2] = {textChar(t, held), 0};
+  ui::panel({b.x + b.w / 2 - 12, b.y - 27, 24, 24}, C_WHITE, C_DKBROWN);
+  gfx::textCentered(b.x + b.w / 2, b.y - 23, c, C_NAVY, 2);
 }
 // What was typed, every letter but the last as '*' (a password is never shown whole), its tail when it is long.
 static void masked(char* out, size_t n, const TextEntry& t, bool cursor) {
@@ -293,14 +340,7 @@ void Shell::drawSysPass() {
   ui::panel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
   char shown[TEXT_MAX + 2]; masked(shown, sizeof shown, pass_, pass_.len < TEXT_MAX && (ms_ / 400) % 2);
   if (pass_.len) stextC(80, 27, shown, C_NAVY); else stextC(80, 27, "Password", C_DKGRAY);
-  for (int k = 0; k < TK_CHARS; k++) {
-    const char c[2] = {textChar(pass_, k), 0};
-    if (c[0]) sbutton(textKeyBox(k), c, C_WHITE, down(in_, textKeyBox(k)), 1);
-  }
-  const char* const labels[5] = {"Aa", NEXT_PAGE[pass_.page % 3], "spc", "<", "OK"};
-  const uint8_t cols[5] = {pass_.upper ? (uint8_t)C_YELLOW : (uint8_t)C_LTGRAY, C_SKY, C_WHITE, C_LTGRAY,
-                           pass_.len ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY};
-  for (int k = TK_CHARS; k < TK_COUNT; k++) sbutton(textKeyBox(k), labels[k - TK_CHARS], cols[k - TK_CHARS], down(in_, textKeyBox(k)), 1);
+  drawKeys(pass_);
   ui::drawBack();
 }
 
