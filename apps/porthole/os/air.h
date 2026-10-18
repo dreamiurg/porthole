@@ -1,6 +1,6 @@
 // Live aircraft around the device's spot, for Plane Radar (games/plane-radar/). The firmware feeds it from adsb.fi over
-// the saved wifi (firmware/radar.cpp), the sim and the tests from canned planes. The spot (where the device is) is one
-// per device, kept by the feed (firmware: NVS "sys"); planes come as offsets from it. Header-only.
+// the saved wifi (net::Radar in firmware/net.cpp), the sim and the tests from canned planes. The spot (where the device
+// is) is one per device, set in the grown-ups' menu (Home); planes come as offsets from it. Header-only.
 #pragma once
 #include <stdint.h>
 
