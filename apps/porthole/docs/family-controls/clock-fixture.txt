@@ -1,0 +1,4 @@
+# Synthetic profile fixture for explicitly canned clock/network coverage.
+reset
+profile Sam 8
+reboot

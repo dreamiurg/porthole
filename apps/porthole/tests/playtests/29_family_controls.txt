@@ -1,0 +1,211 @@
+# Supplemental fixtures: window boundaries, canceled drafts, overnight hours and confirmed override.
+# Natural visible-input cutoff/override play is recorded separately in docs/family-controls.
+reset
+profile Sam 8
+profile Kai 6
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_time
+tap 80 103
+wait 450
+expect-screen sys_window
+ui-check sys_window-default
+snap 01_window
+tap 80 49
+wait 450
+tap 57 135
+wait 450
+expect-screen sys_time
+expect window_on=1
+tap 80 103
+wait 450
+tap 80 49
+wait 450
+tap 103 135
+wait 450
+expect-screen sys_time
+expect window_on=0
+ui-check sys_time-anytime
+tap 80 103
+wait 450
+tap 80 49
+wait 450
+tap 103 135
+wait 450
+expect window_on=1
+tap 80 103
+wait 450
+repeat 5
+hold 122 80
+wait 450
+end
+tap 122 80
+wait 450
+tap 122 80
+wait 450
+tap 103 135
+wait 450
+expect-screen sys_window
+expect window_start=840
+ui-check sys_window-equal-rejected
+snap 02_equal
+tap 80 12
+wait 450
+tap 80 103
+wait 450
+repeat 7
+hold 122 80
+wait 450
+end
+tap 103 135
+wait 450
+expect window_start=1260
+expect window_end=1170
+ui-check sys_time-overnight
+snap 03_overnight
+tap 80 103
+wait 450
+repeat 7
+hold 38 80
+wait 450
+end
+tap 103 135
+wait 450
+expect window_start=840
+expect window_end=1170
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 54
+wait 450
+expect-screen launcher
+skip 12600
+wait 450
+expect-screen rest
+ui-check rest-window-cutoff
+snap 04_cutoff
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_time
+tap 52 129
+wait 450
+tap 80 118
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 54
+wait 450
+expect-screen rest
+expect today=0
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_time
+tap 108 129
+wait 450
+expect-screen sys_allow
+ui-check sys_allow
+snap 05_allow
+tap 80 94
+wait 450
+expect-screen sys_time
+expect allow_min=0
+tap 108 129
+wait 450
+tap 80 118
+wait 450
+expect-screen sys_time
+expect allow_min=30
+ui-check sys_time-allowing
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 54
+wait 450
+expect-screen launcher
+tap 80 32
+wait 450
+tap 80 80
+wait 450
+expect-screen launcher
+app pets-club
+wait 450
+expect-screen splash
+repeat 179
+tilt -300 950 0
+wait 5000
+tilt 300 950 0
+wait 5000
+end
+expect today>1700
+expect allow_min<=1
+wait 20000
+expect-screen rest
+expect allow_min=0
+expect today>1700
+ui-check rest-override-expired
+snap 06_expired
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_time
+tap 108 129
+wait 450
+tap 80 118
+wait 450
+expect allow_min=30
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+reboot
+expect-screen picker
+expect allow_min=0
+tap 80 80
+wait 450
+expect-screen rest
+ui-check rest-reboot-cleared
+snap 07_reboot
+sheet play_window_and_override

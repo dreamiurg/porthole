@@ -9,6 +9,7 @@
 #include "shell.h"
 #include "adult_fonts.h"
 #include "canvas.h"
+#include "timezone.h"
 
 using namespace gfx;
 using namespace shell;
@@ -163,12 +164,11 @@ void Shell::updateSysAdmin() {
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
   if (tapped(in_, adminPageArrow(!adminPage_))) { adminPage_ = !adminPage_; return; }
   if (adminPage_) {
-    if (tapped(in_, ADMIN_CODE)) { limitsDraft_ = limits_; go(SH_SYS_LIMITS); return; }
-    if (tapped(in_, ADMIN_RESET)) { utcDraft_ = sys_->clockStatus().utcOffsetMin; go(SH_SYS_CLOCK); }
+    if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
-  if (tapped(in_, ADMIN_RESET)) { go(SH_SYS_RESET); return; }
+  if (tapped(in_, ADMIN_RESET)) { go(SH_SYS_TIME); return; }
   if (tapped(in_, ADMIN_PLAYERS)) { target_ = -1; go(SH_SYS_PLAYERS); return; }
   if (adminPin_ && tapped(in_, ADMIN_REMOVE)) go(SH_SYS_REMOVE);
 }
@@ -178,14 +178,13 @@ void Shell::drawSysAdmin() {
   const ui::Box arrow = adminPageArrow(!adminPage_);
   sbutton(arrow, adminPage_ ? "<" : ">", C_SKY, down(in_, arrow));
   if (adminPage_) {
-    stextC(80, 46, "Time and play limits", C_LTGRAY);
-    sbutton(ADMIN_CODE, "Play limits", C_SKY, down(in_, ADMIN_CODE));
-    sbutton(ADMIN_RESET, "Clock", C_SKY, down(in_, ADMIN_RESET));
+    stextC(80, 46, "Device settings", C_LTGRAY);
+    sbutton(ADMIN_CODE, "Clock", C_SKY, down(in_, ADMIN_CODE));
     sback(); return;
   }
   stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
   sbutton(ADMIN_CODE, adminPin_ ? "Change code" : "Set admin code", C_SKY, down(in_, ADMIN_CODE));
-  sbutton(ADMIN_RESET, "Reset all limits", C_SKY, down(in_, ADMIN_RESET));
+  sbutton(ADMIN_RESET, "Screen time", C_SKY, down(in_, ADMIN_RESET));
   if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
@@ -243,25 +242,25 @@ void Shell::drawSysPin() {
 }
 static const ui::Box CONFIRM_NO = {30, 84, 100, 20}, CONFIRM_YES = {30, 108, 100, 20};
 void Shell::updateSysConfirm() {
-  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_ADMIN); return; }
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(screen_ == SH_SYS_REMOVE ? SH_SYS_ADMIN : SH_SYS_TIME); return; }
   if (!tapped(in_, CONFIRM_YES)) return;
   if (screen_ == SH_SYS_REMOVE) {
     const bool ok = saveAdminPin(0);
     go(SH_SYS_ADMIN); toast(ok ? "Admin code removed" : "Could not remove code");
   } else {
     const bool ok = resetLimits(*st_, prof_);
-    go(SH_SYS_ADMIN); toast(ok ? "All limits reset" : "Reset failed. Retry");
+    go(SH_SYS_TIME); toast(ok ? "Usage reset" : "Reset failed. Retry");
   }
 }
 void Shell::drawSysConfirm() {
   sclear(C_NAVY);
   const bool remove = screen_ == SH_SYS_REMOVE;
-  shead(80, 34, remove ? "Remove admin code?" : "Reset all limits?", C_WHITE);
+  shead(80, 34, remove ? "Remove admin code?" : "Reset everyone's usage?", C_WHITE);
   stextC(80, 49, remove ? "The system menu will open" : "Clear daily play and rest", C_LTGRAY);
   stextC(80, 60, remove ? "without a code." : "timers for every profile.", C_LTGRAY);
   if (!remove) stextC(80, 71, "Game progress is kept.", C_LTGRAY);
   sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
-  sbutton(CONFIRM_YES, remove ? "Remove code" : "Reset limits", C_SKY, down(in_, CONFIRM_YES));
+  sbutton(CONFIRM_YES, remove ? "Remove code" : "Reset usage", C_SKY, down(in_, CONFIRM_YES));
   sback();
 }
 
@@ -309,9 +308,50 @@ void Shell::drawSysPlayerPin() {
   sback();
 }
 
-// ---------------------------------------------------------------- device-wide limits in minutes
-static ui::Box limitStepBox(int row, bool plus) { return {plus ? 110 : 26, 55 + row * 33, 24, 20}; }
-static const ui::Box LIMIT_SAVE = {40, 117, 80, 20};
+static bool typeInto(const Input& in, TextEntry& t);
+
+// ---------------------------------------------------------------- Screen time: one home for limits, play hours and deliberate exceptions
+static const ui::Box TIME_ROWS[3] = {{30, 42, 100, 22}, {30, 67, 100, 22}, {30, 92, 100, 22}};
+static const ui::Box TIME_RESET = {26, 119, 52, 20}, TIME_ALLOW = {82, 119, 52, 20};
+static void friendlyTime(char* out, size_t n, int minute) {
+  const int hour = minute / 60;
+  if (minute % 60) snprintf(out, n, "%d:%02d %s", hour % 12 ? hour % 12 : 12, minute % 60, hour < 12 ? "AM" : "PM");
+  else snprintf(out, n, "%d %s", hour % 12 ? hour % 12 : 12, hour < 12 ? "AM" : "PM");
+}
+static void settingRow(const ui::Box& b, const char* label, const char* value, bool pressed) {
+  sbutton(b, "", C_SKY, pressed);
+  const int dy = pressed ? 1 : 0;
+  stextC(80, b.y + 3 + dy, label, C_DKBROWN); stextC(80, b.y + 12 + dy, value, C_DKBROWN);
+}
+void Shell::updateSysTime() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  for (int i = 0; i < 2; i++) if (tapped(in_, TIME_ROWS[i])) {
+    limitEditor_ = (uint8_t)i; limitsDraft_ = limits_; go(SH_SYS_LIMITS); return;
+  }
+  if (tapped(in_, TIME_ROWS[2])) { windowDraft_ = window_; go(SH_SYS_WINDOW); return; }
+  if (tapped(in_, TIME_RESET)) { go(SH_SYS_RESET); return; }
+  if (!tapped(in_, TIME_ALLOW)) return;
+  if (allowance_.active(ms_)) { allowance_.stop(); toast("Extra time ended"); }
+  else go(SH_SYS_ALLOW);
+}
+void Shell::drawSysTime() {
+  sclear(C_NAVY); shead(80, 28, "Screen time", C_WHITE);
+  char value[40]; snprintf(value, sizeof value, "%u min", (unsigned)limits_.sessionMinutes);
+  settingRow(TIME_ROWS[0], "Session", value, down(in_, TIME_ROWS[0]));
+  snprintf(value, sizeof value, "%u min", (unsigned)limits_.dailyMinutes);
+  settingRow(TIME_ROWS[1], "Daily total", value, down(in_, TIME_ROWS[1]));
+  if (window_.enabled) {
+    char start[16], end[16]; friendlyTime(start, sizeof start, window_.startMinute); friendlyTime(end, sizeof end, window_.endMinute);
+    snprintf(value, sizeof value, "%s to %s", start, end);
+  } else snprintf(value, sizeof value, "Any time");
+  settingRow(TIME_ROWS[2], "Play window", value, down(in_, TIME_ROWS[2]));
+  sbutton(TIME_RESET, "Reset usage", C_SKY, down(in_, TIME_RESET));
+  if (allowance_.active(ms_)) snprintf(value, sizeof value, "End %lu min", (unsigned long)allowance_.minutesLeft(ms_));
+  else snprintf(value, sizeof value, "Allow 30 min");
+  sbutton(TIME_ALLOW, value, C_GREEN, down(in_, TIME_ALLOW)); sback();
+}
+static const ui::Box EDIT_MINUS = {26, 68, 24, 24}, EDIT_PLUS = {110, 68, 24, 24};
+static const ui::Box EDIT_CANCEL = {26, 110, 52, 22}, EDIT_SAVE = {82, 110, 52, 22};
 static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
   const bool tap = tapped(in, box), held = in.longPress && in.hit(box.x, box.y, box.w, box.h);
   if (!tap && !held) return value;
@@ -319,61 +359,152 @@ static int limitStep(const Input& in, const ui::Box& box, int value, int delta) 
   return next < 1 ? 1 : next > 1440 ? 1440 : next;
 }
 void Shell::updateSysLimits() {
-  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }   // discard unsaved edits
-  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, false), limitsDraft_.sessionMinutes, -1);
-  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, true), limitsDraft_.sessionMinutes, 1);
-  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, false), limitsDraft_.dailyMinutes, -1);
-  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, true), limitsDraft_.dailyMinutes, 1);
-  if (!tapped(in_, LIMIT_SAVE)) return;
-  if (!saveLimits(*st_, limitsDraft_)) { toast("Could not save limits"); return; }
-  limits_ = limitsDraft_; go(SH_SYS_ADMIN); toast("Play limits saved");
+  if (ui::back(in_) || tapped(in_, EDIT_CANCEL)) { go(SH_SYS_TIME); return; }
+  uint16_t& value = limitEditor_ ? limitsDraft_.dailyMinutes : limitsDraft_.sessionMinutes;
+  value = (uint16_t)limitStep(in_, EDIT_MINUS, value, -1);
+  value = (uint16_t)limitStep(in_, EDIT_PLUS, value, 1);
+  if (!tapped(in_, EDIT_SAVE)) return;
+  if (!saveLimits(*st_, limitsDraft_)) { toast("Could not save limit"); return; }
+  limits_ = limitsDraft_; go(SH_SYS_TIME); toast("Limit saved");
 }
 void Shell::drawSysLimits() {
-  sclear(C_NAVY);
-  shead(80, 32, "Play limits (minutes)", C_WHITE);
-  const uint16_t values[2] = {limitsDraft_.sessionMinutes, limitsDraft_.dailyMinutes};
+  sclear(C_NAVY); shead(80, 32, limitEditor_ ? "Daily total" : "Session limit", C_WHITE);
+  stextC(80, 49, limitEditor_ ? "Minutes per day" : "Minutes per session", C_LTGRAY);
+  sbutton(EDIT_MINUS, "-", C_SKY, down(in_, EDIT_MINUS)); sbutton(EDIT_PLUS, "+", C_SKY, down(in_, EDIT_PLUS));
+  char value[16]; snprintf(value, sizeof value, "%u min", (unsigned)(limitEditor_ ? limitsDraft_.dailyMinutes : limitsDraft_.sessionMinutes));
+  shead(80, 76, value, C_WHITE);
+  sbutton(EDIT_CANCEL, "Cancel", C_LTGRAY, down(in_, EDIT_CANCEL)); sbutton(EDIT_SAVE, "Save", C_GREEN, down(in_, EDIT_SAVE));
+  stextC(80, 141, "Hold +/- for 10", C_LTGRAY); sback();
+}
+static const ui::Box WINDOW_TOGGLE = {42, 40, 76, 18}, WINDOW_CANCEL = {37, 125, 40, 20}, WINDOW_SAVE = {83, 125, 40, 20};
+static ui::Box windowStep(int row, bool plus) { return {plus ? 110 : 26, 70 + row * 32, 24, 20}; }
+static uint16_t stepTime(const Input& in, const ui::Box& b, uint16_t value, int sign) {
+  if (tapped(in, b)) return (uint16_t)((value + 1440 + sign * 15) % 1440);
+  if (in.longPress && in.hit(b.x, b.y, b.w, b.h)) return (uint16_t)((value + 1440 + sign * 60) % 1440);
+  return value;
+}
+void Shell::updateSysWindow() {
+  if (ui::back(in_) || tapped(in_, WINDOW_CANCEL)) { go(SH_SYS_TIME); return; }
+  if (tapped(in_, WINDOW_TOGGLE)) windowDraft_.enabled = !windowDraft_.enabled;
+  uint16_t* values[2] = {&windowDraft_.startMinute, &windowDraft_.endMinute};
   for (int i = 0; i < 2; i++) {
-    stextC(80, 44 + i * 33, i ? "Per day" : "Per session", C_LTGRAY);
-    const ui::Box minus = limitStepBox(i, false), plus = limitStepBox(i, true);
-    sbutton(minus, "-", C_SKY, down(in_, minus)); sbutton(plus, "+", C_SKY, down(in_, plus));
-    char value[12]; snprintf(value, sizeof value, "%u min", (unsigned)values[i]); stextC(80, minus.y + 7, value, C_WHITE);
+    *values[i] = stepTime(in_, windowStep(i, false), *values[i], -1);
+    *values[i] = stepTime(in_, windowStep(i, true), *values[i], 1);
   }
-  sbutton(LIMIT_SAVE, "Save", C_GREEN, down(in_, LIMIT_SAVE));
-  stextC(80, 143, "Hold +/- for 10", C_LTGRAY);
-  sback();
+  if (!tapped(in_, WINDOW_SAVE)) return;
+  if (windowDraft_.startMinute == windowDraft_.endMinute) { toast("Choose different times"); return; }
+  if (!savePlayWindow(*st_, windowDraft_)) { toast("Could not save hours"); return; }
+  window_ = windowDraft_; go(SH_SYS_TIME); toast("Play window saved");
+}
+void Shell::drawSysWindow() {
+  sclear(C_NAVY); shead(80, 28, "Play window", C_WHITE);
+  sbutton(WINDOW_TOGGLE, windowDraft_.enabled ? "Enabled" : "Off: any time", C_SKY, down(in_, WINDOW_TOGGLE));
+  for (int i = 0; i < 2; i++) {
+    stextC(80, 61 + i * 32, i ? "Until" : "From", C_LTGRAY);
+    const ui::Box minus = windowStep(i, false), plus = windowStep(i, true);
+    sbutton(minus, "-", C_SKY, down(in_, minus)); sbutton(plus, "+", C_SKY, down(in_, plus));
+    char time[16]; friendlyTime(time, sizeof time, i ? windowDraft_.endMinute : windowDraft_.startMinute);
+    stextC(80, minus.y + 6, time, C_WHITE);
+  }
+  sbutton(WINDOW_CANCEL, "Cancel", C_LTGRAY, down(in_, WINDOW_CANCEL)); sbutton(WINDOW_SAVE, "Save", C_GREEN, down(in_, WINDOW_SAVE)); sback();
+}
+void Shell::updateSysAllowance() {
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_TIME); return; }
+  if (!tapped(in_, CONFIRM_YES)) return;
+  allowance_.start(ms_); go(SH_SYS_TIME); toast("Extra time: 30 minutes");
+}
+void Shell::drawSysAllowance() {
+  sclear(C_NAVY); shead(80, 34, "Allow 30 minutes?", C_WHITE);
+  stextC(80, 49, "Ignore limits and play hours", C_LTGRAY);
+  stextC(80, 60, "for everyone, temporarily.", C_LTGRAY);
+  stextC(80, 71, "Usage still counts.", C_LTGRAY);
+  sbutton(CONFIRM_NO, "Cancel", C_LTGRAY, down(in_, CONFIRM_NO));
+  sbutton(CONFIRM_YES, "Allow 30 min", C_GREEN, down(in_, CONFIRM_YES)); sback();
 }
 
-// ---------------------------------------------------------------- network clock and explicit local UTC offset
-static const ui::Box CLOCK_MINUS = {26, 94, 24, 20}, CLOCK_PLUS = {110, 94, 24, 20};
-static const ui::Box CLOCK_SAVE = {30, 119, 48, 20}, CLOCK_SYNC = {82, 119, 48, 20};
+// ---------------------------------------------------------------- Clock: local IANA zone, automatic detection and ordinary clock sync
+static const ui::Box CLOCK_ZONE = {30, 77, 100, 20}, CLOCK_AUTO = {30, 101, 100, 20};
+static const ui::Box CLOCK_DETECT = {37, 125, 40, 20}, CLOCK_SYNC = {83, 125, 40, 20};
 void Shell::updateSysClock() {
   if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
-  if (tapped(in_, CLOCK_MINUS) && utcDraft_ > -720) utcDraft_ -= 15;
-  if (tapped(in_, CLOCK_PLUS) && utcDraft_ < 840) utcDraft_ += 15;
-  if (tapped(in_, CLOCK_SAVE)) {
-    toast(sys_->setUtcOffset(utcDraft_) ? "UTC offset saved" : "Could not save offset");
-    return;
+  const ClockStatus clock = sys_->clockStatus();
+  if (tapped(in_, CLOCK_ZONE)) { zonePage_ = 0; zoneQuery_ = TextEntry{}; go(SH_SYS_ZONE); return; }
+  if (tapped(in_, CLOCK_AUTO)) {
+    toast(sys_->setTimeZone(clock.zone, !clock.automaticZone) ? "Time zone mode saved" : "Could not save mode"); return;
   }
-  if (sys_->clockStatus().state != TIME_SYNCING && tapped(in_, CLOCK_SYNC))
-    if (!sys_->syncClock()) toast("Wifi busy. Try again");
+  if (tapped(in_, CLOCK_DETECT)) {
+    if (!clock.automaticZone && !sys_->setTimeZone(clock.zone, true)) { toast("Could not enable auto"); return; }
+    if (clock.zoneState != ZONE_LOOKING && !sys_->detectTimeZone()) toast("Wifi busy. Try again");
+  }
+  if (clock.state != TIME_SYNCING && tapped(in_, CLOCK_SYNC) && !sys_->syncClock()) toast("Wifi busy. Try again");
 }
 void Shell::drawSysClock() {
-  sclear(C_NAVY);
-  shead(80, 33, "Clock", C_WHITE);
+  sclear(C_NAVY); shead(80, 28, "Clock", C_WHITE);
   const time_t epoch = now_; struct tm date{}; gmtime_r(&epoch, &date);
-  char current[24]; strftime(current, sizeof current, "%Y-%m-%d %H:%M", &date); stextC(80, 47, current, C_WHITE);
+  char current[32]; strftime(current, sizeof current, "%b %d, %I:%M %p", &date); stextC(80, 43, current, C_WHITE);
   const ClockStatus clock = sys_->clockStatus();
   static const char* const STATES[] = {"Using device clock", "Syncing with wifi...", "Wifi time synced", "No wifi connection", "Time sync failed"};
-  stextC(80, 60, STATES[clock.state], clock.state == TIME_OK ? (uint8_t)C_GREEN : (uint8_t)C_YELLOW);
-  char last[28]; ago(last, sizeof last, now_, clock.lastSync); stextC(80, 71, last, C_LTGRAY);
-  stextC(80, 83, "Local UTC offset", C_LTGRAY);
-  const int magnitude = utcDraft_ < 0 ? -utcDraft_ : utcDraft_;
-  char offset[16]; snprintf(offset, sizeof offset, "UTC%c%02d:%02d", utcDraft_ < 0 ? '-' : '+', magnitude / 60, magnitude % 60);
-  stextC(80, 101, offset, C_WHITE);
-  sbutton(CLOCK_MINUS, "-", C_SKY, down(in_, CLOCK_MINUS)); sbutton(CLOCK_PLUS, "+", C_SKY, down(in_, CLOCK_PLUS));
-  sbutton(CLOCK_SAVE, "Save", C_GREEN, down(in_, CLOCK_SAVE));
-  if (clock.state != TIME_SYNCING) sbutton(CLOCK_SYNC, "Sync now", C_SKY, down(in_, CLOCK_SYNC));
+  const char* status = clock.zoneState == ZONE_LOOKING ? "Detecting time zone..." : clock.zoneState == ZONE_FAILED ? "Zone lookup failed; saved zone" : STATES[clock.state];
+  stextC(80, 55, status, clock.state == TIME_OK && clock.zoneState != ZONE_FAILED ? (uint8_t)C_GREEN : (uint8_t)C_YELLOW);
+  stextC(80, 67, "Time zone", C_LTGRAY);
+  const timezones::Zone* zone = timezones::find(clock.zone);
+  char label[48]; fit(label, sizeof label, zone ? zone->label : clock.zone, 92);
+  sbutton(CLOCK_ZONE, label, C_SKY, down(in_, CLOCK_ZONE));
+  sbutton(CLOCK_AUTO, clock.automaticZone ? "Automatic: on" : "Automatic: off", C_SKY, down(in_, CLOCK_AUTO));
+  if (clock.zoneState != ZONE_LOOKING) sbutton(CLOCK_DETECT, "Detect", C_SKY, down(in_, CLOCK_DETECT));
+  if (clock.state != TIME_SYNCING) sbutton(CLOCK_SYNC, "Sync", C_SKY, down(in_, CLOCK_SYNC));
   sback();
+}
+static const char* const COMMON_ZONES[] = {"America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "Europe/London", "Etc/UTC"};
+static const ui::Box ZONE_COMMON = {30, 125, 48, 20}, ZONE_SEARCH = {82, 125, 48, 20};
+static ui::Box zoneRow(int i) { return {30, 45 + i * 24, 100, 20}; }
+static const ui::Box ZONE_PREV = {26, 24, 20, 18}, ZONE_NEXT = {114, 24, 20, 18};
+static int zoneCount(const TextEntry& query) {
+  if (!query.len) return (int)(sizeof COMMON_ZONES / sizeof COMMON_ZONES[0]);
+  int count = 0; for (int i = 0; i < timezones::count(); i++) count += timezones::matches(i, query.buf);
+  return count;
+}
+static const timezones::Zone* zoneAt(const TextEntry& query, int match) {
+  if (!query.len) return timezones::find(COMMON_ZONES[match]);
+  for (int i = 0; i < timezones::count(); i++) if (timezones::matches(i, query.buf) && match-- == 0) return &timezones::at(i);
+  return nullptr;
+}
+void Shell::updateSysZone() {
+  if (ui::back(in_)) { go(SH_SYS_CLOCK); return; }
+  if (tapped(in_, ZONE_COMMON)) { zoneQuery_ = TextEntry{}; zonePage_ = 0; return; }
+  if (tapped(in_, ZONE_SEARCH)) { zoneSearch_ = zoneQuery_; go(SH_SYS_ZONE_SEARCH); return; }
+  const int count = zoneCount(zoneQuery_), pages = (count + 2) / 3;
+  if (zonePage_ > 0 && tapped(in_, ZONE_PREV)) zonePage_--;
+  if (zonePage_ + 1 < pages && tapped(in_, ZONE_NEXT)) zonePage_++;
+  for (int i = 0; i < 3 && zonePage_ * 3 + i < count; i++) if (tapped(in_, zoneRow(i))) {
+    const timezones::Zone* zone = zoneAt(zoneQuery_, zonePage_ * 3 + i);
+    if (!zone || !sys_->setTimeZone(zone->id, false)) { toast("Could not save zone"); return; }
+    go(SH_SYS_CLOCK); toast("Time zone saved"); return;
+  }
+}
+void Shell::drawSysZone() {
+  sclear(C_NAVY); shead(80, 29, "Time zone", C_WHITE);
+  const int count = zoneCount(zoneQuery_), pages = (count + 2) / 3;
+  for (int i = 0; i < 3 && zonePage_ * 3 + i < count; i++) {
+    const timezones::Zone* zone = zoneAt(zoneQuery_, zonePage_ * 3 + i); char label[48];
+    fit(label, sizeof label, zone ? zone->label : "Unknown", 92);
+    sbutton(zoneRow(i), label, C_SKY, down(in_, zoneRow(i)));
+  }
+  if (!count) { stextC(80, 65, "No matching zones", C_WHITE); stextC(80, 79, "Try a city or IANA name", C_LTGRAY); }
+  if (zonePage_ > 0) sbutton(ZONE_PREV, "<", C_SKY, down(in_, ZONE_PREV));
+  if (zonePage_ + 1 < pages) sbutton(ZONE_NEXT, ">", C_SKY, down(in_, ZONE_NEXT));
+  char page[32]; snprintf(page, sizeof page, "%d / %d", count ? zonePage_ + 1 : 0, pages); stextC(80, 115, page, C_LTGRAY);
+  sbutton(ZONE_COMMON, "Common", C_LTGRAY, down(in_, ZONE_COMMON)); sbutton(ZONE_SEARCH, "Search", C_SKY, down(in_, ZONE_SEARCH)); sback();
+}
+void Shell::updateSysZoneSearch() {
+  if (ui::back(in_)) { go(SH_SYS_ZONE); return; }
+  if (typeInto(in_, zoneSearch_)) { zoneQuery_ = zoneSearch_; zonePage_ = 0; go(SH_SYS_ZONE); }
+}
+void Shell::drawSysZoneSearch() {
+  sclear(C_NAVY); spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
+  const char* tail = zoneSearch_.buf; while (stextW(tail) > 98) tail++;
+  stextC(80, 27, *tail ? tail : "City or IANA zone", *tail ? (uint8_t)C_NAVY : (uint8_t)C_DKGRAY);
+  drawKeys(zoneSearch_); sback();
 }
 
 // ---------------------------------------------------------------- Updates: channel, versions, Check now / Restart now
@@ -386,7 +517,7 @@ static bool chanLocked(UpdState s) { return busy(s) || s == UP_READY; }
 // A scan or a test join holds the radio: Check now would do nothing until it is done.
 static bool radioBusy(System& s) {
   Home found{};
-  return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0 || s.lookupResult(found) < 0 || s.clockStatus().state == TIME_SYNCING;
+  return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0 || s.lookupResult(found) < 0 || s.clockStatus().state == TIME_SYNCING || s.clockStatus().zoneState == ZONE_LOOKING;
 }
 void Shell::updateSysUpd() {
   upd_ = sys_->status();

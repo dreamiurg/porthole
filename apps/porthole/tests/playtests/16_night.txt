@@ -1,6 +1,8 @@
 # At night the shell and every Pets Club screen, adoption included, dim with the clock: no daylight flash anywhere.
 # (The UI audit measures day colors only; the sheet shows the tint.)
 newgame Sam Biscuit
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 wait 2400
 expect-screen home
 expect tint = day

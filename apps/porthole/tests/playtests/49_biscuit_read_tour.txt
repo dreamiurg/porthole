@@ -4,6 +4,8 @@
 # notebook with all 96 kept, its last page, a topic), Topics, a discovery's cover, page and wonder, its source,
 # World with Today's tile, Today and its word on the day of the longest meaning, the scrapbook and the album.
 # The evening and night passes repeat the day's visits and ui-checks.
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 profile Wwwwwwww 8
 app biscuit
 wait 450
