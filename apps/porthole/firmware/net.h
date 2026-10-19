@@ -19,11 +19,16 @@ class Updater final : public shell::System {
   void begin(uint32_t (*localNow)());
   // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
   void tick(uint32_t ms);
-  // The daily run writes flash only while the screen is dark: a flash write stalls the RGB panel's refill from PSRAM,
-  // and a lit screen shows a broken frame or two. Call setDark every loop with whether the backlight is off. The daily
-  // download starts only in the dark and stops (to resume the next dark spell) if the screen wakes. A Check now run
-  // keeps going with the screen lit: the grown-up asked for it and watches its progress.
+  // Daily checks start in the dark and stop on activity. Explicit checks wait for the loop to install an
+  // SRAM-backed display before any flash writes; it remains installed through all cleanup. A daily check
+  // respects the idle backlight; only a manual check keeps its progress lit.
   void setDark(bool dark);
+  bool progressRequested();
+  bool manualCheck();
+  void progressReady(bool ok);
+  void cancelCheck();
+  bool cancelling();
+  bool committing();
 
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;

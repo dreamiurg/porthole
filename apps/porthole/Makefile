@@ -28,6 +28,9 @@ test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/gam
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
+test_update_gate_SRC :=
+test_display_frames_SRC :=
+test_update_picture_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
@@ -67,6 +70,7 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/check_rgb_driver.py
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
