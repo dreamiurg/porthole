@@ -1,9 +1,9 @@
 # Codex Cloud handoff — implement the playable first chapter
 
-**Repository:** `dreamiurg/porthole`  
-**Starting branch:** `design/living-kingdom-chapter-one`  
-**Implementation PR target:** this design branch while open; if it has merged, target `main`.  
-**Game folder:** `apps/porthole/games/living-kingdom/`  
+**Repository:** `dreamiurg/porthole`
+**Starting branch:** `design/living-kingdom-chapter-one`
+**Implementation PR target:** this design branch while open; if it has merged, target `main`.
+**Game folder:** `apps/porthole/games/living-kingdom/`
 **Launcher label:** `Kingdom` (full internal title: Princess Pulverizer: The Living Kingdom).
 
 ## Mission

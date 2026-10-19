@@ -15,11 +15,21 @@
 
 ## Status
 
-**The binaries have not yet been uploaded to this branch.** The connected GitHub write interface only accepts encoded blob contents, not locally mounted binary file paths, and could not transfer the original multi-megabyte PNG files. The full-resolution originals are packaged together as `living-kingdom-original-concept-images.zip` in the originating ChatGPT conversation and saved to the user's Files Library.
+All eight original PNGs are committed in this directory at their original
+1536×1024 resolution. Each file is byte-for-byte identical to its ZIP entry;
+none has been regenerated, recompressed, or replaced with SVG.
+
+Source: [original concept-art ZIP on Google Drive](https://drive.google.com/file/d/1ZRhYuGQ8jxlkiqYv4sr6WItBClGclIUx/view).
+
+Verified ZIP SHA-256:
+
+```text
+b67913e4383d76c4759755312c051ca82ff8ff800d4b6b9d215201aa2e78d295
+```
 
 ## Import procedure
 
-1. Download the complete ZIP from the originating ChatGPT conversation or Library.
+1. Download the complete ZIP from the Google Drive link above and verify its SHA-256.
 2. In `dreamiurg/porthole`, check out `design/living-kingdom-chapter-one` (or the corresponding implementation branch).
 3. Extract the contents of `concept-art/` into this directory, including the eight PNGs. Preserve the original PNG files without recompression or regeneration.
 4. Commit the eight binary files and add previews to PR #79 or to the implementation PR. Do not merge.
