@@ -13,7 +13,7 @@ struct View {
   uint32_t ms = 0;
   float bank = 0;
   uint16_t calibrationPermille = 0, holdPermille = 0;
-  bool gripReady = false;
+  bool gripReady = false, gripUpright = false;
 };
 void draw(const View& view);
 const gfx::Sprite& icon();

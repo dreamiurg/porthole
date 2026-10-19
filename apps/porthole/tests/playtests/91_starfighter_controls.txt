@@ -37,7 +37,12 @@ expect bank<-900
 expect x<210
 ui-check
 snap sf_controls_left
+# Isolate injected life/immunity checks from live enemy attacks in the safe target phase.
 # A hit spends one life, grants protection and never charges another during that protection.
+tilt 0 1000 0
+wait 80
+dbg target
+wait 600
 dbg hit
 expect lives=2
 expect invulnerable>0

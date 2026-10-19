@@ -78,7 +78,8 @@ void Game::render() {
   tilt::Grav neutral{};
   const paint::Page pages[] = {paint::Page::Title, paint::Page::Calibrate, paint::Page::Brief, paint::Page::Flight};
   const paint::View view = {pages[(int)screen_], &run_, ms_, bank_, calibration_.progress(),
-                            (uint16_t)(hold_.progress() * 1000), calibration_.get(&neutral)};
+                            (uint16_t)(hold_.progress() * 1000), calibration_.get(&neutral),
+                            controls::upright({in_.gx, in_.gy, in_.gz})};
   paint::draw(view);
 }
 const char* Game::screenName() const {

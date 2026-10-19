@@ -14,6 +14,14 @@ wait 600
 snap starfighter-title
 screen
 tap 80 120
+tilt 0 0 1000
+wait 600
+snap starfighter-calibration-flat
+screen
+tilt 0 1000 0
+wait 160
+snap starfighter-calibration-steady
+screen
 wait 600
 snap starfighter-calibration
 screen

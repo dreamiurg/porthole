@@ -90,7 +90,7 @@ static void spawnGroup(Run& r) {
   for (auto& e : r.enemies) {
     if (e.active) continue;
     const float x = 150 + count * 60.0f;
-    const float y = 84 + fabsf(count - 1.5f) * 28;
+    const float y = ENEMY_MIN_Y + (fabsf(count - 1.5f) - 0.5f) * 28;
     e = {x, y, x, random(r) % 628 / 100.0f, fireWait(r, true), 0,
          static_cast<uint8_t>(f == Formation::Heavy && count == 1 ? 2 : 1), r.groupsSpawned, f, true, false};
     e.heavy = e.hp > 1;
@@ -108,13 +108,13 @@ static void moveEnemies(Run& r) {
     e.phase += DT * (e.formation == Formation::Swoop ? 1.15f : 0.55f);
     e.x = clamp(e.homeX + sinf(e.phase) * (e.formation == Formation::Swoop ? 52 : 22), 122, 358);
     e.y += DT * (e.formation == Formation::Swoop ? 19 : 13) * (1 + r.wave * WAVE_SPEED_GAIN);
-    if (e.y > 405) e.y = 76;  // A missed fighter loops around; only shooting clears it.
+    if (e.y > 405) e.y = ENEMY_MIN_Y;  // A missed fighter loops around; only shooting clears it.
     if (e.fireMs > STEP_MS) e.fireMs -= STEP_MS;
     else {
       enemyFire(r, e.x, e.y);
       e.fireMs = fireWait(r, false);
     }
-    if (hit(e.x, e.y, r.player.x, r.player.y, 22)) hurt(r);
+    if (hit(e.x, e.y, r.player.x, r.player.y, ENEMY_RAM_RADIUS)) hurt(r);
     if (r.stage == Stage::Defeat) return;
   }
 }
@@ -129,7 +129,7 @@ static void damageEnemy(Run& r, Enemy& e, Bolt& b) {
   r.score += e.heavy ? 150 : 100;
 }
 static bool enemyHit(const Enemy& e, const Bolt& b) {
-  return fabsf(b.x - e.x) <= (e.heavy ? 43 : 32) && fabsf(b.y - e.y) <= (e.heavy ? 30 : 25);
+  return fabsf(b.x - e.x) <= (e.heavy ? HEAVY_HALF_W : ENEMY_HALF_W) && fabsf(b.y - e.y) <= (e.heavy ? HEAVY_HALF_H : ENEMY_HALF_H);
 }
 static void playerBolt(Run& r, Bolt& b) {
   for (auto& e : r.enemies) {
@@ -138,7 +138,7 @@ static void playerBolt(Run& r, Bolt& b) {
     return;
   }
   for (auto& o : r.obstacles) {
-    if (!o.active || !hit(b.x, b.y, o.x, o.y, 22)) continue;
+    if (!o.active || !(fabsf(b.x - o.x) <= TURRET_HALF_W && fabsf(b.y - o.y) <= TURRET_HALF_H)) continue;
     o.active = b.active = false;
     effect(r, o.x, o.y, true);
     r.score += 50;
@@ -178,8 +178,16 @@ static void age(Run& r) {
     else e.ms -= STEP_MS;
   }
 }
+static void reinforce(Run& r) {
+  if (r.groupsSpawned >= GROUPS_PER_WAVE) return;
+  if (enemiesAlive(r)) { r.groupClearMs = 0; return; }
+  r.groupClearMs += STEP_MS;
+  if (r.groupsSpawned && r.groupClearMs < GROUP_GAP_MS) return;
+  spawnGroup(r);
+  r.groupClearMs = 0;
+}
 static void squadron(Run& r, bool tap) {
-  if (r.groupsSpawned < GROUPS_PER_WAVE && r.stageMs >= r.groupsSpawned * GROUP_MS) spawnGroup(r);
+  reinforce(r);
   if (tap) volley(r);
   moveEnemies(r);
   moveBolts(r);
@@ -191,6 +199,7 @@ static void nextWave(Run& r) {
   if (++r.wave == WAVES) enter(r, Stage::TrenchEntry);
   else {
     r.groupsSpawned = 0;
+    r.groupClearMs = 0;
     enter(r, Stage::Squadron);
   }
 }
@@ -210,7 +219,7 @@ static void moveObstacles(Run& r) {
     if (!o.active) continue;
     o.y += 68 * DT;
     if (o.y > 420) o.active = false;
-    else if (hit(o.x, o.y, r.player.x, r.player.y, 27)) {
+    else if (hit(o.x, o.y, r.player.x, r.player.y, TURRET_RAM_RADIUS)) {
       o.active = false;
       hurt(r);
     }

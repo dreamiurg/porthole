@@ -28,7 +28,7 @@ struct Run {
   Effect effects[MAX_EFFECTS]{};
   Obstacle obstacles[MAX_OBSTACLES]{};
   uint32_t ms = 0, stageMs = 0, score = 0, seed = 1, volleys = 0;
-  uint32_t obstacleMs = 0, targetPasses = 0;
+  uint32_t obstacleMs = 0, targetPasses = 0, groupClearMs = 0;
   uint8_t lives = 3, wave = 0, groupsSpawned = 0;
   float targetX = 240;
 };

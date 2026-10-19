@@ -74,7 +74,8 @@ constexpr uint8_t LETTERS[][7]={
  {30,1,1,14,1,1,30},{17,17,17,31,1,1,1},{31,16,16,30,1,1,30},
  {15,16,16,30,17,17,14},{31,1,2,4,8,8,8},{14,17,17,14,17,17,14},
  {14,17,17,15,1,1,30},{4,4,4,4,0,0,4},{0,0,4,0,0,4,0},
- {0,0,0,31,0,0,0},{0,4,4,31,4,4,0},{0,0,0,0,0,0,0}
+ {0,0,0,31,0,0,0},{0,4,4,31,4,4,0},{0,0,0,0,0,0,0},
+ {1,1,2,4,8,16,16}
 };
 int glyph(char ch) {
   if(ch>='A'&&ch<='Z') return ch-'A';
@@ -83,6 +84,7 @@ int glyph(char ch) {
   if(ch==':') return 37;
   if(ch=='-') return 38;
   if(ch=='+') return 39;
+  if(ch=='/') return 41;
   return 40;
 }
 void ink(int x,int y,const char* s,Color c,int scale) {
@@ -98,6 +100,28 @@ void text(int y,const char* s,Color c=WHITE,int scale=1,int cx=80) {
       gfx565::rgb888(color(c)),gfx565::rgb888(bg),true};
   ink(x,y,s,c,scale);
 }
+// A separate 3x5 instrument face keeps rim counters small and upright.
+constexpr uint8_t TINY[][5]={
+ {7,5,5,5,7},{2,6,2,2,7},{7,1,7,4,7},{7,1,7,1,7},{5,5,7,1,1},
+ {7,4,7,1,7},{7,4,7,5,7},{7,1,2,2,2},{7,5,7,5,7},{7,5,7,1,7},
+ {5,5,7,5,5},{7,5,5,5,7},{4,4,4,4,7},{6,5,5,5,6},
+ {5,5,5,7,5},{2,5,7,5,5},{5,5,5,5,2},{7,4,6,4,7}
+};
+int tinyGlyph(char c) {
+  if(c>='0'&&c<='9') return c-'0';
+  const char* letters="HOLDWAVE";
+  const char* found=std::strchr(letters,c);
+  return found?10+int(found-letters):0;
+}
+void tinyText(int x,int y,const char* s,Color c) {
+  int width=int(std::strlen(s))*4-1;
+  box(x-1,y-1,width+2,7,SPACE);
+  if(gfx::textLogEnabled&&gfx::textLogCount<64)
+    gfx::textLog[gfx::textLogCount++]={int16_t(x),int16_t(y),int16_t(width),5,
+      gfx565::rgb888(color(c)),gfx565::rgb888(color(SPACE)),true};
+  for(int n=0;s[n];++n) for(int row=0;row<5;++row) for(int col=0;col<3;++col)
+    if(TINY[tinyGlyph(s[n])][row]&(4>>col)) box(x+n*4+col,y+row,1,1,c);
+}
 void plaque(int y,const char* s,Color c=WHITE) {
   int w=int(std::strlen(s))*6+7;
   box(80-w/2,y-3,w,13,SPACE); text(y,s,c);
@@ -111,9 +135,11 @@ void control(const Box& b,const char* s,bool primary) {
   if(*s) text(b.y+8,s,primary?WHITE:HULL,1,b.x+b.w/2);
 }
 void holdExit(uint16_t progress) {
-  control(HOLD,"",false);
-  text(HOLD.y+4,"HOLD",SILVER); text(HOLD.y+13,"EXIT",WHITE);
-  box(HOLD.x+4,HOLD.y+HOLD.h-4,int((HOLD.w-8)*std::min(progress,uint16_t(1000))/1000),2,GOLD);
+  UiAudit::add(HOLD.x,HOLD.y,HOLD.w,HOLD.h);
+  box(76,11,6,1,SLATE); box(76,11,1,8,SLATE); box(76,18,6,1,SLATE);
+  line(79,15,85,15,SILVER); line(83,13,85,15,SILVER); line(83,17,85,15,SILVER);
+  tinyText(73,22,"HOLD",SILVER);
+  if(progress) box(72,29,int(16*std::min(progress,uint16_t(1000))/1000),1,GOLD);
 }
 void expand() {
   if(!gfx565::fb) return;
@@ -163,32 +189,45 @@ void space(uint32_t ms,float bank,bool busy) {
   }
 }
 void engineTrails(int x,int y,float bank,uint32_t ms) {
+  int pose=bank<-.15f?-1:bank>.15f?1:0;
   for(int side=-1;side<=1;side+=2) for(int engine=0;engine<2;++engine) {
-    int xx=x+side*(engine?14:10),yy=y+(engine?16:9)+int(side*bank*3);
+    int sx=side*(engine?20:14),sy=engine?49:39,ax=30+sx,ay=sy;
+    if(pose) {
+      ax=30+int(std::round(sx*.89f))+int(std::round((28-sy)*pose*.1f));
+      ay=sy+int(std::round(sx*pose*.22f));
+    }
+    int xx=x+ax/2-15,yy=y+ay/2-14;
     int radius=std::max(0,79*79-(xx-80)*(xx-80));
     int floor=79+int(std::sqrt(float(radius)));
-    int length=std::max(0,std::min(floor-yy,3+int(ms/80%3)+(std::abs(bank)>.3f?3:0)));
+    int length=std::max(0,std::min(floor-yy,2+int(ms/80%2)+(std::abs(bank)>.3f?1:0)));
     box(xx-1,yy,3,length,DARK_RED); box(xx,yy,1,length-1,ORANGE);
   }
 }
 void fighter(int x,int y,float bank,uint32_t ms) {
   engineTrails(x,y,bank,ms);
-  sprite(bank<-.15f?art::BANK_LEFT:bank>.15f?art::BANK_RIGHT:art::FIGHTER,x,y,80);
+  sprite(bank<-.15f?art::BANK_LEFT:bank>.15f?art::BANK_RIGHT:art::FIGHTER,x,y,50);
 }
 void life(int x,int y,bool on) {
   Color c=on?HULL:STEEL;
-  box(x+3,y,1,7,c); box(x,y+3,7,2,c); box(x,y+2,1,5,c); box(x+6,y+2,1,5,c);
-  box(x+2,y+6,3,2,on?RED:PANEL);
+  box(x+2,y,1,5,c); box(x,y+2,5,1,c); box(x,y+1,1,4,c); box(x+4,y+1,1,4,c);
+  box(x+1,y+5,1,1,on?RED:PANEL); box(x+3,y+5,1,1,on?RED:PANEL);
 }
 void hud(const Run& r) {
-  box(29,36,34,12,SPACE); box(99,36,33,12,SPACE);
-  for(int i=0;i<3;++i) life(33+i*10,38,i<r.lives);
-  char score[12]; std::snprintf(score,sizeof(score),"%05u",unsigned(std::min<uint32_t>(r.score,99999)));
-  text(38,score,WHITE,1,116);
+  constexpr int lx[]={26,35,45},ly[]={33,24,18},sy[]={15,18,21,25,29};
+  for(int i=0;i<3;++i) life(lx[i],ly[i],i<r.lives);
+  char score[12]; std::snprintf(score,sizeof(score),"%u",unsigned(std::min<uint32_t>(r.score,99999)));
+  int length=int(std::strlen(score)),first=(5-length)/2;
+  for(int i=0;i<length;++i) {
+    char digit[]={score[i],0}; tinyText(105+(first+i)*5,sy[first+i],digit,SILVER);
+  }
+  if(r.stage>=Stage::TrenchEntry) return;
+  constexpr int wx[]={17,14,12,11},wy[]={47,53,59,65};
+  for(int i=0;i<WAVES;++i) box(wx[i],wy[i],3,2,i<=r.wave?ICE:STEEL);
+  tinyText(9,72,"WAVE",SLATE);
 }
 void title(const View& v) {
   space(v.ms,0,false);
-  text(20,"SQUADRON 07",ICE);
+  text(20,"BANK TAP FLY",ICE);
   box(15,31,130,22,SPACE);
   ink(17,38,"STARFIGHTER",DARK_RED,2); text(36,"STARFIGHTER",GOLD,2);
   sprite(art::FIGHTER,80,80);
@@ -206,20 +245,20 @@ void arrow(int x,bool right) {
   for(int i=0;i<6;++i) box(x+s*(3+i),60+i,2,2,ICE);
 }
 void calibration(const View& v) {
-  stars(v.ms,0,false); text(36,"HOLD UPRIGHT",WHITE);
+  stars(v.ms,0,false); text(28,"BANK TO STEER",WHITE);
+  text(40,v.gripReady?"READY TO FLY":v.gripUpright?"HOLD STEADY":"LIFT UPRIGHT",v.gripReady?LIME:ICE);
   disc(80,77,28,STEEL); disc(80,77,25,PANEL); ring(80,77,22,SLATE);
   sprite(v.bank<-.15f?art::BANK_LEFT:v.bank>.15f?art::BANK_RIGHT:art::FIGHTER,80,77,60);
   hand(42,false); hand(108,true); arrow(27,false); arrow(132,true);
-  const char* label=v.gripReady?"CONTINUE":"HOLD STILL";
-  control(MAIN,label,true);
+  control(MAIN,v.gripReady?"CONTINUE":"WAIT",v.gripReady);
   box(48,128,int(64*std::min(v.calibrationPermille,uint16_t(1000))/1000),2,GOLD);
   control(EXIT,"EXIT",false);
 }
 void briefing(const View& v) {
   space(v.ms,0,false); text(23,"YOUR MISSION",ICE);
-  box(61,35,38,34,PANEL); box(63,37,34,30,INK); sprite(art::PILOT,80,52);
-  plaque(74,"CLEAR THE FIGHTERS"); plaque(86,"FLY THE TRENCH");
-  plaque(98,"TAP TO FIRE",ICE);
+  box(63,35,34,28,PANEL); box(65,37,30,24,INK); sprite(art::PILOT,80,49,80);
+  plaque(66,"CLEAR FIGHTERS"); plaque(76,"FLY THE TRENCH");
+  plaque(86,"BANK TO STEER",ICE); plaque(96,"TAP TO FIRE",ICE);
   control(MAIN,"FLY",true); control(EXIT,"EXIT",false);
 }
 // Deliberately discrete depth bands: the outer wall faces, raised rim, deep
@@ -261,17 +300,22 @@ void trench(const Run& r) {
   stars(r.ms,r.player.bank,true); moon(82,40);
   trenchFloor(r.player.bank); ribs(r.ms,r.player.bank);
 }
+void turretPart(int x,int y,const Box& b,Color c) {
+  int left=int(std::round(b.x*.8f)),top=int(std::round(b.y*.8f));
+  int right=int(std::round((b.x+b.w)*.8f)),bottom=int(std::round((b.y+b.h)*.8f));
+  box(x+left,y+top,std::max(1,right-left),std::max(1,bottom-top),c);
+}
 void turret(int x,int y) {
-  box(x-8,y-4,17,10,INK); box(x-6,y-5,13,9,STEEL);
-  box(x-4,y-7,9,7,SLATE); box(x-3,y-7,5,2,HULL);
-  box(x-2,y-3,5,3,DARK_RED); box(x-1,y-2,3,2,RED);
-  box(x-4,y+2,2,7,PANEL); box(x+3,y+2,2,7,PANEL);
-  box(x-4,y+7,2,2,GREEN); box(x+3,y+7,2,2,GREEN);
+  turretPart(x,y,{-8,-4,17,10},INK); turretPart(x,y,{-6,-5,13,9},STEEL);
+  turretPart(x,y,{-4,-7,9,7},SLATE); turretPart(x,y,{-3,-7,5,2},HULL);
+  turretPart(x,y,{-2,-3,5,3},DARK_RED); turretPart(x,y,{-1,-2,3,2},RED);
+  turretPart(x,y,{-4,2,2,7},PANEL); turretPart(x,y,{3,2,2,7},PANEL);
+  turretPart(x,y,{-4,7,2,2},GREEN); turretPart(x,y,{3,7,2,2},GREEN);
 }
 void combat(const Run& r) {
   for(const auto& o:r.obstacles) if(o.active) turret(int(o.x/3),int(o.y/3));
   for(const auto& e:r.enemies) if(e.active)
-    sprite(e.heavy?art::HEAVY:art::ENEMY,int(e.x/3),int(e.y/3));
+    sprite(e.heavy?art::HEAVY:art::ENEMY,int(e.x/3),int(e.y/3),80);
   for(const auto& b:r.bolts) if(b.active) {
     int x=int(b.x/3),y=int(b.y/3);
     box(x-1,y-3,3,8,b.enemy?DARK_GREEN:DARK_RED);
@@ -289,10 +333,10 @@ void effects(const Run& r) {
 void player(const Run& r) {
   bool blink=r.player.invulnerableMs&&r.ms/100%2;
   if(!blink) fighter(int(r.player.x/3),int(r.player.y/3),r.player.bank,r.ms);
-  if(r.player.invulnerableMs>INVULNERABLE_MS-500) plaque(86,"SHIELDS UP",GOLD);
+  if(r.player.invulnerableMs>INVULNERABLE_MS-650) plaque(86,"SHIP HIT",GOLD);
 }
 void target(const Run& r) {
-  int x=int(r.targetX/3),y=60;
+  int x=int(r.targetX/3),y=64;
   box(x-20,y-16,41,33,PANEL); box(x-17,y-13,35,27,STEEL);
   box(x-14,y-11,29,23,INK); ring(x,y,10,RED); ring(x,y,7,ORANGE); disc(x,y,4,DARK_RED);
   Color c=aligned(r)?LIME:ICE;
@@ -306,7 +350,7 @@ void target(const Run& r) {
 }
 void torpedo(const Run& r) {
   target(r);
-  int x=int(r.player.x/3),y=112-int(std::min<uint32_t>(r.stageMs,1400))*52/1400;
+  int x=int(r.player.x/3),y=112-int(std::min<uint32_t>(r.stageMs,1400))*48/1400;
   box(x-2,y,5,14,BLUE); box(x-1,y,3,8,ICE); box(x,y,1,5,WHITE);
 }
 void transition(const Run& r) {
@@ -318,7 +362,7 @@ void transition(const Run& r) {
     plaque(93,next,ICE);
   }
   if(r.stage==Stage::TrenchEntry) {
-    box(12,63,136,26,SPACE); text(68,"THE TRENCH",GOLD,2); plaque(93,"STAY SHARP",ICE);
+    box(12,63,136,26,SPACE); text(68,"THE TRENCH",GOLD,2); plaque(93,"DODGE AND FIRE",ICE);
   }
 }
 void station(uint32_t ms) {
