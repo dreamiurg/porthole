@@ -227,8 +227,10 @@ Pillow is installed.
 | Storage | NVS (`Preferences`): a 52-byte record per profile (v2, `porthole/p0`..`p3`) and one blob per profile per game (Pets Club: 156 bytes, `crago/s0`..`s3`), all with CRC. Pets Club's houses become profiles on the first Porthole boot |
 | Serial | UART0 through the on-board CH343 USB bridge, 115200 baud |
 
-Rendering: two 480×480 RGB565 framebuffers in PSRAM, read by the panel DMA directly; each frame the 160×160
-indexed buffer is expanded through the palette into the back buffer and swapped on vsync.
+Rendering: two 480×480 RGB565 framebuffers in PSRAM feed internal SRAM bounce buffers for the panel DMA.
+A framebuffer is reused only after its complete copy into SRAM. The locally pinned RGB driver restarts only to
+recover a missed transfer. Indexed scenes expand once through their palette; Pumpkin composes on its own logical
+palette before the same expansion, avoiding repeated full-resolution overdraw.
 Day / evening / night are palette variants applied at flip time (always day once a kid picks a sun).
 
 ## Layout

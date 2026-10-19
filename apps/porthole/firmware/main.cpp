@@ -35,6 +35,7 @@ static net::Updater g_sys;
 static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
 static Shell g_shell;
 static InputTracker g_input;
+static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
 static uint8_t g_backlight = 100;
@@ -115,12 +116,34 @@ void setup() {
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
-static void dimWhenIdle(uint32_t ms) {
+static void dimWhenIdle(uint32_t ms, bool progress) {
   uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+  g_sys.setDark(want == 0);
+  if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {
+    if (g_backlight == 0 && !progress && !board::settlePanel()) return;
     g_backlight = want; board::setBacklight(want);
   }
-  g_sys.setDark(g_backlight == 0);
+}
+
+static bool updateDisplay(const Input& in) {
+  static bool active = false;
+  if (!g_sys.progressRequested()) {
+    if (active) { board::endUpdateDisplay(); active = false; g_updateInputGate.shown(millis()); }
+    return false;
+  }
+  if (!active) active = board::beginUpdateDisplay();
+  g_sys.progressReady(active);   // no NVS, calibration, or image writes until scan-out is independent of PSRAM
+  if (!active) return false;
+  if (in.tap && board::hitUpdateCancel(in.x, in.y)) g_sys.cancelCheck();
+  shell::UpdStatus status = g_sys.status();
+  char label[24];
+  if (g_sys.cancelling()) snprintf(label, sizeof label, "Stopping...");
+  else if (status.state != shell::UP_DOWNLOADING) snprintf(label, sizeof label, "Checking...");
+  else if (status.pct >= 100) snprintf(label, sizeof label, "Verifying...");
+  else snprintf(label, sizeof label, "Downloading %u%%", (unsigned)status.pct);
+  board::drawUpdateProgress(label, !g_sys.committing() && !g_sys.cancelling());
+  return true;
 }
 
 // The frame on the glass for tools/devctl.py. Indexed: "FB 160 160 idx\n", 160*160 palette indices, then the tint's 32
@@ -266,17 +289,23 @@ void loop() {
   in.gx = g_grav[0]; in.gy = g_grav[1]; in.gz = g_grav[2];
   g_activity.step(in, t.down, ms);   // picking up a dark board lights it; only a touch gets swallowed
   uint32_t t1 = micros();
-  g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  bool progress = updateDisplay(in);
+  Input shellInput = in;
+  g_updateInputGate.filter(shellInput, millis());   // a Cancel release must never become Check now or Restart now
+  g_shell.update(nowSec(), ms, progress ? Input{} : shellInput);
   uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
-  g_shell.render();
+  if (!progress) {
+    if (g_hires) gfx565::target(board::backBuffer());
+    g_shell.render();
+  }
   uint32_t t3 = micros();
-  if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  if (progress) delay(20);
+  else if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
-  dimWhenIdle(ms);
+  dimWhenIdle(ms, progress);
   g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
 }

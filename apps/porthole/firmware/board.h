@@ -8,12 +8,17 @@ namespace board {
 constexpr int LCD_W = 480, LCD_H = 480;
 
 void init();
-// Upscale a 160x160 indexed frame 3x through pal565 into the back buffer and swap on vsync.
+// Upscale a 160x160 indexed frame 3x through pal565 and wait until the driver releases the old buffer.
 void present(const uint8_t* fb160, const uint16_t* pal565);
-// RGB565 apps draw straight into the panel: render into backBuffer(), then presentHires() swaps it in on vsync.
+// RGB565 apps render into backBuffer(); presentHires() waits for the driver's SRAM-copy fence before buffer reuse.
 uint16_t* backBuffer();
 void presentHires();
 const uint16_t* frontBuffer();   // the frame on the glass (the serial frame dump)
+// Explicit updates keep a small SRAM-backed progress display scanning while flash is unavailable.
+bool beginUpdateDisplay();   // false: leave normal display intact and do not start the update
+void drawUpdateProgress(const char* label, bool cancellable);
+bool hitUpdateCancel(int logicalX, int logicalY);
+void endUpdateDisplay();
 
 struct Touch { bool down; int x, y; };  // physical pixels
 Touch readTouch();
@@ -29,6 +34,8 @@ void rtcSet(uint32_t localEpoch);
 bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw = nullptr);
 
 void setBacklight(uint8_t percent);
+// After flash writes, wait for the DMA restart and a full fresh scan before lighting a dark screen. False on timeout.
+bool settlePanel();
 void buzzer(bool on);
 
 // NVS blobs addressed by (namespace, key). Namespaces are at most 15 chars, keys at most 15.

@@ -52,7 +52,7 @@ points for a new app or feature.
 
 The display comes up in two steps: an init sequence over 9-bit SPI, then the
 RGB panel through ESP-IDF's `esp_lcd` RGB driver with frame buffers in PSRAM.
-`apps/porthole/firmware/board.cpp` does this without extra libraries.
+`apps/porthole/firmware/board.cpp` feeds the panel through internal SRAM bounce buffers and waits for copy completion before reusing a framebuffer. The pinned driver and recovery fixes live in `firmware/vendor/rgb/` under that app, with provenance in its README. Healthy frames do not reset the DMA at each VSYNC. Update writes use a separate sparse SRAM scan-out so flash access cannot starve the panel.
 
 ## Toolchain
 

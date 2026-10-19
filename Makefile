@@ -13,7 +13,7 @@ APPS := $(notdir $(patsubst %/Makefile,%,$(wildcard apps/*/Makefile)))
 # generated/manifest.json, so they are data-like drawing lists, gated by that oracle instead of by lizard.
 LIZARD_ARGS := -C 15 -L 60 -a 5 -w -W whitelizard.txt \
 	-x '*/generated/*' -x '*/node_modules/*' -x '*/.pio/*' -x '*/build/*' -x '*/sprites.h' -x '*/content*.h' \
-	-x '*/biscuit/tools/art/*art*.js'
+	-x '*/biscuit/tools/art/*art*.js' -x 'apps/porthole/firmware/vendor/rgb/*'
 
 .PHONY: help check ci test lint coverage complexity firmware flash monitor hooks apps
 

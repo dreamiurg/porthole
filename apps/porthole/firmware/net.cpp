@@ -10,6 +10,7 @@
 #include <NetworkClientSecure.h>
 #include <SD_MMC.h>
 #include <Update.h>
+#include "update_gate.h"
 #include <WiFi.h>
 #include <algorithm>
 #include <atomic>
@@ -52,8 +53,9 @@ uint32_t g_nextPoll = FIRST_MS;
 char g_ssid[33] = {0};
 shell::Channel g_chan = shell::CH_STABLE;
 std::atomic<bool> g_busy{false};   // a check task exists
-std::atomic<bool> g_dark{false};   // the backlight is off (main loop, every frame)
-std::atomic<bool> g_forced{false}; // the running check is a Check now: it writes flash even with the screen lit
+std::atomic<bool> g_dark{false};   // idle dimming wants the screen off (daily-check gate)
+std::atomic<bool> g_forced{false}; // Check now continues even when touch or motion requests a lit screen
+UpdateGate g_screen;
 std::atomic<bool> g_woke{false};   // the screen came on mid-download: stopped, to resume in the next dark spell
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
@@ -161,24 +163,38 @@ Found fetchAvailable(shell::Channel ch, char out[16]) {
   return F_VERSION;
 }
 
-// Body bytes into Update, a sector at a time, pausing between writes so core 0's idle task and the wifi stack run.
+bool checkStopped() {
+  if (!g_screen.cancelled() && (g_forced || g_dark)) return false;
+  g_woke = true;
+  return true;
+}
+
+// Check now keeps its SRAM display through abort, final verification and wifi cleanup.
 bool stream(HTTPClient& http, size_t size) {
   std::unique_ptr<uint8_t[]> buf(new (std::nothrow) uint8_t[CHUNK]);
   NetworkClient* s = http.getStreamPtr();
   if (!buf || !s) return false;
   size_t got = 0;
   for (uint32_t last = millis(); got < size && millis() - last < HTTP_MS;) {
+    if (checkStopped()) return false;
     size_t n = (size_t)s->available();
     if (!n) { if (!http.connected()) break; vTaskDelay(pdMS_TO_TICKS(5)); continue; }
     int r = s->read(buf.get(), std::min(std::min(n, CHUNK), size - got));
     if (r <= 0) { vTaskDelay(pdMS_TO_TICKS(5)); continue; }
-    if (!g_forced && !g_dark) { g_woke = true; return false; }   // someone woke the screen: no flash writes now
+    if (checkStopped()) return false;
     if (Update.write(buf.get(), (size_t)r) != (size_t)r) return false;
     got += (size_t)r; last = millis();
     setState(shell::UP_DOWNLOADING, (uint8_t)(got * 100 / size));
     vTaskDelay(pdMS_TO_TICKS(2));
   }
   return got == size;
+}
+
+bool finishDownload() {
+  if (checkStopped()) return false;
+  // Cancel and the commit race through one atomic state: a tap can never promise cancellation after this point.
+  if (!g_screen.beginCommit()) { g_woke = true; return false; }
+  return Update.end();
 }
 
 // porthole-<ver>-ota.bin into the spare slot. Update.end() then sets that slot to boot, and esp_ota_set_boot_partition
@@ -188,17 +204,18 @@ bool download(const char* ver) {
   snprintf(url, sizeof url, "%sdownload/porthole-v%s/porthole-%s-ota.bin", RELEASES, ver, ver);
   Https c;
   int code = c.get(url), size = c.http.getSize();
+  if (checkStopped()) return false;
   Serial.printf("[net] downloading %s: %d bytes\n", ver, size);
   setState(shell::UP_DOWNLOADING);
   // A known size, never UPDATE_SIZE_UNKNOWN: that erases the whole 7.9 MB slot first, stalling both cores.
-  bool ok = code == 200 && size > 0 && Update.begin((size_t)size) && stream(c.http, (size_t)size) && Update.end();
+  bool ok = code == 200 && size > 0 && Update.begin((size_t)size) && stream(c.http, (size_t)size) && finishDownload();
   if (ok) return true;
   if (!g_woke) Serial.printf("[net] download failed: %s\n", Update.errorString());   // a wake is not a failure
   if (Update.isRunning()) Update.abort();   // never begun, abort() would drive Update's unset LED pin: GPIO0
   return false;
 }
 
-bool joinWifi(const Wifi& w) {
+bool joinWifi(const Wifi& w, bool checking = false) {
   WiFi.mode(WIFI_STA);
   // Arduino-ESP32 3.2.1: begin() says WL_CONNECT_FAILED when the station would not start or take the network; after it,
   // the disconnect reason sets WL_NO_SSID_AVAIL (no such network heard) or WL_CONNECT_FAILED (a wrong password, after
@@ -209,6 +226,7 @@ bool joinWifi(const Wifi& w) {
     return false;
   }
   for (uint32_t t0 = millis(); WiFi.status() != WL_CONNECTED; vTaskDelay(pdMS_TO_TICKS(250))) {
+    if (checking && checkStopped()) return false;
     const wl_status_t s = WiFi.status();
     const bool gaveUp = s == WL_NO_SSID_AVAIL || s == WL_CONNECT_FAILED;
     if (!gaveUp && millis() - t0 <= WIFI_MS) continue;
@@ -224,12 +242,13 @@ bool joinWifi(const Wifi& w) {
 void checkAndDownload(shell::Channel ch) {
   char avail[16] = {0};
   Found f = fetchAvailable(ch, avail);
+  if (checkStopped()) return;
   if (f == F_ERROR) { setState(shell::UP_FAILED); return; }
   portENTER_CRITICAL(&g_mux); strcpy(g_st.available, avail); portEXIT_CRITICAL(&g_mux);
   Serial.printf("[net] %s channel: %s, running %s\n", ch == shell::CH_BETA ? "beta" : "stable", f == F_VERSION ? avail : "none",
                 PORTHOLE_VERSION);
   if (!shell::newer(avail, PORTHOLE_VERSION)) { setState(shell::UP_CURRENT); return; }
-  if (!g_forced && !g_dark) { g_woke = true; return; }   // woken during the check: download in the next dark spell
+  if (checkStopped()) return;
   bool ok = download(avail);
   if (ok) setState(shell::UP_READY, 100); else setState(shell::UP_FAILED);   // a ready image is all there
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
@@ -238,6 +257,8 @@ void checkAndDownload(shell::Channel ch) {
 // TODO(porthole): sync the clock by NTP while connected. The RTC and the whole firmware keep local wall-clock seconds
 // with no timezone anywhere on the device, so UTC from NTP cannot be turned into local time without a timezone setting.
 void run(shell::Channel ch) {
+  g_woke = false;
+  if (checkStopped()) { setState(shell::UP_IDLE); return; }
   Wifi w;
   if (!loadWifi(w)) { setState(shell::UP_NO_WIFI); return; }
   uint32_t now = g_now(), prev = 0;
@@ -245,9 +266,8 @@ void run(shell::Channel ch) {
   board::saveBlob(NS, "last", &now, sizeof now);   // before connecting: a crash below can't retry on every boot
   portENTER_CRITICAL(&g_mux); g_st.lastCheck = now; portEXIT_CRITICAL(&g_mux);
   setState(shell::UP_CHECKING);
-  g_woke = false;
-  if (joinWifi(w)) checkAndDownload(ch);
-  else setState(shell::UP_NO_WIFI);
+  if (joinWifi(w, true)) checkAndDownload(ch);
+  else if (!g_woke) setState(shell::UP_NO_WIFI);
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   if (!g_woke) return;
@@ -255,7 +275,7 @@ void run(shell::Channel ch) {
   board::saveBlob(NS, "last", &prev, sizeof prev);
   portENTER_CRITICAL(&g_mux); g_st.lastCheck = prev; portEXIT_CRITICAL(&g_mux);
   setState(shell::UP_IDLE);
-  Serial.println("[net] screen woke: download stopped, it resumes the next time the screen is dark");
+  Serial.println("[net] check cancelled or screen woke: download stopped");
 }
 
 // Wifi setup from the system menu, each a task like the update check. A scan lists what the radio hears; a test joins
@@ -281,13 +301,25 @@ void test() {
 
 void lookup();
 void radar();
+bool waitForProgress() {
+  for (uint32_t start = millis(); !g_screen.ready(); vTaskDelay(1)) {
+    if (g_screen.cancelled()) { setState(shell::UP_IDLE); return false; }
+    if (!g_screen.failed() && millis() - start < 2000) continue;
+    Serial.println("[net] progress display unavailable: update deferred");
+    setState(shell::UP_FAILED);
+    return false;
+  }
+  return true;
+}
+
 void task(void* arg) {
   const Job job = (Job)(uintptr_t)arg;
   if (job == J_SCAN) scan();
   else if (job == J_TEST) test();
   else if (job == J_LOOK) lookup();
   else if (job == J_RADAR) radar();
-  else run(g_checkChan);
+  else if (waitForProgress()) run(g_checkChan);
+  g_screen.release();
   g_forced = false;
   g_busy = false;
   vTaskDelete(nullptr);
@@ -298,6 +330,8 @@ void task(void* arg) {
 // check) cannot starve IDLE0 into the 5 s task watchdog. Wifi and lwIP run in their own, higher-priority tasks.
 bool spawn(Job job) {
   if (xTaskCreatePinnedToCore(task, "porthole-net", STACK, (void*)(uintptr_t)job, tskIDLE_PRIORITY, nullptr, 0) == pdPASS) return true;
+  g_screen.release();
+  if (job == J_CHECK) setState(shell::UP_FAILED);
   g_forced = false;
   g_busy = false;
   Serial.println("[net] no memory for the wifi task");
@@ -593,6 +627,7 @@ bool startCheck(shell::Channel ch, bool forced) {   // false: dropped
   if (ready) { g_busy = false; return false; }
   g_forced = forced;
   g_checkChan = ch;
+  g_screen.request(); setState(shell::UP_CHECKING);
   return spawn(J_CHECK);
 }
 
@@ -700,7 +735,16 @@ bool Updater::startTest(const char* ssid, const char* pass) {
   return true;
 }
 int Updater::testResult() { return g_tested; }
-void Updater::setDark(bool dark) { g_dark = dark; }
+void Updater::setDark(bool dark) {
+  g_dark = dark;
+  if (!dark && !g_forced) g_screen.cancel();   // daily wake and final commit race through the same atomic gate
+}
+bool Updater::progressRequested() { return g_screen.requested(); }
+bool Updater::manualCheck() { return g_forced; }
+void Updater::progressReady(bool ok) { g_screen.acknowledge(ok); }
+void Updater::cancelCheck() { g_screen.cancel(); }
+bool Updater::cancelling() { return g_screen.cancelled(); }
+bool Updater::committing() { return g_screen.committing(); }
 void Updater::restart() { ESP.restart(); }
 
 shell::Channel Updater::channel() { return g_chan; }

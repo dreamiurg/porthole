@@ -177,7 +177,7 @@ To give it your wifi, pick one:
 
 Grown-ups have a hidden menu. On "Who's playing?", press and hold the title for 5 seconds. **Info** shows the
 version, the wifi, the SD card and a few other details. **Wifi** lists the networks nearby. **Updates** shows the running and newest version, lets you
-pick Stable or Beta, and has **Check now** (it downloads right away, about a minute, with the progress on screen) and **Restart now** once an update is ready. The running version is also in small print at the bottom
+pick Stable or Beta, and has **Check now** (it downloads right away, about a minute; a black background shows the download percentage and a Cancel control) and **Restart now** once an update is ready. The running version is also in small print at the bottom
 of "Who's playing?".
 
 - **Stable** (the default) gets versions I've tried and promoted.
