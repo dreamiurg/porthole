@@ -348,9 +348,15 @@ static void writeBMP(const char* path) {
 // board::expand: the 160x160 indexed frame, 3x, into the buffer about to be shown, only the rows that buffer does not
 // already hold; an RGB565 render into a buffer forgets what it held, as on the board.
 static gfx565::Expanded g_expanded[2] = {};
+// Snapshots read gfx::fb, so every frame is also checked against a whole expansion: a row the bookkeeping wrongly
+// skips stops the run here instead of showing only on the board.
 static void upscale(uint16_t* dst, const uint16_t* pal) {
+  static uint16_t whole[gfx565::W * gfx565::H];
+  gfx565::target(whole);
+  gfx565::expandIndexed3(gfx::fb, pal);
   gfx565::target(dst);
   gfx565::expandIndexed3(gfx::fb, pal, &g_expanded[g_shown]);
+  if (memcmp(dst, whole, sizeof whole)) { fprintf(stderr, "sim: a skipped indexed row is stale\n"); abort(); }
 }
 static double since(std::chrono::steady_clock::time_point t) {
   return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
