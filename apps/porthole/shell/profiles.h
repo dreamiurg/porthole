@@ -23,7 +23,7 @@ static_assert(sizeof(Limits) == 4, "sys/limits is two uint16 minute counts");
 // No touch and no move of the board (ActivityTracker, os/input.h) for this long is not play (counts toward neither
 // budget). Matches the backlight's first dimming step.
 constexpr uint32_t IDLE_MS = 60000;
-constexpr size_t BLOB_MAX = 256;         // biggest app save the shell loads (Pets Club's Save is 156 bytes)
+constexpr size_t BLOB_MAX = 2048;        // bounded per-profile buffer, including Kingdom's campaign snapshot
 
 // Storage both platforms implement: firmware -> board NVS, host -> files, tests -> memory.
 class Store {

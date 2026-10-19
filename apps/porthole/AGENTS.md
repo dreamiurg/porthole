@@ -46,6 +46,7 @@ A game is a directory under `games/`: the Makefile and PlatformIO build every `g
 - `games/pumpkin-hide-seek/`: Pumpkin Hide & Seek, a single-room tilt-and-touch game with original pixel art on RGB565, three hiding spots, three candies to collect before escaping through the door, a seeded mix of Grandma moves (sweeps, turn-backs, spot checks) and a frosting-to-pie retry sequence. No persisted state or sounds. Brief: `games/pumpkin-hide-seek/AGENTS.md`.
 
 - `games/starfighter/`: an offline retro pixel-art shooter: calibrated upright banking and tap-to-fire squadron combat, then a perspective trench and forgiving final torpedo shot. No persisted state or sounds. Brief: `games/starfighter/AGENTS.md`.
+- `games/living-kingdom/`: Kingdom, a persistent story RPG with a complete forty-encounter Willowbrook chapter, original reference artwork and readable native fonts, rereadable multi-page decisions, six locations, inventory, skills, quests and delayed world consequences. Its 935-byte version 1 snapshot includes exact reading and overlay cursors. `App::saveUrgent()` opts into immediate page/decision checkpoints; other games keep the five-second cadence. The shell's per-profile load buffer is 2048 bytes. Brief: `games/living-kingdom/AGENTS.md`.
 
 In `os/`, the shared runtime:
 

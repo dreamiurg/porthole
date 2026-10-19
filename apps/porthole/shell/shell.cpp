@@ -445,7 +445,7 @@ void Shell::updateApp() {
   app_->update(now_, ms_, in_);
   if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
-  if (screen_ == SH_APP) flushApp(ms_ - lastSaveMs_ > 5000);
+  if (screen_ == SH_APP) flushApp(app_->saveUrgent() || ms_ - lastSaveMs_ > 5000);
 }
 void Shell::drawApp() { app_->render(); }
 

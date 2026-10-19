@@ -1,0 +1,156 @@
+wait 1000
+snap 001-profile
+down 41 53
+wait 66
+up
+wait 550
+down 120 125
+wait 66
+up
+wait 550
+snap 002-age
+down 34 57
+wait 66
+up
+wait 550
+snap 003-age
+down 80 103
+wait 66
+up
+wait 550
+snap 004-pin
+down 80 145
+wait 66
+up
+wait 550
+snap 005-launcher
+down 108 136
+wait 66
+up
+wait 550
+snap 006-launcher-two
+down 108 136
+wait 66
+up
+wait 550
+snap 007-launcher-three
+down 112 80
+wait 66
+up
+wait 550
+snap 008-title
+down 80 126
+wait 66
+up
+wait 550
+snap 009-help1
+down 114 131
+wait 66
+up
+wait 550
+snap 010-story-p2
+down 46 131
+wait 66
+up
+wait 550
+snap 011-reread-p1
+down 80 137
+wait 66
+up
+wait 550
+snap 012-pack
+down 51 54
+wait 66
+up
+wait 550
+snap 013-party
+down 113 132
+wait 66
+up
+wait 550
+snap 014-party-drib
+down 113 132
+wait 66
+up
+wait 550
+snap 015-party-drib2
+down 113 132
+wait 66
+up
+wait 550
+snap 016-party-lucas2
+down 113 132
+wait 66
+up
+wait 550
+snap 017-party-dragon
+down 80 137
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 018-items
+down 80 137
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 019-items
+down 80 137
+wait 66
+up
+wait 550
+down 80 137
+wait 66
+up
+wait 550
+down 51 81
+wait 66
+up
+wait 550
+snap 020-journal
+down 80 137
+wait 66
+up
+wait 550
+down 80 137
+wait 66
+up
+wait 550
+down 105 81
+wait 66
+up
+wait 550
+snap 021-save-quit
+reboot
+snap 022-reboot
+wait 1000
+snap 023-picker
+down 80 67
+wait 66
+up
+wait 550
+down 108 136
+wait 66
+up
+wait 550
+down 108 136
+wait 66
+up
+wait 550
+down 112 80
+wait 66
+up
+wait 550
+snap 024-resume-title
+down 80 126
+wait 66
+up
+wait 550
+snap 025-resumed-page
