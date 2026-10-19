@@ -1,0 +1,173 @@
+tick 1000
+snapshot 01-fresh
+down 41 53
+tick 66
+up
+tick 500
+down 120 125
+tick 66
+up
+tick 600
+snapshot 02-profile-age
+down 35 58
+tick 66
+up
+tick 600
+snapshot 03-age
+down 36 103
+tick 66
+up
+tick 600
+snapshot 04-launcher
+down 80 146
+tick 66
+up
+tick 600
+snapshot 05-launcher
+down 109 137
+tick 66
+up
+tick 600
+snapshot 06-launcher-next
+down 111 82
+tick 66
+up
+tick 600
+snapshot 07-pumpkin-intro
+down 80 130
+tick 66
+up
+tick 600
+snapshot 08-pumpkin-instructions
+down 80 130
+tick 66
+up
+tick 700
+snapshot 09-pumpkin-play
+tilt 500 1000 0
+tick 600
+snapshot 10-pumpkin-roll-right
+tilt -500 1000 0
+tick 600
+snapshot 11-pumpkin-roll-left
+tilt 0 1000 0
+tick 6000
+snapshot 12-pumpkin-wait
+tick 3000
+snapshot 13-pumpkin-loss
+down 80 130
+tick 66
+up
+tick 600
+snapshot 14-pumpkin-replay
+down 120 80
+tick 66
+up
+tick 200
+down 80 130
+move 30 100
+up
+tick 200
+snapshot 15-pumpkin-drag-off
+down 80 130
+tick 1000
+snapshot 16-pumpkin-hide-held
+up
+tick 300
+snapshot 17-pumpkin-hide-released
+tilt -700 1000 0
+tick 800
+snapshot 18-pumpkin-left
+tilt 0 1000 0
+down 80 130
+tick 66
+up
+tick 100
+snapshot 19-pumpkin-hide-at-furniture
+tilt -700 1000 0
+tick 400
+tilt 0 1000 0
+down 80 130
+tick 66
+up
+tick 100
+snapshot 20-pumpkin-cover-feedback
+tick 4000
+snapshot 21-pumpkin-outcome
+tilt -1000 1000 0
+tick 600
+tilt 0 1000 0
+down 80 130
+tick 66
+up
+tick 100
+snapshot 22-pumpkin-hidden-or-loss
+tick 3000
+snapshot 23-pumpkin-after
+down 80 19
+tick 66
+up
+tick 600
+snapshot 24-exit-pumpkin
+down 50 137
+tick 66
+up
+tick 600
+down 130 80
+tick 66
+up
+tick 600
+snapshot 25-marble-intro
+down 80 109
+tick 66
+up
+tick 600
+snapshot 26-marble-ready
+tilt 500 500 500
+tick 500
+snapshot 27-marble-tilt-right
+tilt -500 -500 500
+tick 700
+snapshot 28-marble-tilt-left
+tilt 0 -900 500
+tick 1000
+snapshot 29-marble-play
+down 80 146
+move 120 110
+up
+tick 600
+snapshot 30-marble-drag-off
+down 80 146
+tick 66
+up
+tick 600
+snapshot 31-marble-home
+down 80 146
+tick 1200
+up
+tick 600
+snapshot 32-marble-held-home
+down 130 80
+tick 66
+up
+tick 600
+down 130 125
+tick 66
+up
+tick 600
+snapshot 33-marble-instructions
+down 130 125
+tick 800
+up
+tick 600
+snapshot 34-marble-help
+down 80 146
+tick 1200
+up
+tick 600
+snapshot 35-marble-exit
+down 80 143
+tick 300
+up
+tick 700
+snapshot 36-marble-exit-retry
