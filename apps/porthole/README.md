@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC and Pumpkin Hide & Seek.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar and Starfighter.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -27,6 +27,30 @@ on other screens, tap it. Every new visit starts with calibration. In `make webe
 the existing tilt pad (or arrow keys) and click the screen's buttons.
 
 Design and state contract: [game brief](games/pumpkin-hide-seek/AGENTS.md).
+
+## Starfighter: bank, battle, fly the trench
+
+Open **Star Fighter** on the launcher's third page. Hold the puck upright like a small
+steering wheel, keep it still, and calibrate your comfortable grip. Bank left and right
+to steer; tap the glass to fire a pair of red lasers. The accelerometer reads that bank:
+spinning the puck flat on a table cannot steer it.
+
+Clear four fighter waves, then dodge turrets, green fire and obstacles in the trench.
+Line up with the final port and tap to launch the torpedo. A missed shot gets another
+pass. Three lives, a protective blink after each hit, and an immediate replay keep runs
+forgiving. Hold the exit sign during flight; menu screens also have a visible way back.
+The game is silent, runs offline, and starts fresh each time without changing saved
+progress in any other game.
+
+Original pixel sprites, a small dedicated palette and crisp 3× rendering carry the
+space parallax, banking ship, perspective trench and station explosion. In the host
+simulator or browser emulator, choose **Upright**, calibrate, then use left/right arrow
+keys to bank and click the glass to fire.
+
+![Starfighter squadron combat](docs/starfighter/squadron.png)
+
+[Runtime screenshot tour and verification](docs/starfighter/README.md).
+Design and state contract: [game brief](games/starfighter/AGENTS.md).
 
 ## Profiles and the launcher
 

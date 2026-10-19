@@ -44,6 +44,8 @@ A game is a directory under `games/`: the Makefile and PlatformIO build every `g
 
 - `games/pumpkin-hide-seek/`: Pumpkin Hide & Seek, a single-room tilt-and-touch game with original pixel art on RGB565, three hiding spots, three candies to collect before escaping through the door, a seeded mix of Grandma moves (sweeps, turn-backs, spot checks) and a frosting-to-pie retry sequence. No persisted state or sounds. Brief: `games/pumpkin-hide-seek/AGENTS.md`.
 
+- `games/starfighter/`: an offline retro pixel-art shooter: calibrated upright banking and tap-to-fire squadron combat, then a perspective trench and forgiving final torpedo shot. No persisted state or sounds. Brief: `games/starfighter/AGENTS.md`.
+
 In `os/`, the shared runtime:
 
 - `app.h`: the contract between the shell and a game (`App`, `Profile`, `SaveSlot`, `AppEnter`, `MAX_PROFILES`, and `enum Surface { SURFACE_INDEXED, SURFACE_RGB565 }` plus `App::surface()`, defaulted to `SURFACE_INDEXED` so Pets Club needs no change; polled every frame, so a game may switch per screen).

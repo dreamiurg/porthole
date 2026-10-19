@@ -1,0 +1,76 @@
+# One press/release -> one paired volley; holding, moving, and banking do not auto-fire.
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg start
+wait 600
+expect-screen sf_squadron
+expect x=240
+expect bank=0
+down 120 80
+wait 300
+expect volleys=0
+up
+wait 80
+expect volleys=1
+wait 400
+expect volleys=1
+down 120 80
+wait 800
+expect volleys=1
+up
+wait 80
+expect volleys=1
+tap 130 90
+wait 80
+expect volleys=2
+tilt 500 866 0
+wait 600
+expect bank>900
+expect x>310
+ui-check
+snap sf_controls_right
+tilt -500 866 0
+wait 1100
+expect bank<-900
+expect x<210
+ui-check
+snap sf_controls_left
+# A hit spends one life, grants protection and never charges another during that protection.
+dbg hit
+expect lives=2
+expect invulnerable>0
+dbg hit
+expect lives=2
+ui-check
+snap sf_controls_hit
+wait 1700
+expect invulnerable=0
+dbg hit
+expect lives=1
+dbg hit
+expect lives=1
+wait 1700
+dbg hit
+expect-screen sf_defeat
+expect lives=0
+ui-check
+snap sf_controls_defeat
+# Fresh replay returns to calibration and starts a complete new run.
+wait 600
+tap 80 120
+expect-screen sf_calibrate
+tilt 0 1000 0
+wait 600
+tap 80 120
+expect-screen sf_brief
+wait 600
+tap 80 120
+expect-screen sf_squadron
+expect lives=3
+expect score=0
+expect volleys=0
+expect wave=1
+expect x=240
+sheet controls
