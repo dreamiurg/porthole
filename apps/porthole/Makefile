@@ -64,15 +64,18 @@ BUILD := build/host
 # dependency files make an edited header rebuild exactly what includes it, and a no-op build do nothing.
 # The whole build runs in parallel by default (make 3.81 on macOS takes -j from here too); NPROC=1 for serial output.
 NPROC ?= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+ifeq ($(filter clean,$(MAKECMDGOALS)),)  # `make clean test` must not delete build/ while it compiles
 MAKEFLAGS += -j$(NPROC)
+endif
 objs = $(addprefix $(1)/,$(2:.cpp=.o))
+# Objects depend on this Makefile too: a changed flag (a new warning) must recompile what was already built.
 compile = mkdir -p $(@D) && $(CXX) $(1) -MMD -MP -c $< -o $@
-$(BUILD)/obj/%.o: %.cpp
+$(BUILD)/obj/%.o: %.cpp Makefile
 	$(call compile,$(CXXFLAGS))
-$(BUILD)/asan/%.o: %.cpp
+$(BUILD)/asan/%.o: %.cpp Makefile
 	$(call compile,$(CXXFLAGS) $(ASAN))
 # HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
-$(BUILD)/sdl/host/sim.o: host/sim.cpp
+$(BUILD)/sdl/host/sim.o: host/sim.cpp Makefile
 	$(call compile,$(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL)
 
 all: sim test
@@ -149,7 +152,7 @@ else
 GCOV ?= gcov
 endif
 
-$(COV)/obj/%.o: %.cpp
+$(COV)/obj/%.o: %.cpp Makefile
 	$(call compile,$(COV_CXXFLAGS))
 $(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
 $(COV)/test_%:
