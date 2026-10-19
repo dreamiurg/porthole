@@ -331,7 +331,17 @@
     "flag.storm_seen",
     "flag.rationed",
     "flag.agreed_water_plan",
-    "flag.chapter_done"
+    "flag.chapter_done",
+    "flag.tilda_consulted",
+    "flag.followup_done",
+    "outcome.mill_first",
+    "outcome.marsh_first",
+    "outcome.time_share",
+    "outcome.build_channel",
+    "event.marsh_shortage.done",
+    "event.food_shortage.done",
+    "event.water_dispute.done",
+    "event.channel_storm.done"
   ],
   "quests": [
     {
@@ -485,6 +495,10 @@
             {
               "type": "set",
               "id": "clue.recent_repairs"
+            },
+            {
+              "type": "set",
+              "id": "clue.water_low"
             }
           ],
           "next": "map"
@@ -853,6 +867,22 @@
               "fact": "outcome.build_channel"
             }
           ]
+        },
+        {
+          "any": [
+            {
+              "fact": "event.marsh_shortage.done"
+            },
+            {
+              "fact": "event.food_shortage.done"
+            },
+            {
+              "fact": "event.water_dispute.done"
+            },
+            {
+              "fact": "event.channel_storm.done"
+            }
+          ]
         }
       ],
       "proseRef": "LK_RETURN_01",
@@ -873,25 +903,161 @@
         }
       ],
       "proseRef": "LK_FINALE",
-      "effects": [
-        {
-          "type": "set",
-          "id": "flag.chapter_done"
-        },
-        {
-          "type": "set",
-          "id": "clue.royal_seal"
-        },
-        {
-          "type": "quest",
-          "id": "quest.chapter",
-          "status": "resolved"
-        }
-      ],
       "choices": [
         {
           "id": "chapter.explore",
+          "next": "map",
+          "effects": [
+            {
+              "type": "set",
+              "id": "flag.chapter_done"
+            },
+            {
+              "type": "set",
+              "id": "clue.royal_seal"
+            },
+            {
+              "type": "quest",
+              "id": "quest.chapter",
+              "status": "resolved"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river.inspect",
+      "location": "loc.river",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_RIVER_01",
+      "choices": [
+        {
+          "id": "river.measure",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.water_low"
+            }
+          ],
           "next": "map"
+        },
+        {
+          "id": "river.trace",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.water_low"
+            },
+            {
+              "type": "unlock",
+              "id": "loc.marsh"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "tilda.work",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [
+        {
+          "fact": "clue.old_channel"
+        }
+      ],
+      "proseRef": "LK_TILDA_01",
+      "choices": [
+        {
+          "id": "tilda.plan",
+          "effects": [
+            {
+              "type": "set",
+              "id": "flag.tilda_consulted"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "tilda.defer",
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "council.followup",
+      "location": "loc.river",
+      "once": true,
+      "requires": [
+        {
+          "any": [
+            {
+              "fact": "outcome.mill_first"
+            },
+            {
+              "fact": "outcome.marsh_first"
+            },
+            {
+              "fact": "outcome.time_share"
+            },
+            {
+              "fact": "outcome.build_channel"
+            }
+          ]
+        }
+      ],
+      "proseRef": "LK_COUNCIL_AFTERMATH",
+      "choices": [
+        {
+          "id": "council.return",
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "quest.resolution",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [
+        {
+          "any": [
+            {
+              "fact": "event.marsh_shortage.done"
+            },
+            {
+              "fact": "event.food_shortage.done"
+            },
+            {
+              "fact": "event.water_dispute.done"
+            },
+            {
+              "fact": "event.channel_storm.done"
+            }
+          ]
+        }
+      ],
+      "proseRef": "LK_FOLLOWUP",
+      "choices": [
+        {
+          "id": "resolution.repair",
+          "effects": [
+            {
+              "type": "set",
+              "id": "flag.followup_done"
+            }
+          ],
+          "next": "chapter.finale"
+        },
+        {
+          "id": "resolution.seek_help",
+          "effects": [
+            {
+              "type": "set",
+              "id": "flag.followup_done"
+            }
+          ],
+          "next": "chapter.finale"
         }
       ]
     }
@@ -901,25 +1067,49 @@
       "id": "event.marsh_shortage",
       "after": "outcome.mill_first",
       "once": true,
-      "worldChange": "Marsh pools shrink; Fen asks for restoration; a village bakery still has flour."
+      "worldChange": "Marsh pools shrink; Fen asks for restoration; a village bakery still has flour.",
+      "effects": [
+        {
+          "type": "set",
+          "id": "event.marsh_shortage.done"
+        }
+      ]
     },
     {
       "id": "event.food_shortage",
       "after": "outcome.marsh_first",
       "once": true,
-      "worldChange": "Eggs remain safe; village bakery has less flour; help families or traders."
+      "worldChange": "Eggs remain safe; village bakery has less flour; help families or traders.",
+      "effects": [
+        {
+          "type": "set",
+          "id": "event.food_shortage.done"
+        }
+      ]
     },
     {
       "id": "event.water_dispute",
       "after": "outcome.time_share",
       "once": true,
-      "worldChange": "Mill runs half days, marsh only partly recovers, both sides want review."
+      "worldChange": "Mill runs half days, marsh only partly recovers, both sides want review.",
+      "effects": [
+        {
+          "type": "set",
+          "id": "event.water_dispute.done"
+        }
+      ]
     },
     {
       "id": "event.channel_storm",
       "after": "outcome.build_channel",
       "once": true,
-      "worldChange": "Apprentices needed at water gate; bridge reinforcement postponed; promise wages."
+      "worldChange": "Apprentices needed at water gate; bridge reinforcement postponed; promise wages.",
+      "effects": [
+        {
+          "type": "set",
+          "id": "event.channel_storm.done"
+        }
+      ]
     }
   ],
   "invariants": [
