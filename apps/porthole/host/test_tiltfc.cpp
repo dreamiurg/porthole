@@ -6,7 +6,7 @@
 // every drawn string in the font; every incrementally drawn frame equal to a full repaint; and the playtests' recorded
 // matches in step with the rules (`build/host/test_tiltfc --write-playtests` rewrites them).
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <dirent.h>
 #include <math.h>
 #include <stdio.h>
@@ -19,7 +19,6 @@
 using namespace fc;
 using namespace grip;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 
 static float len(Vec v) { return sqrtf(v.x * v.x + v.y * v.y); }
 static Vec unit(Vec v) { const float l = len(v); return l > 0 ? Vec{v.x / l, v.y / l} : Vec{0, 0}; }

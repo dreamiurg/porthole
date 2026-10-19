@@ -38,14 +38,18 @@ def source_path(name):
     return SOURCE if name == "source.png" else BOARD / name
 
 
+@cache  # several crops share one atlas: decode each once
+def decoded(path):
+    return Image.open(path).convert("RGB")
+
+
 def validate_sources(extract=False):
     manifest = json.loads((BOARD / "manifest.json").read_text())
     for name, expected in manifest["sources"].items():
         if digest(source_path(name).read_bytes()) != expected:
             raise SystemExit(f"Source image hash changed: {name}")
     for name, entry in manifest["assets"].items():
-        source = Image.open(source_path(entry["source"])).convert("RGB")
-        cropped = source.crop(entry["crop"])
+        cropped = decoded(source_path(entry["source"])).crop(entry["crop"])
         path = BOARD / f"{name}.png"
         if extract and path != source_path(entry["source"]):
             cropped.save(path)

@@ -105,7 +105,9 @@ jobs:
         if: failure()
         with:
           name: porthole-playtest-report
-          path: apps/porthole/build/playtest/
+          path: |
+            apps/porthole/build/playtest/
+            apps/porthole/build/coverage/playtest/
           retention-days: 7
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         if: env.CODECOV_TOKEN != ''
@@ -115,18 +117,29 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/porthole/build/coverage/coverage.xml
           flags: porthole
-      - if: needs.changes.outputs.porthole-firmware == 'true'
-        id: pio
+
+  # Its own job, so the firmware build runs alongside the host suite instead of after it.
+  porthole-firmware:
+    name: Porthole firmware
+    needs: changes
+    if: needs.changes.outputs.porthole-firmware == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.11"
+      - id: pio
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
           key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # shared by every app: toolchains come from the platform pin
-      - if: needs.changes.outputs.porthole-firmware == 'true'
-        run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
-      - if: needs.changes.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+      - run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
+      - if: github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
         name: Prune the PlatformIO cache before saving it (main only)
         run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
-      - if: needs.changes.outputs.porthole-firmware == 'true' && github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
+      - if: github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
@@ -137,7 +150,7 @@ jobs:
     name: Required Checks
     runs-on: ubuntu-24.04
     timeout-minutes: 2
-    needs: [changes, static, porthole]
+    needs: [changes, static, porthole, porthole-firmware]
     if: always()
     steps:
       - name: Check results

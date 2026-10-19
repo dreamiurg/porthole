@@ -1,6 +1,6 @@
 // Plane Radar's self-check: the scope geometry, tag placement, the save, and the pages driven through the App
 // interface with a stub feed (menu, settings saved, slow presses, taps on the rim), every page drawn.
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,6 @@
 
 using namespace radar;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 
 static air::Plane at(float east, float north) {
   air::Plane p{};

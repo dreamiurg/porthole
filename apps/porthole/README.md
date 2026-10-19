@@ -255,7 +255,7 @@ using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usb
 ```bash
 make check      # content fits its pixel boxes, sprites are current, -Werror build, pet and shell self-tests (seconds)
 make playtest   # 17 scripted playthroughs, a UI audit (target size, bezel, overlap, contrast), chaos monkeys under ASan
-make ci         # check + playtest + coverage: what CI runs for this app, minus the firmware build
+make ci         # lint + coverage + monkey playtests: what CI runs for this app, minus the firmware build
 make coverage   # line coverage of os/, shell/ and games/ -> build/coverage/coverage.xml (needs gcovr, or uvx)
 ```
 

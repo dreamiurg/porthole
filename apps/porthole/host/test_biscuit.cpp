@@ -2,7 +2,7 @@
 // tricks and growth, the save blob, and conversion of the save Biscuit had before Porthole. The cases are the old
 // model's own test suite, ported; the daily play budget cases went to the shell with the budget.
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

@@ -1,5 +1,5 @@
 // Validate the compiled manuscript with the same fonts and page dimensions used on the device.
-#include <assert.h>
+#include "host/check.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

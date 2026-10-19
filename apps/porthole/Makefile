@@ -13,7 +13,9 @@ WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initi
 # came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
 FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
-CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+# -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so no CXXFLAGS turns them off.
+CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
 # with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
@@ -23,6 +25,7 @@ PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
 NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
+# Each is its own target (build/host/test_<name>, run by run-test_<name>), so make -j and -k work on them.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
@@ -54,27 +57,50 @@ SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 HOST_LIBS := -lz
 BUILD := build/host
 
+# Every source compiles once per flavor into an object that mirrors the source tree (two games both have a pet.cpp):
+# build/host/obj (the sims and the tests), build/host/asan (snap-asan), build/coverage/obj (coverage). -MMD -MP
+# dependency files make an edited header rebuild exactly what includes it, and a no-op build do nothing.
+# The whole build runs in parallel by default (make 3.81 on macOS takes -j from here too).
+NPROC := $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+MAKEFLAGS += -j$(NPROC)
+objs = $(addprefix $(1)/,$(2:.cpp=.o))
+$(BUILD)/obj/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+$(BUILD)/asan/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(ASAN) -MMD -MP -c $< -o $@
+# HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
+$(BUILD)/sdl/host/sim.o: host/sim.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL -MMD -MP -c $< -o $@
+
 all: sim test
 
-$(BUILD):
-	mkdir -p $(BUILD)
-
-sim: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS) $(HOST_LIBS)
-
-snap: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap $(HOST_LIBS)
-
+$(BUILD)/sim: $(call objs,$(BUILD)/obj,$(SRC)) $(BUILD)/sdl/host/sim.o
+	$(CXX) $^ -o $@ $(SDL_LIBS) $(HOST_LIBS)
+$(BUILD)/snap: $(call objs,$(BUILD)/obj,$(SRC) host/sim.cpp)
+	$(CXX) $^ -o $@ $(HOST_LIBS)
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
-snap-asan: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan $(HOST_LIBS)
+$(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+sim snap snap-asan: %: $(BUILD)/%
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
-test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
-	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) $(HOST_LIBS) && $(BUILD)/$(t) &&) true
+# Just the sanitizer monkeys: what ci adds to coverage, which already plays every other scenario.
+playtest-monkey: snap-asan
+	$(PY) tools/playtest.py monkey
+
+$(foreach t,$(TESTS),$(eval $(BUILD)/$(t): $(call objs,$(BUILD)/obj,$($(t)_SRC) host/$(t).cpp)))
+$(BUILD)/test_%:
+	$(CXX) $^ -o $@ $(HOST_LIBS)
+# No .PHONY: make skips pattern rules for phony targets. Nothing creates a run-* file, so these always run.
+run-%: $(BUILD)/%
+	$<
+test: $(TESTS:%=run-%)
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
@@ -99,17 +125,16 @@ lint: snap
 # What pre-commit runs: seconds, not minutes.
 check: lint test
 
-# Everything CI runs for this app except the firmware build.
-ci: check playtest coverage
+# Everything CI runs for this app except the firmware build. coverage runs every test and every non-monkey playtest
+# (at -O0), so ci runs each once: the -O1 test binaries are only built, for their warnings.
+ci: lint coverage playtest-monkey $(TESTS:%=$(BUILD)/%)
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
-# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang; they mirror the source tree
-# (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
-# 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
+# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.6% measured
+# (gcc 13, ubuntu-24.04) on 2026-10-19; raise it as coverage grows, never lower it.
 COV := build/coverage
-COV_MIN := 97
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
-COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
+COV_MIN := 98.6
+COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 # GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
@@ -124,12 +149,23 @@ else
 GCOV ?= gcov
 endif
 
-coverage:
-	rm -rf $(COV) && mkdir -p $(COV)/obj
-	for f in $(SRC) host/sim.cpp $(TESTS:%=host/%.cpp); do o=$(COV)/obj/$${f%.cpp}.o; mkdir -p $$(dirname $$o) && $(CXX) $(COV_CXXFLAGS) -c $$f -o $$o || exit 1; done
-	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) $(HOST_LIBS) && $(COV)/$(t) &&) true
-	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap $(HOST_LIBS)
-	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
+$(COV)/obj/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(COV_CXXFLAGS) -MMD -MP -c $< -o $@
+$(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
+$(COV)/test_%:
+	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
+$(COV)/snap: $(call objs,$(COV)/obj,$(SRC) host/sim.cpp)
+	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
+
+# Objects stay between runs; the counts (.gcda) start from zero each time. The binaries run in parallel like the
+# playtests below: the coverage runtime locks each .gcda while it merges into it. -O0 is slow, hence the time scale.
+cov-reset:
+	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
+cov-run-%: $(COV)/% cov-reset
+	$<
+coverage: $(TESTS:%=cov-run-%) $(COV)/snap
+	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
@@ -162,4 +198,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset art webemu firmware factory flash monitor clean
+-include $(shell find build -name '*.d' 2>/dev/null)

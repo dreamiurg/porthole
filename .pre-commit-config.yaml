@@ -10,7 +10,8 @@ exclude: |
     apps/porthole/games/tilt-fc/generated/.*|
     apps/porthole/games/tilt-fc/fonts/OFL\.txt|
     apps/porthole/os/font8x8_basic\.h|
-    .*\.(ttf|png|bmp)
+    # Binaries under games/ and shell/ are checked inputs (art sources, fonts, goldens): those still run porthole-check.
+    (?!apps/porthole/(games|shell)/).*\.(ttf|png|bmp)
   )$
 
 repos:
@@ -26,6 +27,7 @@ repos:
         args: [--branch, main]
       - id: check-added-large-files
         args: [--maxkb=500]
+        exclude: \.(ttf|png|bmp)$  # art sources and fonts under games/ (see the top-level exclude) are big by nature
       - id: detect-private-key
 
   - repo: https://github.com/gitleaks/gitleaks
