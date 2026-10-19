@@ -34,13 +34,14 @@ struct MemStore : shell::Store {
     if (!x || x->len > max) return 0;
     memcpy(buf, x->data, x->len); return x->len;
   }
-  void save(const char* ns, const char* key, const void* data, size_t len) override {
-    if (!land(ns, key)) return;
+  bool save(const char* ns, const char* key, const void* data, size_t len) override {
+    if (!land(ns, key)) return false;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
     assert(x && len <= shell::BLOB_MAX);
     snprintf(x->ns, sizeof x->ns, "%s", ns); snprintf(x->key, sizeof x->key, "%s", key);
     memcpy(x->data, data, len); x->len = len; x->used = true;
+    return true;
   }
   void erase(const char* ns, const char* key) override { if (!land(ns, key)) return; if (Entry* x = find(ns, key)) x->used = false; }
   bool has(const char* ns, const char* key) { return find(ns, key) != nullptr; }

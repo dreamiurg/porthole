@@ -141,8 +141,9 @@ void Shell::openIdx(int k) {
 void Shell::flushApp(bool allowed) {
   const void* data; size_t len;
   if (!app_->takeSave(&data, &len, allowed)) return;
-  if (len) st_->save(app_->store(), shell::key('s', active_), data, len); else st_->erase(app_->store(), shell::key('s', active_));
-  lastSaveMs_ = ms_;
+  if (!len) st_->erase(app_->store(), shell::key('s', active_));
+  else if (!st_->save(app_->store(), shell::key('s', active_), data, len)) app_->saveFailed();
+  lastSaveMs_ = ms_;   // a failure too: a dead flash is retried at the save cadence, not every frame
 }
 void Shell::closeApp() {
   app_->leave();
@@ -446,7 +447,8 @@ void Shell::updateApp() {
   app_->update(now_, ms_, in_);
   if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
-  if (screen_ == SH_APP) flushApp(app_->saveUrgent() || ms_ - lastSaveMs_ > 5000);
+  const uint32_t sinceSave = ms_ - lastSaveMs_;   // an urgent checkpoint still waits a second: one flash write per tap at most
+  if (screen_ == SH_APP) flushApp(sinceSave > 5000 || (app_->saveUrgent() && sinceSave >= 1000));
 }
 void Shell::drawApp() { app_->render(); }
 
@@ -455,12 +457,9 @@ bool Shell::clearPin(int id) {
   if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return false;
   if (!prof_.rec[id].pin) return true;
   const Record before = prof_.rec[id];
-  prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
-  Record saved{};
-  if (st_->load(shell::NS, shell::key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&saved, &prof_.rec[id], sizeof saved)) {
-    prof_.rec[id] = before; return false;
-  }
-  return true;
+  prof_.rec[id].pin = 0;
+  if (shell::saveRecord(*st_, prof_, id)) return true;
+  prof_.rec[id] = before; return false;
 }
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",

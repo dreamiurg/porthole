@@ -22,6 +22,7 @@ class Game : public App {
   bool asleep() const override { return save_.asleep != 0; }
   bool soundOn(uint32_t ms) override;   // buzzer pattern player: true while the buzzer should be on
   bool takeSave(const void** data, size_t* len, bool allowed) override;
+  void saveFailed() override { markDirty(); }
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;

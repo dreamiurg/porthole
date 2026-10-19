@@ -51,8 +51,10 @@ struct FileStore : shell::Store {
     size_t got = fread(buf, 1, max, f); bool more = fgetc(f) != EOF; fclose(f);
     return more ? 0 : got;   // like NVS: a blob bigger than the buffer is not loaded at all
   }
-  void save(const char* ns, const char* key, const void* data, size_t len) override {
-    FILE* f = fopen(path(ns, key), "wb"); if (f) { fwrite(data, 1, len, f); fclose(f); }
+  bool save(const char* ns, const char* key, const void* data, size_t len) override {
+    FILE* f = fopen(path(ns, key), "wb"); if (!f) return false;
+    const bool ok = fwrite(data, 1, len, f) == len;
+    return fclose(f) == 0 && ok;
   }
   void erase(const char* ns, const char* key) override { remove(path(ns, key)); }
 };
@@ -123,9 +125,8 @@ struct SimSystem : shell::System {
   }
   bool setUtcOffset(int16_t minutes) override {
     if (!netclock::validOffset(minutes)) return false;
-    FileStore store; int16_t readback = 0;
-    store.save("sys", "utc_off", &minutes, sizeof minutes);
-    if (store.load("sys", "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
+    FileStore store;
+    if (!store.save("sys", "utc_off", &minutes, sizeof minutes)) return false;
     const int delta = minutes - clock.utcOffsetMin;
     setNow(netclock::local(now(), delta));
     if (clock.lastSync) clock.lastSync = netclock::local(clock.lastSync, delta);

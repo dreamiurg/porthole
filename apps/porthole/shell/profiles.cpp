@@ -12,10 +12,7 @@ Limits loadLimits(Store& st) {
   return st.load("sys", "limits", &l, sizeof l) == sizeof l && validLimits(l) ? l : Limits{};
 }
 bool saveLimits(Store& st, const Limits& l) {
-  if (!validLimits(l)) return false;
-  st.save("sys", "limits", &l, sizeof l);
-  Limits saved{};
-  return st.load("sys", "limits", &saved, sizeof saved) == sizeof saved && !memcmp(&saved, &l, sizeof l);
+  return validLimits(l) && st.save("sys", "limits", &l, sizeof l);
 }
 int Profiles::count() const { int n = 0; for (bool u : used) n += u; return n; }
 int Profiles::nth(int i) const {
@@ -50,7 +47,7 @@ void loadAll(Store& st, Profiles& p) {
   if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
   migrateBiscuit(st, p);   // after migrate: it matches the migrated names; a no-op once porthole/mb exists
 }
-void saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); st.save(NS, key('p', id), &p.rec[id], sizeof(Record)); }
+bool saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); return st.save(NS, key('p', id), &p.rec[id], sizeof(Record)); }
 
 int create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores) {
   for (int id = 0; id < MAX_PROFILES; id++) {
@@ -89,11 +86,7 @@ bool resetLimits(Store& st, Profiles& p) {
     if (!p.used[id] || !(r.restUntil || r.playSec || r.dayPlaySec)) continue;
     const Record before = r;
     r.restUntil = r.playSec = r.dayPlaySec = 0;
-    saveRecord(st, p, id);
-    Record saved{};
-    if (st.load(NS, key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&r, &saved, sizeof r)) {
-      r = before; ok = false;
-    }
+    if (!saveRecord(st, p, id)) { r = before; ok = false; }
   }
   return ok;
 }

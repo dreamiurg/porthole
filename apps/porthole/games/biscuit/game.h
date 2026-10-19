@@ -24,6 +24,7 @@ class Game : public App {
   bool asleep() const override { return save_.named && save_.sleeping; }
   bool soundOn(uint32_t) override { return false; }   // Biscuit never drives the buzzer
   bool takeSave(const void** data, size_t* len, bool allowed) override;
+  void saveFailed() override { dirty_ = true; }
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (save_.named) dirty_ = true; fetch_ = -1; shelfAtMs_ = 0; }
   const char* screenName() const override;

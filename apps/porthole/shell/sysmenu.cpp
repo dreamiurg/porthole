@@ -190,11 +190,9 @@ void Shell::drawSysAdmin() {
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
 }
-// Read back because Store::save has no result: a failed flash write must not claim the code changed.
+// A failed flash write must not claim the code changed.
 bool Shell::saveAdminPin(uint16_t code) {
-  st_->save("sys", "admin", &code, sizeof code);
-  uint16_t saved = 0xffff;
-  if (st_->load("sys", "admin", &saved, sizeof saved) != sizeof saved || saved != code) return false;
+  if (!st_->save("sys", "admin", &code, sizeof code)) return false;
   adminPin_ = code;
   return true;
 }

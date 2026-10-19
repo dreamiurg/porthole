@@ -18,7 +18,7 @@
 // The shell's storage is the board's NVS, addressed by (namespace, key).
 struct NvsStore : shell::Store {
   size_t load(const char* ns, const char* key, void* buf, size_t max) override { return board::loadBlob(ns, key, buf, max); }
-  void save(const char* ns, const char* key, const void* data, size_t len) override { board::saveBlob(ns, key, data, len); }
+  bool save(const char* ns, const char* key, const void* data, size_t len) override { return board::saveBlob(ns, key, data, len); }
   void erase(const char* ns, const char* key) override { board::eraseBlob(ns, key); }
 };
 

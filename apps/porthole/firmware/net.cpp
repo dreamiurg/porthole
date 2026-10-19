@@ -793,9 +793,7 @@ bool Updater::takeClock(uint32_t& localEpoch) {
 
 bool Updater::setUtcOffset(int16_t minutes) {
   if (!netclock::validOffset(minutes)) return false;
-  int16_t readback = 0;
-  if (!board::saveBlob(NS, "utc_off", &minutes, sizeof minutes) ||
-      board::loadBlob(NS, "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
+  if (!board::saveBlob(NS, "utc_off", &minutes, sizeof minutes)) return false;
   const uint32_t now = g_now(), ms = millis();
   portENTER_CRITICAL(&g_mux);
   // Keep a pending network sample if one exists. Otherwise shift the current local time by the offset difference.
