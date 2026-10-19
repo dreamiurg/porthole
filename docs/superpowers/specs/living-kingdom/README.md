@@ -11,6 +11,7 @@ This folder is the **complete design handoff** for an implementation agent. It i
 | [chapter-01-world.json](chapter-01-world.json) | Example location/quest/encounter IDs, scenario seeds and consequence graph (design fixture; normalize in code) |
 | [content-contract.md](content-contract.md) | Stable extensibility, deterministic procedural variation, saves, migrations, validator and tests |
 | [starter-screens.svg](starter-screens.svg) | **Nine round-screen layout/storyboard sketches**: start, map, reading, choices, party, inventory, journal, future return |
+| [Original concept-art PNGs](concept-art/README.md) | Eight unchanged 1536×1024 boards; **08 — Chapter One: Polished UX** is the selected visual style |
 
 ## The game in one paragraph
 
@@ -18,7 +19,16 @@ An advanced third-grader plays Princess Pulverizer traveling with Lucas and Drib
 
 ## Visual samples
 
-The committed SVG is an **original schematic reference**, not a production asset pack. Earlier visual moodboards in the ChatGPT design conversation explored richer illustrated pixel-world and gamebook styles; the chosen direction is colorful hand-painted-looking **pixel fantasy**, parchment text areas, large readable touch choices and modest scene art.
+The selected visual style is
+[08 — Chapter One: Polished UX](concept-art/08-chapter-one-polished-ux.png):
+colorful illustrated **pixel fantasy**, expressive characters, detailed landscapes,
+deep indigo framing, parchment text areas and gold touch actions. All eight
+[original PNG boards](concept-art/README.md) are committed unchanged at 1536×1024.
+
+![Selected style: Chapter One — Polished UX](concept-art/08-chapter-one-polished-ux.png)
+
+The SVG below is a **schematic layout reference**, not the selected artwork or
+a replacement for the PNGs.
 
 ![Nine Porthole screens](starter-screens.svg)
 

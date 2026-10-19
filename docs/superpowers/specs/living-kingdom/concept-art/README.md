@@ -2,6 +2,11 @@
 
 **Eight original PNGs, generated in the ChatGPT game-design conversation.** Each is 1536×1024, visually distinct, and should be committed as a binary PNG with its original image data. They are not interchangeable with the schematic SVG.
 
+**Selected style:** [08 — Chapter One: Polished UX](08-chapter-one-polished-ux.png)
+is the user's preferred visual direction: rich illustrated pixel-fantasy scenes,
+expressive characters, a detailed map, deep indigo framing, parchment text areas
+and gold actions. The other seven boards are earlier explorations.
+
 | Filename | Content |
 |---|---|
 | `01-world-map-and-encounters.png` | Illustrated map, troll encounter, party/inventory, village changes |
