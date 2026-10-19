@@ -31,6 +31,7 @@ test_biscuit_SRC :=
 test_update_gate_SRC :=
 test_display_frames_SRC :=
 test_update_picture_SRC :=
+test_biscuit_home_SRC := $(wildcard os/*.cpp) $(wildcard games/biscuit/*.cpp)
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
 test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)

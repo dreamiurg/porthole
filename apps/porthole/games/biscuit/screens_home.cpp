@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "content_daily.h"
+#include "crc32.h"
 #include "game.h"
 #include "generated/scenes.h"
 #include "gfx565.h"
@@ -73,12 +74,21 @@ void Game::homeFetch() {
   say(SAY_FETCHED, SCENE_PLAY);
 }
 
-void Game::drawScene() {
+const gfx565::RleImage& Game::scene() const {
   const bool oneShot = activity_ == SCENE_SHELF || activity_ == SCENE_FERN;
   const int act = save_.sleeping ? (int)SCENE_SLEEP : fetch_ >= 0 ? (int)SCENE_PLAY : activity_;
   const uint32_t since = ms_ - actStartMs_, step = save_.sleeping ? SCENE_SLEEP_MS : SCENE_FRAME_MS;   // scenes.h
   const int frame = oneShot && !save_.sleeping ? (since / step < 3 ? (int)(since / step) : 3) : (int)(ms_ / step % 4);
-  gfx565::blitRle(SCENES[(int)stage(save_)][timeOfDay()][act][frame], 0, 0, 3);   // the whole glass
+  return SCENES[(int)stage(save_)][timeOfDay()][act][frame];
+}
+// Everything drawHome() draws from: when it is the same as the last time this buffer got Home, the buffer already
+// holds the frame. The scene (stage, light, activity and frame) is one pointer; a press shows where it is.
+uint32_t Game::homeLook() const {
+  const uint32_t look[] = {(uint32_t)(uintptr_t)&scene(), save_.sleeping, save_.daysTogether,
+                           (uint32_t)need(save_.fullness), (uint32_t)need(save_.happiness), (uint32_t)need(save_.energy),
+                           (uint32_t)fetch_, in_.down, in_.down ? (uint32_t)in_.x : 0, in_.down ? (uint32_t)in_.y : 0,
+                           os::crc32(save_.petName, strlen(save_.petName)), os::crc32(speech_, strlen(speech_))};
+  return os::crc32(look, sizeof look);
 }
 void Game::drawHomeTop() {
   char name[NAME_LIMIT + 1], mood[48];
@@ -98,8 +108,11 @@ void Game::drawHomeTop() {
   ui565::need(1, Icon::Heart, need(save_.happiness), HEART);
   ui565::need(2, Icon::Moon, need(save_.energy), MOON);
 }
-void Game::drawHome() {
-  drawScene();
+void Game::drawHome() {   // the scene steps every 230 ms: most frames have nothing new to draw
+  homeFrames_.render(nullptr, 0, homeLook(), [this] { drawHomeWhole(); });
+}
+void Game::drawHomeWhole() {
+  gfx565::blitRle(scene(), 0, 0, 3);   // the whole glass
   drawHomeTop();
   home(in_);
   if (fetch_ >= 0) {

@@ -130,12 +130,14 @@ static void lcdInitPanel() {
   esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[0]);
 }
 
-void present(const uint8_t* fb160, const uint16_t* pal565) {
-  gfx565::target(backBuffer());
-  gfx565::expandIndexed3(fb160, pal565);
-  presentHires();
+// What each buffer holds of an indexed frame, so expand() rewrites only the rows that changed. Anything else draws into
+// a buffer through backBuffer() (an RGB565 app's render), which forgets what that buffer held.
+static gfx565::Expanded g_expanded[2] = {};
+void expand(const uint8_t* fb160, const uint16_t* pal565) {
+  gfx565::target(g_fbs[g_frames.back()]);
+  gfx565::expandIndexed3(fb160, pal565, &g_expanded[g_frames.back()]);
 }
-uint16_t* backBuffer() { return g_fbs[g_frames.back()]; }
+uint16_t* backBuffer() { g_expanded[g_frames.back()].palette = nullptr; return g_fbs[g_frames.back()]; }
 bool beginUpdateDisplay() { return update_scanout::begin(); }
 void drawUpdateProgress(const char* label, bool cancellable) { update_scanout::draw(label, cancellable); }
 bool hitUpdateCancel(int x, int y) { return update_scanout::hitCancel(x, y); }
@@ -144,6 +146,7 @@ void endUpdateDisplay() {
   ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));   // restore normal timings, vsync ISR and original framebuffer DMA
   update_scanout::release();   // normal DMA no longer references the sparse frame
   xSemaphoreTake(g_vsync, 0);
+  g_expanded[0].palette = g_expanded[1].palette = nullptr;   // repaint both whole: nothing assumed across an update
 }
 const uint16_t* frontBuffer() { return g_fbs[g_frames.front()]; }
 void presentHires() {
@@ -151,7 +154,7 @@ void presentHires() {
   portENTER_CRITICAL(&g_frameMux);
   xSemaphoreTake(g_frameCopied, 0);
   ESP_ERROR_CHECK(g_frames.submit() ? ESP_OK : ESP_ERR_INVALID_STATE);
-  ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer()));
+  ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[g_frames.back()]));
   portEXIT_CRITICAL(&g_frameMux);
   // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
   ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
@@ -190,7 +193,7 @@ static void civilFromDays(uint32_t z0, int& y, int& m, int& d) {
 bool rtcValid() {
   uint8_t s; if (!i2cRead(RTC_ADDR, 0x04, &s, 1)) return false;
   if (s & 0x80) return false;  // oscillator-stop flag: time is garbage
-  uint8_t yr; i2cRead(RTC_ADDR, 0x0A, &yr, 1);
+  uint8_t yr; if (!i2cRead(RTC_ADDR, 0x0A, &yr, 1)) return false;
   return bcd2(yr) >= 25;  // year 2025+ (register counts from 2000)
 }
 uint32_t rtcNow() {
