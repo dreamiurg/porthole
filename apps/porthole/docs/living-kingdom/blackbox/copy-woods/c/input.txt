@@ -1,0 +1,211 @@
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 00-marsh-profile-fixture-map
+down 39 53
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 01-woods-first
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 02-other-campaign-woods-options
+down 39 53
+wait 66
+up
+wait 550
+snap 03-woods-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 04-woods-first
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 05-woods-choice
+down 80 104
+wait 66
+up
+wait 550
+snap 06-hillside-result1
+wait 12000
+down 112 133
+wait 66
+up
+wait 550
+snap 07-hillside-result2
+down 50 133
+wait 66
+up
+wait 550
+snap 08-hillside-back1
+down 112 133
+wait 66
+up
+wait 550
+snap 09-hillside-next2
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 10-hillside-save-quit
+reboot
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 11-hillside-result-resumed
+down 112 133
+wait 66
+up
+wait 550
+snap 12-watchtower-after-hillside
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 13-exit
+reboot
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 14-returned-to-result3
+down 112 133
+wait 66
+up
+wait 550
+snap 15-watchtower-first
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 16-final-exit

@@ -1,0 +1,165 @@
+wait 1000
+snap 01-picker
+down 41 54
+wait 66
+up
+wait 550
+down 119 126
+wait 66
+up
+wait 550
+snap 02-profile
+down 33 55
+wait 66
+up
+wait 550
+snap 03-age
+down 80 102
+wait 66
+up
+wait 550
+snap 04-code
+down 80 146
+wait 66
+up
+wait 550
+snap 05-launcher
+down 109 135
+wait 66
+up
+wait 550
+snap 06-next-page
+down 109 135
+wait 66
+up
+wait 550
+snap 07-kingdom-launcher
+down 112 78
+wait 66
+up
+wait 550
+snap 08-title
+down 92 137
+wait 66
+up
+wait 550
+snap 09-opening
+wait 8000
+down 112 133
+wait 66
+up
+wait 550
+snap 10-page-two
+crash
+wait 1000
+snap 11-reboot-picker
+down 80 22
+wait 5200
+up
+wait 550
+snap 12-admin-info
+down 80 12
+wait 66
+up
+wait 550
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+snap 13-continue
+down 92 137
+wait 66
+up
+wait 550
+snap 14-crash-restored
+down 50 133
+wait 66
+up
+wait 550
+snap 15-back
+down 112 133
+wait 66
+up
+wait 550
+down 80 133
+wait 66
+up
+wait 550
+snap 16-menu
+down 51 54
+wait 66
+up
+wait 550
+snap 17-party
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 18-items
+down 80 133
+wait 66
+up
+wait 550
+down 105 110
+wait 66
+up
+wait 550
+snap 19-returned
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 20-saved-exit
+reboot
+wait 1000
+snap 21-restart-picker
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 22-save-restored
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 23-final-exit

@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar and Starfighter.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter and Kingdom.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -51,6 +51,29 @@ keys to bank and click the glass to fire.
 
 [Runtime screenshot tour and verification](docs/starfighter/README.md).
 Design and state contract: [game brief](games/starfighter/AGENTS.md).
+
+## Kingdom: Princess Pulverizer and the Living Kingdom
+
+Open **Kingdom** on the launcher's third page. Chapter One, **Trouble at Willowbrook**,
+is a complete, persistent story RPG for an advanced third-grade reader: explore six
+places with Lucas and Dribble, investigate the bridge and food shortage, and choose
+how to share the river. Forty authored encounters offer four resolutions with real
+costs, delayed consequences and work to finish before earning a good deed.
+
+Read with **Back** and **Next**; **Reread** returns from a decision to its first page.
+**Menu** opens the party, six item pockets and the dated quest/evidence/promise journal.
+Only choosing an action changes the world. Travel and camp advance world days;
+time away changes nothing. Each profile keeps its own seed, decisions and exact page,
+including through the shell's breaks. **Exit** saves and returns to the launcher;
+**Continue** resumes the same pending story.
+
+The original concept-art PNGs, GPT-generated additions and readable Atkinson
+message text render at 480×480. The game runs offline and silently. This is an
+unofficial private fan prototype with original prose.
+
+[Game and save contract](games/living-kingdom/AGENTS.md) ·
+[Design decisions](docs/design/living-kingdom.md) ·
+[Emulator playthrough evidence](docs/living-kingdom/blackbox/README.md).
 
 ## Profiles and the launcher
 

@@ -83,7 +83,7 @@ repos:
         name: porthole make check
         entry: make -C apps/porthole check
         language: python
-        additional_dependencies: [pillow, gcovr>=8.3]
+        additional_dependencies: [pillow, fonttools==4.61.1, gcovr>=8.3]
         pass_filenames: false
         files: ^apps/porthole/
 
@@ -117,7 +117,7 @@ repos:
         name: porthole make ci (playtests, coverage)
         entry: make -C apps/porthole ci REQUIRE_NODE=1
         language: python
-        additional_dependencies: [pillow, gcovr>=8.3]
+        additional_dependencies: [pillow, fonttools==4.61.1, gcovr>=8.3]
         pass_filenames: false
         files: ^(apps/porthole/|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$)
         exclude: \.md$|(^|/)docs/

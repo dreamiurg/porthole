@@ -4,6 +4,7 @@
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
 #include "games/biscuit/game.h"
+#include "games/living-kingdom/game.h"
 #include "games/marble-kick/game.h"
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
@@ -28,7 +29,8 @@ static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
 static radar::Game g_radar;
 static starfighter::Game g_starfighter;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter};
+static kingdom::Game g_kingdom;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static net::Updater g_sys;

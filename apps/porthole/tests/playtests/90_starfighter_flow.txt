@@ -11,7 +11,7 @@ wait 600
 expect-screen launcher
 ui-check
 snap sf00_launcher
-tap 112 80
+tap 48 80
 wait 600
 expect-screen sf_title
 ui-check

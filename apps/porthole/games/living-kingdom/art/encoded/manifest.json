@@ -1,0 +1,258 @@
+{
+  "format": "zlib-wrapped DEFLATE of little-endian RGB565",
+  "compressor": "zopfli==0.4.3, numiterations=15",
+  "assets": {
+    "bridge": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "c31dccf3255d9fc65715da608c11f1504e2fddb49cca465471bd9a1187406acf",
+      "stream_sha256": "7e161cdcadd9bd752c4955e7ed7fca326f9726431a7a20d2f416cdb82f8c155d",
+      "bytes": 52563
+    },
+    "bridge-repaired": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "7c64a7d66ce81a865add9d6be63c346e2dcfbe7cb3f1454bc1467256ef6420da",
+      "stream_sha256": "8c22241d6ed2da8b59478743844bc213f0ce352a1f2fae67d0cce9ce09d538a1",
+      "bytes": 52247
+    },
+    "bridge-state4": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "5cd053ca9c92469c6f666550c31d740ba95ed0eff44f4b3dddb419a7cd00b6fe",
+      "stream_sha256": "112316e7c36c528abc1fe5f824da841d3684ab11201cb8049a2d5381d2dcfd7b",
+      "bytes": 53408
+    },
+    "dribble": {
+      "size": [
+        80,
+        112
+      ],
+      "rgb565_sha256": "b14f97e5eca2de481bda5c8721fd1f3164f26ccfb0454466675662d6ec72d835",
+      "stream_sha256": "0c245e25d8cd7603c64e6453fc0d5ad7c5ef2348ac9a409efe6a945422d3d70b",
+      "bytes": 10571
+    },
+    "item-bread": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "2b790c5844fff2ac942490ac289ccd0d05dc742f6d6fc60590834e96d1c71ec3",
+      "stream_sha256": "413989400f6a8078e1e050562ce0d604db48fe49d02227a011701ee6b41fbce2",
+      "bytes": 2489
+    },
+    "item-flour": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "83cf19469a85dd4340ca720bfb4b711b3e81a0f9f4f9809bb5b9f737a15aac4b",
+      "stream_sha256": "1120650d6a57df56d3a3cdd598d586ce5e4871b83e989361f381de9c43cb85a1",
+      "bytes": 2673
+    },
+    "item-map": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "4e9cda5513281368fe386e6a8d36512e3f0310285656fe7e6ed74ae1be6d1a96",
+      "stream_sha256": "a909d38453dacce9a303d29bb00a2b5c39bfa46832d446207fc2c28c32b876d6",
+      "bytes": 3598
+    },
+    "item-rope": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "3e509a50b39a4649d89b21376d672a5517ffe1a8baea0a51e5c87b9a809a69dd",
+      "stream_sha256": "8bc4382b41dcf632eef1df4b28010a6b87498f10c9330962993be553e7e328ce",
+      "bytes": 2351
+    },
+    "item-thyme": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "2e9f97f9e8c959bbafae1d418d9c853a0b6b6aff5ddfc0bfb005ca27b95b9d07",
+      "stream_sha256": "dd90a6eea9b3d5ae165727122172270eee43b24e338ebdb45f2f19e2e0cb8083",
+      "bytes": 2351
+    },
+    "item-wood": {
+      "size": [
+        48,
+        48
+      ],
+      "rgb565_sha256": "73e113b40d463e0ed2abcecbd607f309ef2c393d502e3179a61a47ccbb33b461",
+      "stream_sha256": "9a34e59b6db770892dec1c817aafe45bb8aba815f2e6c60a15f82247c64f33c7",
+      "bytes": 2069
+    },
+    "lucas": {
+      "size": [
+        80,
+        112
+      ],
+      "rgb565_sha256": "b7a868254e3cadf8377e9073a23968c8390938741c0ae69a99e604518e748f77",
+      "stream_sha256": "f26877458ab64c8cb3ae6ba8573eb84d08eb43b86b44b5faedf4e943a76e76ff",
+      "bytes": 8599
+    },
+    "marsh": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "1619fe631b22c7f0a8989d986fc575c1bd1218bedcd1eba58e2f01422eb56f94",
+      "stream_sha256": "2088f0a88fd4e5f3651727007b8537f81c27940a0f1077f6f952dc6cfe523fb6",
+      "bytes": 53574
+    },
+    "marsh-state1": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "4268f4f1b14b31d574b76b9e4d22651bed79f9cd4ef4a3eb8aa5bdc5809dfaaa",
+      "stream_sha256": "4324008c66d76db174457a620f201d7d7c2286a5f172ed9d37a4e07bb946ff7b",
+      "bytes": 49440
+    },
+    "marsh-state2": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "bfef7303a346bb77ef9c0d8d3e2ec1415950905b141711737e3c91980172fd3d",
+      "stream_sha256": "23221b3113f960a69442b2d0468fa5df97edb2bbb04db339f21eae5be2152578",
+      "bytes": 54578
+    },
+    "marsh-state3": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "c7fde344b91de58b59291f694ef419df323a0bdb27580e66627e35ca1694a762",
+      "stream_sha256": "c628c1b10920029278e348671b2fb261b64485d173771ab4e33a75d4d3066a87",
+      "bytes": 54253
+    },
+    "marsh-state4": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "d0549011c84f517e3c8d22964679e1a25557ea505c0e15951620a9df1f2131a3",
+      "stream_sha256": "03eefcf1cf28365da4f7a2a2ab2e0121fe85c44ea14d951d77b51a7a54505780",
+      "bytes": 54575
+    },
+    "mill": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "8574b4ec620b52c6db65e9600e684e6aec622950e9f22fcc7f62b283d12e82ad",
+      "stream_sha256": "8ce6f667a6fedc5738326c154c8c66eda2b41cf7506be2e023c384e118178241",
+      "bytes": 53200
+    },
+    "mill-state1": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "dee89ace9a7f713fe8aa90a93963a1630b27ddd2ba839aad9a396fb1202e7a5d",
+      "stream_sha256": "a0a5dbd292aa0b29569ee1e5153a5683662c1b19fafa57189d7fb0f51b30eb5f",
+      "bytes": 53734
+    },
+    "mill-state2": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "48d88bfa3d1a0673c0fbc8c0ee5f120f5aa35b6be999b3bed5879d1b610ee75c",
+      "stream_sha256": "13e933fdd2baaeabd8eb36777c7c897f60e6045e3e7d8b3dbeb55fe3ad3f2b4e",
+      "bytes": 51750
+    },
+    "mill-state3": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "0c1648e7dd66c242cfb35a3ea011b1d7449e021fa057d6d1a887d81ec47b40f7",
+      "stream_sha256": "d4ccbb40bae7ca74e73db3e40e511d3f79d1e8842e1333f645fb55accb85031b",
+      "bytes": 54379
+    },
+    "mill-state4": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "8ef1b2db9c05ec55306fe528a157f70cef1a840f4bfba00d446bf4500d18ee9b",
+      "stream_sha256": "a9745650a97f68c0d2419ebb6e38fea4aa89feaccc7cd8ae94980264b313ce57",
+      "bytes": 54320
+    },
+    "princess": {
+      "size": [
+        80,
+        112
+      ],
+      "rgb565_sha256": "734c9dcc4d713573aba29e39c0e9b583efddd3e9a210f0e148aa2ea49dfc31b4",
+      "stream_sha256": "f96d8ffad8e5919f1e47713a98f2efdc670900cf00d856da825191cb3e6a5b9a",
+      "bytes": 12031
+    },
+    "sunset": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "28121fc381b95e89e4ab3dce9c6de441753fa4dec5f26be8102485a01d417cf9",
+      "stream_sha256": "241e7aa7f304298cb658295d848e3de6501182c7d99d9f82a9842ad344e8f480",
+      "bytes": 44331
+    },
+    "title": {
+      "size": [
+        240,
+        175
+      ],
+      "rgb565_sha256": "0aeba5bb2fd85c4190f057171aaa3725ab5b876b1f97f4908791246eb344b126",
+      "stream_sha256": "ecd913c0126f29cc188ffe1bf518f69c5c31b91d24c5c369af158fbc4f0d63ba",
+      "bytes": 50343
+    },
+    "tower": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "36c9ec8ca8eb1856f25f535a0e1f14b157de65e19053fe5505b1bd7ae18b5b04",
+      "stream_sha256": "8922bef57493e15a164fe57ba3dbe6be9c3f83f4e716f060b1fade9f709ebb5b",
+      "bytes": 40972
+    },
+    "village": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "b2bccdea5b2b21900925419f3e467a1e9b290ead3e9bc6ff6dc52dc95cf66e49",
+      "stream_sha256": "13db37a8d0406cfa66a204603fad679016f5781f98be10b113c01eaad28b7416",
+      "bytes": 50656
+    },
+    "woods": {
+      "size": [
+        240,
+        120
+      ],
+      "rgb565_sha256": "0196df2d20f16ccb74cf520b3b5c2afbee8be50c878ffbfdd8b25ee23ed3c237",
+      "stream_sha256": "80e60ad7ccfaf97a2fa4c5f3986e8cc2f00d236deb54d019775da1c2b00cef01",
+      "bytes": 45614
+    },
+    "world-map": {
+      "size": [
+        240,
+        240
+      ],
+      "rgb565_sha256": "21cc837a4c17a4de8858e7d76ffeae04a235c391f92aabec340495d9520a6d0f",
+      "stream_sha256": "c1b4d7af0a6df71dac409dba4121bc7ced7376fa701add0d254ba3c48072aa85",
+      "bytes": 102016
+    }
+  }
+}

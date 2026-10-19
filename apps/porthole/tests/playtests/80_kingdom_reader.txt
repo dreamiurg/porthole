@@ -1,0 +1,182 @@
+# Automated regression; independent ordinary-input playthroughs live in docs/living-kingdom/blackbox/.
+# Atkinson reader: an illustrated first page, seven continuation pages, then a separate choice screen.
+profile Sam 9
+app kingdom
+wait 500
+expect-screen lk_title
+ui-check lk_title
+snap kingdom_title
+tap 94 137
+wait 500
+expect-screen lk_read
+expect scene=1
+expect page=0
+expect pages=8
+ui-check lk_read
+snap kingdom_opening
+tap 110 133
+wait 500
+expect page=1
+ui-check lk_read
+snap kingdom_continuation
+# Party and inventory overviews lead to readable details; Back returns to the overview.
+# Menu returns through the pack to the exact interrupted world page.
+tap 80 133
+wait 500
+expect-screen lk_menu
+ui-check lk_menu
+tap 51 54
+wait 500
+expect-screen lk_party_overview
+ui-check lk_party_overview
+snap kingdom_party
+tap 80 61
+wait 500
+expect-screen lk_party
+ui-check lk_party
+snap kingdom_party_detail
+tap 50 133
+wait 500
+expect-screen lk_party_overview
+tap 80 133
+wait 500
+expect-screen lk_menu
+tap 80 133
+wait 500
+expect-screen lk_read
+expect scene=1
+expect page=1
+tap 80 133
+wait 500
+tap 105 54
+wait 500
+expect-screen lk_inventory_overview
+ui-check lk_inventory_overview
+snap kingdom_inventory
+tap 43 59
+wait 500
+expect-screen lk_inventory
+ui-check lk_inventory
+snap kingdom_inventory_detail
+tap 50 133
+wait 500
+expect-screen lk_inventory_overview
+tap 80 133
+wait 500
+expect-screen lk_menu
+tap 80 133
+wait 500
+expect-screen lk_read
+expect page=1
+tap 80 133
+wait 500
+tap 51 82
+wait 500
+expect-screen lk_journal
+ui-check lk_journal
+snap kingdom_journal
+tap 110 133
+wait 500
+tap 50 133
+wait 500
+expect-screen lk_journal
+tap 80 133
+wait 500
+expect-screen lk_menu
+tap 80 133
+wait 500
+expect-screen lk_read
+expect scene=1
+expect page=1
+# Read the complete remaining scene; reread from the beginning, including a backwards step.
+repeat 7
+  tap 110 133
+  wait 500
+end
+expect-screen lk_choice
+expect journal=0
+expect day=1
+ui-check lk_choice
+snap kingdom_choice
+tap 80 133
+wait 500
+expect-screen lk_read
+expect page=0
+expect pages=8
+tap 110 133
+wait 500
+expect page=1
+tap 50 133
+wait 500
+expect page=0
+repeat 8
+  tap 110 133
+  wait 500
+end
+expect-screen lk_choice
+expect scene=1
+expect journal=0
+expect day=1
+# Exactly one commitment; neither rereading nor paging the result adds another journal record.
+tap 80 46
+wait 500
+expect-screen lk_result
+expect journal=1
+expect pages=2
+ui-check lk_result
+snap kingdom_result
+tap 110 133
+wait 500
+expect-screen lk_result
+expect page=1
+expect journal=1
+ui-check lk_result
+snap kingdom_result_continuation
+tap 110 133
+wait 500
+expect-screen lk_read
+expect scene=4
+tap 110 133
+wait 500
+expect page=1
+# Explicit Save & quit preserves the reader cursor and the committed campaign state.
+tap 80 133
+wait 500
+expect-screen lk_menu
+tap 105 82
+wait 500
+expect-screen launcher
+app kingdom
+wait 500
+expect-screen lk_title
+tap 94 137
+wait 500
+expect-screen lk_read
+expect scene=4
+expect page=1
+expect journal=1
+# Power-cycle immediately after the next page, before the normal five-second save cadence.
+tap 110 133
+expect page=2
+reboot
+wait 500
+tap 80 67
+wait 500
+app kingdom
+wait 500
+expect-screen lk_title
+tap 94 137
+wait 500
+expect-screen lk_read
+expect scene=4
+expect page=2
+expect journal=1
+expect day=1
+ui-check lk_read
+snap kingdom_resumed
+tap 80 133
+wait 500
+tap 105 82
+wait 500
+expect-screen launcher
+sheet kingdom
