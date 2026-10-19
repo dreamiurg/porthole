@@ -1,0 +1,934 @@
+{
+  "$comment": "Non-runtime narrative design fixture; stable IDs, seed variants, characters, world flags and quest prerequisites. See content-contract.md. This is not a JSON file the firmware must parse.",
+  "game": "living-kingdom",
+  "chapter": "willowbrook-01",
+  "version": 1,
+  "campaign": {
+    "title": "The Living Kingdom",
+    "mainQuest": "Eight good deeds earned over a continuing campaign; Chapter One can recognize the first.",
+    "initialLocation": "loc.willowbrook",
+    "day": 1,
+    "initialSkills": {
+      "courage": 3,
+      "ingenuity": 2,
+      "insight": 2
+    },
+    "inventoryCapacity": 6,
+    "chapterCompletion": "quest.chapter resolved and a follow-up completed; no one canonical council choice."
+  },
+  "seedVariants": [
+    {
+      "id": "variant.first_rumor",
+      "values": [
+        "miller_accuses_bram",
+        "trader_accuses_bram"
+      ]
+    },
+    {
+      "id": "variant.forest_path",
+      "values": [
+        "north_track",
+        "watchtower_ridge"
+      ]
+    },
+    {
+      "id": "variant.storm_day",
+      "values": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": "variant.side_encounter",
+      "values": [
+        "fox",
+        "lost_parcel",
+        "goose"
+      ]
+    }
+  ],
+  "locations": [
+    {
+      "id": "loc.willowbrook",
+      "name": "Willowbrook",
+      "neighbors": [
+        "loc.mill",
+        "loc.bridge",
+        "loc.woods"
+      ],
+      "roles": [
+        "hub",
+        "journal",
+        "lodgings",
+        "rumors"
+      ]
+    },
+    {
+      "id": "loc.mill",
+      "name": "Miller's Mill",
+      "neighbors": [
+        "loc.willowbrook",
+        "loc.river"
+      ],
+      "roles": [
+        "miller",
+        "food",
+        "water"
+      ]
+    },
+    {
+      "id": "loc.bridge",
+      "name": "Old Bridge",
+      "neighbors": [
+        "loc.willowbrook",
+        "loc.woods",
+        "loc.river"
+      ],
+      "roles": [
+        "bram",
+        "crossing",
+        "danger"
+      ]
+    },
+    {
+      "id": "loc.woods",
+      "name": "North Woods",
+      "neighbors": [
+        "loc.willowbrook",
+        "loc.bridge",
+        "loc.tower",
+        "loc.marsh"
+      ],
+      "roles": [
+        "path",
+        "witness",
+        "exploration"
+      ]
+    },
+    {
+      "id": "loc.marsh",
+      "name": "Riverside Marsh",
+      "neighbors": [
+        "loc.woods",
+        "loc.river"
+      ],
+      "roles": [
+        "guardian",
+        "eggs",
+        "habitat"
+      ]
+    },
+    {
+      "id": "loc.tower",
+      "name": "Old Watchtower",
+      "neighbors": [
+        "loc.woods"
+      ],
+      "roles": [
+        "ruin",
+        "maps",
+        "future_hook"
+      ]
+    },
+    {
+      "id": "loc.river",
+      "name": "Riverbank",
+      "neighbors": [
+        "loc.mill",
+        "loc.bridge",
+        "loc.marsh"
+      ],
+      "roles": [
+        "waterway",
+        "council",
+        "world_change"
+      ]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc.serena",
+      "name": "Princess Pulverizer",
+      "role": "player",
+      "concerns": [
+        "courage",
+        "knighthood",
+        "impulsivity"
+      ]
+    },
+    {
+      "id": "npc.lucas",
+      "name": "Lucas",
+      "role": "companion",
+      "concerns": [
+        "careful_evidence",
+        "loyalty",
+        "risk"
+      ]
+    },
+    {
+      "id": "npc.dribble",
+      "name": "Dribble",
+      "role": "companion",
+      "concerns": [
+        "food",
+        "dragons",
+        "creative_help"
+      ]
+    },
+    {
+      "id": "npc.elric",
+      "name": "Elric the Miller",
+      "role": "village",
+      "concerns": [
+        "flour",
+        "family_income",
+        "pride"
+      ]
+    },
+    {
+      "id": "npc.bram",
+      "name": "Bram the Troll",
+      "role": "bridge",
+      "concerns": [
+        "sister_bea",
+        "bridge_safety",
+        "reputation"
+      ]
+    },
+    {
+      "id": "npc.mira",
+      "name": "Mira",
+      "role": "village",
+      "concerns": [
+        "fair_distribution",
+        "sick_families",
+        "trade"
+      ]
+    },
+    {
+      "id": "npc.tilda",
+      "name": "Tilda",
+      "role": "village",
+      "concerns": [
+        "apprentice_pay",
+        "limited_lumber",
+        "craftsmanship"
+      ]
+    },
+    {
+      "id": "npc.nell",
+      "name": "Nell",
+      "role": "trader",
+      "concerns": [
+        "deliveries",
+        "contracts",
+        "rumors"
+      ]
+    },
+    {
+      "id": "npc.fen",
+      "name": "Fen",
+      "role": "marsh",
+      "concerns": [
+        "eggs",
+        "river_habitat",
+        "trust"
+      ]
+    },
+    {
+      "id": "npc.pippa",
+      "name": "Pippa",
+      "role": "child",
+      "concerns": [
+        "truth",
+        "curiosity",
+        "local_friends"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "item.old_key",
+      "name": "Old Key",
+      "uses": [
+        "tower_locked_box"
+      ]
+    },
+    {
+      "id": "item.bread",
+      "name": "Bread",
+      "uses": [
+        "trade",
+        "food_relief"
+      ]
+    },
+    {
+      "id": "item.map",
+      "name": "Trail Map",
+      "uses": [
+        "forest_shortcut"
+      ]
+    },
+    {
+      "id": "item.channel_map",
+      "name": "Old Channel Drawing",
+      "uses": [
+        "negotiate_channel"
+      ]
+    },
+    {
+      "id": "item.rope",
+      "name": "Rope",
+      "uses": [
+        "bridge_inspection",
+        "safe_crossing"
+      ]
+    },
+    {
+      "id": "item.wood",
+      "name": "Lumber",
+      "uses": [
+        "bridge_repair",
+        "channel_build"
+      ]
+    },
+    {
+      "id": "item.thyme",
+      "name": "Wild Thyme",
+      "uses": [
+        "dribble_food_solution"
+      ]
+    },
+    {
+      "id": "item.flour",
+      "name": "Bag of Flour",
+      "uses": [
+        "ration",
+        "festival",
+        "trade"
+      ]
+    }
+  ],
+  "facts": [
+    "clue.supply_ledger",
+    "clue.recent_repairs",
+    "clue.bram_repairs",
+    "clue.bridge_fracture",
+    "clue.bea_risk",
+    "clue.water_low",
+    "clue.nests",
+    "clue.old_channel",
+    "clue.washer",
+    "clue.guardian_view",
+    "clue.trader_contract",
+    "clue.royal_seal",
+    "flag.mill_working",
+    "flag.bridge_open",
+    "flag.marsh_safe",
+    "flag.apprentices_busy",
+    "flag.family_helped",
+    "flag.storm_seen",
+    "flag.rationed",
+    "flag.agreed_water_plan",
+    "flag.chapter_done"
+  ],
+  "quests": [
+    {
+      "id": "quest.chapter",
+      "name": "Trouble at Willowbrook",
+      "start": "active",
+      "milestones": [
+        "discover_dispute",
+        "choose_river_plan",
+        "resolve_primary",
+        "respond_to_consequence",
+        "deed_recognized"
+      ]
+    },
+    {
+      "id": "quest.bridge",
+      "name": "The Broken Bridge",
+      "start": "available",
+      "milestones": [
+        "inspect_damage",
+        "hear_bram",
+        "bridge_secure"
+      ]
+    },
+    {
+      "id": "quest.supplies",
+      "name": "The Missing Supplies",
+      "start": "available",
+      "milestones": [
+        "learn_shortage",
+        "allocate_or_find",
+        "follow_up"
+      ]
+    },
+    {
+      "id": "quest.river",
+      "name": "The River's Secret",
+      "start": "undiscovered",
+      "milestones": [
+        "hear_miller",
+        "hear_fen",
+        "find_water_clue",
+        "council_decision",
+        "follow_up"
+      ]
+    }
+  ],
+  "narrative": [
+    {
+      "id": "intro.road",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_INTRO_01",
+      "choices": [
+        {
+          "id": "intro.visit_mill",
+          "next": "miller.first"
+        },
+        {
+          "id": "intro.visit_bridge",
+          "next": "bridge.first"
+        },
+        {
+          "id": "intro.ask_villagers",
+          "next": "village.first"
+        }
+      ]
+    },
+    {
+      "id": "village.first",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_VILLAGE_01",
+      "choices": [
+        {
+          "id": "village.ask_pippa",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.bram_repairs"
+            }
+          ],
+          "next": "pippa.chalk"
+        },
+        {
+          "id": "village.visit_mill",
+          "next": "miller.first"
+        },
+        {
+          "id": "village.visit_bridge",
+          "next": "bridge.first"
+        }
+      ]
+    },
+    {
+      "id": "pippa.chalk",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_PIPPA_01",
+      "choices": [
+        {
+          "id": "pippa.listen",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.bram_repairs"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "pippa.note",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.bram_repairs"
+            },
+            {
+              "type": "relation",
+              "npc": "npc.pippa",
+              "delta": 1
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "miller.first",
+      "location": "loc.mill",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_MILLER_01",
+      "choices": [
+        {
+          "id": "miller.ledger",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.supply_ledger"
+            }
+          ],
+          "next": "mira.ledger"
+        },
+        {
+          "id": "miller.wheel",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.recent_repairs"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "miller.promise",
+          "effects": [
+            {
+              "type": "promise",
+              "id": "promise.help_mill",
+              "status": "open"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "bridge.first",
+      "location": "loc.bridge",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_BRIDGE_01",
+      "choices": [
+        {
+          "id": "bridge.listen",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.bea_risk"
+            },
+            {
+              "type": "relation",
+              "npc": "npc.bram",
+              "delta": 1
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "bridge.inspect",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.bridge_fracture"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "bridge.challenge",
+          "effects": [
+            {
+              "type": "relation",
+              "npc": "npc.bram",
+              "delta": -1
+            },
+            {
+              "type": "set",
+              "id": "clue.bridge_fracture"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "woods.clues",
+      "location": "loc.woods",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_FOREST_01",
+      "choices": [
+        {
+          "id": "woods.take_washer",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.washer"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "woods.follow",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.washer"
+            },
+            {
+              "type": "unlock",
+              "id": "loc.tower"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "marsh.first",
+      "location": "loc.marsh",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_MARSH_01",
+      "choices": [
+        {
+          "id": "marsh.ask",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.nests"
+            },
+            {
+              "type": "set",
+              "id": "clue.guardian_view"
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "marsh.promise",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.nests"
+            },
+            {
+              "type": "promise",
+              "id": "promise.protect_nests",
+              "status": "open"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "tower.map",
+      "location": "loc.tower",
+      "once": true,
+      "requires": [],
+      "proseRef": "LK_TOWER_01",
+      "choices": [
+        {
+          "id": "tower.map_take",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.old_channel"
+            },
+            {
+              "type": "item",
+              "id": "item.channel_map",
+              "delta": 1
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "tower.copy",
+          "effects": [
+            {
+              "type": "set",
+              "id": "clue.old_channel"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "mira.ledger",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [
+        {
+          "fact": "clue.supply_ledger"
+        }
+      ],
+      "proseRef": "LK_MIRA_01",
+      "choices": [
+        {
+          "id": "mira.reserve_sick",
+          "effects": [
+            {
+              "type": "set",
+              "id": "flag.family_helped"
+            },
+            {
+              "type": "relation",
+              "npc": "npc.mira",
+              "delta": 1
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "mira.honor_trader",
+          "effects": [
+            {
+              "type": "relation",
+              "npc": "npc.nell",
+              "delta": 1
+            }
+          ],
+          "next": "map"
+        },
+        {
+          "id": "mira.seek_more",
+          "effects": [
+            {
+              "type": "promise",
+              "id": "promise.seek_supplies",
+              "status": "open"
+            }
+          ],
+          "next": "map"
+        }
+      ]
+    },
+    {
+      "id": "council.first",
+      "location": "loc.river",
+      "once": true,
+      "requires": [
+        {
+          "fact": "clue.water_low"
+        },
+        {
+          "fact": "clue.guardian_view"
+        },
+        {
+          "any": [
+            {
+              "fact": "clue.bridge_fracture"
+            },
+            {
+              "fact": "clue.old_channel"
+            }
+          ]
+        }
+      ],
+      "proseRef": "LK_COUNCIL_01",
+      "choices": [
+        {
+          "id": "council.mill_first",
+          "knownStakes": "Food rises soon; marsh suffers.",
+          "effects": [
+            {
+              "type": "set",
+              "id": "outcome.mill_first"
+            },
+            {
+              "type": "relation",
+              "npc": "npc.elric",
+              "delta": 2
+            },
+            {
+              "type": "relation",
+              "npc": "npc.fen",
+              "delta": -2
+            },
+            {
+              "type": "schedule",
+              "id": "event.marsh_shortage",
+              "afterDays": 2
+            }
+          ],
+          "next": "council.followup"
+        },
+        {
+          "id": "council.marsh_first",
+          "knownStakes": "Marsh survives; food remains scarce.",
+          "effects": [
+            {
+              "type": "set",
+              "id": "outcome.marsh_first"
+            },
+            {
+              "type": "relation",
+              "npc": "npc.fen",
+              "delta": 2
+            },
+            {
+              "type": "relation",
+              "npc": "npc.elric",
+              "delta": -2
+            },
+            {
+              "type": "schedule",
+              "id": "event.food_shortage",
+              "afterDays": 2
+            }
+          ],
+          "next": "council.followup"
+        },
+        {
+          "id": "council.time_share",
+          "knownStakes": "Neither side gets enough; conflict lingers.",
+          "effects": [
+            {
+              "type": "set",
+              "id": "outcome.time_share"
+            },
+            {
+              "type": "schedule",
+              "id": "event.water_dispute",
+              "afterDays": 2
+            }
+          ],
+          "next": "council.followup"
+        },
+        {
+          "id": "council.build_channel",
+          "requires": [
+            {
+              "fact": "clue.old_channel"
+            },
+            {
+              "fact": "flag.tilda_consulted"
+            }
+          ],
+          "knownStakes": "Costs lumber, wages and time. Bridge repair waits.",
+          "effects": [
+            {
+              "type": "set",
+              "id": "outcome.build_channel"
+            },
+            {
+              "type": "set",
+              "id": "flag.apprentices_busy"
+            },
+            {
+              "type": "promise",
+              "id": "promise.pay_apprentices",
+              "status": "open"
+            },
+            {
+              "type": "schedule",
+              "id": "event.channel_storm",
+              "afterDays": 2
+            }
+          ],
+          "next": "council.followup"
+        }
+      ]
+    },
+    {
+      "id": "return.changed",
+      "location": "loc.willowbrook",
+      "once": false,
+      "requires": [
+        {
+          "any": [
+            {
+              "fact": "outcome.mill_first"
+            },
+            {
+              "fact": "outcome.marsh_first"
+            },
+            {
+              "fact": "outcome.time_share"
+            },
+            {
+              "fact": "outcome.build_channel"
+            }
+          ]
+        }
+      ],
+      "proseRef": "LK_RETURN_01",
+      "choices": [
+        {
+          "id": "return.followup",
+          "next": "quest.resolution"
+        }
+      ]
+    },
+    {
+      "id": "chapter.finale",
+      "location": "loc.willowbrook",
+      "once": true,
+      "requires": [
+        {
+          "fact": "flag.followup_done"
+        }
+      ],
+      "proseRef": "LK_FINALE",
+      "effects": [
+        {
+          "type": "set",
+          "id": "flag.chapter_done"
+        },
+        {
+          "type": "set",
+          "id": "clue.royal_seal"
+        },
+        {
+          "type": "quest",
+          "id": "quest.chapter",
+          "status": "resolved"
+        }
+      ],
+      "choices": [
+        {
+          "id": "chapter.explore",
+          "next": "map"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "event.marsh_shortage",
+      "after": "outcome.mill_first",
+      "once": true,
+      "worldChange": "Marsh pools shrink; Fen asks for restoration; a village bakery still has flour."
+    },
+    {
+      "id": "event.food_shortage",
+      "after": "outcome.marsh_first",
+      "once": true,
+      "worldChange": "Eggs remain safe; village bakery has less flour; help families or traders."
+    },
+    {
+      "id": "event.water_dispute",
+      "after": "outcome.time_share",
+      "once": true,
+      "worldChange": "Mill runs half days, marsh only partly recovers, both sides want review."
+    },
+    {
+      "id": "event.channel_storm",
+      "after": "outcome.build_channel",
+      "once": true,
+      "worldChange": "Apprentices needed at water gate; bridge reinforcement postponed; promise wages."
+    }
+  ],
+  "invariants": [
+    "Rereading a scene is side-effect-free.",
+    "Only confirming a choice commits its effects once.",
+    "Any council outcome admits a follow-up and chapter resolution.",
+    "No real-time day gating.",
+    "Quest options do not silently disappear without explanation.",
+    "Map generated once per child and revisits retain history.",
+    "Missing inventory space cannot trap vital clues; use journal facts."
+  ]
+}
