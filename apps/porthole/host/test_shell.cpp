@@ -10,6 +10,7 @@
 #include "games/pets-club/pet.h"
 #include "crc32.h"
 #include "input.h"
+#include "gfx565.h"
 #include "launcher.h"
 #include "profiles.h"
 #include "shell.h"
@@ -935,12 +936,15 @@ static void systemMenuWayIn() {
   sh.createProfile("Sam", 8, "");
   sh.begin(st, list, 1, &sys); assert(on(sh, "picker"));
   holdTitle(sh, ms, 4900); assert(on(sh, "picker"));
-  holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
+  holdTitle(sh, ms, 5000); assert(on(sh, "sys_info") && sh.surface() == SURFACE_RGB565);
+  tapAt(sh, ms, {69, 1, 22, 22}); assert(on(sh, "picker") && sh.surface() == SURFACE_INDEXED);
   sh.begin(st, list, 1); assert(on(sh, "picker"));
   holdTitle(sh, ms, 6000); assert(on(sh, "picker"));
 }
 
 int main() {
+  static uint16_t nativePixels[gfx565::W * gfx565::H];
+  gfx565::target(nativePixels);
   limitSettingsFlow();
   monotonicPlayDuration();
   configurableLimits();

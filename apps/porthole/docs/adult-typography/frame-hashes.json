@@ -1,0 +1,206 @@
+[
+  {
+    "frame": "final-01-picker",
+    "sha256_rgb": "d6c6ea3b501a7e169cf6a28e257467431f275551cb8b092e040fbb5f39914db7"
+  },
+  {
+    "frame": "final-02-info",
+    "sha256_rgb": "c8cfee205d5fd4281452e68dc4a65b96029cd5d66db63b2f4f6dccb601f11ad4"
+  },
+  {
+    "frame": "final-03-admin",
+    "sha256_rgb": "737aa5a113be3f72fefd25fd1c10dddd99369247bf0819dbb542ef8736288c01"
+  },
+  {
+    "frame": "final-04-code-choose",
+    "sha256_rgb": "8d14bfb894021aa1ce7baa165d830887b914e48f12e28809edcb6e0935997dec"
+  },
+  {
+    "frame": "final-05-code-repeat",
+    "sha256_rgb": "454ab504998f66fc2229c1c8abef39bec9baf2c5dcbbb08f62c554177596fac1"
+  },
+  {
+    "frame": "final-06-code-mismatch",
+    "sha256_rgb": "10e5809a54fce055b29944c97bda2dec661fa48fca8fe0424b01d265a6c0265f"
+  },
+  {
+    "frame": "final-07-code-masked",
+    "sha256_rgb": "a4ad77667582b915b32482dfa62b57d86691917c703a85b7a3ecd0e14f9e018c"
+  },
+  {
+    "frame": "final-08-code-saved",
+    "sha256_rgb": "2ffb720a4ce09f527d03886ffb223b092bdf0059b1481688dcb7296718cb4ed2"
+  },
+  {
+    "frame": "final-09-auth",
+    "sha256_rgb": "883265571b786f31b7b337088df5af5ac24f74a8101af6e0c411eb1800ed7dac"
+  },
+  {
+    "frame": "final-10-auth-rejected",
+    "sha256_rgb": "3cc2d40e2e4e2625d761c14c4f6f5dab952b089196cb55f685ecae10684c3a20"
+  },
+  {
+    "frame": "final-11-reset-confirm",
+    "sha256_rgb": "21d5d0dd7d2902dd6338623d61515f485a541a2cb38f6b217b52c8185d972c10"
+  },
+  {
+    "frame": "final-12-players",
+    "sha256_rgb": "08e2f5965ac715674c9873cf070b2a868896f98b77fac37c87cf189e4fdee8c9"
+  },
+  {
+    "frame": "final-13-wifi-scanning",
+    "sha256_rgb": "5b0c5b1f4977618e350a498c0fa685cb1845808d9a1605955e0bf282da3c96b8"
+  },
+  {
+    "frame": "final-14-wifi-networks",
+    "sha256_rgb": "dd8f2c5f3729723bbe1fb70c80513d761c7bd5e2733ccccd8039cef3f2aabd14"
+  },
+  {
+    "frame": "final-15-wifi-keyboard",
+    "sha256_rgb": "0fea57396ecb1b269e36c9dd29593448c8cec389796a2ccdcc35c2bd5033452f"
+  },
+  {
+    "frame": "final-18-wifi-numbers",
+    "sha256_rgb": "060145f21f4cafb84c3c6dac507a7b5a210ffde0247518cfbce7c54197bcda24"
+  },
+  {
+    "frame": "final-19-number-preview",
+    "sha256_rgb": "32cbd9c7c56c6507f4bac5fed331b130b55dc324937d4bb2a0c429a39266b290"
+  },
+  {
+    "frame": "final-20-wifi-symbols",
+    "sha256_rgb": "ab44d68e2570e4a288dbbe0aa6a5864c84bd6530976e9e89cb054bccd33941c4"
+  },
+  {
+    "frame": "final-21-q-preview-fixed",
+    "sha256_rgb": "eb765e94d3a7f275ce0218cf133bfc3b570e77d4b9c26cd55461077405316941"
+  },
+  {
+    "frame": "final-22-p-preview-fixed",
+    "sha256_rgb": "85cd86a794616006aef65eb32e74aef5c446b497b6fa80670c04f24d458b62b8"
+  },
+  {
+    "frame": "final-23-bottom-key-preview",
+    "sha256_rgb": "6cc5f8502177951a243881cc4b799ed2e5df802e4de504934660569096b247f9"
+  },
+  {
+    "frame": "final-24-wifi-joining",
+    "sha256_rgb": "ba7009fcd37e47542760f54898655ce9816e9a7a3cfe1b160ec3d01dd8e09053"
+  },
+  {
+    "frame": "final-25-wifi-failed",
+    "sha256_rgb": "7b04152041aeff0307054ec8bc956ee0043cefe04411e1c5755a5992fe1d8fd2"
+  },
+  {
+    "frame": "final-26-wifi-retry-typing",
+    "sha256_rgb": "98fe7f2af04dadfc9202dc019baffc661da0fd5fcdc2332e088e523b992dada2"
+  },
+  {
+    "frame": "final-27-wifi-connected",
+    "sha256_rgb": "1071a74ece3474b294fea127235c9cb2d97084ed252d21e2e783f06413caa705"
+  },
+  {
+    "frame": "final-28-home",
+    "sha256_rgb": "994fb02b77824ddde301bec4d9d101da740190f97122116b8884a5e8f58d4724"
+  },
+  {
+    "frame": "final-29-address-keyboard",
+    "sha256_rgb": "c1a2b4c0b3c403222a42c79f047bc32276aad374c034fa551db42e964cc531a8"
+  },
+  {
+    "frame": "final-30-address-typed",
+    "sha256_rgb": "599621166b57e17ae8f54a82f40466859fbcb01de3315666800e5046369d3e32"
+  },
+  {
+    "frame": "final-31-address-looking",
+    "sha256_rgb": "459f5472a0e9cae26b08b7be490ed00b0b4a2ab367c5bc2a5fd001c516c0ee41"
+  },
+  {
+    "frame": "final-32-address-not-found",
+    "sha256_rgb": "1a715d162ca9e4667fee2ba5a485de8647ab02d558070f4ce9d0fb085a7cc96a"
+  },
+  {
+    "frame": "final-33-address-corrected",
+    "sha256_rgb": "13d1eff0c3e2ca87fe704b82df2f05e88ba484a41b3e420ae90dc0c3b59cc27b"
+  },
+  {
+    "frame": "final-34-address-found",
+    "sha256_rgb": "45e73b2c5f76ee69c26b0a3e75889afe6d90496cb88ce324a6df79dae226eab7"
+  },
+  {
+    "frame": "final-35-updates",
+    "sha256_rgb": "45d4f6675bf4685be883c1a8081dbb1d91dea58b92a9360c64327b2f0bb1d2cb"
+  },
+  {
+    "frame": "final-36-update-checking",
+    "sha256_rgb": "e8bb8747768632a90bb01403ae7b27d3b212011f5d2cbca062b96bd9c4533b7a"
+  },
+  {
+    "frame": "final-37-update-failed",
+    "sha256_rgb": "aa546d0cfe10f97a93d59d6d2bde12a649313fd08aee06681606e2bfdc2ea143"
+  },
+  {
+    "frame": "final-38-player-confirm",
+    "sha256_rgb": "660e41ce5a02e7eba4e49aae58c890cd851c9af78e1fec4548451e01da4b0b39"
+  },
+  {
+    "frame": "final-39-player-drag-cancel",
+    "sha256_rgb": "660e41ce5a02e7eba4e49aae58c890cd851c9af78e1fec4548451e01da4b0b39"
+  },
+  {
+    "frame": "final-40-player-reset-toast",
+    "sha256_rgb": "161dd3f2f78dfcc07104c20f688e210845d669b9c0c63820d60fa8b34c096fde"
+  },
+  {
+    "frame": "final-41-player-no-pin-toast",
+    "sha256_rgb": "7aac5ca841fc6087597515ea54554503005724ac99122bb08eea5301c4ee2cd7"
+  },
+  {
+    "frame": "final-42-remove-confirm",
+    "sha256_rgb": "3b6f5965ec8413c3107c077792cfde26526b2d9363ffe098d3576c84e03b5de4"
+  },
+  {
+    "frame": "final-43-admin-page-two",
+    "sha256_rgb": "56a09bcb315090d772d29dabb617e0958718c69f91f1c4a4a6831b902aba1b56"
+  },
+  {
+    "frame": "final-44-limits",
+    "sha256_rgb": "9d1febccf15b3eb9c5079d6663b91997c848681229cc3439ca73b1423eec2a40"
+  },
+  {
+    "frame": "final-45-limits-draft",
+    "sha256_rgb": "862bb526f3194c1dea26cabedd37552ef28582c49a780c750326ca47db8e1172"
+  },
+  {
+    "frame": "final-46-limits-saved",
+    "sha256_rgb": "1e4a38dafbfd4dbf8b7bb836c922d6568d2a783534dc87f843cf773a63dfbcc1"
+  },
+  {
+    "frame": "final-47-clock",
+    "sha256_rgb": "9250486d39f7ab11f6bcdc0a6a7a15c7b630c0bd4f4938b8397fd6df1564f02e"
+  },
+  {
+    "frame": "final-48-clock-saved",
+    "sha256_rgb": "3f5cb48a60fe36edc905130e78aa02ccb288db70243961d77a5b73ff89b186a7"
+  },
+  {
+    "frame": "final-49-clock-syncing",
+    "sha256_rgb": "7ae4f5135fd19eee7c08f3ffd8be12ccc6e6d1531c2304225ac8ea20863ff17b"
+  },
+  {
+    "frame": "final-50-clock-failed",
+    "sha256_rgb": "336e769d9a0f39c119a65396ae67dbed678a06d696543e9e91ce7b79a6b8e56f"
+  },
+  {
+    "frame": "final-51-clock-synced",
+    "sha256_rgb": "d2f9954229770667710013c3d9ae3694fe87cb8a156992844a7842029aa57471"
+  },
+  {
+    "frame": "final-52-code-removed-toast",
+    "sha256_rgb": "7818b045ba001625b70e91012bd3884a3ca1db157459e9c424f328f087db1173"
+  },
+  {
+    "frame": "final-53-exit-picker",
+    "sha256_rgb": "8bcd66f8118e7923c1a45f5e165bd895f8e39c2af69cd1abc586ea26c54a9a5c"
+  }
+]

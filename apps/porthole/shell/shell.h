@@ -48,7 +48,7 @@ class Shell {
   void render();
   Tint tint() const;
   uint8_t backlight() const { return shell::LIGHT_BACKLIGHT[light_]; }   // % while active (shell::Light)
-  Surface surface() const { return screen_ == SH_APP ? app_->surface() : SURFACE_INDEXED; }   // the shell's own screens are indexed
+  Surface surface() const { return screen_ == SH_APP ? app_->surface() : adultScreen() ? SURFACE_RGB565 : SURFACE_INDEXED; }
   bool asleep() const { return screen_ == SH_APP && app_->asleep(); }
   bool soundOn(uint32_t ms);          // the active game's buzzer, silenced by the profile's mute
   uint32_t lastSeen() const;          // newest play time on the device: restores the clock when the RTC lost it
@@ -107,7 +107,9 @@ class Shell {
   bool restingNow() const;   // the day's play is used up, or (with 2+ profiles) a turn rest
   void go(Screen s);
   void land();   // the picker, or the first profile's name on a fresh device
+  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_CLOCK); }
   void toast(const char* s);
+  void drawSysToast();
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
   // flow
   void startNew();

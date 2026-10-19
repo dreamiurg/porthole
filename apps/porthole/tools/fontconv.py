@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Convert lv_font_conv 1.5.3 C output into a game's generated/fonts.h (os/font.h tables, no LVGL).
 
-    python3 tools/fontconv.py [--game biscuit|tiltfc|radar] fontN.c ...
+    python3 tools/fontconv.py [--game biscuit|tiltfc|radar|adult] fontN.c ...
 
 Run from apps/porthole. Each game's font, its output and its inputs (GAMES below):
 
@@ -23,6 +23,13 @@ draws (KEEP): every other ASCII glyph keeps its advance but has no bitmap.
         --size $n --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name tiltfc_font_$n
         --output build/fc$n.c; done
     python3 tools/fontconv.py --game tiltfc build/fc{18,36,64}.c
+
+Adult system menu: Atkinson Hyperlegible Regular (shell/fonts/). Regenerate with:
+
+    for n in 24 28 32; do npx lv_font_conv@1.5.3 --font shell/fonts/AtkinsonHyperlegible-Regular.ttf --range 0x20-0x7e
+        --size $n --bpp 4 --format lvgl --no-compress --force-fast-kern-format --lv-include lvgl.h --lv-font-name adult_font_$n
+        --output build/adult$n.c; done
+    python3 tools/fontconv.py --game adult build/adult{24,28,32}.c
 
 Plane Radar: B612 Mono Bold (games/plane-radar/fonts/, from github.com/google/fonts ofl/b612mono), all of ASCII.
 
@@ -67,6 +74,14 @@ GAMES = {
         "Copyright 2015 The Rubik Project Authors (mail@hubertfischer.com).",
         "see games/tilt-fc/fonts/OFL.txt",
         " !0123456789AGLO",  # GOAL!, the scores, the countdown and the shirt numbers
+    ),
+    "adult": Game(
+        "shell/adult_fonts.h",
+        "adult",
+        "Atkinson Hyperlegible Regular",
+        "Copyright 2020 Braille Institute of America, Inc.",
+        "see shell/fonts/OFL.txt",
+        None,
     ),
     "radar": Game(
         "games/plane-radar/generated/fonts.h",
