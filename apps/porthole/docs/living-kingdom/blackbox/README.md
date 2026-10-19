@@ -1,5 +1,12 @@
 # Chapter One: final emulator evidence
 
+The [main integration check](main-integration/README.md) covers the final
+combined firmware source after PR #80's admin typography was merged. It adds
+a watched launcher/reader/tools/save/restart pass (23/23 replay frames) and
+replays all three complete campaigns with 218/218, 269/269 and 242/242 exact
+matches against their copy-corrected captures. Kingdom source and art are
+unchanged by that merge.
+
 These are watched ordinary-input campaigns on the completed board08 visual
 baseline, followed by narrow watched checks of four copy corrections. They are
 not engine simulations or staged endings. The visual baseline SHA-256 is:

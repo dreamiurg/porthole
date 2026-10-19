@@ -42,8 +42,9 @@ Validation:
   complexity, full CI and firmware. Code review found no remaining issues. [Detailed verification](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/verification.md)
   and [manual evidence](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/README.md)
   record the precise scope.
-- ESP32-S3 firmware builds: **218,632 bytes RAM (66.7%)**, **8,245,882 bytes
-  flash (99.1%)**, leaving **77,190 bytes** in the app slot. Future content/art
+- Integrated firmware **0.27.0** and factory build pass: **218,632 bytes RAM
+  (66.7%)**, **8,288,010 bytes flash (99.6%)**. The padded OTA image leaves
+  **34,656 bytes** in the app slot. Future content/art
   expansion needs a flash-budget review. No physical-device test is claimed.
 
 Actual 2.1-inch reading comfort still needs hardware playtesting; the supplied
@@ -52,9 +53,14 @@ Actual 2.1-inch reading comfort still needs hardware playtesting; the supplied
 Try it with `make -C apps/porthole webemu`, then select a profile and open
 **Kingdom** on the third launcher page.
 
-Targets `design/living-kingdom-chapter-one`. Automatic hosted CI only runs for
-PRs against `main`; this design-base PR is validated by the full local gates.
- **Do not merge automatically.**
+Targets `main` after design PR #79 was merged. Includes the newer PR #80 admin
+typography. The user authorized merging and cutting the next firmware release;
+GitHub Required Checks must pass before squash merge.
+
+The [final main integration check](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/main-integration/README.md)
+adds a watched launcher/reader/tools/crash/save/restart pass (23/23 replay
+frames). All three full campaign replays match the copy-corrected frames
+(218/218, 269/269, 242/242); main's adult typography matches 51/51.
 
 ![Original-art title](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/mill-board08/08-title.png?raw=true)
 ![Readable illustrated story](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/mill-board08/20-road-first.png?raw=true)

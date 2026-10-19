@@ -1,15 +1,19 @@
 # Chapter One v0.1 verification
 
 Implementation branch: `feat/living-kingdom-chapter-one`, based on design commit
-`48e1bbb9700190147eb06e9989dcf0ad77c7eb56`. The intended PR base is
-`design/living-kingdom-chapter-one`; do not merge automatically.
+`48e1bbb9700190147eb06e9989dcf0ad77c7eb56`. Design PR #79 was squash-merged
+as `96209b1`; implementation PR #81 now targets `main`. The user authorized
+merging and releasing after the original review handoff.
 
 The results below were recorded on 2026-10-19 against the frozen implementation
 using the approved polished Chapter One artwork, reference-based generated
 additions, textured panels and Atkinson typography. The ordinary host emulator
 at `build/host/snap` has SHA-256:
 
-`780fd0add1892afa4af35e29a9d1acc266d5baf7798e6bcb0ab3a8c2bd4eb246`
+`2bb76fc45af7902d4ed30629304380ba04f2aa15ecb1a8efd18c6003941b2d3b`
+
+This is the integrated main build at `2116f91`. The earlier copy-corrected
+Kingdom build was `780fd0ad…`; merging PR #80 changed only shared/admin code.
 
 ## Passed automated gates
 
@@ -18,8 +22,8 @@ at `build/host/snap` has SHA-256:
   warnings treated as errors. All **67 of 67** playtest scenarios passed,
   including sanitized monkey runs, with zero UI warnings or failures. The
   coverage replay also passed all **58 of 58** non-monkey scenarios.
-- Repository coverage is **98.6% of lines** (6,980 / 7,076) and **99.3% of
-  functions** (1,093 / 1,101). Kingdom covers **99.6% of lines** (847 / 850)
+- Repository coverage is **98.6% of lines** (7,006 / 7,102) and **99.3% of
+  functions** (1,102 / 1,110). Kingdom covers **99.6% of lines** (847 / 850)
   and **100% of functions** (134 / 134). Reports are generated at
   `build/playtest/report.md`, `build/coverage/playtest/report.md` and
   `build/coverage/coverage.xml`.
@@ -44,10 +48,11 @@ at `build/host/snap` has SHA-256:
   source-derived RGB565 reconstruction, all 70 scene/map state combinations,
   declared physical sizes, title, camp, portraits, items, nine-slice texture
   identity and clipping, malformed streams and 5,000 deterministic fuzz cases.
-- `make -C apps/porthole firmware` built the ESP32-S3 release firmware with
+- Versioned `make -C apps/porthole factory` built firmware **0.27.0** with
   the pinned Xtensa toolchain. RAM is **218,632 / 327,680 bytes (66.7%)**;
-  flash is **8,245,882 / 8,323,072 bytes (99.1%)**, leaving **77,190 bytes**
-  in the app slot. The firmware binary is
+  flash is **8,288,010 / 8,323,072 bytes (99.6%)** after PR #80 integration.
+  The actual padded OTA binary is **8,288,416 bytes**, leaving **34,656 bytes**
+  in the app slot. Future expansion needs a flash-budget review. The binary is
   `apps/porthole/.pio/build/firmware/firmware.bin` from the repository root.
 
 No test expectation, sanitizer gate, hook or coverage threshold was weakened.
@@ -75,7 +80,7 @@ endings and post-ending exploration on visual baseline `6f40297…`, with fresh
 mill return destination and remove unearned Pippa attribution. They change no
 IDs, effects, conditions, controls or artwork.
 
-On the current `780fd0ad…` binary, the
+On the copy-corrected `780fd0ad…` binary, the
 [clue/return-instruction pass](blackbox/marsh-board08/copy-addendum/README.md)
 and [both seeded woods paths](blackbox/copy-woods/README.md) were watched with
 Back/Next, save/quit, restart and abrupt-kill recovery. These use disclosed
@@ -93,10 +98,17 @@ full watched baselines from the narrow current-copy checks. Earlier rejected art
 and font treatments remain explicitly historical. Engine simulations and
 scripted regression fixtures do not replace the watched player runs.
 
-[Implementation PR #81](https://github.com/dreamiurg/porthole/pull/81) targets the
-open design branch. Automatic hosted CI is configured only for PRs targeting
-`main`, so it does not run on this design-branch PR. The matching local CI and
-normal pre-push gates above passed; no hosted CI result is claimed. All four
+The final [main integration pass](blackbox/main-integration/README.md) uses
+the combined `2bb76fc4…` binary. It traverses launcher, reader, native adult
+Info, Party/Inventory and exact page recovery after both forced kill and
+Save & quit. Its fresh replay matches 23/23 frames. Full mill, marsh and channel
+replays match all 218/218, 269/269 and 242/242 copy-corrected frames; main's
+adult typography replay matches 51/51. Kingdom source and assets are unchanged.
+
+[Implementation PR #81](https://github.com/dreamiurg/porthole/pull/81) originally
+targeted the design branch, which did not trigger hosted CI. It now targets
+`main`, with the newer PR #80 admin typography integrated. GitHub Required
+Checks must pass before its squash merge. All four
 actual PR screenshot embeds rendered at natural 480×480 on GitHub, with exact
 remote PNG/capture hashes verified; see [the rendering record](pr81-image-verification.json).
 
