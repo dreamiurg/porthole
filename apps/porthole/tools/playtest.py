@@ -466,7 +466,10 @@ def main():
         sys.exit(f"playtest: {'missing ' + ', '.join(missing) + ' (run make playtest)' if missing else 'no scenario matches'}")
     OUT.mkdir(parents=True, exist_ok=True)
     results = []
-    with ThreadPoolExecutor(os.cpu_count()) as pool:  # every scenario has its own cwd, so they run side by side
+    # Coverage-heavy shell scenarios can exceed their unchanged 30-second
+    # deadline when every reported CPU is saturated. Bound the worker pool;
+    # each scenario still runs in its own cwd with the same checks and limits.
+    with ThreadPoolExecutor(min(4, os.cpu_count() or 1)) as pool:
         for r in pool.map(run_scenario, paths):
             results.append(r)
             print(f"{'FAIL' if failed(r) else 'PASS'} {r['name']} ({r['sec']:.1f} s, {r['checks']} checks, UI {ui_count(r, 'FAIL')} FAIL / {ui_count(r, 'WARN')} WARN)")

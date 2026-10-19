@@ -5,7 +5,7 @@
     {
       "id": "clue.bram_repairs",
       "name": "Bram brought repair stones",
-      "description": "Pippa saw stones brought toward the bridge; the stones were repairs."
+      "description": "Bram brought stones to repair the bridge; they are not evidence of sabotage."
     },
     {
       "id": "clue.bridge_fracture",
@@ -1063,7 +1063,7 @@
           "caption": "Take the low footpath",
           "detail": "The marked low path is dry in this adventure.",
           "journal": "We recorded the washer and checked the watchtower path.",
-          "result": "The low footpath is dry in this adventure. You follow its marked stepping places directly to the watchtower door. Lucas records the washer without accusing its owner. The hillside route is available but longer; Pippa's careful markings save you that extra walking today.",
+          "result": "The low footpath is dry in this adventure. You follow its marked stepping places directly to the watchtower door. Lucas records the washer without accusing its owner. The hillside route is available but longer; the careful markings save you that extra walking today.",
           "effects": [
             {
               "kind": "fact",
@@ -1089,7 +1089,7 @@
           "caption": "Take the hillside route",
           "detail": "The wet low path needs a detour of one day.",
           "journal": "We used the marked hillside route while the low path was wet.",
-          "result": "The low stepping places are wet in this adventure, so you follow the marked hillside route. The detour uses a day and reaches the same watchtower door safely. Lucas records the washer without accusing anyone. Pippa's alternative path has kept the investigation moving without requiring a risky crossing.",
+          "result": "The low stepping places are wet in this adventure, so you follow the marked hillside route. The detour uses a day and reaches the same watchtower door safely. Lucas records the washer without accusing anyone. The marked alternative path has kept the investigation moving without requiring a risky crossing.",
           "effects": [
             {
               "kind": "fact",
@@ -2289,7 +2289,7 @@
           "caption": "Keep the marsh flow",
           "detail": "Nests stay wet; arrange village food relief.",
           "journal": "Council protected marsh flow; village food relief is our next responsibility.",
-          "result": "Fen checks that the marsh gate stays at its present mark. Elric writes a smaller flour estimate in his book. Mira asks you to return after two days, when the delivery gap will be clearer. The pantry covers meals while a slower supply plan takes shape.",
+          "result": "Fen checks that the marsh gate stays at its present mark. Elric writes a smaller flour estimate in his book. Mira asks you to meet Elric at the mill after two days, when the delivery gap will be clearer. The pantry covers meals while a slower supply plan takes shape.",
           "effects": [
             {
               "kind": "outcome",
