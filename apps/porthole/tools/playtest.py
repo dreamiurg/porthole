@@ -81,10 +81,15 @@ GROWN_UPS = {
     "sys_player_pin",
     "sys_limits",
     "sys_clock",
+    "sys_time",
+    "sys_window",
+    "sys_allow",
+    "sys_zone",
+    "sys_zone_search",
 }
 # The grown-ups' full QWERTY keyboard (a user decision of 2026-10-18): 12 px (4 mm) keys pass on these screens. Every
 # tap goes to the nearest key and the pressed key shows big above the finger; under 12 px still fails.
-KEYBOARDS = {"sys_pass", "sys_addr"}
+KEYBOARDS = {"sys_pass", "sys_addr", "sys_zone_search"}
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
     "=": lambda a, b: a == b,
@@ -303,35 +308,103 @@ def run_scenario(path):
     return res
 
 
-def play(path, cwd, res, start):
-    binary, limit = sim_for(path), (120 if "monkey" in path.stem else 30) * TIMEOUT_SCALE
-    lines, checks = [], []  # expanded script; (id, where, kind, data) per query
+def scenario_limit(path):
+    # The family fixture renders thirty active minutes through override expiry, including under -O0 coverage.
+    return (120 if "monkey" in path.stem or path.stem == "29_family_controls" else 30) * TIMEOUT_SCALE
 
-    def query(cmd, where, kind, data=None):  # output lands between `@@<id>` and `@@`
+
+def run_script(binary, cwd, lines, deadline, limit):
+    (cwd / "script.txt").write_text("\n".join(lines) + "\n")
+    try:
+        p = subprocess.run(
+            [str(binary), "--fresh", "--script", "script.txt"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=max(1.0, deadline - time.monotonic()),
+            env=dict(os.environ, UBSAN_OPTIONS="print_stacktrace=1"),
+        )
+    except subprocess.TimeoutExpired as e:
+        raise Fail(f"timeout: over {limit:g} s", (e.stdout or b"").decode(errors="replace").splitlines()[-12:]) from None
+    bad = SANITIZER.search(p.stdout + p.stderr)
+    if bad or p.returncode or "unknown command" in p.stderr:
+        what = "sanitizer error" if bad else f"exit code {p.returncode}" if p.returncode else "unknown sim command"
+        raise Fail(f"{what} ({binary.name})", p.stdout.splitlines()[-8:] + ["--- stderr"] + p.stderr.splitlines()[:80])
+    return p.stdout
+
+
+def check_expect(res, where, data, output):
+    key, op, want = data
+    got = pairs(output).get(key)
+    try:
+        ok = got is not None and compare(key, got, op, want)
+    except Fail as e:
+        ok, got = False, f"{got} ({e})"
+    if not ok:
+        res["fails"].append((f"{where}: got {key}={got}" if got is not None else f"{where}: no {key}= in the debug output", output))
+
+
+def check_ui(res, where, data, output):
+    head = pairs(output[:1])
+    regions = [tuple(map(int, ln.split()[1:5])) for ln in output if ln.startswith("region ")]
+    texts = [tuple(map(int, ln.split()[1:5])) + text_colors(ln) for ln in output if ln.startswith("text ")]
+    full = int(head.get("regions", 0)) >= 96 or int(head.get("texts", 0)) >= 64
+    screen = head.get("screen", "?")
+    tag = data if data.startswith(screen) else f"{data} ({screen})" if data else screen
+    res["ui"] += [(f, where) for f in audit(tag, screen, regions, texts, full)]
+
+
+def check_result(res, kind, data, where, output):
+    if kind == "expect":
+        check_expect(res, where, data, output)
+    elif kind == "expect-screen":
+        got = pairs(output).get("screen", "?")
+        if not (got in SCREENS if data == "*" else got in data.split("|")):
+            res["fails"].append((f"{where}: screen is {got}", output))
+    elif kind == "ui-check":
+        check_ui(res, where, data, output)
+
+
+def sheet_outputs(cwd, out, checks):
+    snaps, sheet_at = [], {}
+    sheet_ids = {c[0] for c in checks if c[2] == "sheet"}
+    for line in out.splitlines():
+        if line.startswith("wrote "):
+            snaps.append(cwd / line[6:])
+        elif line.startswith("@@") and line[2:] in sheet_ids:
+            sheet_at[line[2:]], snaps = snaps, []
+    return sheet_at
+
+
+def collect_results(path, cwd, res, out, checks):
+    seg, sheet_at = segments(out), sheet_outputs(cwd, out, checks)
+    for qid, where, kind, data in checks:
+        output = seg.get(qid)
+        if output is None:
+            res["fails"].append((f"{where}: no output (the sim stopped early)", out.splitlines()[-12:]))
+            continue
+        res["checks"] += 1
+        if kind == "sheet":
+            dest = OUT / f"{path.stem}-{data or 'sheet'}.png"
+            if make_sheet(sheet_at.get(qid, []), dest):
+                res["sheets"].append(dest)
+        else:
+            check_result(res, kind, data, where, output)
+
+
+def play(path, cwd, res, start):
+    binary, limit = sim_for(path), scenario_limit(path)
+    lines, checks = [], []
+
+    def query(cmd, where, kind, data=None):
         qid = str(len(checks))
         checks.append((qid, where, kind, data))
         lines.extend([f"echo @@{qid}", *([cmd] if cmd else []), "echo @@"])
         return qid
 
     def run():
-        (cwd / "script.txt").write_text("\n".join(lines) + "\n")
-        try:
-            p = subprocess.run(
-                [str(binary), "--fresh", "--script", "script.txt"],
-                cwd=cwd,
-                capture_output=True,
-                text=True,
-                errors="replace",
-                timeout=max(1.0, start + limit - time.monotonic()),
-                env=dict(os.environ, UBSAN_OPTIONS="print_stacktrace=1"),
-            )
-        except subprocess.TimeoutExpired as e:
-            raise Fail(f"timeout: over {limit:g} s", (e.stdout or b"").decode(errors="replace").splitlines()[-12:]) from None
-        bad = SANITIZER.search(p.stdout + p.stderr)
-        if bad or p.returncode or "unknown command" in p.stderr:
-            what = "sanitizer error" if bad else f"exit code {p.returncode}" if p.returncode else "unknown sim command"
-            raise Fail(f"{what} ({binary.name})", p.stdout.splitlines()[-8:] + ["--- stderr"] + p.stderr.splitlines()[:80])
-        return p.stdout
+        return run_script(binary, cwd, lines, start + limit, limit)
 
     for no, raw in unroll(path.read_text()):
         w = raw.split()
@@ -350,46 +423,7 @@ def play(path, cwd, res, start):
             lines.extend(plan(d, segments(run()).get(qid, []), where))
         else:
             lines.append(raw.strip())
-    out = run()
-
-    seg, snaps, sheet_at = segments(out), [], {}
-    sheet_ids = {c[0] for c in checks if c[2] == "sheet"}
-    for line in out.splitlines():  # a sheet takes the snaps written since the previous sheet
-        if line.startswith("wrote "):
-            snaps.append(cwd / line[6:])
-        elif line.startswith("@@") and line[2:] in sheet_ids:
-            sheet_at[line[2:]], snaps = snaps, []
-    for qid, where, kind, data in checks:
-        s = seg.get(qid)
-        if s is None:
-            res["fails"].append((f"{where}: no output (the sim stopped early)", out.splitlines()[-12:]))
-            continue
-        res["checks"] += 1
-        if kind == "expect":
-            key, op, want = data
-            got = pairs(s).get(key)
-            try:
-                ok = got is not None and compare(key, got, op, want)
-            except Fail as e:
-                ok, got = False, f"{got} ({e})"
-            if not ok:
-                res["fails"].append((f"{where}: got {key}={got}" if got is not None else f"{where}: no {key}= in the debug output", s))
-        elif kind == "expect-screen":
-            got = pairs(s).get("screen", "?")
-            if not (got in SCREENS if data == "*" else got in data.split("|")):
-                res["fails"].append((f"{where}: screen is {got}", s))
-        elif kind == "ui-check":
-            head = pairs(s[:1])
-            regions = [tuple(map(int, ln.split()[1:5])) for ln in s if ln.startswith("region ")]
-            texts = [tuple(map(int, ln.split()[1:5])) + text_colors(ln) for ln in s if ln.startswith("text ")]
-            full = int(head.get("regions", 0)) >= 96 or int(head.get("texts", 0)) >= 64
-            screen = head.get("screen", "?")
-            tag = data if data.startswith(screen) else f"{data} ({screen})" if data else screen  # a tag never hides the real screen
-            res["ui"] += [(f, where) for f in audit(tag, screen, regions, texts, full)]
-        elif kind == "sheet":
-            dest = OUT / f"{path.stem}-{data or 'sheet'}.png"
-            if make_sheet(sheet_at.get(qid, []), dest):
-                res["sheets"].append(dest)
+    collect_results(path, cwd, res, run(), checks)
 
 
 def ui_count(r, sev):
