@@ -200,7 +200,7 @@ tap 106 128
 wait 450
 sys timeok 1790035170
 wait 100
-expect sys_time=ok
+expect sys_time=idle
 # No offset saved since the reset: network time never moves the clock until a grown-up saves one.
 expect sys_now<1790030000
 tap 54 128

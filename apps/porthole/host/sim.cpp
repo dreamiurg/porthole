@@ -133,8 +133,9 @@ struct SimSystem : shell::System {
     if (!ok) { clock.state = shell::TIME_FAILED; return true; }
     const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : now();
     if (epoch < netclock::MIN_UTC || epoch >= netclock::MAX_UTC) { clock.state = shell::TIME_FAILED; return true; }
-    if (clock.offsetSet) setNow(epoch);   // no offset saved: the firmware holds the sample (the sim drops it)
-    clock.state = shell::TIME_OK; clock.lastSync = epoch;
+    // No offset saved: the firmware holds the sample and shows the device clock still in use (the sim drops it).
+    if (!clock.offsetSet) { clock.state = shell::TIME_IDLE; return true; }
+    setNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
     return true;
   }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.

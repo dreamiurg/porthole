@@ -286,8 +286,8 @@ void syncConnected() {
   settimeofday(&tv, nullptr);
   portENTER_CRITICAL(&g_mux);
   g_clockUtc = utc; g_clockAt = ms; g_clockPending = true;
-  g_clock.state = shell::TIME_OK;
-  g_clock.lastSync = netclock::local(utc, g_clock.utcOffsetMin);
+  if (g_clock.offsetSet) { g_clock.state = shell::TIME_OK; g_clock.lastSync = netclock::local(utc, g_clock.utcOffsetMin); }
+  else g_clock.state = shell::TIME_IDLE;   // "Using device clock": the sample waits for setUtcOffset
   portEXIT_CRITICAL(&g_mux);
   g_nextClock = ms + CLOCK_POLL_MS;
   Serial.printf("[net] clock synchronized utc=%lu\n", (unsigned long)utc);
@@ -801,6 +801,7 @@ bool Updater::setUtcOffset(int16_t minutes) {
   // not for the first offset saved: the clock was local time already, not UTC.
   if (!g_clockPending && g_clock.offsetSet) { g_clockUtc = netclock::local(now, -g_clock.utcOffsetMin); g_clockAt = ms; g_clockPending = true; }
   if (g_clock.lastSync) g_clock.lastSync = netclock::local(g_clock.lastSync, minutes - g_clock.utcOffsetMin);
+  if (!g_clock.offsetSet && g_clockPending) { g_clock.state = shell::TIME_OK; g_clock.lastSync = netclock::local(g_clockUtc, minutes); }
   g_clock.utcOffsetMin = minutes; g_clock.offsetSet = true;
   portEXIT_CRITICAL(&g_mux);
   return true;
