@@ -298,6 +298,81 @@ Example closing:
 
 End with Chapter One complete and **a genuine new lead** (a strange royal seal found in the tower, weather or a messenger from the highlands), journal ledger updated, continue exploring chapter region as desired.
 
+
+### LK_RIVER_01 — The waterline (2–3 pages)
+
+> Serena followed the riverbank until the grass turned to pebbles. A line of pale stones lay several feet from the water, like a necklace that the river had forgotten to wear.
+>
+> "Isn't the river supposed to be over there?" Lucas asked.
+>
+> Dribble dipped one toe into the shallows and pulled it back. "It is certainly cold enough to be a river."
+>
+> Across the bank, a little wooden gate stood half open. It was marked with an old crest, nearly hidden beneath moss.
+>
+> "A gate for water," Lucas said. "Someone built this. If it moves the river one way, it must leave less water another way."
+>
+> Serena touched the crest. The wood was worn smooth by years of careful hands.
+>
+> She had been thinking of the mill and the bridge as separate troubles. Perhaps the river had other ideas.
+
+Choices record \`clue.water_low\`, and optionally reveal the marsh as a destination. The player now knows something is changing but **does not yet know who is responsible**.
+
+### LK_TILDA_01 — The price of a clever idea (3 pages)
+
+> Tilda the carpenter read the old watchtower map twice, slowly. Then she put it on the table beside a heap of unfinished chairs.
+>
+> "Can we build it?" Serena demanded.
+>
+> "Of course," said Tilda. "With enough wood, tools, hands, time and a promise that you'll pay my apprentices."
+>
+> "That's a lot of enoughs."
+>
+> "Building things is mostly enoughs. Fighting a dragon is much simpler, if you're the sort of person who likes fighting dragons."
+>
+> Dribble looked offended. "Some of us are the sort of dragons who prefer making soup."
+>
+> Tilda pointed to the bridge on the map. "I can lend the apprentices to the river channel, but they won't also be repairing the bridge that week. Everyone will need to agree on which work comes first."
+>
+> Serena stared at the map. A moment ago it had looked like a brilliant solution. Now it looked like another question.
+
+Talking through the plan reveals \`flag.tilda_consulted\`, unlocking a channel option at council—but the cost and promise must carry forward.
+
+### LK_COUNCIL_AFTERMATH — What a decision feels like (2 pages)
+
+> The meeting was finished. People pushed back their chairs and made their way into the evening.
+>
+> Serena stood beside the fountain, listening to the last of their footsteps.
+>
+> "Somebody ought to cheer," she said.
+>
+> "They might," Lucas replied, "once they see what happens."
+>
+> Dribble held out a bowl. "For now, I have soup."
+>
+> Serena took it and sat on the fountain's edge. She had decided. The decision was real. And tomorrow the water would keep flowing, whether or not anyone liked where it went.
+>
+> "Then we should come back," she said.
+>
+> Lucas nodded. "That sounds like what knights do."
+
+Do not immediately resolve the chapter. Advance world days through play, travel, or resting and show a follow-up before epilogue.
+
+### LK_FOLLOWUP — Responsibility after the choice (2–4 pages, authored variants)
+
+> The village seemed different when Serena returned. It was not quieter. It was not happier in every corner. But people had begun to live with the choice they had made.
+>
+> "They haven't forgotten," Lucas said.
+>
+> "Neither have we," said Serena.
+>
+> There was still work to do: a delivery to make, a promise to keep, or a neighbor whose trouble had become worse while everyone was busy solving somebody else's.
+>
+> Dribble tucked a loaf of bread beneath one arm. "I vote we begin with the part that can be eaten."
+>
+> Serena laughed. "We begin with the part that needs us most."
+
+Codex must author **distinct follow-up variants** for each water outcome, each requiring a nontrivial action and incurring the previously foreshadowed cost. The two illustrative \`resolution.*\` choices in the JSON fixture are placeholders for **different methods of following through**, not guaranteed successful magic buttons. Resolve Chapter One only after a genuine follow-up has been completed.
+
 ## Required branching / encounter matrix for Codex
 
 All scene text above is seed manuscript. Write enough additional *complete narrative prose* to support ~3–5 sessions, with each major scene given 2–5 pages and roughly 150–350 words. Avoid filler, random fetch grinding or identical dialogue repeated.
