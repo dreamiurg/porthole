@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../games/biscuit/generated/fonts.h"
+#include "canvas.h"
 #include "crc32.h"
 #include "font.h"
 #include "gfx.h"
@@ -245,6 +246,20 @@ static void indexedExpansion() {
   target(g_fb);
 }
 
+// canvas::Frames holds at most N movers: a page with more is drawn whole, every frame, never past its buffer.
+static void tooManyMovers() {
+  target(g_fb);
+  canvas::Frames<1> frames;
+  const canvas::Mover two[2] = {{{0, 0, 10, 10}, 1}, {{20, 20, 30, 30}, 2}};
+  int whole = 0;
+  for (int i = 0; i < 2; i++) frames.render(two, 2, 7, [&] { whole += canvas::same(canvas::clipBox(), canvas::FULL); });
+  assert(whole == 2);
+  const canvas::Mover one[1] = {{{0, 0, 10, 10}, 1}};
+  int calls = 0;
+  for (int i = 0; i < 2; i++) frames.render(one, 1, 7, [&] { calls++; });
+  assert(calls == 1);   // back within N: one whole frame, then nothing changed
+}
+
 int main() {
   widths();
   pages();
@@ -255,6 +270,7 @@ int main() {
   images();
   pictures();
   indexedExpansion();
+  tooManyMovers();
   puts("test_gfx565: all checks passed");
   return 0;
 }
