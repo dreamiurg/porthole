@@ -856,6 +856,22 @@ static void adminAccess() {
   typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
   typeAdminCode(sh, ms, "9870"); assert(on(sh, "sys_info"));
 }
+// With an admin code set, New and delete ask for it first (a kid could otherwise make a fresh profile, or delete
+// one, to dodge the limits); the wrong code or back changes nothing. Without one, they work as before.
+static void adminGatesProfiles() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); sh.createProfile("Kai", 6, "");
+  const ui::Box NEW_ROW = {24, 94, 112, 24};   // rows of three: Sam (y 42), Kai, New
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, NEW_ROW); assert(on(sh, "new_name"));
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, NEW_ROW); assert(on(sh, "sys_pin"));
+  typeAdminCode(sh, ms, "1111"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  tapAt(sh, ms, NEW_ROW); typeAdminCode(sh, ms, "1234"); assert(on(sh, "new_name"));
+  sh.begin(st, nullptr, 0, &sys);
+  Input hold{}; hold.down = hold.longPress = true; hold.x = hold.downX = 80; hold.y = hold.downY = 54; frame(sh, ms, hold);
+  assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
+}
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -957,6 +973,7 @@ int main() {
   resetSelectedPlayerPin();
   resetLimitsRetry();
   adminAccess();
+  adminGatesProfiles();
   adminChangesAndReset();
   resetAllLimits();
   versions();

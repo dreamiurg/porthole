@@ -164,9 +164,12 @@ void Shell::updatePick() {
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
-    if (i == n) { if (tap) startNew(); }
+    if (i == n) { if (tap) askAdmin(SH_NAME); }
     else if (tap) choose(prof_.nth(i), false);
-    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) choose(prof_.nth(i), true);   // long press: delete
+    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) {   // long press: delete
+      if (adminPin_) { target_ = prof_.nth(i); deleting_ = true; askAdmin(SH_DELETE); }   // the grown-up's code, not the kid's
+      else choose(prof_.nth(i), true);
+    }
     if (screen_ != SH_PICK) return;
   }
 }

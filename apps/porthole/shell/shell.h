@@ -80,6 +80,7 @@ class Shell {
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
   uint8_t adminPage_ = 0;
+  Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
   shell::Limits limits_{}, limitsDraft_{};
   int16_t utcDraft_ = 0;
   int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
@@ -139,6 +140,7 @@ class Shell {
   // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)
   bool titleHeld();
   void enterSystem();
+  void askAdmin(Screen next); void adminPassed();   // next: SH_SYS_INFO, SH_NAME (New) or SH_DELETE
   void updateSysAdmin(); void drawSysAdmin();
   void updateSysPin(); void submitSysPin(); void drawSysPin();
   bool saveAdminPin(uint16_t code);
