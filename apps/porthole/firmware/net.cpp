@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include "esp_random.h"
 #include "netclock.h"
+#include "timezone.h"
 #include <algorithm>
 #include <atomic>
 #include <math.h>
@@ -67,13 +68,20 @@ shell::ClockStatus g_clock;
 bool g_clockPending = false;
 uint32_t g_clockUtc = 0, g_clockAt = 0;
 std::atomic<uint32_t> g_nextClock{3000};
+timezones::Settings g_zoneSettings = timezones::settings(timezones::DEFAULT_ZONE, true);
+uint32_t g_zoneGeneration = 0, g_zoneJobToken = 0;
+std::atomic<uint32_t> g_clockSequence{0};
+timezones::DetectionRetry g_zoneRetry;
+bool g_zoneNeeded = true, g_zonePending = false, g_zoneResultOk = false;
+char g_zoneResult[64] = {};
+uint32_t g_zoneResultToken = 0;
 uint32_t g_checkNow = 0;   // main-loop snapshot; workers never read the main-loop clock variables
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
 // The radio's jobs, one task at a time (g_busy): the update check (on g_checkChan, set before it starts), a scan or a
 // test join from the menu's Wifi screens. g_scanCount and g_tested are -1 while theirs runs; g_found belongs to the scan
 // task until it sets g_scanCount, and g_try (the network to test) to the test task while it runs. The Home lookup and
 // Radar's feed (below) are the other two.
-enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK };
+enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK, J_ZONE };
 shell::Channel g_checkChan = shell::CH_STABLE;
 shell::Network g_found[shell::MAX_NETWORKS];
 std::atomic<int> g_scanCount{0}, g_tested{0};
@@ -89,6 +97,21 @@ size_t loadStr(const char* key, char* buf, size_t max) {   // NUL-terminated; 0 
   return n;
 }
 bool loadWifi(Wifi& w) { loadStr("pass", w.pass, sizeof w.pass); return loadStr("ssid", w.ssid, sizeof w.ssid) > 0; }
+
+// A saved network change also invalidates a successful guess from the previous network, including across reboot.
+// Write this first: if storage fails, keep the old credentials rather than retaining a falsely valid cache for new wifi.
+bool invalidateDetectedZone() {
+  ++g_zoneGeneration;
+  if (!g_clock.automaticZone) return true;
+  g_zoneNeeded = true;
+  if (!g_zoneSettings.reserved[0]) return true;
+  const auto pending = timezones::settings(g_zoneSettings.zone, true);
+  timezones::Settings checked{};
+  if (!board::saveBlob(NS, "tz", &pending, sizeof pending) ||
+      board::loadBlob(NS, "tz", &checked, sizeof checked) != sizeof checked || memcmp(&pending, &checked, sizeof pending)) return false;
+  g_zoneSettings = pending;
+  return true;
+}
 
 bool storeWifi(const char* ssid, const char* pass) {
   size_t n = strlen(ssid), p = strlen(pass);
@@ -287,8 +310,9 @@ void syncConnected() {
   portENTER_CRITICAL(&g_mux);
   g_clockUtc = utc; g_clockAt = ms; g_clockPending = true;
   g_clock.state = shell::TIME_OK;
-  g_clock.lastSync = netclock::local(utc, g_clock.utcOffsetMin);
+  g_clock.lastSync = utc;   // raw UTC internally; main-core clockStatus derives local display time
   portEXIT_CRITICAL(&g_mux);
+  ++g_clockSequence;   // UTC success handoff only; timezone retry decisions stay on the main core
   g_nextClock = ms + CLOCK_POLL_MS;
   Serial.printf("[net] clock synchronized utc=%lu\n", (unsigned long)utc);
 }
@@ -362,6 +386,29 @@ void test() {
   g_tested = ok ? 1 : 0;
 }
 
+// The only request is for the public-IP timezone, with no location/SSID/profile fields in its URL or body.
+// ipapi.co/timezone/ returns one plain IANA identifier. No live development probe is required or performed.
+bool fetchZone(char (&out)[64]) {
+  Https c; c.http10 = true;
+  if (c.get("https://ipapi.co/timezone/") != 200) return false;
+  const int length = c.http.getSize();
+  if (length <= 0 || length >= 64) return false;
+  char body[64] = {};
+  if (c.http.getStream().readBytes(body, (size_t)length) != (size_t)length) return false;
+  return timezones::detectedZone(body, (size_t)length, out);
+}
+void zoneJob() {
+  Wifi w; char zone[64] = {};
+  const bool joined = loadWifi(w) && joinWifi(w);
+  if (joined) syncConnected();   // establish UTC before the first HTTPS certificate validation after boot
+  const bool ok = joined && fetchZone(zone);
+  wifiOff();
+  portENTER_CRITICAL(&g_mux);
+  memcpy(g_zoneResult, zone, sizeof zone); g_zoneResultOk = ok;
+  g_zoneResultToken = g_zoneJobToken; g_zonePending = true;
+  portEXIT_CRITICAL(&g_mux);
+}
+
 void lookup();
 void radar();
 bool waitForProgress() {
@@ -382,6 +429,7 @@ void task(void* arg) {
   else if (job == J_LOOK) lookup();
   else if (job == J_RADAR) radar();
   else if (job == J_CLOCK) clockJob();
+  else if (job == J_ZONE) zoneJob();
   else if (waitForProgress()) run(g_checkChan);
   g_screen.release();
   g_forced = false;
@@ -694,7 +742,7 @@ bool startCheck(shell::Channel ch, bool forced) {   // false: dropped
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
   if (ready) { g_busy = false; return false; }
   g_forced = forced;
-  g_checkNow = g_now();
+  g_checkNow = timezones::local(g_now());
   g_checkChan = ch;
   g_screen.request(); setState(shell::UP_CHECKING);
   return spawn(J_CHECK);
@@ -709,7 +757,9 @@ void wifiFromSd() {
   for (String* s : {&ssid, &pass}) while (s->endsWith("\r") || s->endsWith("\n")) s->remove(s->length() - 1);
   Wifi w;
   if (loadWifi(w) && ssid == w.ssid && pass == w.pass) return;
-  if (storeWifi(ssid.c_str(), pass.c_str())) Serial.printf("[net] wifi from SD card saved: %s\n", ssid.c_str());
+  if (invalidateDetectedZone() && storeWifi(ssid.c_str(), pass.c_str())) {
+    Serial.printf("[net] wifi from SD card saved: %s\n", ssid.c_str());
+  }
 }
 
 const char* resetName(esp_reset_reason_t r) {
@@ -720,11 +770,15 @@ const char* resetName(esp_reset_reason_t r) {
 }
 }  // namespace
 
-void Updater::begin(uint32_t (*localNow)()) {
-  g_now = localNow;
-  int16_t offset = 0;
-  if (board::loadBlob(NS, "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
-    g_clock.utcOffsetMin = offset;
+void Updater::begin(uint32_t (*utcNow)()) {
+  g_now = utcNow;
+  timezones::Settings saved{};
+  if (board::loadBlob(NS, "tz", &saved, sizeof saved) == sizeof saved && timezones::validSettings(saved)) {
+    g_zoneSettings = saved; g_zoneNeeded = saved.automatic && !saved.reserved[0];
+  }
+  timezones::select(g_zoneSettings.zone);
+  snprintf(g_clock.zone, sizeof g_clock.zone, "%s", g_zoneSettings.zone);
+  g_clock.automaticZone = g_zoneSettings.automatic != 0;
   WiFi.persistent(false);   // the network lives in "sys"; keep the wifi driver from saving its own copy
   uint32_t last = 0;
   if (board::loadBlob(NS, "last", &last, sizeof last) == sizeof last) g_st.lastCheck = last;
@@ -745,13 +799,17 @@ void Updater::begin(uint32_t (*localNow)()) {
 }
 
 void Updater::tick(uint32_t ms) {
+  applyZoneResult();
+  if (g_zoneRetry.afterSync(g_clockSequence.load(), ms, g_clock.automaticZone && g_clock.zoneState == shell::ZONE_FAILED))
+    g_zoneNeeded = true;
   if ((int32_t)(ms - g_nextClock) >= 0 && !g_busy) {
     g_nextClock = ms + CLOCK_RETRY_MS;
     if (g_ssid[0]) syncClock();
   }
+  if (g_zoneNeeded && g_clock.automaticZone && g_ssid[0] && !g_busy) detectTimeZone();
   if ((int32_t)(ms - g_nextPoll) < 0) return;
   g_nextPoll = ms + POLL_MS;
-  if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
+  if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == timezones::local(g_now()) / 86400u) return;   // dev, no wifi, done today
   if (!g_dark) return;   // the daily check runs while nobody is looking: it may write flash
   startCheck(channel(), false);
 }
@@ -759,7 +817,7 @@ void Updater::tick(uint32_t ms) {
 // "No wifi" or "Check failed" was about the network before: idle again, as setChannel does. Only those resting states:
 // never a run going (CHECKING, DOWNLOADING) or an update waiting (READY).
 bool Updater::saveWifi(const char* ssid, const char* pass) {
-  if (!storeWifi(ssid, pass)) return false;
+  if (!invalidateDetectedZone() || !storeWifi(ssid, pass)) return false;
   g_nextClock = millis() + 1000;
   portENTER_CRITICAL(&g_mux);
   if (g_st.state == shell::UP_NO_WIFI || g_st.state == shell::UP_FAILED) { g_st.state = shell::UP_IDLE; g_st.pct = 0; }
@@ -769,6 +827,8 @@ bool Updater::saveWifi(const char* ssid, const char* pass) {
 
 shell::ClockStatus Updater::clockStatus() {
   portENTER_CRITICAL(&g_mux); shell::ClockStatus s = g_clock; portEXIT_CRITICAL(&g_mux);
+  s.utcOffsetMin = timezones::offset(g_now());
+  if (s.lastSync) s.lastSync = timezones::local(s.lastSync);
   return s;
 }
 
@@ -780,30 +840,78 @@ bool Updater::syncClock() {
   return true;
 }
 
-bool Updater::takeClock(uint32_t& localEpoch) {
+bool Updater::takeClock(uint32_t& utcEpoch) {
   portENTER_CRITICAL(&g_mux);
   const bool ready = g_clockPending;
   if (ready) {
-    localEpoch = netclock::local(netclock::advanced(g_clockUtc, g_clockAt, millis()), g_clock.utcOffsetMin);
+    utcEpoch = netclock::advanced(g_clockUtc, g_clockAt, millis());
     g_clockPending = false;
   }
   portEXIT_CRITICAL(&g_mux);
   return ready;
 }
 
-bool Updater::setUtcOffset(int16_t minutes) {
-  if (!netclock::validOffset(minutes)) return false;
-  int16_t readback = 0;
-  if (!board::saveBlob(NS, "utc_off", &minutes, sizeof minutes) ||
-      board::loadBlob(NS, "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
-  const uint32_t now = g_now(), ms = millis();
+bool Updater::setUtcOffset(int16_t) { return false; }   // legacy entry point; zones now own offsets and DST
+
+bool Updater::setTimeZone(const char* iana, bool automatic) { return storeTimeZone(iana, automatic, false); }
+
+bool Updater::storeTimeZone(const char* iana, bool automatic, bool detected) {
+  const timezones::Zone* zone = timezones::find(iana);
+  if (!zone) return false;
+  const timezones::Settings wanted = timezones::settings(zone->id, automatic, detected);
+  timezones::Settings checked{};
+  if (!timezones::select(zone->id)) return false;
+  if (!board::saveBlob(NS, "tz", &wanted, sizeof wanted) ||
+      board::loadBlob(NS, "tz", &checked, sizeof checked) != sizeof checked || memcmp(&wanted, &checked, sizeof wanted)) {
+    timezones::select(g_zoneSettings.zone); return false;
+  }
+  g_zoneSettings = wanted; ++g_zoneGeneration; g_zoneNeeded = automatic;
   portENTER_CRITICAL(&g_mux);
-  // Keep a pending network sample if one exists. Otherwise shift the current local time by the offset difference.
-  if (!g_clockPending) { g_clockUtc = netclock::local(now, -g_clock.utcOffsetMin); g_clockAt = ms; g_clockPending = true; }
-  if (g_clock.lastSync) g_clock.lastSync = netclock::local(g_clock.lastSync, minutes - g_clock.utcOffsetMin);
-  g_clock.utcOffsetMin = minutes;
+  snprintf(g_clock.zone, sizeof g_clock.zone, "%s", zone->id);
+  g_clock.automaticZone = automatic;
+  if (g_clock.zoneState != shell::ZONE_LOOKING) g_clock.zoneState = shell::ZONE_IDLE;
   portEXIT_CRITICAL(&g_mux);
   return true;
+}
+
+bool Updater::detectTimeZone() {
+  if (!g_clock.automaticZone || g_busy.exchange(true)) return false;
+  if (!invalidateDetectedZone()) {
+    g_zoneNeeded = false;   // failed storage must wait for a later NTP event or explicit Detect, never retry each frame
+    g_zoneRetry.completed(g_clockSequence.load());
+    portENTER_CRITICAL(&g_mux); g_clock.zoneState = shell::ZONE_FAILED; portEXIT_CRITICAL(&g_mux);
+    g_busy = false; return true;
+  }
+  g_zoneNeeded = false;
+  if (!g_ssid[0]) {
+    g_zoneRetry.completed(g_clockSequence.load());
+    portENTER_CRITICAL(&g_mux); g_clock.zoneState = shell::ZONE_FAILED; portEXIT_CRITICAL(&g_mux);
+    g_busy = false; return true;
+  }
+  g_zoneJobToken = g_zoneGeneration;
+  portENTER_CRITICAL(&g_mux); g_clock.zoneState = shell::ZONE_LOOKING; portEXIT_CRITICAL(&g_mux);
+  if (!spawn(J_ZONE)) {
+    portENTER_CRITICAL(&g_mux); g_clock.zoneState = shell::ZONE_FAILED; portEXIT_CRITICAL(&g_mux);
+  }
+  return true;
+}
+
+void Updater::applyZoneResult() {
+  char zone[64]; bool ok = false; uint32_t token = 0;
+  portENTER_CRITICAL(&g_mux);
+  const bool pending = g_zonePending;
+  if (pending) { memcpy(zone, g_zoneResult, sizeof zone); ok = g_zoneResultOk; token = g_zoneResultToken; g_zonePending = false; }
+  portEXIT_CRITICAL(&g_mux);
+  if (!pending) return;
+  if (token != g_zoneGeneration || !g_clock.automaticZone) {
+    portENTER_CRITICAL(&g_mux);
+    if (g_zoneJobToken != g_zoneGeneration || !g_busy) g_clock.zoneState = shell::ZONE_IDLE;
+    portEXIT_CRITICAL(&g_mux); return;
+  }
+  const bool applied = ok && storeTimeZone(zone, true, true);
+  g_zoneRetry.completed(g_clockSequence.load());   // a lookup cannot retry itself using its own earlier NTP sample
+  g_zoneNeeded = false;   // success is cached; failures retry on later NTP connections with a six-hour cooldown
+  portENTER_CRITICAL(&g_mux); g_clock.zoneState = applied ? shell::ZONE_OK : shell::ZONE_FAILED; portEXIT_CRITICAL(&g_mux);
 }
 
 void Updater::info(shell::SysInfo& out) {

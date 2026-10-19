@@ -41,7 +41,8 @@ test_kingdom_shell_SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcar
 test_kingdom_reader_SRC := $(wildcard os/*.cpp) games/living-kingdom/reader.cpp
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
-test_clock_SRC :=
+test_timezone_SRC := os/timezone.cpp
+test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
@@ -80,6 +81,7 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/test_playtest_runner.py
 	$(PY) games/living-kingdom/tools/content.py --check
 	$(PY) games/living-kingdom/tools/test_content.py
 	$(PY) games/living-kingdom/tools/kingdom_art.py --check

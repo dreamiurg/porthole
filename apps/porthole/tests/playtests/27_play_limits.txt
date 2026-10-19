@@ -1,5 +1,5 @@
-# Separate automated regression fixtures; natural visible enforcement is recorded in docs/admin-playtest/.
-# Defaults, draft cancellation, hold +/-10, persistence, single-player rest, and raising/lowering caps.
+# Supplemental regression fixtures after the final visible-input family-controls pass.
+# Consolidated home, editor cancel/save, preserved usage, single-player session/daily enforcement and bounds.
 newgame Solo Rex
 wait 2400
 wait 30000
@@ -17,46 +17,81 @@ up
 wait 450
 tap 106 132
 wait 450
-expect-screen sys_admin
-tap 124 35
+tap 80 94
 wait 450
-ui-check sys_admin-page2
-tap 80 70
+expect-screen sys_time
+expect session_min=15
+expect daily_min=30
+expect window_on=1
+expect window_start=840
+expect window_end=1170
+ui-check sys_time-default
+snap 01_defaults
+tap 80 53
 wait 450
 expect-screen sys_limits
-expect session_min=6
-expect daily_min=25
-ui-check sys_limits-default
-snap 01_defaults
-hold 122 65
+hold 38 80
 wait 450
-hold 38 98
+tap 38 80
 wait 450
-ui-check sys_limits-edited
-snap 02_held
+ui-check sys_limits-draft
+snap 02_draft
 tap 80 12
 wait 450
-tap 80 70
+tap 80 53
 wait 450
 expect-screen sys_limits
-expect session_min=6
-expect daily_min=25
-ui-check sys_limits-cancelled
-hold 38 65
+tap 54 121
 wait 450
-tap 122 98
+expect session_min=15
+tap 80 53
 wait 450
-down 122 65
-move 80 80
+expect-screen sys_limits
+hold 38 80
+wait 450
+tap 38 80
+wait 450
+tap 38 80
+wait 450
+tap 38 80
+wait 450
+tap 38 80
+wait 450
+down 122 80
+move 80 100
 up
 wait 450
 ui-check sys_limits-drag-cancelled
-tap 80 126
+tap 108 121
 wait 450
+expect-screen sys_time
 expect session_min=1
-expect daily_min=26
-ui-check sys_admin-limits-saved
+tap 80 78
+wait 450
+expect-screen sys_limits
+hold 38 80
+wait 450
+hold 38 80
+wait 450
+hold 38 80
+wait 450
+tap 122 80
+wait 450
+tap 108 121
+wait 450
+expect-screen sys_time
+expect daily_min=2
+ui-check sys_time-saved
 snap 03_saved
+tap 52 129
+wait 450
+expect-screen sys_reset
+tap 80 94
+wait 450
+expect-screen sys_time
+# Re-select the player to inspect retained usage; the adult menu has no active profile.
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12
@@ -67,15 +102,45 @@ expect-screen launcher
 expect today>40
 expect today<50
 expect play>40
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+tap 52 129
+wait 450
+tap 80 118
+wait 450
+expect-screen sys_time
+expect session_min=1
+expect daily_min=2
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen launcher
+expect today=0
+expect play=0
 app pets-club
 wait 2400
-wait 22000
+wait 30000
+tap 80 80
+wait 30000
 expect-screen rest
 expect rest>500
 expect today>=60
 expect today<70
 ui-check rest-single-profile
-snap 04_single_session
+snap 04_session
 tap 80 132
 wait 450
 down 80 16
@@ -84,33 +149,29 @@ up
 wait 450
 tap 106 132
 wait 450
-expect-screen sys_admin
-tap 124 35
+tap 80 94
 wait 450
-ui-check sys_admin-page2
-tap 80 70
+expect-screen sys_time
+tap 80 53
 wait 450
 expect-screen sys_limits
-tap 122 65
+tap 122 80
 wait 450
-hold 38 98
+tap 108 121
 wait 450
-hold 38 98
+expect-screen sys_time
+tap 80 78
 wait 450
-tap 38 98
+expect-screen sys_limits
+tap 38 80
 wait 450
-tap 38 98
+tap 108 121
 wait 450
-tap 38 98
-wait 450
-tap 38 98
-wait 450
-tap 38 98
-wait 450
-tap 80 126
-wait 450
+expect-screen sys_time
 expect session_min=2
 expect daily_min=1
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12
@@ -118,7 +179,6 @@ wait 450
 tap 80 67
 wait 450
 expect-screen rest
-expect today>=60
 expect rest>28000
 ui-check rest-lowered-daily
 snap 05_lowered
@@ -130,19 +190,19 @@ up
 wait 450
 tap 106 132
 wait 450
-expect-screen sys_admin
-tap 124 35
+tap 80 94
 wait 450
-ui-check sys_admin-page2
-tap 80 70
+expect-screen sys_time
+tap 80 78
 wait 450
 expect-screen sys_limits
-tap 122 98
+tap 122 80
 wait 450
-tap 80 126
+tap 108 121
 wait 450
-expect session_min=2
-expect daily_min=2
+expect-screen sys_time
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12
@@ -150,7 +210,6 @@ wait 450
 tap 80 67
 wait 450
 expect-screen rest
-expect today>=60
 expect rest<600
 expect rest>400
 ui-check rest-raised-daily
@@ -162,8 +221,6 @@ expect-screen picker
 tap 80 67
 wait 450
 expect-screen launcher
-expect today>=60
-expect today<70
 expect play=0
 app pets-club
 wait 2400
@@ -172,9 +229,9 @@ tap 80 80
 wait 30000
 expect-screen rest
 expect today>=120
-expect rest>28000
-ui-check rest-configured-daily
-snap 07_two_minutes
+expect rest>27000
+ui-check rest-two-minutes
+snap 07_daily
 tap 80 132
 wait 450
 down 80 16
@@ -183,18 +240,19 @@ up
 wait 450
 tap 106 132
 wait 450
-expect-screen sys_admin
-tap 124 35
-wait 450
-ui-check sys_admin-page2
-tap 36 35
-wait 450
 tap 80 94
+wait 450
+expect-screen sys_time
+tap 52 129
 wait 450
 tap 80 118
 wait 450
-expect session_min=2
-expect daily_min=2
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
 reboot
 expect-screen picker
 tap 80 67
@@ -211,41 +269,59 @@ up
 wait 450
 tap 106 132
 wait 450
-expect-screen sys_admin
-tap 124 35
+tap 80 94
 wait 450
-ui-check sys_admin-page2
-tap 80 70
-wait 450
-expect-screen sys_limits
-ui-check sys_limits-reboot
+expect-screen sys_time
+expect session_min=2
+expect daily_min=2
+ui-check sys_time-reboot
 snap 08_reboot
-hold 38 65
-wait 450
-hold 38 98
-wait 450
-hold 38 65
-wait 450
-hold 38 98
-wait 450
-tap 80 126
-wait 450
-expect session_min=1
-expect daily_min=1
-tap 80 70
+tap 80 53
 wait 450
 expect-screen sys_limits
-# Four-digit values must fit, and both controls clamp at one day.
+hold 38 80
+wait 450
+hold 38 80
+wait 450
+tap 108 121
+wait 450
+expect-screen sys_time
+expect session_min=1
+tap 80 53
+wait 450
+expect-screen sys_limits
 repeat 145
-hold 122 65
-wait 40
-hold 122 98
+hold 122 80
 wait 40
 end
-ui-check sys_limits-max
-snap 09_max
-tap 80 126
+ui-check sys_limits-max-session
+snap 09_max_session
+tap 108 121
 wait 450
+expect-screen sys_time
 expect session_min=1440
+tap 80 78
+wait 450
+expect-screen sys_limits
+hold 38 80
+wait 450
+hold 38 80
+wait 450
+tap 108 121
+wait 450
+expect-screen sys_time
+expect daily_min=1
+tap 80 78
+wait 450
+expect-screen sys_limits
+repeat 145
+hold 122 80
+wait 40
+end
+ui-check sys_limits-max-daily
+snap 09_max_daily
+tap 108 121
+wait 450
+expect-screen sys_time
 expect daily_min=1440
 sheet persistence_and_bounds

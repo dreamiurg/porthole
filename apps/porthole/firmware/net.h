@@ -13,10 +13,10 @@ namespace net {
 
 class Updater final : public shell::System {
  public:
-  // localNow: the firmware's local wall-clock seconds (main.cpp nowSec()), called on the main core only. Loads the "sys"
+  // utcNow: the firmware's canonical UTC seconds, called on the main core only. Loads the "sys"
   // settings, mounts the optional SD card and takes /porthole/wifi.txt from it. Call once, after board::init() and
   // before Shell::begin: info() reads what this loads.
-  void begin(uint32_t (*localNow)());
+  void begin(uint32_t (*utcNow)());
   // Call every loop: clock sync soon after boot and every six hours, independent of screen/build version;
   // once a minute (the first a minute after boot) it also starts the daily update check if one is due.
   void tick(uint32_t ms);
@@ -31,10 +31,12 @@ class Updater final : public shell::System {
   bool cancelling();
   bool committing();
   // Consume a worker sample on the main core only; includes time elapsed since it was received.
-  bool takeClock(uint32_t& localEpoch);
+  bool takeClock(uint32_t& utcEpoch);
   shell::ClockStatus clockStatus() override;
   bool syncClock() override;
   bool setUtcOffset(int16_t minutes) override;
+  bool setTimeZone(const char* iana, bool automatic) override;
+  bool detectTimeZone() override;
 
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;
@@ -54,6 +56,9 @@ class Updater final : public shell::System {
   bool saveHome(const shell::Home& h) override;   // also serial L
   bool startLookup(const char* address) override;
   int lookupResult(shell::Home& out) override;
+ private:
+  void applyZoneResult();
+  bool storeTimeZone(const char* iana, bool automatic, bool detected);
 };
 
 // Radar's planes from adsb.fi over the saved wifi, as one more radio job: while started (and the screen is not dark)

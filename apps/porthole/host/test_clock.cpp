@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <initializer_list>
 #include "netclock.h"
+#include "timezone.h"
 
 static void timestamp(uint8_t packet[48], uint32_t utc) {
   const uint32_t ntp = utc + 2208988800u;
@@ -28,6 +29,39 @@ static void responses() {
     timestamp(p, valid); assert(netclock::reply(p, sizeof p, token, utc) && utc == valid);
   }
 }
+static void automaticRetries() {
+  timezones::DetectionRetry offline;
+  offline.completed(0);   // an offline join produced no successful UTC connection
+  assert(!offline.afterSync(0, 1000, true));
+  assert(offline.afterSync(1, 2000, true));   // Wi-Fi returns and NTP succeeds: one automatic retry
+  assert(!offline.afterSync(1, 3000, true));   // the same sample cannot launch another request
+  assert(!offline.afterSync(2, 3600000, true));
+  assert(!offline.afterSync(3, timezones::DetectionRetry::PERIOD_MS + 1999, true));
+  assert(offline.afterSync(4, timezones::DetectionRetry::PERIOD_MS + 2000, true));
+  timezones::DetectionRetry provider;
+  provider.completed(7);   // this NTP sample powered the failed provider lookup
+  assert(!provider.afterSync(7, 10, true));
+  assert(provider.afterSync(8, 20, true));   // only a later connection may retry
+  assert(!provider.afterSync(9, 86400000, false));   // manual selection or a successful cached guess is authoritative
+  timezones::DetectionRetry wrapping;
+  const uint32_t start = UINT32_MAX - 1000u;
+  const uint32_t next = start + timezones::DetectionRetry::PERIOD_MS;
+  assert(wrapping.afterSync(1, start, true));
+  assert(!wrapping.afterSync(2, next - 1, true));
+  assert(wrapping.afterSync(3, next, true));   // cooldown spans millis wrap
+  timezones::DetectionRetry longOffline;
+  assert(longOffline.afterSync(1, 1000, true));
+  assert(!longOffline.afterSync(1, 1000 + timezones::DetectionRetry::PERIOD_MS, true));   // no new sample, but expiry latches
+  assert(longOffline.afterSync(2, UINT32_MAX - 10, true));   // much later successful connection, beyond signed-deadline horizon
+  assert(!longOffline.afterSync(2, 10 + timezones::DetectionRetry::PERIOD_MS, true));
+  assert(longOffline.afterSync(3, 20, true));   // expired cooldown cannot revive at a wrapped millis position
+  const auto pending = timezones::settings("America/Los_Angeles", true);
+  const auto cached = timezones::settings("Europe/London", true, true);
+  const auto manual = timezones::settings("Europe/London", false, true);
+  assert(timezones::validSettings(pending) && !pending.reserved[0]);
+  assert(timezones::validSettings(cached) && cached.reserved[0]);
+  assert(timezones::validSettings(manual) && !manual.reserved[0] && !manual.automatic);
+}
 int main() {
   for (int offset = -750; offset <= 870; offset++)
     assert(netclock::validOffset(offset) == (offset >= -720 && offset <= 840 && offset % 15 == 0));
@@ -36,6 +70,6 @@ int main() {
   assert(netclock::local(1792368000u, 345) == 1792388700u);
   assert(netclock::advanced(1792368000u, 1000, 6799) == 1792368005u);
   assert(netclock::advanced(1792368000u, UINT32_MAX - 499, 2500) == 1792368003u);
-  responses();
-  puts("clock: validated fresh replies, NTP era rollover, UTC offsets and sample elapsed time");
+  responses(); automaticRetries();
+  puts("clock: fresh NTP, era rollover, elapsed time and bounded automatic-zone retries after reconnect");
 }
