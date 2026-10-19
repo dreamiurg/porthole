@@ -1,0 +1,94 @@
+[
+  {
+    "file": "01-picker.png",
+    "sha256_png": "054c2d97461d977ee4cd6900b42e290f5ad55950a38dcff3e568844deb0a2580"
+  },
+  {
+    "file": "02-profile.png",
+    "sha256_png": "adf1d808d638f5d7ddb31856e123b059e0f2367807d8125f00b0f9465f254b22"
+  },
+  {
+    "file": "03-age.png",
+    "sha256_png": "5905fe1b2d82273a631dd26126b1830c4c5b9d087d0f2aa983eed1ecf92fdd48"
+  },
+  {
+    "file": "04-code.png",
+    "sha256_png": "1a9a3a02c73953ae9ea55e30ae98ed82a49d93f4fed5567849c09f96441faa24"
+  },
+  {
+    "file": "05-launcher.png",
+    "sha256_png": "1789b9dd62fcbcd18fd72f9cc11d1f3c7f21a311126898cfe452f3da2fca06ec"
+  },
+  {
+    "file": "06-next-page.png",
+    "sha256_png": "16bf989da28dfddadfc65f08499ef9ba813f46eb775da544fa4a814c8f8a9bb1"
+  },
+  {
+    "file": "07-kingdom-launcher.png",
+    "sha256_png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c"
+  },
+  {
+    "file": "08-title.png",
+    "sha256_png": "0fa3153f1e040af15c35a1fd1b77c4f05231dca784966d9c57a4959cc0269d26"
+  },
+  {
+    "file": "09-opening.png",
+    "sha256_png": "fb5093197cc9d508bd51f7956b242bea326da1fdbbe32ab25510b9d52d467c6f"
+  },
+  {
+    "file": "10-page-two.png",
+    "sha256_png": "82affad713534b873b8700318303290a95a776b92f8276857e2b71508166c073"
+  },
+  {
+    "file": "11-reboot-picker.png",
+    "sha256_png": "554417fda31dcb6a76959af69fbf156806baeae733a6127d4b23e840c1b8ac24"
+  },
+  {
+    "file": "12-admin-info.png",
+    "sha256_png": "96b5366dfc9444cd3d5a81b7d9fe7ed66977a8786c31387200583cd8a948e77b"
+  },
+  {
+    "file": "13-continue.png",
+    "sha256_png": "90cc8f83977c342e9ec18e42a752edbf1242c3e866e85906d8a9c302ad517d21"
+  },
+  {
+    "file": "14-crash-restored.png",
+    "sha256_png": "82affad713534b873b8700318303290a95a776b92f8276857e2b71508166c073"
+  },
+  {
+    "file": "15-back.png",
+    "sha256_png": "fb5093197cc9d508bd51f7956b242bea326da1fdbbe32ab25510b9d52d467c6f"
+  },
+  {
+    "file": "16-menu.png",
+    "sha256_png": "4487da78e92de6e78c3af01767b767dd4bc3a07a6011241d3f23ee27a2f6f20a"
+  },
+  {
+    "file": "17-party.png",
+    "sha256_png": "dfc67f6cf2b933cbf756da3f0cdb5036de2cb2eaed6feec23aa6cd6a0a1a2822"
+  },
+  {
+    "file": "18-items.png",
+    "sha256_png": "e0aed7bd414ecbda1632392019243b8eca43e70863e4783fab66b8a277902e1b"
+  },
+  {
+    "file": "19-returned.png",
+    "sha256_png": "82affad713534b873b8700318303290a95a776b92f8276857e2b71508166c073"
+  },
+  {
+    "file": "20-saved-exit.png",
+    "sha256_png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c"
+  },
+  {
+    "file": "21-restart-picker.png",
+    "sha256_png": "554417fda31dcb6a76959af69fbf156806baeae733a6127d4b23e840c1b8ac24"
+  },
+  {
+    "file": "22-save-restored.png",
+    "sha256_png": "82affad713534b873b8700318303290a95a776b92f8276857e2b71508166c073"
+  },
+  {
+    "file": "23-final-exit.png",
+    "sha256_png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c"
+  }
+]

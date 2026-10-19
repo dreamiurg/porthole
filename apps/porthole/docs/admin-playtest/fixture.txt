@@ -1,0 +1,4 @@
+# Declared setup fixture only: two existing profiles, no game progress.
+reset
+profile Sam 8 1234
+profile Kai 6 5678

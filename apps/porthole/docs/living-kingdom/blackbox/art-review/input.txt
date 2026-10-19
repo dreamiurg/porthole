@@ -1,0 +1,1290 @@
+snap 001-profile
+wait 1000
+snap 002-create
+down 41 53
+wait 66
+up
+wait 550
+down 119 53
+wait 66
+up
+wait 550
+down 41 53
+wait 66
+up
+wait 550
+down 119 126
+wait 66
+up
+wait 550
+snap 003-age
+down 93 87
+wait 66
+up
+wait 550
+snap 004-age
+down 80 103
+wait 66
+up
+wait 550
+snap 005-pin
+down 80 145
+wait 66
+up
+wait 550
+snap 006-launcher
+down 109 136
+wait 66
+up
+wait 550
+snap 007-launcher2
+down 109 136
+wait 66
+up
+wait 550
+snap 008-launcher3
+down 112 80
+wait 66
+up
+wait 550
+snap 009-title
+down 80 127
+wait 66
+up
+wait 550
+snap 010-story1
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 011-story2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 012-story3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 013-story4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 014-story5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 015-story6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 016-story7
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 017-first-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 018-village-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 019-village-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 020-village-scene
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 021-chalk2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 022-chalk3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 023-chalk4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 024-chalk5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 025-chalk6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 026-chalk-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 027-pippa-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 028-pippa-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 029-map
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 030-questions2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 031-questions3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 032-questions-choice
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 033-questions5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 034-questions6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 035-questions-choice
+down 80 80
+wait 66
+up
+wait 550
+snap 036-paths-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 037-map
+down 53 110
+wait 66
+up
+wait 550
+snap 038-marsh-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 039-marsh1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 040-marsh2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 041-marsh3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 042-marsh4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 043-marsh5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 044-marsh6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 045-marsh-choice
+down 80 80
+wait 66
+up
+wait 550
+snap 046-marsh-promise
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 047-marsh-promise2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 048-marsh-map
+down 48 84
+wait 66
+up
+wait 550
+snap 049-mill-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 050-mill1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 051-mill2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 052-mill3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 053-mill4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 054-mill5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 055-mill6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 056-mill-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 057-mill-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 058-mill-result2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 059-repair2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 060-repair3
+down 80 19
+wait 66
+up
+wait 550
+snap 061-session1-exit
+reboot
+wait 1000
+snap 062-session2-picker
+down 80 67
+wait 66
+up
+wait 550
+snap 063-session2-launcher
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 80
+wait 66
+up
+wait 550
+snap 064-resumed3
+down 80 126
+wait 66
+up
+wait 550
+snap 065-resumed3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 066-repair4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 067-repair5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 068-repair6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 069-repair-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 070-accounts-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 071-accounts-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 072-map
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 073-ledger2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 074-ledger3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 075-ledger4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 076-ledger5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 077-ledger6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 078-ledger-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 079-supplies-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 080-supplies-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 081-supplies-next
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 082-trader2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 083-trader3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 084-trader4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 085-trader5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 086-trader6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 087-trader-choice
+reboot
+wait 1000
+snap 088-rest-restart
+down 80 67
+wait 66
+up
+wait 550
+snap 089-rest-duration
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 80
+wait 66
+up
+wait 550
+down 80 126
+wait 66
+up
+wait 550
+snap 090-trader-resume
+down 113 130
+wait 66
+up
+wait 550
+snap 091-trader-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 092-why-help
+down 47 130
+wait 66
+up
+wait 550
+down 80 54
+wait 66
+up
+wait 550
+snap 093-carry-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 094-carry-result2
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 095-parcel1
+down 53 58
+wait 66
+up
+wait 550
+snap 096-village-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 097-parcel1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 098-rumor2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 099-rumor3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 100-rumor4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 101-rumor5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 102-rumor6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 103-rumor7
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 104-rumor-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 105-correction-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 106-correction-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 107-map
+down 108 58
+wait 66
+up
+wait 550
+snap 108-bridge-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 109-bridge1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 110-bridge2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 111-bridge3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 112-bridge4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 113-bridge5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 114-bridge6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 115-bridge-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 116-bridge-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 117-brace1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 118-brace2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 119-brace3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 120-brace4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 121-brace5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 122-brace6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 123-brace7
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 124-brace-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 125-plan-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 126-plan-result2
+wait 10000
+down 113 130
+wait 66
+up
+wait 550
+snap 127-map
+down 53 58
+wait 66
+up
+wait 550
+snap 128-village-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 129-council1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 130-council2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 131-council3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 132-council4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 133-council5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 134-council6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 135-council7
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 136-council8
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 137-council-choice
+down 80 80
+wait 66
+up
+wait 550
+snap 138-marsh-confirm
+down 80 137
+wait 66
+up
+wait 550
+snap 139-council-reread1
+down 113 130
+wait 66
+up
+wait 550
+snap 140-council-reread2
+down 47 130
+wait 66
+up
+wait 550
+snap 141-council-reread-back1
+down 113 130
+wait 66
+up
+wait 550
+snap 142-reread2
+down 113 130
+wait 66
+up
+wait 550
+snap 143-reread3
+down 113 130
+wait 66
+up
+wait 550
+snap 144-reread4
+down 113 130
+wait 66
+up
+wait 550
+snap 145-reread5
+down 113 130
+wait 66
+up
+wait 550
+snap 146-reread6
+down 113 130
+wait 66
+up
+wait 550
+snap 147-reread7
+down 113 130
+wait 66
+up
+wait 550
+snap 148-reread8
+down 113 130
+wait 66
+up
+wait 550
+snap 149-reread-choice
+down 80 80
+wait 66
+up
+wait 550
+snap 150-marsh-confirm
+down 113 130
+wait 66
+up
+wait 550
+snap 151-marsh-committed
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 152-marsh-committed2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 153-marsh-plan-map
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 154-chairs2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 155-chairs3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 156-chairs4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 157-chairs5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 158-chairs6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 159-chairs-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 160-chairs-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 161-map
+down 80 137
+wait 66
+up
+wait 550
+snap 162-pack
+down 50 80
+wait 66
+up
+wait 550
+snap 163-journal
+down 80 137
+wait 66
+up
+wait 550
+down 53 108
+wait 66
+up
+wait 550
+snap 164-rest-choice
+down 113 130
+wait 66
+up
+wait 550
+snap 165-marsh-visit
+down 53 58
+wait 66
+up
+wait 550
+snap 166-village-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 167-followthrough1
+down 53 58
+wait 66
+up
+wait 550
+snap 168-village-new-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 169-followthrough1
+down 48 84
+wait 66
+up
+wait 550
+snap 170-mill-follow-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 171-oven1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 172-oven2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 173-oven3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 174-oven4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 175-oven5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 176-oven6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 177-oven-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 178-relief-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 179-relief-result2
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 180-delivery1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 181-delivery2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 182-delivery3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 183-delivery4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 184-delivery5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 185-delivery6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 186-delivery-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 187-flour-used
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 188-flour-used2
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 189-followthrough-done
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 190-deed2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 191-deed3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 192-deed4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 193-deed5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 194-deed6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 195-deed7
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 196-deed-choice
+down 80 80
+wait 66
+up
+wait 550
+snap 197-marsh-ending-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 198-marsh-ending-result2
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 199-marsh-ending1
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 200-ending2
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 201-ending3
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 202-ending4
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 203-ending5
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 204-ending6
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 205-ending7
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 206-ending-choice
+down 80 54
+wait 66
+up
+wait 550
+snap 207-ending-result
+wait 20000
+down 113 130
+wait 66
+up
+wait 550
+snap 208-ending-result2
+wait 15000
+down 113 130
+wait 66
+up
+wait 550
+snap 209-completed-map
+down 80 137
+wait 66
+up
+wait 550
+snap 210-final-pack
+down 105 54
+wait 66
+up
+wait 550
+snap 211-final-items
+down 80 137
+wait 66
+up
+wait 550
+down 80 137
+wait 66
+up
+wait 550
+down 105 80
+wait 66
+up
+wait 550
+snap 212-save-quit
+reboot
+wait 1000
+snap 213-final-picker
+down 80 67
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 80
+wait 66
+up
+wait 550
+snap 214-final-continue
+down 80 126
+wait 66
+up
+wait 550
+snap 215-final-resumed-map
+down 53 110
+wait 66
+up
+wait 550
+snap 216-final-marsh-preview
+down 113 130
+wait 66
+up
+wait 550
+snap 217-post-ending-marsh
+down 48 84
+wait 66
+up
+wait 550
+snap 218-final-mill-preview
+down 47 130
+wait 66
+up
+wait 550
+snap 219-final-back-map
+down 80 137
+wait 66
+up
+wait 550
+down 105 80
+wait 66
+up
+wait 550
+snap 220-final-exit

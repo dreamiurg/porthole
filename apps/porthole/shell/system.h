@@ -29,6 +29,15 @@ struct UpdStatus {
   uint32_t lastCheck = 0;       // local epoch seconds of the last attempt, 0 = never
 };
 
+struct Home { double lat = 0, lon = 0; char name[96] = {0}; };   // name: the place as the geocoder calls it, ASCII
+
+enum TimeState : uint8_t { TIME_IDLE, TIME_SYNCING, TIME_OK, TIME_NO_WIFI, TIME_FAILED };
+struct ClockStatus {
+  TimeState state = TIME_IDLE;
+  uint32_t lastSync = 0;         // local epoch of the last successful network sync
+  int16_t utcOffsetMin = 0;     // explicit local offset, -720..840 in 15-minute steps
+};
+
 struct SysInfo {
   const char* version = "dev";  // PORTHOLE_VERSION, "dev" for local builds
   char slot[8] = {0};           // running app partition, "ota_0" / "ota_1"
@@ -95,6 +104,20 @@ class System {
   // The network the daily check joins, persisted; false (nothing saved) if ssid is empty or over 32 bytes, or pass
   // over 64. pass "" = an open network. Never logged.
   virtual bool saveWifi(const char* ssid, const char* pass) = 0;
+
+  // Home: where the radar centers, one per device, set by a grown-up from a street address. The lookup is a radio job
+  // like a scan (refused while another runs); it sends the typed address, once, to a geocoder and nothing else.
+  // Defaults: a build with no lookup, whose menu hides Home.
+  virtual bool hasHome() { return false; }
+  virtual bool home(Home& out) { (void)out; return false; }      // false when none is set
+  virtual bool saveHome(const Home& h) { (void)h; return false; }   // persisted; false if it could not be saved
+  virtual bool startLookup(const char* address) { (void)address; return false; }
+  virtual int lookupResult(Home& out) { (void)out; return 0; }    // -1 while it runs; 1 found (into out); 0 not found
+
+  // Clock sync shares the radio with updates and wifi setup. Local RTC/save timestamps stay local.
+  virtual ClockStatus clockStatus() { return {}; }
+  virtual bool syncClock() { return false; }
+  virtual bool setUtcOffset(int16_t minutes) { return false; }
 
  protected:
   ~System() = default;

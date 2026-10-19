@@ -1,0 +1,70 @@
+# Runtime screenshot provenance, not a renderer-only preview.
+# From apps/porthole: ./build/host/snap --fresh --script docs/starfighter/tour.txt
+# snap writes 480x480 BMPs to build/host; PNGs are lossless conversions.
+# Title/calibration/brief/squadron follow the natural tap path.
+# `dbg trench` and `dbg target` are deterministic reachability fixtures.
+# The target tap then advances normally through torpedo/explosion/victory.
+# `dbg defeat` is a reachability fixture, not a claim of naturally losing a run.
+# All states use the actual App, input tracker, update loop and renderer.
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+wait 600
+snap starfighter-title
+screen
+tap 80 120
+tilt 0 0 1000
+wait 600
+snap starfighter-calibration-flat
+screen
+tilt 0 1000 0
+wait 160
+snap starfighter-calibration-steady
+screen
+wait 600
+snap starfighter-calibration
+screen
+tap 80 120
+wait 600
+snap starfighter-brief
+screen
+tap 80 120
+wait 600
+tap 120 80
+tilt 500 866 0
+wait 250
+tap 120 80
+wait 120
+snap starfighter-squadron
+screen
+tilt 0 1000 0
+wait 80
+dbg trench
+wait 3400
+tilt -200 980 0
+wait 300
+tap 120 80
+wait 100
+snap starfighter-trench
+screen
+tilt 0 1000 0
+wait 80
+dbg target
+wait 600
+snap starfighter-target
+screen
+tap 120 90
+wait 1100
+snap starfighter-torpedo
+screen
+wait 1900
+snap starfighter-explosion
+screen
+wait 2700
+snap starfighter-victory
+screen
+dbg defeat
+wait 600
+snap starfighter-defeat
+screen

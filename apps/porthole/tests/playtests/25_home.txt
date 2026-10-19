@@ -1,0 +1,100 @@
+# Home for the radar, in the hidden system menu: Info -> Home (what is set) -> Set address (the QWERTY keyboard, the
+# address shown in full) -> a lookup -> Is this home? Yes saves it; No and a miss go back to the typing, kept; a failed
+# save says so and changes nothing. Back from every screen. The sim's System is a stub: `sys found|notfound` end the
+# lookup, `sys homefail` fails the next save, `sys nohome` clears it (host/sim.cpp).
+reset
+profile Sam 8
+reboot
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+ui-check sys_info-home
+tap 54 132
+wait 450
+expect-screen sys_home
+expect sys_home=1
+ui-check
+sheet
+tap 80 114
+wait 450
+expect-screen sys_addr
+ui-check
+tap 143 57
+tap 115 57
+tap 122 77
+tap 45 57
+tap 78 117
+tap 143 57
+tap 136 77
+tap 66 97
+tap 45 57
+tap 139 97
+tap 45 57
+wait 100
+expect-screen sys_addr
+ui-check sys_addr-typed
+sheet
+tap 124 117
+wait 450
+expect-screen sys_find
+expect sys_lookups=1
+expect sys_addr=pike plce
+ui-check sys_find-looking
+sys notfound
+wait 100
+ui-check sys_find-notfound
+sheet
+tap 80 114
+wait 450
+expect-screen sys_addr
+tap 139 97
+tap 139 97
+tap 24 77
+tap 66 97
+tap 45 57
+tap 124 117
+wait 450
+expect sys_addr=pike place
+sys found
+wait 100
+expect-screen sys_find
+ui-check sys_find-found
+sheet
+tap 108 114
+wait 450
+expect-screen sys_addr
+tap 124 117
+wait 450
+sys found
+wait 100
+sys homefail
+tap 52 114
+wait 100
+expect-screen sys_find
+expect sys_lat=47.6200
+ui-check sys_find-savefailed
+tap 80 114
+wait 450
+expect-screen sys_home
+expect sys_lat=47.6205
+expect sys_lon=-122.3493
+ui-check sys_home-set
+# back from every screen
+tap 80 114
+wait 450
+tap 80 12
+wait 450
+expect-screen sys_home
+tap 80 12
+wait 450
+expect-screen sys_info
+sys nohome
+tap 54 132
+wait 450
+expect sys_home=0
+ui-check sys_home-none
+tap 80 12
+wait 450
+expect-screen sys_info

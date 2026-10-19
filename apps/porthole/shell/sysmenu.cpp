@@ -1,14 +1,14 @@
 // The device side the kid barely sees: the "something new" card after an update, and the grown-ups' system menu
 // behind a 5 s hold on the picker's title (Info, then Updates and Wifi). Shell palette only (root rule 7), no sound.
-// The menu is for grown-ups (a user decision of 2026-10-18): it draws in the shell's compact font (shell_font.h)
-// with 18 px targets, denser than the kids' 8x8 font and 24x22 buttons; the "something new" card is the kids' and
-// keeps their rules. Design: docs/superpowers/specs/2026-10-17-wireless-updates-design.md.
+// Adult screens render at native resolution with an anti-aliased reading font; logical touch coordinates stay
+// unchanged. The "something new" card keeps the children's indexed art and typography. Design: docs/superpowers/specs/2026-10-17-wireless-updates-design.md.
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "shell.h"
-#include "shell_font.h"
-#include "shell_sprites.h"
+#include "adult_fonts.h"
+#include "canvas.h"
 
 using namespace gfx;
 using namespace shell;
@@ -47,22 +47,32 @@ void Shell::drawSysNew() {
 }
 
 // ---------------------------------------------------------------- the menu's font and widgets
-static int glyphOf(char ch) { unsigned char u = (unsigned char)ch; return (u < 32 || u > 126 ? '?' : u) - 32; }   // a non-ASCII SSID byte: "?"
-static int stextW(const char* s) {
-  int w = 0;
-  for (; *s; s++) w += SYS_FONT_W[glyphOf(*s)] + 1;
-  return w ? w - 1 : 0;
+// Geometry remains logical (160 x 160) so drawing and touch targets share one layout. Only this adult renderer
+// scales it to physical pixels; font glyphs are rasterized at their final size, never enlarged pixel art.
+static uint16_t scol(uint8_t c) { return rgb888_to_565(PALETTE_RGB[c]); }
+static void sclear(uint8_t c) { canvas::clip(canvas::FULL); gfx565::clear(scol(c)); }
+static void srect(int x, int y, int w, int h, uint8_t c) { gfx565::rect(x * 3, y * 3, w * 3, h * 3, scol(c)); }
+static void sframe(int x, int y, int w, int h, uint8_t c) {
+  srect(x, y, w, 1, c); srect(x, y + h - 1, w, 1, c); srect(x, y, 1, h, c); srect(x + w - 1, y, 1, h, c);
 }
-static void stext(int x, int y, const char* s, uint8_t c) {
-  logText(x, y, stextW(s), SYS_FONT_H, c);
-  for (; *s; s++) {
-    const int g = glyphOf(*s);
-    for (int row = 0; row < SYS_FONT_H; row++)
-      for (int col = 0; col < SYS_FONT_W[g]; col++) if (SYS_FONT[g][row] >> col & 1) pixel(x + col, y + row, c);
-    x += SYS_FONT_W[g] + 1;
-  }
+static void scircle(int x, int y, int r, uint8_t c) { gfx565::circle(x * 3, y * 3, r * 3, scol(c)); }
+static void sround(int x, int y, int w, int h, uint8_t c) { gfx565::roundRect({x * 3, y * 3, w * 3, h * 3}, 9, scol(c)); }
+static void spanel(const ui::Box& b, uint8_t fill, uint8_t border) {
+  sround(b.x, b.y, b.w, b.h, border); sround(b.x + 1, b.y + 1, b.w - 2, b.h - 2, fill);
 }
-static void stextC(int cx, int y, const char* s, uint8_t c) { stext(cx - stextW(s) / 2, y, s, c); }
+static int stextW(const char* s) { return (font::textWidth(adult::FONT24, s) + 2) / 3; }
+static void stext(int x, int y, const char* s, uint8_t c) { font::text(adult::FONT24, s, x * 3, y * 3, scol(c)); }
+static void stextC(int cx, int y, const char* s, uint8_t c) {
+  font::text(adult::FONT24, s, cx * 3 - font::textWidth(adult::FONT24, s) / 2, y * 3, scol(c));
+}
+static void shead(int cx, int y, const char* s, uint8_t c) {
+  font::text(adult::FONT28, s, cx * 3 - font::textWidth(adult::FONT28, s) / 2, y * 3, scol(c));
+}
+static void sback() {
+  scircle(80, 12, 11, C_DKBROWN); scircle(80, 11, 10, C_ORANGE);
+  const int roof[] = {225, 31, 240, 17, 255, 31}; canvas::poly(roof, 3, scol(C_WHITE));
+  gfx565::rect(229, 30, 22, 15, scol(C_WHITE)); gfx565::rect(237, 36, 7, 9, scol(C_ORANGE));
+}
 // s cut to room px, its last two letters ".." when cut: "HomeNe..".
 static void fit(char* out, size_t n, const char* s, int room) {
   snprintf(out, n, "%s", s);
@@ -76,19 +86,19 @@ static bool tapped(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y
 // ui::drawButton's look in the menu's font. A keyboard key is the same with a 1 px shadow, yellow while pressed.
 static void sbutton(const ui::Box& b, const char* label, uint8_t col, bool pressed, int shadow = 2) {
   const int dy = pressed ? 1 : 0;
-  if (!pressed) roundRect(b.x, b.y + shadow, b.w, b.h, C_DKBROWN);
-  roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
+  if (!pressed) sround(b.x, b.y + shadow, b.w, b.h, C_DKBROWN);
+  sround(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
   const uint8_t fill = pressed && shadow == 1 ? (uint8_t)C_YELLOW : col;
-  roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, fill);
-  if (shadow == 2) hline(b.x + 2, b.y + 1 + dy, b.w - 4, C_WHITE);
-  stextC(b.x + b.w / 2, b.y + dy + (b.h - 5) / 2, label, ui::inkOn(fill));
+  sround(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, fill);
+  if (shadow == 2) srect(b.x + 2, b.y + 1 + dy, b.w - 4, 1, C_WHITE);
+  stextC(b.x + b.w / 2, b.y + dy + (b.h - 8) / 2, label, ui::inkOn(fill));
 }
 
 // ---------------------------------------------------------------- Info: label | value rows on navy
 static const int ROW = 9, COL = 76;   // labels end at COL, values start 5 px after it
 // Widest a value starting at x may be on the row at y, inside a 78 px circle (the audit clips at 79).
 static int valueRoom(int x, int y) {
-  int d = y < 80 ? 80 - y : y + SYS_FONT_H - 80;
+  int d = y < 80 ? 80 - y : y + 8 - 80;
   return (int)sqrtf((float)(78 * 78 - d * d)) + 80 - x;
 }
 static void row(int y, const char* label, const char* value) {
@@ -111,14 +121,17 @@ static void wifiResult(char* out, size_t n, const UpdStatus& u, uint32_t now) {
 }
 
 static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20};
+static const ui::Box HOME_BTN = {30, 122, 48, 20}, ADMIN_BTN = {82, 122, 48, 20};
 void Shell::updateSysInfo() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_PICK); return; }
+  if (tapped(in_, ADMIN_BTN)) { adminPage_ = 0; go(SH_SYS_ADMIN); return; }
   if (tapped(in_, UPD_BTN)) { go(SH_SYS_UPD); return; }
+  if (sys_->hasHome() && tapped(in_, HOME_BTN)) { go(SH_SYS_HOME); return; }
   if (tapped(in_, WIFI_BTN)) { netPage_ = 0; scan(); go(SH_SYS_WIFI); }
 }
 void Shell::drawSysInfo() {
-  clear(C_NAVY);
+  sclear(C_NAVY);
   char heap[16], tried[24]; snprintf(heap, sizeof heap, "%lu KB", (unsigned long)(info_.heapFree / 1024));
   wifiResult(tried, sizeof tried, upd_, now_);
   int y = 27;
@@ -131,7 +144,236 @@ void Shell::drawSysInfo() {
   row(y, upd_.state == UP_IDLE && upd_.lastCheck ? "Checked" : "Last try", tried);   // before this boot: a time, no result
   sbutton(WIFI_BTN, "Wifi", C_SKY, down(in_, WIFI_BTN));
   sbutton(UPD_BTN, "Updates", C_SKY, down(in_, UPD_BTN));
-  ui::drawBack();
+  if (sys_->hasHome()) sbutton(HOME_BTN, "Home", C_SKY, down(in_, HOME_BTN));
+  sbutton(ADMIN_BTN, "Admin", C_SKY, down(in_, ADMIN_BTN));
+  sback();
+}
+
+// ---------------------------------------------------------------- optional admin code and everyone's play limits
+// A separate key: existing devices stay unlocked, and no shipped profile/save layout changes. Leaving Info for
+// the picker ends access; every new title hold asks again. The post-update news card never grants menu access.
+void Shell::enterSystem() {
+  resetPin(); firstPin_ = 0;
+  go(adminPin_ ? SH_SYS_PIN : SH_SYS_INFO);
+}
+static const ui::Box ADMIN_CODE = {30, 60, 100, 20}, ADMIN_RESET = {30, 84, 100, 20}, ADMIN_REMOVE = {30, 108, 100, 20};
+static const ui::Box ADMIN_PLAYERS = {42, 132, 76, 18};
+static ui::Box adminPageArrow(bool next) { return {next ? 114 : 26, 26, 20, 18}; }
+void Shell::updateSysAdmin() {
+  if (ui::back(in_)) { go(SH_SYS_INFO); return; }
+  if (tapped(in_, adminPageArrow(!adminPage_))) { adminPage_ = !adminPage_; return; }
+  if (adminPage_) {
+    if (tapped(in_, ADMIN_CODE)) { limitsDraft_ = limits_; go(SH_SYS_LIMITS); return; }
+    if (tapped(in_, ADMIN_RESET)) { utcDraft_ = sys_->clockStatus().utcOffsetMin; go(SH_SYS_CLOCK); }
+    return;
+  }
+  if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
+  if (tapped(in_, ADMIN_RESET)) { go(SH_SYS_RESET); return; }
+  if (tapped(in_, ADMIN_PLAYERS)) { target_ = -1; go(SH_SYS_PLAYERS); return; }
+  if (adminPin_ && tapped(in_, ADMIN_REMOVE)) go(SH_SYS_REMOVE);
+}
+void Shell::drawSysAdmin() {
+  sclear(C_NAVY);
+  shead(80, 33, adminPage_ ? "Admin 2/2" : "Admin 1/2", C_WHITE);
+  const ui::Box arrow = adminPageArrow(!adminPage_);
+  sbutton(arrow, adminPage_ ? "<" : ">", C_SKY, down(in_, arrow));
+  if (adminPage_) {
+    stextC(80, 46, "Time and play limits", C_LTGRAY);
+    sbutton(ADMIN_CODE, "Play limits", C_SKY, down(in_, ADMIN_CODE));
+    sbutton(ADMIN_RESET, "Clock", C_SKY, down(in_, ADMIN_RESET));
+    sback(); return;
+  }
+  stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
+  sbutton(ADMIN_CODE, adminPin_ ? "Change code" : "Set admin code", C_SKY, down(in_, ADMIN_CODE));
+  sbutton(ADMIN_RESET, "Reset all limits", C_SKY, down(in_, ADMIN_RESET));
+  if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
+  sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
+  sback();
+}
+// Read back because Store::save has no result: a failed flash write must not claim the code changed.
+bool Shell::saveAdminPin(uint16_t code) {
+  st_->save("sys", "admin", &code, sizeof code);
+  uint16_t saved = 0xffff;
+  if (st_->load("sys", "admin", &saved, sizeof saved) != sizeof saved || saved != code) return false;
+  adminPin_ = code;
+  return true;
+}
+// Adult keypad: 0-9 and erase, four masked digits, automatic submission after the last digit has shown briefly.
+// Kept separate from the kids' nine big keys so an admin code can include zero without changing their flow.
+static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19}; }
+static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
+void Shell::updateSysPin() {
+  if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
+  if (pinLen_ == 4) { if (ms_ - pinMs_ >= 400) submitSysPin(); return; }
+  if (ms_ < pinWrongUntil_) return;
+  if (tapped(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
+  for (int k = 0; k < 10; k++) {
+    if (!tapped(in_, adminKey(k))) continue;
+    pin_[pinLen_++] = k == 9 ? '0' : (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+    return;
+  }
+}
+void Shell::submitSysPin() {
+  const uint16_t code = pinCode(pin_); resetPin();
+  if (screen_ == SH_SYS_PIN_SET) { firstPin_ = code; go(SH_SYS_PIN_AGAIN); return; }
+  if (screen_ == SH_SYS_PIN) {
+    if (code == adminPin_) { go(SH_SYS_INFO); return; }
+    pinWrongUntil_ = ms_ + 900; toast("Wrong code. Try again."); return;
+  }
+  if (code != firstPin_) { firstPin_ = 0; go(SH_SYS_PIN_SET); toast("Codes did not match"); return; }
+  const bool ok = saveAdminPin(code); firstPin_ = 0;
+  go(SH_SYS_ADMIN); toast(ok ? "Admin code saved" : "Could not save code");
+}
+void Shell::drawSysPin() {
+  sclear(C_NAVY);
+  const char* prompt = screen_ == SH_SYS_PIN ? "Admin code?" : screen_ == SH_SYS_PIN_SET ? "Choose 4 digits" : "Repeat admin code";
+  shead(80, 32, ms_ < toastUntil_ ? toast_ : prompt, C_WHITE);
+  for (int i = 0; i < 4; i++) {
+    const int x = 58 + i * 12;
+    sframe(x, 43, 10, 9, ms_ < pinWrongUntil_ ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE);
+    if (i < pinLen_) scircle(x + 5, 47, 2, C_WHITE);
+  }
+  for (int k = 0; k < 10; k++) {
+    const ui::Box b = adminKey(k); char digit[2] = {k == 9 ? '0' : (char)('1' + k), 0};
+    sbutton(b, "", C_WHITE, down(in_, b), 1);
+    font::text(adult::FONT32, digit, (b.x + b.w / 2) * 3 - font::textWidth(adult::FONT32, digit) / 2, b.y * 3 + (b.h * 3 - adult::FONT32.lineHeight) / 2 + (down(in_, b) ? 3 : 0), scol(C_DKBROWN));
+  }
+  sbutton(ADMIN_ERASE, "Del", C_SKY, down(in_, ADMIN_ERASE), 1);
+  sback();
+}
+static const ui::Box CONFIRM_NO = {30, 84, 100, 20}, CONFIRM_YES = {30, 108, 100, 20};
+void Shell::updateSysConfirm() {
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_ADMIN); return; }
+  if (!tapped(in_, CONFIRM_YES)) return;
+  if (screen_ == SH_SYS_REMOVE) {
+    const bool ok = saveAdminPin(0);
+    go(SH_SYS_ADMIN); toast(ok ? "Admin code removed" : "Could not remove code");
+  } else {
+    const bool ok = resetLimits(*st_, prof_);
+    go(SH_SYS_ADMIN); toast(ok ? "All limits reset" : "Reset failed. Retry");
+  }
+}
+void Shell::drawSysConfirm() {
+  sclear(C_NAVY);
+  const bool remove = screen_ == SH_SYS_REMOVE;
+  shead(80, 34, remove ? "Remove admin code?" : "Reset all limits?", C_WHITE);
+  stextC(80, 49, remove ? "The system menu will open" : "Clear daily play and rest", C_LTGRAY);
+  stextC(80, 60, remove ? "without a code." : "timers for every profile.", C_LTGRAY);
+  if (!remove) stextC(80, 71, "Game progress is kept.", C_LTGRAY);
+  sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
+  sbutton(CONFIRM_YES, remove ? "Remove code" : "Reset limits", C_SKY, down(in_, CONFIRM_YES));
+  sback();
+}
+
+// ---------------------------------------------------------------- recover a selected player's forgotten PIN
+// Rows map through nth(): a deleted profile leaves a stable-id hole. No profile PIN is asked here; the system
+// menu already checked the adult's code. The selected player's details, budgets and games all stay intact.
+static ui::Box playerRow(int i) { return {30, 46 + i * 22, 100, 20}; }
+void Shell::updateSysPlayers() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  for (int i = 0; i < prof_.count(); i++) {
+    if (!tapped(in_, playerRow(i))) continue;
+    target_ = prof_.nth(i);
+    if (!prof_.rec[target_].pin) { toast("No PIN set"); return; }
+    go(SH_SYS_PLAYER_PIN); return;
+  }
+}
+void Shell::drawSysPlayers() {
+  sclear(C_NAVY);
+  shead(80, 33, "Reset a player's PIN", C_WHITE);
+  if (!prof_.count()) stextC(80, 70, "No players yet", C_LTGRAY);
+  for (int i = 0; i < prof_.count(); i++) {
+    const Record& r = prof_.rec[prof_.nth(i)]; const ui::Box b = playerRow(i);
+    sbutton(b, "", C_SKY, down(in_, b));
+    char name[12]; fit(name, sizeof name, r.name, 54);
+    const int dy = down(in_, b) ? 1 : 0;
+    stext(b.x + 6, b.y + 6 + dy, name, C_DKBROWN);
+    stext(b.x + 66, b.y + 6 + dy, r.pin ? "PIN" : "No PIN", C_DKBROWN);
+  }
+  sback();
+}
+void Shell::updateSysPlayerPin() {
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_PLAYERS); return; }
+  if (!tapped(in_, CONFIRM_YES)) return;
+  if (!clearPin(target_)) { toast("Could not reset PIN"); return; }
+  go(SH_SYS_PLAYERS); toast("Player PIN reset");
+}
+void Shell::drawSysPlayerPin() {
+  sclear(C_NAVY);
+  shead(80, 34, "Reset player PIN?", C_WHITE);
+  stextC(80, 48, prof_.rec[target_].name, C_YELLOW);
+  stextC(80, 61, "Their next login will", C_LTGRAY);
+  stextC(80, 72, "not need a PIN.", C_LTGRAY);
+  sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
+  sbutton(CONFIRM_YES, "Reset PIN", C_SKY, down(in_, CONFIRM_YES));
+  sback();
+}
+
+// ---------------------------------------------------------------- device-wide limits in minutes
+static ui::Box limitStepBox(int row, bool plus) { return {plus ? 110 : 26, 55 + row * 33, 24, 20}; }
+static const ui::Box LIMIT_SAVE = {40, 117, 80, 20};
+static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
+  const bool tap = tapped(in, box), held = in.longPress && in.hit(box.x, box.y, box.w, box.h);
+  if (!tap && !held) return value;
+  int next = value + delta * (held ? 10 : 1);
+  return next < 1 ? 1 : next > 1440 ? 1440 : next;
+}
+void Shell::updateSysLimits() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }   // discard unsaved edits
+  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, false), limitsDraft_.sessionMinutes, -1);
+  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, true), limitsDraft_.sessionMinutes, 1);
+  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, false), limitsDraft_.dailyMinutes, -1);
+  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, true), limitsDraft_.dailyMinutes, 1);
+  if (!tapped(in_, LIMIT_SAVE)) return;
+  if (!saveLimits(*st_, limitsDraft_)) { toast("Could not save limits"); return; }
+  limits_ = limitsDraft_; go(SH_SYS_ADMIN); toast("Play limits saved");
+}
+void Shell::drawSysLimits() {
+  sclear(C_NAVY);
+  shead(80, 32, "Play limits (minutes)", C_WHITE);
+  const uint16_t values[2] = {limitsDraft_.sessionMinutes, limitsDraft_.dailyMinutes};
+  for (int i = 0; i < 2; i++) {
+    stextC(80, 44 + i * 33, i ? "Per day" : "Per session", C_LTGRAY);
+    const ui::Box minus = limitStepBox(i, false), plus = limitStepBox(i, true);
+    sbutton(minus, "-", C_SKY, down(in_, minus)); sbutton(plus, "+", C_SKY, down(in_, plus));
+    char value[12]; snprintf(value, sizeof value, "%u min", (unsigned)values[i]); stextC(80, minus.y + 7, value, C_WHITE);
+  }
+  sbutton(LIMIT_SAVE, "Save", C_GREEN, down(in_, LIMIT_SAVE));
+  stextC(80, 143, "Hold +/- for 10", C_LTGRAY);
+  sback();
+}
+
+// ---------------------------------------------------------------- network clock and explicit local UTC offset
+static const ui::Box CLOCK_MINUS = {26, 94, 24, 20}, CLOCK_PLUS = {110, 94, 24, 20};
+static const ui::Box CLOCK_SAVE = {30, 119, 48, 20}, CLOCK_SYNC = {82, 119, 48, 20};
+void Shell::updateSysClock() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  if (tapped(in_, CLOCK_MINUS) && utcDraft_ > -720) utcDraft_ -= 15;
+  if (tapped(in_, CLOCK_PLUS) && utcDraft_ < 840) utcDraft_ += 15;
+  if (tapped(in_, CLOCK_SAVE)) {
+    toast(sys_->setUtcOffset(utcDraft_) ? "UTC offset saved" : "Could not save offset");
+    return;
+  }
+  if (sys_->clockStatus().state != TIME_SYNCING && tapped(in_, CLOCK_SYNC))
+    if (!sys_->syncClock()) toast("Wifi busy. Try again");
+}
+void Shell::drawSysClock() {
+  sclear(C_NAVY);
+  shead(80, 33, "Clock", C_WHITE);
+  const time_t epoch = now_; struct tm date{}; gmtime_r(&epoch, &date);
+  char current[24]; strftime(current, sizeof current, "%Y-%m-%d %H:%M", &date); stextC(80, 47, current, C_WHITE);
+  const ClockStatus clock = sys_->clockStatus();
+  static const char* const STATES[] = {"Using device clock", "Syncing with wifi...", "Wifi time synced", "No wifi connection", "Time sync failed"};
+  stextC(80, 60, STATES[clock.state], clock.state == TIME_OK ? (uint8_t)C_GREEN : (uint8_t)C_YELLOW);
+  char last[28]; ago(last, sizeof last, now_, clock.lastSync); stextC(80, 71, last, C_LTGRAY);
+  stextC(80, 83, "Local UTC offset", C_LTGRAY);
+  const int magnitude = utcDraft_ < 0 ? -utcDraft_ : utcDraft_;
+  char offset[16]; snprintf(offset, sizeof offset, "UTC%c%02d:%02d", utcDraft_ < 0 ? '-' : '+', magnitude / 60, magnitude % 60);
+  stextC(80, 101, offset, C_WHITE);
+  sbutton(CLOCK_MINUS, "-", C_SKY, down(in_, CLOCK_MINUS)); sbutton(CLOCK_PLUS, "+", C_SKY, down(in_, CLOCK_PLUS));
+  sbutton(CLOCK_SAVE, "Save", C_GREEN, down(in_, CLOCK_SAVE));
+  if (clock.state != TIME_SYNCING) sbutton(CLOCK_SYNC, "Sync now", C_SKY, down(in_, CLOCK_SYNC));
+  sback();
 }
 
 // ---------------------------------------------------------------- Updates: channel, versions, Check now / Restart now
@@ -142,7 +384,10 @@ static bool busy(UpdState s) { return s == UP_CHECKING || s == UP_DOWNLOADING; }
 // The channel stays put mid-check and with an image waiting: switching then would show one channel's result as another's.
 static bool chanLocked(UpdState s) { return busy(s) || s == UP_READY; }
 // A scan or a test join holds the radio: Check now would do nothing until it is done.
-static bool radioBusy(System& s) { return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0; }
+static bool radioBusy(System& s) {
+  Home found{};
+  return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0 || s.lookupResult(found) < 0 || s.clockStatus().state == TIME_SYNCING;
+}
 void Shell::updateSysUpd() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
@@ -165,7 +410,7 @@ static void statusLine(char* out, size_t n, const UpdStatus& u, const char* runn
   else snprintf(out, n, "%s", (size_t)u.state < sizeof STATE / sizeof STATE[0] ? STATE[u.state] : "");
 }
 void Shell::drawSysUpd() {
-  clear(C_NAVY);
+  sclear(C_NAVY);
   const Channel ch = sys_->channel();
   const bool locked = chanLocked(upd_.state);
   for (int c = 0; c < 2; c++) {
@@ -181,12 +426,12 @@ void Shell::drawSysUpd() {
   const bool radio = !busy(upd_.state) && upd_.state != UP_READY && radioBusy(*sys_);
   stextC(80, 87, radio ? "Wifi setup busy" : st, C_YELLOW);
   if (!radio) drawSysAction();
-  ui::drawBack();
+  sback();
 }
 void Shell::drawSysAction() {   // the bar while downloading, else the button that fits the state
   if (upd_.state == UP_DOWNLOADING) {
-    frame(30, 102, 100, 10, C_WHITE);
-    rect(31, 103, (upd_.pct > 100 ? 100 : upd_.pct) * 98 / 100, 8, C_GREEN);
+    sframe(30, 102, 100, 10, C_WHITE);
+    srect(31, 103, (upd_.pct > 100 ? 100 : upd_.pct) * 98 / 100, 8, C_GREEN);
   }
   if (busy(upd_.state)) return;
   bool ready = upd_.state == UP_READY;
@@ -217,7 +462,7 @@ void Shell::updateSysWifi() {
 }
 static void bars(int x, int y, int rssi) {   // 1-3 bars: under -75 dBm, under -60, the rest
   const int on = rssi >= -60 ? 3 : rssi >= -75 ? 2 : 1;
-  for (int b = 0; b < 3; b++) rect(x + b * 3, y + 4 - 2 * b, 2, 3 + 2 * b, b < on ? (uint8_t)C_NAVY : (uint8_t)C_LTGRAY);
+  for (int b = 0; b < 3; b++) srect(x + b * 3, y + 4 - 2 * b, 2, 3 + 2 * b, b < on ? (uint8_t)C_NAVY : (uint8_t)C_LTGRAY);
 }
 void Shell::drawNetRow(int i, const Network& n) {
   const ui::Box b = netRow(i);
@@ -227,10 +472,15 @@ void Shell::drawNetRow(int i, const Network& n) {
   bars(b.x + 5, b.y + 6 + dy, n.rssi);
   char name[40]; fit(name, sizeof name, n.ssid, b.w - 31);
   stext(b.x + 16, b.y + 6 + dy, name, C_NAVY);
-  if (n.secured) blitTint(SPR_LOCK, b.x + b.w - 11, b.y + 4 + dy, C_NAVY);
+  if (n.secured) {
+    const int x = (b.x + b.w - 10) * 3, y = (b.y + 5 + dy) * 3;
+    gfx565::roundRect({x + 3, y, 12, 17}, 6, scol(C_NAVY));
+    gfx565::roundRect({x + 6, y + 3, 6, 11}, 3, scol(C_WHITE));
+    gfx565::roundRect({x, y + 10, 18, 15}, 3, scol(C_NAVY));
+  }
 }
 void Shell::drawSysWifi() {
-  clear(C_NAVY);
+  sclear(C_NAVY);
   const int pages = (nNets_ + NET_ROWS - 1) / NET_ROWS;
   if (nNets_ < 0) stextC(80, 66, "Looking for wifi...", C_WHITE);
   else if (scanRefused_ && busy(upd_.state)) { stextC(80, 60, "Busy with an update,", C_WHITE); stextC(80, 70, "Rescan when it is done", C_WHITE); }
@@ -244,20 +494,35 @@ void Shell::drawSysWifi() {
     stextC(80, 138, pg, C_LTGRAY);
   }
   sbutton(RESCAN, "Rescan", nNets_ < 0 ? (uint8_t)C_DKGRAY : (uint8_t)C_SKY, nNets_ >= 0 && down(in_, RESCAN));
-  ui::drawBack();
+  sback();
 }
 
-// ---------------------------------------------------------------- the password: a keyboard of 31 keys shaped to the glass
-// Rows of 6, 7, 7, 6 and 5 keys of 19x18, 2 px apart, every corner inside a 79 px circle. The first 26 type the page's
-// characters, the last row is shift, page, space, backspace and OK (TK_SHIFT..TK_OK).
-static const char* const PAGES[3] = {"abcdefghijklmnopqrstuvwxyz", "1234567890!@#$%&*-_+=.,?/:", "\"'();<>[\\]^`{|}~"};
+// ---------------------------------------------------------------- the keyboard: full QWERTY shaped to the glass
+// A user decision of 2026-10-18: full QWERTY for grown-ups, keys of 12x18 (4 x 6 mm, under the menu's 18 px floor:
+// tools/playtest.py KEYBOARDS). Every tap goes to the nearest key (the 2 px gaps belong to their neighbours), and the
+// key under the finger shows big above it. Rows of 10, 9, then shift + 7 + backspace, then page, space and OK; the
+// widest row sits low, where the glass is widest. The 26 character keys type the page's characters (TK_SHIFT..TK_OK).
+static const char* const PAGES[3] = {"qwertyuiopasdfghjklzxcvbnm", "1234567890-/:;()$&@\".,?!'#", "[]{}%^*+=_\\|~<>`"};
 static const char* const NEXT_PAGE[3] = {"123", "#+=", "abc"};
+// Character keys: rows from y 48, 20 apart, keys 12 wide every 14. The controls, in TK_SHIFT..TK_OK order: shift and
+// backspace flank the third row, page, space and OK are the fourth.
+static const ui::Box CONTROL_KEYS[TK_COUNT - TK_CHARS] = {
+  {11, 88, 19, 18}, {21, 108, 26, 18}, {49, 108, 58, 18}, {130, 88, 19, 18}, {109, 108, 30, 18}};
 static ui::Box textKeyBox(int key) {
-  static const int N[5] = {6, 7, 7, 6, 5};
+  static const int N[3] = {10, 9, 7}, X0[3] = {11, 18, 32};
+  if (key >= TK_CHARS) return CONTROL_KEYS[key - TK_CHARS];
   int r = 0;
   while (key >= N[r]) key -= N[r++];
-  const int w = N[r] * 21 - 2;
-  return {80 - w / 2 + key * 21, 39 + r * 20, 19, 18};
+  return {X0[r] + key * 14, 48 + r * 20, 12, 18};
+}
+static bool live(const TextEntry& t, int k) { return k >= TK_CHARS || textChar(t, k); }   // drawn and typing
+// The key a finger at (x, y) means: the one whose box, grown by half a gap, holds it; -1 off the keyboard.
+static int textKeyAt(int x, int y) {
+  for (int k = 0; k < TK_COUNT; k++) {
+    const ui::Box b = textKeyBox(k);
+    if (x >= b.x - 1 && x < b.x + b.w + 1 && y >= b.y - 1 && y < b.y + b.h + 1) return k;
+  }
+  return -1;
 }
 char shell::textChar(const TextEntry& t, int key) {
   if (key < 0 || key >= TK_CHARS) return 0;
@@ -273,10 +538,41 @@ bool shell::textKey(TextEntry& t, int key) {
   if (key == TK_DEL && t.len > 0) t.buf[--t.len] = 0;
   return key == TK_OK && t.len > 0;
 }
+// One frame of typing into t: true when OK was tapped with something typed.
+static bool typeInto(const Input& in, TextEntry& t) {
+  for (int k = 0; k < TK_COUNT; k++) {
+    const ui::Box b = textKeyBox(k);
+    if (live(t, k)) UiAudit::add(b.x, b.y, b.w, b.h);   // what tapped() would log, for the nearest-key rule
+  }
+  // The key under the finger when it lifts (the one the preview showed), however long it was held, for a press that
+  // began on the keyboard: on 4 mm keys a finger often rolls onto the next one.
+  if (!in.released || textKeyAt(in.downX, in.downY) < 0) return false;
+  const int k = textKeyAt(in.x, in.y);
+  return k >= 0 && textKey(t, k);   // an empty slot types nothing; OK needs something typed
+}
 void Shell::updateSysPass() {
   if (ui::back(in_)) { pass_ = TextEntry{}; go(SH_SYS_WIFI); return; }
-  for (int k = 0; k < TK_COUNT; k++)
-    if ((k >= TK_CHARS || textChar(pass_, k)) && tapped(in_, textKeyBox(k)) && textKey(pass_, k)) { join(); return; }
+  if (typeInto(in_, pass_)) join();
+}
+// The keys, and the one under the finger big above it (a finger hides the key it presses).
+void Shell::drawKeys(const TextEntry& t) {
+  const int held = in_.down ? textKeyAt(in_.x, in_.y) : -1;
+  for (int k = 0; k < TK_CHARS; k++) {
+    const char c[2] = {textChar(t, k), 0};
+    if (live(t, k)) sbutton(textKeyBox(k), c, C_WHITE, k == held, 1);
+  }
+  const char* const labels[5] = {"Aa", NEXT_PAGE[t.page % 3], "space", "<", "OK"};
+  const uint8_t cols[5] = {t.upper ? (uint8_t)C_YELLOW : (uint8_t)C_LTGRAY, C_SKY, C_WHITE, C_LTGRAY,
+                           t.len ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY};
+  for (int k = TK_CHARS; k < TK_COUNT; k++) sbutton(textKeyBox(k), labels[k - TK_CHARS], cols[k - TK_CHARS], k == held, 1);
+  if (held < 0 || held >= TK_CHARS || !live(t, held)) return;
+  const ui::Box b = textKeyBox(held);
+  const char c[2] = {textChar(t, held), 0};
+  const int keyCenter = b.x + b.w / 2;
+  const int previewCenter = keyCenter < 40 ? 40 : keyCenter > 120 ? 120 : keyCenter;
+  // Edge keys sit where the glass is wide; their raised preview must move inward to the narrower upper chord.
+  spanel({previewCenter - 12, b.y - 27, 24, 24}, C_WHITE, C_DKBROWN);
+  font::text(adult::FONT32, c, previewCenter * 3 - font::textWidth(adult::FONT32, c) / 2, (b.y - 22) * 3, scol(C_NAVY));
 }
 // What was typed, every letter but the last as '*' (a password is never shown whole), its tail when it is long.
 static void masked(char* out, size_t n, const TextEntry& t, bool cursor) {
@@ -289,19 +585,12 @@ static void masked(char* out, size_t n, const TextEntry& t, bool cursor) {
   memmove(out, s, strlen(s) + 1);
 }
 void Shell::drawSysPass() {
-  clear(C_NAVY);
-  ui::panel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
+  sclear(C_NAVY);
+  spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
   char shown[TEXT_MAX + 2]; masked(shown, sizeof shown, pass_, pass_.len < TEXT_MAX && (ms_ / 400) % 2);
   if (pass_.len) stextC(80, 27, shown, C_NAVY); else stextC(80, 27, "Password", C_DKGRAY);
-  for (int k = 0; k < TK_CHARS; k++) {
-    const char c[2] = {textChar(pass_, k), 0};
-    if (c[0]) sbutton(textKeyBox(k), c, C_WHITE, down(in_, textKeyBox(k)), 1);
-  }
-  const char* const labels[5] = {"Aa", NEXT_PAGE[pass_.page % 3], "spc", "<", "OK"};
-  const uint8_t cols[5] = {pass_.upper ? (uint8_t)C_YELLOW : (uint8_t)C_LTGRAY, C_SKY, C_WHITE, C_LTGRAY,
-                           pass_.len ? (uint8_t)C_GREEN : (uint8_t)C_LTGRAY};
-  for (int k = TK_CHARS; k < TK_COUNT; k++) sbutton(textKeyBox(k), labels[k - TK_CHARS], cols[k - TK_CHARS], down(in_, textKeyBox(k)), 1);
-  ui::drawBack();
+  drawKeys(pass_);
+  sback();
 }
 
 // ---------------------------------------------------------------- joining: a test with the new password, then saved
@@ -335,7 +624,7 @@ void Shell::updateSysJoin() {
   else if (tapped(in_, JOIN_RETRY)) { if (pick_.secured) go(SH_SYS_PASS); else join(); }
 }
 void Shell::drawSysJoin() {
-  clear(C_NAVY);
+  sclear(C_NAVY);
   char name[40]; fit(name, sizeof name, pick_.ssid, 120);
   static const char* const HEAD[] = {"Could not connect to", "Connected to", "Could not save"};
   static const char* const TAIL[] = {"Wrong password or no signal", "Saved", "Nothing was changed"};
@@ -354,5 +643,108 @@ void Shell::drawSysJoin() {
     sbutton(JOIN_RETRY, "Try again", C_SKY, down(in_, JOIN_RETRY));
     sbutton(JOIN_SAVE, "Save anyway", C_LTGRAY, down(in_, JOIN_SAVE));
   }
-  ui::drawBack();
+  sback();
+}
+
+// ---------------------------------------------------------------- Home: where the radar centers, from a street address
+// Home shows what is set; Set address types one on the keyboard (shown in full, not masked: an address is not a
+// secret), OK looks it up (a radio job: it waits while another runs), and the place found is saved only after Yes.
+enum : int8_t { L_WAITING = -2, L_LOOKING = -1, L_NONE = 0, L_FOUND = 1, L_SAVE_FAILED = 2 };
+static const ui::Box SET_BTN = {40, 104, 80, 20}, FIND_YES = {26, 104, 52, 20}, FIND_NO = {82, 104, 52, 20};
+static const ui::Box FIND_RETRY = {50, 104, 60, 20};
+// s word-wrapped into up to `lines` centered rows of at most room px from y; returns the y after the last row.
+static int wrapC(int y, const char* s, int room, int lines, uint8_t c) {
+  char line[64];
+  while (*s && lines-- > 0) {
+    int n = 0, cut = 0;
+    while (s[n] && n < 63) {
+      memcpy(line, s, (size_t)n + 1); line[n + 1] = 0;
+      if (stextW(line) > room) break;
+      n++;
+      if (!s[n] || s[n] == ' ') cut = n;
+    }
+    if (!cut || !lines) cut = n;   // one long word, or the last row: cut where it stops fitting
+    memcpy(line, s, (size_t)cut); line[cut] = 0;
+    stextC(80, y, line, c);
+    y += ROW;
+    s += cut;
+    while (*s == ' ') s++;
+  }
+  return y;
+}
+void Shell::updateSysHome() {
+  if (ui::back(in_)) { go(SH_SYS_INFO); return; }
+  if (tapped(in_, SET_BTN)) { addr_ = TextEntry{}; go(SH_SYS_ADDR); }
+}
+void Shell::drawSysHome() {
+  sclear(C_NAVY);
+  stextC(80, 30, "The radar centers on", C_LTGRAY);
+  Home h;
+  if (sys_->home(h)) {
+    const int y = wrapC(44, h.name[0] ? h.name : "a place with no name", 120, 3, C_WHITE);
+    char at[32]; snprintf(at, sizeof at, "%.3f, %.3f", h.lat, h.lon);
+    stextC(80, y + 3, at, C_LTGRAY);
+  } else {
+    stextC(80, 50, "nothing yet", C_YELLOW);
+  }
+  sbutton(SET_BTN, "Set address", C_SKY, down(in_, SET_BTN));
+  sback();
+}
+void Shell::updateSysAddr() {
+  if (ui::back(in_)) { addr_ = TextEntry{}; go(SH_SYS_HOME); return; }
+  if (typeInto(in_, addr_)) { look_ = L_WAITING; go(SH_SYS_FIND); }
+}
+void Shell::drawSysAddr() {
+  sclear(C_NAVY);
+  spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
+  char shown[TEXT_MAX + 2];   // its tail, as much as fits, and a cursor
+  snprintf(shown, sizeof shown, "%s%s", addr_.buf, addr_.len < TEXT_MAX && (ms_ / 400) % 2 ? "_" : "");
+  const char* tail = shown;
+  while (stextW(tail) > 98) tail++;
+  if (addr_.len) stextC(80, 27, tail, C_NAVY); else stextC(80, 27, "Street, city", C_DKGRAY);
+  drawKeys(addr_);
+  sback();
+}
+void Shell::pollLook() {
+  if (look_ == L_WAITING && sys_->startLookup(addr_.buf)) look_ = L_LOOKING;
+  else if (look_ == L_LOOKING) look_ = (int8_t)sys_->lookupResult(found_);
+}
+void Shell::updateSysFind() {
+  upd_ = sys_->status();
+  pollLook();
+  if (ui::back(in_)) { go(SH_SYS_ADDR); return; }   // the typing is kept
+  if (look_ == L_FOUND && tapped(in_, FIND_YES)) {
+    if (sys_->saveHome(found_)) { addr_ = TextEntry{}; go(SH_SYS_HOME); } else look_ = L_SAVE_FAILED;
+  } else if (look_ == L_FOUND && tapped(in_, FIND_NO)) go(SH_SYS_ADDR);
+  else if ((look_ == L_NONE || look_ == L_SAVE_FAILED) && tapped(in_, FIND_RETRY)) {
+    if (look_ == L_NONE) go(SH_SYS_ADDR); else if (sys_->saveHome(found_)) go(SH_SYS_HOME);
+  }
+}
+void Shell::drawSysFind() {
+  sclear(C_NAVY);
+  static const char* const DOTS[] = {".", "..", "..."};
+  if (look_ < 0) {
+    stextC(80, 48, look_ == L_WAITING && busy(upd_.state) ? "Waiting for the update" : "Looking up", C_LTGRAY);
+    wrapC(60, addr_.buf, 120, 2, C_WHITE);
+    stextC(80, 82, DOTS[ms_ / 400 % 3], C_WHITE);
+  } else if (look_ == L_FOUND) {
+    stextC(80, 30, "Is this home?", C_LTGRAY);
+    wrapC(44, found_.name, 120, 4, C_WHITE);
+    sbutton(FIND_YES, "Yes", C_GREEN, down(in_, FIND_YES));
+    sbutton(FIND_NO, "No", C_LTGRAY, down(in_, FIND_NO));
+  } else {
+    stextC(80, 48, look_ == L_NONE ? "Could not find that address" : "Could not save", C_YELLOW);
+    wrapC(62, look_ == L_NONE ? "Check the spelling, or add the city" : "Nothing was changed", 120, 2, C_LTGRAY);
+    sbutton(FIND_RETRY, "Try again", C_SKY, down(in_, FIND_RETRY));
+  }
+  sback();
+}
+
+void Shell::drawSysToast() {
+  const font::Box box = {&adult::FONT24, 360, 80, 5, font::Align::CENTER};
+  const int h = font::textHeight(adult::FONT24, toast_, box.w, box.spacing);
+  const int y = 210 - h / 2;
+  gfx565::roundRect({48, y - 12, 384, h + 24}, 12, scol(C_DKBROWN));
+  gfx565::roundRect({51, y - 9, 378, h + 18}, 9, scol(C_WHITE));
+  font::textBox(box, toast_, 60, y, scol(C_DKBROWN));
 }

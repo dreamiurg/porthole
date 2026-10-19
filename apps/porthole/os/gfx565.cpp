@@ -5,6 +5,17 @@ namespace gfx565 {
 uint16_t* fb = nullptr;
 void target(uint16_t* pixels) { fb = pixels; }
 
+void expandIndexed3(const uint8_t* logical160, const uint16_t* palette) {
+  uint16_t row[W];
+  for (int y = 0; y < H / 3; y++) {
+    for (int x = 0; x < W / 3; x++) {
+      const uint16_t c = palette[logical160[y * (W / 3) + x]];
+      row[x * 3] = row[x * 3 + 1] = row[x * 3 + 2] = c;
+    }
+    for (int dy = 0; dy < 3; dy++) memcpy(fb + (y * 3 + dy) * W, row, sizeof row);
+  }
+}
+
 void rect(int x, int y, int w, int h, uint16_t c) {
   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
   int x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;

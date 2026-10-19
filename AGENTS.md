@@ -35,10 +35,15 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
    lost. No personal data: no real names, no analytics. Nothing sent over the network carries anything
-   about the kid; the only traffic is the daily firmware update check, its download, and a clock sync.
+   about the kid. The only traffic is the daily firmware update check, its download, and a clock sync;
+   while Radar is open, home rounded to ~1 km goes to adsb.fi every 5 s and the callsigns it sees to
+   adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
-   anything user-visible.
+   anything user-visible. Every gameplay or UI change also requires a black-box
+   emulator playthrough of the final build: play through ordinary visible inputs,
+   inspect the experience, fix observed problems, and replay after changes.
+   Automated tests, bots and staged screenshots alone do not satisfy this gate.
 6. **Warnings are errors.** Every hook and CI job fails on any warning: `-Werror`
    on host and firmware builds (firmware: our sources via `build_src_flags`),
    biome `--error-on-warnings`, Python `-W error`, and `tools/fail-on-warning.sh`
@@ -86,6 +91,12 @@ Per-app targets are listed in `docs/new-app.md`.
   `/code-review` on the diff (or the PR); fix every real finding or say why it
   is skipped, then re-run `make check` (and `make ci` for anything
   user-visible). Green hooks and CI are not a review.
+- Done means played. Before calling gameplay or UI work done, marking its PR
+  ready or merging it, record the final-build black-box playthrough, findings,
+  fixes and screenshot/input evidence. Cover the complete affected player flow,
+  including completion, failure where applicable, replay and exit. For Porthole,
+  follow `apps/porthole/docs/playtesting.md`'s required playthrough procedure.
+  Documentation-only and non-player-visible changes do not require a new run.
 
 ## Delegation
 

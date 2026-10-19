@@ -1,0 +1,8 @@
+# Declared existing-profile fixture, no game progress or settings.
+reset
+profile Sam 8 1234
+profile Kai 6 5678
+profile Wwwwwwww 9 9999
+profile Mia 7
+reboot
+wait 500

@@ -1,0 +1,66 @@
+# Natural title -> upright calibration -> briefing -> flight, with no debug shortcut.
+# Flat or implausible gravity cannot calibrate; a fresh tap is needed after a stable grip.
+reset
+tilt 0 0 1000
+profile Sam 8
+wait 600
+tap 109 135
+wait 600
+tap 109 135
+wait 600
+expect-screen launcher
+ui-check
+snap sf00_launcher
+tap 48 80
+wait 600
+expect-screen sf_title
+ui-check
+snap sf01_title
+tap 80 120
+wait 600
+expect-screen sf_calibrate
+expect ready=0
+ui-check
+snap sf02_flat
+tap 80 120
+expect-screen sf_calibrate
+tilt 0 2000 0
+wait 600
+expect ready=0
+tap 80 120
+expect-screen sf_calibrate
+tilt 350 900 -250
+wait 160
+expect ready=0
+wait 600
+expect ready=1
+ui-check
+snap sf03_ready
+shake
+expect ready=0
+tap 80 120
+expect-screen sf_calibrate
+wait 600
+expect ready=1
+tap 80 120
+expect-screen sf_brief
+expect neutralX=350
+expect neutralY=900
+expect neutralZ=-250
+ui-check
+snap sf04_brief
+# Mashing immediately after the briefing arrives cannot skip it.
+tap 80 120
+expect-screen sf_brief
+wait 600
+tap 80 120
+expect-screen sf_squadron
+expect lives=3
+expect score=0
+expect volleys=0
+ui-check
+snap sf05_squadron
+wait 600
+tap 120 80
+expect volleys=1
+sheet flow

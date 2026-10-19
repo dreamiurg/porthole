@@ -5,6 +5,7 @@
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
 //                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
 //                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf | reboot | sys WHAT [ARG]
+//                            | feed WHAT [ARG]
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
 //                            | tilt X Y Z | shake | perf
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
@@ -12,8 +13,11 @@
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
 // it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed, and for wifi setup
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
-// ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
+// ends so) | savefail (the next saveWifi fails) | timeok [localEpoch] | timefail (complete a clock sync). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
+// feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
+// nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
+// `debug` adds feed_state/feed_on/feed_km/feed_starts and sys_home/sys_lat/sys_lon/sys_lookups/sys_addr.
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -24,13 +28,17 @@
 #include <string>
 #include <vector>
 #include "games/biscuit/game.h"
+#include "games/living-kingdom/game.h"
 #include "games/marble-kick/game.h"
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
+#include "games/plane-radar/game.h"
+#include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
+#include "netclock.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
 #endif
@@ -52,7 +60,9 @@ struct FileStore : shell::Store {
 // Canned wireless updates: the state is whatever a `sys` command last set. A local build, like the firmware's: "dev"
 // never shows the "something new" card, so every scenario that does not ask for it starts as before.
 static uint32_t now();
+static void setNow(uint32_t epoch);
 struct SimSystem : shell::System {
+  shell::ClockStatus clock; int syncs = 0;
   char version[16] = "dev"; shell::UpdStatus st; shell::Channel ch = shell::CH_STABLE;
   bool rebootDue = false; int slot = 0, checks = 0, restarts = 0;
   // Wifi setup: the saved network, the last scan (-1 until `sys scan` or `sys scanempty` ends it) and the last test
@@ -60,15 +70,33 @@ struct SimSystem : shell::System {
   char ssid[33] = "Home-Network-5G-Upstairs", pass[65] = "", tried[33] = "";
   shell::Network nets[shell::MAX_NETWORKS]; int nNets = 0, tested = 0, scans = 0, tests = 0;
   bool failSave = false;   // `sys savefail`: the next saveWifi fails (NVS full or broken)
+  // Home (the radar's center): set to Seattle so the radar is live; `sys nohome` clears it. A lookup runs until
+  // `sys found` (a canned place) or `sys notfound` ends it; `sys homefail` makes the next saveHome fail.
+  shell::Home homeAt = {47.62, -122.35, "Seattle, King County, Washington, United States"};
+  bool homeSet = true, failHome = false; int looked = 0, lookups = 0; char addr[65] = "";
+  bool hasHome() override { return true; }
+  bool home(shell::Home& o) override { o = homeAt; return homeSet; }
+  bool saveHome(const shell::Home& h) override {
+    if (failHome) { failHome = false; return false; }
+    homeAt = h; homeSet = true; return true;
+  }
+  bool startLookup(const char* a) override {
+    if (!radioFree() || looked < 0) return false;
+    lookups++; looked = -1; snprintf(addr, sizeof addr, "%s", a); return true;
+  }
+  int lookupResult(shell::Home& o) override {
+    if (looked == 1) o = {47.6205, -122.3493, "Space Needle, 400 Broad Street, Seattle, Washington, United States"};
+    return looked;
+  }
   bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
-  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0; }
+  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0 && clock.state != shell::TIME_SYNCING; }
   void info(shell::SysInfo& o) override {
     o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
     o.heapFree = 187392; o.sd = true; o.wifiSaved = ssid[0] != 0; snprintf(o.ssid, sizeof o.ssid, "%s", ssid);
   }
   shell::UpdStatus status() override { return st; }
   void checkNow() override {
-    if (nNets < 0 || tested < 0) return;   // a scan or a test holds the radio: the contract says nothing happens
+    if (!radioFree()) return;   // a scan or a test holds the radio: the contract says nothing happens
     checks++; st.state = ssid[0] ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now();
   }
   bool startScan() override { if (!radioFree()) return false; scans++; nNets = -1; return true; }
@@ -87,6 +115,33 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_NO_WIFI || st.state == shell::UP_FAILED) st.state = shell::UP_IDLE;   // as the firmware's
     return true;
   }
+  shell::ClockStatus clockStatus() override { return clock; }
+  bool syncClock() override {
+    if (!radioFree()) return false;
+    syncs++; clock.state = ssid[0] ? shell::TIME_SYNCING : shell::TIME_NO_WIFI;
+    return true;
+  }
+  bool setUtcOffset(int16_t minutes) override {
+    if (!netclock::validOffset(minutes)) return false;
+    FileStore store; int16_t readback = 0;
+    store.save("sys", "utc_off", &minutes, sizeof minutes);
+    if (store.load("sys", "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
+    const int delta = minutes - clock.utcOffsetMin;
+    setNow(netclock::local(now(), delta));
+    if (clock.lastSync) clock.lastSync = netclock::local(clock.lastSync, delta);
+    clock.utcOffsetMin = minutes;
+    return true;
+  }
+  bool setClock(const char* what, const char* arg) {
+    const bool ok = !strcmp(what, "timeok");
+    if (!ok && strcmp(what, "timefail")) return false;
+    if (clock.state != shell::TIME_SYNCING) return true;   // only a pending request can complete
+    if (!ok) { clock.state = shell::TIME_FAILED; return true; }
+    const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : now();
+    if (epoch < netclock::MIN_UTC || epoch >= netclock::MAX_UTC) { clock.state = shell::TIME_FAILED; return true; }
+    setNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
+    return true;
+  }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
   void scanned() {
     static const struct { const char* ssid; int rssi; bool secured; } AIR[] = {
@@ -102,6 +157,10 @@ struct SimSystem : shell::System {
     else if (!strcmp(what, "joinok")) tested = 1;
     else if (!strcmp(what, "joinfail")) tested = 0;
     else if (!strcmp(what, "savefail")) failSave = true;
+    else if (!strcmp(what, "nohome")) homeSet = false;
+    else if (!strcmp(what, "found")) looked = 1;
+    else if (!strcmp(what, "notfound")) looked = 0;
+    else if (!strcmp(what, "homefail")) failHome = true;
     else return false;
     return true;
   }
@@ -115,10 +174,14 @@ struct SimSystem : shell::System {
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
-    st = {}; st.lastCheck = last; nNets = tested = 0;
+    st = {}; st.lastCheck = last; nNets = tested = looked = 0;
+    FileStore store; int16_t offset = 0;
+    clock = {};
+    if (store.load("sys", "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
+      clock.utcOffsetMin = offset;
   }
   void set(const char* what, const char* arg) {
-    if (setWifi(what)) return;
+    if (setClock(what, arg) || setWifi(what)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }
@@ -130,25 +193,62 @@ struct SimSystem : shell::System {
     if (strcmp(what, "version") && strcmp(what, "newest")) st.lastCheck = now();
   }
   void print() const {
+    static const char* const TIME[] = {"idle", "syncing", "ok", "nowifi", "failed"};
+    printf("[sys sys_time=%s sys_sync=%lu sys_off=%d sys_syncs=%d]\n", TIME[clock.state],
+           (unsigned long)clock.lastSync, clock.utcOffsetMin, syncs);
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
            ch == shell::CH_BETA ? "beta" : "stable", S[st.state], checks, restarts, (unsigned long)st.lastCheck);
     printf("[sys sys_ssid=\"%s\" sys_pass=\"%s\" sys_scans=%d sys_nets=%d sys_tests=%d sys_tried=\"%s\" sys_tested=%d]\n", ssid,
            pass, scans, nNets, tests, tried, tested);
+    printf("[sys sys_home=%d sys_lat=%.4f sys_lon=%.4f sys_lookups=%d sys_addr=\"%s\"]\n", homeSet, homeAt.lat, homeAt.lon,
+           lookups, addr);
   }
 };
+
+// Canned planes for Plane Radar: they fly on, one step per 5 s of sim time (a fetch on the board), and wrap around.
+// Between them they cover every kind, a plane with no callsign, one past the 20 km ring (a rim dot) and one near the
+// glass's edge (its tag goes on the far side).
+struct SimFeed : air::Feed {
+  air::State state = air::S_LIVE; bool on = false, empty = false; float km = 0; int starts = 0;
+  void start(float radiusKm) override { if (!on) starts++; on = true; km = radiusKm; }
+  void stop() override { on = false; }
+  void read(air::Snapshot& out) override;
+  bool spot(double* la, double* lo) override;   // home, from the system menu (SimSystem)
+  void set(const char* what, const char*) {
+    static const char* const S[] = {"off", "nospot", "nowifi", "joining", "live", "lost"};
+    empty = !strcmp(what, "empty");
+    if (empty) { state = air::S_LIVE; return; }
+    for (int i = 0; i < air::S_COUNT; i++)
+      if (!strcmp(what, S[i])) { state = (air::State)i; return; }
+    fprintf(stderr, "unknown command: feed %s\n", what);
+  }
+  void print() const {
+    printf("[feed feed_state=%d feed_on=%d feed_km=%.1f feed_starts=%d]\n", (int)state, on, km, starts);
+  }
+};
+static SimFeed g_feed;
 
 static Game g_pets;
 static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
+static radar::Game g_radar;
+static starfighter::Game g_starfighter;
+static kingdom::Game g_kingdom;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
 static InputTracker g_tracker;
+bool SimFeed::spot(double* la, double* lo) {
+  shell::Home h;
+  const bool set = g_sys.home(h);
+  *la = h.lat; *lo = h.lon;
+  return set;
+}
 static uint32_t g_ms = 0, g_epoch = 0;
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
 static uint16_t g_pal565[TINT_COUNT][C_COUNT];   // the same, as the firmware hands it to board::present
@@ -163,6 +263,32 @@ static int g_shakeFrames = 0;                    // frames of shaking left
 static double g_updateMs = 0, g_renderMs = 0; static int g_perfFrames = 0;
 
 static uint32_t now() { return g_epoch + g_ms / 1000; }
+
+void SimFeed::read(air::Snapshot& out) {
+  static const air::Plane PLANES[] = {
+    {-9.0f, 6.0f, 95, 420, 12300, "ASA1234", "SEA-SFO", air::K_AIRLINER},
+    {4.0f, -11.0f, 340, 310, 8650, "DAL88", "SEA-ATL", air::K_AIRLINER},
+    {12.0f, 9.0f, 220, 120, 2500, "N512SP", "", air::K_SMALL},
+    {-3.0f, -4.0f, 45, 160, 4100, "", "", air::K_SMALL},
+    {6.5f, 14.5f, 180, 380, 21000, "RCH401", "", air::K_MILITARY},
+    {-18.0f, 1.5f, 70, 450, 35000, "UAL905", "SFO-NRT", air::K_AIRLINER},
+    {22.0f, -6.0f, 270, 400, 30000, "SWA77", "OAK-SEA", air::K_AIRLINER},
+  };
+  out = air::Snapshot{};
+  out.state = state;
+  if (state != air::S_LIVE) return;
+  const uint32_t step = g_ms / 5000;
+  out.gen = step + 1;
+  if (empty) return;
+  for (const air::Plane& p : PLANES) {
+    air::Plane q = p;
+    const float km = q.knots * 1.852f / 3600 * 5 * (float)(step % 24);   // 5 s a step, wrapping every 2 minutes
+    q.eastKm += sinf(q.trackDeg * 3.14159265f / 180) * km;
+    q.northKm += cosf(q.trackDeg * 3.14159265f / 180) * km;
+    out.planes[out.n++] = q;
+  }
+}
+static void setNow(uint32_t epoch) { g_epoch = epoch - g_ms / 1000; }
 static void wipe() {   // every namespace, every key: all the .sav files
   DIR* d = opendir("build/host"); if (!d) return;
   while (dirent* e = readdir(d)) {
@@ -178,6 +304,7 @@ static void boot() {
     assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
   }
   g_sys.powerOn();
+  air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, n, &g_sys);
 }
 static void reset() { wipe(); boot(); }
@@ -366,7 +493,7 @@ static const Named COMMANDS[] = {
   {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), c); }},
   {"app", [](Finger&, const char* a, const char*, const char*) { if (!g_shell.openApp(a)) printf("app %s: not opened\n", a); }},
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
-  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); }},
+  {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); g_feed.print(); }},
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
   {"dbg", [](Finger&, const char* a, const char*, const char*) { g_shell.debugCmd(a); }},
   {"screen", [](Finger&, const char*, const char*, const char*) { printf("screen=%s\n", g_shell.screenName()); }},
@@ -378,6 +505,7 @@ static const Named COMMANDS[] = {
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
   {"reboot", [](Finger& f, const char*, const char*, const char*) { boot(); f.down = false; }},
   {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
+  {"feed", [](Finger&, const char* a, const char* b, const char*) { g_feed.set(a, b); }},
 };
 static void runScript(const char* path) {
   FILE* f = fopen(path, "r"); if (!f) { perror(path); exit(1); }

@@ -1,0 +1,19 @@
+{
+  "00-marsh-profile-fixture-map.png": "349d6725542f5c8d1d2b6c4dfdac92e998deb8e9be3a99ed1ef50b31b2a62508",
+  "01-woods-first.png": "ca93563fd933d4c1d5075a758d382a2f259417e043a7788501c672b6cc19b258",
+  "02-other-campaign-woods-options.png": "ca93563fd933d4c1d5075a758d382a2f259417e043a7788501c672b6cc19b258",
+  "03-woods-preview.png": "8a49ca9b971f01ca5064cdc18b1859d14516a173255113a01ee1b27cb4155b91",
+  "04-woods-first.png": "6151c440e7fc059f3bff0815bc6eadee64cee4d26d26e41f831b58be4dc28e12",
+  "05-woods-choice.png": "1680a7e8b98b08e02472462466e6f4f4e4c733eeb7f95cb1982a0105750dfbd8",
+  "06-hillside-result1.png": "0d658767db6b9565a5c3d6c290643dd93516ca1546e8bf4cee955793f34152eb",
+  "07-hillside-result2.png": "267ff3bca09f06a0da71fd8358716d7a7298e087d0be898f86cf10505cd13f42",
+  "08-hillside-back1.png": "0d658767db6b9565a5c3d6c290643dd93516ca1546e8bf4cee955793f34152eb",
+  "09-hillside-next2.png": "267ff3bca09f06a0da71fd8358716d7a7298e087d0be898f86cf10505cd13f42",
+  "10-hillside-save-quit.png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c",
+  "11-hillside-result-resumed.png": "267ff3bca09f06a0da71fd8358716d7a7298e087d0be898f86cf10505cd13f42",
+  "12-watchtower-after-hillside.png": "a553e4c10f1c736ce2a76ef092ed42a108ee2eae06711960bf66358904716363",
+  "13-exit.png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c",
+  "14-returned-to-result3.png": "a553e4c10f1c736ce2a76ef092ed42a108ee2eae06711960bf66358904716363",
+  "15-watchtower-first.png": "3e6187c33f834b7942d6b74942d0abff78de4da1e3bdbe860d2de8747d60e603",
+  "16-final-exit.png": "89e68e45747dc17677d25d8691080c9ea63f79757892bbdb107f9def9cde894c"
+}

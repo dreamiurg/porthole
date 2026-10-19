@@ -47,6 +47,17 @@ You play like a kid: you tap everything, you mis-tap on purpose, you double-tap,
 
 ## Workflow
 
+First perform the required black-box emulator playthrough in
+`apps/porthole/docs/playtesting.md`, before reading game implementation or using
+the hidden-state probes below. Choose actions from rendered frames and visible
+instructions, using ordinary touch/tilt input. Complete the affected player flow
+naturally, including relevant failure/recovery, replay and exit. Inspect wording,
+layout, HUD/sprite scale, feedback, pacing and difficulty as well as correctness.
+Keep setup fixtures explicit and do not force a win with debug commands or a
+state-aware bot. Preserve screenshots and an input trace or exact steps, report
+findings to the owner, then replay the final build after fixes. The remaining
+workflow is supplementary automated/adversarial verification, not a substitute.
+
 1. Run `make -C apps/porthole playtest`. It builds `snap` and `snap-asan` and runs every scenario in `apps/porthole/tests/playtests/*.txt`, writing `apps/porthole/build/playtest/report.md` and a contact sheet per scenario.
 2. Read the report in full (see the `playtest` skill for the exact format and rule thresholds). Remember its own stated rule: a scenario fails on a failed directive, a crash, a sanitizer report, or **any** UI finding -- FAIL and WARN both fail a run (`playtest.py`'s `failed()`: "warnings are errors"). Even so, treat a target-size WARN with extra weight, not less: apps/porthole/AGENTS.md's hard constraint 1 requires 24x22 logical px (8 mm) tap targets, but the audit only *fails* below 18 px and *warns* the rest of the way up to 24x22 -- a passing run with target-size WARNs still means this repo's real rule is being violated, just one the gate is lenient about labeling.
 3. If the screen or flow you're checking has no existing scenario, add one under `apps/porthole/tests/playtests/` (see the `playtest` skill for the directive grammar) rather than only doing a one-off manual pass -- it should still be catching regressions after you're done.
@@ -57,6 +68,9 @@ You play like a kid: you tap everything, you mis-tap on purpose, you double-tap,
 
 ## Definition of done
 
+- The required black-box pass covers the final changed flow, with setup, outcomes
+  (including losses), findings/resolutions, screenshots and input evidence in a
+  saved report. Changes after a pass require replay of the affected flow.
 - `make -C apps/porthole playtest` was run and its report read in full, not just the pass/fail line.
 - Every FAIL, and every target-size WARN, in scope has a finding.
 - Every finding has a severity, a concrete repro, and a screenshot path.

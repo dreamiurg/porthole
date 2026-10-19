@@ -122,12 +122,14 @@ and Wi-Fi that no app uses yet.
 ## Getting started
 
 You need Python 3.11+, Node 22, a C++17 compiler, and PlatformIO for firmware.
+Host builds also need zlib headers and a library (`zlib1g-dev` on Debian/Ubuntu;
+included in the macOS SDK).
 
 ```sh
 git clone https://github.com/dreamiurg/porthole.git
 cd porthole
 pip install -r platform/requirements.txt   # PlatformIO Core + the pinned builder deps
-pip install pillow 'gcovr>=8.3'            # make lint (golden screenshots, art checks) and make ci (coverage)
+pip install pillow fonttools==4.61.1 'gcovr>=8.3'  # art/font checks and coverage
 make hooks                                 # the same checks as CI, run on commit and push
 make check                                 # lint + tests for every app
 ```
@@ -177,7 +179,7 @@ To give it your wifi, pick one:
 
 Grown-ups have a hidden menu. On "Who's playing?", press and hold the title for 5 seconds. **Info** shows the
 version, the wifi, the SD card and a few other details. **Wifi** lists the networks nearby. **Updates** shows the running and newest version, lets you
-pick Stable or Beta, and has **Check now** (it downloads right away, about a minute, with the progress on screen) and **Restart now** once an update is ready. The running version is also in small print at the bottom
+pick Stable or Beta, and has **Check now** (it downloads right away, about a minute; a black background shows the download percentage and a Cancel control) and **Restart now** once an update is ready. The running version is also in small print at the bottom
 of "Who's playing?".
 
 - **Stable** (the default) gets versions I've tried and promoted.

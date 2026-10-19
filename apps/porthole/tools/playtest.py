@@ -60,7 +60,29 @@ SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 # The hidden system menu is for grown-ups (a user decision of 2026-10-18): 18 px (6 mm) targets pass there without the
 # kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; "sys_new" is the kids' card and is not in it.
-GROWN_UPS = {"sys_info", "sys_updates", "sys_wifi", "sys_pass", "sys_join"}
+GROWN_UPS = {
+    "sys_info",
+    "sys_updates",
+    "sys_wifi",
+    "sys_pass",
+    "sys_join",
+    "sys_home",
+    "sys_addr",
+    "sys_find",
+    "sys_admin",
+    "sys_pin",
+    "sys_pin_set",
+    "sys_pin_again",
+    "sys_reset",
+    "sys_remove",
+    "sys_players",
+    "sys_player_pin",
+    "sys_limits",
+    "sys_clock",
+}
+# The grown-ups' full QWERTY keyboard (a user decision of 2026-10-18): 12 px (4 mm) keys pass on these screens. Every
+# tap goes to the nearest key and the pressed key shows big above the finger; under 12 px still fails.
+KEYBOARDS = {"sys_pass", "sys_addr"}
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
     "=": lambda a, b: a == b,
@@ -113,8 +135,9 @@ def audit(tag, screen, regions, texts, full):
         add("WARN", "dead screen", "nothing tappable")
     for r in regions:
         x, y, w, h = r
-        if min(w, h) < 18:
-            add("FAIL", "target size", f"{name(r)}: {min(w, h)} px < 18 px (6 mm)")
+        floor = 12 if screen in KEYBOARDS else 18
+        if min(w, h) < floor:
+            add("FAIL", "target size", f"{name(r)}: {min(w, h)} px < {floor} px ({floor // 3} mm)")
         elif (w < 24 or h < 22) and screen not in GROWN_UPS:
             add("WARN", "target size", f"{name(r)}: under 24x22 px (8 mm)")
         inside = sum((px + 0.5 - 80) ** 2 + (py + 0.5 - 80) ** 2 <= 6400 for px in range(x, x + w) for py in range(y, y + h)) / max(1, w * h)
@@ -443,7 +466,10 @@ def main():
         sys.exit(f"playtest: {'missing ' + ', '.join(missing) + ' (run make playtest)' if missing else 'no scenario matches'}")
     OUT.mkdir(parents=True, exist_ok=True)
     results = []
-    with ThreadPoolExecutor(os.cpu_count()) as pool:  # every scenario has its own cwd, so they run side by side
+    # Coverage-heavy shell scenarios can exceed their unchanged 30-second
+    # deadline when every reported CPU is saturated. Bound the worker pool;
+    # each scenario still runs in its own cwd with the same checks and limits.
+    with ThreadPoolExecutor(min(4, os.cpu_count() or 1)) as pool:
         for r in pool.map(run_scenario, paths):
             results.append(r)
             print(f"{'FAIL' if failed(r) else 'PASS'} {r['name']} ({r['sec']:.1f} s, {r['checks']} checks, UI {ui_count(r, 'FAIL')} FAIL / {ui_count(r, 'WARN')} WARN)")

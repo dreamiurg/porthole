@@ -28,15 +28,30 @@ test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/gam
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
+test_update_gate_SRC :=
+test_display_frames_SRC :=
+test_update_picture_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_gfx565_SRC := $(wildcard os/*.cpp)
+test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
+test_kingdom_art_SRC := os/gfx565.cpp
+test_kingdom_content_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
+test_kingdom_shell_SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/living-kingdom/*.cpp) games/pets-club/pet.cpp
+test_kingdom_reader_SRC := $(wildcard os/*.cpp) games/living-kingdom/reader.cpp
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
+test_clock_SRC :=
 test_tilt_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
+test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
+test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
+test_starfighter_rules_SRC := games/starfighter/rules.cpp
+test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
+# Native firmware uses ROM miniz; host builds use the system zlib decoder.
+HOST_LIBS := -lz
 BUILD := build/host
 
 all: sim test
@@ -45,25 +60,31 @@ $(BUILD):
 	mkdir -p $(BUILD)
 
 sim: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS)
+	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS) $(HOST_LIBS)
 
 snap: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap
+	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap $(HOST_LIBS)
 
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
 snap-asan: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan
+	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan $(HOST_LIBS)
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
 test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
-	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) && $(BUILD)/$(t) &&) true
+	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) $(HOST_LIBS) && $(BUILD)/$(t) &&) true
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) games/living-kingdom/tools/content.py --check
+	$(PY) games/living-kingdom/tools/test_content.py
+	$(PY) games/living-kingdom/tools/kingdom_art.py --check
+	$(PY) games/living-kingdom/tools/font.py --check
+	$(PY) tools/check_rgb_driver.py
+	$(PY) games/starfighter/tools/art.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
@@ -106,13 +127,16 @@ endif
 coverage:
 	rm -rf $(COV) && mkdir -p $(COV)/obj
 	for f in $(SRC) host/sim.cpp $(TESTS:%=host/%.cpp); do o=$(COV)/obj/$${f%.cpp}.o; mkdir -p $$(dirname $$o) && $(CXX) $(COV_CXXFLAGS) -c $$f -o $$o || exit 1; done
-	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) && $(COV)/$(t) &&) true
-	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap
+	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) $(HOST_LIBS) && $(COV)/$(t) &&) true
+	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap $(HOST_LIBS)
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
+	python3 games/living-kingdom/tools/kingdom_art.py
+	python3 games/living-kingdom/tools/font.py
+	python3 games/starfighter/tools/art.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py

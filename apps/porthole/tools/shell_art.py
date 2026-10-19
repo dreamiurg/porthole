@@ -4,7 +4,7 @@
 Reuses the ASCII helpers of games/pets-club/tools/art.py. Avatars are drawn as the left half of a 20x20
 face, mirrored, then given the same 1-px inner outline as the dog rig. Icons are single-color masks meant
 for gfx::blitTint, like Pets Club's CHECK/ARROW.
-Emits shell/shell_sprites.h, the system menu's font shell/shell_font.h and a preview sheet at build/art/shell_sheet.png (needs Pillow for the preview).
+Emits shell/shell_sprites.h and a preview sheet at build/art/shell_sheet.png (needs Pillow for the preview).
 Run from apps/porthole/ (or anywhere: it chdirs there). `--check` exits 1 if the header is stale.
 """
 
@@ -17,7 +17,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from art import K, T, ascii_img  # noqa: E402
 
 HEADER = "shell/shell_sprites.h"
-FONT_HEADER = "shell/shell_font.h"
 SHEET = "build/art/shell_sheet.png"
 AV = 20  # avatar size
 
@@ -311,135 +310,6 @@ o.oyyyo.o
 }
 
 
-# The system menu's compact font (grown-ups only, a user decision of 2026-10-18; the kids' screens keep the 8x8 font):
-# printable ASCII, 7 rows a glyph with rows separated by "|" (a missing row is blank). Capitals and digits are rows
-# 0-4, lowercase x-height rows 1-4, descenders rows 5-6. One blank column follows every glyph.
-FONT_H = 7
-FONT = {
-    " ": "...",
-    "!": "#|#|#|.|#",
-    '"': "#.#|#.#",
-    "#": ".#.#.|#####|.#.#.|#####|.#.#.",
-    "$": "..#..|.####|#.#..|.###.|..#.#|####.|..#..",
-    "%": "##..#|##.#.|..#..|.#.##|#..##",
-    "&": ".#..|#.#.|.#..|#.##|.#.#",
-    "'": "#|#",
-    "(": ".#|#.|#.|#.|#.|.#",
-    ")": "#.|.#|.#|.#|.#|#.",
-    "*": ".....|#.#.#|.###.|#.#.#",
-    "+": "...|.#.|###|.#.",
-    ",": "..|..|..|..|.#|#.",
-    "-": "...|...|###",
-    ".": ".|.|.|.|#",
-    "/": "..#|..#|.#.|#..|#..",
-    "0": ".#.|#.#|#.#|#.#|.#.",
-    "1": ".#.|##.|.#.|.#.|###",
-    "2": "###.|...#|.##.|#...|####",
-    "3": "###.|...#|.##.|...#|###.",
-    "4": "#..#|#..#|####|...#|...#",
-    "5": "####|#...|###.|...#|###.",
-    "6": ".##.|#...|###.|#..#|.##.",
-    "7": "####|...#|..#.|.#..|.#..",
-    "8": ".##.|#..#|.##.|#..#|.##.",
-    "9": ".##.|#..#|.###|...#|.##.",
-    ":": ".|.|#|.|#",
-    ";": "..|..|.#|..|.#|#.",
-    "<": "..#|.#.|#..|.#.|..#",
-    "=": "...|###|...|###",
-    ">": "#..|.#.|..#|.#.|#..",
-    "?": "##.|..#|.#.|...|.#.",
-    "@": ".###.|#.#.#|#.###|#....|.###.",
-    "A": ".##.|#..#|####|#..#|#..#",
-    "B": "###.|#..#|###.|#..#|###.",
-    "C": ".###|#...|#...|#...|.###",
-    "D": "###.|#..#|#..#|#..#|###.",
-    "E": "####|#...|###.|#...|####",
-    "F": "####|#...|###.|#...|#...",
-    "G": ".###|#...|#.##|#..#|.###",
-    "H": "#..#|#..#|####|#..#|#..#",
-    "I": "###|.#.|.#.|.#.|###",
-    "J": "...#|...#|...#|#..#|.##.",
-    "K": "#..#|#.#.|##..|#.#.|#..#",
-    "L": "#...|#...|#...|#...|####",
-    "M": "#...#|##.##|#.#.#|#...#|#...#",
-    "N": "#..#|##.#|#.##|#..#|#..#",
-    "O": ".##.|#..#|#..#|#..#|.##.",
-    "P": "###.|#..#|###.|#...|#...",
-    "Q": ".##.|#..#|#..#|#.#.|.#.#",
-    "R": "###.|#..#|###.|#.#.|#..#",
-    "S": ".###|#...|.##.|...#|###.",
-    "T": "###|.#.|.#.|.#.|.#.",
-    "U": "#..#|#..#|#..#|#..#|.##.",
-    "V": "#...#|#...#|.#.#.|.#.#.|..#..",
-    "W": "#...#|#...#|#.#.#|##.##|#...#",
-    "X": "#..#|#..#|.##.|#..#|#..#",
-    "Y": "#.#|#.#|.#.|.#.|.#.",
-    "Z": "####|...#|.##.|#...|####",
-    "[": "##|#.|#.|#.|#.|##",
-    "\\": "#..|#..|.#.|..#|..#",
-    "]": "##|.#|.#|.#|.#|##",
-    "^": ".#.|#.#",
-    "_": "....|....|....|....|....|####",
-    "`": "#.|.#",
-    "a": "....|.###|#..#|#..#|.###",
-    "b": "#...|###.|#..#|#..#|###.",
-    "c": "...|.##|#..|#..|.##",
-    "d": "...#|.###|#..#|#..#|.###",
-    "e": "....|.##.|####|#...|.###",
-    "f": ".##|#..|###|#..|#..",
-    "g": "....|.###|#..#|#..#|.###|...#|.##.",
-    "h": "#...|###.|#..#|#..#|#..#",
-    "i": "#|.|#|#|#",
-    "j": ".#|..|.#|.#|.#|.#|#.",
-    "k": "#..|#.#|##.|#.#|#.#",
-    "l": "#.|#.|#.|#.|.#",
-    "m": ".....|####.|#.#.#|#.#.#|#.#.#",
-    "n": "....|###.|#..#|#..#|#..#",
-    "o": "....|.##.|#..#|#..#|.##.",
-    "p": "....|###.|#..#|#..#|###.|#...|#...",
-    "q": "....|.###|#..#|#..#|.###|...#|...#",
-    "r": "...|#.#|##.|#..|#..",
-    "s": "....|.###|##..|..##|###.",
-    "t": ".#.|###|.#.|.#.|..#",
-    "u": "....|#..#|#..#|#..#|.###",
-    "v": ".....|#...#|#...#|.#.#.|..#..",
-    "w": ".....|#...#|#.#.#|#.#.#|.#.#.",
-    "x": "....|#..#|.##.|.##.|#..#",
-    "y": "....|#..#|#..#|#..#|.###|...#|.##.",
-    "z": "....|####|..#.|.#..|####",
-    "{": ".##|.#.|#..|.#.|.#.|.##",
-    "|": "#|#|#|#|#|#",
-    "}": "##.|.#.|..#|.#.|.#.|##.",
-    "~": "....|.#.#|#.#.",
-}
-
-
-def glyph(ch):
-    rows = FONT[ch].split("|")
-    w = len(rows[0])
-    assert len(rows) <= FONT_H and all(len(r) == w for r in rows) and w <= 8, f"glyph {ch!r}: rows of one width, at most 7"
-    return w, [sum(1 << x for x, c in enumerate(r) if c == "#") for r in rows] + [0] * (FONT_H - len(rows))
-
-
-def font_header():
-    assert sorted(FONT) == [chr(c) for c in range(32, 127)], "one glyph for every printable ASCII character"
-    glyphs = [glyph(chr(c)) for c in range(32, 127)]
-    return (
-        "\n".join(
-            [
-                "// AUTO-GENERATED by tools/shell_art.py. Edit the generator, not this file.",
-                "// The system menu's compact font: printable ASCII 32..126, rows top to bottom, bit x = column x.",
-                "#pragma once",
-                "#include <stdint.h>",
-                f"constexpr int SYS_FONT_H = {FONT_H};",
-                "static const uint8_t SYS_FONT_W[95] = {" + ",".join(str(w) for w, _ in glyphs) + "};",
-                f"static const uint8_t SYS_FONT[95][{FONT_H}] = {{" + ",".join("{" + ",".join(map(str, r)) + "}" for _, r in glyphs) + "};",
-            ]
-        )
-        + "\n"
-    )
-
-
 def write(path, text, check):
     if check:
         try:
@@ -488,8 +358,6 @@ def emit(check=False):
     out.append("static const gfx::Sprite SPR_LIGHTS[] = {" + ", ".join(f"{{{im.w},{im.h},spr_{n.lower()}_px}}" for n, im in lights.items()) + "};")
     text = "\n".join(out) + "\n"
     wrote = write(HEADER, text, check)
-    if write(FONT_HEADER, font_header(), check):
-        print(f"wrote {FONT_HEADER}")
     if not wrote:
         return
     print(f"wrote {HEADER} ({len(avatars)} avatars, {len(icons)} icons)")

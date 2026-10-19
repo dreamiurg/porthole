@@ -1,0 +1,8 @@
+{
+  "binary_sha256": "780fd0add1892afa4af35e29a9d1acc266d5baf7798e6bcb0ab3a8c2bd4eb246",
+  "matching_snapshots": 268,
+  "changed_snapshots": [
+    "140-marsh-result2.png"
+  ],
+  "setup": "Fresh campaign; shell session20/daily120 minutes only."
+}

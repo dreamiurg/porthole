@@ -4,9 +4,12 @@
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
 #include "games/biscuit/game.h"
+#include "games/living-kingdom/game.h"
 #include "games/marble-kick/game.h"
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
+#include "games/plane-radar/game.h"
+#include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
 #include "net.h"
@@ -24,12 +27,17 @@ static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
+static radar::Game g_radar;
+static starfighter::Game g_starfighter;
+static kingdom::Game g_kingdom;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static net::Updater g_sys;
+static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
 static Shell g_shell;
 static InputTracker g_input;
+static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
 static uint8_t g_backlight = 100;
@@ -50,7 +58,9 @@ static int g_mtAt = 0;
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
-  return g_bootLocalEpoch + (millis() - g_bootMillis) / 1000u;
+  const uint32_t seconds = (millis() - g_bootMillis) / 1000u;
+  g_bootLocalEpoch += seconds; g_bootMillis += seconds * 1000u;
+  return g_bootLocalEpoch;
 }
 
 // Compile-time fallback clock: the time this firmware was built (local time of the build machine).
@@ -93,6 +103,7 @@ void setup() {
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
   g_sys.begin(nowSec);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
+  air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   uint32_t lastSeen = g_shell.lastSeen(), now;
   if (board::rtcValid()) now = board::rtcNow();
@@ -109,12 +120,34 @@ void setup() {
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
-static void dimWhenIdle(uint32_t ms) {
+static void dimWhenIdle(uint32_t ms, bool progress) {
   uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+  g_sys.setDark(want == 0);
+  if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {
+    if (g_backlight == 0 && !progress && !board::settlePanel()) return;
     g_backlight = want; board::setBacklight(want);
   }
-  g_sys.setDark(g_backlight == 0);
+}
+
+static bool updateDisplay(const Input& in) {
+  static bool active = false;
+  if (!g_sys.progressRequested()) {
+    if (active) { board::endUpdateDisplay(); active = false; g_updateInputGate.shown(millis()); }
+    return false;
+  }
+  if (!active) active = board::beginUpdateDisplay();
+  g_sys.progressReady(active);   // no NVS, calibration, or image writes until scan-out is independent of PSRAM
+  if (!active) return false;
+  if (in.tap && board::hitUpdateCancel(in.x, in.y)) g_sys.cancelCheck();
+  shell::UpdStatus status = g_sys.status();
+  char label[24];
+  if (g_sys.cancelling()) snprintf(label, sizeof label, "Stopping...");
+  else if (status.state != shell::UP_DOWNLOADING) snprintf(label, sizeof label, "Checking...");
+  else if (status.pct >= 100) snprintf(label, sizeof label, "Verifying...");
+  else snprintf(label, sizeof label, "Downloading %u%%", (unsigned)status.pct);
+  board::drawUpdateProgress(label, !g_sys.committing() && !g_sys.cancelling());
+  return true;
 }
 
 // The frame on the glass for tools/devctl.py. Indexed: "FB 160 160 idx\n", 160*160 palette indices, then the tint's 32
@@ -147,7 +180,8 @@ static void dumpFrame() {
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
 // "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
-// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background).
+// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background),
+// "L<lat>,<lon>" sets Radar's home without the menu.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
   for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
@@ -192,18 +226,33 @@ static void updateCommand() {
   }
   Serial.printf("[porthole] update check started (channel %s)\n", g_sys.channel() == shell::CH_BETA ? "beta" : "stable");
 }
-static void motionCommand(int c) {   // A, G, M, W, U: split out of serialCommand for the complexity gate
+static void homeCommand() {   // L<lat>,<lon>: decimal degrees; the name says where it came from
+  String arg = Serial.readStringUntil('\n'); arg.trim();
+  char* end = nullptr;
+  shell::Home h;
+  h.lat = strtod(arg.c_str(), &end);
+  const bool comma = end != arg.c_str() && *end == ',';   // "L,5" has no latitude
+  if (comma) h.lon = strtod(end + 1, &end);
+  snprintf(h.name, sizeof h.name, "%.4f, %.4f (set over serial)", h.lat, h.lon);
+  if (!comma || *end || !g_sys.saveHome(h)) { Serial.println("[porthole] usage: L<lat>,<lon> (decimal degrees)"); return; }
+  Serial.println("[porthole] home saved");
+}
+static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
   else if (c == 'W') wifiCommand();
   else if (c == 'U') updateCommand();
+  else if (c == 'L') homeCommand();
 }
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();
-  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu\n",
+  const shell::ClockStatus clock = g_sys.clockStatus();
+  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
+                "sys_time=%d sys_sync=%lu sys_off=%d\n",
                 (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
-                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck);
+                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck,
+                (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
@@ -227,12 +276,20 @@ static void serialCommand(int c) {
   else motionCommand(c);
 }
 
+static void applyClock(uint32_t ms) {
+  uint32_t synchronized = 0;
+  if (!g_sys.takeClock(synchronized)) return;
+  g_bootLocalEpoch = synchronized; g_bootMillis = ms;
+  board::rtcSet(synchronized);   // I2C and shell clock changes belong to this main core only
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt[g_mtAt];
   uint32_t t0 = micros();
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
+  applyClock(ms);
   board::Touch t = board::readTouch();
   if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
     t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
@@ -247,17 +304,23 @@ void loop() {
   in.gx = g_grav[0]; in.gy = g_grav[1]; in.gz = g_grav[2];
   g_activity.step(in, t.down, ms);   // picking up a dark board lights it; only a touch gets swallowed
   uint32_t t1 = micros();
-  g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  bool progress = updateDisplay(in);
+  Input shellInput = in;
+  g_updateInputGate.filter(shellInput, millis());   // a Cancel release must never become Check now or Restart now
+  g_shell.update(nowSec(), ms, progress ? Input{} : shellInput);
   uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
-  g_shell.render();
+  if (!progress) {
+    if (g_hires) gfx565::target(board::backBuffer());
+    g_shell.render();
+  }
   uint32_t t3 = micros();
-  if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  if (progress) delay(20);
+  else if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
-  dimWhenIdle(ms);
+  dimWhenIdle(ms, progress);
   g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
 }

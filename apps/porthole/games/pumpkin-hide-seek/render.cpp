@@ -4,6 +4,7 @@
 #include "rules.h"
 #include "gfx565.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -14,7 +15,15 @@ constexpr uint16_t WOOD=rgb(0x925743),FLOOR=rgb(0x633e43),ORANGE=rgb(0xf58b32),R
 constexpr uint16_t GOLD=rgb(0xffc875),CREAM=rgb(0xffedc2),SAGE=rgb(0x87a878),GREEN=rgb(0x49674d);
 constexpr uint16_t NIGHT=rgb(0x263449),BLUE=rgb(0x53637a),SKIN=rgb(0xe6b79d),GREY=rgb(0xb6acb4),BEAM=rgb(0x997752);
 constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops
-void box(int x,int y,int w,int h,uint16_t c) { gfx565::rect(x*3,y*3,w*3,h*3,c); }
+// The runtime's logical framebuffer is scratch while this RGB565 game owns the screen. Its palette stays ours.
+// Compose all overdraw here before expanding once, rather than repeatedly writing the panel's PSRAM buffer.
+constexpr uint16_t COLORS[]={0,INK,WALL,PURPLE,LILAC,WOOD,FLOOR,ORANGE,RUST,GOLD,CREAM,SAGE,GREEN,NIGHT,BLUE,SKIN,GREY,BEAM,SKY};
+uint8_t colorIndex(uint16_t c) {
+ for(unsigned i=0;i<sizeof COLORS/sizeof COLORS[0];++i) if(COLORS[i]==c) return static_cast<uint8_t>(i);
+ assert(false&&"Pumpkin color missing from its logical palette");
+ return 0;
+}
+void box(int x,int y,int w,int h,uint16_t c) { gfx::rect(x,y,w,h,colorIndex(c)); }
 void oval(int x,int y,int rx,int ry,uint16_t c) {
   for(int dy=-ry;dy<=ry;++dy) {
     int dx=static_cast<int>(rx*std::sqrt(1.f-float(dy*dy)/float(ry*ry)));
@@ -47,7 +56,7 @@ int glyph(char c) {
 }
 void text(int y,const char* s,uint16_t color,int scale=1,int cx=80) {
  int width=static_cast<int>(std::strlen(s))*6*scale-scale,x=(2*cx-width)/2;
- uint16_t bg=gfx565::fb[(y*3)*480+x*3];
+ uint16_t bg=COLORS[gfx::fb[y*gfx::W+x]];
  if(gfx::textLogEnabled&&gfx::textLogCount<64)
   gfx::textLog[gfx::textLogCount++]={int16_t(x),int16_t(y),int16_t(width),int16_t(7*scale),gfx565::rgb888(color),gfx565::rgb888(bg),true};
  for(int n=0;s[n];++n) for(int row=0;row<7;++row) for(int col=0;col<5;++col)
@@ -141,7 +150,7 @@ void door(bool open,uint32_t tick) {
  box(9+bob,77,6,3,INK);
 }
 void room(bool doorOpen,uint32_t tick) {
- gfx565::clear(WALL);
+ gfx::clear(colorIndex(WALL));
  for(int x=0;x<160;x+=12) box(x,0,1,88,PURPLE);
  box(0,82,160,5,INK); box(0,84,160,2,WOOD); box(0,87,160,73,FLOOR);
  for(int y=91;y<160;y+=13) {
@@ -327,7 +336,7 @@ constexpr const char* WON_QUIP[QUIPS][2]={{"YOU ESCAPED!","WITH THE CANDY"},{"SN
 void endPage(const View& v) {
  int q=v.quip%QUIPS;
  if(v.page==Page::Lost) {
-  gfx565::clear(ORANGE); icing(1600); pie(); box(30,39,100,19,INK); text(42,"YOU LOST",CREAM,2);
+  gfx::clear(colorIndex(ORANGE)); icing(1600); pie(); box(30,39,100,19,INK); text(42,"YOU LOST",CREAM,2);
   label(108,LOST_QUIP[q]); button("TRY AGAIN");
  } else {
   label(37,WON_QUIP[q][0]); label(51,WON_QUIP[q][1]); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
@@ -351,6 +360,7 @@ void draw(const View& v) {
   case Page::Lost: case Page::Won: endPage(v); break;
  }
  home(v.homeHold); mask();
+ gfx565::expandIndexed3(gfx::fb,COLORS);
 }
 namespace {
 uint8_t iconPixel(int x,int y) {

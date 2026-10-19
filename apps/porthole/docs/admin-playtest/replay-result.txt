@@ -1,0 +1,5 @@
+Fresh declared fixture, new emulator process, complete input-trace.jsonl replay.
+Base b76db520aea131ccd010fd9796fb50817ead2b19; snap SHA-256 0f0efa7fd47a007b4ebf139b69cffdf9f0e27fbec0c6067058dd54d30448d056.
+Original 43 native frames unchanged on the rebuilt emulator.
+Live inspected Admin, limits and Clock reentry appended with safe picker exit.
+PASS: all 49 distinct recorded native frames reproduced exactly in a subsequent fresh replay.

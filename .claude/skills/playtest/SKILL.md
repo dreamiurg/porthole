@@ -3,6 +3,16 @@ name: playtest
 description: Any game (apps/porthole). Use before calling any gameplay or UI change done. Runs the playtest suite (`make -C apps/porthole playtest`), explains how to read apps/porthole/build/playtest/report.md and its FAIL/WARN severities, and says when to escalate to the playtester agent instead of reading it yourself.
 ---
 
+Before the automated steps below, perform the **required black-box playthrough**
+in `apps/porthole/docs/playtesting.md`. Every gameplay/UI change needs actual
+play of the final build using visible touch/tilt inputs, natural completion and
+relevant failure/replay/exit checks. Inspect UI, wording, feedback, pacing and
+playability; report issues to their owner, then replay after fixes. Preserve
+setup, outcomes, findings, screenshots and input evidence. Debug fixtures,
+state-aware bots, unobserved trace replays and green CI cannot substitute for
+this pass. Keep hidden-state probes and the automated work below separate from
+the black-box session. Documentation-only/non-player-visible changes are exempt.
+
 1. `make -C apps/porthole playtest` builds `snap` and `snap-asan`, then runs `python3 apps/porthole/tools/playtest.py` against every scenario in `apps/porthole/tests/playtests/*.txt`. It writes `apps/porthole/build/playtest/report.md` and one contact-sheet PNG per scenario under `apps/porthole/build/playtest/`.
 2. To iterate on one scenario instead of the whole suite: `python3 apps/porthole/tools/playtest.py 05_read` (matches file names in `apps/porthole/tests/playtests/` by substring; space-separate several substrings, e.g. `06 monkey`).
 3. Read `apps/porthole/build/playtest/report.md` top to bottom, not just the summary line:

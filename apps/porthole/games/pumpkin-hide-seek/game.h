@@ -8,7 +8,7 @@
 namespace pumpkin {
 class Game : public App {
  public:
-  const char* name() const override { return "Pumpkin"; }
+  const char* name() const override { return "Spooky"; }
   const gfx::Sprite& icon() const override { return paint::icon(); }
   const char* store() const override { return "pumpkin"; }
   void enter(const AppEnter& e) override;

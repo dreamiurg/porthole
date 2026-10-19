@@ -58,10 +58,14 @@ The board is not powered overnight, so nothing depends on a night-time window.
   every boot.
 - **Rule 4 changes wording, not intent.** Suggested: "No network traffic carries anything about the kid. Only a
   daily update check and download go out."
-- **Flash is only written while the screen is dark** (decided on the board, 2026-10-17). Writing flash while a game
-  was on screen didn't just stutter (34 ms frames became about 62 ms): the glass showed broken frames, because a
-  flash write stalls the RGB panel's refill from PSRAM. The daily download starts only when the backlight is off and
-  stops if the screen wakes, resuming in the next dark spell. Check now keeps the screen lit.
+- **Visible update progress must survive flash writes** (revised 2026-10-19). The daily download starts with the
+  backlight off and stops on activity. Check now keeps the backlight on and uses a black screen with a percentage
+  and Cancel. It scans a small sparse picture from internal SRAM, independently of PSRAM and cache-disabled ISRs.
+  Every update worker, including the daily check, waits for this display before any flash writes and keeps it through cleanup. A daily check keeps the idle backlight off; activity cancels it at the next boundary, with visible feedback until cleanup finishes. Allocation failure
+  fails the check instead of falling back to a blank screen. Text changes at most four times a second, at a complete
+  frame boundary. Cancel shows "Stopping..." until the next network/write boundary and cleanup; a pending blocking
+  HTTPS request can take its timeout. Cancel disappears at the atomic handoff into final verification and boot-slot
+  selection; an accepted cancellation cannot install the image. Ordinary framebuffer scan-out resumes when the check finishes.
 - **Root rule 7.** The "something new" card and the hidden menu use the shell's own widgets and palette, with
   nothing from any game.
 

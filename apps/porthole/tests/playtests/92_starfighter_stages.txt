@@ -1,0 +1,79 @@
+# Fixture entry makes every timed phase deterministic; transitions thereafter use real updates.
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg waveclear
+wait 600
+expect-screen sf_waveclear
+ui-check
+snap sf06_waveclear
+wait 1100
+expect-screen sf_squadron
+expect wave=2
+dbg lastwave
+wait 1700
+expect-screen sf_entry
+dbg entry
+wait 600
+expect-screen sf_entry
+ui-check
+snap sf07_entry
+wait 1900
+expect-screen sf_trench
+ui-check
+snap sf08_trench
+# The end of the trench advances through the real update path.
+dbg trench-end
+wait 200
+expect-screen sf_target
+# Final shot is optional until aligned: missed passes remain recoverable.
+dbg target
+wait 7200
+expect-screen sf_target
+expect targetPasses>=1
+expect lives=3
+expect score=0
+ui-check
+snap sf09_target_return
+tilt 500 866 0
+wait 1000
+expect x>=330
+tap 120 90
+expect-screen sf_target
+expect score=0
+ui-check
+snap sf10_target_missed
+# A fresh target fixture resets to center; the actual tap begins the final sequence.
+tilt 0 1000 0
+wait 80
+dbg target
+wait 600
+tap 120 90
+expect-screen sf_torpedo
+expect score=1750
+ui-check
+snap sf11_torpedo
+wait 1900
+expect-screen sf_explosion
+ui-check
+snap sf12_explosion
+wait 2700
+expect-screen sf_victory
+expect lives=3
+ui-check
+snap sf13_victory
+wait 600
+tap 80 120
+expect-screen sf_calibrate
+expect ready=0
+wait 600
+tap 80 120
+expect-screen sf_brief
+wait 600
+tap 80 120
+expect-screen sf_squadron
+expect score=0
+expect lives=3
+expect wave=1
+sheet stages

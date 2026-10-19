@@ -1,0 +1,251 @@
+# Separate automated regression fixtures; natural visible enforcement is recorded in docs/admin-playtest/.
+# Defaults, draft cancellation, hold +/-10, persistence, single-player rest, and raising/lowering caps.
+newgame Solo Rex
+wait 2400
+wait 30000
+tap 80 80
+wait 10000
+expect today>40
+expect today<50
+tap 80 12
+wait 450
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 70
+wait 450
+expect-screen sys_limits
+expect session_min=6
+expect daily_min=25
+ui-check sys_limits-default
+snap 01_defaults
+hold 122 65
+wait 450
+hold 38 98
+wait 450
+ui-check sys_limits-edited
+snap 02_held
+tap 80 12
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_limits
+expect session_min=6
+expect daily_min=25
+ui-check sys_limits-cancelled
+hold 38 65
+wait 450
+tap 122 98
+wait 450
+down 122 65
+move 80 80
+up
+wait 450
+ui-check sys_limits-drag-cancelled
+tap 80 126
+wait 450
+expect session_min=1
+expect daily_min=26
+ui-check sys_admin-limits-saved
+snap 03_saved
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen launcher
+expect today>40
+expect today<50
+expect play>40
+app pets-club
+wait 2400
+wait 22000
+expect-screen rest
+expect rest>500
+expect today>=60
+expect today<70
+ui-check rest-single-profile
+snap 04_single_session
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 70
+wait 450
+expect-screen sys_limits
+tap 122 65
+wait 450
+hold 38 98
+wait 450
+hold 38 98
+wait 450
+tap 38 98
+wait 450
+tap 38 98
+wait 450
+tap 38 98
+wait 450
+tap 38 98
+wait 450
+tap 38 98
+wait 450
+tap 80 126
+wait 450
+expect session_min=2
+expect daily_min=1
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen rest
+expect today>=60
+expect rest>28000
+ui-check rest-lowered-daily
+snap 05_lowered
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 70
+wait 450
+expect-screen sys_limits
+tap 122 98
+wait 450
+tap 80 126
+wait 450
+expect session_min=2
+expect daily_min=2
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen rest
+expect today>=60
+expect rest<600
+expect rest>400
+ui-check rest-raised-daily
+snap 06_raised
+sheet settings_and_caps
+skip 600
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+expect today>=60
+expect today<70
+expect play=0
+app pets-club
+wait 2400
+wait 30000
+tap 80 80
+wait 30000
+expect-screen rest
+expect today>=120
+expect rest>28000
+ui-check rest-configured-daily
+snap 07_two_minutes
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 36 35
+wait 450
+tap 80 94
+wait 450
+tap 80 118
+wait 450
+expect session_min=2
+expect daily_min=2
+reboot
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+expect today=0
+expect play=0
+expect rest=0
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 70
+wait 450
+expect-screen sys_limits
+ui-check sys_limits-reboot
+snap 08_reboot
+hold 38 65
+wait 450
+hold 38 98
+wait 450
+hold 38 65
+wait 450
+hold 38 98
+wait 450
+tap 80 126
+wait 450
+expect session_min=1
+expect daily_min=1
+tap 80 70
+wait 450
+expect-screen sys_limits
+# Four-digit values must fit, and both controls clamp at one day.
+repeat 145
+hold 122 65
+wait 40
+hold 122 98
+wait 40
+end
+ui-check sys_limits-max
+snap 09_max
+tap 80 126
+wait 450
+expect session_min=1440
+expect daily_min=1440
+sheet persistence_and_bounds
