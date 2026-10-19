@@ -82,8 +82,9 @@ Per-app targets are listed in `docs/new-app.md`.
 - Coverage thresholds live in each app's Makefile. Don't lower them. Raise them
   when coverage grows.
 - Done means reviewed. Before calling any change done, marking a PR ready or
-  merging it, run `/code-review` on the diff (or the PR), fix every real finding
-  or say why it is skipped, then re-run `make check` (and `make ci` for anything
+  merging it, run `/simplify` on the diff and apply its cleanups, then
+  `/code-review` on the diff (or the PR); fix every real finding or say why it
+  is skipped, then re-run `make check` (and `make ci` for anything
   user-visible). Green hooks and CI are not a review.
 
 ## Delegation
