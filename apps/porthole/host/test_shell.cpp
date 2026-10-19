@@ -208,6 +208,11 @@ static void corruptNoRemigrate() {
   shell::Profiles boot; shell::loadAll(st, boot);
   assert(boot.count() == 0 && !boot.used[0]);
   uint8_t rec[shell::BLOB_MAX]; assert(st.load(shell::NS, "p0", rec, sizeof rec) == sizeof junk && rec[0] == 1);
+  // The unreadable slot (a newer firmware's record after a rollback, or a torn write) is not free: a new profile
+  // never takes its id and erases the saves that may still belong to it.
+  assert(shell::create(st, boot, draft("Kai", 6, 0), STORES, 2) == 1 && st.has("crago", "s0"));
+  for (int i = 0; i < 2; i++) assert(shell::create(st, boot, draft("Kid", 7, 0), STORES, 2) == i + 2);
+  assert(boot.full() && shell::create(st, boot, draft("Extra", 7, 0), STORES, 2) == -1 && st.has("crago", "s0"));
 }
 
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.

@@ -107,7 +107,7 @@ int Shell::appStores(const char** out) const {
 int Shell::createProfile(const char* name, uint8_t age, const char* code) {
   memset(&draft_, 0, sizeof draft_);
   snprintf(draft_.name, sizeof draft_.name, "%s", name); draft_.age = age;
-  for (int id = 0; id < MAX_PROFILES; id++) if (!prof_.used[id]) { draft_.avatar = (uint8_t)(id % NUM_AVATARS); break; }
+  for (int id = 0; id < MAX_PROFILES; id++) if (!prof_.used[id] && !prof_.blocked[id]) { draft_.avatar = (uint8_t)(id % NUM_AVATARS); break; }
   finishCreate(shell::pinCode(code));
   gate_.closed = false;   // a hook, not a touch
   return screen_ == SH_PICK ? -1 : active_;
@@ -160,7 +160,7 @@ void Shell::budgetTick() {   // per profile, across every game
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
   if (titleHeld()) { enterSystem(); return; }
-  int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
+  int n = prof_.count(), rows = prof_.full() ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
@@ -173,7 +173,7 @@ void Shell::updatePick() {
 void Shell::drawPick() {
   clear(C_SKY);
   textCentered(80, 18, "Who's playing?", C_NAVY);
-  int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
+  int n = prof_.count(), rows = prof_.full() ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
     int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;

@@ -59,7 +59,9 @@ static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused
   Record rec[MAX_PROFILES];
   bool used[MAX_PROFILES];
+  bool blocked[MAX_PROFILES];   // a record is there but will not load: not shown, and never handed to a new profile
   int count() const;
+  bool full() const;      // no id left for a new profile
   int nth(int i) const;   // id of the i-th used profile, -1 past the end
 };
 

@@ -15,6 +15,10 @@ bool saveLimits(Store& st, const Limits& l) {
   return validLimits(l) && st.save("sys", "limits", &l, sizeof l);
 }
 int Profiles::count() const { int n = 0; for (bool u : used) n += u; return n; }
+bool Profiles::full() const {
+  for (int id = 0; id < MAX_PROFILES; id++) if (!used[id] && !blocked[id]) return false;
+  return true;
+}
 int Profiles::nth(int i) const {
   for (int id = 0; id < MAX_PROFILES; id++) if (used[id] && i-- == 0) return id;
   return -1;
@@ -42,6 +46,7 @@ void loadAll(Store& st, Profiles& p) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
+    p.blocked[id] = n && !p.used[id];
   }
   uint8_t mark;
   if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
@@ -51,7 +56,7 @@ bool saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); return st.sav
 
 int create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores) {
   for (int id = 0; id < MAX_PROFILES; id++) {
-    if (p.used[id]) continue;
+    if (p.used[id] || p.blocked[id]) continue;
     for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
     Record& r = p.rec[id];
     memset(&r, 0, sizeof r);
