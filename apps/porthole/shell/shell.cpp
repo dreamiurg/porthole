@@ -145,7 +145,7 @@ void Shell::flushApp(bool allowed) {
   // write that failed is retried from this copy at the save cadence, not every frame.
   const void* data; size_t len;
   if (app_->takeSave(&data, &len, allowed) && len <= shell::BLOB_MAX) {
-    if (writtenOk_ && len == writtenLen_ && !memcmp(data, written_, len)) { lastSaveMs_ = ms_; return; }
+    if (writtenOk_ && len == writtenLen_ && !memcmp(data, written_, len)) return;   // keeps the cadence: a page turn next is still prompt
     memcpy(written_, data, len); writtenLen_ = len;
   } else if (writtenOk_ || !allowed) return;
   const char* k = shell::key('s', active_);
