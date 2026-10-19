@@ -1,0 +1,7 @@
+# Synthetic existing profiles; Sam has an adopted pet for game reachability.
+newgame Sam Rex
+wait 2400
+tap 80 12
+wait 500
+profile Kai 6 5678
+reboot

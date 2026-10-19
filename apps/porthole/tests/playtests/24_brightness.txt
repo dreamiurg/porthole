@@ -2,6 +2,8 @@
 # (big 100%, middle 65%, small 40%), on the shell's screens and in the games, and survives a reboot. At 22:00 Biscuit
 # shows its night room on Auto and its day room once a sun is picked.
 reset
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 profile Sam 8
 wait 450
 expect-screen launcher

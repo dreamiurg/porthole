@@ -1,6 +1,8 @@
 # Biscuit's care: Feed and petting (a tap on the pup) move the needs and show what the pup does; the bookshelf opens
 # the Library once the pup has pulled out a book; a nap from the window or from World rests everything but waking;
 # time away is capped and never goes below the floors.
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 profile Sam 8
 app biscuit
 wait 450

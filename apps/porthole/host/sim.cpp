@@ -13,7 +13,7 @@
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
 // it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed, and for wifi setup
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
-// ends so) | savefail (the next saveWifi fails) | timeok [localEpoch] | timefail (complete a clock sync). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
+// ends so) | savefail (the next saveWifi fails) | timeok [UTCepoch] | timefail (complete a clock sync). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
 // feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
 // nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
@@ -39,6 +39,7 @@
 #include "launcher.h"
 #include "shell.h"
 #include "netclock.h"
+#include "timezone.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
 #endif
@@ -60,9 +61,15 @@ struct FileStore : shell::Store {
 // Canned wireless updates: the state is whatever a `sys` command last set. A local build, like the firmware's: "dev"
 // never shows the "something new" card, so every scenario that does not ask for it starts as before.
 static uint32_t now();
-static void setNow(uint32_t epoch);
+static uint32_t utcNow();
+static uint32_t simulatedMs();
+static void setUtcNow(uint32_t epoch);
 struct SimSystem : shell::System {
   shell::ClockStatus clock; int syncs = 0;
+  timezones::Settings zoneSettings = timezones::settings(timezones::DEFAULT_ZONE, true);
+  uint32_t zoneGeneration = 0, zoneJobToken = 0, clockSequence = 0;
+  timezones::DetectionRetry zoneRetryPolicy;
+  bool zoneBusy = false, zoneRetry = false, unresolvedZoneCache = false, failZoneSave = false; int detections = 0;
   char version[16] = "dev"; shell::UpdStatus st; shell::Channel ch = shell::CH_STABLE;
   bool rebootDue = false; int slot = 0, checks = 0, restarts = 0;
   // Wifi setup: the saved network, the last scan (-1 until `sys scan` or `sys scanempty` ends it) and the last test
@@ -89,7 +96,7 @@ struct SimSystem : shell::System {
     return looked;
   }
   bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
-  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0 && clock.state != shell::TIME_SYNCING; }
+  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0 && !zoneBusy && clock.state != shell::TIME_SYNCING; }
   void info(shell::SysInfo& o) override {
     o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
     o.heapFree = 187392; o.sd = true; o.wifiSaved = ssid[0] != 0; snprintf(o.ssid, sizeof o.ssid, "%s", ssid);
@@ -111,35 +118,77 @@ struct SimSystem : shell::System {
   int testResult() override { return tested; }
   bool saveWifi(const char* s, const char* p) override {
     if (failSave || !s[0] || strlen(s) > 32 || strlen(p) > 64) { failSave = false; return false; }
+    if (clock.automaticZone && zoneSettings.reserved[0] && !storeZone(clock.zone, true, false)) return false;
     snprintf(ssid, sizeof ssid, "%s", s); snprintf(pass, sizeof pass, "%s", p);
+    ++zoneGeneration;   // a pending canned response belongs to the old network
+    if (zoneBusy && clock.automaticZone) zoneRetry = true;
     if (st.state == shell::UP_NO_WIFI || st.state == shell::UP_FAILED) st.state = shell::UP_IDLE;   // as the firmware's
     return true;
   }
-  shell::ClockStatus clockStatus() override { return clock; }
+  shell::ClockStatus clockStatus() override {
+    auto result = clock; result.utcOffsetMin = timezones::offset(utcNow());
+    if (result.lastSync) result.lastSync = timezones::local(result.lastSync);
+    return result;
+  }
   bool syncClock() override {
     if (!radioFree()) return false;
     syncs++; clock.state = ssid[0] ? shell::TIME_SYNCING : shell::TIME_NO_WIFI;
     return true;
   }
-  bool setUtcOffset(int16_t minutes) override {
-    if (!netclock::validOffset(minutes)) return false;
-    FileStore store; int16_t readback = 0;
-    store.save("sys", "utc_off", &minutes, sizeof minutes);
-    if (store.load("sys", "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
-    const int delta = minutes - clock.utcOffsetMin;
-    setNow(netclock::local(now(), delta));
-    if (clock.lastSync) clock.lastSync = netclock::local(clock.lastSync, delta);
-    clock.utcOffsetMin = minutes;
+  bool setUtcOffset(int16_t) override { return false; }
+  bool setTimeZone(const char* id, bool automatic) override { return storeZone(id, automatic, false); }
+  bool storeZone(const char* id, bool automatic, bool detected) {
+    const auto* zone = timezones::find(id);
+    if (!zone || failZoneSave) { failZoneSave = false; return false; }
+    const auto wanted = timezones::settings(zone->id, automatic, detected);
+    FileStore store; timezones::Settings readback{};
+    store.save("sys", "tz", &wanted, sizeof wanted);
+    if (store.load("sys", "tz", &readback, sizeof readback) != sizeof readback || memcmp(&wanted, &readback, sizeof wanted)) return false;
+    if (!timezones::select(zone->id)) return false;
+    zoneSettings = wanted; ++zoneGeneration; unresolvedZoneCache = automatic && !detected;
+    zoneRetry = zoneBusy && automatic;
+    snprintf(clock.zone, sizeof clock.zone, "%s", zone->id); clock.automaticZone = automatic;
+    clock.zoneState = zoneBusy ? shell::ZONE_LOOKING : shell::ZONE_IDLE;
     return true;
   }
+  bool detectTimeZone() override {
+    if (!clock.automaticZone || !radioFree()) return false;
+    if (zoneSettings.reserved[0] && !storeZone(clock.zone, true, false)) return false;
+    detections++; zoneJobToken = zoneGeneration;
+    zoneBusy = ssid[0] != 0;
+    clock.zoneState = zoneBusy ? shell::ZONE_LOOKING : shell::ZONE_FAILED;
+    return true;
+  }
+  bool setZone(const char* what, const char* arg) {
+    if (!strcmp(what, "zonesavefail")) { failZoneSave = true; return true; }
+    const bool ok = !strcmp(what, "zoneok");
+    if (!ok && strcmp(what, "zonefail")) return false;
+    if (!zoneBusy) return true;
+    zoneBusy = false;
+    if (zoneJobToken != zoneGeneration || !clock.automaticZone) {
+      clock.zoneState = shell::ZONE_IDLE;
+      if (zoneRetry) { zoneRetry = false; detectTimeZone(); }
+      return true;
+    }
+    const bool applied = ok && storeZone(arg[0] ? arg : timezones::DEFAULT_ZONE, true, true);
+    zoneRetryPolicy.completed(clockSequence);
+    clock.zoneState = applied ? shell::ZONE_OK : shell::ZONE_FAILED;
+    return true;
+  }
+  void tickClockRetry() { (void)zoneRetryPolicy.afterSync(clockSequence, simulatedMs(), false); }
   bool setClock(const char* what, const char* arg) {
+    if (!strcmp(what, "utc")) { setUtcNow((uint32_t)strtoul(arg, nullptr, 10)); return true; }
     const bool ok = !strcmp(what, "timeok");
     if (!ok && strcmp(what, "timefail")) return false;
     if (clock.state != shell::TIME_SYNCING) return true;   // only a pending request can complete
     if (!ok) { clock.state = shell::TIME_FAILED; return true; }
-    const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : now();
+    const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : utcNow();
     if (epoch < netclock::MIN_UTC || epoch >= netclock::MAX_UTC) { clock.state = shell::TIME_FAILED; return true; }
-    setNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
+    setUtcNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
+    ++clockSequence;
+    if (zoneRetryPolicy.afterSync(clockSequence, simulatedMs(), clock.automaticZone &&
+                                      (clock.zoneState == shell::ZONE_FAILED || unresolvedZoneCache)))
+      detectTimeZone();
     return true;
   }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
@@ -175,13 +224,20 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
     st = {}; st.lastCheck = last; nNets = tested = looked = 0;
-    FileStore store; int16_t offset = 0;
-    clock = {};
-    if (store.load("sys", "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
-      clock.utcOffsetMin = offset;
+    FileStore store; timezones::Settings saved{};
+    zoneSettings = timezones::settings(timezones::DEFAULT_ZONE, true);
+    const bool loaded = store.load("sys", "tz", &saved, sizeof saved) == sizeof saved && timezones::validSettings(saved);
+    if (loaded) zoneSettings = saved;
+    unresolvedZoneCache = loaded && zoneSettings.automatic && !zoneSettings.reserved[0];
+    timezones::select(zoneSettings.zone);
+    clock = {}; zoneBusy = zoneRetry = false; ++zoneGeneration;
+    zoneRetryPolicy = {}; clockSequence = 0;
+    snprintf(clock.zone, sizeof clock.zone, "%s", zoneSettings.zone);
+    clock.automaticZone = zoneSettings.automatic != 0;
   }
   void set(const char* what, const char* arg) {
-    if (setClock(what, arg) || setWifi(what)) return;
+    if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return; }   // host-only saved-network race fixture
+    if (setZone(what, arg) || setClock(what, arg) || setWifi(what)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }
@@ -195,7 +251,10 @@ struct SimSystem : shell::System {
   void print() const {
     static const char* const TIME[] = {"idle", "syncing", "ok", "nowifi", "failed"};
     printf("[sys sys_time=%s sys_sync=%lu sys_off=%d sys_syncs=%d]\n", TIME[clock.state],
-           (unsigned long)clock.lastSync, clock.utcOffsetMin, syncs);
+           (unsigned long)(clock.lastSync ? timezones::local(clock.lastSync) : 0), timezones::offset(utcNow()), syncs);
+    static const char* const ZONE[] = {"idle", "looking", "ok", "failed"};
+    printf("[sys sys_zone=\"%s\" sys_auto=%d sys_zone_state=%s sys_detections=%d sys_zone_cached=%d sys_utc=%lu sys_local=%lu]\n",
+           clock.zone, clock.automaticZone, ZONE[clock.zoneState], detections, zoneSettings.reserved[0], (unsigned long)utcNow(), (unsigned long)now());
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
@@ -250,6 +309,7 @@ bool SimFeed::spot(double* la, double* lo) {
   return set;
 }
 static uint32_t g_ms = 0, g_epoch = 0;
+static uint32_t simulatedMs() { return g_ms; }
 static uint32_t g_pal[TINT_COUNT][C_COUNT];
 static uint16_t g_pal565[TINT_COUNT][C_COUNT];   // the same, as the firmware hands it to board::present
 // The panel's two buffers, as on the device: every present flips them, an indexed frame's too (upscaled into the one it
@@ -262,7 +322,8 @@ static int16_t g_gravity[3] = {0, 1000, 0};      // the motion sensor: held upri
 static int g_shakeFrames = 0;                    // frames of shaking left
 static double g_updateMs = 0, g_renderMs = 0; static int g_perfFrames = 0;
 
-static uint32_t now() { return g_epoch + g_ms / 1000; }
+static uint32_t utcNow() { return g_epoch + g_ms / 1000; }
+static uint32_t now() { return timezones::local(utcNow()); }
 
 void SimFeed::read(air::Snapshot& out) {
   static const air::Plane PLANES[] = {
@@ -288,7 +349,7 @@ void SimFeed::read(air::Snapshot& out) {
     out.planes[out.n++] = q;
   }
 }
-static void setNow(uint32_t epoch) { g_epoch = epoch - g_ms / 1000; }
+static void setUtcNow(uint32_t epoch) { g_epoch = epoch - g_ms / 1000; }
 static void wipe() {   // every namespace, every key: all the .sav files
   DIR* d = opendir("build/host"); if (!d) return;
   while (dirent* e = readdir(d)) {
@@ -297,7 +358,7 @@ static void wipe() {   // every namespace, every key: all the .sav files
   }
   closedir(d);
 }
-static void boot() {
+static void boot(bool seedClock = true) {
   const int n = (int)(sizeof APPS / sizeof APPS[0]);
   for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
     const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
@@ -306,6 +367,7 @@ static void boot() {
   g_sys.powerOn();
   air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, n, &g_sys);
+  if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
 static void reset() { wipe(); boot(); }
 
@@ -357,6 +419,7 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
   in.gx = g_gravity[0]; in.gy = g_gravity[1]; in.gz = g_gravity[2];
   if (g_shakeFrames > 0) { in.gx = (int16_t)(g_shakeFrames-- & 1 ? 1800 : -1800); in.gz = 900; }   // hard jolts side to side
   auto t = std::chrono::steady_clock::now();
+  g_sys.tickClockRetry();
   g_shell.update(now(), g_ms, in);
   g_updateMs += since(t);
   t = std::chrono::steady_clock::now();
@@ -393,6 +456,12 @@ static void writePPM() {
   fflush(stdout);
 }
 
+static bool serveExtra(const char* cmd, const char* a, const char* b) {
+  if (!strcmp(cmd, "perf")) { perf(); return false; }
+  if (!strcmp(cmd, "sys")) { g_sys.set(a, b); puts("ok"); return true; }
+  puts("ok"); return false;
+}
+
 // --serve mode: newline-delimited commands on stdin, one response on stdout per command (flushed).
 // down/move/up/tick/skip/reset all print "ok"; frame prints a binary PPM (P6) preceded by "PPM <bytes>".
 static void runServe() {
@@ -411,8 +480,7 @@ static void runServe() {
     else if (!strcmp(cmd, "dbg")) { g_shell.debugCmd(a); puts("ok"); }
     else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
     else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
-    else if (!strcmp(cmd, "perf")) perf();
-    else puts("ok");
+    else if (serveExtra(cmd, a, b)) { frame(down, cx, cy); g_ms += 33; }
     fflush(stdout);
   }
 }
@@ -585,7 +653,9 @@ int main(int argc, char** argv) {
     else if (!strcmp(argv[i], "--now") && i + 1 < argc) g_epoch = (uint32_t)atol(argv[++i]);
     else if (!strcmp(argv[i], "--fresh")) wipe();
   }
-  boot();
+  boot(false);
+  g_epoch = timezones::toUtc(g_epoch);   // --now and the deterministic default remain local-wall inputs
+  g_shell.update(now(), g_ms, Input{});   // initial programmatic profile/newgame hooks run before the first rendered frame
   if (script) runScript(script);
   else if (serve) runServe();
   else runWindow();
