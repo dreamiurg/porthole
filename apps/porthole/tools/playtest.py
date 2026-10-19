@@ -472,8 +472,7 @@ def main():
         sys.exit(f"playtest: {'missing ' + ', '.join(missing) + ' (run make playtest)' if missing else 'no scenario matches'}")
     OUT.mkdir(parents=True, exist_ok=True)
     results = []
-    # One worker per CPU, the slowest scenarios first so none starts last and holds up the run. A saturated machine
-    # (make ci compiles and plays at once) slows every scenario: PLAYTEST_TIMEOUT_SCALE gives coverage's room.
+    # One worker per CPU, the slowest scenarios first so none starts last and holds up the run.
     with ThreadPoolExecutor(os.cpu_count() or 1) as pool:
         running = {p: pool.submit(run_scenario, p) for p in slowest_first(paths)}
         for p in paths:  # reported in name order

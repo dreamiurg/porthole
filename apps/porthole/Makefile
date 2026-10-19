@@ -13,8 +13,10 @@ WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initi
 # came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
 FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
-# -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so no CXXFLAGS turns them off.
-CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+# -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so an NDEBUG in the
+# environment's CXXFLAGS does not turn them off. HOST_FLAGS goes into the coverage build too.
+HOST_FLAGS := $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+CXXFLAGS += $(HOST_FLAGS)
 ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
 # with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
@@ -60,20 +62,18 @@ BUILD := build/host
 # Every source compiles once per flavor into an object that mirrors the source tree (two games both have a pet.cpp):
 # build/host/obj (the sims and the tests), build/host/asan (snap-asan), build/coverage/obj (coverage). -MMD -MP
 # dependency files make an edited header rebuild exactly what includes it, and a no-op build do nothing.
-# The whole build runs in parallel by default (make 3.81 on macOS takes -j from here too).
-NPROC := $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+# The whole build runs in parallel by default (make 3.81 on macOS takes -j from here too); NPROC=1 for serial output.
+NPROC ?= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(NPROC)
 objs = $(addprefix $(1)/,$(2:.cpp=.o))
+compile = mkdir -p $(@D) && $(CXX) $(1) -MMD -MP -c $< -o $@
 $(BUILD)/obj/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	$(call compile,$(CXXFLAGS))
 $(BUILD)/asan/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(ASAN) -MMD -MP -c $< -o $@
+	$(call compile,$(CXXFLAGS) $(ASAN))
 # HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
 $(BUILD)/sdl/host/sim.o: host/sim.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL -MMD -MP -c $< -o $@
+	$(call compile,$(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL)
 
 all: sim test
 
@@ -125,16 +125,16 @@ lint: snap
 # What pre-commit runs: seconds, not minutes.
 check: lint test
 
-# Everything CI runs for this app except the firmware build. coverage runs every test and every non-monkey playtest
-# (at -O0), so ci runs each once: the -O1 test binaries are only built, for their warnings.
-ci: lint coverage playtest-monkey $(TESTS:%=$(BUILD)/%)
+# Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
+# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22).
+ci: lint test coverage playtest-monkey
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.6% measured
 # (gcc 13, ubuntu-24.04) on 2026-10-19; raise it as coverage grows, never lower it.
 COV := build/coverage
 COV_MIN := 98.6
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(HOST_FLAGS)
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 # GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
@@ -150,23 +150,23 @@ GCOV ?= gcov
 endif
 
 $(COV)/obj/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(COV_CXXFLAGS) -MMD -MP -c $< -o $@
+	$(call compile,$(COV_CXXFLAGS))
 $(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
 $(COV)/test_%:
 	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
 $(COV)/snap: $(call objs,$(COV)/obj,$(SRC) host/sim.cpp)
 	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
 
-# Objects stay between runs; the counts (.gcda) start from zero each time. The binaries run in parallel like the
-# playtests below: the coverage runtime locks each .gcda while it merges into it. -O0 is slow, hence the time scale.
+# Objects stay between runs; the counts (.gcda) start from zero each time. The tests and the playtests all run at
+# once: the coverage runtime locks each .gcda while it merges into it. -O0 is slow, hence the time scale.
 cov-reset:
 	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
 cov-run-%: $(COV)/% cov-reset
 	$<
-coverage: $(TESTS:%=cov-run-%) $(COV)/snap
+cov-playtest: $(COV)/snap cov-reset
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+coverage: $(TESTS:%=cov-run-%) cov-playtest
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
@@ -198,5 +198,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean
 -include $(shell find build -name '*.d' 2>/dev/null)
