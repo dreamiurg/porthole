@@ -282,6 +282,20 @@ static void applyClock(uint32_t ms) {
   board::rtcSet(synchronized);   // I2C and shell clock changes belong to this main core only
 }
 
+// The finger: the touch panel's, or the harness's press (physical px), which also wakes the screen.
+static board::Touch touchNow(uint32_t ms) {
+  board::Touch t = board::readTouch();
+  if (!g_fake.on) return t;
+  t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
+  if (!t.down) g_fake.on = false;
+  return t;
+}
+static void renderFrame() {
+  if (g_hires) gfx565::target(board::backBuffer());
+  g_shell.render();
+  if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt[g_mtAt];
@@ -289,11 +303,7 @@ void loop() {
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
   applyClock(ms);
-  board::Touch t = board::readTouch();
-  if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
-    t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
-    if (!t.down) g_fake.on = false;
-  }
+  board::Touch t = touchNow(ms);
   static bool swallow = false;  // the touch that wakes a dark screen is not a game input, until released
   if (!t.down) swallow = false;
   else if (g_backlight == 0) swallow = true;
@@ -312,11 +322,7 @@ void loop() {
   // Dark and staying dark: nothing to draw for. The delay keeps the loop near its lit pace (touch and I2C polling).
   const uint8_t light = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
   const bool dark = !progress && g_backlight == 0 && light == 0;
-  if (!progress && !dark) {
-    if (g_hires) gfx565::target(board::backBuffer());
-    g_shell.render();
-    if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
-  }
+  if (!progress && !dark) renderFrame();
   uint32_t t3 = micros();
   if (progress || dark) delay(20);
   else board::presentHires();

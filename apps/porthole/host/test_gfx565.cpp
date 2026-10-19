@@ -268,7 +268,13 @@ static void indexedExpansion() {
     previous = os::crc32(out.pixels, sizeof out.pixels);
     for (uint8_t& c : logical) c++;   // a different frame must land only in the next target
   }
-  // With what the buffer holds: only the rows that changed are rewritten, and every row after a palette change.
+}
+// With what the buffer holds: only the rows that changed are rewritten, and every row after a palette change.
+static void heldExpansion() {
+  static uint8_t logical[160 * 160];
+  uint16_t palette[256];
+  for (int i = 0; i < 256; i++) palette[i] = (uint16_t)(i * 257);
+  for (int i = 0; i < 160 * 160; i++) logical[i] = (uint8_t)(i * 37 + i / 160);
   Expanded held = {};
   uint16_t other[256];
   for (int i = 0; i < 256; i++) other[i] = (uint16_t)~palette[i];
@@ -313,6 +319,7 @@ int main() {
   pictures();
   scaledBlits();
   indexedExpansion();
+  heldExpansion();
   tooManyMovers();
   puts("test_gfx565: all checks passed");
   return 0;
