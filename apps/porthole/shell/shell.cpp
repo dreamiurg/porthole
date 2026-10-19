@@ -61,7 +61,8 @@ void Shell::render() {
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   bool pinScreen = (screen_ >= SH_PIN_SET && screen_ <= SH_PIN) || (screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN);
-  if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
+  if (ms_ < toastUntil_ && !pinScreen && adultScreen()) drawSysToast();
+  else if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
 }
 Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
   if (screen_ == SH_APP) return app_->tint();

@@ -66,9 +66,11 @@ A long press on a profile (after its code) deletes
 it and everything it made.
 
 For grown-ups, hold the "Who's playing?" title for five seconds to open the system menu,
-then tap **Admin**. Set an optional four-digit admin code (digits 0–9), change it, or remove it
-there. Setting a code asks you to enter it twice; once enabled, it is required each time you
-open the system menu, including after a restart. It is separate from the kids' profile codes.
+then tap **Admin**. The adult menus use smooth, native-resolution Atkinson Hyperlegible text
+for readability, with larger headings and code digits. Set an optional four-digit admin code
+(digits 0–9), change it, or remove it there. Setting a code asks you to enter it twice;
+once enabled, it is required each time you open the system menu, including after a restart.
+It is separate from the kids' profile codes.
 In the same Admin screen, **Reset all limits** clears daily play usage, session usage and
 rest timers for every profile after confirmation. Everyone gets a fresh allowance immediately,
 with the usual limits counting again from there. Profiles, codes and game progress are kept.

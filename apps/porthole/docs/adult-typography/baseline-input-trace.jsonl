@@ -1,0 +1,3 @@
+{"commands": ["tick 500", "down 80 20", "tick 5100", "up", "tick 500"], "frame": "baseline-info"}
+{"commands": ["down 106 132", "tick 80", "up", "tick 500"], "frame": "baseline-admin"}
+{"commands": ["down 124 35", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "baseline-clock"}
