@@ -7,6 +7,7 @@
 #include "games/marble-kick/game.h"
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
+#include "games/plane-radar/game.h"
 #include "games/tilt-fc/game.h"
 #include "gfx565.h"
 #include "net.h"
@@ -24,10 +25,12 @@ static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
 static pumpkin::Game g_pumpkin;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin};
+static radar::Game g_radar;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar};
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static net::Updater g_sys;
+static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
 static Shell g_shell;
 static InputTracker g_input;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
@@ -93,6 +96,7 @@ void setup() {
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
   g_sys.begin(nowSec);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
+  air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   uint32_t lastSeen = g_shell.lastSeen(), now;
   if (board::rtcValid()) now = board::rtcNow();
@@ -147,7 +151,8 @@ static void dumpFrame() {
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
 // "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
-// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background).
+// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background),
+// "L<lat>,<lon>" sets Radar's home without the menu.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
   for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
@@ -192,12 +197,24 @@ static void updateCommand() {
   }
   Serial.printf("[porthole] update check started (channel %s)\n", g_sys.channel() == shell::CH_BETA ? "beta" : "stable");
 }
-static void motionCommand(int c) {   // A, G, M, W, U: split out of serialCommand for the complexity gate
+static void homeCommand() {   // L<lat>,<lon>: decimal degrees; the name says where it came from
+  String arg = Serial.readStringUntil('\n'); arg.trim();
+  char* end = nullptr;
+  shell::Home h;
+  h.lat = strtod(arg.c_str(), &end);
+  const bool comma = end != arg.c_str() && *end == ',';   // "L,5" has no latitude
+  if (comma) h.lon = strtod(end + 1, &end);
+  snprintf(h.name, sizeof h.name, "%.4f, %.4f (set over serial)", h.lat, h.lon);
+  if (!comma || *end || !g_sys.saveHome(h)) { Serial.println("[porthole] usage: L<lat>,<lon> (decimal degrees)"); return; }
+  Serial.println("[porthole] home saved");
+}
+static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
   else if (c == 'W') wifiCommand();
   else if (c == 'U') updateCommand();
+  else if (c == 'L') homeCommand();
 }
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();
