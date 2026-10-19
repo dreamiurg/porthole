@@ -35,6 +35,8 @@ test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 test_tilt_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
+test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
+test_starfighter_rules_SRC := games/starfighter/rules.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
@@ -65,6 +67,7 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) games/starfighter/tools/art.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
@@ -114,6 +117,7 @@ coverage:
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
+	python3 games/starfighter/tools/art.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py

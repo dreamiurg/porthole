@@ -40,7 +40,10 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
-   anything user-visible.
+   anything user-visible. Every gameplay or UI change also requires a black-box
+   emulator playthrough of the final build: play through ordinary visible inputs,
+   inspect the experience, fix observed problems, and replay after changes.
+   Automated tests, bots and staged screenshots alone do not satisfy this gate.
 6. **Warnings are errors.** Every hook and CI job fails on any warning: `-Werror`
    on host and firmware builds (firmware: our sources via `build_src_flags`),
    biome `--error-on-warnings`, Python `-W error`, and `tools/fail-on-warning.sh`
@@ -87,6 +90,12 @@ Per-app targets are listed in `docs/new-app.md`.
   merging it, run `/code-review` on the diff (or the PR), fix every real finding
   or say why it is skipped, then re-run `make check` (and `make ci` for anything
   user-visible). Green hooks and CI are not a review.
+- Done means played. Before calling gameplay or UI work done, marking its PR
+  ready or merging it, record the final-build black-box playthrough, findings,
+  fixes and screenshot/input evidence. Cover the complete affected player flow,
+  including completion, failure where applicable, replay and exit. For Porthole,
+  follow `apps/porthole/docs/playtesting.md`'s required playthrough procedure.
+  Documentation-only and non-player-visible changes do not require a new run.
 
 ## Delegation
 

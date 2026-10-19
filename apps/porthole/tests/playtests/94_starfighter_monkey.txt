@@ -1,0 +1,97 @@
+# AddressSanitizer + UBSan: seeded random taps, drags, holds and tilt on every distinct page.
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg title
+wait 600
+monkey 150 910
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg calibrate
+wait 600
+monkey 150 911
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg brief
+wait 600
+monkey 150 912
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg squadron
+wait 600
+monkey 150 913
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg waveclear
+wait 600
+monkey 150 914
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg entry
+wait 600
+monkey 150 915
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg trench
+wait 600
+monkey 150 916
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg target
+wait 600
+monkey 150 917
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg torpedo
+wait 600
+monkey 150 918
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg explosion
+wait 600
+monkey 150 919
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg victory
+wait 600
+monkey 150 920
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app starfighter
+dbg defeat
+wait 600
+monkey 150 921
+expect-screen *
