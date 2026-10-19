@@ -61,7 +61,7 @@ struct Profiles {   // indexed by stable id (a migrated house keeps its slot num
   bool used[MAX_PROFILES];
   bool blocked[MAX_PROFILES];   // a record is there but will not load: not shown, and never handed to a new profile
   int count() const;
-  bool full() const;      // no id left for a new profile
+  int firstFree() const;  // the id a new profile gets, -1 when none is left
   int nth(int i) const;   // id of the i-th used profile, -1 past the end
 };
 

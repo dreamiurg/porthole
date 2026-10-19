@@ -212,7 +212,7 @@ static void corruptNoRemigrate() {
   // never takes its id and erases the saves that may still belong to it.
   assert(shell::create(st, boot, draft("Kai", 6, 0), STORES, 2) == 1 && st.has("crago", "s0"));
   for (int i = 0; i < 2; i++) assert(shell::create(st, boot, draft("Kid", 7, 0), STORES, 2) == i + 2);
-  assert(boot.full() && shell::create(st, boot, draft("Extra", 7, 0), STORES, 2) == -1 && st.has("crago", "s0"));
+  assert(boot.firstFree() < 0 && shell::create(st, boot, draft("Extra", 7, 0), STORES, 2) == -1 && st.has("crago", "s0"));
 }
 
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.

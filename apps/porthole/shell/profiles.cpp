@@ -15,9 +15,9 @@ bool saveLimits(Store& st, const Limits& l) {
   return validLimits(l) && st.save("sys", "limits", &l, sizeof l);
 }
 int Profiles::count() const { int n = 0; for (bool u : used) n += u; return n; }
-bool Profiles::full() const {
-  for (int id = 0; id < MAX_PROFILES; id++) if (!used[id] && !blocked[id]) return false;
-  return true;
+int Profiles::firstFree() const {
+  for (int id = 0; id < MAX_PROFILES; id++) if (!used[id] && !blocked[id]) return id;
+  return -1;
 }
 int Profiles::nth(int i) const {
   for (int id = 0; id < MAX_PROFILES; id++) if (used[id] && i-- == 0) return id;
@@ -55,18 +55,16 @@ void loadAll(Store& st, Profiles& p) {
 bool saveRecord(Store& st, Profiles& p, int id) { seal(p.rec[id]); return st.save(NS, key('p', id), &p.rec[id], sizeof(Record)); }
 
 int create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores) {
-  for (int id = 0; id < MAX_PROFILES; id++) {
-    if (p.used[id] || p.blocked[id]) continue;
-    for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
-    Record& r = p.rec[id];
-    memset(&r, 0, sizeof r);
-    memcpy(r.name, draft.name, sizeof r.name); r.name[sizeof r.name - 1] = 0;
-    r.avatar = draft.avatar; r.age = draft.age; r.pin = draft.pin;
-    p.used[id] = true;
-    saveRecord(st, p, id);
-    return id;
-  }
-  return -1;
+  const int id = p.firstFree();
+  if (id < 0) return -1;
+  for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
+  Record& r = p.rec[id];
+  memset(&r, 0, sizeof r);
+  memcpy(r.name, draft.name, sizeof r.name); r.name[sizeof r.name - 1] = 0;
+  r.avatar = draft.avatar; r.age = draft.age; r.pin = draft.pin;
+  p.used[id] = true;
+  saveRecord(st, p, id);
+  return id;
 }
 void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, int nStores) {
   for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));

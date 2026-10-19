@@ -41,7 +41,6 @@ class App {
   virtual bool soundOn(uint32_t ms) = 0;         // the shell gates this with the profile's mute
   // true when there is something to write for `who`; *len 0 means erase `who`'s save.
   virtual bool takeSave(const void** data, size_t* len, bool allowed) = 0;
-  virtual void saveFailed() {}                   // the last takeSave's write did not land: hand it out again
   // Story readers may checkpoint a page or atomic decision immediately. Existing games keep the five-second cadence.
   virtual bool saveUrgent() const { return false; }
   virtual bool wantsHome() = 0;                  // back pressed on the game's top screen (reported once)

@@ -20,7 +20,6 @@ class Game : public App {
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
   bool takeSave(const void** data, size_t* len, bool allowed) override;
-  void saveFailed() override { dirty_ = true; written_ = {}; }
   bool saveUrgent() const override { return dirty_; }
   bool wantsHome() override { const bool result = home_; home_ = false; return result; }
   void leave() override { dirty_ = true; }
@@ -30,7 +29,7 @@ class Game : public App {
   const Save& save() const { return save_; }
   int pages() const { return reader_.count(); }
  private:
-  Save save_{}, written_{};   // the campaign, and the snapshot last handed to the shell (an unchanged one is not rewritten)
+  Save save_{};
   Input in_{};
   ui::FreshGate gate_;
   canvas::Frames<1> frames_;

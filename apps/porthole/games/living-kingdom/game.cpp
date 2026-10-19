@@ -30,8 +30,6 @@ void Game::enter(const AppEnter& e) {
   fresh_ = true;
   for (int i = 0; i < e.n; i++)
     if (e.all[i].id == profile && e.saves[i].len && loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
-  written_ = {};
-  if (!fresh_) { sealSave(save_); written_ = save_; }   // what is on flash already
   ms_ = e.ms; in_ = {}; title_ = true; home_ = false;
   changed();
 }
@@ -207,9 +205,7 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_) return false;
-  dirty_ = false; sealSave(save_);
-  if (!memcmp(&save_, &written_, sizeof save_)) return false;   // a view change that moved nothing persisted
-  written_ = save_; *data = &save_; *len = sizeof save_; return true;
+  sealSave(save_); *data = &save_; *len = sizeof save_; dirty_ = false; return true;
 }
 const char* Game::screenName() const {
   static const char* N[] = {"lk_title", "lk_map", "lk_read", "lk_choice", "lk_confirm", "lk_result",

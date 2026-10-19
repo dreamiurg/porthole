@@ -16,8 +16,9 @@ board. `build/host/snap` SHA-256:
 holding "Who's playing?" for five seconds. No `dbg`, state queries, `app` shortcuts or clock jumps during play.
 
 The [fixture](fixture.txt) prepares two existing profiles: Sam, age 8, kid code 1234; Kai, age 6, no code. No admin
-code, no game progress. The [input trace](trace.jsonl) holds the logical touches and elapsed ticks; each entry ends
-on the named frame. `python3 replay_admin_profiles.py` (needs Pillow) replays it in a fresh process and checks every saved frame.
+code, no game progress. The [input trace](input-trace.jsonl) holds the logical touches and elapsed ticks; each entry ends
+on the named frame. `python3 ../admin-playtest/replay.py ../admin-profiles-playtest` (needs Pillow) replays it in a fresh process and
+checks every saved frame.
 
 ## Paths and observations
 

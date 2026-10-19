@@ -103,6 +103,9 @@ class Shell {
   shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
   shell::TextEntry addr_{}; shell::Home found_{}; int8_t look_ = 0;    // the address being looked up (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
+  uint8_t written_[shell::BLOB_MAX];               // the open game's save as last written (or loaded)
+  size_t writtenLen_ = 0;
+  bool writtenOk_ = true;                          // false: the last write failed; flushApp retries written_
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;   // the day's play is used up, or (with 2+ profiles) a turn rest

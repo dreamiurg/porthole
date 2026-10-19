@@ -1,14 +1,19 @@
-"""Replay recorded visible inputs against snap --serve in a fresh isolated directory."""
+"""Replay recorded visible inputs against snap --serve in a fresh isolated directory.
+
+With no argument it replays this directory; give another evidence directory (fixture.txt, input-trace.jsonl and its
+PNGs) to replay that one, e.g. ../admin-profiles-playtest.
+"""
 
 import json
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 from PIL import Image
 
-HERE = Path(__file__).resolve().parent
-SNAP = HERE.parents[1] / "build" / "host" / "snap"
+SNAP = Path(__file__).resolve().parents[2] / "build" / "host" / "snap"
+HERE = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).resolve().parent
 
 
 def start(work):

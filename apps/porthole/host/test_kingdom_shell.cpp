@@ -50,7 +50,6 @@ struct Ordinary : App {
     if (!allowed || !dirty) return false;
     *data = &byte; *length = 1; dirty = false; return true;
   }
-  void saveFailed() override { dirty = true; }
   bool saveUrgent() const override { return urgent && dirty; }
   bool wantsHome() override { return false; }
   void leave() override { dirty = true; }
@@ -144,22 +143,22 @@ void urgentThrottled() {
   assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
   for (uint32_t ms = 20; ms <= 3000; ms += 20) shell.update(NOW + ms / 1000, ms, {});
   assert(store.gameWrites >= 2 && store.gameWrites <= 3);
-  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle(); const Save saved = s.store.campaign();
-  kingdom::Game resumed; Profile profile{0, "Reader", 0, 9, 1}; SaveSlot slot{&saved, sizeof saved};
-  resumed.enter({&profile, &profile, &slot, 1, NOW, 0, true});
-  const void* data; size_t length; assert(!resumed.takeSave(&data, &length, true));   // loaded: already on flash
-  InputTracker fingers; resumed.update(NOW, 1200, fingers.step(true, 80, 126, 1200));
-  resumed.update(NOW, 1250, fingers.step(false, 80, 126, 1250));
-  assert(!strcmp(resumed.screenName(), "lk_read") && !resumed.takeSave(&data, &length, true));   // Continue moves nothing
+  // Kingdom marks its save dirty on every view change; reopening and Continue change no byte, so nothing is written.
+  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle();
+  s.tap(kingdom::layout::MENU); s.tap(kingdom::layout::TOOL3); assert(!strcmp(s.shell.screenName(), "launcher"));
+  const int writes = s.store.gameWrites;
+  assert(s.shell.openApp("Kingdom")); s.tap(kingdom::layout::START); s.settle(); s.step(false, 0, 0, 6000);
+  assert(!strcmp(s.game.screenName(), "lk_read") && s.store.gameWrites == writes);
 }
-// A refused write keeps the game's save pending: it lands at the next cadence once the store works again.
+// A refused write stays pending in the shell: it lands at the next cadence once the store works again, though the
+// game has nothing new to hand out.
 void failedSaveRetried() {
   Memory store; Shell shell; Ordinary ordinary; App* apps[] = {&ordinary};
   shell.begin(store, apps, 1); shell.update(NOW, 10, {});
   assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
-  store.fail = true; shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 0 && ordinary.dirty);
+  store.fail = true; shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 0 && !ordinary.dirty);
   store.fail = false; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 0);   // the cadence, not every frame
-  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && !ordinary.dirty);
+  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
 }
 } // namespace
 int main() {

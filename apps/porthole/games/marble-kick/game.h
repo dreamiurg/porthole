@@ -27,7 +27,6 @@ class Game : public App {
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }        // no sound in slice 1
   bool takeSave(const void** data, size_t* len, bool allowed) override;
-  void saveFailed() override { dirty_ = true; }
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override {}
   const char* screenName() const override;
