@@ -723,8 +723,9 @@ const char* resetName(esp_reset_reason_t r) {
 void Updater::begin(uint32_t (*localNow)()) {
   g_now = localNow;
   int16_t offset = 0;
-  if (board::loadBlob(NS, "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
-    g_clock.utcOffsetMin = offset;
+  if (board::loadBlob(NS, "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset)) {
+    g_clock.utcOffsetMin = offset; g_clock.offsetSet = true;
+  }
   WiFi.persistent(false);   // the network lives in "sys"; keep the wifi driver from saving its own copy
   uint32_t last = 0;
   if (board::loadBlob(NS, "last", &last, sizeof last) == sizeof last) g_st.lastCheck = last;
@@ -782,7 +783,7 @@ bool Updater::syncClock() {
 
 bool Updater::takeClock(uint32_t& localEpoch) {
   portENTER_CRITICAL(&g_mux);
-  const bool ready = g_clockPending;
+  const bool ready = g_clockPending && g_clock.offsetSet;   // else the sample waits for setUtcOffset
   if (ready) {
     localEpoch = netclock::local(netclock::advanced(g_clockUtc, g_clockAt, millis()), g_clock.utcOffsetMin);
     g_clockPending = false;
@@ -796,10 +797,11 @@ bool Updater::setUtcOffset(int16_t minutes) {
   if (!board::saveBlob(NS, "utc_off", &minutes, sizeof minutes)) return false;
   const uint32_t now = g_now(), ms = millis();
   portENTER_CRITICAL(&g_mux);
-  // Keep a pending network sample if one exists. Otherwise shift the current local time by the offset difference.
-  if (!g_clockPending) { g_clockUtc = netclock::local(now, -g_clock.utcOffsetMin); g_clockAt = ms; g_clockPending = true; }
+  // Keep a pending network sample if one exists. Otherwise shift the current local time by the offset difference, but
+  // not for the first offset saved: the clock was local time already, not UTC.
+  if (!g_clockPending && g_clock.offsetSet) { g_clockUtc = netclock::local(now, -g_clock.utcOffsetMin); g_clockAt = ms; g_clockPending = true; }
   if (g_clock.lastSync) g_clock.lastSync = netclock::local(g_clock.lastSync, minutes - g_clock.utcOffsetMin);
-  g_clock.utcOffsetMin = minutes;
+  g_clock.utcOffsetMin = minutes; g_clock.offsetSet = true;
   portEXIT_CRITICAL(&g_mux);
   return true;
 }

@@ -18,6 +18,7 @@ wait 450
 expect-screen sys_clock
 expect sys_time=idle
 expect sys_off=0
+expect sys_off_set=0
 ui-check sys_clock-idle
 snap 01_idle
 tap 38 104
@@ -38,6 +39,7 @@ wait 450
 tap 54 128
 wait 450
 expect sys_off=30
+expect sys_off_set=1
 ui-check sys_clock-saved
 snap 03_saved
 wait 1500
@@ -193,11 +195,25 @@ ui-check sys_admin-page2
 tap 80 94
 wait 450
 expect-screen sys_clock
+expect sys_off_set=0
 tap 106 128
 wait 450
 sys timeok 1790035170
 wait 100
 expect sys_time=ok
+# No offset saved since the reset: network time never moves the clock until a grown-up saves one.
+expect sys_now<1790030000
+tap 54 128
+wait 450
+expect sys_off_set=1
+expect sys_now<1790030000
+wait 1500
+tap 106 128
+wait 450
+sys timeok 1790035170
+wait 100
+expect sys_time=ok
+expect sys_now>=1790035170
 tap 80 12
 wait 450
 tap 80 12

@@ -36,6 +36,9 @@ struct ClockStatus {
   TimeState state = TIME_IDLE;
   uint32_t lastSync = 0;         // local epoch of the last successful network sync
   int16_t utcOffsetMin = 0;     // explicit local offset, -720..840 in 15-minute steps
+  // A grown-up saved utcOffsetMin. Until then network time never moves the clock: the RTC holds local time, and
+  // UTC+0 is only the menu's starting draft, not a guess about where the device is.
+  bool offsetSet = false;
 };
 
 struct SysInfo {

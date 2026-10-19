@@ -128,9 +128,9 @@ struct SimSystem : shell::System {
     FileStore store;
     if (!store.save("sys", "utc_off", &minutes, sizeof minutes)) return false;
     const int delta = minutes - clock.utcOffsetMin;
-    setNow(netclock::local(now(), delta));
+    if (clock.offsetSet) setNow(netclock::local(now(), delta));   // as the firmware's: the first one keeps the clock
     if (clock.lastSync) clock.lastSync = netclock::local(clock.lastSync, delta);
-    clock.utcOffsetMin = minutes;
+    clock.utcOffsetMin = minutes; clock.offsetSet = true;
     return true;
   }
   bool setClock(const char* what, const char* arg) {
@@ -140,7 +140,8 @@ struct SimSystem : shell::System {
     if (!ok) { clock.state = shell::TIME_FAILED; return true; }
     const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : now();
     if (epoch < netclock::MIN_UTC || epoch >= netclock::MAX_UTC) { clock.state = shell::TIME_FAILED; return true; }
-    setNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
+    if (clock.offsetSet) setNow(epoch);   // no offset saved: the firmware holds the sample (the sim drops it)
+    clock.state = shell::TIME_OK; clock.lastSync = epoch;
     return true;
   }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
@@ -178,8 +179,9 @@ struct SimSystem : shell::System {
     st = {}; st.lastCheck = last; nNets = tested = looked = 0;
     FileStore store; int16_t offset = 0;
     clock = {};
-    if (store.load("sys", "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
-      clock.utcOffsetMin = offset;
+    if (store.load("sys", "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset)) {
+      clock.utcOffsetMin = offset; clock.offsetSet = true;
+    }
   }
   void set(const char* what, const char* arg) {
     if (setClock(what, arg) || setWifi(what)) return;
@@ -195,8 +197,8 @@ struct SimSystem : shell::System {
   }
   void print() const {
     static const char* const TIME[] = {"idle", "syncing", "ok", "nowifi", "failed"};
-    printf("[sys sys_time=%s sys_sync=%lu sys_off=%d sys_syncs=%d]\n", TIME[clock.state],
-           (unsigned long)clock.lastSync, clock.utcOffsetMin, syncs);
+    printf("[sys sys_time=%s sys_sync=%lu sys_off=%d sys_off_set=%d sys_syncs=%d sys_now=%lu]\n", TIME[clock.state],
+           (unsigned long)clock.lastSync, clock.utcOffsetMin, clock.offsetSet, syncs, (unsigned long)now());
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
