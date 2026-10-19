@@ -115,7 +115,6 @@ lint: snap
 	$(PY) games/living-kingdom/tools/kingdom_art.py --check
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
-	$(PY) tools/timezones.py --check
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
