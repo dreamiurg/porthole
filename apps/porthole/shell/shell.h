@@ -67,7 +67,7 @@ class Shell {
                          SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
-                         SH_SYS_LIMITS, SH_SYS_CLOCK,
+                         SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
                          SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
@@ -82,7 +82,10 @@ class Shell {
   uint8_t adminPage_ = 0;
   Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
   shell::Limits limits_{}, limitsDraft_{};
-  int16_t utcDraft_ = 0;
+  shell::PlayWindow window_{}, windowDraft_{};
+  shell::Allowance allowance_{};
+  uint8_t limitEditor_ = 0;   // session or daily
+  shell::TextEntry zoneQuery_{}, zoneSearch_{}; int zonePage_ = 0;
   int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
@@ -108,10 +111,12 @@ class Shell {
   bool writtenOk_ = true;                          // false: the last write failed; flushApp retries written_
 
   shell::Record& rec() { return prof_.rec[active_]; }
-  bool restingNow() const;   // the day's play is used up, or (with 2+ profiles) a turn rest
+  bool restingNow() const;
+  void enforceCurrentBudget();
+  bool guardScreenTime();
   void go(Screen s);
   void land();   // the picker, or the first profile's name on a fresh device
-  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_CLOCK); }
+  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_ZONE_SEARCH); }
   void toast(const char* s);
   void drawSysToast();
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
@@ -152,6 +157,11 @@ class Shell {
   void updateSysPlayerPin(); void drawSysPlayerPin();
   void updateSysLimits(); void drawSysLimits();
   void updateSysClock(); void drawSysClock();
+  void updateSysTime(); void drawSysTime();
+  void updateSysWindow(); void drawSysWindow();
+  void updateSysAllowance(); void drawSysAllowance();
+  void updateSysZone(); void drawSysZone();
+  void updateSysZoneSearch(); void drawSysZoneSearch();
   void updateSysNew(); void drawSysNew();
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();

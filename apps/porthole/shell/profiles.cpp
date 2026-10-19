@@ -14,6 +14,28 @@ Limits loadLimits(Store& st) {
 bool saveLimits(Store& st, const Limits& l) {
   return validLimits(l) && st.save("sys", "limits", &l, sizeof l);
 }
+static bool validWindow(const PlayWindow& w) {
+  return w.version == 1 && w.enabled <= 1 && !w.reserved && w.startMinute < 1440 && w.endMinute < 1440 && w.startMinute != w.endMinute;
+}
+PlayWindow loadPlayWindow(Store& st) {
+  PlayWindow w{};
+  return st.load("sys", "window", &w, sizeof w) == sizeof w && validWindow(w) ? w : PlayWindow{};
+}
+bool savePlayWindow(Store& st, const PlayWindow& w) {
+  if (!validWindow(w)) return false;
+  st.save("sys", "window", &w, sizeof w);
+  PlayWindow saved{};
+  return st.load("sys", "window", &saved, sizeof saved) == sizeof saved && !memcmp(&saved, &w, sizeof w);
+}
+bool windowAllows(const PlayWindow& w, uint32_t now) {
+  if (!w.enabled) return true;
+  const uint32_t minute = now % DAY_SEC / 60;
+  return w.startMinute < w.endMinute ? minute >= w.startMinute && minute < w.endMinute : minute >= w.startMinute || minute < w.endMinute;
+}
+uint32_t windowWait(const PlayWindow& w, uint32_t now) {
+  if (windowAllows(w, now)) return 0;
+  return (w.startMinute * 60u + DAY_SEC - now % DAY_SEC) % DAY_SEC;
+}
 int Profiles::count() const { int n = 0; for (bool u : used) n += u; return n; }
 int Profiles::firstFree() const {
   for (int id = 0; id < MAX_PROFILES; id++) if (!used[id] && !blocked[id]) return id;
@@ -78,6 +100,10 @@ Profile toProfile(const Profiles& p, int id) {
   return out;
 }
 
+RestHint restHint(const Record& r, const PlayWindow& window, uint32_t now, const Limits& limits) {
+  if (playedToday(r, now, limits)) return REST_DAY;
+  return windowAllows(window, now + restLeft(r, now, limits)) ? REST_BREAK : REST_WINDOW;
+}
 void liftCaps(Store& st, Profiles& p) {
   for (int id = 0; id < MAX_PROFILES; id++)
     if (p.used[id] && p.rec[id].dayPlaySec) { p.rec[id].dayPlaySec = 0; saveRecord(st, p, id); }
@@ -96,16 +122,24 @@ bool resetLimits(Store& st, Profiles& p) {
 void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
   if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
 }
-bool play(Record& r, uint32_t now, uint32_t dt, bool idle, const Limits& limits) {
+void playUnrestricted(Record& r, uint32_t now, uint32_t dt, bool idle) {
   r.lastPlayed = now;
-  if (r.playDay != now / DAY_SEC) { r.playDay = now / DAY_SEC; r.dayPlaySec = 0; }   // a new day, a new budget
-  // A clock jump (the device was off, or the clock was set) is not play time, and neither is a screen nobody touches.
-  uint32_t add = idle || resting(r, now) ? 0 : dt > 5 ? 5 : dt;
-  r.dayPlaySec += add;
-  if (playedToday(r, now, limits)) { r.playSec = 0; return true; }
-  r.playSec += add;
+  if (r.playDay != now / DAY_SEC) { r.playDay = now / DAY_SEC; r.dayPlaySec = 0; }
+  const uint32_t add = idle ? 0 : dt > 5 ? 5 : dt;
+  r.dayPlaySec += add; r.playSec += add;
+}
+bool enforceBudget(Record& r, uint32_t now, const Limits& limits) {
+  if (playedToday(r, now, limits)) return true;
+  if (resting(r, now)) return true;
   if (r.playSec < (uint32_t)limits.sessionMinutes * 60) return false;
   r.restUntil = now + REST_SEC; r.playSec = 0;
   return true;
+}
+bool play(Record& r, uint32_t now, uint32_t dt, bool idle, const Limits& limits) {
+  // Clock jumps are not play time. Only the monotonic dt supplied by the shell is counted.
+  const bool wasResting = resting(r, now);
+  playUnrestricted(r, now, dt, idle || wasResting);
+  if (playedToday(r, now, limits)) { r.playSec = 0; return true; }
+  return !wasResting && enforceBudget(r, now, limits);
 }
 }  // namespace shell

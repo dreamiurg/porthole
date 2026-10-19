@@ -88,10 +88,15 @@ tap 106 132
 wait 450
 tap 80 94
 wait 450
+expect-screen sys_time
+tap 52 129
+wait 450
 expect-screen sys_reset
 tap 80 118
 wait 450
-expect-screen sys_admin
+expect-screen sys_time
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12

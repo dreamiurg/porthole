@@ -11,6 +11,7 @@
 #include "crc32.h"
 #include "input.h"
 #include "gfx565.h"
+#include "timezone.h"
 #include "launcher.h"
 #include "profiles.h"
 #include "shell.h"
@@ -77,16 +78,71 @@ static void pinCodes() {
   assert(shell::pinCode("1234") == 1235 && shell::pinCode("9999") == 10000);
 }
 
+// Separate versioned schedule settings never resize shipped profile records or the 4-byte limits blob.
+static void playWindowRules() {
+  MemStore st;
+  auto w = shell::loadPlayWindow(st);
+  assert(w.enabled && w.startMinute == 14 * 60 && w.endMinute == 19 * 60 + 30 && st.writes == 0);
+  const uint32_t day = NOW - NOW % shell::DAY_SEC;
+  assert(!shell::windowAllows(w, day + 14 * 3600 - 1));
+  assert(shell::windowAllows(w, day + 14 * 3600));
+  assert(shell::windowAllows(w, day + 19 * 3600 + 30 * 60 - 1));
+  assert(!shell::windowAllows(w, day + 19 * 3600 + 30 * 60));
+  assert(shell::windowWait(w, day + 19 * 3600 + 30 * 60) == 18 * 3600 + 30 * 60);
+  w.startMinute = 20 * 60; w.endMinute = 6 * 60;
+  assert(shell::windowAllows(w, day + 23 * 3600) && shell::windowAllows(w, day + 5 * 3600));
+  assert(!shell::windowAllows(w, day + 6 * 3600) && !shell::windowAllows(w, day + 19 * 3600));
+  assert(shell::savePlayWindow(st, w)); const auto again = shell::loadPlayWindow(st);
+  assert(again.startMinute == w.startMinute && again.endMinute == w.endMinute);
+  st.budget = st.writes; w.startMinute = 15 * 60; assert(!shell::savePlayWindow(st, w));
+  assert(shell::loadPlayWindow(st).startMinute == 20 * 60); st.budget = -1;
+  w.endMinute = w.startMinute; assert(!shell::savePlayWindow(st, w));
+  w.enabled = false; assert(shell::windowAllows(w, day + 2 * 3600) && !shell::windowWait(w, day));
+  w.version = 99; st.save("sys", "window", &w, sizeof w); assert(shell::loadPlayWindow(st).version == 1);
+  const uint8_t partial = 1; st.save("sys", "window", &partial, 1);
+  assert(shell::loadPlayWindow(st).startMinute == 14 * 60);
+}
+static void combinedRestPrompts() {
+  const uint32_t day = NOW - NOW % shell::DAY_SEC;
+  shell::PlayWindow window{}; shell::Record r = draft("Sam", 8, 0);
+  const uint32_t beforeOpening = day + 14 * 3600 - 60;
+  r.restUntil = beforeOpening + shell::REST_SEC;
+  assert(shell::restHint(r, window, beforeOpening) == shell::REST_BREAK);   // a 1:59 break ends at 2:09, not 2:00
+  const uint32_t beforeClosing = day + 19 * 3600 + 29 * 60;
+  r.restUntil = beforeClosing + shell::REST_SEC;
+  assert(shell::restHint(r, window, beforeClosing) == shell::REST_WINDOW);   // ten minutes later is outside play hours
+  r.playDay = day / shell::DAY_SEC; r.dayPlaySec = shell::DAILY_SEC;
+  assert(shell::restHint(r, window, beforeClosing) == shell::REST_DAY);
+  r.dayPlaySec = 0; r.restUntil = 0;
+  assert(shell::restHint(r, window, beforeOpening) == shell::REST_WINDOW);
+}
+static void temporaryAllowance() {
+  shell::Allowance a;
+  assert(!a.active(0)); a.start(0); assert(a.active(0) && a.active(1799999) && !a.active(1800000));
+  a.tick(1800000); assert(!a.active(0) && !a.enabled);
+  a.start(0xfffffff0u); assert(a.active(0x00001000u));
+  a.stop(); assert(!a.active(0x00001000u));
+  shell::Record r = draft("Sam", 8, 0); r.restUntil = NOW + 600;
+  shell::playUnrestricted(r, NOW, 5, false); assert(r.dayPlaySec == 5 && r.playSec == 5);
+  shell::playUnrestricted(r, NOW, 5, true); assert(r.dayPlaySec == 5 && r.playSec == 5);
+  r.dayPlaySec = 1800; r.playSec = 901; r.restUntil = 0;
+  assert(shell::enforceBudget(r, NOW, {15, 30}) && shell::playedToday(r, NOW, {15, 30}));
+  r.dayPlaySec = 1; r.playSec = 901;
+  assert(shell::enforceBudget(r, NOW, {15, 30}) && shell::resting(r, NOW) && r.playSec == 0);
+  shell::playUnrestricted(r, NOW + shell::DAY_SEC, 2, false); assert(r.dayPlaySec == 2);
+}
+
 static void configurableLimits() {
   MemStore st;
-  auto l = shell::loadLimits(st); assert(l.sessionMinutes == 6 && l.dailyMinutes == 25 && st.writes == 0);
+  auto l = shell::loadLimits(st); assert(l.sessionMinutes == 15 && l.dailyMinutes == 30 && st.writes == 0);
+  assert(shell::saveLimits(st, {6, 25})); l = shell::loadLimits(st); assert(l.sessionMinutes == 6 && l.dailyMinutes == 25);
   assert(shell::saveLimits(st, {2, 3})); l = shell::loadLimits(st);
   assert(l.sessionMinutes == 2 && l.dailyMinutes == 3);
   int w = st.writes; assert(!shell::saveLimits(st, {0, 3}) && !shell::saveLimits(st, {1, 1441}) && st.writes == w);
   st.budget = st.writes; assert(!shell::saveLimits(st, {7, 30})); assert(shell::loadLimits(st).sessionMinutes == 2);
   st.budget = -1; const shell::Limits bad{1441, 25}; st.save("sys", "limits", &bad, sizeof bad);
-  assert(shell::loadLimits(st).sessionMinutes == 6);
-  const uint8_t shortBlob = 1; st.save("sys", "limits", &shortBlob, 1); assert(shell::loadLimits(st).dailyMinutes == 25);
+  assert(shell::loadLimits(st).sessionMinutes == 15);
+  const uint8_t shortBlob = 1; st.save("sys", "limits", &shortBlob, 1); assert(shell::loadLimits(st).dailyMinutes == 30);
   shell::Record r = draft("Sam", 8, 0); uint32_t now = NOW;
   for (int i = 1; i < 120; i++) assert(!shell::play(r, ++now, 1, false, l));
   assert(shell::play(r, ++now, 1, false, l) && shell::restLeft(r, now, l) == shell::REST_SEC);
@@ -416,7 +472,7 @@ static void recordV1() {
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
 static void dailyCap() {
   shell::Record r = draft("Sam", 8, 0);
-  const shell::Limits limits{1440, 25};   // isolate the daily cap from the shorter session limit
+  const shell::Limits limits{1440, shell::DAILY_SEC / 60};   // isolate the daily cap from the shorter session limit
   uint32_t t = NOW;   // 10:00
   for (uint32_t i = 1; i < shell::DAILY_SEC; i++) assert(!shell::play(r, t += 1, 1, false, limits));
   assert(r.dayPlaySec == shell::DAILY_SEC - 1 && shell::restLeft(r, t) == 0);
@@ -658,25 +714,30 @@ static void launcherNames() {
 
 // Paging through a Shell with five stub games (3 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
 struct StubApp : App {
-  const char* label; int entered = 0; bool home = false;
+  const char* label; int entered = 0, left = 0, updated = 0; bool home = false, saving = false; uint32_t payload = 42;
   explicit StubApp(const char* n) : label(n) {}
   const char* name() const override { return label; }
   const gfx::Sprite& icon() const override { static const uint8_t px[1] = {C_T}; static const gfx::Sprite s = {1, 1, px}; return s; }
   const char* store() const override { return "stub"; }
   bool daylight = false;
   void enter(const AppEnter& e) override { entered++; daylight = e.daylight; }
-  void update(uint32_t, uint32_t, const Input&) override {}
+  void update(uint32_t, uint32_t, const Input&) override { updated++; }
   void render() override {}
   Tint tint() const override { return TINT_DAY; }
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
-  bool takeSave(const void**, size_t*, bool) override { return false; }
+  bool takeSave(const void** data, size_t* len, bool allowed) override { if (!saving || !allowed) return false; *data = &payload; *len = sizeof payload; return true; }
   bool wantsHome() override { const bool h = home; home = false; return h; }
-  void leave() override {}
+  void leave() override { left++; }
   const char* screenName() const override { return "stub"; }
   void debugPrint() override {}
   void debugCmd(const char*) override {}
 };
+// These pre-existing tests isolate profiles, brightness, PIN recovery and cap behavior from the new schedule.
+static void bootWithoutHours(Shell& sh, shell::Store& st, App* const* apps, int n, shell::System* sys = nullptr) {
+  auto window = shell::loadPlayWindow(st); window.enabled = 0;
+  assert(shell::savePlayWindow(st, window)); sh.begin(st, apps, n, sys);
+}
 static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(NOW, ms, in); sh.render(); }   // past FreshGate
 static void tapAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // the middle of b
   Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
@@ -688,7 +749,7 @@ static void launcherPaging() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[5] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five")};
   App* const list[5] = {&a[0], &a[1], &a[2], &a[3], &a[4]};
-  sh.begin(st, list, 5); frame(sh, ms, Input{});
+  bootWithoutHours(sh, st, list, 5); frame(sh, ms, Input{});
   sh.createProfile("Sam", 8, "");
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true), t2 = launcher::tile(0, 2), t3 = launcher::tile(0, 3);
   assert(on(sh, "launcher"));
@@ -714,7 +775,7 @@ static void brightness() {
   auto step = [&](const Input& in) { ms += 700; sh.update(night, ms, in); sh.render(); };
   auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
   auto pick = [&](const ui::Box& b) { tap(launcher::LIGHT); assert(on(sh, "light")); tap(b); assert(on(sh, "launcher")); };
-  sh.begin(st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
+  bootWithoutHours(sh, st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
   assert(on(sh, "launcher") && sh.tint() == TINT_NIGHT && sh.backlight() == 100);   // Auto, as before
   tap(launcher::tile(0, 1)); assert(a.entered == 1 && !a.daylight); home(sh, ms, a);
   static const uint8_t PCT[3] = {100, 65, 40};   // Bright, Medium, Soft: the suns left to right
@@ -723,10 +784,10 @@ static void brightness() {
   int w = st.writes;
   pick(launcher::tile(2, 3)); assert(st.writes == w);   // Soft again: no flash write
   tap(launcher::LIGHT); tap({64, -4, 32, 32}); assert(on(sh, "launcher") && sh.backlight() == 40);   // the home button keeps it
-  sh.begin(st, list, 1); step(Input{}); assert(on(sh, "picker") && sh.tint() == TINT_DAY && sh.backlight() == 40);   // reboot
+  bootWithoutHours(sh, st, list, 1); step(Input{}); assert(on(sh, "picker") && sh.tint() == TINT_DAY && sh.backlight() == 40);   // reboot
   tap({24, 55, 112, 24}); pick(launcher::LIGHT_AUTO); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
   const uint8_t bad = shell::LIGHT_COUNT; st.save("sys", "lite", &bad, 1);
-  sh.begin(st, list, 1); step(Input{}); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
+  bootWithoutHours(sh, st, list, 1); step(Input{}); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
 }
 
 // The firmware's backlight at every level: the level in use, 30% after a minute idle, dark after five; a game asleep
@@ -805,6 +866,7 @@ static void textEntry() {
 }
 
 struct StubSys : shell::System {
+  shell::ClockStatus clock{}; bool zoneWrite = true; int detections = 0;
   const char* version = "0.15.0";
   void info(shell::SysInfo& o) override { o = {}; o.version = version; }
   shell::UpdStatus status() override { return {}; }
@@ -817,6 +879,12 @@ struct StubSys : shell::System {
   bool startTest(const char*, const char*) override { return false; }
   int testResult() override { return 0; }
   bool saveWifi(const char*, const char*) override { return false; }
+  shell::ClockStatus clockStatus() override { return clock; }
+  bool setTimeZone(const char* id, bool automatic) override {
+    const auto* zone = timezones::find(id); if (!zoneWrite || !zone) return false;
+    snprintf(clock.zone, sizeof clock.zone, "%s", zone->id); clock.automaticZone = automatic; return true;
+  }
+  bool detectTimeZone() override { detections++; clock.zoneState = shell::ZONE_LOOKING; return true; }
 };
 static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
   Input in{}; in.pressed = in.down = true; in.x = in.downX = 80; in.y = in.downY = 16; in.heldMs = heldMs; frame(sh, ms, in);
@@ -837,7 +905,7 @@ static uint16_t storedAdmin(MemStore& st) {
 // leaving the menu both require the code again. Leading zeroes work, and a profile's code cannot unlock the menu.
 static void adminAccess() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
-  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.begin(st, nullptr, 0, &sys);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); bootWithoutHours(sh, st, nullptr, 0, &sys);
   holdTitle(sh, ms, 5000); assert(on(sh, "sys_info")); tapAt(sh, ms, ADMIN_OPEN);
   tapAt(sh, ms, CODE_SET); typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_pin_again"));
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_pin_set") && !storedAdmin(st));
@@ -847,12 +915,12 @@ static void adminAccess() {
   tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); holdTitle(sh, ms, 5000);
   assert(on(sh, "sys_pin"));
   tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_pin"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_pin"));
   typeAdminCode(sh, ms, "1111"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
   typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_info"));
   tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, CODE_SET);
   typeAdminCode(sh, ms, "9870"); typeAdminCode(sh, ms, "9870"); assert(storedAdmin(st) == 9871);
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000);
   typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
   typeAdminCode(sh, ms, "9870"); assert(on(sh, "sys_info"));
 }
@@ -875,16 +943,18 @@ static void adminGatesProfiles() {
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
-  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
   shell::Profiles p; shell::loadAll(st, p);
   p.rec[0].restUntil = NOW + 100; p.rec[0].playSec = 359;
   p.rec[1].playDay = NOW / shell::DAY_SEC; p.rec[1].dayPlaySec = shell::DAILY_SEC;
   shell::saveRecord(st, p, 0); shell::saveRecord(st, p, 1);
   uint16_t pin = 1235; st.save("sys", "admin", &pin, sizeof pin);
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234");
-  tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_reset"));
-  int w = st.writes; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_admin") && st.writes == w);
-  tapAt(sh, ms, LIMIT_RESET); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_admin"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234");
+  tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, {26, 119, 52, 20}); assert(on(sh, "sys_reset"));
+  int w = st.writes; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_time") && st.writes == w);
+  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_admin"));
   shell::loadAll(st, p); assert(!p.rec[0].restUntil && !p.rec[0].playSec && !p.rec[1].dayPlaySec && p.rec[0].pin == 1112);
   tapAt(sh, ms, CODE_SET); typeAdminCode(sh, ms, "0000");
   st.budget = st.writes; typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_admin") && storedAdmin(st) == 1235);
@@ -892,19 +962,19 @@ static void adminChangesAndReset() {
   tapAt(sh, ms, CODE_REMOVE); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_admin") && storedAdmin(st) == 1235);
   st.budget = -1;
   tapAt(sh, ms, CODE_REMOVE); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_admin") && !storedAdmin(st));
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
 }
 // Grown-ups choose a stable profile id, then confirm. Cancel and failed writes preserve that PIN; a successful
 // reset survives reboot and changes no other profile fields, game saves, profile PINs or the menu code.
 static void resetSelectedPlayerPin() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
-  sh.begin(st, nullptr, 0, &sys);
+  bootWithoutHours(sh, st, nullptr, 0, &sys);
   sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "2222"); sh.createProfile("Ava", 7, "3333");
   shell::Profiles p; shell::loadAll(st, p); shell::removeProfile(st, p, 1, STORES, 2);
   p.rec[2].dayPlaySec = 42; p.rec[2].playSec = 37; p.rec[2].lastPlayed = NOW; shell::saveRecord(st, p, 2);
   Save pet = house("Ava", "Rex", 7, 0); st.save("crago", "s2", &pet, sizeof pet);
   const auto before = p.rec[2]; const uint16_t admin = 9871; st.save("sys", "admin", &admin, sizeof admin);
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_pin"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_pin"));
   typeAdminCode(sh, ms, "9870"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, {42, 132, 76, 18});
   assert(on(sh, "sys_players")); tapAt(sh, ms, {30, 68, 100, 20}); assert(on(sh, "sys_player_pin"));
   int w = st.writes; tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_players") && st.writes == w);
@@ -917,30 +987,112 @@ static void resetSelectedPlayerPin() {
   assert(!strcmp(petIn(st, "s2"), "Rex"));
   w = st.writes; tapAt(sh, ms, {30, 68, 100, 20}); assert(on(sh, "sys_players") && st.writes == w);
   assert(!sh.clearPin(-1) && !sh.clearPin(MAX_PROFILES) && !sh.clearPin(1));
-  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 68, 112, 24}); assert(on(sh, "launcher"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, {24, 68, 112, 24}); assert(on(sh, "launcher"));
 }
 
 static void limitSettingsFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
+  tapAt(sh, ms, {110, 68, 24, 24}); tapAt(sh, ms, ADMIN_HOME);
+  assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 15);
+  tapAt(sh, ms, {30, 42, 100, 22}); tapAt(sh, ms, {110, 68, 24, 24});
+  st.budget = st.writes; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_limits"));
+  assert(shell::loadLimits(st).sessionMinutes == 15);
+  st.budget = -1; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time"));
+  assert(shell::loadLimits(st).sessionMinutes == 16 && shell::loadLimits(st).dailyMinutes == 30);
+  tapAt(sh, ms, {30, 67, 100, 22}); tapAt(sh, ms, {26, 68, 24, 24}); tapAt(sh, ms, {82, 110, 52, 22});
+  assert(shell::loadLimits(st).dailyMinutes == 29 && shell::loadLimits(st).sessionMinutes == 16);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); assert(shell::loadLimits(st).sessionMinutes == 16);
+}
+static void windowSettingsFlow() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); sh.begin(st, nullptr, 0, &sys);
-  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, {114, 29, 20, 20});
-  tapAt(sh, ms, CODE_SET); assert(on(sh, "sys_limits")); tapAt(sh, ms, {110, 55, 24, 20});
-  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_admin") && shell::loadLimits(st).sessionMinutes == 6);
-  tapAt(sh, ms, CODE_SET); tapAt(sh, ms, {110, 55, 24, 20});
-  st.budget = st.writes; tapAt(sh, ms, {40, 117, 80, 20}); assert(on(sh, "sys_limits"));
-  assert(shell::loadLimits(st).sessionMinutes == 6);
-  st.budget = -1; tapAt(sh, ms, {40, 117, 80, 20}); assert(on(sh, "sys_admin"));
-  assert(shell::loadLimits(st).sessionMinutes == 7 && shell::loadLimits(st).dailyMinutes == 25);
-  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN);
-  tapAt(sh, ms, {114, 29, 20, 20}); tapAt(sh, ms, CODE_SET); tapAt(sh, ms, {110, 55, 24, 20});
-  tapAt(sh, ms, {40, 117, 80, 20}); assert(shell::loadLimits(st).sessionMinutes == 8);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  tapAt(sh, ms, {30, 92, 100, 22}); assert(on(sh, "sys_window"));
+  tapAt(sh, ms, {110, 70, 24, 20}); tapAt(sh, ms, {37, 125, 40, 20});
+  assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 840);
+  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {110, 70, 24, 20});
+  st.budget = st.writes; tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_window"));
+  assert(shell::loadPlayWindow(st).startMinute == 840); st.budget = -1;
+  tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 855);
+  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {42, 40, 76, 18}); tapAt(sh, ms, {83, 125, 40, 20});
+  assert(!shell::loadPlayWindow(st).enabled);
+  const auto before = shell::loadPlayWindow(st);
+  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  const auto after = shell::loadPlayWindow(st); assert(!memcmp(&before, &after, sizeof before));
+  tapAt(sh, ms, {82, 119, 52, 20}); assert(on(sh, "sys_allow")); tapAt(sh, ms, LIMIT_RESET);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20});   // end early
+  sh.begin(st, nullptr, 0, &sys); assert(!shell::loadPlayWindow(st).enabled);
+}
+
+// Closing the window takes priority over a running game's next input, even with no activity; progress is flushed.
+static void scheduleClosesGame() {
+  MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app};
+  const uint32_t day = NOW - NOW % shell::DAY_SEC, opens = day + 14 * 3600, closes = day + 19 * 3600 + 30 * 60;
+  sh.begin(st, apps, 1); sh.update(opens, 0, Input{}); sh.createProfile("Sam", 8, "");
+  assert(on(sh, "launcher") && sh.openApp("One")); app.saving = true;
+  sh.update(opens + 60, 60000, Input{}); const int before = app.updated;
+  sh.update(closes, 90000, Input{});
+  assert(on(sh, "rest") && app.updated == before && app.left == 1 && st.has("stub", "s0"));
+  assert(!sh.openApp("One"));   // no serial/helper entry bypass
+  sh.update(day + shell::DAY_SEC, 91000, Input{}); assert(on(sh, "rest"));
+  sh.update(day + shell::DAY_SEC + 14 * 3600, 92000, Input{}); assert(on(sh, "picker"));
+  sh.begin(st, apps, 1); sh.update(closes, 100000, Input{}); sh.createProfile("Kai", 8, "");
+  assert(on(sh, "rest") && !sh.openApp("One"));   // create/selection and reboot agree
+}
+static void familyAllowanceFlow() {
+  MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app}; StubSys sys; sys.version = "dev"; uint32_t ms = 0;
+  shell::Profiles p{}; shell::loadAll(st, p); shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
+  p.rec[0].playDay = NOW / shell::DAY_SEC; p.rec[0].dayPlaySec = shell::DAILY_SEC;
+  p.rec[0].restUntil = NOW + 600; p.rec[0].playSec = shell::SESSION_SEC; shell::saveRecord(st, p, 0);
+  sh.begin(st, apps, 1, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, LIMIT_RESET);   // cancel does not grant an allowance
+  tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
+  tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest")); tapAt(sh, ms, {50, 120, 60, 24});
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); const uint32_t started = ms;
+  tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
+  tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher") && sh.openApp("One")); app.saving = true;
+  Input active{}; active.down = true;
+  sh.update(NOW, ms += 1000, active); app.home = true; sh.update(NOW, ms += 10, Input{});
+  shell::loadAll(st, p); assert(p.rec[0].dayPlaySec > shell::DAILY_SEC && p.rec[0].playSec >= shell::SESSION_SEC);
+  assert(sh.openApp("One"));
+  sh.update(NOW, started + 1799999u, Input{}); assert(on(sh, "stub"));
+  const int updates = app.updated; sh.update(NOW, started + 1800000u, Input{});
+  assert(on(sh, "rest") && app.updated == updates && app.left == 2 && st.has("stub", "s0"));
+  sh.update(NOW, started, Input{}); assert(on(sh, "rest"));   // latched expiry never revives after millis wraps
+  sh.begin(st, apps, 1, &sys); sh.update(NOW, ms, Input{});
+  sh.createProfile("Kai", 8, ""); assert(on(sh, "rest") && !sh.openApp("One"));
+}
+static void keyAt(Shell& sh, uint32_t& ms, const ui::Box& b) {
+  Input in{}; in.pressed = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  frame(sh, ms, in);
+}
+static void zoneSelectionFlow() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, {114, 26, 20, 18}); tapAt(sh, ms, CODE_SET);
+  assert(on(sh, "sys_clock")); tapAt(sh, ms, {30, 77, 100, 20}); assert(on(sh, "sys_zone"));
+  tapAt(sh, ms, {30, 93, 100, 20}); assert(on(sh, "sys_clock") && !strcmp(sys.clock.zone, "America/Chicago") && !sys.clock.automaticZone);
+  tapAt(sh, ms, {30, 77, 100, 20}); sys.zoneWrite = false; tapAt(sh, ms, {30, 45, 100, 20});
+  assert(on(sh, "sys_zone") && !strcmp(sys.clock.zone, "America/Chicago")); sys.zoneWrite = true;
+  tapAt(sh, ms, {82, 125, 48, 20}); assert(on(sh, "sys_zone_search"));
+  keyAt(sh, ms, {67, 48, 12, 18}); keyAt(sh, ms, {123, 48, 12, 18}); keyAt(sh, ms, {116, 68, 12, 18});
+  keyAt(sh, ms, {81, 48, 12, 18}); keyAt(sh, ms, {123, 48, 12, 18}); keyAt(sh, ms, {109, 108, 30, 18});
+  assert(on(sh, "sys_zone")); tapAt(sh, ms, {30, 45, 100, 20});
+  assert(on(sh, "sys_clock") && !strcmp(sys.clock.zone, "Asia/Tokyo") && !sys.clock.automaticZone);
+  tapAt(sh, ms, {30, 101, 100, 20}); assert(sys.clock.automaticZone);
+  tapAt(sh, ms, {37, 125, 40, 20}); assert(sys.detections == 1 && sys.clock.zoneState == shell::ZONE_LOOKING);
 }
 
 // Correcting the wall clock changes midnight/rest deadlines, but neither a forward nor a backward correction
 // invents seconds of play. Real milliseconds still count, even when a supplied wall second repeats.
 static void monotonicPlayDuration() {
   MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app}; uint32_t ms = 0;
-  sh.begin(st, apps, 1); frame(sh, ms, Input{}); sh.createProfile("Sam", 8, ""); assert(sh.openApp("One"));
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{}); sh.createProfile("Sam", 8, ""); assert(sh.openApp("One"));
   Input active{}; active.down = true;
   sh.update(NOW + 3600, ms += 100, active);
   sh.update(NOW - 3600, ms += 100, active);
@@ -953,20 +1105,27 @@ static void monotonicPlayDuration() {
 // picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp a("One"); App* const list[1] = {&a};
-  sh.begin(st, list, 1, &sys); assert(on(sh, "sys_new"));
+  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "sys_new"));
   tapAt(sh, ms, {45, 112, 70, 26}); assert(on(sh, "new_name"));
   sh.createProfile("Sam", 8, "");
-  sh.begin(st, list, 1, &sys); assert(on(sh, "picker"));
+  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "picker"));
   holdTitle(sh, ms, 4900); assert(on(sh, "picker"));
   holdTitle(sh, ms, 5000); assert(on(sh, "sys_info") && sh.surface() == SURFACE_RGB565);
   tapAt(sh, ms, {69, 1, 22, 22}); assert(on(sh, "picker") && sh.surface() == SURFACE_INDEXED);
-  sh.begin(st, list, 1); assert(on(sh, "picker"));
+  bootWithoutHours(sh, st, list, 1); assert(on(sh, "picker"));
   holdTitle(sh, ms, 6000); assert(on(sh, "picker"));
 }
 
 int main() {
   static uint16_t nativePixels[gfx565::W * gfx565::H];
   gfx565::target(nativePixels);
+  scheduleClosesGame();
+  familyAllowanceFlow();
+  zoneSelectionFlow();
+  windowSettingsFlow();
+  combinedRestPrompts();
+  playWindowRules();
+  temporaryAllowance();
   limitSettingsFlow();
   monotonicPlayDuration();
   configurableLimits();

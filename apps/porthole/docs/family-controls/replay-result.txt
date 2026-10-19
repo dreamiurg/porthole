@@ -1,0 +1,7 @@
+Final private immutable snap SHA-256: e0b595d2a5ab6ed6a1a74cf229835baf1cafbe8e17e39705fd540a607acfdc1f
+Fresh-process ordinary trace: 54 native frames.
+Fresh-process explicitly canned network/DST trace: 20 native frames.
+PASS: independent final verification matched all 74 native RGB hashes.
+Known final changes inspected: expiry/reentry daily-cap wording in frames 38/39; puppy/heart animation phase in nine Pets Club frames after fixture-clock initialization.
+No open independent QA findings. All new PNGs remain private in ignored build/family-controls; none are published in docs/Git.
+Ruff check/format passed; whole-repository mypy passed (30 source files).

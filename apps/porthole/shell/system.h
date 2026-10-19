@@ -31,14 +31,15 @@ struct UpdStatus {
 
 struct Home { double lat = 0, lon = 0; char name[96] = {0}; };   // name: the place as the geocoder calls it, ASCII
 
+enum ZoneState : uint8_t { ZONE_IDLE, ZONE_LOOKING, ZONE_OK, ZONE_FAILED };
 enum TimeState : uint8_t { TIME_IDLE, TIME_SYNCING, TIME_OK, TIME_NO_WIFI, TIME_FAILED };
 struct ClockStatus {
   TimeState state = TIME_IDLE;
   uint32_t lastSync = 0;         // local epoch of the last successful network sync
-  int16_t utcOffsetMin = 0;     // explicit local offset, -720..840 in 15-minute steps
-  // A grown-up saved utcOffsetMin. Until then network time never moves the clock: the RTC holds local time, and
-  // UTC+0 is only the menu's starting draft, not a guess about where the device is.
-  bool offsetSet = false;
+  int16_t utcOffsetMin = -480;   // derived from the named zone at the current UTC instant; debug compatibility
+  char zone[64] = "America/Los_Angeles";
+  bool automaticZone = true;
+  ZoneState zoneState = ZONE_IDLE;
 };
 
 struct SysInfo {
@@ -120,7 +121,9 @@ class System {
   // Clock sync shares the radio with updates and wifi setup. Local RTC/save timestamps stay local.
   virtual ClockStatus clockStatus() { return {}; }
   virtual bool syncClock() { return false; }
-  virtual bool setUtcOffset(int16_t minutes) { return false; }
+  virtual bool setUtcOffset(int16_t minutes) { return false; }   // legacy only; named-zone UI never calls this
+  virtual bool setTimeZone(const char* iana, bool automatic) { (void)iana; (void)automatic; return false; }
+  virtual bool detectTimeZone() { return false; }
 
  protected:
   ~System() = default;

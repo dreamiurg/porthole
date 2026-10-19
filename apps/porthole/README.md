@@ -82,8 +82,8 @@ name, one of eight animal faces, an age (it picks the reading level) and an opti
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
 profile, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
 small sun (full, 65% or 40% backlight, always daylight colors and day scenes), or Auto (a sun and a moon: full
-backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 25 minutes a day across every game, then the board says "Back
-tomorrow" until midnight. Each player rests for 10 minutes after their session allowance (six minutes by default),
+backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 30 minutes a day across every game by default, then the board says "Back
+tomorrow" until local midnight. Each player rests for 10 minutes after their session allowance (15 minutes by default),
 even with only one profile. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
 it and everything it made.
@@ -94,24 +94,41 @@ for readability, with larger headings and code digits. Set an optional four-digi
 (digits 0–9), change it, or remove it there. Setting a code asks you to enter it twice;
 once enabled, it is required each time you open the system menu, including after a restart.
 It is separate from the kids' profile codes.
-In the same Admin screen, **Reset all limits** clears daily play usage, session usage and
-rest timers for every profile after confirmation. Everyone gets a fresh allowance immediately,
-with the usual limits counting again from there. Profiles, codes and game progress are kept.
 To recover a forgotten player code, open **Player PINs**, select the player, and confirm
 **Reset PIN**. Their next login will not require a PIN. Only that player's PIN is removed;
 their limits, game progress, the other players' PINs and the admin code are kept.
 
-On Admin page 2 (the right arrow), **Play limits** sets the session and daily allowances
-in minutes for everyone. Tap +/- to change by one minute, or hold to change by ten; tap
-**Save** to apply. Going back discards edits. Changing a limit keeps time already played.
-The defaults are six minutes per session and 25 minutes per day, with a ten-minute break
-after each session. Both allowances can be set from 1 to 1440 minutes.
+In **Admin → Screen time**, all play controls stay together:
 
-**Clock** shows local date/time and Wi-Fi sync status. Set and save the **UTC offset** for
-local midnight (default UTC; adjust it when daylight saving changes), then use **Sync now**
-to correct time immediately. With a saved Wi-Fi network, sync also runs automatically after
-boot, periodically, and during successful network connections. Offline, the device keeps
-using its RTC. Clock corrections do not add time to play counters.
+- **Session:** 15 minutes by default, followed by a ten-minute break.
+- **Daily total:** 30 minutes per player across all games, resetting at local midnight.
+- **Play window:** enabled by default from 2:00 p.m. through 7:30 p.m. Turn it off or
+  change both times, including an overnight window. At the cutoff, a running game saves
+  and closes; the child sees when they can return.
+- **Reset usage:** after confirmation, clears daily/session usage and rest timers for
+  everyone. Settings, profiles, codes and game progress stay. The play window still applies.
+- **Allow 30 min:** after confirmation, temporarily overrides all three restrictions for
+  everyone. Play still counts. End it early in Screen time, or let it expire automatically;
+  restarting the device clears the override.
+
+Session and daily allowances range from 1 to 1440 minutes. Tap +/- for one minute or hold
+for ten, then **Save**; Back discards edits. Changing settings keeps time already played.
+Existing saved allowances survive firmware updates. Set an admin code to protect these
+controls; opening Admin alone does not grant extra play.
+
+**Clock**, on Admin page 2 (the right arrow), shows local time and Wi-Fi sync status. Named time zones handle daylight saving
+automatically, including offline. The initial zone is **Pacific (America/Los_Angeles)**.
+Automatic detection uses one HTTPS request to `ipapi.co/timezone/`. The service sees the
+connection's public IP; no Wi-Fi name, address, coordinates or player data are sent. If it fails,
+the last valid zone stays, and automatic mode retries after connectivity returns (at most
+once per six hours). A manual choice takes precedence over detection. VPNs can make
+the guess inaccurate, so parents can select the zone themselves.
+
+Use **Sync now** to correct the clock immediately. With saved Wi-Fi, time sync also runs
+after boot, periodically, and during successful connections. Offline, the device keeps
+using its RTC. Play duration and the temporary override use elapsed time, so clock
+corrections do not add play time. Physical RTC and live network behavior require testing
+on a board; the host emulator supplies simulated network results.
 
 ## Pets Club: a pixel puppy
 
@@ -238,7 +255,9 @@ make monitor                                 # serial log at 115200 baud
 ```
 
 On first boot the clock is set from the build time. To set it exactly, send `T<epoch>` over serial
-using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usbmodemXXXX`.
+using local wall-clock seconds in the selected zone (the RTC stores UTC). For example, on a
+computer set to the same zone, `python3 -c 'import calendar,time; print("T" + str(calendar.timegm(time.localtime())))' > /dev/cu.usbmodemXXXX`.
+For normal use, prefer Wi-Fi time sync in Clock.
 
 ### Serial commands (115200 baud)
 
