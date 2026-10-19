@@ -27,14 +27,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include "games/biscuit/game.h"
-#include "games/living-kingdom/game.h"
-#include "games/marble-kick/game.h"
-#include "games/pumpkin-hide-seek/game.h"
-#include "games/pets-club/game.h"
-#include "games/plane-radar/game.h"
-#include "games/starfighter/game.h"
-#include "games/tilt-fc/game.h"
+#include "games/apps.h"
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
@@ -233,15 +226,6 @@ struct SimFeed : air::Feed {
 };
 static SimFeed g_feed;
 
-static Game g_pets;
-static biscuit::Game g_biscuit;
-static marble::Game g_marble;
-static fc::Game g_tiltfc;
-static pumpkin::Game g_pumpkin;
-static radar::Game g_radar;
-static starfighter::Game g_starfighter;
-static kingdom::Game g_kingdom;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
@@ -301,7 +285,7 @@ static void wipe() {   // every namespace, every key: all the .sav files
   closedir(d);
 }
 static void boot() {
-  const int n = (int)(sizeof APPS / sizeof APPS[0]);
+  const int n = N_APPS;
   for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
     const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
     assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
