@@ -1,0 +1,6 @@
+Base 27aa687283fff4f31ecb1ced2f84715cf827e665, working-tree typography changes.
+Final snap SHA-256 369bf5d59714337723940802992d8f7910854be31ea5a5f63da53bfcf3ff5fb2.
+PASS: 51 final native frames reproduced exactly from the complete trace in a fresh isolated process.
+Pre-fix Q/P clipping frames remain separate historical evidence.
+Targeted adult fixtures: 7/7 pass, 470 checks, 0 failures, 0 UI FAIL / 0 WARN.
+All names, codes, network names, passwords and locations are synthetic emulator fixtures.

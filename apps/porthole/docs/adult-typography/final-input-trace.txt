@@ -1,0 +1,315 @@
+reset
+profile Sam 8 1234
+profile Kai 6 5678
+profile Wwwwwwww 9 9999
+profile Mia 7
+reboot
+wait 500
+
+snap final-01-picker
+down 80 20
+wait 5100
+up
+wait 500
+snap final-02-info
+tap 106 132
+wait 500
+snap final-03-admin
+tap 80 70
+wait 500
+snap final-04-code-choose
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+snap final-05-code-repeat
+tap 49 63
+tap 49 63
+tap 49 63
+tap 49 63
+wait 900
+snap final-06-code-mismatch
+tap 80 12
+wait 500
+tap 80 70
+wait 500
+tap 79 63
+tap 79 63
+snap final-07-code-masked
+tap 79 63
+tap 79 126
+wait 900
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+snap final-08-code-saved
+tap 80 12
+wait 500
+tap 80 12
+wait 500
+down 80 20
+wait 5100
+up
+wait 500
+snap final-09-auth
+tap 49 63
+tap 49 63
+tap 49 63
+tap 49 63
+wait 900
+snap final-10-auth-rejected
+wait 1000
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+tap 106 132
+wait 500
+tap 80 94
+wait 500
+snap final-11-reset-confirm
+tap 80 94
+wait 500
+tap 80 141
+wait 500
+snap final-12-players
+tap 80 12
+wait 500
+tap 80 12
+wait 500
+tap 50 108
+wait 500
+snap final-13-wifi-scanning
+# Explicit canned scan completion; visual network fixture, no real Wi-Fi.
+sys scan
+wait 500
+snap final-14-wifi-networks
+tap 80 39
+wait 500
+snap final-15-wifi-keyboard
+down 17 57
+wait 200
+snap issue-before-q-preview
+move 80 80
+up
+wait 500
+down 143 57
+wait 200
+snap issue-before-p-preview
+up
+wait 500
+tap 34 117
+wait 500
+snap final-18-wifi-numbers
+down 45 57
+wait 200
+snap final-19-number-preview
+up
+wait 500
+tap 34 117
+wait 500
+snap final-20-wifi-symbols
+tap 34 117
+wait 500
+down 17 57
+wait 200
+snap final-21-q-preview-fixed
+up
+wait 500
+down 143 57
+wait 200
+snap final-22-p-preview-fixed
+up
+wait 500
+down 38 97
+wait 200
+snap final-23-bottom-key-preview
+move 52 97
+wait 120
+up
+wait 500
+tap 124 117
+wait 500
+snap final-24-wifi-joining
+# Explicit canned failed join for typography/retry coverage.
+sys joinfail
+wait 500
+snap final-25-wifi-failed
+tap 48 108
+wait 500
+snap final-26-wifi-retry-typing
+tap 124 117
+wait 500
+# Explicit canned successful join; no real network exchange.
+sys joinok
+wait 500
+snap final-27-wifi-connected
+tap 80 12
+wait 500
+tap 54 132
+wait 500
+snap final-28-home
+tap 80 114
+wait 500
+snap final-29-address-keyboard
+tap 143 57
+tap 115 57
+tap 136 77
+tap 45 57
+tap 78 117
+tap 143 57
+tap 136 77
+tap 24 77
+tap 66 97
+tap 45 57
+wait 500
+snap final-30-address-typed
+tap 124 117
+wait 500
+snap final-31-address-looking
+# Explicit canned lookup miss for visual recovery coverage.
+sys notfound
+wait 500
+snap final-32-address-not-found
+tap 80 114
+wait 500
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 139 97
+tap 143 57
+tap 115 57
+tap 122 77
+tap 45 57
+tap 78 117
+tap 143 57
+tap 136 77
+tap 24 77
+tap 66 97
+tap 45 57
+wait 500
+snap final-33-address-corrected
+tap 124 117
+wait 500
+# Explicit canned lookup result for visual confirmation coverage.
+sys found
+wait 500
+snap final-34-address-found
+tap 108 114
+wait 500
+tap 80 12
+wait 500
+tap 80 12
+wait 500
+tap 110 108
+wait 500
+snap final-35-updates
+tap 80 108
+wait 500
+snap final-36-update-checking
+# Explicit canned update failure for visual feedback coverage.
+sys failed
+wait 500
+snap final-37-update-failed
+tap 80 12
+wait 500
+tap 106 132
+wait 500
+tap 80 141
+wait 500
+tap 80 100
+wait 500
+snap final-38-player-confirm
+tap 80 12
+wait 500
+tap 80 100
+wait 500
+down 80 118
+move 140 80
+up
+wait 500
+snap final-39-player-drag-cancel
+tap 80 118
+wait 500
+snap final-40-player-reset-toast
+wait 1600
+tap 80 122
+wait 500
+snap final-41-player-no-pin-toast
+tap 80 12
+wait 500
+tap 80 118
+wait 500
+snap final-42-remove-confirm
+tap 80 94
+wait 500
+tap 124 35
+wait 500
+snap final-43-admin-page-two
+tap 80 70
+wait 500
+snap final-44-limits
+hold 122 65
+wait 500
+tap 122 98
+wait 500
+snap final-45-limits-draft
+tap 80 12
+wait 500
+tap 80 70
+wait 500
+tap 122 65
+wait 500
+tap 80 126
+wait 500
+snap final-46-limits-saved
+tap 80 94
+wait 500
+snap final-47-clock
+tap 122 104
+wait 500
+tap 54 128
+wait 500
+snap final-48-clock-saved
+wait 1600
+tap 106 128
+wait 500
+snap final-49-clock-syncing
+tap 80 12
+wait 500
+tap 80 94
+wait 500
+# Explicit canned failed time sync; no real NTP exchange.
+sys timefail
+wait 500
+snap final-50-clock-failed
+tap 106 128
+wait 500
+# Explicit canned valid clock response for visual success state.
+sys timeok
+wait 500
+snap final-51-clock-synced
+tap 80 12
+wait 500
+tap 36 35
+wait 500
+tap 80 118
+wait 500
+tap 80 118
+wait 500
+snap final-52-code-removed-toast
+tap 80 12
+wait 500
+tap 80 12
+wait 500
+snap final-53-exit-picker
