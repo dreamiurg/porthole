@@ -211,6 +211,32 @@ static void images() {
   assert(fb[6 * W + 0] == 0x3333 && fb[8 * W + 8] == 0x3333 && !fb[9 * W]);
 }
 
+// The row-at-a-time scaled blits against the plain definition (a scale x scale rect per source pixel), clipped on
+// every side, with a run that stops partway through a row.
+static void scaledBlits() {
+  static uint16_t px[7 * 5], runs[2 * 20], want[W * H];
+  int nruns = 0;
+  for (int i = 0; i < 7 * 5; i++) px[i] = (uint16_t)(i * 997 + 1);
+  for (int left = 7 * 5 - 3, i = 0; left > 0; i++) { int n = 1 + i % 6 < left ? 1 + i % 6 : left; runs[2 * nruns] = (uint16_t)n; runs[2 * nruns++ + 1] = (uint16_t)(i * 4111 + 7); left -= n; }
+  const Image565 im = {7, 5, px};
+  const RleImage rle = {7, 5, runs, (uint32_t)nruns};
+  const int at[4][3] = {{10, 20, 3}, {-4, -5, 3}, {470, 466, 4}, {-30, 400, 2}};
+  for (const auto& a : at) {
+    for (int pass = 0; pass < 2; pass++) {
+      target(want); clear(0);
+      for (int i = 0, k = 0; i < 7 * 5 - 3; k++)   // the reference: decode by hand, rect per pixel
+        for (int n = runs[2 * k]; n--; i++) {
+          const uint16_t c = pass ? runs[2 * k + 1] : px[i];
+          rect(a[0] + (i % 7) * a[2], a[1] + (i / 7) * a[2], a[2], a[2], c);
+        }
+      if (!pass) for (int i = 7 * 5 - 3; i < 7 * 5; i++) rect(a[0] + (i % 7) * a[2], a[1] + (i / 7) * a[2], a[2], a[2], px[i]);
+      target(g_fb); clear(0);
+      if (pass) blitRle(rle, a[0], a[1], a[2]); else blit(im, a[0], a[1], a[2]);
+      assert(!memcmp(g_fb, want, sizeof want));
+    }
+  }
+}
+
 static void pictures() {
   static const uint16_t px[4] = {1, 2, 3, 4};
   target(g_fb); clear(0);
@@ -243,7 +269,24 @@ static void indexedExpansion() {
     previous = os::crc32(out.pixels, sizeof out.pixels);
     for (uint8_t& c : logical) c++;   // a different frame must land only in the next target
   }
+  // With what the buffer holds: only the rows that changed are rewritten, and every row after a palette change.
+  Expanded held = {};
+  uint16_t other[256];
+  for (int i = 0; i < 256; i++) other[i] = (uint16_t)~palette[i];
   target(g_fb);
+  expandIndexed3(logical, palette, &held);
+  for (int i = 0; i < W * H; i++) assert(g_fb[i] == palette[logical[(i / W / 3) * 160 + i % W / 3]]);
+  for (uint16_t& p : g_fb) p = 0x5A5A;   // a sentinel: whatever is not rewritten keeps it
+  logical[70 * 160 + 9]++;
+  expandIndexed3(logical, palette, &held);
+  for (int y = 0; y < H; y++)
+    for (int x = 0; x < W; x++) assert(g_fb[y * W + x] == (y / 3 == 70 ? palette[logical[70 * 160 + x / 3]] : 0x5A5A));
+  expandIndexed3(logical, other, &held);
+  for (int i = 0; i < W * H; i++) assert(g_fb[i] == other[logical[(i / W / 3) * 160 + i % W / 3]]);
+  held.palette = nullptr;   // the host drew something else into it
+  for (uint16_t& p : g_fb) p = 0x5A5A;
+  expandIndexed3(logical, other, &held);
+  assert(g_fb[0] == other[logical[0]] && g_fb[W * H - 1] == other[logical[160 * 160 - 1]]);
 }
 
 // canvas::Frames holds at most N movers: a page with more is drawn whole, every frame, never past its buffer.
@@ -269,6 +312,7 @@ int main() {
   shapes();
   images();
   pictures();
+  scaledBlits();
   indexedExpansion();
   tooManyMovers();
   puts("test_gfx565: all checks passed");

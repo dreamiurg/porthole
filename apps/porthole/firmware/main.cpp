@@ -313,10 +313,11 @@ void loop() {
   if (!progress) {
     if (g_hires) gfx565::target(board::backBuffer());
     g_shell.render();
+    if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
   }
   uint32_t t3 = micros();
   if (progress) delay(20);
-  else if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  else board::presentHires();
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));

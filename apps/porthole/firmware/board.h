@@ -8,8 +8,9 @@ namespace board {
 constexpr int LCD_W = 480, LCD_H = 480;
 
 void init();
-// Upscale a 160x160 indexed frame 3x through pal565 and wait until the driver releases the old buffer.
-void present(const uint8_t* fb160, const uint16_t* pal565);
+// Upscale a 160x160 indexed frame 3x through pal565 into backBuffer(), rewriting only the rows that changed since that
+// buffer last held one; presentHires() then shows it.
+void expand(const uint8_t* fb160, const uint16_t* pal565);
 // RGB565 apps render into backBuffer(); presentHires() waits for the driver's SRAM-copy fence before buffer reuse.
 uint16_t* backBuffer();
 void presentHires();

@@ -130,10 +130,14 @@ static void lcdInitPanel() {
   esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[0]);
 }
 
-void present(const uint8_t* fb160, const uint16_t* pal565) {
+// What each buffer holds of an indexed frame, so expand() rewrites only the rows that changed. Any other drawing into a
+// buffer (an RGB565 app's render) leaves it unknown: presentHires() forgets a back buffer expand() did not fill.
+static gfx565::Expanded g_expanded[2] = {};
+static bool g_backExpanded = false;
+void expand(const uint8_t* fb160, const uint16_t* pal565) {
   gfx565::target(backBuffer());
-  gfx565::expandIndexed3(fb160, pal565);
-  presentHires();
+  gfx565::expandIndexed3(fb160, pal565, &g_expanded[g_frames.back()]);
+  g_backExpanded = true;
 }
 uint16_t* backBuffer() { return g_fbs[g_frames.back()]; }
 bool beginUpdateDisplay() { return update_scanout::begin(); }
@@ -144,9 +148,12 @@ void endUpdateDisplay() {
   ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));   // restore normal timings, vsync ISR and original framebuffer DMA
   update_scanout::release();   // normal DMA no longer references the sparse frame
   xSemaphoreTake(g_vsync, 0);
+  g_expanded[0].palette = g_expanded[1].palette = nullptr;   // repaint both whole: nothing assumed across an update
 }
 const uint16_t* frontBuffer() { return g_fbs[g_frames.front()]; }
 void presentHires() {
+  if (!g_backExpanded) g_expanded[g_frames.back()].palette = nullptr;
+  g_backExpanded = false;
   // Submission and arming are atomic with the same-core DMA ISR. An earlier frame completion cannot acknowledge it.
   portENTER_CRITICAL(&g_frameMux);
   xSemaphoreTake(g_frameCopied, 0);
