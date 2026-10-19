@@ -1,0 +1,250 @@
+# Explicit fake-network fixtures are separate from the visible-input black-box report.
+# Clock drafts/save, radio serialization, success/failure/retry, no wifi, reboot, and local-midnight caps.
+reset
+profile Sam 8
+reboot
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+expect sys_time=idle
+expect sys_off=0
+ui-check sys_clock-idle
+snap 01_idle
+tap 38 104
+wait 450
+expect sys_off=0
+ui-check sys_clock-draft
+snap 02_draft
+tap 80 12
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_clock
+expect sys_off=0
+tap 122 104
+wait 450
+tap 122 104
+wait 450
+tap 54 128
+wait 450
+expect sys_off=30
+ui-check sys_clock-saved
+snap 03_saved
+wait 1500
+tap 106 128
+wait 450
+expect sys_time=syncing
+expect sys_syncs=1
+ui-check sys_clock-syncing
+snap 04_syncing
+tap 106 128
+wait 450
+expect sys_syncs=1
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 110 108
+wait 450
+expect-screen sys_updates
+ui-check sys_updates-clock-busy
+snap 05_update_busy
+tap 80 108
+wait 450
+expect sys_checks=0
+tap 80 12
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+expect sys_time=syncing
+sys timefail
+wait 100
+expect sys_time=failed
+expect sys_sync=0
+ui-check sys_clock-failed
+snap 06_failed
+tap 106 128
+wait 450
+expect sys_syncs=2
+sys timeok 1
+wait 100
+expect sys_time=failed
+ui-check sys_clock-invalid-reply
+tap 106 128
+wait 450
+expect sys_syncs=3
+sys timeok
+wait 100
+expect sys_time=ok
+expect sys_sync>0
+ui-check sys_clock-ok
+snap 07_ok
+tap 38 104
+wait 450
+tap 38 104
+wait 450
+tap 38 104
+wait 450
+tap 54 128
+wait 450
+expect sys_off=-15
+expect sys_sync>0
+wait 1500
+ui-check sys_clock-negative-offset
+snap 08_negative
+sheet sync_and_offsets
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+expect sys_off=-15
+expect sys_time=idle
+ui-check sys_clock-rebooted
+sys nowifi
+tap 106 128
+wait 450
+expect sys_time=nowifi
+ui-check sys_clock-no-wifi
+snap 09_no_wifi
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 50 108
+wait 450
+expect-screen sys_wifi
+sys scan
+wait 100
+tap 80 79
+wait 450
+expect-screen sys_join
+sys joinok
+wait 450
+expect-screen sys_join
+tap 80 12
+wait 450
+expect-screen sys_info
+expect sys_ssid=Library Free WiFi
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+tap 106 128
+wait 450
+expect sys_time=syncing
+sys timeok
+wait 100
+expect sys_time=ok
+ui-check sys_clock-wifi-recovered
+snap 10_recovered
+sheet failure_and_recovery
+# A successful clock correction across local midnight starts the new day's allowance.
+newgame Sam Rex
+wait 2400
+dbg bedtime
+wait 1500
+expect-screen rest
+expect today>=1500
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+tap 106 128
+wait 450
+sys timeok 1790035170
+wait 100
+expect sys_time=ok
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen rest
+expect rest>10
+expect rest<40
+expect today>=1500
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+tap 80 94
+wait 450
+expect-screen sys_clock
+tap 106 128
+wait 450
+sys timeok 1790035201
+wait 100
+expect sys_time=ok
+ui-check sys_clock-next-day
+snap 11_midnight
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
+expect-screen launcher
+expect today=0
+expect rest=0
+app pets-club
+wait 2400
+expect-screen home
+expect books=0/3
+sheet midnight

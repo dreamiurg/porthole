@@ -60,10 +60,33 @@ Every game keeps its progress per profile. From the launcher a kid can mute the 
 profile, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
 small sun (full, 65% or 40% backlight, always daylight colors and day scenes), or Auto (a sun and a moon: full
 backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 25 minutes a day across every game, then the board says "Back
-tomorrow" until midnight. With two or more profiles, a kid who has played for about 6 minutes also
-rests for 10, so the board passes to the next kid. A minute without a touch or a move of the board does not count as play.
+tomorrow" until midnight. Each player rests for 10 minutes after their session allowance (six minutes by default),
+even with only one profile. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
 it and everything it made.
+
+For grown-ups, hold the "Who's playing?" title for five seconds to open the system menu,
+then tap **Admin**. Set an optional four-digit admin code (digits 0–9), change it, or remove it
+there. Setting a code asks you to enter it twice; once enabled, it is required each time you
+open the system menu, including after a restart. It is separate from the kids' profile codes.
+In the same Admin screen, **Reset all limits** clears daily play usage, session usage and
+rest timers for every profile after confirmation. Everyone gets a fresh allowance immediately,
+with the usual limits counting again from there. Profiles, codes and game progress are kept.
+To recover a forgotten player code, open **Player PINs**, select the player, and confirm
+**Reset PIN**. Their next login will not require a PIN. Only that player's PIN is removed;
+their limits, game progress, the other players' PINs and the admin code are kept.
+
+On Admin page 2 (the right arrow), **Play limits** sets the session and daily allowances
+in minutes for everyone. Tap +/- to change by one minute, or hold to change by ten; tap
+**Save** to apply. Going back discards edits. Changing a limit keeps time already played.
+The defaults are six minutes per session and 25 minutes per day, with a ten-minute break
+after each session. Both allowances can be set from 1 to 1440 minutes.
+
+**Clock** shows local date/time and Wi-Fi sync status. Set and save the **UTC offset** for
+local midnight (default UTC; adjust it when daylight saving changes), then use **Sync now**
+to correct time immediately. With a saved Wi-Fi network, sync also runs automatically after
+boot, periodically, and during successful network connections. Offline, the device keeps
+using its RTC. Clock corrections do not add time to play counters.
 
 ## Pets Club: a pixel puppy
 

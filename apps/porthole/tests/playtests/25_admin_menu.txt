@@ -1,0 +1,365 @@
+# Optional device-wide menu code and resetting all profile budgets without losing game saves.
+# Sam has a daily cap; Kai has a turn-taking rest. Authentication uses zero, delete, wrong codes,
+# mismatch, cancellation, change, removal, reboot, and reentry; every new state receives a UI audit.
+newgame Sam Rex
+wait 2400
+expect-screen home
+expect books=0/3
+dbg bedtime
+wait 1500
+expect-screen rest
+expect today>=1500
+expect rest>28000
+tap 80 132
+wait 450
+profile Kai 6
+app Biscuit
+wait 450
+expect-screen biscuit_setup_pet
+tap 119 125
+wait 450
+expect-screen biscuit_home
+expect named=1
+expect pet=Biscuit
+dbg tired
+wait 1500
+expect-screen rest
+expect play=0
+expect rest>500
+tap 80 132
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+ui-check sys_info-admin
+snap 01_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+ui-check sys_admin-off
+snap 02_admin_off
+down 80 94
+move 140 80
+up
+wait 450
+expect-screen sys_admin
+hold 80 94
+wait 450
+expect-screen sys_admin
+# A slow double tap on Reset must not carry into its confirmation screen.
+tap 80 94
+wait 220
+tap 80 94
+wait 450
+expect-screen sys_reset
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 70
+wait 450
+expect-screen sys_pin_set
+ui-check
+snap 03_choose
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_pin_again
+ui-check
+snap 04_repeat
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 70
+wait 450
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_pin_again
+tap 49 63
+tap 49 63
+tap 49 63
+tap 49 63
+wait 900
+expect-screen sys_pin_set
+ui-check sys_pin_set-mismatch
+snap 05_mismatch
+wait 1500
+tap 109 105
+tap 49 126
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_pin_again
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_admin
+ui-check sys_admin-saved
+snap 06_saved
+wait 1500
+ui-check sys_admin-on
+snap 07_admin_on
+sheet setup
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+ui-check
+snap 08_auth
+tap 49 63
+tap 49 63
+tap 49 63
+tap 49 63
+wait 900
+expect-screen sys_pin
+ui-check sys_pin-wrong
+snap 09_wrong
+wait 1000
+tap 80 12
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_reset
+ui-check
+snap 10_reset
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 94
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+tap 80 54
+wait 450
+expect-screen rest
+expect profile=0/2
+expect today>=1500
+expect rest>28000
+tap 80 132
+wait 450
+tap 80 80
+wait 450
+expect-screen rest
+expect profile=1/2
+expect play=0
+expect rest>400
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_reset
+tap 80 118
+wait 450
+expect-screen sys_admin
+ui-check sys_admin-reset
+snap 11_reset_done
+sheet authentication_reset
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+# Cleared budgets survive reboot as well as immediate reentry.
+reboot
+expect-screen picker
+tap 80 54
+wait 450
+expect-screen launcher
+expect profile=0/2
+expect today=0
+expect play=0
+expect rest=0
+app pets-club
+wait 2400
+expect-screen home
+expect books=0/3
+expect stage=0
+tap 80 12
+wait 450
+tap 80 32
+wait 450
+tap 80 80
+wait 450
+expect-screen launcher
+expect profile=1/2
+expect today=0
+expect play=0
+expect rest=0
+app Biscuit
+wait 450
+expect-screen biscuit_home
+expect pet=Biscuit
+expect named=1
+tap 80 12
+wait 450
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+tap 106 132
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_pin_set
+tap 79 63
+tap 49 84
+tap 109 84
+tap 79 126
+wait 900
+tap 79 63
+tap 49 84
+tap 109 84
+tap 79 126
+wait 900
+expect-screen sys_admin
+ui-check sys_admin-changed
+snap 12_changed
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 126
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_pin
+wait 1000
+tap 79 63
+tap 49 84
+tap 109 84
+tap 79 126
+wait 900
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 118
+wait 450
+expect-screen sys_remove
+ui-check
+snap 13_remove
+tap 80 94
+wait 450
+expect-screen sys_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 79 63
+tap 49 84
+tap 109 84
+tap 79 126
+wait 900
+tap 106 132
+wait 450
+tap 80 118
+wait 450
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 118
+wait 450
+tap 80 118
+wait 450
+expect-screen sys_admin
+ui-check sys_admin-removed
+snap 14_removed
+wait 1500
+ui-check sys_admin-off-again
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+ui-check sys_admin-off-rebooted
+snap 15_optional_again
+sheet change_remove

@@ -31,6 +31,13 @@ struct UpdStatus {
 
 struct Home { double lat = 0, lon = 0; char name[96] = {0}; };   // name: the place as the geocoder calls it, ASCII
 
+enum TimeState : uint8_t { TIME_IDLE, TIME_SYNCING, TIME_OK, TIME_NO_WIFI, TIME_FAILED };
+struct ClockStatus {
+  TimeState state = TIME_IDLE;
+  uint32_t lastSync = 0;         // local epoch of the last successful network sync
+  int16_t utcOffsetMin = 0;     // explicit local offset, -720..840 in 15-minute steps
+};
+
 struct SysInfo {
   const char* version = "dev";  // PORTHOLE_VERSION, "dev" for local builds
   char slot[8] = {0};           // running app partition, "ota_0" / "ota_1"
@@ -106,6 +113,11 @@ class System {
   virtual bool saveHome(const Home& h) { (void)h; return false; }   // persisted; false if it could not be saved
   virtual bool startLookup(const char* address) { (void)address; return false; }
   virtual int lookupResult(Home& out) { (void)out; return 0; }    // -1 while it runs; 1 found (into out); 0 not found
+
+  // Clock sync shares the radio with updates and wifi setup. Local RTC/save timestamps stay local.
+  virtual ClockStatus clockStatus() { return {}; }
+  virtual bool syncClock() { return false; }
+  virtual bool setUtcOffset(int16_t minutes) { return false; }
 
  protected:
   ~System() = default;

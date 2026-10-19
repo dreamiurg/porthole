@@ -55,7 +55,7 @@ class Shell {
   int profileCount() const { return prof_.count(); }
   // serial and sim hooks
   void clockRestored() { shell::liftCaps(*st_, prof_); }   // the RTC was lost and the clock guessed: no cap holds
-  void clearPin(int id);              // parent escape hatch (serial "P<n>")
+  bool clearPin(int id);              // parent escape hatch (serial "P<n>" and Admin); false if save fails
   int createProfile(const char* name, uint8_t age, const char* code);   // code "1234", "" = none; lands on the launcher
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
@@ -64,8 +64,11 @@ class Shell {
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME,
-                         SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT, SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
+                         SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
+                         SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
+                         SH_SYS_LIMITS, SH_SYS_CLOCK,
+                         SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -75,6 +78,10 @@ class Shell {
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
+  uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
+  uint8_t adminPage_ = 0;
+  shell::Limits limits_{}, limitsDraft_{};
+  int16_t utcDraft_ = 0;
   int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
@@ -83,6 +90,7 @@ class Shell {
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0, pinMs_ = 0;   // pinMs_: the last digit
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
+  uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;
   Input in_{};
@@ -128,6 +136,15 @@ class Shell {
   void updateApp(); void drawApp();
   // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)
   bool titleHeld();
+  void enterSystem();
+  void updateSysAdmin(); void drawSysAdmin();
+  void updateSysPin(); void submitSysPin(); void drawSysPin();
+  bool saveAdminPin(uint16_t code);
+  void updateSysConfirm(); void drawSysConfirm();   // reset all limits, or remove the admin code
+  void updateSysPlayers(); void drawSysPlayers();   // select whose profile PIN to remove
+  void updateSysPlayerPin(); void drawSysPlayerPin();
+  void updateSysLimits(); void drawSysLimits();
+  void updateSysClock(); void drawSysClock();
   void updateSysNew(); void drawSysNew();
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();

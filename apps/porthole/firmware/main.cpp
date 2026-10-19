@@ -56,7 +56,9 @@ static int g_mtAt = 0;
 
 // Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
 static uint32_t nowSec() {
-  return g_bootLocalEpoch + (millis() - g_bootMillis) / 1000u;
+  const uint32_t seconds = (millis() - g_bootMillis) / 1000u;
+  g_bootLocalEpoch += seconds; g_bootMillis += seconds * 1000u;
+  return g_bootLocalEpoch;
 }
 
 // Compile-time fallback clock: the time this firmware was built (local time of the build machine).
@@ -243,9 +245,12 @@ static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCom
 }
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();
-  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu\n",
+  const shell::ClockStatus clock = g_sys.clockStatus();
+  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
+                "sys_time=%d sys_sync=%lu sys_off=%d\n",
                 (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
-                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck);
+                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck,
+                (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
@@ -269,12 +274,20 @@ static void serialCommand(int c) {
   else motionCommand(c);
 }
 
+static void applyClock(uint32_t ms) {
+  uint32_t synchronized = 0;
+  if (!g_sys.takeClock(synchronized)) return;
+  g_bootLocalEpoch = synchronized; g_bootMillis = ms;
+  board::rtcSet(synchronized);   // I2C and shell clock changes belong to this main core only
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt[g_mtAt];
   uint32_t t0 = micros();
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
+  applyClock(ms);
   board::Touch t = board::readTouch();
   if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
     t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};

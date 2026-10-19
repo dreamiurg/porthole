@@ -4,6 +4,19 @@
 #include "crc32.h"
 
 namespace shell {
+static bool validLimits(const Limits& l) {
+  return l.sessionMinutes >= 1 && l.sessionMinutes <= 1440 && l.dailyMinutes >= 1 && l.dailyMinutes <= 1440;
+}
+Limits loadLimits(Store& st) {
+  Limits l{};
+  return st.load("sys", "limits", &l, sizeof l) == sizeof l && validLimits(l) ? l : Limits{};
+}
+bool saveLimits(Store& st, const Limits& l) {
+  if (!validLimits(l)) return false;
+  st.save("sys", "limits", &l, sizeof l);
+  Limits saved{};
+  return st.load("sys", "limits", &saved, sizeof saved) == sizeof saved && !memcmp(&saved, &l, sizeof l);
+}
 int Profiles::count() const { int n = 0; for (bool u : used) n += u; return n; }
 int Profiles::nth(int i) const {
   for (int id = 0; id < MAX_PROFILES; id++) if (used[id] && i-- == 0) return id;
@@ -69,19 +82,33 @@ void liftCaps(Store& st, Profiles& p) {
   for (int id = 0; id < MAX_PROFILES; id++)
     if (p.used[id] && p.rec[id].dayPlaySec) { p.rec[id].dayPlaySec = 0; saveRecord(st, p, id); }
 }
+bool resetLimits(Store& st, Profiles& p) {
+  bool ok = true;
+  for (int id = 0; id < MAX_PROFILES; id++) {
+    Record& r = p.rec[id];
+    if (!p.used[id] || !(r.restUntil || r.playSec || r.dayPlaySec)) continue;
+    const Record before = r;
+    r.restUntil = r.playSec = r.dayPlaySec = 0;
+    saveRecord(st, p, id);
+    Record saved{};
+    if (st.load(NS, key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&r, &saved, sizeof r)) {
+      r = before; ok = false;
+    }
+  }
+  return ok;
+}
 void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
   if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
 }
-bool play(Record& r, uint32_t now, uint32_t dt, int nProfiles, bool idle) {
+bool play(Record& r, uint32_t now, uint32_t dt, bool idle, const Limits& limits) {
   r.lastPlayed = now;
   if (r.playDay != now / DAY_SEC) { r.playDay = now / DAY_SEC; r.dayPlaySec = 0; }   // a new day, a new budget
   // A clock jump (the device was off, or the clock was set) is not play time, and neither is a screen nobody touches.
   uint32_t add = idle || resting(r, now) ? 0 : dt > 5 ? 5 : dt;
   r.dayPlaySec += add;
-  if (r.dayPlaySec >= DAILY_SEC) { r.playSec = 0; return true; }
-  if (nProfiles < 2) return false;
+  if (playedToday(r, now, limits)) { r.playSec = 0; return true; }
   r.playSec += add;
-  if (r.playSec < SESSION_SEC) return false;
+  if (r.playSec < (uint32_t)limits.sessionMinutes * 60) return false;
   r.restUntil = now + REST_SEC; r.playSec = 0;
   return true;
 }
