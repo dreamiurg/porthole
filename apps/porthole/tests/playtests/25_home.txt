@@ -11,7 +11,7 @@ up
 wait 450
 expect-screen sys_info
 ui-check sys_info-home
-tap 80 131
+tap 54 132
 wait 450
 expect-screen sys_home
 expect sys_home=1
@@ -91,7 +91,7 @@ tap 80 12
 wait 450
 expect-screen sys_info
 sys nohome
-tap 80 131
+tap 54 132
 wait 450
 expect sys_home=0
 ui-check sys_home-none

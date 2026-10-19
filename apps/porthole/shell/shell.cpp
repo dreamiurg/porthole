@@ -12,8 +12,11 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
+  limits_ = shell::loadLimits(st); adminPage_ = 0;
   uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
   light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
+  adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
+  if (adminPin_ > 10000) adminPin_ = 0;
   if (sys_) sys_->info(info_);
   if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
@@ -37,7 +40,9 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
     &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
-    &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateApp};
+    &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
+    &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
+    &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   activity_.step(in, in.down, ms);
@@ -49,11 +54,13 @@ void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
     &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
     &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
-    &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawApp};
+    &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
+    &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
+    &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
-  bool pinScreen = screen_ >= SH_PIN_SET && screen_ <= SH_PIN;   // drawPin shows its messages in the prompt line
+  bool pinScreen = (screen_ >= SH_PIN_SET && screen_ <= SH_PIN) || (screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN);
   if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
 }
 Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
@@ -77,7 +84,7 @@ void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
   holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's last digit) is where "No" is safe
 }
-bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, prof_.count()) > 0; }
+bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, limits_) > 0; }
 void Shell::select(int id) {
   active_ = id; page_ = 0;
   shell::recharge(rec(), now_);
@@ -127,7 +134,7 @@ void Shell::openIdx(int k) {
     if (id == active_) who = n;
   }
   app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
-  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = ms_;
+  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
   go(SH_APP);
 }
 void Shell::flushApp(bool allowed) {
@@ -142,15 +149,15 @@ void Shell::closeApp() {
   shell::saveRecord(*st_, prof_, active_);
 }
 void Shell::budgetTick() {   // per profile, across every game
-  uint32_t dt = now_ - lastTick_; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, prof_.count(), activity_.idleMs(ms_) >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
+  uint32_t dt = (ms_ - playTickMs_) / 1000; playTickMs_ += dt * 1000; lastTick_ = now_;
+  if (shell::play(rec(), now_, dt, activity_.idleMs(ms_) >= shell::IDLE_MS, limits_)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
-  if (titleHeld()) { go(SH_SYS_INFO); return; }
+  if (titleHeld()) { enterSystem(); return; }
   int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
@@ -421,14 +428,14 @@ void Shell::drawRest() {
   blitScaled(SPR_AVATARS[rec().avatar % NUM_AVATARS], 60, 24, 2);
   textCentered(106, 20 - (int)((ms_ / 400) % 3), "z", C_YELLOW);
   textCentered(80, 70, rec().name, C_YELLOW);
-  if (shell::playedToday(rec(), now_)) {   // bedtime is part of the game: no countdown to watch
+  if (shell::playedToday(rec(), now_, limits_)) {   // bedtime is part of the game: no countdown to watch
     textCentered(80, 80, "played today.", C_WHITE);
     textCentered(80, 94, "Back tomorrow!", C_LTGRAY);
   } else {
     textCentered(80, 80, "is resting.", C_WHITE);
-    uint32_t left = shell::restLeft(rec(), now_, prof_.count());
+    uint32_t left = shell::restLeft(rec(), now_, limits_);
     char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
-    textCentered(80, 106, "Let a friend play!", C_WHITE);
+    textCentered(80, 106, prof_.count() >= 2 ? "Let a friend play!" : "Time for a break!", C_WHITE);
   }
   ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, in_.down && in_.hit(50, 120, 60, 24));
 }
@@ -437,19 +444,27 @@ void Shell::drawRest() {
 void Shell::updateApp() {
   app_->update(now_, ms_, in_);
   if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
-  if (now_ != lastTick_) budgetTick();
+  if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
   if (screen_ == SH_APP) flushApp(ms_ - lastSaveMs_ > 5000);
 }
 void Shell::drawApp() { app_->render(); }
 
 // ---------------------------------------------------------------- serial and sim hooks
-void Shell::clearPin(int id) {
-  if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return;
+bool Shell::clearPin(int id) {
+  if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return false;
+  if (!prof_.rec[id].pin) return true;
+  const Record before = prof_.rec[id];
   prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
+  Record saved{};
+  if (st_->load(shell::NS, shell::key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&saved, &prof_.rec[id], sizeof saved)) {
+    prof_.rec[id] = before; return false;
+  }
+  return true;
 }
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
-                              "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light"};
+                              "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
+                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
@@ -464,14 +479,15 @@ void Shell::debugPrint() {
   printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s bright=%s backlight=%u]\n", active_, prof_.count(),
          r ? r->age : 0, r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0),
          (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
-         (unsigned long)(r ? shell::restLeft(*r, now_, prof_.count()) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
+         (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
+  printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
   if (!strcmp(cmd, "light")) setLight((shell::Light)((light_ + 1) % shell::LIGHT_COUNT));   // the sim's `b` key
   if (active_ >= 0) {
-    if (!strcmp(cmd, "tired")) rec().playSec = shell::SESSION_SEC;
-    else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = shell::DAILY_SEC; }
+    if (!strcmp(cmd, "tired")) rec().playSec = (uint32_t)limits_.sessionMinutes * 60;
+    else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = (uint32_t)limits_.dailyMinutes * 60; }
     else if (!strcmp(cmd, "rested")) { rec().restUntil = 0; rec().playSec = 0; rec().dayPlaySec = 0; }
     else if (!strcmp(cmd, "younger")) rec().age = 6;
     else if (!strcmp(cmd, "older")) rec().age = 9;

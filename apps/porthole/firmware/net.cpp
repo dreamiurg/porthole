@@ -12,6 +12,10 @@
 #include <Update.h>
 #include "update_gate.h"
 #include <WiFi.h>
+#include <WiFiUdp.h>
+#include <sys/time.h>
+#include "esp_random.h"
+#include "netclock.h"
 #include <algorithm>
 #include <atomic>
 #include <math.h>
@@ -38,6 +42,7 @@ const char* const NS = "sys";
 const char* const STABLE_VERSION = RELEASES "latest/download/porthole-version.txt";
 const char* const BETA_VERSION = RELEASES "download/porthole-beta/porthole-version.txt";
 const uint32_t FIRST_MS = 60000, POLL_MS = 60000;   // first check a minute after boot, then a look once a minute
+const uint32_t CLOCK_MS = 5000, CLOCK_POLL_MS = 6 * 3600000u, CLOCK_RETRY_MS = 15 * 60000u;
 const uint32_t WIFI_MS = 20000;                    // to join the network
 const uint16_t HTTP_MS = 15000;                    // TCP connect, and the longest wait for the next bytes
 const unsigned long TLS_S = 15;                    // TLS handshake, seconds
@@ -58,12 +63,17 @@ std::atomic<bool> g_forced{false}; // Check now continues even when touch or mot
 UpdateGate g_screen;
 std::atomic<bool> g_woke{false};   // the screen came on mid-download: stopped, to resume in the next dark spell
 portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
+shell::ClockStatus g_clock;
+bool g_clockPending = false;
+uint32_t g_clockUtc = 0, g_clockAt = 0;
+std::atomic<uint32_t> g_nextClock{3000};
+uint32_t g_checkNow = 0;   // main-loop snapshot; workers never read the main-loop clock variables
 shell::UpdStatus g_st;             // written by the task, read by the main loop: only under g_mux
 // The radio's jobs, one task at a time (g_busy): the update check (on g_checkChan, set before it starts), a scan or a
 // test join from the menu's Wifi screens. g_scanCount and g_tested are -1 while theirs runs; g_found belongs to the scan
 // task until it sets g_scanCount, and g_try (the network to test) to the test task while it runs. The Home lookup and
 // Radar's feed (below) are the other two.
-enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR };
+enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK };
 shell::Channel g_checkChan = shell::CH_STABLE;
 shell::Network g_found[shell::MAX_NETWORKS];
 std::atomic<int> g_scanCount{0}, g_tested{0};
@@ -239,6 +249,58 @@ bool joinWifi(const Wifi& w, bool checking = false) {
   return true;
 }
 
+void clockState(shell::TimeState state) {
+  if (state == shell::TIME_FAILED || state == shell::TIME_NO_WIFI) g_nextClock = millis() + CLOCK_RETRY_MS;
+  portENTER_CRITICAL(&g_mux); g_clock.state = state; portEXIT_CRITICAL(&g_mux);
+}
+
+// A fresh request on every connection. The random token distinguishes this request even when the RTC is wrong.
+// DNS and UDP run only on the worker: neither a missing network nor an unavailable time service stalls the UI.
+bool fetchClock(uint32_t& utc) {
+  IPAddress server;
+  if (WiFi.hostByName("pool.ntp.org", server) != 1) return false;
+  WiFiUDP udp;
+  if (!udp.begin(0)) return false;
+  uint8_t packet[48] = {}, token[8];
+  packet[0] = 0x23;   // version 4, client
+  esp_fill_random(token, sizeof token);
+  memcpy(packet + 40, token, sizeof token);
+  if (!udp.beginPacket(server, 123) || udp.write(packet, sizeof packet) != sizeof packet || !udp.endPacket()) return false;
+  for (uint32_t start = millis(); millis() - start < CLOCK_MS; vTaskDelay(pdMS_TO_TICKS(20))) {
+    const int n = udp.parsePacket();
+    if (!n) continue;
+    const bool source = udp.remoteIP() == server && udp.remotePort() == 123;
+    const int got = udp.read(packet, sizeof packet);
+    if (source && got >= 0 && netclock::reply(packet, (size_t)got, token, utc)) return true;
+  }
+  return false;
+}
+
+void syncConnected() {
+  clockState(shell::TIME_SYNCING);
+  uint32_t utc = 0;
+  if (!fetchClock(utc)) { clockState(shell::TIME_FAILED); return; }
+  const uint32_t ms = millis();
+  // POSIX time is UTC for TLS certificate verification. The shell and the physical RTC keep local wall time.
+  const timeval tv = {(time_t)utc, 0};
+  settimeofday(&tv, nullptr);
+  portENTER_CRITICAL(&g_mux);
+  g_clockUtc = utc; g_clockAt = ms; g_clockPending = true;
+  g_clock.state = shell::TIME_OK;
+  g_clock.lastSync = netclock::local(utc, g_clock.utcOffsetMin);
+  portEXIT_CRITICAL(&g_mux);
+  g_nextClock = ms + CLOCK_POLL_MS;
+  Serial.printf("[net] clock synchronized utc=%lu\n", (unsigned long)utc);
+}
+
+void clockJob() {
+  Wifi w;
+  if (!loadWifi(w) || !joinWifi(w)) clockState(shell::TIME_NO_WIFI);
+  else syncConnected();
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+}
+
 void checkAndDownload(shell::Channel ch) {
   char avail[16] = {0};
   Found f = fetchAvailable(ch, avail);
@@ -254,20 +316,20 @@ void checkAndDownload(shell::Channel ch) {
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
 }
 
-// TODO(porthole): sync the clock by NTP while connected. The RTC and the whole firmware keep local wall-clock seconds
-// with no timezone anywhere on the device, so UTC from NTP cannot be turned into local time without a timezone setting.
 void run(shell::Channel ch) {
   g_woke = false;
   if (checkStopped()) { setState(shell::UP_IDLE); return; }
   Wifi w;
   if (!loadWifi(w)) { setState(shell::UP_NO_WIFI); return; }
-  uint32_t now = g_now(), prev = 0;
+  uint32_t now = g_checkNow, prev = 0;
   board::loadBlob(NS, "last", &prev, sizeof prev);
   board::saveBlob(NS, "last", &now, sizeof now);   // before connecting: a crash below can't retry on every boot
   portENTER_CRITICAL(&g_mux); g_st.lastCheck = now; portEXIT_CRITICAL(&g_mux);
   setState(shell::UP_CHECKING);
-  if (joinWifi(w, true)) checkAndDownload(ch);
-  else if (!g_woke) setState(shell::UP_NO_WIFI);
+  if (joinWifi(w, true)) {
+    if (!checkStopped()) syncConnected();
+    if (!checkStopped()) checkAndDownload(ch);
+  } else if (!g_woke) setState(shell::UP_NO_WIFI);
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   if (!g_woke) return;
@@ -293,6 +355,7 @@ void scan() {
 }
 void test() {
   const bool ok = joinWifi(g_try);   // logs the network, never the password
+  if (ok) syncConnected();
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   memset(g_try.pass, 0, sizeof g_try.pass);
@@ -318,6 +381,7 @@ void task(void* arg) {
   else if (job == J_TEST) test();
   else if (job == J_LOOK) lookup();
   else if (job == J_RADAR) radar();
+  else if (job == J_CLOCK) clockJob();
   else if (waitForProgress()) run(g_checkChan);
   g_screen.release();
   g_forced = false;
@@ -396,7 +460,9 @@ bool geocode(const char* address, shell::Home& out) {
 }
 void lookup() {
   Wifi w;
-  const bool ok = loadWifi(w) && joinWifi(w) && geocode(g_addr, g_looked);
+  const bool joined = loadWifi(w) && joinWifi(w);
+  if (joined) syncConnected();
+  const bool ok = joined && geocode(g_addr, g_looked);
   wifiOff();
   memset(g_addr, 0, sizeof g_addr);
   Serial.printf("[net] home lookup: %s\n", ok ? "found" : "nothing");
@@ -580,6 +646,7 @@ bool heapOk() {
 }
 
 void poll() {
+  if ((int32_t)(millis() - g_nextClock) >= 0) syncConnected();   // the long-running feed already holds the radio
   if (!heapOk() || !fetchPlanes()) return;
   publish();
   if (!g_want || g_dark || !heapOk()) return;   // let the radio go without waiting on a route lookup
@@ -591,6 +658,7 @@ void radar() {
   Wifi w;
   if (!loadWifi(w) || !joinWifi(w)) g_phase = air::S_NO_WIFI;   // a dead end until Radar starts the feed again
   else {
+    syncConnected();
     // ponytail: stop() can't cut a GET short; the radio comes back after the one in flight (up to its timeouts), and a
     // menu scan started in that window is refused (the menu waits and retries).
     for (uint32_t next = millis(); g_want && !g_dark; vTaskDelay(pdMS_TO_TICKS(100))) {
@@ -626,6 +694,7 @@ bool startCheck(shell::Channel ch, bool forced) {   // false: dropped
   portENTER_CRITICAL(&g_mux); bool ready = g_st.state == shell::UP_READY; portEXIT_CRITICAL(&g_mux);
   if (ready) { g_busy = false; return false; }
   g_forced = forced;
+  g_checkNow = g_now();
   g_checkChan = ch;
   g_screen.request(); setState(shell::UP_CHECKING);
   return spawn(J_CHECK);
@@ -653,6 +722,9 @@ const char* resetName(esp_reset_reason_t r) {
 
 void Updater::begin(uint32_t (*localNow)()) {
   g_now = localNow;
+  int16_t offset = 0;
+  if (board::loadBlob(NS, "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
+    g_clock.utcOffsetMin = offset;
   WiFi.persistent(false);   // the network lives in "sys"; keep the wifi driver from saving its own copy
   uint32_t last = 0;
   if (board::loadBlob(NS, "last", &last, sizeof last) == sizeof last) g_st.lastCheck = last;
@@ -673,6 +745,10 @@ void Updater::begin(uint32_t (*localNow)()) {
 }
 
 void Updater::tick(uint32_t ms) {
+  if ((int32_t)(ms - g_nextClock) >= 0 && !g_busy) {
+    g_nextClock = ms + CLOCK_RETRY_MS;
+    if (g_ssid[0]) syncClock();
+  }
   if ((int32_t)(ms - g_nextPoll) < 0) return;
   g_nextPoll = ms + POLL_MS;
   if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == g_now() / 86400u) return;   // dev, no wifi, done today
@@ -684,8 +760,48 @@ void Updater::tick(uint32_t ms) {
 // never a run going (CHECKING, DOWNLOADING) or an update waiting (READY).
 bool Updater::saveWifi(const char* ssid, const char* pass) {
   if (!storeWifi(ssid, pass)) return false;
+  g_nextClock = millis() + 1000;
   portENTER_CRITICAL(&g_mux);
   if (g_st.state == shell::UP_NO_WIFI || g_st.state == shell::UP_FAILED) { g_st.state = shell::UP_IDLE; g_st.pct = 0; }
+  portEXIT_CRITICAL(&g_mux);
+  return true;
+}
+
+shell::ClockStatus Updater::clockStatus() {
+  portENTER_CRITICAL(&g_mux); shell::ClockStatus s = g_clock; portEXIT_CRITICAL(&g_mux);
+  return s;
+}
+
+bool Updater::syncClock() {
+  if (g_busy.exchange(true)) return false;
+  if (!g_ssid[0]) { clockState(shell::TIME_NO_WIFI); g_busy = false; return true; }
+  clockState(shell::TIME_SYNCING);
+  if (!spawn(J_CLOCK)) clockState(shell::TIME_FAILED);
+  return true;
+}
+
+bool Updater::takeClock(uint32_t& localEpoch) {
+  portENTER_CRITICAL(&g_mux);
+  const bool ready = g_clockPending;
+  if (ready) {
+    localEpoch = netclock::local(netclock::advanced(g_clockUtc, g_clockAt, millis()), g_clock.utcOffsetMin);
+    g_clockPending = false;
+  }
+  portEXIT_CRITICAL(&g_mux);
+  return ready;
+}
+
+bool Updater::setUtcOffset(int16_t minutes) {
+  if (!netclock::validOffset(minutes)) return false;
+  int16_t readback = 0;
+  if (!board::saveBlob(NS, "utc_off", &minutes, sizeof minutes) ||
+      board::loadBlob(NS, "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
+  const uint32_t now = g_now(), ms = millis();
+  portENTER_CRITICAL(&g_mux);
+  // Keep a pending network sample if one exists. Otherwise shift the current local time by the offset difference.
+  if (!g_clockPending) { g_clockUtc = netclock::local(now, -g_clock.utcOffsetMin); g_clockAt = ms; g_clockPending = true; }
+  if (g_clock.lastSync) g_clock.lastSync = netclock::local(g_clock.lastSync, minutes - g_clock.utcOffsetMin);
+  g_clock.utcOffsetMin = minutes;
   portEXIT_CRITICAL(&g_mux);
   return true;
 }

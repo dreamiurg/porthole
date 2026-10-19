@@ -13,7 +13,7 @@
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
 // it at boot) | newest V (the channel's newest) | nowifi | current | download PCT | ready | failed, and for wifi setup
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
-// ends so) | savefail (the next saveWifi fails). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
+// ends so) | savefail (the next saveWifi fails) | timeok [localEpoch] | timefail (complete a clock sync). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
 // feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
 // nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
@@ -37,6 +37,7 @@
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
+#include "netclock.h"
 #ifdef HAVE_SDL
 #include <SDL.h>
 #endif
@@ -58,7 +59,9 @@ struct FileStore : shell::Store {
 // Canned wireless updates: the state is whatever a `sys` command last set. A local build, like the firmware's: "dev"
 // never shows the "something new" card, so every scenario that does not ask for it starts as before.
 static uint32_t now();
+static void setNow(uint32_t epoch);
 struct SimSystem : shell::System {
+  shell::ClockStatus clock; int syncs = 0;
   char version[16] = "dev"; shell::UpdStatus st; shell::Channel ch = shell::CH_STABLE;
   bool rebootDue = false; int slot = 0, checks = 0, restarts = 0;
   // Wifi setup: the saved network, the last scan (-1 until `sys scan` or `sys scanempty` ends it) and the last test
@@ -85,14 +88,14 @@ struct SimSystem : shell::System {
     return looked;
   }
   bool updating() const { return st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING; }
-  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0; }
+  bool radioFree() const { return !updating() && nNets >= 0 && tested >= 0 && looked >= 0 && clock.state != shell::TIME_SYNCING; }
   void info(shell::SysInfo& o) override {
     o = {}; o.version = version; snprintf(o.slot, sizeof o.slot, "ota_%d", slot); snprintf(o.reset, sizeof o.reset, "power-on");
     o.heapFree = 187392; o.sd = true; o.wifiSaved = ssid[0] != 0; snprintf(o.ssid, sizeof o.ssid, "%s", ssid);
   }
   shell::UpdStatus status() override { return st; }
   void checkNow() override {
-    if (nNets < 0 || tested < 0) return;   // a scan or a test holds the radio: the contract says nothing happens
+    if (!radioFree()) return;   // a scan or a test holds the radio: the contract says nothing happens
     checks++; st.state = ssid[0] ? shell::UP_CHECKING : shell::UP_NO_WIFI; st.lastCheck = now();
   }
   bool startScan() override { if (!radioFree()) return false; scans++; nNets = -1; return true; }
@@ -109,6 +112,33 @@ struct SimSystem : shell::System {
     if (failSave || !s[0] || strlen(s) > 32 || strlen(p) > 64) { failSave = false; return false; }
     snprintf(ssid, sizeof ssid, "%s", s); snprintf(pass, sizeof pass, "%s", p);
     if (st.state == shell::UP_NO_WIFI || st.state == shell::UP_FAILED) st.state = shell::UP_IDLE;   // as the firmware's
+    return true;
+  }
+  shell::ClockStatus clockStatus() override { return clock; }
+  bool syncClock() override {
+    if (!radioFree()) return false;
+    syncs++; clock.state = ssid[0] ? shell::TIME_SYNCING : shell::TIME_NO_WIFI;
+    return true;
+  }
+  bool setUtcOffset(int16_t minutes) override {
+    if (!netclock::validOffset(minutes)) return false;
+    FileStore store; int16_t readback = 0;
+    store.save("sys", "utc_off", &minutes, sizeof minutes);
+    if (store.load("sys", "utc_off", &readback, sizeof readback) != sizeof readback || readback != minutes) return false;
+    const int delta = minutes - clock.utcOffsetMin;
+    setNow(netclock::local(now(), delta));
+    if (clock.lastSync) clock.lastSync = netclock::local(clock.lastSync, delta);
+    clock.utcOffsetMin = minutes;
+    return true;
+  }
+  bool setClock(const char* what, const char* arg) {
+    const bool ok = !strcmp(what, "timeok");
+    if (!ok && strcmp(what, "timefail")) return false;
+    if (clock.state != shell::TIME_SYNCING) return true;   // only a pending request can complete
+    if (!ok) { clock.state = shell::TIME_FAILED; return true; }
+    const uint32_t epoch = arg[0] ? (uint32_t)strtoul(arg, nullptr, 10) : now();
+    if (epoch < netclock::MIN_UTC || epoch >= netclock::MAX_UTC) { clock.state = shell::TIME_FAILED; return true; }
+    setNow(epoch); clock.state = shell::TIME_OK; clock.lastSync = epoch;
     return true;
   }
   // What a scan hears: one name twice (a dual-band router), a mesh's two nodes, a hidden network, open ones.
@@ -144,9 +174,13 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
     st = {}; st.lastCheck = last; nNets = tested = looked = 0;
+    FileStore store; int16_t offset = 0;
+    clock = {};
+    if (store.load("sys", "utc_off", &offset, sizeof offset) == sizeof offset && netclock::validOffset(offset))
+      clock.utcOffsetMin = offset;
   }
   void set(const char* what, const char* arg) {
-    if (setWifi(what)) return;
+    if (setClock(what, arg) || setWifi(what)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }
@@ -158,6 +192,9 @@ struct SimSystem : shell::System {
     if (strcmp(what, "version") && strcmp(what, "newest")) st.lastCheck = now();
   }
   void print() const {
+    static const char* const TIME[] = {"idle", "syncing", "ok", "nowifi", "failed"};
+    printf("[sys sys_time=%s sys_sync=%lu sys_off=%d sys_syncs=%d]\n", TIME[clock.state],
+           (unsigned long)clock.lastSync, clock.utcOffsetMin, syncs);
     static const char* const S[] = {"idle", "nowifi", "checking", "current", "downloading", "ready", "failed"};
     static_assert(sizeof S / sizeof S[0] == shell::UP_COUNT, "one name per UpdState");
     printf("[sys sys_ver=%s sys_chan=%s sys_state=%s sys_checks=%d sys_restarts=%d sys_last=%lu]\n", version,
@@ -249,6 +286,7 @@ void SimFeed::read(air::Snapshot& out) {
     out.planes[out.n++] = q;
   }
 }
+static void setNow(uint32_t epoch) { g_epoch = epoch - g_ms / 1000; }
 static void wipe() {   // every namespace, every key: all the .sav files
   DIR* d = opendir("build/host"); if (!d) return;
   while (dirent* e = readdir(d)) {

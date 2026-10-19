@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "shell.h"
 #include "shell_font.h"
 #include "shell_sprites.h"
@@ -110,10 +111,12 @@ static void wifiResult(char* out, size_t n, const UpdStatus& u, uint32_t now) {
   else snprintf(out, n, "%s", u.state == UP_IDLE ? "not yet" : u.state == UP_NO_WIFI ? "no wifi" : u.state == UP_CHECKING ? "trying" : "ok");
 }
 
-static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20}, HOME_BTN = {50, 121, 60, 20};
+static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20};
+static const ui::Box HOME_BTN = {30, 122, 48, 20}, ADMIN_BTN = {82, 122, 48, 20};
 void Shell::updateSysInfo() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_PICK); return; }
+  if (tapped(in_, ADMIN_BTN)) { adminPage_ = 0; go(SH_SYS_ADMIN); return; }
   if (tapped(in_, UPD_BTN)) { go(SH_SYS_UPD); return; }
   if (sys_->hasHome() && tapped(in_, HOME_BTN)) { go(SH_SYS_HOME); return; }
   if (tapped(in_, WIFI_BTN)) { netPage_ = 0; scan(); go(SH_SYS_WIFI); }
@@ -133,6 +136,233 @@ void Shell::drawSysInfo() {
   sbutton(WIFI_BTN, "Wifi", C_SKY, down(in_, WIFI_BTN));
   sbutton(UPD_BTN, "Updates", C_SKY, down(in_, UPD_BTN));
   if (sys_->hasHome()) sbutton(HOME_BTN, "Home", C_SKY, down(in_, HOME_BTN));
+  sbutton(ADMIN_BTN, "Admin", C_SKY, down(in_, ADMIN_BTN));
+  ui::drawBack();
+}
+
+// ---------------------------------------------------------------- optional admin code and everyone's play limits
+// A separate key: existing devices stay unlocked, and no shipped profile/save layout changes. Leaving Info for
+// the picker ends access; every new title hold asks again. The post-update news card never grants menu access.
+void Shell::enterSystem() {
+  resetPin(); firstPin_ = 0;
+  go(adminPin_ ? SH_SYS_PIN : SH_SYS_INFO);
+}
+static const ui::Box ADMIN_CODE = {30, 60, 100, 20}, ADMIN_RESET = {30, 84, 100, 20}, ADMIN_REMOVE = {30, 108, 100, 20};
+static const ui::Box ADMIN_PLAYERS = {42, 132, 76, 18};
+static ui::Box adminPageArrow(bool next) { return {next ? 114 : 26, 26, 20, 18}; }
+void Shell::updateSysAdmin() {
+  if (ui::back(in_)) { go(SH_SYS_INFO); return; }
+  if (tapped(in_, adminPageArrow(!adminPage_))) { adminPage_ = !adminPage_; return; }
+  if (adminPage_) {
+    if (tapped(in_, ADMIN_CODE)) { limitsDraft_ = limits_; go(SH_SYS_LIMITS); return; }
+    if (tapped(in_, ADMIN_RESET)) { utcDraft_ = sys_->clockStatus().utcOffsetMin; go(SH_SYS_CLOCK); }
+    return;
+  }
+  if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
+  if (tapped(in_, ADMIN_RESET)) { go(SH_SYS_RESET); return; }
+  if (tapped(in_, ADMIN_PLAYERS)) { target_ = -1; go(SH_SYS_PLAYERS); return; }
+  if (adminPin_ && tapped(in_, ADMIN_REMOVE)) go(SH_SYS_REMOVE);
+}
+void Shell::drawSysAdmin() {
+  clear(C_NAVY);
+  stextC(80, 33, adminPage_ ? "Admin 2/2" : "Admin 1/2", C_WHITE);
+  const ui::Box arrow = adminPageArrow(!adminPage_);
+  sbutton(arrow, adminPage_ ? "<" : ">", C_SKY, down(in_, arrow));
+  if (adminPage_) {
+    stextC(80, 46, "Time and play limits", C_LTGRAY);
+    sbutton(ADMIN_CODE, "Play limits", C_SKY, down(in_, ADMIN_CODE));
+    sbutton(ADMIN_RESET, "Clock", C_SKY, down(in_, ADMIN_RESET));
+    ui::drawBack(); return;
+  }
+  stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
+  sbutton(ADMIN_CODE, adminPin_ ? "Change code" : "Set admin code", C_SKY, down(in_, ADMIN_CODE));
+  sbutton(ADMIN_RESET, "Reset all limits", C_SKY, down(in_, ADMIN_RESET));
+  if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
+  sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
+  ui::drawBack();
+}
+// Read back because Store::save has no result: a failed flash write must not claim the code changed.
+bool Shell::saveAdminPin(uint16_t code) {
+  st_->save("sys", "admin", &code, sizeof code);
+  uint16_t saved = 0xffff;
+  if (st_->load("sys", "admin", &saved, sizeof saved) != sizeof saved || saved != code) return false;
+  adminPin_ = code;
+  return true;
+}
+// Adult keypad: 0-9 and erase, four masked digits, automatic submission after the last digit has shown briefly.
+// Kept separate from the kids' nine big keys so an admin code can include zero without changing their flow.
+static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19}; }
+static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
+void Shell::updateSysPin() {
+  if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
+  if (pinLen_ == 4) { if (ms_ - pinMs_ >= 400) submitSysPin(); return; }
+  if (ms_ < pinWrongUntil_) return;
+  if (tapped(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
+  for (int k = 0; k < 10; k++) {
+    if (!tapped(in_, adminKey(k))) continue;
+    pin_[pinLen_++] = k == 9 ? '0' : (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+    return;
+  }
+}
+void Shell::submitSysPin() {
+  const uint16_t code = pinCode(pin_); resetPin();
+  if (screen_ == SH_SYS_PIN_SET) { firstPin_ = code; go(SH_SYS_PIN_AGAIN); return; }
+  if (screen_ == SH_SYS_PIN) {
+    if (code == adminPin_) { go(SH_SYS_INFO); return; }
+    pinWrongUntil_ = ms_ + 900; toast("Wrong code. Try again."); return;
+  }
+  if (code != firstPin_) { firstPin_ = 0; go(SH_SYS_PIN_SET); toast("Codes did not match"); return; }
+  const bool ok = saveAdminPin(code); firstPin_ = 0;
+  go(SH_SYS_ADMIN); toast(ok ? "Admin code saved" : "Could not save code");
+}
+void Shell::drawSysPin() {
+  clear(C_NAVY);
+  const char* prompt = screen_ == SH_SYS_PIN ? "Admin code?" : screen_ == SH_SYS_PIN_SET ? "Choose 4 digits" : "Repeat admin code";
+  stextC(80, 32, ms_ < toastUntil_ ? toast_ : prompt, C_WHITE);
+  for (int i = 0; i < 4; i++) {
+    const int x = 58 + i * 12;
+    frame(x, 43, 10, 9, ms_ < pinWrongUntil_ ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE);
+    if (i < pinLen_) circle(x + 5, 47, 2, C_WHITE);
+  }
+  for (int k = 0; k < 10; k++) {
+    const ui::Box b = adminKey(k); char digit[2] = {k == 9 ? '0' : (char)('1' + k), 0};
+    sbutton(b, digit, C_WHITE, down(in_, b), 1);
+  }
+  sbutton(ADMIN_ERASE, "Del", C_SKY, down(in_, ADMIN_ERASE), 1);
+  ui::drawBack();
+}
+static const ui::Box CONFIRM_NO = {30, 84, 100, 20}, CONFIRM_YES = {30, 108, 100, 20};
+void Shell::updateSysConfirm() {
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_ADMIN); return; }
+  if (!tapped(in_, CONFIRM_YES)) return;
+  if (screen_ == SH_SYS_REMOVE) {
+    const bool ok = saveAdminPin(0);
+    go(SH_SYS_ADMIN); toast(ok ? "Admin code removed" : "Could not remove code");
+  } else {
+    const bool ok = resetLimits(*st_, prof_);
+    go(SH_SYS_ADMIN); toast(ok ? "All limits reset" : "Reset failed. Retry");
+  }
+}
+void Shell::drawSysConfirm() {
+  clear(C_NAVY);
+  const bool remove = screen_ == SH_SYS_REMOVE;
+  stextC(80, 34, remove ? "Remove admin code?" : "Reset all limits?", C_WHITE);
+  stextC(80, 49, remove ? "The system menu will open" : "Clear daily play and rest", C_LTGRAY);
+  stextC(80, 60, remove ? "without a code." : "timers for every profile.", C_LTGRAY);
+  if (!remove) stextC(80, 71, "Game progress is kept.", C_LTGRAY);
+  sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
+  sbutton(CONFIRM_YES, remove ? "Remove code" : "Reset limits", C_SKY, down(in_, CONFIRM_YES));
+  ui::drawBack();
+}
+
+// ---------------------------------------------------------------- recover a selected player's forgotten PIN
+// Rows map through nth(): a deleted profile leaves a stable-id hole. No profile PIN is asked here; the system
+// menu already checked the adult's code. The selected player's details, budgets and games all stay intact.
+static ui::Box playerRow(int i) { return {30, 46 + i * 22, 100, 20}; }
+void Shell::updateSysPlayers() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  for (int i = 0; i < prof_.count(); i++) {
+    if (!tapped(in_, playerRow(i))) continue;
+    target_ = prof_.nth(i);
+    if (!prof_.rec[target_].pin) { toast("No PIN set"); return; }
+    go(SH_SYS_PLAYER_PIN); return;
+  }
+}
+void Shell::drawSysPlayers() {
+  clear(C_NAVY);
+  stextC(80, 33, "Reset a player's PIN", C_WHITE);
+  if (!prof_.count()) stextC(80, 70, "No players yet", C_LTGRAY);
+  for (int i = 0; i < prof_.count(); i++) {
+    const Record& r = prof_.rec[prof_.nth(i)]; const ui::Box b = playerRow(i);
+    sbutton(b, "", C_SKY, down(in_, b));
+    char name[12]; fit(name, sizeof name, r.name, 54);
+    const int dy = down(in_, b) ? 1 : 0;
+    stext(b.x + 6, b.y + 7 + dy, name, C_DKBROWN);
+    stext(b.x + 66, b.y + 7 + dy, r.pin ? "PIN" : "No PIN", C_DKBROWN);
+  }
+  ui::drawBack();
+}
+void Shell::updateSysPlayerPin() {
+  if (ui::back(in_) || tapped(in_, CONFIRM_NO)) { go(SH_SYS_PLAYERS); return; }
+  if (!tapped(in_, CONFIRM_YES)) return;
+  if (!clearPin(target_)) { toast("Could not reset PIN"); return; }
+  go(SH_SYS_PLAYERS); toast("Player PIN reset");
+}
+void Shell::drawSysPlayerPin() {
+  clear(C_NAVY);
+  stextC(80, 34, "Reset player PIN?", C_WHITE);
+  stextC(80, 48, prof_.rec[target_].name, C_YELLOW);
+  stextC(80, 61, "Their next login will", C_LTGRAY);
+  stextC(80, 72, "not need a PIN.", C_LTGRAY);
+  sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
+  sbutton(CONFIRM_YES, "Reset PIN", C_SKY, down(in_, CONFIRM_YES));
+  ui::drawBack();
+}
+
+// ---------------------------------------------------------------- device-wide limits in minutes
+static ui::Box limitStepBox(int row, bool plus) { return {plus ? 110 : 26, 55 + row * 33, 24, 20}; }
+static const ui::Box LIMIT_SAVE = {40, 117, 80, 20};
+static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
+  const bool tap = tapped(in, box), held = in.longPress && in.hit(box.x, box.y, box.w, box.h);
+  if (!tap && !held) return value;
+  int next = value + delta * (held ? 10 : 1);
+  return next < 1 ? 1 : next > 1440 ? 1440 : next;
+}
+void Shell::updateSysLimits() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }   // discard unsaved edits
+  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, false), limitsDraft_.sessionMinutes, -1);
+  limitsDraft_.sessionMinutes = (uint16_t)limitStep(in_, limitStepBox(0, true), limitsDraft_.sessionMinutes, 1);
+  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, false), limitsDraft_.dailyMinutes, -1);
+  limitsDraft_.dailyMinutes = (uint16_t)limitStep(in_, limitStepBox(1, true), limitsDraft_.dailyMinutes, 1);
+  if (!tapped(in_, LIMIT_SAVE)) return;
+  if (!saveLimits(*st_, limitsDraft_)) { toast("Could not save limits"); return; }
+  limits_ = limitsDraft_; go(SH_SYS_ADMIN); toast("Play limits saved");
+}
+void Shell::drawSysLimits() {
+  clear(C_NAVY);
+  stextC(80, 32, "Play limits (minutes)", C_WHITE);
+  const uint16_t values[2] = {limitsDraft_.sessionMinutes, limitsDraft_.dailyMinutes};
+  for (int i = 0; i < 2; i++) {
+    stextC(80, 44 + i * 33, i ? "Per day" : "Per session", C_LTGRAY);
+    const ui::Box minus = limitStepBox(i, false), plus = limitStepBox(i, true);
+    sbutton(minus, "-", C_SKY, down(in_, minus)); sbutton(plus, "+", C_SKY, down(in_, plus));
+    char value[12]; snprintf(value, sizeof value, "%u min", (unsigned)values[i]); stextC(80, minus.y + 7, value, C_WHITE);
+  }
+  sbutton(LIMIT_SAVE, "Save", C_GREEN, down(in_, LIMIT_SAVE));
+  stextC(80, 143, "Hold +/- for 10", C_LTGRAY);
+  ui::drawBack();
+}
+
+// ---------------------------------------------------------------- network clock and explicit local UTC offset
+static const ui::Box CLOCK_MINUS = {26, 94, 24, 20}, CLOCK_PLUS = {110, 94, 24, 20};
+static const ui::Box CLOCK_SAVE = {30, 119, 48, 20}, CLOCK_SYNC = {82, 119, 48, 20};
+void Shell::updateSysClock() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  if (tapped(in_, CLOCK_MINUS) && utcDraft_ > -720) utcDraft_ -= 15;
+  if (tapped(in_, CLOCK_PLUS) && utcDraft_ < 840) utcDraft_ += 15;
+  if (tapped(in_, CLOCK_SAVE)) {
+    toast(sys_->setUtcOffset(utcDraft_) ? "UTC offset saved" : "Could not save offset");
+    return;
+  }
+  if (sys_->clockStatus().state != TIME_SYNCING && tapped(in_, CLOCK_SYNC))
+    if (!sys_->syncClock()) toast("Wifi busy. Try again");
+}
+void Shell::drawSysClock() {
+  clear(C_NAVY);
+  stextC(80, 33, "Clock", C_WHITE);
+  const time_t epoch = now_; struct tm date{}; gmtime_r(&epoch, &date);
+  char current[24]; strftime(current, sizeof current, "%Y-%m-%d %H:%M", &date); stextC(80, 47, current, C_WHITE);
+  const ClockStatus clock = sys_->clockStatus();
+  static const char* const STATES[] = {"Using device clock", "Syncing with wifi...", "Wifi time synced", "No wifi connection", "Time sync failed"};
+  stextC(80, 60, STATES[clock.state], clock.state == TIME_OK ? (uint8_t)C_GREEN : (uint8_t)C_YELLOW);
+  char last[28]; ago(last, sizeof last, now_, clock.lastSync); stextC(80, 71, last, C_LTGRAY);
+  stextC(80, 83, "Local UTC offset", C_LTGRAY);
+  const int magnitude = utcDraft_ < 0 ? -utcDraft_ : utcDraft_;
+  char offset[16]; snprintf(offset, sizeof offset, "UTC%c%02d:%02d", utcDraft_ < 0 ? '-' : '+', magnitude / 60, magnitude % 60);
+  stextC(80, 101, offset, C_WHITE);
+  sbutton(CLOCK_MINUS, "-", C_SKY, down(in_, CLOCK_MINUS)); sbutton(CLOCK_PLUS, "+", C_SKY, down(in_, CLOCK_PLUS));
+  sbutton(CLOCK_SAVE, "Save", C_GREEN, down(in_, CLOCK_SAVE));
+  if (clock.state != TIME_SYNCING) sbutton(CLOCK_SYNC, "Sync now", C_SKY, down(in_, CLOCK_SYNC));
   ui::drawBack();
 }
 
@@ -144,7 +374,10 @@ static bool busy(UpdState s) { return s == UP_CHECKING || s == UP_DOWNLOADING; }
 // The channel stays put mid-check and with an image waiting: switching then would show one channel's result as another's.
 static bool chanLocked(UpdState s) { return busy(s) || s == UP_READY; }
 // A scan or a test join holds the radio: Check now would do nothing until it is done.
-static bool radioBusy(System& s) { return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0; }
+static bool radioBusy(System& s) {
+  Home found{};
+  return s.scanResult(nullptr, 0) < 0 || s.testResult() < 0 || s.lookupResult(found) < 0 || s.clockStatus().state == TIME_SYNCING;
+}
 void Shell::updateSysUpd() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }

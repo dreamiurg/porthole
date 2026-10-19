@@ -13,11 +13,12 @@ namespace net {
 
 class Updater final : public shell::System {
  public:
-  // localNow: the firmware's local wall-clock seconds (main.cpp nowSec()), first called a minute later. Loads the "sys"
+  // localNow: the firmware's local wall-clock seconds (main.cpp nowSec()), called on the main core only. Loads the "sys"
   // settings, mounts the optional SD card and takes /porthole/wifi.txt from it. Call once, after board::init() and
   // before Shell::begin: info() reads what this loads.
   void begin(uint32_t (*localNow)());
-  // Call every loop: once a minute (the first a minute after boot) it starts the daily check if one is due.
+  // Call every loop: clock sync soon after boot and every six hours, independent of screen/build version;
+  // once a minute (the first a minute after boot) it also starts the daily update check if one is due.
   void tick(uint32_t ms);
   // Daily checks start in the dark and stop on activity. Explicit checks wait for the loop to install an
   // SRAM-backed display before any flash writes; it remains installed through all cleanup. A daily check
@@ -29,6 +30,11 @@ class Updater final : public shell::System {
   void cancelCheck();
   bool cancelling();
   bool committing();
+  // Consume a worker sample on the main core only; includes time elapsed since it was received.
+  bool takeClock(uint32_t& localEpoch);
+  shell::ClockStatus clockStatus() override;
+  bool syncClock() override;
+  bool setUtcOffset(int16_t minutes) override;
 
   void info(shell::SysInfo& out) override;
   shell::UpdStatus status() override;
