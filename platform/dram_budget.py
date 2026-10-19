@@ -4,6 +4,7 @@
 # again; this catches that growth in the pull request instead of on a board.
 # ruff: noqa: F821
 # mypy: disable-error-code="name-defined"
+import os
 import subprocess
 
 Import("env")
@@ -19,6 +20,7 @@ def check(source, target, env):
     print(f"Static internal RAM: {used} of {limit} bytes")
     if used > limit:
         print("Error: static internal RAM over custom_dram_static_max. Put big buffers on the heap (PSRAM on the board).")
+        os.remove(str(target[0]))  # or the next incremental build skips this check and passes
         return 1
     return None
 
