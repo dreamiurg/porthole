@@ -22,7 +22,7 @@ The story is for an advanced third-grade reader. Do not oversimplify prose. **Se
 6. `content-contract.md` and `chapter-01-world.json` — stable IDs / sample world graph, initial procedural variation, save and evolution.
 7. `starter-screens.svg` — nine **schematic** color/styling/layout references. Use as visual direction only; produce real in-engine sprites/fonts/screens.
 
-Repo presently has **seven launcher games and MAX_APPS=8**. This game should become the eighth. Do not modify/remap the profiles, reduce other games' resources, or inadvertently break launcher labels/layout.
+**Launcher is being redesigned separately by the repo owner.** Do not treat the present `MAX_APPS=8` limit as a product requirement or a reason to constrain future games. Integrate the game with the existing shell, profiles and launcher using the smallest safe compatibility change needed for prototype access; avoid undertaking a broader launcher redesign or interfering with the owner's work. If capacity or layout must change for the prototype, make a focused change and verify other games still launch.
 
 ## Functional core to build now
 
