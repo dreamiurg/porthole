@@ -26,7 +26,7 @@ description: |
   user: "We changed feed, play menu, and fetch this week, give it a once-over before we push"
   assistant: "I'll use the playtester agent to run make -C apps/porthole playtest, review every FAIL and target-size WARN touching those screens, and return a prioritized findings list before the reviewer pass."
   <commentary>
-  Multi-screen UX sweep before push -- playtester runs first, reviewer runs separately for code correctness. Note CI also runs make -C apps/porthole playtest (via `make ci`), but playtester reads the report with intent instead of just checking the exit code.
+  Multi-screen UX sweep before push -- playtester runs first, reviewer runs separately for code correctness. Note CI also plays every scenario (via `make ci`: coverage plays the scripted ones, the sanitizer sim the monkeys), but playtester reads the report with intent instead of just checking the exit code.
   </commentary>
   </example>
 model: opus

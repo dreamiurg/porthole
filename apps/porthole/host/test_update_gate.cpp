@@ -1,5 +1,5 @@
 // Regression: no flash writes on worker startup, allocation failure, or a stale display acknowledgment.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include "firmware/update_gate.h"
 int main() {

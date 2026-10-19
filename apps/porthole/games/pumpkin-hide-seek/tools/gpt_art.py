@@ -21,6 +21,7 @@ Not art.py: mypy names modules in hyphenated game dirs by file name alone, so it
 
 import sys
 from collections import Counter
+from functools import cache
 from pathlib import Path
 
 from PIL import Image
@@ -46,6 +47,7 @@ def keyed(p):
     return p[1] > p[0] + 60 and p[1] > p[2] + 60  # the green screen and its fringes
 
 
+@cache  # the art has far fewer distinct colours than pixels
 def nearest(p, palette):
     return min(palette, key=lambda c: sum((a - b) ** 2 for a, b in zip(p, rgb(c), strict=True)))
 

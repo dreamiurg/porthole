@@ -1,7 +1,7 @@
 // Self-check for Biscuit's content: personalize(), the generated art tables, and the pixel gate that every string
 // fits the box its screen draws it in (games/biscuit/layout.h) and stays on the round glass. Run: make test
 // (Glyphs, tokens, ids and order are checked by games/biscuit/tools/check_content.py; art pixels by the art tool's --check.)
-#include <assert.h>
+#include "host/check.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

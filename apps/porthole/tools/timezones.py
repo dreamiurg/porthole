@@ -121,7 +121,7 @@ def generate(tree, source):
         "static const Zone ZONES[] = {",
     ]
     text += ["  {" + ", ".join(json.dumps(value) for value in item) + "}," for item in items]
-    text += ["};", "struct __attribute__((packed)) Alias { const char* id; uint16_t canonical; };", "static const Alias ALIASES[] = {"]
+    text += ["};", "struct Alias { const char* id; uint16_t canonical; };  // not packed: Apple ld rejects unaligned pointers", "static const Alias ALIASES[] = {"]
     text += ["  {" + json.dumps(alias) + ", " + str(index) + "}," for alias, index in aliases]
     text += ["};", "static const uint32_t TRANSITIONS[] = {"]
     text += [f"  {encoded}u," for encoded in transitions]

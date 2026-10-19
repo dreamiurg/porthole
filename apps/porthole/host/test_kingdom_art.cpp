@@ -1,6 +1,6 @@
 // Exercise the private streaming decoder without adding a test-only production API.
 #include <algorithm>
-#include <assert.h>
+#include "host/check.h"
 #include <climits>
 #include <stdio.h>
 #include <random>

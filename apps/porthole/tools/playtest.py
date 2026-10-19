@@ -4,7 +4,8 @@
   python3 tools/playtest.py            every scenario in tests/playtests/ (make playtest builds the sims first)
   python3 tools/playtest.py 06 monkey  only scenarios whose file name contains one of the words
 
-PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report directory (make coverage uses both).
+PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report directory, and PLAYTEST_TIMEOUT_SCALE
+multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
 Directives that need live state (follow-glow, solve-word, answer-book) run the script so far, read the answer and
@@ -24,6 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(os.environ.get("PLAYTEST_OUT") or ROOT / "build" / "playtest").resolve()
 SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap").resolve()
+TIMEOUT_SCALE = float(os.environ.get("PLAYTEST_TIMEOUT_SCALE") or 1)
 _pal = (ROOT / "os/palette.h").read_text()
 
 
@@ -308,7 +310,7 @@ def run_scenario(path):
 
 def scenario_limit(path):
     # The family fixture renders thirty active minutes through override expiry, including under -O0 coverage.
-    return 120 if "monkey" in path.stem or path.stem == "29_family_controls" else 30
+    return (120 if "monkey" in path.stem or path.stem == "29_family_controls" else 30) * TIMEOUT_SCALE
 
 
 def run_script(binary, cwd, lines, deadline, limit):
@@ -324,7 +326,7 @@ def run_script(binary, cwd, lines, deadline, limit):
             env=dict(os.environ, UBSAN_OPTIONS="print_stacktrace=1"),
         )
     except subprocess.TimeoutExpired as e:
-        raise Fail(f"timeout: over {limit} s", (e.stdout or b"").decode(errors="replace").splitlines()[-12:]) from None
+        raise Fail(f"timeout: over {limit:g} s", (e.stdout or b"").decode(errors="replace").splitlines()[-12:]) from None
     bad = SANITIZER.search(p.stdout + p.stderr)
     if bad or p.returncode or "unknown command" in p.stderr:
         what = "sanitizer error" if bad else f"exit code {p.returncode}" if p.returncode else "unknown sim command"
@@ -488,6 +490,10 @@ def report(results):
     (OUT / "report.md").write_text("\n".join(md) + "\n")
 
 
+def slowest_first(paths):  # ponytail: monkeys, then the longest scripts; record past times if this guesses badly
+    return sorted(paths, key=lambda p: ("monkey" not in p.stem, -p.stat().st_size))
+
+
 def sim_for(path):  # monkeys run under the sanitizers
     return ROOT / "build" / "host" / "snap-asan" if "monkey" in path.stem else SNAP
 
@@ -500,11 +506,11 @@ def main():
         sys.exit(f"playtest: {'missing ' + ', '.join(missing) + ' (run make playtest)' if missing else 'no scenario matches'}")
     OUT.mkdir(parents=True, exist_ok=True)
     results = []
-    # Coverage-heavy shell scenarios can exceed their unchanged 30-second
-    # deadline when every reported CPU is saturated. Bound the worker pool;
-    # each scenario still runs in its own cwd with the same checks and limits.
-    with ThreadPoolExecutor(min(4, os.cpu_count() or 1)) as pool:
-        for r in pool.map(run_scenario, paths):
+    # One worker per CPU, the slowest scenarios first so none starts last and holds up the run.
+    with ThreadPoolExecutor(os.cpu_count() or 1) as pool:
+        running = {p: pool.submit(run_scenario, p) for p in slowest_first(paths)}
+        for p in paths:  # reported in name order
+            r = running[p].result()
             results.append(r)
             print(f"{'FAIL' if failed(r) else 'PASS'} {r['name']} ({r['sec']:.1f} s, {r['checks']} checks, UI {ui_count(r, 'FAIL')} FAIL / {ui_count(r, 'WARN')} WARN)")
             for msg, ctx in r["fails"]:
