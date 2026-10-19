@@ -130,16 +130,14 @@ static void lcdInitPanel() {
   esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[0]);
 }
 
-// What each buffer holds of an indexed frame, so expand() rewrites only the rows that changed. Any other drawing into a
-// buffer (an RGB565 app's render) leaves it unknown: presentHires() forgets a back buffer expand() did not fill.
+// What each buffer holds of an indexed frame, so expand() rewrites only the rows that changed. Anything else draws into
+// a buffer through backBuffer() (an RGB565 app's render), which forgets what that buffer held.
 static gfx565::Expanded g_expanded[2] = {};
-static bool g_backExpanded = false;
 void expand(const uint8_t* fb160, const uint16_t* pal565) {
-  gfx565::target(backBuffer());
+  gfx565::target(g_fbs[g_frames.back()]);
   gfx565::expandIndexed3(fb160, pal565, &g_expanded[g_frames.back()]);
-  g_backExpanded = true;
 }
-uint16_t* backBuffer() { return g_fbs[g_frames.back()]; }
+uint16_t* backBuffer() { g_expanded[g_frames.back()].palette = nullptr; return g_fbs[g_frames.back()]; }
 bool beginUpdateDisplay() { return update_scanout::begin(); }
 void drawUpdateProgress(const char* label, bool cancellable) { update_scanout::draw(label, cancellable); }
 bool hitUpdateCancel(int x, int y) { return update_scanout::hitCancel(x, y); }
@@ -152,13 +150,11 @@ void endUpdateDisplay() {
 }
 const uint16_t* frontBuffer() { return g_fbs[g_frames.front()]; }
 void presentHires() {
-  if (!g_backExpanded) g_expanded[g_frames.back()].palette = nullptr;
-  g_backExpanded = false;
   // Submission and arming are atomic with the same-core DMA ISR. An earlier frame completion cannot acknowledge it.
   portENTER_CRITICAL(&g_frameMux);
   xSemaphoreTake(g_frameCopied, 0);
   ESP_ERROR_CHECK(g_frames.submit() ? ESP_OK : ESP_ERR_INVALID_STATE);
-  ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer()));
+  ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[g_frames.back()]));
   portEXIT_CRITICAL(&g_frameMux);
   // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
   ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);

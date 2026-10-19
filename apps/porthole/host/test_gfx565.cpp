@@ -212,28 +212,27 @@ static void images() {
 }
 
 // The row-at-a-time scaled blits against the plain definition (a scale x scale rect per source pixel), clipped on
-// every side, with a run that stops partway through a row.
+// every side. The runs carry over row ends and stop 3 pixels short of the 7x5 image.
 static void scaledBlits() {
-  static uint16_t px[7 * 5], runs[2 * 20], want[W * H];
-  int nruns = 0;
+  static uint16_t px[7 * 5], want[W * H];
+  static const uint16_t runs[] = {3, 0x1111, 6, 0x2222, 1, 0x3333, 9, 0x4444, 5, 0x5555, 8, 0x6666};   // 32 pixels
   for (int i = 0; i < 7 * 5; i++) px[i] = (uint16_t)(i * 997 + 1);
-  for (int left = 7 * 5 - 3, i = 0; left > 0; i++) { int n = 1 + i % 6 < left ? 1 + i % 6 : left; runs[2 * nruns] = (uint16_t)n; runs[2 * nruns++ + 1] = (uint16_t)(i * 4111 + 7); left -= n; }
   const Image565 im = {7, 5, px};
-  const RleImage rle = {7, 5, runs, (uint32_t)nruns};
+  const RleImage rle = {7, 5, runs, 6};
   const int at[4][3] = {{10, 20, 3}, {-4, -5, 3}, {470, 466, 4}, {-30, 400, 2}};
   for (const auto& a : at) {
-    for (int pass = 0; pass < 2; pass++) {
-      target(want); clear(0);
-      for (int i = 0, k = 0; i < 7 * 5 - 3; k++)   // the reference: decode by hand, rect per pixel
-        for (int n = runs[2 * k]; n--; i++) {
-          const uint16_t c = pass ? runs[2 * k + 1] : px[i];
-          rect(a[0] + (i % 7) * a[2], a[1] + (i / 7) * a[2], a[2], a[2], c);
-        }
-      if (!pass) for (int i = 7 * 5 - 3; i < 7 * 5; i++) rect(a[0] + (i % 7) * a[2], a[1] + (i / 7) * a[2], a[2], a[2], px[i]);
-      target(g_fb); clear(0);
-      if (pass) blitRle(rle, a[0], a[1], a[2]); else blit(im, a[0], a[1], a[2]);
-      assert(!memcmp(g_fb, want, sizeof want));
-    }
+    const int x = a[0], y = a[1], s = a[2];
+    target(want); clear(0);
+    for (int i = 0; i < 7 * 5; i++) rect(x + i % 7 * s, y + i / 7 * s, s, s, px[i]);
+    target(g_fb); clear(0);
+    blit(im, x, y, s);
+    assert(!memcmp(g_fb, want, sizeof want));
+    target(want); clear(0);
+    for (int k = 0, i = 0; k < 6; k++)
+      for (int n = 0; n < runs[2 * k]; n++, i++) rect(x + i % 7 * s, y + i / 7 * s, s, s, runs[2 * k + 1]);
+    target(g_fb); clear(0);
+    blitRle(rle, x, y, s);
+    assert(!memcmp(g_fb, want, sizeof want));
   }
 }
 
