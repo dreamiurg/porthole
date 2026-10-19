@@ -80,6 +80,7 @@ class Shell {
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
   uint8_t adminPage_ = 0;
+  Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
   shell::Limits limits_{}, limitsDraft_{};
   shell::PlayWindow window_{}, windowDraft_{};
   shell::Allowance allowance_{};
@@ -105,6 +106,9 @@ class Shell {
   shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
   shell::TextEntry addr_{}; shell::Home found_{}; int8_t look_ = 0;    // the address being looked up (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
+  uint8_t written_[shell::BLOB_MAX];               // the open game's save as last written (or loaded)
+  size_t writtenLen_ = 0;
+  bool writtenOk_ = true;                          // false: the last write failed; flushApp retries written_
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;
@@ -144,6 +148,7 @@ class Shell {
   // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)
   bool titleHeld();
   void enterSystem();
+  void askAdmin(Screen next); void adminPassed();   // next: SH_SYS_INFO, SH_NAME (New) or SH_DELETE
   void updateSysAdmin(); void drawSysAdmin();
   void updateSysPin(); void submitSysPin(); void drawSysPin();
   bool saveAdminPin(uint16_t code);
