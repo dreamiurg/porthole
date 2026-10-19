@@ -1,5 +1,10 @@
 # Marsh route: final board08 visual build
 
+This watched campaign records the board08 visual baseline. Four subsequent
+copy corrections are covered by the [current-build addendum](copy-addendum/README.md),
+including a fresh full-trace replay and watched validation of changed screens.
+The baseline screenshots and SHA below remain unchanged historical evidence.
+
 Completed ordinary-input emulator campaign on binary SHA256
 `6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce`.
 This evidence uses the actual original board08 artwork, the completed location

@@ -6,6 +6,12 @@ and actual screenshots from the frozen emulator executable:
 
 `6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce`
 
+The later four-string copy correction has emulator SHA-256
+`780fd0add1892afa4af35e29a9d1acc266d5baf7798e6bcb0ab3a8c2bd4eb246`.
+A full fresh mill replay on that binary matches all 218 watched frames,
+including every comparison capture below. The artwork, typography and controls
+are unchanged; see the [copy validation](../blackbox/copy-woods/README.md).
+
 The screenshots came from the ordinary-input session
 `build/kingdom-final-mill-board08`. Files in [native/](native/) are byte-for-byte
 copies of its 480×480 captures. No game screens were regenerated or retouched
@@ -71,8 +77,9 @@ masonry and steps. This is a documented original-source resolution limitation,
 not a decoder defect; no runtime assets were changed during this review.
 
 The inventory screenshot shows a new campaign with six empty slots. It
-validates the slot layout and labels, not the appearance of collected item
-icons. Missing scenes, consequence artwork and map label removal use GPT Image
+validates the slot layout and labels. A later watched optional gathering pass
+also shows [earned thyme in the grid](../blackbox/copy-woods/a/14-earned-thyme-inventory.png)
+on the current binary, covering a collected item icon. Missing scenes, consequence artwork and map label removal use GPT Image
 Gen with the selected board/crops as references. Exact source provenance and
 runtime transformations are documented in the
 [art source README](../../../games/living-kingdom/art/board08/README.md).

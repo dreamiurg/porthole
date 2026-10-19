@@ -1,7 +1,8 @@
 # Chapter One: final emulator evidence
 
 These are watched ordinary-input campaigns on the completed board08 visual
-build, not engine simulations or staged endings. The frozen emulator SHA-256 is:
+baseline, followed by narrow watched checks of four copy corrections. They are
+not engine simulations or staged endings. The visual baseline SHA-256 is:
 
 `6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce`
 
@@ -25,12 +26,20 @@ in the linked reports. No hidden progression commands are accepted by
 [kingdom_replay.py](kingdom_replay.py). Replays check the recorded watched inputs
 and do not replace the original live runs.
 
+The current copy-corrected emulator SHA-256 is
+`780fd0add1892afa4af35e29a9d1acc266d5baf7798e6bcb0ab3a8c2bd4eb246`.
+The [clue/return-guidance addendum](marsh-board08/copy-addendum/README.md) and
+[both woods routes](copy-woods/README.md) inspect the changed screens, backward
+navigation, exits and exact save recovery. A fresh full mill replay matches all
+218 baseline frames on this binary. The full marsh replay matches 268 frames;
+its sole expected difference is the now-explicit mill destination, inspected in
+the addendum. No conditions, effects, controls or art changed.
+
 The revised build passes the reader/reread/confirmation loop, one-time
 commitments, inventory use, companions, journal, consequences, endings and
 continued exploration. No blocking UI, save or progression defect was found.
-The marsh report records one minor guidance issue: its return instruction
-could name Miller's Mill more explicitly. The tester found it naturally and
-completed the route.
+The final copy pass fixes the marsh return destination and removes witness
+attribution from clues that can be earned before meeting Pippa.
 
 ## Current screens
 

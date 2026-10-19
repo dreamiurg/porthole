@@ -9,7 +9,7 @@ using the approved polished Chapter One artwork, reference-based generated
 additions, textured panels and Atkinson typography. The ordinary host emulator
 at `build/host/snap` has SHA-256:
 
-`6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce`
+`780fd0add1892afa4af35e29a9d1acc266d5baf7798e6bcb0ab3a8c2bd4eb246`
 
 ## Passed automated gates
 
@@ -46,29 +46,48 @@ at `build/host/snap` has SHA-256:
   identity and clipping, malformed streams and 5,000 deterministic fuzz cases.
 - `make -C apps/porthole firmware` built the ESP32-S3 release firmware with
   the pinned Xtensa toolchain. RAM is **218,632 / 327,680 bytes (66.7%)**;
-  flash is **8,245,850 / 8,323,072 bytes (99.1%)**, leaving **77,222 bytes**
+  flash is **8,245,882 / 8,323,072 bytes (99.1%)**, leaving **77,190 bytes**
   in the app slot. The firmware binary is
   `apps/porthole/.pio/build/firmware/firmware.bin` from the repository root.
 
 No test expectation, sanitizer gate, hook or coverage threshold was weakened.
 
-## Pending final gates
+## Repository gates and test resources
 
-The final repository pre-commit hooks and the ordinary-input manual review of
-the frozen build are pending. This record does not yet certify those gates,
-an implementation commit, or an opened implementation PR. No hooks have been
-bypassed.
+Normal pre-commit checks passed, including Semgrep, full-tree mypy, Ruff,
+gitleaks, freshness checks and `make check`. `make complexity` passes. No hook
+has been bypassed; publication uses the required clean-tree pre-push hooks.
+
+The coverage runner initially timed out two existing shell scenarios under
+parallel load. Both passed together in 11.3/11.7 seconds. The worker pool is
+now capped at four; every scenario, assertion, sanitizer and original 30/120
+second timeout remains unchanged. The subsequent full run passed 67/67 and
+58/58. One push attempt was correctly refused because an evidence document
+changed during its hook; its actual CI and firmware checks passed. Reports are
+committed before the clean-tree publication attempt.
 
 ## Manual evidence and scope
 
-**Final frozen-build ordinary-input report: pending.** Its report and
-screenshots will be linked here when the watched final-build run is complete.
-The [black-box evidence index](blackbox/README.md) currently preserves
-historical campaigns and explicitly identifies their rejected, pre-revision
-presentation. Those traces establish their recorded gameplay observations;
-they do not certify the current artwork or replace final-build manual review.
-Automated scenarios, engine simulations and staged fixtures remain separate
-from ordinary-input player runs.
+The [mill campaign](blackbox/mill-board08/README.md) and
+[marsh campaign](blackbox/marsh-board08/README.md) were watched through full
+endings and post-ending exploration on visual baseline `6f40297…`, with fresh
+218/218 and 269/269 identical-frame replays. Four later copy edits clarify the
+mill return destination and remove unearned Pippa attribution. They change no
+IDs, effects, conditions, controls or artwork.
+
+On the current `780fd0ad…` binary, the
+[clue/return-instruction pass](blackbox/marsh-board08/copy-addendum/README.md)
+and [both seeded woods paths](blackbox/copy-woods/README.md) were watched with
+Back/Next, save/quit, restart and abrupt-kill recovery. These use disclosed
+legitimate prior-play fixtures, reproducible from fresh ordinary-input traces.
+Their fresh narrow replays match 22/22, 17/17, 10/10 and 17/17 frames.
+The full mill replay remains 218/218 identical; full marsh replay changes only
+its expected corrected return instruction, inspected in the addendum.
+
+A separate source-free tester is completing the channel campaign; its report
+will be linked in the [evidence index](blackbox/README.md). Earlier rejected art
+and font treatments remain explicitly historical. Engine simulations and
+scripted regression fixtures do not replace the watched player runs.
 
 Testing covers the host emulator and compiled board firmware; no physical
 device was played. Any approximate 2.1-inch typography comparison is a monitor

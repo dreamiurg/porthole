@@ -35,19 +35,22 @@ Validation:
 - Watched final-build mill and marsh campaigns completed with reading,
   rereading, rest breaks, exact resume, consequences, endings and post-ending
   play. Fresh replay matched **218/218** and **269/269** frames respectively.
-  A source-free independent channel campaign is in progress.
+  A source-free independent channel campaign is in progress. Four final copy
+  fixes received narrow watched checks; on the corrected build, all 218 mill
+  frames still match, and only the expected marsh return instruction differs.
 - Normal repository hooks and final `/code-review` are being completed before
   marking this PR ready. [Detailed verification](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/verification.md)
   and [manual evidence](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/README.md)
   record the precise scope.
-- ESP32-S3 firmware builds: **218,632 bytes RAM (66.7%)**, **8,245,850 bytes
-  flash (99.1%)**, leaving **77,222 bytes** in the app slot. Future content/art
+- ESP32-S3 firmware builds: **218,632 bytes RAM (66.7%)**, **8,245,882 bytes
+  flash (99.1%)**, leaving **77,190 bytes** in the app slot. Future content/art
   expansion needs a flash-budget review. No physical-device test is claimed.
 
-Minor known polish: the marsh route's return instruction could explicitly name
-the mill. It remains discoverable and the full route completed naturally.
 Actual 2.1-inch reading comfort still needs hardware playtesting; the supplied
 201px comparison is only a monitor approximation.
+
+Try it with `make -C apps/porthole webemu`, then select a profile and open
+**Kingdom** on the third launcher page.
 
 Targets `design/living-kingdom-chapter-one`. **Do not merge automatically.**
 
