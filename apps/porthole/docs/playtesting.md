@@ -2,6 +2,63 @@
 
 Commands run from `apps/porthole/` (or `make -C apps/porthole <target>` from the repo root).
 
+## Required black-box playthrough
+
+Every gameplay or UI change must pass this development gate before it is called
+done, its PR is marked ready, or it is merged. This is required in addition to
+the automated suite below. Documentation-only and non-player-visible changes do
+not require another playthrough.
+
+1. Build the current emulator and play the affected flow as a player. Use the SDL
+   simulator, browser emulator, or `snap --serve` with inspected rendered frames
+   and ordinary touch/tilt inputs. Base each decision on what is visible. A
+   source-free independent playtester is preferred for new games and major flow
+   changes; the implementer can perform the pass when working alone.
+2. Enter through the visible launcher and instructions. For a new finite game or
+   changes to controls, combat or progression, complete a full natural run. For
+   an ongoing game, complete the affected activity and return to its normal
+   resting screen. For a shell-only change, complete the affected task. Narrow
+   presentation changes require traversing the affected screens and their
+   relevant recovery/exit paths, not every level in the game. Also exercise
+   relevant failure/recovery, replay, back/exit, mis-taps, carried touches and
+   canceled holds. Do not substitute a staged ending for a required natural run.
+3. During this pass, do not use `dbg`, hidden-state queries, source-derived
+   solutions, stage jumps, `app` shortcuts or state-aware bots to choose actions
+   or force success. Ordinary elapsed-time stepping (`tick`/`wait`) is allowed;
+   wall-clock jumps and progression cheats are not natural play. A documented
+   profile/save fixture may prepare existing user progress needed to reach the
+   affected activity; disclose it and traverse the changed flow normally.
+   Keep debug tours, clock probes and automated state-aware tests separate.
+4. Inspect native-size frames and the sequence in motion: round-screen layout,
+   HUD footprint, sprite scale, clipping, contrast, text and instructions, input
+   discoverability, response and feedback, collision readability, animation,
+   pacing, difficulty and dead ends. Judge the experience, not just whether the
+   state machine eventually reaches an ending. A blind replay of a known trace
+   without watching the current experience does not replace this pass.
+5. Record prioritized findings with a repro and screenshots. Fix actionable
+   problems and play again; any further gameplay/UI edit invalidates the earlier
+   evidence for its affected flow. Verify the final build, including a fresh
+   complete run when controls, combat or progression changed. Add focused
+   regression tests where they can meaningfully catch the observed bug.
+6. Save a concise report under `docs/<game>/` (or `docs/` for shared flows), with
+   the tested revision/build, setup/fixtures, paths played, outcomes including
+   losses, findings and resolutions, remaining limitations, native screenshots,
+   and an input trace or exact reproducible steps. If claiming a trace reproduces
+   an outcome, replay it in a fresh process. Link the evidence in the PR or final
+   handoff. State emulator versus physical-device scope accurately.
+7. Run the required automated checks and obtain code review. The reviewer must
+   verify that the evidence covers the final changed experience. Missing or
+   blocked playthroughs leave gameplay/UI work incomplete; report the gap rather
+   than treating green CI or fixture screenshots as a substitute. Document any
+   accepted limitation explicitly instead of silently dropping a finding.
+
+The [Starfighter report](starfighter/blackbox/README.md) is an example: ordinary
+input drove the complete game, observed issues led to refinements, and the final
+victory trace reproduced the saved frame. These qualitative checks are a required
+development/review gate; CI alone cannot certify that someone inspected play.
+
+## Automated suite
+
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:
 

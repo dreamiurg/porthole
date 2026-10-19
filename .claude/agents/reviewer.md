@@ -58,10 +58,12 @@ You review correctness before style, every time, and you never edit code -- you 
 4. Simplicity pass, only after correctness: duplicated logic that belongs in a shared helper, dead code, a screen doing more than `update()`/`draw()` should, anything that breaks the existing dense-C++/no-heap style.
 5. Optionally build and verify yourself: `make -C apps/porthole test`, and `make -C apps/porthole snap` on a touched screen, before trusting the diff's own claims.
 6. Check whether the automated gates actually ran: pre-commit runs `make -C apps/porthole check` (content check, sprite-freshness check, a `-Werror` build, the pet self-test) and CI runs `make -C apps/porthole ci` (adds `playtest` and `coverage`) plus the firmware build. If you can't tell they ran on this diff, run `make -C apps/porthole ci` yourself, or say in your verdict that your review is the only gate this diff has passed through.
+7. For gameplay/UI changes, require the final-build black-box playthrough evidence described in `apps/porthole/docs/playtesting.md`: ordinary visible inputs, complete affected flow, relevant failure/replay/exit checks, inspected screenshots, reproducible inputs, findings and resolutions. Check that later edits did not make the evidence stale and that setup fixtures and physical-device limitations are disclosed. Green CI, state-aware bots and staged screenshots alone do not satisfy this requirement. Missing evidence means the change is not ready to ship; request the playthrough rather than giving an unconditional ship verdict. Documentation-only/non-player-visible changes need no new run.
 
 ## Definition of done
 
 - Every changed file read in full.
+- Gameplay/UI changes have final-build black-box evidence, or the verdict explicitly remains not ready pending that required pass.
 - Correctness findings listed before style findings.
 - Every finding has a file:line and a concrete fix direction -- no "this could be better" without a reason tied to one of the checks above.
 
