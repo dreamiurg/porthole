@@ -1,4 +1,5 @@
 #include "art.h"
+#include <new>
 #include "gfx565.h"
 #include "generated/fonts.h"
 #ifdef HOST_BUILD
@@ -18,7 +19,13 @@ namespace kingdom { namespace art {
 namespace {
 struct Origin { int x, y, scale; };
 // Rendering is serial. The ROM inflater needs one fixed dictionary, never a full-image scratch copy.
-static uint8_t inflateBuffer[32768];
+// Heap, not static: on the board an allocation this big lands in PSRAM, and internal RAM stays free for the
+// wireless update's screen, wifi and TLS (a 43 KB static here once left too little for any update to run).
+constexpr size_t INFLATE_BYTES = 32768;
+uint8_t* dictionary() {
+  static uint8_t* buffer = new (std::nothrow) uint8_t[INFLATE_BYTES];
+  return buffer;
+}
 struct ImageSink {
   const PackedImage& image;
   Origin at;
@@ -48,14 +55,15 @@ bool inflateImage(const PackedImage& image, ImageSink& sink) {
   if (inflateInit(&stream) != Z_OK) return false;
   stream.next_in = const_cast<Bytef*>(image.data);
   stream.avail_in = image.byteCount;
+  uint8_t* inflateBuffer = dictionary();
   int status = Z_OK;
-  bool valid = true;
+  bool valid = inflateBuffer != nullptr;
   while (status == Z_OK && valid) {
     stream.next_out = inflateBuffer;
-    stream.avail_out = sizeof inflateBuffer;
+    stream.avail_out = INFLATE_BYTES;
     uInt before = stream.avail_in;
     status = inflate(&stream, Z_NO_FLUSH);
-    size_t produced = sizeof inflateBuffer - stream.avail_out;
+    size_t produced = INFLATE_BYTES - stream.avail_out;
     valid = sink.accept(inflateBuffer, produced);
     if (status == Z_OK && produced == 0 && before == stream.avail_in) valid = false;
   }
@@ -65,16 +73,18 @@ bool inflateImage(const PackedImage& image, ImageSink& sink) {
 }
 #else
 bool inflateImage(const PackedImage& image, ImageSink& sink) {
-  static tinfl_decompressor decoder;
-  tinfl_init(&decoder);
+  static tinfl_decompressor* decoder = new (std::nothrow) tinfl_decompressor;
+  uint8_t* inflateBuffer = dictionary();
+  if (!decoder || !inflateBuffer) return false;
+  tinfl_init(decoder);
   size_t input = 0, output = 0;
   for (;;) {
-    size_t available = image.byteCount - input, produced = sizeof inflateBuffer - output;
-    tinfl_status status = tinfl_decompress(&decoder, image.data + input, &available,
+    size_t available = image.byteCount - input, produced = INFLATE_BYTES - output;
+    tinfl_status status = tinfl_decompress(decoder, image.data + input, &available,
       inflateBuffer, inflateBuffer + output, &produced, TINFL_FLAG_PARSE_ZLIB_HEADER);
     input += available;
     if (!sink.accept(inflateBuffer + output, produced)) return false;
-    output = (output + produced) % sizeof inflateBuffer;
+    output = (output + produced) % INFLATE_BYTES;
     if (status == TINFL_STATUS_DONE) return input == image.byteCount && sink.complete();
     if (status < 0 || (available == 0 && produced == 0)) return false;
     if (status == TINFL_STATUS_NEEDS_MORE_INPUT && input == image.byteCount) return false;
