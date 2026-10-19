@@ -1,6 +1,8 @@
 # Every Biscuit screen of this release, by name, audited: home (day, evening, night; puppy, young pup, story dog;
 # asleep; fetch; a line on two rows), World, the scrapbook, Tricks (both pages), Training (watching a six-cue lesson,
 # the pad), and the two name keyboards. The widest names a kid can type: Wwwwwwww for the kid and for the pup.
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 profile Wwwwwwww 8
 app biscuit
 wait 450

@@ -83,7 +83,7 @@ Output:
 * `build/playtest/<scenario>-<name>.png`: labeled contact sheets of the snapshots (needs Pillow; skipped without).
 
 A scenario fails on a failed directive, a crash or non-zero exit, any sanitizer report (`ERROR: AddressSanitizer`,
-`ERROR: LeakSanitizer`, `runtime error:`), an unknown sim command, a timeout (30 s, or 120 s for monkeys), or a
+`ERROR: LeakSanitizer`, `runtime error:`), an unknown sim command, a timeout (30 s, or 120 s for monkeys and the thirty-minute family-control expiry scenario), or a
 UI finding of either severity: FAIL and WARN both fail the run (warnings are errors). `make ci` (what CI runs for this app)
 includes `make playtest`, so an open FAIL finding fails CI.
 

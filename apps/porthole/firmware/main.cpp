@@ -1,5 +1,6 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
+#include <Preferences.h>
 #include "board.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
@@ -14,6 +15,7 @@
 #include "gfx565.h"
 #include "net.h"
 #include "shell.h"
+#include "timezone.h"
 #include "update_picture.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
@@ -44,7 +46,9 @@ static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a mo
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
-static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
+static uint32_t g_bootUtcEpoch = 0, g_bootMillis = 0;
+static bool g_rtcUtcReady = false;
+static uint32_t g_nextCheckpoint = 3600000u;
 // Test harness (tools/devctl.py): a synthetic finger held at logical (x, y) until `until`, then released.
 static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 // Gravity for Input (milli-g, screen frame): the last good sensor reading, or the harness's "G" override while it is on.
@@ -57,14 +61,15 @@ static const int MT_N = 64;
 static uint32_t g_mt[MT_N][MT_COUNT];
 static int g_mtAt = 0;
 
-// Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
-static uint32_t nowSec() {
+// RTC and running base are UTC. Only the main core derives local-wall seconds for shell/game day and time rules.
+static uint32_t utcNow() {
   const uint32_t seconds = (millis() - g_bootMillis) / 1000u;
-  g_bootLocalEpoch += seconds; g_bootMillis += seconds * 1000u;
-  return g_bootLocalEpoch;
+  g_bootUtcEpoch += seconds; g_bootMillis += seconds * 1000u;
+  return g_bootUtcEpoch;
 }
+static uint32_t nowSec() { return timezones::local(utcNow()); }
 
-// Compile-time fallback clock: the time this firmware was built (local time of the build machine).
+// Compile-time fallback clock: release builds use UTC; it is a lower bound when no trustworthy RTC/sample survives.
 static uint32_t buildEpoch() {
   static const char* months = "JanFebMarAprMayJunJulAugSepOctNovDec";
   char mon[4] = {0}; int d, y, hh, mm, ss;
@@ -76,6 +81,72 @@ static uint32_t buildEpoch() {
   unsigned doe = yoe * 365u + yoe / 4u - yoe / 100u + doy;
   uint32_t days = (uint32_t)(era * 146097 + (int)doe - 719468);
   return days * 86400u + (uint32_t)(hh * 3600 + mm * 60 + ss);
+}
+
+// Journal the RTC's format change independently of profile/game saves. A failed prepared write never touches the
+// RTC; a missing final commit remains recoverable at either recorded side after an interrupted conversion.
+template <class T> static bool saveClockBlob(const char* key, const T& value) {
+  T checked{};
+  return board::saveBlob("sys", key, &value, sizeof value) &&
+         board::loadBlob("sys", key, &checked, sizeof checked) == sizeof checked && !memcmp(&value, &checked, sizeof value);
+}
+static bool writeUtcRtc(uint32_t utc) {
+  const uint32_t source = board::rtcValid() ? board::rtcNow() : utc;
+  const auto prepared = timezones::journal(source, utc, false);
+  if (!saveClockBlob("rtc_clock", prepared)) return false;
+  board::rtcSet(utc);
+  const uint32_t checked = board::rtcNow();
+  if (!board::rtcValid() || checked < utc || checked - utc > 2) return false;
+  g_rtcUtcReady = true; g_nextCheckpoint = millis() + 3600000u;
+  const auto committed = timezones::journal(source, utc, true);
+  if (!saveClockBlob("rtc_clock", committed)) Serial.println("[porthole] RTC UTC commit pending; recovery journal kept");
+  return true;
+}
+static size_t clockJournalSize() {
+  Preferences prefs;
+  if (!prefs.begin("sys", true)) return 0;
+  const size_t size = prefs.isKey("rtc_clock") ? prefs.getBytesLength("rtc_clock") : 0;
+  prefs.end(); return size;
+}
+static uint32_t restoreRtc(bool& trusted) {
+  trusted = false;
+  if (!board::rtcValid()) return 0;
+  const uint32_t raw = board::rtcNow(); uint32_t utc = 0;
+  timezones::RtcJournal record{};
+  const size_t size = clockJournalSize();
+  if (size) {
+    trusted = size == sizeof record && board::loadBlob("sys", "rtc_clock", &record, sizeof record) == sizeof record &&
+              timezones::recoverRtc(raw, record, utc);
+    if (trusted && !record.committed) writeUtcRtc(utc);
+    else if (trusted) g_rtcUtcReady = true;
+    return utc;
+  }
+  int16_t offset = 0;
+  const bool hasOffset = board::loadBlob("sys", "utc_off", &offset, sizeof offset) == sizeof offset;
+  utc = timezones::legacyUtc(raw, hasOffset, offset);   // the previous shipped default was UTC when utc_off was absent
+  trusted = true;
+  writeUtcRtc(utc);
+  return utc;
+}
+static void beginClock() {
+  bool trusted = false;
+  uint32_t utc = restoreRtc(trusted);
+  if (!trusted) {
+    const uint32_t last = g_shell.lastSeen();
+    timezones::RtcJournal oldClock{}; int16_t oldOffset = 0;
+    const size_t oldSize = clockJournalSize();
+    board::loadBlob("sys", "rtc_clock", &oldClock, sizeof oldClock);
+    // Existing profile timestamps may mix legacy UTC and several local zones: a validated UTC checkpoint is the
+    // conservative source after migration. A malformed journal uses build time instead of guessing its format.
+    const uint32_t checkpoint = timezones::validJournal(oldClock) ? oldClock.target : oldSize ? buildEpoch() : 0;
+    const bool hasOffset = board::loadBlob("sys", "utc_off", &oldOffset, sizeof oldOffset) == sizeof oldOffset;
+    utc = timezones::fallbackUtc(last ? last + 60 : buildEpoch(), checkpoint, hasOffset, oldOffset);
+    if (utc < buildEpoch()) utc = buildEpoch();
+    writeUtcRtc(utc);
+    g_shell.clockRestored();
+    Serial.println("[porthole] RTC unavailable or migration uncertain; clock restored");
+  }
+  g_bootUtcEpoch = utc; g_bootMillis = millis();
 }
 
 // Rollback: the Arduino core marks a freshly updated firmware valid before setup() unless this says "later". setup()
@@ -120,20 +191,13 @@ void setup() {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
-  g_sys.begin(nowSec);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
+  g_bootUtcEpoch = buildEpoch(); g_bootMillis = millis();
+  g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
-  uint32_t lastSeen = g_shell.lastSeen(), now;
-  if (board::rtcValid()) now = board::rtcNow();
-  else {
-    now = lastSeen ? lastSeen + 60 : buildEpoch();
-    if (now < buildEpoch()) now = buildEpoch();
-    board::rtcSet(now);
-    g_shell.clockRestored();   // else a kid capped today stays on "Back tomorrow": the guess is always that same day
-    Serial.println("[porthole] RTC was not running; clock restored");
-  }
-  g_bootLocalEpoch = now; g_bootMillis = millis();
-  Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
+  beginClock();
+  Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
+                (unsigned long)utcNow(), (unsigned long)board::freeHeap());
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
@@ -273,7 +337,7 @@ static void printSystem() {   // the tail of "S": version, slot and where the up
                 (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
 static void serialCommand(int c) {
-  if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
+  if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { const uint32_t utc = timezones::toUtc(e); writeUtcRtc(utc); g_bootUtcEpoch = utc; g_bootMillis = millis(); Serial.println("[porthole] local clock set; RTC stores UTC"); } }
   else if (c == 'R') {
     board::eraseNamespace(shell::NS);
     for (App* a : APPS) board::eraseNamespace(a->store());
@@ -294,11 +358,19 @@ static void serialCommand(int c) {
   else motionCommand(c);
 }
 
+static void checkpointClock(uint32_t ms) {
+  if (!g_rtcUtcReady || (int32_t)(ms - g_nextCheckpoint) < 0) return;
+  g_nextCheckpoint = ms + 3600000u;
+  const uint32_t utc = utcNow();
+  const auto checkpoint = timezones::journal(utc, utc, true);
+  saveClockBlob("rtc_clock", checkpoint);   // once an hour; no RTC write and no profile timestamp reinterpretation
+}
 static void applyClock(uint32_t ms) {
+  checkpointClock(ms);
   uint32_t synchronized = 0;
   if (!g_sys.takeClock(synchronized)) return;
-  g_bootLocalEpoch = synchronized; g_bootMillis = ms;
-  board::rtcSet(synchronized);   // I2C and shell clock changes belong to this main core only
+  g_bootUtcEpoch = synchronized; g_bootMillis = ms;
+  writeUtcRtc(synchronized);   // I2C, persistence and shell clock changes belong to this main core only
 }
 
 void loop() {
