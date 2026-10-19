@@ -32,14 +32,14 @@ Validation:
   atomic decisions, item-free progress, delayed effects, corrupt saves and
   profile isolation. Font/content/art freshness, geometry, decompression fuzz
   tests and all 14 UI modes pass.
-- Watched final-build mill and marsh campaigns completed with reading,
+- Watched mill, marsh and source-free independent channel campaigns completed with reading,
   rereading, rest breaks, exact resume, consequences, endings and post-ending
-  play. Fresh replay matched **218/218** and **269/269** frames respectively.
-  A source-free independent channel campaign is in progress. Four final copy
-  fixes received narrow watched checks; on the corrected build, all 218 mill
-  frames still match, and only the expected marsh return instruction differs.
-- Normal repository hooks and final `/code-review` are being completed before
-  marking this PR ready. [Detailed verification](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/verification.md)
+  play. Fresh baseline replays matched **218/218**, **269/269** and **242/242**
+  frames. Four final copy fixes received narrow watched checks; current full
+  replays retain all mill frames and change only the expected marsh return
+  instruction and channel journal note.
+- Normal pre-commit and clean-tree pre-push hooks pass: static checks,
+  complexity, full CI and firmware. Code review found no remaining issues. [Detailed verification](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/verification.md)
   and [manual evidence](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/README.md)
   record the precise scope.
 - ESP32-S3 firmware builds: **218,632 bytes RAM (66.7%)**, **8,245,882 bytes
@@ -52,7 +52,9 @@ Actual 2.1-inch reading comfort still needs hardware playtesting; the supplied
 Try it with `make -C apps/porthole webemu`, then select a profile and open
 **Kingdom** on the third launcher page.
 
-Targets `design/living-kingdom-chapter-one`. **Do not merge automatically.**
+Targets `design/living-kingdom-chapter-one`. Automatic hosted CI only runs for
+PRs against `main`; this design-base PR is validated by the full local gates.
+ **Do not merge automatically.**
 
 ![Original-art title](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/mill-board08/08-title.png?raw=true)
 ![Readable illustrated story](https://github.com/dreamiurg/porthole/blob/feat/living-kingdom-chapter-one/apps/porthole/docs/living-kingdom/blackbox/mill-board08/20-road-first.png?raw=true)

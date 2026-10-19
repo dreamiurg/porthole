@@ -5,7 +5,11 @@ elapsed reading time, screenshots and process restarts on 2026-10-19. This was
 a watched rendered campaign, not a staged ending or engine simulation. The
 implementer knows the game; this is not a blind test.
 
-Executable SHA-256:
+This full watched run is the visual baseline. The later four-string copy
+revision has SHA-256 `780fd0ad…`; a fresh replay on it matches all 218 frames.
+Its actual changed screens are covered in the [copy checks](../copy-woods/README.md).
+
+Watched baseline executable SHA-256:
 `6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce`
 
 The only fixture was the shell's 20-minute session / 120-minute daily allowance,

@@ -10,11 +10,12 @@ not engine simulations or staged endings. The visual baseline SHA-256 is:
 | --- | --- | --- |
 | Mill first | [Implementer report](mill-board08/README.md) | Complete ending, delayed nursery work, retained optional quests, post-ending visits; fresh replay 218/218 identical frames |
 | Marsh first | [Designer report](marsh-board08/README.md) | Complete ending, flour consumed by relief work, post-ending bridge repair; fresh replay 269/269 identical frames |
+| Costly channel | [Source-free independent report](channel-board08/README.md) | Complete paid-work/repair ending, deferred bridge and post-ending save/restart; fresh replay 242/242 identical frames |
 
 The mill tester implemented the game; the marsh tester previously authored its
 story. Their reports disclose that prior knowledge. A separate source-free
-tester is currently playing the costly second-channel route; its final report
-will be added when that watched campaign and fresh replay finish. All four
+tester completed the costly second-channel route using only visible clues and
+controls. The report also discloses prior play of an earlier shared-route build. All four
 routes also have engine coverage across 128 seeds.
 
 Each campaign starts fresh. Only the shell's parental allowance is configured
@@ -33,7 +34,9 @@ The [clue/return-guidance addendum](marsh-board08/copy-addendum/README.md) and
 navigation, exits and exact save recovery. A fresh full mill replay matches all
 218 baseline frames on this binary. The full marsh replay matches 268 frames;
 its sole expected difference is the now-explicit mill destination, inspected in
-the addendum. No conditions, effects, controls or art changed.
+the addendum. The full channel replay matches 241 frames and changes only the
+corrected journal attribution; its current native difference is inspected and
+linked in that report. No conditions, effects, controls or art changed.
 
 The revised build passes the reader/reread/confirmation loop, one-time
 commitments, inventory use, companions, journal, consequences, endings and

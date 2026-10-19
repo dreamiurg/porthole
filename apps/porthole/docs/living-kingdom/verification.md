@@ -63,8 +63,8 @@ parallel load. Both passed together in 11.3/11.7 seconds. The worker pool is
 now capped at four; every scenario, assertion, sanitizer and original 30/120
 second timeout remains unchanged. The subsequent full run passed 67/67 and
 58/58. One push attempt was correctly refused because an evidence document
-changed during its hook; its actual CI and firmware checks passed. Reports are
-committed before the clean-tree publication attempt.
+changed during its hook; its actual CI and firmware checks passed. The subsequent clean-tree push at `580cd22` passed every normal pre-push gate:
+static checks on all files, complexity, full CI and firmware. No gate was bypassed.
 
 ## Manual evidence and scope
 
@@ -84,10 +84,21 @@ Their fresh narrow replays match 22/22, 17/17, 10/10 and 17/17 frames.
 The full mill replay remains 218/218 identical; full marsh replay changes only
 its expected corrected return instruction, inspected in the addendum.
 
-A separate source-free tester is completing the channel campaign; its report
-will be linked in the [evidence index](blackbox/README.md). Earlier rejected art
+The [source-free channel campaign](blackbox/channel-board08/README.md) also
+completed its paid-work ending, post-ending deferred bridge and exact saved-map
+recovery: 242/242 baseline frames replay identically. On the current build,
+241 match and only the expected journal attribution differs, inspected and
+linked in that report. The [evidence index](blackbox/README.md) separates these
+full watched baselines from the narrow current-copy checks. Earlier rejected art
 and font treatments remain explicitly historical. Engine simulations and
 scripted regression fixtures do not replace the watched player runs.
+
+[Implementation PR #81](https://github.com/dreamiurg/porthole/pull/81) targets the
+open design branch. Automatic hosted CI is configured only for PRs targeting
+`main`, so it does not run on this design-branch PR. The matching local CI and
+normal pre-push gates above passed; no hosted CI result is claimed. All four
+actual PR screenshot embeds rendered at natural 480×480 on GitHub, with exact
+remote PNG/capture hashes verified; see [the rendering record](pr81-image-verification.json).
 
 Testing covers the host emulator and compiled board firmware; no physical
 device was played. Any approximate 2.1-inch typography comparison is a monitor

@@ -1,0 +1,56 @@
+{
+  "pull_request": "https://github.com/dreamiurg/porthole/pull/81",
+  "transport": "Actual GitHub HTTPS responses validated with existing system CA trust and rendered by Chromium; no persistent trust changes or disabled TLS checks.",
+  "remote_images": [
+    {
+      "file": "08-title.png",
+      "status": 200,
+      "sha256_matches_committed_capture": true
+    },
+    {
+      "file": "20-road-first.png",
+      "status": 200,
+      "sha256_matches_committed_capture": true
+    },
+    {
+      "file": "10-party.png",
+      "status": 200,
+      "sha256_matches_committed_capture": true
+    },
+    {
+      "file": "217-ending-exact-resume.png",
+      "status": 200,
+      "sha256_matches_committed_capture": true
+    }
+  ],
+  "rendered_images": [
+    {
+      "file": "08-title.png",
+      "complete": true,
+      "width": 480,
+      "height": 480,
+      "displayedWidth": 480
+    },
+    {
+      "file": "20-road-first.png",
+      "complete": true,
+      "width": 480,
+      "height": 480,
+      "displayedWidth": 480
+    },
+    {
+      "file": "10-party.png",
+      "complete": true,
+      "width": 480,
+      "height": 480,
+      "displayedWidth": 480
+    },
+    {
+      "file": "217-ending-exact-resume.png",
+      "complete": true,
+      "width": 480,
+      "height": 480,
+      "displayedWidth": 480
+    }
+  ]
+}
