@@ -120,8 +120,9 @@ void setup() {
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
+static uint8_t backlightWanted(uint32_t ms) { return shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight()); }
 static void dimWhenIdle(uint32_t ms, bool progress) {
-  uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+  uint8_t want = backlightWanted(ms);
   g_sys.setDark(want == 0);
   if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {
@@ -310,13 +311,15 @@ void loop() {
   g_shell.update(nowSec(), ms, progress ? Input{} : shellInput);
   uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (!progress) {
+  // Dark and staying dark: nothing to draw for. The delay keeps the loop near its lit pace (touch and I2C polling).
+  const bool dark = !progress && g_backlight == 0 && backlightWanted(ms) == 0;
+  if (!progress && !dark) {
     if (g_hires) gfx565::target(board::backBuffer());
     g_shell.render();
     if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
   }
   uint32_t t3 = micros();
-  if (progress) delay(20);
+  if (progress || dark) delay(20);
   else board::presentHires();
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;

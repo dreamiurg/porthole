@@ -197,7 +197,7 @@ static void civilFromDays(uint32_t z0, int& y, int& m, int& d) {
 bool rtcValid() {
   uint8_t s; if (!i2cRead(RTC_ADDR, 0x04, &s, 1)) return false;
   if (s & 0x80) return false;  // oscillator-stop flag: time is garbage
-  uint8_t yr; i2cRead(RTC_ADDR, 0x0A, &yr, 1);
+  uint8_t yr; if (!i2cRead(RTC_ADDR, 0x0A, &yr, 1)) return false;
   return bcd2(yr) >= 25;  // year 2025+ (register counts from 2000)
 }
 uint32_t rtcNow() {
