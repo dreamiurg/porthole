@@ -443,7 +443,7 @@ static const Zone ZONES[] = {
   {"Pacific/Wake", "Wake", "<+12>-12"},
   {"Pacific/Wallis", "Wallis", "<+12>-12"},
 };
-struct Alias { const char* id; uint16_t canonical; };   // not packed: Mach-O cannot relocate an unaligned pointer
+struct Alias { const char* id; uint16_t canonical; };
 static const Alias ALIASES[] = {
   {"Africa/Asmera", 4},
   {"Africa/Timbuktu", 5},
