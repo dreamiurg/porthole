@@ -1,5 +1,5 @@
 // Regression: stale VSYNC / timeout must never allow drawing into a framebuffer still being copied for scan-out.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include "firmware/display_frames.h"
 int main() {
