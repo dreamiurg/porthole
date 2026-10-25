@@ -35,13 +35,14 @@ struct MemStore : shell::Store {
     if (!x || x->len > max) return 0;
     memcpy(buf, x->data, x->len); return x->len;
   }
-  void save(const char* ns, const char* key, const void* data, size_t len) override {
-    if (!land(ns, key)) return;
+  bool save(const char* ns, const char* key, const void* data, size_t len) override {
+    if (!land(ns, key)) return false;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
     assert(x && len <= shell::BLOB_MAX);
     snprintf(x->ns, sizeof x->ns, "%s", ns); snprintf(x->key, sizeof x->key, "%s", key);
     memcpy(x->data, data, len); x->len = len; x->used = true;
+    return true;
   }
   void erase(const char* ns, const char* key) override { if (!land(ns, key)) return; if (Entry* x = find(ns, key)) x->used = false; }
   bool has(const char* ns, const char* key) { return find(ns, key) != nullptr; }
@@ -263,6 +264,11 @@ static void corruptNoRemigrate() {
   shell::Profiles boot; shell::loadAll(st, boot);
   assert(boot.count() == 0 && !boot.used[0]);
   uint8_t rec[shell::BLOB_MAX]; assert(st.load(shell::NS, "p0", rec, sizeof rec) == sizeof junk && rec[0] == 1);
+  // The unreadable slot (a newer firmware's record after a rollback, or a torn write) is not free: a new profile
+  // never takes its id and erases the saves that may still belong to it.
+  assert(shell::create(st, boot, draft("Kai", 6, 0), STORES, 2) == 1 && st.has("crago", "s0"));
+  for (int i = 0; i < 2; i++) assert(shell::create(st, boot, draft("Kid", 7, 0), STORES, 2) == i + 2);
+  assert(boot.firstFree() < 0 && shell::create(st, boot, draft("Extra", 7, 0), STORES, 2) == -1 && st.has("crago", "s0"));
 }
 
 // A v1 blob (140 bytes, before names and ages were per house) still becomes a profile; age stays unknown.
@@ -918,6 +924,22 @@ static void adminAccess() {
   typeAdminCode(sh, ms, "0000"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
   typeAdminCode(sh, ms, "9870"); assert(on(sh, "sys_info"));
 }
+// With an admin code set, New and delete ask for it first (a kid could otherwise make a fresh profile, or delete
+// one, to dodge the limits); the wrong code or back changes nothing. Without one, they work as before.
+static void adminGatesProfiles() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); sh.createProfile("Kai", 6, "");
+  const ui::Box NEW_ROW = {24, 94, 112, 24};   // rows of three: Sam (y 42), Kai, New
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, NEW_ROW); assert(on(sh, "new_name"));
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, NEW_ROW); assert(on(sh, "sys_pin"));
+  typeAdminCode(sh, ms, "1111"); assert(on(sh, "sys_pin")); frame(sh, ms, Input{});
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  tapAt(sh, ms, NEW_ROW); typeAdminCode(sh, ms, "1234"); assert(on(sh, "new_name"));
+  sh.begin(st, nullptr, 0, &sys);
+  Input hold{}; hold.down = hold.longPress = true; hold.x = hold.downX = 80; hold.y = hold.downY = 54; frame(sh, ms, hold);
+  assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
+}
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1110,6 +1132,7 @@ int main() {
   resetSelectedPlayerPin();
   resetLimitsRetry();
   adminAccess();
+  adminGatesProfiles();
   adminChangesAndReset();
   resetAllLimits();
   versions();

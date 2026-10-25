@@ -29,7 +29,7 @@ constexpr size_t BLOB_MAX = 2048;        // bounded per-profile buffer, includin
 class Store {
  public:
   virtual size_t load(const char* ns, const char* key, void* buf, size_t max) = 0;   // 0 = missing or bigger than max
-  virtual void save(const char* ns, const char* key, const void* data, size_t len) = 0;
+  virtual bool save(const char* ns, const char* key, const void* data, size_t len) = 0;   // false = it did not land
   virtual void erase(const char* ns, const char* key) = 0;
 
  protected:
@@ -80,7 +80,9 @@ static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused
   Record rec[MAX_PROFILES];
   bool used[MAX_PROFILES];
+  bool blocked[MAX_PROFILES];   // a record is there but will not load: not shown, and never handed to a new profile
   int count() const;
+  int firstFree() const;  // the id a new profile gets, -1 when none is left
   int nth(int i) const;   // id of the i-th used profile, -1 past the end
 };
 
@@ -91,7 +93,7 @@ bool loadRecord(const void* data, size_t n, Record& out);
 inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16_t)(atoi(digits) + 1) : 0; }
 // porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
 void loadAll(Store& st, Profiles& p);
-void saveRecord(Store& st, Profiles& p, int id);
+bool saveRecord(Store& st, Profiles& p, int id);   // false = the write failed
 // name/avatar/age/pin from draft; erases any s<id> left in the app stores first. The id, or -1 when full.
 int  create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores);
 // Every app's s<id> first, the record last: power loss in between leaves a profile without saves, never saves
