@@ -1,0 +1,157 @@
+# Cafe quantities, visible budget error, saved comparison, editable correction and exact-page restart.
+# Supplemental scripted regression; final visible-input playthrough is recorded separately.
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 80 142
+wait 600
+expect-screen toytown_cafe_intro
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_cafe_intro
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+expect total=15
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+ui-check
+snap tt96_over_budget
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+expect total=15
+expect ordered=0
+tap 109 117
+wait 600
+expect-screen toytown_cafe_compare
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_cafe_compare
+expect compared=1
+tap 109 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+expect total=0
+tap 109 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+expect total=3
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+expect ordered=0
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 109 117
+wait 600
+expect-screen toytown_cafe_menu
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+expect total=4
+# Reboot a pending order without spending or rerolling it.
+reboot
+wait 600
+tap 80 67
+wait 600
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+expect total=4
+expect ordered=0
+expect compared=1
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+tap 109 117
+wait 600
+expect-screen toytown_cafe_compare
+ui-check
+snap tt96_compare
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_cafe_result
+expect ordered=1
+expect total=4
+ui-check
+snap tt96_lunch
+tap 80 142
+wait 600
+expect-screen toytown_cafe_cart
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_cafe_cart
+expect total=4
+tap 51 117
+wait 600
+expect-screen toytown_cafe_result
+tap 51 117
+wait 600
+expect-screen toytown_memory
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_stop
+expect count=1
+expect recorded=1
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_book
+ui-check
+snap tt96_memory
+tap 80 142
+wait 600
+expect-screen toytown_hub
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 80 142
+wait 600
+expect-screen launcher
+sheet 96_toytown_cafe

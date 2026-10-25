@@ -8,7 +8,7 @@
   "storage": {
     "pixelFormat": "RGB565",
     "byteOrder": "little-endian",
-    "discoveryBytes": 884736,
+    "discoveryBytes": 155280,
     "sceneBytes": 4261704
   },
   "discoveries": {

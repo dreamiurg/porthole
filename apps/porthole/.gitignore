@@ -6,3 +6,5 @@ build/
 !games/pumpkin-hide-seek/docs/*.png
 !games/pumpkin-hide-seek/art/*.png
 .DS_Store
+!games/toy-town-life/art/*.png
+!docs/toy-town-life/blackbox/*.png

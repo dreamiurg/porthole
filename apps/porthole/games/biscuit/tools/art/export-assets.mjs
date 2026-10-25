@@ -94,12 +94,15 @@ const topicOrder = ['space', 'earth', 'physics', 'nature', 'history', 'humanity'
 const ids = topicOrder.flatMap((topic) => Array.from({ length: 8 }, (_, i) => `${topic}-0${i + 1}`));
 assert.deepEqual([...ids].sort(), Object.keys(discoveryPictures).sort(), 'Every picture needs a place in the order');
 const pictures = [];
+const pictureRuns = [];
 const pictureHashes = {};
 ids.forEach((id, index) => {
   const ctx = raster(96, 48);
   renderDiscoveryArt(ctx, id);
   const pixels = ctx.finish();
-  pictures.push(array(`picture_${index}`, pixels));
+  const runs = encode(pixels);
+  pictures.push(array(`picture_${index}`, runs));
+  pictureRuns.push(runs.length / 2);
   pictureHashes[id] = hash(littleEndian(pixels));
 });
 
@@ -144,13 +147,13 @@ const discoveryH = `${banner}#pragma once
 #include "gfx565.h"
 
 namespace biscuit {
-// 96x48 RGB565 discovery pictures, drawn at 3x. Same order as DISCOVERIES in content_discoveries.h; append only.
+// 96x48 RLE RGB565 discovery pictures, drawn at 1x or 3x. Same order as DISCOVERIES; append only.
 enum DiscoveryId : uint8_t {
 ${ids.map((id) => `  ${enumName(id)},`).join('\n')}
   DISCOVERY_COUNT
 };
 constexpr int DISCOVERY_W = 96, DISCOVERY_H = 48;
-extern const gfx565::Image565 DISCOVERY_ART[DISCOVERY_COUNT];
+extern const gfx565::RleImage DISCOVERY_ART[DISCOVERY_COUNT];
 }  // namespace biscuit
 `;
 const sceneRows = table.map((stage) => `{\n${stage.map((time) => `{\n${time.map((act) => `{${act.join(',')}}`).join(',\n')}}`).join(',\n')}}`).join(',\n');
@@ -158,13 +161,13 @@ const dataInc = `${banner}// Included once, by games/biscuit/art.cpp, so only on
 namespace biscuit {
 namespace {
 ${pictures.join('')}${sceneArrays.join('')}}  // namespace
-const gfx565::Image565 DISCOVERY_ART[DISCOVERY_COUNT] = {
-${ids.map((_, i) => `{96,48,picture_${i}}`).join(',\n')}};
+const gfx565::RleImage DISCOVERY_ART[DISCOVERY_COUNT] = {
+${ids.map((_, i) => `{96,48,picture_${i},${pictureRuns[i]}}`).join(',\n')}};
 const gfx565::RleImage SCENES[SCENE_STAGES][SCENE_TIMES][SCENE_ACTIVITIES][SCENE_FRAMES] = {
 ${sceneRows}};
 }  // namespace biscuit
 `;
-const pictureBytes = ids.length * 96 * 48 * 2;
+const pictureBytes = pictureRuns.reduce((sum, count) => sum + count * 4, 0);
 const sceneBytes = [...unique.values()].reduce((sum, { runs }) => sum + runs.length * 2, 0);
 const manifest = {
   generator: 'node games/biscuit/tools/art/export-assets.mjs',

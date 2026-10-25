@@ -50,7 +50,7 @@ Return home and optionally make a one-page scrapbook record: choose a scene snap
 
 ### Scenario S1 — The Art Presentation (School)
 
-Friend Mina asks whether the doll will sit nearby during her class art presentation. She feels nervous, but the player has promised to help another friend set up displays. 
+Friend Mina asks whether the doll will sit nearby during her class art presentation. She feels nervous, but the player has promised to help another friend set up displays.
 - Ask what Mina is worried about; may learn she's more afraid of forgetting her introduction than being watched.
 - Sit beside her; support, but display setup is delayed.
 - Help rehearse; creates a cue-card solution if the player has notebook/paper; another friend may need to improvise.
@@ -70,7 +70,7 @@ The group has **10 pretend coins** and would like lunch and a drink. Menu could 
 
 ### Scenario S3 — The Missing Notebook (Park)
 
-A friend notices their small sketch notebook is gone after a picnic. Nearby: bench, fountain and path with visually distinct clues. 
+A friend notices their small sketch notebook is gone after a picnic. Nearby: bench, fountain and path with visually distinct clues.
 - Ask last-seen place; investigate; offer to help search before accusing anyone.
 - Check 2 or 3 locations (player can return to any).
 - Find evidence that it slid under a bench during the picnic, not that a stranger stole it.

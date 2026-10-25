@@ -1,8 +1,8 @@
 # Codex Cloud implementation handoff — Toy Town Life v0.1
 
-**Repository** `dreamiurg/porthole`  
-**Base branch** `design/toy-town-life-anime`  
-**Game** `apps/porthole/games/toy-town-life/` (inside Porthole's shared firmware, not standalone)  
+**Repository** `dreamiurg/porthole`
+**Base branch** `design/toy-town-life-anime`
+**Game** `apps/porthole/games/toy-town-life/` (inside Porthole's shared firmware, not standalone)
 **Goal** Working prototype of a gentle, creative, educational anime slice-of-life doll neighborhood for an eight-year-old.
 
 ## Read first

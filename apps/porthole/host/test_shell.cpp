@@ -671,6 +671,11 @@ static void headerName() {   // the widest name the keyboard types (its widest c
 }
 static void launcherLayout() {
   headerName();
+  for (int page = 0; page < 3; ++page) {
+    assert(launcher::count(9, page) == launcher::count(8, page));
+    assert(launcher::first(9, page) == launcher::first(8, page));
+  }
+  assert(launcher::count(9, 3) == 1 && launcher::first(9, 3) == 8);
   const ui::Box two = launcher::tile(0, 2), three = launcher::tile(0, 3);   // two keep today's look; three, the first row of three
   assert(two.x == 24 && two.w == 48 && launcher::tile(0, 1).x == 56 && three.x == 8 && three.w == 44 && launcher::muteY(2) == 128);
   assert(launcher::pages(0) == 1 && launcher::count(0, 0) == 0 && launcher::count(4, 2) == 0);   // no games; past the last page
