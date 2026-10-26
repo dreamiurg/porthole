@@ -78,7 +78,7 @@ void Game::drawScene() {
   const int act = save_.sleeping ? (int)SCENE_SLEEP : fetch_ >= 0 ? (int)SCENE_PLAY : activity_;
   const uint32_t since = ms_ - actStartMs_, step = save_.sleeping ? SCENE_SLEEP_MS : SCENE_FRAME_MS;   // scenes.h
   const int frame = oneShot && !save_.sleeping ? (since / step < 3 ? (int)(since / step) : 3) : (int)(ms_ / step % 4);
-  gfx565::blitRle(SCENES[(int)stage(save_)][timeOfDay()][act][frame], 0, 0, 3);   // the whole glass
+  packed565::draw(SCENES[(int)stage(save_)][timeOfDay()][act][frame], 0, 0, 3);   // the whole glass
 }
 void Game::drawHomeTop() {
   char name[NAME_LIMIT + 1], mood[48];

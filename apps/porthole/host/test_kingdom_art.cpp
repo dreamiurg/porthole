@@ -1,10 +1,11 @@
-// Exercise the private streaming decoder without adding a test-only production API.
+// Include Kingdom asset tables to verify the shared decoder against every original stream.
 #include <algorithm>
 #include <assert.h>
 #include <climits>
 #include <stdio.h>
 #include <random>
 #include <vector>
+#include <zlib.h>
 #include "games/living-kingdom/art.cpp"
 
 namespace {
@@ -37,27 +38,27 @@ void invalidArguments(const std::vector<uint8_t>& bytes) {
     {0, 2, bytes.data(), good.byteCount}, {2, 0, bytes.data(), good.byteCount},
     {481, 1, bytes.data(), good.byteCount}, {1, 481, bytes.data(), good.byteCount},
     {2, 2, bytes.data(), 2000001}};
-  for (const auto& invalid : bad) { assert(!art::drawImage(invalid, {0, 0, 1})); unchanged(); }
-  for (int scale : {0, -1, 481}) { assert(!art::drawImage(good, {0, 0, scale})); unchanged(); }
+  for (const auto& invalid : bad) { assert(!packed565::draw(invalid, 0, 0, 1)); unchanged(); }
+  for (int scale : {0, -1, 481}) { assert(!packed565::draw(good, 0, 0, scale)); unchanged(); }
   for (int position : {INT_MIN, INT_MAX}) {
-    assert(art::drawImage(good, {position, position, 1})); unchanged();
+    assert(packed565::draw(good, position, position, 1)); unchanged();
   }
 }
 void malformedStreams(const std::vector<uint8_t>& bytes) {
   for (uint32_t size = 1; size < bytes.size(); size++) {
-    reset(); assert(!art::drawImage({2, 2, bytes.data(), size}, {0, 0, 1})); guards();
+    reset(); assert(!packed565::draw({2, 2, bytes.data(), size}, 0, 0, 1)); guards();
   }
   const std::vector<uint8_t> invalid[] = {
     compressed({1, 2, 3, 4, 5, 6}), compressed({1, 2, 3, 4, 5, 6, 7, 8, 9})};
-  for (const auto& data : invalid) { reset(); assert(!art::drawImage(image(data), {0, 0, 1})); guards(); }
+  for (const auto& data : invalid) { reset(); assert(!packed565::draw(image(data), 0, 0, 1)); guards(); }
   auto trailing = bytes; trailing.push_back(0);
-  reset(); assert(!art::drawImage(image(trailing), {0, 0, 1})); guards();
+  reset(); assert(!packed565::draw(image(trailing), 0, 0, 1)); guards();
   auto checksum = bytes; checksum.back() ^= 1;
-  reset(); assert(!art::drawImage(image(checksum), {0, 0, 1})); guards();
+  reset(); assert(!packed565::draw(image(checksum), 0, 0, 1)); guards();
 }
 void clippedPixels(const std::vector<uint8_t>& bytes, int x, int y, int scale) {
   const uint16_t source[] = {0x1234, 0xabcd, 0xf81f, 0x07e0};
-  reset(); assert(art::drawImage(image(bytes), {x, y, scale})); guards();
+  reset(); assert(packed565::draw(image(bytes), x, y, scale)); guards();
   for (int py = 0; py < gfx565::H; py++) for (int px = 0; px < gfx565::W; px++) {
     uint16_t expected = CLEAR;
     if (px >= x && py >= y && px < x + 2 * scale && py < y + 2 * scale)
@@ -72,7 +73,7 @@ void randomStreams() {
     for (auto& byte : fuzz) byte = static_cast<uint8_t>(random());
     const art::PackedImage invalid = {static_cast<uint16_t>(1 + random() % 16),
       static_cast<uint16_t>(1 + random() % 16), fuzz.data(), static_cast<uint32_t>(fuzz.size())};
-    reset(); assert(!art::drawImage(invalid, {0, 0, 1})); guards();
+    reset(); assert(!packed565::draw(invalid, 0, 0, 1)); guards();
   }
 }
 void assertSourcePixels(const art::PackedImage& source, int scale) {
@@ -99,7 +100,7 @@ void realAssets() {
   for (const auto* source : art::ITEMS) sources.push_back(source);
   assert(sources.size() >= 15);
   for (const auto* source : sources) {
-    reset(); assert(art::drawImage(*source, {0, 0, 1})); assertSourcePixels(*source, 1);
+    reset(); assert(packed565::draw(*source, 0, 0, 1)); assertSourcePixels(*source, 1);
   }
 }
 void publicPixels() {

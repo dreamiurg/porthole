@@ -5,10 +5,10 @@
     "park.png": "a0942d2b3df574f18e8cfeea16e8a4c3b92899f795bdfbd8ed392bd18f9b5c1e",
     "fonts/OpenSans-Semibold.ttf": "aa3b0ef53db12e3d45094030cac0e69d384e44cc5978643dd4390041cad546e2",
     "fonts/OpenSans-Bold.ttf": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323",
-    "../../os/palette.h": "7b64ef88902dcf760ebbead52fca1d7f6903404f5cc6475e380a6a019eee1f36"
+    "../../os/palette.h": "8bf833d02941525fbcc232576963e389592712aebc93b1fc635f7ee600e84631"
   },
   "conversion_pillow": "12.3.0",
-  "conversion_cache_sha256": "0d2ad71d2e55224f2f408a5f4819de176f9f2da2e0b83012ad9625c75641d098",
+  "conversion_cache_sha256": "68ac771045a0d436382a5cebc4ed41879d6216163e36b977bbe8a3fa764a94e6",
   "runtime_bytes": 311833,
   "scene_resolution": [
     240,

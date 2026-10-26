@@ -34,9 +34,10 @@ test_update_gate_SRC :=
 test_display_frames_SRC :=
 test_update_picture_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
+test_packed_image_SRC := $(wildcard os/*.cpp)
 test_gfx565_SRC := $(wildcard os/*.cpp)
 test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
-test_kingdom_art_SRC := os/gfx565.cpp
+test_kingdom_art_SRC := os/gfx565.cpp os/packed_image.cpp
 test_kingdom_content_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
 test_kingdom_shell_SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/living-kingdom/*.cpp) games/pets-club/pet.cpp
 test_kingdom_reader_SRC := $(wildcard os/*.cpp) games/living-kingdom/reader.cpp
@@ -82,6 +83,8 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/test_flash_report.py
+	$(PY) tools/compression_oracle.py
 	$(PY) games/toy-town-life/tools/toytown_art.py --check
 	$(PY) tools/test_playtest_runner.py
 	$(PY) games/living-kingdom/tools/content.py --check
@@ -156,6 +159,9 @@ webemu: snap
 firmware:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware
 
+flash-report: firmware
+	$(PY) tools/flash_report.py
+
 factory:
 	pio run -e firmware -t factory
 
@@ -168,4 +174,4 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean flash-report
