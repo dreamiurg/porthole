@@ -24,6 +24,8 @@ NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
+test_toytown_SRC :=
+test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
@@ -80,6 +82,7 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) games/toy-town-life/tools/toytown_art.py --check
 	$(PY) tools/test_playtest_runner.py
 	$(PY) games/living-kingdom/tools/content.py --check
 	$(PY) games/living-kingdom/tools/test_content.py
@@ -136,6 +139,7 @@ coverage:
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
+	python3 games/toy-town-life/tools/toytown_art.py
 	python3 games/living-kingdom/tools/kingdom_art.py
 	python3 games/living-kingdom/tools/font.py
 	python3 games/starfighter/tools/art.py

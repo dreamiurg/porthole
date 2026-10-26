@@ -1,0 +1,204 @@
+# Supplemental shell integration: rest checkpoint, profile isolation and clock-independent resume.
+# profile/app/dbg are explicit simulator fixtures; this is not the source-free player tour.
+reset
+profile Sam 8
+app toy-town
+wait 600
+# Sam's chosen doll and hair differ from the next player's.
+tap 109 117
+wait 600
+tap 51 117
+wait 600
+tap 109 117
+wait 600
+tap 51 117
+wait 600
+expect doll=1
+expect hair=1
+tap 80 142
+wait 600
+tap 80 142
+wait 600
+expect-screen toytown_hub
+# Start Park, bring a notebook, listen and inspect the bench.
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 109 117
+wait 600
+tap 51 117
+wait 600
+expect bag=1
+tap 80 142
+wait 600
+expect-screen toytown_park_intro
+tap 51 117
+wait 600
+tap 109 117
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect profile=0/1
+expect variant=2
+expect clue=0
+expect clues=1
+expect listened=1
+expect active=1
+expect recorded=0
+expect count=0
+ui-check tt99_before_rest
+snap tt99_before_rest
+# Exhaust the actual shell session budget while a clue and its choices are pending.
+dbg tired
+wait 1500
+expect-screen rest
+expect rest>500
+ui-check tt99_shell_rest
+snap tt99_shell_rest
+tap 80 132
+wait 600
+expect-screen picker
+# A separate profile has a fresh doll and no inherited outing or scrapbook.
+profile Kai 7
+expect-screen launcher
+expect profile=1/2
+app toy-town
+wait 600
+tap 109 117
+wait 600
+expect-screen toytown_doll
+expect doll=0
+expect hair=0
+expect active=0
+expect count=0
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 109 117
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_style
+expect doll=2
+expect hair=2
+ui-check tt99_second_profile
+snap tt99_second_profile
+# Leave through the game and shell controls; Sam's own rest is still enforced.
+tap 80 19
+wait 600
+tap 80 142
+wait 600
+expect-screen launcher
+tap 80 12
+wait 600
+expect-screen picker
+tap 80 54
+wait 600
+expect-screen rest
+expect profile=0/2
+expect rest>500
+# Let the real ten-minute break expire. Reopen through the shell picker.
+skip 600
+wait 600
+expect-screen picker
+tap 80 54
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect profile=0/2
+expect doll=1
+expect hair=1
+expect bag=1
+expect variant=2
+expect clue=0
+expect clues=1
+expect listened=1
+expect active=1
+expect recorded=0
+expect count=0
+ui-check tt99_after_rest
+snap tt99_after_rest
+# Reboot keeps the same pending clue. Neither a fortnight away nor clock rollback changes it.
+reboot
+wait 600
+tap 80 54
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect doll=1
+expect hair=1
+expect variant=2
+expect clues=1
+skip 1209600
+wait 600
+expect-screen toytown_park_clue
+expect doll=1
+expect hair=1
+expect bag=1
+expect variant=2
+expect clue=0
+expect clues=1
+expect active=1
+expect count=0
+skip -1209600
+wait 600
+expect-screen toytown_park_clue
+expect variant=2
+expect clue=0
+expect clues=1
+expect listened=1
+expect recorded=0
+expect count=0
+# The preserved primary choice still works: return to search, then return to the same evidence.
+tap 51 117
+wait 600
+expect-screen toytown_park_search
+expect clue=0
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect clues=1
+# Kai's appearance also survives a separate reboot and Sam's clock probes.
+tap 80 19
+wait 600
+tap 80 142
+wait 600
+tap 80 12
+wait 600
+expect-screen picker
+tap 80 80
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_style
+expect profile=1/2
+expect doll=2
+expect hair=2
+expect active=0
+expect count=0
+ui-check tt99_second_profile_return
+snap tt99_second_profile_return
+tap 80 19
+wait 600
+tap 80 142
+wait 600
+expect-screen launcher
+sheet 99_toytown_profiles

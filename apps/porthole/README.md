@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter and Kingdom.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom and Toy Town.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -51,6 +51,17 @@ keys to bank and click the glass to fire.
 
 [Runtime screenshot tour and verification](docs/starfighter/README.md).
 Design and state contract: [game brief](games/starfighter/AGENTS.md).
+
+## Toy Town Life: a tiny town, your own stories
+
+Open **Toy Town** on the fourth launcher page. Create a doll, pack a bag, help at
+School, compare pretend lunch budgets at the Cafe, and find a missing notebook
+in the Park. Every profile keeps its own outfit, exact outing page and scrapbook.
+All styling is free; there are no attendance rewards, needs decay or social scores.
+
+[Gameplay and emulator guide](docs/toy-town-life/README.md) ·
+[Save contract](games/toy-town-life/AGENTS.md) ·
+[Native playthrough evidence](docs/toy-town-life/blackbox/README.md)
 
 ## Kingdom: Princess Pulverizer and the Living Kingdom
 

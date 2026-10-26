@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include "crc32.h"
 #include "games/biscuit/content_daily.h"
 #include "games/biscuit/content_discoveries.h"
 #include "games/biscuit/content_stories.h"
@@ -30,11 +31,17 @@ static void personalizing() {
   assert(personalize("x", "Sam", "Pip", out, 0) == 0);
 }
 
-// Every scene is 160x160 and its runs cover exactly that; every picture exists. Catches a truncated art_data.inc.
+// Every scene and picture's runs cover exactly its dimensions. Catches a truncated art_data.inc.
 static void art() {
   static_assert(sizeof DISCOVERIES / sizeof DISCOVERIES[0] == DISCOVERY_COUNT, "one picture per discovery");
-  for (int i = 0; i < DISCOVERY_COUNT; i++)
-    assert(DISCOVERY_ART[i].width == DISCOVERY_W && DISCOVERY_ART[i].height == DISCOVERY_H && DISCOVERY_ART[i].pixels);
+  for (const gfx565::RleImage& picture : DISCOVERY_ART) {
+    uint32_t pixels = 0;
+    for (uint32_t r = 0; r < picture.runCount; r++) {
+      assert(picture.runs[r * 2] > 0);
+      pixels += picture.runs[r * 2];
+    }
+    assert(picture.width == DISCOVERY_W && picture.height == DISCOVERY_H && pixels == DISCOVERY_W * DISCOVERY_H);
+  }
   const gfx565::RleImage* scene = &SCENES[0][0][0][0];
   for (int i = 0; i < SCENE_STAGES * SCENE_TIMES * SCENE_ACTIVITIES * SCENE_FRAMES; i++, scene++) {
     uint32_t pixels = 0;
@@ -52,6 +59,39 @@ static const char NAME[] = "WWWWWWWWWWW", PET[] = "WWWWWWWWWWWW";
 static_assert(sizeof NAME == 12 && sizeof PET == NAME_LIMIT + 1, "the longest names");
 static uint16_t g_fb[gfx565::W * gfx565::H];
 static int failures = 0;
+
+// Frozen from the original uncompressed RGB565 arrays, independently checked against all 96 legacy SHA-256
+// manifest entries. Exercise the actual renderer at list (1x) and cover (3x) scales, including every expanded pixel.
+static void discoveryPixels() {
+  static const uint32_t originalCrc[DISCOVERY_COUNT] = {
+    0x55E833B9u, 0xB70B05BEu, 0xABA73DFCu, 0x9C38F67Du, 0xF8AAA38Au, 0x2E452652u, 0x43B42E32u, 0x409B2EC5u,
+    0xC9C452DCu, 0xAABD9A75u, 0xA7B178E0u, 0xBAE496B5u, 0x7B410885u, 0xB8278F7Au, 0x0FE7961Cu, 0x0847180Fu,
+    0x3AFC42DCu, 0xC9AF002Du, 0x2111C491u, 0x85A5828Bu, 0x2A8E4D3Fu, 0xA56A0D31u, 0xF1AB34FBu, 0xB676D381u,
+    0x532D971Eu, 0x9D9AD7CFu, 0x3CFBF904u, 0xD0CC101Fu, 0x20E892E1u, 0xFA0203A4u, 0x68FAB573u, 0x465520E8u,
+    0x82940995u, 0xCEA1B340u, 0x15D1950Eu, 0xC6B741B7u, 0x4A9FE9C2u, 0x4ECCAC1Du, 0x3C758927u, 0x3FAC9274u,
+    0xDB2ED57Bu, 0x13F10A1Au, 0x275FD886u, 0x376E6451u, 0x2D2B329Au, 0xFF96F5D1u, 0xC82BDC45u, 0x5AC09FD6u,
+    0x6089CD06u, 0xB8188308u, 0x81F56363u, 0x8DB7693Au, 0x2F9819F1u, 0xF769A39Eu, 0x43137780u, 0xC7AE16C4u,
+    0x217E62F3u, 0xE0D4E423u, 0x7AE4DD86u, 0x6637918Au, 0x5446039Du, 0xF239B091u, 0xE41DBBD7u, 0x7D4BCDFFu,
+    0x31E65B75u, 0xE3700259u, 0x938288CEu, 0x001E035Au, 0xB31CA9EAu, 0x5A4352B1u, 0x88C8C98Fu, 0x295C6371u,
+    0xBA22DF99u, 0x10C019EEu, 0xD1EC3810u, 0x73F3B85Du, 0xB02C5FEDu, 0x7BB6B037u, 0x7E0695D2u, 0xE79E0BB6u,
+    0x47831148u, 0xF1E9ACE6u, 0x8D5AB928u, 0xC8B73808u, 0xED474844u, 0x9B665676u, 0x7810B52Fu, 0xE572F0B2u,
+    0x9F041C4Du, 0x5FA728B5u, 0x77FB5257u, 0x11756D67u, 0xCE8547E0u, 0x912C0F07u, 0xA906F4F8u, 0x88AF18E8u,
+  };
+  uint16_t original[DISCOVERY_W * DISCOVERY_H];
+  gfx565::target(g_fb);
+  for (int i = 0; i < DISCOVERY_COUNT; i++) {
+    gfx565::clear(0);
+    gfx565::blitRle(DISCOVERY_ART[i], 0, 0, 1);
+    for (int y = 0; y < DISCOVERY_H; y++)
+      memcpy(original + y * DISCOVERY_W, g_fb + y * gfx565::W, DISCOVERY_W * sizeof(uint16_t));
+    assert(os::crc32(original, sizeof original) == originalCrc[i]);
+    gfx565::clear(0);
+    gfx565::blitRle(DISCOVERY_ART[i], COVER_X, COVER_Y, 3);
+    for (int y = 0; y < DISCOVERY_H * 3; y++)
+      for (int x = 0; x < DISCOVERY_W * 3; x++)
+        assert(g_fb[(COVER_Y + y) * gfx565::W + COVER_X + x] == original[(y / 3) * DISCOVERY_W + x / 3]);
+  }
+}
 
 static const char* filled(const char* s) {   // the screens fill into 256 bytes: never cut there
   static char out[1024];
@@ -244,6 +284,7 @@ static void pixelGate() {
 int main() {
   personalizing();
   art();
+  discoveryPixels();
   pixelGate();
   // The rules and the content count the same things (and share one namespace without clashing).
   static_assert(NUM_STORIES == STORY_COUNT && NUM_DISCOVERIES == DISCOVERY_COUNT && NUM_TRICKS == TRICK_COUNT &&

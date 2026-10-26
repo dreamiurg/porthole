@@ -22,6 +22,6 @@ Size: **14,251,694 bytes**, SHA-256 `2eba78f075f1d998a396d05b5f5a2139608466b2a34
 
 Extract originals to `docs/superpowers/specs/toy-town-life/assets/reference/`. Keep the 5 PNG files **binary-identical** and commit them as real images. No need to commit the ZIP once the five PNGs have landed. Update the pull request Markdown to embed the two selected boards, with the other three accessible under an expandable reference section.
 
-The present GitHub connector can write UTF-8 text and accept base64 blobs but **does not ingest mounted multi-megabyte files directly**, so the originals are **hosted in Drive and not yet committed as GitHub PNGs**. Do not describe the PR as containing binaries until those file commits have been verified.
+The implementation retrieved the archive through the authenticated Drive connection. All five PNGs are now present in `reference/`, byte-identical to the SHA-256 values above. Runtime artwork is authored separately under `apps/porthole/games/toy-town-life/art/`.
 
 The moodboards are not gameplay sprite sheets and their tiny baked-in captions are not appropriate for 480×480 device screens. The production agent should create smaller original sprites/backgrounds with readable native Porthole fonts; preserve each board as visual reference and provenance.

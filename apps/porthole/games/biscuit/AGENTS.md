@@ -93,7 +93,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   contract above) into a caller-supplied buffer.
 - Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
   [frame]`, RLE RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
-  `Image565`), the pixel data itself in `generated/art_data.inc`, and
+  `RleImage`, losslessly encoded), the pixel data itself in `generated/art_data.inc`, and
   `generated/manifest.json` (a SHA-256 per scene/picture, all matching the legacy
   firmware's). `art.cpp` is the one translation unit that includes `art_data.inc`. See the
   `art` skill for the generator and its `--check`.
