@@ -61,12 +61,23 @@ Read the target game's own `apps/porthole/games/<game>/AGENTS.md` first -- it na
 6. For a broader pass, or before anything non-trivial: `make -C apps/porthole playtest` runs the scenario suite plus a chaos-monkey pass under AddressSanitizer/UBSan and applies the round-edge/target-size/contrast/overlap rules automatically (see the `playtest` skill). CI runs this too (`make -C apps/porthole ci`), but a red CI run is a worse time to find out than now.
 7. Update apps/porthole/README.md, apps/porthole/AGENTS.md, or the game's own AGENTS.md only if something they describe actually changed (a new make target, a new serial command, a new hard constraint, a new Save field). Otherwise leave docs alone.
 8. For a non-trivial change, say in your report that a `reviewer` pass is the next step before push -- you do not skip straight to "done" on your own judgment for anything touching `Save`, state transitions, or round-screen layout.
+9. Every gameplay/UI change also needs the independent child-perspective
+   `playtester` gate in `apps/porthole/docs/playtesting.md`. Your script tour is
+   supplementary. Hand off the current build/start commands, audience and
+   ordinary goal without solutions. Fix reported mechanics, input, feedback or
+   pacing problems and rebuild for another independent pass. Help refine the
+   playtester's brief when coverage is weak, without coaching around game flaws.
+   Repeat until the final experience meets the documented acceptance; use a
+   fresh source-free agent for new games and major changes.
 
 ## Definition of done
 
 - `make -C apps/porthole test` is green.
 - `make -C apps/porthole snap` builds and runs without crashing.
 - A script tour's screenshots show the feature working and respecting round-screen geometry.
+- Independent child-perspective playtest evidence covers the final affected
+  experience, including mistakes/recovery and comprehension/boredom assessment;
+  the coordinator and reviewer have accepted fixes and any explicit limitations.
 - Any `Save` change has a migration path and a test case covering it in that game's `apps/porthole/host/test_<name>.cpp`.
 - No debug prints or dead code left behind.
 
@@ -80,3 +91,5 @@ Return, in this order:
 5. **`make -C apps/porthole playtest`** -- run or not, and if run, the FAIL/WARN counts from `apps/porthole/build/playtest/report.md`.
 6. **Save migration** -- "not applicable," or the new field, the version bump, and the test case added.
 7. **Follow-ups** -- anything that needs pixel-artist, story-writer, firmware-engineer, or a reviewer pass before this ships.
+8. **Independent playtest** -- persona/brief revisions, final build and evidence
+   link, mechanics/usability findings fixed, final retest result and limitations.
