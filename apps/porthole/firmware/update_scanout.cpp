@@ -4,7 +4,6 @@
 #include "update_scanout.h"
 #include "update_picture.h"
 #include <Arduino.h>
-#include <new>
 #include <string.h>
 #include "esp_heap_caps.h"
 #include "esp_private/gdma.h"
@@ -25,7 +24,7 @@ extern "C" esp_err_t __wrap_gdma_connect(gdma_channel_handle_t channel, gdma_tri
 }
 
 namespace update_scanout {
-static board::UpdatePicture* g_picture = nullptr;
+static board::UpdatePicture g_picture{};
 static gdma_link_list_handle_t g_links[2] = {};
 static int g_bank = 0;
 static uint32_t g_lastDraw = 0;
@@ -42,7 +41,7 @@ static bool makeList(int bank) {
   if (gdma_new_link_list(&config, &g_links[bank]) != ESP_OK) return false;
   for (int i = 0; i < board::UpdatePicture::CHUNKS; i++) {
     gdma_buffer_mount_config_t buffer = {};
-    buffer.buffer = (void*)g_picture->chunk(i * board::UpdatePicture::CHUNK_ROWS, bank);
+    buffer.buffer = (void*)g_picture.chunk(i * board::UpdatePicture::CHUNK_ROWS, bank);
     buffer.length = board::UpdatePicture::CHUNK_BYTES;
     // Neither EOF nor final: all 120 descriptors form a hardware-driven circular frame.
     if (gdma_link_mount_buffers(g_links[bank], i, &buffer, 1, nullptr) != ESP_OK) return false;
@@ -52,16 +51,19 @@ static bool makeList(int bank) {
 
 void release() {
   for (auto& list : g_links) if (list) { ESP_ERROR_CHECK(gdma_del_link_list(list)); list = nullptr; }
-  if (g_picture) { g_picture->~UpdatePicture(); heap_caps_free(g_picture); g_picture = nullptr; }
+  g_picture.eachChunk([](uint16_t*& c) { heap_caps_free(c); c = nullptr; });
 }
 
 bool begin() {
   if (!g_lcdDma || xPortGetCoreID() != g_lcdCore) return false;
-  void* memory = heap_caps_aligned_calloc(64, 1, sizeof(board::UpdatePicture), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-  if (!memory) return false;
-  g_picture = new (memory) board::UpdatePicture{};
-  g_picture->drawBack();
-  g_picture->drawProgress(0, "Checking..."); g_picture->drawProgress(1, "Checking...");
+  bool allocated = true;
+  g_picture.eachChunk([&](uint16_t*& c) {
+    c = (uint16_t*)heap_caps_aligned_calloc(64, 1, board::UpdatePicture::CHUNK_BYTES, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    allocated = allocated && c;
+  });
+  if (!allocated) { release(); return false; }
+  g_picture.drawBack();
+  g_picture.drawProgress(0, "Checking..."); g_picture.drawProgress(1, "Checking...");
   if (!makeList(0) || !makeList(1)) { release(); return false; }
   // Same core as the stock ISR: it cannot be in flight while we mask its peripheral source.
   // Its per-vsync DMA restart must stay disabled through flash writes, including delayed interrupts.
@@ -81,7 +83,7 @@ static void setCancelStripe(int bank, bool cancellable) {
   for (int y = board::UpdatePicture::BACK_Y; y < board::UpdatePicture::BACK_Y + board::UpdatePicture::TEXT_ROWS;
        y += board::UpdatePicture::CHUNK_ROWS) {
     gdma_buffer_mount_config_t buffer = {};
-    buffer.buffer = cancellable ? g_picture->chunk(y, bank) : g_picture->black;
+    buffer.buffer = cancellable ? g_picture.chunk(y, bank) : g_picture.black;
     buffer.length = board::UpdatePicture::CHUNK_BYTES;
     // TX does not return descriptor ownership. This list is inactive after the two-frame swap wait.
     ESP_ERROR_CHECK(gdma_link_set_owner(g_links[bank], y / board::UpdatePicture::CHUNK_ROWS, GDMA_LLI_OWNER_CPU));
@@ -90,10 +92,10 @@ static void setCancelStripe(int bank, bool cancellable) {
 }
 
 void draw(const char* label, bool cancellable) {
-  if (!g_picture) return;
+  if (!g_picture.black) return;
   if (g_cancellable == cancellable && (!strcmp(label, g_label) || millis() - g_lastDraw < 250)) return;
   int next = 1 - g_bank;
-  g_picture->drawProgress(next, label);
+  g_picture.drawProgress(next, label);
   setCancelStripe(next, cancellable);
   // The inactive list loops on itself; switch only at the end of a whole frame, with no LCD/DMA reset.
   ESP_ERROR_CHECK(gdma_link_concat(g_links[next], -1, g_links[next], 0));

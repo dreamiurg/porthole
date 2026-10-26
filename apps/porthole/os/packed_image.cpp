@@ -1,6 +1,8 @@
 #include "packed_image.h"
 #include "gfx565.h"
 #include <algorithm>
+#include <memory>
+#include <new>
 #include <string.h>
 #ifdef HOST_BUILD
 #include <zlib.h>
@@ -11,7 +13,13 @@
 namespace packed565 {
 namespace {
 constexpr size_t WINDOW = 32768;
-static uint8_t dictionary[WINDOW];
+// Large scratch buffers belong on the heap (PSRAM on the board), leaving
+// internal DMA RAM available for the update display and Wi-Fi/TLS.
+static std::unique_ptr<uint8_t[]> dictionary;
+bool prepareDictionary() {
+  if (!dictionary) dictionary.reset(new (std::nothrow) uint8_t[WINDOW]);
+  return dictionary != nullptr;
+}
 struct Origin { int x, y, scale; };
 
 struct ImageSink {
@@ -58,6 +66,7 @@ struct ImageSink {
 
 #ifdef HOST_BUILD
 bool inflateImage(const Image& image, ImageSink& sink) {
+  if (!prepareDictionary()) return false;
   z_stream stream = {};
   if (inflateInit(&stream) != Z_OK) return false;
   stream.next_in = const_cast<Bytef*>(image.data);
@@ -65,12 +74,12 @@ bool inflateImage(const Image& image, ImageSink& sink) {
   int status = Z_OK;
   bool valid = true;
   while (status == Z_OK && valid) {
-    stream.next_out = dictionary;
-    stream.avail_out = sizeof dictionary;
+    stream.next_out = dictionary.get();
+    stream.avail_out = WINDOW;
     uInt before = stream.avail_in;
     status = inflate(&stream, Z_NO_FLUSH);
-    size_t produced = sizeof dictionary - stream.avail_out;
-    valid = sink.accept(dictionary, produced);
+    size_t produced = WINDOW - stream.avail_out;
+    valid = sink.accept(dictionary.get(), produced);
     if (status == Z_OK && produced == 0 && before == stream.avail_in) valid = false;
   }
   bool complete = valid && status == Z_STREAM_END && stream.avail_in == 0 && sink.complete();
@@ -78,18 +87,21 @@ bool inflateImage(const Image& image, ImageSink& sink) {
   return complete;
 }
 #else
-static tinfl_decompressor decoder;
-static_assert(sizeof decoder + sizeof dictionary + sizeof(ImageSink) < 49152, "bounded decoder scratch");
+static std::unique_ptr<tinfl_decompressor> decoder;
+static_assert(sizeof(tinfl_decompressor) + WINDOW + sizeof(ImageSink) < 49152, "bounded decoder scratch");
 bool inflateImage(const Image& image, ImageSink& sink) {
-  tinfl_init(&decoder);
+  if (!prepareDictionary()) return false;
+  if (!decoder) decoder.reset(new (std::nothrow) tinfl_decompressor);
+  if (!decoder) return false;
+  tinfl_init(decoder.get());
   size_t input = 0, output = 0;
   for (;;) {
-    size_t available = image.byteCount - input, produced = sizeof dictionary - output;
-    tinfl_status status = tinfl_decompress(&decoder, image.data + input, &available,
-      dictionary, dictionary + output, &produced, TINFL_FLAG_PARSE_ZLIB_HEADER);
+    size_t available = image.byteCount - input, produced = WINDOW - output;
+    tinfl_status status = tinfl_decompress(decoder.get(), image.data + input, &available,
+      dictionary.get(), dictionary.get() + output, &produced, TINFL_FLAG_PARSE_ZLIB_HEADER);
     input += available;
-    if (!sink.accept(dictionary + output, produced)) return false;
-    output = (output + produced) % sizeof dictionary;
+    if (!sink.accept(dictionary.get() + output, produced)) return false;
+    output = (output + produced) % WINDOW;
     if (status == TINFL_STATUS_DONE) return input == image.byteCount && sink.complete();
     if (status < 0 || (available == 0 && produced == 0)) return false;
     if (status == TINFL_STATUS_NEEDS_MORE_INPUT && input == image.byteCount) return false;

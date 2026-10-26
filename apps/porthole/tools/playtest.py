@@ -307,8 +307,9 @@ def run_scenario(path):
 
 
 def scenario_limit(path):
-    # The family fixture renders thirty active minutes through override expiry, including under -O0 coverage.
-    return 120 if "monkey" in path.stem or path.stem == "29_family_controls" else 30
+    # The family fixture renders thirty active minutes through override expiry, including under -O0 coverage. The
+    # UI audit walks every reachable screen: 27.5 s of 30 under coverage on an idle machine, so any load timed it out.
+    return 120 if "monkey" in path.stem or path.stem in ("29_family_controls", "30_ui_audit") else 30
 
 
 def run_script(binary, cwd, lines, deadline, limit):
