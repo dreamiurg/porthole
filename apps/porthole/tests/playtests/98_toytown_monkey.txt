@@ -15,7 +15,7 @@ wait 600
 tap 109 117
 wait 600
 expect-screen toytown_doll
-tap 109 117
+tap 80 142
 wait 600
 expect-screen toytown_style
 ui-check

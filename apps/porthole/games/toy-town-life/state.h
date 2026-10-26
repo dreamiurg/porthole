@@ -23,12 +23,17 @@ struct State {
   uint8_t menuItem, compared, ordered, variant, clues, clue, guess, revised;
   uint8_t active, recorded, count, bookIndex, completed, caption, sticker, resumePage;
   Entry entries[8];
-  uint32_t seed, crc;
+  uint32_t seed;
+  uint8_t hairColor, reserved[3]; // V2: 0 keeps the original hair tint; reserved bytes stay zero.
+  uint32_t crc;
 };
 constexpr uint32_t MAGIC = 0x544f5954;
-constexpr uint16_t VERSION = 1;
+constexpr uint16_t VERSION = 2;
 constexpr size_t V1_SIZE = 88;
-static_assert(sizeof(State) == V1_SIZE, "Save: append fields before crc, bump version and keep historical sizes");
+constexpr size_t V2_SIZE = 92;
+static_assert(sizeof(State) == V2_SIZE, "Save: append fields before crc, bump version and keep historical sizes");
+static_assert(offsetof(State, seed) == 80 && offsetof(State, hairColor) == V1_SIZE - 4 && offsetof(State, crc) == V2_SIZE - 4,
+    "Keep every V1 field through seed at its original offset");
 inline State fresh() { State s{}; s.seed = 17; return s; }
 inline int total(const State& s) {
   return s.cart[0] * 5 + s.cart[1] * 3 + s.cart[2] + s.cart[3] * 2;
@@ -55,11 +60,12 @@ inline void complete(State& s) {
 }
 inline void seal(State& s) {
   s.magic = MAGIC; s.version = VERSION; s.size = sizeof s;
+  memset(s.reserved, 0, sizeof s.reserved);
   s.crc = os::crc32(&s, sizeof s - 4);
 }
 inline bool validLook(const State& s) {
-  return s.doll <= 3 && s.category <= 7 && s.skin <= 3 && s.hair <= 2 && s.outfit <= 2 &&
-      s.shoes <= 2 && s.accessory <= 2 && s.color <= 3 && s.dollName <= 3;
+  return s.doll <= 3 && s.category <= 8 && s.skin <= 3 && s.hair <= 2 && s.outfit <= 2 &&
+      s.shoes <= 2 && s.accessory <= 2 && s.color <= 3 && s.dollName <= 3 && s.hairColor <= 3;
 }
 inline bool validCursor(const State& s) {
   return s.page < PAGE_COUNT && s.destination <= PARK && s.bag <= 31 && s.packItem <= 4 &&
@@ -77,15 +83,22 @@ inline bool validEntry(const Entry& e) {
   return e.outcome <= (e.place == CAFE ? 6 : 2);
 }
 inline bool valid(const State& s) {
-  if (!validLook(s) || !validCursor(s) || !validFlags(s)) return false;
+  if (!validLook(s) || !validCursor(s) || !validFlags(s) || s.reserved[0] || s.reserved[1] || s.reserved[2]) return false;
   for (int i = 0; i < 4; ++i) if (s.cart[i] > 3 || s.compare[i] > 3) return false;
   for (int i = 0; i < s.count; ++i) if (!validEntry(s.entries[i])) return false;
   return true;
 }
 inline bool load(const void* data, size_t n, State& out) {
-  if (!data || n != V1_SIZE) return false;
-  State s{}; memcpy(&s, data, n);
-  if (s.magic != MAGIC || s.version != VERSION || s.size != n || s.crc != os::crc32(&s, n - 4) || !valid(s)) return false;
+  if (!data || (n != V1_SIZE && n != V2_SIZE)) return false;
+  const uint8_t* bytes = static_cast<const uint8_t*>(data);
+  State s = fresh(); memcpy(&s, bytes, offsetof(State, page));
+  uint32_t crc; memcpy(&crc, bytes + n - 4, 4);
+  const uint16_t version = n == V1_SIZE ? 1 : VERSION;
+  if (s.magic != MAGIC || s.version != version || s.size != n || crc != os::crc32(bytes, n - 4)) return false;
+  // Only verified records may supply the old prefix; new fields keep their fresh defaults.
+  memcpy(&s, bytes, n - 4);
+  if ((n == V1_SIZE && s.category > 7) || !valid(s)) return false;
+  seal(s);
   out = s; return true;
 }
 } // namespace toytown

@@ -1,6 +1,7 @@
 #include "game.h"
 #include "art.h"
 #include "content.h"
+#include "choices.h"
 #include "font.h"
 #include "gfx565.h"
 #include <stdio.h>
@@ -12,12 +13,41 @@ constexpr uint16_t INK=0x2928, PAPER=0xff9b, EDGE=0xc452, PINK=0xf695, MINT=0xb7
 constexpr ui::Box BUTTONS[] = {{24,105,54,24},{82,105,54,24},{49,131,62,22}};
 constexpr ui::Box BACK={68,8,24,22};
 void copy(char* to, size_t n, const char* from) { snprintf(to,n,"%s",from); }
-void button(const ui::Box& b, const char* label, bool pressed) {
+void button(const ui::Box& b, const char* label, bool pressed, bool primary=false) {
  gfx565::Rect r={b.x*3,b.y*3,b.w*3,b.h*3};
- gfx565::roundRect(r,18,EDGE); gfx565::roundRect({r.x+2,r.y+2,r.w-4,r.h-4},16,pressed ? MINT : PAPER);
+ gfx565::roundRect(r,18,INK);
+ gfx565::roundRect({r.x+3,r.y+3,r.w-6,r.h-9},16,EDGE);
+ gfx565::roundRect({r.x+6,r.y+6+(pressed ? 3 : 0),r.w-12,r.h-17},13,pressed ? BLUE : primary ? MINT : PAPER);
  const font::Box box={&art::BODY,(int16_t)(r.w-16),66,0,font::Align::CENTER};
  const int h=font::textHeight(art::BODY,label,r.w-16,0);
  font::textBox(box,label,r.x+8,r.y+(r.h-h)/2,INK);
+}
+void caption(const char* text,int x,int y,int w,bool title=false) {
+ const font::Box box={title ? &art::TITLE : &art::BODY,(int16_t)w,30,0,font::Align::CENTER};
+ font::textBox(box,text,x,y,INK);
+}
+void pictureFrame(const ui::Box& b,bool selected,bool pressed) {
+ const int x=b.x*3,y=b.y*3,w=b.w*3,h=b.h*3;
+ gfx565::roundRect({x,y,w,h},14,INK);
+ gfx565::roundRect({x+3,y+3,w-6,h-9},12,selected ? 0x456b : EDGE);
+ gfx565::roundRect({x+7,y+7+(pressed ? 3 : 0),w-14,h-17},9,selected || pressed ? MINT : PAPER);
+}
+void selectedMark(const ui::Box& b) {
+ const int x=(b.x+b.w)*3-15,y=b.y*3+14;
+ gfx565::circle(x,y,10,0x456b);
+ for (int i=0;i<3;++i) { gfx565::pixel(x-5+i,y+i,PAPER); gfx565::pixel(x-5+i,y+i+1,PAPER); }
+ for (int i=0;i<7;++i) { gfx565::pixel(x-3+i,y+2-i,PAPER); gfx565::pixel(x-3+i,y+3-i,PAPER); }
+}
+bool pressed(const Input& in,const ui::Box& b) { return in.down && in.x>=b.x && in.x<b.x+b.w && in.y>=b.y && in.y<b.y+b.h; }
+int detailPart(int category) { return category==2 || category==5 ? 2 : category==3 ? 3 : category==7 ? 0 : 1; }
+void optionPicture(const State& state,int category,const ui::Box& b,bool tab=false) {
+ State s=state;
+ const int x=b.x*3+9,y=b.y*3+9,w=b.w*3-18,h=b.h*3-43;
+ if (category==1 || category==5 || category==8) {
+  if (choices::value(s,category)==0) art::detail(s,{x,y,w,h},detailPart(category));
+  else { gfx565::circle(x+w/2,y+h/2,h/2-2,INK); gfx565::circle(x+w/2,y+h/2,h/2-5,art::swatch(s,category)); }
+ } else if (category==6) caption(tab ? "Aa" : choices::label(category,s.dollName),x,y+h/2-10,w);
+ else art::detail(s,{x,y,w,h},detailPart(category));
 }
 int trayTotal(const uint8_t* c) { return c[0]*5+c[1]*3+c[2]+c[3]*2; }
 int sceneFor(const State& s,uint8_t destination) {
@@ -101,16 +131,9 @@ void Game::describeEntry(const Entry& e) {
  snprintf(words_,sizeof words_,"%s\n%s\nSticker: %s",memory,CAPTIONS[e.caption],STICKERS[e.sticker]);
 }
 void Game::describeStyle() {
- if (s_.page==STYLE) {
-  const char* categories[]={"Hair","Skin","Fabric","Shoes","Accessory","Color","Name","Material"};
-  const uint8_t values[]={s_.hair,s_.skin,s_.outfit,s_.shoes,s_.accessory,s_.color,s_.dollName,s_.doll};
-  const char* styles[]={"loose","buns","side pony"}; const char* outfits[]={"plain","stripes","plaid"};
-  const char* shoes[]={"original","rose","cocoa"}; const char* accessories[]={"none","glasses","flower"};
-  const char* colors[]={"original","teal","lavender","sunshine"}; const char* skins[]={"original","peach","brown","deep"};
-  const char* choices[]={styles[s_.hair],skins[s_.skin],outfits[s_.outfit],shoes[s_.shoes],accessories[s_.accessory],colors[s_.color],NAMES[s_.dollName],(s_.doll==0 ? "Fashion" : s_.doll==1 ? "Plush" : s_.doll==2 ? "Clay" : "Keychain")};
-  const int c=s_.category%8; snprintf(heading_,sizeof heading_,"%s: %s",categories[c],choices[c]);
-  snprintf(words_,sizeof words_,"%s's choice %u. Try anything. Your style never changes what you can do.",NAMES[s_.dollName],values[c]+1);
- }
+ const int c=s_.category;
+ snprintf(heading_,sizeof heading_,"%s: %s",choices::category(c),choices::label(c,choices::value(s_,c)));
+ copy(words_,sizeof words_,"Tap a look to wear it.");
 }
 void Game::describeCafe() {
  if (s_.page==CAFE_MENU) {
@@ -162,11 +185,59 @@ void Game::drawHero() {
 void Game::drawButtons() {
  for (int i=0;i<3;i++) {
   const ui::Box& b=BUTTONS[i]; const bool pressed=in_.down && in_.x>=b.x && in_.x<b.x+b.w && in_.y>=b.y && in_.y<b.y+b.h;
-  button(b,labels_[i],pressed);
+  button(b,labels_[i],pressed,(title_ || s_.page==HUB) && i==0);
  }
  button(BACK,"<",false);
 }
+void Game::drawDress() {
+ art::background(1);
+ if (s_.page==DOLL) {
+  gfx565::roundRect({92,94,296,31},13,PAPER); caption("Choose your doll",95,96,290);
+  for (int i=0;i<4;++i) {
+   const auto& b=choices::DOLLS[i]; State look=s_; look.doll=i;
+   pictureFrame(b,s_.doll==i,pressed(in_,b));
+   art::detail(look,{b.x*3+8,b.y*3+7,b.w*3-16,95},0);
+   caption(choices::label(7,i),b.x*3+5,(b.y+b.h)*3-32,b.w*3-10);
+   if (s_.doll==i) selectedMark(b);
+  }
+  button(BACK,"<",pressed(in_,BACK));
+  button(choices::WARDROBE,"Dress up",pressed(in_,choices::WARDROBE),true);
+  return;
+ }
+ button(choices::EXIT,"<",pressed(in_,choices::EXIT));
+ button(choices::DONE,"Done",pressed(in_,choices::DONE),true);
+ gfx565::roundRect({120,116,240,31},13,PAPER);
+ char title[48]; snprintf(title,sizeof title,"%s %u/9",choices::category(s_.category),s_.category+1);
+ caption(title,125,119,230);
+ gfx565::roundRect({177,151,126,166},20,PAPER);
+ art::doll(s_,192,153,1);
+ const ui::Box tabs[]={choices::PREVIOUS,choices::NEXT};
+ for (int i=0;i<2;++i) {
+  const auto& b=tabs[i]; const int c=(s_.category+(i ? 1 : choices::CATEGORIES-1))%choices::CATEGORIES;
+  State icon=s_; if (c==4) icon.accessory=1;
+  pictureFrame(b,false,pressed(in_,b)); optionPicture(icon,c,b,true);
+  const char* tabNames[]={"Hair","Skin","Fabric","Shoes","Extras","Color","Name","Doll","Dye"};
+  caption(tabNames[c],b.x*3+4,(b.y+b.h)*3-32,b.w*3-8);
+  const int ax=(b.x+(i ? b.w-5 : 5))*3,ay=b.y*3+15;
+  for (int d=0;d<5;++d) gfx565::hline(ax+(i ? -d : d),ay+d,2,INK);
+ }
+ for (int i=0;i<choices::count(s_.category);++i) {
+  const auto& b=choices::LOOKS[i]; State look=s_; choices::value(look,s_.category)=i;
+  pictureFrame(b,choices::value(s_,s_.category)==i,pressed(in_,b));
+  optionPicture(look,s_.category,b);
+  if (s_.category!=6) caption(choices::label(s_.category,i),b.x*3+4,(b.y+b.h)*3-32,b.w*3-8);
+  if (choices::value(s_,s_.category)==i) selectedMark(b);
+ }
+ gfx565::roundRect({144,423,192,28},12,PAPER); caption("Tap to try",145,427,190);
+}
 void Game::draw() {
+ if (!title_ && !pause_ && (s_.page==DOLL || s_.page==STYLE)) { drawDress(); return; }
+ if (!pause_ && (title_ || s_.page==HUB)) {
+  art::background(0);
+  gfx565::roundRect({90,97,300,34},14,PAPER); caption("Toy Town Life",94,102,292,true);
+  art::detail(s_,{165,133,150,174},0);
+  drawButtons(); return;
+ }
  drawHero();
  gfx565::roundRect({32,180,416,300},30,PAPER);
  const font::Box head={&art::TITLE,344,34,0,font::Align::CENTER};

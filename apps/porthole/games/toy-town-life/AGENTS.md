@@ -17,6 +17,15 @@ its art and typography; do not borrow another game's visual assets.
 - All four doll materials have the same opportunities. Hair, skin, outfit, shoes,
   accessories, color and suggested in-world names are free choices; appearance
   never determines social approval or scenario success.
+- The doll picker uses four pictured material cards. The wardrobe shows a live
+  production-art doll, direct picture choices or swatches, and a selected check.
+  Pictured previous/next category tabs expose nine categories in persisted order:
+  Hair, Skin, Fabric, Shoes, Accessory, Color, Name, Material, Hair color. Color
+  changes fabric; Hair color independently changes hair (the Plush rabbit's
+  outer ears), leaving the face's skin choice intact. All options are free.
+  Done returns to the doll picker; Back opens the ordinary pause/exit choices.
+  Preserve pictured input, short measured labels, raised controls, immediate
+  preview and the 24x22 logical target floor when changing these screens.
 - A bag holds at most three of five items. Missing school paper has a borrowing
   route, so packing cannot strand a child.
 - School: listening reveals Mina's concern about her first words. Sitting beside
@@ -42,18 +51,26 @@ record; `content.h` owns authored dialogue; `game.*` owns input/navigation and
 `rendering.cpp` draws the native RGB565 surface. Assets and their reproducible
 build sources live under `art/`, `tools/` and `generated/`.
 
-The initial save is **V1, 88 bytes**, magic `0x544f5954`, ending in an IEEE CRC32
-of all preceding bytes. `State`, `Entry` and the persisted `Place`/`Page` ids are
-append-only from release. Never reorder, resize or repurpose existing fields,
-ids or arrays. Reject incorrect size, magic, version, CRC and out-of-range data
-without partially replacing the destination state. The seed is any uint32; wrap
-is intentional. No elapsed-time field drives rewards or deterioration.
+The current save is **V2, 92 bytes**, magic `0x544f5954`, ending in an IEEE CRC32
+of all preceding bytes. The shipped **V1, 88 bytes** remains readable. `State`,
+`Entry` and the persisted `Place`/`Page` ids are append-only from release. Never
+reorder, resize or repurpose existing fields, ids or arrays. Reject incorrect
+size, magic, version, CRC and out-of-range data without partially replacing the
+destination state. The seed is any uint32; wrap is intentional. No elapsed-time
+field drives rewards or deterioration.
 
-V1 is the first Toy Town save: there is **no historical save format to migrate**.
-For any future schema change, preserve `V1_SIZE` and the V1 decoder, append fields
-before the new CRC, bump version, initialize new fields and add an actual V1
-fixture migration test. Never claim a migration test for a fictitious V0 record.
-Unknown future versions must not be misread as V1.
+V2 preserves every V1 field through `seed` (bytes 0–83), then appends `hairColor`
+at byte 84 and three zero reserved bytes before the CRC at byte 88. `hairColor`
+is independent of the hair shape and outfit `color`: 0 retains the original
+hair tint, with choices 1–3 added. Style category 8 is appended after the V1
+categories 0–7. V1 validates its own exact header and CRC before copying its
+84-byte prefix into fresh V2 defaults, requires category 0–7, then validates and
+reseals V2. V2 requires category 0–8, hair color 0–3 and zero reserved bytes.
+
+Preserve `V1_SIZE`, `V2_SIZE` and their strict size/version decoders for future
+schema changes. Initialize appended fields, bump version and retain the frozen
+V1 fixture migration test in `host/test_toytown.cpp`; never invent a V0 record.
+Unknown future versions must not be misread as V1 or V2.
 
 ## Verification
 
@@ -61,7 +78,7 @@ Unknown future versions must not be misread as V1.
 deterministic clue coherence, exact-once completion, bounded memories and save
 rejection/roundtrips. `host/test_toytown_ui.cpp` exercises the App contract,
 ordinary touch lifecycle, navigation, interruption, save isolation and render/UI
-geometry. These are supplementary to the required source-free black-box emulator
+geometry, direct pictured selection and exact production-art thumbnail fidelity. These are supplementary to the required source-free black-box emulator
 playthrough in [playtesting.md](../../docs/playtesting.md). Parent app `make check`,
 `make ci`, firmware compile and final-build screenshot/input evidence are the
 acceptance gates; report emulator-only scope honestly.

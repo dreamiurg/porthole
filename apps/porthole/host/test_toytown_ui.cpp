@@ -7,6 +7,7 @@
 #include <vector>
 #include "games/toy-town-life/art.h"
 #include "games/toy-town-life/content.h"
+#include "games/toy-town-life/choices.h"
 #include "games/toy-town-life/game.h"
 #include "gfx565.h"
 using namespace toytown;
@@ -31,8 +32,21 @@ struct Player {
     const int x = b.x + b.w / 2, y = b.y + b.h / 2;
     frame(true,x,y); frame(true,x,y,held); frame(false,x,y);
   }
-  void tap(const ui::Box& b) { frame(false,0,0,500); press(b); }
-  void action(int i) { tap(ACTIONS[i]); }
+  void tap(const ui::Box& b) {
+    const bool dress=!strcmp(game.screenName(),"toytown_doll") || !strcmp(game.screenName(),"toytown_style");
+    const ui::Box target=dress && b.x==BACK.x && b.y==BACK.y && game.state().page==STYLE ? choices::EXIT : b;
+    frame(false,0,0,500); press(target);
+  }
+  void action(int i) {
+    if (!strcmp(game.screenName(),"toytown_doll")) {
+      if (i==0) tap(choices::DOLLS[(game.state().doll+1)%4]);
+      else if (i==1) tap(choices::WARDROBE);
+      else { tap(BACK); action(1); }
+    } else if (!strcmp(game.screenName(),"toytown_style")) {
+      if (i==0) tap(choices::LOOKS[(choices::value(game.state(),game.state().category)+1)%choices::count(game.state().category)]);
+      else tap(i==1 ? choices::NEXT : choices::DONE);
+    } else tap(ACTIONS[i]);
+  }
   void start(State* saved = nullptr) { enter(saved); action(0); }
   bool on(uint8_t page) const { return game.state().page == page; }
   State snapshot() {
@@ -93,8 +107,8 @@ void invalidAppSave() {
 }
 void wardrobeAndBag() {
   Player p; p.start(); p.action(1); p.action(1); assert(p.on(STYLE));
-  const int counts[] = {3,4,3,3,3,4,4,4};
-  for (int category = 0; category < 8; ++category) {
+  const int counts[] = {3,4,3,3,3,4,4,4,4};
+  for (int category = 0; category < 9; ++category) {
     const State before = p.game.state();
     for (int i = 0; i < counts[category]; ++i) p.action(0);
     const State& after = p.game.state();
@@ -111,6 +125,23 @@ void wardrobeAndBag() {
   p.action(1); p.action(1); p.action(0); assert(slots(p.game.state()) == 2);
   p.action(1); p.action(1); p.action(1); p.action(0); assert(slots(p.game.state()) == 3);
   p.action(2); assert(p.on(SCHOOL_INTRO));
+}
+void picturedSelections() {
+ Player p; p.start(); p.action(1);
+ for (int i=0;i<4;++i) { p.tap(choices::DOLLS[i]); assert(p.game.state().doll==i); }
+ p.tap(choices::WARDROBE);
+ for (int c=0;c<choices::CATEGORIES;++c) {
+  assert(p.game.state().category==c);
+  for (int i=0;i<choices::count(c);++i) {
+   p.tap(choices::LOOKS[i]); assert(choices::value(p.game.state(),c)==i);
+   p.tap(choices::LOOKS[i]); assert(choices::value(p.game.state(),c)==i);
+  }
+  p.tap(choices::NEXT);
+ }
+ assert(p.game.state().category==0); p.tap(choices::PREVIOUS); assert(p.game.state().category==8);
+ State saved=p.snapshot(); assert(saved.hairColor==3 && saved.color==3 && saved.doll==3);
+ Player reopened; reopened.start(&saved); assert(reopened.game.state().hairColor==3);
+ reopened.tap(choices::DONE); assert(reopened.on(DOLL));
 }
 void school() {
   Player p; State s = fixture(SCHOOL_INTRO); p.start(&s);
@@ -258,7 +289,7 @@ void textAvoidsControls(const gfx::TextBox& b, const char* screen) {
 }
 void geometry(Player& p) {
   UiAudit::enabled=true; UiAudit::reset(); gfx::textLogEnabled=true; gfx::textLogReset();
-  p.frame(); UiAudit::enabled=false; render(p.game); assert(UiAudit::count == 4 && gfx::textLogCount > 0);
+  p.frame(); UiAudit::enabled=false; render(p.game); assert(UiAudit::count >= 4 && gfx::textLogCount > 0);
   for (int i = 0; i < UiAudit::count; ++i) {
     const auto& b = UiAudit::regions[i]; assert(b.w >= 24 && b.h >= 22);
     for (int x : {int(b.x),b.x+b.w-1}) for (int y : {int(b.y),b.y+b.h-1}) assert(gfx::inCircle(x,y));
@@ -295,7 +326,7 @@ void renderedVariants() {
     State s = fixture(PARK_CLUE,PARK); s.variant=variant; s.clue=clue; s.clues=7;
     Player p; p.start(&s); geometry(p);
   }
-  for (uint8_t category = 0; category < 8; ++category) {
+  for (uint8_t category = 0; category < 9; ++category) {
     State s = fixture(STYLE); s.category=category; s.doll=3; s.hair=s.outfit=s.shoes=s.accessory=2;
     s.skin=s.color=s.dollName=3; Player p; p.start(&s); geometry(p);
   }
@@ -307,11 +338,31 @@ void contentGlyphs(const char* text) {
   }
 }
 void content() {
+  for (int c=0;c<choices::CATEGORIES;++c) for (int i=0;i<choices::count(c);++i) {
+    assert(font::textWidth(art::BODY,choices::label(c,i))<=70);
+  }
   for (const auto& scene : SCENES) { contentGlyphs(scene.title); contentGlyphs(scene.words); for (const auto* a : scene.actions) contentGlyphs(a); }
   for (const auto* words : LAST_SEEN) contentGlyphs(words);
   for (const auto* words : CLUES) contentGlyphs(words);
   for (const auto* words : EMPTY_CLUES) contentGlyphs(words);
   for (const auto* words : SCHOOL_ENDINGS) contentGlyphs(words);
+}
+void previewMatchesDoll() {
+ std::vector<uint16_t> hero(480*480),preview(480*480);
+ for (int doll=0;doll<4;++doll) for (int hair=0;hair<3;++hair) for (int accessory=0;accessory<3;++accessory) {
+  State s=fresh(); s.doll=doll; s.hair=hair; s.accessory=accessory; s.hairColor=3;
+  std::fill(hero.begin(),hero.end(),0xf81f); std::fill(preview.begin(),preview.end(),0xf81f);
+  gfx565::target(hero.data()); art::doll(s,100,100,1);
+  gfx565::target(preview.data()); art::detail(s,{100,100,96,160},0);
+  assert(hero==preview);
+ }
+ State plush=fresh(); plush.doll=1; plush.skin=3;
+ std::fill(hero.begin(),hero.end(),0); gfx565::target(hero.data()); art::doll(plush,100,100,1);
+ plush.hairColor=2;
+ std::fill(preview.begin(),preview.end(),0); gfx565::target(preview.data()); art::doll(plush,100,100,1);
+ assert(hero[150*480+122]!=preview[150*480+122]); // outer ear tint reacts
+ assert(hero[160*480+148]==preview[160*480+148]); // independently chosen face stays intact
+
 }
 void cosmeticPixels() {
   const size_t pixels = 480 * 480;
@@ -325,7 +376,7 @@ void cosmeticPixels() {
   }
   struct Choice { uint8_t State::*member; int count; };
   const Choice choices[] = {{&State::hair,3},{&State::skin,4},{&State::outfit,3},
-    {&State::shoes,3},{&State::accessory,3},{&State::color,4}};
+    {&State::shoes,3},{&State::accessory,3},{&State::color,4},{&State::hairColor,4}};
   for (uint8_t doll = 0; doll < 4; ++doll) {
     State base = fresh(); base.doll = doll;
     std::fill(canvas.begin()+64,canvas.end()-64,0); art::doll(base,100,0,1);
@@ -344,6 +395,6 @@ int main() {
   identityAndSave(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
   cafeOrders(); cafeCompareAndFinish(); park(); interruptedPages(); personalizeDuringOuting();
   optionalMemory(); memoryEditResume();
-  renderedPages(); renderedVariants(); content(); cosmeticPixels();
+  picturedSelections(); renderedPages(); renderedVariants(); content(); cosmeticPixels(); previewMatchesDoll();
   puts("Toy Town App/UI contracts passed");
 }

@@ -29,6 +29,11 @@ uint16_t recolor(uint16_t source, int material, const State& s, int pixel) {
   static const uint32_t shoe[] = {0x487ba1, 0xb65f62, 0x765344};
   uint32_t color = gfx565::rgb888(source);
   int light = 140 + static_cast<int>(std::max({(color >> 16) & 255, (color >> 8) & 255, color & 255})) * 115 / 255;
+  const bool plushEars=s.doll==1 && pixel/96<83 && (pixel%96<30 || pixel%96>66) && material==2;
+  if ((material == 1 || plushEars) && s.hairColor) {
+    static const uint32_t hair[] = {0,0x76503a,0xd8aa55,0x34485f};
+    return shade(hair[s.hairColor % 4],light);
+  }
   if (material == 2) return s.skin ? shade(skin[s.skin % 4], light) : source;
   if (material == 4) return s.shoes ? shade(shoe[s.shoes % 3], light) : source;
   if (material != 3) return source;
@@ -42,14 +47,16 @@ void dot(int x, int y, int radius, uint16_t color, int scale) {
 void hairShape(const State& s, int x, int y, int scale) {
   if (!s.hair) return;
   static const uint32_t hair[] = {0x9b5d42, 0xbc9ac9, 0x34485f, 0x5790b5};
-  uint16_t dark = shade(hair[s.doll % 4], 110), fill = shade(hair[s.doll % 4], 230);
+  static const uint32_t colors[] = {0,0x76503a,0xd8aa55,0x34485f};
+  uint32_t color=s.hairColor ? colors[s.hairColor%4] : hair[s.doll%4];
+  uint16_t dark = shade(color, 110), fill = shade(color, 230);
   int cy = y + (s.hair == 1 ? 30 : 62) * scale;
   int radius = s.hair == 1 ? 12 : 18;
   for (int side = 0; side < 2; ++side) {
     int cx = x + (side ? 77 : 19) * scale;
     dot(cx, cy, radius, dark, scale);
     dot(cx, cy - scale, radius - 2, fill, scale);
-    dot(cx - 3 * scale, cy - 5 * scale, 3, shade(hair[s.doll % 4], 255), scale);
+    dot(cx - 3 * scale, cy - 5 * scale, 3, shade(color, 255), scale);
   }
 }
 void accessories(const State& s, int x, int y, int scale) {
@@ -95,6 +102,60 @@ void doll(const State& s, int x, int y, int scale) {
     gfx565::rect(x + (pixel % 96) * scale, y + (pixel / 96) * scale, scale, scale, color);
   }
   accessories(s, x, y, scale);
+}
+namespace {
+bool disc(int x,int y,int cx,int cy,int r) { return (x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r+r; }
+uint32_t hairPixel(const State& s,int x,int y,uint32_t below) {
+ if (!s.hair) return below;
+ static const uint32_t hair[]={0x9b5d42,0xbc9ac9,0x34485f,0x5790b5};
+ static const uint32_t colors[]={0,0x76503a,0xd8aa55,0x34485f};
+ const uint32_t color=s.hairColor ? colors[s.hairColor%4] : hair[s.doll%4];
+ const int cy=s.hair==1 ? 30 : 62, r=s.hair==1 ? 12 : 18;
+ for (int cx : {19,77}) {
+  if (disc(x,y,cx,cy,r)) below=shade(color,110);
+  if (disc(x,y,cx,cy-1,r-2)) below=shade(color,230);
+  if (disc(x,y,cx-3,cy-5,3)) below=shade(color,255);
+ }
+ return below;
+}
+bool glassesAt(const State& s,int x,int y) {
+ static const int eyes[]={60,78,59,65}; const int ey=eyes[s.doll%4];
+ for (int cx : {35,61}) if (x>=cx-10 && x<cx+10 && y>=ey-8 && y<ey+8 &&
+     (x<cx-8 || x>=cx+8 || y<ey-6 || y>=ey+6)) return true;
+ return x>=45 && x<52 && y==ey;
+}
+uint32_t accessoryPixel(const State& s,int x,int y,uint32_t below) {
+ if (s.accessory==1 && glassesAt(s,x,y)) return rgb888_to_565(0x4b3e58);
+ if (s.accessory==2) {
+  for (int dx : {-4,4}) for (int dy : {-4,4}) if (disc(x,y,72+dx,36+dy,4)) below=rgb888_to_565(0xf6bdcd);
+  if (disc(x,y,72,36,3)) below=rgb888_to_565(0xf2c36c);
+ }
+ return below;
+}
+uint32_t dollPixel(const State& s,int x,int y) {
+ uint32_t color=hairPixel(s,x,y,0x10000);
+ const int pixel=y*96+x, id=s.doll%4, index=unpack(DOLLS[id],pixel,6);
+ if (index!=63) color=recolor(DOLL_PALETTES[id][index],unpack(MATERIALS[id],pixel,3),s,pixel);
+ return accessoryPixel(s,x,y,color);
+}
+}
+void detail(const State& s,const gfx565::Rect& box,int part) {
+ int x=box.x,y=box.y; const int w=box.w,h=box.h;
+ const int tops[]={0,8,94,134}, heights[]={160,82,40,26};
+ part=std::max(0,std::min(3,part));
+ const int sh=heights[part], sw=96;
+ const int scale=std::min(w*256/sw,h*256/sh), dw=sw*scale/256, dh=sh*scale/256;
+ x+=(w-dw)/2; y+=(h-dh)/2;
+ for (int dy=0;dy<dh;++dy) for (int dx=0;dx<dw;++dx) {
+  const uint32_t c=dollPixel(s,dx*sw/dw,tops[part]+dy*sh/dh);
+  if (c<=0xffff) gfx565::pixel(x+dx,y+dy,c);
+ }
+}
+uint16_t swatch(const State& s,int category) {
+ static const uint32_t skin[]={0xffd7b8,0xffd7b8,0xba7c55,0x805238};
+ static const uint32_t cloth[]={0xef9fa8,0x72bec9,0xb5a2d8,0xe7be6d};
+ static const uint32_t hair[]={0,0x76503a,0xd8aa55,0x34485f};
+ return rgb888_to_565(category==1 ? skin[s.skin%4] : category==8 ? hair[s.hairColor%4] : cloth[s.color%4]);
 }
 const gfx::Sprite& icon() { return ICON; }
 }}  // namespace toytown::art

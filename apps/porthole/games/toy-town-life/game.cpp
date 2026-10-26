@@ -1,6 +1,7 @@
 #include "game.h"
 #include "art.h"
 #include "content.h"
+#include "choices.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -12,11 +13,7 @@ const char* PAGES[] = {"hub","doll","style","map","pack","school_intro","school_
  "school_other","school_paper","school_result","school_repair","cafe_intro","cafe_menu","cafe_cart",
  "cafe_compare","cafe_result","park_intro","park_search","park_clue","park_guess","park_wrong","park_found",
  "memory","stop","book","memory_edit"};
-void nextStyle(State& s) {
- uint8_t* values[] = {&s.hair,&s.skin,&s.outfit,&s.shoes,&s.accessory,&s.color,&s.dollName,&s.doll};
- const uint8_t counts[] = {3,4,3,3,3,4,4,4};
- const int c = s.category % 8; *values[c] = (uint8_t)((*values[c] + 1) % counts[c]);
-}
+
 }
 const gfx::Sprite& Game::icon() const { return art::icon(); }
 void Game::enter(const AppEnter& e) {
@@ -30,6 +27,7 @@ void Game::changed() { dirty_ = true; ++look_; gate_.shown(ms_); describe(); }
 void Game::go(uint8_t p) { s_.page = p; if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT)) s_.resumePage = p; changed(); }
 void Game::update(uint32_t, uint32_t ms, const Input& input) {
  ms_ = ms; in_ = input; gate_.filter(in_,ms);
+ if (!title_ && !pause_ && (s_.page==DOLL || s_.page==STYLE)) { dressInput(); return; }
  const bool back = ui::clicked(in_,BACK);
  int action = -1;
  for (int i=0;i<3;i++) if (ui::clicked(in_,BUTTONS[i])) action = i;
@@ -64,9 +62,29 @@ void Game::actHome(int i) {
 void Game::actDress(int i) {
  switch (s_.page) {
  case HUB: if (i==0) go(s_.active ? s_.resumePage : (uint8_t)MAP); else go(i==1 ? DOLL : BOOK); break;
- case DOLL: if (i==0) { s_.doll=(s_.doll+1)%4; changed(); } else go(i==1 ? STYLE : HUB); break;
- case STYLE: if (i==0) { nextStyle(s_); changed(); } else if (i==1) { s_.category=(s_.category+1)%8; changed(); } else go(DOLL); break;
+
  }
+}
+void Game::dollInput(bool exit) {
+ int picked=-1;
+ for (int i=0;i<4;++i) if (ui::clicked(in_,choices::DOLLS[i])) picked=i;
+ const bool wardrobe=ui::clicked(in_,choices::WARDROBE);
+ if (exit) { pause_=true; changed(); }
+ else if (wardrobe) go(STYLE);
+ else if (picked>=0) { s_.doll=(uint8_t)picked; changed(); }
+}
+bool Game::dressInput() {
+ const bool exit=ui::clicked(in_,s_.page==DOLL ? BACK : choices::EXIT);
+ if (s_.page==DOLL) { dollInput(exit); return true; }
+ const bool done=ui::clicked(in_,choices::DONE);
+ const bool previous=ui::clicked(in_,choices::PREVIOUS), next=ui::clicked(in_,choices::NEXT);
+ int picked=-1;
+ for (int i=0;i<choices::count(s_.category);++i) if (ui::clicked(in_,choices::LOOKS[i])) picked=i;
+ if (exit) { pause_=true; changed(); }
+ else if (done) go(DOLL);
+ else if (previous || next) { s_.category=(s_.category+(previous ? choices::CATEGORIES-1 : 1))%choices::CATEGORIES; changed(); }
+ else if (picked>=0) { choices::value(s_,s_.category)=(uint8_t)picked; changed(); }
+ return true;
 }
 void Game::actNavigate(int i) {
  if (s_.page==PACK) { actPack(i); return; }
@@ -165,7 +183,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 }
 const char* Game::screenName() const { if (title_) return "toytown_title"; if (pause_) return "toytown_pause"; static char page[48]; snprintf(page,sizeof page,"toytown_%s",PAGES[s_.page]); return page; }
 void Game::debugPrint() {
- printf("toytown page=%s doll=%u hair=%u skin=%u outfit=%u shoes=%u accessory=%u color=%u name=%u category=%u destination=%u bag=%u pack=%u listened=%u outcome=%u repaired=%u total=%d compared=%u ordered=%u variant=%u clue=%u clues=%u guess=%u revised=%u active=%u recorded=%u count=%u resume=%u\n",
- screenName(),s_.doll,s_.hair,s_.skin,s_.outfit,s_.shoes,s_.accessory,s_.color,s_.dollName,s_.category,s_.destination,s_.bag,s_.packItem,s_.listened,s_.schoolOutcome,s_.repaired,total(s_),s_.compared,s_.ordered,s_.variant,s_.clue,s_.clues,s_.guess,s_.revised,s_.active,s_.recorded,s_.count,s_.resumePage);
+ printf("toytown page=%s doll=%u hair=%u skin=%u outfit=%u shoes=%u accessory=%u color=%u name=%u hairColor=%u category=%u destination=%u bag=%u pack=%u listened=%u outcome=%u repaired=%u total=%d compared=%u ordered=%u variant=%u clue=%u clues=%u guess=%u revised=%u active=%u recorded=%u count=%u resume=%u\n",
+ screenName(),s_.doll,s_.hair,s_.skin,s_.outfit,s_.shoes,s_.accessory,s_.color,s_.dollName,s_.hairColor,s_.category,s_.destination,s_.bag,s_.packItem,s_.listened,s_.schoolOutcome,s_.repaired,total(s_),s_.compared,s_.ordered,s_.variant,s_.clue,s_.clues,s_.guess,s_.revised,s_.active,s_.recorded,s_.count,s_.resumePage);
 }
 } // namespace toytown
