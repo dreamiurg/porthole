@@ -4,8 +4,8 @@
 
 [Download original concept-art ZIP](https://drive.google.com/file/d/19LMZvQIAtuDZLikyJDwhP6wl3t7hC-3O/view)
 
-Archive: `toy-town-life-original-design-images.zip`  
-Size: **14,251,694 bytes**, SHA-256 `2eba78f075f1d998a396d05b5f5a2139608466b2a3486d823d552b4aff89ea47`  
+Archive: `toy-town-life-original-design-images.zip`
+Size: **14,251,694 bytes**, SHA-256 `2eba78f075f1d998a396d05b5f5a2139608466b2a3486d823d552b4aff89ea47`
 **Access:** currently private to the user's connected Drive account. This URL **is not an anonymous/public download link**. Codex must authenticate using an authorized Drive connection or the user must explicitly change sharing permissions before using a bare `curl`/gdown download. If Codex cannot access it directly, attach the ZIP to its task.
 
 ## Contents: original images (all 1448 × 1086 PNG)
