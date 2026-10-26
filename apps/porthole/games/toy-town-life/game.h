@@ -38,6 +38,9 @@ class Game : public App {
   void act(int i);
   void actHome(int i);
   void actDress(int i);
+  bool dressInput();
+  void dollInput(bool exit);
+  void drawDress();
   void actNavigate(int i);
   void actPack(int i);
   void describeEntry(const Entry& e);

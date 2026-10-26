@@ -8,4 +8,5 @@ build/
 .DS_Store
 !games/toy-town-life/art/*.png
 !docs/toy-town-life/blackbox/*.png
+!docs/toy-town-life/visual-choices/*.png
 !docs/flash-optimization/blackbox/*.png

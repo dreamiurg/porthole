@@ -1,0 +1,80 @@
+{"shot": "00-start.png"}
+{"tap": [40, 53]}
+{"tap": [120, 125]}
+{"shot": "01-profile-face.png"}
+{"tap": [34, 56]}
+{"shot": "02-profile-age.png"}
+{"tap": [37, 102]}
+{"shot": "03-profile-code.png"}
+{"tap": [80, 145]}
+{"shot": "04-launcher.png"}
+{"tap": [109, 135]}
+{"shot": "05-launcher-page2.png"}
+{"tap": [109, 135]}
+{"shot": "06-launcher-page3.png"}
+{"tap": [109, 135]}
+{"shot": "07-launcher-page4.png"}
+{"tap": [80, 80]}
+{"shot": "08-title.png"}
+{"tap": [109, 116]}
+{"shot": "09-doll-materials.png"}
+{"tap": [100, 61]}
+{"shot": "10-plush-selected.png"}
+{"tap": [57, 106]}
+{"shot": "11-clay-selected.png"}
+{"tap": [101, 106]}
+{"shot": "12-keychain-selected.png"}
+{"tap": [80, 143]}
+{"shot": "13-style-hub.png"}
+{"tap": [66, 120]}
+{"shot": "14-hair-buns.png"}
+{"tap": [94, 120]}
+{"shot": "15-hair-pony.png"}
+{"gesture": [[66, 120], [80, 90]]}
+{"shot": "16-hair-cancelled-drag.png"}
+{"tap": [128, 79]}
+{"shot": "17-skin.png"}
+{"tap": [38, 120]}
+{"shot": "18-skin-orig.png"}
+{"tap": [66, 120]}
+{"shot": "19-skin-peach.png"}
+{"tap": [94, 120]}
+{"shot": "20-skin-brown.png"}
+{"tap": [122, 120]}
+{"shot": "21-skin-deep.png"}
+{"tap": [128, 79]}
+{"shot": "22-fabric.png"}
+{"tap": [66, 120]}
+{"shot": "23-fabric-stripe.png"}
+{"tap": [94, 120]}
+{"shot": "24-fabric-plaid.png"}
+{"tap": [128, 79]}
+{"shot": "25-shoes.png"}
+{"tap": [66, 120]}
+{"shot": "26-shoes-rose.png"}
+{"tap": [94, 120]}
+{"shot": "27-shoes-cocoa.png"}
+{"tap": [128, 79]}
+{"shot": "28-extras.png"}
+{"tap": [66, 120]}
+{"shot": "29-extras-glasses.png"}
+{"tap": [94, 120]}
+{"shot": "30-extras-flower.png"}
+{"tap": [128, 79]}
+{"shot": "31-color.png"}
+{"tap": [66, 120]}
+{"shot": "32-color-teal.png"}
+{"tap": [94, 120]}
+{"shot": "33-color-lilac.png"}
+{"tap": [122, 120]}
+{"shot": "34-color-gold.png"}
+{"tap": [128, 79]}
+{"shot": "35-name.png"}
+{"tap": [66, 120]}
+{"shot": "36-name-pip.png"}
+{"tap": [94, 120]}
+{"shot": "37-name-kai.png"}
+{"tap": [122, 120]}
+{"shot": "38-name-lulu.png"}
+{"tap": [128, 79]}
+{"shot": "39-doll.png"}

@@ -11,24 +11,33 @@ tap 109 117
 wait 600
 expect-screen toytown_doll
 ui-check
-tap 51 117
+tap 102 64
 wait 600
 expect-screen toytown_doll
 expect doll=1
-tap 109 117
+tap 80 142
 wait 600
 expect-screen toytown_style
-tap 51 117
+tap 66 120
 wait 600
 expect-screen toytown_style
-tap 109 117
+tap 129 80
 wait 600
 expect-screen toytown_style
-tap 51 117
+tap 66 120
 wait 600
 expect-screen toytown_style
 expect hair=1
 expect skin=1
+# Independent hair color is appended after the original eight categories.
+tap 30 80
+wait 600
+tap 30 80
+wait 600
+tap 95 120
+wait 600
+expect category=8
+expect hairColor=2
 ui-check
 snap tt95_style
 # Power-cycle immediately after a cosmetic decision; reopen the exact wardrobe page.
@@ -45,10 +54,14 @@ expect-screen toytown_style
 expect doll=1
 expect hair=1
 expect skin=1
-tap 80 142
+expect hairColor=2
+tap 106 26
 wait 600
 expect-screen toytown_doll
-tap 80 142
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 109 117
 wait 600
 expect-screen toytown_hub
 ui-check
@@ -123,6 +136,7 @@ expect active=1
 expect doll=1
 expect hair=1
 expect skin=1
+expect hairColor=2
 tap 80 142
 wait 600
 expect-screen toytown_school_other

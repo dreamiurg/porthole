@@ -7,17 +7,25 @@ wait 600
 # Sam's chosen doll and hair differ from the next player's.
 tap 109 117
 wait 600
-tap 51 117
+tap 102 64
 wait 600
-tap 109 117
+tap 80 142
 wait 600
-tap 51 117
+tap 66 120
 wait 600
 expect doll=1
 expect hair=1
-tap 80 142
+tap 30 80
 wait 600
-tap 80 142
+tap 95 120
+wait 600
+expect hairColor=2
+tap 106 26
+wait 600
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 109 117
 wait 600
 expect-screen toytown_hub
 # Start Park, bring a notebook, listen and inspect the bench.
@@ -73,25 +81,27 @@ wait 600
 expect-screen toytown_doll
 expect doll=0
 expect hair=0
+expect hairColor=0
 expect active=0
 expect count=0
-tap 51 117
+tap 58 108
 wait 600
-tap 51 117
+tap 80 142
 wait 600
-tap 109 117
+tap 95 120
 wait 600
-tap 51 117
+tap 30 80
 wait 600
-tap 51 117
+tap 124 120
 wait 600
 expect-screen toytown_style
 expect doll=2
 expect hair=2
+expect hairColor=3
 ui-check tt99_second_profile
 snap tt99_second_profile
 # Leave through the game and shell controls; Sam's own rest is still enforced.
-tap 80 19
+tap 54 26
 wait 600
 tap 80 142
 wait 600
@@ -119,6 +129,7 @@ expect-screen toytown_park_clue
 expect profile=0/2
 expect doll=1
 expect hair=1
+expect hairColor=2
 expect bag=1
 expect variant=2
 expect clue=0
@@ -142,6 +153,7 @@ wait 600
 expect-screen toytown_park_clue
 expect doll=1
 expect hair=1
+expect hairColor=2
 expect variant=2
 expect clues=1
 skip 1209600
@@ -149,6 +161,7 @@ wait 600
 expect-screen toytown_park_clue
 expect doll=1
 expect hair=1
+expect hairColor=2
 expect bag=1
 expect variant=2
 expect clue=0
@@ -192,11 +205,12 @@ expect-screen toytown_style
 expect profile=1/2
 expect doll=2
 expect hair=2
+expect hairColor=3
 expect active=0
 expect count=0
 ui-check tt99_second_profile_return
 snap tt99_second_profile_return
-tap 80 19
+tap 54 26
 wait 600
 tap 80 142
 wait 600
