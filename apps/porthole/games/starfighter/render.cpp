@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <new>
 
 namespace starfighter::paint {
 namespace {
@@ -15,8 +16,10 @@ enum Color : uint8_t {
   DEEP_BLUE, BLUE, AZURE, ICE, DARK_RED, RED, ORANGE, GOLD, CREAM,
   DARK_GREEN, GREEN, LIME, SKIN_DARK, SKIN_SHADE, SKIN, VIOLET
 };
-// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM.
-uint16_t scene[160*160];
+// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM. Heap, not static: on the
+// board this lands in PSRAM, so internal RAM stays free for the wireless update's screen, wifi and TLS.
+// ponytail: PSRAM reads cost a little per frame; allocate internal RAM on enter() and free on leave() if fps drops.
+uint16_t* scene = nullptr;   // allocated by draw(), the only way in
 constexpr uint16_t color(Color c) { return rgb(art::COLORS[c]); }
 void pixel(int x,int y,uint16_t c) {
   if(unsigned(x)<160&&unsigned(y)<160) scene[y*160+x]=c;
@@ -435,6 +438,8 @@ const gfx::Sprite& launcherIcon() {
 }
 }  // namespace
 void draw(const View& v) {
+  if(!scene) scene=new (std::nothrow) uint16_t[160*160]();   // first draw, never at static init: PSRAM joins the heap later
+  if(!scene) return;
   switch(v.page) {
     case Page::Title: title(v); break;
     case Page::Calibrate: calibration(v); break;
