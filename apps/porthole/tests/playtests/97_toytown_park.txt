@@ -10,16 +10,10 @@ expect-screen toytown_hub
 tap 51 117
 wait 600
 expect-screen toytown_map
-tap 51 117
-wait 600
-expect-screen toytown_map
-tap 51 117
-wait 600
-expect-screen toytown_map
-tap 109 117
+tap 80 142
 wait 600
 expect-screen toytown_pack
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_park_intro
 ui-check
@@ -28,7 +22,8 @@ wait 600
 expect-screen toytown_park_intro
 expect listened=1
 ui-check
-tap 80 142
+# Touch the actual bench in the scene.
+tap 24 75
 wait 600
 expect-screen toytown_park_clue
 ui-check
@@ -80,19 +75,14 @@ snap tt97_ribbon
 tap 109 117
 wait 600
 expect-screen toytown_park_guess
-tap 109 117
-wait 600
-expect-screen toytown_park_guess
-tap 109 117
-wait 600
-expect-screen toytown_park_guess
+expect guess=2
 tap 51 117
 wait 600
 expect-screen toytown_park_found
 ui-check
 snap tt97_found
 # Return after an interruption to the same found-item page.
-tap 80 19
+tap 52 25
 wait 600
 expect-screen toytown_pause
 tap 80 142
@@ -147,10 +137,10 @@ expect-screen toytown_hub
 tap 51 117
 wait 600
 expect-screen toytown_map
-tap 109 117
+tap 80 142
 wait 600
 expect-screen toytown_pack
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_park_intro
 tap 51 117
@@ -164,7 +154,7 @@ tap 51 117
 wait 600
 expect-screen toytown_park_clue
 ui-check
-tap 80 19
+tap 52 25
 wait 600
 expect-screen toytown_pause
 tap 80 142

@@ -3,13 +3,19 @@
     "scene-atlas.png": "816cff64976297863fed9a7b2a23f115ea0baf5ed8ff6cc62eb60ec1ea8b01a6",
     "doll-atlas.png": "ba71687d7ab72c7f911b1f4106b59b7d0ed161dd3f167ffb872f6cec7d17e26d",
     "park.png": "a0942d2b3df574f18e8cfeea16e8a4c3b92899f795bdfbd8ed392bd18f9b5c1e",
+    "scene-world-atlas.png": "e2e7c1d7891b2d971474ec96d981898de39fc75cb93b6eb76451eb9af5d740e8",
+    "scene-sprite-atlas.png": "0d22b7836464953487aecccf867295672a41a5c92d182755ca72753f6e2a6250",
+    "scene-pose-atlas.png": "5e5b4888623a9c5bccbdd16e3d856749f01852ad80d4ed29c3cfd44b8fe5bc7d",
+    "scene-objects-atlas.png": "b4d0379e20224bf4cee2e8b8ad07388f5a2a32a94073771f189d2d985b6ff31d",
+    "scene-bag-atlas.png": "dcd8493d8cedc8144a6bc59005cc8ca8a3082f6239f5909dbcf27dce59823669",
+    "scene-pictures-atlas.png": "938207d069f0ecc1a7305a6685af7ea24556c5977307e40bb2715399a505cd33",
     "fonts/OpenSans-Semibold.ttf": "aa3b0ef53db12e3d45094030cac0e69d384e44cc5978643dd4390041cad546e2",
     "fonts/OpenSans-Bold.ttf": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323",
     "../../os/palette.h": "8bf833d02941525fbcc232576963e389592712aebc93b1fc635f7ee600e84631"
   },
   "conversion_pillow": "12.3.0",
-  "conversion_cache_sha256": "68ac771045a0d436382a5cebc4ed41879d6216163e36b977bbe8a3fa764a94e6",
-  "runtime_bytes": 311833,
+  "conversion_cache_sha256": "d98e3560096a259478c96f53697f274c8159d8752222af3bc079ab65427fb85d",
+  "runtime_bytes": 569682,
   "scene_resolution": [
     240,
     240
@@ -19,10 +25,13 @@
     160
   ],
   "palette_colors": 64,
-  "runtime_source_sha256": "bf524d720f03f792c1c8321f9a83e1da43b921823d01ae4b91871645c68d2e2e",
+  "runtime_source_sha256": "1c47383b03b0ff1452b233528b6b61e8b9017481b3797b22c00952bf06631ec1",
   "parts": {
-    "art_part_0.inc": "75fba90808433db0a9cbfc36814814d7908007ade4cdbb3c989b80fb1f301a14",
-    "art_part_1.inc": "36b243930e9f49f70fa6b0fbc29973f078ec58f9af1b25ba4a54333b9d468cd3",
-    "art_part_2.inc": "93803891c64d8396960598545da181fc9b677fdf296dcbd5304261713e008c43"
+    "art_part_0.inc": "bae93e8cb9a37cab290e4170b03347033aa7ccef3ef4a2f201d7f00192a71b64",
+    "art_part_1.inc": "504408d4aca6d630f6339edf4911cc277a280054d3b89957735086175d08770e",
+    "art_part_2.inc": "72a74e0f7914d5e809dd2de98f32e085c3e622dd186de36ba3dbbe6d67e07f9f",
+    "art_part_3.inc": "dec2a2536c2ba85acdea13eed4e2fc0433522ff748bcd8581de2acc62e3e64aa",
+    "art_part_4.inc": "b8028ff4ea65df7d9efeef2e58979587c98f82d36212da021eb97628cdb0fd71",
+    "art_part_5.inc": "ba3de773d63c283cdfd7d525527d66c484b30554d355f74ec9f8059adf0c4104"
   }
 }

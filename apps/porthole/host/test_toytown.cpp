@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "games/toy-town-life/content.h"
 using namespace toytown;
+static_assert(CAFE_QUANTITY == 27 && SCHOOL_HANG == 28, "Append V3 pages");
 static_assert(MEMORY == 23 && STOP == 24 && BOOK == 25 && MEMORY_EDIT == 26,
   "Persisted V1 page ids must remain stable when new pages are appended");
 namespace {
@@ -20,6 +21,70 @@ constexpr uint8_t V1_FIXTURE[] = {
   0x11,0xf6,0x77,0xcd
 };
 static_assert(sizeof V1_FIXTURE == V1_SIZE && V1_SIZE == 88, "Keep the shipped V1 fixture frozen");
+// Frozen shipped V2 layout with independent hair color 3.
+constexpr uint8_t V2_FIXTURE[] = {
+  0x54,0x59,0x4f,0x54,0x02,0x00,0x5c,0x00,0x1a,0x03,0x02,0x01,
+  0x01,0x02,0x01,0x03,0x02,0x07,0x03,0x15,0x04,0x01,0x04,0x02,
+  0x01,0x02,0x03,0x00,0x00,0x03,0x02,0x01,0x03,0x01,0x01,0x02,
+  0x07,0x01,0x02,0x01,0x01,0x00,0x08,0x06,0x0e,0x02,0x01,0x17,
+  0x01,0x01,0x00,0x01,0x02,0x06,0x01,0x02,0x03,0x02,0x02,0x00,
+  0x01,0x04,0x00,0x02,0x02,0x00,0x02,0x01,0x03,0x01,0x01,0x00,
+  0x01,0x03,0x02,0x02,0x02,0x04,0x01,0x01,0x98,0xba,0xdc,0xfe,
+  0x03,0x00,0x00,0x00,0x91,0x76,0xd7,0x92,
+};
+void sceneRules() {
+  State s = fresh();
+  assert(s.worldX == 80 && s.worldY == 80 && s.worldPlace == HOME && !hasPaper(s));
+  s.bag = 14; start(s, SCHOOL); const State before = s;
+  borrowPaper(s);
+  assert(hasPaper(s) && s.schoolPaper && s.bag == before.bag && slots(s) == 3);
+  assert(s.page == before.page && !s.schoolOutcome && s.active && !s.recorded);
+  borrowPaper(s); assert(s.schoolPaper == 1);
+  start(s, CAFE); assert(!s.schoolPaper && s.worldPlace == CAFE);
+  s.bag = 1; assert(hasPaper(s));
+}
+void displayRules() {
+  for (uint8_t first : {1,2}) {
+    State s = fresh(); repairSchool(s, first); repairSchool(s, 3 - first);
+    assert(s.repaired == 3); repairSchool(s, first); assert(s.repaired == 3);
+    start(s, SCHOOL); assert(!s.repaired); beginDisplay(s, false);
+    assert(s.page == SCHOOL_HANG && s.schoolTask == 1 && !displayReady(s));
+    assert(!finishDisplay(s) && !s.schoolOutcome);
+    for (int slot = 0; slot < 3; ++slot) { s.schoolPicture = slot; assert(hangPicture(s, slot)); }
+    assert(displayReady(s) && s.page == SCHOOL_HANG && !s.schoolOutcome);
+    s.schoolPicture = 2; assert(hangPicture(s, 0)); assert((s.schoolPictures & 3) == 2);
+    assert(finishDisplay(s) && s.schoolOutcome == 4 && s.page == SCHOOL_RESULT);
+    repairSchool(s, 2); beginDisplay(s, true); assert(s.repaired == 2);
+    for (int slot = 0; slot < 3; ++slot) assert(hangPicture(s, slot));
+    assert(finishDisplay(s) && s.repaired == 3 && s.page == SCHOOL_REPAIR);
+    assert(finishDisplay(s) && s.repaired == 3);
+  }
+}
+void displayReopen() {
+  State s = fresh(), out{}; start(s, SCHOOL); beginDisplay(s, false);
+  for (int slot = 0; slot < 3; ++slot) { s.schoolPicture = slot; assert(hangPicture(s, slot)); }
+  assert(finishDisplay(s)); const uint8_t pictures = s.schoolPictures;
+  beginDisplay(s, true);
+  assert(s.schoolHangMask == 7 && s.schoolPictures == pictures && s.schoolPicture == 2);
+  s.schoolPicture = 0; assert(hangPicture(s, 1));
+  assert((s.schoolPictures & 3) == 0 && ((s.schoolPictures >> 2) & 3) == 0);
+  assert(((s.schoolPictures >> 4) & 3) == 2);
+  seal(s); assert(load(&s, sizeof s, out)); beginDisplay(out, true);
+  assert(out.schoolHangMask == 7 && out.schoolPictures == s.schoolPictures && out.schoolPicture == 0);
+  start(out, SCHOOL);
+  assert(!out.schoolHangMask && !out.schoolPictures && !out.schoolPicture && !out.schoolTask);
+}
+void displayResume() {
+  State s = fresh(), out{}; start(s, SCHOOL); beginDisplay(s, true);
+  s.schoolPicture = 1; assert(hangPicture(s, 2)); seal(s);
+  assert(load(&s, sizeof s, out) && !memcmp(&s, &out, sizeof s));
+  const State before = s;
+  assert(!hangPicture(s, -1) && !memcmp(&s, &before, sizeof s));
+  assert(!hangPicture(s, 3) && !memcmp(&s, &before, sizeof s));
+  s.schoolPicture = 3; const State bad = s;
+  assert(!hangPicture(s, 0) && !memcmp(&s, &bad, sizeof s));
+  start(s, PARK); assert(!s.schoolHangMask && !s.schoolPicture && !s.schoolPictures && !s.schoolTask);
+}
 void budget() {
   // Exhaust every editable tray, including an exact budget and every missing lunch component.
   for (int a = 0; a <= 3; ++a) for (int b = 0; b <= 3; ++b)
@@ -110,17 +175,21 @@ void assertV1Progress(const State& s) {
     {CAFE,0,2,1},{PARK,1,1,0},{SCHOOL,3,2,2},{CAFE,4,1,1}};
   assert(!memcmp(s.entries, entries, sizeof entries));
 }
+void assertDisplayDefaults(const State& s) {
+  assert(!s.schoolHangMask && !s.schoolPicture && !s.schoolPictures && !s.schoolTask);
+}
 void frozenV1Migration() {
-  static_assert(V2_SIZE == 92 && sizeof(State) == V2_SIZE, "V2 only appends four bytes before CRC");
-  static_assert(offsetof(State, seed) == 80 && offsetof(State, hairColor) == 84 && offsetof(State, crc) == 88,
+  static_assert(V2_SIZE == 92 && sizeof(State) == V3_SIZE, "V3 retains historical V2 size constant");
+  static_assert(offsetof(State, seed) == 80 && offsetof(State, hairColor) == 84 && offsetof(State, worldX) == 88 && offsetof(State, schoolHangMask) == 92 && offsetof(State, crc) == 96,
     "Every V1 field through seed keeps its byte offset");
   assert(os::crc32(V1_FIXTURE, V1_SIZE - 4) == 0xcd77f611u);
   State migrated = fresh(), out{};
   assert(load(V1_FIXTURE, sizeof V1_FIXTURE, migrated));
   assertV1Progress(migrated);
+  assertDisplayDefaults(migrated);
   // Compare every old player field, array byte and seed against the original record.
   assert(!memcmp(reinterpret_cast<const uint8_t*>(&migrated) + 8, V1_FIXTURE + 8, V1_SIZE - 12));
-  assert(migrated.magic == MAGIC && migrated.version == VERSION && migrated.size == V2_SIZE);
+  assert(migrated.magic == MAGIC && migrated.version == VERSION && migrated.size == V3_SIZE);
   assert(migrated.hairColor == 0 && !migrated.reserved[0] && !migrated.reserved[1] && !migrated.reserved[2]);
   seal(migrated); assert(load(&migrated, sizeof migrated, out));
   assert(!memcmp(&migrated, &out, sizeof out));
@@ -153,6 +222,48 @@ void invalidV1Saves() {
   const uint32_t crc = os::crc32(bytes, V1_SIZE - 4); memcpy(bytes + V1_SIZE - 4, &crc, 4);
   rejectedBlob(bytes, V1_SIZE);
 }
+void frozenV2Migration() {
+  static_assert(sizeof V2_FIXTURE == V2_SIZE && V2_SIZE == 92, "Keep V2 fixture frozen");
+  State s = fresh(); assert(load(V2_FIXTURE, sizeof V2_FIXTURE, s));
+  assertV1Progress(s);
+  assertDisplayDefaults(s);
+  assert(!memcmp(reinterpret_cast<const uint8_t*>(&s) + 8, V2_FIXTURE + 8, V2_SIZE - 12));
+  assert(s.hairColor == 3 && s.worldX == 80 && s.worldY == 80 && s.worldPlace == HOME && !s.schoolPaper);
+}
+void invalidV2Saves() {
+  uint8_t bytes[V2_SIZE];
+  for (size_t i = 0; i < V2_SIZE; ++i) {
+    memcpy(bytes, V2_FIXTURE, V2_SIZE); bytes[i] ^= 1; rejectedBlob(bytes, V2_SIZE);
+  }
+  for (size_t offset : {0u,4u,5u,6u,7u,84u,85u,86u,87u}) {
+    memcpy(bytes, V2_FIXTURE, V2_SIZE); bytes[offset] = offset == 84 ? 4 : bytes[offset] ^ 1;
+    const uint32_t crc = os::crc32(bytes, V2_SIZE - 4); memcpy(bytes + V2_SIZE - 4, &crc, 4);
+    rejectedBlob(bytes, V2_SIZE);
+  }
+}
+void profileScenes() {
+  State profiles[4], out{};
+  for (uint8_t id = 0; id < 4; ++id) {
+    State& s = profiles[id]; s = fresh(); s.doll = id; s.page = CAFE_QUANTITY; s.resumePage = CAFE_QUANTITY;
+    s.schoolPaper = id % 2; assert(moveTo(s, WORLD_MIN_X + id, WORLD_MAX_Y - id, id)); seal(s);
+  }
+  for (int id = 3; id >= 0; --id) {
+    assert(load(&profiles[id], sizeof(State), out)); assert(!memcmp(&out, &profiles[id], sizeof out));
+  }
+  State s = profiles[0]; const State before = s;
+  assert(!moveTo(s, WORLD_MIN_X - 1, 80, HOME)); assert(!memcmp(&s, &before, sizeof s));
+  assert(!moveTo(s, 80, WORLD_MAX_Y + 1, HOME)); assert(!memcmp(&s, &before, sizeof s));
+  assert(!moveTo(s, 80, 80, PARK + 1)); assert(!memcmp(&s, &before, sizeof s));
+}
+void historicalPages() {
+  uint8_t bytes[V2_SIZE];
+  for (size_t size : {V1_SIZE, V2_SIZE}) for (size_t offset : {8u, 47u, 23u}) for (uint8_t page : {CAFE_QUANTITY, SCHOOL_HANG}) {
+    memcpy(bytes, size == V1_SIZE ? V1_FIXTURE : V2_FIXTURE, size);
+    bytes[offset] = offset == 23 ? 3 : page;
+    const uint32_t crc = os::crc32(bytes, size - 4); memcpy(bytes + size - 4, &crc, 4);
+    rejectedBlob(bytes, size);
+  }
+}
 void invalidRanges() {
   struct Range { uint8_t State::*member; uint8_t invalid; };
   const Range ranges[] = {
@@ -162,9 +273,13 @@ void invalidRanges() {
     {&State::packItem, 5}, {&State::menuItem, 4}, {&State::count, 9}, {&State::variant, 3},
     {&State::clue, 3}, {&State::guess, 3}, {&State::resumePage, PAGE_COUNT}, {&State::bookIndex, 8},
     {&State::caption, 3}, {&State::sticker, 3}, {&State::schoolOutcome, 5},
-    {&State::listened, 2}, {&State::repaired, 3}, {&State::compared, 2}, {&State::ordered, 2},
+    {&State::listened, 2}, {&State::repaired, 4}, {&State::compared, 2}, {&State::ordered, 2},
     {&State::revised, 2}, {&State::active, 2}, {&State::recorded, 2}, {&State::clues, 8},
-    {&State::completed, 1}
+    {&State::completed, 1}, {&State::worldX, WORLD_MIN_X - 1}, {&State::worldX, WORLD_MAX_X + 1},
+    {&State::worldY, WORLD_MIN_Y - 1}, {&State::worldY, WORLD_MAX_Y + 1},
+    {&State::worldPlace, PARK + 1}, {&State::schoolPaper, 2}, {&State::schoolHangMask, 8}, {&State::schoolPicture, 3},
+    {&State::schoolPictures, 3}, {&State::schoolPictures, 12}, {&State::schoolPictures, 48},
+    {&State::schoolPictures, 64}, {&State::schoolTask, 3}
   };
   for (const auto& range : ranges) { State s = fresh(); s.*range.member = range.invalid; seal(s); rejected(s); }
   for (int i = 0; i < 4; ++i) {
@@ -218,7 +333,7 @@ void saves() {
 }
 } // namespace
 int main() {
-  budget(); schoolConsequences(); replayAndMemories(); coherentSeeds(); saves(); richRoundtrip();
-  frozenV1Migration(); invalidV1Saves();
+  sceneRules(); displayRules(); displayReopen(); displayResume(); budget(); schoolConsequences(); replayAndMemories(); coherentSeeds(); saves(); richRoundtrip();
+  frozenV1Migration(); frozenV2Migration(); historicalPages(); invalidV1Saves(); invalidV2Saves(); profileScenes();
   puts("Toy Town rules/save contracts passed");
 }

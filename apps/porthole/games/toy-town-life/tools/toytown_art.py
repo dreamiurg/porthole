@@ -21,7 +21,19 @@ from PIL import Image, ImageDraw, ImageFont, __version__ as PILLOW_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 PREVIEW = ROOT.parents[1] / "build/art/toy-town-life"
-SOURCES = ("scene-atlas.png", "doll-atlas.png", "park.png", "fonts/OpenSans-Semibold.ttf", "fonts/OpenSans-Bold.ttf")
+SOURCES = (
+    "scene-atlas.png",
+    "doll-atlas.png",
+    "park.png",
+    "scene-world-atlas.png",
+    "scene-sprite-atlas.png",
+    "scene-pose-atlas.png",
+    "scene-objects-atlas.png",
+    "scene-bag-atlas.png",
+    "scene-pictures-atlas.png",
+    "fonts/OpenSans-Semibold.ttf",
+    "fonts/OpenSans-Bold.ttf",
+)
 CACHE = ROOT / "art/converted/assets.json.zlib"
 CONVERSION_VERSION = "12.3.0"
 
@@ -63,7 +75,75 @@ def scenes():
     boxes = ((0, 0, 624, 624), (631, 0, 1254, 624), (0, 631, 624, 1254), (631, 631, 1254, 1254))
     images = [atlas.crop(box) for box in boxes]
     images.append(Image.open(ROOT / "art/park.png").convert("RGB"))
+    world = Image.open(ROOT / "art/scene-world-atlas.png").convert("RGB")
+    images[1:] = [world.crop(box) for box in boxes]
     return [image.resize((240, 240), Image.Resampling.LANCZOS) for image in images]
+
+
+def clean_sprite_alpha(image):
+    # Generated atlas cells can contain tiny detached slivers of a neighboring
+    # sprite. Keep substantial connected alpha islands, never color-key clothing.
+    width, height = image.size
+    alpha = bytearray(image.getchannel("A").tobytes())
+    remaining = {i for i, value in enumerate(alpha) if value >= 128}
+    islands = []
+    while remaining:
+        seed = remaining.pop()
+        island, pending = [seed], [seed]
+        while pending:
+            pixel = pending.pop()
+            x, y = pixel % width, pixel // width
+            neighbors = ((pixel - 1, x > 0), (pixel + 1, x + 1 < width), (pixel - width, y > 0), (pixel + width, y + 1 < height))
+            for neighbor, valid in neighbors:
+                if valid and neighbor in remaining:
+                    remaining.remove(neighbor)
+                    island.append(neighbor)
+                    pending.append(neighbor)
+        islands.append(island)
+    minimum = max(map(len, islands)) // 50
+    for island in islands:
+        if len(island) < minimum:
+            for pixel in island:
+                alpha[pixel] = 0
+    image.putalpha(Image.frombytes("L", image.size, bytes(alpha)))
+    return image
+
+
+def sprite_record(image, size):
+    image = clean_sprite_alpha(image.convert("RGBA"))
+    bounds = image.getchannel("A").point(lambda a: 255 if a >= 128 else 0).getbbox()
+    image = image.crop(bounds)
+    image.thumbnail(size, Image.Resampling.LANCZOS)
+    pixels, palette = quantized(image.convert("RGB"), 63)
+    alpha = image.getchannel("A").tobytes()
+    pixels = [p if a >= 128 else 63 for p, a in zip(pixels, alpha, strict=True)]
+    return {"pixels": pixels, "palette": [*palette, (0, 0, 0)], "w": image.width, "h": image.height}
+
+
+def scene_sprites():
+    atlas = Image.open(ROOT / "art/scene-sprite-atlas.png").convert("RGBA")
+    rows = (0, 440, 715, 975, 1254)
+    images = [atlas.crop((c * 1254 // 4, rows[r], (c + 1) * 1254 // 4, rows[r + 1])) for r in range(4) for c in range(4)]
+    poses = Image.open(ROOT / "art/scene-pose-atlas.png").convert("RGBA")
+    images += [poses.crop((c * poses.width // 4, 0, (c + 1) * poses.width // 4, poses.height)) for c in range(4)]
+    objects = Image.open(ROOT / "art/scene-objects-atlas.png").convert("RGBA")
+    images += [objects.crop((c * objects.width // 3, 0, (c + 1) * objects.width // 3, objects.height)) for c in range(3)]
+    bag = Image.open(ROOT / "art/scene-bag-atlas.png").convert("RGBA")
+    images += [bag.crop((c * bag.width // 2, 0, (c + 1) * bag.width // 2, bag.height)) for c in range(2)]
+    pictures = Image.open(ROOT / "art/scene-pictures-atlas.png").convert("RGBA")
+    images += [pictures.crop((c * pictures.width // 3, 0, (c + 1) * pictures.width // 3, pictures.height)) for c in range(3)]
+    return [sprite_record(image, (112, 176) if i < 4 or 16 <= i < 20 else (112, 100)) for i, image in enumerate(images)]
+
+
+def sprite_output(records):
+    lines, size = [], 0
+    for i, record in enumerate(records):
+        pixels = pack(record["pixels"], 6)
+        lines += [array("uint8_t", f"WORLD_PIX_{i}", pixels), array("uint16_t", f"WORLD_PAL_{i}", [rgb565(c) for c in record["palette"]])]
+        size += len(pixels) + 128
+    lines += ["struct WorldSprite { const uint8_t* pixels; const uint16_t* palette; int w; int h; };", "static const WorldSprite WORLD_SPRITES[] = {"]
+    lines += [f"  {{WORLD_PIX_{i},WORLD_PAL_{i},{r['w']},{r['h']}}}," for i, r in enumerate(records)]
+    return "\n".join([*lines, "};"]), size
 
 
 def rgba_pixels(image):
@@ -233,7 +313,8 @@ def convert_source():
         "scenes": images,
         "dolls": converted_dolls,
         "icon": icon_pixels(doll_images[0]),
-        "fonts": [font_data("BODY", "Semibold", 24, 28, 6), font_data("TITLE", "Bold", 30, 34, 7)],
+        "world_sprites": scene_sprites(),
+        "fonts": [font_data("BODY", "Semibold", 24, 28, 6), font_data("TITLE", "Bold", 30, 34, 7), font_data("ACTION", "Bold", 18, 21, 4)],
     }
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     CACHE.write_bytes(zlib.compress(json.dumps(result, separators=(",", ":")).encode(), 9))
@@ -246,7 +327,7 @@ def converted():
     return data
 
 
-def preview(scene_images, doll_images):
+def preview(scene_images, doll_images, sprites):
     PREVIEW.mkdir(parents=True, exist_ok=True)
     sheet = Image.new("RGB", (1200, 720), "#fff7ee")
     for index, scene in enumerate(scene_images):
@@ -263,6 +344,12 @@ def preview(scene_images, doll_images):
     face = ImageFont.truetype(str(ROOT / "art/fonts/OpenSans-Semibold.ttf"), 24)
     draw.text((40, 640), "Toy Town Life  |  Open Sans 24  |  Let's make a day together!", font=face, fill="#302937")
     sheet.save(PREVIEW / "assets.png")
+    spritesheet = Image.new("RGBA", (8 * 130, 4 * 190), "#fff7ee")
+    for index, sprite in enumerate(sprites):
+        image = Image.new("RGBA", (sprite["w"], sprite["h"]))
+        image.putdata([(*sprite["palette"][p], 255) if p != 63 else (0, 0, 0, 0) for p in sprite["pixels"]])
+        spritesheet.alpha_composite(image, ((index % 8) * 130, (index // 8) * 190))
+    spritesheet.save(PREVIEW / "world-sprites.png")
 
 
 def split_output(output):
@@ -308,15 +395,17 @@ def main():
     images, size = image_output(scene_images, doll_images)
     body, body_size = font_output(data["fonts"][0])
     title, title_size = font_output(data["fonts"][1])
+    sprites, sprite_size = sprite_output(data["world_sprites"])
+    action, action_size = font_output(data["fonts"][2])
     header = "// Generated by tools/toytown_art.py; DO NOT EDIT. Sources and licenses: ../art/.\n"
-    fonts = array("uint8_t", "ZERO_CLASSES", [0] * 96) + "\nstatic const int8_t ZERO_KERN[] = {0};\n" + body + "\n" + title
-    output = header + images + "\n" + fonts + "\n" + icon_output(data["icon"]) + "\n"
+    fonts = array("uint8_t", "ZERO_CLASSES", [0] * 96) + "\nstatic const int8_t ZERO_KERN[] = {0};\n" + body + "\n" + title + "\n" + action
+    output = header + images + "\n" + sprites + "\n" + fonts + "\n" + icon_output(data["icon"]) + "\n"
     outputs = split_output(output)
     manifest = {
         "sources": data["sources"],
         "conversion_pillow": data["pillow"],
         "conversion_cache_sha256": hashlib.sha256(CACHE.read_bytes()).hexdigest(),
-        "runtime_bytes": size + body_size + title_size + 674,
+        "runtime_bytes": size + body_size + title_size + action_size + sprite_size + 674,
         "scene_resolution": [240, 240],
         "doll_resolution": [96, 160],
         "palette_colors": 64,
@@ -327,8 +416,8 @@ def main():
     outputs["manifest.json"] = json.dumps(manifest, indent=2) + "\n"
     write_outputs(outputs, args.check)
     if not args.check:
-        preview(scene_images, doll_images)
-    print(f"Toy Town art {'matches' if args.check else 'generated'}: {manifest['runtime_bytes']:,} runtime bytes, original 5 scenes / 4 dolls / 2 fonts")
+        preview(scene_images, doll_images, data["world_sprites"])
+    print(f"Toy Town art {'matches' if args.check else 'generated'}: {manifest['runtime_bytes']:,} runtime bytes, original 5 scenes / 4 dolls / 28 world sprites / 3 fonts")
 
 
 if __name__ == "__main__":

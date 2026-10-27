@@ -2,6 +2,7 @@
 #include "art.h"
 #include "content.h"
 #include "choices.h"
+#include "scene_ui.h"
 #include "font.h"
 #include "gfx565.h"
 #include <stdio.h>
@@ -81,44 +82,48 @@ void Game::describe() {
  describeSchool();
  if (s_.page>=CAFE_INTRO && s_.page<=CAFE_RESULT) describeCafe();
  if (s_.page>=PARK_INTRO && s_.page<=PARK_FOUND) describePark();
- if (s_.page==MEMORY) snprintf(words_,sizeof words_,"Keep a memory, or skip.\n%s\nSticker: %s",CAPTIONS[s_.caption],STICKERS[s_.sticker]);
- if (s_.page==MEMORY_EDIT) snprintf(words_,sizeof words_,"%s\nSticker: %s\nTry another detail.",CAPTIONS[s_.caption],STICKERS[s_.sticker]);
+ if (s_.page==MEMORY) snprintf(words_,sizeof words_,"%s\nKeep this memory, or skip.",CAPTIONS[s_.caption]);
+ if (s_.page==MEMORY_EDIT) snprintf(words_,sizeof words_,"%s\nSticker: %s",CAPTIONS[s_.caption],STICKERS[s_.sticker]);
+ describeScene();
  describeOverlay();
 }
 void Game::describeSchool() {
  if (s_.page==SCHOOL_RESULT) {
-  const char* endings[]={"", "Mina feels less alone.\nShe pauses at her start.\nTheo's display waits.", "Cue cards help Mina start.\nTheo hangs fewer pictures.", "Your picture cards look fun.\nMina forgets her start.\nAsk what would help.", "Theo hangs pictures first.\nMina waits, then practices\nher first words with him."};
+  const char* endings[]={"", "Mina: Stay beside me.\nTheo's pictures still need us.", "Mina: My notes helped!\nTheo still has pictures to hang.", "Mina: Pretty pictures!\nI still forget my first words.", "Theo: My display is ready.\nNow let's practice with Mina."};
   copy(words_,sizeof words_,endings[s_.schoolOutcome]);
+  if(s_.schoolOutcome==4 && !(s_.repaired&2)) copy(labels_[0],sizeof labels_[0],"Practice with Mina");
  }
  if (s_.page==SCHOOL_PAPER) copy(labels_[1],sizeof labels_[1],"Another plan");
- if (s_.page==SCHOOL_INTRO) copy(words_,sizeof words_,"Mina: Will you sit with me? I'm nervous! You promised Theo help, too.");
- if (s_.page==SCHOOL_OTHER) copy(words_,sizeof words_,"Theo: Help hang pictures first? Then I can rehearse with Mina. She will wait.");
+ if (s_.page==SCHOOL_INTRO) copy(words_,sizeof words_,"Theo: Can we hang my pictures?");
+ if (s_.page==SCHOOL_OTHER) copy(words_,sizeof words_,"Theo: Help hang my pictures?\nThen I can practice with Mina.");
  if (s_.page==SCHOOL_REPAIR) {
-  const char* text[]={"A promise still needs care. What shall we do after class?","You help Theo finish. He smiles: We made room for both promises.","Mina: Next time, ask me first. We can practice together after class."};
+  const char* text[]={"Two friends. Two promises.\nWhat can we finish together?","Theo: The pictures are up!\nThank you for coming back.","Mina: Let's try my first line.\nWe can practice together.","Both friends are ready.\nWe made room for each other."};
   copy(words_,sizeof words_,text[s_.repaired]);
+  if((s_.repaired&1) || s_.schoolOutcome==4) copy(labels_[0],sizeof labels_[0],"Arrange pictures");
+  copy(labels_[1],sizeof labels_[1],(s_.repaired&2) ? "Practice again" : "Practice with Mina");
  }
 }
 void Game::describeOverlay() {
  if (title_) {
-  copy(heading_,sizeof heading_,"Toy Town Life"); copy(words_,sizeof words_,"Your doll. Your plans. Three little stories in a town that remembers.");
+  copy(heading_,sizeof heading_,"Toy Town Life"); copy(words_,sizeof words_,"Your doll. Your little town.\nTap a picture to begin.");
   copy(labels_[0],sizeof labels_[0],s_.active ? "Continue my story" : "Enter Toy Town"); copy(labels_[1],sizeof labels_[1],"Meet my doll"); copy(labels_[2],sizeof labels_[2],"Leave");
  }
  if (pause_) {
-  copy(heading_,sizeof heading_,"A little pause"); copy(words_,sizeof words_,"Everything stays just here. Your story will wait for you.");
+  copy(heading_,sizeof heading_,"A little pause"); copy(words_,sizeof words_,"Your story stays right here.\nCome back whenever you like.");
   copy(labels_[0],sizeof labels_[0],"Resume"); copy(labels_[1],sizeof labels_[1],"Town"); copy(labels_[2],sizeof labels_[2],"Save & leave");
  }
 }
 void Game::describeHome() {
- if (s_.page==HUB && s_.active) { copy(labels_[0],sizeof labels_[0],"Resume my outing"); copy(words_,sizeof words_,"Your outing is waiting. Dress up, read a memory, or pick up your story."); }
+ if (s_.page==HUB && s_.active) { copy(labels_[0],sizeof labels_[0],"Resume my outing"); copy(words_,sizeof words_,"Your outing is saved.\nDress up, read, or keep exploring."); }
  if (s_.page==DOLL) { snprintf(words_,sizeof words_,"%s, the %s. Every material can play every story.",NAMES[s_.dollName],DOLLS[s_.doll]); }
  if (s_.page==STYLE) describeStyle();
- if (s_.page==MAP) { snprintf(heading_,sizeof heading_,"Let's visit %s",PLACES[destination_]); copy(words_,sizeof words_,"Choose a place, then pack up to three things for your outing."); }
+ if (s_.page==MAP) { copy(heading_,sizeof heading_,"Where shall we go?"); copy(words_,sizeof words_,"Choose a place to visit.\nThen pack your little bag."); }
  if (s_.page==PACK) {
   snprintf(heading_,sizeof heading_,"Bag: %d of 3 packed",slots(s_));
   snprintf(words_,sizeof words_,"%s: %s. %s",ITEMS[s_.packItem],(s_.bag&(1<<s_.packItem)) ? "packed" : "not packed",slots(s_)==3 ? "Bag full? Unpack one to swap." : "Forgot something? You can borrow.");
  }
  if (s_.page==BOOK) {
-  if (!s_.count) copy(words_,sizeof words_,"Blank pages for your stories. A memory can be kept after an outing.");
+  if (!s_.count) copy(words_,sizeof words_,"A blank book for your stories.\nKeep a memory after an outing.");
   else { const Entry& e=s_.entries[s_.bookIndex%s_.count]; snprintf(heading_,sizeof heading_,"%s | memory %u",PLACES[e.place],s_.bookIndex%s_.count+1); describeEntry(e); }
  }
 }
@@ -128,7 +133,7 @@ void Game::describeEntry(const Entry& e) {
  if (e.place==SCHOOL) copy(memory,sizeof memory,school[e.outcome]);
  else if (e.place==CAFE) snprintf(memory,sizeof memory,"Lunch: %u coins left.",e.outcome);
  else snprintf(memory,sizeof memory,"Found by the %s.",SPOTS[e.outcome]);
- snprintf(words_,sizeof words_,"%s\n%s\nSticker: %s",memory,CAPTIONS[e.caption],STICKERS[e.sticker]);
+ snprintf(words_,sizeof words_,"%s\n%s",memory,CAPTIONS[e.caption]);
 }
 void Game::describeStyle() {
  const int c=s_.category;
@@ -136,41 +141,49 @@ void Game::describeStyle() {
  copy(words_,sizeof words_,"Tap a look to wear it.");
 }
 void Game::describeCafe() {
+ if (s_.page==CAFE_INTRO) copy(words_,sizeof words_,"Mina: I'd like water, please!\nWe have 10 pretend coins.");
  if (s_.page==CAFE_MENU) {
   snprintf(heading_,sizeof heading_,"%s | %d coins",FOOD[s_.menuItem],PRICES[s_.menuItem]);
   snprintf(words_,sizeof words_,"Qty: %u | Tray: %d/10\nSandwich 5 | Fruit 3\nWater 1 | Cookie 2",s_.cart[s_.menuItem],total(s_));
  }
- if (s_.page==CAFE_CART) {
-  snprintf(heading_,sizeof heading_,"Tray: %d / 10 coins",total(s_));
-  if (total(s_)>10) snprintf(words_,sizeof words_,"Need %d more coins. Change a quantity to fit our pretend budget.",total(s_)-10);
-  else if (!canOrder(s_)) copy(words_,sizeof words_,"Lunch needs food and water. Add a sandwich or fruit, and water for Mina.");
-  else snprintf(words_,sizeof words_,"Food and water are ready. %d coins left. We can change our plan or order.",10-total(s_));
- }
+ if (s_.page==CAFE_CART) describeCafeCart();
  if (s_.page==CAFE_COMPARE) {
   if (s_.compared) {
    const int difference=total(s_)-trayTotal(s_.compare); char comparison[40];
    if (!difference) copy(comparison,sizeof comparison,"the same cost");
    else snprintf(comparison,sizeof comparison,"%d %s coins",difference<0 ? -difference : difference,difference<0 ? "fewer" : "more");
-   snprintf(words_,sizeof words_,"Saved idea: %d coins.\nThis tray: %d coins.\nThat's %s.",trayTotal(s_.compare),total(s_),comparison);
+   snprintf(words_,sizeof words_,"Saved %d. This tray %d.\nThat's %s.",trayTotal(s_.compare),total(s_),comparison);
   }
-  else copy(words_,sizeof words_,"Keep this tray as an idea. Change quantities, then compare the two costs.");
+  else copy(words_,sizeof words_,"Save this tray as an idea.\nTry another, then compare.");
  }
  if (s_.ordered && s_.page==CAFE_CART) {
   copy(labels_[0],sizeof labels_[0],"Back to lunch"); copy(labels_[1],sizeof labels_[1],"Read again"); copy(labels_[2],sizeof labels_[2],"Remember");
  }
- if (s_.page==CAFE_RESULT) snprintf(words_,sizeof words_,"Mina: Water, just right! Lunch cost %d coins. %d coins left.",total(s_),10-total(s_));
+ if (s_.page==CAFE_RESULT) snprintf(words_,sizeof words_,"Mina: Lunch together!\n%d coins spent. %d left.",total(s_),10-total(s_));
+}
+void Game::describeCafeCart() {
+ snprintf(heading_,sizeof heading_,"Tray: %d / 10",total(s_));
+ if(total(s_)>10) snprintf(words_,sizeof words_,"%d coin%s over budget.\nLet's remove an item.",total(s_)-10,total(s_)==11 ? "" : "s");
+ else if(!canOrder(s_)) copy(words_,sizeof words_,s_.cart[2] ? "Mina: We need food.\nSandwich or fruit?" : "Mina: We need water.\nPlease add a drink.");
+ else snprintf(words_,sizeof words_,"Mina: Lunch is ready!\n%d coins left. Shall we order?",10-total(s_));
+ if(!s_.ordered && !canOrder(s_)) copy(labels_[2],sizeof labels_[2],total(s_)>10 ? "Fix budget" : !s_.cart[2] ? "Add water" : "Add food");
 }
 void Game::describePark() {
- if (s_.page==PARK_INTRO && s_.listened) copy(words_,sizeof words_,LAST_SEEN[s_.variant]);
- if (s_.page==PARK_SEARCH) { snprintf(heading_,sizeof heading_,"Look: %s",SPOTS[s_.clue]); copy(words_,sizeof words_,"Notice the scene. Is there a pink ribbon? Look closely before choosing."); }
- if (s_.page==PARK_CLUE) {
-  if (!(s_.clues&(1<<s_.clue))) copy(words_,sizeof words_,"No clue checked here yet. Look closely at the bench, fountain or path.");
-  else copy(words_,sizeof words_,s_.clue==s_.variant ? CLUES[s_.clue] : EMPTY_CLUES[s_.clue]);
+ if (s_.page==PARK_INTRO) {
+  if(s_.listened) snprintf(words_,sizeof words_,"Nori: I drew by the %s.\nMy notebook has a pink ribbon.",SPOTS[s_.variant]);
+  else copy(words_,sizeof words_,"Nori: My notebook is missing!\nCan you look with me?");
  }
- if (s_.page==PARK_GUESS) { snprintf(heading_,sizeof heading_,"My idea: %s",SPOTS[s_.guess]); copy(words_,sizeof words_,"We can test an idea and change it. Where might Nori's sketchbook be?"); }
- if (s_.page==PARK_WRONG) copy(words_,sizeof words_,"No sketchbook here. A useful clue! We can look again and change our idea.");
- if (s_.page==PARK_CLUE && (s_.bag&16) && (s_.clues&(1<<s_.clue)) && s_.clue==s_.variant) copy(words_,sizeof words_,"Your magnifier shows a pink ribbon on a little sketchbook. A closer look!");
- if (s_.page==PARK_FOUND) snprintf(words_,sizeof words_,"Found by the %s!\nA pink-ribbon sketchbook!\nLet's return it to Nori.",SPOTS[s_.variant]);
+ if (s_.page==PARK_SEARCH) { snprintf(heading_,sizeof heading_,"Look: %s",SPOTS[s_.clue]); copy(words_,sizeof words_,"Look closely at this place.\nCan you spot a pink ribbon?"); }
+ if (s_.page==PARK_CLUE) {
+  if (!(s_.clues&(1<<s_.clue))) copy(words_,sizeof words_,"We haven't looked here yet.\nLet's check the place together.");
+  else if(s_.clue==s_.variant) copy(words_,sizeof words_,"A pink ribbon here!\nIs that Nori's notebook?");
+  else copy(words_,sizeof words_,"No pink ribbon here.\nLet's try another place.");
+  snprintf(heading_,sizeof heading_,"Clue: %s",SPOTS[s_.clue]);
+ }
+ if (s_.page==PARK_GUESS) { snprintf(heading_,sizeof heading_,"Try: %s",SPOTS[s_.guess]); copy(words_,sizeof words_,"Let's check our idea.\nWe can try another place."); }
+ if (s_.page==PARK_WRONG) copy(words_,sizeof words_,"No notebook here.\nLet's look somewhere else.");
+ if (s_.page==PARK_CLUE && (s_.bag&16) && (s_.clues&(1<<s_.clue)) && s_.clue==s_.variant) copy(words_,sizeof words_,"A ribbon on a notebook!\nLet's tell Nori.");
+ if (s_.page==PARK_FOUND) snprintf(words_,sizeof words_,"Found by the %s!\nLet's give it back to Nori.",SPOTS[s_.variant]);
 }
 void Game::drawHero() {
  const int scene=sceneFor(s_,destination_);
@@ -232,20 +245,9 @@ void Game::drawDress() {
 }
 void Game::draw() {
  if (!title_ && !pause_ && (s_.page==DOLL || s_.page==STYLE)) { drawDress(); return; }
- if (!pause_ && (title_ || s_.page==HUB)) {
-  art::background(0);
-  gfx565::roundRect({90,97,300,34},14,PAPER); caption("Toy Town Life",94,102,292,true);
-  art::detail(s_,{165,133,150,174},0);
-  drawButtons(); return;
- }
- drawHero();
- gfx565::roundRect({32,180,416,300},30,PAPER);
- const font::Box head={&art::TITLE,344,34,0,font::Align::CENTER};
- font::textBox(head,heading_,68,188,INK);
- const font::Box prose={&art::BODY,324,84,0,font::Align::CENTER};
- font::textBox(prose,words_,78,228,INK);
- drawButtons();
+ drawScene();
 }
+
 void Game::render() {
  int slot=buffers_[0]==gfx565::fb ? 0 : buffers_[1]==gfx565::fb ? 1 : buffers_[0] ? 1 : 0;
  const uint32_t revision=(look_<<17) ^ (in_.down ? 0x10000u|((uint32_t)in_.x<<8)|(uint32_t)in_.y : 0);
