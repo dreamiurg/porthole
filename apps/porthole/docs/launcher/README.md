@@ -11,8 +11,8 @@
    yet still finds their game. Names no longer fit under six tiles, so they are not drawn there.
 3. **Names on demand.** A finger on a tile shows that game's name in the yellow caption over the header row; slide
    off and nothing opens. A tap opens the game, as before. The sim asserts every game's name fits the caption.
-4. **Nothing else moves.** Home, who is playing, the sun, the mute button and the page arrows keep their places,
-   sizes and behavior. Every tile is a whole 40x30 (13 x 10 mm) target inside the glass (`host/test_shell.cpp`).
+4. **Nothing else moves.** Home, who is playing, the sun and the page arrows keep their places, sizes and behavior.
+   (Since then the mute button moved to the grown-ups' Admin menu and the arrows closed up under the grid.) Every tile is a whole 40x30 (13 x 10 mm) target inside the glass (`host/test_shell.cpp`).
 5. **Each game owns its picture.** `games/<game>/art/launcher.png` -> `games/<game>/launcher_icon.h` through
    `tools/launcher_icons.py` (shell palette, integer cell voting, `--check` in `make lint`); `App::icon()` returns it.
 
@@ -64,3 +64,14 @@ Played on the final build with ordinary input through `snap --serve` (fixture: `
 Inputs: [playthrough-inputs.jsonl](playthrough-inputs.jsonl) (each `start` is a fresh `snap --serve` after the
 fixture). Observation, not changed here: Pumpkin's launcher name is "Spooky" while its title says Pumpkin Hide &
 Seek. Not checked: a child finding a game by picture alone, and the device itself.
+
+## Sound moved to Admin (2026-10-31)
+
+Kids never used the launcher's mute button, and the games barely use the buzzer, so sound became one device-wide
+switch on the grown-ups' Admin page 2 (`"sys"/"sound"`, on by default, read back after saving). The launcher's bottom
+row is now just the page arrows, closed up under the grid. Emulator pass with ordinary input: launcher pages without
+mute, Home, the 5 s title hold into Info, Admin, page 2, Sound on to off.
+
+![Launcher pages, then Info, Admin 1/2, Admin 2/2 with Sound on and off](sound-in-admin.png)
+
+Inputs: [sound-in-admin-inputs.jsonl](sound-in-admin-inputs.jsonl).

@@ -104,8 +104,8 @@ unofficial private fan prototype with original prose.
 
 Power on, pick who's playing, pick a game. Up to four kids share one board, each with a profile: a
 name, one of eight animal faces, an age (it picks the reading level) and an optional 4-digit code.
-Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
-profile, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
+Every game keeps its progress per profile. Grown-ups switch the buzzer on or off for the whole board in the
+Admin menu, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
 small sun (full, 65% or 40% backlight, always daylight colors and day scenes), or Auto (a sun and a moon: full
 backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 30 minutes a day across every game by default, then the board says "Back
 tomorrow" until local midnight. Each player rests for 10 minutes after their session allowance (15 minutes by default),
@@ -190,7 +190,7 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 * **Reading level by age.** Stories and spelling words scale with the profile's age: level 1 at
   5-6 up to level 3 from 9.
 * **Quiet by design.** The buzzer is harsh, so it only sounds for rare moments (growing up, a
-  new trick, a gift, a sticker). Each profile can mute it on the launcher.
+  new trick, a gift, a sticker). Grown-ups can turn it off in the Admin menu.
 
 ## Biscuit: a reading companion
 

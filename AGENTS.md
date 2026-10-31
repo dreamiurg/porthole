@@ -29,7 +29,7 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
 1. **Round screen, no buttons.** Everything tappable and every glyph must sit
    inside the circle. Every screen needs a visible way back. See `docs/hardware.md`.
 2. **The buzzer is harsh.** Never beep on routine taps or navigation. Keep sound
-   for rare moments and give every app a mute toggle.
+   for rare moments. One device-wide switch in the grown-ups' Admin menu turns it off for every app.
 3. **Saves survive firmware updates.** Never reorder or resize a persisted
    struct, and never rename an NVS namespace that shipped. Pets Club keeps the
    namespace `"crago"` for exactly this reason.

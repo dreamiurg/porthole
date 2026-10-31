@@ -79,6 +79,7 @@ class Shell {
   int active_ = -1;                                // the profile on the launcher / in a game
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
+  bool sound_ = true;                              // the buzzer, device-wide: "sys"/"sound" (one byte, 0 = off; missing = on)
   uint8_t adminPage_ = 0;
   shell::Limits limits_{}, limitsDraft_{};
   shell::PlayWindow window_{}, windowDraft_{};
@@ -136,7 +137,6 @@ class Shell {
   void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
-  bool muteButton();   // draws the launcher's mute button; true on a tap
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
   void updateRest(); void drawRest();
@@ -147,6 +147,7 @@ class Shell {
   void updateSysAdmin(); void drawSysAdmin();
   void updateSysPin(); void submitSysPin(); void drawSysPin();
   bool saveAdminPin(uint16_t code);
+  bool saveSound(bool on);
   void updateSysConfirm(); void drawSysConfirm();   // reset all limits, or remove the admin code
   void updateSysPlayers(); void drawSysPlayers();   // select whose profile PIN to remove
   void updateSysPlayerPin(); void drawSysPlayerPin();

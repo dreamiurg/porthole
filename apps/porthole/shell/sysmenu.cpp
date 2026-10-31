@@ -165,6 +165,7 @@ void Shell::updateSysAdmin() {
   if (tapped(in_, adminPageArrow(!adminPage_))) { adminPage_ = !adminPage_; return; }
   if (adminPage_) {
     if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
+    if (tapped(in_, ADMIN_RESET)) saveSound(!sound_);   // a failed write leaves the switch as it was
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
@@ -180,6 +181,7 @@ void Shell::drawSysAdmin() {
   if (adminPage_) {
     stextC(80, 46, "Device settings", C_LTGRAY);
     sbutton(ADMIN_CODE, "Clock", C_SKY, down(in_, ADMIN_CODE));
+    sbutton(ADMIN_RESET, sound_ ? "Sound: on" : "Sound: off", sound_ ? C_SKY : C_LTGRAY, down(in_, ADMIN_RESET));
     sback(); return;
   }
   stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
@@ -188,6 +190,15 @@ void Shell::drawSysAdmin() {
   if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
+}
+// Read back, like the code below: a failed flash write must not claim the sound changed.
+bool Shell::saveSound(bool on) {
+  const uint8_t v = on ? 1 : 0;
+  st_->save("sys", "sound", &v, 1);
+  uint8_t saved = 2;
+  if (st_->load("sys", "sound", &saved, 1) != 1 || saved != v) return false;
+  sound_ = on;
+  return true;
 }
 // Read back because Store::save has no result: a failed flash write must not claim the code changed.
 bool Shell::saveAdminPin(uint16_t code) {

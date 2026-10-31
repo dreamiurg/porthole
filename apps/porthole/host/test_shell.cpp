@@ -613,12 +613,6 @@ static bool target(const ui::Box& b) { return b.w >= 24 && b.h >= 22 && within(b
 static bool apart(const ui::Box& a, const ui::Box& b, int gap = 2) {   // targets: 2 px between them, the UI audit's spacing
   return a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y;
 }
-static bool offMute(const ui::Box& b) {   // no pixel of b inside the mute button's hit circle
-  const int cx = launcher::MUTE_X, cy = launcher::MUTE_Y;
-  const int dx = cx < b.x ? b.x - cx : cx > b.x + b.w - 1 ? cx - (b.x + b.w - 1) : 0;
-  const int dy = cy < b.y ? b.y - cy : cy > b.y + b.h - 1 ? cy - (b.y + b.h - 1) : 0;
-  return dx * dx + dy * dy > launcher::MUTE_HIT * launcher::MUTE_HIT;
-}
 static void headerName() {   // the widest name the keyboard types (its widest capital, then small letters) fits the header
   int cap = 0, low = 0;
   for (char c = 'A'; c <= 'Z'; c++) {
@@ -647,7 +641,7 @@ static void launcherLayout() {
   launcherPages();
   const ui::Box fixed[] = {{64, -4, 32, 32}, launcher::HEADER, launcher::LIGHT, launcher::arrow(false), launcher::arrow(true)};
   for (int a = 1; a < 5; a++) {
-    assert(target(fixed[a]) && offMute(fixed[a]));
+    assert(target(fixed[a]));
     for (int b = 0; b < a; b++) assert(apart(fixed[a], fixed[b]));
   }
   assert(within(launcher::CAPTION, 2));
@@ -655,7 +649,7 @@ static void launcherLayout() {
     for (int i = 0; i < m; i++) {
       const int rowStart = i / 3 * 3, rowEnd = rowStart + 3 < m ? rowStart + 3 : m;   // this tile's row: [rowStart, rowEnd)
       const ui::Box t = launcher::tile(i, m), first = launcher::tile(rowStart, m), last = launcher::tile(rowEnd - 1, m);
-      assert(target(t) && offMute(t) && first.x == 160 - last.x - last.w);   // whole, clear of the mute, each row centered
+      assert(target(t) && first.x == 160 - last.x - last.w);   // whole, and each row centered
       for (const ui::Box& f : fixed) assert(apart(t, f));
       for (int j = 0; j < i; j++) assert(apart(t, launcher::tile(j, m)));
     }

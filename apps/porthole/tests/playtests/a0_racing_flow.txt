@@ -4,7 +4,7 @@ reset
 tilt 0 1000 0
 profile Sam 8
 wait 600
-tap 109 135
+tap 96 135
 wait 600
 expect-screen launcher
 ui-check rally_launcher
