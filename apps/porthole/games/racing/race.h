@@ -14,6 +14,7 @@ struct Car {
   uint16_t solid = 0;                                 // obstacles this car is inside (bit per feature)
   uint8_t grid = 0;
   uint8_t boosts = 0;                                 // a rival's Boost charges (the player's are Race::inventory)
+  bool refill = false;                                // a rival taking its charges back at every lap line
   bool finished = false;
 };
 struct Rocket { float dist = 0, x = 0; uint32_t ageMs = 0; bool live = false; };
@@ -27,6 +28,7 @@ struct Race {
   Puff puff[MAX_PUFFS];
   uint32_t ms = 0, raceMs = 0, cooldownMs = 0, calloutMs = 0, fullMs[2] = {0, 0}, seed = 1;   // calloutMs: a new lap's banner
   uint32_t hitMs = 0;               // "Hit!" after the player's rocket finds a rival
+  uint32_t rivalBoostMs = 0;        // a rival boosted lately: the next one waits, so boosts never gang up on the kid
   uint32_t lapStartMs = 0, lapMs[LAPS] = {};   // the player's laps, line to line (0 until driven)
   uint16_t taken = 0;               // pickup gates collected on the player's current lap (bit per feature)
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
@@ -39,7 +41,10 @@ struct Race {
 // level: how hard the rivals push (LEVEL_MIN..LEVEL_MAX, 0 = the brief's pace). The race is a pure function of the
 // track, seed, level and inputs.
 void start(Race& r, const Track& t, uint32_t seed, int level);
-int nextLevel(int level, int place);   // after a finished race: a win steps up one, any other place down two
+// After a finished race: a win steps up one (two when no rival was within CLEAR_LEAD m), any other place steps down
+// two, or halves a level above 0, so a kid losing from the top is back to 0 in about three races.
+int nextLevel(int level, int place, float leadM);
+float lead(const Race& r);   // m the player is ahead of the nearest rival (negative: behind)
 void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS

@@ -248,12 +248,16 @@ void placeCars(const Camera& cam) {
   for (const Rocket& k : r.rocket) if (k.live) add({k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f});   // easy to follow
   for (const Puff& p : r.puff) if (p.ms) add({p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f});
 }
-// A boosting car's short exhaust flames, bounded and baked (no glow); k: the car's size against the player's.
-void flames(int x, int bottom, float k, uint32_t ms) {
+// A boosting car's short exhaust flames, bounded and baked (no glow); k: the car's size against the player's. The
+// kid's burn orange and gold; a rival's are drawn half as big again in the boost's cyan, so a rival boosting past
+// is told apart from the kid's own boost at a glance.
+void flames(int x, int bottom, float k, uint32_t ms, bool rival) {
+  if (rival) k *= 1.5f;
+  const uint32_t a = rival ? CYAN : ORANGE, b = rival ? CREAM : GOLD;
   const int w = (int)lroundf(7 * k), h = (int)lroundf((10 + (int)((ms / 30) % 3) * 5) * k);
   for (int side = -1; side <= 1; side += 2)
     fill(x + (int)lroundf(side * 14 * k) - (int)lroundf(3 * k), bottom - (int)lroundf(4 * k), w > 0 ? w : 1, h > 0 ? h : 1,
-         (ms / 60) & 1 ? ORANGE : GOLD);
+         (ms / 60) & 1 ? a : b);
 }
 void drawThing(const Thing& t, uint32_t ms) {
   const int y = HORIZON + (int)(DEPTH_K / t.z);
@@ -263,7 +267,7 @@ void drawThing(const Thing& t, uint32_t ms) {
   const int x = sc->center[i] + (int)(t.x * sc->half[i]);
   const int lift = (int)(t.lift * 60 * scale / PIC_SCALE);
   if (t.shadow) fill(x - (int)(t.p->w * scale * 0.42f), y - 2, (int)(t.p->w * scale * 0.84f), (int)(3 * scale) + 1, RIM);
-  if (t.flames) flames(x, y - lift, scale / PIC_SCALE, ms);
+  if (t.flames) flames(x, y - lift, scale / PIC_SCALE, ms, true);
   scaled(*t.p, x, y - lift, scale);
 }
 void drawThings(uint32_t ms) {
@@ -279,7 +283,7 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   const pic::Pic& s = *pic::CAR[0];
   const int lift = (int)(hop(p) * 44);
   fill(x - s.w + 4, CAR_ROW - 6, 2 * s.w - 8, 7, RIM);   // the shadow stays on the road
-  if (p.boostMs) flames(x, CAR_ROW - lift, 1, ms);
+  if (p.boostMs) flames(x, CAR_ROW - lift, 1, ms, false);
   pic(s, x - s.w, CAR_ROW - lift - 2 * s.h, PIC_SCALE);
 }
 void scene(const Race& r, int track, float steer, uint32_t ms) {

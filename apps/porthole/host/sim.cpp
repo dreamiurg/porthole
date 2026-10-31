@@ -3,10 +3,10 @@
 // Also a --serve mode (stdin/stdout protocol) that tools/webemu.py drives to serve the device in a browser.
 //   sim                      interactive (SDL)
 //   sim --script file.txt    headless; commands: tap X Y | hold X Y | down X Y | move X Y | up | wait MS | skip SEC | snap name
-//                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD | ui | screen
+//                            | reset | profile NAME AGE [PIN] | app NAME | newgame KID PET | debug | dbg CMD [ARG] | ui | screen
 //                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf | reboot | sys WHAT [ARG]
 //                            | feed WHAT [ARG]
-//   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD
+//   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD [ARG]
 //                            | tilt X Y Z | shake | perf
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
 // few frames, perf prints the average update and render time per frame since the last perf. reboot is a power cycle

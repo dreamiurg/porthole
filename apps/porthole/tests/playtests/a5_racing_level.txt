@@ -1,0 +1,81 @@
+# Rally's adaptive rivals: a win raises the kid's level on that track (by two when no rival is near: the fixture's
+# wins are all that clear), a loss above 0 halves it, the level survives a reboot, belongs to one kid and one track,
+# a never-raced track starts one below the kid's best (at most 3), and the level stays inside its range. Finishes come from the dbg
+# fixtures (reachability), so this is a regression check, not evidence of how a race feels.
+reset
+tilt 0 1000 0
+profile Zoe 9
+app racing
+wait 600
+expect level=0
+dbg lastlap
+wait 5500
+expect-screen race_results
+expect place=1
+expect level=2
+# Replay: a second win
+tap 52 111
+wait 4000
+dbg lastlap
+wait 5500
+expect place=1
+expect level=4
+# Replay: a loss above 0 halves the level
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect-screen race_results
+expect place=4
+expect level=2
+# Replay: a win after the loss
+tap 52 111
+wait 4000
+dbg lastlap
+wait 5500
+expect place=1
+expect level=4
+tap 80 140
+wait 1500
+reboot
+wait 600
+tap 80 67
+wait 900
+app racing
+wait 600
+# Desert Canyon keeps Zoe's level after the reboot; never-raced Snow Track starts one below it
+tap 53 52
+wait 900
+expect level=4
+tap 54 123
+wait 900
+tap 53 95
+wait 900
+expect track=2
+expect level=3
+# another kid starts fresh on the same track
+reboot
+wait 600
+profile Sam 6
+app racing
+wait 600
+tap 53 52
+wait 900
+expect level=0
+# the range holds at both ends
+tap 106 124
+wait 900
+tap 106 124
+wait 4000
+dbg level 18
+dbg lastlap
+wait 5500
+expect place=1
+expect level=18
+tap 52 111
+wait 4000
+dbg level -16
+dbg lastplace
+wait 5500
+expect place=4
+expect level=-16

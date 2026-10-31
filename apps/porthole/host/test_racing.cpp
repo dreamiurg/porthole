@@ -342,9 +342,15 @@ void leaderboard() {
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
   assert(mine.level[0] == -4 && mine.level[1] == -5);
   r.g.debugCmd("level -16");
+  assert(r.g.takeSave(&data, &len, true));   // the fixture's level is saved
   r.g.debugCmd("lastplace");   // at the floor a loss changes nothing: nothing to save
   r.wait(5200);
   assert(r.g.race().level == LEVEL_MIN && !r.g.takeSave(&data, &len, true));
+  r.g.debugCmd("level 99");   // clamped to the top; a clear win there stays there
+  r.g.debugCmd("lastlap");
+  r.wait(5200);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == LEVEL_MAX);
+  assert(mine.level[1] == LEVEL_SEED_MAX && mine.level[3] == LEVEL_SEED_MAX);   // a new track still starts gently
   r.g.debugPrint();
 }
 

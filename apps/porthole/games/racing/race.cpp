@@ -165,6 +165,7 @@ void drive(Race& r, int i, float steer) {
   slide(r, c, steer, ice);
   obstacles(r, i);
   if (i == PLAYER) { pickups(r, prev); lapClock(r, prev, c.dist); }
+  else if (c.refill && crossed(*r.track, prev, c.dist, 0)) c.boosts = MAX_INVENTORY;
   ramps(r, i, prev);
   const float line = LAPS * r.track->length;
   if (prev < line && c.dist >= line) {   // interpolate the crossing inside this step: a stable, fair order
@@ -227,17 +228,20 @@ void tick(Race& r) {
     c.wobbleMs = down(c.wobbleMs); c.lineMs = down(c.lineMs);
   }
   for (Puff& p : r.puff) p.ms = down(p.ms);
+  r.rivalBoostMs = down(r.rivalBoostMs);
   r.cooldownMs = down(r.cooldownMs); r.calloutMs = down(r.calloutMs); r.hitMs = down(r.hitMs);
   r.fullMs[0] = down(r.fullMs[0]); r.fullMs[1] = down(r.fullMs[1]);
 }
-// A rival spends a charge only while chasing: the kid a little ahead of it, never as a hidden head start.
+// A rival spends a charge only while chasing (the kid a little ahead of it), never as a hidden head start, and never
+// right after another rival's boost.
 void rivalBoosts(Race& r) {
-  for (int i = 1; i < CARS; i++) {
+  for (int i = 1; i < CARS && !r.rivalBoostMs; i++) {
     Car& c = r.car[i];
     const float gap = r.car[PLAYER].dist - c.dist;
     if (!c.boosts || c.boostMs || c.finished || gap <= CHASE_MIN || gap >= CHASE_MAX) continue;
     c.boosts--;
     c.boostMs = BOOST_MS;
+    r.rivalBoostMs = RIVAL_BOOST_GAP_MS;
   }
 }
 void actions(Race& r, const Controls& in) {
@@ -254,6 +258,16 @@ void laps(Race& r) {
   }
   r.place = (uint8_t)placeOf(r, PLAYER);
   if (r.car[PLAYER].finished) r.phase = Phase::Finished;   // the place is locked here, once
+}
+// The ladder in tune.h, one step a level: slower below 0, then charges, pace, and charges back each lap.
+void ladder(Car& c, int i, int level) {
+  constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
+  if (level < 0) c.top *= slowdown(level);
+  for (int k = 0; k < level; k++) {
+    if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
+    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
+    else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
+  }
 }
 }  // namespace
 
@@ -280,9 +294,20 @@ float terrainCap(const Track& t, float dist, float x, bool* onIce) {
   return cap;
 }
 
-int nextLevel(int level, int place) {
-  const int next = level + (place == 1 ? 1 : -2);
+int nextLevel(int level, int place, float leadM) {
+  int next = level - 2;
+  if (place == 1) next = level + (leadM >= CLEAR_LEAD ? 2 : 1);
+  else if (level > 0 && level / 2 < next) next = level / 2;
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
+}
+float lead(const Race& r) {
+  float best = -1e9f;
+  for (int i = 1; i < CARS; i++) {
+    const Car& c = r.car[i];
+    if (c.finished && (!r.car[PLAYER].finished || c.finishMs < r.car[PLAYER].finishMs)) return -1;   // home first
+    if (c.dist > best) best = c.dist;
+  }
+  return r.car[PLAYER].dist - best;
 }
 
 void start(Race& r, const Track& t, uint32_t seed, int level) {
@@ -298,11 +323,7 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
-    if (i != PLAYER && r.level < 0) c.top *= 1 + LEVEL_SLOW_STEP * r.level;
-    for (int k = 0; i != PLAYER && k < r.level; k++) {   // the ladder in tune.h, one step a level
-      if (k < (int)sizeof LADDER_CHARGE) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
-      else if (LADDER_TOP[k - sizeof LADDER_CHARGE] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP);   // never past the kid
-    }
+    if (i != PLAYER) ladder(c, i, r.level);
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;
