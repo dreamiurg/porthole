@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || exit 0; cd \"$CLAUDE_PROJECT_DIR\" && make hooks >/dev/null || echo 'make hooks failed: run tools/cloud-setup.sh as the environment setup script'"
+          }
+        ]
+      }
+    ]
+  }
+}
