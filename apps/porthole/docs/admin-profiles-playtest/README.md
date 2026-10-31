@@ -10,6 +10,10 @@ board. `build/host/snap` SHA-256:
 53dcda4e5d07cbace02d3ed79411531658bc60b9699522f16e6bb3cd6ed6d108
 ```
 
+Re-checked after merging main on 2026-10-31: the replay reproduced every frame of the New/delete gate unchanged.
+Four frames were re-captured because main changed screens outside this flow: `05-admin`, `08-saved` and
+`08b-saved-settled` (the admin menu's "Reset all limits" became "Screen time") and `21-launcher` (picture tiles, #99).
+
 ## Method and setup
 
 `snap --serve`, inspecting native 480x480 frames before choosing each next input. Entered the grown-up menu by
