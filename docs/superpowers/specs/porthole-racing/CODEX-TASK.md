@@ -6,9 +6,9 @@ Implement the racing game in `dreamiurg/porthole` using this design package. Sta
 
 1. Root `AGENTS.md`, `apps/porthole/AGENTS.md`, and `apps/porthole/docs/playtesting.md`.
 2. This folder's `README.md`, `gameplay-brief.md`, `tracks.md`, `implementation-contract.md` and `assets/README.md`.
-3. Open `assets/reference/generated-image.png` with an image viewer. Use bottom-row **Style 2**, panels **2A–2D**. Verify its SHA-256 using `assets/SHA256SUMS`.
+3. Open both `assets/reference/generated-image.png` and `assets/reference/level-showcase-upload.png` with an image viewer. Use the first board's bottom-row **Style 2**, panels **2A–2D**, and the uploaded showcase's top-row track scenes. Verify both hashes using `assets/SHA256SUMS`.
 
-Two additional requested originals could not be recovered: `a_clean_concept_art_game_ui_level_showcase_poster.png` and `a_clean_concept_art_game_ui_moodboard_poster_in.png`. This is disclosed in the package. Do not claim they exist or replace them with fabricated assets. The delivered original is the visual baseline; if later supplied, inspect the missing files and reconcile their HUD with the explicit text requirements.
+The user supplied the level/HUD showcase as a clipboard PNG; its exact identity with the historical `a_clean_concept_art_game_ui_level_showcase_poster.png` is unverified. `a_clean_concept_art_game_ui_moodboard_poster_in.png` remains unavailable. Do not fabricate it or claim the three-file recovery is complete. Use the two delivered boards as the visual baseline. Shield, Magnet and Mine shown on the showcase are out of scope; only Boost, Rocket and Jump ramp apply. Its HUD variants are comparisons, not new user-approved mechanics: the written brief remains authoritative, including lap visibility and the pause/exit path.
 
 ## Required result
 
