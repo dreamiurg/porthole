@@ -356,12 +356,12 @@ void Shell::drawDelete() {
 }
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
-// The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
+// The layout (shell/launcher.h) shows page_ of the games, six to a page, and the arrows to the rest.
 using launcher::HEADER;
 using launcher::LIGHT;
 static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
 bool Shell::muteButton() {
-  return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+  return ui::iconButton(in_, launcher::MUTE_X, launcher::MUTE_Y, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
@@ -379,7 +379,7 @@ void Shell::updateLauncher() {
 }
 void Shell::drawLauncher() {
   clear(C_SKY);
-  rect(0, launcher::grassY(nApps_), 160, 160 - launcher::grassY(nApps_), C_LEAF);
+  rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
   text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
@@ -389,6 +389,12 @@ void Shell::drawLauncher() {
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
+  for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
+    const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
+    if (!in_.down || !in_.hit(b.x, b.y, b.w, b.h)) continue;
+    ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
+    textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
+  }
   if (page_ > 0) drawPageArrow(false);
   if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
   muteButton();
@@ -397,10 +403,8 @@ void Shell::drawLauncher() {
 void Shell::drawAppTile(int k, int i, int m) {
   const ui::Box b = launcher::tile(i, m);
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
+  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // the game's picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-  const launcher::Name nm = launcher::name(apps_[k]->name(), i, m, nApps_);   // the sim asserts nm.fits for every game
-  for (int j = 0; j < nm.lines; j++) textShadow(nm.at[j].x, nm.at[j].y, nm.text[j], C_NAVY, C_WHITE);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
@@ -412,7 +416,7 @@ void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triang
 // ---------------------------------------------------------------- brightness (the launcher's sun): three suns, big to small,
 // and Auto (a sun and a moon) under them. A tap picks, saves and goes back to the launcher, already in the new light;
 // the level picked now is the mint one.
-static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::tile(l - 1, 3); }
+static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::sun(l - 1); }
 void Shell::setLight(shell::Light l) {
   if (l == light_) return;   // no flash write for the same level
   light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);

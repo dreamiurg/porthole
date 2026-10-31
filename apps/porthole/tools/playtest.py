@@ -47,7 +47,15 @@ def _screens() -> set:
     table = r"static const char\* N\[\] = \{(.*?)\};"
     tables = [("shell/shell.cpp", _block(table, (ROOT / "shell/shell.cpp").read_text()))]
     for path in sorted(ROOT.glob("games/*/*.cpp")):
-        tables += [(path.relative_to(ROOT).as_posix(), t) for t in re.findall(table, path.read_text(), re.S)]
+        text = path.read_text()
+        tables += [(path.relative_to(ROOT).as_posix(), t) for t in re.findall(table, text, re.S)]
+        for body in re.findall(r"screenName\(\) const \{(.*?)\n", text):  # names returned as plain literals
+            tables.append((path.relative_to(ROOT).as_posix(), " ".join(f'"{n}"' for n in re.findall(r'return "(\w+)"', body))))
+        # A name built at run time from a prefix and a table (Toy Town: "toytown_%s" over PAGES): every prefixed entry.
+        for prefix, name in re.findall(r'"(\w+_)%s",\s*(\w+)\[', text):
+            sources = [text] + [h.read_text() for h in path.parent.glob("*.h")]
+            entries = next((m[1] for m in (re.search(name + r"\[\w*\] = \{(.*?)\};", t, re.S) for t in sources) if m), "")
+            tables.append((path.relative_to(ROOT).as_posix(), " ".join(f'"{prefix}{e}"' for e in re.findall(r'"(\w+)"', entries))))
     owner: dict = {}
     for src, names in tables:
         for name in re.findall(r'"(\w+)"', names):
