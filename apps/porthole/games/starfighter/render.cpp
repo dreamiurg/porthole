@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "render.h"
 #include "assets.h"
 #include "gfx565.h"
@@ -418,24 +419,6 @@ void flight(const View& v) {
   if(r.stage==Stage::Torpedo) torpedo(r);
   player(r); effects(r); transition(r); hud(r); holdExit(v.holdPermille);
 }
-// Launcher icons must use the shell's indexed sprite contract. Map only this
-// original craft's pixels to that surface; in-game colors stay independent.
-const gfx::Sprite& launcherIcon() {
-  static uint8_t px[32*32];
-  static bool ready=false;
-  static const gfx::Sprite s{32,32,px};
-  if(!ready) {
-    constexpr uint8_t map[]={C_NAVY,C_NAVY,C_SLATE,C_SLATE,C_BLUE,C_LTGRAY,C_LTGRAY,C_WHITE,
-      C_NAVY,C_BLUE,C_BLUE,C_SKY,C_RED,C_RED,C_ORANGE,C_YELLOW,C_CREAM,
-      C_DKGREEN,C_GREEN,C_MINT,C_BROWN,C_TAN,C_PEACH,C_PLUM};
-    for(int y=0;y<32;++y) for(int x=0;x<32;++x) {
-      uint8_t c=art::FIGHTER.px[(y*57/32)*61+x*61/32];
-      px[y*32+x]=c==255?C_T:map[c];
-    }
-    ready=true;
-  }
-  return s;
-}
 }  // namespace
 void draw(const View& v) {
   if(!scene) scene=new (std::nothrow) uint16_t[160*160]();   // first draw, never at static init: PSRAM joins the heap later
@@ -448,5 +431,5 @@ void draw(const View& v) {
   }
   expand();
 }
-const gfx::Sprite& icon() { return launcherIcon(); }
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }  // namespace starfighter::paint

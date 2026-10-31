@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. Rally (`games/racing/`; design: `docs/superpowers/specs/porthole-racing/`) is an arcade racer steered like a wheel over four tracks. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
@@ -87,8 +87,9 @@ Per-app targets are listed in `docs/new-app.md`.
 - Coverage thresholds live in each app's Makefile. Don't lower them. Raise them
   when coverage grows.
 - Done means reviewed. Before calling any change done, marking a PR ready or
-  merging it, run `/code-review` on the diff (or the PR), fix every real finding
-  or say why it is skipped, then re-run `make check` (and `make ci` for anything
+  merging it, run `/simplify` on the diff and apply its cleanups, then
+  `/code-review` on the diff (or the PR); fix every real finding or say why it
+  is skipped, then re-run `make check` (and `make ci` for anything
   user-visible). Green hooks and CI are not a review.
 - Done means played. Before calling gameplay or UI work done, marking its PR
   ready or merging it, dispatch an independent `playtester` agent to play the

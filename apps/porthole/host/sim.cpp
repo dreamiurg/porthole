@@ -36,6 +36,7 @@
 #include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
 #include "games/toy-town-life/game.h"
+#include "games/racing/game.h"
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
@@ -299,7 +300,9 @@ static radar::Game g_radar;
 static starfighter::Game g_starfighter;
 static kingdom::Game g_kingdom;
 static toytown::Game g_toytown;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown};
+static racing::Game g_racing;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
+static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
@@ -362,9 +365,9 @@ static void wipe() {   // every namespace, every key: all the .sav files
 }
 static void boot(bool seedClock = true) {
   const int n = (int)(sizeof APPS / sizeof APPS[0]);
-  for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
-    const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
-    assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
+  for (int k = 0; k < n; k++) {   // every game's name fits the launcher's press caption; every picture fits its tile
+    assert(launcher::nameFits(APPS[k]->name()));
+    assert(APPS[k]->icon().w <= launcher::TILE_W - 2 && APPS[k]->icon().h <= launcher::TILE_H - 2);
   }
   g_sys.powerOn();
   air::setFeed(&g_feed);

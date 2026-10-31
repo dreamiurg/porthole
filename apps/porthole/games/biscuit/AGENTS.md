@@ -164,8 +164,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `update()` asks `tapped()`, `render()` draws; never draw from `update()`, where on the
   device the RGB565 target is the buffer on the glass. Hit boxes are logical px.
   Game-local for now; promote to `os/` if a second RGB565 game shows up.
-- `tools/icon.py` -> `generated/icon.h`: the launcher icon, a 32x32 indexed sprite (the
-  launcher is the shell's), with a `--check` in `make lint`.
+- `art/launcher.png` -> `launcher_icon.h` (`tools/launcher_icons.py`, shared by every game): the launcher picture, a
+  38x28 indexed sprite in the shell's palette (the launcher is the shell's).
 
 ## Content limits (first release)
 
