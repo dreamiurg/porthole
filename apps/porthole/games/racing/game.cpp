@@ -22,7 +22,7 @@ void Game::enter(const AppEnter& e) {
   neutral_ = {0, 1000, 0};
   track_ = 0;
   loadKids(e);
-  start(race_, TRACK[track_], seed_);
+  start(race_, TRACK[track_], seed_, save_.level[track_]);
   go(Screen::Tracks);
 }
 
@@ -35,16 +35,31 @@ void Game::loadKids(const AppEnter& e) {
     Save s{};
     if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) memcpy(k.best, s.best, sizeof k.best);
     k.me = e.who && e.all[i].id == e.who->id;
-    if (k.me) { me_ = nKids_; memcpy(save_.best, k.best, sizeof save_.best); }
+    if (k.me) { me_ = nKids_; save_ = s; }
     nKids_++;
   }
+  seedLevels();
 }
 
-// Once per finish: the kid's own record for this track, kept only when it improves.
+// A track the kid has never finished starts one level below their best level elsewhere (0 with none), so a kid who
+// is good on one track is not handed easy rivals on the next. Derived again after every finish until it is raced.
+void Game::seedLevels() {
+  int top = LEVEL_MIN - 1;   // none raced yet
+  for (int t = 0; t < TRACKS; t++) if (save_.best[t].raceMs && save_.level[t] > top) top = save_.level[t];
+  const int seed = top < LEVEL_MIN ? 0 : top > LEVEL_MIN ? top - 1 : LEVEL_MIN;
+  for (int t = 0; t < TRACKS; t++) if (!save_.best[t].raceMs) save_.level[t] = (int8_t)seed;
+}
+
+// Once per finish: the kid's own record for this track, kept only when it improves, and the rivals' next level.
+// TODO: leaving a race (Restart/Tracks/Home) never counts, so quitting one being lost never lowers the level;
+// deliberate for now, revisit if kids learn to quit instead of finishing.
 void Game::recordFinish() {
   prevBestMs_ = save_.best[track_].raceMs;
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
-  dirty_ = dirty_ || newBest_;
+  const int8_t level = (int8_t)nextLevel(race_.level, race_.place);
+  dirty_ = dirty_ || newBest_ || level != save_.level[track_];
+  save_.level[track_] = level;
+  seedLevels();
   if (me_ >= 0) kids_[me_].best[track_] = save_.best[track_];
 }
 
@@ -80,7 +95,7 @@ void Game::go(Screen s) {
 }
 
 void Game::startRace() {
-  start(race_, TRACK[track_], seed_ + ++runs_);   // every run is fresh: inventory, timers and rivals reset
+  start(race_, TRACK[track_], seed_ + ++runs_, save_.level[track_]);   // every run is fresh: inventory, timers and rivals reset
   steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = false; newBest_ = 0;
   go(Screen::Race);
 }
@@ -226,7 +241,8 @@ void Game::debugPrint() {
          race_.rocketsFired, race_.rocketHits, race_.impacts);
   tilt::Grav n{};
   const Best& b = save_.best[track_];
-  printf("best_race=%u best_lap=%u new_best=%d kids=%d\n", (unsigned)b.raceMs, (unsigned)b.lapMs, newBest_, nKids_);
+  printf("best_race=%u best_lap=%u new_best=%d kids=%d level=%d\n", (unsigned)b.raceMs, (unsigned)b.lapMs, newBest_, nKids_,
+         (int)save_.level[track_]);
   printf("steer=%d grip_lost=%d resume=%u ready=%d calibration=%u neutral=%d,%d,%d\n", (int)lroundf(steer_ * 1000),
          gripLost_, (unsigned)resumeMs_, calibration_.get(&n), calibration_.progress(), neutral_.x, neutral_.y, neutral_.z);
 }
@@ -248,6 +264,11 @@ void Game::debugFixture(const char* cmd) {
 
 void Game::debugCmd(const char* cmd) {
   if (!strncmp(cmd, "track ", 6)) { track_ = abs(atoi(cmd + 6)) % TRACKS; return; }
+  if (!strncmp(cmd, "level ", 6)) {   // the next race on this track (a finish moves it on as usual)
+    const int n = atoi(cmd + 6);
+    save_.level[track_] = (int8_t)(n < LEVEL_MIN ? LEVEL_MIN : n > LEVEL_MAX ? LEVEL_MAX : n);
+    return;
+  }
   if (!strcmp(cmd, "tracks")) { go(Screen::Tracks); return; }
   if (!strcmp(cmd, "calibrate")) { go(Screen::Calibrate); return; }
   if (!strcmp(cmd, "go") || !strcmp(cmd, "lastlap") || !strcmp(cmd, "lastplace")) debugFixture(cmd);

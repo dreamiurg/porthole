@@ -25,4 +25,10 @@ constexpr float RAIL = 1.35f;                      // guardrail: the car stops s
 constexpr float CAR_HALF_W = 0.16f, CAR_LEN = 4.5f;
 constexpr float PICKUP_HALF_W = 0.26f;
 constexpr int GRID_SPACING = 7;                    // m between grid slots
+// Adaptive rivals (a user decision of 2026-10-31): each kid has a level per track, +1 after a win, -2 after any other
+// finish, so it settles where the kid wins about two races in three. Below 0 the rivals' top speed drops
+// LEVEL_SLOW_STEP per level and, from LEVEL_COURTESY on, a rival with the kid close behind moves out of its lane.
+// Nothing above 0 yet: raising the slower rivals' pace made races easier in simulation (less traffic to hit).
+constexpr int LEVEL_MIN = -16, LEVEL_MAX = 0, LEVEL_COURTESY = -7;
+constexpr float LEVEL_SLOW_STEP = 0.005f;
 }  // namespace racing

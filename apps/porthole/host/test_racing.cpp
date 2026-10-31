@@ -283,17 +283,27 @@ void finishAndReplay() {
   assert(r.g.wantsHome());
 }
 
-// The save: a sealed blob loads back; a wrong crc, size or magic is ignored (no times, never half a record); only
-// a better time replaces one.
+// The save: a sealed blob loads back; a v1 blob (before levels) loads with every level 0; a wrong crc, size or magic
+// is ignored (no times, never half a record); only a better time replaces one.
 void saveBlob() {
   Save s{};
   s.best[2] = {95000, 30100};
+  s.level[2] = -5; s.level[3] = 3;
   seal(s);
   Save back{};
   assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
+  assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3);
+  struct V1 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; uint32_t crc; } v1 = {SAVE_MAGIC, 1, 44, {}, 0};
+  static_assert(sizeof(V1) == SAVE_V1_SIZE, "the shipped v1 layout");
+  v1.best[1] = {88000, 28000};
+  v1.crc = os::crc32(&v1, sizeof v1 - 4);
+  Save old{};
+  old.level[1] = 9;   // must be overwritten, not merged
+  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION);
+  for (int8_t l : old.level) assert(l == 0);
   Save bad = s; bad.best[2].raceMs = 1;
   assert(!loadBlob(&bad, sizeof bad, back));
-  assert(!loadBlob(&s, sizeof s - 4, back));
+  assert(!loadBlob(&s, sizeof s - 4, back));   // a v2 blob cut to v1's size is not a v1 blob
   Best b{};
   assert(record(b, 100000, 32000) == (BEST_RACE | BEST_LAP) && b.raceMs == 100000);
   assert(!record(b, 101000, 33000) && b.raceMs == 100000 && b.lapMs == 32000);   // slower: kept
@@ -321,14 +331,20 @@ void leaderboard() {
   assert(r.g.takeSave(&data, &len, true) && len == sizeof(Save) && !r.g.takeSave(&data, &len, true));
   Save mine{};
   assert(loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  assert(mine.level[0] == -2 && mine.level[1] == -3 && mine.level[3] == -3);   // fourth: down two; unraced: one below
   gfx::textLogEnabled = true; gfx::textLogReset();
   r.frame();
   gfx::textLogEnabled = false;
   for (int i = 0; i < gfx::textLogCount; i++) assert(inside({gfx::textLog[i].x, gfx::textLog[i].y, gfx::textLog[i].w, gfx::textLog[i].h}, 1));
   r.tap(paint::REPLAY);
-  r.g.debugCmd("lastplace");   // the same short fixture: no better, so no new save
+  r.g.debugCmd("lastplace");   // the same short fixture: no better time, but the level moved, so a save
   r.wait(5200);
-  assert(!r.g.takeSave(&data, &len, true));
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  assert(mine.level[0] == -4 && mine.level[1] == -5);
+  r.g.debugCmd("level -16");
+  r.g.debugCmd("lastplace");   // at the floor a loss changes nothing: nothing to save
+  r.wait(5200);
+  assert(r.g.race().level == LEVEL_MIN && !r.g.takeSave(&data, &len, true));
   r.g.debugPrint();
 }
 

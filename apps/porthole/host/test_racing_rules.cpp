@@ -18,9 +18,9 @@ float follow(const Race& r, float aim) {
   return s < -1 ? -1 : s > 1 ? 1 : s;
 }
 struct Result { uint32_t ms; int place; bool finished; uint32_t lapMs[LAPS]; };
-Result run(int track, int style, uint32_t seed) {   // style 0 idle, 1 steady, 2 steady + every action
+Result run(int track, int style, uint32_t seed, int level = 0) {   // style 0 idle, 1 steady, 2 steady + every action
   Race r;
-  start(r, TRACK[track], seed);
+  start(r, TRACK[track], seed, level);
   Result out{};
   int lap = 1;
   for (int n = 0; n < 60 * 60 * 50 && r.phase != Phase::Finished; n++) {
@@ -33,7 +33,7 @@ Result run(int track, int style, uint32_t seed) {   // style 0 idle, 1 steady, 2
     assert(r.car[PLAYER].speed >= 0 && r.car[PLAYER].speed <= BOOST_CAP + 1e-4f);
     assert(fabsf(r.car[PLAYER].x) <= RAIL + 1e-4f);
   }
-  out.ms = r.raceMs; out.place = r.place; out.finished = r.phase == Phase::Finished;
+  out.ms = r.car[PLAYER].finishMs; out.place = r.place; out.finished = r.phase == Phase::Finished;
   // Lap times add up to the finish, less the run from the grid to the line, and the best is one of them.
   const uint32_t sum = r.lapMs[0] + r.lapMs[1] + r.lapMs[2];
   assert(r.lapMs[0] && r.lapMs[1] && r.lapMs[2] && sum < r.car[PLAYER].finishMs && r.car[PLAYER].finishMs - sum < 5000);
@@ -50,12 +50,28 @@ void everyTrackFinishes() {
     assert(idle.finished && steady.finished && busy.finished);   // even hands off, the player finishes
     assert(idle.place == 4);                                     // ... and fourth is a finish, not a failure
     assert(steady.ms < idle.ms);
+    // Even the rivals at their slowest and most courteous beat a kid who never steers; the same seed and level is the
+    // same race, to the millisecond.
+    for (int level : {LEVEL_MIN, LEVEL_MAX}) assert(run(t, 0, 7, level).place == 4);
+    assert(run(t, 2, 11, LEVEL_MIN).ms == run(t, 2, 11, LEVEL_MIN).ms);
   }
+}
+
+// The level after a finished race: a win steps up one, any other place down two, inside LEVEL_MIN..LEVEL_MAX; a
+// level out of range is clamped when the race starts.
+void levels() {
+  assert(nextLevel(-3, 1) == -2 && nextLevel(-3, 2) == -5 && nextLevel(-3, 4) == -5);
+  assert(nextLevel(LEVEL_MAX, 1) == LEVEL_MAX && nextLevel(LEVEL_MIN + 1, 3) == LEVEL_MIN);
+  Race r;
+  start(r, TRACK[0], 1, LEVEL_MIN - 5);
+  assert(r.level == LEVEL_MIN && r.car[PLAYER].top == 1 && r.car[3].top < 1);   // slower rivals, never the kid
+  start(r, TRACK[0], 1, 0);
+  assert(r.car[1].top == 0.92f && r.car[2].top == 0.97f && r.car[3].top == 1);   // level 0: the brief's pace
 }
 
 void countdownFreezes() {
   Race r;
-  start(r, TRACK[0], 3);
+  start(r, TRACK[0], 3, 0);
   const float d = r.car[PLAYER].dist;
   Controls c; c.boost = c.rocket = true; c.steer = 1;
   for (uint32_t t = 0; t + STEP_MS < COUNTDOWN_MS; t += STEP_MS) step(r, c);
@@ -84,7 +100,7 @@ void impactRule() {
 
 Race racingAt(int track, float dist, float x) {
   Race r;
-  start(r, TRACK[track], 5);
+  start(r, TRACK[track], 5, 0);
   r.phase = Phase::Racing;
   for (Car& c : r.car) { c.dist = -500; c.speed = 0; }   // rivals out of the way
   r.car[PLAYER].dist = dist; r.car[PLAYER].x = x; r.car[PLAYER].speed = 1;
@@ -192,7 +208,7 @@ void contactOnce() {
 
 void finishOrder() {
   Race r;
-  start(r, TRACK[0], 9);
+  start(r, TRACK[0], 9, 0);
   r.phase = Phase::Racing;
   const float line = LAPS * TRACK[0].length;
   r.car[1].dist = line - 1; r.car[2].dist = line - 1; r.car[3].dist = line - 100;
@@ -219,6 +235,7 @@ int main() {
   rockets();
   contactOnce();
   finishOrder();
+  levels();
   everyTrackFinishes();
   puts("test_racing_rules: ok");
   return 0;

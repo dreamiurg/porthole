@@ -2,7 +2,7 @@
 
 A short, silent arcade race for the round 480x480 Porthole: hold the puck like a steering wheel, collect Boost and
 Rocket charges, jump ramps and race three rivals for three laps. Launcher name **Rally**, namespace `racing`; the save
-holds each kid's best times for the leaderboard. Design package: `docs/superpowers/specs/porthole-racing/` at the repository root (gameplay brief, the four
+holds each kid's best times for the leaderboard and the rivals' level for that kid on each track. Design package: `docs/superpowers/specs/porthole-racing/` at the repository root (gameplay brief, the four
 tracks, platform contract, and the two approved reference boards the look follows).
 
 ## Player contract
@@ -40,6 +40,12 @@ tracks, platform contract, and the two approved reference boards the look follow
   gold (a user decision of 2026-10-31: no medals, no ghost mode). Laps run line to line, the first from the flying
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
+- Rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`, +1 after a
+  win, -2 after any other finished place, clamped to `LEVEL_MIN..LEVEL_MAX` (`tune.h`), so it settles where the kid
+  wins about two races in three. Only a finish counts; Restart, Tracks, Home or leaving never move it. Below 0 the
+  rivals' top speed drops half a percent a level and, from -7 down, a rival with the kid close behind it (2 m at -7,
+  up to 16 m) moves out of the kid's lane. Level 0 is the brief's pace. A track never finished starts one below the
+  kid's highest level elsewhere (0 with none). The race stays a pure function of track, seed, level and inputs.
 - No sounds, no network. Leaving and coming back starts at the cards.
 
 ## Module map
@@ -63,9 +69,11 @@ tracks, platform contract, and the two approved reference boards the look follow
 
 ## Save layout
 
-`Save` (`save.h`), 44 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
-the shell. Magic `0x594C4C52` ("RLLY"), `version` 1, `size`, then `best[4]` by track index (`TRACK[]` order, never
-reordered): `{raceMs, lapMs}`, 0 = not driven, each kept only when a finish beats it; `crc` last. Append-only: a new
+`Save` (`save.h`), 48 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
+the shell. Magic `0x594C4C52` ("RLLY"), `version` 2, `size`, then `best[4]` by track index (`TRACK[]` order, never
+reordered): `{raceMs, lapMs}`, 0 = not driven, each kept only when a finish beats it; v2 adds `int8_t level[4]`, the
+rivals' level by track (a v1 44-byte blob loads with every level 0); `crc` last. A finish that moves the level is
+saved even without a new best. Append-only: a new
 field goes right before `crc` with a version bump, and `loadBlob` must keep loading every older size. A blob with a
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
 every profile's save for the leaderboard and writes only the current kid's.
@@ -78,7 +86,8 @@ targets on the glass). Playtests: `tests/playtests/a0_racing_flow.txt`, `a1_raci
 
 Screens: `race_tracks`, `race_howto`, `race_calibrate`, `race_countdown`, `race_play`, `race_pause`, `race_confirm`,
 `race_results`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
-finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids` (this track), then `steer grip_lost resume ready calibration neutral`.
+finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids level` (this track), then `steer grip_lost resume ready calibration neutral`.
+`dbg level N` sets this kid's level on the current track for the next race (clamped).
 `dbg track N|tracks|calibrate|go|lastlap|lastplace`: `go` starts a race past the countdown from the current grip,
 `lastlap` puts the player 60 m from the finish, `lastplace` also brings every rival home first. Fixtures only, not
 evidence of natural play.

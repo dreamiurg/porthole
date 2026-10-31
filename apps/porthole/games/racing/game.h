@@ -70,6 +70,7 @@ class Game : public App {
   void debugFixture(const char* cmd);
   void loadKids(const AppEnter& e);
   void recordFinish();
+  void seedLevels();
   int board(paint::Row out[MAX_PROFILES]) const;
 };
 }  // namespace racing

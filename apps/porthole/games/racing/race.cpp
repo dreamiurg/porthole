@@ -119,12 +119,22 @@ float aroundCars(const Race& r, int i, float line) {   // never sit in the back 
   }
   return line;
 }
+// Low levels only: a rival with the kid close behind it in its lane moves half a road out of the way, the closer
+// the lower the level (up to 16 m), so a struggling kid can get past.
+float courtesy(const Race& r, int i, float line) {
+  if (r.level > LEVEL_COURTESY) return line;
+  const int reach = 2 * (LEVEL_COURTESY + 1 - r.level);
+  const Car& p = r.car[PLAYER];
+  const float gap = r.car[i].dist - p.dist;
+  if (gap <= 0 || gap >= (reach < 16 ? reach : 16) || fabsf(p.x - line) >= 0.4f) return line;
+  return p.x + (p.x > 0 ? -0.5f : 0.5f);
+}
 float rivalLine(Race& r, int i) {
   Car& c = r.car[i];
   if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % 4 == 0 ? 1200 : 0; }
   float line = (i - 2) * 0.45f + curve(*r.track, c.dist + 30) * 0.35f;
   if (c.wobbleMs > 500) line += (c.lineMs & 1) ? 0.9f : -0.9f;   // a seeded line error, then recovery
-  return clampf(aroundCars(r, i, aroundHazards(r, i, line)), -0.85f, 0.85f);
+  return clampf(courtesy(r, i, aroundCars(r, i, aroundHazards(r, i, line))), -0.85f, 0.85f);
 }
 float rivalSteer(Race& r, int i) {
   Car& c = r.car[i];
@@ -260,10 +270,16 @@ float terrainCap(const Track& t, float dist, float x, bool* onIce) {
   return cap;
 }
 
-void start(Race& r, const Track& t, uint32_t seed) {
+int nextLevel(int level, int place) {
+  const int next = level + (place == 1 ? 1 : -2);
+  return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
+}
+
+void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
+  r.level = (int8_t)(level < LEVEL_MIN ? LEVEL_MIN : level > LEVEL_MAX ? LEVEL_MAX : level);
   static const float TOP[CARS] = {1.0f, 0.92f, 0.97f, 1.0f};
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];
@@ -272,6 +288,7 @@ void start(Race& r, const Track& t, uint32_t seed) {
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
+    if (i != PLAYER && r.level < 0) c.top *= 1 + LEVEL_SLOW_STEP * r.level;
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;

@@ -31,10 +31,14 @@ struct Race {
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
   uint8_t place = CARS, finishedCount = 0, playerLap = 0;
+  int8_t level = 0;                 // the rivals' difficulty for this kid on this track (see start)
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
 };
 
-void start(Race& r, const Track& t, uint32_t seed);
+// level: how hard the rivals push (LEVEL_MIN..LEVEL_MAX, 0 = the brief's pace). The race is a pure function of the
+// track, seed, level and inputs.
+void start(Race& r, const Track& t, uint32_t seed, int level);
+int nextLevel(int level, int place);   // after a finished race: a win steps up one, any other place down two
 void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS
