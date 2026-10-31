@@ -1,6 +1,6 @@
 // Self-check for the pet simulation. Run: make test
 // One pup's life, in order: each step starts from the state the previous one left.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"

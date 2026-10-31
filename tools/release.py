@@ -12,7 +12,7 @@ Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
 - A commit belongs to an app when it touches apps/<app>/ or the shared platform/.
 - Conventional commit titles pick the bump: feat -> minor, fix/perf -> patch,
-  `type!:` or a "BREAKING CHANGE" footer -> major (minor while the app is below 1.0).
+  `type!:` or a "BREAKING CHANGE:" (or "BREAKING-CHANGE:") footer -> major (minor while the app is below 1.0).
   Other types (docs, chore, ci, test, refactor, style, build) never cause a release
   on their own, but are listed in the notes of a release that happens anyway.
 - An app's first release is 0.1.0.
@@ -26,6 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TITLE = re.compile(r"^(?P<type>\w+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?:\s*(?P<desc>.+)$")
+BREAKING = re.compile(r"^BREAKING[ -]CHANGE:", re.M)  # a footer starts its line; a mention in prose is not one
 SECTIONS = [("breaking", "Breaking changes"), ("feat", "Features"), ("fix", "Fixes"), ("other", "Other changes")]
 FIRST = (0, 1, 0)
 
@@ -60,7 +61,7 @@ def classify(subject: str, body: str) -> tuple[str, str]:
     m = TITLE.match(subject)
     if not m:
         return "other", subject
-    if m["bang"] or "BREAKING CHANGE" in body:
+    if m["bang"] or BREAKING.search(body):
         return "breaking", subject
     if m["type"] == "feat":
         return "feat", subject

@@ -1,5 +1,5 @@
 // Network samples must be fresh, synchronized, plausible and converted to the selected local offset.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <initializer_list>
 #include "netclock.h"

@@ -1,5 +1,5 @@
 // Controller proof: the physical upright bank, steady calibration and touch lifecycle.
-#include <assert.h>
+#include "host/check.h"
 #include <initializer_list>
 #include <math.h>
 #include <stdio.h>
@@ -10,7 +10,6 @@
 
 using namespace starfighter;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 
 static tilt::Grav rolled(float degrees, tilt::Grav n = {0, 1000, 0}) {
   const float a = degrees * 3.14159265f / 180, c = cosf(a), s = sinf(a);

@@ -1,5 +1,5 @@
 // Shared-shell integration: immediate story checkpoints and the unchanged ordinary-game cadence.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include <map>

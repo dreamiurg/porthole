@@ -3,7 +3,7 @@
 // as activity for the idle rule, the launcher's layout for every number of games, version order for wireless updates,
 // the "something new" card and the hidden system menu's way in.
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include "games/biscuit/pet.h"
