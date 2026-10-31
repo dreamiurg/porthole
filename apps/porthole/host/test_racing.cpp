@@ -298,7 +298,7 @@ void textOnGlass() {
   r.g.debugCmd("tracks"); r.g.debugCmd("track 2"); r.g.debugCmd("calibrate");
   assert(r.g.screen() == Game::Screen::Calibrate);
   (void)paint::icon();
-  assert(paint::icon().w == 32);
+  assert(paint::icon().w == 38 && paint::icon().h == 28);
 }
 }  // namespace
 

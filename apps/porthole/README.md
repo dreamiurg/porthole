@@ -10,7 +10,7 @@ launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick,
 
 ## Pumpkin Hide & Seek: a cozy Halloween game
 
-Open **Pumpkin** on the launcher's second page. Tap to start, hold the device comfortably,
+Open **Pumpkin** (the jack-o'-lantern) on the launcher's first page. Tap to start, hold the device comfortably,
 then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
 table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
 then out the door on the left. A warning announces each of Grandma's moves: full or fast
@@ -30,7 +30,7 @@ Design and state contract: [game brief](games/pumpkin-hide-seek/AGENTS.md).
 
 ## Starfighter: bank, battle, fly the trench
 
-Open **Star Fighter** on the launcher's third page. Hold the puck upright like a small
+Open **Star Fighter** on the launcher's second page. Hold the puck upright like a small
 steering wheel, keep it still, and calibrate your comfortable grip. Bank left and right
 to steer; tap the glass to fire a pair of red lasers. The accelerometer reads that bank:
 spinning the puck flat on a table cannot steer it.
@@ -54,7 +54,7 @@ Design and state contract: [game brief](games/starfighter/AGENTS.md).
 
 ## Rally: steer the puck like a wheel
 
-Open **Rally** on the launcher's last page and pick a track: Desert Canyon, Industrial Ruins,
+Open **Rally** on the launcher's second page and pick a track: Desert Canyon, Industrial Ruins,
 Snow Track or Night Run. Hold the puck upright like a steering wheel and tap **Go**; turning it
 clockwise steers right. The car speeds up by itself. Grab cyan bolts and orange rockets on the
 road, then tap **Boost** (3 o'clock) or **Rocket** (9 o'clock) to use one; each holds up to
@@ -68,7 +68,7 @@ Design and state contract: [game brief](games/racing/AGENTS.md)
 
 ## Toy Town Life: a tiny town, your own stories
 
-Open **Toy Town** on the fourth launcher page. Create a doll, pack a bag, help at
+Open **Toy Town** on the launcher's second page. Create a doll, pack a bag, help at
 School, compare pretend lunch budgets at the Cafe, and find a missing notebook
 in the Park. Every profile keeps its own outfit, exact outing page and scrapbook.
 All styling is free; there are no attendance rewards, needs decay or social scores.
@@ -79,7 +79,7 @@ All styling is free; there are no attendance rewards, needs decay or social scor
 
 ## Kingdom: Princess Pulverizer and the Living Kingdom
 
-Open **Kingdom** on the launcher's third page. Chapter One, **Trouble at Willowbrook**,
+Open **Kingdom** on the launcher's second page. Chapter One, **Trouble at Willowbrook**,
 is a complete, persistent story RPG for an advanced third-grade reader: explore six
 places with Lucas and Dribble, investigate the bridge and food shortage, and choose
 how to share the river. Forty authored encounters offer four resolutions with real
