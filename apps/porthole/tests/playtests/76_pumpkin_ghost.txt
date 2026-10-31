@@ -1,0 +1,33 @@
+# The ghost at the window: one tap during Grandma's warning sends her to look at a crash; it works once a round.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect ghost=0
+ui-check pumpkin_play-ghost-ready
+snap pumpkin_ghost_ready
+wait 3000
+expect phase=1
+tap 34 42
+wait 100
+expect ghost=1
+expect phase=0
+expect distract=1
+ui-check pumpkin_play-ghost-crash
+snap pumpkin_ghost_crash
+wait 4500
+expect-screen pumpkin_play
+expect phase=0
+expect exposure=0
+tap 34 42
+wait 100
+expect ghost=1
+wait 600
+expect phase=1
+sheet ghost

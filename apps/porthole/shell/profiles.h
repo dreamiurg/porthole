@@ -10,16 +10,20 @@ namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
 constexpr const char* MIGRATED = "m";    // porthole/m: present once the Pets Club houses became profiles
 constexpr const char* MIGRATED_BISCUIT = "mb";   // porthole/mb: present once Biscuit's old save found its profile
-// Turn taking, same numbers Pets Club used: play 6 min, then rest 10. Only with 2+ profiles on the device.
+// Session defaults: play 15 min, then rest 10. Parent-configured session limits apply even with one player.
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
-constexpr uint32_t SESSION_SEC = 6 * 60, REST_SEC = 10 * 60;
-// The daily cap: 25 min per profile per local day, across every game, even alone on the device. The clock is local
+constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
+// The daily cap: 30 min per profile per local day, across every game, even alone on the device. The clock is local
 // wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
-constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 25 * 60;
+constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 30 * 60;
+// Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
+// Independent of profile/game records: changing a limit never resets usage or moves a save.
+struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };
+static_assert(sizeof(Limits) == 4, "sys/limits is two uint16 minute counts");
 // No touch and no move of the board (ActivityTracker, os/input.h) for this long is not play (counts toward neither
 // budget). Matches the backlight's first dimming step.
 constexpr uint32_t IDLE_MS = 60000;
-constexpr size_t BLOB_MAX = 256;         // biggest app save the shell loads (Pets Club's Save is 156 bytes)
+constexpr size_t BLOB_MAX = 2048;        // bounded per-profile buffer, including Kingdom's campaign snapshot
 
 // Storage both platforms implement: firmware -> board NVS, host -> files, tests -> memory.
 class Store {
@@ -30,6 +34,29 @@ class Store {
 
  protected:
   ~Store() = default;
+};
+Limits loadLimits(Store& st);
+bool saveLimits(Store& st, const Limits& limits);   // validates and verifies persistence; caller updates RAM only on success
+
+// Separate, versioned device schedule. Local play is allowed [startMinute, endMinute); an overnight
+// interval is valid. Equal endpoints are rejected instead of hiding an ambiguous all-day/no-play setting.
+struct PlayWindow {
+  uint16_t version = 1, startMinute = 14 * 60, endMinute = 19 * 60 + 30;
+  uint8_t enabled = 1, reserved = 0;
+};
+static_assert(sizeof(PlayWindow) == 8, "sys/window is a versioned independent blob");
+PlayWindow loadPlayWindow(Store& st);
+bool savePlayWindow(Store& st, const PlayWindow& window);
+bool windowAllows(const PlayWindow& window, uint32_t now);
+uint32_t windowWait(const PlayWindow& window, uint32_t now);
+// A deliberate adult exception, in RAM only. Unsigned elapsed time handles millis() rollover; reboot clears it.
+struct Allowance {
+  uint32_t startedMs = 0; bool enabled = false;
+  void start(uint32_t ms) { startedMs = ms; enabled = true; }
+  void stop() { enabled = false; }
+  void tick(uint32_t ms) { if (enabled && ms - startedMs >= 1800000u) stop(); }
+  bool active(uint32_t ms) const { return enabled && ms - startedMs < 30u * 60u * 1000u; }
+  uint32_t minutesLeft(uint32_t ms) const { return active(ms) ? (1800000u - (ms - startedMs) + 59999u) / 60000u : 0; }
 };
 
 // Persisted as a raw blob, append-only like Pets Club's Save: new fields go right before crc, bump the version,
@@ -80,17 +107,30 @@ void migrateBiscuit(Store& st, Profiles& p);
 inline bool resting(const Record& r, uint32_t now) { return r.restUntil > now && r.restUntil - now <= REST_SEC; }
 // The daily cap is kept as (playDay, dayPlaySec), not as a restUntil: it ends at the next midnight by construction,
 // and a clock set back to an earlier day lifts it instead of stranding anyone.
-inline bool playedToday(const Record& r, uint32_t now) { return r.playDay == now / DAY_SEC && r.dayPlaySec >= DAILY_SEC; }
-// Seconds until this profile may play again, 0 = now. Turn taking only counts with someone to hand over to.
-inline uint32_t restLeft(const Record& r, uint32_t now, int nProfiles) {
-  if (playedToday(r, now)) return DAY_SEC - now % DAY_SEC;
-  return nProfiles >= 2 && resting(r, now) ? r.restUntil - now : 0;
+inline bool playedToday(const Record& r, uint32_t now, const Limits& limits = {}) {
+  return r.playDay == now / DAY_SEC && r.dayPlaySec >= (uint32_t)limits.dailyMinutes * 60;
 }
+// Seconds until this profile may play again, 0 = now. Every player gets a break after their session.
+inline uint32_t restLeft(const Record& r, uint32_t now, const Limits& limits = {}) {
+  if (playedToday(r, now, limits)) return DAY_SEC - now % DAY_SEC;
+  return resting(r, now) ? r.restUntil - now : 0;
+}
+// The child's prompt reflects both the budget release and the schedule at that time.
+enum RestHint : uint8_t { REST_DAY, REST_WINDOW, REST_BREAK };
+RestHint restHint(const Record& r, const PlayWindow& window, uint32_t now, const Limits& limits = {});
 // The clock was guessed (RTC lost: the firmware resumes from the newest lastPlayed, which a capped kid never moves),
 // so "today" cannot be trusted: lift every day's cap, like a clock set back. Saves only the records it changed.
 void liftCaps(Store& st, Profiles& p);
+// A grown-up's fresh start for everyone: clear daily usage, session usage and rest deadlines, saving changed
+// records. Keep lastPlayed (clock recovery), profile details and every game's save intact. False if any write did
+// not read back: that record keeps its old in-memory limits so the grown-up can retry (others may have reset).
+bool resetLimits(Store& st, Profiles& p);
 void recharge(Record& r, uint32_t now);   // a real break (REST_SEC away) refills the session budget
 // Counts dt seconds of play (none while idle or resting); true when the profile must stop now (a rest began, or the
 // day's play is used up).
-bool play(Record& r, uint32_t now, uint32_t dt, int nProfiles, bool idle);
+// Count ordinary active play while an explicit allowance bypasses restrictions, including a pre-existing rest.
+void playUnrestricted(Record& r, uint32_t now, uint32_t dt, bool idle);
+// Apply a cap/session boundary after an allowance expires or settings are lowered (even on the launcher).
+bool enforceBudget(Record& r, uint32_t now, const Limits& limits = {});
+bool play(Record& r, uint32_t now, uint32_t dt, bool idle, const Limits& limits = {});
 }  // namespace shell

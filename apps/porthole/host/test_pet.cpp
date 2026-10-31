@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"
+#include "games/pets-club/game.h"
 
 static const uint32_t day0 = 1790000000u - (1790000000u % 86400u) + 10 * 3600;  // 10:00
 
@@ -103,6 +104,14 @@ static void levels(const Save& s) {
     r.kidAge = 8; int n8 = pet::bookListFor(r, list); assert(n8 >= 6); for (int i = 0; i < n8; i++) assert(BOOKS[list[i]].level >= 2); }
 }
 
+// 22:00 in the game: Auto (AppEnter::daylight false) is night; a sun picked on the launcher is day, with no stars.
+static void dayOnPickedLight() {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot none = {nullptr, 0};
+  const uint32_t night = day0 + 12 * 3600;
+  g.enter({&kid, &kid, &none, 1, night, 0}); assert(g.tint() == TINT_NIGHT && g.nightSky());
+  g.enter({&kid, &kid, &none, 1, night, 0, true}); assert(g.tint() == TINT_DAY && !g.nightSky());
+}
+
 int main() {
   Save s;
   decayAndGrowth(s);
@@ -112,6 +121,7 @@ int main() {
   giftsStreakReading(s, t);
   saveV1(s);
   levels(s);
+  dayOnPickedLight();
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }

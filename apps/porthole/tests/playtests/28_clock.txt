@@ -1,0 +1,229 @@
+# Explicit canned network/UTC fixtures, supplemental to docs/family-controls visible-input play.
+# Named zones, manual precedence, detection fallback/radio serialization and Pacific DST.
+reset
+profile Sam 8
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/Los_Angeles
+expect sys_auto=1
+expect sys_off=-420
+expect sys_time=idle
+ui-check sys_clock-default
+snap 01_default
+tap 80 87
+wait 450
+expect-screen sys_zone
+ui-check sys_zone-common
+snap 02_common
+tap 80 12
+wait 450
+tap 80 87
+wait 450
+tap 80 79
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/Denver
+expect sys_auto=0
+expect sys_off=-360
+ui-check sys_clock-manual
+snap 03_manual
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/Denver
+expect sys_auto=0
+tap 57 135
+wait 450
+expect sys_auto=1
+expect sys_zone_state=looking
+expect sys_detections=1
+ui-check sys_clock-detecting
+snap 04_detecting
+tap 103 135
+wait 450
+expect sys_syncs=0
+tap 80 87
+wait 450
+tap 124 35
+wait 450
+tap 80 55
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/New_York
+expect sys_auto=0
+sys zoneok America/Chicago
+wait 100
+expect sys_zone=America/New_York
+expect sys_auto=0
+ui-check sys_clock-manual-precedence
+tap 57 135
+wait 450
+expect sys_detections=2
+sys zoneok America/Invalid
+wait 100
+expect sys_zone_state=failed
+expect sys_zone=America/New_York
+ui-check sys_clock-detection-failed
+snap 05_fallback
+tap 57 135
+wait 450
+sys zoneok America/Chicago
+wait 100
+expect sys_zone=America/Chicago
+expect sys_zone_state=ok
+expect sys_auto=1
+ui-check sys_clock-detected
+snap 06_detected
+tap 57 135
+wait 450
+sys zonefail
+wait 100
+expect sys_zone=America/Chicago
+expect sys_zone_state=failed
+# An old-network result must not overwrite a newly saved network or cancel its queued lookup.
+tap 57 135
+wait 450
+expect sys_zone_state=looking
+sys wifi Family-Test-Network
+sys zoneok Asia/Tokyo
+wait 100
+expect sys_zone=America/Chicago
+expect sys_zone_state=looking
+sys zoneok Europe/London
+wait 100
+expect sys_zone=Europe/London
+expect sys_zone_state=ok
+ui-check sys_clock-network-generation
+# Failed zone saving keeps the prior selection and offers a retry.
+sys zonesavefail
+tap 80 87
+wait 450
+tap 80 55
+wait 450
+expect-screen sys_zone
+expect sys_zone=Europe/London
+ui-check sys_zone-save-failed
+tap 80 55
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/Los_Angeles
+expect sys_auto=0
+tap 103 135
+wait 450
+expect sys_time=syncing
+expect sys_syncs=1
+ui-check sys_clock-syncing
+tap 103 135
+wait 450
+expect sys_syncs=1
+sys timefail
+wait 100
+expect sys_time=failed
+ui-check sys_clock-time-failed
+tap 103 135
+wait 450
+sys timeok 1
+wait 100
+expect sys_time=failed
+tap 103 135
+wait 450
+sys timeok
+wait 100
+expect sys_time=ok
+expect sys_sync>0
+ui-check sys_clock-time-ok
+snap 07_synced
+tap 80 87
+wait 450
+tap 80 55
+wait 450
+expect sys_zone=America/Los_Angeles
+expect sys_auto=0
+sys utc 1772963999
+expect sys_off=-480
+expect sys_local=1772935199
+ui-check sys_clock-spring_before
+snap 08_spring_before
+sys utc 1772964000
+expect sys_off=-420
+expect sys_local=1772938800
+ui-check sys_clock-spring_after
+snap 08_spring_after
+sys utc 1793523599
+expect sys_off=-420
+expect sys_local=1793498399
+ui-check sys_clock-fall_before
+snap 08_fall_before
+sys utc 1793523600
+expect sys_off=-480
+expect sys_local=1793494800
+ui-check sys_clock-fall_after
+snap 08_fall_after
+sheet timezones_and_clock
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_clock
+expect sys_zone=America/Los_Angeles
+expect sys_auto=0
+sys nowifi
+tap 103 135
+wait 450
+expect sys_time=nowifi
+ui-check sys_clock-no-wifi
+tap 57 135
+wait 450
+expect sys_zone_state=failed
+expect sys_zone=America/Los_Angeles
+ui-check sys_clock-zone-no-wifi
+snap 09_no_wifi
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+sheet offline_fallback

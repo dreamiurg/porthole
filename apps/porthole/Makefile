@@ -24,18 +24,40 @@ NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
-test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
-test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+test_toytown_SRC :=
+test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
+test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
+test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
+test_update_gate_SRC :=
+test_display_frames_SRC :=
+test_update_picture_SRC :=
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
+test_packed_image_SRC := $(wildcard os/*.cpp)
 test_gfx565_SRC := $(wildcard os/*.cpp)
+test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
+test_kingdom_art_SRC := os/gfx565.cpp os/packed_image.cpp
+test_kingdom_content_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
+test_kingdom_shell_SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/living-kingdom/*.cpp) games/pets-club/pet.cpp
+test_kingdom_reader_SRC := $(wildcard os/*.cpp) games/living-kingdom/reader.cpp
 test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 # os/tilt.h is header-only
+test_timezone_SRC := os/timezone.cpp
+test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
+test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
+test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
+test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
+test_starfighter_rules_SRC := games/starfighter/rules.cpp
+test_racing_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
+test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
+test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
+# Native firmware uses ROM miniz; host builds use the system zlib decoder.
+HOST_LIBS := -lz
 BUILD := build/host
 
 all: sim test
@@ -44,30 +66,44 @@ $(BUILD):
 	mkdir -p $(BUILD)
 
 sim: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS)
+	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS) $(HOST_LIBS)
 
 snap: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap
+	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap $(HOST_LIBS)
 
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
 snap-asan: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan
+	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan $(HOST_LIBS)
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
 test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
-	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) && $(BUILD)/$(t) &&) true
+	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) $(HOST_LIBS) && $(BUILD)/$(t) &&) true
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/test_flash_report.py
+	$(PY) tools/compression_oracle.py
+	$(PY) games/toy-town-life/tools/toytown_art.py --check
+	$(PY) tools/test_playtest_runner.py
+	$(PY) games/living-kingdom/tools/content.py --check
+	$(PY) games/living-kingdom/tools/test_content.py
+	$(PY) games/living-kingdom/tools/kingdom_art.py --check
+	$(PY) games/living-kingdom/tools/font.py --check
+	$(PY) tools/check_rgb_driver.py
+	$(PY) games/starfighter/tools/art.py --check
+	$(PY) games/racing/tools/art.py --check
+	$(PY) games/racing/tools/pictures.py --check
+	$(PY) tools/launcher_icons.py --check
+	$(PY) tools/pumpkin_goldens.py
+	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
-	$(PY) games/biscuit/tools/icon.py --check
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
 	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
@@ -83,7 +119,7 @@ ci: check playtest coverage
 # (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
 # 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
 COV := build/coverage
-COV_MIN := 91
+COV_MIN := 97
 COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
 COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
@@ -103,16 +139,23 @@ endif
 coverage:
 	rm -rf $(COV) && mkdir -p $(COV)/obj
 	for f in $(SRC) host/sim.cpp $(TESTS:%=host/%.cpp); do o=$(COV)/obj/$${f%.cpp}.o; mkdir -p $$(dirname $$o) && $(CXX) $(COV_CXXFLAGS) -c $$f -o $$o || exit 1; done
-	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) && $(COV)/$(t) &&) true
-	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap
+	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) $(HOST_LIBS) && $(COV)/$(t) &&) true
+	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap $(HOST_LIBS)
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
+	python3 games/toy-town-life/tools/toytown_art.py
+	python3 games/living-kingdom/tools/kingdom_art.py
+	python3 games/living-kingdom/tools/font.py
+	python3 games/starfighter/tools/art.py
+	python3 games/racing/tools/art.py
+	python3 games/racing/tools/pictures.py
+	python3 tools/launcher_icons.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
-	python3 games/biscuit/tools/icon.py
+	python3 games/pumpkin-hide-seek/tools/gpt_art.py
 	node $(NODE_ART)
 
 webemu: snap
@@ -121,6 +164,9 @@ webemu: snap
 # PlatformIO exits 0 on its own "Warning!" lines (an unknown platformio.ini option, say); the wrapper fails on them.
 firmware:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware
+
+flash-report: firmware
+	$(PY) tools/flash_report.py
 
 factory:
 	pio run -e firmware -t factory
@@ -134,4 +180,4 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean flash-report

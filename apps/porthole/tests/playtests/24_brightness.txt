@@ -1,0 +1,88 @@
+# The launcher's sun (shell::Light, "sys"/"lite"): Auto keeps the clock's light; a sun picks daylight at its backlight
+# (big 100%, middle 65%, small 40%), on the shell's screens and in the games, and survives a reboot. At 22:00 Biscuit
+# shows its night room on Auto and its day room once a sun is picked.
+reset
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
+profile Sam 8
+wait 450
+expect-screen launcher
+expect bright = auto
+expect backlight = 100
+ui-check launcher
+snap l01_launcher
+# 22:00
+skip 21600
+expect tint = night
+app Biscuit
+wait 450
+tap 119 125
+wait 2000
+expect-screen biscuit_home
+expect tint = night
+snap l02_biscuit_night_auto
+tap 80 12
+wait 600
+expect-screen launcher
+snap l03_launcher_night_auto
+# the sun button: three suns and Auto
+tap 126 42
+wait 450
+expect-screen light
+ui-check light
+snap l04_light
+# the small sun: Soft
+tap 130 79
+wait 450
+expect-screen launcher
+expect bright = soft
+expect backlight = 40
+expect tint = day
+snap l05_launcher_soft
+# the home button leaves the picker as it was
+tap 126 42
+wait 450
+tap 80 12
+wait 450
+expect-screen launcher
+expect bright = soft
+# the middle sun, then the big one
+tap 126 42
+wait 450
+tap 80 79
+wait 450
+expect bright = medium
+expect backlight = 65
+tap 126 42
+wait 450
+tap 30 79
+wait 450
+expect bright = bright
+expect backlight = 100
+expect tint = day
+snap l06_launcher_bright
+reboot
+wait 450
+expect-screen picker
+expect bright = bright
+expect tint = day
+tap 80 67
+wait 450
+expect-screen launcher
+app Biscuit
+wait 2000
+expect-screen biscuit_home
+expect tint = day
+snap l07_biscuit_night_bright
+tap 80 12
+wait 600
+# Auto again: the clock's night is back
+tap 126 42
+wait 450
+tap 80 123
+wait 450
+expect-screen launcher
+expect bright = auto
+expect backlight = 100
+expect tint = night
+sheet brightness

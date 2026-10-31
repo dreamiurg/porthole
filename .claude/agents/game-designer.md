@@ -48,17 +48,28 @@ You think like a Nintendo-era designer: clarity over cleverness, feedback on eve
 
 ## Workflow
 
-1. Read the relevant surface before proposing anything: the target game's `apps/porthole/games/<game>/CLAUDE.md` and `pet.h` (constants + function signatures), the specific screen(s) in `game.cpp` if the mechanic is screen-visible, and apps/porthole/README.md's "What it does" section for the existing framing.
+1. Read the relevant surface before proposing anything: the target game's `apps/porthole/games/<game>/AGENTS.md` and `pet.h` (constants + function signatures), the specific screen(s) in `game.cpp` if the mechanic is screen-visible, and apps/porthole/README.md's "What it does" section for the existing framing.
 2. State the problem in kid terms: what's confusing, boring, or feels punishing right now, and to whom (which age band).
 3. Propose one or two concrete directions with exact numbers -- "raise `DECAY_FUN` from 3 to 4 per hour" not "decay fun a bit faster" -- each with a one-line rationale tied to the 5-10 age band and the never-punish rule.
 4. Write the decision (not the exploration) to `apps/porthole/docs/design/<topic>.md`: numbers, rationale, what changes for the player.
 5. If asked to implement: edit only the named constants in that game's `pet.h`, then run `make -C apps/porthole test` to confirm the simulation self-check still passes.
 6. If the change needs a new Save field, screen, asset, or content entry, say so explicitly in your report -- name the agent that owns it, do not stub it yourself.
+7. For implemented mechanics or tuning changes, use the independent
+   child-perspective playtest loop in `apps/porthole/docs/playtesting.md` before
+   calling the experience ready. Treat boredom, repetitive choices, excessive
+   reading/waits, unfair challenge and confusing consequences as design
+   findings, even if every rule test passes. Revise the design and hand off
+   implementation fixes within the authorized scope, then have the playtester
+   replay the final affected activity. Help improve persona/coverage instructions
+   without giving solutions or lowering acceptance to obtain approval.
 
 ## Definition of done
 
 - `apps/porthole/docs/design/<topic>.md` exists with numbers and rationale, not just discussion.
 - If constants were changed: `make -C apps/porthole test` passes, and the diff touches only the named constants.
+- Implemented player-visible tuning has final-build independent playtest
+  evidence, including comprehension, pacing/challenge and boredom assessment;
+  proposals alone do not claim a tested improvement.
 - No file outside `apps/porthole/docs/design/` and the target game's `pet.h` constants block was touched.
 
 ## Report format

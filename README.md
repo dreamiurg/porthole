@@ -122,11 +122,15 @@ and Wi-Fi that no app uses yet.
 ## Getting started
 
 You need Python 3.11+, Node 22, a C++17 compiler, and PlatformIO for firmware.
+Host builds also need zlib headers and a library (`zlib1g-dev` on Debian/Ubuntu;
+included in the macOS SDK).
 
 ```sh
 git clone https://github.com/dreamiurg/porthole.git
 cd porthole
 pip install -r platform/requirements.txt   # PlatformIO Core + the pinned builder deps
+pip install pillow fonttools==4.61.1 'gcovr>=8.3'  # art/font checks and coverage
+make hooks                                 # the same checks as CI, run on commit and push
 make check                                 # lint + tests for every app
 ```
 
@@ -143,8 +147,55 @@ make monitor
 The easiest way needs no tools at all: download `<app>-<version>-factory.bin` from the
 [releases](https://github.com/dreamiurg/porthole/releases), plug the board in over USB-C, open
 [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge, and write the file at
-address `0x0`. This erases the board, saved progress included. Step by step, with pictures of the
+address `0x0`. This erases the board, saved progress included. To keep saves, write the separate
+parts from `<app>-<version>-web.zip` at the offsets in its `parts.json` (that is what the web
+installer does), or build from source and run `make flash`. With esptool, from the unzipped parts:
+`esptool --chip esp32s3 write-flash 0x0 bootloader.bin 0x8000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin`.
+(esptool 4 spells it `write_flash`.) Don't pass `--flash-mode`/`--flash-freq`: they rewrite the bootloader's header, and a mode the board
+can't run (`qio`) leaves it in a watchdog reset loop until the parts are written again without them. Step by step, with pictures of the
 games: [dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
+
+### Updates over wifi
+
+You only need the USB cable once. After that, the board keeps itself up to date over wifi.
+
+![The version on "Who's playing?", the Info screen, the wifi list, an update ready to start, and the "something new" card](docs/updates.png)
+
+Once a day, when nobody is playing and the screen has gone dark (it dims itself after a few minutes), the
+board looks for a new version and downloads it. If someone wakes the screen during the download, it stops and
+picks up again the next time the screen is dark. The new version starts the next time the board is switched on, and
+the kids see a "Porthole has something new!" card. Saves and profiles are kept. Nothing about the kids is sent
+anywhere.
+
+To give it your wifi, pick one:
+
+- **On the board (easiest).** Open the hidden menu (below), tap **Wifi**, pick your network from the list and type
+  its password. The board tries it right away and keeps it only if it connects (or if you tap **Save anyway**).
+  Networks without a password skip the typing.
+- **microSD card.** Make a file `/porthole/wifi.txt` with the network name on the first line and the password
+  on the second. Put the card in the board and switch it on. It remembers the network.
+- **USB cable.** Open a serial monitor at 115200 baud (either USB-C port works) and send
+  `W<network name><TAB><password>`, for example `WHomeWiFi`, then a tab, then your password.
+
+Grown-ups have a hidden menu. On "Who's playing?", press and hold the title for 5 seconds. **Info** shows the
+version, the wifi, the SD card and a few other details. **Wifi** lists the networks nearby. **Updates** shows the running and newest version, lets you
+pick Stable or Beta, and has **Check now** (it downloads right away, about a minute; a black background shows the download percentage and a Cancel control) and **Restart now** once an update is ready. The running version is also in small print at the bottom
+of "Who's playing?".
+
+- **Stable** (the default) gets versions I've tried and promoted.
+- **Beta** gets every new version as soon as it's built.
+
+### Beta and stable
+
+Every release starts as a GitHub pre-release: that is **beta**. A person promotes a release to
+**stable**, which makes it GitHub's "Latest" and moves the `stable` branch to it. To promote, open
+Actions, pick **Promote**, and run it with a tag (empty means the highest-versioned pre-release). Promoting
+an older tag rolls stable back for boards that have not updated yet; a board never installs an
+older version by itself, so one already on the bad build needs a USB flash. Each release also carries `<app>-<version>-ota.bin`, the app image
+on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves. A rolling
+`<app>-beta` pre-release holds a copy of the newest `<app>-version.txt`; boards on the beta channel read it there. `tools/check_channel.sh porthole stable|beta`
+resolves a channel the way a board does (version file, then that version's image); the release and
+promote workflows run it after they publish.
 
 ## Make your own app
 
@@ -166,8 +217,8 @@ What you get for free:
   ratchet, playtests, coverage and the firmware build. CI repeats it once per PR
   as a cheap backstop, only for the apps a PR touches.
 - Releases are automatic. Each merge that adds a `feat:` or `fix:` to an app
-  tags a new version of that app, publishes release notes and attaches a
-  flashable factory image. See [Releases](https://github.com/dreamiurg/porthole/releases).
+  tags a new version of that app, publishes a beta (pre-release) with notes and
+  attaches a flashable factory image. See [Releases](https://github.com/dreamiurg/porthole/releases).
 
 ## Layout
 
@@ -177,7 +228,7 @@ platform/           shared PlatformIO base, pinned requirements, factory-image s
 tools/gallery.py    README screenshot strips from panel captures
 docs/               hardware.md (board, pins, round-screen rules), new-app.md (the app contract)
 .github/            CI, releases, Dependabot
-.claude/            agent roster and skills for AI-assisted work (see CLAUDE.md)
+.claude/            agent roster and skills for AI-assisted work (see AGENTS.md)
 ```
 
 Board details, pins and round-screen design notes: [docs/hardware.md](docs/hardware.md).

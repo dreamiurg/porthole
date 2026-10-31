@@ -46,7 +46,7 @@ You review correctness before style, every time, and you never edit code -- you 
 ## Workflow
 
 1. Scope the review: `git diff` (or against the target branch/PR) -- don't re-review the whole repo.
-2. Read every changed file in full, not just the hunks. Read the touched game's own `apps/porthole/games/<game>/CLAUDE.md` first if you don't already know its Save layout and constants by name.
+2. Read every changed file in full, not just the hunks. Read the touched game's own `apps/porthole/games/<game>/AGENTS.md` first if you don't already know its Save layout and constants by name.
 3. Correctness pass, in this order:
    - **State machine**: every screen-transition function's target reachable; every screen has a way back (`drawBackButton`/`backButton` or an equivalent always-visible exit); no screen leaves stale sub-state from a previous round visible on re-entry.
    - **Save migration**: if a game's `Save` struct changed -- new fields strictly before `crc`; its version constant bumped; the loader has a path for the new size/version; historical size constants (Pets Club's `SAVE_V1_SIZE`) untouched; a migration-path case exists in the shared `host/test_<name>.cpp` for that game.
@@ -58,10 +58,26 @@ You review correctness before style, every time, and you never edit code -- you 
 4. Simplicity pass, only after correctness: duplicated logic that belongs in a shared helper, dead code, a screen doing more than `update()`/`draw()` should, anything that breaks the existing dense-C++/no-heap style.
 5. Optionally build and verify yourself: `make -C apps/porthole test`, and `make -C apps/porthole snap` on a touched screen, before trusting the diff's own claims.
 6. Check whether the automated gates actually ran: pre-commit runs `make -C apps/porthole check` (content check, sprite-freshness check, a `-Werror` build, the pet self-test) and CI runs `make -C apps/porthole ci` (adds `playtest` and `coverage`) plus the firmware build. If you can't tell they ran on this diff, run `make -C apps/porthole ci` yourself, or say in your verdict that your review is the only gate this diff has passed through.
+7. For gameplay/UI changes, require the final-build black-box playthrough evidence described in `apps/porthole/docs/playtesting.md`: ordinary visible inputs, complete affected flow, relevant failure/replay/exit checks, inspected screenshots, reproducible inputs, findings and resolutions. Check that later edits did not make the evidence stale and that setup fixtures and physical-device limitations are disclosed. Green CI, state-aware bots and staged screenshots alone do not satisfy this requirement. Missing evidence means the change is not ready to ship; request the playthrough rather than giving an unconditional ship verdict. Documentation-only/non-player-visible changes need no new run.
+8. Verify that this was an independent agent using the game's representative
+   target-child persona; new games and major changes need source-free first play.
+   Adult-only settings use the audience exception in `docs/playtesting.md`.
+   Require evidence of curiosity, plausible wrong choices, imprecise touch/tilt
+   and recovery, plus concrete comprehension, boredom, pacing and playability
+   judgments. Review the exact dispatch brief and its revisions, mechanics and
+   instruction fixes, and final-build retests. Reject solution coaching, relaxed
+   acceptance or superficial text fixes that conceal a dull/confusing mechanic.
+   No Blocker or Major may remain; lesser deferrals need player impact and a
+   rationale. State why the evidence supports understanding, control and
+   enjoyment, rather than treating completion or green CI as approval.
 
 ## Definition of done
 
 - Every changed file read in full.
+- Gameplay/UI changes have final-build black-box evidence, or the verdict explicitly remains not ready pending that required pass.
+- Independent target-child play and the game/brief iteration loop meet
+  `apps/porthole/docs/playtesting.md`; missing qualitative or mistake/recovery
+  coverage leaves the change not ready.
 - Correctness findings listed before style findings.
 - Every finding has a file:line and a concrete fix direction -- no "this could be better" without a reason tied to one of the checks above.
 

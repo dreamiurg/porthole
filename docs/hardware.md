@@ -14,7 +14,7 @@ other hardware is welcome; see "Other boards" in the [README](../README.md).
 | I/O expander | TCA9554, I2C `0x20` |
 | Clock | PCF85063 RTC, I2C `0x51`, keeps time on the backup cell |
 | Buzzer | Single-tone piezo on the expander. It is harsh: use it rarely. |
-| USB | USB-C through a CH343 USB-UART bridge, so `Serial` is UART0, not USB CDC |
+| USB | Two USB-C ports: "USB to UART" through a CH343 bridge (UART0), and the ESP32-S3's own USB (USB-Serial-JTAG, shows up as 303A:1001). Both flash; Porthole's console (`firmware/console.h`) logs to and reads commands from both |
 | Radio | 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth 5 LE, onboard antenna |
 | Motion | QMI8658 6-axis accelerometer and gyroscope, I2C `0x6B`; Porthole reads the accelerometer as gravity (`board::readAccel`) |
 | Storage | microSD (TF) card slot |
@@ -52,7 +52,7 @@ points for a new app or feature.
 
 The display comes up in two steps: an init sequence over 9-bit SPI, then the
 RGB panel through ESP-IDF's `esp_lcd` RGB driver with frame buffers in PSRAM.
-`apps/porthole/firmware/board.cpp` does this without extra libraries.
+`apps/porthole/firmware/board.cpp` feeds the panel through internal SRAM bounce buffers and waits for copy completion before reusing a framebuffer. The pinned driver and recovery fixes live in `firmware/vendor/rgb/` under that app, with provenance in its README. Healthy frames do not reset the DMA at each VSYNC. Update writes use a separate sparse SRAM scan-out so flash access cannot starve the panel.
 
 ## Toolchain
 
@@ -65,8 +65,9 @@ that builder imports. Install them into a virtualenv or with pipx:
 pip install -r platform/requirements.txt
 ```
 
-PlatformIO auto-detects the serial port when one board is plugged in. Pass
-`PORT=/dev/cu.usbserial-XXXX` (macOS) or `PORT=/dev/ttyUSB0` (Linux) to pick one.
+PlatformIO auto-detects the serial port when one board is plugged in, on either USB-C port. Pass
+`PORT=/dev/cu.usbmodemXXXX` or `/dev/cu.usbserial-XXXX` (macOS), or `PORT=/dev/ttyACM0` / `/dev/ttyUSB0` (Linux),
+to pick one.
 
 ## Designing for a round screen
 

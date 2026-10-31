@@ -1,0 +1,14 @@
+{
+  "games/toy-town-life/art.cpp": "1194116c9e415dae6b3b9b9039e84716b746a91adfe9ee5a5d2d34b8bedf085e",
+  "games/toy-town-life/art.h": "1e2bd690a1c5e4e42ced6495eb57dc9717d37c6365788311f2c99fb081078866",
+  "games/toy-town-life/content.h": "49621dfeab890bbd28a40e994bf342c8d260c3d724587b95196e529d34532a5b",
+  "games/toy-town-life/game.cpp": "648a70f2df92531db37cd6f185ea72e091c70cc29a4748085c23761a6e478a5e",
+  "games/toy-town-life/game.h": "c04b40d45143a572c6f92092dceefd422bb15488ad53998319a1f1b23c1b5ee2",
+  "games/toy-town-life/generated/art_data.inc": "d2a74dc32a206cde410815260d1303176eb3b7d6a82423db12b5d8d1fda6d4e1",
+  "games/toy-town-life/generated/art_part_0.inc": "75fba90808433db0a9cbfc36814814d7908007ade4cdbb3c989b80fb1f301a14",
+  "games/toy-town-life/generated/art_part_1.inc": "36b243930e9f49f70fa6b0fbc29973f078ec58f9af1b25ba4a54333b9d468cd3",
+  "games/toy-town-life/generated/art_part_2.inc": "93803891c64d8396960598545da181fc9b677fdf296dcbd5304261713e008c43",
+  "games/toy-town-life/rendering.cpp": "d90b9c4d1ee6ba3987a291ab68ab795a5984a380d2ea14decafa1fe5734cb49e",
+  "games/toy-town-life/state.h": "d2f8b6fdad01290ca218915968b683d71e5072929d105bab8aab20cdf2544c8c",
+  "games/toy-town-life/tools/toytown_art.py": "65900836b72c7935f02236b43966be38ba9e755ee9abf015eaad531899441e60"
+}

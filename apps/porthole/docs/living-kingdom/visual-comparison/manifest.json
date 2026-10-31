@@ -1,0 +1,64 @@
+{
+  "emulator_sha256": "6f40297c36fccf7d067c7f37aeeeacf2f29f0fa6416d5cca19832efcf33e87ce",
+  "source_crops": {
+    "title": [
+      8,
+      0,
+      327,
+      310
+    ],
+    "map": [
+      329,
+      0,
+      631,
+      310
+    ],
+    "party": [
+      6,
+      354,
+      327,
+      655
+    ],
+    "inventory": [
+      329,
+      354,
+      634,
+      655
+    ],
+    "arrival": [
+      630,
+      0,
+      935,
+      310
+    ],
+    "continuation": [
+      10,
+      697,
+      324,
+      978
+    ],
+    "choices": [
+      1220,
+      0,
+      1536,
+      311
+    ],
+    "journal": [
+      933,
+      697,
+      1238,
+      978
+    ]
+  },
+  "file_sha256": {
+    "docs/superpowers/specs/living-kingdom/concept-art/08-chapter-one-polished-ux.png": "47edba8170bb6e64986c5093e68d719fa37349dcc8b7bee505aa99488f8b2e4d",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/08-title.png": "0fa3153f1e040af15c35a1fd1b77c4f05231dca784966d9c57a4959cc0269d26",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/10-party.png": "dfc67f6cf2b933cbf756da3f0cdb5036de2cb2eaed6feec23aa6cd6a0a1a2822",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/11-items.png": "e0aed7bd414ecbda1632392019243b8eca43e70863e4783fab66b8a277902e1b",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/13-journal.png": "0cb68e9cfb43a76e9bb6d8dbb0df3c04846bb811389a7b9ef5aef57f68f93b52",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/20-road-first.png": "fb5093197cc9d508bd51f7956b242bea326da1fdbbe32ab25510b9d52d467c6f",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/21-road-page2.png": "82affad713534b873b8700318303290a95a776b92f8276857e2b71508166c073",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/29-road-choice.png": "283b8811291aee18bfd810f9583b62b8bd318e7904f1adbd9bdc518cb2b8aea1",
+    "apps/porthole/docs/living-kingdom/visual-comparison/native/74-ledger-after.png": "4013538c10b97007a94357b2ab88a1d9f19032a87d8bba9e2a43ad9cf2acd150"
+  }
+}

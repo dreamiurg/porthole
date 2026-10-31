@@ -2,7 +2,7 @@
 # 1. A slow double tap (300-400 ms) must not act on the next screen: every screen ignores touches until a press
 #    begins 450 ms after it appeared (ui::FreshGate).
 # 2. A long press on a picker row opens "Delete?" with "No" under the finger; deleting takes a held press elsewhere.
-# 3. With one profile left there is no rest, even one begun while there were two.
+# 3. Session rests still apply with one profile left; only an explicit adult reset clears the existing rest.
 reset
 profile Sam 8
 profile Kai 6 1234
@@ -48,7 +48,7 @@ expect-screen delete
 tap 110 110
 wait 450
 expect profile=-1/4
-# 3: Sam rests with two profiles; Kai is deleted; Sam, now alone, plays
+# 3: Sam rests with two profiles; deleting Kai keeps Sam's rest. A grown-up can explicitly reset it.
 reset
 newgame Sam Biscuit
 wait 2400
@@ -72,4 +72,40 @@ wait 450
 expect profile=-1/1
 tap 80 67
 wait 450
+expect-screen rest
+expect rest>500
+expect profile=0/1
+ui-check rest-after-other-player-deleted
+snap 01_solo_rest
+# Removing a profile does not erase the other player's usage. The adult reset deliberately clears it.
+tap 80 132
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_time
+tap 52 129
+wait 450
+expect-screen sys_reset
+tap 80 118
+wait 450
+expect-screen sys_time
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 67
+wait 450
 expect-screen launcher
+expect profile=0/1
+expect rest=0
+expect play=0
+expect today=0
+sheet solo_rest_reset

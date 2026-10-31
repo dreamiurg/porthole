@@ -1,0 +1,15 @@
+# Baseline only. Explicit canned network scan completion allows the password keyboard to be compared.
+reset
+profile Sam 8
+reboot
+down 80 20
+wait 5100
+up
+wait 500
+tap 50 108
+wait 500
+sys scan
+wait 500
+tap 80 39
+wait 500
+snap baseline-wifi-keyboard

@@ -1,0 +1,1961 @@
+wait 1000
+snap 001-profile
+down 41 53
+wait 66
+up
+wait 550
+down 119 126
+wait 66
+up
+wait 550
+snap 002-face
+down 34 57
+wait 66
+up
+wait 550
+snap 003-age
+down 79 103
+wait 66
+up
+wait 550
+snap 004-pin
+down 80 144
+wait 66
+up
+wait 550
+snap 005-launcher
+down 109 136
+wait 66
+up
+wait 550
+snap 006-launcher2
+down 109 136
+wait 66
+up
+wait 550
+snap 007-launcher3
+down 112 78
+wait 66
+up
+wait 550
+snap 008-title
+down 94 137
+wait 66
+up
+wait 550
+snap 009-road1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 010-road2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 011-road3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 012-road4
+wait 15000
+down 80 133
+wait 66
+up
+wait 550
+snap 013-pack
+down 51 54
+wait 66
+up
+wait 550
+snap 014-party
+down 114 61
+wait 66
+up
+wait 550
+snap 015-dribble
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+snap 016-party-return
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 017-items
+down 80 133
+wait 66
+up
+wait 550
+down 51 82
+wait 66
+up
+wait 550
+snap 018-journal
+wait 15000
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 019-save-quit
+reboot
+wait 1000
+snap 020-picker
+down 80 68
+wait 66
+up
+wait 550
+snap 021-relaunch
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+snap 022-continue
+down 94 137
+wait 66
+up
+wait 550
+snap 023-resume-overlay
+down 112 133
+wait 66
+up
+wait 550
+snap 024-road5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 025-road6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 026-road7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 027-road8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 028-road-choice
+down 80 133
+wait 66
+up
+wait 550
+snap 029-reread1
+down 112 133
+wait 66
+up
+wait 550
+snap 030-reread2
+down 50 133
+wait 66
+up
+wait 550
+snap 031-reread-back
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 032-returned-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 033-village-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 034-village-result2
+wait 10000
+down 112 133
+wait 66
+up
+wait 550
+snap 035-chalk1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 036-chalk2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 037-chalk3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 038-chalk4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 039-chalk5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 040-chalk6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 041-chalk7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 042-chalk-choice
+down 80 75
+wait 66
+up
+wait 550
+snap 043-ledger-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 044-ledger-result2
+wait 10000
+down 112 133
+wait 66
+up
+wait 550
+snap 045-ledger1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 046-ledger2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 047-ledger3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 048-ledger4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 049-ledger5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 050-ledger6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 051-ledger7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 052-ledger8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 053-ledger-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 054-seek-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 055-seek-result2
+wait 10000
+down 112 133
+wait 66
+up
+wait 550
+snap 056-trader1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 057-trader2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 058-trader3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 059-trader4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 060-trader5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 061-trader6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 062-trader7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 063-trader8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 064-trader-choice
+down 80 105
+wait 66
+up
+wait 550
+snap 065-trader-why
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+down 80 45
+wait 66
+up
+wait 550
+snap 066-carry-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 067-carry-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 068-map
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 069-flour-inventory
+down 43 59
+wait 66
+up
+wait 550
+snap 070-flour-detail
+wait 10000
+down 50 133
+wait 66
+up
+wait 550
+down 50 133
+wait 66
+up
+wait 550
+snap 071-map-return
+down 115 81
+wait 66
+up
+wait 550
+snap 072-mill-preview
+down 50 133
+wait 66
+up
+wait 550
+snap 073-travel-cancel
+down 115 81
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 074-miller1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 075-miller2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 076-miller3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 077-miller4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 078-miller5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 079-miller6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 080-miller7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 081-miller-choice
+down 80 75
+wait 66
+up
+wait 550
+snap 082-promise-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 083-promise-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 084-day3map
+down 115 109
+wait 66
+up
+wait 550
+snap 085-marsh-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 086-fen1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 087-fen2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 088-fen3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 089-fen4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 090-fen5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 091-fen6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 092-fen7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 093-fen8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 094-fen-choice
+down 80 75
+wait 66
+up
+wait 550
+snap 095-nests-promise1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 096-nests-promise2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 097-day4map
+down 55 109
+wait 66
+up
+wait 550
+snap 098-bridge-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 099-bridge1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 100-bridge2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 101-bridge3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 102-bridge4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 103-bridge5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 104-bridge6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 105-bridge7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 106-bridge-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 107-inspect-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 108-inspect-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 109-afterbridge
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 110-crack2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 111-crack3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 112-crack4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 113-crack5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 114-crack6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 115-crack7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 116-crack8
+wait 15000
+wait 600000
+snap 117-after-shell-break
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 94 137
+wait 66
+up
+wait 550
+snap 118-resumed-crack
+down 112 133
+wait 66
+up
+wait 550
+snap 119-crack6-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 120-crack7-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 121-crack8-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 122-crack-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 123-repair-plan1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 124-repair-plan2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 125-map5
+down 52 80
+wait 66
+up
+wait 550
+snap 126-village-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 127-village-return1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 128-council2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 129-council3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 130-council4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 131-council5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 132-council6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 133-council7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 134-council8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 135-council9
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 136-council-choices
+down 80 75
+wait 66
+up
+wait 550
+snap 137-marsh-confirm
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+snap 138-confirm-cancel
+down 80 75
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 139-marsh-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 140-marsh-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 141-marsh-day6
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 142-items-current
+down 117 99
+wait 66
+up
+wait 550
+snap 143-flour-actual
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+down 50 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 144-chairs2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 145-chairs3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 146-chairs4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 147-chairs5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 148-chairs6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 149-chairs7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 150-chairs8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 151-chairs-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 152-leave-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 153-leave-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+down 80 133
+wait 66
+up
+wait 550
+down 54 110
+wait 66
+up
+wait 550
+snap 154-rest1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 155-day7
+down 80 133
+wait 66
+up
+wait 550
+down 54 110
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 156-day8
+down 52 80
+wait 66
+up
+wait 550
+snap 157-relief-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 158-relief1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 159-rumor2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 160-rumor3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 161-rumor4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 162-rumor5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 163-rumor6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 164-rumor7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 165-rumor8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 166-rumor-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 167-correction1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 168-correction2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 169-aftercorrection
+wait 10000
+down 112 133
+wait 66
+up
+wait 550
+down 52 80
+wait 66
+up
+wait 550
+snap 170-village-next
+down 112 133
+wait 66
+up
+wait 550
+snap 171-next1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 172-questions2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 173-questions3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 174-questions4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 175-questions5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 176-questions6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 177-questions7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 178-questions8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 179-questions-choice
+down 80 75
+wait 66
+up
+wait 550
+snap 180-paths1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 181-paths2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 182-afterpaths
+down 80 133
+wait 66
+up
+wait 550
+down 51 82
+wait 66
+up
+wait 550
+snap 183-journal-chapter
+down 112 133
+wait 66
+up
+wait 550
+snap 184-journal-bridge
+down 112 133
+wait 66
+up
+wait 550
+snap 185-journal-supplies
+down 112 133
+wait 66
+up
+wait 550
+snap 186-journal-river
+down 50 133
+wait 66
+up
+wait 550
+down 115 81
+wait 66
+up
+wait 550
+snap 187-mill-return-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 188-mill-return1
+wait 15000
+down 80 133
+wait 66
+up
+wait 550
+down 102 110
+wait 66
+up
+wait 550
+snap 189-map-restored
+down 115 81
+wait 66
+up
+wait 550
+snap 190-mill-preview-real
+down 112 133
+wait 66
+up
+wait 550
+snap 191-mill-return1-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 192-oven2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 193-oven3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 194-oven4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 195-oven5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 196-oven6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 197-oven7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 198-oven-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 199-arrange1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 200-arrange2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 201-relief-work1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 202-carrying2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 203-carrying3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 204-carrying4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 205-carrying5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 206-carrying6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 207-carrying7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 208-carrying8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 209-carrying-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 210-exchange-confirm
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 211-exchange-result2
+wait 15000
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 212-spent-flour
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 213-relief-savequit
+reboot
+wait 1000
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 94 137
+wait 66
+up
+wait 550
+snap 214-relief-result-resume
+down 112 133
+wait 66
+up
+wait 550
+snap 215-after-relief
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 216-ending2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 217-ending3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 218-ending4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 219-ending5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 220-ending6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 221-ending7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 222-ending8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 223-ending-choice
+wait 600000
+snap 224-second-break-over
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 94 137
+wait 66
+up
+wait 550
+snap 225-ending6-resume
+down 112 133
+wait 66
+up
+wait 550
+snap 226-ending7-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 227-ending8-real
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 228-ending-choice-real
+down 80 75
+wait 66
+up
+wait 550
+snap 229-deed1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 230-deed2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 231-marsh-ending1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 232-lunch2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 233-lunch3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 234-lunch4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 235-lunch5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 236-lunch6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 237-lunch7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 238-lunch8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 239-lunch9
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 240-lunch-choice
+down 80 45
+wait 66
+up
+wait 550
+snap 241-explore-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 242-explore-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 243-postending-map
+wait 10000
+down 112 133
+wait 66
+up
+wait 550
+snap 244-postending-map-real
+down 80 133
+wait 66
+up
+wait 550
+down 51 82
+wait 66
+up
+wait 550
+snap 245-complete-journal
+down 112 133
+wait 66
+up
+wait 550
+snap 246-unfinished-bridge
+down 80 133
+wait 66
+up
+wait 550
+down 102 110
+wait 66
+up
+wait 550
+down 55 109
+wait 66
+up
+wait 550
+snap 247-postending-bridge-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 248-postending-bridge1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 249-repair2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 250-repair3
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 251-repair4
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 252-repair5
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 253-repair6
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 254-repair7
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 255-repair-choice
+down 80 75
+wait 66
+up
+wait 550
+snap 256-tools-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 257-tools-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 258-postrepair-map
+down 80 133
+wait 66
+up
+wait 550
+down 51 54
+wait 66
+up
+wait 550
+snap 259-post-party
+down 46 61
+wait 66
+up
+wait 550
+snap 260-serena-detail
+wait 10000
+down 50 133
+wait 66
+up
+wait 550
+down 80 61
+wait 66
+up
+wait 550
+snap 261-lucas-detail
+wait 10000
+down 80 133
+wait 66
+up
+wait 550
+down 51 82
+wait 66
+up
+wait 550
+snap 262-final-chapter
+down 112 133
+wait 66
+up
+wait 550
+snap 263-repaired-journal
+down 112 133
+wait 66
+up
+wait 550
+snap 264-supplies-complete
+down 112 133
+wait 66
+up
+wait 550
+snap 265-river-complete
+down 80 133
+wait 66
+up
+wait 550
+down 102 110
+wait 66
+up
+wait 550
+down 55 109
+wait 66
+up
+wait 550
+snap 266-repaired-preview
+down 50 133
+wait 66
+up
+wait 550
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 267-final-savequit
+reboot
+wait 1000
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 94 137
+wait 66
+up
+wait 550
+snap 268-persisted-day12
+down 55 109
+wait 66
+up
+wait 550
+snap 269-persisted-repair
+reboot
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 00-marsh-profile-fixture-map
+down 39 53
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 01-woods-first
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 02-other-campaign-woods-options
+down 39 53
+wait 66
+up
+wait 550
+snap 03-woods-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 04-woods-first
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 05-woods-choice
+down 80 104
+wait 66
+up
+wait 550
+snap 06-hillside-result1
+wait 12000
+down 112 133
+wait 66
+up
+wait 550
+snap 07-hillside-result2
+down 50 133
+wait 66
+up
+wait 550
+snap 08-hillside-back1
+down 112 133
+wait 66
+up
+wait 550
+snap 09-hillside-next2
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 10-hillside-save-quit
+reboot
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 11-hillside-result-resumed
+down 112 133
+wait 66
+up
+wait 550
+snap 12-watchtower-after-hillside
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 13-exit
+reboot
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 14-returned-to-result3
+down 112 133
+wait 66
+up
+wait 550
+snap 15-watchtower-first
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 16-final-exit

@@ -1,0 +1,122 @@
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 00-fixture-map
+down 39 53
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 01-woods-reread1
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 02-woods-options
+down 80 75
+wait 66
+up
+wait 550
+snap 03-low-path-result1
+wait 12000
+down 112 133
+wait 66
+up
+wait 550
+snap 04-low-path-result2
+down 50 133
+wait 66
+up
+wait 550
+snap 05-back-to-result1
+down 112 133
+wait 66
+up
+wait 550
+snap 06-return-to-result2
+crash
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 07-result-restored-after-crash
+down 112 133
+wait 66
+up
+wait 550
+snap 08-watchtower-after-path
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 09-path-save-and-quit

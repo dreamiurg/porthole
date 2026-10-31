@@ -1,13 +1,24 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
+#include <Preferences.h>
 #include "board.h"
 #include "esp_heap_caps.h"
+#include "esp_ota_ops.h"
 #include "games/biscuit/game.h"
+#include "games/living-kingdom/game.h"
 #include "games/marble-kick/game.h"
+#include "games/pumpkin-hide-seek/game.h"
 #include "games/pets-club/game.h"
+#include "games/plane-radar/game.h"
+#include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
+#include "games/toy-town-life/game.h"
+#include "games/racing/game.h"
 #include "gfx565.h"
+#include "net.h"
 #include "shell.h"
+#include "timezone.h"
+#include "update_picture.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
 struct NvsStore : shell::Store {
@@ -20,17 +31,29 @@ static Game g_pets;
 static biscuit::Game g_biscuit;
 static marble::Game g_marble;
 static fc::Game g_tiltfc;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc};
+static pumpkin::Game g_pumpkin;
+static radar::Game g_radar;
+static starfighter::Game g_starfighter;
+static kingdom::Game g_kingdom;
+static toytown::Game g_toytown;
+static racing::Game g_racing;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
+static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
+static net::Updater g_sys;
+static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
 static Shell g_shell;
 static InputTracker g_input;
+static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
 static uint8_t g_backlight = 100;
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
-static uint32_t g_bootLocalEpoch = 0, g_bootMillis = 0;
+static uint32_t g_bootUtcEpoch = 0, g_bootMillis = 0;
+static bool g_rtcUtcReady = false;
+static uint32_t g_nextCheckpoint = 3600000u;
 // Test harness (tools/devctl.py): a synthetic finger held at logical (x, y) until `until`, then released.
 static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 // Gravity for Input (milli-g, screen frame): the last good sensor reading, or the harness's "G" override while it is on.
@@ -43,12 +66,15 @@ static const int MT_N = 64;
 static uint32_t g_mt[MT_N][MT_COUNT];
 static int g_mtAt = 0;
 
-// Wall clock: RTC if it runs, else continue from the last play time so the pets' day counts keep going.
-static uint32_t nowSec() {
-  return g_bootLocalEpoch + (millis() - g_bootMillis) / 1000u;
+// RTC and running base are UTC. Only the main core derives local-wall seconds for shell/game day and time rules.
+static uint32_t utcNow() {
+  const uint32_t seconds = (millis() - g_bootMillis) / 1000u;
+  g_bootUtcEpoch += seconds; g_bootMillis += seconds * 1000u;
+  return g_bootUtcEpoch;
 }
+static uint32_t nowSec() { return timezones::local(utcNow()); }
 
-// Compile-time fallback clock: the time this firmware was built (local time of the build machine).
+// Compile-time fallback clock: release builds use UTC; it is a lower bound when no trustworthy RTC/sample survives.
 static uint32_t buildEpoch() {
   static const char* months = "JanFebMarAprMayJunJulAugSepOctNovDec";
   char mon[4] = {0}; int d, y, hh, mm, ss;
@@ -62,36 +88,154 @@ static uint32_t buildEpoch() {
   return days * 86400u + (uint32_t)(hh * 3600 + mm * 60 + ss);
 }
 
+// Journal the RTC's format change independently of profile/game saves. A failed prepared write never touches the
+// RTC; a missing final commit remains recoverable at either recorded side after an interrupted conversion.
+template <class T> static bool saveClockBlob(const char* key, const T& value) {
+  T checked{};
+  return board::saveBlob("sys", key, &value, sizeof value) &&
+         board::loadBlob("sys", key, &checked, sizeof checked) == sizeof checked && !memcmp(&value, &checked, sizeof value);
+}
+static bool writeUtcRtc(uint32_t utc) {
+  const uint32_t source = board::rtcValid() ? board::rtcNow() : utc;
+  const auto prepared = timezones::journal(source, utc, false);
+  if (!saveClockBlob("rtc_clock", prepared)) return false;
+  board::rtcSet(utc);
+  const uint32_t checked = board::rtcNow();
+  if (!board::rtcValid() || checked < utc || checked - utc > 2) return false;
+  g_rtcUtcReady = true; g_nextCheckpoint = millis() + 3600000u;
+  const auto committed = timezones::journal(source, utc, true);
+  if (!saveClockBlob("rtc_clock", committed)) Serial.println("[porthole] RTC UTC commit pending; recovery journal kept");
+  return true;
+}
+static size_t clockJournalSize() {
+  Preferences prefs;
+  if (!prefs.begin("sys", true)) return 0;
+  const size_t size = prefs.isKey("rtc_clock") ? prefs.getBytesLength("rtc_clock") : 0;
+  prefs.end(); return size;
+}
+static uint32_t restoreRtc(bool& trusted) {
+  trusted = false;
+  if (!board::rtcValid()) return 0;
+  const uint32_t raw = board::rtcNow(); uint32_t utc = 0;
+  timezones::RtcJournal record{};
+  const size_t size = clockJournalSize();
+  if (size) {
+    trusted = size == sizeof record && board::loadBlob("sys", "rtc_clock", &record, sizeof record) == sizeof record &&
+              timezones::recoverRtc(raw, record, utc);
+    if (trusted && !record.committed) writeUtcRtc(utc);
+    else if (trusted) g_rtcUtcReady = true;
+    return utc;
+  }
+  int16_t offset = 0;
+  const bool hasOffset = board::loadBlob("sys", "utc_off", &offset, sizeof offset) == sizeof offset;
+  utc = timezones::legacyUtc(raw, hasOffset, offset);   // the previous shipped default was UTC when utc_off was absent
+  trusted = true;
+  writeUtcRtc(utc);
+  return utc;
+}
+static void beginClock() {
+  bool trusted = false;
+  uint32_t utc = restoreRtc(trusted);
+  if (!trusted) {
+    const uint32_t last = g_shell.lastSeen();
+    timezones::RtcJournal oldClock{}; int16_t oldOffset = 0;
+    const size_t oldSize = clockJournalSize();
+    board::loadBlob("sys", "rtc_clock", &oldClock, sizeof oldClock);
+    // Existing profile timestamps may mix legacy UTC and several local zones: a validated UTC checkpoint is the
+    // conservative source after migration. A malformed journal uses build time instead of guessing its format.
+    const uint32_t checkpoint = timezones::validJournal(oldClock) ? oldClock.target : oldSize ? buildEpoch() : 0;
+    const bool hasOffset = board::loadBlob("sys", "utc_off", &oldOffset, sizeof oldOffset) == sizeof oldOffset;
+    utc = timezones::fallbackUtc(last ? last + 60 : buildEpoch(), checkpoint, hasOffset, oldOffset);
+    if (utc < buildEpoch()) utc = buildEpoch();
+    writeUtcRtc(utc);
+    g_shell.clockRestored();
+    Serial.println("[porthole] RTC unavailable or migration uncertain; clock restored");
+  }
+  g_bootUtcEpoch = utc; g_bootMillis = millis();
+}
+
+// Rollback: the Arduino core marks a freshly updated firmware valid before setup() unless this says "later". setup()
+// does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
+extern "C" bool verifyRollbackLater() { return true; }
+
+// Every update needs internal RAM: its SRAM screen, then wifi and TLS (on the board those took about 28 KB more, with
+// 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
+// good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
+static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
+static bool canUpdate() {
+  const size_t need = board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM;
+  const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+  Serial.printf("[porthole] update ram: %u free, %u needed\n", (unsigned)have, (unsigned)need);
+  return have >= need;
+}
+
+static void markValid() {
+  const bool ok = canUpdate();
+  if (!ok) Serial.println("[porthole] WARNING: too little internal RAM to install the next update");
+  esp_ota_img_states_t st;
+  if (esp_ota_get_state_partition(esp_ota_get_running_partition(), &st) != ESP_OK || st != ESP_OTA_IMG_PENDING_VERIFY) return;
+  if (!ok) {   // back to the firmware that installed this one, which could still update
+    Serial.println("[porthole] new firmware can't update itself: rolling back");
+    esp_ota_mark_app_invalid_rollback_and_reboot();
+    return;   // rollback can fail without a valid spare image; never mark this image valid
+  }
+  esp_ota_mark_app_valid_cancel_rollback();
+  Serial.println("[porthole] new firmware started; marked valid");
+}
+
 void setup() {
   Serial.begin(115200);
   delay(50);
-  Serial.println("\n[porthole] boot");
+  Serial.printf("\n[porthole] boot v=%s slot=%s\n", PORTHOLE_VERSION, esp_ota_get_running_partition()->label);
+  enableLoopWDT();   // until marked valid: a hang panics after 5 s, and the bootloader goes back to the old slot
   board::init();
+  board::presentHires();   // the first frame: the panel path works
+  // Valid before anything can write a save: a rollback to an older firmware would reject a newer save and lose it.
+  markValid();
+  disableLoopWDT();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
-  g_shell.begin(g_store, APPS, N_APPS);   // first boot after Pets Club: its houses become profiles here
-  uint32_t lastSeen = g_shell.lastSeen(), now;
-  if (board::rtcValid()) now = board::rtcNow();
-  else {
-    now = lastSeen ? lastSeen + 60 : buildEpoch();
-    if (now < buildEpoch()) now = buildEpoch();
-    board::rtcSet(now);
-    g_shell.clockRestored();   // else a kid capped today stays on "Back tomorrow": the guess is always that same day
-    Serial.println("[porthole] RTC was not running; clock restored");
-  }
-  g_bootLocalEpoch = now; g_bootMillis = millis();
-  Serial.printf("[porthole] profiles=%d now=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)now, (unsigned long)board::freeHeap());
+  g_bootUtcEpoch = buildEpoch(); g_bootMillis = millis();
+  g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
+  air::setFeed(&g_feed);
+  g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
+  beginClock();
+  Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
+                (unsigned long)utcNow(), (unsigned long)board::freeHeap());
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
-// Idle dimming (no physical buttons: the screen is the only power control).
-static const uint32_t DIM_MS = 60000;   // first dim step; the same minute and activity rule as shell::IDLE_MS
-static void dimWhenIdle(uint32_t ms) {
-  uint32_t idle = g_activity.idleMs(ms);
-  uint8_t want = g_shell.asleep() ? (idle > 20000 ? 0 : 40) : (idle > 300000 ? 0 : idle > DIM_MS ? 30 : 100);
-  if (want != g_backlight) { g_backlight = want; board::setBacklight(want); }
+// Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
+static void dimWhenIdle(uint32_t ms, bool progress) {
+  uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+  g_sys.setDark(want == 0);
+  if (progress && g_sys.manualCheck()) want = g_shell.backlight();
+  if (want != g_backlight) {
+    if (g_backlight == 0 && !progress && !board::settlePanel()) return;
+    g_backlight = want; board::setBacklight(want);
+  }
+}
+
+static bool updateDisplay(const Input& in) {
+  static bool active = false;
+  if (!g_sys.progressRequested()) {
+    if (active) { board::endUpdateDisplay(); active = false; g_updateInputGate.shown(millis()); }
+    return false;
+  }
+  if (!active) active = board::beginUpdateDisplay();
+  g_sys.progressReady(active);   // no NVS, calibration, or image writes until scan-out is independent of PSRAM
+  if (!active) return false;
+  if (in.tap && board::hitUpdateCancel(in.x, in.y)) g_sys.cancelCheck();
+  shell::UpdStatus status = g_sys.status();
+  char label[24];
+  if (g_sys.cancelling()) snprintf(label, sizeof label, "Stopping...");
+  else if (status.state != shell::UP_DOWNLOADING) snprintf(label, sizeof label, "Checking...");
+  else if (status.pct >= 100) snprintf(label, sizeof label, "Verifying...");
+  else snprintf(label, sizeof label, "Downloading %u%%", (unsigned)status.pct);
+  board::drawUpdateProgress(label, !g_sys.committing() && !g_sys.cancelling());
+  return true;
 }
 
 // The frame on the glass for tools/devctl.py. Indexed: "FB 160 160 idx\n", 160*160 palette indices, then the tint's 32
@@ -123,7 +267,9 @@ static void dumpFrame() {
 // Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
-// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics.
+// "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
+// "W<ssid>\t<password>" saves the wifi network, "U" checks for an update now (and downloads it, in the background),
+// "L<lat>,<lon>" sets Radar's home without the menu.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
   for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
@@ -151,13 +297,53 @@ static void accelCommand() {
   if (!board::readAccel(g[0], g[1], g[2], raw)) { Serial.println("[accel] no sensor reading"); return; }
   Serial.printf("[accel] raw=%d,%d,%d g=%d,%d,%d%s\n", raw[0], raw[1], raw[2], g[0], g[1], g[2], g_gravFake ? " (G override on)" : "");
 }
-static void motionCommand(int c) {   // A, G, M: split out of serialCommand for the complexity gate
+static void wifiCommand() {   // W<ssid>\t<password>: the tab is required; an open network has nothing after it
+  String arg = Serial.readStringUntil('\n');
+  if (arg.endsWith("\r")) arg.remove(arg.length() - 1);
+  int tab = arg.indexOf('\t');
+  if (tab < 0 || !g_sys.saveWifi(arg.substring(0, tab).c_str(), arg.substring(tab + 1).c_str())) {
+    Serial.println("[porthole] usage: W<ssid><TAB><password> (ssid 1-32, password up to 64 characters)");
+    return;
+  }
+  Serial.printf("[porthole] wifi saved: %s\n", arg.substring(0, tab).c_str());
+}
+static void updateCommand() {
+  if (!g_sys.tryCheckNow()) {
+    Serial.println("[porthole] update check dropped: one is running, wifi setup holds the radio, or an update is ready");
+    return;
+  }
+  Serial.printf("[porthole] update check started (channel %s)\n", g_sys.channel() == shell::CH_BETA ? "beta" : "stable");
+}
+static void homeCommand() {   // L<lat>,<lon>: decimal degrees; the name says where it came from
+  String arg = Serial.readStringUntil('\n'); arg.trim();
+  char* end = nullptr;
+  shell::Home h;
+  h.lat = strtod(arg.c_str(), &end);
+  const bool comma = end != arg.c_str() && *end == ',';   // "L,5" has no latitude
+  if (comma) h.lon = strtod(end + 1, &end);
+  snprintf(h.name, sizeof h.name, "%.4f, %.4f (set over serial)", h.lat, h.lon);
+  if (!comma || *end || !g_sys.saveHome(h)) { Serial.println("[porthole] usage: L<lat>,<lon> (decimal degrees)"); return; }
+  Serial.println("[porthole] home saved");
+}
+static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
+  else if (c == 'W') wifiCommand();
+  else if (c == 'U') updateCommand();
+  else if (c == 'L') homeCommand();
+}
+static void printSystem() {   // the tail of "S": version, slot and where the update stands
+  shell::UpdStatus u = g_sys.status();
+  const shell::ClockStatus clock = g_sys.clockStatus();
+  Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
+                "sys_time=%d sys_sync=%lu sys_off=%d\n",
+                (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
+                esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck,
+                (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
 static void serialCommand(int c) {
-  if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { board::rtcSet(e); g_bootLocalEpoch = e; g_bootMillis = millis(); Serial.println("[porthole] clock set"); } }
+  if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { const uint32_t utc = timezones::toUtc(e); writeUtcRtc(utc); g_bootUtcEpoch = utc; g_bootMillis = millis(); Serial.println("[porthole] local clock set; RTC stores UTC"); } }
   else if (c == 'R') {
     board::eraseNamespace(shell::NS);
     for (App* a : APPS) board::eraseNamespace(a->store());
@@ -168,7 +354,7 @@ static void serialCommand(int c) {
     if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }
     int n = arg.toInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n);
   }
-  else if (c == 'S') { g_shell.debugPrint(); Serial.printf("heap=%lu now=%lu\n", (unsigned long)board::freeHeap(), (unsigned long)nowSec()); }
+  else if (c == 'S') { g_shell.debugPrint(); printSystem(); }
   else if (c == 'X') {  // X<x>,<y>,<ms>: press at logical (x, y) for ms (the harness's tap/hold)
     int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();
     g_fake = {true, x, y, millis() + (uint32_t)(dur > 0 ? dur : 80)};
@@ -178,12 +364,28 @@ static void serialCommand(int c) {
   else motionCommand(c);
 }
 
+static void checkpointClock(uint32_t ms) {
+  if (!g_rtcUtcReady || (int32_t)(ms - g_nextCheckpoint) < 0) return;
+  g_nextCheckpoint = ms + 3600000u;
+  const uint32_t utc = utcNow();
+  const auto checkpoint = timezones::journal(utc, utc, true);
+  saveClockBlob("rtc_clock", checkpoint);   // once an hour; no RTC write and no profile timestamp reinterpretation
+}
+static void applyClock(uint32_t ms) {
+  checkpointClock(ms);
+  uint32_t synchronized = 0;
+  if (!g_sys.takeClock(synchronized)) return;
+  g_bootUtcEpoch = synchronized; g_bootMillis = ms;
+  writeUtcRtc(synchronized);   // I2C, persistence and shell clock changes belong to this main core only
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt[g_mtAt];
   uint32_t t0 = micros();
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
+  applyClock(ms);
   board::Touch t = board::readTouch();
   if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
     t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
@@ -198,16 +400,23 @@ void loop() {
   in.gx = g_grav[0]; in.gy = g_grav[1]; in.gz = g_grav[2];
   g_activity.step(in, t.down, ms);   // picking up a dark board lights it; only a touch gets swallowed
   uint32_t t1 = micros();
-  g_shell.update(nowSec(), ms, in);   // also saves: the open game at most every 5 s, profiles when they change
+  bool progress = updateDisplay(in);
+  Input shellInput = in;
+  g_updateInputGate.filter(shellInput, millis());   // a Cancel release must never become Check now or Restart now
+  g_shell.update(nowSec(), ms, progress ? Input{} : shellInput);
   uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (g_hires) gfx565::target(board::backBuffer());   // an RGB565 app draws straight into the panel's back buffer
-  g_shell.render();
+  if (!progress) {
+    if (g_hires) gfx565::target(board::backBuffer());
+    g_shell.render();
+  }
   uint32_t t3 = micros();
-  if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  if (progress) delay(20);
+  else if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
-  dimWhenIdle(ms);
+  dimWhenIdle(ms, progress);
+  g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
 }

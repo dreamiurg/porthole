@@ -1,0 +1,153 @@
+# Wireless updates, the shell's side: the "something new" card on the boot after an update (once), the hidden system
+# menu (hold the picker's title for 5 s), Info, Updates, the channel switch, Check now -> downloading -> ready ->
+# Restart now (the channel locked meanwhile), the other resting states, and Back out to the picker. The sim's System is a stub driven by `sys`
+# commands; it runs "dev" (never news) until `sys version` says otherwise.
+reset
+profile Sam 8
+profile Kai 6
+profile Ava 7
+profile Mia 9
+sys version 0.15.0
+reboot
+expect-screen sys_new
+ui-check
+snap 01_new
+tap 80 125
+wait 450
+expect-screen picker
+ui-check picker-full
+# the same version again: no card
+reboot
+expect-screen picker
+# a 1 s hold on the title does nothing; 5 s opens the menu
+hold 80 16
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+ui-check
+snap 02_info
+tap 110 108
+wait 450
+expect-screen sys_updates
+ui-check sys_updates-idle
+snap 03_updates
+expect sys_chan=stable
+tap 107 40
+wait 450
+expect sys_chan=beta
+tap 80 108
+wait 100
+expect sys_checks=1
+expect sys_state=checking
+ui-check sys_updates-checking
+snap 04_checking
+sys newest 0.16.0
+sys download 42
+wait 100
+ui-check sys_updates-downloading
+snap 05_downloading
+sys ready
+wait 100
+ui-check sys_updates-ready
+snap 06_ready
+# the channel stays put with an image waiting
+tap 53 40
+wait 450
+expect sys_chan=beta
+expect sys_state=ready
+tap 80 108
+wait 450
+expect sys_restarts=1
+expect sys_ver=0.16.0
+expect sys_chan=beta
+expect-screen sys_new
+snap 07_restarted
+tap 80 125
+wait 450
+expect-screen picker
+sheet update
+# eight minutes after the restart: the status is idle again, the last check is still on record, and both screens say so
+# ("Checked 8 min ago", "Checks once a day"), not "not yet" / "Not checked yet"
+skip 480
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+expect sys_state=idle
+expect sys_last>0
+ui-check sys_info-rebooted
+snap 08_info_rebooted
+tap 110 108
+wait 450
+ui-check sys_updates-rebooted
+snap 08b_updates_rebooted
+# the other resting states, then Back: Updates -> Info -> picker
+sys current
+wait 100
+ui-check sys_updates-current
+snap 08c_current
+sys failed
+wait 100
+ui-check sys_updates-failed
+snap 09_failed
+tap 53 40
+wait 450
+expect sys_chan=stable
+expect sys_state=idle
+ui-check sys_updates-switched
+tap 80 12
+wait 450
+expect-screen sys_info
+tap 80 12
+wait 450
+expect-screen picker
+# no wifi saved: Info says so, and Check now reports it
+sys nowifi
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+ui-check sys_info-nowifi
+snap 10_nowifi
+tap 110 108
+wait 450
+tap 80 108
+wait 100
+expect sys_state=nowifi
+ui-check sys_updates-nowifi
+snap 11_nowifi_updates
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+sheet states
+# a dev build is never "up to date", even after a check that found a release
+sys version dev
+reboot
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 110 108
+wait 450
+sys current
+sys newest 0.15.0
+wait 100
+expect sys_ver=dev
+expect sys_state=current
+ui-check sys_updates-dev
+snap 12_dev
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+sheet dev

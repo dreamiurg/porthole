@@ -1,7 +1,22 @@
 ---
 name: playtest
-description: Any game (apps/porthole). Use before calling any gameplay or UI change done. Runs the playtest suite (`make -C apps/porthole playtest`), explains how to read apps/porthole/build/playtest/report.md and its FAIL/WARN severities, and says when to escalate to the playtester agent instead of reading it yourself.
+description: Any game (apps/porthole). Use before calling gameplay/UI changes done. Requires an independent child-perspective emulator playtest and iterative game/brief refinement, then supplementary automated playtests and report inspection.
 ---
+
+Before the automated steps below, dispatch an independent `playtester` for the
+**required black-box playthrough**, child-perspective brief, qualitative
+assessment and iteration loop in `apps/porthole/docs/playtesting.md`. Every game's
+gameplay/UI change needs actual final-build play through visible controls; new
+games and major changes need a source-free first-play agent. Specify target age,
+reading/experience and imprecise touch/tilt behavior; test curiosity, wrong
+choices, recovery and boredom alongside completion/replay/exit. Iterate on game
+mechanics, controls, player instructions and the playtester brief, then retest
+until the documented acceptance is met. Preserve persona/brief revisions, build
+hash, outcomes, findings, screenshots and inputs. The implementer's own run is
+supplementary. If independent play is blocked, leave the gate incomplete.
+Debug fixtures, state-aware bots, unobserved trace replays and green CI cannot substitute for
+this pass. Keep hidden-state probes and the automated work below separate from
+the black-box session. Documentation-only/non-player-visible changes are exempt.
 
 1. `make -C apps/porthole playtest` builds `snap` and `snap-asan`, then runs `python3 apps/porthole/tools/playtest.py` against every scenario in `apps/porthole/tests/playtests/*.txt`. It writes `apps/porthole/build/playtest/report.md` and one contact-sheet PNG per scenario under `apps/porthole/build/playtest/`.
 2. To iterate on one scenario instead of the whole suite: `python3 apps/porthole/tools/playtest.py 05_read` (matches file names in `apps/porthole/tests/playtests/` by substring; space-separate several substrings, e.g. `06 monkey`).
@@ -9,7 +24,7 @@ description: Any game (apps/porthole). Use before calling any gameplay or UI cha
    - **Scenario table**: pass/fail, check count, and UI FAIL/WARN counts per scenario. The report's own header states the rule: a scenario fails on a failed directive, a crash, a sanitizer report, or any UI finding — **FAIL and WARN both fail a run (warnings are errors)**.
    - **UI findings table**: one row per (severity, rule, screen), with example findings and which scenario saw them. `<details>` blocks below hold the complete list when there are more than a few.
 4. Know the rules the audit applies (from `apps/porthole/tools/playtest.py`'s `audit()` — check there if a threshold matters and this drifts):
-   - **target size** — FAIL if the smaller dimension is under 18 logical px (6 mm); WARN if under 24 px (8 mm) and area under 480 px². The repo's real floor (apps/porthole/CLAUDE.md hard constraint 1) is 24x22 — a WARN here is still a constraint violation, not optional polish.
+   - **target size** — FAIL if the smaller dimension is under 18 logical px (6 mm); WARN if under 24 px (8 mm) and area under 480 px². The repo's real floor (apps/porthole/AGENTS.md hard constraint 1) is 24x22 — a WARN here is still a constraint violation, not optional polish.
    - **round edge** — FAIL if less than 85% of a region's area is inside the circle, or its center is more than 70 px from (80,80).
    - **overlap** — FAIL if two regions share more than 4x4 px (WARN instead if one fully nests inside the other, e.g. a badge on a button).
    - **spacing** — WARN if two regions are under 2 px apart without overlapping.
@@ -20,5 +35,5 @@ description: Any game (apps/porthole). Use before calling any gameplay or UI cha
    The contact sheet (`make_sheet()`) keeps the 160px round-trip only when the snapshot is an exact 3x nearest-neighbor replicate (an indexed game), and otherwise resamples straight from 480 to 320 so native RGB565 screenshots stay sharp.
 5. For a quick ad hoc check of one screen outside the formal suite, write a short raw script instead (see the `tour` skill) and use its `ui` command — faster, but it prints raw hit-region/text-box numbers; it does not apply the FAIL/WARN rules above for you.
 6. To add a new formal scenario, add a file under `apps/porthole/tests/playtests/` using the directive language (`expect`, `expect-screen`, `ui-check`, `sheet`, `follow-glow`, `solve-word`, `answer-book`, `repeat N ... end`, plus raw sim commands from the `tour` skill) — read an existing scenario file and `apps/porthole/tools/playtest.py`'s `play()` function first; directives are compiled into a raw sim script under the hood, they are not understood by `apps/porthole/host/sim.cpp` directly.
-7. Escalate to the `playtester` agent when the change touches more than one screen, adds a new interactive control, produces a FAIL you're not confident how to fix, or a monkey scenario times out or trips the sanitizer.
+7. Route supplementary FAIL findings, monkey timeouts and sanitizer errors to the appropriate owner, and have the independent `playtester` retest any resulting player-visible changes. The independent pass above is mandatory even when the automated suite passes.
 8. Never call a UI or gameplay-feel change done from `make -C apps/porthole test` alone — `apps/porthole/host/test_pet.cpp` never renders a frame, so it cannot catch a layout, contrast, or feedback problem.

@@ -1,0 +1,38 @@
+# Wiggling hard while hidden rustles the table: Grandma's next move after the opening sweep checks it, and rolling away in time is safe.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 300
+expect hidden=1
+tilt -500 866 0
+wait 550
+expect rustle=1
+expect heard=-1
+ui-check pumpkin_play-rustle
+snap pumpkin_rustle
+wait 700
+expect heard=1
+expect hidden=1
+tilt 0 1000 0
+wait 200
+ui-check pumpkin_play-heard
+snap pumpkin_heard
+wait 13300
+expect phase=1
+expect checking=1
+expect hidden=1
+snap pumpkin_check_heard
+tap 80 131
+tilt 500 866 0
+wait 2500
+expect-screen pumpkin_play
+expect hidden=-1
+expect heard=-1
+sheet rustle

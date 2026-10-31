@@ -1,0 +1,35 @@
+# Source-aware development fixture; not the independent black-box playthrough.
+reset
+profile Dev 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 112 25
+wait 600
+tap 32 102
+wait 600
+snap empty
+tap 103 134
+wait 600
+snap feedback
+tap 103 103
+wait 600
+tap 55 70
+wait 600
+tap 57 134
+wait 600
+tap 81 70
+wait 600
+tap 57 103
+wait 600
+tap 107 70
+wait 600
+snap ready
+tap 103 134
+wait 600
+snap result

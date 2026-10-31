@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "game.h"
 #include <math.h>
 #include <stdio.h>
@@ -20,37 +21,6 @@ constexpr int CX = gfx565::CX, CY = gfx565::CY;   // the tray's center: physics 
 constexpr int DISH_X = CX, DISH_Y = 196, COIN_X = 392, COIN_Y = 376;
 constexpr float DISH_GAIN = 1.2f, DISH_SPRING = 9, DISH_DAMP = 3.5f;   // the dish: 1/s^2, 1/s
 
-// The launcher icon, in the shell's indexed palette (the launcher is the shell's): the tray from above, the goal's net
-// cut into the wood at the top between brass posts, a red peg and the white ball with its dark pentagon. k outline,
-// w walnut, m maple, f/F felt stripes, n net, g brass, r/R peg and its shine, W the ball.
-constexpr char ICON_ART[] =
-  "............kkkkkkkk............" ".........kkkknnnnnnkkkk........." "........kkwwnnnnnnnnwwkk........"
-  "......kkwwwgnnnnnnnngwwwkk......" ".....kkwwwwgnnnnnnnngwwwwkk....." "....kwwwwmmgnFFFFFFngmmwwwwk...."
-  "...kkwwwmmffffffffffffmmwwwkk..." "...kwwwmmffffffffffffffmmwwwk..." "..kwwwmmfffffffffffkrrkfmmwwwk.."
-  ".kkwwmmFFFFFFFFFFFkrRrrkFmmwwkk." ".kwwwmFFFFFFFFFFFFrRRrrrFFmwwwk." ".kwwmmFFFFFFFFFFFFrrrrrrFFmmwwk."
-  "kkwwmmffffffffffffkrrrrkffmmwwkk" "kwwwmffffffffffffffkrrkffffmwwwk" "kwwmmffffffffffffffffffffffmmwwk"
-  "kwwmmFFFFFFFFFFFFFFFFFFFFFFmmwwk" "kwwmmFFFFFFFFFFFFFFFFFFFFFFmmwwk" "kwwmmFFFFFFFkkWkkFFFFFFFFFFmmwwk"
-  "kwwwmffffffkWWWWWkfffffffffmwwwk" "kkwwmmffffkWWWWWWWkfffffffmmwwkk" ".kwwmmffffkWWWkWWWkfffffffmmwwk."
-  ".kwwwmFFFFWWWkkkWWWFFFFFFFmwwwk." ".kkwwmmFFFkWWkkkWWkFFFFFFmmwwkk." "..kwwwmmFFkWWWWWWWkFFFFFmmwwwk.."
-  "...kwwwmmffkWWWWWkfffffmmwwwk..." "...kkwwwmmffkkWkkfffffmmwwwkk..." "....kwwwwmmmmffffffmmmmwwwwk...."
-  ".....kkwwwwmmmmmmmmmmwwwwkk....." "......kkwwwwwwmmmmwwwwwwkk......" "........kkwwwwwwwwwwwwkk........"
-  ".........kkkkwwwwwwkkkk........." "............kkkkkkkk............";
-static_assert(sizeof ICON_ART == 32 * 32 + 1, "the launcher slot fits a 32x32 icon");
-constexpr char ICON_KEYS[] = "kwmfFngrRW";
-constexpr uint8_t ICON_COLS[] = {C_BLACK, C_DKBROWN, C_TAN, C_DKGREEN, C_LEAF, C_SLATE, C_GOLD, C_BROWN, C_PEACH, C_WHITE};
-static_assert(sizeof ICON_KEYS - 1 == sizeof ICON_COLS, "one color per key");
-constexpr uint8_t iconColor(char c) {
-  for (int i = 0; ICON_KEYS[i]; i++) if (ICON_KEYS[i] == c) return ICON_COLS[i];
-  return C_T;
-}
-struct IconPx { uint8_t px[32 * 32]; };
-constexpr IconPx makeIcon() {
-  IconPx ic{};
-  for (int i = 0; i < 32 * 32; i++) ic.px[i] = iconColor(ICON_ART[i]);
-  return ic;
-}
-constexpr IconPx ICON_PX = makeIcon();
-const gfx::Sprite ICON = {32, 32, ICON_PX.px};
 
 int px(float v) { return CX + (int)lroundf(v); }
 int coinX(int i) { return COIN_HX[i % 4]; }
@@ -64,11 +34,11 @@ Vec postOnScreen(const Level& l, int side, const paint::Mouth& m) {
 Rail onScreen(const Rail& r) { return {(int16_t)(CX + r.x0), (int16_t)(CY + r.y0), (int16_t)(CX + r.x1), (int16_t)(CY + r.y1)}; }
 }  // namespace
 
-const gfx::Sprite& Game::icon() const { return ICON; }
+const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 // Every visit: the kid's own level, and the Calibrate page. After all of them, level 1 again.
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; in_ = Input{};
+  now_ = e.nowSec; ms_ = e.ms; in_ = Input{}; daylight_ = e.daylight;
   save_ = Save{};
   for (int i = 0; i < e.n; i++)   // only this kid's save; a bad one starts from the first level
     if (e.all[i].id == e.who->id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);

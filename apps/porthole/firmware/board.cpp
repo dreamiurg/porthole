@@ -1,7 +1,11 @@
 #include "board.h"
+#include "display_frames.h"
+#include "update_scanout.h"
+#include "gfx565.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <Preferences.h>
+#include <SD_MMC.h>
 #include "driver/spi_master.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
@@ -25,8 +29,10 @@ static const uint8_t TP_ADDR = 0x15, RTC_ADDR = 0x51;
 static uint8_t g_expOut = 0xFF;
 static esp_lcd_panel_handle_t g_panel = nullptr;
 static uint16_t* g_fbs[2] = {nullptr, nullptr};
-static int g_front = 0;
+static DisplayFrames g_frames;
+static portMUX_TYPE g_frameMux = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t g_vsync = nullptr;
+static SemaphoreHandle_t g_frameCopied = nullptr;
 
 static void i2cWrite(uint8_t addr, uint8_t reg, const uint8_t* d, size_t n) {
   Wire.beginTransmission(addr); Wire.write(reg); for (size_t i = 0; i < n; i++) Wire.write(d[i]); Wire.endTransmission(true);
@@ -92,7 +98,10 @@ static void lcdInitPanel() {
   cfg.timings.vsync_pulse_width = 3; cfg.timings.vsync_back_porch = 8; cfg.timings.vsync_front_porch = 8;
   cfg.timings.flags.pclk_active_neg = 0;
   cfg.data_width = 16; cfg.bits_per_pixel = 16; cfg.num_fbs = 2;
-  cfg.bounce_buffer_size_px = 10 * LCD_W; cfg.dma_burst_size = 64;
+  // Scan from internal RAM while the CPU copies ahead from PSRAM. The local driver backports the missed-EOF
+  // recovery fix and restarts only on underrun/request, rather than disturbing every healthy frame.
+  cfg.bounce_buffer_size_px = 10 * LCD_W;
+  cfg.dma_burst_size = 64;
   cfg.hsync_gpio_num = PIN_HSYNC; cfg.vsync_gpio_num = PIN_VSYNC; cfg.de_gpio_num = PIN_DE; cfg.pclk_gpio_num = PIN_PCLK; cfg.disp_gpio_num = -1;
   for (int i = 0; i < 16; i++) cfg.data_gpio_nums[i] = PIN_DATA[i];
   cfg.flags.fb_in_psram = 1; cfg.flags.double_fb = 1;
@@ -104,35 +113,51 @@ static void lcdInitPanel() {
   g_fbs[0] = (uint16_t*)a; g_fbs[1] = (uint16_t*)b;
   memset(g_fbs[0], 0, LCD_W * LCD_H * 2); memset(g_fbs[1], 0, LCD_W * LCD_H * 2);
   g_vsync = xSemaphoreCreateBinary();
+  g_frameCopied = xSemaphoreCreateBinary();
+  ESP_ERROR_CHECK(g_vsync && g_frameCopied ? ESP_OK : ESP_ERR_NO_MEM);
   esp_lcd_rgb_panel_event_callbacks_t cbs = {};
   cbs.on_vsync = [](esp_lcd_panel_handle_t, const esp_lcd_rgb_panel_event_data_t*, void*) -> bool {
     BaseType_t hp = pdFALSE; xSemaphoreGiveFromISR(g_vsync, &hp); return hp == pdTRUE;
+  };
+  cbs.on_frame_buf_complete = [](esp_lcd_panel_handle_t, const esp_lcd_rgb_panel_event_data_t*, void*) -> bool {
+    portENTER_CRITICAL_ISR(&g_frameMux);
+    bool done = g_frames.frameCopied();
+    portEXIT_CRITICAL_ISR(&g_frameMux);
+    if (!done) return false;
+    BaseType_t hp = pdFALSE; xSemaphoreGiveFromISR(g_frameCopied, &hp); return hp == pdTRUE;
   };
   esp_lcd_rgb_panel_register_event_callbacks(g_panel, &cbs, nullptr);
   esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[0]);
 }
 
 void present(const uint8_t* fb160, const uint16_t* pal565) {
-  uint16_t* dst = g_fbs[1 - g_front];
-  static uint16_t line[LCD_W];
-  for (int y = 0; y < 160; y++) {
-    const uint8_t* src = fb160 + y * 160;
-    uint16_t* l = line;
-    for (int x = 0; x < 160; x++) { uint16_t c = pal565[src[x]]; *l++ = c; *l++ = c; *l++ = c; }
-    uint16_t* row = dst + (size_t)y * 3 * LCD_W;
-    memcpy(row, line, sizeof line); memcpy(row + LCD_W, line, sizeof line); memcpy(row + 2 * LCD_W, line, sizeof line);
-  }
+  gfx565::target(backBuffer());
+  gfx565::expandIndexed3(fb160, pal565);
   presentHires();
 }
-uint16_t* backBuffer() { return g_fbs[1 - g_front]; }
-const uint16_t* frontBuffer() { return g_fbs[g_front]; }
-void presentHires() {
-  // A vsync given while the loop was busy would end the wait below at once, and the next frame would be drawn into the
-  // buffer still being scanned out. Drop it: the wait then ends at the swap.
+uint16_t* backBuffer() { return g_fbs[g_frames.back()]; }
+bool beginUpdateDisplay() { return update_scanout::begin(); }
+void drawUpdateProgress(const char* label, bool cancellable) { update_scanout::draw(label, cancellable); }
+bool hitUpdateCancel(int x, int y) { return update_scanout::hitCancel(x, y); }
+void endUpdateDisplay() {
+  update_scanout::stop();
+  ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));   // restore normal timings, vsync ISR and original framebuffer DMA
+  update_scanout::release();   // normal DMA no longer references the sparse frame
   xSemaphoreTake(g_vsync, 0);
-  esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer());  // pointer is a panel fb: swaps at next vsync
-  g_front = 1 - g_front;
-  xSemaphoreTake(g_vsync, pdMS_TO_TICKS(40));
+}
+const uint16_t* frontBuffer() { return g_fbs[g_frames.front()]; }
+void presentHires() {
+  // Submission and arming are atomic with the same-core DMA ISR. An earlier frame completion cannot acknowledge it.
+  portENTER_CRITICAL(&g_frameMux);
+  xSemaphoreTake(g_frameCopied, 0);
+  ESP_ERROR_CHECK(g_frames.submit() ? ESP_OK : ESP_ERR_INVALID_STATE);
+  ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, backBuffer()));
+  portEXIT_CRITICAL(&g_frameMux);
+  // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
+  ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
+  portENTER_CRITICAL(&g_frameMux);
+  ESP_ERROR_CHECK(g_frames.finish() ? ESP_OK : ESP_ERR_INVALID_STATE);
+  portEXIT_CRITICAL(&g_frameMux);
 }
 
 // ---- touch (CST820) ----
@@ -229,6 +254,13 @@ bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw) {
 }
 
 void setBacklight(uint8_t pct) { if (pct > 100) pct = 100; ledcWrite(PIN_BL, pct == 100 ? 1023 : pct * 10); }
+bool settlePanel() {
+  ESP_ERROR_CHECK(esp_lcd_rgb_panel_restart(g_panel));
+  xSemaphoreTake(g_vsync, 0);   // discard a notification left over from the download
+  // The first ISR restarts DMA; by the second vsync an entire clean frame has been scanned out.
+  for (int i = 0; i < 2; i++) if (xSemaphoreTake(g_vsync, pdMS_TO_TICKS(100)) != pdTRUE) return false;
+  return true;
+}
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 
 // Each call opens its namespace read-write (creating it, as the old boot-time begin() did) and the
@@ -241,6 +273,13 @@ size_t loadBlob(const char* ns, const char* key, void* d, size_t n) {
 void eraseBlob(const char* ns, const char* key) { Preferences p; if (p.begin(ns, false)) p.remove(key); }
 void eraseNamespace(const char* ns) { Preferences p; if (p.begin(ns, false)) p.clear(); }
 uint32_t freeHeap() { return (uint32_t)ESP.getFreeHeap(); }
+
+// ---- microSD (1-bit SDMMC; pins from the Waveshare wiki's table, not their demo code) ----
+// CLK and CMD are GPIO2/GPIO1, the ST7701's init SPI: lcdInitPanel() frees that bus for good, and with the panel's CS
+// (expander P2) held high it ignores the card's traffic. D3 is expander P3, held high since init(), so the card starts
+// in SD mode rather than SPI.
+static const int PIN_SD_CLK = PIN_LCD_SPI_CLK, PIN_SD_CMD = PIN_LCD_SPI_MOSI, PIN_SD_D0 = 42;
+bool mountSd() { return SD_MMC.setPins(PIN_SD_CLK, PIN_SD_CMD, PIN_SD_D0) && SD_MMC.begin("/sdcard", true); }
 
 void init() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);

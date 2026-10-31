@@ -13,7 +13,7 @@ enum Col : uint8_t {
 };
 constexpr uint8_t C_T = 255;  // transparent (sprites only)
 
-static const uint32_t PALETTE_RGB[C_COUNT] = {
+inline constexpr uint32_t PALETTE_RGB[C_COUNT] = {
   0x000000, 0x1D2B53, 0x7E2553, 0x008751, 0xAB5236, 0x5F574F, 0xC2C3C7, 0xFFF1E8,
   0xFF004D, 0xFFA300, 0xFFEC27, 0x00E436, 0x29ADFF, 0x83769C, 0xFF77A8, 0xFFCCAA,
   0xE6B27A, 0x5C3A1E, 0xFFF7D6, 0xA8E0FF, 0x16213E, 0xC47A3A, 0x8A4B22, 0xF2D9B5,
@@ -41,6 +41,6 @@ static inline void palette_build(Tint tint, uint32_t out[C_COUNT]) {
     out[i] = (uint32_t)(r << 16 | g << 8 | b);
   }
 }
-static inline uint16_t rgb888_to_565(uint32_t c) {
+constexpr uint16_t rgb888_to_565(uint32_t c) {
   return (uint16_t)(((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x001F));
 }

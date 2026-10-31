@@ -1,0 +1,10 @@
+{
+  "binary_sha256": "c3cd4b8291c6e8d15e99504d229990c85fe4677f5db5d2c3cdcd9bd909ec7753",
+  "matching_snapshots": 217,
+  "changed_snapshots": [
+    "164-rest-choice.png",
+    "166-village-preview.png",
+    "168-village-new-preview.png"
+  ],
+  "setup": "Fresh campaign; shell session20/daily120 minutes only."
+}

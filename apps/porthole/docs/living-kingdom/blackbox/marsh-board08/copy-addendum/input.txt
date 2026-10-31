@@ -1,0 +1,196 @@
+wait 1000
+snap 001-fixture-picker
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+snap 002-new-title
+down 94 137
+wait 66
+up
+wait 550
+snap 003-restored-confirm
+down 50 133
+wait 66
+up
+wait 550
+down 50 133
+wait 66
+up
+wait 550
+down 51 82
+wait 66
+up
+wait 550
+snap 004-journal-chapter
+down 112 133
+wait 66
+up
+wait 550
+snap 005-journal-bridge
+down 112 133
+wait 66
+up
+wait 550
+snap 006-journal-supplies
+down 112 133
+wait 66
+up
+wait 550
+snap 007-journal-river
+down 112 133
+wait 66
+up
+wait 550
+snap 008-journal-next
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 009-clue-reread
+down 80 133
+wait 66
+up
+wait 550
+down 102 110
+wait 66
+up
+wait 550
+snap 010-returned-choices
+down 80 75
+wait 66
+up
+wait 550
+down 80 133
+wait 66
+up
+wait 550
+snap 011-council-reread1
+down 112 133
+wait 66
+up
+wait 550
+snap 012-council-reread2
+down 50 133
+wait 66
+up
+wait 550
+snap 013-council-back1
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+down 112 133
+wait 66
+up
+wait 550
+snap 014-council-page9
+down 112 133
+wait 66
+up
+wait 550
+down 80 75
+wait 66
+up
+wait 550
+snap 015-reselected-confirm
+down 112 133
+wait 66
+up
+wait 550
+snap 016-marsh-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 017-corrected-result2
+wait 15000
+down 50 133
+wait 66
+up
+wait 550
+snap 018-result-back1
+down 112 133
+wait 66
+up
+wait 550
+snap 019-result-reread2
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 020-savequit
+reboot
+wait 1000
+down 80 68
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 109 136
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 94 137
+wait 66
+up
+wait 550
+snap 021-corrected-result-resume
+down 112 133
+wait 66
+up
+wait 550
+snap 022-next-scene

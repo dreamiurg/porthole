@@ -8,7 +8,7 @@ description: Any game (apps/porthole). Use when building, flashing, or bringing 
    ```bash
    uv pip install --python ~/.local/share/uv/tools/platformio/bin/python pyyaml rich-click intelhex rich esp-idf-size "click<8.2"
    ```
-3. Find the device: `pio device list` (the on-board CH343 USB-UART bridge; macOS `/dev/cu.usbmodem*`, Linux usually `/dev/ttyACM*`). PlatformIO auto-detects it when only one board is attached.
+3. Find the device: `pio device list`. The board has two USB-C ports, and either works for flashing, logs and serial commands (`firmware/console.h` writes to and reads from both): the ESP32-S3's own USB (VID:PID 303A:1001, macOS `/dev/cu.usbmodem*`, Linux `/dev/ttyACM*`) and "USB to UART" through the CH343 (macOS `/dev/cu.usbserial-*` or `/dev/cu.usbmodem*`, Linux `/dev/ttyUSB*` or `/dev/ttyACM*`). PlatformIO auto-detects it when only one board is attached.
 4. Flash: `make -C apps/porthole flash` (or `make -C apps/porthole flash PORT=<port>`).
 5. Monitor: `make -C apps/porthole monitor` (or with `PORT=<port>`). Expect `[porthole] boot`, then within a couple seconds `[porthole] profiles=N now=<epoch> heap=<bytes>`.
 6. Set the clock if the boot log says the RTC was not running: send `T<epoch>` over serial, where `<epoch>` is local wall-clock seconds (the board does no timezone math): `printf 'T%s\n' "$(python3 -c 'import time; print(int(time.time()) + time.localtime().tm_gmtoff)')" > <port>`. Plain `date +%s` is UTC on every machine and would put the board hours off.

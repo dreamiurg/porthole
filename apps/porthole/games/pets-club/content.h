@@ -15,7 +15,7 @@ struct Book {
 };
 
 // Reading level: grade 2-3. Short sentences, ~20-30 words per page.
-static const Book BOOKS[] = {
+inline constexpr Book BOOKS[] = {
   {"The Lost Ball", C_RED, 0, 1, {
     "Pip was a small brown dog with one white ear. Pip loved one thing more than treats. Pip loved his red ball.",
     "One windy day the ball rolled away. It rolled down the hill. It rolled past the pond. Pip ran and ran.",

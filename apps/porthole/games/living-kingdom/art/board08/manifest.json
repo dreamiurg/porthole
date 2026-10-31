@@ -1,0 +1,343 @@
+{
+  "source_sha256": "47edba8170bb6e64986c5093e68d719fa37349dcc8b7bee505aa99488f8b2e4d",
+  "assets": {
+    "title": {
+      "crop": [
+        16,
+        3,
+        324,
+        227
+      ],
+      "sha256": "780de32fdc47272d46a331eecb097a6aa6eba6e173f36ea23f88444f8d918c89",
+      "source": "source.png"
+    },
+    "village": {
+      "crop": [
+        652,
+        72,
+        906,
+        193
+      ],
+      "sha256": "25c38e233277a5e0257222b89714f86831289bcb4664dc5a7e88b904486ff45e",
+      "source": "source.png"
+    },
+    "woods": {
+      "crop": [
+        952,
+        412,
+        1210,
+        530
+      ],
+      "sha256": "a190d75415e401d3cd2146c912f36c8732a4c3ac5a30e92548b61f375cbcb6e5",
+      "source": "source.png"
+    },
+    "tower": {
+      "crop": [
+        47,
+        766,
+        287,
+        829
+      ],
+      "sha256": "f8028f009eecf8f61e665de7c0df35d1a76b8e31e4eb2e21d654177553982a55",
+      "source": "source.png"
+    },
+    "sunset": {
+      "crop": [
+        1251,
+        750,
+        1508,
+        858
+      ],
+      "sha256": "88072d35d24aa45be83a8cd9d589d8827f0bdc9d212672e7d32024d8d3323e7f",
+      "source": "source.png"
+    },
+    "princess": {
+      "crop": [
+        39,
+        417,
+        120,
+        527
+      ],
+      "sha256": "a02586d12fc0021cccda16af31fcf51303672a8650e8ca0fe6ec45bd494b59c0",
+      "source": "source.png"
+    },
+    "lucas": {
+      "crop": [
+        132,
+        434,
+        206,
+        527
+      ],
+      "sha256": "9ee67f86311ba299325cb75adb5fb3daf006a30092fcae1958bd37940262fdd4",
+      "source": "source.png"
+    },
+    "dribble": {
+      "crop": [
+        211,
+        417,
+        287,
+        527
+      ],
+      "sha256": "2f94530d2c9449b4a3cb9e3aee17670836c0a4813a70e4b247a3d2d430c69c6e",
+      "source": "source.png"
+    },
+    "item-bread": {
+      "crop": [
+        548,
+        433,
+        586,
+        467
+      ],
+      "sha256": "57e13fcb7c0ca97626d6839d4b6e426f010ce1d6ddc1b7de8873487b9859a82f",
+      "source": "source.png"
+    },
+    "item-map": {
+      "crop": [
+        455,
+        432,
+        495,
+        469
+      ],
+      "sha256": "fa55375e0c2fea44be160e24f9095b37b3be306419d61e40ccc7b2e4c1640ac2",
+      "source": "source.png"
+    },
+    "map-reference": {
+      "crop": [
+        331,
+        4,
+        629,
+        272
+      ],
+      "sha256": "66fd530ee3d0a3ccf95d3e19c847d7b53f2c5f12225817d3b62fe765449fadc9",
+      "source": "source.png"
+    },
+    "bridge": {
+      "source": "atlas-base.png",
+      "crop": [
+        0,
+        0,
+        768,
+        341
+      ],
+      "sha256": "eb7558e5b5ac81390ca657a9d16ec1da2b4154730c406c50552c69a797e88d7b"
+    },
+    "bridge-repaired": {
+      "source": "atlas-base.png",
+      "crop": [
+        768,
+        0,
+        1536,
+        341
+      ],
+      "sha256": "b8720f52402f014960e15803687a2aebfd738adc4ca2534027eae308e6a4fda6"
+    },
+    "mill": {
+      "source": "atlas-base.png",
+      "crop": [
+        0,
+        342,
+        768,
+        682
+      ],
+      "sha256": "b6f95d23b8c9853e272fa9ecd48a3e051c5612eb717a259bac76877a01e584eb"
+    },
+    "marsh": {
+      "source": "atlas-base.png",
+      "crop": [
+        768,
+        342,
+        1536,
+        682
+      ],
+      "sha256": "a15293d8bc5526e7db8252a9f79f3951cda33331f75768504c1899a67d328d5a"
+    },
+    "bridge-state4": {
+      "source": "atlas-base.png",
+      "crop": [
+        0,
+        683,
+        768,
+        1024
+      ],
+      "sha256": "5ebf01af4a7d9adbea5f95ff50b5e93695a99ac4165de49676a33586c51ba6b7"
+    },
+    "mill-state1": {
+      "source": "atlas-water.png",
+      "crop": [
+        0,
+        64,
+        768,
+        448
+      ],
+      "sha256": "fbcd1526d48a3c2318decaf7625f05d8af10cfa78028398a093ad0e578902c4f"
+    },
+    "mill-state2": {
+      "source": "atlas-water.png",
+      "crop": [
+        768,
+        64,
+        1536,
+        448
+      ],
+      "sha256": "b3afdea5ebd2793bb162fae96cee332749813a9655b521be26c60ea6bc25ea77"
+    },
+    "marsh-state1": {
+      "source": "atlas-water.png",
+      "crop": [
+        0,
+        576,
+        768,
+        960
+      ],
+      "sha256": "0f52ea0e46a67e331d86cc2fa5d40cdca2299f130927d3a018cae807e3075bd7"
+    },
+    "marsh-state2": {
+      "source": "atlas-water.png",
+      "crop": [
+        768,
+        576,
+        1536,
+        960
+      ],
+      "sha256": "3fc741e795a179898ada1e78d43e10222cb8f6c6d803d4d6abee299cc4fb26ee"
+    },
+    "mill-state3": {
+      "source": "atlas-work.png",
+      "crop": [
+        0,
+        48,
+        768,
+        432
+      ],
+      "sha256": "5a2830d95982dde3b81e21d97344e425ec035798488993edef252644ec298128"
+    },
+    "marsh-state3": {
+      "source": "atlas-work.png",
+      "crop": [
+        768,
+        48,
+        1536,
+        432
+      ],
+      "sha256": "c13d79b1071a66d107d03d80c19495e3ee821a07521dad3e37e85783671edfe0"
+    },
+    "mill-state4": {
+      "source": "atlas-work.png",
+      "crop": [
+        0,
+        560,
+        768,
+        944
+      ],
+      "sha256": "354daf4c6f451e2d5edd08cd4530f047947aefe439c7c0bf2d0c00273fd394e5"
+    },
+    "marsh-state4": {
+      "source": "atlas-work.png",
+      "crop": [
+        768,
+        560,
+        1536,
+        944
+      ],
+      "sha256": "676615711a08b5e078b8df485dd23e7e725b1165fd8b1a825f9bc3f7946330fb"
+    },
+    "item-rope": {
+      "source": "atlas-items.png",
+      "crop": [
+        2,
+        2,
+        510,
+        510
+      ],
+      "sha256": "0146a9593b6de90d98b5c9840e0951a62625c01576011a488f276f1a17e6b15f"
+    },
+    "item-wood": {
+      "source": "atlas-items.png",
+      "crop": [
+        514,
+        2,
+        1022,
+        510
+      ],
+      "sha256": "da51f23d26bde164a5f5e4a36cce0a0d4e526f1acc359f24e87367c63d30d36b"
+    },
+    "item-thyme": {
+      "source": "atlas-items.png",
+      "crop": [
+        1026,
+        2,
+        1534,
+        510
+      ],
+      "sha256": "50441b04c3f21c06829f6aae5fb5db767546c3dc8a8da73499de32f147b96499"
+    },
+    "item-flour": {
+      "source": "atlas-items.png",
+      "crop": [
+        2,
+        514,
+        510,
+        1022
+      ],
+      "sha256": "8143590ee871e41b554ab594d078be594a92acdcf1e0a1c04a3e3409d0bc6699"
+    },
+    "skin-paper": {
+      "source": "atlas-items.png",
+      "crop": [
+        1048,
+        530,
+        1520,
+        985
+      ],
+      "sha256": "f8f70ab9cb7b8701217ffdbd30a6ae33ac11afce64383a77098b82f80b6a84cd"
+    },
+    "skin-gold": {
+      "source": "atlas-items.png",
+      "crop": [
+        537,
+        636,
+        998,
+        738
+      ],
+      "sha256": "80b1e73b03d3a4c4798fafa5a87dfe909dbc498dfdbbcf41de21589a26380e4c"
+    },
+    "skin-violet": {
+      "source": "atlas-items.png",
+      "crop": [
+        537,
+        748,
+        998,
+        850
+      ],
+      "sha256": "a7e79719410061bf5f0783e25a95d10d665621633d5b874796f33d36c3c29d47"
+    },
+    "skin-dark": {
+      "source": "atlas-items.png",
+      "crop": [
+        537,
+        860,
+        998,
+        985
+      ],
+      "sha256": "a45d76ed4108e7ec2d011cf3ebca2a65dbca041335f553115d58ad14cc5bc7af"
+    },
+    "world-map": {
+      "source": "world-map.png",
+      "crop": [
+        0,
+        0,
+        1254,
+        1254
+      ],
+      "sha256": "2d727fabee9889689397d3bbb1b95584a8544e4989ebc43dc99a60d4f60ac1c1"
+    }
+  },
+  "sources": {
+    "atlas-work.png": "21faaa028a4022de7f5509e8bc21b2e218b208686ee1f4b9ec8f1dba948e97c3",
+    "atlas-water.png": "4b0ecb1b3649db4a45d9233c5d2d12bbeae8b818637fcb4cac55701e8cf4dd87",
+    "atlas-base.png": "d24469030f247b1e2be7b9b47085a01048efbec6c51aae1ddc6cb9d18757cfac",
+    "atlas-items.png": "ab251da9b5b22f712db8e2362c3c1b9178b9727854b6fb77b316c4b0bf8436ce",
+    "source.png": "47edba8170bb6e64986c5093e68d719fa37349dcc8b7bee505aa99488f8b2e4d",
+    "world-map.png": "2d727fabee9889689397d3bbb1b95584a8544e4989ebc43dc99a60d4f60ac1c1"
+  }
+}

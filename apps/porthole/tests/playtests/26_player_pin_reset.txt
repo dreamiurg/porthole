@@ -1,0 +1,245 @@
+# Recover one forgotten player PIN through the adult menu. Other profiles and the admin code stay protected.
+# Empty/full lists, fourth-player selection, cancellation, repeated taps, drag-off, and persistence are covered.
+reset
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 141
+wait 450
+expect-screen sys_players
+ui-check sys_players-empty
+snap 01_empty
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+reset
+profile Sam 8 1234
+profile Kai 6 5678
+profile Ava 7
+profile Mia 9 9999
+tap 80 32
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 80 141
+wait 450
+expect-screen sys_players
+ui-check sys_players-full
+snap 02_full
+tap 80 100
+wait 450
+expect-screen sys_players
+ui-check sys_players-no-pin
+snap 03_no_pin
+tap 80 100
+wait 450
+expect-screen sys_players
+wait 1500
+tap 80 12
+wait 450
+tap 80 70
+wait 450
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_pin_again
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_admin
+wait 1500
+ui-check sys_admin-player-pins
+snap 04_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 49 63
+tap 49 63
+tap 49 63
+wait 900
+expect-screen sys_pin
+wait 1000
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 141
+wait 450
+expect-screen sys_players
+tap 80 122
+wait 450
+expect-screen sys_player_pin
+ui-check
+snap 05_confirm
+tap 80 12
+wait 450
+expect-screen sys_players
+tap 80 122
+wait 450
+tap 80 94
+wait 450
+expect-screen sys_players
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+tap 80 119
+wait 450
+expect-screen pin
+tap 80 12
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+tap 106 132
+wait 450
+tap 80 141
+wait 450
+expect-screen sys_players
+tap 80 122
+wait 220
+tap 80 122
+wait 450
+expect-screen sys_player_pin
+ui-check sys_player_pin-double-tap
+snap 06_double_tap
+down 80 118
+move 140 80
+up
+wait 450
+expect-screen sys_player_pin
+hold 80 118
+wait 450
+expect-screen sys_player_pin
+tap 80 118
+wait 450
+expect-screen sys_players
+ui-check sys_players-reset
+snap 07_reset
+wait 1500
+ui-check sys_players-mia-cleared
+snap 08_cleared
+tap 80 122
+wait 450
+expect-screen sys_players
+ui-check sys_players-reset-again
+snap 09_no_pin_again
+sheet recovery
+reboot
+expect-screen picker
+tap 80 119
+wait 450
+expect-screen launcher
+expect profile=3/4
+expect age=9
+tap 80 32
+wait 450
+tap 80 41
+wait 450
+expect-screen pin
+tap 119 118
+tap 119 118
+tap 119 118
+tap 119 118
+wait 900
+expect-screen pin
+wait 1000
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen launcher
+expect profile=0/4
+tap 80 32
+wait 450
+tap 80 67
+wait 450
+expect-screen pin
+tap 80 90
+tap 119 90
+tap 41 118
+tap 80 118
+wait 900
+expect-screen launcher
+expect profile=1/4
+tap 80 32
+wait 450
+tap 80 93
+wait 450
+expect-screen launcher
+expect profile=2/4
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+tap 79 63
+tap 79 63
+tap 79 63
+tap 79 126
+wait 900
+expect-screen sys_info
+tap 106 132
+wait 450
+tap 80 141
+wait 450
+expect-screen sys_players
+ui-check sys_players-rebooted
+snap 10_rebooted
+tap 80 122
+wait 450
+expect-screen sys_players
+tap 80 12
+wait 450
+expect-screen sys_admin
+tap 80 12
+wait 450
+expect-screen sys_info
+tap 80 12
+wait 450
+expect-screen picker
+sheet persistence

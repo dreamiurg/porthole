@@ -222,6 +222,29 @@ static void pictures() {
   assert(fb[0] == 4 && !fb[1] && !fb[W]);
 }
 
+static void indexedExpansion() {
+  struct Guarded { uint16_t before, pixels[W * H], after; };
+  static Guarded buffers[2];
+  static uint8_t logical[160 * 160];
+  uint16_t palette[256];
+  for (int i = 0; i < 256; i++) palette[i] = (uint16_t)(i * 257);   // all bits, including black and white
+  for (int i = 0; i < 160 * 160; i++) logical[i] = (uint8_t)(i * 37 + i / 160);
+  uint32_t previous = 0;
+  for (int frame = 0; frame < 3; frame++) {
+    Guarded& out = buffers[frame & 1];
+    out.before = 0x1234; out.after = 0xABCD;
+    target(out.pixels);
+    expandIndexed3(logical, palette);
+    assert(out.before == 0x1234 && out.after == 0xABCD);
+    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
+      assert(out.pixels[y * W + x] == palette[logical[(y / 3) * 160 + x / 3]]);
+    if (frame) assert(os::crc32(buffers[(frame - 1) & 1].pixels, sizeof out.pixels) == previous);
+    previous = os::crc32(out.pixels, sizeof out.pixels);
+    for (uint8_t& c : logical) c++;   // a different frame must land only in the next target
+  }
+  target(g_fb);
+}
+
 int main() {
   widths();
   pages();
@@ -231,6 +254,7 @@ int main() {
   shapes();
   images();
   pictures();
+  indexedExpansion();
   puts("test_gfx565: all checks passed");
   return 0;
 }

@@ -125,7 +125,9 @@ void nav(const Input& in, const Nav& n, int page, int count) {
 }
 int navTapped(const Input& in, int page, int count) { return navTapped(in, list(page, count)); }
 void nav(const Input& in, int page, int count) { nav(in, list(page, count), page, count); }
-void picture(int id, int x, int y, int scale) { gfx565::blit(DISCOVERY_ART[id], x, y, scale); }
+void picture(int id, int x, int y, int scale) {
+  if ((unsigned)id < DISCOVERY_COUNT) packed565::draw(DISCOVERY_ART[id], x, y, scale);
+}
 void pictureRow(const Input& in, const Box& b, int id, const char* label) {
   frame(in, {b, label, &FONT20, PURPLE, true});
   picture(id, b.x * 3 + ROW_PICTURE_X, b.y * 3 + ROW_PICTURE_Y, 1);

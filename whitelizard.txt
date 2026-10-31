@@ -22,5 +22,4 @@ apps/porthole/games/pets-club/tools/check_content.py:main
 apps/porthole/tools/playtest.py:audit
 apps/porthole/tools/playtest.py:main
 apps/porthole/tools/playtest.py:plan
-apps/porthole/tools/playtest.py:play
 apps/porthole/tools/playtest.py:report

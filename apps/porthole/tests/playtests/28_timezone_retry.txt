@@ -1,0 +1,118 @@
+# Canned reconnection fixtures supplement the inspected Clock pass; six-hour/wrap cooldowns have pure unit tests.
+reset
+profile Sam 8
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+expect-screen sys_clock
+sys nowifi
+tap 57 135
+wait 450
+expect sys_zone_state=failed
+expect sys_detections=1
+expect sys_zone=America/Los_Angeles
+# A genuinely later successful clock connection retries the earlier offline automatic guess.
+sys wifi Returned-Network
+tap 103 135
+wait 450
+expect sys_time=syncing
+sys timeok
+wait 100
+expect sys_time=ok
+expect sys_zone_state=looking
+expect sys_detections=2
+sys zonefail
+wait 100
+expect sys_zone_state=failed
+expect sys_zone=America/Los_Angeles
+# Another clock sample inside the six-hour cooldown must not loop on the provider.
+tap 103 135
+wait 450
+sys timeok
+wait 100
+expect sys_zone_state=failed
+expect sys_detections=2
+# Manual choice remains authoritative even after a later successful NTP connection.
+tap 80 87
+wait 450
+tap 80 79
+wait 450
+expect sys_zone=America/Denver
+expect sys_auto=0
+tap 103 135
+wait 450
+sys timeok
+wait 100
+expect sys_zone=America/Denver
+expect sys_auto=0
+expect sys_detections=2
+# A successful automatic result is persisted as an actual detected cache.
+tap 57 135
+wait 450
+sys zoneok Europe/London
+wait 100
+expect sys_zone=Europe/London
+expect sys_auto=1
+expect sys_zone_cached=1
+expect sys_detections=3
+tap 103 135
+wait 450
+sys timeok
+wait 100
+expect sys_detections=3
+reboot
+expect-screen picker
+expect sys_zone=Europe/London
+expect sys_auto=1
+expect sys_zone_cached=1
+# Enabling automatic mode without a successful lookup is not a permanently valid cache across reboot.
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+tap 57 135
+wait 450
+sys zonefail
+wait 100
+expect sys_zone_cached=0
+reboot
+expect sys_zone=Europe/London
+expect sys_auto=1
+expect sys_zone_cached=0
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 70
+wait 450
+tap 103 135
+wait 450
+sys timeok
+wait 100
+expect sys_zone_state=looking
+expect sys_detections=5
+sys zoneok America/Los_Angeles
+wait 100
+expect sys_zone=America/Los_Angeles
+expect sys_zone_cached=1
+expect sys_auto=1
+ui-check sys_clock-reconnected

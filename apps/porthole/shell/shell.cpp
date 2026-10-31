@@ -8,13 +8,20 @@
 using namespace gfx;
 using shell::Record;
 
-void Shell::begin(shell::Store& st, App* const* apps, int nApps) {
-  st_ = &st; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
+void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys) {
+  st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
-  if (prof_.count()) go(SH_PICK); else startNew();   // a fresh device goes straight to making the first profile
+  limits_ = shell::loadLimits(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
+  uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
+  light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
+  adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
+  if (adminPin_ > 10000) adminPin_ = 0;
+  if (sys_) sys_->info(info_);
+  if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
 }
+void Shell::land() { if (prof_.count()) go(SH_PICK); else startNew(); }   // a fresh device goes straight to making the first profile
 uint32_t Shell::lastSeen() const {
   uint32_t t = 0;
   for (int id = 0; id < MAX_PROFILES; id++) if (prof_.used[id] && prof_.rec[id].lastPlayed > t) t = prof_.rec[id].lastPlayed;
@@ -24,31 +31,45 @@ void Shell::go(Screen s) {
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   gate_.shown(ms_);
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
+  if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
 void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toastUntil_ = ms_ + 1500; }
 
 using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
-    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest, &Shell::updateApp};
+    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
+    &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
+    &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
+    &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
+    &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
+    &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
-  now_ = nowSec; ms_ = ms; in_ = in;
+  now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
+  if (guardScreenTime()) return;
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
 }
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
-    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest, &Shell::drawApp};
+    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
+    &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
+    &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
+    &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
+    &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
+    &Shell::drawSysZone, &Shell::drawSysZoneSearch, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
-  bool pinScreen = screen_ >= SH_PIN_SET && screen_ <= SH_PIN;   // drawPin shows its messages in the prompt line
-  if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
+  bool pinScreen = (screen_ >= SH_PIN_SET && screen_ <= SH_PIN) || (screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN);
+  if (ms_ < toastUntil_ && !pinScreen && adultScreen()) drawSysToast();
+  else if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
 }
 Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
   if (screen_ == SH_APP) return app_->tint();
+  if (light_ != shell::LIGHT_AUTO) return TINT_DAY;   // a picked brightness is daylight on every screen, resting too
   Tint t = clockTint(now_);
   return screen_ == SH_REST && t == TINT_DAY ? TINT_EVENING : t;   // resting is never broad daylight
 }
@@ -67,10 +88,25 @@ void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
   holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's last digit) is where "No" is safe
 }
-bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, prof_.count()) > 0; }
+bool Shell::restingNow() const {
+  return !allowance_.active(ms_) && (!shell::windowAllows(window_, now_) || shell::restLeft(prof_.rec[active_], now_, limits_) > 0);
+}
+void Shell::enforceCurrentBudget() {
+  if (allowance_.active(ms_)) return;
+  const uint32_t before = rec().restUntil;
+  shell::enforceBudget(rec(), now_, limits_);
+  if (rec().restUntil != before) shell::saveRecord(*st_, prof_, active_);
+}
+bool Shell::guardScreenTime() {
+  if (active_ < 0 || (screen_ != SH_APP && screen_ != SH_LAUNCHER && screen_ != SH_LIGHT)) return false;
+  enforceCurrentBudget();
+  if (!restingNow()) return false;
+  if (screen_ == SH_APP) closeApp();
+  go(SH_REST); return true;
+}
 void Shell::select(int id) {
   active_ = id; page_ = 0;
-  shell::recharge(rec(), now_);
+  shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
   go(restingNow() ? SH_REST : SH_LAUNCHER);
 }
@@ -104,10 +140,13 @@ static bool sameName(const char* a, const char* b) {   // "pets-club" matches "P
 }
 bool Shell::openApp(const char* name) {
   if (active_ < 0 || screen_ == SH_APP) return false;
-  for (int k = 0; k < nApps_; k++) if (sameName(apps_[k]->name(), name)) { openIdx(k); gate_.closed = false; return true; }
+  for (int k = 0; k < nApps_; k++)   // by its label or its store (which never changes: scripts outlive a renamed label)
+    if (sameName(apps_[k]->name(), name) || sameName(apps_[k]->store(), name)) { openIdx(k); gate_.closed = false; return screen_ == SH_APP; }
   return false;
 }
 void Shell::openIdx(int k) {
+  enforceCurrentBudget();
+  if (restingNow()) { go(SH_REST); return; }
   app_ = apps_[k]; opened_[k] = true; page_ = launcher::pageOf(nApps_, k);   // back from a game: its page
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
   for (int id; (id = prof_.nth(n)) >= 0; n++) {
@@ -115,8 +154,8 @@ void Shell::openIdx(int k) {
     saves[n] = {blobs_[n], st_->load(app_->store(), shell::key('s', id), blobs_[n], shell::BLOB_MAX)};
     if (id == active_) who = n;
   }
-  app_->enter({&all[who], all, saves, n, now_, ms_});
-  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = ms_;
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
+  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
   go(SH_APP);
 }
 void Shell::flushApp(bool allowed) {
@@ -131,14 +170,17 @@ void Shell::closeApp() {
   shell::saveRecord(*st_, prof_, active_);
 }
 void Shell::budgetTick() {   // per profile, across every game
-  uint32_t dt = now_ - lastTick_; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, prof_.count(), activity_.idleMs(ms_) >= shell::IDLE_MS)) { closeApp(); go(SH_REST); return; }
+  uint32_t dt = (ms_ - playTickMs_) / 1000; playTickMs_ += dt * 1000; lastTick_ = now_;
+  const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
+  if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
+  else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
+  if (titleHeld()) { enterSystem(); return; }
   int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
@@ -163,6 +205,10 @@ void Shell::drawPick() {
     text(b.x + 30, b.y + 9 + dy, r.name, C_DKBROWN);
     if (r.pin) blitTint(SPR_LOCK, b.x + b.w - 12, b.y + 8 + dy, C_DKGRAY);
   }
+  if (!sys_) return;   // the running firmware, small, under the rows: "v0.16.2", or "dev" for a local build
+  int v[3]; char ver[16];   // at most 10 characters: 80 px, inside the glass's 84 px chord at the text's bottom row
+  snprintf(ver, sizeof ver, "%s%.9s", shell::parseVersion(info_.version, v) ? "v" : "", info_.version);
+  textCentered(80, 140, ver, C_DKGRAY);
 }
 
 // ---------------------------------------------------------------- new profile: name -> face -> age -> code
@@ -292,7 +338,7 @@ void Shell::updateDelete() {
   if (!(in_.down && in_.hit(h.x, h.y, h.w, h.h) && began && in_.heldMs >= HOLD_MS)) return;
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
-  if (prof_.count()) go(SH_PICK); else startNew();
+  land();
 }
 void Shell::drawDelete() {
   clear(C_NAVY);
@@ -310,13 +356,16 @@ void Shell::drawDelete() {
 }
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
-// The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
+// The layout (shell/launcher.h) shows page_ of the games, six to a page, and the arrows to the rest.
 using launcher::HEADER;
+using launcher::LIGHT;
+static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
 bool Shell::muteButton() {
-  return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+  return ui::iconButton(in_, launcher::MUTE_X, launcher::MUTE_Y, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
+  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { go(SH_LIGHT); return; }
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   if (muteButton()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
@@ -330,13 +379,23 @@ void Shell::updateLauncher() {
 }
 void Shell::drawLauncher() {
   clear(C_SKY);
-  rect(0, launcher::grassY(nApps_), 160, 160 - launcher::grassY(nApps_), C_LEAF);
+  rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
-  blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 4, HEADER.y + 2);
-  text(HEADER.x + 28, HEADER.y + 8, rec().name, C_DKBROWN);
+  blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
+  text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
+  const int dy = in_.down && in_.hit(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) ? 1 : 0;   // the sun shows the level picked now
+  ui::drawButton({LIGHT, nullptr, nullptr, C_WHITE}, dy);
+  const Sprite& sun = SPR_LIGHTS[light_]; blit(sun, LIGHT.x + (LIGHT.w - sun.w) / 2, LIGHT.y + (LIGHT.h - sun.h) / 2 + dy);
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
+  for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
+    const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
+    const bool began = in_.downX >= b.x && in_.downX < b.x + b.w && in_.downY >= b.y && in_.downY < b.y + b.h;
+    if (!in_.down || !began || !in_.hit(b.x, b.y, b.w, b.h)) continue;   // only a press that started on it
+    ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
+    textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
+  }
   if (page_ > 0) drawPageArrow(false);
   if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
   muteButton();
@@ -345,16 +404,45 @@ void Shell::drawLauncher() {
 void Shell::drawAppTile(int k, int i, int m) {
   const ui::Box b = launcher::tile(i, m);
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
+  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // the game's picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-  const launcher::Name nm = launcher::name(apps_[k]->name(), i, m, nApps_);   // the sim asserts nm.fits for every game
-  for (int j = 0; j < nm.lines; j++) textShadow(nm.at[j].x, nm.at[j].y, nm.text[j], C_NAVY, C_WHITE);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0, cy = b.y + b.h / 2 + dy;
   ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
   for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
+}
+
+// ---------------------------------------------------------------- brightness (the launcher's sun): three suns, big to small,
+// and Auto (a sun and a moon) under them. A tap picks, saves and goes back to the launcher, already in the new light;
+// the level picked now is the mint one.
+static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::sun(l - 1); }
+void Shell::setLight(shell::Light l) {
+  if (l == light_) return;   // no flash write for the same level
+  light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);
+}
+void Shell::updateLight() {
+  if (ui::back(in_)) { go(SH_LAUNCHER); return; }
+  for (int l = 0; l < shell::LIGHT_COUNT; l++) {
+    const ui::Box b = lightBox(l);
+    if (in_.tapIn(b.x, b.y, b.w, b.h)) { setLight((shell::Light)l); go(SH_LAUNCHER); return; }
+  }
+}
+void Shell::drawLight() {
+  clear(C_SKY);
+  textCentered(80, 40, "How bright?", C_NAVY);
+  for (int l = 0; l < shell::LIGHT_COUNT; l++) {
+    const ui::Box b = lightBox(l);
+    const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    ui::drawButton({b, nullptr, nullptr, l == light_ ? (uint8_t)C_MINT : (uint8_t)C_WHITE}, dy);
+    const Sprite& sun = SPR_LIGHTS[l];
+    if (l != shell::LIGHT_AUTO) { blitScaled(sun, b.x + (b.w - 2 * sun.w) / 2, b.y + (b.h - 2 * sun.h) / 2 + dy, 2); continue; }
+    const int w = sun.w + 3 + textWidth("Auto"), x = b.x + (b.w - w) / 2;   // the icon, then its word
+    blit(sun, x, b.y + (b.h - sun.h) / 2 + dy);
+    text(x + sun.w + 3, b.y + (b.h - 8) / 2 + dy, "Auto", C_DKBROWN);
+  }
+  ui::drawBack();
 }
 
 // ---------------------------------------------------------------- resting: the play budget ran out (a turn, or the day)
@@ -368,14 +456,23 @@ void Shell::drawRest() {
   blitScaled(SPR_AVATARS[rec().avatar % NUM_AVATARS], 60, 24, 2);
   textCentered(106, 20 - (int)((ms_ / 400) % 3), "z", C_YELLOW);
   textCentered(80, 70, rec().name, C_YELLOW);
-  if (shell::playedToday(rec(), now_)) {   // bedtime is part of the game: no countdown to watch
+  const shell::RestHint hint = shell::restHint(rec(), window_, now_, limits_);
+  if (hint == shell::REST_DAY) {
     textCentered(80, 80, "played today.", C_WHITE);
     textCentered(80, 94, "Back tomorrow!", C_LTGRAY);
+  } else if (hint == shell::REST_WINDOW) {
+    textCentered(80, 80, "is taking a break.", C_WHITE);
+    textCentered(80, 94, "Come back at", C_LTGRAY);
+    const int hour = window_.startMinute / 60, minute = window_.startMinute % 60;
+    char when[20];
+    if (minute) snprintf(when, sizeof when, "%d:%02d %s", hour % 12 ? hour % 12 : 12, minute, hour < 12 ? "AM" : "PM");
+    else snprintf(when, sizeof when, "%d %s", hour % 12 ? hour % 12 : 12, hour < 12 ? "AM" : "PM");
+    textCentered(80, 106, when, C_WHITE);
   } else {
     textCentered(80, 80, "is resting.", C_WHITE);
-    uint32_t left = shell::restLeft(rec(), now_, prof_.count());
+    uint32_t left = shell::restLeft(rec(), now_, limits_);
     char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
-    textCentered(80, 106, "Let a friend play!", C_WHITE);
+    textCentered(80, 106, prof_.count() >= 2 ? "Let a friend play!" : "Time for a break!", C_WHITE);
   }
   ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, in_.down && in_.hit(50, 120, 60, 24));
 }
@@ -384,18 +481,28 @@ void Shell::drawRest() {
 void Shell::updateApp() {
   app_->update(now_, ms_, in_);
   if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
-  if (now_ != lastTick_) budgetTick();
-  if (screen_ == SH_APP) flushApp(ms_ - lastSaveMs_ > 5000);
+  if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
+  if (screen_ == SH_APP) flushApp(app_->saveUrgent() || ms_ - lastSaveMs_ > 5000);
 }
 void Shell::drawApp() { app_->render(); }
 
 // ---------------------------------------------------------------- serial and sim hooks
-void Shell::clearPin(int id) {
-  if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return;
+bool Shell::clearPin(int id) {
+  if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return false;
+  if (!prof_.rec[id].pin) return true;
+  const Record before = prof_.rec[id];
   prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
+  Record saved{};
+  if (st_->load(shell::NS, shell::key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&saved, &prof_.rec[id], sizeof saved)) {
+    prof_.rec[id] = before; return false;
+  }
+  return true;
 }
 const char* Shell::screenName() const {
-  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest"};
+  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
+                              "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
+                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search"};
+  static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
 void Shell::debugPrint() {
@@ -405,15 +512,21 @@ void Shell::debugPrint() {
   if (app_) app_->debugPrint();
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};
-  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s]\n", active_, prof_.count(), r ? r->age : 0,
-         r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0), (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
-         (unsigned long)(r ? shell::restLeft(*r, now_, prof_.count()) : 0), TINTS[tint()]);
+  static const char* const LIGHTS[shell::LIGHT_COUNT] = {"auto", "bright", "medium", "soft"};
+  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s bright=%s backlight=%u]\n", active_, prof_.count(),
+         r ? r->age : 0, r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0),
+         (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
+         (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
+  printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
+  printf("[hours window_on=%u window_start=%u window_end=%u allow_min=%lu]\n", (unsigned)window_.enabled, (unsigned)window_.startMinute, (unsigned)window_.endMinute, (unsigned long)allowance_.minutesLeft(ms_));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
+  if (!strcmp(cmd, "anytime")) { window_.enabled = 0; shell::savePlayWindow(*st_, window_); }   // declared host test fixture
+  if (!strcmp(cmd, "light")) setLight((shell::Light)((light_ + 1) % shell::LIGHT_COUNT));   // the sim's `b` key
   if (active_ >= 0) {
-    if (!strcmp(cmd, "tired")) rec().playSec = shell::SESSION_SEC;
-    else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = shell::DAILY_SEC; }
+    if (!strcmp(cmd, "tired")) rec().playSec = (uint32_t)limits_.sessionMinutes * 60;
+    else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = (uint32_t)limits_.dailyMinutes * 60; }
     else if (!strcmp(cmd, "rested")) { rec().restUntil = 0; rec().playSec = 0; rec().dayPlaySec = 0; }
     else if (!strcmp(cmd, "younger")) rec().age = 6;
     else if (!strcmp(cmd, "older")) rec().age = 9;

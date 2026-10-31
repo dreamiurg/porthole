@@ -1,0 +1,50 @@
+{"commands": [], "frame": "01-picker"}
+{"commands": ["tick 500"], "frame": "01-picker"}
+{"commands": ["down 80 20", "tick 5100", "up", "tick 500"], "frame": "02-info"}
+{"commands": ["down 106 132", "tick 80", "up", "tick 500"], "frame": "03-admin"}
+{"commands": ["down 80 70", "tick 80", "up", "tick 500"], "frame": "04-choose-code"}
+{"commands": ["down 49 63", "tick 80", "up", "tick 80", "down 49 63", "tick 80", "up", "tick 80", "down 49 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900"], "frame": "05-repeat-code"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500"], "frame": "06-code-cancelled"}
+{"commands": ["down 80 70", "tick 80", "up", "tick 500", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900"], "frame": "07-repeat-new"}
+{"commands": ["down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900"], "frame": "08-code-saved"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 20", "tick 5100", "up", "tick 500"], "frame": "09-auth-entry"}
+{"commands": ["down 49 63", "tick 80", "up", "tick 80", "down 49 63", "tick 80", "up", "tick 80", "down 49 63", "tick 80", "up", "tick 80", "down 49 63", "tick 80", "up", "tick 900"], "frame": "10-auth-rejected"}
+{"commands": ["tick 1000", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900"], "frame": "11-auth-success"}
+{"commands": ["down 106 132", "tick 80", "up", "tick 500", "down 80 141", "tick 80", "up", "tick 500"], "frame": "12-player-list"}
+{"commands": ["down 80 78", "tick 80", "up", "tick 500"], "frame": "13-player-confirm"}
+{"commands": ["down 80 94", "tick 80", "up", "tick 500", "down 80 78", "tick 80", "up", "tick 500", "down 80 118", "tick 80", "up", "tick 500"], "frame": "14-player-reset"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 124 40", "tick 80", "up", "tick 500"], "frame": "15-admin-page-two"}
+{"commands": ["down 80 70", "tick 80", "up", "tick 500"], "frame": "16-play-limits"}
+{"commands": ["down 122 98", "tick 80", "up", "tick 500", "down 122 65", "tick 1100", "up", "tick 500"], "frame": "17-limits-edited"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 70", "tick 80", "up", "tick 500"], "frame": "18-limits-cancelled"}
+{"commands": ["down 122 65", "tick 150", "move 80 80", "tick 900", "up", "tick 500", "down 122 65", "tick 80", "up", "tick 500", "down 80 126", "tick 80", "up", "tick 500"], "frame": "19-limits-saved"}
+{"commands": ["down 80 70", "tick 80", "up", "tick 500"], "frame": "20-limits-retained"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "21-clock"}
+{"commands": ["down 122 104", "tick 80", "up", "tick 500"], "frame": "22-clock-offset-draft"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "23-clock-offset-cancelled"}
+{"commands": ["down 122 104", "tick 80", "up", "tick 500", "down 54 128", "tick 80", "up", "tick 500"], "frame": "24-clock-offset-saved"}
+{"commands": ["down 106 128", "tick 80", "up", "tick 500"], "frame": "25-clock-syncing"}
+{"commands": ["tick 1600"], "frame": "26-clock-waiting"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "27-clock-reentered-pending"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500"], "frame": "28-recovered-player-login"}
+{"power_cycle": true, "commands": ["tick 500"], "frame": "29-power-cycle-picker"}
+{"commands": ["down 80 20", "tick 5100", "up", "tick 500", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900", "down 106 132", "tick 80", "up", "tick 500", "down 124 35", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "30-clock-after-power-cycle"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 70", "tick 80", "up", "tick 500"], "frame": "31-limits-after-power-cycle"}
+{"commands": ["down 38 65", "tick 80", "up", "tick 500", "down 38 65", "tick 80", "up", "tick 500", "down 38 65", "tick 80", "up", "tick 500", "down 38 65", "tick 80", "up", "tick 500", "down 38 65", "tick 80", "up", "tick 500", "down 38 65", "tick 80", "up", "tick 500"], "frame": "32-session-one-minute"}
+{"commands": ["down 80 126", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500"], "frame": "33-visible-game-entry"}
+{"commands": ["down 119 125", "tick 80", "up", "tick 500"], "frame": "34-session-playing"}
+{"commands": ["tick 28000", "down 80 80", "tick 80", "up", "tick 500"], "frame": "35-session-thirty-seconds"}
+{"commands": ["tick 32000"], "frame": "36-session-limit-enforced"}
+{"commands": ["down 80 132", "tick 80", "up", "tick 500", "down 80 20", "tick 5100", "up", "tick 500", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900", "down 106 132", "tick 80", "up", "tick 500", "down 124 35", "tick 80", "up", "tick 500", "down 80 70", "tick 80", "up", "tick 500", "down 122 65", "tick 80", "up", "tick 500", "down 122 65", "tick 80", "up", "tick 500", "down 38 98", "tick 1100", "up", "tick 500", "down 38 98", "tick 1100", "up", "tick 500", "down 38 98", "tick 80", "up", "tick 500", "down 38 98", "tick 80", "up", "tick 500", "down 38 98", "tick 80", "up", "tick 500", "down 38 98", "tick 80", "up", "tick 500"], "frame": "37-daily-one-minute"}
+{"commands": ["down 80 126", "tick 80", "up", "tick 500", "down 36 35", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "38-reset-before-daily-run"}
+{"commands": ["down 80 118", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500"], "frame": "39-daily-playing"}
+{"commands": ["tick 30000", "down 80 80", "tick 80", "up", "tick 500"], "frame": "40-daily-thirty-seconds"}
+{"commands": ["tick 31000"], "frame": "41-daily-limit-enforced"}
+{"commands": ["down 80 132", "tick 80", "up", "tick 500", "down 80 80", "tick 80", "up", "tick 500"], "frame": "42-daily-reentry-still-capped"}
+{"commands": ["down 80 132", "tick 80", "up", "tick 500"], "frame": "43-exit-picker"}
+{"commands": ["down 80 20", "tick 5100", "up", "tick 500"], "frame": "44-latest-auth-reentry"}
+{"commands": ["down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 63", "tick 80", "up", "tick 80", "down 79 126", "tick 80", "up", "tick 900", "down 106 132", "tick 80", "up", "tick 500"], "frame": "45-latest-admin-reentry"}
+{"commands": ["down 124 35", "tick 80", "up", "tick 500"], "frame": "46-latest-page-two"}
+{"commands": ["down 80 70", "tick 80", "up", "tick 500"], "frame": "47-latest-limits-reentry"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 94", "tick 80", "up", "tick 500"], "frame": "48-latest-clock-reentry"}
+{"commands": ["down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500", "down 80 12", "tick 80", "up", "tick 500"], "frame": "49-latest-exit"}

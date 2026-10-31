@@ -1,8 +1,8 @@
+#include "launcher_icon.h"
 #include "game.h"
 #include "content_daily.h"
 #include <stdio.h>
 #include <string.h>
-#include "generated/icon.h"
 #include "generated/scenes.h"
 #include "personalize.h"
 
@@ -12,10 +12,10 @@ constexpr uint32_t TICK_SEC = 30, CHECKPOINT_SEC = 300;   // needs move every 30
 constexpr uint32_t SAY_MS = 4000, ONE_SHOT_MS = 800, SURPRISE_MS = 90000;
 }  // namespace
 
-const gfx::Sprite& Game::icon() const { return SPR_BISCUIT_ICON; }
+const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 void Game::enter(const AppEnter& e) {
-  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms;
+  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   save_ = create(now_);
   for (int i = 0; i < e.n; i++)   // only this kid's pup: other profiles' saves are theirs
     if (e.all[i].id == who_.id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);   // bad: a new pup
@@ -110,8 +110,10 @@ void Game::render() {
 }
 Surface Game::surface() const { return screen_ == SC_SETUP_PET || screen_ == SC_RENAME_PET ? SURFACE_INDEXED : SURFACE_RGB565; }
 
-// The light of the old firmware's scenes: evening from 17:00, night from 20:00 to 6:00 (local time).
+// The light of the old firmware's scenes: evening from 17:00, night from 20:00 to 6:00 (local time); always day when the
+// kid picked a brightness on the launcher.
 Tint Game::tint() const {
+  if (daylight_) return TINT_DAY;
   const uint32_t h = now_ / 3600 % 24;
   return h >= 20 || h < 6 ? TINT_NIGHT : h >= 17 ? TINT_EVENING : TINT_DAY;
 }

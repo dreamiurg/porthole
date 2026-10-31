@@ -1,0 +1,124 @@
+wait 1000
+down 80 65
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 109 135
+wait 66
+up
+wait 550
+down 112 78
+wait 66
+up
+wait 550
+down 92 137
+wait 66
+up
+wait 550
+snap 00-prior-campaign-resumed
+down 39 53
+wait 66
+up
+wait 550
+snap 01-woods-preview
+down 112 133
+wait 66
+up
+wait 550
+snap 02-woods-first
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 03-woods-page2
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 04-woods-page3
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 05-woods-page4
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 06-woods-page5
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 07-woods-page6
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 08-woods-page7
+wait 18000
+down 112 133
+wait 66
+up
+wait 550
+snap 09-woods-page8
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 10-woods-choice
+down 80 46
+wait 66
+up
+wait 550
+snap 11-woods-result1
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 12-woods-result2
+wait 15000
+down 112 133
+wait 66
+up
+wait 550
+snap 13-woods-after
+down 80 133
+wait 66
+up
+wait 550
+down 105 54
+wait 66
+up
+wait 550
+snap 14-earned-thyme-inventory
+down 43 59
+wait 66
+up
+wait 550
+snap 15-earned-thyme-detail
+down 50 133
+wait 66
+up
+wait 550
+down 80 133
+wait 66
+up
+wait 550
+down 105 82
+wait 66
+up
+wait 550
+snap 16-safe-quit

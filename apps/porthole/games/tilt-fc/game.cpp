@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "game.h"
 #include <math.h>
 #include <stdio.h>
@@ -19,37 +20,6 @@ constexpr uint8_t HAIR[PLAYERS] = {0, 1, 2, 1, 3, 0};
 constexpr paint::Kit KIT[PLAYERS] = {paint::KIT_TEAL, paint::KIT_TEAL, paint::KIT_TEAL_KEEPER,
                                      paint::KIT_CORAL, paint::KIT_CORAL, paint::KIT_CORAL_KEEPER};
 
-// The launcher icon, in the shell's indexed palette (the launcher is the shell's): the street court from above, a
-// goal at each end, the kid's player ringed in sun yellow with the ball at his feet, a coral player up the court.
-// k outline, p paving, w chalk and the ball, s asphalt, n net, y sun, g/m teal, o/r coral.
-constexpr char ICON_ART[] =
-  "....kkkkkkkkkkkkkkkkkkkkkkkk...." "..kkppppppppppppppppppppppppkk.." ".kkppppppppwnnnnnnnnwppppppppkk."
-  ".kpppppppppwnnnnnnnnwpppppppppk." "kppppppppppwnnnnnnnnwppppppppppk" "kpppppwwwwwwwwwwwwwwwwwwwwpppppk"
-  "kppppwwsssssssssssssssssswwppppk" "kpppwwssssssssssssssooossswwpppk" "kpppwssssssssssssssorrrossswpppk"
-  "kpppwsssssssssssssorrrrrosswpppk" "kpppwssssssssswwwworrrrrosswpppk" "kpppwsssssssswwwwworrrrrosswpppk"
-  "kpppwssssssswwsssssorrrossswpppk" "kpppwsssssswwsssssssooosssswpppk" "kpppwsssssswwssssssswwssssswpppk"
-  "kpppwwwwwwwwwwwwwwwwwwwwwwwwpppk" "kpppwwwwyyyyywwwwwwwwwwwwwwwpppk" "kpppwssyyyyyyysssssswwssssswpppk"
-  "kpppwsyyygggyyyssssswwssssswpppk" "kpppwyyygmmmgyyyssswwsssssswpppk" "kpppwyygmmmmmgyywwwwssssssswpppk"
-  "kpppwyygmmmmmgkkkwwsssssssswpppk" "kpppwyygmmmmmgkwksssssssssswpppk" "kpppwyyygmmmgykkksssssssssswpppk"
-  "kpppwwyyygggyyyssssssssssswwpppk" "kppppwwyyyyyyyssssssssssswwppppk" "kpppppwwyyyyywwwwwwwwwwwwwpppppk"
-  "kppppppppppwnnnnnnnnwppppppppppk" ".kpppppppppwnnnnnnnnwpppppppppk." ".kkppppppppwnnnnnnnnwppppppppkk."
-  "..kkppppppppppppppppppppppppkk.." "....kkkkkkkkkkkkkkkkkkkkkkkk....";
-static_assert(sizeof ICON_ART == 32 * 32 + 1, "the launcher slot fits a 32x32 icon");
-constexpr char ICON_KEYS[] = "kpwsnygmor";
-constexpr uint8_t ICON_COLS[] = {C_BLACK, C_TAN, C_WHITE, C_SLATE, C_DKGRAY, C_YELLOW, C_DKGREEN, C_MINT, C_BROWN, C_ROSE};
-static_assert(sizeof ICON_KEYS - 1 == sizeof ICON_COLS, "one color per key");
-constexpr uint8_t iconColor(char c) {
-  for (int i = 0; ICON_KEYS[i]; i++) if (ICON_KEYS[i] == c) return ICON_COLS[i];
-  return C_T;
-}
-struct IconPx { uint8_t px[32 * 32]; };
-constexpr IconPx makeIcon() {
-  IconPx ic{};
-  for (int i = 0; i < 32 * 32; i++) ic.px[i] = iconColor(ICON_ART[i]);
-  return ic;
-}
-constexpr IconPx ICON_PX = makeIcon();
-const gfx::Sprite ICON = {32, 32, ICON_PX.px};
 
 int sx(float x) { return CX + (int)lroundf(x); }   // match.h's court to the panel
 int sy(float y) { return CY + (int)lroundf(y); }
@@ -68,11 +38,11 @@ Arrow arrowFor(tilt::Vec t) {
 Vec arrowDir(int k) { const float a = k * 3.14159265f / 16; return {cosf(a), sinf(a)}; }
 }  // namespace
 
-const gfx::Sprite& Game::icon() const { return ICON; }
+const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 // Every visit starts on the Calibrate page with the kid's own difficulty.
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; in_ = Input{};
+  now_ = e.nowSec; ms_ = e.ms; in_ = Input{}; daylight_ = e.daylight;
   save_ = Save{};
   for (int i = 0; i < e.n; i++)   // only this kid's save; a bad one starts from the first level
     if (e.all[i].id == e.who->id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);

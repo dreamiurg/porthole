@@ -14,7 +14,9 @@ struct SaveSlot { const void* data; size_t len; };                             /
 
 // Everything enter() gets, bundled because the complexity gate caps functions at 5 parameters.
 // saves[i] belongs to all[i]; a game may read other profiles' saves (Paw Street) but only writes who's.
-struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; };
+// daylight: the kid picked a brightness on the launcher, so the game draws day whatever the clock says (tint() returns
+// TINT_DAY, no night scenes); false is Auto, the light follows the clock. A game's own night (a pet asleep) still holds.
+struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight; };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
 // full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() must leave the whole target correct, knowing
@@ -39,6 +41,8 @@ class App {
   virtual bool soundOn(uint32_t ms) = 0;         // the shell gates this with the profile's mute
   // true when there is something to write for `who`; *len 0 means erase `who`'s save.
   virtual bool takeSave(const void** data, size_t* len, bool allowed) = 0;
+  // Story readers may checkpoint a page or atomic decision immediately. Existing games keep the five-second cadence.
+  virtual bool saveUrgent() const { return false; }
   virtual bool wantsHome() = 0;                  // back pressed on the game's top screen (reported once)
   virtual void leave() = 0;                      // flush state; next takeSave returns the final save
   // Test and serial hooks: the sim's `debug`/`screen`/`dbg` and the firmware's `S` reach the active game.

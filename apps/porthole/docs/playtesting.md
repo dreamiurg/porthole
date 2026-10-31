@@ -2,6 +2,169 @@
 
 Commands run from `apps/porthole/` (or `make -C apps/porthole <target>` from the repo root).
 
+## Required black-box playthrough
+
+Every gameplay or UI change must pass this development gate before it is called
+done, its PR is marked ready, or it is merged. This is required in addition to
+the automated suite below. Documentation-only and non-player-visible changes do
+not require another playthrough.
+
+Game and kids' shell flows use the representative child persona below. For a
+grown-up-only settings change, use a representative adult instead; the same
+independence, ordinary-input, evidence and iteration requirements apply. This
+exception does not apply to games. Major changes include new mechanics, controls,
+progression, difficulty/economy, onboarding or a substantial interaction redesign.
+
+1. Build the current emulator and dispatch an independent `playtester` agent to
+   play the affected flow as its representative target user, using the brief
+   and iteration procedure below. Use the SDL
+   simulator, browser emulator, or `snap --serve` with inspected rendered frames
+   and ordinary touch/tilt inputs. Base each decision on what is visible.
+   Independence is required for every game's gameplay/UI changes; new games and
+   major changes require a source-free first-play pass. An implementer can do
+   additional checks but cannot certify this gate alone. If delegation or the
+   emulator is unavailable, report the blocked gate and leave the work incomplete.
+2. Enter through the visible launcher and instructions. For a new finite game or
+   changes to controls, combat or progression, complete a full natural run. For
+   an ongoing game, complete the affected activity and return to its normal
+   resting screen. For a shell-only change, complete the affected task. Narrow
+   presentation changes require traversing the affected screens and their
+   relevant recovery/exit paths, not every level in the game. Also exercise
+   relevant failure/recovery, replay, back/exit, mis-taps, carried touches and
+   canceled holds. Do not substitute a staged ending for a required natural run.
+3. During this pass, do not use `dbg`, hidden-state queries, source-derived
+   solutions, stage jumps, `app` shortcuts or state-aware bots to choose actions
+   or force success. Ordinary elapsed-time stepping (`tick`/`wait`) is allowed;
+   wall-clock jumps and progression cheats are not natural play. A documented
+   profile/save fixture may prepare existing user progress needed to reach the
+   affected activity; disclose it and traverse the changed flow normally.
+   Keep debug tours, clock probes and automated state-aware tests separate.
+4. Inspect native-size frames and the sequence in motion: round-screen layout,
+   HUD footprint, sprite scale, clipping, contrast, text and instructions, input
+   discoverability, response and feedback, collision readability, animation,
+   pacing, difficulty and dead ends. Judge the experience, not just whether the
+   state machine eventually reaches an ending. A blind replay of a known trace
+   without watching the current experience does not replace this pass.
+5. Record prioritized findings with a repro and screenshots. Use the iteration
+   loop below to improve both the game and the playtester's instructions, then
+   play again; any further gameplay/UI edit invalidates the earlier evidence for
+   its affected flow. Verify the final build, including a fresh complete run
+   when controls, combat or progression changed. Add focused regression tests
+   where they can meaningfully catch the observed bug.
+6. Save a concise report under `docs/<game>/` (or `docs/` for shared flows), with
+   the tested revision and executable hash, persona and exact dispatch brief
+   (including revisions), setup/fixtures, paths played, outcomes including
+   losses, findings and resolutions across iterations, remaining limitations,
+   native screenshots, and an input trace or exact reproducible steps.
+   Include the qualitative assessment below. If claiming a trace reproduces
+   an outcome, replay it in a fresh process. Link the evidence in the PR or final
+   handoff. State emulator versus physical-device scope accurately.
+7. Run the required automated checks and obtain code review. The reviewer must
+   verify that the evidence covers the final changed experience. Missing or
+   blocked playthroughs leave gameplay/UI work incomplete; report the gap rather
+   than treating green CI or fixture screenshots as a substitute. Document any
+   accepted limitation explicitly instead of silently dropping a finding.
+
+The [Starfighter report](starfighter/blackbox/README.md) is an example: ordinary
+input drove the complete game, observed issues led to refinements, and the final
+victory trace reproduced the saved frame. These qualitative checks are a required
+development/review gate; CI alone cannot certify that someone inspected play.
+
+## Child-perspective playtester brief
+
+The coordinator must give the independent agent this contract before play. The
+playtester must not have implemented the changed experience. Use the game's own
+brief to choose a representative age and abilities; do not apply one generic
+child to every game. For a new game or major change, use a fresh agent without
+implementation history, walkthroughs, solution traces or expected correct choices.
+Provide only the build/start commands, input/frame protocol, audience, ordinary
+player goal, scope and disclosed setup fixture. Keep implementation review and
+hidden-state QA separate from this first-play session.
+
+Record the following in the dispatch brief and report:
+
+- **Persona:** target age, reading fluency, familiarity with this kind of game,
+  patience for reading/waiting and touch/tilt precision. This is a simulated
+  perspective, not evidence from a real child or a measured attention span.
+- **First play:** enter through the launcher and on-screen instructions without
+  coaching. Say what looks tappable, what you expect a tap to do and what you
+  think the next goal is. Follow curiosity rather than a known solution. If lost,
+  record the confusion and attempted recovery before trying another visible path.
+- **Exploration and mistakes:** try plausible wrong choices and alternative
+  strategies; tap appealing scenery and ambiguous controls; back out, retry and
+  leave/resume. Check whether feedback explains the consequence and recovery.
+  Finish the natural run when possible; inability to finish unaided is a finding,
+  not a reason to consult the solution or force an ending.
+- **Imprecise fingers:** deliberately offset taps around visible targets, try
+  either side of close boundaries, double-tap after uncertain feedback, hold
+  slightly too long, drag off before release, and carry a touch across a screen
+  change. Try input during animations and modest tilt over/under-correction where
+  relevant. Observe actual frames after each action. Judge intentional hits,
+  safe cancellation and accidental activation separately; outside taps should
+  not all activate a button. Random mashing alone does not cover this behavior.
+- **Experience:** assess the qualitative questions below as play unfolds, with
+  screenshots/steps and observed waits or repetition supporting each criticism.
+
+The first-play discovery and deliberate mistake probes can be separate passes.
+Use the required scope above: new finite games and major control/progression
+changes need a complete natural run; narrow presentation changes need the full
+affected activity and recovery/exit paths, not every unchanged level.
+
+## Qualitative assessment and iteration
+
+The report must answer these questions with observations, including a positive
+case and any friction; a bare "fun" or "PASS" is not an assessment:
+
+- Can this persona recognize the goal and available actions from the screen,
+  understand the instructions, and tell what changed after acting?
+- Does play offer interesting decisions or skill, understandable consequences
+  and useful feedback? Do pictures help the child act, or is reading carrying
+  the whole interaction? Is challenge fair and recovery understandable?
+- Where does play become repetitive, passive, confusing or frustrating? Record
+  specific waits, repeated actions and reading burden. At what point would this
+  persona want to stop, and why? Is there a satisfying natural stopping point?
+- Can imprecise input, a wrong guess or an interruption be recovered from without
+  losing progress, adult coaching or pressure to keep playing?
+
+Keep the ordinary child goal separate from coverage requirements. Record the
+first voluntary stopping point before continuing for coverage; completing the
+checklist does not demonstrate that a child would naturally keep playing. Use an
+explicit gesture/interruption matrix and distinguish ordinary save/leave/resume
+from process restart. Label untested cases as gaps rather than inferring broad
+input robustness from a completed story.
+
+Iterate until the coordinator and independent reviewer are satisfied by evidence:
+
+1. The playtester reports prioritized findings, including mechanics/pacing and
+   boredom concerns as well as layout/input bugs. Preserve unsuccessful attempts.
+2. The coordinator routes fixes to the right owner: mechanics/difficulty/pacing
+   to game-designer/game-engineer, controls/feedback to game-engineer, and art or
+   player-facing instructions to their owners. Fix the underlying experience;
+   rewriting tutorial text alone cannot excuse a dull or confusing mechanic.
+3. Also revise the playtester's brief when it misses a relevant behavior, models
+   the audience poorly or produces an uninformative assessment. Record what was
+   changed and why. Improve persona, exploration and reporting instructions;
+   never add solution hints, prescribe winning taps, remove hard cases or weaken
+   acceptance merely to obtain a pass. New coverage may be refined even when the
+   first brief was adequate; do not force artificial edits every round.
+   Promote lessons that apply across games into `.claude/agents/playtester.md`
+   or this procedure; keep game-specific personas and probes in that game's
+   brief/report. Preserve the reason for each instruction change.
+4. Rebuild and have the independent agent replay the final affected flow, verify
+   fixes and seek new problems. Repeat as needed. A previously coached or
+   source-exposed agent cannot certify first-time comprehension; use a fresh
+   independent agent for that claim. Keep earlier evidence labeled by build.
+5. Accept only when required paths and mistake/recovery probes are complete on
+   the final build, no Blocker or Major usability/playability finding remains,
+   and each actionable lesser finding is fixed or explicitly deferred with its
+   player impact and rationale. Both coordinator and reviewer must state why
+   the target persona can understand, control and enjoy the affected activity.
+   Check the prompt revisions and remaining boredom/pacing concerns in review.
+   A blocked or unsatisfactory run stays incomplete despite green CI. Do not
+   claim real-child or physical-device validation from emulator roleplay.
+
+## Automated suite
+
 `make playtest` builds the headless simulator twice (plain, and with AddressSanitizer + UBSan) and runs every
 scenario in `tests/playtests/`. The suite has three parts:
 
@@ -26,7 +189,7 @@ Output:
 * `build/playtest/<scenario>-<name>.png`: labeled contact sheets of the snapshots (needs Pillow; skipped without).
 
 A scenario fails on a failed directive, a crash or non-zero exit, any sanitizer report (`ERROR: AddressSanitizer`,
-`ERROR: LeakSanitizer`, `runtime error:`), an unknown sim command, a timeout (30 s, or 120 s for monkeys), or a
+`ERROR: LeakSanitizer`, `runtime error:`), an unknown sim command, a timeout (30 s, or 120 s for monkeys and the thirty-minute family-control expiry scenario), or a
 UI finding of either severity: FAIL and WARN both fail the run (warnings are errors). `make ci` (what CI runs for this app)
 includes `make playtest`, so an open FAIL finding fails CI.
 
