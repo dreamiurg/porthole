@@ -48,30 +48,4 @@ void circle(int cx, int cy, int r, uint16_t c) {   // same disc as gfx::circle, 
     rect(cx - dx, cy + dy, 2 * dx + 1, 1, c);
   }
 }
-void blit(const Image565& im, int x, int y, int scale) {
-  if (scale == 1) {   // row copies: full-screen images are drawn every frame
-    int x0 = x < 0 ? -x : 0, x1 = x + im.width > W ? W - x : im.width;
-    for (int sy = y < 0 ? -y : 0; sy < im.height && y + sy < H && x1 > x0; sy++)
-      memcpy(fb + (y + sy) * W + x + x0, im.pixels + sy * im.width + x0, (size_t)(x1 - x0) * 2);
-    return;
-  }
-  for (int sy = 0; sy < im.height; sy++) {
-    const uint16_t* row = im.pixels + sy * im.width;
-    for (int sx = 0; sx < im.width; sx++) rect(x + sx * scale, y + sy * scale, scale, scale, row[sx]);
-  }
-}
-void blitRle(const RleImage& im, int x, int y, int scale) {
-  const uint32_t total = (uint32_t)im.width * im.height;
-  uint32_t at = 0;
-  for (uint32_t i = 0; i < im.runCount && at < total; i++) {
-    uint32_t left = im.runs[2 * i];
-    const uint16_t c = im.runs[2 * i + 1];
-    if (left > total - at) left = total - at;
-    while (left) {   // a run carries on into the next rows
-      uint32_t col = at % im.width, row = at / im.width, n = im.width - col < left ? im.width - col : left;
-      rect(x + (int)col * scale, y + (int)row * scale, (int)n * scale, scale, c);
-      at += n; left -= n;
-    }
-  }
-}
 }  // namespace gfx565

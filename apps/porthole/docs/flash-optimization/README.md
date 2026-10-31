@@ -47,10 +47,10 @@ symbol breakdowns are estimates; padding and unnamed data are not attributed.
 ## Performance and verification
 
 The [benchmark source](benchmark.cpp) draws every Biscuit scene at native 3x,
-12 rounds / 6,048 frames. Compile it against baseline `5653dfd` with `-O2`, then
-against this branch with `-std=c++17 -O2 -DHOST_BUILD -DPACKED`, linking `os/packed_image.cpp`
-and `-lz` for the latter. Both link `os/gfx565.cpp` and Biscuit `art.cpp`, with
-`-Ios -I.` from the app directory. [Three repeated samples](benchmark.json) gave
+12 rounds / 6,048 frames. It was compiled against baseline `5653dfd` with `-O2`
+(the same loop calling `gfx565::blitRle`, since removed), then against this branch
+with `-std=c++17 -O2 -DHOST_BUILD`, linking `os/packed_image.cpp` and `-lz`. Both
+link `os/gfx565.cpp` and Biscuit `art.cpp`, with `-Ios -I.` from the app directory. [Three repeated samples](benchmark.json) gave
 median 93.588 → 94.972 microseconds/frame (~1.5% overhead). Earlier VM samples
 varied up to ~4%; these are host timings, not physical ESP32 latency claims.
 

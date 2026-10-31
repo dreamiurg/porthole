@@ -195,33 +195,6 @@ static void shapes() {
   assert(rgb888(0xFFFF) == 0xFFFFFF && rgb888(0xF800) == 0xFF0000 && rgb888(0x07E0) == 0x00FF00);
 }
 
-static void images() {
-  target(g_fb); clear(0);
-  // 4x3 image: a run crossing a row end, one ending the image, then one past it (ignored)
-  static const uint16_t runs[] = {5, 0x1111, 3, 0x2222, 4, 0x3333, 9, 0x4444};
-  const RleImage rle = {4, 3, runs, 4};
-  blitRle(rle, 10, 20, 1);
-  const uint16_t want[12] = {0x1111, 0x1111, 0x1111, 0x1111, 0x1111, 0x2222, 0x2222, 0x2222, 0x3333, 0x3333, 0x3333, 0x3333};
-  for (int i = 0; i < 12; i++) assert(fb[(20 + i / 4) * W + 10 + i % 4] == want[i]);
-  assert(!fb[23 * W + 10] && !fb[20 * W + 14]);
-  clear(0);
-  blitRle(rle, -3, 0, 3);   // 3x blocks, clipped on the left
-  assert(fb[0] == 0x1111 && fb[2 * W + 8] == 0x1111 && fb[3 * W + 0] == 0x2222 && fb[3 * W + 3] == 0x2222 && fb[5 * W + 8] == 0x2222);
-  assert(fb[6 * W + 0] == 0x3333 && fb[8 * W + 8] == 0x3333 && !fb[9 * W]);
-}
-
-static void pictures() {
-  static const uint16_t px[4] = {1, 2, 3, 4};
-  target(g_fb); clear(0);
-  blit({2, 2, px}, 0, 0, 3);
-  assert(fb[0] == 1 && fb[2 * W + 5] == 2 && fb[3 * W + 2] == 3 && fb[5 * W + 5] == 4 && !fb[6 * W]);
-  blit({2, 2, px}, 478, 478, 1);   // clipped at the corner
-  assert(fb[478 * W + 478] == 1 && fb[479 * W + 479] == 4);
-  clear(0);
-  blit({2, 2, px}, -1, -1, 1);   // clipped at the origin: only the last pixel lands
-  assert(fb[0] == 4 && !fb[1] && !fb[W]);
-}
-
 static void indexedExpansion() {
   struct Guarded { uint16_t before, pixels[W * H], after; };
   static Guarded buffers[2];
@@ -252,8 +225,6 @@ int main() {
   audit();
   roundRects();
   shapes();
-  images();
-  pictures();
   indexedExpansion();
   puts("test_gfx565: all checks passed");
   return 0;

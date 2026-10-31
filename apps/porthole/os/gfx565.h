@@ -13,10 +13,6 @@ void target(uint16_t* pixels);   // must be set before an RGB565 render()
 // each output row is built locally and copied three times, so the panel buffer is written once and never read.
 void expandIndexed3(const uint8_t* logical160, const uint16_t* palette);
 
-// Generated art (Biscuit's scenes and pictures) uses these layouts verbatim.
-struct Image565 { uint16_t width, height; const uint16_t* pixels; };
-struct RleImage { uint16_t width, height; const uint16_t* runs; uint32_t runCount; };  // runs = (count, color565) pairs; runCount = pairs
-
 inline void pixel(int x, int y, uint16_t c) { if ((unsigned)x < W && (unsigned)y < H) fb[y * W + x] = c; }
 void clear(uint16_t c);
 void rect(int x, int y, int w, int h, uint16_t c);             // filled, clipped to the surface
@@ -25,10 +21,6 @@ void frame(int x, int y, int w, int h, uint16_t c);            // 1 px outline i
 struct Rect { int x, y, w, h; };
 void roundRect(const Rect& b, int r, uint16_t c);              // filled, corners of radius r (clamped to half the box)
 void circle(int cx, int cy, int r, uint16_t c);                // filled disc
-// Nearest-neighbor copy, each source pixel becoming a scale x scale block (1 = as is, 3 = a 160 px image on the panel).
-void blit(const Image565& im, int x, int y, int scale);
-// Same, decoding the runs straight into the target (no scratch buffer). Runs past width*height are ignored.
-void blitRle(const RleImage& im, int x, int y, int scale);
 
 // Is physical (x,y) inside the round glass (radius R - margin around the center)?
 inline bool inCircle(int x, int y, int margin = 0) {
