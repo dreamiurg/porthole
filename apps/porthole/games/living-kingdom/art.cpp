@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "art.h"
 #include "gfx565.h"
 #include "generated/fonts.h"
@@ -60,5 +61,5 @@ void panel(int x, int y, int width, int height, PanelStyle style) {
     }
   }
 }
-const gfx::Sprite& icon() { return ICON; }
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }}  // namespace kingdom::art

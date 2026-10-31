@@ -7,7 +7,7 @@
 #include "system.h"
 #include "ui.h"
 
-constexpr int MAX_APPS = 9;
+constexpr int MAX_APPS = 12;
 
 namespace shell {
 // "sys"/"ran" holds the version that booted last (its bytes, no NUL). True when version is not "dev" and differs from
