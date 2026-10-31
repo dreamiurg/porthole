@@ -22,7 +22,7 @@ static void adoptHouse(Store& st, Profiles& p, int slot, const Save& h) {
   // Pets Club stored 0000 as 1, so a legacy 1 becomes code 0001: that one kid types 0001 instead of 0000.
   r.avatar = (uint8_t)slot; r.age = h.kidAge; r.muted = h.muted; r.pin = h.pin ? (uint16_t)(h.pin + 1) : 0;
   r.restUntil = h.restUntil; r.playSec = h.playSec; r.lastPlayed = h.lastSeen;
-  p.used[slot] = true;
+  p.used[slot] = true; p.blocked[slot] = false;
   saveRecord(st, p, slot);
 }
 

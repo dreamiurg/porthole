@@ -27,16 +27,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include "games/biscuit/game.h"
-#include "games/living-kingdom/game.h"
-#include "games/marble-kick/game.h"
-#include "games/pumpkin-hide-seek/game.h"
-#include "games/pets-club/game.h"
-#include "games/plane-radar/game.h"
-#include "games/starfighter/game.h"
-#include "games/tilt-fc/game.h"
-#include "games/toy-town-life/game.h"
-#include "games/racing/game.h"
+#include "games/apps.h"
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
@@ -54,8 +45,10 @@ struct FileStore : shell::Store {
     size_t got = fread(buf, 1, max, f); bool more = fgetc(f) != EOF; fclose(f);
     return more ? 0 : got;   // like NVS: a blob bigger than the buffer is not loaded at all
   }
-  void save(const char* ns, const char* key, const void* data, size_t len) override {
-    FILE* f = fopen(path(ns, key), "wb"); if (f) { fwrite(data, 1, len, f); fclose(f); }
+  bool save(const char* ns, const char* key, const void* data, size_t len) override {
+    FILE* f = fopen(path(ns, key), "wb"); if (!f) return false;
+    const bool ok = fwrite(data, 1, len, f) == len;
+    return fclose(f) == 0 && ok;
   }
   void erase(const char* ns, const char* key) override { remove(path(ns, key)); }
 };
@@ -291,18 +284,6 @@ struct SimFeed : air::Feed {
 };
 static SimFeed g_feed;
 
-static Game g_pets;
-static biscuit::Game g_biscuit;
-static marble::Game g_marble;
-static fc::Game g_tiltfc;
-static pumpkin::Game g_pumpkin;
-static radar::Game g_radar;
-static starfighter::Game g_starfighter;
-static kingdom::Game g_kingdom;
-static toytown::Game g_toytown;
-static racing::Game g_racing;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
-static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
@@ -364,7 +345,7 @@ static void wipe() {   // every namespace, every key: all the .sav files
   closedir(d);
 }
 static void boot(bool seedClock = true) {
-  const int n = (int)(sizeof APPS / sizeof APPS[0]);
+  const int n = N_APPS;
   for (int k = 0; k < n; k++) {   // every game's name fits the launcher's press caption; every picture fits its tile
     assert(launcher::nameFits(APPS[k]->name()));
     assert(APPS[k]->icon().w <= launcher::TILE_W - 2 && APPS[k]->icon().h <= launcher::TILE_H - 2);
