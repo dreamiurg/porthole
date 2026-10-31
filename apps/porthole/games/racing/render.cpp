@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "assets.h"
+#include "font.h"
+#include "fonts.h"
 #include "gfx565.h"
 #include "palette.h"
 #include "pictures.h"
+#include "save.h"
 
 // The look follows the approved reference boards (docs/superpowers/specs/porthole-racing/assets/reference/): Style 2
 // panels 2A-2D and the four-track showcase. Pictures come from tools/pictures.py, the font and road colors from
@@ -17,7 +20,9 @@ namespace {
 // Rally's own interface colors: a navy-black plate, white and gold numerals with a black outline, a race-orange accent.
 constexpr uint32_t INK = 0x141623, PLATE = 0x1F2438, PLATE_HI = 0x343C5C, RIM = 0x07080C, CREAM = 0xFFF6E4;
 constexpr uint32_t DIM = 0x8A8FA3, ORANGE = 0xFF8A1E, CYAN = 0x45E3FF, GOLD = 0xFFD23A, GREEN = 0x7BE07B;
+constexpr uint32_t HELD = 0xFF5A36;   // the speed held back by a trap
 constexpr uint32_t RING = 0xDCE2EC, STEEL = 0xB4BCC6, STEEL_DARK = 0x5C6470;
+constexpr float MPH_AT_TOP = 90;
 constexpr int HORIZON = 228, CAR_ROW = 402, CAR_DEPTH = CAR_ROW - HORIZON, PIC_SCALE = 2;
 constexpr float DEPTH_K = 6.0f * CAR_DEPTH;   // z (m ahead of the camera) = DEPTH_K / rows below the horizon
 constexpr float CAMERA_BACK = 6, ROAD_SLOPE = 1.25f, CURVE_K = 0.0042f;
@@ -26,47 +31,29 @@ float scroll = 0, scrollDist = 0;          // the skyline slides the way the roa
 
 void fill(int x, int y, int w, int h, uint32_t c) { gfx565::rect(x, y, w, h, rgb888_to_565(c)); }
 
-// ---- text: Rally's own bundled pixel face, logged for the UI audit in logical pixels.
-const art::Glyph& glyph(char c) { return art::FONT[(c < 32 || c > 126) ? 0 : c - 32]; }
-int textWidth(const char* s, int scale) {
-  int w = 0;
-  for (const char* p = s; *p; p++) w += (glyph(*p).w + 1) * scale;
-  return w > 0 ? w - scale : 0;
-}
-void ink(int x, int y, const char* s, int scale, uint16_t c) {
-  for (const char* p = s; *p; p++) {
-    const art::Glyph& g = glyph(*p);
-    for (int row = 0; row < 10; row++)
-      for (int cx = 0; cx < g.w;) {   // one rect per run of lit bits
-        int end = cx;
-        while (end < g.w && (g.rows[row] >> (g.w - 1 - end) & 1)) end++;
-        if (end > cx) gfx565::rect(x + cx * scale, y + row * scale, (end - cx) * scale, scale, c);
-        cx = end + 1;
-      }
-    x += (g.w + 1) * scale;
-  }
-}
-// Logged in logical px against the background it is drawn on: the pixel under its first corner, sampled first.
-void logText(const gfx565::Rect& b, uint32_t color, uint32_t bg) {
-  if (gfx::textLogEnabled && gfx::textLogCount < 64)
-    gfx::textLog[gfx::textLogCount++] = {(int16_t)(b.x / 3), (int16_t)(b.y / 3), (int16_t)((b.x + b.w + 2) / 3 - b.x / 3),
-                                         (int16_t)((b.y + b.h + 2) / 3 - b.y / 3), color, bg, true};
-}
-uint32_t under(int x, int y) {
-  const int cx = x < 0 ? 0 : x > 479 ? 479 : x, cy = y < 0 ? 0 : y > 479 ? 479 : y;
-  return gfx565::rgb888(gfx565::fb[cy * 480 + cx]);
-}
-void text(int x, int y, const char* s, int scale, uint32_t color) {
-  logText({x, y, textWidth(s, scale), 10 * scale}, color, under(x, y));
+// ---- text: Russo One (fonts.h), four sizes picked by the old scale numbers so layouts read 2 = body ... 8 = countdown.
+// y is the top of the capitals, as before, so a line sits where its letters start.
+const font::Font& face(int scale) { return scale <= 2 ? fonts::SMALL : scale == 3 ? fonts::LABEL : scale <= 5 ? fonts::BIG : fonts::GIANT; }
+int capTop(const font::Font& f) { return f.lineHeight - f.baseLine - f.glyphs['H' - 31].boxH; }   // line top to cap top
+int textWidth(const char* s, int scale) { return font::textWidth(face(scale), s); }
+void ink(int x, int y, const char* s, int scale, uint16_t c) { font::text(face(scale), s, x, y - capTop(face(scale)), c); }
+void text(int x, int y, const char* s, int scale, uint32_t color) {   // font::text logs the line for the UI audit
   ink(x, y, s, scale, rgb888_to_565(color));
 }
 void centered(int cx, int y, const char* s, int scale, uint32_t color) { text(cx - textWidth(s, scale) / 2, y, s, scale, color); }
-// The reference HUD's numerals: bright letters in a thick black outline, straight on the scene.
+// The reference HUD's numerals: bright letters in a thick black outline, straight on the scene. Only the fill is
+// logged, against the outline it sits on.
 void outlined(int x, int y, const char* s, int scale, uint32_t color) {
-  const int t = scale > 2 ? 3 : 2;
-  logText({x - t, y - t, textWidth(s, scale) + 2 * t, 8 * scale + 2 * t}, color, RIM);
+  const int t = scale > 3 ? 3 : 2;
+  const bool logging = gfx::textLogEnabled;
+  gfx::textLogEnabled = false;
   for (int dy = -t; dy <= t; dy += t) for (int dx = -t; dx <= t; dx += t) if (dx || dy) ink(x + dx, y + dy, s, scale, rgb888_to_565(RIM));
   ink(x, y, s, scale, rgb888_to_565(color));
+  gfx::textLogEnabled = logging;
+  const font::Font& f = face(scale);
+  if (logging && gfx::textLogCount < 64)
+    gfx::textLog[gfx::textLogCount++] = {(int16_t)((x - t) / 3), (int16_t)((y - t) / 3), (int16_t)((textWidth(s, scale) + 2 * t + 2) / 3),
+                                         (int16_t)((f.lineHeight - f.baseLine - capTop(f) + 2 * t + 2) / 3), color, RIM, true};
 }
 
 // ---- pictures
@@ -139,13 +126,20 @@ void skyline(int track, int bottom, int offset) {
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
 struct Thing { float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; };   // size: drawn bigger than life
 constexpr int MAX_THINGS = 48;
+// The speed arc hugs the top rim: SEGMENTS slots across ARC_DEG either side of 12 o'clock, between ARC_IN and ARC_OUT.
+// Which slot each of its pixels belongs to (or its dark rim) is worked out once, so a frame only looks it up.
+constexpr int SEGMENTS = 24, ARC_IN = 210, ARC_OUT = 228, ARC_MAX = 9000, ARC_RIM = 255;
+constexpr float ARC_DEG = 56;
 struct Scratch {
   int16_t center[ROWS], half[ROWS];   // road center and half-width for each row below the horizon
   float z[ROWS];
   Thing things[MAX_THINGS];
   int n;
+  uint32_t arc[ARC_MAX];              // panel offset << 8 | slot (ARC_RIM: the dark edge and the gaps)
+  int arcCount;
 };
 Scratch* sc = nullptr;
+void buildArc();   // with the HUD, below
 struct Camera { const Race* r; int track; float dist, x; };
 float rowZ(int y) { return DEPTH_K / (float)(y - HORIZON); }
 void project(const Camera& cam) {   // bottom row up: the bend accumulates with distance
@@ -282,7 +276,7 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   pic(s, x - s.w, CAR_ROW - lift - 2 * s.h, PIC_SCALE);
 }
 void scene(const Race& r, int track, float steer, uint32_t ms) {
-  if (!sc) sc = new (std::nothrow) Scratch();
+  if (!sc) { sc = new (std::nothrow) Scratch(); if (sc) buildArc(); }
   if (!sc) return;
   const Car& p = r.car[PLAYER];
   Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f};
@@ -317,8 +311,50 @@ void action(const ui::Box& b, int item, int count, bool lit, bool full) {
   outlined(cx + inward * 20 - 12, cy + 12, n, 3, count ? CREAM : DIM);   // the count, toward the middle
   if (full) { const int w = textWidth("Full", 2); outlined(cx + inward * 8 - w / 2, cy - 70, "Full", 2, GOLD); }
 }
+void buildArc() {
+  sc->arcCount = 0;
+  for (int y = 240 - ARC_OUT; y < 240; y++)
+    for (int x = 0; x < 480; x++) {
+      const float dx = (float)(x - 240), dy = (float)(240 - y), r = sqrtf(dx * dx + dy * dy);
+      const float deg = atan2f(dx, dy) * (180 / 3.14159265f);
+      if (r < ARC_IN || r > ARC_OUT || fabsf(deg) > ARC_DEG || sc->arcCount >= ARC_MAX) continue;
+      const float at = (deg + ARC_DEG) / (2 * ARC_DEG) * SEGMENTS, inSlot = at - floorf(at);
+      const bool edge = r < ARC_IN + 2 || r > ARC_OUT - 2 || inSlot < 0.12f || inSlot > 0.88f;
+      sc->arc[sc->arcCount++] = (uint32_t)(y * 480 + x) << 8 | (edge ? ARC_RIM : (uint32_t)at);
+    }
+}
+// Slot colors: the road range runs green to gold to orange; the slots past top speed are the boost's cyan.
+uint16_t slotColor(int i) {
+  constexpr int ROAD = (int)(SEGMENTS / BOOST_CAP + 0.5f);
+  if (i >= ROAD) return rgb888_to_565(CYAN);
+  const float t = (float)i / (ROAD - 1);
+  const uint32_t a = t < 0.5f ? GREEN : GOLD, b = t < 0.5f ? GOLD : ORANGE;
+  const float u = t < 0.5f ? t * 2 : t * 2 - 1;
+  auto mix = [&](int s) { return (uint32_t)((a >> s & 255) * (1 - u) + (b >> s & 255) * u) << s; };
+  return rgb888_to_565(mix(16) | mix(8) | mix(0));
+}
+// The speed: an arc of slots along the top rim lighting left to right, and big digits under it. Held back (a slow
+// patch, off the road, the moment after a hit) the lit slots and digits turn red-orange; boosting, the digits are
+// cyan as the boost slots fill. 1.0 (dry-road top speed) reads 90 mph.
+void speedo(const Race& r) {
+  const Car& p = r.car[PLAYER];
+  bool ice = false;
+  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, p.dist, p.x, &ice) < 1);
+  const int lit = (int)lroundf(fminf(p.speed / BOOST_CAP, 1) * SEGMENTS);
+  const uint16_t rim = rgb888_to_565(RIM), off = rgb888_to_565(PLATE), held = rgb888_to_565(HELD);
+  for (int i = 0; i < sc->arcCount; i++) {
+    const uint32_t slot = sc->arc[i] & 255;
+    gfx565::fb[sc->arc[i] >> 8] = slot == ARC_RIM ? rim : (int)slot >= lit ? off : slowed ? held : slotColor((int)slot);
+  }
+  const uint32_t color = p.boostMs ? CYAN : slowed ? HELD : CREAM;
+  char n[8];
+  snprintf(n, sizeof n, "%d", (int)lroundf(p.speed * MPH_AT_TOP));
+  outlined(262 - textWidth(n, 5), 40, n, 5, color);
+  outlined(268, 62, "mph", 2, color);
+}
 void hud(const View& v) {
   const Race& r = *v.race;
+  speedo(r);
   UiAudit::add(LAP.x, LAP.y, LAP.w, LAP.h);
   char lap[8];
   snprintf(lap, sizeof lap, "%d/%d", lapOf(r, PLAYER), LAPS);
@@ -340,12 +376,26 @@ void hud(const View& v) {
 void banner(int y, const char* s, int scale, uint32_t color) {
   outlined(240 - textWidth(s, scale) / 2, y, s, scale, color);
 }
+void clock(char* out, size_t n, uint32_t ms) {   // m:ss.t
+  snprintf(out, n, "%u:%02u.%u", (unsigned)(ms / 60000), (unsigned)(ms / 1000 % 60), (unsigned)(ms / 100 % 10));
+}
+// The time to beat on this track: the record holder's, or the kid's own; false when nobody has a time yet.
+bool toBeat(const View& v, char* line, size_t n) {
+  if (!v.boardRows) return false;
+  char t[16];
+  clock(t, sizeof t, v.board[0].raceMs);
+  if (v.board[0].me) snprintf(line, n, "Your record %s", t);
+  else snprintf(line, n, "To beat: %s %s", v.board[0].name, t);
+  return true;
+}
 void callouts(const View& v) {
   const Race& r = *v.race;
   if (r.phase == Phase::Countdown) {
     static const char* C[] = {"3", "2", "1"};
     const uint32_t i = r.ms / 1000;
     banner(150, C[i < 3 ? i : 2], 8, GOLD);
+    char line[48];   // the time to beat again on a Replay, which skips the grip page
+    if (toBeat(v, line, sizeof line)) outlined(240 - textWidth(line, 2) / 2, 232, line, 2, GOLD);
   } else if (r.raceMs < 700) banner(150, "GO!", 8, GREEN);
   if (r.calloutMs) banner(170, r.playerLap >= LAPS ? "Final lap" : "Lap 2", 4, CREAM);
   if (v.resumeMs) banner(160, "Ready", 5, GOLD);
@@ -395,7 +445,7 @@ void howToPage(const View& v) {
   text(176, 182, "Grab boosts", 2, CREAM);
   text(176, 206, "and rockets", 2, CREAM);
   centered(240, 246, "Finish 3 laps", 2, CREAM);
-  centered(240, 280, "Hold 1/3 to pause", 2, GOLD);
+  centered(240, 280, "Hold 1/3 at the top to pause", 2, GOLD);
   button(BACK, "Back", true);
   button(NEXT, "Next", true);
 }
@@ -408,15 +458,17 @@ void calibratePage(const View& v) {
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
   wheelPreview(v.steer, v.track, 162);
   centered(240, 252, "Turn right: car goes right", 2, DIM);
+  char line[48];   // the time to beat on this track, before the kid starts
+  if (toBeat(v, line, sizeof line)) centered(240, 288, line, 2, GOLD);
   button(BACK, "Back", true);
   button(NEXT, "Go", v.gripReady);
 }
 void pausePage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
-  if (v.gripLost && !v.gripUpright) heading(46, "Hold like a wheel", 2, GOLD);
+  if (v.gripLost && !v.gripHeld) heading(46, "Hold like a wheel", 2, GOLD);
   else heading(48, "Paused", 3, ORANGE);
-  button(RESUME, "Resume", v.gripUpright);
-  button(RECENTER, "Recenter", true);
+  button(RESUME, "Resume", v.gripHeld);
+  button(RECENTER, "New grip", true);
   button(RESTART, "Restart", true);
   button(TRACKS_BTN, "Tracks", true);
   button(HOME_BTN, "Home", true);
@@ -429,21 +481,33 @@ void confirmPage(const View& v) {
   button(YES, "Yes", true);
   button(NO, "No", true);
 }
+// The finish, then this track's leaderboard: every kid's best race and best lap, fastest first, this kid in gold.
 void resultsPage(const View& v) {
   const Race& r = *v.race;
   gfx565::clear(rgb888_to_565(INK));
   heading(40, "Finished!", 3, ORANGE);
   banner(80, ordinal(r.place), 5, GOLD);
-  uint8_t o[CARS];
-  order(r, o);
-  static const char* WHO[CARS] = {"You", "Blue", "Gold", "Green"};
-  for (int i = 0; i < CARS; i++) {
-    const Car& c = r.car[o[i]];
-    char line[32];
-    if (c.finished) snprintf(line, sizeof line, "%s %s %u:%02u.%u", ordinal(i + 1), WHO[o[i]], (unsigned)(c.finishMs / 60000),
-                             (unsigned)(c.finishMs / 1000 % 60), (unsigned)(c.finishMs / 100 % 10));
-    else snprintf(line, sizeof line, "%s %s Racing", ordinal(i + 1), WHO[o[i]]);
-    centered(240, 146 + i * 36, line, 2, o[i] == PLAYER ? GOLD : CREAM);
+  char t[16], line[64];
+  clock(t, sizeof t, r.car[PLAYER].finishMs);
+  // Said plainly for a six-year-old: a best of their own is not beating a sibling's record.
+  const uint32_t mine = r.car[PLAYER].finishMs;
+  const bool top = v.boardRows && v.board[0].me && v.board[0].raceMs == mine;
+  if (v.newBest & BEST_RACE) snprintf(line, sizeof line, "%s  %s", t, top && v.boardRows > 1 ? "Track record!" : "Your best yet!");
+  else if (v.newBest & BEST_LAP) snprintf(line, sizeof line, "%s  Best lap yet!", t);
+  else if (v.prevBestMs && mine > v.prevBestMs)
+    snprintf(line, sizeof line, "%s  (+%u.%u)", t, (unsigned)((mine - v.prevBestMs) / 1000), (unsigned)((mine - v.prevBestMs) / 100 % 10));
+  else snprintf(line, sizeof line, "Your time %s", t);
+  centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
+  centered(240, 166, "Best times", 2, DIM);
+  for (int i = 0; i < v.boardRows; i++) {
+    char lap[16];
+    clock(t, sizeof t, v.board[i].raceMs);
+    const uint32_t lm = v.board[i].lapMs;
+    if (!lm) snprintf(lap, sizeof lap, "-");
+    else if (lm < 60000) snprintf(lap, sizeof lap, "%u.%u", (unsigned)(lm / 1000), (unsigned)(lm / 100 % 10));   // "29.8"
+    else clock(lap, sizeof lap, lm);
+    snprintf(line, sizeof line, "%d %.11s %s  lap %s", i + 1, v.board[i].name, t, lap);
+    centered(240, 194 + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
   }
   button(REPLAY, "Replay", true);
   button(RESULT_TRACKS, "Tracks", true);

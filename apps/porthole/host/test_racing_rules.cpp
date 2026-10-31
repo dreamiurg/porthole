@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include "games/racing/race.h"
 
 using namespace racing;
@@ -33,6 +34,10 @@ Result run(int track, int style, uint32_t seed) {   // style 0 idle, 1 steady, 2
     assert(fabsf(r.car[PLAYER].x) <= RAIL + 1e-4f);
   }
   out.ms = r.raceMs; out.place = r.place; out.finished = r.phase == Phase::Finished;
+  // Lap times add up to the finish, less the run from the grid to the line, and the best is one of them.
+  const uint32_t sum = r.lapMs[0] + r.lapMs[1] + r.lapMs[2];
+  assert(r.lapMs[0] && r.lapMs[1] && r.lapMs[2] && sum < r.car[PLAYER].finishMs && r.car[PLAYER].finishMs - sum < 5000);
+  assert(bestLap(r) == std::min(r.lapMs[0], std::min(r.lapMs[1], r.lapMs[2])));
   return out;
 }
 

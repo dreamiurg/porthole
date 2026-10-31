@@ -26,6 +26,7 @@ struct Race {
   Puff puff[MAX_PUFFS];
   uint32_t ms = 0, raceMs = 0, cooldownMs = 0, calloutMs = 0, fullMs[2] = {0, 0}, seed = 1;   // calloutMs: a new lap's banner
   uint32_t hitMs = 0;               // "Hit!" after the player's rocket finds a rival
+  uint32_t lapStartMs = 0, lapMs[LAPS] = {};   // the player's laps, line to line (0 until driven)
   uint16_t taken = 0;               // pickup gates collected on the player's current lap (bit per feature)
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
@@ -38,6 +39,7 @@ void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS
 void order(const Race& r, uint8_t out[CARS]);   // car ids, first place first
+uint32_t bestLap(const Race& r);       // the player's fastest finished lap, 0 if none
 float hitSpeed(float before, float factor);    // the impact rule: min(before, max(HIT_FLOOR, before * factor))
 bool airborne(const Car& c);
 // What is under a grounded car at (dist, x): the strongest speed cap (1 = none) and whether it is on ice.

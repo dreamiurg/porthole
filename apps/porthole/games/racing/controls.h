@@ -12,12 +12,18 @@ inline bool plausible(tilt::Grav g) {
   const int64_t m = (int64_t)g.x * g.x + (int64_t)g.y * g.y + (int64_t)g.z * g.z;
   return m >= 800 * 800 && m <= 1200 * 1200;
 }
+// Still held like a wheel during a race: anything but nearly flat. Leaning back up to about 75 degrees from upright,
+// or turning hard, keeps racing; only a puck laid on a table (under FLAT_MG in the screen plane) stops it.
+constexpr int FLAT_MG = 250;
+inline bool held(tilt::Grav g) {
+  return plausible(g) && (int64_t)g.x * g.x + (int64_t)g.y * g.y >= (int64_t)FLAT_MG * FLAT_MG;
+}
 inline bool upright(tilt::Grav g) {
   return plausible(g) && g.y >= 400 && (int64_t)g.x * g.x + (int64_t)g.y * g.y >= 650 * 650;
 }
 inline float steer(tilt::Grav g, tilt::Grav neutral) {
   if (!plausible(g) || !upright(neutral)) return 0;
-  if ((int64_t)g.x * g.x + (int64_t)g.y * g.y < 350 * 350) return 0;
+  if (!held(g)) return 0;
   const float cross = (float)g.x * neutral.y - (float)g.y * neutral.x;
   const float dot = (float)g.x * neutral.x + (float)g.y * neutral.y;
   const float angle = atan2f(cross, dot) * (180 / 3.14159265f);

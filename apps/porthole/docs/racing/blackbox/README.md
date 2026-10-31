@@ -217,3 +217,13 @@ Pacing lands on the 1.5-2 minute target (1:33 to 2:00). Laps take about 30-38 s,
   The hit, puff and slowdown still read clearly.
 - `trace-night-run-final-race.jsonl` replayed in a fresh process on this final build reaches the same results page:
   1st, 1:46.8.
+
+## Speed arc, flat-only pause and Russo One text (2026-10-31)
+
+- `trace-desert-canyon-full-race.jsonl` replayed in a fresh process on this build: the same race, 2nd in 1:33.1,
+  now with the speed arc along the top rim, mph digits under it, and all text in Russo One (`12-speed-font-replay.png`).
+- Leaning the puck back 70 degrees mid-race keeps racing and steering; a hard turn past full lock keeps racing;
+  lying flat still pauses with "Hold like a wheel" (`host/test_racing.cpp` `gripLost`, and checked with ordinary
+  tilts in the emulator).
+- The arc filled left to right from 45 to 90 mph while accelerating; the digits went cyan with a boost; off the road
+  at 50 mph the lit slots and digits turned red-orange.

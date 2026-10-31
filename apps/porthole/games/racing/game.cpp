@@ -21,8 +21,53 @@ void Game::enter(const AppEnter& e) {
   daylight_ = e.daylight; home_ = seenHowTo_ = recenter_ = gripLost_ = false; in_ = {};
   neutral_ = {0, 1000, 0};
   track_ = 0;
+  loadKids(e);
   start(race_, TRACK[track_], seed_);
   go(Screen::Tracks);
+}
+
+void Game::loadKids(const AppEnter& e) {
+  save_ = {}; dirty_ = false; newBest_ = 0; nKids_ = 0; me_ = -1;
+  for (int i = 0; i < e.n && nKids_ < MAX_PROFILES; i++) {
+    Kid& k = kids_[nKids_];
+    k = {};
+    snprintf(k.name, sizeof k.name, "%s", e.all[i].name);
+    Save s{};
+    if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) memcpy(k.best, s.best, sizeof k.best);
+    k.me = e.who && e.all[i].id == e.who->id;
+    if (k.me) { me_ = nKids_; memcpy(save_.best, k.best, sizeof save_.best); }
+    nKids_++;
+  }
+}
+
+// Once per finish: the kid's own record for this track, kept only when it improves.
+void Game::recordFinish() {
+  prevBestMs_ = save_.best[track_].raceMs;
+  newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
+  dirty_ = dirty_ || newBest_;
+  if (me_ >= 0) kids_[me_].best[track_] = save_.best[track_];
+}
+
+// This track's leaderboard: every kid with a time, fastest race first (ties: the faster lap, then profile order).
+int Game::board(paint::Row out[MAX_PROFILES]) const {
+  int n = 0;
+  for (int i = 0; i < nKids_; i++) {
+    const Best& b = kids_[i].best[track_];
+    if (!b.raceMs) continue;
+    paint::Row row = {kids_[i].name, b.raceMs, b.lapMs, kids_[i].me};
+    int j = n++;
+    for (; j > 0 && (out[j - 1].raceMs > row.raceMs || (out[j - 1].raceMs == row.raceMs && out[j - 1].lapMs > row.lapMs)); j--) out[j] = out[j - 1];
+    out[j] = row;
+  }
+  return n;
+}
+
+bool Game::takeSave(const void** data, size_t* len, bool allowed) {
+  if (!allowed || !dirty_) return false;
+  seal(save_);
+  *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update
+  dirty_ = false;
+  return true;
 }
 
 void Game::go(Screen s) {
@@ -36,7 +81,7 @@ void Game::go(Screen s) {
 
 void Game::startRace() {
   start(race_, TRACK[track_], seed_ + ++runs_);   // every run is fresh: inventory, timers and rivals reset
-  steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = false;
+  steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = false; newBest_ = 0;
   go(Screen::Race);
 }
 
@@ -84,9 +129,10 @@ void Game::updateCalibrate() {
   go(Screen::Race);
 }
 
-// A flat or implausible pose for GRIP_LOST_MS stops the race: no unstable steering, no driving blind.
+// A flat or implausible pose for GRIP_LOST_MS stops the race: no unstable steering, no driving blind. Leaning back or
+// turning hard is still racing (controls::held); the grip page alone asks for a comfortable upright hold.
 bool Game::gripOk(uint32_t dt) {
-  if (controls::upright(gravity())) { badGripMs_ = 0; return true; }
+  if (controls::held(gravity())) { badGripMs_ = 0; return true; }
   badGripMs_ += dt;
   if (badGripMs_ < GRIP_LOST_MS) return true;
   gripLost_ = true;
@@ -96,6 +142,7 @@ bool Game::gripOk(uint32_t dt) {
 
 void Game::updateRace(uint32_t dt) {
   if (race_.phase == Phase::Finished) {   // a moment on the line to see "Finish!" before the results
+    if (!recorded_) { recorded_ = true; recordFinish(); }
     finishMs_ += dt;
     if (finishMs_ >= FINISH_MS) go(Screen::Results);
     return;
@@ -126,7 +173,7 @@ void Game::simulate(uint32_t dt) {
 }
 
 void Game::updatePause() {
-  if (ui::clicked(in_, paint::RESUME) && controls::upright(gravity())) {
+  if (ui::clicked(in_, paint::RESUME) && controls::held(gravity())) {
     gripLost_ = false; resumeMs_ = RESUME_MS;
     go(Screen::Race);   // the exact paused state, down to the partial step
     return;
@@ -156,8 +203,10 @@ void Game::render() {
   v.page = screen_;
   v.race = &race_; v.track = track_; v.ms = ms_; v.steer = steer_;
   v.calibration = calibration_.progress(); v.hold = (uint16_t)(hold_.progress() * 1000); v.resumeMs = resumeMs_;
-  v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity());
+  v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity()); v.gripHeld = controls::held(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
+  paint::Row rows[MAX_PROFILES];
+  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_;
   paint::draw(v);
 }
 
@@ -176,6 +225,8 @@ void Game::debugPrint() {
          (unsigned)race_.raceMs, p.finished, (unsigned)p.finishMs, race_.finishedCount, race_.jumps, race_.pickups,
          race_.rocketsFired, race_.rocketHits, race_.impacts);
   tilt::Grav n{};
+  const Best& b = save_.best[track_];
+  printf("best_race=%u best_lap=%u new_best=%d kids=%d\n", (unsigned)b.raceMs, (unsigned)b.lapMs, newBest_, nKids_);
   printf("steer=%d grip_lost=%d resume=%u ready=%d calibration=%u neutral=%d,%d,%d\n", (int)lroundf(steer_ * 1000),
          gripLost_, (unsigned)resumeMs_, calibration_.get(&n), calibration_.progress(), neutral_.x, neutral_.y, neutral_.z);
 }

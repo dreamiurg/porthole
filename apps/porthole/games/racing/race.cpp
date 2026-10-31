@@ -131,6 +131,21 @@ float rivalSteer(Race& r, int i) {
   const float feed = curve(*r.track, c.dist) * DRIFT * c.speed * c.speed / STEER_RATE;
   return clampf((rivalLine(r, i) - c.x) * 3 + feed, -1, 1);
 }
+// The moment inside this step a car moving from prev to cur crossed `line`.
+uint32_t crossingMs(const Race& r, float prev, float cur, float line) {
+  return r.raceMs - STEP_MS + (uint32_t)lroundf((line - prev) / (cur - prev) * STEP_MS);
+}
+// The player's lap times: each lap runs from one crossing of the start line to the next (the first from the flying
+// crossing just after GO), so every lap is timed the same way the finish is.
+void lapClock(Race& r, float prev, float cur) {
+  const float len = r.track->length;
+  for (int k = 0; k <= LAPS; k++) {
+    if (prev >= k * len || cur < k * len) continue;
+    const uint32_t at = crossingMs(r, prev, cur, k * len);
+    if (k > 0) r.lapMs[k - 1] = at - r.lapStartMs;
+    r.lapStartMs = at;
+  }
+}
 void drive(Race& r, int i, float steer) {
   Car& c = r.car[i];
   const float prev = c.dist;
@@ -139,12 +154,12 @@ void drive(Race& r, int i, float steer) {
   c.dist += c.speed * V_MAX * DT;
   slide(r, c, steer, ice);
   obstacles(r, i);
-  if (i == PLAYER) pickups(r, prev);
+  if (i == PLAYER) { pickups(r, prev); lapClock(r, prev, c.dist); }
   ramps(r, i, prev);
   const float line = LAPS * r.track->length;
   if (prev < line && c.dist >= line) {   // interpolate the crossing inside this step: a stable, fair order
     c.finished = true;
-    c.finishMs = r.raceMs - STEP_MS + (uint32_t)lroundf((line - prev) / (c.dist - prev) * STEP_MS);
+    c.finishMs = crossingMs(r, prev, c.dist, line);
     r.finishedCount++;
   }
 }
@@ -222,6 +237,11 @@ void laps(Race& r) {
 }
 }  // namespace
 
+uint32_t bestLap(const Race& r) {
+  uint32_t best = 0;
+  for (uint32_t ms : r.lapMs) if (ms && (!best || ms < best)) best = ms;
+  return best;
+}
 float hitSpeed(float before, float factor) {
   const float after = before * factor > HIT_FLOOR ? before * factor : HIT_FLOOR;
   return after < before ? after : before;
