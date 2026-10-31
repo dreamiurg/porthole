@@ -1,0 +1,4 @@
+# Declared setup fixture only: two existing profiles (Sam with a kid code), no game progress, no admin code.
+reset
+profile Sam 8 1234
+profile Kai 6

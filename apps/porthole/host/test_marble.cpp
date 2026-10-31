@@ -3,7 +3,7 @@
 // solution replayed to a goal from three grips (and kept in step with the playtests), and the renderer's shortcut:
 // every frame drawn incrementally into the panel's two buffers equals the frame painted whole.
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <dirent.h>
 #include <math.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@
 using namespace marble;
 static int checks = 0;
 static bool lab = false;   // --levels: report every level's checks, fail none (for designing levels)
+#undef CHECK  // check.h's, but a --levels report (lab) records instead of asserting
 #define CHECK(c) (lab || (assert(c), true), checks++)
 
 static float len(Vec v) { return sqrtf(v.x * v.x + v.y * v.y); }

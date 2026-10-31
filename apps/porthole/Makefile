@@ -13,7 +13,11 @@ WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initi
 # came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
 FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
-CXXFLAGS += $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
+# -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so an NDEBUG in the
+# environment's CXXFLAGS does not turn them off. HOST_FLAGS goes into the coverage build too.
+HOST_FLAGS := $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+CXXFLAGS += $(HOST_FLAGS)
+ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
 # with it, and on aarch64 that call really is miscompiled (screens stuck, issue #22). Bind the entry to a local first.
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
@@ -23,6 +27,7 @@ PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
 NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
+# Each is its own target (build/host/test_<name>, run by run-test_<name>), so make -j and -k work on them.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_toytown_SRC :=
 test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
@@ -60,27 +65,51 @@ SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 HOST_LIBS := -lz
 BUILD := build/host
 
+# Every source compiles once per flavor into an object that mirrors the source tree (two games both have a pet.cpp):
+# build/host/obj (the sims and the tests), build/host/asan (snap-asan), build/coverage/obj (coverage). -MMD -MP
+# dependency files make an edited header rebuild exactly what includes it, and a no-op build do nothing.
+# The whole build runs in parallel by default (make 3.81 on macOS takes -j from here too); NPROC=1 for serial output.
+NPROC ?= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+ifeq ($(filter clean,$(MAKECMDGOALS)),)  # `make clean test` must not delete build/ while it compiles
+MAKEFLAGS += -j$(NPROC)
+endif
+objs = $(addprefix $(1)/,$(2:.cpp=.o))
+# Objects depend on this Makefile too: a changed flag (a new warning) must recompile what was already built.
+compile = mkdir -p $(@D) && $(CXX) $(1) -MMD -MP -c $< -o $@
+$(BUILD)/obj/%.o: %.cpp Makefile
+	$(call compile,$(CXXFLAGS))
+$(BUILD)/asan/%.o: %.cpp Makefile
+	$(call compile,$(CXXFLAGS) $(ASAN))
+# HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
+$(BUILD)/sdl/host/sim.o: host/sim.cpp Makefile
+	$(call compile,$(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL)
+
 all: sim test
 
-$(BUILD):
-	mkdir -p $(BUILD)
-
-sim: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL $(SRC) host/sim.cpp -o $(BUILD)/sim $(SDL_LIBS) $(HOST_LIBS)
-
-snap: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) $(SRC) host/sim.cpp -o $(BUILD)/snap $(HOST_LIBS)
-
+$(BUILD)/sim: $(call objs,$(BUILD)/obj,$(SRC)) $(BUILD)/sdl/host/sim.o
+	$(CXX) $^ -o $@ $(SDL_LIBS) $(HOST_LIBS)
+$(BUILD)/snap: $(call objs,$(BUILD)/obj,$(SRC) host/sim.cpp)
+	$(CXX) $^ -o $@ $(HOST_LIBS)
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
-snap-asan: $(BUILD) $(SRC) host/sim.cpp
-	$(CXX) $(CXXFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SRC) host/sim.cpp -o $(BUILD)/snap-asan $(HOST_LIBS)
+$(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+sim snap snap-asan: %: $(BUILD)/%
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
-test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
-	$(foreach t,$(TESTS),$(CXX) $(CXXFLAGS) $($(t)_SRC) host/$(t).cpp -o $(BUILD)/$(t) $(HOST_LIBS) && $(BUILD)/$(t) &&) true
+# Just the sanitizer monkeys: what ci adds to coverage, which already plays every other scenario.
+playtest-monkey: snap-asan
+	$(PY) tools/playtest.py monkey
+
+$(foreach t,$(TESTS),$(eval $(BUILD)/$(t): $(call objs,$(BUILD)/obj,$($(t)_SRC) host/$(t).cpp)))
+$(BUILD)/test_%:
+	$(CXX) $^ -o $@ $(HOST_LIBS)
+# No .PHONY: make skips pattern rules for phony targets. Nothing creates a run-* file, so these always run.
+run-%: $(BUILD)/%
+	$<
+test: $(TESTS:%=run-%)
 
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
@@ -112,17 +141,16 @@ lint: snap
 # What pre-commit runs: seconds, not minutes.
 check: lint test
 
-# Everything CI runs for this app except the firmware build.
-ci: check playtest coverage
+# Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
+# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22).
+ci: lint test coverage playtest-monkey
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
-# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang; they mirror the source tree
-# (build/coverage/obj/games/<game>/pet.o) because two games can both have a pet.cpp. COV_MIN: baseline
-# 93.9% (gcc 13, ubuntu-24.04) / 94.3% (Apple clang) at import, minus 2 points.
+# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.47% measured
+# (Apple clang) on 2026-10-31 after Toy Town and Rally landed; raise it as coverage grows, never lower it.
 COV := build/coverage
-COV_MIN := 97
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD
-COV_OBJ = $(addprefix $(COV)/obj/,$(1:.cpp=.o))
+COV_MIN := 98.4
+COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(HOST_FLAGS)
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 # GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
@@ -137,13 +165,24 @@ else
 GCOV ?= gcov
 endif
 
-coverage:
-	rm -rf $(COV) && mkdir -p $(COV)/obj
-	for f in $(SRC) host/sim.cpp $(TESTS:%=host/%.cpp); do o=$(COV)/obj/$${f%.cpp}.o; mkdir -p $$(dirname $$o) && $(CXX) $(COV_CXXFLAGS) -c $$f -o $$o || exit 1; done
-	$(foreach t,$(TESTS),$(CXX) --coverage $(call COV_OBJ,$($(t)_SRC) host/$(t).cpp) -o $(COV)/$(t) $(HOST_LIBS) && $(COV)/$(t) &&) true
-	$(CXX) --coverage $(call COV_OBJ,$(SRC) host/sim.cpp) -o $(COV)/snap $(HOST_LIBS)
-	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest $(PY) tools/playtest.py $(COV_SCENARIOS)
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+$(COV)/obj/%.o: %.cpp Makefile
+	$(call compile,$(COV_CXXFLAGS))
+$(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
+$(COV)/test_%:
+	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
+$(COV)/snap: $(call objs,$(COV)/obj,$(SRC) host/sim.cpp)
+	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
+
+# Objects stay between runs; the counts (.gcda) start from zero each time. The tests and the playtests all run at
+# once: the coverage runtime locks each .gcda while it merges into it. -O0 is slow, hence the time scale.
+cov-reset:
+	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
+cov-run-%: $(COV)/% cov-reset
+	$<
+cov-playtest: $(COV)/snap cov-reset
+	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
+coverage: $(TESTS:%=cov-run-%) cov-playtest
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
@@ -181,4 +220,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean flash-report
+.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean flash-report
+-include $(shell find build -name '*.d' 2>/dev/null)

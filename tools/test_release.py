@@ -65,4 +65,10 @@ with tempfile.TemporaryDirectory() as tmp:
     notes = release.plan("HEAD")[0]["notes"]
     assert "### Breaking changes" in notes and "alpha-1.4.2" not in notes and "alpha-2.0.0-factory.bin" in notes, notes
 
+    run(repo, "git", "tag", "alpha-v2.0.0")
+    commit(repo, "apps/alpha/main.cpp", "fix: wording\n\nThis is not a BREAKING CHANGE: just prose.")
+    assert versions(repo)["alpha"] == "2.0.1", "BREAKING CHANGE mid-line is prose, not a footer"
+    commit(repo, "apps/alpha/main.cpp", "fix: rename\n\nBREAKING-CHANGE: the hyphenated footer counts too")
+    assert versions(repo)["alpha"] == "3.0.0", versions(repo)
+
 print("release.py: all checks passed")

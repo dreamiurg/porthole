@@ -1,5 +1,5 @@
 // Shared-shell integration: immediate story checkpoints and the unchanged ordinary-game cadence.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include <map>
@@ -14,17 +14,19 @@ using kingdom::Save;
 constexpr uint32_t NOW = 1790000000;
 struct Memory : shell::Store {
   std::map<std::string, std::vector<uint8_t>> entries;
-  int gameWrites = 0;
+  int gameWrites = 0; bool fail = false;   // fail: every write is refused, like a worn-out flash
   size_t load(const char* ns, const char* key, void* out, size_t max) override {
     auto i = entries.find(std::string(ns) + "/" + key);
     if (i == entries.end() || i->second.size() > max) return 0;
     memcpy(out, i->second.data(), i->second.size()); return i->second.size();
   }
-  void save(const char* ns, const char* key, const void* bytes, size_t length) override {
+  bool save(const char* ns, const char* key, const void* bytes, size_t length) override {
     assert(length <= shell::BLOB_MAX);
+    if (fail) return false;
     const auto* data = static_cast<const uint8_t*>(bytes);
     entries[std::string(ns) + "/" + key] = std::vector<uint8_t>(data, data + length);
     if (!strcmp(ns, "kingdom") || !strcmp(ns, "ordinary")) gameWrites++;
+    return true;
   }
   void erase(const char* ns, const char* key) override { entries.erase(std::string(ns) + "/" + key); }
   Save campaign(uint8_t profile = 0) {
@@ -34,12 +36,12 @@ struct Memory : shell::Store {
   }
 };
 struct Ordinary : App {
-  uint8_t byte = 1; bool dirty = true;
+  uint8_t byte = 1; bool dirty = true, urgent = false, churn = false;   // churn: something to save every frame
   const char* name() const override { return "Ordinary"; }
   const char* store() const override { return "ordinary"; }
   const gfx::Sprite& icon() const override { return kingdom::art::icon(); }
   void enter(const AppEnter&) override { dirty = true; }
-  void update(uint32_t, uint32_t, const Input&) override {}
+  void update(uint32_t, uint32_t, const Input&) override { if (churn) { byte++; dirty = true; } }
   void render() override {}
   Tint tint() const override { return TINT_DAY; }
   bool asleep() const override { return false; }
@@ -48,6 +50,7 @@ struct Ordinary : App {
     if (!allowed || !dirty) return false;
     *data = &byte; *length = 1; dirty = false; return true;
   }
+  bool saveUrgent() const override { return urgent && dirty; }
   bool wantsHome() override { return false; }
   void leave() override { dirty = true; }
   const char* screenName() const override { return "ordinary"; }
@@ -72,12 +75,13 @@ struct Session {
     shell.begin(store, apps, 1); step(); assert(shell.createProfile("Reader", 9, "") == 0);
     assert(shell.openApp("Kingdom")); step();
   }
-  void start() { begin(); tap(kingdom::layout::START); }
+  void settle() { step(false, 0, 0, 1000); }   // past the urgent checkpoint's one-second gap
+  void start() { begin(); tap(kingdom::layout::START); settle(); }   // the new campaign lands first
 };
 void sameCursor(const kingdom::UiCursor& a, const kingdom::UiCursor& b) { assert(!memcmp(&a, &b, sizeof a)); }
 void urgentPageCheckpoint() {
   Session s; s.start(); const int writes = s.store.gameWrites;
-  const uint32_t before = s.ms; s.tap(kingdom::layout::NEXT);
+  const uint32_t before = s.ms; s.tap(kingdom::layout::NEXT); s.settle();
   assert(s.ms - before < 5000 && s.store.gameWrites == writes + 1);
   const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor); assert(saved.cursor.page == 1);
   // A new shell represents an abrupt restart: leave() is deliberately never called on the old shell.
@@ -96,7 +100,7 @@ void urgentAtomicDecision() {
   s.tap(kingdom::layout::CARD0);
   for (int n = 0; s.game.save().cursor.mode == kingdom::CONFIRM && n < 64; n++) s.tap(kingdom::layout::NEXT);
   assert(s.game.save().cursor.mode == kingdom::RESULT);
-  const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor);
+  s.settle(); const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor);
   assert(saved.journalCount == 1);
   const kingdom::Scene* scene = kingdom::currentScene(saved); assert(scene);
   assert(kingdom::hasDecision(saved, scene->choices[saved.cursor.selectedChoice].id));
@@ -104,7 +108,7 @@ void urgentAtomicDecision() {
 }
 void sessionBreakCursor() {
   Session s; const shell::Limits limits{1, 25}; s.store.save("sys", "limits", &limits, sizeof limits); s.start();
-  s.tap(kingdom::layout::NEXT); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
+  s.tap(kingdom::layout::NEXT); s.settle(); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
   for (int n = 0; n < 65 && strcmp(s.shell.screenName(), "rest"); n++) s.step(true, 0, 0, 1000);
   assert(!strcmp(s.shell.screenName(), "rest")); const Save paused = s.store.campaign();
   sameCursor(paused.cursor, before.cursor); assert(paused.day == before.day && paused.journalCount == before.journalCount);
@@ -113,7 +117,7 @@ void sessionBreakCursor() {
   sameCursor(resumed.save().cursor, before.cursor); assert(resumed.save().seed == before.seed);
 }
 void quitFromDetails() {
-  Session s; s.start(); s.tap(kingdom::layout::NEXT); const Save original = s.store.campaign();
+  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle(); const Save original = s.store.campaign();
   s.tap(kingdom::layout::MENU); s.tap(kingdom::layout::TOOL0);
   assert(s.game.save().cursor.mode == kingdom::PARTY_OVERVIEW); s.tap(kingdom::layout::PARTY1);
   assert(s.game.save().cursor.mode == kingdom::PARTY); s.tap(kingdom::layout::MENU);
@@ -132,9 +136,34 @@ void ordinaryCadence() {
   shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 1);
   ordinary.dirty = true; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 1);
 }
+// A game that is always urgent is still written at most once a second; one that only changes its view is not written.
+void urgentThrottled() {
+  Memory store; Shell shell; Ordinary ordinary; App* apps[] = {&ordinary};
+  ordinary.urgent = ordinary.churn = true; shell.begin(store, apps, 1); shell.update(NOW, 10, {});
+  assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
+  for (uint32_t ms = 20; ms <= 3000; ms += 20) shell.update(NOW + ms / 1000, ms, {});
+  assert(store.gameWrites >= 2 && store.gameWrites <= 3);
+  // Kingdom marks its save dirty on every view change; reopening and Continue change no byte, so nothing is written.
+  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle();
+  s.tap(kingdom::layout::MENU); s.tap(kingdom::layout::TOOL3); assert(!strcmp(s.shell.screenName(), "launcher"));
+  const int writes = s.store.gameWrites;
+  assert(s.shell.openApp("Kingdom")); s.tap(kingdom::layout::START); s.settle(); s.step(false, 0, 0, 6000);
+  assert(!strcmp(s.game.screenName(), "lk_read") && s.store.gameWrites == writes);
+}
+// A refused write stays pending in the shell: it lands at the next cadence once the store works again, though the
+// game has nothing new to hand out.
+void failedSaveRetried() {
+  Memory store; Shell shell; Ordinary ordinary; App* apps[] = {&ordinary};
+  shell.begin(store, apps, 1); shell.update(NOW, 10, {});
+  assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
+  store.fail = true; shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 0 && !ordinary.dirty);
+  store.fail = false; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 0);   // the cadence, not every frame
+  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
+}
 } // namespace
 int main() {
   static_assert(sizeof(Save) <= shell::BLOB_MAX, "the shell must hold a complete campaign checkpoint");
   urgentPageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
+  urgentThrottled(); failedSaveRetried();
   puts("kingdom shell: immediate pages/decisions, abrupt restart, exact break resume and ordinary save cadence passed");
 }

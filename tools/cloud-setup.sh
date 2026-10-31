@@ -3,7 +3,8 @@
 # Runs as root on Ubuntu 24.04 before the session starts; the result is snapshotted and reused for ~7 days, so it
 # installs everything the hooks and CI need: the session's SessionStart hook (.claude/settings.json) only runs
 # `make hooks`. Reads pinned files from main on GitHub, because the environment is shared by every branch.
-# Network: Custom, with the default list, plus the PlatformIO registry (*.platformio.org) and *.espressif.com.
+# Network: Custom, with the default list, plus *.platformio.org, *.espressif.com, and semgrep.dev and
+# metrics.semgrep.dev (the semgrep hook's --config auto downloads its rules).
 set -u
 raw=https://raw.githubusercontent.com/dreamiurg/porthole/main
 export UV_TOOL_BIN_DIR=/usr/local/bin
@@ -22,8 +23,9 @@ python3 -m pip install -q --break-system-packages pillow fonttools==4.61.1 'gcov
 
 # PlatformIO in its own venv (Core 6.1 needs click<8.2), plus the ESP32 platform and toolchains for the
 # pre-push firmware build: install the project's packages from its two config files, no sources needed.
+# uv venvs have no pip, and the builder warns without it (a failure under fail-on-warning.sh): add it.
 (curl -fsSL "$raw/platform/requirements.txt" -o "$tmp/pio-req.txt" \
-  && uv tool install -q "$(grep -E '^platformio==' "$tmp/pio-req.txt")" --with-requirements "$tmp/pio-req.txt" \
+  && uv tool install -q "$(grep -E '^platformio==' "$tmp/pio-req.txt")" --with pip --with-requirements "$tmp/pio-req.txt" \
   && mkdir -p "$tmp/pio/apps/porthole" "$tmp/pio/platform" \
   && curl -fsSL "$raw/apps/porthole/platformio.ini" -o "$tmp/pio/apps/porthole/platformio.ini" \
   && curl -fsSL "$raw/platform/waveshare-round.ini" -o "$tmp/pio/platform/waveshare-round.ini" \
