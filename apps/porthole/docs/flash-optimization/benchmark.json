@@ -1,0 +1,18 @@
+{
+  "before": {
+    "microseconds_per_frame": [
+      93.588,
+      91.761,
+      97.861
+    ],
+    "median": 93.588
+  },
+  "after": {
+    "microseconds_per_frame": [
+      101.617,
+      93.255,
+      94.972
+    ],
+    "median": 94.972
+  }
+}

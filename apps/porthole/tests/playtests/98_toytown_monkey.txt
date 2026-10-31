@@ -1,0 +1,85 @@
+# Seeded random child input through ordinarily reached town, wardrobe and each outing.
+# Supplemental scripted regression; final visible-input playthrough is recorded separately.
+reset
+profile Sam 8
+app toy-town
+wait 600
+ui-check
+monkey 160 9501
+wait 600
+ui-check
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 109 117
+wait 600
+expect-screen toytown_doll
+tap 80 142
+wait 600
+expect-screen toytown_style
+ui-check
+monkey 220 9502
+wait 600
+ui-check
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 51 117
+wait 600
+expect-screen toytown_pack
+tap 112 25
+wait 600
+expect-screen toytown_school_intro
+ui-check
+monkey 220 9503
+wait 600
+ui-check
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 112 25
+wait 600
+expect-screen toytown_cafe_intro
+ui-check
+monkey 220 9504
+wait 600
+ui-check
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 80 142
+wait 600
+expect-screen toytown_pack
+tap 112 25
+wait 600
+expect-screen toytown_park_intro
+ui-check
+monkey 220 9505
+wait 600
+ui-check
+sheet 98_toytown_monkey

@@ -92,10 +92,12 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
 - `personalize.h` / `personalize.cpp`: fills the `{name}`/`{pet}` tokens (see Product
   contract above) into a caller-supplied buffer.
 - Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
-  [frame]`, RLE RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
-  `Image565`), the pixel data itself in `generated/art_data.inc`, and
+  [frame]`, lossless zlib RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
+  `packed565::Image`, losslessly encoded), byte arrays in `generated/art_data_*.inc`
+  indexed by `art_data.inc`, and
   `generated/manifest.json` (a SHA-256 per scene/picture, all matching the legacy
-  firmware's). `art.cpp` is the one translation unit that includes `art_data.inc`. See the
+  firmware's). Shared `os/packed_image.*` streams rows through one fixed decoder
+  workspace, also used by Kingdom. `art.cpp` alone includes `art_data.inc`. See the
   `art` skill for the generator and its `--check`.
 - `tools/check_content.py`: the content gate -- glyph set, token validity, required
   fields, fixed counts, unique ids, discovery order vs. `DiscoveryId`. Fit is the pixel
@@ -162,8 +164,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `update()` asks `tapped()`, `render()` draws; never draw from `update()`, where on the
   device the RGB565 target is the buffer on the glass. Hit boxes are logical px.
   Game-local for now; promote to `os/` if a second RGB565 game shows up.
-- `tools/icon.py` -> `generated/icon.h`: the launcher icon, a 32x32 indexed sprite (the
-  launcher is the shell's), with a `--check` in `make lint`.
+- `art/launcher.png` -> `launcher_icon.h` (`tools/launcher_icons.py`, shared by every game): the launcher picture, a
+  38x28 indexed sprite in the shell's palette (the launcher is the shell's).
 
 ## Content limits (first release)
 

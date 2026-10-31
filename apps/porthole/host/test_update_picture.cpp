@@ -1,23 +1,48 @@
 // Physical sparse scanout and the visible progress/back contract, without ESP32 headers.
 #include "host/check.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <type_traits>
 #include <vector>
 #include "firmware/update_picture.h"
 
 using board::UpdatePicture;
+using Strip = UpdatePicture::Strip;
+
+// The board's allocation, on the host: every chunk on its own, zeroed and 64-byte aligned.
+struct Picture : UpdatePicture {
+  Picture() : UpdatePicture{} {
+    eachChunk([](uint16_t*& c) {
+      c = (uint16_t*)aligned_alloc(64, CHUNK_BYTES);
+      assert(c);
+      memset(c, 0, CHUNK_BYTES);
+    });
+  }
+  ~Picture() { eachChunk([](uint16_t*& c) { free(c); }); }
+  Picture(const Picture&) = delete;
+  Picture& operator=(const Picture&) = delete;
+};
+
+static uint16_t& at(const Strip strip, int x, int y) { return UpdatePicture::row(strip, y)[x]; }
+
+static std::vector<uint16_t> pixels(const Strip strip) {
+  std::vector<uint16_t> out;
+  for (int y = 0; y < UpdatePicture::TEXT_ROWS; y++)
+    out.insert(out.end(), UpdatePicture::row(strip, y), UpdatePicture::row(strip, y) + UpdatePicture::W);
+  return out;
+}
 
 static bool inCircle(int x, int y, int center, int radius) {
   int dx = x - center, dy = y - center;
   return dx * dx + dy * dy <= radius * radius;
 }
 
-static void checkInk(const uint16_t* stripe, int top) {
+static void checkInk(const Strip stripe, int top) {
   int ink = 0;
   for (int y = 0; y < UpdatePicture::TEXT_ROWS; y++) {
     for (int x = 0; x < UpdatePicture::W; x++) {
-      uint16_t pixel = stripe[y * UpdatePicture::W + x];
+      uint16_t pixel = at(stripe, x, y);
       assert(pixel == 0 || pixel == 0xffff);
       if (!pixel) continue;
       assert(inCircle(x, top + y, 240, 240));
@@ -28,26 +53,26 @@ static void checkInk(const uint16_t* stripe, int top) {
 }
 
 static void checkLabels() {
-  UpdatePicture picture{};
+  Picture picture;
   picture.drawBack();
-  std::vector<uint16_t> back(picture.back, picture.back + UpdatePicture::W * UpdatePicture::TEXT_ROWS);
+  std::vector<uint16_t> back = pixels(picture.back);
   for (int percent = 0; percent <= 100; percent++) {
     char label[32];
     snprintf(label, sizeof label, "Downloading %d%%", percent);
     picture.drawProgress(0, label);
     checkInk(picture.progress[0], UpdatePicture::PROGRESS_Y);
-    for (uint16_t pixel : picture.progress[1]) assert(pixel == 0);
-    assert(memcmp(picture.back, back.data(), sizeof picture.back) == 0);
+    for (uint16_t pixel : pixels(picture.progress[1])) assert(pixel == 0);
+    assert(pixels(picture.back) == back);
   }
   const char* labels[] = {"Checking...", "Verifying...", "Stopping..."};
-  std::vector<uint16_t> saved(picture.progress[0], picture.progress[0] + UpdatePicture::W * UpdatePicture::TEXT_ROWS);
+  std::vector<uint16_t> saved = pixels(picture.progress[0]);
   for (const char* label : labels) {
     picture.drawProgress(1, label);
     checkInk(picture.progress[1], UpdatePicture::PROGRESS_Y);
-    assert(memcmp(picture.progress[0], saved.data(), sizeof picture.progress[0]) == 0);
+    assert(pixels(picture.progress[0]) == saved);
   }
   picture.drawProgress(1, "");
-  for (uint16_t pixel : picture.progress[1]) assert(pixel == 0);
+  for (uint16_t pixel : pixels(picture.progress[1])) assert(pixel == 0);
   checkInk(picture.back, UpdatePicture::BACK_Y);
 }
 
@@ -63,11 +88,11 @@ static void checkBack() {
   assert(!UpdatePicture::hitBack(UpdatePicture::BACK_X + UpdatePicture::BACK_W, UpdatePicture::BACK_TOP));
   assert(!UpdatePicture::hitBack(UpdatePicture::BACK_X, UpdatePicture::BACK_TOP - 1));
   assert(!UpdatePicture::hitBack(UpdatePicture::BACK_X, UpdatePicture::BACK_TOP + UpdatePicture::BACK_H));
-  UpdatePicture picture{};
+  Picture picture;
   picture.drawBack();
   for (int y = 0; y < UpdatePicture::TEXT_ROWS; y++) {
     for (int x = 0; x < UpdatePicture::W; x++) {
-      if (picture.back[y * UpdatePicture::W + x]) assert(UpdatePicture::hitBack(x / 3, (UpdatePicture::BACK_Y + y) / 3));
+      if (at(picture.back, x, y)) assert(UpdatePicture::hitBack(x / 3, (UpdatePicture::BACK_Y + y) / 3));
     }
   }
 }
@@ -89,15 +114,15 @@ static void checkChunkPointers(UpdatePicture& picture, int bank) {
   for (int y = 0; y < UpdatePicture::H; y += UpdatePicture::CHUNK_ROWS) {
     uint16_t* expected = picture.black;
     if (y >= UpdatePicture::PROGRESS_Y && y < UpdatePicture::PROGRESS_Y + UpdatePicture::TEXT_ROWS)
-      expected = picture.progress[bank] + (y - UpdatePicture::PROGRESS_Y) * UpdatePicture::W;
+      expected = UpdatePicture::row(picture.progress[bank], y - UpdatePicture::PROGRESS_Y);
     if (y >= UpdatePicture::BACK_Y && y < UpdatePicture::BACK_Y + UpdatePicture::TEXT_ROWS)
-      expected = picture.back + (y - UpdatePicture::BACK_Y) * UpdatePicture::W;
+      expected = UpdatePicture::row(picture.back, y - UpdatePicture::BACK_Y);
     assert(picture.chunk(y, bank) == expected);
   }
   assert(picture.chunk(0, bank) == picture.black);
   assert(picture.chunk(476, bank) == picture.black);
-  assert(picture.chunk(UpdatePicture::PROGRESS_Y, bank) == picture.progress[bank]);
-  assert(picture.chunk(UpdatePicture::BACK_Y, bank) == picture.back);
+  assert(picture.chunk(UpdatePicture::PROGRESS_Y, bank) == picture.progress[bank][0]);
+  assert(picture.chunk(UpdatePicture::BACK_Y, bank) == picture.back[0]);
 }
 
 static void checkFramePixels(UpdatePicture& picture, int bank) {
@@ -106,22 +131,23 @@ static void checkFramePixels(UpdatePicture& picture, int bank) {
     for (int x = 0; x < UpdatePicture::W; x++) {
       uint16_t expected = 0;
       if (y >= UpdatePicture::PROGRESS_Y && y < UpdatePicture::PROGRESS_Y + UpdatePicture::TEXT_ROWS)
-        expected = picture.progress[bank][(y - UpdatePicture::PROGRESS_Y) * UpdatePicture::W + x];
+        expected = at(picture.progress[bank], x, y - UpdatePicture::PROGRESS_Y);
       if (y >= UpdatePicture::BACK_Y && y < UpdatePicture::BACK_Y + UpdatePicture::TEXT_ROWS)
-        expected = picture.back[(y - UpdatePicture::BACK_Y) * UpdatePicture::W + x];
+        expected = at(picture.back, x, y - UpdatePicture::BACK_Y);
       assert(pixels[y * UpdatePicture::W + x] == expected);
     }
   }
 }
 
 static void checkScanout() {
-  UpdatePicture picture{};
+  Picture picture;
   for (uint16_t pixel : frame(picture, 0)) assert(pixel == 0);
   for (uint16_t pixel : frame(picture, 1)) assert(pixel == 0);
   for (int i = 0; i < UpdatePicture::W * UpdatePicture::TEXT_ROWS; i++) {
-    picture.progress[0][i] = (uint16_t)(i + 1);
-    picture.progress[1][i] = (uint16_t)(i + 20000);
-    picture.back[i] = (uint16_t)(i + 40000);
+    int x = i % UpdatePicture::W, y = i / UpdatePicture::W;
+    at(picture.progress[0], x, y) = (uint16_t)(i + 1);
+    at(picture.progress[1], x, y) = (uint16_t)(i + 20000);
+    at(picture.back, x, y) = (uint16_t)(i + 40000);
   }
   for (int bank = 0; bank < 2; bank++) {
     checkChunkPointers(picture, bank);
@@ -130,7 +156,7 @@ static void checkScanout() {
 }
 
 static void preview(const char* path) {
-  UpdatePicture picture{};
+  Picture picture;
   picture.drawProgress(0, "Downloading 42%");
   picture.drawBack();
   auto pixels = frame(picture, 0);
@@ -150,7 +176,13 @@ static void preview(const char* path) {
 
 int main(int argc, char** argv) {
   static_assert(std::is_trivial<UpdatePicture>::value && std::is_aggregate<UpdatePicture>::value,
-                "The board must be able to value-initialize its DMA allocation");
+                "The board keeps one zeroed UpdatePicture of chunk pointers");
+  {
+    Picture picture;
+    int pieces = 0;
+    picture.eachChunk([&](uint16_t*&) { pieces++; });
+    assert(pieces == UpdatePicture::PIECES);   // main.cpp's boot check budgets this many chunks
+  }
   checkLabels();
   checkBack();
   checkScanout();

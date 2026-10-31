@@ -1,0 +1,132 @@
+# Profile fixture only; all taps came from the inspected live touch session.
+profile Sam 8
+reboot
+wait 600
+wait 600
+tap 80 68
+wait 600
+snap 01-launcher
+wait 600
+tap 80 80
+wait 600
+snap 02-biscuit-entry
+wait 600
+tap 124 125
+wait 600
+snap 03-biscuit-home
+wait 600
+tap 29 129
+wait 600
+snap 04-care
+wait 600
+tap 96 130
+wait 600
+snap 05-library
+wait 600
+tap 55 60
+wait 600
+snap 06-discoveries
+wait 600
+tap 80 83
+wait 600
+snap 07-discovery-cover
+wait 600
+tap 109 132
+wait 600
+snap 08-discovery-read
+wait 600
+tap 109 132
+wait 600
+snap 09-discovery-next
+wait 600
+tap 109 132
+wait 600
+snap 10-discovery-end
+wait 600
+tap 109 132
+wait 600
+snap 11-kept
+wait 600
+tap 51 25
+wait 600
+wait 600
+tap 51 25
+wait 600
+snap 12-return-home
+wait 600
+tap 80 12
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 112 80
+wait 600
+snap 13-kingdom-title
+wait 600
+tap 80 116
+wait 600
+snap 14-kingdom-start
+wait 600
+tap 96 137
+wait 600
+snap 15-kingdom-begin
+wait 600
+tap 110 133
+wait 600
+snap 16-kingdom-page2
+wait 600
+tap 110 133
+wait 600
+snap 17-kingdom-page3
+wait 600
+tap 110 133
+wait 600
+snap 18-kingdom-page4
+wait 600
+tap 110 133
+wait 600
+snap 19-kingdom-page5
+wait 600
+tap 110 133
+wait 600
+snap 20-kingdom-page6
+wait 600
+tap 110 133
+wait 600
+snap 21-kingdom-page7
+wait 600
+tap 110 133
+wait 600
+snap 22-kingdom-page8
+wait 600
+tap 110 133
+wait 600
+snap 23-kingdom-choices
+wait 600
+tap 80 46
+wait 600
+snap 24-kingdom-confirm
+wait 600
+tap 110 133
+wait 600
+snap 25-kingdom-result
+wait 600
+tap 110 133
+wait 600
+snap 26-kingdom-return
+wait 600
+tap 50 133
+wait 600
+snap 27-kingdom-exit
+wait 600
+tap 112 80
+wait 600
+snap 28-kingdom-resume-title
+wait 600
+tap 96 137
+wait 600
+snap 29-kingdom-resumed

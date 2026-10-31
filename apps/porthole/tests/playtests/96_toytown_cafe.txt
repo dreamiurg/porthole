@@ -1,0 +1,83 @@
+# Direct food selection, explicit arithmetic and quantity-page resume.
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+tap 109 117
+wait 600
+expect-screen toytown_pack
+ui-check
+tap 112 25
+wait 600
+expect-screen toytown_cafe_intro
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_cafe_menu
+ui-check
+tap 57 103
+wait 600
+expect-screen toytown_cafe_quantity
+ui-check
+tap 109 117
+wait 600
+tap 109 117
+wait 600
+tap 109 117
+wait 600
+expect total=15
+tap 80 142
+wait 600
+tap 112 25
+wait 600
+tap 80 142
+wait 600
+expect-screen toytown_cafe_menu
+ui-check
+expect ordered=0
+tap 57 103
+wait 600
+tap 51 117
+wait 600
+tap 51 117
+wait 600
+expect total=5
+reboot
+wait 600
+tap 80 67
+wait 600
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_cafe_quantity
+ui-check
+expect total=5
+tap 80 142
+wait 600
+tap 57 134
+wait 600
+tap 109 117
+wait 600
+tap 80 142
+wait 600
+expect total=6
+tap 112 25
+wait 600
+tap 80 142
+wait 600
+expect-screen toytown_cafe_result
+ui-check
+expect ordered=1
+tap 51 117
+wait 600
+tap 80 142
+wait 600
+expect-screen toytown_stop
+ui-check
+expect count=0
+sheet 96_toytown_cafe

@@ -1,0 +1,315 @@
+# Profile fixture only; every game action below came from the inspected live touch session.
+profile Sam 8
+reboot
+wait 600
+wait 600
+tap 80 68
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 109 135
+wait 600
+snap 01-launcher
+wait 600
+tap 80 80
+wait 600
+snap 02-title
+wait 600
+tap 108 116
+wait 600
+snap 03-doll
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 04-wardrobe
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 05-map
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 06-bag
+wait 600
+tap 80 142
+wait 600
+snap 07-school
+wait 600
+tap 50 116
+wait 600
+snap 08-listen
+wait 600
+tap 50 116
+wait 600
+snap 09-promises
+wait 600
+tap 108 116
+wait 600
+snap 10-school-result
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 11-school-repair
+wait 600
+tap 80 142
+wait 600
+snap 12-memory-choice
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+snap 13-memory-details
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 14-stop
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 15-cafe
+wait 600
+tap 50 116
+wait 600
+snap 16-menu
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 17-over-budget
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 18-six-coin-tray
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 19-saved-idea
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 108 116
+wait 600
+snap 20-comparison
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 21-lunch-result
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 22-skipped-memory-stop
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+snap 23-park
+wait 600
+tap 50 116
+wait 600
+snap 24-last-seen
+wait 600
+tap 108 116
+wait 600
+snap 25-search-bench
+wait 600
+tap 50 116
+wait 600
+snap 26-bench-clue
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 27-wrong-idea
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 28-fountain-clue
+wait 600
+tap 80 19
+wait 600
+snap 29-pause
+wait 600
+tap 80 142
+wait 600
+snap 30-exited
+reboot
+wait 600
+wait 600
+tap 80 68
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 109 135
+wait 600
+wait 600
+tap 109 135
+wait 600
+snap 31-final-launcher
+wait 600
+tap 80 80
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 32-resumed-clue
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 33-found
+wait 600
+tap 50 116
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 34-park-stop
+wait 600
+tap 80 142
+wait 600
+snap 35-scrapbook
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 108 116
+wait 600
+wait 600
+tap 108 116
+wait 600
+snap 36-final-wardrobe
+wait 600
+tap 80 142
+wait 600
+wait 600
+tap 50 116
+wait 600
+snap 37-plush
+wait 600
+tap 50 116
+wait 600
+snap 38-clay
+wait 600
+tap 50 116
+wait 600
+snap 39-keychain

@@ -1,0 +1,163 @@
+# Park evidence inspection, a wrong hypothesis, revision, return and coherent replay.
+# Supplemental scripted regression; final visible-input playthrough is recorded separately.
+reset
+profile Sam 8
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 80 142
+wait 600
+expect-screen toytown_pack
+tap 112 25
+wait 600
+expect-screen toytown_park_intro
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_park_intro
+expect listened=1
+ui-check
+# Touch the actual bench in the scene.
+tap 24 75
+wait 600
+expect-screen toytown_park_clue
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_park_search
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect clues=1
+ui-check
+snap tt97_first_clue
+tap 109 117
+wait 600
+expect-screen toytown_park_guess
+ui-check
+tap 51 117
+wait 600
+# The initial seed puts the sketchbook by the path; the bench guess is revisable.
+expect-screen toytown_park_wrong
+ui-check
+snap tt97_wrong
+tap 51 117
+wait 600
+expect-screen toytown_park_search
+expect revised=1
+tap 109 117
+wait 600
+expect-screen toytown_park_search
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect clues=3
+ui-check
+snap tt97_fountain_empty
+tap 51 117
+wait 600
+expect-screen toytown_park_search
+tap 109 117
+wait 600
+expect-screen toytown_park_search
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+expect clues=7
+ui-check
+snap tt97_ribbon
+tap 109 117
+wait 600
+expect-screen toytown_park_guess
+expect guess=2
+tap 51 117
+wait 600
+expect-screen toytown_park_found
+ui-check
+snap tt97_found
+# Return after an interruption to the same found-item page.
+tap 52 25
+wait 600
+expect-screen toytown_pause
+tap 80 142
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_park_found
+tap 109 117
+wait 600
+expect-screen toytown_park_clue
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_park_guess
+tap 51 117
+wait 600
+expect-screen toytown_park_found
+tap 51 117
+wait 600
+expect-screen toytown_memory
+tap 109 117
+wait 600
+expect-screen toytown_memory_edit
+tap 51 117
+wait 600
+expect-screen toytown_memory_edit
+tap 109 117
+wait 600
+expect-screen toytown_memory_edit
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_memory
+tap 51 117
+wait 600
+expect-screen toytown_stop
+expect count=1
+expect recorded=1
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_book
+ui-check
+snap tt97_memory
+tap 80 142
+wait 600
+expect-screen toytown_hub
+# Replay advances only the story seed, with no real-world waiting.
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 80 142
+wait 600
+expect-screen toytown_pack
+tap 112 25
+wait 600
+expect-screen toytown_park_intro
+tap 51 117
+wait 600
+expect-screen toytown_park_intro
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_park_search
+tap 51 117
+wait 600
+expect-screen toytown_park_clue
+ui-check
+tap 52 25
+wait 600
+expect-screen toytown_pause
+tap 80 142
+wait 600
+expect-screen launcher
+sheet 97_toytown_park

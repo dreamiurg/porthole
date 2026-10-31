@@ -12,10 +12,13 @@
 #include "games/plane-radar/game.h"
 #include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
+#include "games/toy-town-life/game.h"
+#include "games/racing/game.h"
 #include "gfx565.h"
 #include "net.h"
 #include "shell.h"
 #include "timezone.h"
+#include "update_picture.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
 struct NvsStore : shell::Store {
@@ -32,7 +35,10 @@ static pumpkin::Game g_pumpkin;
 static radar::Game g_radar;
 static starfighter::Game g_starfighter;
 static kingdom::Game g_kingdom;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
+static toytown::Game g_toytown;
+static racing::Game g_racing;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
+static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
 static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static net::Updater g_sys;
@@ -152,9 +158,27 @@ static void beginClock() {
 // does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
 extern "C" bool verifyRollbackLater() { return true; }
 
+// Every update needs internal RAM: its SRAM screen, then wifi and TLS (on the board those took about 28 KB more, with
+// 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
+// good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
+static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
+static bool canUpdate() {
+  const size_t need = board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM;
+  const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+  Serial.printf("[porthole] update ram: %u free, %u needed\n", (unsigned)have, (unsigned)need);
+  return have >= need;
+}
+
 static void markValid() {
+  const bool ok = canUpdate();
+  if (!ok) Serial.println("[porthole] WARNING: too little internal RAM to install the next update");
   esp_ota_img_states_t st;
   if (esp_ota_get_state_partition(esp_ota_get_running_partition(), &st) != ESP_OK || st != ESP_OTA_IMG_PENDING_VERIFY) return;
+  if (!ok) {   // back to the firmware that installed this one, which could still update
+    Serial.println("[porthole] new firmware can't update itself: rolling back");
+    esp_ota_mark_app_invalid_rollback_and_reboot();
+    return;   // rollback can fail without a valid spare image; never mark this image valid
+  }
   esp_ota_mark_app_valid_cancel_rollback();
   Serial.println("[porthole] new firmware started; marked valid");
 }
