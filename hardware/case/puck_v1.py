@@ -53,6 +53,7 @@ USB_OPEN = (13.0, 7.5)  # tangential x height, fits a standard USB-C overmold
 SWITCH = (-11.3, -2.75, 9.0, 3.6)  # angle, z, tangential slot length, height
 BUTTONS = {"BOOT": 13.5, "RESET": 0.9}  # angles; plungers at r = 34, z = -2.85
 LEDS = {"CHG": -23.3, "PWR": -30.3}
+LED_Z = -2.85  # window center; LEDs sit on the back of the PCB (z -2.1 down), -4.4 in v1 missed them
 BUZZER = (-27.5, -12.3)  # from Waveshare's labelled photo; not in the STEP by name - verify
 BUZZER_HOLES = [(0, 0), (2.2, 0), (-2.2, 0), (0, 2.2), (0, -2.2)]
 J1 = (21.2, 8.6)  # battery socket center
@@ -104,7 +105,7 @@ def bezel_body():
     for deg in BUTTONS.values():
         b -= radial_hole(deg, -2.85, 1.6, R_IN - 1, R_OUT + 1)
     for deg in LEDS.values():
-        b -= radial_hole(deg, -4.4, 2.0, R_IN - 1, R_OUT + 1)
+        b -= radial_hole(deg, LED_Z, 2.0, R_IN - 1, R_OUT + 1)
     for deg in POST_ANGLES:  # M2 clearance + counterbore for a pan head
         b -= radial_hole(deg, RADIAL_SCREW_Z, 2.3, R_IN - 1, R_OUT + 1)
         b -= radial_hole(deg, RADIAL_SCREW_Z, 4.2, HEAD_R, R_OUT + 1)
