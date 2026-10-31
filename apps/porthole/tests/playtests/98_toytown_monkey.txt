@@ -32,10 +32,10 @@ expect-screen toytown_hub
 tap 51 117
 wait 600
 expect-screen toytown_map
-tap 109 117
+tap 51 117
 wait 600
 expect-screen toytown_pack
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_school_intro
 ui-check
@@ -52,13 +52,10 @@ expect-screen toytown_hub
 tap 51 117
 wait 600
 expect-screen toytown_map
-tap 51 117
-wait 600
-expect-screen toytown_map
 tap 109 117
 wait 600
 expect-screen toytown_pack
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_cafe_intro
 ui-check
@@ -75,16 +72,10 @@ expect-screen toytown_hub
 tap 51 117
 wait 600
 expect-screen toytown_map
-tap 51 117
-wait 600
-expect-screen toytown_map
-tap 51 117
-wait 600
-expect-screen toytown_map
-tap 109 117
+tap 80 142
 wait 600
 expect-screen toytown_pack
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_park_intro
 ui-check

@@ -1,0 +1,515 @@
+{"frame": "/tmp/toy-scene-blackbox/frames/0000.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 124, "y": 160}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 124, "y": 160}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0001.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 357, "y": 375}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 357, "y": 375}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0002.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 280, "y": 265}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 280, "y": 265}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0003.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 115, "y": 309}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 115, "y": 309}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0004.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 432}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 432}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0005.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0006.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0007.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0008.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0009.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 325, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 325, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0010.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 307, "y": 191}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 307, "y": 191}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0011.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0012.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 200, "y": 359}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 200, "y": 359}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0013.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 318, "y": 75}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 318, "y": 75}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0014.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 54}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 54}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0015.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0016.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 155, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 155, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0017.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 151, "y": 346}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 151, "y": 346}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0018.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 337, "y": 72}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 337, "y": 72}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0019.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 350, "y": 210}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 350, "y": 210}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0020.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 151, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 151, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0021.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0022.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 328, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 328, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0023.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 152, "y": 351}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 152, "y": 351}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0024.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0025.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0026.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0027.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 154, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 154, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0028.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0029.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 384, "y": 305}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 384, "y": 305}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0030.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0031.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 154, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 154, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0032.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 309, "y": 401}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 309, "y": 401}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0033.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0034.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 241, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 241, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0035.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0036.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 241, "y": 426}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0037.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 347}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 347}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0038.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 171, "y": 401}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 171, "y": 401}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0039.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0040.png"}
+{"path": "/restart", "input": {}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0041.png"}
+{"path": "/wait", "input": {"ms": 2000}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0042.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 199}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 199}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0043.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0044.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0045.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0046.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 240}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 240}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0047.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 152, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 152, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0048.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0049.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 171, "y": 307}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 171, "y": 307}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0050.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0051.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0052.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 336, "y": 74}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 336, "y": 74}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0053.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0054.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0055.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0056.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0057.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 348}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0058.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0059.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 307, "y": 398}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 307, "y": 398}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0060.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 337, "y": 73}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0061.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 392, "y": 228}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 392, "y": 228}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0062.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 327, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 327, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0063.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0064.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0065.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0066.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0067.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0068.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0069.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0070.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 241, "y": 38}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 241, "y": 38}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0071.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 281}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 281}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0072.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 202, "y": 158}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 202, "y": 158}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0073.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 357, "y": 375}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 357, "y": 375}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0074.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 193, "y": 166}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 193, "y": 166}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0075.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 112, "y": 307}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 112, "y": 307}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0076.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 432}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 432}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0077.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0078.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0079.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 408}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0080.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 240}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 240}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0081.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 349}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0082.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 426}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 426}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0083.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0084.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 800}}
+{"path": "/input", "input": {"type": "move", "x": 243, "y": 275}}
+{"path": "/input", "input": {"type": "up", "x": 243, "y": 275}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0085.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 156, "y": 73}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 156, "y": 73}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0086.png"}
+{"path": "/wait", "input": {"ms": 600}}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox/frames/0087.png"}
