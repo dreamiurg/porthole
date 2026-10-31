@@ -36,6 +36,7 @@
 #include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
 #include "games/toy-town-life/game.h"
+#include "games/racing/game.h"
 #include "gfx565.h"
 #include "launcher.h"
 #include "shell.h"
@@ -299,7 +300,8 @@ static radar::Game g_radar;
 static starfighter::Game g_starfighter;
 static kingdom::Game g_kingdom;
 static toytown::Game g_toytown;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown};
+static racing::Game g_racing;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;
