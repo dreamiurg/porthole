@@ -1,0 +1,35 @@
+# Rally's leaderboard across profiles: Zoe's best time is saved, survives a reboot, shows as the time to beat on
+# Sam's grip page, and both kids are on the results board. The finishes come from the dbg fixtures (reachability).
+reset
+tilt 0 1000 0
+profile Zoe 9
+app racing
+wait 600
+dbg lastlap
+wait 5500
+expect-screen race_results
+expect new_best=1
+ui-check race_results-board
+tap 80 140
+wait 1500
+reboot
+wait 600
+profile Sam 7
+app racing
+wait 600
+tap 53 53
+wait 600
+tap 106 124
+wait 900
+expect-screen race_calibrate
+expect kids=2
+ui-check race_calibrate-to-beat
+snap rb1_to_beat
+tap 106 124
+wait 4000
+dbg lastplace
+wait 5500
+expect-screen race_results
+expect new_best=1
+snap rb2_board
+sheet board

@@ -389,6 +389,9 @@ void callouts(const View& v) {
 }
 
 // ---- pages
+void clock(char* out, size_t n, uint32_t ms) {   // m:ss.t
+  snprintf(out, n, "%u:%02u.%u", (unsigned)(ms / 60000), (unsigned)(ms / 1000 % 60), (unsigned)(ms / 100 % 10));
+}
 void track(int i, int x, int y, int w, int h) {   // a track's own sky and skyline in a box
   const art::Theme& t = art::THEME[i];
   fill(x, y, w, h, t.skyLow);
@@ -443,6 +446,13 @@ void calibratePage(const View& v) {
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
   wheelPreview(v.steer, v.track, 162);
   centered(240, 252, "Turn right: car goes right", 2, DIM);
+  if (v.boardRows) {   // the time to beat on this track, before the kid starts
+    char t[16], line[48];
+    clock(t, sizeof t, v.board[0].raceMs);
+    if (v.board[0].me) snprintf(line, sizeof line, "Your record %s", t);
+    else snprintf(line, sizeof line, "To beat: %s %s", v.board[0].name, t);
+    centered(240, 288, line, 2, GOLD);
+  }
   button(BACK, "Back", true);
   button(NEXT, "Go", v.gripReady);
 }
@@ -464,21 +474,26 @@ void confirmPage(const View& v) {
   button(YES, "Yes", true);
   button(NO, "No", true);
 }
+// The finish, then this track's leaderboard: every kid's best race and best lap, fastest first, this kid in gold.
 void resultsPage(const View& v) {
   const Race& r = *v.race;
   gfx565::clear(rgb888_to_565(INK));
   heading(40, "Finished!", 3, ORANGE);
   banner(80, ordinal(r.place), 5, GOLD);
-  uint8_t o[CARS];
-  order(r, o);
-  static const char* WHO[CARS] = {"You", "Blue", "Gold", "Green"};
-  for (int i = 0; i < CARS; i++) {
-    const Car& c = r.car[o[i]];
-    char line[32];
-    if (c.finished) snprintf(line, sizeof line, "%s %s %u:%02u.%u", ordinal(i + 1), WHO[o[i]], (unsigned)(c.finishMs / 60000),
-                             (unsigned)(c.finishMs / 1000 % 60), (unsigned)(c.finishMs / 100 % 10));
-    else snprintf(line, sizeof line, "%s %s Racing", ordinal(i + 1), WHO[o[i]]);
-    centered(240, 146 + i * 36, line, 2, o[i] == PLAYER ? GOLD : CREAM);
+  char t[16], line[48];
+  clock(t, sizeof t, r.car[PLAYER].finishMs);
+  snprintf(line, sizeof line, v.newBest ? "%s  New best!" : "Your time %s", t);
+  centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
+  centered(240, 166, "Best times", 2, DIM);
+  for (int i = 0; i < v.boardRows; i++) {
+    char lap[16];
+    clock(t, sizeof t, v.board[i].raceMs);
+    const uint32_t lm = v.board[i].lapMs;
+    if (!lm) snprintf(lap, sizeof lap, "-");
+    else if (lm < 60000) snprintf(lap, sizeof lap, "%u.%u", (unsigned)(lm / 1000), (unsigned)(lm / 100 % 10));   // "29.8"
+    else clock(lap, sizeof lap, lm);
+    snprintf(line, sizeof line, "%d %s %s  lap %s", i + 1, v.board[i].name, t, lap);
+    centered(240, 194 + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
   }
   button(REPLAY, "Replay", true);
   button(RESULT_TRACKS, "Tracks", true);

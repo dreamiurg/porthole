@@ -19,6 +19,7 @@ constexpr ui::Box YES{30, 84, 48, 24}, NO{82, 84, 48, 24};
 constexpr ui::Box REPLAY{26, 100, 52, 24}, RESULT_TRACKS{82, 100, 52, 24}, RESULT_HOME{62, 128, 36, 24};
 enum class Leave : uint8_t { Restart, Tracks, Home };
 
+struct Row { const char* name; uint32_t raceMs, lapMs; bool me; };   // a leaderboard line
 struct View {
   Page page = Page::Tracks;
   const Race* race = nullptr;
@@ -30,6 +31,9 @@ struct View {
   uint32_t resumeMs = 0;      // the "ready" cue before a paused race moves again
   bool gripReady = false, gripUpright = false, gripHeld = false, gripLost = false;
   Leave leave = Leave::Restart;
+  const Row* board = nullptr;   // this track's best times across every profile, fastest first
+  int boardRows = 0;
+  bool newBest = false;         // this race beat the kid's own best race or lap here
 };
 void draw(const View& v);
 const gfx::Sprite& icon();

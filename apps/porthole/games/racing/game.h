@@ -4,6 +4,7 @@
 #include "controls.h"
 #include "race.h"
 #include "render.h"
+#include "save.h"
 #include "ui.h"
 
 namespace racing {
@@ -19,7 +20,7 @@ class Game : public App {
   Tint tint() const override { return daylight_ ? TINT_DAY : clockTint(now_); }
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
-  bool takeSave(const void**, size_t*, bool) override { return false; }
+  bool takeSave(const void** data, size_t* len, bool allowed) override;
   bool wantsHome() override { const bool w = home_; home_ = false; return w; }
   void leave() override {}
   const char* screenName() const override;
@@ -44,6 +45,12 @@ class Game : public App {
   float steer_ = 0;
   bool home_ = false, daylight_ = false, seenHowTo_ = false, recenter_ = false, gripLost_ = false, gripSet_ = false;
   bool boost_ = false, rocket_ = false;   // fresh presses waiting for the next simulation step
+  // The leaderboard: every profile's best times (their saves, read on entry), this kid's own among them.
+  struct Kid { char name[12]; Best best[TRACKS]; bool me; };
+  Kid kids_[MAX_PROFILES] = {};
+  int nKids_ = 0, me_ = -1;
+  Save save_{};
+  bool dirty_ = false, newBest_ = false, recorded_ = false;
 
   tilt::Grav gravity() const { return {in_.gx, in_.gy, in_.gz}; }
   bool gripReady() const { return gripSet_ && controls::upright(gravity()); }   // a steady grip, still held like a wheel
@@ -59,5 +66,8 @@ class Game : public App {
   bool gripOk(uint32_t dt);
   void simulate(uint32_t dt);
   void debugFixture(const char* cmd);
+  void loadKids(const AppEnter& e);
+  void recordFinish();
+  int board(paint::Row out[MAX_PROFILES]) const;
 };
 }  // namespace racing
