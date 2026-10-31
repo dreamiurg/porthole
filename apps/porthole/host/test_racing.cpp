@@ -283,6 +283,55 @@ void finishAndReplay() {
   assert(r.g.wantsHome());
 }
 
+// The save: a sealed blob loads back; a wrong crc, size or magic is ignored (no times, never half a record); only
+// a better time replaces one.
+void saveBlob() {
+  Save s{};
+  s.best[2] = {95000, 30100};
+  seal(s);
+  Save back{};
+  assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
+  Save bad = s; bad.best[2].raceMs = 1;
+  assert(!loadBlob(&bad, sizeof bad, back));
+  assert(!loadBlob(&s, sizeof s - 4, back));
+  Best b{};
+  assert(record(b, 100000, 32000) == (BEST_RACE | BEST_LAP) && b.raceMs == 100000);
+  assert(!record(b, 101000, 33000) && b.raceMs == 100000 && b.lapMs == 32000);   // slower: kept
+  assert(record(b, 102000, 31000) == BEST_LAP && b.raceMs == 100000 && b.lapMs == 31000);   // a lap, not a race
+}
+
+// Three kids share the board: everyone's best on the track, fastest first, this kid's row marked; a slower race
+// keeps the record, a faster one becomes the new best and is handed to the shell once.
+void leaderboard() {
+  static const Profile all[3] = {{0, "Zoe", 0, 9, 0}, {1, "Sam", 1, 7, 0}, {2, "Kai", 2, 6, 0}};
+  Save zoe{}, kai{};
+  zoe.best[0] = {91200, 29800}; seal(zoe);
+  kai.best[0] = {99000, 32000}; seal(kai);
+  const uint8_t junk[8] = {1, 2, 3};
+  const SaveSlot slots[3] = {{&zoe, sizeof zoe}, {junk, sizeof junk}, {&kai, sizeof kai}};
+  Rig r;
+  r.g.enter(AppEnter{&all[1], all, slots, 3, 1000000, r.ms, false});
+  const void* data = nullptr; size_t len = 0;
+  assert(!r.g.takeSave(&data, &len, true));   // nothing new yet
+  r.toRace(0);
+  r.wait(500);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(r.g.screen() == Game::Screen::Results);
+  assert(r.g.takeSave(&data, &len, true) && len == sizeof(Save) && !r.g.takeSave(&data, &len, true));
+  Save mine{};
+  assert(loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  gfx::textLogEnabled = true; gfx::textLogReset();
+  r.frame();
+  gfx::textLogEnabled = false;
+  for (int i = 0; i < gfx::textLogCount; i++) assert(inside({gfx::textLog[i].x, gfx::textLog[i].y, gfx::textLog[i].w, gfx::textLog[i].h}, 1));
+  r.tap(paint::REPLAY);
+  r.g.debugCmd("lastplace");   // the same short fixture: no better, so no new save
+  r.wait(5200);
+  assert(!r.g.takeSave(&data, &len, true));
+  r.g.debugPrint();
+}
+
 // Every glyph drawn on every page stays on the glass.
 void textOnGlass() {
   Rig r;
@@ -325,6 +374,8 @@ int main() {
   frameRateInvariant();
   finishAndReplay();
   textOnGlass();
+  saveBlob();
+  leaderboard();
   puts("test_racing: ok");
   return 0;
 }
