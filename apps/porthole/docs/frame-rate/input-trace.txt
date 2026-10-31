@@ -1,0 +1,49 @@
+# Biscuit Home after the frame-rate change: replay with
+#   ./build/host/snap --fresh --script docs/frame-rate/input-trace.txt
+# (then the BMPs in build/host/ are the frames). Logical 160x160 coordinates.
+# Fixture: `profile Sam 8` creates one profile (no PIN), as every Biscuit playtest does. Then visible input only.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+snap fr01_home
+tap 40 129
+wait 600
+snap fr02_fed
+wait 4100
+tap 80 75
+wait 600
+snap fr03_petted
+wait 4100
+tap 67 129
+wait 600
+snap fr04_fetch
+tap 47 70
+wait 600
+tap 113 78
+wait 600
+tap 79 102
+wait 600
+tap 45 105
+wait 600
+snap fr05_fetch4
+tap 111 106
+wait 600
+snap fr06_fetched
+wait 4100
+tap 126 62
+wait 600
+snap fr07_nap
+tap 122 129
+wait 600
+snap fr08_woken
+tap 122 129
+wait 600
+snap fr09_world
+tap 43 29
+wait 600
+snap fr10_back_home
+tap 80 14
+wait 600
+snap fr11_launcher

@@ -84,14 +84,11 @@ tap 41 90
 wait 900
 expect-screen launcher
 expect profile=1/2
-# the mute switch, on and off again
-tap 80 128
+# no mute switch here any more (sound is the grown-ups' Admin switch): the gap between the arrows does nothing
+tap 80 135
 wait 450
-expect muted=1
-snap 02_launcher_muted
-tap 80 128
-wait 450
-expect muted=0
+expect-screen launcher
+expect sound=1
 # Ava, made by the sim
 profile Ava 7
 expect-screen launcher

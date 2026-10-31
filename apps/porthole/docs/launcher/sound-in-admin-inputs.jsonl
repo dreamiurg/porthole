@@ -1,0 +1,42 @@
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 96 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 64 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 80 12"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 300"}
+{"cmd": "down 80 16"}
+{"cmd": "tick 5200"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 106 132"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 124 35"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 80 94"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}

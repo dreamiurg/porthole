@@ -22,7 +22,7 @@ void Game::enter(const AppEnter& e) {
   biscuit::tick(save_, now_);
   dirty_ = save_.named; wantsHome_ = false;   // the visit (and its new day, if any) is saved right away
   lastTickSec_ = lastCheckpointSec_ = now_; lastSurpriseMs_ = ms_;
-  fetch_ = -1; quiet();
+  fetch_ = -1; quiet(); homeFrames_.reset();   // the buffers hold the launcher
   claimed_ = save_.dailyClaimed; stickerNews_ = false;
   if (save_.named) go(SC_HOME);
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
@@ -106,6 +106,7 @@ void Game::render() {
     &Game::drawWord, &Game::drawStickers};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
+  if (screen_ != SC_HOME) homeFrames_.reset();   // another screen draws over what the buffers held of Home
   (this->*fn)();
 }
 Surface Game::surface() const { return screen_ == SC_SETUP_PET || screen_ == SC_RENAME_PET ? SURFACE_INDEXED : SURFACE_RGB565; }

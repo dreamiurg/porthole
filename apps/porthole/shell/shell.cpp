@@ -16,6 +16,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
   light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
   adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
+  uint8_t sound = 1; sound_ = st.load("sys", "sound", &sound, 1) != 1 || sound != 0;
   if (adminPin_ > 10000) adminPin_ = 0;
   if (sys_) sys_->info(info_);
   if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
@@ -73,7 +74,9 @@ Tint Shell::tint() const {   // the game's light, or the clock's: a night game n
   Tint t = clockTint(now_);
   return screen_ == SH_REST && t == TINT_DAY ? TINT_EVENING : t;   // resting is never broad daylight
 }
-bool Shell::soundOn(uint32_t ms) { return screen_ == SH_APP && app_->soundOn(ms) && !prof_.rec[active_].muted; }
+// One switch for the whole device, in the grown-ups' Admin menu: kids never reach for the buzzer, so the launcher has no
+// mute button. A profile's old `muted` byte stays in its record (append-only) and is no longer read.
+bool Shell::soundOn(uint32_t ms) { return screen_ == SH_APP && app_->soundOn(ms) && sound_; }
 
 // ---------------------------------------------------------------- flow
 void Shell::startNew() {
@@ -367,19 +370,15 @@ void Shell::drawDelete() {
   textCentered(80, h.y + (h.h - 7) / 2 + (pr ? 1 : 0), "Hold to delete", C_WHITE);
 }
 
-// ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
+// ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games
 // The layout (shell/launcher.h) shows page_ of the games, six to a page, and the arrows to the rest.
 using launcher::HEADER;
 using launcher::LIGHT;
 static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
-bool Shell::muteButton() {
-  return ui::iconButton(in_, launcher::MUTE_X, launcher::MUTE_Y, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
-}
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
   if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { go(SH_LIGHT); return; }
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
-  if (muteButton()) { rec().muted = !rec().muted; shell::saveRecord(*st_, prof_, active_); }
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
   if (page_ > 0 && in_.tapIn(l.x, l.y, l.w, l.h)) page_--;
   else if (page_ + 1 < launcher::pages(nApps_) && in_.tapIn(r.x, r.y, r.w, r.h)) page_++;
@@ -410,7 +409,6 @@ void Shell::drawLauncher() {
   }
   if (page_ > 0) drawPageArrow(false);
   if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
-  muteButton();
   ui::drawBack();
 }
 void Shell::drawAppTile(int k, int i, int m) {
@@ -523,8 +521,8 @@ void Shell::debugPrint() {
   const Record* r = active_ >= 0 ? &prof_.rec[active_] : nullptr;
   static const char* const TINTS[TINT_COUNT] = {"day", "evening", "night"};
   static const char* const LIGHTS[shell::LIGHT_COUNT] = {"auto", "bright", "medium", "soft"};
-  printf("[shell profile=%d/%d age=%d muted=%d play=%lus today=%lu rest=%lu tint=%s bright=%s backlight=%u]\n", active_, prof_.count(),
-         r ? r->age : 0, r ? r->muted : 0, (unsigned long)(r ? r->playSec : 0),
+  printf("[shell profile=%d/%d age=%d sound=%d play=%lus today=%lu rest=%lu tint=%s bright=%s backlight=%u]\n", active_, prof_.count(),
+         r ? r->age : 0, sound_ ? 1 : 0, (unsigned long)(r ? r->playSec : 0),
          (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
          (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
   printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
