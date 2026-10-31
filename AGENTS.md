@@ -87,14 +87,22 @@ Per-app targets are listed in `docs/new-app.md`.
 - Coverage thresholds live in each app's Makefile. Don't lower them. Raise them
   when coverage grows.
 - Done means reviewed. Before calling any change done, marking a PR ready or
-  merging it, run `/code-review` on the diff (or the PR), fix every real finding
-  or say why it is skipped, then re-run `make check` (and `make ci` for anything
+  merging it, run `/simplify` on the diff and apply its cleanups, then
+  `/code-review` on the diff (or the PR); fix every real finding or say why it
+  is skipped, then re-run `make check` (and `make ci` for anything
   user-visible). Green hooks and CI are not a review.
 - Done means played. Before calling gameplay or UI work done, marking its PR
-  ready or merging it, record the final-build black-box playthrough, findings,
-  fixes and screenshot/input evidence. Cover the complete affected player flow,
-  including completion, failure where applicable, replay and exit. For Porthole,
-  follow `apps/porthole/docs/playtesting.md`'s required playthrough procedure.
+  ready or merging it, dispatch an independent `playtester` agent to play the
+  final emulator build as its representative audience: a target-age child for
+  every game and child-facing flow, a grown-up for adult-only settings. New
+  games and major changes require a source-free first-play pass.
+  Test curiosity, plausible wrong choices and imprecise fingers, and assess
+  boredom, comprehension and playability as well as correctness. Iterate on
+  mechanics, controls, player-facing instructions and the playtester's brief;
+  fix findings and retest until the final affected experience is satisfactory.
+  Record the persona/brief, build, findings, resolutions and screenshot/input
+  evidence. Follow `apps/porthole/docs/playtesting.md` for scope and acceptance.
+  An implementer's own run is useful but does not replace the independent pass.
   Documentation-only and non-player-visible changes do not require a new run.
 
 ## Delegation

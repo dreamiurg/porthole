@@ -365,9 +365,9 @@ static void wipe() {   // every namespace, every key: all the .sav files
 }
 static void boot(bool seedClock = true) {
   const int n = (int)(sizeof APPS / sizeof APPS[0]);
-  for (int k = 0; k < n; k++) {   // every game's name, at the launcher slot it has with these n, whole and off the bezel
-    const int p = launcher::pageOf(n, k), first = launcher::first(n, p);
-    assert(launcher::name(APPS[k]->name(), k - first, launcher::count(n, p), n).fits);
+  for (int k = 0; k < n; k++) {   // every game's name fits the launcher's press caption; every picture fits its tile
+    assert(launcher::nameFits(APPS[k]->name()));
+    assert(APPS[k]->icon().w <= launcher::TILE_W - 2 && APPS[k]->icon().h <= launcher::TILE_H - 2);
   }
   g_sys.powerOn();
   air::setFeed(&g_feed);

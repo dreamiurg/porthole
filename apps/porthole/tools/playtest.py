@@ -39,6 +39,18 @@ PALETTE = [int(h, 16) for h in re.findall(r"0x([0-9A-Fa-f]{6})", _block(r"PALETT
 COLOR = [n.lower() for n in re.findall(r"\bC_([A-Z]+)\b", _block(r"enum Col : uint8_t \{(.*?)\};", _pal))][: len(PALETTE)]
 
 
+def _bodies(text: str, opener: str) -> list:
+    """Every function body that starts with `opener` (ending in its `{`), up to the brace that closes it."""
+    out = []
+    for m in re.finditer(re.escape(opener), text):
+        depth, i = 1, m.end()
+        while depth and i < len(text):
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            i += 1
+        out.append(text[m.end() : i])
+    return out
+
+
 def _screens() -> set:
     """The shell's screen names and every game's (each lists its names in a `static const char* N[]`, in any of the
     game's .cpp files: a game split into screen files keeps its table wherever screenName() lives).
@@ -47,7 +59,15 @@ def _screens() -> set:
     table = r"static const char\* N\[\] = \{(.*?)\};"
     tables = [("shell/shell.cpp", _block(table, (ROOT / "shell/shell.cpp").read_text()))]
     for path in sorted(ROOT.glob("games/*/*.cpp")):
-        tables += [(path.relative_to(ROOT).as_posix(), t) for t in re.findall(table, path.read_text(), re.S)]
+        text = path.read_text()
+        tables += [(path.relative_to(ROOT).as_posix(), t) for t in re.findall(table, text, re.S)]
+        for body in _bodies(text, "screenName() const {"):  # names returned as plain literals
+            tables.append((path.relative_to(ROOT).as_posix(), " ".join(f'"{n}"' for n in re.findall(r'return "(\w+)"', body))))
+        # A name built at run time from a prefix and a table (Toy Town: "toytown_%s" over PAGES): every prefixed entry.
+        for prefix, name in re.findall(r'"(\w+_)%s",\s*(\w+)\[', text):
+            sources = [text] + [h.read_text() for h in path.parent.glob("*.h")]
+            entries = next((m[1] for m in (re.search(name + r"\[\w*\] = \{(.*?)\};", t, re.S) for t in sources) if m), "")
+            tables.append((path.relative_to(ROOT).as_posix(), " ".join(f'"{prefix}{e}"' for e in re.findall(r'"(\w+)"', entries))))
     owner: dict = {}
     for src, names in tables:
         for name in re.findall(r'"(\w+)"', names):

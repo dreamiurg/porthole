@@ -98,13 +98,13 @@ lint: snap
 	$(PY) games/racing/tools/art.py --check
 	$(PY) games/racing/tools/pictures.py --check
 	$(PY) games/racing/tools/font.py --check
+	$(PY) tools/launcher_icons.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
-	$(PY) games/biscuit/tools/icon.py --check
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
 	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
@@ -153,9 +153,9 @@ art:
 	python3 games/starfighter/tools/art.py
 	python3 games/racing/tools/art.py
 	python3 games/racing/tools/pictures.py
+	python3 tools/launcher_icons.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
-	python3 games/biscuit/tools/icon.py
 	python3 games/pumpkin-hide-seek/tools/gpt_art.py
 	node $(NODE_ART)
 
