@@ -136,7 +136,7 @@ void skyline(int track, int bottom, int offset) {
 
 // ---- the road. Its per-row tables and the list of things on it live on the heap (PSRAM on the board), allocated
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
-struct Thing { float z; const pic::Pic* p; float x, lift, size; bool shadow; };   // size: drawn bigger than life
+struct Thing { float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; };   // size: drawn bigger than life
 constexpr int MAX_THINGS = 48;
 struct Scratch {
   int16_t center[ROWS], half[ROWS];   // road center and half-width for each row below the horizon
@@ -221,9 +221,9 @@ void roadRow(const Camera& cam, int y) {
 }
 
 // ---- things beside and on the road, far to near
-void add(float z, const pic::Pic* p, float x, float lift = 0, bool shadow = false, float size = 1) {
-  if (z < 1.5f || z > rowZ(HORIZON + 3) || sc->n >= MAX_THINGS) return;
-  sc->things[sc->n++] = {z, p, x, lift, size, shadow};
+void add(const Thing& t) {
+  if (t.z < 1.5f || t.z > rowZ(HORIZON + 3) || sc->n >= MAX_THINGS) return;
+  sc->things[sc->n++] = t;
 }
 void placeTrack(const Camera& cam) {
   const Track& t = *cam.r->track;
@@ -231,14 +231,14 @@ void placeTrack(const Camera& cam) {
     const Feature& o = t.features[f];
     const float ahead = featureAt(t, o) - lapPos(t, cam.dist);
     const float z = ahead < -10 ? ahead + t.length : ahead;
-    if (o.kind == Kind::Obstacle) add(z + featureLen(t, o) / 2, pic::OBSTACLE[cam.track], o.x / 100.0f);
+    if (o.kind == Kind::Obstacle) add({z + featureLen(t, o) / 2, pic::OBSTACLE[cam.track], o.x / 100.0f});
     if (o.kind == Kind::Pickup && !(cam.r->taken & (1u << f)))
-      add(z, pic::PICKUP[o.item], o.x / 100.0f, o.raised ? 0.9f : 0.15f, o.raised);
+      add({z, pic::PICKUP[o.item], o.x / 100.0f, o.raised ? 0.9f : 0.15f, o.raised});
   }
   const float first = ceilf(cam.dist / 18) * 18;   // roadside scenery past the rails, alternating sides
   for (float d = first; d < cam.dist + 220; d += 18) {
     const int n = (int)(d / 18);
-    add(d - cam.dist, pic::PROP[cam.track][(n / 2) & 1], (n & 1) ? 1.95f : -1.95f);
+    add({d - cam.dist, pic::PROP[cam.track][(n / 2) & 1], (n & 1) ? 1.95f : -1.95f});
   }
 }
 float hop(const Car& c) { return airborne(c) ? sinf((float)(AIR_MS - c.airMs) / AIR_MS * 3.14159f) : 0; }   // 0..1..0
@@ -248,10 +248,10 @@ void placeCars(const Camera& cam) {
     const Car& c = r.car[i];
     if (c.finished) continue;   // home rivals leave the road
     const float lift = hop(c) * 0.9f;
-    add(c.dist - cam.dist, pic::CAR[i], c.x, lift, true);
+    add({c.dist - cam.dist, pic::CAR[i], c.x, lift, true});
   }
-  for (const Rocket& k : r.rocket) if (k.live) add(k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f);   // easy to follow
-  for (const Puff& p : r.puff) if (p.ms) add(p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f);
+  for (const Rocket& k : r.rocket) if (k.live) add({k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f});   // easy to follow
+  for (const Puff& p : r.puff) if (p.ms) add({p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f});
 }
 void drawThing(const Thing& t) {
   const int y = HORIZON + (int)(DEPTH_K / t.z);
