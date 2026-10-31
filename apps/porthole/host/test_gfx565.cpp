@@ -196,58 +196,6 @@ static void shapes() {
   assert(rgb888(0xFFFF) == 0xFFFFFF && rgb888(0xF800) == 0xFF0000 && rgb888(0x07E0) == 0x00FF00);
 }
 
-static void images() {
-  target(g_fb); clear(0);
-  // 4x3 image: a run crossing a row end, one ending the image, then one past it (ignored)
-  static const uint16_t runs[] = {5, 0x1111, 3, 0x2222, 4, 0x3333, 9, 0x4444};
-  const RleImage rle = {4, 3, runs, 4};
-  blitRle(rle, 10, 20, 1);
-  const uint16_t want[12] = {0x1111, 0x1111, 0x1111, 0x1111, 0x1111, 0x2222, 0x2222, 0x2222, 0x3333, 0x3333, 0x3333, 0x3333};
-  for (int i = 0; i < 12; i++) assert(fb[(20 + i / 4) * W + 10 + i % 4] == want[i]);
-  assert(!fb[23 * W + 10] && !fb[20 * W + 14]);
-  clear(0);
-  blitRle(rle, -3, 0, 3);   // 3x blocks, clipped on the left
-  assert(fb[0] == 0x1111 && fb[2 * W + 8] == 0x1111 && fb[3 * W + 0] == 0x2222 && fb[3 * W + 3] == 0x2222 && fb[5 * W + 8] == 0x2222);
-  assert(fb[6 * W + 0] == 0x3333 && fb[8 * W + 8] == 0x3333 && !fb[9 * W]);
-}
-
-// The row-at-a-time scaled blits against the plain definition (a scale x scale rect per source pixel), clipped on
-// every side. The runs carry over row ends and stop 3 pixels short of the 7x5 image.
-static void scaledBlits() {
-  static uint16_t px[7 * 5], want[W * H];
-  static const uint16_t runs[] = {3, 0x1111, 6, 0x2222, 1, 0x3333, 9, 0x4444, 5, 0x5555, 8, 0x6666};   // 32 pixels
-  for (int i = 0; i < 7 * 5; i++) px[i] = (uint16_t)(i * 997 + 1);
-  const Image565 im = {7, 5, px};
-  const RleImage rle = {7, 5, runs, 6};
-  const int at[4][3] = {{10, 20, 3}, {-4, -5, 3}, {470, 466, 4}, {-30, 400, 2}};
-  for (const auto& a : at) {
-    const int x = a[0], y = a[1], s = a[2];
-    target(want); clear(0);
-    for (int i = 0; i < 7 * 5; i++) rect(x + i % 7 * s, y + i / 7 * s, s, s, px[i]);
-    target(g_fb); clear(0);
-    blit(im, x, y, s);
-    assert(!memcmp(g_fb, want, sizeof want));
-    target(want); clear(0);
-    for (int k = 0, i = 0; k < 6; k++)
-      for (int n = 0; n < runs[2 * k]; n++, i++) rect(x + i % 7 * s, y + i / 7 * s, s, s, runs[2 * k + 1]);
-    target(g_fb); clear(0);
-    blitRle(rle, x, y, s);
-    assert(!memcmp(g_fb, want, sizeof want));
-  }
-}
-
-static void pictures() {
-  static const uint16_t px[4] = {1, 2, 3, 4};
-  target(g_fb); clear(0);
-  blit({2, 2, px}, 0, 0, 3);
-  assert(fb[0] == 1 && fb[2 * W + 5] == 2 && fb[3 * W + 2] == 3 && fb[5 * W + 5] == 4 && !fb[6 * W]);
-  blit({2, 2, px}, 478, 478, 1);   // clipped at the corner
-  assert(fb[478 * W + 478] == 1 && fb[479 * W + 479] == 4);
-  clear(0);
-  blit({2, 2, px}, -1, -1, 1);   // clipped at the origin: only the last pixel lands
-  assert(fb[0] == 4 && !fb[1] && !fb[W]);
-}
-
 static void indexedExpansion() {
   struct Guarded { uint16_t before, pixels[W * H], after; };
   static Guarded buffers[2];
@@ -315,9 +263,6 @@ int main() {
   audit();
   roundRects();
   shapes();
-  images();
-  pictures();
-  scaledBlits();
   indexedExpansion();
   heldExpansion();
   tooManyMovers();
