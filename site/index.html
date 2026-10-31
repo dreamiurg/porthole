@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>porthole: games for a round screen</title>
-  <meta name="description" content="Small games my kids and I made for the Waveshare ESP32-S3 round touchscreen, and how to put them on the board.">
+  <title>porthole: games for a round touchscreen</title>
+  <meta name="description" content="Porthole is a home project: firmware with ten small games for the Waveshare ESP32-S3 round touchscreen, how to put it on a board, and a 3D-printed case.">
   <meta name="color-scheme" content="light dark">
   <link rel="preload" href="assets/fonts/Nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
   <style>
@@ -13,225 +13,294 @@
     @font-face { font-family: "Nunito"; src: url("assets/fonts/Nunito-cyrillic.woff2") format("woff2"); font-weight: 400 800; font-display: swap;
       unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
     :root {
-      --bg: #fbf7f0; --card: #ffffff; --ink: #2b2230; --muted: #6b5f70; --line: #e8dfd3;
-      --accent: #7a4fb3; --soft: #f3ecfb; --mark: #fbe7a1;
+      --bg: #fbf7f0; --card: #ffffff; --ink: #2b2230; --body: #4d4252; --muted: #6b5f70; --line: #e8dfd3;
+      --accent: #7a4fb3; --soft: #f3ecfb; --stage: #241d2b;
       color-scheme: light dark;
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #1b1720; --card: #25202b; --ink: #f1ebf5; --muted: #b3a8ba; --line: #3a3342;
-        --accent: #b99ae6; --soft: #2f2738; --mark: #5a4a1e; }
+      :root { --bg: #1b1720; --card: #25202b; --ink: #f1ebf5; --body: #d6cddc; --muted: #b3a8ba; --line: #3a3342;
+        --accent: #b99ae6; --soft: #2f2738; --stage: #121016; }
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; }
     a { color: var(--accent); text-underline-offset: 3px; }
     :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
     html[data-lang="en"] [lang="uk"]:not(html), html[data-lang="uk"] [lang="en"]:not(html) { display: none !important; }
+    code { font-size: 0.92em; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 
     header.top { border-bottom: 1px solid var(--line); }
-    header.top .bar { max-width: 880px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
-    header.top .brand { font-weight: 800; font-size: 19px; color: var(--ink); text-decoration: none; }
-    header.top nav { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
-    header.top nav a { color: var(--muted); text-decoration: none; font-size: 16px; }
-    header.top nav a:hover { color: var(--accent); }
-    .langs { display: flex; gap: 2px; font-size: 15px; }
-    .langs button { background: none; border: 0; padding: 2px 6px; border-radius: 6px; font: inherit; color: var(--muted); cursor: pointer; }
-    .langs button[aria-pressed="true"] { color: var(--ink); font-weight: 800; background: var(--soft); }
+    header.top .wrap { padding-top: 14px; padding-bottom: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+    .brand { font-weight: 800; font-size: 20px; color: var(--ink); text-decoration: none; }
+    header nav { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-size: 16px; }
+    header nav a { color: var(--muted); text-decoration: none; }
+    header nav a:hover { color: var(--accent); }
+    .gh { width: 1em; height: 1em; vertical-align: -0.125em; margin-right: 0.3em; }
+    .langs { display: flex; gap: 4px; }
+    .langs button { border: 2px solid transparent; border-radius: 8px; padding: 4px; background: none; display: flex; cursor: pointer; }
+    .langs button[aria-pressed="true"] { border-color: var(--accent); background: var(--soft); }
+    .langs svg { display: block; border-radius: 2px; }
 
-    main { max-width: 880px; margin: 0 auto; padding: 40px 16px 64px; }
-    h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0 0 8px; font-weight: 800; }
-    h2 { font-size: 23px; margin: 44px 0 12px; font-weight: 800; }
+    .hero { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
+    .hero .text { flex: 999 1 480px; min-width: 0; }
+    .hero h1 { margin: 0 0 16px; font-size: clamp(30px, 5vw, 44px); line-height: 1.15; font-weight: 800; }
+    .hero p { margin: 0 0 14px; font-size: 19px; color: var(--body); }
+    .hero .shot { flex: 1 1 300px; display: flex; justify-content: center; }
+    .hero .shot img { width: min(420px, 90vw); height: auto; }
+    .case-intro { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 16px; }
+    .case-intro p { flex: 999 1 320px; min-width: 0; }
+    .case-intro img { flex: 0 1 180px; width: 180px; height: auto; }
+    .now { margin-top: 24px; }
+    .now img { width: 100%; height: auto; display: block; border-radius: 14px; margin-top: 10px; }
+
+    .layout { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; padding-bottom: 64px; }
+    .toc { flex: 1 1 200px; max-width: 240px; position: sticky; top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+    .toc p { margin: 0 0 10px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .toc ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-weight: 700; font-size: 16px; }
+    .toc a { text-decoration: none; color: var(--muted); }
+    .toc a.on { color: var(--accent); }
+    @media (max-width: 760px) { .toc { position: static; max-width: none; } }
+    main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 56px; }
+    main section { scroll-margin-top: 16px; }
+    h2 { margin: 0 0 12px; font-size: 30px; font-weight: 800; }
     p { margin: 0 0 12px; }
-    .lede { color: var(--muted); font-size: 19px; margin-bottom: 8px; }
-    mark { background: linear-gradient(transparent 55%, var(--mark) 55%); color: inherit; padding: 0 2px; }
-
-    ol.steps { padding-left: 22px; margin: 0 0 8px; }
-    ol.steps li { margin: 6px 0; }
-    .note { background: var(--soft); border-radius: 14px; padding: 14px 18px; margin: 16px 0; }
-    .note p:last-child { margin-bottom: 0; }
     .small { font-size: 15px; color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    .note { background: var(--soft); border-radius: 14px; padding: 14px 18px; }
+    .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .row > * { flex: 1 1 280px; min-width: 0; }
 
-    .board { display: grid; grid-template-columns: 1fr 250px; gap: 20px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; margin: 16px 0; }
-    .specs { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 16px; }
+    .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+    .game { text-align: center; padding: 16px; }
+    .game img { width: 128px; height: 128px; display: block; margin: 0 auto 10px; }
+    .game h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; }
+    .game p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--body); }
+    .game details { margin-top: 8px; font-size: 14px; text-align: left; color: var(--body); }
+    .game summary { cursor: pointer; color: var(--accent); font-weight: 700; text-align: center; }
+
+    ol.steps { margin: 0 0 16px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    ol.steps b { display: block; font-size: 13px; color: var(--accent); }
+    ol.steps strong { display: block; }
+    ol.steps span { font-size: 15px; color: var(--body); }
+    details.help { margin-top: 12px; }
+    details.help summary { cursor: pointer; font-weight: 700; }
+    .updates-img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); background: #000; margin-top: 16px; }
+
+    .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .photos img { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+    .specs { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 14px; font-size: 16px; }
     .specs dt { color: var(--muted); font-weight: 700; }
     .specs dd { margin: 0; }
-    .buy { align-self: start; background: var(--soft); border-radius: 12px; padding: 14px 16px; }
-    .buy p { margin: 0 0 8px; }
-    .buy .price { font-weight: 800; font-size: 19px; }
-    .buy .links { line-height: 1.9; font-weight: 700; }
-    @media (max-width: 640px) { .board { grid-template-columns: 1fr; } }
-    code { font-size: 0.92em; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
-    .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
-    .app { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
-    .app img { width: 160px; height: 160px; display: block; margin: 0 auto 12px; }
-    .app h3 { margin: 0 0 4px; font-size: 21px; font-weight: 800; }
-    .app p { margin: 0; font-size: 16px; }
+    .buy { display: flex; flex-wrap: wrap; gap: 10px; }
+    .buy a { padding: 10px 18px; border-radius: 999px; background: var(--soft); font-weight: 800; text-decoration: none; }
 
-    .gh { width: 1em; height: 1em; vertical-align: -0.125em; margin-right: 0.3em; }
-    a.zoom { cursor: zoom-in; display: block; }
-    .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0 4px; }
-    .photos img { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
-    .credit { margin-bottom: 0; }
-    .zoom-box { padding: 0; border: 0; background: transparent; max-width: none; max-height: none; cursor: zoom-out; }
-    .zoom-box::backdrop { background: rgba(20, 16, 24, 0.85); }
-    .zoom-box img { display: block; height: auto; border-radius: 8px; }
-    footer { margin-top: 48px; color: var(--muted); font-size: 15px; }
+    .stage { position: relative; height: 440px; border-radius: 18px; background: var(--stage); overflow: hidden; }
+    .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    .stage .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #c9bfd0; }
+    .stage .hint { position: absolute; left: 16px; bottom: 12px; font-size: 14px; color: #c9bfd0; pointer-events: none; }
+    .parts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .parts button { font: inherit; font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+    .parts button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
+    .cards3 strong { display: block; margin-bottom: 4px; }
+    .cards3 div { font-size: 15px; color: var(--body); }
+
+    footer { border-top: 1px solid var(--line); }
+    footer .wrap { padding-top: 24px; padding-bottom: 24px; font-size: 15px; color: var(--muted); }
   </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
 </head>
 <body>
 <header class="top">
-  <div class="bar">
+  <div class="wrap">
     <a class="brand" href="./">porthole</a>
     <nav aria-label="Site">
+      <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
       <a href="https://dreamiurg.net/"><span lang="en">Blog</span><span lang="uk">Блог</span></a>
-      <a href="https://dreamiurg.net/projects/"><span lang="en">Projects</span><span lang="uk">Проєкти</span></a>
-      <a href="https://github.com/dreamiurg"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+      <a href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a>
       <span class="langs" role="group" aria-label="Language">
-        <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
-        <button type="button" data-set-lang="uk" aria-pressed="false">УК</button>
+        <button type="button" data-set-lang="en" aria-pressed="true" aria-label="English"><svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg></button>
+        <button type="button" data-set-lang="uk" aria-pressed="false" aria-label="Українська"><svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg></button>
       </span>
     </nav>
   </div>
 </header>
-<main>
-  <h1><span lang="en">Games for your round screen</span><span lang="uk">Ігри для круглого екрана</span></h1>
-  <p class="lede" lang="en">Small games my kids and I made for a round touchscreen, and how to put them on one yourself. All you need is the board, a USB-C cable and Chrome.</p>
-  <p class="lede" lang="uk">Маленькі ігри, які ми з дітьми зробили для круглого сенсорного екрана, і як записати їх на такий самий. Потрібні лише плата, кабель USB-C і Chrome.</p>
 
-
-  <h2><span lang="en">Games</span><span lang="uk">Ігри</span></h2>
-  <p><span lang="en">All ten games come in one file, <code>porthole-&lt;version&gt;-factory.bin</code>. Each kid picks their own profile (up to four on a board), then a game. Nothing in any game dies or gets lost while a kid is away.</span><span lang="uk">Усі десять ігор в одному файлі, <code>porthole-&lt;version&gt;-factory.bin</code>. Кожна дитина вибирає свій профіль (до чотирьох на плату), а потім гру. Поки дитини немає, ніхто в іграх не гине й нічого не втрачається.</span></p>
-  <div class="apps">
-    <article class="app" id="pets-club">
-      <img src="games/pets-club.png" alt="Pets Club" width="160" height="160" loading="lazy">
-      <h3>Pets Club</h3>
-      <p><span lang="en">A pixel puppy that grows over real days, learns eight tricks and loves being read to: 30 stories at three reading levels. Each kid gets their own pup and a house on Paw Street.</span><span lang="uk">Піксельне цуценя, яке росте з кожним справжнім днем, вчить вісім трюків і любить, коли йому читають: 30 історій трьох рівнів. У кожної дитини своє цуценя і свій будиночок на Paw Street.</span></p>
-    </article>
-    <article class="app" id="biscuit">
-      <img src="games/biscuit.png" alt="Biscuit" width="160" height="160" loading="lazy">
-      <h3>Biscuit</h3>
-      <p><span lang="en">A little dog with a big bookshelf: branching stories, 96 illustrated discoveries, tricks and daily adventures. For strong young readers.</span><span lang="uk">Маленький песик із великою книжковою поличкою: розгалужені історії, 96 ілюстрованих відкриттів, трюки й щоденні пригоди. Для дітей, які вже добре читають.</span></p>
-    </article>
-    <article class="app" id="marble-kick">
-      <img src="games/marble-kick.png" alt="Marble Kick" width="160" height="160" loading="lazy">
-      <h3>Marble Kick</h3>
-      <p><span lang="en">Tilt the board and a ball rolls like a marble through a wooden labyrinth. Twelve puzzle levels with walls, holes, defenders and a keeper. No timer, no score.</span><span lang="uk">Нахиляєш плату &mdash; і кулька котиться дерев&rsquo;яним лабіринтом. Дванадцять рівнів-головоломок зі стінами, лунками, захисниками й воротарем. Без таймера й рахунку.</span></p>
-    </article>
-    <article class="app" id="tilt-fc">
-      <img src="games/tilt-fc.png" alt="Tilt FC" width="160" height="160" loading="lazy">
-      <h3>Tilt FC</h3>
-      <p><span lang="en">Street football on a round court, seen from above. Tilt to steer your player, tap to pass or shoot. Lose by two and the next match gets easier.</span><span lang="uk">Вуличний футбол на круглому майданчику, вигляд згори. Нахиляєш плату &mdash; гравець біжить, торкаєшся &mdash; пас або удар. Програв із різницею у два м&rsquo;ячі &mdash; наступний матч буде легшим.</span></p>
-    </article>
-    <article class="app" id="pumpkin-hide-seek">
-      <img src="games/pumpkin-hide-seek.png" alt="Pumpkin Hide &amp; Seek" width="160" height="160" loading="lazy">
-      <h3>Pumpkin Hide &amp; Seek</h3>
-      <p><span lang="en">A cozy Halloween hide-and-seek. Grab three candies and slip out the door while Grandma searches with a flashlight. Get found and you just try again.</span><span lang="uk">Затишні хелловінські хованки. Збери три цукерки й вислизни за двері, поки бабуся шукає з ліхтариком. Знайшли &mdash; просто пробуєш ще раз.</span></p>
-    </article>
-    <article class="app" id="radar">
-      <img src="games/radar.png" alt="Radar" width="160" height="160" loading="lazy">
-      <h3>Radar</h3>
-      <p><span lang="en">Real planes around your home on a radar scope, with callsign, route and height. A grown-up sets home once by typing an address. Needs Wi-Fi.</span><span lang="uk">Справжні літаки навколо вашого дому на екрані радара: позивний, маршрут і висота. Дорослий один раз задає дім, ввівши адресу. Потрібен Wi-Fi.</span></p>
-    </article>
-    <article class="app" id="starfighter">
-      <img src="games/starfighter.png" alt="Starfighter" width="160" height="160" loading="lazy">
-      <h3>Starfighter</h3>
-      <p><span lang="en">A retro space shooter. Bank the board to steer and tap to fire at the squadron, then fly down the trench for one last shot.</span><span lang="uk">Ретро-космічна стрілялка. Нахиляй плату, щоб кермувати, торкайся, щоб стріляти по ескадрильї, а потім лети траншеєю до останнього пострілу.</span></p>
-    </article>
-    <article class="app" id="kingdom">
-      <img src="games/kingdom.png" alt="Kingdom" width="160" height="160" loading="lazy">
-      <h3>Kingdom</h3>
-      <p><span lang="en">A story adventure for readers: forty scenes in Willowbrook, where choices, items and skills change what happens later.</span><span lang="uk">Пригода-історія для тих, хто читає: сорок сцен у Віллоубруку, де вибір, речі й уміння змінюють те, що станеться далі.</span></p>
-    </article>
-    <article class="app" id="toy-town">
-      <img src="games/toy-town.png" alt="Toy Town" width="160" height="160" loading="lazy">
-      <h3>Toy Town</h3>
-      <p><span lang="en">A doll neighborhood. Dress up your doll, then walk to school, the caf&eacute; and the park: make art, buy lunch with coins and solve a small mystery.</span><span lang="uk">Ляльковий район. Одягни ляльку й прогуляйся до школи, кафе та парку: малюй, купуй обід за монетки й розгадуй маленьку загадку.</span></p>
-    </article>
-    <article class="app" id="rally">
-      <img src="games/rally.png" alt="Rally" width="160" height="160" loading="lazy">
-      <h3>Rally</h3>
-      <p><span lang="en">An arcade racer. Hold the board like a steering wheel and race three rivals for three laps on four tracks. Best times go on a leaderboard.</span><span lang="uk">Аркадні перегони. Тримай плату, як кермо, і змагайся з трьома суперниками три кола на чотирьох трасах. Найкращий час потрапляє в таблицю рекордів.</span></p>
-    </article>
+<div class="wrap hero">
+  <div class="text">
+    <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
+    <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
+    <p><span lang="en">I am sharing it as it is. If you have the same board, this page shows how to put the games on it, and the code is on GitHub if you want to change them.</span><span lang="uk">Ділюся ним як є. Якщо у вас така сама плата, ця сторінка показує, як записати на неї ігри, а код лежить на GitHub, якщо захочете щось змінити.</span></p>
   </div>
+  <div class="shot"><img src="images/puck.webp" alt="The board in its 3D-printed case, showing the Porthole game menu" width="746" height="611"></div>
+</div>
 
-  <h2 id="board"><span lang="en">The board</span><span lang="uk">Плата</span></h2>
-  <p><span lang="en">Every game here runs on one board, and only this one is supported: the <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, the version with the <mark>flat 2.1-inch</mark> round screen. It's a round touchscreen with a small computer behind it. In a 3D-printed case it becomes a pocket gadget with no buttons at all.</span><span lang="uk">Усі ігри тут працюють на одній платі, і підтримується лише вона: <mark><strong>Waveshare ESP32-S3-Touch-LCD-2.1</strong></mark>, версія з <mark>пласким круглим екраном 2,1 дюйма</mark>. Це круглий сенсорний екран із маленьким комп&rsquo;ютером позаду. У надрукованому на 3D-принтері корпусі він стає кишеньковою іграшкою зовсім без кнопок.</span></p>
-  <div class="photos">
-    <a class="zoom" href="images/board-front.jpg" aria-label="The board, front, screen on"><img src="images/board-front.jpg" alt="The board from the front, screen on" width="800" height="800" loading="lazy"></a>
-    <a class="zoom" href="images/board-back.jpg" aria-label="The board, back"><img src="images/board-back.jpg" alt="The back of the board: chip, USB-C ports, microSD slot" width="800" height="800" loading="lazy"></a>
-    <a class="zoom" href="images/board-angle.jpg" aria-label="The board, from an angle"><img src="images/board-angle.jpg" alt="The board from an angle" width="800" height="800" loading="lazy"></a>
-  </div>
-  <p class="small credit"><span lang="en">Photos:</span><span lang="uk">Фото:</span> <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a></p>
-  <div class="board">
-    <dl class="specs">
-      <dt><span lang="en">Screen</span><span lang="uk">Екран</span></dt><dd><span lang="en">2.1" round IPS, 480x480, capacitive touch</span><span lang="uk">Круглий IPS 2,1", 480x480, ємнісний сенсор</span></dd>
-      <dt><span lang="en">Chip</span><span lang="uk">Чип</span></dt><dd><span lang="en">ESP32-S3, dual-core 240 MHz</span><span lang="uk">ESP32-S3, два ядра 240 МГц</span></dd>
-      <dt><span lang="en">Memory</span><span lang="uk">Пам&rsquo;ять</span></dt><dd><span lang="en">16 MB flash, 8 MB PSRAM</span><span lang="uk">16 МБ флеш, 8 МБ PSRAM</span></dd>
-      <dt><span lang="en">Clock</span><span lang="uk">Годинник</span></dt><dd><span lang="en">Real-time clock that keeps time on a backup cell</span><span lang="uk">Годинник реального часу, що йде від резервної батарейки</span></dd>
-      <dt><span lang="en">Sound</span><span lang="uk">Звук</span></dt><dd><span lang="en">A small single-tone buzzer</span><span lang="uk">Маленька однотонна пищалка</span></dd>
-      <dt><span lang="en">Radio</span><span lang="uk">Зв&rsquo;язок</span></dt><dd><span lang="en">Wi-Fi and Bluetooth LE</span><span lang="uk">Wi-Fi і Bluetooth LE</span></dd>
-      <dt><span lang="en">Motion</span><span lang="uk">Рух</span></dt><dd><span lang="en">Accelerometer, used for tilt in the tilt games</span><span lang="uk">Акселерометр, для керування нахилом в іграх</span></dd>
-      <dt><span lang="en">Also on board</span><span lang="uk">Ще на платі</span></dt><dd><span lang="en">microSD slot, battery connector with charging</span><span lang="uk">Слот microSD, роз&rsquo;єм для акумулятора із зарядкою</span></dd>
-      <dt><span lang="en">Cable</span><span lang="uk">Кабель</span></dt><dd><span lang="en">One USB-C for power and installing games</span><span lang="uk">Один USB-C для живлення і запису ігор</span></dd>
-    </dl>
-    <div class="buy">
-      <p class="price"><span lang="en">Where to get it</span><span lang="uk">Де купити</span></p>
-      <p class="links"><a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a> <span class="small"><span lang="en">about $35</span><span lang="uk">близько $35</span></span><br>
-        <a href="https://www.amazon.com/dp/B0DDPQSKJD?tag=dreamiurg-20">Amazon</a> <span class="small"><span lang="en">about $45</span><span lang="uk">близько $45</span></span></p>
-    </div>
-  </div>
-  <p><span lang="en">Watch out for look-alikes. Waveshare also sells round boards in 1.28, 1.85 and 2.8 inch, and those won't run these games. The 2.1B has curved glass over the same screen; nobody has tried the games on it yet.</span><span lang="uk">Остерігайтеся схожих плат. Waveshare продає й круглі плати на 1,28, 1,85 і 2,8 дюйма, і на них ці ігри не запрацюють. У 2.1B вигнуте скло над тим самим екраном; ігри на ній ще ніхто не пробував.</span></p>
-  <p><span lang="en">The games use the screen, the touch, the clock, the buzzer, the motion sensor for tilt, and Wi-Fi for updates, the clock and Radar. Bluetooth is still free to play with, and a small battery would make it cordless.</span><span lang="uk">Ігри використовують екран, сенсор дотику, годинник, пищалку, датчик руху для нахилу та Wi-Fi для оновлень, годинника й радара. Bluetooth ще вільний для експериментів, а невеликий акумулятор зробить пристрій бездротовим.</span></p>
+<div class="wrap layout">
+  <nav class="toc" aria-label="On this page">
+    <p><span lang="en">On this page</span><span lang="uk">На сторінці</span></p>
+    <ol>
+      <li><a href="#what"><span lang="en">What it is</span><span lang="uk">Що це</span></a></li>
+      <li><a href="#games"><span lang="en">Games</span><span lang="uk">Ігри</span></a></li>
+      <li><a href="#install"><span lang="en">Put it on a board</span><span lang="uk">Як записати</span></a></li>
+      <li><a href="#updates"><span lang="en">Updates and settings</span><span lang="uk">Оновлення й налаштування</span></a></li>
+      <li><a href="#board"><span lang="en">The board</span><span lang="uk">Плата</span></a></li>
+      <li><a href="#case"><span lang="en">3D-printed case</span><span lang="uk">Корпус на 3D-принтері</span></a></li>
+      <li><a href="#build"><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></a></li>
+      <li><a href="#story"><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></a></li>
+    </ol>
+  </nav>
 
-  <h2><span lang="en">How to install</span><span lang="uk">Як записати гру на плату</span></h2>
-  <ol class="steps">
-    <li><span lang="en">Open <a href="https://github.com/dreamiurg/porthole/releases"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>the releases page</a> and download <code>porthole-&lt;version&gt;-factory.bin</code> from the newest release.</span><span lang="uk">Відкрийте <a href="https://github.com/dreamiurg/porthole/releases"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>сторінку релізів</a> і завантажте файл <code>porthole-&lt;version&gt;-factory.bin</code> із найновішого релізу.</span></li>
-    <li><span lang="en">Plug the board into a computer with a USB-C cable and open <a href="https://espressif.github.io/esptool-js/">esptool-js</a>, Espressif's web flasher, in <strong>Chrome</strong> or <strong>Edge</strong>. Phones, Safari and Firefox can't talk to the board.</span><span lang="uk">Під&rsquo;єднайте плату до комп&rsquo;ютера кабелем USB-C і відкрийте <a href="https://espressif.github.io/esptool-js/">esptool-js</a>, веб-програматор від Espressif, у <strong>Chrome</strong> або <strong>Edge</strong>. Телефони, Safari і Firefox не вміють працювати з платою.</span></li>
-    <li><span lang="en">Press <strong>Connect</strong> and pick the board in the list. Set the flash address to <code>0x0</code>, choose the file, press <strong>Program</strong> and wait about a minute. Then unplug the board and plug it back in.</span><span lang="uk">Натисніть <strong>Connect</strong> і виберіть плату у списку. Вкажіть адресу <code>0x0</code>, виберіть файл, натисніть <strong>Program</strong> і зачекайте близько хвилини. Потім від&rsquo;єднайте плату й під&rsquo;єднайте знову.</span></li>
-  </ol>
-  <div class="note">
-    <p><span lang="en">Writing the file this way starts fresh: saved progress on the board is erased. You need to do it only once. After that, the board updates itself over Wi-Fi and keeps the saves.</span><span lang="uk">Такий запис починає все з нуля: збережений на платі прогрес стирається. Робити це треба лише раз. Далі плата оновлюється сама через Wi-Fi і зберігає прогрес.</span></p>
-  </div>
-  <p><span lang="en"><strong>If the board doesn't show up</strong> in the list, try another USB-C cable: some cables only charge. Close any other program or tab that might be using the board, then reload esptool-js.</span><span lang="uk"><strong>Якщо плати немає у списку,</strong> спробуйте інший кабель USB-C: деякі кабелі лише заряджають. Закрийте інші програми чи вкладки, які можуть використовувати плату, і перезавантажте esptool-js.</span></p>
-  <p><span lang="en"><strong>If the install stops halfway,</strong> press Program again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Якщо запис зупинився на півдорозі,</strong> натисніть Program ще раз. Зламати плату неможливо, гра просто запишеться знову.</span></p>
+  <main>
+    <section id="what">
+      <h2><span lang="en">What it is</span><span lang="uk">Що це</span></h2>
+      <p><span lang="en">You plug the board into USB power and a &ldquo;Who&rsquo;s playing?&rdquo; screen comes up. Up to four people can have a profile there. Each picks theirs, then a game from the menu. Every game keeps its progress per player, and none of them punishes you for not playing for a while.</span><span lang="uk">Під&rsquo;єднуєте плату до живлення USB, і з&rsquo;являється екран &laquo;Who&rsquo;s playing?&raquo;. Там може бути до чотирьох профілів. Кожен вибирає свій, а потім гру з меню. Кожна гра зберігає прогрес окремо для кожного гравця, і жодна не карає за те, що ви якийсь час не грали.</span></p>
+      <p><span lang="en">In a 3D-printed case with a small battery, the board becomes a round handheld you can carry around. Once it knows your Wi-Fi, it updates itself when I publish a new version.</span><span lang="uk">У надрукованому на 3D-принтері корпусі з невеликим акумулятором плата стає круглою кишеньковою консоллю. Коли вона знає ваш Wi-Fi, то сама оновлюється, щойно я публікую нову версію.</span></p>
+    </section>
 
-  <h2 id="updates"><span lang="en">Updates over Wi-Fi</span><span lang="uk">Оновлення через Wi-Fi</span></h2>
-  <ol class="steps">
-    <li><span lang="en">On the &ldquo;Who&rsquo;s playing?&rdquo; screen, hold the title for five seconds. This opens the grown-ups&rsquo; menu.</span><span lang="uk">На екрані &laquo;Who&rsquo;s playing?&raquo; утримуйте заголовок п&rsquo;ять секунд. Відкриється меню для дорослих.</span></li>
-    <li><span lang="en">Tap <strong>Wifi</strong>, pick your network and type its password. The board keeps it only if it connects.</span><span lang="uk">Натисніть <strong>Wifi</strong>, виберіть свою мережу й введіть пароль. Плата збереже її, лише якщо підключиться.</span></li>
-  </ol>
-  <p><span lang="en">Once a day, while the screen is dark, the board looks for a new version and downloads it. The new version starts the next time the board is switched on. Saves and profiles stay, and nothing about the kids leaves the board.</span><span lang="uk">Раз на день, коли екран темний, плата шукає нову версію й завантажує її. Нова версія запуститься, коли плату ввімкнуть наступного разу. Прогрес і профілі зберігаються, і жодні дані про дітей не залишають плату.</span></p>
-  <p><span lang="en"><strong>Updates</strong> in the same menu picks the channel. <strong>Stable</strong> (the default) gets a version after it has gone two days without a fix. <strong>Beta</strong> gets each new version right away. The menu also sets screen time, a play window and a grown-up code.</span><span lang="uk"><strong>Updates</strong> у тому ж меню вибирає канал. <strong>Stable</strong> (за замовчуванням) отримує версію, яка два дні обійшлася без виправлень. <strong>Beta</strong> отримує кожну нову версію одразу. Там само налаштовується час біля екрана, години для гри й код для дорослих.</span></p>
+    <section id="games">
+      <h2><span lang="en">Games</span><span lang="uk">Ігри</span></h2>
+      <p><span lang="en">All ten come in one file. Each player picks a profile, then a game.</span><span lang="uk">Усі десять в одному файлі. Кожен гравець вибирає профіль, а потім гру.</span></p>
+      <div class="games">
+        <article class="card game"><img src="games/pets-club.png" alt="Pets Club" width="160" height="160" loading="lazy"><h3>Pets Club</h3>
+          <p><span lang="en">A pixel puppy that grows over real days and loves stories.</span><span lang="uk">Піксельне цуценя, яке росте з кожним днем і любить історії.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">It learns eight tricks and listens to 30 stories at three reading levels. Each player gets their own pup and a house on Paw Street.</span><span lang="uk">Вчить вісім трюків і слухає 30 історій трьох рівнів. У кожного гравця своє цуценя і будиночок на Paw Street.</span></p></details></article>
+        <article class="card game"><img src="games/biscuit.png" alt="Biscuit" width="160" height="160" loading="lazy"><h3>Biscuit</h3>
+          <p><span lang="en">A pup with a bookshelf: stories and 96 discoveries.</span><span lang="uk">Песик із книжковою поличкою: історії та 96 відкриттів.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Branching stories, 96 illustrated discoveries, tricks and a small adventure each day. For readers who are already fluent.</span><span lang="uk">Розгалужені історії, 96 ілюстрованих відкриттів, трюки й маленька пригода щодня. Для тих, хто вже добре читає.</span></p></details></article>
+        <article class="card game"><img src="games/marble-kick.png" alt="Marble Kick" width="160" height="160" loading="lazy"><h3>Marble Kick</h3>
+          <p><span lang="en">Tilt a marble through 12 wooden mazes.</span><span lang="uk">Котіть кульку нахилом через 12 дерев&rsquo;яних лабіринтів.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Walls, holes, moving defenders, a keeper and a goal that swings. No timer and no score.</span><span lang="uk">Стіни, лунки, рухомі захисники, воротар і ворота, що гойдаються. Без таймера й рахунку.</span></p></details></article>
+        <article class="card game"><img src="games/tilt-fc.png" alt="Tilt FC" width="160" height="160" loading="lazy"><h3>Tilt FC</h3>
+          <p><span lang="en">Street football. Tilt to run, tap to pass.</span><span lang="uk">Вуличний футбол. Нахил &mdash; біг, дотик &mdash; пас.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Two a side plus keepers, first to three goals or three minutes. Lose by two and the next match gets easier.</span><span lang="uk">Двоє на двоє плюс воротарі, до трьох голів або три хвилини. Програли з різницею у два &mdash; наступний матч легший.</span></p></details></article>
+        <article class="card game"><img src="games/pumpkin-hide-seek.png" alt="Pumpkin Hide &amp; Seek" width="160" height="160" loading="lazy"><h3>Pumpkin Hide &amp; Seek</h3>
+          <p><span lang="en">Grab three candies before Grandma finds you.</span><span lang="uk">Зберіть три цукерки, поки бабуся вас не знайшла.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A cozy Halloween hide-and-seek. Slip out the door while Grandma searches with a flashlight. Get found and you just try again.</span><span lang="uk">Затишні хелловінські хованки. Вислизніть за двері, поки бабуся шукає з ліхтариком. Знайшли &mdash; просто пробуєте ще раз.</span></p></details></article>
+        <article class="card game"><img src="games/radar.png" alt="Radar" width="160" height="160" loading="lazy"><h3>Radar</h3>
+          <p><span lang="en">Real planes over your home, live.</span><span lang="uk">Справжні літаки над вашим домом, наживо.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Callsign, route and height on a radar scope. You set home once by typing an address. Needs Wi-Fi.</span><span lang="uk">Позивний, маршрут і висота на екрані радара. Дім задаєте один раз, ввівши адресу. Потрібен Wi-Fi.</span></p></details></article>
+        <article class="card game"><img src="games/starfighter.png" alt="Starfighter" width="160" height="160" loading="lazy"><h3>Starfighter</h3>
+          <p><span lang="en">Bank to steer, tap to fire, fly the trench.</span><span lang="uk">Нахил &mdash; кермо, дотик &mdash; постріл, політ траншеєю.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A retro space shooter: clear a squadron, then fly down the trench for one last shot.</span><span lang="uk">Ретро-стрілялка: розбийте ескадрилью, а потім летіть траншеєю до останнього пострілу.</span></p></details></article>
+        <article class="card game"><img src="games/kingdom.png" alt="Kingdom" width="160" height="160" loading="lazy"><h3>Kingdom</h3>
+          <p><span lang="en">A 40-scene story where choices matter later.</span><span lang="uk">Історія на 40 сцен, де вибір має наслідки.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A story adventure for readers in Willowbrook. Choices, items and skills change what happens later.</span><span lang="uk">Пригода-історія у Віллоубруку для тих, хто читає. Вибір, речі й уміння змінюють те, що станеться далі.</span></p></details></article>
+        <article class="card game"><img src="games/toy-town.png" alt="Toy Town" width="160" height="160" loading="lazy"><h3>Toy Town</h3>
+          <p><span lang="en">Dress a doll, go to school, the caf&eacute; and the park.</span><span lang="uk">Одягніть ляльку й прогуляйтеся до школи, кафе й парку.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Make art at school, buy lunch with coins at the caf&eacute; and solve a small mystery in the park.</span><span lang="uk">Малюйте в школі, купуйте обід за монетки в кафе й розгадуйте маленьку загадку в парку.</span></p></details></article>
+        <article class="card game"><img src="games/rally.png" alt="Rally" width="160" height="160" loading="lazy"><h3>Rally</h3>
+          <p><span lang="en">Hold it like a wheel and race on four tracks.</span><span lang="uk">Тримайте як кермо й мчіть чотирма трасами.</span></p>
+          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Three laps against three rivals, with boosts and rockets. Best times go on a leaderboard.</span><span lang="uk">Три кола проти трьох суперників, з прискоренням і ракетами. Найкращий час потрапляє в таблицю.</span></p></details></article>
+      </div>
+    </section>
 
-  <h2><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></h2>
-  <p lang="en">It started with a small project on MakerWorld,
-    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo.
-    A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar.
-    I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on
-    the little screen. I loved that.</p>
-  <p lang="uk">Усе почалося з невеликого проєкту на MakerWorld,
-    <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> від MatixYo.
-    Крихітна плата ESP32 з круглим екраном 1,28 дюйма бере з інтернету дані про польоти й малює літаки над головою на маленькому радарі.
-    Я зібрав такий із дітьми, а потім показав їм, як змінювати його за допомогою Claude Code. Вони просили зміни й дивилися, як ті
-    з&rsquo;являються на маленькому екрані. Мені це дуже сподобалося.</p>
-  <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had
-    a couple of games running on it. My kids loved them so much that I shared them with friends, and their kids had a blast too.
-    This page is where those games live now, and the <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>repo</a> is set up so anyone can add the next one.</p>
-  <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали
-    кілька ігор. Моїм дітям вони так сподобалися, що я поділився ними з друзями, і їхні діти теж були в захваті.
-    Тепер ці ігри живуть тут, а <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>репозиторій</a> налаштований так, щоб будь-хто міг додати наступну.</p>
-  <p><span lang="en">If you like to tinker and have $35-45 for a board, or a spare one lying in a drawer, have fun with it. Enjoy the new era of tinkering.</span><span lang="uk">Якщо любите майструвати і маєте $35-45 на плату або зайву в шухляді, розважайтеся. Насолоджуйтеся новою ерою майстрування.</span></p>
+    <section id="install">
+      <h2><span lang="en">Put it on a board</span><span lang="uk">Як записати на плату</span></h2>
+      <p><span lang="en">You need the board, a USB-C cable and Chrome or Edge on a computer. About five minutes.</span><span lang="uk">Потрібні плата, кабель USB-C і Chrome або Edge на комп&rsquo;ютері. Близько п&rsquo;яти хвилин.</span></p>
+      <ol class="steps">
+        <li class="card"><b><span lang="en">STEP 1</span><span lang="uk">КРОК 1</span></b><strong><span lang="en">Download</span><span lang="uk">Завантажте</span></strong><span><span lang="en"><code>porthole-&lt;version&gt;-factory.bin</code> from the newest <a href="https://github.com/dreamiurg/porthole/releases">release</a>.</span><span lang="uk"><code>porthole-&lt;version&gt;-factory.bin</code> із найновішого <a href="https://github.com/dreamiurg/porthole/releases">релізу</a>.</span></span></li>
+        <li class="card"><b><span lang="en">STEP 2</span><span lang="uk">КРОК 2</span></b><strong><span lang="en">Connect</span><span lang="uk">Під&rsquo;єднайте</span></strong><span><span lang="en">Plug in the board and open <a href="https://espressif.github.io/esptool-js/">esptool-js</a> in Chrome or Edge. Press Connect and pick the board.</span><span lang="uk">Під&rsquo;єднайте плату й відкрийте <a href="https://espressif.github.io/esptool-js/">esptool-js</a> у Chrome чи Edge. Натисніть Connect і виберіть плату.</span></span></li>
+        <li class="card"><b><span lang="en">STEP 3</span><span lang="uk">КРОК 3</span></b><strong><span lang="en">Write</span><span lang="uk">Запишіть</span></strong><span><span lang="en">Address <code>0x0</code>, choose the file, press Program, wait about a minute. Then unplug and plug back in.</span><span lang="uk">Адреса <code>0x0</code>, виберіть файл, натисніть Program, зачекайте близько хвилини. Потім перепід&rsquo;єднайте плату.</span></span></li>
+      </ol>
+      <div class="note"><span lang="en">This erases saved progress on the board. You only do it once: after that, updates arrive over Wi-Fi and keep the saves.</span><span lang="uk">Такий запис стирає збережений прогрес. Робити це треба лише раз: далі оновлення приходять через Wi-Fi і прогрес зберігається.</span></div>
+      <details class="help">
+        <summary><span lang="en">If something goes wrong</span><span lang="uk">Якщо щось пішло не так</span></summary>
+        <p><span lang="en"><strong>The board is not in the list:</strong> try another USB-C cable, some only charge. Close any other program or tab that might use the board, then reload esptool-js.</span><span lang="uk"><strong>Плати немає у списку:</strong> спробуйте інший кабель USB-C, деякі лише заряджають. Закрийте інші програми чи вкладки, що можуть використовувати плату, і перезавантажте esptool-js.</span></p>
+        <p><span lang="en"><strong>The install stopped halfway:</strong> press Program again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Запис зупинився на півдорозі:</strong> натисніть Program ще раз. Зламати плату неможливо, просто запишеться знову.</span></p>
+      </details>
+    </section>
 
-  <h2><span lang="en">Different board? Fork it</span><span lang="uk">Інша плата? Форкніть</span></h2>
-  <p><span lang="en">This is a side project, and I only support the board on my desk. I'm not porting the games myself, so hack away: point Claude Code or Codex at <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>the repo</a> and ask it to adapt the code to your hardware. Most of the hardware code sits in one board layer; a screen of another size or shape also means redoing the layouts. Got one working? Send a pull request, or just ask me a question.</span><span lang="uk">Це побічний проєкт, і я підтримую лише плату, що лежить у мене на столі. Сам я ігри не переноситиму, тож експериментуйте: попросіть Claude Code чи Codex адаптувати код із <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>репозиторію</a> під ваше залізо. Більшість коду для заліза зібрано в одному шарі для плати; екран іншого розміру чи форми потребує нових макетів. Запустили? Надішліть pull request або просто поставте мені питання.</span></p>
+    <section id="updates">
+      <h2><span lang="en">Updates and settings</span><span lang="uk">Оновлення й налаштування</span></h2>
+      <p><span lang="en">On &ldquo;Who&rsquo;s playing?&rdquo;, hold the title for five seconds. This opens the settings menu. Tap <strong>Wifi</strong>, pick your network and type its password. The board keeps it only if it connects.</span><span lang="uk">На екрані &laquo;Who&rsquo;s playing?&raquo; утримуйте заголовок п&rsquo;ять секунд. Відкриється меню налаштувань. Натисніть <strong>Wifi</strong>, виберіть мережу й введіть пароль. Плата збереже її, лише якщо підключиться.</span></p>
+      <ul>
+        <li><span lang="en">Once a day, while the screen is dark, the board downloads a new version. It starts the next time the board is switched on. Saves and profiles stay.</span><span lang="uk">Раз на день, коли екран темний, плата завантажує нову версію. Вона запуститься, коли плату ввімкнуть наступного разу. Прогрес і профілі зберігаються.</span></li>
+        <li><span lang="en"><strong>Stable</strong> (the default) gets a version after it has gone two days without a fix. <strong>Beta</strong> gets each new version right away.</span><span lang="uk"><strong>Stable</strong> (за замовчуванням) отримує версію, яка два дні обійшлася без виправлень. <strong>Beta</strong> отримує кожну нову версію одразу.</span></li>
+        <li><span lang="en">The same menu sets screen time, a play window and a code that locks the settings.</span><span lang="uk">Там само налаштовуються час біля екрана, години для гри й код, що закриває налаштування.</span></li>
+      </ul>
+      <img class="updates-img" src="images/updates.png" alt="The version on Who's playing, the Info screen, the Wi-Fi list, an update ready to start, and the something new card" width="1680" height="320" loading="lazy">
+    </section>
 
-  <footer>
-    <span lang="en">Source code: <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>porthole on GitHub</a>. Made by Dmytro Gaivoronsky: <a href="https://dreamiurg.net/">dreamiurg.net</a>. Font: Nunito (SIL Open Font License).</span><span lang="uk">Код: <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>porthole на GitHub</a>. Створено: Дмитро Гайворонський, <a href="https://dreamiurg.net/">dreamiurg.net</a>. Шрифт: Nunito (SIL Open Font License).</span> As an Amazon Associate I earn from qualifying purchases.
-  </footer>
-</main>
-<dialog class="zoom-box" id="zoom-box"><img alt=""></dialog>
+    <section id="board">
+      <h2><span lang="en">The board</span><span lang="uk">Плата</span></h2>
+      <div class="row">
+        <div>
+          <div class="photos">
+            <img src="images/board-front.jpg" alt="The board from the front, screen on" width="800" height="800" loading="lazy">
+            <img src="images/board-back.jpg" alt="The back of the board" width="800" height="800" loading="lazy">
+            <img src="images/board-angle.jpg" alt="The board from an angle" width="800" height="800" loading="lazy">
+          </div>
+          <p class="small" style="margin-top: 6px"><span lang="en">Photos:</span><span lang="uk">Фото:</span> <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a></p>
+        </div>
+        <div>
+          <dl class="specs">
+            <dt><span lang="en">Screen</span><span lang="uk">Екран</span></dt><dd><span lang="en">2.1&Prime; round, 480&times;480, touch</span><span lang="uk">круглий 2,1&Prime;, 480&times;480, сенсорний</span></dd>
+            <dt><span lang="en">Chip</span><span lang="uk">Чип</span></dt><dd><span lang="en">ESP32-S3, Wi-Fi and Bluetooth</span><span lang="uk">ESP32-S3, Wi-Fi і Bluetooth</span></dd>
+            <dt><span lang="en">Extras</span><span lang="uk">Ще</span></dt><dd><span lang="en">tilt sensor, clock, buzzer, microSD, battery plug</span><span lang="uk">датчик нахилу, годинник, пищалка, microSD, роз&rsquo;єм акумулятора</span></dd>
+          </dl>
+          <div class="buy"><a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare, <span lang="en">about</span><span lang="uk">близько</span> $35</a><a href="https://www.amazon.com/dp/B0DDPQSKJD">Amazon, <span lang="en">about</span><span lang="uk">близько</span> $45</a></div>
+          <p class="small" style="margin-top: 12px"><span lang="en">The games are built for the flat 2.1-inch model only. I did not make them work on Waveshare&rsquo;s other round boards (1.28, 1.85 and 2.8-inch) or the curved 2.1B. If you want one of those, fork the repo and add support. Send me a pull request and I&rsquo;ll be happy to review and merge it.</span><span lang="uk">Ігри зроблені лише для пласкої моделі 2,1 дюйма. Я не адаптував їх для інших круглих плат Waveshare (1,28, 1,85 і 2,8 дюйма) чи вигнутої 2.1B. Якщо хочете одну з них, форкніть репозиторій і додайте підтримку. Надішліть pull request, і я радо його перегляну й змерджу.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="case">
+      <h2><span lang="en">3D-printed case</span><span lang="uk">Корпус на 3D-принтері</span></h2>
+      <div class="case-intro">
+        <p><span lang="en">I call it the puck: a round case that holds the board and a battery. Print it in PETG, add the battery and close it with three screws. No soldering. Below is the real model: turn it around, or take it apart.</span><span lang="uk">Я називаю його шайбою: круглий корпус для плати й акумулятора. Друкуйте з PETG, додайте акумулятор і закрийте трьома гвинтами. Без паяння. Нижче справжня модель: покрутіть її або розберіть.</span></p>
+        <img src="images/puck-exploded.webp" alt="The case taken apart: bezel, board, plate and lid" width="517" height="900" loading="lazy">
+      </div>
+      <div class="stage" id="stage">
+        <div class="msg" id="stage-msg"><span lang="en">Loading the 3D model&hellip;</span><span lang="uk">Завантажується 3D-модель&hellip;</span></div>
+        <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Тягніть, щоб повернути, прокрутка чи щипок &mdash; масштаб.</span></div>
+      </div>
+      <div class="parts" role="group" aria-label="Show">
+        <button type="button" data-view="assembled" aria-pressed="true"><span lang="en">Assembled</span><span lang="uk">Зібраний</span></button>
+        <button type="button" data-view="exploded" aria-pressed="false"><span lang="en">Exploded</span><span lang="uk">Розібраний</span></button>
+        <button type="button" data-view="bezel" aria-pressed="false"><span lang="en">Bezel</span><span lang="uk">Обідок</span></button>
+        <button type="button" data-view="plate" aria-pressed="false"><span lang="en">Plate</span><span lang="uk">Пластина</span></button>
+        <button type="button" data-view="lid" aria-pressed="false"><span lang="en">Lid</span><span lang="uk">Кришка</span></button>
+      </div>
+      <div class="cards3">
+        <div class="card"><strong><span lang="en">What you print</span><span lang="uk">Що друкувати</span></strong><span lang="en">Bezel and plate (v1.1) and lid (v1.2). 84 mm across. PETG.</span><span lang="uk">Обідок і пластина (v1.1) та кришка (v1.2). 84 мм у діаметрі. PETG.</span></div>
+        <div class="card"><strong><span lang="en">What you buy</span><span lang="uk">Що купити</span></strong><span lang="en">A protected 3.7 V LiPo, 2000 mAh or more, with a 1.25 mm plug. Check its polarity with a meter first: many ship reversed. M2 screws.</span><span lang="uk">Захищений LiPo 3,7 В на 2000 мА&middot;год або більше з роз&rsquo;ємом 1,25 мм. Спершу перевірте полярність мультиметром: багато продаються навпаки. Гвинти M2.</span></div>
+        <div class="card"><strong><span lang="en">Downloads</span><span lang="uk">Файли</span></strong><a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl">STL</a> &middot; <a href="https://github.com/dreamiurg/porthole/blob/main/hardware/case/puck_v1.py"><span lang="en">build123d source</span><span lang="uk">код build123d</span></a></div>
+      </div>
+      <div class="now">
+        <h3 style="margin: 0; font-size: 21px; font-weight: 800"><span lang="en">What I&rsquo;m working on now</span><span lang="uk">Над чим працюю зараз</span></h3>
+        <p style="margin: 6px 0 0"><span lang="en">A two-handed grip the puck snaps into, so the tilt games and Rally feel like holding a steering wheel. These are renders; it is not printed yet.</span><span lang="uk">Тримач на дві руки, у який вставляється шайба, щоб ігри з нахилом і Rally відчувалися як кермо. Це рендери, надрукованого ще немає.</span></p>
+        <img src="images/grip.webp" alt="Renders of the steering-wheel grip holding the puck" width="1200" height="800" loading="lazy">
+      </div>
+    </section>
+
+    <section id="build">
+      <h2><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></h2>
+      <p><span lang="en">The repo is set up so anyone can add the next game: a simulator that runs on a computer, an emulator in the browser, automatic tests and releases. Point Claude Code or Codex at it and describe the game you want.</span><span lang="uk">Репозиторій налаштований так, щоб будь-хто міг додати наступну гру: симулятор на комп&rsquo;ютері, емулятор у браузері, автоматичні тести й релізи. Попросіть Claude Code чи Codex і опишіть гру, яку хочете.</span></p>
+      <p><a href="https://github.com/dreamiurg/porthole"><strong>dreamiurg/porthole</strong></a> <span lang="en">on GitHub, MIT license.</span><span lang="uk">на GitHub, ліцензія MIT.</span></p>
+    </section>
+
+    <section id="story">
+      <h2><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></h2>
+      <p lang="en">It started with a small project on MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo. A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar. I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on the little screen. I loved that.</p>
+      <p lang="uk">Усе почалося з невеликого проєкту на MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> від MatixYo. Крихітна плата ESP32 з круглим екраном 1,28 дюйма бере з інтернету дані про польоти й малює літаки над головою на маленькому радарі. Я зібрав такий із дітьми, а потім показав їм, як змінювати його за допомогою Claude Code. Вони просили зміни й дивилися, як ті з&rsquo;являються на екрані. Мені це дуже сподобалося.</p>
+      <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had a couple of games running on it. Since then it has grown to ten games, a case and updates over Wi-Fi.</p>
+      <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали кілька ігор. Відтоді їх стало десять, з&rsquo;явилися корпус і оновлення через Wi-Fi.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap"><span lang="en">Made by Dmytro Gaivoronsky:</span><span lang="uk">Зробив Дмитро Гайворонський:</span> <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://github.com/dreamiurg/porthole"><span lang="en">Source on GitHub</span><span lang="uk">Код на GitHub</span></a> &middot; <span lang="en">Font: Nunito (SIL Open Font License).</span><span lang="uk">Шрифт: Nunito (SIL Open Font License).</span></div>
+</footer>
 
 <script>
-  const TITLES = { en: document.title, uk: "porthole: ігри для круглого екрана" };
+  const TITLES = { en: document.title, uk: "porthole: ігри для круглого сенсорного екрана" };
   function setLang(lang, remember) {
     document.documentElement.dataset.lang = lang;
     document.documentElement.lang = lang;
@@ -245,20 +314,74 @@
   setLang([asked, saved].find((l) => l === "en" || l === "uk") || ((navigator.language || "").toLowerCase().startsWith("uk") ? "uk" : "en"), false);
   document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.setLang, true)));
 
-  // Screenshots open larger in a dialog; without JS the link just opens the image.
-  const box = document.getElementById("zoom-box"), big = box.querySelector("img");
-  document.querySelectorAll("a.zoom").forEach((a) => a.addEventListener("click", (e) => {
-    e.preventDefault();
-    big.src = a.href;
-    big.alt = a.getAttribute("aria-label") || (a.querySelector("img") || {}).alt || "";
-    box.showModal();
+  // The table of contents marks the section being read.
+  const links = new Map([...document.querySelectorAll(".toc a")].map((a) => [a.hash.slice(1), a]));
+  const seen = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) links.forEach((a, id) => a.classList.toggle("on", id === e.target.id)); });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+  document.querySelectorAll("main section").forEach((s) => seen.observe(s));
+</script>
+<script type="module">
+  // The case viewer loads three.js and the STLs only when the case section comes near.
+  const stage = document.getElementById("stage"), msg = document.getElementById("stage-msg");
+  let view = "assembled", apply = () => {};   // a pick made while loading shows once the model is in
+  document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => {
+    view = b.dataset.view;
+    document.querySelectorAll("[data-view]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+    apply();
   }));
-  // As large as fits the window, keeping the image's shape.
-  big.addEventListener("load", () => {
-    big.style.width = `min(96vw, ${92 * big.naturalWidth / big.naturalHeight}vh)`;
-  });
-  box.addEventListener("click", () => box.close());
+  const near = new IntersectionObserver(async (entries) => {
+    if (!entries.some((e) => e.isIntersecting)) return;
+    near.disconnect();
+    try { await start(); } catch (e) {
+      msg.innerHTML = '<span lang="en">The 3D model could not load here. The STL files are on GitHub.</span><span lang="uk">3D-модель тут не завантажилася. Файли STL є на GitHub.</span>';
+    }
+  }, { rootMargin: "400px" });
+  near.observe(stage);
 
+  async function start() {
+    const THREE = await import("three");
+    const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
+    const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    stage.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x302838, 1.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(60, -80, 120); scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(35, 1, 1, 2000);
+    camera.up.set(0, 0, 1); camera.position.set(110, -170, 120);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.target.set(0, 0, -8);
+
+    // The STLs share one assembly frame (mm): bezel on top, plate inside, lid below.
+    const parts = { bezel: { file: "case/puck_bezel.stl", color: 0xb99ae6, lift: 26 },
+                    plate: { file: "case/puck_plate.stl", color: 0xf1ebf5, lift: 0 },
+                    lid:   { file: "case/puck_lid.stl",   color: 0x7a4fb3, lift: -26 } };
+    const loader = new STLLoader();
+    await Promise.all(Object.values(parts).map(async (p) => {
+      const geometry = await loader.loadAsync(p.file);
+      geometry.computeVertexNormals();
+      p.mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.55, metalness: 0.05 }));
+      scene.add(p.mesh);
+    }));
+    msg.remove();
+
+    apply = () => {
+      for (const [name, p] of Object.entries(parts)) {
+        p.mesh.visible = view === "assembled" || view === "exploded" || view === name;
+        p.mesh.position.z = view === "exploded" ? p.lift : 0;
+      }
+    };
+    apply();
+
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage); resize();
+    renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+  }
 </script>
 </body>
 </html>
