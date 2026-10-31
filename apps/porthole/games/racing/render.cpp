@@ -487,7 +487,7 @@ void resultsPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   heading(40, "Finished!", 3, ORANGE);
   banner(80, ordinal(r.place), 5, GOLD);
-  char t[16], line[48];
+  char t[16], line[64];
   clock(t, sizeof t, r.car[PLAYER].finishMs);
   // Said plainly for a six-year-old: a best of their own is not beating a sibling's record.
   const uint32_t mine = r.car[PLAYER].finishMs;
@@ -506,7 +506,7 @@ void resultsPage(const View& v) {
     if (!lm) snprintf(lap, sizeof lap, "-");
     else if (lm < 60000) snprintf(lap, sizeof lap, "%u.%u", (unsigned)(lm / 1000), (unsigned)(lm / 100 % 10));   // "29.8"
     else clock(lap, sizeof lap, lm);
-    snprintf(line, sizeof line, "%d %s %s  lap %s", i + 1, v.board[i].name, t, lap);
+    snprintf(line, sizeof line, "%d %.11s %s  lap %s", i + 1, v.board[i].name, t, lap);
     centered(240, 194 + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
   }
   button(REPLAY, "Replay", true);
