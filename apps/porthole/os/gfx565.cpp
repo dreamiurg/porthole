@@ -5,9 +5,23 @@ namespace gfx565 {
 uint16_t* fb = nullptr;
 void target(uint16_t* pixels) { fb = pixels; }
 
-void expandIndexed3(const uint8_t* logical160, const uint16_t* palette) {
+// ponytail: a 32-bit hash per row, so a changed row that collides with the old one stays stale for that frame
+// (about 1 in 4 billion); keep a copy of the logical rows instead if that ever shows.
+static uint32_t rowHash(const uint8_t* row) {
+  uint32_t h = 0x811C9DC5u, w;
+  for (int i = 0; i < W / 3; i += 4) { memcpy(&w, row + i, 4); h = (h ^ w) * 0x9E3779B1u; h ^= h >> 15; }
+  return h;
+}
+void expandIndexed3(const uint8_t* logical160, const uint16_t* palette, Expanded* held) {
   uint16_t row[W];
+  const bool same = held && held->palette == palette;
+  if (held) held->palette = palette;
   for (int y = 0; y < H / 3; y++) {
+    if (held) {
+      const uint32_t h = rowHash(logical160 + y * (W / 3));
+      if (same && held->rows[y] == h) continue;
+      held->rows[y] = h;
+    }
     for (int x = 0; x < W / 3; x++) {
       const uint16_t c = palette[logical160[y * (W / 3) + x]];
       row[x * 3] = row[x * 3 + 1] = row[x * 3 + 2] = c;

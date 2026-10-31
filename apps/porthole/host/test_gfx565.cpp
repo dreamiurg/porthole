@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../games/biscuit/generated/fonts.h"
+#include "canvas.h"
 #include "crc32.h"
 #include "font.h"
 #include "gfx.h"
@@ -215,7 +216,44 @@ static void indexedExpansion() {
     previous = os::crc32(out.pixels, sizeof out.pixels);
     for (uint8_t& c : logical) c++;   // a different frame must land only in the next target
   }
+}
+// With what the buffer holds: only the rows that changed are rewritten, and every row after a palette change.
+static void heldExpansion() {
+  static uint8_t logical[160 * 160];
+  uint16_t palette[256];
+  for (int i = 0; i < 256; i++) palette[i] = (uint16_t)(i * 257);
+  for (int i = 0; i < 160 * 160; i++) logical[i] = (uint8_t)(i * 37 + i / 160);
+  Expanded held = {};
+  uint16_t other[256];
+  for (int i = 0; i < 256; i++) other[i] = (uint16_t)~palette[i];
   target(g_fb);
+  expandIndexed3(logical, palette, &held);
+  for (int i = 0; i < W * H; i++) assert(g_fb[i] == palette[logical[(i / W / 3) * 160 + i % W / 3]]);
+  for (uint16_t& p : g_fb) p = 0x5A5A;   // a sentinel: whatever is not rewritten keeps it
+  logical[70 * 160 + 9]++;
+  expandIndexed3(logical, palette, &held);
+  for (int y = 0; y < H; y++)
+    for (int x = 0; x < W; x++) assert(g_fb[y * W + x] == (y / 3 == 70 ? palette[logical[70 * 160 + x / 3]] : 0x5A5A));
+  expandIndexed3(logical, other, &held);
+  for (int i = 0; i < W * H; i++) assert(g_fb[i] == other[logical[(i / W / 3) * 160 + i % W / 3]]);
+  held.palette = nullptr;   // the host drew something else into it
+  for (uint16_t& p : g_fb) p = 0x5A5A;
+  expandIndexed3(logical, other, &held);
+  assert(g_fb[0] == other[logical[0]] && g_fb[W * H - 1] == other[logical[160 * 160 - 1]]);
+}
+
+// canvas::Frames holds at most N movers: a page with more is drawn whole, every frame, never past its buffer.
+static void tooManyMovers() {
+  target(g_fb);
+  canvas::Frames<1> frames;
+  const canvas::Mover two[2] = {{{0, 0, 10, 10}, 1}, {{20, 20, 30, 30}, 2}};
+  int whole = 0;
+  for (int i = 0; i < 2; i++) frames.render(two, 2, 7, [&] { whole += canvas::same(canvas::clipBox(), canvas::FULL); });
+  assert(whole == 2);
+  const canvas::Mover one[1] = {{{0, 0, 10, 10}, 1}};
+  int calls = 0;
+  for (int i = 0; i < 2; i++) frames.render(one, 1, 7, [&] { calls++; });
+  assert(calls == 1);   // back within N: one whole frame, then nothing changed
 }
 
 int main() {
@@ -226,6 +264,8 @@ int main() {
   roundRects();
   shapes();
   indexedExpansion();
+  heldExpansion();
+  tooManyMovers();
   puts("test_gfx565: all checks passed");
   return 0;
 }

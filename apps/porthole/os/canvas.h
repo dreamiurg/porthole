@@ -45,7 +45,8 @@ class Frames {
   void render(const Mover* now, int n, uint32_t look, Draw draw) {
     Held* h = held_[0].fb == gfx565::fb ? &held_[0] : held_[1].fb == gfx565::fb ? &held_[1] : nullptr;
     if (!h) { h = &held_[held_[0].fb ? 1 : 0]; h->fb = gfx565::fb; h->n = -1; }
-    if (gfx::textLogEnabled || look != h->look || n != h->n) { clip(FULL); draw(); }
+    if (n > N) n = -1;   // more movers than it can hold: draw it whole, and the next frame whole too
+    if (gfx::textLogEnabled || look != h->look || n != h->n || n < 0) { clip(FULL); draw(); }
     else
       for (int i = 0; i < n; i++) {   // each thing that moved: where it was, and where it is
         const Mover& was = h->movers[i];

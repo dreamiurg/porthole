@@ -1,0 +1,42 @@
+# The buzzer is one device-wide switch in the grown-ups' Admin menu (page 2): on by default, kept across a reboot.
+# The launcher no longer has a mute button.
+reset
+profile Sam 8
+wait 600
+expect-screen launcher
+expect sound=1
+ui-check launcher-no-mute
+tap 80 12
+wait 600
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-page2
+snap sa1_sound_on
+tap 80 94
+wait 450
+expect sound=0
+snap sa2_sound_off
+reboot
+wait 600
+expect sound=0
+down 80 16
+wait 5000
+up
+wait 450
+tap 106 132
+wait 450
+tap 124 35
+wait 450
+tap 80 94
+wait 450
+expect sound=1
+sheet sound

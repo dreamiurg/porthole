@@ -30,11 +30,15 @@ class Steady {
  public:
   static constexpr uint32_t WINDOW_MS = 300;
   static constexpr int MIN_MG = 800, MAX_MG = 1200;
-  void add(int x, int y, int z, uint32_t ms) { s_[n_++ % SAMPLES] = {(int16_t)x, (int16_t)y, (int16_t)z, ms}; }
+  void add(int x, int y, int z, uint32_t ms) {
+    s_[at_] = {(int16_t)x, (int16_t)y, (int16_t)z, ms};
+    at_ = (at_ + 1) % SAMPLES;
+    if (n_ < SAMPLES) n_++;   // a count, not a running index: an int frame counter would overflow in a year of play
+  }
   bool get(uint32_t ms, Grav* neutral) const {
     long sx = 0, sy = 0, sz = 0;
     int n = 0;
-    for (int i = 0; i < SAMPLES && i < n_; i++) {
+    for (int i = 0; i < n_; i++) {
       const Sample& s = s_[i];
       if (ms - s.ms > WINDOW_MS) continue;
       const long m2 = (long)s.x * s.x + (long)s.y * s.y + (long)s.z * s.z;
@@ -50,7 +54,7 @@ class Steady {
   static constexpr int SAMPLES = 24;   // WINDOW_MS at up to 80 frames a second
   struct Sample { int16_t x, y, z; uint32_t ms; };
   Sample s_[SAMPLES] = {};
-  int n_ = 0;
+  int at_ = 0, n_ = 0;
 };
 
 // A Calibrate page's preview: a reference that follows gravity over about a second (each frame closes dt / 1000 of the

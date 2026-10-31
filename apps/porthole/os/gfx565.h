@@ -9,9 +9,13 @@ namespace gfx565 {
 constexpr int W = 480, H = 480, CX = 240, CY = 240, R = 240;
 extern uint16_t* fb;             // the current target: W * H pixels, row-major
 void target(uint16_t* pixels);   // must be set before an RGB565 render()
+// What a target buffer holds of an indexed frame: the palette it went through (nullptr = unknown) and a hash of each
+// logical row. One per buffer; the host sets palette to nullptr whenever anything else draws into that buffer.
+struct Expanded { const uint16_t* palette; uint32_t rows[H / 3]; };
 // Expand a 160x160 indexed image through its own RGB565 palette, exactly 3x. Compose at logical resolution first:
-// each output row is built locally and copied three times, so the panel buffer is written once and never read.
-void expandIndexed3(const uint8_t* logical160, const uint16_t* palette);
+// each output row is built locally and copied three times, so the panel buffer is written once and never read. With
+// `held`, rows the buffer already holds (same hash, same palette) are skipped, and `held` is updated.
+void expandIndexed3(const uint8_t* logical160, const uint16_t* palette, Expanded* held = nullptr);
 
 inline void pixel(int x, int y, uint16_t c) { if ((unsigned)x < W && (unsigned)y < H) fb[y * W + x] = c; }
 void clear(uint16_t c);

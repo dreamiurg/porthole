@@ -14,7 +14,7 @@ move 80 150
 up
 wait 600
 expect-screen launcher
-tap 109 135
+tap 96 135
 wait 600
 expect-screen launcher
 ui-check launcher_page2
@@ -26,7 +26,7 @@ tap 80 132
 wait 600
 expect-screen launcher
 snap lp3_back_on_page2
-tap 51 135
+tap 64 135
 wait 600
 tap 36 72
 wait 600

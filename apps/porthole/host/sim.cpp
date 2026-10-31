@@ -393,9 +393,18 @@ static void writeBMP(const char* path) {
   fclose(f);
 }
 
-// board::present: the 160x160 indexed frame, 3x, into the buffer about to be shown.
+// board::expand: the 160x160 indexed frame, 3x, into the buffer about to be shown, only the rows that buffer does not
+// already hold; an RGB565 render into a buffer forgets what it held, as on the board.
+static gfx565::Expanded g_expanded[2] = {};
+// Snapshots read gfx::fb, so every frame is also checked against a whole expansion: a row the bookkeeping wrongly
+// skips stops the run here instead of showing only on the board.
 static void upscale(uint16_t* dst, const uint16_t* pal) {
-  for (int y = 0; y < gfx565::H; y++) for (int x = 0; x < gfx565::W; x++) dst[y * gfx565::W + x] = pal[gfx::fb[(y / 3) * gfx::W + x / 3]];
+  static uint16_t whole[gfx565::W * gfx565::H];
+  gfx565::target(whole);
+  gfx565::expandIndexed3(gfx::fb, pal);
+  gfx565::target(dst);
+  gfx565::expandIndexed3(gfx::fb, pal, &g_expanded[g_shown]);
+  if (memcmp(dst, whole, sizeof whole)) { fprintf(stderr, "sim: a skipped indexed row is stale\n"); abort(); }
 }
 static double since(std::chrono::steady_clock::time_point t) {
   return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
@@ -411,7 +420,7 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
   t = std::chrono::steady_clock::now();
   g_shown ^= 1;
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (g_hires) gfx565::target(g_fb565[g_shown]);
+  if (g_hires) { gfx565::target(g_fb565[g_shown]); g_expanded[g_shown].palette = nullptr; }
   g_shell.render();
   g_renderMs += since(t); g_perfFrames++;
   if (!g_hires) upscale(g_fb565[g_shown], g_pal565[g_shell.tint()]);
