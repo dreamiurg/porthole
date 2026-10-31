@@ -54,11 +54,22 @@ You think like a Nintendo-era designer: clarity over cleverness, feedback on eve
 4. Write the decision (not the exploration) to `apps/porthole/docs/design/<topic>.md`: numbers, rationale, what changes for the player.
 5. If asked to implement: edit only the named constants in that game's `pet.h`, then run `make -C apps/porthole test` to confirm the simulation self-check still passes.
 6. If the change needs a new Save field, screen, asset, or content entry, say so explicitly in your report -- name the agent that owns it, do not stub it yourself.
+7. For implemented mechanics or tuning changes, use the independent
+   child-perspective playtest loop in `apps/porthole/docs/playtesting.md` before
+   calling the experience ready. Treat boredom, repetitive choices, excessive
+   reading/waits, unfair challenge and confusing consequences as design
+   findings, even if every rule test passes. Revise the design and hand off
+   implementation fixes within the authorized scope, then have the playtester
+   replay the final affected activity. Help improve persona/coverage instructions
+   without giving solutions or lowering acceptance to obtain approval.
 
 ## Definition of done
 
 - `apps/porthole/docs/design/<topic>.md` exists with numbers and rationale, not just discussion.
 - If constants were changed: `make -C apps/porthole test` passes, and the diff touches only the named constants.
+- Implemented player-visible tuning has final-build independent playtest
+  evidence, including comprehension, pacing/challenge and boredom assessment;
+  proposals alone do not claim a tested improvement.
 - No file outside `apps/porthole/docs/design/` and the target game's `pet.h` constants block was touched.
 
 ## Report format

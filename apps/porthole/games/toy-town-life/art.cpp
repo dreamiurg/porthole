@@ -91,6 +91,16 @@ void background(int scene) {
     }
   }
 }
+void placePicture(int scene, const gfx565::Rect& box) {
+  if (box.w <= 0 || box.h <= 0) return;
+  scene = std::max(0, std::min(4, scene));
+  const int side = std::min(box.w, box.h);
+  const int left = box.x + (box.w - side) / 2, top = box.y + (box.h - side) / 2;
+  for (int y = 0; y < side; ++y) for (int x = 0; x < side; ++x) {
+    const int index = (y * 240 / side) * 240 + x * 240 / side;
+    gfx565::pixel(left + x, top + y, SCENE_PALETTES[scene][unpack(SCENES[scene], index, 6)]);
+  }
+}
 void doll(const State& s, int x, int y, int scale) {
   scale = std::max(1, std::min(3, scale));
   int id = s.doll % 4;
@@ -150,6 +160,55 @@ void detail(const State& s,const gfx565::Rect& box,int part) {
   const uint32_t c=dollPixel(s,dx*sw/dw,tops[part]+dy*sh/dh);
   if (c<=0xffff) gfx565::pixel(x+dx,y+dy,c);
  }
+}
+namespace {
+void worldSprite(int id, const gfx565::Rect& box, int cropPercent = 100) {
+  if (box.w <= 0 || box.h <= 0) return;
+  const WorldSprite& image = WORLD_SPRITES[id];
+  const int sourceHeight = image.h * cropPercent / 100;
+  const int scale = std::min(box.w * 256 / image.w, box.h * 256 / sourceHeight);
+  const int w = image.w * scale / 256, h = sourceHeight * scale / 256;
+  if (!w || !h) return;
+  const int left = box.x + (box.w - w) / 2, top = box.y + box.h - h;
+  for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+    const int index = unpack(image.pixels, (y * sourceHeight / h) * image.w + x * image.w / w, 6);
+    if (index != 63) gfx565::pixel(left + x, top + y, image.palette[index]);
+  }
+}
+int npcSprite(int id, int pose) {
+  id = std::max(0, std::min(NPC_COUNT - 1, id));
+  int sprite = id;
+  if (id == MINA && pose == 1) sprite = 16;
+  if (id == MINA && pose >= 2) sprite = 17;
+  if (id == THEO && pose == 1) sprite = 19;
+  if (id == THEO && pose >= 2) sprite = 18;
+  return sprite;
+}
+}
+void npc(int id, const gfx565::Rect& box, int pose) {
+  worldSprite(npcSprite(id, pose), box);
+}
+void npcPortrait(int id, const gfx565::Rect& box, int pose) {
+  worldSprite(npcSprite(id, pose), box, 55);
+}
+void prop(int id, const gfx565::Rect& box) {
+  static const int sprites[] = {4,5,6,7,8,9,10,11,12,13,14,15,21,20,22,23,24,25,26,27};
+  id = std::max(0, std::min(PROP_COUNT - 1, id));
+  worldSprite(sprites[id], box);
+}
+void walkingDoll(const State& state, const gfx565::Rect& box, int phase) {
+  if (phase <= 0) { detail(state, box, 0); return; }
+  const int scale = std::min(box.w * 256 / 96, box.h * 256 / 160);
+  const int w = 96 * scale / 256, h = 160 * scale / 256;
+  if (w <= 0 || h <= 0) return;
+  const int left = box.x + (box.w - w) / 2, top = box.y + (box.h - h) / 2;
+  const int stride = (phase / 140) % 2 ? 1 : -1;
+  for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x) {
+    const int sx = x * 96 / w, sy = y * 160 / h;
+    const uint32_t color = dollPixel(state, sx, sy);
+    const int lift = sy >= 134 ? (sx < 48 ? stride : -stride) : 0;
+    if (color <= 0xffff) gfx565::pixel(left + x, top + y + lift, color);
+  }
 }
 uint16_t swatch(const State& s,int category) {
  static const uint32_t skin[]={0xffd7b8,0xffd7b8,0xba7c55,0x805238};
