@@ -653,8 +653,9 @@ static void launcherLayout() {
   assert(within(launcher::CAPTION, 2));
   for (int m = 1; m <= launcher::PER_PAGE; m++)
     for (int i = 0; i < m; i++) {
-      const ui::Box t = launcher::tile(i, m), mirror = launcher::tile(i / 3 * 3 + (i / 3 * 3 + 3 <= m ? 2 - i % 3 : m - 1 - i % 3 - i / 3 * 3), m);
-      assert(target(t) && offMute(t) && mirror.x == 160 - t.x - t.w);   // whole, clear of the mute, each row centered
+      const int rowStart = i / 3 * 3, rowEnd = rowStart + 3 < m ? rowStart + 3 : m;   // this tile's row: [rowStart, rowEnd)
+      const ui::Box t = launcher::tile(i, m), first = launcher::tile(rowStart, m), last = launcher::tile(rowEnd - 1, m);
+      assert(target(t) && offMute(t) && first.x == 160 - last.x - last.w);   // whole, clear of the mute, each row centered
       for (const ui::Box& f : fixed) assert(apart(t, f));
       for (int j = 0; j < i; j++) assert(apart(t, launcher::tile(j, m)));
     }

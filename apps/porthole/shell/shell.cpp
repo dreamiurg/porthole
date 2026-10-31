@@ -391,7 +391,8 @@ void Shell::drawLauncher() {
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
   for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
     const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
-    if (!in_.down || !in_.hit(b.x, b.y, b.w, b.h)) continue;
+    const bool began = in_.downX >= b.x && in_.downX < b.x + b.w && in_.downY >= b.y && in_.downY < b.y + b.h;
+    if (!in_.down || !began || !in_.hit(b.x, b.y, b.w, b.h)) continue;   // only a press that started on it
     ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
     textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
   }

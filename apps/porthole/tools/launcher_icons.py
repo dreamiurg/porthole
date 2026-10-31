@@ -22,7 +22,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 ICON_W, ICON_H = 38, 28  # launcher::TILE_W - 2 by launcher::TILE_H - 2
-GAMES = ("pets-club", "biscuit", "marble-kick", "tilt-fc", "pumpkin-hide-seek", "plane-radar", "starfighter", "living-kingdom", "toy-town-life", "racing")
+GAMES = sorted(p.parent.parent.name for p in (ROOT / "games").glob("*/art/launcher.png"))  # every game with a picture
 
 
 def palette():
