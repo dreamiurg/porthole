@@ -185,14 +185,16 @@ version, the wifi, the SD card and a few other details. **Wifi** lists the netwo
 pick Stable or Beta, and has **Check now** (it downloads right away, about a minute; a black background shows the download percentage and a Cancel control) and **Restart now** once an update is ready. The running version is also in small print at the bottom
 of "Who's playing?".
 
-- **Stable** (the default) gets versions I've tried and promoted.
+- **Stable** (the default) gets a beta once it has gone two days without a newer one.
 - **Beta** gets every new version as soon as it's built.
 
 ### Beta and stable
 
-Every release starts as a GitHub pre-release: that is **beta**. A person promotes a release to
-**stable**, which makes it GitHub's "Latest" and moves the `stable` branch to it. To promote, open
-Actions, pick **Promote**, and run it with a tag (empty means the highest-versioned pre-release). Promoting
+Every release starts as a GitHub pre-release: that is **beta**. Promoting a release to **stable** makes it
+GitHub's "Latest" and moves the `stable` branch to it. The **Promote** workflow does that every morning by
+itself for the newest beta once it has been the newest for 48 hours, so a beta that needed a fix never reaches
+stable. To promote now, open Actions, pick **Promote**, and run it with a tag (empty means the
+highest-versioned pre-release). Promoting
 an older tag rolls stable back for boards that have not updated yet; a board never installs an
 older version by itself, so one already on the bad build needs a USB flash. Each release also carries `<app>-<version>-ota.bin`, the app image
 on its own, and `<app>-version.txt`, the bare version string, for boards that update themselves. A rolling
