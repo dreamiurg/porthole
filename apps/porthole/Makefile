@@ -24,6 +24,8 @@ NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
+test_toytown_SRC :=
+test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
@@ -33,9 +35,10 @@ test_display_frames_SRC :=
 test_update_picture_SRC :=
 test_biscuit_home_SRC := $(wildcard os/*.cpp) $(wildcard games/biscuit/*.cpp)
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
+test_packed_image_SRC := $(wildcard os/*.cpp)
 test_gfx565_SRC := $(wildcard os/*.cpp)
 test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
-test_kingdom_art_SRC := os/gfx565.cpp
+test_kingdom_art_SRC := os/gfx565.cpp os/packed_image.cpp
 test_kingdom_content_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
 test_kingdom_shell_SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/living-kingdom/*.cpp) games/pets-club/pet.cpp
 test_kingdom_reader_SRC := $(wildcard os/*.cpp) games/living-kingdom/reader.cpp
@@ -48,6 +51,8 @@ test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cp
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
 test_starfighter_rules_SRC := games/starfighter/rules.cpp
+test_racing_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
+test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
 test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
@@ -81,6 +86,9 @@ test: $(BUILD) $(SRC) $(TESTS:%=host/%.cpp)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	$(PY) tools/test_flash_report.py
+	$(PY) tools/compression_oracle.py
+	$(PY) games/toy-town-life/tools/toytown_art.py --check
 	$(PY) tools/test_playtest_runner.py
 	$(PY) games/living-kingdom/tools/content.py --check
 	$(PY) games/living-kingdom/tools/test_content.py
@@ -88,13 +96,15 @@ lint: snap
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
 	$(PY) games/starfighter/tools/art.py --check
+	$(PY) games/racing/tools/art.py --check
+	$(PY) games/racing/tools/pictures.py --check
+	$(PY) tools/launcher_icons.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
-	$(PY) games/biscuit/tools/icon.py --check
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
 	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
@@ -137,12 +147,15 @@ coverage:
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
 
 art:
+	python3 games/toy-town-life/tools/toytown_art.py
 	python3 games/living-kingdom/tools/kingdom_art.py
 	python3 games/living-kingdom/tools/font.py
 	python3 games/starfighter/tools/art.py
+	python3 games/racing/tools/art.py
+	python3 games/racing/tools/pictures.py
+	python3 tools/launcher_icons.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
-	python3 games/biscuit/tools/icon.py
 	python3 games/pumpkin-hide-seek/tools/gpt_art.py
 	node $(NODE_ART)
 
@@ -152,6 +165,9 @@ webemu: snap
 # PlatformIO exits 0 on its own "Warning!" lines (an unknown platformio.ini option, say); the wrapper fails on them.
 firmware:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware
+
+flash-report: firmware
+	$(PY) tools/flash_report.py
 
 factory:
 	pio run -e firmware -t factory
@@ -165,4 +181,4 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean
+.PHONY: all sim snap snap-asan playtest test lint check ci coverage art webemu firmware factory flash monitor clean flash-report

@@ -1,0 +1,351 @@
+{"seq": 1, "event": "start", "binary": "/tmp/toytown-quiet-final-snap", "sha256": "df08c56bbfa97c19d18852639ea05dc2d8943f502e9e19f4e857a1b8cc37d5b9"}
+{"seq": 2, "event": "frame", "path": "frames/000002.png", "sha256": "61147d36558eb3f833f830cb958bf7d2ac82eb2b683b8e9925034307f5b2e26c"}
+{"frame": "000.png"}
+{"seq": 3, "event": "input", "type": "down", "x": 240, "y": 35}
+{"type": "down", "x": 240, "y": 35}
+{"seq": 4, "event": "wait", "ms": 80}
+{"seq": 5, "event": "input", "type": "up", "x": 240, "y": 35}
+{"type": "up", "x": 240, "y": 35}
+{"seq": 6, "event": "wait", "ms": 600}
+{"seq": 7, "event": "frame", "path": "frames/000007.png", "sha256": "2593cd983106864ddbb0183d64be97f79dcdd386c8e858ffc75a1f5548842a98"}
+{"frame": "002.png"}
+{"seq": 8, "event": "input", "type": "down", "x": 233, "y": 243}
+{"type": "down", "x": 233, "y": 243}
+{"seq": 9, "event": "wait", "ms": 80}
+{"seq": 10, "event": "input", "type": "up", "x": 233, "y": 243}
+{"type": "up", "x": 233, "y": 243}
+{"seq": 11, "event": "wait", "ms": 600}
+{"seq": 12, "event": "frame", "path": "frames/000012.png", "sha256": "3fb2fb74ca91d7ea3179b4754c2715a641e0afe6c0dc0b29345af48223b4fd89"}
+{"frame": "004.png"}
+{"seq": 13, "event": "input", "type": "down", "x": 124, "y": 378}
+{"type": "down", "x": 124, "y": 378}
+{"seq": 14, "event": "wait", "ms": 80}
+{"seq": 15, "event": "input", "type": "up", "x": 124, "y": 378}
+{"type": "up", "x": 124, "y": 378}
+{"seq": 16, "event": "wait", "ms": 600}
+{"seq": 17, "event": "frame", "path": "frames/000017.png", "sha256": "564562973491a8450416eb9f54b3b208d111e5ce8336d3c26abd0b406716517f"}
+{"frame": "006.png"}
+{"seq": 18, "event": "input", "type": "down", "x": 358, "y": 376}
+{"type": "down", "x": 358, "y": 376}
+{"seq": 19, "event": "wait", "ms": 80}
+{"seq": 20, "event": "input", "type": "up", "x": 358, "y": 376}
+{"type": "up", "x": 358, "y": 376}
+{"seq": 21, "event": "wait", "ms": 600}
+{"seq": 22, "event": "frame", "path": "frames/000022.png", "sha256": "5fc8c0906f66f385f4c6a731a453938412eb7ddf73825dc0c789a0d06d556730"}
+{"frame": "008.png"}
+{"seq": 23, "event": "input", "type": "down", "x": 188, "y": 171}
+{"type": "down", "x": 188, "y": 171}
+{"seq": 24, "event": "wait", "ms": 80}
+{"seq": 25, "event": "input", "type": "up", "x": 188, "y": 171}
+{"type": "up", "x": 188, "y": 171}
+{"seq": 26, "event": "wait", "ms": 600}
+{"seq": 27, "event": "frame", "path": "frames/000027.png", "sha256": "d985dd49c132d07798711db02b941a727dc0979e496ca9ed33d0a368a23e9cc1"}
+{"frame": "010.png"}
+{"seq": 28, "event": "input", "type": "down", "x": 111, "y": 299}
+{"type": "down", "x": 111, "y": 299}
+{"seq": 29, "event": "wait", "ms": 80}
+{"seq": 30, "event": "input", "type": "up", "x": 111, "y": 299}
+{"type": "up", "x": 111, "y": 299}
+{"seq": 31, "event": "wait", "ms": 600}
+{"seq": 32, "event": "frame", "path": "frames/000032.png", "sha256": "e90c77eb2576e6c94fdebc3c7887688358019c43f7789785b301bdcd4e99f83e"}
+{"frame": "012.png"}
+{"seq": 33, "event": "input", "type": "down", "x": 243, "y": 435}
+{"seq": 34, "event": "wait", "ms": 80}
+{"seq": 35, "event": "input", "type": "up", "x": 243, "y": 435}
+{"seq": 36, "event": "wait", "ms": 600}
+{"seq": 37, "event": "frame", "path": "frames/000037.png", "sha256": "ef61c0ea6d1d70213ab97179bf841998ff77206c9eef6011eb5f08c71745557b"}
+{"seq": 38, "event": "input", "type": "down", "x": 327, "y": 407}
+{"seq": 39, "event": "wait", "ms": 80}
+{"seq": 40, "event": "input", "type": "up", "x": 327, "y": 407}
+{"seq": 41, "event": "wait", "ms": 600}
+{"seq": 42, "event": "frame", "path": "frames/000042.png", "sha256": "52ad2e22d9bfe2ff49f4f90610800710b78ec76a225777c1e944067783d1132c"}
+{"seq": 43, "event": "input", "type": "down", "x": 326, "y": 407}
+{"seq": 44, "event": "wait", "ms": 80}
+{"seq": 45, "event": "input", "type": "up", "x": 326, "y": 407}
+{"seq": 46, "event": "wait", "ms": 600}
+{"seq": 47, "event": "frame", "path": "frames/000047.png", "sha256": "2702997ded24f805da837752d8d081e4c6b8bbb56bdd198b87583b95d7c21b5f"}
+{"seq": 48, "event": "input", "type": "down", "x": 326, "y": 407}
+{"seq": 49, "event": "wait", "ms": 80}
+{"seq": 50, "event": "input", "type": "up", "x": 326, "y": 407}
+{"seq": 51, "event": "wait", "ms": 600}
+{"seq": 52, "event": "frame", "path": "frames/000052.png", "sha256": "43aab0c7261a2ea115576240feda2f172ab1d3d660e8f76b1921cb449df671fb"}
+{"seq": 53, "event": "input", "type": "down", "x": 240, "y": 243}
+{"seq": 54, "event": "wait", "ms": 80}
+{"seq": 55, "event": "input", "type": "up", "x": 240, "y": 243}
+{"seq": 56, "event": "wait", "ms": 600}
+{"seq": 57, "event": "frame", "path": "frames/000057.png", "sha256": "6201b5b510152b90743e58c9918e691896ca12912ed27f3a4910e6170324b457"}
+{"seq": 58, "event": "input", "type": "down", "x": 320, "y": 348}
+{"seq": 59, "event": "wait", "ms": 80}
+{"seq": 60, "event": "input", "type": "up", "x": 320, "y": 348}
+{"seq": 61, "event": "wait", "ms": 600}
+{"seq": 62, "event": "frame", "path": "frames/000062.png", "sha256": "9fb553aea23f0bdcdce40c1122143c19d0c4fc0e92563f5612c9d9284c51c340"}
+{"seq": 63, "event": "input", "type": "down", "x": 309, "y": 317}
+{"seq": 64, "event": "wait", "ms": 80}
+{"seq": 65, "event": "input", "type": "up", "x": 309, "y": 317}
+{"seq": 66, "event": "wait", "ms": 600}
+{"seq": 67, "event": "frame", "path": "frames/000067.png", "sha256": "e6b14ed35bfb53e01d6b328a9109a30541203d4ae683654f84fe27375f1c6a99"}
+{"seq": 68, "event": "input", "type": "down", "x": 239, "y": 427}
+{"seq": 69, "event": "wait", "ms": 80}
+{"seq": 70, "event": "input", "type": "up", "x": 239, "y": 427}
+{"seq": 71, "event": "wait", "ms": 600}
+{"seq": 72, "event": "frame", "path": "frames/000072.png", "sha256": "de7f276fe4a3bf04f9a7fcebc3f8436719f06d21474a8ecc4e3812ceb526e871"}
+{"seq": 73, "event": "input", "type": "down", "x": 191, "y": 360}
+{"seq": 74, "event": "wait", "ms": 80}
+{"seq": 75, "event": "input", "type": "up", "x": 191, "y": 360}
+{"seq": 76, "event": "wait", "ms": 600}
+{"seq": 77, "event": "frame", "path": "frames/000077.png", "sha256": "1919862806271c0020776414d7942b25100ba408a8465454b129a1495f7acb28"}
+{"seq": 78, "event": "input", "type": "down", "x": 321, "y": 77}
+{"seq": 79, "event": "wait", "ms": 80}
+{"seq": 80, "event": "input", "type": "up", "x": 321, "y": 77}
+{"seq": 81, "event": "wait", "ms": 600}
+{"seq": 82, "event": "frame", "path": "frames/000082.png", "sha256": "29423d747096acfb61d94dac77706cb55443539f01b9237541bc292f27e371bf"}
+{"seq": 83, "event": "input", "type": "down", "x": 239, "y": 58}
+{"seq": 84, "event": "wait", "ms": 80}
+{"seq": 85, "event": "input", "type": "up", "x": 239, "y": 58}
+{"seq": 86, "event": "wait", "ms": 600}
+{"seq": 87, "event": "frame", "path": "frames/000087.png", "sha256": "df7956117a5a67a488874d9858bf3116eb41589775b79d27d406b85178f38a17"}
+{"seq": 88, "event": "input", "type": "down", "x": 154, "y": 350}
+{"seq": 89, "event": "wait", "ms": 80}
+{"seq": 90, "event": "input", "type": "up", "x": 154, "y": 350}
+{"seq": 91, "event": "wait", "ms": 600}
+{"seq": 92, "event": "frame", "path": "frames/000092.png", "sha256": "29423d747096acfb61d94dac77706cb55443539f01b9237541bc292f27e371bf"}
+{"seq": 93, "event": "input", "type": "down", "x": 239, "y": 58}
+{"seq": 94, "event": "wait", "ms": 80}
+{"seq": 95, "event": "input", "type": "up", "x": 239, "y": 58}
+{"seq": 96, "event": "wait", "ms": 600}
+{"seq": 97, "event": "frame", "path": "frames/000097.png", "sha256": "df7956117a5a67a488874d9858bf3116eb41589775b79d27d406b85178f38a17"}
+{"seq": 98, "event": "input", "type": "down", "x": 328, "y": 347}
+{"seq": 99, "event": "wait", "ms": 80}
+{"seq": 100, "event": "input", "type": "up", "x": 328, "y": 347}
+{"seq": 101, "event": "wait", "ms": 600}
+{"seq": 102, "event": "frame", "path": "frames/000102.png", "sha256": "d23a631276074e2b4dae6446811a03021d76e0dfaae0a2cb255c05cd40b87f07"}
+{"seq": 103, "event": "input", "type": "down", "x": 145, "y": 348}
+{"seq": 104, "event": "wait", "ms": 80}
+{"seq": 105, "event": "input", "type": "up", "x": 145, "y": 348}
+{"seq": 106, "event": "wait", "ms": 600}
+{"seq": 107, "event": "frame", "path": "frames/000107.png", "sha256": "1f7e18ba4e28bb970c505d83d33c9cfb16ebd9b1d2a3d8362c4367440ef70443"}
+{"seq": 108, "event": "input", "type": "down", "x": 149, "y": 349}
+{"seq": 109, "event": "wait", "ms": 80}
+{"seq": 110, "event": "input", "type": "up", "x": 149, "y": 349}
+{"seq": 111, "event": "wait", "ms": 600}
+{"seq": 112, "event": "frame", "path": "frames/000112.png", "sha256": "1c0febd74256e4e016fb72c0efc9d0de5517c34aa1eb6b260f090d4fd966ce38"}
+{"seq": 113, "event": "input", "type": "down", "x": 96, "y": 306}
+{"seq": 114, "event": "wait", "ms": 80}
+{"seq": 115, "event": "input", "type": "up", "x": 96, "y": 306}
+{"seq": 116, "event": "wait", "ms": 600}
+{"seq": 117, "event": "frame", "path": "frames/000117.png", "sha256": "0552a3a94b8a03d55b23715239853db89abc5d1c21cc046fc50ab72d389f804d"}
+{"seq": 118, "event": "input", "type": "down", "x": 241, "y": 306}
+{"seq": 119, "event": "wait", "ms": 80}
+{"seq": 120, "event": "input", "type": "up", "x": 241, "y": 306}
+{"seq": 121, "event": "wait", "ms": 600}
+{"seq": 122, "event": "frame", "path": "frames/000122.png", "sha256": "154f206c8e715876340efb9598ce906735f1a302635f07d3036d250f96797f5f"}
+{"seq": 123, "event": "input", "type": "down", "x": 384, "y": 306}
+{"seq": 124, "event": "wait", "ms": 80}
+{"seq": 125, "event": "input", "type": "up", "x": 384, "y": 306}
+{"seq": 126, "event": "wait", "ms": 600}
+{"seq": 127, "event": "frame", "path": "frames/000127.png", "sha256": "d948027ac2c654472c8d46175db78209ff62bfdd5c844b3260f49bb330fc72bd"}
+{"seq": 128, "event": "input", "type": "down", "x": 336, "y": 74}
+{"seq": 129, "event": "wait", "ms": 80}
+{"seq": 130, "event": "input", "type": "up", "x": 336, "y": 74}
+{"seq": 131, "event": "wait", "ms": 600}
+{"seq": 132, "event": "frame", "path": "frames/000132.png", "sha256": "6cd4a4c70846e93efe3bd81541c98e634c0cf947bf5523c57d70f8a17436d3f2"}
+{"seq": 133, "event": "input", "type": "down", "x": 404, "y": 175}
+{"seq": 134, "event": "wait", "ms": 80}
+{"seq": 135, "event": "input", "type": "up", "x": 404, "y": 175}
+{"seq": 136, "event": "wait", "ms": 600}
+{"seq": 137, "event": "frame", "path": "frames/000137.png", "sha256": "6cd4a4c70846e93efe3bd81541c98e634c0cf947bf5523c57d70f8a17436d3f2"}
+{"seq": 138, "event": "input", "type": "down", "x": 350, "y": 218}
+{"seq": 139, "event": "wait", "ms": 80}
+{"seq": 140, "event": "input", "type": "up", "x": 350, "y": 218}
+{"seq": 141, "event": "wait", "ms": 600}
+{"seq": 142, "event": "frame", "path": "frames/000142.png", "sha256": "e6c0e4522f1d64af8c98a6504eb309564916960fd3c2dfa837fc9165293199fa"}
+{"seq": 143, "event": "input", "type": "down", "x": 150, "y": 349}
+{"seq": 144, "event": "wait", "ms": 80}
+{"seq": 145, "event": "input", "type": "up", "x": 150, "y": 349}
+{"seq": 146, "event": "wait", "ms": 600}
+{"seq": 147, "event": "frame", "path": "frames/000147.png", "sha256": "843f7c96c9c7520334ede008bcaaaa29db0bc67abd87d11d4d9e3551c850d6e6"}
+{"seq": 148, "event": "input", "type": "down", "x": 169, "y": 310}
+{"seq": 149, "event": "wait", "ms": 80}
+{"seq": 150, "event": "input", "type": "up", "x": 169, "y": 310}
+{"seq": 151, "event": "wait", "ms": 600}
+{"seq": 152, "event": "frame", "path": "frames/000152.png", "sha256": "843f7c96c9c7520334ede008bcaaaa29db0bc67abd87d11d4d9e3551c850d6e6"}
+{"seq": 153, "event": "input", "type": "down", "x": 165, "y": 211}
+{"seq": 154, "event": "wait", "ms": 80}
+{"seq": 155, "event": "input", "type": "up", "x": 165, "y": 211}
+{"seq": 156, "event": "wait", "ms": 600}
+{"seq": 157, "event": "frame", "path": "frames/000157.png", "sha256": "cd375b244de89cedac8d7d0f0105acca6dab75f89c93b18a13f48a9f9e2fee93"}
+{"seq": 158, "event": "input", "type": "down", "x": 156, "y": 74}
+{"seq": 159, "event": "wait", "ms": 80}
+{"seq": 160, "event": "input", "type": "up", "x": 156, "y": 74}
+{"seq": 161, "event": "wait", "ms": 600}
+{"seq": 162, "event": "frame", "path": "frames/000162.png", "sha256": "eb256367b9c8118e882b43c146aeed25c6e521b2b1bf03b4a91d581dd2712d9c"}
+{"seq": 163, "event": "input", "type": "down", "x": 150, "y": 348}
+{"seq": 164, "event": "wait", "ms": 80}
+{"seq": 165, "event": "input", "type": "up", "x": 150, "y": 348}
+{"seq": 166, "event": "wait", "ms": 600}
+{"seq": 167, "event": "frame", "path": "frames/000167.png", "sha256": "cd375b244de89cedac8d7d0f0105acca6dab75f89c93b18a13f48a9f9e2fee93"}
+{"seq": 168, "event": "input", "type": "down", "x": 309, "y": 305}
+{"seq": 169, "event": "wait", "ms": 80}
+{"seq": 170, "event": "input", "type": "up", "x": 309, "y": 305}
+{"seq": 171, "event": "wait", "ms": 600}
+{"seq": 172, "event": "frame", "path": "frames/000172.png", "sha256": "f961ca8760a1ab0e04ef486486d0eb89a6435b196d51802d27f5171759466ffd"}
+{"seq": 173, "event": "input", "type": "down", "x": 243, "y": 210}
+{"seq": 174, "event": "wait", "ms": 80}
+{"seq": 175, "event": "input", "type": "up", "x": 243, "y": 210}
+{"seq": 176, "event": "wait", "ms": 600}
+{"seq": 177, "event": "frame", "path": "frames/000177.png", "sha256": "0750430e4d39b77c63048ac0f18660f64dd5619963f8a047a4d6bbdb6a133206"}
+{"seq": 178, "event": "input", "type": "down", "x": 170, "y": 399}
+{"seq": 179, "event": "wait", "ms": 80}
+{"seq": 180, "event": "input", "type": "up", "x": 170, "y": 399}
+{"seq": 181, "event": "wait", "ms": 600}
+{"seq": 182, "event": "frame", "path": "frames/000182.png", "sha256": "8e1643a570eb91d06b948c9e2ec8325a0d70acc8c61d02b3d1e77353d0ef00d6"}
+{"seq": 183, "event": "input", "type": "down", "x": 321, "y": 209}
+{"seq": 184, "event": "wait", "ms": 80}
+{"seq": 185, "event": "input", "type": "up", "x": 321, "y": 209}
+{"seq": 186, "event": "wait", "ms": 600}
+{"seq": 187, "event": "frame", "path": "frames/000187.png", "sha256": "1aacdaf668b852a8b3c76aed3b0480ddc5df146b1f256748aca32a6cdea9a410"}
+{"seq": 188, "event": "input", "type": "down", "x": 308, "y": 398}
+{"seq": 189, "event": "wait", "ms": 80}
+{"seq": 190, "event": "input", "type": "up", "x": 308, "y": 398}
+{"seq": 191, "event": "wait", "ms": 600}
+{"seq": 192, "event": "frame", "path": "frames/000192.png", "sha256": "16f92ea0ade2fc4c5fac92fa12ebc6c29dfea53b0fb0e50f933649683b8502a8"}
+{"seq": 193, "event": "input", "type": "down", "x": 156, "y": 75}
+{"seq": 194, "event": "wait", "ms": 80}
+{"seq": 195, "event": "input", "type": "up", "x": 156, "y": 75}
+{"seq": 196, "event": "wait", "ms": 600}
+{"seq": 197, "event": "frame", "path": "frames/000197.png", "sha256": "2b7546a4c31b9067e9b8bf629ce7f9a47cc3edc1272b672ee84f6ea4b1226998"}
+{"seq": 198, "event": "input", "type": "down", "x": 325, "y": 349}
+{"seq": 199, "event": "wait", "ms": 80}
+{"seq": 200, "event": "input", "type": "up", "x": 325, "y": 349}
+{"seq": 201, "event": "wait", "ms": 600}
+{"seq": 202, "event": "frame", "path": "frames/000202.png", "sha256": "b6977dd360705021c8791f3861e30f286482f36eeb6a1f3541a9b0e1bb7ee4be"}
+{"seq": 203, "event": "input", "type": "down", "x": 150, "y": 350}
+{"seq": 204, "event": "wait", "ms": 80}
+{"seq": 205, "event": "input", "type": "up", "x": 150, "y": 350}
+{"seq": 206, "event": "wait", "ms": 600}
+{"seq": 207, "event": "frame", "path": "frames/000207.png", "sha256": "16f92ea0ade2fc4c5fac92fa12ebc6c29dfea53b0fb0e50f933649683b8502a8"}
+{"seq": 208, "event": "input", "type": "down", "x": 326, "y": 350}
+{"seq": 209, "event": "wait", "ms": 80}
+{"seq": 210, "event": "input", "type": "up", "x": 326, "y": 350}
+{"seq": 211, "event": "wait", "ms": 600}
+{"seq": 212, "event": "frame", "path": "frames/000212.png", "sha256": "a041cc3e10525d9cbaf58fbe0a3a46f5ee5df892416531ecd2fff4e018855aa2"}
+{"seq": 213, "event": "input", "type": "down", "x": 152, "y": 350}
+{"seq": 214, "event": "wait", "ms": 80}
+{"seq": 215, "event": "input", "type": "up", "x": 152, "y": 350}
+{"seq": 216, "event": "wait", "ms": 600}
+{"seq": 217, "event": "frame", "path": "frames/000217.png", "sha256": "b86e87a0fcae45207dfc68211b62ac06bb852e54f7e719ca55cdd25ef3e8a148"}
+{"seq": 218, "event": "input", "type": "down", "x": 327, "y": 350}
+{"seq": 219, "event": "wait", "ms": 80}
+{"seq": 220, "event": "input", "type": "up", "x": 327, "y": 350}
+{"seq": 221, "event": "wait", "ms": 600}
+{"seq": 222, "event": "frame", "path": "frames/000222.png", "sha256": "3625d42ad9489fb898e03732e33b926df20b2ce657792b5506216d46ed86d0f8"}
+{"seq": 223, "event": "input", "type": "down", "x": 151, "y": 349}
+{"seq": 224, "event": "wait", "ms": 80}
+{"seq": 225, "event": "input", "type": "up", "x": 151, "y": 349}
+{"seq": 226, "event": "wait", "ms": 600}
+{"seq": 227, "event": "frame", "path": "frames/000227.png", "sha256": "f254dbf8211c837060a6841384b4c5a527dc219ee26efd3db05dfcda8c13d15f"}
+{"seq": 228, "event": "input", "type": "down", "x": 327, "y": 349}
+{"seq": 229, "event": "wait", "ms": 80}
+{"seq": 230, "event": "input", "type": "up", "x": 327, "y": 349}
+{"seq": 231, "event": "wait", "ms": 600}
+{"seq": 232, "event": "frame", "path": "frames/000232.png", "sha256": "40b75aa009142311b2b1c5c7179c18d49c02f854ee4a5eaf1d388cd170796542"}
+{"seq": 233, "event": "input", "type": "down", "x": 335, "y": 74}
+{"seq": 234, "event": "wait", "ms": 80}
+{"seq": 235, "event": "input", "type": "up", "x": 335, "y": 74}
+{"seq": 236, "event": "wait", "ms": 600}
+{"seq": 237, "event": "frame", "path": "frames/000237.png", "sha256": "a472db60f05a7d89f21080c5e7966dea558998fcd86a5b1f730bec24ebbaa73d"}
+{"seq": 238, "event": "input", "type": "down", "x": 366, "y": 240}
+{"seq": 239, "event": "wait", "ms": 80}
+{"seq": 240, "event": "input", "type": "up", "x": 366, "y": 240}
+{"seq": 241, "event": "wait", "ms": 600}
+{"seq": 242, "event": "frame", "path": "frames/000242.png", "sha256": "23052d875869f568a2e522226e3c53c075f1a12fdda1e5b9a7be828cc6ceeba3"}
+{"seq": 243, "event": "input", "type": "down", "x": 151, "y": 350}
+{"seq": 244, "event": "wait", "ms": 80}
+{"seq": 245, "event": "input", "type": "up", "x": 151, "y": 350}
+{"seq": 246, "event": "wait", "ms": 600}
+{"seq": 247, "event": "frame", "path": "frames/000247.png", "sha256": "0159edfe9039406100ee4529e5fe36a183b9804cef95b382aacaf853c1ddfce3"}
+{"seq": 248, "event": "input", "type": "down", "x": 309, "y": 400}
+{"seq": 249, "event": "wait", "ms": 80}
+{"seq": 250, "event": "input", "type": "up", "x": 309, "y": 400}
+{"seq": 251, "event": "wait", "ms": 600}
+{"seq": 252, "event": "frame", "path": "frames/000252.png", "sha256": "604dd6379d6275f619b7aa7fdcb643312f5e500981d8302b3e8079a85f40d1c4"}
+{"seq": 253, "event": "input", "type": "down", "x": 326, "y": 350}
+{"seq": 254, "event": "wait", "ms": 80}
+{"seq": 255, "event": "input", "type": "up", "x": 326, "y": 350}
+{"seq": 256, "event": "wait", "ms": 600}
+{"seq": 257, "event": "frame", "path": "frames/000257.png", "sha256": "331791939da2292cd82366f0a865087a370477fe4299e4814c0b9ae8aabcdc29"}
+{"seq": 258, "event": "input", "type": "down", "x": 239, "y": 427}
+{"seq": 259, "event": "wait", "ms": 80}
+{"seq": 260, "event": "input", "type": "up", "x": 239, "y": 427}
+{"seq": 261, "event": "wait", "ms": 600}
+{"seq": 262, "event": "frame", "path": "frames/000262.png", "sha256": "71062fc60e134819a884c07aded61c64d23e8f1a8998ba21249b477b61484f4c"}
+{"seq": 263, "event": "input", "type": "down", "x": 335, "y": 75}
+{"seq": 264, "event": "wait", "ms": 80}
+{"seq": 265, "event": "input", "type": "up", "x": 335, "y": 75}
+{"seq": 266, "event": "wait", "ms": 600}
+{"seq": 267, "event": "frame", "path": "frames/000267.png", "sha256": "5383ddd9f59a51c17a762dc5cc2bc4db240d7e33a438a02e1d9ae477c1e6741e"}
+{"seq": 268, "event": "input", "type": "down", "x": 241, "y": 427}
+{"seq": 269, "event": "wait", "ms": 80}
+{"seq": 270, "event": "input", "type": "up", "x": 241, "y": 427}
+{"seq": 271, "event": "wait", "ms": 600}
+{"seq": 272, "event": "frame", "path": "frames/000272.png", "sha256": "71062fc60e134819a884c07aded61c64d23e8f1a8998ba21249b477b61484f4c"}
+{"seq": 273, "event": "input", "type": "down", "x": 169, "y": 400}
+{"seq": 274, "event": "wait", "ms": 80}
+{"seq": 275, "event": "input", "type": "up", "x": 169, "y": 400}
+{"seq": 276, "event": "wait", "ms": 600}
+{"seq": 277, "event": "frame", "path": "frames/000277.png", "sha256": "00e7c29f709a4d854b61ea8e2c425837770fa1d47e5cd437b78ad47403503ddd"}
+{"seq": 278, "event": "input", "type": "down", "x": 326, "y": 350}
+{"seq": 279, "event": "wait", "ms": 80}
+{"seq": 280, "event": "input", "type": "up", "x": 326, "y": 350}
+{"seq": 281, "event": "wait", "ms": 600}
+{"seq": 282, "event": "frame", "path": "frames/000282.png", "sha256": "0fd24b4eb2079b530cbfda523ae6ab5a4f943279ee949ba632db292333be0e5d"}
+{"seq": 283, "event": "input", "type": "down", "x": 239, "y": 428}
+{"seq": 284, "event": "wait", "ms": 80}
+{"seq": 285, "event": "input", "type": "up", "x": 239, "y": 428}
+{"seq": 286, "event": "wait", "ms": 600}
+{"seq": 287, "event": "frame", "path": "frames/000287.png", "sha256": "54bc3fd576a126d1b805b61ac6688319bfa9d04410d43d33879b032b6974bc63"}
+{"seq": 288, "event": "input", "type": "down", "x": 336, "y": 75}
+{"seq": 289, "event": "wait", "ms": 80}
+{"seq": 290, "event": "input", "type": "up", "x": 336, "y": 75}
+{"seq": 291, "event": "wait", "ms": 600}
+{"seq": 292, "event": "frame", "path": "frames/000292.png", "sha256": "3b21a7bec61995e003b99272eaa50f63514ffd6e9a1c724612e0582b89c68812"}
+{"seq": 293, "event": "input", "type": "down", "x": 239, "y": 427}
+{"seq": 294, "event": "wait", "ms": 80}
+{"seq": 295, "event": "input", "type": "up", "x": 239, "y": 427}
+{"seq": 296, "event": "wait", "ms": 600}
+{"seq": 297, "event": "frame", "path": "frames/000297.png", "sha256": "54bc3fd576a126d1b805b61ac6688319bfa9d04410d43d33879b032b6974bc63"}
+{"seq": 298, "event": "input", "type": "down", "x": 309, "y": 307}
+{"seq": 299, "event": "wait", "ms": 80}
+{"seq": 300, "event": "input", "type": "up", "x": 309, "y": 307}
+{"seq": 301, "event": "wait", "ms": 600}
+{"seq": 302, "event": "frame", "path": "frames/000302.png", "sha256": "750a62df3823233764343e5e6c78f4611c35dcf74f218367b7dda4f9e7a687fd"}
+{"seq": 303, "event": "input", "type": "down", "x": 327, "y": 350}
+{"seq": 304, "event": "wait", "ms": 80}
+{"seq": 305, "event": "input", "type": "up", "x": 327, "y": 350}
+{"seq": 306, "event": "wait", "ms": 600}
+{"seq": 307, "event": "frame", "path": "frames/000307.png", "sha256": "19e82de5bd6d3e057cf3714004df5e49abe51b85f6cccaa40e8cf9214a76ab50"}
+{"seq": 308, "event": "input", "type": "down", "x": 239, "y": 427}
+{"seq": 309, "event": "wait", "ms": 80}
+{"seq": 310, "event": "input", "type": "up", "x": 239, "y": 427}
+{"seq": 311, "event": "wait", "ms": 600}
+{"seq": 312, "event": "frame", "path": "frames/000312.png", "sha256": "9050f52bd9655a762d9e083e590058e13c3cf3e63583c12eedd745b8b5e4e42c"}
+{"seq": 313, "event": "input", "type": "down", "x": 335, "y": 75}
+{"seq": 314, "event": "wait", "ms": 80}
+{"seq": 315, "event": "input", "type": "up", "x": 335, "y": 75}
+{"seq": 316, "event": "wait", "ms": 600}
+{"seq": 317, "event": "frame", "path": "frames/000317.png", "sha256": "cf9b1b75b7c81a086532999afceaca41c8480d720ac19393cdc6ffe8ce875955"}
+{"seq": 318, "event": "input", "type": "down", "x": 241, "y": 427}
+{"seq": 319, "event": "wait", "ms": 80}
+{"seq": 320, "event": "input", "type": "up", "x": 241, "y": 427}
+{"seq": 321, "event": "wait", "ms": 600}
+{"seq": 322, "event": "frame", "path": "frames/000322.png", "sha256": "5e7d49c38a7102e372f003a4247471457c765da14f911a712f7fa06bca91352b"}
+{"seq": 323, "event": "input", "type": "down", "x": 152, "y": 350}
+{"seq": 324, "event": "wait", "ms": 80}
+{"seq": 325, "event": "input", "type": "up", "x": 152, "y": 350}
+{"seq": 326, "event": "wait", "ms": 600}
+{"seq": 327, "event": "frame", "path": "frames/000327.png", "sha256": "84d8790597ab262f38f7ea9de0057f7f1cd01a5a543a1f2cf55caec1ac4db78d"}
+{"seq": 328, "event": "input", "type": "down", "x": 152, "y": 350}
+{"seq": 329, "event": "wait", "ms": 80}
+{"seq": 330, "event": "input", "type": "up", "x": 152, "y": 350}
+{"seq": 331, "event": "wait", "ms": 600}
+{"seq": 332, "event": "frame", "path": "frames/000332.png", "sha256": "a957664f4251988182d7fb50f9767a536db05897e0015924455da9accb7360d5"}

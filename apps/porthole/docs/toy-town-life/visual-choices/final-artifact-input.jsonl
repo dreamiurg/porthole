@@ -1,0 +1,61 @@
+{"shot": "r00-start.png"}
+{"tap": [80, 68]}
+{"shot": "r01-launcher.png"}
+{"tap": [109, 135]}
+{"tap": [109, 135]}
+{"tap": [109, 135]}
+{"tap": [80, 80]}
+{"shot": "r02-title.png"}
+{"tap": [109, 116]}
+{"shot": "r03-doll-mini.png"}
+{"tap": [57, 61]}
+{"shot": "r04-doll-selected.png"}
+{"tap": [100, 61]}
+{"shot": "r05-plush-selected.png"}
+{"tap": [80, 143]}
+{"shot": "r06-hair.png"}
+{"down": [66, 120]}
+{"shot": "r07-hair-pressed.png"}
+{"up": [0, 0]}
+{"shot": "r08-hair-buns.png"}
+{"gesture": [[38, 120], [80, 90]]}
+{"shot": "r09-cancelled-drag.png"}
+{"tap": [128, 79]}
+{"tap": [66, 120]}
+{"shot": "r10-skin-warm.png"}
+{"tap": [128, 79]}
+{"tap": [66, 120]}
+{"shot": "r11-fabric-lines.png"}
+{"tap": [128, 79]}
+{"tap": [66, 120]}
+{"shot": "r12-shoes-rose.png"}
+{"tap": [128, 79]}
+{"tap": [66, 120]}
+{"shot": "r13-glasses.png"}
+{"tap": [128, 79]}
+{"tap": [94, 120]}
+{"shot": "r14-color-lilac.png"}
+{"tap": [128, 79]}
+{"tap": [94, 120]}
+{"shot": "r15-name-kai.png"}
+{"tap": [128, 79]}
+{"tap": [38, 120]}
+{"shot": "r16-material-doll-glasses.png"}
+{"tap": [128, 79]}
+{"tap": [94, 120]}
+{"shot": "r17-dye-gold.png"}
+{"tap": [128, 79]}
+{"shot": "r18-category-loop.png"}
+{"tap": [54, 25]}
+{"shot": "r19-pause.png"}
+{"tap": [80, 143]}
+{"shot": "r20-exit-launcher.png"}
+{"tap": [80, 80]}
+{"shot": "r21-reentry-title.png"}
+{"tap": [52, 116]}
+{"shot": "r22-resumed-style.png"}
+{"tap": [106, 26]}
+{"shot": "r23-done-doll-chooser.png"}
+{"tap": [80, 18]}
+{"tap": [108, 116]}
+{"shot": "r24-resting-home.png"}

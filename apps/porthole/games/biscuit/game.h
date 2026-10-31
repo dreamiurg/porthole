@@ -8,6 +8,7 @@
 #include "canvas.h"
 #include "content_daily.h"
 #include "layout.h"
+#include "packed_image.h"
 #include "pet.h"
 #include "ui.h"
 
@@ -83,7 +84,7 @@ class Game : public App {
   void updateSetupPet(); void drawSetupPet();
   void updateHome(); void drawHome();
   void homeTaps(); void homeFetch(); void drawHomeTop(); void drawHomeWhole();
-  const gfx565::RleImage& scene() const; uint32_t homeLook() const;
+  const packed565::Image& scene() const; uint32_t homeLook() const;
   canvas::Frames<1> homeFrames_;               // which buffer already holds which Home frame; reset off Home
   void updateWorld(); void drawWorld();
   void updateTricks(); void drawTricks();

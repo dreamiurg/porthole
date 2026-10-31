@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "render.h"
 #include <math.h>
 #include <stdio.h>
@@ -20,33 +21,6 @@ constexpr uint16_t HOME_C = c565(0xFFD166), HOME_DOWN = c565(0xC9A24D);
 constexpr uint16_t KIND_C[] = {c565(0xFFD166), c565(0x7BDFF2), c565(0xFF7B54)};   // airliner, small, military
 constexpr int RANGE_X = CX + 10, RANGE_Y = CY + RING - 44;   // the range label, under the middle on the right
 
-// The launcher icon, in the shell's indexed palette: the scope from above, an amber plane crossing it.
-// k rim, n night, g rings, y the plane.
-constexpr char ICON_ART[] =
-  "................................" "...........kkkkkkkkkk..........." "........kkknnnggggnnnkkk........"
-  ".......kknnggggggggggnnkk......." "......kknggnnnnggnnnnggnkk......" ".....knggnnnnnnggnnnnnnggnk....."
-  "....knggnnnnnnnggnnnnnnnggnk...." "...kkggnnnnngggggggyynnnnggkk..." "..kkngnnnnnggnnggnnyynnnnngnkk.."
-  "..kngnnnnggnnnnggnyyyygnnnngnk.." "..kngnnnngnnnnnggnyyyygnnnngnk.." ".kngnnnngnnnnnggggyyyyngnnnngnk."
-  ".kngnnnggnnngggggyyyyyyggnnngnk." ".kngnnngnnnngnnggyygnyyngnnngnk." ".kggnnngnnnggnngynnggnnygnnnggk."
-  ".kggggggggggggggggggggggggggggk." ".kggggggggggggggggggggggggggggk." ".kggnnngnnnggnnggnnggnnngnnnggk."
-  ".kngnnngnnnngnnggnngnnnngnnngnk." ".kngnnnggnnnggggggggnnnggnnngnk." ".kngnnnngnnnnnggggnnnnngnnnngnk."
-  "..kngnnnngnnnnnggnnnnngnnnngnk.." "..kngnnnnggnnnnggnnnnggnnnngnk.." "..kkngnnnnnggnnggnnggnnnnngnkk.."
-  "...kkggnnnnnggggggggnnnnnggkk..." "....knggnnnnnnnggnnnnnnnggnk...." ".....knggnnnnnnggnnnnnnggnk....."
-  "......kknggnnnnggnnnnggnkk......" ".......kknnggggggggggnnkk......." "........kkknnnggggnnnkkk........"
-  "...........kkkkkkkkkk..........." "................................";
-static_assert(sizeof ICON_ART == 32 * 32 + 1, "the launcher slot fits a 32x32 icon");
-constexpr uint8_t iconColor(char c) {
-  return c == 'k' ? (uint8_t)C_BLACK : c == 'n' ? (uint8_t)C_NIGHT : c == 'g' ? (uint8_t)C_DKGREEN
-       : c == 'y' ? (uint8_t)C_YELLOW : C_T;
-}
-struct IconPx { uint8_t px[32 * 32]; };
-constexpr IconPx makeIcon() {
-  IconPx ic{};
-  for (int i = 0; i < 32 * 32; i++) ic.px[i] = iconColor(ICON_ART[i]);
-  return ic;
-}
-constexpr IconPx ICON_PX = makeIcon();
-const gfx::Sprite ICON = {32, 32, ICON_PX.px};
 
 struct Pt { int x, y; };
 Pt along(Pt from, float screenDeg, float len) {
@@ -221,6 +195,6 @@ void draw(const View& v) {
   home(v.homeDown);
 }
 
-const gfx::Sprite& icon() { return ICON; }
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 
 }  // namespace radar::paint

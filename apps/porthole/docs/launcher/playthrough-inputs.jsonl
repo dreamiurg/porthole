@@ -1,0 +1,225 @@
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 36 104"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 109 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 300"}
+{"cmd": "frame"}
+{"cmd": "move 80 150"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 51 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 36 104"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 109 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 109 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 109 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 124 72"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}
+{"start": "snap --serve"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 109 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "tick 1500"}
+{"cmd": "frame"}

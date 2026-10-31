@@ -74,7 +74,7 @@ void Game::homeFetch() {
   say(SAY_FETCHED, SCENE_PLAY);
 }
 
-const gfx565::RleImage& Game::scene() const {
+const packed565::Image& Game::scene() const {
   const bool oneShot = activity_ == SCENE_SHELF || activity_ == SCENE_FERN;
   const int act = save_.sleeping ? (int)SCENE_SLEEP : fetch_ >= 0 ? (int)SCENE_PLAY : activity_;
   const uint32_t since = ms_ - actStartMs_, step = save_.sleeping ? SCENE_SLEEP_MS : SCENE_FRAME_MS;   // scenes.h
@@ -112,7 +112,7 @@ void Game::drawHome() {   // the scene steps every 230 ms: most frames have noth
   homeFrames_.render(nullptr, 0, homeLook(), [this] { drawHomeWhole(); });
 }
 void Game::drawHomeWhole() {
-  gfx565::blitRle(scene(), 0, 0, 3);   // the whole glass
+  packed565::draw(scene(), 0, 0, 3);   // the whole glass
   drawHomeTop();
   home(in_);
   if (fetch_ >= 0) {

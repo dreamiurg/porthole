@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "game.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +15,7 @@ static const int HOME_FLOOR_Y = 92, DOG_BASE_Y = 116;
 static const int BTN_Y = 118, BTN_W = 24, BTN_H = 22;
 static const int BTN_X[4] = {28, 54, 80, 106};
 
-const Sprite& Game::icon() const { return SPR_APP_ICON; }
+const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
   now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;

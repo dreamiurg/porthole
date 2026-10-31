@@ -8,8 +8,10 @@
   "storage": {
     "pixelFormat": "RGB565",
     "byteOrder": "little-endian",
-    "discoveryBytes": 884736,
-    "sceneBytes": 4261704
+    "compression": "zlib",
+    "windowBytes": 16384,
+    "discoveryBytes": 29752,
+    "sceneBytes": 418740
   },
   "discoveries": {
     "space-01": "00561353a26e382932e56c872eeb02af035bc25154fa94af3f48fce1fa0b6b62",

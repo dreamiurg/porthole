@@ -604,7 +604,7 @@ static void capAfterClockGuess() {
 }
 
 // The launcher for 1..MAX_APPS games: every page's tiles and arrows are whole 24x22 targets a margin inside the glass,
-// every name line keeps off the bezel like the UI audit asks, and nothing touches what it shares the screen with.
+// and nothing touches what it shares the screen with.
 static bool within(const ui::Box& b, int margin) {
   return gfx::inCircle(b.x, b.y, margin) && gfx::inCircle(b.x + b.w, b.y, margin) && gfx::inCircle(b.x, b.y + b.h, margin) &&
          gfx::inCircle(b.x + b.w, b.y + b.h, margin);
@@ -613,52 +613,11 @@ static bool target(const ui::Box& b) { return b.w >= 24 && b.h >= 22 && within(b
 static bool apart(const ui::Box& a, const ui::Box& b, int gap = 2) {   // targets: 2 px between them, the UI audit's spacing
   return a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y;
 }
-static bool clear(const ui::Box& a, const ui::Box& b) { return apart(a, b, 0); }   // text: no pixel shared
-struct LauncherFixed { int n, count; ui::Box b[6]; };   // the home button, the header, the mute button, the sun, the arrows
-static bool offMute(const ui::Box& b, int n) {   // no pixel of b inside the mute button's hit circle
-  const int cx = launcher::MUTE_X, cy = launcher::muteY(n);
+static bool offMute(const ui::Box& b) {   // no pixel of b inside the mute button's hit circle
+  const int cx = launcher::MUTE_X, cy = launcher::MUTE_Y;
   const int dx = cx < b.x ? b.x - cx : cx > b.x + b.w - 1 ? cx - (b.x + b.w - 1) : 0;
   const int dy = cy < b.y ? b.y - cy : cy > b.y + b.h - 1 ? cy - (b.y + b.h - 1) : 0;
   return dx * dx + dy * dy > launcher::MUTE_HIT * launcher::MUTE_HIT;
-}
-static LauncherFixed launcherFixed(int n) {
-  const int h = launcher::MUTE_HIT, p = launcher::pages(n);
-  LauncherFixed fx = {n, p > 1 ? 6 : 4, {{64, -4, 32, 32}, launcher::HEADER, {launcher::MUTE_X - h, launcher::muteY(n) - h, 2 * h, 2 * h},
-                                         launcher::LIGHT, launcher::arrow(false), launcher::arrow(true)}};   // ui::back's hit circle first
-  assert((n > 3) == (p > 1));   // arrows only when a row of three is not enough
-  assert(within(fx.b[2], 2));
-  for (int a = 1; a < fx.count; a++) {
-    assert(a < 3 || target(fx.b[a]));
-    for (int b = 0; b < a; b++) assert(apart(fx.b[a], fx.b[b]));
-  }
-  return fx;
-}
-struct LauncherPage { int m, lines; ui::Box tiles[3], names[3][2]; };
-static LauncherPage launcherPage(int n, int pg) {   // one page's tiles and name lines (with their shadow)
-  LauncherPage p = {launcher::count(n, pg), launcher::twoLines(n) ? 2 : 1, {}, {}};
-  const int k0 = launcher::first(n, pg), end = k0 + p.m;
-  assert(p.m >= 1 && p.m <= 3);
-  assert(launcher::pageOf(n, k0) == pg && launcher::pageOf(n, end - 1) == pg);
-  assert(pg + 1 < launcher::pages(n) ? launcher::first(n, pg + 1) == end : end == n);   // each game on one page
-  for (int i = 0; i < p.m; i++) {
-    p.tiles[i] = launcher::tile(i, p.m);
-    const ui::Box mt = launcher::tile(p.m - 1 - i, p.m);
-    assert(mt.x == 160 - p.tiles[i].x - p.tiles[i].w);   // the row mirrors about the middle
-    for (int l = 0; l < p.lines; l++) {
-      const ui::Box b = launcher::nameLine(i, p.m, l), mb = launcher::nameLine(p.m - 1 - i, p.m, l);
-      assert(b.w >= 30 && within(b, 1));   // 30: "Pets" and "Club" each fit a line
-      assert(mb.w == b.w && mb.x == 160 - b.x - b.w);   // a name on the right gets the room of its mirror on the left
-      p.names[i][l] = {b.x, b.y, b.w + 1, b.h + 1};
-    }
-  }
-  return p;
-}
-static void nameClear(const LauncherPage& p, int i, const ui::Box& nl, const LauncherFixed& fx) {
-  for (int f = 0; f < fx.count; f++) assert(f == 2 ? offMute(nl, fx.n) : clear(nl, fx.b[f]));   // two games' names pass the mute's box corner
-  for (int j = 0; j < p.m; j++) {
-    assert(clear(nl, p.tiles[j]));
-    for (int k = 0; k < p.lines && j != i; k++) assert(clear(nl, p.names[j][k]));
-  }
 }
 static void headerName() {   // the widest name the keyboard types (its widest capital, then small letters) fits the header
   int cap = 0, low = 0;
@@ -669,44 +628,42 @@ static void headerName() {   // the widest name the keyboard types (its widest c
   }
   assert(26 + cap + (ui::NAME_LEN - 1) * (low + 1) <= launcher::HEADER.w - 2);   // drawn at x + 26, inside the border
 }
-static void launcherLayout() {
-  headerName();
-  const ui::Box two = launcher::tile(0, 2), three = launcher::tile(0, 3);   // two keep today's look; three, the first row of three
-  assert(two.x == 24 && two.w == 48 && launcher::tile(0, 1).x == 56 && three.x == 8 && three.w == 44 && launcher::muteY(2) == 128);
-  assert(launcher::pages(0) == 1 && launcher::count(0, 0) == 0 && launcher::count(4, 2) == 0);   // no games; past the last page
+static void launcherPages() {   // six a page; each game on exactly one page, in order
+  assert(launcher::pages(0) == 1 && launcher::count(0, 0) == 0);
+  assert(launcher::pages(6) == 1 && launcher::pages(7) == 2 && launcher::pages(10) == 2 && launcher::pages(12) == 2);
+  assert(launcher::count(10, 0) == 6 && launcher::count(10, 1) == 4 && launcher::count(10, 2) == 0);
   for (int n = 1; n <= MAX_APPS; n++) {
-    const LauncherFixed fx = launcherFixed(n);
-    for (int pg = 0; pg < launcher::pages(n); pg++) {
-      const LauncherPage p = launcherPage(n, pg);
-      for (int i = 0; i < p.m; i++) {
-        assert(target(p.tiles[i]));
-        for (int f = 0; f < fx.count; f++) assert(apart(p.tiles[i], fx.b[f]));
-        for (int j = 0; j < i; j++) assert(apart(p.tiles[i], p.tiles[j]));
-        for (int l = 0; l < p.lines; l++) nameClear(p, i, p.names[i][l], fx);
-      }
+    int seen = 0;
+    for (int p = 0; p < launcher::pages(n); p++) {
+      assert(launcher::first(n, p) == seen && launcher::count(n, p) >= 1);
+      for (int k = seen; k < seen + launcher::count(n, p); k++) assert(launcher::pageOf(n, k) == p);
+      seen += launcher::count(n, p);
     }
+    assert(seen == n);
   }
 }
-
-// Names as the launcher draws them: whole, and every line a pixel off the bezel, wherever a game may land.
-static bool nameOk(const char* s, int i, int m, int n) {
-  const launcher::Name nm = launcher::name(s, i, m, n);
-  for (int l = 0; l < nm.lines; l++) assert(!nm.fits || within(nm.at[l], 1));
-  return nm.fits;
+static void launcherLayout() {
+  headerName();
+  launcherPages();
+  const ui::Box fixed[] = {{64, -4, 32, 32}, launcher::HEADER, launcher::LIGHT, launcher::arrow(false), launcher::arrow(true)};
+  for (int a = 1; a < 5; a++) {
+    assert(target(fixed[a]) && offMute(fixed[a]));
+    for (int b = 0; b < a; b++) assert(apart(fixed[a], fixed[b]));
+  }
+  assert(within(launcher::CAPTION, 2));
+  for (int m = 1; m <= launcher::PER_PAGE; m++)
+    for (int i = 0; i < m; i++) {
+      const int rowStart = i / 3 * 3, rowEnd = rowStart + 3 < m ? rowStart + 3 : m;   // this tile's row: [rowStart, rowEnd)
+      const ui::Box t = launcher::tile(i, m), first = launcher::tile(rowStart, m), last = launcher::tile(rowEnd - 1, m);
+      assert(target(t) && offMute(t) && first.x == 160 - last.x - last.w);   // whole, clear of the mute, each row centered
+      for (const ui::Box& f : fixed) assert(apart(t, f));
+      for (int j = 0; j < i; j++) assert(apart(t, launcher::tile(j, m)));
+    }
+  for (int i = 0; i < 3; i++) assert(target(launcher::sun(i)) && apart(launcher::sun(i), launcher::LIGHT_AUTO));
+  assert(launcher::nameFits("Star Fighter") && launcher::nameFits("Pets Club") && !launcher::nameFits("A very long game name"));
 }
-static void launcherNames() {
-  static const char* const THREE[3] = {"Pets Club", "Biscuit", "Marble Kick"};   // the football branch's three
-  for (int i = 0; i < 3; i++) assert(nameOk(THREE[i], i, 3, 3));
-  const launcher::Name mk = launcher::name("Marble Kick", 2, 3, 3);
-  assert(mk.lines == 2 && !strcmp(mk.text[0], "Marble") && mk.at[0].x == 108 && mk.at[0].w == 43);   // the mirror of x 9
-  static const char* const ANY[] = {"Pets Club", "Sand Jar", "Marble Kick", "Tilt FC"};
-  for (const char* s : ANY) for (int m = 1; m <= 3; m++) for (int i = 0; i < m; i++) assert(nameOk(s, i, m, 6));
-  assert(nameOk("Pets Club", 0, 2, 2) && nameOk("Biscuit", 1, 2, 2));
-  assert(!nameOk("Marble Kick", 0, 2, 2));   // two games have one line: "Kick" would be dropped
-  assert(!nameOk("Football", 0, 3, 3));      // one 53 px word under a side tile would cross the bezel
-}
 
-// Paging through a Shell with five stub games (3 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
+// Paging through a Shell with eight stub games (6 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
 struct StubApp : App {
   const char* label; int entered = 0, left = 0, updated = 0; bool home = false, saving = false; uint32_t payload = 42;
   explicit StubApp(const char* n) : label(n) {}
@@ -741,23 +698,26 @@ static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenNa
 static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
 static void launcherPaging() {
   MemStore st; static Shell sh; uint32_t ms = 0;
-  StubApp a[5] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five")};
-  App* const list[5] = {&a[0], &a[1], &a[2], &a[3], &a[4]};
-  bootWithoutHours(sh, st, list, 5); frame(sh, ms, Input{});
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{});
   sh.createProfile("Sam", 8, "");
-  const ui::Box l = launcher::arrow(false), r = launcher::arrow(true), t2 = launcher::tile(0, 2), t3 = launcher::tile(0, 3);
+  const ui::Box l = launcher::arrow(false), r = launcher::arrow(true), first = launcher::tile(0, 6), sixth = launcher::tile(5, 6);
+  const ui::Box p1 = launcher::tile(1, 2);
   assert(on(sh, "launcher"));
   tapAt(sh, ms, l);                                   // page 0: no page to the left, nothing there
-  tapAt(sh, ms, t3); assert(a[0].entered == 1); home(sh, ms, a[0]);
-  tapAt(sh, ms, r);                                   // page 1: games 3 and 4
+  tapAt(sh, ms, first); assert(a[0].entered == 1); home(sh, ms, a[0]);
+  tapAt(sh, ms, sixth); assert(a[5].entered == 1); home(sh, ms, a[5]);
+  tapAt(sh, ms, r);                                   // page 1: games 6 and 7
   tapAt(sh, ms, r);                                   // the last page: no right arrow
-  tapAt(sh, ms, t2); assert(a[3].entered == 1 && on(sh, "stub")); home(sh, ms, a[3]);
-  tapAt(sh, ms, t2); assert(a[3].entered == 2); home(sh, ms, a[3]);   // back from a game: still its page
-  tapAt(sh, ms, l); tapAt(sh, ms, t3); assert(a[0].entered == 2); home(sh, ms, a[0]);
+  tapAt(sh, ms, p1); assert(a[7].entered == 1 && on(sh, "stub")); home(sh, ms, a[7]);
+  tapAt(sh, ms, p1); assert(a[7].entered == 2); home(sh, ms, a[7]);   // back from a game: still its page
+  tapAt(sh, ms, l); tapAt(sh, ms, first); assert(a[0].entered == 2); home(sh, ms, a[0]);
   tapAt(sh, ms, r);                                   // page 1, then a new pick from the picker lands on page 0
   tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // the picker's first row
-  tapAt(sh, ms, t3); assert(a[0].entered == 3 && a[3].entered == 2);
+  tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);
 }
 
 // The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
@@ -773,10 +733,10 @@ static void brightness() {
   assert(on(sh, "launcher") && sh.tint() == TINT_NIGHT && sh.backlight() == 100);   // Auto, as before
   tap(launcher::tile(0, 1)); assert(a.entered == 1 && !a.daylight); home(sh, ms, a);
   static const uint8_t PCT[3] = {100, 65, 40};   // Bright, Medium, Soft: the suns left to right
-  for (int i = 0; i < 3; i++) { pick(launcher::tile(i, 3)); assert(sh.tint() == TINT_DAY && sh.backlight() == PCT[i]); }
+  for (int i = 0; i < 3; i++) { pick(launcher::sun(i)); assert(sh.tint() == TINT_DAY && sh.backlight() == PCT[i]); }
   tap(launcher::tile(0, 1)); assert(a.entered == 2 && a.daylight); home(sh, ms, a);
   int w = st.writes;
-  pick(launcher::tile(2, 3)); assert(st.writes == w);   // Soft again: no flash write
+  pick(launcher::sun(2)); assert(st.writes == w);   // Soft again: no flash write
   tap(launcher::LIGHT); tap({64, -4, 32, 32}); assert(on(sh, "launcher") && sh.backlight() == 40);   // the home button keeps it
   bootWithoutHours(sh, st, list, 1); step(Input{}); assert(on(sh, "picker") && sh.tint() == TINT_DAY && sh.backlight() == 40);   // reboot
   tap({24, 55, 112, 24}); pick(launcher::LIGHT_AUTO); assert(sh.tint() == TINT_NIGHT && sh.backlight() == 100);
@@ -1142,7 +1102,6 @@ int main() {
   capClockBack();
   capAfterClockGuess();
   launcherLayout();
-  launcherNames();
   launcherPaging();
   brightness();
   backlightSteps();

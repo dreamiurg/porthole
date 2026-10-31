@@ -1,0 +1,261 @@
+{
+  "attribution_note": "Estimates from named symbols in .flash.text/.flash.rodata; exact address/size aliases counted once. Unnamed data, padding and other budget sections are excluded; partial symbol overlaps may remain.",
+  "budget_sections": {
+    ".dram0.bss": {
+      "address": 1070212848,
+      "size": 177440
+    },
+    ".dram0.data": {
+      "address": 1070170112,
+      "size": 42736
+    },
+    ".flash.rodata": {
+      "address": 1007812896,
+      "size": 6682168
+    },
+    ".flash.text": {
+      "address": 1107296288,
+      "size": 1115428
+    },
+    ".iram0.text": {
+      "address": 1077363716,
+      "size": 80643
+    },
+    ".iram0.vectors": {
+      "address": 1077362688,
+      "size": 1027
+    }
+  },
+  "elf": "firmware.elf",
+  "elf_sha256": "0f41b1f652954e03ad3c78edf7debaf21932f7842c48e1ba75d5782a5ff25ac1",
+  "flash_free": 401070,
+  "flash_limit": 8323072,
+  "flash_percent": 95.1812,
+  "flash_used": 7922002,
+  "largest_namespaces": [
+    {
+      "namespace": "biscuit",
+      "size": 4489982
+    },
+    {
+      "namespace": "kingdom",
+      "size": 1171914
+    },
+    {
+      "namespace": "<global>",
+      "size": 891580
+    },
+    {
+      "namespace": "toytown",
+      "size": 320541
+    },
+    {
+      "namespace": "fc",
+      "size": 43141
+    },
+    {
+      "namespace": "adult",
+      "size": 41815
+    },
+    {
+      "namespace": "starfighter",
+      "size": 33013
+    },
+    {
+      "namespace": "radar",
+      "size": 25760
+    },
+    {
+      "namespace": "Game",
+      "size": 24285
+    },
+    {
+      "namespace": "Shell",
+      "size": 19404
+    },
+    {
+      "namespace": "marble",
+      "size": 17364
+    },
+    {
+      "namespace": "pumpkin",
+      "size": 15611
+    },
+    {
+      "namespace": "net",
+      "size": 13609
+    },
+    {
+      "namespace": "timezones",
+      "size": 13503
+    },
+    {
+      "namespace": "nvs",
+      "size": 11883
+    },
+    {
+      "namespace": "HTTPClient",
+      "size": 9023
+    },
+    {
+      "namespace": "ArduinoJson",
+      "size": 5981
+    },
+    {
+      "namespace": "NetworkInterface",
+      "size": 4798
+    },
+    {
+      "namespace": "shell",
+      "size": 3994
+    },
+    {
+      "namespace": "board",
+      "size": 3770
+    }
+  ],
+  "largest_symbols": [
+    {
+      "address": 1013583480,
+      "name": "kingdom::art::IMAGE_1_DATA",
+      "namespace": "kingdom",
+      "size": 102016,
+      "type": "d"
+    },
+    {
+      "address": 1012787280,
+      "name": "kingdom::art::IMAGE_19_DATA",
+      "namespace": "kingdom",
+      "size": 54578,
+      "type": "d"
+    },
+    {
+      "address": 1012678424,
+      "name": "kingdom::art::IMAGE_21_DATA",
+      "namespace": "kingdom",
+      "size": 54575,
+      "type": "d"
+    },
+    {
+      "address": 1012999244,
+      "name": "kingdom::art::IMAGE_15_DATA",
+      "namespace": "kingdom",
+      "size": 54379,
+      "type": "d"
+    },
+    {
+      "address": 1012944912,
+      "name": "kingdom::art::IMAGE_16_DATA",
+      "namespace": "kingdom",
+      "size": 54320,
+      "type": "d"
+    },
+    {
+      "address": 1012733012,
+      "name": "kingdom::art::IMAGE_20_DATA",
+      "namespace": "kingdom",
+      "size": 54253,
+      "type": "d"
+    },
+    {
+      "address": 1013105400,
+      "name": "kingdom::art::IMAGE_13_DATA",
+      "namespace": "kingdom",
+      "size": 53734,
+      "type": "d"
+    },
+    {
+      "address": 1012891324,
+      "name": "kingdom::art::IMAGE_17_DATA",
+      "namespace": "kingdom",
+      "size": 53574,
+      "type": "d"
+    },
+    {
+      "address": 1013264620,
+      "name": "kingdom::art::IMAGE_10_DATA",
+      "namespace": "kingdom",
+      "size": 53408,
+      "type": "d"
+    },
+    {
+      "address": 1013159148,
+      "name": "kingdom::art::IMAGE_12_DATA",
+      "namespace": "kingdom",
+      "size": 53200,
+      "type": "d"
+    },
+    {
+      "address": 1013318040,
+      "name": "kingdom::art::IMAGE_9_DATA",
+      "namespace": "kingdom",
+      "size": 52563,
+      "type": "d"
+    },
+    {
+      "address": 1013212360,
+      "name": "kingdom::art::IMAGE_11_DATA",
+      "namespace": "kingdom",
+      "size": 52247,
+      "type": "d"
+    },
+    {
+      "address": 1013053636,
+      "name": "kingdom::art::IMAGE_14_DATA",
+      "namespace": "kingdom",
+      "size": 51750,
+      "type": "d"
+    },
+    {
+      "address": 1013532812,
+      "name": "kingdom::art::IMAGE_2_DATA",
+      "namespace": "kingdom",
+      "size": 50656,
+      "type": "d"
+    },
+    {
+      "address": 1013685508,
+      "name": "kingdom::art::IMAGE_0_DATA",
+      "namespace": "kingdom",
+      "size": 50343,
+      "type": "d"
+    },
+    {
+      "address": 1012841872,
+      "name": "kingdom::art::IMAGE_18_DATA",
+      "namespace": "kingdom",
+      "size": 49440,
+      "type": "d"
+    },
+    {
+      "address": 1013487184,
+      "name": "kingdom::art::IMAGE_3_DATA",
+      "namespace": "kingdom",
+      "size": 45614,
+      "type": "d"
+    },
+    {
+      "address": 1013401856,
+      "name": "kingdom::art::IMAGE_5_DATA",
+      "namespace": "kingdom",
+      "size": 44331,
+      "type": "d"
+    },
+    {
+      "address": 1014027032,
+      "name": "toytown::art::SCENE_4",
+      "namespace": "toytown",
+      "size": 43200,
+      "type": "d"
+    },
+    {
+      "address": 1014070360,
+      "name": "toytown::art::SCENE_3",
+      "namespace": "toytown",
+      "size": 43200,
+      "type": "d"
+    }
+  ],
+  "named_flash_bytes_estimate": 7222827,
+  "ram_used": 220176
+}
