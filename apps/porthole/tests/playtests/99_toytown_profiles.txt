@@ -31,16 +31,12 @@ expect-screen toytown_hub
 # Start Park, bring a notebook, listen and inspect the bench.
 tap 51 117
 wait 600
-tap 51 117
+tap 80 142
 wait 600
-tap 51 117
-wait 600
-tap 109 117
-wait 600
-tap 51 117
+tap 34 103
 wait 600
 expect bag=1
-tap 80 142
+tap 112 25
 wait 600
 expect-screen toytown_park_intro
 tap 51 117
@@ -187,7 +183,7 @@ wait 600
 expect-screen toytown_park_clue
 expect clues=1
 # Kai's appearance also survives a separate reboot and Sam's clock probes.
-tap 80 19
+tap 52 25
 wait 600
 tap 80 142
 wait 600

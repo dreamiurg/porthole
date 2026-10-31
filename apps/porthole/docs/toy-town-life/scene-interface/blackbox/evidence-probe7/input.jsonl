@@ -1,0 +1,189 @@
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0000.png"}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 164}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 164}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0001.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0002.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0003.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0004.png"}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0005.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0006.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0007.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0008.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0009.png"}
+{"path": "/input", "input": {"type": "down", "x": 308, "y": 399}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 308, "y": 399}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0010.png"}
+{"path": "/input", "input": {"type": "down", "x": 96, "y": 305}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 96, "y": 305}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0011.png"}
+{"path": "/input", "input": {"type": "down", "x": 337, "y": 72}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 337, "y": 72}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0012.png"}
+{"path": "/input", "input": {"type": "down", "x": 349, "y": 212}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 349, "y": 212}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0013.png"}
+{"path": "/input", "input": {"type": "down", "x": 154, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 154, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0014.png"}
+{"path": "/input", "input": {"type": "down", "x": 309, "y": 307}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 309, "y": 307}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0015.png"}
+{"path": "/input", "input": {"type": "down", "x": 165, "y": 209}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 165, "y": 209}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0016.png"}
+{"path": "/input", "input": {"type": "down", "x": 170, "y": 398}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 170, "y": 398}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0017.png"}
+{"path": "/input", "input": {"type": "down", "x": 243, "y": 208}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 243, "y": 208}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0018.png"}
+{"path": "/input", "input": {"type": "down", "x": 172, "y": 308}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 172, "y": 308}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0019.png"}
+{"path": "/input", "input": {"type": "down", "x": 322, "y": 209}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 322, "y": 209}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0020.png"}
+{"path": "/input", "input": {"type": "down", "x": 309, "y": 399}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 309, "y": 399}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0021.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0022.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0023.png"}
+{"path": "/input", "input": {"type": "down", "x": 309, "y": 307}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 309, "y": 307}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0024.png"}
+{"path": "/input", "input": {"type": "down", "x": 243, "y": 208}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 243, "y": 208}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0025.png"}
+{"path": "/input", "input": {"type": "down", "x": 154, "y": 73}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 154, "y": 73}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0026.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0027.png"}
+{"path": "/restart", "input": {}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0028.png"}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 164}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 164}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0029.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0030.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0031.png"}
+{"path": "/input", "input": {"type": "down", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 326, "y": 407}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0032.png"}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 241}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0033.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0034.png"}
+{"path": "/input", "input": {"type": "down", "x": 309, "y": 399}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 309, "y": 399}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0035.png"}
+{"path": "/input", "input": {"type": "down", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 240, "y": 425}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0036.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0037.png"}
+{"path": "/input", "input": {"type": "down", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 80}}
+{"path": "/input", "input": {"type": "up", "x": 153, "y": 350}}
+{"path": "/wait", "input": {"ms": 600}}
+{"frame": "/tmp/toy-scene-blackbox-final7/frames/0038.png"}

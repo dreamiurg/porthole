@@ -2,3 +2,6 @@
 #include "art_part_0.inc"
 #include "art_part_1.inc"
 #include "art_part_2.inc"
+#include "art_part_3.inc"
+#include "art_part_4.inc"
+#include "art_part_5.inc"

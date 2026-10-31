@@ -61,3 +61,81 @@ python3 -m venv /tmp/toy-town-conversion
 /tmp/toy-town-conversion/bin/pip install Pillow==12.3.0
 /tmp/toy-town-conversion/bin/python apps/porthole/games/toy-town-life/tools/toytown_art.py --convert-source
 ```
+
+## Scene interface production layers (2026-10-27)
+
+The approved `../../../docs/toy-town-life/scene-interface/approved-school-reference.png`
+was inspected before creating these original Image Gen sources. They carry its
+warm outlined anime classroom language into independently rendered game layers;
+the reference itself is never embedded in runtime art. Original shipped concept
+PNGs and customization doll/material data remain intact.
+
+- `scene-world-atlas.png`: four empty places in a 2×2 atlas: cozy doll bedroom,
+  school art room with unfinished cork display, indoor cafe with serving counter
+  and empty tray, park with distinct bench/fountain/path. The converter replaces
+  background slots 1–4 and retains slot 0's original street.
+- `scene-sprite-atlas.png`: transparent full-body Mina, Theo, Nori and server;
+  framed paintings, cue cards, paper tray, ribbon notebook, ribbon, sandwich,
+  fruit bowl, water, cookie, bag, pencil and camera. Actual row boundaries are
+  explicitly cropped because generated sheets are not perfectly even grids.
+- `scene-pose-atlas.png`: Mina waiting and rehearsing, Theo hanging a rocket
+  painting and planning. These are separate illustrated poses, not palette swaps.
+- `scene-objects-atlas.png`: empty serving tray, schoolbook and finished pinned
+  art display, all transparent and independently placed at runtime.
+
+`scene-bag-atlas.png` adds the actual checked picnic cloth and magnifying glass
+used by packing controls, avoiding misleading bag/camera substitutions.
+`placePicture(scene, box)` samples the exact production scene into map cards
+without allocating an intermediate image.
+
+All six new source images were generated with Image Gen for this game. The
+brief specified warm painterly anime, clean dark brown outlines, generous clear
+floor for layered characters, recognizable place landmarks, no words or UI, and
+independently isolated sprites. Character briefs: Mina has long purple hair,
+navy pinafore and purple bow; Theo has curly brown hair, green cardigan and
+shorts; Nori wears a teal beret and yellow cardigan. Sprites use actual source
+alpha with a 128 cutoff, **never green extraction** (Theo's clothing is green).
+Tiny detached neighbor-cell alpha islands below 2% of the largest connected
+component are removed before cropping; the original source PNGs are preserved.
+At conversion, bounded thumbnails use 63 local colors plus transparent index 63;
+all source images and fonts participate in cache SHA-256 verification.
+
+`art::npc` fits a sprite into a box. `art::npcPortrait` samples its upper 55%
+into picture controls so facial expressions and Mina's bow remain recognizable. Mina pose 0 holds a card, 1 waits, 2 or higher
+rehearses; Theo 0 holds a picture, 1 plans, 2 or higher hangs a picture. Other NPCs
+have one pose. `art::prop` fits an illustrated object. `HUNG_PICTURES` is the
+completed display. Runtime drawing unpacks individual indexed pixels directly
+into the existing RGB565 surface, without heap allocation or frame buffers.
+`walkingDoll` preserves every cosmetic layer and alternates foot lift with an
+elapsed-millisecond phase; phase 0 uses the existing exact production detail.
+
+Open Sans Bold `ACTION` is independently converted at 18px with a 21px line;
+BODY/TITLE retain the shipped 24/30px faces. Combined estimated art runtime cost
+is recorded by the generated manifest (approximately 570 KB, including the
+original assets). Conversion also writes `world-sprites.png` beside `assets.png`
+for inspection. `--check` uses the committed source-verified cache and remains
+independent of the installed Pillow conversion version.
+
+`scene-pictures-atlas.png` adds three separately illustrated front-facing framed
+paintings for hands-on School picture hanging: flowers, a rocket, and a rabbit.
+`FLOWER_PICTURE`, `ROCKET_PICTURE`, and `RABBIT_PICTURE` are contiguous prop IDs,
+with individually converted transparent sprites recognizable at 60×70px. The
+original stack of pictures remains a separate prop.
+
+## Quiet background replacement (2026-10-30)
+
+The user selected the second quiet Park concept ([approved reference](../../../docs/toy-town-life/quiet-backgrounds/approved-reference.png)). It was inspected as an art-direction reference, never pasted into runtime. Two new original Image Gen production sources replace all five backgrounds:
+
+- `street-quiet.png`: the standalone miniature village street.
+- `scene-quiet-atlas.png`: exact equal quadrants, without gutters: Home, School, Cafe, Park in reading order.
+
+Broad cel-painted shapes, muted local colors and large light untextured floors keep the independently rendered dolls readable. Foliage uses broad silhouettes, with no individual leaves or flowers. Park retains the bench at left, fountain at right and winding path in the middle; the School cork display stays at the right edge and the Cafe serving counter at the right behind the runtime tray. No actors, UI, text or loose gameplay props are baked into these sources. All older source PNGs remain intact.
+
+Background conversion is deliberately separate from full source conversion. It validates every existing nonbackground source hash and retains the exact shipped doll pixels, semantic material maps, icon, world sprites and font records:
+
+```sh
+/tmp/toy-town-conversion/bin/python -W error apps/porthole/games/toy-town-life/tools/toytown_art.py --convert-backgrounds
+python3 -W error apps/porthole/games/toy-town-life/tools/toytown_art.py --check
+```
+
+The first command requires **Pillow==12.3.0** in the isolated environment described above. Background dimensions, independent 64-color palettes, RGB565 conversion and packed six-bit runtime format are unchanged (240×240, displayed at 480×480). `--convert-source` remains the explicit full reconversion path; it is unnecessary for a background-only update. On this replacement, exact old/new JSON record equality was verified for all four dolls including materials, all 28 world sprites, all three fonts and the launcher icon. Every one of the five scene records changed; total runtime asset size remains 569,682 bytes. Converted background-only previews are preserved in [background-previews](../../../docs/toy-town-life/quiet-backgrounds/background-previews/). These show the illustrations at 480px; they are separate from observed emulator gameplay captures. Normal generation writes the `assets.png` contact sheet under `build/art/toy-town-life/`.

@@ -71,6 +71,13 @@ choices, imprecise fingers, alternative paths, replay, exit and resume. Record
 confusion before trying to recover; never consult a solution to hide a blocker.
 Judge whether this child could understand and enjoy play without adult coaching.
 
+Keep the ordinary player goal separate from coverage requirements. Record where
+the persona would voluntarily stop before continuing to finish the test checklist;
+coverage-driven persistence is not evidence of enjoyment or attention span.
+Maintain an explicit gesture and interruption matrix: ordinary save/leave/resume
+and process restart are different checks. Mark untested cells as gaps instead of
+claiming general robustness from a completed story.
+
 Return mechanics, pacing and boredom findings as well as visual/input defects.
 Suggest improvements to your own dispatch instructions if the persona, coverage
 or reporting was inadequate. Ask the owner for game fixes, then replay the
