@@ -50,7 +50,9 @@ class Game : public App {
   Kid kids_[MAX_PROFILES] = {};
   int nKids_ = 0, me_ = -1;
   Save save_{};
-  bool dirty_ = false, newBest_ = false, recorded_ = false;
+  bool dirty_ = false, recorded_ = false;
+  uint8_t newBest_ = 0;            // BEST_RACE / BEST_LAP bits from this finish
+  uint32_t prevBestMs_ = 0;        // the kid's best race here before this finish (0: first time)
 
   tilt::Grav gravity() const { return {in_.gx, in_.gy, in_.gz}; }
   bool gripReady() const { return gripSet_ && controls::upright(gravity()); }   // a steady grip, still held like a wheel

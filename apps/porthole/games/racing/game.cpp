@@ -27,7 +27,7 @@ void Game::enter(const AppEnter& e) {
 }
 
 void Game::loadKids(const AppEnter& e) {
-  save_ = {}; dirty_ = newBest_ = false; nKids_ = 0; me_ = -1;
+  save_ = {}; dirty_ = false; newBest_ = 0; nKids_ = 0; me_ = -1;
   for (int i = 0; i < e.n && nKids_ < MAX_PROFILES; i++) {
     Kid& k = kids_[nKids_];
     k = {};
@@ -42,6 +42,7 @@ void Game::loadKids(const AppEnter& e) {
 
 // Once per finish: the kid's own record for this track, kept only when it improves.
 void Game::recordFinish() {
+  prevBestMs_ = save_.best[track_].raceMs;
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
   dirty_ = dirty_ || newBest_;
   if (me_ >= 0) kids_[me_].best[track_] = save_.best[track_];
@@ -80,7 +81,7 @@ void Game::go(Screen s) {
 
 void Game::startRace() {
   start(race_, TRACK[track_], seed_ + ++runs_);   // every run is fresh: inventory, timers and rivals reset
-  steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = newBest_ = false;
+  steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = false; newBest_ = 0;
   go(Screen::Race);
 }
 
@@ -205,7 +206,7 @@ void Game::render() {
   v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity()); v.gripHeld = controls::held(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
   paint::Row rows[MAX_PROFILES];
-  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_;
+  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_;
   paint::draw(v);
 }
 

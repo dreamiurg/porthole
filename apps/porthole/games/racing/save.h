@@ -43,11 +43,13 @@ inline bool loadBlob(const void* data, size_t n, Save& out) {
   out = s;
   return true;
 }
-// Keep the better of each time; true when either improved.
-inline bool record(Best& b, uint32_t raceMs, uint32_t lapMs) {
-  bool better = false;
-  if (raceMs && (!b.raceMs || raceMs < b.raceMs)) { b.raceMs = raceMs; better = true; }
-  if (lapMs && (!b.lapMs || lapMs < b.lapMs)) { b.lapMs = lapMs; better = true; }
+// Keep the better of each time; says which improved (0 = neither), so a faster lap in a slower race is not called a
+// best race.
+enum : uint8_t { BEST_RACE = 1, BEST_LAP = 2 };
+inline uint8_t record(Best& b, uint32_t raceMs, uint32_t lapMs) {
+  uint8_t better = 0;
+  if (raceMs && (!b.raceMs || raceMs < b.raceMs)) { b.raceMs = raceMs; better |= BEST_RACE; }
+  if (lapMs && (!b.lapMs || lapMs < b.lapMs)) { b.lapMs = lapMs; better |= BEST_LAP; }
   return better;
 }
 }  // namespace racing

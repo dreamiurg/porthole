@@ -33,7 +33,8 @@ struct View {
   Leave leave = Leave::Restart;
   const Row* board = nullptr;   // this track's best times across every profile, fastest first
   int boardRows = 0;
-  bool newBest = false;         // this race beat the kid's own best race or lap here
+  uint8_t newBest = 0;          // BEST_RACE / BEST_LAP: what this finish improved on the kid's own record here
+  uint32_t prevBestMs = 0;      // the kid's best race here before this finish, for "+1.9" when slower
 };
 void draw(const View& v);
 const gfx::Sprite& icon();

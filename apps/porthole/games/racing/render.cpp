@@ -10,6 +10,7 @@
 #include "gfx565.h"
 #include "palette.h"
 #include "pictures.h"
+#include "save.h"
 
 // The look follows the approved reference boards (docs/superpowers/specs/porthole-racing/assets/reference/): Style 2
 // panels 2A-2D and the four-track showcase. Pictures come from tools/pictures.py, the font and road colors from
@@ -375,12 +376,26 @@ void hud(const View& v) {
 void banner(int y, const char* s, int scale, uint32_t color) {
   outlined(240 - textWidth(s, scale) / 2, y, s, scale, color);
 }
+void clock(char* out, size_t n, uint32_t ms) {   // m:ss.t
+  snprintf(out, n, "%u:%02u.%u", (unsigned)(ms / 60000), (unsigned)(ms / 1000 % 60), (unsigned)(ms / 100 % 10));
+}
+// The time to beat on this track: the record holder's, or the kid's own; false when nobody has a time yet.
+bool toBeat(const View& v, char* line, size_t n) {
+  if (!v.boardRows) return false;
+  char t[16];
+  clock(t, sizeof t, v.board[0].raceMs);
+  if (v.board[0].me) snprintf(line, n, "Your record %s", t);
+  else snprintf(line, n, "To beat: %s %s", v.board[0].name, t);
+  return true;
+}
 void callouts(const View& v) {
   const Race& r = *v.race;
   if (r.phase == Phase::Countdown) {
     static const char* C[] = {"3", "2", "1"};
     const uint32_t i = r.ms / 1000;
     banner(150, C[i < 3 ? i : 2], 8, GOLD);
+    char line[48];   // the time to beat again on a Replay, which skips the grip page
+    if (toBeat(v, line, sizeof line)) outlined(240 - textWidth(line, 2) / 2, 232, line, 2, GOLD);
   } else if (r.raceMs < 700) banner(150, "GO!", 8, GREEN);
   if (r.calloutMs) banner(170, r.playerLap >= LAPS ? "Final lap" : "Lap 2", 4, CREAM);
   if (v.resumeMs) banner(160, "Ready", 5, GOLD);
@@ -389,9 +404,6 @@ void callouts(const View& v) {
 }
 
 // ---- pages
-void clock(char* out, size_t n, uint32_t ms) {   // m:ss.t
-  snprintf(out, n, "%u:%02u.%u", (unsigned)(ms / 60000), (unsigned)(ms / 1000 % 60), (unsigned)(ms / 100 % 10));
-}
 void track(int i, int x, int y, int w, int h) {   // a track's own sky and skyline in a box
   const art::Theme& t = art::THEME[i];
   fill(x, y, w, h, t.skyLow);
@@ -433,7 +445,7 @@ void howToPage(const View& v) {
   text(176, 182, "Grab boosts", 2, CREAM);
   text(176, 206, "and rockets", 2, CREAM);
   centered(240, 246, "Finish 3 laps", 2, CREAM);
-  centered(240, 280, "Hold 1/3 to pause", 2, GOLD);
+  centered(240, 280, "Hold 1/3 at the top to pause", 2, GOLD);
   button(BACK, "Back", true);
   button(NEXT, "Next", true);
 }
@@ -446,13 +458,8 @@ void calibratePage(const View& v) {
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
   wheelPreview(v.steer, v.track, 162);
   centered(240, 252, "Turn right: car goes right", 2, DIM);
-  if (v.boardRows) {   // the time to beat on this track, before the kid starts
-    char t[16], line[48];
-    clock(t, sizeof t, v.board[0].raceMs);
-    if (v.board[0].me) snprintf(line, sizeof line, "Your record %s", t);
-    else snprintf(line, sizeof line, "To beat: %s %s", v.board[0].name, t);
-    centered(240, 288, line, 2, GOLD);
-  }
+  char line[48];   // the time to beat on this track, before the kid starts
+  if (toBeat(v, line, sizeof line)) centered(240, 288, line, 2, GOLD);
   button(BACK, "Back", true);
   button(NEXT, "Go", v.gripReady);
 }
@@ -461,7 +468,7 @@ void pausePage(const View& v) {
   if (v.gripLost && !v.gripHeld) heading(46, "Hold like a wheel", 2, GOLD);
   else heading(48, "Paused", 3, ORANGE);
   button(RESUME, "Resume", v.gripHeld);
-  button(RECENTER, "Recenter", true);
+  button(RECENTER, "New grip", true);
   button(RESTART, "Restart", true);
   button(TRACKS_BTN, "Tracks", true);
   button(HOME_BTN, "Home", true);
@@ -482,7 +489,14 @@ void resultsPage(const View& v) {
   banner(80, ordinal(r.place), 5, GOLD);
   char t[16], line[48];
   clock(t, sizeof t, r.car[PLAYER].finishMs);
-  snprintf(line, sizeof line, v.newBest ? "%s  New best!" : "Your time %s", t);
+  // Said plainly for a six-year-old: a best of their own is not beating a sibling's record.
+  const uint32_t mine = r.car[PLAYER].finishMs;
+  const bool top = v.boardRows && v.board[0].me && v.board[0].raceMs == mine;
+  if (v.newBest & BEST_RACE) snprintf(line, sizeof line, "%s  %s", t, top && v.boardRows > 1 ? "Track record!" : "Your best yet!");
+  else if (v.newBest & BEST_LAP) snprintf(line, sizeof line, "%s  Best lap yet!", t);
+  else if (v.prevBestMs && mine > v.prevBestMs)
+    snprintf(line, sizeof line, "%s  (+%u.%u)", t, (unsigned)((mine - v.prevBestMs) / 1000), (unsigned)((mine - v.prevBestMs) / 100 % 10));
+  else snprintf(line, sizeof line, "Your time %s", t);
   centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
   centered(240, 166, "Best times", 2, DIM);
   for (int i = 0; i < v.boardRows; i++) {

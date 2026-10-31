@@ -295,9 +295,9 @@ void saveBlob() {
   assert(!loadBlob(&bad, sizeof bad, back));
   assert(!loadBlob(&s, sizeof s - 4, back));
   Best b{};
-  assert(record(b, 100000, 32000) && b.raceMs == 100000);
+  assert(record(b, 100000, 32000) == (BEST_RACE | BEST_LAP) && b.raceMs == 100000);
   assert(!record(b, 101000, 33000) && b.raceMs == 100000 && b.lapMs == 32000);   // slower: kept
-  assert(record(b, 0, 31000) && b.raceMs == 100000 && b.lapMs == 31000);         // a better lap alone counts
+  assert(record(b, 102000, 31000) == BEST_LAP && b.raceMs == 100000 && b.lapMs == 31000);   // a lap, not a race
 }
 
 // Three kids share the board: everyone's best on the track, fastest first, this kid's row marked; a slower race
