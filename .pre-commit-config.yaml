@@ -25,7 +25,11 @@ repos:
         args: [--branch, main]
       - id: check-added-large-files
         args: [--maxkb=500]
-        exclude: \.(ttf|png|bmp)$  # art sources and fonts are big by nature; text hooks skip binaries on their own
+        exclude: \.(ttf|png|bmp)$|^hardware/grip/(stl/.*\.stl|source/.*\.glb)$  # art, fonts, grip meshes are big by nature
+      - id: check-added-large-files
+        name: check for added large files (grip meshes)
+        args: [--maxkb=12000]
+        files: ^hardware/grip/(stl/.*\.stl|source/.*\.glb)$
       - id: detect-private-key
 
   - repo: https://github.com/gitleaks/gitleaks

@@ -39,3 +39,16 @@ tap anywhere, so a thumb must reach the glass while both hands are on the grips.
 
 - Thumb reach and grip size for ages 5-11 are estimates.
 - 0.8 mm engagement and 2.8% strain are rules of thumb; the snap test print decides.
+
+## v3 (same day): Meshy handles, exact centre
+
+The v1 shape read as crude, so the handles now come from a Meshy multi-image-to-3D of the ChatGPT
+"Yoke Pro" concept (`hardware/grip/source/meshy_yoke_v2.glb`). `hardware/grip/build_grip_blender.py`
+(run in Blender) keeps only Meshy's handles and bottom bar and replaces the centre with exact geometry:
+the snap cradle from `grip_v1.py`, two rounded spokes, and a pad to the bar. 215 x 129 x 25 mm, 277 cm3.
+The puck is taken out to charge, so the grip has no USB access.
+
+Prototypes before the full print (about 3.5 h at standard settings):
+- Fit: `hardware/case/stl/v1.2/puck_lid.stl` + `hardware/grip/stl/snap_test.stl`.
+- Ergonomics: `hardware/grip/stl/ergo_gauge.stl`, the real right handle plus a 2.6 mm outline of the rest
+  with a ring the puck drops into: span, thumb reach to the screen, handle girth.
