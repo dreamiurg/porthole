@@ -1,0 +1,113 @@
+# Rally's adaptive rivals: a win raises the kid's level on that track (by two after a runaway: the fixture's wins
+# lead all race), a loss from 1..3 drops it to 0 and from 4..9 to -2, the level survives a reboot, belongs to one kid
+# and one track,
+# a never-raced track starts one below the kid's best (inside 0..3), and the level stays inside its range. Finishes
+# come from the dbg fixtures (reachability), so this is a regression check, not evidence of how a race feels.
+reset
+tilt 0 1000 0
+profile Zoe 9
+app racing
+wait 600
+expect level=0
+dbg lastlap
+wait 5500
+expect-screen race_results
+expect place=1
+expect level=2
+# Replay: a second win
+tap 52 111
+wait 4000
+dbg lastlap
+wait 5500
+expect place=1
+expect level=4
+# Replay: a loss from 4..9 drops to -2
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect-screen race_results
+expect place=4
+expect level=-2
+# Replay: a win after the loss
+tap 52 111
+wait 4000
+dbg lastlap
+wait 5500
+expect place=1
+expect level=0
+tap 80 140
+wait 1500
+reboot
+wait 600
+tap 80 67
+wait 900
+app racing
+wait 600
+# Desert Canyon keeps Zoe's level after the reboot; never-raced Snow Track starts one below it, never below 0
+tap 53 52
+wait 900
+expect level=0
+tap 54 123
+wait 900
+tap 53 95
+wait 900
+expect track=2
+expect level=0
+# another kid starts fresh on the same track
+reboot
+wait 600
+profile Sam 6
+app racing
+wait 600
+tap 53 52
+wait 900
+expect level=0
+# the range holds at both ends
+tap 106 124
+wait 900
+tap 106 124
+wait 4000
+dbg level 18
+dbg lastlap
+wait 5500
+expect place=1
+expect level=18
+tap 52 111
+wait 4000
+dbg level -16
+dbg lastplace
+wait 5500
+expect place=4
+expect level=-16
+# the difficulty chip on the track cards: tap to cycle, saved for this kid, a fixed setting leaves the level alone
+tap 108 112
+wait 900
+expect-screen race_tracks
+expect mode=Auto
+ui-check race_tracks-mode
+tap 102 130
+wait 600
+expect mode=Easy
+expect race_level=-8
+expect level=-16
+snap ra_mode_easy
+tap 102 130
+wait 600
+expect mode=Normal
+tap 102 130
+wait 600
+expect mode=Hard
+tap 102 130
+wait 600
+expect mode=Auto
+tap 102 130
+wait 600
+expect mode=Easy
+# Home and back: the setting is Sam's own and stays
+tap 54 130
+wait 900
+app racing
+wait 600
+expect-screen race_tracks
+expect mode=Easy

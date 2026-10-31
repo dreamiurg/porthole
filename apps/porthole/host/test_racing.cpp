@@ -59,7 +59,7 @@ bool apart(const ui::Box& a, const ui::Box& b) {
 void geometry() {
   using namespace paint;
   assert(inside(PLACE, 2) && apart(PLACE, LAP));   // the place is shown, never tapped
-  const ui::Box pages[][6] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, HOME},
+  const ui::Box pages[][6] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, MODE_CHIP},
                               {BACK, NEXT, BACK, NEXT, BACK, NEXT},
                               {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP},
                               {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN},
@@ -283,17 +283,19 @@ void finishAndReplay() {
   assert(r.g.wantsHome());
 }
 
-// The save: a sealed blob loads back; a wrong crc, size or magic is ignored (no times, never half a record); only
-// a better time replaces one.
+// The save: a sealed blob loads back (older ones: saveMigration); a wrong crc, size or magic
+// is ignored (no times, never half a record); only a better time replaces one.
 void saveBlob() {
   Save s{};
   s.best[2] = {95000, 30100};
+  s.level[2] = -5; s.level[3] = 3; s.mode = HARD;
   seal(s);
   Save back{};
   assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
+  assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3 && back.mode == HARD);
   Save bad = s; bad.best[2].raceMs = 1;
   assert(!loadBlob(&bad, sizeof bad, back));
-  assert(!loadBlob(&s, sizeof s - 4, back));
+  assert(!loadBlob(&s, sizeof s - 4, back));   // a v2 blob cut to v1's size is not a v1 blob
   Best b{};
   assert(record(b, 100000, 32000) == (BEST_RACE | BEST_LAP) && b.raceMs == 100000);
   assert(!record(b, 101000, 33000) && b.raceMs == 100000 && b.lapMs == 32000);   // slower: kept
@@ -321,15 +323,82 @@ void leaderboard() {
   assert(r.g.takeSave(&data, &len, true) && len == sizeof(Save) && !r.g.takeSave(&data, &len, true));
   Save mine{};
   assert(loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  assert(mine.level[0] == -2 && mine.level[1] == 0 && mine.level[3] == 0);   // fourth: down two; unraced: never below 0
   gfx::textLogEnabled = true; gfx::textLogReset();
   r.frame();
   gfx::textLogEnabled = false;
   for (int i = 0; i < gfx::textLogCount; i++) assert(inside({gfx::textLog[i].x, gfx::textLog[i].y, gfx::textLog[i].w, gfx::textLog[i].h}, 1));
   r.tap(paint::REPLAY);
-  r.g.debugCmd("lastplace");   // the same short fixture: no better, so no new save
+  r.g.debugCmd("lastplace");   // the same short fixture: no better time, but the level moved, so a save
   r.wait(5200);
-  assert(!r.g.takeSave(&data, &len, true));
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  assert(mine.level[0] == -4 && mine.level[1] == 0);
+  r.g.debugCmd("level -16");
+  assert(r.g.takeSave(&data, &len, true));   // the fixture's level is saved
+  r.g.debugCmd("lastplace");   // at the floor a loss changes nothing: nothing to save
+  r.wait(5200);
+  assert(r.g.race().level == LEVEL_MIN && !r.g.takeSave(&data, &len, true));
+  r.g.debugCmd("level 99");   // clamped to the top; a runaway win there stays there
+  r.g.debugCmd("lastlap");
+  r.wait(5200);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == LEVEL_MAX);
+  assert(mine.level[1] == LEVEL_SEED_MAX && mine.level[3] == LEVEL_SEED_MAX);   // a new track still starts gently
   r.g.debugPrint();
+}
+
+// The difficulty chip cycles Auto, Easy, Normal, Hard and back, saving at once. A fixed setting races at its own
+// level and leaves the adaptive levels alone; the setting is the kid's own, back on the next entry.
+void modes() {
+  static const Profile all[2] = {{0, "Zoe", 0, 9, 0}, {1, "Sam", 1, 6, 0}};
+  Save zoe{};
+  zoe.mode = EASY; zoe.level[0] = 5; zoe.best[0] = {91000, 30000};
+  seal(zoe);
+  const SaveSlot slots[2] = {{&zoe, sizeof zoe}, {nullptr, 0}};
+  Rig r;
+  r.g.enter(AppEnter{&all[0], all, slots, 2, 1000000, r.ms, false});
+  r.toRace(0);
+  assert(r.g.race().level == EASY_LEVEL);   // Zoe's own setting
+  r.wait(500);
+  r.g.debugCmd("lastlap");   // a win on Easy: a record, but her adaptive level stays 5
+  r.wait(5200);
+  const void* data = nullptr; size_t len = 0;
+  Save mine{};
+  assert(r.g.screen() == Game::Screen::Results && r.g.race().place == 1);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == EASY);
+  r.tap(paint::RESULT_TRACKS);
+  const uint8_t order[] = {NORMAL, HARD, AUTO, EASY};
+  for (uint8_t want : order) {
+    r.tap(paint::MODE_CHIP);
+    assert(r.g.saveUrgent());   // checkpointed at once, not on the 5 s cadence
+    assert(r.g.screen() == Game::Screen::Tracks && r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.mode == want);
+  }
+  r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP);   // Hard
+  r.g.debugCmd("lastplace");
+  assert(r.g.race().level == HARD_LEVEL[0]);
+  r.wait(5200);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == HARD);
+  Rig sam;   // Sam has no save: Auto, at his own level
+  sam.g.enter(AppEnter{&all[1], all, slots, 2, 1000000, sam.ms, false});
+  sam.toRace(0);
+  assert(sam.g.race().level == 0);
+  sam.g.debugPrint();
+}
+
+// Older and newer blobs: a v1 blob (before levels) loads with every level 0 and Auto; a setting this firmware does
+// not know loads as Auto.
+void saveMigration() {
+  Save s{}, back{};
+  s.level[2] = -5; s.mode = MODES;
+  seal(s);
+  assert(loadBlob(&s, sizeof s, back) && back.mode == AUTO && back.level[2] == -5);
+  struct V1 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; uint32_t crc; } v1 = {SAVE_MAGIC, 1, 44, {}, 0};
+  static_assert(sizeof(V1) == SAVE_V1_SIZE, "the shipped v1 layout");
+  v1.best[1] = {88000, 28000};
+  v1.crc = os::crc32(&v1, sizeof v1 - 4);
+  Save old{};
+  old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
+  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == AUTO);
+  for (int8_t l : old.level) assert(l == 0);
 }
 
 // Every glyph drawn on every page stays on the glass.
@@ -375,7 +444,9 @@ int main() {
   finishAndReplay();
   textOnGlass();
   saveBlob();
+  saveMigration();
   leaderboard();
+  modes();
   puts("test_racing: ok");
   return 0;
 }

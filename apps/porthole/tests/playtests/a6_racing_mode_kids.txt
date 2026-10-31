@@ -1,0 +1,54 @@
+# Rally's Rivals chip belongs to one kid and survives a reboot: Sam's Easy never shows up for Zoe, Zoe's Hard
+# never shows up for Sam, and both come back after a restart. From the pass-4 black-box playtest
+# (docs/racing/adaptive-playtest/README.md), which checked the same thing by hand.
+reset
+tilt 0 1000 0
+profile Zoe 9
+profile Sam 6
+app racing
+wait 600
+expect-screen race_tracks
+expect mode=Auto
+# Sam taps the chip once: Easy
+tap 102 130
+wait 600
+expect mode=Easy
+# Home, the launcher's home button, then Zoe
+tap 54 130
+wait 900
+expect-screen launcher
+tap 80 13
+wait 900
+tap 80 55
+wait 900
+app racing
+wait 600
+expect-screen race_tracks
+expect mode=Auto
+ui-check race_tracks-zoe
+# Zoe cycles to Hard
+tap 102 130
+wait 600
+tap 102 130
+wait 600
+tap 102 130
+wait 600
+expect mode=Hard
+# the shell writes a game's save at most every 5 s: give it the time, a reboot is a power cut
+wait 6000
+reboot
+wait 600
+tap 80 81
+wait 900
+app racing
+wait 600
+expect mode=Easy
+snap a6_sam_easy_after_reboot
+reboot
+wait 600
+tap 80 55
+wait 900
+app racing
+wait 600
+expect mode=Hard
+snap a6_zoe_hard_after_reboot

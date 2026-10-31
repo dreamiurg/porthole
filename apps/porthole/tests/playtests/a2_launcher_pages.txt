@@ -22,7 +22,7 @@ snap lp2_page2
 tap 80 104
 wait 600
 expect-screen race_tracks
-tap 80 132
+tap 54 130
 wait 600
 expect-screen launcher
 snap lp3_back_on_page2

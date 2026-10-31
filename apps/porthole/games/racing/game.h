@@ -21,6 +21,7 @@ class Game : public App {
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
   bool takeSave(const void** data, size_t* len, bool allowed) override;
+  bool saveUrgent() const override { return urgent_; }
   bool wantsHome() override { const bool w = home_; home_ = false; return w; }
   void leave() override {}
   const char* screenName() const override;
@@ -50,7 +51,7 @@ class Game : public App {
   Kid kids_[MAX_PROFILES] = {};
   int nKids_ = 0, me_ = -1;
   Save save_{};
-  bool dirty_ = false, recorded_ = false;
+  bool dirty_ = false, recorded_ = false, urgent_ = false;   // urgent_: a setting change, checkpointed at once
   uint8_t newBest_ = 0;            // BEST_RACE / BEST_LAP bits from this finish
   uint32_t prevBestMs_ = 0;        // the kid's best race here before this finish (0: first time)
 
@@ -70,6 +71,8 @@ class Game : public App {
   void debugFixture(const char* cmd);
   void loadKids(const AppEnter& e);
   void recordFinish();
+  void seedLevels();
+  int raceLevel() const;   // the level this kid's next race on this track runs at
   int board(paint::Row out[MAX_PROFILES]) const;
 };
 }  // namespace racing

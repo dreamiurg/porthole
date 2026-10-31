@@ -2,6 +2,7 @@
 #include <math.h>
 
 namespace racing {
+static_assert(sizeof LEVEL_SHIFT == TRACKS && sizeof LEVEL_FLOOR / sizeof LEVEL_FLOOR[0] == TRACKS, "one per track");
 namespace {
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 uint32_t down(uint32_t v) { return v > STEP_MS ? v - STEP_MS : 0; }
@@ -119,12 +120,22 @@ float aroundCars(const Race& r, int i, float line) {   // never sit in the back 
   }
   return line;
 }
+// Low levels only: a rival with the kid close behind it in its lane moves half a road out of the way, the closer
+// the lower the level (up to 16 m), so a struggling kid can get past.
+float courtesy(const Race& r, int i, float line) {
+  if (r.level > LEVEL_COURTESY) return line;
+  const int reach = 2 * (LEVEL_COURTESY + 1 - r.level);
+  const Car& p = r.car[PLAYER];
+  const float gap = r.car[i].dist - p.dist;
+  if (gap <= 0 || gap >= (reach < 16 ? reach : 16) || fabsf(p.x - line) >= 0.4f) return line;
+  return p.x + (p.x > 0 ? -0.5f : 0.5f);
+}
 float rivalLine(Race& r, int i) {
   Car& c = r.car[i];
   if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % 4 == 0 ? 1200 : 0; }
   float line = (i - 2) * 0.45f + curve(*r.track, c.dist + 30) * 0.35f;
   if (c.wobbleMs > 500) line += (c.lineMs & 1) ? 0.9f : -0.9f;   // a seeded line error, then recovery
-  return clampf(aroundCars(r, i, aroundHazards(r, i, line)), -0.85f, 0.85f);
+  return clampf(courtesy(r, i, aroundCars(r, i, aroundHazards(r, i, line))), -0.85f, 0.85f);
 }
 float rivalSteer(Race& r, int i) {
   Car& c = r.car[i];
@@ -155,6 +166,7 @@ void drive(Race& r, int i, float steer) {
   slide(r, c, steer, ice);
   obstacles(r, i);
   if (i == PLAYER) { pickups(r, prev); lapClock(r, prev, c.dist); }
+  else if (c.refill && crossed(*r.track, prev, c.dist, 0)) c.boosts = MAX_INVENTORY;
   ramps(r, i, prev);
   const float line = LAPS * r.track->length;
   if (prev < line && c.dist >= line) {   // interpolate the crossing inside this step: a stable, fair order
@@ -217,8 +229,21 @@ void tick(Race& r) {
     c.wobbleMs = down(c.wobbleMs); c.lineMs = down(c.lineMs);
   }
   for (Puff& p : r.puff) p.ms = down(p.ms);
+  r.rivalBoostMs = down(r.rivalBoostMs);
   r.cooldownMs = down(r.cooldownMs); r.calloutMs = down(r.calloutMs); r.hitMs = down(r.hitMs);
   r.fullMs[0] = down(r.fullMs[0]); r.fullMs[1] = down(r.fullMs[1]);
+}
+// A rival spends a charge only while chasing (the kid a little ahead of it), never as a hidden head start, and never
+// right after another rival's boost.
+void rivalBoosts(Race& r) {
+  for (int i = 1; i < CARS && !r.rivalBoostMs; i++) {
+    Car& c = r.car[i];
+    const float gap = r.car[PLAYER].dist - c.dist;
+    if (!c.boosts || c.boostMs || c.finished || gap <= CHASE_MIN || gap >= CHASE_MAX) continue;
+    c.boosts--;
+    c.boostMs = BOOST_MS;
+    r.rivalBoostMs = RIVAL_BOOST_GAP_MS;
+  }
 }
 void actions(Race& r, const Controls& in) {
   Car& p = r.car[PLAYER];
@@ -233,7 +258,18 @@ void laps(Race& r) {
     r.taken = 0;   // every gate comes back on the next lap
   }
   r.place = (uint8_t)placeOf(r, PLAYER);
+  if (r.place == 1) r.firstMs += STEP_MS;
   if (r.car[PLAYER].finished) r.phase = Phase::Finished;   // the place is locked here, once
+}
+// The ladder in tune.h, one step a level: slower below 0, then charges, pace, and charges back each lap.
+void ladder(Car& c, int i, int level, int rung, float floor) {
+  constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
+  if (level < 0) c.top *= slowdown(level, floor);   // keyed on the kid's level: below 0 rivals are slower on every track
+  for (int k = 0; k < rung; k++) {
+    if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
+    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
+    else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
+  }
 }
 }  // namespace
 
@@ -260,10 +296,30 @@ float terrainCap(const Track& t, float dist, float x, bool* onIce) {
   return cap;
 }
 
-void start(Race& r, const Track& t, uint32_t seed) {
+int nextLevel(int level, int place, bool runaway) {
+  int next = level - 2;
+  if (place == 1) next = level + (runaway ? 2 : 1);
+  else if (level > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
+  else if (level > LEVEL_GENTLE) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
+  else if (level > 0) next = 0;
+  return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
+}
+bool runaway(const Race& r) { return r.firstMs * RUNAWAY_OF >= r.raceMs * RUNAWAY_LED; }
+int clampLevel(int level, int track) {   // past the track's top the ladder has no rungs left
+  const int top = LEVEL_MAX - LEVEL_SHIFT[track];
+  return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;
+}
+
+void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
+  const int track = (int)(&t - TRACK), shift = LEVEL_SHIFT[track];
+  r.level = (int8_t)clampLevel(level, track);
+  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
+  // easy rivals after the same number of losses on every track.
+  const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
+  r.rung = (int8_t)(r.level + (fade > 0 ? shift * fade / LEVEL_SHIFT_FADE : 0));
   static const float TOP[CARS] = {1.0f, 0.92f, 0.97f, 1.0f};
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];
@@ -272,6 +328,7 @@ void start(Race& r, const Track& t, uint32_t seed) {
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
+    if (i != PLAYER) ladder(c, i, r.level, r.rung, LEVEL_FLOOR[track]);
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;
@@ -288,6 +345,7 @@ void step(Race& r, const Controls& in) {
   r.raceMs += STEP_MS;
   tick(r);
   actions(r, in);
+  rivalBoosts(r);
   for (int i = 0; i < CARS; i++) {
     if (r.car[i].finished) continue;   // finished rivals keep their order and leave the road
     drive(r, i, i == PLAYER ? in.steer : rivalSteer(r, i));
