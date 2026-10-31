@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "render.h"
 #include "ghost.h"
 #include "pie.h"
@@ -362,22 +363,5 @@ void draw(const View& v) {
  home(v.homeHold); mask();
  gfx565::expandIndexed3(gfx::fb,COLORS);
 }
-namespace {
-uint8_t iconPixel(int x,int y) {
- int dx=x-12,dy=y-13;
- if(std::abs(x-12)<=1&&std::abs(y-3)<=2) return C_LEAF;
- bool eye=(x==7||x==8||x==15||x==16);
- if(std::abs(y-11)<=1&&eye) return C_NAVY;
- if(y==17&&std::abs(x-12)<=3) return C_NAVY;
- if(dx*dx*49+dy*dy*81<=3969) return C_ORANGE;
- if(dx*dx*64+dy*dy*100<=6400) return C_PLUM;
- return C_T;
-}
-}
-const gfx::Sprite& icon() {
- // Shell icons share its indexed palette; in-game art uses our own RGB565 palette.
- static uint8_t px[24*24]; static gfx::Sprite sprite{24,24,px};
- for(int y=0;y<24;++y) for(int x=0;x<24;++x) px[y*24+x]=iconPixel(x,y);
- return sprite;
-}
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 } }  // namespace pumpkin::paint

@@ -1,6 +1,8 @@
-# The daily cap counts every game: once today's 25 minutes are used up (here in Pets Club, then `dbg bedtime`),
+# The daily cap counts every game: once today's 30 minutes are used up (here in Pets Club, then `dbg bedtime`),
 # Biscuit's tile on the launcher leads to the rest screen, "Back tomorrow". After local midnight Biscuit opens again.
 newgame Solo Rex
+# Declared fixture: disable the play window to isolate this existing night/day behavior.
+dbg anytime
 wait 2400
 expect-screen home
 wait 2000

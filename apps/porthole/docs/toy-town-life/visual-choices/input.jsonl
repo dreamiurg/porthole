@@ -1,0 +1,119 @@
+{"shot": "f00-start.png"}
+{"tap": [40, 53]}
+{"tap": [120, 125]}
+{"tap": [34, 56]}
+{"tap": [37, 102]}
+{"tap": [80, 145]}
+{"shot": "f01-launcher.png"}
+{"tap": [109, 135]}
+{"tap": [109, 135]}
+{"tap": [109, 135]}
+{"shot": "f02-toy-launcher.png"}
+{"tap": [80, 80]}
+{"shot": "f03-title.png"}
+{"tap": [109, 116]}
+{"shot": "f04-doll-fashion.png"}
+{"tap": [100, 61]}
+{"shot": "f05-doll-plush.png"}
+{"tap": [57, 106]}
+{"shot": "f06-doll-clay.png"}
+{"tap": [101, 106]}
+{"shot": "f07-doll-mini.png"}
+{"tap": [57, 61]}
+{"tap": [80, 143]}
+{"shot": "f08-hair-loose.png"}
+{"down": [66, 120]}
+{"shot": "f09-hair-pressed.png"}
+{"up": [0, 0]}
+{"shot": "f10-hair-buns.png"}
+{"tap": [94, 120]}
+{"shot": "f11-hair-pony.png"}
+{"gesture": [[66, 120], [80, 90]]}
+{"shot": "f12-hair-drag-cancel.png"}
+{"tap": [80, 90]}
+{"shot": "f13-hair-preview-mistap.png"}
+{"tap": [128, 79]}
+{"shot": "f14-skin-base.png"}
+{"tap": [66, 120]}
+{"shot": "f15-skin-warm.png"}
+{"tap": [94, 120]}
+{"shot": "f16-skin-tan.png"}
+{"tap": [122, 120]}
+{"shot": "f17-skin-deep.png"}
+{"tap": [128, 79]}
+{"shot": "f18-fabric-plain.png"}
+{"tap": [66, 120]}
+{"shot": "f19-fabric-stripe.png"}
+{"tap": [94, 120]}
+{"shot": "f20-fabric-plaid.png"}
+{"tap": [128, 79]}
+{"shot": "f21-shoes-base.png"}
+{"tap": [66, 120]}
+{"shot": "f22-shoes-rose.png"}
+{"tap": [94, 120]}
+{"shot": "f23-shoes-cocoa.png"}
+{"tap": [128, 79]}
+{"shot": "f24-extras-none.png"}
+{"tap": [66, 120]}
+{"shot": "f25-extras-glasses.png"}
+{"tap": [94, 120]}
+{"shot": "f26-extras-flower.png"}
+{"tap": [128, 79]}
+{"shot": "f27-color-base.png"}
+{"tap": [66, 120]}
+{"shot": "f28-color-teal.png"}
+{"tap": [94, 120]}
+{"shot": "f29-color-lilac.png"}
+{"tap": [122, 120]}
+{"shot": "f30-color-gold.png"}
+{"tap": [128, 79]}
+{"shot": "f31-name-emi.png"}
+{"tap": [66, 120]}
+{"shot": "f32-name-pip.png"}
+{"tap": [94, 120]}
+{"shot": "f33-name-kai.png"}
+{"tap": [122, 120]}
+{"shot": "f34-name-lulu.png"}
+{"tap": [128, 79]}
+{"shot": "f35-material-doll.png"}
+{"tap": [66, 120]}
+{"shot": "f36-material-plush.png"}
+{"tap": [94, 120]}
+{"shot": "f37-material-clay.png"}
+{"tap": [122, 120]}
+{"shot": "f38-material-mini.png"}
+{"tap": [128, 79]}
+{"shot": "f39-dye-base.png"}
+{"tap": [66, 120]}
+{"shot": "f40-dye-dark.png"}
+{"tap": [94, 120]}
+{"shot": "f41-dye-gold.png"}
+{"tap": [122, 120]}
+{"shot": "f42-dye-ink.png"}
+{"tap": [128, 79]}
+{"shot": "f43-hair-loop.png"}
+{"tap": [54, 25]}
+{"shot": "f44-back-from-style.png"}
+{"tap": [80, 143]}
+{"shot": "f45-style-exit-launcher.png"}
+{"tap": [80, 80]}
+{"shot": "f46-style-reentry.png"}
+{"tap": [106, 26]}
+{"shot": "f47-home.png"}
+{"tap": [52, 116]}
+{"shot": "f48-enter-resume.png"}
+{"tap": [106, 26]}
+{"shot": "f49-home.png"}
+{"tap": [80, 18]}
+{"shot": "f50-doll-pause.png"}
+{"tap": [108, 116]}
+{"shot": "f51-town.png"}
+{"tap": [52, 116]}
+{"shot": "f52-map.png"}
+{"tap": [108, 116]}
+{"shot": "f53-pack.png"}
+{"tap": [52, 116]}
+{"shot": "f54-packed-notebook.png"}
+{"tap": [80, 18]}
+{"tap": [108, 116]}
+{"shot": "f55-resting-home.png"}

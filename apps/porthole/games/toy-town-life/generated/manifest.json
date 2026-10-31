@@ -1,0 +1,28 @@
+{
+  "sources": {
+    "scene-atlas.png": "816cff64976297863fed9a7b2a23f115ea0baf5ed8ff6cc62eb60ec1ea8b01a6",
+    "doll-atlas.png": "ba71687d7ab72c7f911b1f4106b59b7d0ed161dd3f167ffb872f6cec7d17e26d",
+    "park.png": "a0942d2b3df574f18e8cfeea16e8a4c3b92899f795bdfbd8ed392bd18f9b5c1e",
+    "fonts/OpenSans-Semibold.ttf": "aa3b0ef53db12e3d45094030cac0e69d384e44cc5978643dd4390041cad546e2",
+    "fonts/OpenSans-Bold.ttf": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323",
+    "../../os/palette.h": "8bf833d02941525fbcc232576963e389592712aebc93b1fc635f7ee600e84631"
+  },
+  "conversion_pillow": "12.3.0",
+  "conversion_cache_sha256": "68ac771045a0d436382a5cebc4ed41879d6216163e36b977bbe8a3fa764a94e6",
+  "runtime_bytes": 311833,
+  "scene_resolution": [
+    240,
+    240
+  ],
+  "doll_resolution": [
+    96,
+    160
+  ],
+  "palette_colors": 64,
+  "runtime_source_sha256": "bf524d720f03f792c1c8321f9a83e1da43b921823d01ae4b91871645c68d2e2e",
+  "parts": {
+    "art_part_0.inc": "75fba90808433db0a9cbfc36814814d7908007ade4cdbb3c989b80fb1f301a14",
+    "art_part_1.inc": "36b243930e9f49f70fa6b0fbc29973f078ec58f9af1b25ba4a54333b9d468cd3",
+    "art_part_2.inc": "93803891c64d8396960598545da181fc9b677fdf296dcbd5304261713e008c43"
+  }
+}

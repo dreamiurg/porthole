@@ -12,7 +12,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
-  limits_ = shell::loadLimits(st); adminPage_ = 0;
+  limits_ = shell::loadLimits(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
   uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
   light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
   adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
@@ -42,11 +42,13 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
-    &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateApp};
+    &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
+    &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
-  now_ = nowSec; ms_ = ms; in_ = in;
+  now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
+  if (guardScreenTime()) return;
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
 }
@@ -56,7 +58,8 @@ void Shell::render() {
     &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
-    &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawApp};
+    &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
+    &Shell::drawSysZone, &Shell::drawSysZoneSearch, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
@@ -85,10 +88,25 @@ void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
   holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's last digit) is where "No" is safe
 }
-bool Shell::restingNow() const { return shell::restLeft(prof_.rec[active_], now_, limits_) > 0; }
+bool Shell::restingNow() const {
+  return !allowance_.active(ms_) && (!shell::windowAllows(window_, now_) || shell::restLeft(prof_.rec[active_], now_, limits_) > 0);
+}
+void Shell::enforceCurrentBudget() {
+  if (allowance_.active(ms_)) return;
+  const uint32_t before = rec().restUntil;
+  shell::enforceBudget(rec(), now_, limits_);
+  if (rec().restUntil != before) shell::saveRecord(*st_, prof_, active_);
+}
+bool Shell::guardScreenTime() {
+  if (active_ < 0 || (screen_ != SH_APP && screen_ != SH_LAUNCHER && screen_ != SH_LIGHT)) return false;
+  enforceCurrentBudget();
+  if (!restingNow()) return false;
+  if (screen_ == SH_APP) closeApp();
+  go(SH_REST); return true;
+}
 void Shell::select(int id) {
   active_ = id; page_ = 0;
-  shell::recharge(rec(), now_);
+  shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
   go(restingNow() ? SH_REST : SH_LAUNCHER);
 }
@@ -123,10 +141,12 @@ static bool sameName(const char* a, const char* b) {   // "pets-club" matches "P
 bool Shell::openApp(const char* name) {
   if (active_ < 0 || screen_ == SH_APP) return false;
   for (int k = 0; k < nApps_; k++)   // by its label or its store (which never changes: scripts outlive a renamed label)
-    if (sameName(apps_[k]->name(), name) || sameName(apps_[k]->store(), name)) { openIdx(k); gate_.closed = false; return true; }
+    if (sameName(apps_[k]->name(), name) || sameName(apps_[k]->store(), name)) { openIdx(k); gate_.closed = false; return screen_ == SH_APP; }
   return false;
 }
 void Shell::openIdx(int k) {
+  enforceCurrentBudget();
+  if (restingNow()) { go(SH_REST); return; }
   app_ = apps_[k]; opened_[k] = true; page_ = launcher::pageOf(nApps_, k);   // back from a game: its page
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
   for (int id; (id = prof_.nth(n)) >= 0; n++) {
@@ -151,7 +171,9 @@ void Shell::closeApp() {
 }
 void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = (ms_ - playTickMs_) / 1000; playTickMs_ += dt * 1000; lastTick_ = now_;
-  if (shell::play(rec(), now_, dt, activity_.idleMs(ms_) >= shell::IDLE_MS, limits_)) { closeApp(); go(SH_REST); return; }
+  const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
+  if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
+  else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
   if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
 }
 
@@ -334,12 +356,12 @@ void Shell::drawDelete() {
 }
 
 // ---------------------------------------------------------------- launcher: back or who is playing (tap: switch), the games, mute
-// The layout (shell/launcher.h) shows page_ of the games: all of them up to three, else a page and the arrows to the rest.
+// The layout (shell/launcher.h) shows page_ of the games, six to a page, and the arrows to the rest.
 using launcher::HEADER;
 using launcher::LIGHT;
 static_assert(sizeof SPR_LIGHTS / sizeof SPR_LIGHTS[0] == shell::LIGHT_COUNT, "one icon per shell::Light, in its order");
 bool Shell::muteButton() {
-  return ui::iconButton(in_, launcher::MUTE_X, launcher::muteY(nApps_), rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
+  return ui::iconButton(in_, launcher::MUTE_X, launcher::MUTE_Y, rec().muted ? SPR_SOUND_OFF : SPR_SOUND_ON, rec().muted ? C_DKGRAY : C_GREEN);
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
@@ -357,7 +379,7 @@ void Shell::updateLauncher() {
 }
 void Shell::drawLauncher() {
   clear(C_SKY);
-  rect(0, launcher::grassY(nApps_), 160, 160 - launcher::grassY(nApps_), C_LEAF);
+  rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
   ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
   text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
@@ -367,6 +389,13 @@ void Shell::drawLauncher() {
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
+  for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
+    const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
+    const bool began = in_.downX >= b.x && in_.downX < b.x + b.w && in_.downY >= b.y && in_.downY < b.y + b.h;
+    if (!in_.down || !began || !in_.hit(b.x, b.y, b.w, b.h)) continue;   // only a press that started on it
+    ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
+    textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
+  }
   if (page_ > 0) drawPageArrow(false);
   if (page_ + 1 < launcher::pages(nApps_)) drawPageArrow(true);
   muteButton();
@@ -375,10 +404,8 @@ void Shell::drawLauncher() {
 void Shell::drawAppTile(int k, int i, int m) {
   const ui::Box b = launcher::tile(i, m);
   const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
-  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);
+  ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // the game's picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
-  const launcher::Name nm = launcher::name(apps_[k]->name(), i, m, nApps_);   // the sim asserts nm.fits for every game
-  for (int j = 0; j < nm.lines; j++) textShadow(nm.at[j].x, nm.at[j].y, nm.text[j], C_NAVY, C_WHITE);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
@@ -390,7 +417,7 @@ void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triang
 // ---------------------------------------------------------------- brightness (the launcher's sun): three suns, big to small,
 // and Auto (a sun and a moon) under them. A tap picks, saves and goes back to the launcher, already in the new light;
 // the level picked now is the mint one.
-static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::tile(l - 1, 3); }
+static ui::Box lightBox(int l) { return l == shell::LIGHT_AUTO ? launcher::LIGHT_AUTO : launcher::sun(l - 1); }
 void Shell::setLight(shell::Light l) {
   if (l == light_) return;   // no flash write for the same level
   light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);
@@ -429,9 +456,18 @@ void Shell::drawRest() {
   blitScaled(SPR_AVATARS[rec().avatar % NUM_AVATARS], 60, 24, 2);
   textCentered(106, 20 - (int)((ms_ / 400) % 3), "z", C_YELLOW);
   textCentered(80, 70, rec().name, C_YELLOW);
-  if (shell::playedToday(rec(), now_, limits_)) {   // bedtime is part of the game: no countdown to watch
+  const shell::RestHint hint = shell::restHint(rec(), window_, now_, limits_);
+  if (hint == shell::REST_DAY) {
     textCentered(80, 80, "played today.", C_WHITE);
     textCentered(80, 94, "Back tomorrow!", C_LTGRAY);
+  } else if (hint == shell::REST_WINDOW) {
+    textCentered(80, 80, "is taking a break.", C_WHITE);
+    textCentered(80, 94, "Come back at", C_LTGRAY);
+    const int hour = window_.startMinute / 60, minute = window_.startMinute % 60;
+    char when[20];
+    if (minute) snprintf(when, sizeof when, "%d:%02d %s", hour % 12 ? hour % 12 : 12, minute, hour < 12 ? "AM" : "PM");
+    else snprintf(when, sizeof when, "%d %s", hour % 12 ? hour % 12 : 12, hour < 12 ? "AM" : "PM");
+    textCentered(80, 106, when, C_WHITE);
   } else {
     textCentered(80, 80, "is resting.", C_WHITE);
     uint32_t left = shell::restLeft(rec(), now_, limits_);
@@ -465,7 +501,7 @@ bool Shell::clearPin(int id) {
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
-                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock"};
+                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
@@ -482,9 +518,11 @@ void Shell::debugPrint() {
          (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
          (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
   printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
+  printf("[hours window_on=%u window_start=%u window_end=%u allow_min=%lu]\n", (unsigned)window_.enabled, (unsigned)window_.startMinute, (unsigned)window_.endMinute, (unsigned long)allowance_.minutesLeft(ms_));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
+  if (!strcmp(cmd, "anytime")) { window_.enabled = 0; shell::savePlayWindow(*st_, window_); }   // declared host test fixture
   if (!strcmp(cmd, "light")) setLight((shell::Light)((light_ + 1) % shell::LIGHT_COUNT));   // the sim's `b` key
   if (active_ >= 0) {
     if (!strcmp(cmd, "tired")) rec().playSec = (uint32_t)limits_.sessionMinutes * 60;

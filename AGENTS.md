@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. Rally (`games/racing/`; design: `docs/superpowers/specs/porthole-racing/`) is an arcade racer steered like a wheel over four tracks. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
@@ -35,7 +35,7 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    namespace `"crago"` for exactly this reason.
 4. **Kids 5-11 are the audience.** Failure is gentle, nothing dies, nothing is
    lost. No personal data: no real names, no analytics. Nothing sent over the network carries anything
-   about the kid. The only traffic is the daily firmware update check, its download, and a clock sync;
+   about the kid. The only traffic is the daily firmware update check, its download, a clock sync, and an optional public-IP time-zone guess to ipapi.co;
    while Radar is open, home rounded to ~1 km goes to adsb.fi every 5 s and the callsigns it sees to
    adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a

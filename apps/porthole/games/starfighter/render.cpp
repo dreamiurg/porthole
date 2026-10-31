@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "render.h"
 #include "assets.h"
 #include "gfx565.h"
@@ -6,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <new>
 
 namespace starfighter::paint {
 namespace {
@@ -15,8 +17,10 @@ enum Color : uint8_t {
   DEEP_BLUE, BLUE, AZURE, ICE, DARK_RED, RED, ORANGE, GOLD, CREAM,
   DARK_GREEN, GREEN, LIME, SKIN_DARK, SKIN_SHADE, SKIN, VIOLET
 };
-// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM.
-uint16_t scene[160*160];
+// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM. Heap, not static: on the
+// board this lands in PSRAM, so internal RAM stays free for the wireless update's screen, wifi and TLS.
+// ponytail: PSRAM reads cost a little per frame; allocate internal RAM on enter() and free on leave() if fps drops.
+uint16_t* scene = nullptr;   // allocated by draw(), the only way in
 constexpr uint16_t color(Color c) { return rgb(art::COLORS[c]); }
 void pixel(int x,int y,uint16_t c) {
   if(unsigned(x)<160&&unsigned(y)<160) scene[y*160+x]=c;
@@ -415,26 +419,10 @@ void flight(const View& v) {
   if(r.stage==Stage::Torpedo) torpedo(r);
   player(r); effects(r); transition(r); hud(r); holdExit(v.holdPermille);
 }
-// Launcher icons must use the shell's indexed sprite contract. Map only this
-// original craft's pixels to that surface; in-game colors stay independent.
-const gfx::Sprite& launcherIcon() {
-  static uint8_t px[32*32];
-  static bool ready=false;
-  static const gfx::Sprite s{32,32,px};
-  if(!ready) {
-    constexpr uint8_t map[]={C_NAVY,C_NAVY,C_SLATE,C_SLATE,C_BLUE,C_LTGRAY,C_LTGRAY,C_WHITE,
-      C_NAVY,C_BLUE,C_BLUE,C_SKY,C_RED,C_RED,C_ORANGE,C_YELLOW,C_CREAM,
-      C_DKGREEN,C_GREEN,C_MINT,C_BROWN,C_TAN,C_PEACH,C_PLUM};
-    for(int y=0;y<32;++y) for(int x=0;x<32;++x) {
-      uint8_t c=art::FIGHTER.px[(y*57/32)*61+x*61/32];
-      px[y*32+x]=c==255?C_T:map[c];
-    }
-    ready=true;
-  }
-  return s;
-}
 }  // namespace
 void draw(const View& v) {
+  if(!scene) scene=new (std::nothrow) uint16_t[160*160]();   // first draw, never at static init: PSRAM joins the heap later
+  if(!scene) return;
   switch(v.page) {
     case Page::Title: title(v); break;
     case Page::Calibrate: calibration(v); break;
@@ -443,5 +431,5 @@ void draw(const View& v) {
   }
   expand();
 }
-const gfx::Sprite& icon() { return launcherIcon(); }
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }  // namespace starfighter::paint

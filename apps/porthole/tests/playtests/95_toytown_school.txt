@@ -1,0 +1,319 @@
+# Doll styling, exact-page restart, three-slot planning and every School outcome.
+# Supplemental scripted regression; final visible-input playthrough is recorded separately.
+reset
+profile Sam 8
+app toy-town
+wait 600
+expect-screen toytown_title
+ui-check
+snap tt95_title
+tap 109 117
+wait 600
+expect-screen toytown_doll
+ui-check
+tap 102 64
+wait 600
+expect-screen toytown_doll
+expect doll=1
+tap 80 142
+wait 600
+expect-screen toytown_style
+tap 66 120
+wait 600
+expect-screen toytown_style
+tap 129 80
+wait 600
+expect-screen toytown_style
+tap 66 120
+wait 600
+expect-screen toytown_style
+expect hair=1
+expect skin=1
+# Independent hair color is appended after the original eight categories.
+tap 30 80
+wait 600
+tap 30 80
+wait 600
+tap 95 120
+wait 600
+expect category=8
+expect hairColor=2
+ui-check
+snap tt95_style
+# Power-cycle immediately after a cosmetic decision; reopen the exact wardrobe page.
+reboot
+wait 600
+tap 80 67
+wait 600
+app toy-town
+wait 600
+expect-screen toytown_title
+tap 51 117
+wait 600
+expect-screen toytown_style
+expect doll=1
+expect hair=1
+expect skin=1
+expect hairColor=2
+tap 106 26
+wait 600
+expect-screen toytown_doll
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 109 117
+wait 600
+expect-screen toytown_hub
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_map
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_pack
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_pack
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 51 117
+wait 600
+expect-screen toytown_pack
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 51 117
+wait 600
+expect-screen toytown_pack
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 51 117
+wait 600
+expect-screen toytown_pack
+expect bag=7
+snap tt95_bag_full
+tap 80 142
+wait 600
+expect-screen toytown_school_intro
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_school_listen
+ui-check
+expect listened=1
+tap 51 117
+wait 600
+expect-screen toytown_school_plan
+ui-check
+# Pause to Town, then resume the exact pending plan.
+tap 80 19
+wait 600
+expect-screen toytown_pause
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_school_plan
+# Leave to the shell and reopen; pending choices and cosmetics are preserved.
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 80 142
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_school_plan
+expect active=1
+expect doll=1
+expect hair=1
+expect skin=1
+expect hairColor=2
+tap 80 142
+wait 600
+expect-screen toytown_school_other
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_school_listen
+tap 51 117
+wait 600
+expect-screen toytown_school_plan
+tap 109 117
+wait 600
+expect-screen toytown_school_result
+expect outcome=2
+ui-check
+snap tt95_cue_cards
+tap 51 117
+wait 600
+expect-screen toytown_school_repair
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_school_repair
+expect repaired=1
+tap 109 117
+wait 600
+expect-screen toytown_school_repair
+expect repaired=2
+tap 80 142
+wait 600
+expect-screen toytown_memory
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_memory_edit
+tap 51 117
+wait 600
+expect-screen toytown_memory_edit
+tap 109 117
+wait 600
+expect-screen toytown_memory_edit
+ui-check
+snap tt95_memory_edit
+tap 80 19
+wait 600
+expect-screen toytown_pause
+tap 80 142
+wait 600
+expect-screen launcher
+app toy-town
+wait 600
+tap 51 117
+wait 600
+expect-screen toytown_memory_edit
+tap 80 142
+wait 600
+expect-screen toytown_memory
+snap tt95_memory
+tap 51 117
+wait 600
+expect-screen toytown_stop
+expect count=1
+expect recorded=1
+expect active=0
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_book
+ui-check
+snap tt95_scrapbook
+tap 51 117
+wait 600
+expect-screen toytown_book
+tap 109 117
+wait 600
+expect-screen toytown_book
+tap 80 142
+wait 600
+expect-screen toytown_hub
+# Replay without a notebook: borrowing paper remains available.
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 51 117
+wait 600
+expect-screen toytown_pack
+expect bag=6
+tap 80 142
+wait 600
+expect-screen toytown_school_intro
+tap 109 117
+wait 600
+expect-screen toytown_school_plan
+tap 109 117
+wait 600
+expect-screen toytown_school_paper
+ui-check
+tap 51 117
+wait 600
+expect-screen toytown_school_result
+expect outcome=3
+tap 109 117
+wait 600
+expect-screen toytown_memory
+tap 51 117
+wait 600
+expect-screen toytown_stop
+expect count=2
+# Sitting beside Mina has a distinct consequence.
+tap 109 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 80 142
+wait 600
+expect-screen toytown_school_intro
+tap 109 117
+wait 600
+expect-screen toytown_school_plan
+tap 51 117
+wait 600
+expect-screen toytown_school_result
+expect outcome=1
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_memory
+tap 51 117
+wait 600
+expect-screen toytown_stop
+expect count=3
+# Theo can coordinate after hanging pictures, with Mina waiting.
+tap 109 117
+wait 600
+expect-screen toytown_hub
+tap 51 117
+wait 600
+expect-screen toytown_map
+tap 109 117
+wait 600
+expect-screen toytown_pack
+tap 80 142
+wait 600
+expect-screen toytown_school_intro
+tap 80 142
+wait 600
+expect-screen toytown_school_other
+tap 51 117
+wait 600
+expect-screen toytown_school_result
+expect outcome=4
+ui-check
+tap 109 117
+wait 600
+expect-screen toytown_memory
+ui-check
+tap 80 142
+wait 600
+expect-screen toytown_stop
+expect count=3
+expect recorded=1
+expect active=0
+tap 51 117
+wait 600
+expect-screen launcher
+sheet 95_toytown_school

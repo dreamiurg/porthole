@@ -4,13 +4,13 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter and Kingdom.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town and Rally.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
 ## Pumpkin Hide & Seek: a cozy Halloween game
 
-Open **Pumpkin** on the launcher's second page. Tap to start, hold the device comfortably,
+Open **Pumpkin** (the jack-o'-lantern) on the launcher's first page. Tap to start, hold the device comfortably,
 then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
 table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
 then out the door on the left. A warning announces each of Grandma's moves: full or fast
@@ -30,7 +30,7 @@ Design and state contract: [game brief](games/pumpkin-hide-seek/AGENTS.md).
 
 ## Starfighter: bank, battle, fly the trench
 
-Open **Star Fighter** on the launcher's third page. Hold the puck upright like a small
+Open **Star Fighter** on the launcher's second page. Hold the puck upright like a small
 steering wheel, keep it still, and calibrate your comfortable grip. Bank left and right
 to steer; tap the glass to fire a pair of red lasers. The accelerometer reads that bank:
 spinning the puck flat on a table cannot steer it.
@@ -52,9 +52,34 @@ keys to bank and click the glass to fire.
 [Runtime screenshot tour and verification](docs/starfighter/README.md).
 Design and state contract: [game brief](games/starfighter/AGENTS.md).
 
+## Rally: steer the puck like a wheel
+
+Open **Rally** on the launcher's second page and pick a track: Desert Canyon, Industrial Ruins,
+Snow Track or Night Run. Hold the puck upright like a steering wheel and tap **Go**; turning it
+clockwise steers right. The car speeds up by itself. Grab cyan bolts and orange rockets on the
+road, then tap **Boost** (3 o'clock) or **Rocket** (9 o'clock) to use one; each holds up to
+three. Ramps hop you over trouble. Bumps, rocks and rockets only slow a car down, and every
+racer finishes all three laps, even in fourth. Hold the **1/3 Hold** chip to pause.
+
+![Rally on its four tracks](docs/racing/preview.png)
+
+Art: [Codex images matched to the approved reference boards](docs/racing/art.md) ·
+Design and state contract: [game brief](games/racing/AGENTS.md)
+
+## Toy Town Life: a tiny town, your own stories
+
+Open **Toy Town** on the launcher's second page. Create a doll, pack a bag, help at
+School, compare pretend lunch budgets at the Cafe, and find a missing notebook
+in the Park. Every profile keeps its own outfit, exact outing page and scrapbook.
+All styling is free; there are no attendance rewards, needs decay or social scores.
+
+[Gameplay and emulator guide](docs/toy-town-life/README.md) ·
+[Save contract](games/toy-town-life/AGENTS.md) ·
+[Native playthrough evidence](docs/toy-town-life/blackbox/README.md)
+
 ## Kingdom: Princess Pulverizer and the Living Kingdom
 
-Open **Kingdom** on the launcher's third page. Chapter One, **Trouble at Willowbrook**,
+Open **Kingdom** on the launcher's second page. Chapter One, **Trouble at Willowbrook**,
 is a complete, persistent story RPG for an advanced third-grade reader: explore six
 places with Lucas and Dribble, investigate the bridge and food shortage, and choose
 how to share the river. Forty authored encounters offer four resolutions with real
@@ -82,8 +107,8 @@ name, one of eight animal faces, an age (it picks the reading level) and an opti
 Every game keeps its progress per profile. From the launcher a kid can mute the buzzer for their
 profile, and the sun button beside their name sets how bright the board is for everyone: a big, middle or
 small sun (full, 65% or 40% backlight, always daylight colors and day scenes), or Auto (a sun and a moon: full
-backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 25 minutes a day across every game, then the board says "Back
-tomorrow" until midnight. Each player rests for 10 minutes after their session allowance (six minutes by default),
+backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 30 minutes a day across every game by default, then the board says "Back
+tomorrow" until local midnight. Each player rests for 10 minutes after their session allowance (15 minutes by default),
 even with only one profile. A minute without a touch or a move of the board does not count as play.
 A long press on a profile (after its code) deletes
 it and everything it made.
@@ -94,24 +119,41 @@ for readability, with larger headings and code digits. Set an optional four-digi
 (digits 0–9), change it, or remove it there. Setting a code asks you to enter it twice;
 once enabled, it is required each time you open the system menu, including after a restart.
 It is separate from the kids' profile codes.
-In the same Admin screen, **Reset all limits** clears daily play usage, session usage and
-rest timers for every profile after confirmation. Everyone gets a fresh allowance immediately,
-with the usual limits counting again from there. Profiles, codes and game progress are kept.
 To recover a forgotten player code, open **Player PINs**, select the player, and confirm
 **Reset PIN**. Their next login will not require a PIN. Only that player's PIN is removed;
 their limits, game progress, the other players' PINs and the admin code are kept.
 
-On Admin page 2 (the right arrow), **Play limits** sets the session and daily allowances
-in minutes for everyone. Tap +/- to change by one minute, or hold to change by ten; tap
-**Save** to apply. Going back discards edits. Changing a limit keeps time already played.
-The defaults are six minutes per session and 25 minutes per day, with a ten-minute break
-after each session. Both allowances can be set from 1 to 1440 minutes.
+In **Admin → Screen time**, all play controls stay together:
 
-**Clock** shows local date/time and Wi-Fi sync status. Set and save the **UTC offset** for
-local midnight (default UTC; adjust it when daylight saving changes), then use **Sync now**
-to correct time immediately. With a saved Wi-Fi network, sync also runs automatically after
-boot, periodically, and during successful network connections. Offline, the device keeps
-using its RTC. Clock corrections do not add time to play counters.
+- **Session:** 15 minutes by default, followed by a ten-minute break.
+- **Daily total:** 30 minutes per player across all games, resetting at local midnight.
+- **Play window:** enabled by default from 2:00 p.m. through 7:30 p.m. Turn it off or
+  change both times, including an overnight window. At the cutoff, a running game saves
+  and closes; the child sees when they can return.
+- **Reset usage:** after confirmation, clears daily/session usage and rest timers for
+  everyone. Settings, profiles, codes and game progress stay. The play window still applies.
+- **Allow 30 min:** after confirmation, temporarily overrides all three restrictions for
+  everyone. Play still counts. End it early in Screen time, or let it expire automatically;
+  restarting the device clears the override.
+
+Session and daily allowances range from 1 to 1440 minutes. Tap +/- for one minute or hold
+for ten, then **Save**; Back discards edits. Changing settings keeps time already played.
+Existing saved allowances survive firmware updates. Set an admin code to protect these
+controls; opening Admin alone does not grant extra play.
+
+**Clock**, on Admin page 2 (the right arrow), shows local time and Wi-Fi sync status. Named time zones handle daylight saving
+automatically, including offline. The initial zone is **Pacific (America/Los_Angeles)**.
+Automatic detection uses one HTTPS request to `ipapi.co/timezone/`. The service sees the
+connection's public IP; no Wi-Fi name, address, coordinates or player data are sent. If it fails,
+the last valid zone stays, and automatic mode retries after connectivity returns (at most
+once per six hours). A manual choice takes precedence over detection. VPNs can make
+the guess inaccurate, so parents can select the zone themselves.
+
+Use **Sync now** to correct the clock immediately. With saved Wi-Fi, time sync also runs
+after boot, periodically, and during successful connections. Offline, the device keeps
+using its RTC. Play duration and the temporary override use elapsed time, so clock
+corrections do not add play time. Physical RTC and live network behavior require testing
+on a board; the host emulator supplies simulated network results.
 
 ## Pets Club: a pixel puppy
 
@@ -238,7 +280,9 @@ make monitor                                 # serial log at 115200 baud
 ```
 
 On first boot the clock is set from the build time. To set it exactly, send `T<epoch>` over serial
-using local wall-clock seconds, e.g. `printf 'T%s\n' "$(date +%s)" > /dev/cu.usbmodemXXXX`.
+using local wall-clock seconds in the selected zone (the RTC stores UTC). For example, on a
+computer set to the same zone, `python3 -c 'import calendar,time; print("T" + str(calendar.timegm(time.localtime())))' > /dev/cu.usbmodemXXXX`.
+For normal use, prefer Wi-Fi time sync in Clock.
 
 ### Serial commands (115200 baud)
 

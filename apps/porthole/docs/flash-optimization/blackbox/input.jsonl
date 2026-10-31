@@ -1,0 +1,62 @@
+{"tap": [80, 68]}
+{"shot": "01-launcher.png"}
+{"tap": [80, 80]}
+{"shot": "02-biscuit-entry.png"}
+{"tap": [124, 125]}
+{"shot": "03-biscuit-home.png"}
+{"tap": [29, 129]}
+{"shot": "04-care.png"}
+{"tap": [96, 130]}
+{"shot": "05-library.png"}
+{"tap": [55, 60]}
+{"shot": "06-discoveries.png"}
+{"tap": [80, 83]}
+{"shot": "07-discovery-cover.png"}
+{"tap": [109, 132]}
+{"shot": "08-discovery-read.png"}
+{"tap": [109, 132]}
+{"shot": "09-discovery-next.png"}
+{"tap": [109, 132]}
+{"shot": "10-discovery-end.png"}
+{"tap": [109, 132]}
+{"shot": "11-kept.png"}
+{"tap": [51, 25]}
+{"tap": [51, 25]}
+{"shot": "12-return-home.png"}
+{"tap": [80, 12]}
+{"tap": [109, 135]}
+{"tap": [109, 135]}
+{"tap": [112, 80]}
+{"shot": "13-kingdom-title.png"}
+{"tap": [80, 116]}
+{"shot": "14-kingdom-start.png"}
+{"tap": [96, 137]}
+{"shot": "15-kingdom-begin.png"}
+{"tap": [110, 133]}
+{"shot": "16-kingdom-page2.png"}
+{"tap": [110, 133]}
+{"shot": "17-kingdom-page3.png"}
+{"tap": [110, 133]}
+{"shot": "18-kingdom-page4.png"}
+{"tap": [110, 133]}
+{"shot": "19-kingdom-page5.png"}
+{"tap": [110, 133]}
+{"shot": "20-kingdom-page6.png"}
+{"tap": [110, 133]}
+{"shot": "21-kingdom-page7.png"}
+{"tap": [110, 133]}
+{"shot": "22-kingdom-page8.png"}
+{"tap": [110, 133]}
+{"shot": "23-kingdom-choices.png"}
+{"tap": [80, 46]}
+{"shot": "24-kingdom-confirm.png"}
+{"tap": [110, 133]}
+{"shot": "25-kingdom-result.png"}
+{"tap": [110, 133]}
+{"shot": "26-kingdom-return.png"}
+{"tap": [50, 133]}
+{"shot": "27-kingdom-exit.png"}
+{"tap": [112, 80]}
+{"shot": "28-kingdom-resume-title.png"}
+{"tap": [96, 137]}
+{"shot": "29-kingdom-resumed.png"}
