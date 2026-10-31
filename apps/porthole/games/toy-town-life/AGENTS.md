@@ -17,6 +17,11 @@ its art and typography; do not borrow another game's visual assets.
 - Use recognizable places with separate NPCs, props and a moving customized
   doll, short named speech and specific picture buttons. The approved target is
   `docs/toy-town-life/scene-interface/approved-school-reference.png` under the app.
+  Background art follows `docs/toy-town-life/quiet-backgrounds/approved-reference.png`:
+  broad cel-painted shapes, restrained muted tones and quiet space behind actors.
+  Keep characters and useful objects clearer and more contrasty than scenery,
+  including while walking. Avoid fine foliage, flowers, woodgrain, paving and
+  dappled lighting that compete with small foreground sprites on the handheld.
   Keep the scene visible; do not restore the large prose panel. All five main
   School actions must retain actual illustrations above their complete labels.
   Tap-to-walk is a continuous floor interaction; named NPCs and Park landmarks
@@ -46,6 +51,9 @@ its art and typography; do not borrow another game's visual assets.
   Quantities are 0–3. An order needs food (sandwich or fruit), water and total at
   most ten. Compare trays freely; invalid orders keep the cart editable. Pretend
   coins never become a persistent balance or cosmetics gate.
+  State the sandwich-or-fruit and water request explicitly. The visible tray
+  opens its review (or completed result); walking and restored positions must
+  keep the doll clear of food and quantity labels.
 - Park: seed selects bench, fountain or path together with its matching last-seen
   report and ribbon clue. Wrong guesses can be revised and discussed with Nori.
 - An outing offers Keep memory, Add details or Skip. Details cycles the caption

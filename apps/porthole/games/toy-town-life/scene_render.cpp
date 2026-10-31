@@ -20,12 +20,6 @@ void frame(const ui::Box& b,bool down,bool selected=false) {
  gfx565::roundRect({b.x*3+6,b.y*3+6,b.w*3-12,b.h*3-15},8,down || selected ? MINT : PAPER);
 }
 bool held(const Input& in,const ui::Box& b) { return in.down && in.x>=b.x && in.x<b.x+b.w && in.y>=b.y && in.y<b.y+b.h; }
-int place(const State& s) {
- if(s.page>=SCHOOL_INTRO && s.page<=SCHOOL_REPAIR) return SCHOOL;
- if((s.page>=CAFE_INTRO && s.page<=CAFE_RESULT)||s.page==CAFE_QUANTITY) return CAFE;
- if(s.page>=PARK_INTRO && s.page<=PARK_FOUND) return PARK;
- return s.page<=PACK ? (int)HOME : (int)s.destination;
-}
 void schoolProps(const State& s) {
  art::prop(art::PICTURES,{366,164,59,83});
  if(s.schoolOutcome==4 || (s.repaired&1)) {
@@ -49,7 +43,8 @@ void parkEvidence(const State& s) {
   art::prop(art::NOTEBOOK,sceneui::notebook(s.variant));
 }
 void tray(const State& s) {
- art::prop(art::TRAY,{288,195,150,83});
+ const auto& b=sceneui::TRAY;
+ art::prop(art::TRAY,{b.x*3,b.y*3,b.w*3,b.h*3-1});
  for(int i=0;i<4;++i) if(s.cart[i]) {
   art::prop(art::SANDWICH+i,{293+i*33,205,32,32});
   char q[8]; snprintf(q,sizeof q,"x%u",s.cart[i]);
@@ -136,11 +131,12 @@ void Game::drawSceneCards() {
 void Game::drawScene() {
  if(!title_ && !pause_ && s_.page==SCHOOL_HANG) { drawDisplay(); return; }
  const State visual=rememberedScene(s_);
- const int p=title_ ? (int)HOME : place(visual);
+ const int p=title_ ? (int)HOME : sceneui::place(visual);
  art::background(title_ || s_.page==MAP ? 0 : p==HOME ? 1 : p+1);
  sceneHeader(visual,p,title_,pause_,heading_); sceneActors(visual,p);
  int x=visual.worldX,y=visual.worldY;
  if(walking_) { const int t=(int)(ms_-walkFrom_); x=walkX_+(targetX_-walkX_)*t/600; y=walkY_+(targetY_-walkY_)*t/600; }
+ x=sceneui::walkX(visual,x);
  art::walkingDoll(visual,{x*3-26,y*3-66,52,86},walking_ ? (int)(ms_-walkFrom_) : 0);
  if(p==PARK && visual.page>=PARK_INTRO && visual.page<=PARK_FOUND) parkEvidence(visual);
  if(p==SCHOOL && visual.schoolPaper) art::prop(art::PAPER,{x*3+12,y*3-28,26,23});

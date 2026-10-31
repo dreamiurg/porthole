@@ -15,6 +15,20 @@ inline ui::Box card(int i,int count) {
  const ui::Box b[]={{9,87,46,30},{57,87,46,30},{105,87,46,30},{37,119,40,28},{83,119,40,28}}; return b[i];
 }
 constexpr gfx565::Rect MINA_SPRITE={95,166,60,94}, THEO_SPRITE={318,166,60,94}, NORI_SPRITE={153,170,58,84};
+// Keep the doll's right edge clear of the tray, including its quantity badges.
+constexpr ui::Box TRAY={96,65,50,28};
+constexpr ui::Box TRAY_TOUCH={96,64,50,22};
+inline int place(const State& s) {
+ if(s.page==BOOK && s.count) return s.entries[s.bookIndex%s.count].place;
+ if(s.page>=SCHOOL_INTRO && s.page<=SCHOOL_REPAIR) return SCHOOL;
+ if((s.page>=CAFE_INTRO && s.page<=CAFE_RESULT)||s.page==CAFE_QUANTITY) return CAFE;
+ if(s.page>=PARK_INTRO && s.page<=PARK_FOUND) return PARK;
+ return s.page<=PACK ? (int)HOME : (int)s.destination;
+}
+constexpr int CAFE_WALK_MAX_X=(TRAY.x*3-26)/3;
+inline int walkX(const State& s,int x) {
+ return place(s)==CAFE && x>CAFE_WALK_MAX_X ? CAFE_WALK_MAX_X : x;
+}
 constexpr ui::Box MINA={31,55,24,30}, THEO={106,55,24,30};
 constexpr ui::Box NORI={49,56,24,28};
 constexpr ui::Box FRAMES[]={{43,59,24,22},{69,59,24,22},{95,59,24,22}};

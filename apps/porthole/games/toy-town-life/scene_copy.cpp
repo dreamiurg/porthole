@@ -35,7 +35,7 @@ void Game::describeScene() {
  }
  if(s_.page==CAFE_MENU) {
   for(int i=0;i<4;++i) snprintf(labels_[i],sizeof labels_[i],"%s\n%d coin%s",FOOD[i],PRICES[i],PRICES[i]==1 ? "" : "s");
-  snprintf(words_,sizeof words_,"Mina: Food and water, please.\nOur budget is 10 coins.");
+  snprintf(words_,sizeof words_,"Mina: Sandwich or fruit,\nplus water. Budget: 10 coins.");
  }
  if(s_.page==CAFE_QUANTITY) {
   snprintf(heading_,sizeof heading_,"%s",FOOD[s_.menuItem]);

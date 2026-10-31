@@ -1,5 +1,7 @@
 {
   "sources": {
+    "scene-quiet-atlas.png": "654d304a57d8a3082d45839a16a605ace55788ce7919a6ccc7449619e2ac50c7",
+    "street-quiet.png": "c68bf6c8c9d1e5de04d971711d0335bd666578096c922fef4844250f185581ab",
     "scene-atlas.png": "816cff64976297863fed9a7b2a23f115ea0baf5ed8ff6cc62eb60ec1ea8b01a6",
     "doll-atlas.png": "ba71687d7ab72c7f911b1f4106b59b7d0ed161dd3f167ffb872f6cec7d17e26d",
     "park.png": "a0942d2b3df574f18e8cfeea16e8a4c3b92899f795bdfbd8ed392bd18f9b5c1e",
@@ -14,7 +16,7 @@
     "../../os/palette.h": "8bf833d02941525fbcc232576963e389592712aebc93b1fc635f7ee600e84631"
   },
   "conversion_pillow": "12.3.0",
-  "conversion_cache_sha256": "d98e3560096a259478c96f53697f274c8159d8752222af3bc079ab65427fb85d",
+  "conversion_cache_sha256": "e88d7342191fa698dbaaf5042658c631f4de152e105dde3f7a5ad2e0ae0b35c4",
   "runtime_bytes": 569682,
   "scene_resolution": [
     240,
@@ -25,13 +27,13 @@
     160
   ],
   "palette_colors": 64,
-  "runtime_source_sha256": "1c47383b03b0ff1452b233528b6b61e8b9017481b3797b22c00952bf06631ec1",
+  "runtime_source_sha256": "3a8c74a2be5002dd86385eca7870bc816213fcedded9ed11ced6aabd689d078f",
   "parts": {
-    "art_part_0.inc": "bae93e8cb9a37cab290e4170b03347033aa7ccef3ef4a2f201d7f00192a71b64",
-    "art_part_1.inc": "504408d4aca6d630f6339edf4911cc277a280054d3b89957735086175d08770e",
-    "art_part_2.inc": "72a74e0f7914d5e809dd2de98f32e085c3e622dd186de36ba3dbbe6d67e07f9f",
-    "art_part_3.inc": "dec2a2536c2ba85acdea13eed4e2fc0433522ff748bcd8581de2acc62e3e64aa",
-    "art_part_4.inc": "b8028ff4ea65df7d9efeef2e58979587c98f82d36212da021eb97628cdb0fd71",
-    "art_part_5.inc": "ba3de773d63c283cdfd7d525527d66c484b30554d355f74ec9f8059adf0c4104"
+    "art_part_0.inc": "df26921b9c527e7f080ee3bfb2b6d2fedc1253d4f44a2efb995e66777bea6c8d",
+    "art_part_1.inc": "2106e067c37b017f0dd1f4b90965bab63076a2bfa404a9844557751c95106354",
+    "art_part_2.inc": "0fa70e912db7202baebd392841b19139700b581e6d7e8b235f11a98df8333a3d",
+    "art_part_3.inc": "c3f060166bc4cde90868772909e189e661a0fd50dd5f3b6ef02ab32efa55d0e3",
+    "art_part_4.inc": "67ae4abec15aba285b793b3a9e648ed45d685bf9dcffd5d7de8c0c2f6720bf4d",
+    "art_part_5.inc": "ca5552aa17948bac13a77a99343121dc4724f7c055c68c78d246c54d4bb74086"
   }
 }

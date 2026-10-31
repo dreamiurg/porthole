@@ -22,6 +22,8 @@ from PIL import Image, ImageDraw, ImageFont, __version__ as PILLOW_VERSION
 ROOT = Path(__file__).resolve().parents[1]
 PREVIEW = ROOT.parents[1] / "build/art/toy-town-life"
 SOURCES = (
+    "scene-quiet-atlas.png",
+    "street-quiet.png",
     "scene-atlas.png",
     "doll-atlas.png",
     "park.png",
@@ -70,13 +72,12 @@ def quantized(image, count=64):
 
 
 def scenes():
-    atlas = Image.open(ROOT / "art/scene-atlas.png").convert("RGB")
-    # White divider is at x/y 624..630 in the 1254px original.
-    boxes = ((0, 0, 624, 624), (631, 0, 1254, 624), (0, 631, 624, 1254), (631, 631, 1254, 1254))
-    images = [atlas.crop(box) for box in boxes]
-    images.append(Image.open(ROOT / "art/park.png").convert("RGB"))
-    world = Image.open(ROOT / "art/scene-world-atlas.png").convert("RGB")
-    images[1:] = [world.crop(box) for box in boxes]
+    # Quiet production atlas has four exact equal quadrants, without a gutter.
+    world = Image.open(ROOT / "art/scene-quiet-atlas.png").convert("RGB")
+    half_x, half_y = world.width // 2, world.height // 2
+    boxes = ((0, 0, half_x, half_y), (half_x, 0, world.width, half_y), (0, half_y, half_x, world.height), (half_x, half_y, world.width, world.height))
+    images = [Image.open(ROOT / "art/street-quiet.png").convert("RGB")]
+    images += [world.crop(box) for box in boxes]
     return [image.resize((240, 240), Image.Resampling.LANCZOS) for image in images]
 
 
@@ -320,6 +321,25 @@ def convert_source():
     CACHE.write_bytes(zlib.compress(json.dumps(result, separators=(",", ":")).encode(), 9))
 
 
+def convert_backgrounds():
+    """Replace only backgrounds; retain shipped character, material and font records."""
+    if PILLOW_VERSION != CONVERSION_VERSION:
+        raise SystemExit(f"Background conversion requires Pillow=={CONVERSION_VERSION}.")
+    data = json.loads(zlib.decompress(CACHE.read_bytes()))
+    hashes = source_hashes()
+    backgrounds = {"scene-quiet-atlas.png", "street-quiet.png"}
+    for name, digest in hashes.items():
+        if name not in backgrounds and data["sources"].get(name) != digest:
+            raise SystemExit(f"Nonbackground source changed: {name}; refusing background-only conversion.")
+    images = []
+    for image in scenes():
+        pixels, palette = quantized(image)
+        images.append({"pixels": pixels, "palette": palette})
+    data["scenes"] = images
+    data["sources"] = hashes
+    CACHE.write_bytes(zlib.compress(json.dumps(data, separators=(",", ":")).encode(), 9))
+
+
 def converted():
     data = json.loads(zlib.decompress(CACHE.read_bytes()))
     if data["sources"] != source_hashes():
@@ -387,7 +407,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--convert-source", action="store_true", help="rebuild conversion cache with pinned Pillow==12.3.0")
+    parser.add_argument("--convert-backgrounds", action="store_true", help="replace only scene records using pinned Pillow==12.3.0")
     args = parser.parse_args()
+    if args.convert_source and args.convert_backgrounds:
+        parser.error("choose one conversion mode")
+    if args.convert_backgrounds:
+        convert_backgrounds()
     if args.convert_source:
         convert_source()
     data = converted()

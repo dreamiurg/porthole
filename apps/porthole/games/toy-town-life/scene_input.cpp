@@ -6,7 +6,8 @@ void Game::beginWalk(int x,int y) {
   const int t=(int)(ms_-walkFrom_);
   walkX_+=(targetX_-walkX_)*t/600; walkY_+=(targetY_-walkY_)*t/600;
  } else { walkX_=s_.worldX; walkY_=s_.worldY; }
- targetX_=x; targetY_=y; walkFrom_=ms_; walking_=true; ++look_;
+ walkX_=sceneui::walkX(s_,walkX_);
+ targetX_=sceneui::walkX(s_,x); targetY_=y; walkFrom_=ms_; walking_=true; ++look_;
 }
 void Game::stopWalk() {
  if(!walking_) return;
@@ -30,6 +31,9 @@ bool Game::overlayInput(int action) {
  return false;
 }
 bool Game::sceneDepart() {
+ if(((s_.page>=CAFE_INTRO && s_.page<=CAFE_RESULT) || s_.page==CAFE_QUANTITY) && ui::clicked(in_,sceneui::TRAY_TOUCH)) {
+  stopWalk(); go(s_.ordered ? CAFE_RESULT : CAFE_CART); return true;
+ }
  if(s_.page!=PACK && s_.page!=CAFE_MENU) return false;
  if(!ui::clicked(in_,sceneui::DEPART)) return false;
  if(s_.page==PACK) { start(s_,s_.destination); go(s_.page); }

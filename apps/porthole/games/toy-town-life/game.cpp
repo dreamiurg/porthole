@@ -20,13 +20,14 @@ const gfx::Sprite& Game::icon() const { return art::icon(); }
 void Game::enter(const AppEnter& e) {
  s_ = fresh(); const uint8_t id = e.who ? e.who->id : 0;
  for (int i=0;i<e.n;i++) if (e.all[i].id == id) load(e.saves[i].data,e.saves[i].len,s_);
+ s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX);
  ms_ = e.ms; in_ = {}; title_ = true; pause_ = home_ = false;
  buffers_[0] = buffers_[1] = nullptr; painted_[0] = painted_[1] = 0;
  walking_=false; displayTried_=false; walkX_=targetX_=s_.worldX; walkY_=targetY_=s_.worldY;
  destination_ = s_.destination == HOME ? (uint8_t)SCHOOL : s_.destination; changed();
 }
 void Game::changed() { dirty_ = true; ++look_; gate_.shown(ms_); describe(); }
-void Game::go(uint8_t p) { s_.page = p; if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; changed(); }
+void Game::go(uint8_t p) { s_.page = p; s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX); if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; changed(); }
 void Game::update(uint32_t, uint32_t ms, const Input& input) {
  ms_ = ms; in_ = input; gate_.filter(in_,ms);
  const bool overlay=title_ || pause_;

@@ -375,6 +375,55 @@ void movementInterruptionAndRetarget() {
   resumed.frame(false,0,0,1000);
   assert(resumed.game.state().worldY==74); // entering floor from outside cannot start movement
 }
+void cafeTrayTouchAndWalking() {
+  for(uint8_t page : {uint8_t(CAFE_INTRO),uint8_t(CAFE_MENU),uint8_t(CAFE_QUANTITY),uint8_t(CAFE_RESULT)}) {
+    State s=fixture(page,CAFE); s.ordered=page==CAFE_RESULT;
+    Player p; p.start(&s);
+    p.tap({121,79,2,2}); // physical (366,240): the visible tray, not the header button
+    assert(p.on(s.ordered ? CAFE_RESULT : CAFE_CART));
+    p.frame(false,0,0,1000);
+    assert(p.game.state().worldX==80 && p.game.state().worldY==80);
+  }
+  State s=fixture(CAFE_MENU,CAFE); Player p; p.start(&s);
+  p.frame(false,0,0,500); p.frame(true,122,80);
+  p.frame(true,80,55,40); p.frame(false,80,55); p.frame(false,0,0,1000);
+  assert(p.on(CAFE_MENU) && p.game.state().worldX==80); // canceled tray drag
+  p.tap({126,55,2,2}); // approach from the free floor above the tray
+  p.frame(false,0,0,1000);
+  assert(p.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+  assert(p.game.state().worldY==56);
+  p.tap({126,61,2,2}); // another floor tap cannot leave the doll over food
+  p.frame(false,0,0,250); p.press(sceneui::BACK);
+  assert(p.game.state().worldX<=sceneui::CAFE_WALK_MAX_X);
+  State saved=p.snapshot(); saved.worldX=122; saved.worldY=80;
+  Player restored; restored.start(&saved); // repair an older save parked on the tray
+  assert(restored.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+  restored.tap({126,55,2,2}); restored.frame(false,0,0,1000);
+  assert(restored.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+}
+void cafeResumeAfterHomeWalk() {
+  State s=fixture(CAFE_MENU,CAFE); Player p; p.start(&s);
+  p.tap(BACK); p.action(1); assert(p.on(HUB));
+  p.tap({121,79,2,2}); p.frame(false,0,0,1000);
+  assert(p.game.state().worldX==122 && p.game.state().worldPlace==HOME);
+  p.action(0); assert(p.on(CAFE_MENU));
+  assert(p.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+  p.tap({126,55,2,2}); p.frame(false,0,0,1000);
+  assert(p.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+  for(uint8_t page : {uint8_t(HUB),uint8_t(DOLL),uint8_t(STYLE)}) {
+    State legacy=fixture(CAFE_MENU,CAFE); legacy.page=page;
+    legacy.worldX=122; legacy.worldPlace=HOME;
+    Player resumed; resumed.start(&legacy);
+    assert(resumed.game.state().worldX==122); // Home and wardrobe remain unrestricted
+    if(page!=HUB) { resumed.tap(BACK); resumed.action(1); }
+    resumed.action(0); assert(resumed.on(CAFE_MENU));
+    assert(resumed.game.state().worldX==sceneui::CAFE_WALK_MAX_X);
+  }
+  for(int i=0;i<4;++i) {
+    const ui::Box card=sceneui::card(i,4);
+    assert(sceneui::TRAY_TOUCH.y+sceneui::TRAY_TOUCH.h+2<=card.y);
+  }
+}
 void explicitQuantityEditor() {
   State s=fixture(CAFE_MENU,CAFE); memset(s.cart,0,4);
   Player p; p.start(&s);
@@ -752,7 +801,7 @@ void cosmeticPixels() {
 } // namespace
 int main() {
   orderedCafeActor(); changeParkIdeaImmediately(); matchingEvidenceSurvivesApproach(); inspectedParkIdea(); scrapbookWorldUsesEntry(); schoolDisplayActivity(); arrangePicturesPreservesCreation(); displayPicturesAreVisible(); schoolRepairsBothOrders(); literalPracticeWithMina(); repairedPropsKeepBoth();
-  explicitSchoolScene(); explicitQuantityEditor(); sceneMovement(); movementInterruptionAndRetarget();
+  explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); sceneMovement(); movementInterruptionAndRetarget();
   identityAndSave(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
   cafeOrders(); cafeCompareAndFinish(); discoverParkInScene(); park(); interruptedPages(); personalizeDuringOuting();
   optionalMemory(); memoryEditResume();

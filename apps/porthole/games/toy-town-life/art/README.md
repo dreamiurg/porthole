@@ -121,3 +121,21 @@ paintings for hands-on School picture hanging: flowers, a rocket, and a rabbit.
 `FLOWER_PICTURE`, `ROCKET_PICTURE`, and `RABBIT_PICTURE` are contiguous prop IDs,
 with individually converted transparent sprites recognizable at 60×70px. The
 original stack of pictures remains a separate prop.
+
+## Quiet background replacement (2026-10-30)
+
+The user selected the second quiet Park concept ([approved reference](../../../docs/toy-town-life/quiet-backgrounds/approved-reference.png)). It was inspected as an art-direction reference, never pasted into runtime. Two new original Image Gen production sources replace all five backgrounds:
+
+- `street-quiet.png`: the standalone miniature village street.
+- `scene-quiet-atlas.png`: exact equal quadrants, without gutters: Home, School, Cafe, Park in reading order.
+
+Broad cel-painted shapes, muted local colors and large light untextured floors keep the independently rendered dolls readable. Foliage uses broad silhouettes, with no individual leaves or flowers. Park retains the bench at left, fountain at right and winding path in the middle; the School cork display stays at the right edge and the Cafe serving counter at the right behind the runtime tray. No actors, UI, text or loose gameplay props are baked into these sources. All older source PNGs remain intact.
+
+Background conversion is deliberately separate from full source conversion. It validates every existing nonbackground source hash and retains the exact shipped doll pixels, semantic material maps, icon, world sprites and font records:
+
+```sh
+/tmp/toy-town-conversion/bin/python -W error apps/porthole/games/toy-town-life/tools/toytown_art.py --convert-backgrounds
+python3 -W error apps/porthole/games/toy-town-life/tools/toytown_art.py --check
+```
+
+The first command requires **Pillow==12.3.0** in the isolated environment described above. Background dimensions, independent 64-color palettes, RGB565 conversion and packed six-bit runtime format are unchanged (240×240, displayed at 480×480). `--convert-source` remains the explicit full reconversion path; it is unnecessary for a background-only update. On this replacement, exact old/new JSON record equality was verified for all four dolls including materials, all 28 world sprites, all three fonts and the launcher icon. Every one of the five scene records changed; total runtime asset size remains 569,682 bytes. Converted background-only previews are preserved in [background-previews](../../../docs/toy-town-life/quiet-backgrounds/background-previews/). These show the illustrations at 480px; they are separate from observed emulator gameplay captures. Normal generation writes the `assets.png` contact sheet under `build/art/toy-town-life/`.
