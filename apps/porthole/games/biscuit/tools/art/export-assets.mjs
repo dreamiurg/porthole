@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Biscuit's scene and discovery art -> games/biscuit/generated/. Node 22+, no npm packages, no Canvas.
+// Biscuit's scene and discovery art -> games/biscuit/generated/. Node 22 (pinned in /.tool-versions: the art is zlib-packed, and a Node on another zlib build packs different bytes), no npm packages, no Canvas.
 //   node games/biscuit/tools/art/export-assets.mjs           regenerate
 //   node games/biscuit/tools/art/export-assets.mjs --check   fail if the committed files are stale
 // art.js and discovery-art*.js are the source of truth; they draw whole-pixel rectangles into the tiny raster below.

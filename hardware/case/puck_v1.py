@@ -1,4 +1,4 @@
-"""Porthole puck case v1.1 as a build123d model (text-to-cad / cadgen). Port of puck_case_v1_fusion.py.
+"""Porthole puck case v1.2 as a build123d model (text-to-cad / cadgen). Port of puck_case_v1_fusion.py.
 
 Run: `cadgen +0.8.4 run hardware/case/puck_v1.py` builds Bezel, Plate, Lid and the assembly with
 reference bodies for the board and the cell, and opens them in the CAD viewer. Millimetres in the
@@ -7,6 +7,10 @@ board's STEP frame: origin = board center, +Z out of the screen, glass top at z 
 v1.1 after the first print: M2 pilots 1.6 -> 1.8 (screws drove too tight), wall 2.0 -> 4.2 for a
 fatter puck (dia 79.6 -> 84). The radial screw counterbore deepens with the wall so the same
 screws still reach the posts; side cutouts span the thicker wall.
+
+v1.2: the lid gets a V groove and a key notch so it clicks into the snap-on grip
+(hardware/grip/grip_v1.py) in one orientation only, keeping the tilt axes square to the grips.
+Bezel and plate are unchanged from v1.1.
 """
 
 import math
@@ -57,6 +61,11 @@ LED_Z = -2.85  # window center; LEDs sit on the back of the PCB (z -2.1 down), -
 BUZZER = (-27.5, -12.3)  # from Waveshare's labelled photo; not in the STEP by name - verify
 BUZZER_HOLES = [(0, 0), (2.2, 0), (-2.2, 0), (0, 2.2), (0, -2.2)]
 J1 = (21.2, 8.6)  # battery socket center
+SNAP_Z = -14.5  # lid groove center: clear of the seam (-12) and the bottom fillet (-17.2)
+SNAP_D = 1.0  # groove depth into the 4.2 mm wall
+SNAP_FLAT = 1.0  # groove floor height; 45 degree flanks open it to 3 mm at the surface
+KEY_DEG = -90.0  # key notch at the bottom of the screen, between the two USB ports
+KEY_W, KEY_D = 4.0, 1.5  # notch width and depth, full lid height
 
 
 # ---- primitives (same signatures as the Fusion script) --------------------------------------
@@ -83,6 +92,17 @@ def radial_hole(deg, z, d, r0, r1):
 def polar(r, deg):
     a = math.radians(deg)
     return r * math.cos(a), r * math.sin(a)
+
+
+def revolved(*rz):
+    """Solid of revolution about Z from (r, z) profile points."""
+    return bd.revolve(bd.Plane.XZ * bd.Polygon(*rz, align=None), bd.Axis.Z)
+
+
+def snap_groove():
+    r0, h = R_OUT - SNAP_D, SNAP_FLAT / 2
+    out = R_OUT + 1  # run the flanks past the surface so the cut is clean
+    return revolved((r0, SNAP_Z - h), (out, SNAP_Z - h - (out - r0)), (out, SNAP_Z + h + (out - r0)), (r0, SNAP_Z + h))
 
 
 def fillet_rim(body, r_edge, z_edge, radius):
@@ -147,6 +167,8 @@ def lid_body():
     for dx, dy in BUZZER_HOLES:
         lid -= cyl(0.75, BOT_Z - 1, FLOOR_TOP + 1, BUZZER[0] + dx, BUZZER[1] + dy)
     lid = fillet_rim(lid, R_OUT, BOT_Z, EDGE_FILLET_BOT)
+    lid -= snap_groove()
+    lid -= radial_box(R_OUT, KEY_DEG, (BOT_Z + SPLIT_Z) / 2, 2 * KEY_D, KEY_W, SPLIT_Z - BOT_Z + 2)
     lid.label, lid.color = "lid", "#e8e4dc"
     return lid
 
