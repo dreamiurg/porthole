@@ -616,3 +616,148 @@ kid never sees. Now the shift moves only the charge-and-pace ladder, so the slow
 | 3 / Nit, 2 / Nit | Boost chains at high levels; the bottom step on Snow is a cliff | **Deferred.** The chains are spaced 2.5 s apart and are earned drama at 16-18. The -1 to 0 step (30-36 points on Snow, Industrial and Night in the sweep) is where the pace-setter reaches the kid's own top speed. |
 | — (review) | On a shifted track a loss to -2 or -4 could still give a trailing kid the same race | **Fixed** (above). |
 | — (owner) | A difficulty setting per kid | **Added.** The chip "Rivals" under the track cards reads Adaptive (default), Easy, Normal or Hard; a tap cycles it and saves it. Easy races at level -8, Normal at 0, Hard at a per-track level a competent driver wins 33-53% of. A fixed setting never moves the adaptive levels. `a5_racing_level` taps the chip and checks `mode=`. |
+
+## Pass 4 (focused retest of the Rivals chip and the new level rules, emulator roleplay)
+
+The same playtester as passes 1-3 ran this pass. It did not read `games/racing/` source. It read `host/sim.cpp` (harness
+only, as before) and, after the natural races, the `mode=` lines of `a5_racing_level`. It knew the rule changes from the
+brief, so this is not a fresh first-time-comprehension check. No real child played and no board was used.
+
+### Build, setup, brief
+
+- Commit `abfa1e6` on `claude/rally-adaptive`. `build/host/snap` sha256 `e5f231ea5ab34d756f2f22275583dff0b81ab61833c8714afe2ef51fc7b5b44a`,
+  frozen as `snapf` for the session. Same fixture and `drv.py` (unchanged). Zoe: `smooth 1 0 kiddodge`. Sam:
+  `jerky 0.5 25 kid`. Struggling Sam (supplementary): `jerky 0.35 45 kid`. Levels were read after each race from a copy
+  of the save (`debug` on the track card); they never fed back into the driving.
+- Brief (as received): (1) Sam (6) first sees the track picker: does he notice and understand the chip, what does he
+  think "Adaptive" means, does an accidental tap confuse him, is Home easy to find? (2) Sam sets Easy and races Snow
+  twice: fun, winnable, rivals around? (3) Zoe sets Hard and races Desert and Night once each: challenging but fair?
+  (4) Zoe back on Adaptive on Snow, 3 races: the swing after a loss (no two solo races in a row). (5) The mode persists
+  after Home and back and after a reboot, per kid. (6) No `(+N)` under a 1st. Verdict on the chip word.
+
+### Races
+
+| # | Kid | Track | Mode / level in → out | Place | Time | What happened |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Sam | Snow | Easy (-8) | 1st | 1:55.4 | 1st about 10 s in, alone to the line. |
+| 2 | Sam | Snow | Easy (-8) | 1st | 1:55.9 | The same race: 1st about 10 s in, alone. No `(+0.5)` under it. |
+| 3 | Zoe | Desert | Hard (4) | 2nd | 1:33.3 | Pack in lap 1; yellow ahead and in view through lap 2, one rival boosting with flames; leader gone in lap 3. Adaptive Desert level stayed 0. |
+| 4 | Zoe | Night | Hard | 1st | 1:47.2 | Duel with green through laps 2-3; Zoe passed it with a boost (122 mph) in the final lap (`21`). |
+| 5 | Zoe | Snow | Adaptive 0 → 2 | 1st | 1:54.8 | Alone from about 20 s. |
+| 6 | Zoe | Snow | 2 → 3 | 1st | 1:56.1 | Yellow ahead all of lap 1 (Zoe hit ice and mud); passed in lap 2. No `(+1.3)` under the 1st. |
+| 7 | Zoe | Snow | 3 → 5 | 1st | 1:54.6 | Alone from about 10 s. |
+| 8 | Zoe | Snow | 5 → 7 | 1st | 1:54.4 | Alone from about 10 s. |
+| 9 | Zoe | Snow | 7 → 7 | — | — | Contested; Zoe 1st in lap 3. The rest screen ended the race (shell, known); no result, level unchanged. |
+| 10 | Zoe | Snow | 7 → 9 | 1st | 1:55.5 | Yellow ahead in laps 1-2 after a rocket `Hit!`; passed. |
+| 11 | Zoe | Snow | 9 → 11 | 1st | 1:54.6 | Green ahead in lap 1; passed in lap 2. |
+| 12 | Zoe | Snow | 11 → 8 | 3rd | 1:57.4 | Pack all race; yellow just ahead to the line. `(+2.9)`. |
+| 13 | Zoe | Snow | 8 → -2 | 2nd | 1:55.6 | Green ahead and in view for laps 2-3. |
+| 14 | Zoe | Snow | -2 → -1 | 1st | 1:55.4 | Green ahead all of lap 1; passed in lap 2. |
+| 15 | Zoe | Snow | -1 → 1 | 1st | 1:54.8 | Alone from about 10 s. |
+| 16 | Zoe (probe: a sloppy "bad day", Sam's driver) | Snow | 1 → **0** | 2nd | 1:56.6 | Next local day. Pack in lap 1; green ahead to the line. |
+| 17 | Zoe | Snow | 0 → 2 | 1st | 1:54.3 | **Alone** from about 10 s. |
+| 18 | Zoe | Snow | 2 → 4 | 1st | 1:54.7 | **Alone** from about 10 s (`22`: #17 and #18 at the same point). |
+| S1 | Struggling Sam (supplementary) | Desert | Easy | 2nd | 1:39.0 | Led lap 1; mud dropped him to 3rd; a pass in lap 3. |
+| S2 | Struggling Sam | Snow | Easy | 2nd | 2:05.9 | Three lead changes; green ahead to the line. |
+| S3 | Struggling Sam | Snow | Easy | 2nd | 2:05.4 | Green ahead and in view most of the race. |
+
+Excluded as harness artifacts: a first try of #3 at 50 mph all race (the last steering tilt was held when the grip page
+set the neutral; truncated and rerun level), and a struggling-Sam Snow race (4th, 2:25.5) run in the same driver process
+as S1, where the helper had learned the Desert road colour; S2 reran it in a fresh process.
+
+### Qualitative assessment
+
+- **The chip, through Sam's eyes (6, early reader).** He sees a box with a grey `Rivals` and a yellow `Adaptive` beside
+  the orange Home box (`20`). He cannot decode either word; "Adaptive" is three syllables and abstract, and "Rivals" is
+  not a 6-year-old's word either. The yellow word and the box shape say "button", so he taps it out of curiosity. One tap
+  shows `Easy`, a word he can read, and nothing else changes. An accidental tap is harmless and even helps him. The only
+  confusion is that the word changes with no other cue, and three more taps bring back the word he could not read. Home
+  stayed easy to find: the same orange box at bottom left, and a tap at x=66 always went Home.
+- **Sam on Easy (standard driver): winnable, but no rivals.** Both races were solo after about 10 s, the same as
+  Adaptive at 0 in passes 1-3. He would stop after race 2, bored. Easy works for the struggling driver (S1-S3: close 2nds
+  with a rival in view), so it is tuned for a struggler, not for the pass-3 Sam.
+- **Zoe on Hard: challenging and fair.** One loss with the leader in view, one win by a final-lap boost pass. She would
+  keep it on Hard.
+- **Zoe back on Adaptive on Snow.** With a clean drive, levels 0 to 5 were solo (#5, #7, #8, #15, #17, #18). Races were
+  contested only when she lost time in lap 1 (#6, #14) or at 7 and above (#9-#13). Zoe would stop after #8, the
+  third solo win in four races, or switch to Hard. After the loss at 1 (#16), the new rule landed at 0 as stated, but
+  the next two races were both solo. After the loss at 8 (#13: to -2) the next race was contested and the one after was
+  solo.
+- **Feedback.** No `(+N)` under any 1st (#2, #6, #10, #11, #14); it is still there under a 2nd or 3rd (#12, #13, #16).
+
+### Findings (pass 4)
+
+No Blocker or Major.
+
+**Minor**
+
+1. **Snow is still two solo races in a row after a loss, for a clean driver.**
+   - Screen: race (Snow Track, Adaptive). Concern: boredom / challenge.
+   - Repro: Zoe's session, #16-#18: after a loss at 1 (to 0), `drive 128 X 5000 smooth 1 0 kiddodge` with Replay (`tap 52 111`) twice. Levels 0 → 2 → 4, both 1st and alone from about 10 s.
+   - Detail: the "1..3 lands at 0" fix works as a rule, but for this driver 0 to 5 is all solo on Snow, so landing at 0
+     instead of -2 changes nothing. Also #7-#8 (3 and 5) were back to back solo. Pass-3 m1 recurs for Zoe; Sam was not
+     retested on Adaptive this pass. Owner options: a smaller step when a loss is narrow, or Snow's 0..5 band nearer the
+     kid's top speed.
+   - Screenshot: `22-p4-zoe-snow-solo-after-loss.png`.
+2. **Easy on Snow is solo for the ordinary 6-year-old driver.**
+   - Screen: race (Snow Track, Easy). Concern: boredom.
+   - Repro: fresh Sam, tap the chip once, Snow, `drive 130 X 10000 jerky 0.5 25 kid` twice with Replay.
+   - Detail: both wins were alone after about 10 s. For the struggling driver Easy was close (S1-S3). Easy is a fixed
+     -8, so it also never gets easier than that for a kid who keeps losing, where Adaptive goes down to -16. An
+     owner call, not a defect; it is consistent with the stated design.
+   - Screenshot: the solo races look like `12-sam-snow-level1-alone.png`.
+3. **The chip word.** `Adaptive` fails a 6-year-old early reader (concern: comprehension). Use **`Auto`**: one syllable,
+   a word kids meet on toys and cars, and it reads as "the game picks". `Easy`, `Normal` and `Hard` are fine. The
+   grey `Rivals` heading is also beyond Sam, but he does not need it: the yellow word is what he taps.
+   - Screenshot: `20-p4-track-picker-rivals-chip.png`.
+4. **The rest screen still ends a race** (shell-owned, the pass-2 m1 deferral): #9 was cut in lap 3 while Zoe led.
+
+**Nit**
+
+1. **A chip change is lost if the power goes within about 5 s.** The shell writes a game's save at most every 5 s, and
+   Home flushes it. Repro: `tests/playtests/a6_racing_mode_kids.txt` without its `wait 6000` before `reboot` fails at
+   `expect mode=Hard` (got `Adaptive`); Sam's Easy, set before a Home, survives. Rare on a board; the
+   `App::saveUrgent()` checkpoint would close it.
+2. **A 1.5 s hold on the chip does nothing**, while a long-press on Replay starts a race (pass 3). A kid who holds
+   instead of tapping sees no change. Low impact.
+3. **Home and the chip are 4 logical px apart** (Home 34..74, chip 78..126, both 24 high at y 118). The boxes do not
+   overlap and each meets the 24x22 floor; a finger between them hits nothing.
+4. `a5_racing_level.txt`'s header still says "a loss from 1..9 drops it to -2"; the rule is now 1..3 → 0, 4..9 → -2.
+
+### Earlier findings: status
+
+| Finding | Status |
+| --- | --- |
+| p3 m1 Snow solo swing after a loss | **Recurs for a clean Zoe** (Minor 1); the rule itself works (1 → 0). Not retested for Sam on Adaptive. |
+| p3 m3 `(+0.4)` under a first 1st | **Fixed.** No gap under any 1st. |
+| p3 m4 rest cuts a race | Still present; shell-owned (Minor 4). |
+| p3 m2 struggling kid on Desert | Not retested on Adaptive. On Easy he was a close 2nd (S1). |
+
+### Gesture / interruption matrix (pass 4)
+
+| Case | Result |
+| --- | --- |
+| Chip: one tap; two quick taps; tap at its left edge (x 82) and right edge (x 124) | Next mode; two modes on; next; next |
+| Chip: 1.5 s hold; tap just below it (y 142) | Nothing; nothing |
+| Tap at x 66 (Home) next to the chip | Home, mode unchanged |
+| Home and back (Sam), Tracks from results (Sam) | Easy kept |
+| Other kid (Zoe after Sam set Easy) | Adaptive: per kid |
+| Process restart from the saves on disk (`--script`, both kids) | Sam Easy, Zoe Adaptive; `a6` adds Zoe Hard |
+| Power cut within 5 s of a chip tap | Lost (Nit 1) |
+| Rest screen mid-race | Race ends, level unchanged |
+| A fixed mode race (Hard) | Adaptive Desert level unchanged (0) |
+| Next local day (`skip 86400`) | Levels and mode kept |
+
+### Automated checks
+
+`make -C apps/porthole playtest` at `abfa1e6` plus the new `a6_racing_mode_kids` (per-kid mode, restart): 82 of 82
+scenarios pass, 0 UI FAIL / 0 WARN, no sanitizer report (racing: `a0_racing_flow` 41 checks, `a1_racing_monkey` 4,
+`a4_racing_board` 9, `a5_racing_level` 31, `a6_racing_mode_kids` 10). `a6` is the only file this pass added under
+`tests/playtests/`.
+
+### Verdict
+
+**Ready for the chip and the Hard setting; Adaptive on Snow needs an owner call.** The chip works, is per kid, survives
+Home and a restart, and an accidental tap only makes races easier. Hard is challenging and fair. `(+N)` under a 1st is
+gone. Rename `Adaptive` to `Auto`. If "never a walk in the park" is strict, Snow's low band (Minor 1) and Easy for an
+ordinary driver (Minor 2) are the next changes.
