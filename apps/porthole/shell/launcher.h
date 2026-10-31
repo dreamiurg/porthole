@@ -1,6 +1,6 @@
-// Launcher geometry for any number of games up to MAX_APPS (9), pure so host/test_shell.cpp can hold every layout to
+// Launcher geometry for any number of games up to MAX_APPS (10), pure so host/test_shell.cpp can hold every layout to
 // the round glass. Up to three games share one row. More split into balanced pages of up to three (4: 2+2, 5: 3+2,
-// 6: 3+3, 7: 3+2+2, 8: 3+3+2, 9: 3+3+2+1) behind a pair of arrows beside the mute button: two rows do not fit, since between the
+// 6: 3+3, 7: 3+2+2, 8: 3+3+2, 9: 3+3+2+1, 10: 3+3+2+1+1) behind a pair of arrows beside the mute button: two rows do not fit, since between the
 // header (y 56) and the mute button there is room for one row of 44 px tiles and their names, and a second row's names
 // would fall where the glass is narrower than "Pets Club".
 #pragma once
@@ -23,12 +23,12 @@ inline bool twoLines(int n) { return n != 2; }
 inline int muteY(int n) { return twoLines(n) ? 138 : 128; }
 inline int grassY(int n) { return twoLines(n) ? 123 : 116; }
 
-inline int pages(int n) { return n > 8 ? 4 : n > 3 ? (n + 2) / 3 : 1; }   // no games is one empty page
-inline int count(int n, int page) {                              // the first pages get the odd one
-  if (n == 9) return page == 3 ? 1 : count(8, page);   // append Toy Town without moving the existing eight tiles
+inline int pages(int n) { return n > 8 ? n - 5 : n > 3 ? (n + 2) / 3 : 1; }   // no games is one empty page
+inline int count(int n, int page) {   // up to eight: the first pages get the odd one; past eight, one page each
+  if (n >= 9) return page >= 3 ? (page < pages(n) ? 1 : 0) : count(8, page);   // Toy Town, then Rally: appended, no tile moves
   return page < pages(n) ? n / pages(n) + (page < n % pages(n) ? 1 : 0) : 0;
 }
-inline int first(int n, int page) { if (n == 9) return page == 3 ? 8 : first(8, page); const int r = n % pages(n); return page * (n / pages(n)) + (page < r ? page : r); }
+inline int first(int n, int page) { if (n >= 9) return page >= 3 ? 5 + page : first(8, page); const int r = n % pages(n); return page * (n / pages(n)) + (page < r ? page : r); }
 inline int pageOf(int n, int k) { int p = 0; while (p + 1 < pages(n) && k >= first(n, p + 1)) p++; return p; }
 
 // Tile i of m on a page: two are 48 wide and 64 apart; three, 44 wide and 50 apart, the only row of three that fits.

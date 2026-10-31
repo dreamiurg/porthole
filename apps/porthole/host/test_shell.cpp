@@ -675,6 +675,11 @@ static void launcherAppend() {
     assert(launcher::first(9, page) == launcher::first(8, page));
   }
   assert(launcher::count(9, 3) == 1 && launcher::first(9, 3) == 8);
+  for (int page = 0; page < 4; ++page) {   // Rally gets a page of its own: Toy Town's tile stays where it was
+    assert(launcher::count(10, page) == launcher::count(9, page));
+    assert(launcher::first(10, page) == launcher::first(9, page));
+  }
+  assert(launcher::pages(10) == 5 && launcher::count(10, 4) == 1 && launcher::first(10, 4) == 9 && launcher::count(10, 5) == 0);
 }
 static void launcherLayout() {
   headerName();

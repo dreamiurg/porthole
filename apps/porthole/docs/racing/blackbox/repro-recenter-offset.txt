@@ -1,0 +1,82 @@
+tilt 0 1000 0
+tick 1000
+down 68 67
+tick 66
+up
+tick 300
+tick 600
+down 108 135
+tick 66
+up
+tick 300
+tick 400
+down 108 135
+tick 66
+up
+tick 300
+tick 400
+down 108 135
+tick 66
+up
+tick 300
+tick 400
+down 108 135
+tick 66
+up
+tick 300
+tick 400
+down 80 80
+tick 66
+up
+tick 300
+tick 800
+down 53 52
+tick 66
+up
+tick 300
+tick 600
+down 106 123
+tick 66
+up
+tick 300
+tick 2500
+down 106 123
+tick 66
+up
+tick 300
+tick 6000
+down 42 38
+tick 1500
+up
+tick 200
+tilt 174 985 0
+down 52 77
+tick 66
+up
+tick 300
+tick 3000
+frame
+tilt 0 1000 0
+tick 800
+frame
+tilt 174 985 0
+tick 800
+down 106 123
+tick 66
+up
+tick 300
+tick 3500
+down 42 38
+tick 1500
+up
+tick 200
+tilt 0 707 -707
+down 52 77
+tick 66
+up
+tick 300
+tick 3000
+frame
+tilt 0 1000 0
+tick 1000
+frame

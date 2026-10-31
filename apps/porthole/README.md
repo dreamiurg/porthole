@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom and Toy Town.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town and Rally.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -51,6 +51,20 @@ keys to bank and click the glass to fire.
 
 [Runtime screenshot tour and verification](docs/starfighter/README.md).
 Design and state contract: [game brief](games/starfighter/AGENTS.md).
+
+## Rally: steer the puck like a wheel
+
+Open **Rally** on the launcher's last page and pick a track: Desert Canyon, Industrial Ruins,
+Snow Track or Night Run. Hold the puck upright like a steering wheel and tap **Go**; turning it
+clockwise steers right. The car speeds up by itself. Grab cyan bolts and orange rockets on the
+road, then tap **Boost** (3 o'clock) or **Rocket** (9 o'clock) to use one; each holds up to
+three. Ramps hop you over trouble. Bumps, rocks and rockets only slow a car down, and every
+racer finishes all three laps, even in fourth. Hold the **1/3 Hold** chip to pause.
+
+![Rally on its four tracks](docs/racing/preview.png)
+
+Art: [Codex images matched to the approved reference boards](docs/racing/art.md) ·
+Design and state contract: [game brief](games/racing/AGENTS.md)
 
 ## Toy Town Life: a tiny town, your own stories
 

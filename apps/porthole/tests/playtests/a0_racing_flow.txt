@@ -1,0 +1,116 @@
+# Rally from the launcher's fifth page through every page: cards, lesson, grip, countdown, race, pause and its
+# confirmations, results, replay and home. Natural input only, except the one results fixture marked below.
+reset
+tilt 0 1000 0
+profile Sam 8
+repeat 4
+wait 600
+tap 109 135
+end
+wait 600
+expect-screen launcher
+ui-check rally_launcher
+snap ra00_launcher
+tap 80 79
+wait 600
+expect-screen race_tracks
+ui-check
+snap ra01_tracks
+tap 53 53
+wait 600
+expect-screen race_howto
+ui-check
+snap ra02_howto
+tap 54 124
+wait 600
+expect-screen race_tracks
+tap 53 53
+wait 600
+tap 106 124
+wait 600
+expect-screen race_calibrate
+tilt 0 0 -1000
+wait 600
+expect ready=0
+tap 106 124
+wait 600
+expect-screen race_calibrate
+tilt 0 1000 0
+wait 600
+expect ready=1
+ui-check
+snap ra03_calibrate
+tap 106 124
+wait 200
+expect-screen race_countdown
+ui-check
+snap ra04_countdown
+tap 142 80
+wait 3000
+expect-screen race_play
+expect boost=1
+tap 142 80
+wait 400
+expect boost=0
+tap 18 80
+wait 400
+expect rocket=0
+expect fired=1
+wait 3000
+ui-check
+snap ra05_race
+hold 42 40
+expect-screen race_pause
+ui-check
+snap ra06_pause
+tap 54 108
+wait 600
+expect-screen race_confirm
+ui-check
+snap ra07_confirm
+tap 106 96
+wait 600
+expect-screen race_pause
+tap 80 48
+wait 1500
+expect-screen race_play
+tilt 0 0 -1000
+wait 600
+expect-screen race_pause
+expect grip_lost=1
+snap ra08_grip
+tap 80 48
+wait 600
+expect-screen race_pause
+tilt 0 1000 0
+tap 80 48
+wait 600
+expect-screen race_play
+# Fixture: skip to the last metres with every rival already home, so the results page is reachable in this run.
+dbg lastplace
+wait 3600
+expect finished=1
+snap ra085_finish
+wait 1500
+expect-screen race_results
+expect place=4
+ui-check
+snap ra09_results
+wait 600
+tap 54 112
+wait 600
+expect-screen race_countdown
+expect boost=1
+expect rocket=1
+expect finished=0
+hold 42 40
+wait 600
+tap 52 108
+wait 600
+tap 54 96
+wait 600
+expect-screen race_tracks
+tap 80 132
+wait 600
+expect-screen launcher
+sheet flow

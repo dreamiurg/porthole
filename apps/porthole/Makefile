@@ -50,6 +50,8 @@ test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cp
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
 test_starfighter_rules_SRC := games/starfighter/rules.cpp
+test_racing_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
+test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
 test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
@@ -93,6 +95,8 @@ lint: snap
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
 	$(PY) games/starfighter/tools/art.py --check
+	$(PY) games/racing/tools/art.py --check
+	$(PY) games/racing/tools/pictures.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
@@ -146,6 +150,8 @@ art:
 	python3 games/living-kingdom/tools/kingdom_art.py
 	python3 games/living-kingdom/tools/font.py
 	python3 games/starfighter/tools/art.py
+	python3 games/racing/tools/art.py
+	python3 games/racing/tools/pictures.py
 	python3 games/pets-club/tools/art.py
 	python3 tools/shell_art.py
 	python3 games/biscuit/tools/icon.py
