@@ -2,7 +2,7 @@
 // The goldens come from Biscuit's LVGL 8.3 firmware (tag biscuit-v0.1.0): widths and page breaks from
 // lv_txt_get_width and its paginate(), and checksums of two framebuffer captures from the panel (a story page and a
 // discovery page) that the renderer reproduces pixel for pixel.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include "../games/biscuit/generated/fonts.h"

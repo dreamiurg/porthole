@@ -4,16 +4,7 @@
 #include "board.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
-#include "games/biscuit/game.h"
-#include "games/living-kingdom/game.h"
-#include "games/marble-kick/game.h"
-#include "games/pumpkin-hide-seek/game.h"
-#include "games/pets-club/game.h"
-#include "games/plane-radar/game.h"
-#include "games/starfighter/game.h"
-#include "games/tilt-fc/game.h"
-#include "games/toy-town-life/game.h"
-#include "games/racing/game.h"
+#include "games/apps.h"
 #include "gfx565.h"
 #include "net.h"
 #include "shell.h"
@@ -23,23 +14,10 @@
 // The shell's storage is the board's NVS, addressed by (namespace, key).
 struct NvsStore : shell::Store {
   size_t load(const char* ns, const char* key, void* buf, size_t max) override { return board::loadBlob(ns, key, buf, max); }
-  void save(const char* ns, const char* key, const void* data, size_t len) override { board::saveBlob(ns, key, data, len); }
+  bool save(const char* ns, const char* key, const void* data, size_t len) override { return board::saveBlob(ns, key, data, len); }
   void erase(const char* ns, const char* key) override { board::eraseBlob(ns, key); }
 };
 
-static Game g_pets;
-static biscuit::Game g_biscuit;
-static marble::Game g_marble;
-static fc::Game g_tiltfc;
-static pumpkin::Game g_pumpkin;
-static radar::Game g_radar;
-static starfighter::Game g_starfighter;
-static kingdom::Game g_kingdom;
-static toytown::Game g_toytown;
-static racing::Game g_racing;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
-static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
-static const int N_APPS = sizeof APPS / sizeof APPS[0];
 static NvsStore g_store;
 static net::Updater g_sys;
 static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
@@ -187,18 +165,21 @@ void setup() {
   Serial.begin(115200);
   delay(50);
   Serial.printf("\n[porthole] boot v=%s slot=%s\n", PORTHOLE_VERSION, esp_ota_get_running_partition()->label);
-  enableLoopWDT();   // until marked valid: a hang panics after 5 s, and the bootloader goes back to the old slot
+  // On for good: a loop stuck 5 s panics and restarts (before markValid, the bootloader then goes back to the old
+  // slot). Arduino feeds it before every loop(); anything that blocks longer feeds it itself.
+  enableLoopWDT();
   board::init();
   board::presentHires();   // the first frame: the panel path works
   // Valid before anything can write a save: a rollback to an older firmware would reject a newer save and lose it.
   markValid();
-  disableLoopWDT();
+  feedLoopWDT();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);
     for (int i = 0; i < C_COUNT; i++) g_pal[t][i] = rgb888_to_565(rgb[i]);
   }
   g_bootUtcEpoch = buildEpoch(); g_bootMillis = millis();
   g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
+  feedLoopWDT();
   air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   beginClock();
@@ -243,7 +224,7 @@ static bool updateDisplay(const Input& in) {
 static void dumpFrame() {
   if (!g_hires) {
     Serial.printf("FB %d %d idx\n", gfx::W, gfx::H);
-    Serial.write(gfx::fb, gfx::W * gfx::H);
+    for (int y = 0; y < gfx::H; y++) { Serial.write(gfx::fb + y * gfx::W, gfx::W); feedLoopWDT(); }   // 25 KB: ~2 s at 115200
     Serial.write((const uint8_t*)g_pal[g_shell.tint()], sizeof g_pal[0]);
     Serial.flush();
     return;
@@ -257,6 +238,7 @@ static void dumpFrame() {
       while (j < n && j - i < 65535 && px[j] == px[i]) j++;
       if (pass) { uint16_t run[2] = {(uint16_t)(j - i), px[i]}; Serial.write((const uint8_t*)run, sizeof run); }
       else runs++;
+      if (i / gfx565::W != j / gfx565::W) feedLoopWDT();   // once a row: a busy frame's runs take far over 5 s to send
       i = j;
     }
   }

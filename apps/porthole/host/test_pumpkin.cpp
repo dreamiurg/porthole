@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,7 +11,6 @@
 
 using namespace pumpkin;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 static void tick(Round& r, int ms, float roll = 0) {
   for (int t = 0; t < ms; t += STEP_MS) step(r, roll, false);
 }

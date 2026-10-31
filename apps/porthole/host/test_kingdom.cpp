@@ -1,11 +1,10 @@
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include "games/living-kingdom/engine.h"
 
 using namespace kingdom;
 static int checks = 0;
-#define CHECK(c) (assert(c), ++checks)
 
 static void openingIsAtomic() {
   Save s;
