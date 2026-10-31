@@ -1,0 +1,15 @@
+{
+  "method": "Supplementary source-aware development fixture, not independent child play. Same existing development-school-probe.txt executed on initial, final3 and final4 immutable binaries; all four native RGB frames are identical.",
+  "probe": "../scene-interface/development-school-probe.txt",
+  "identical_rgb_sha256": {
+    "empty": "fa314d3dd2e3234e5bed422b12a1df29f84fb9b497845a2f1b1dab74da0ce3c8",
+    "feedback": "2781359bfb78e70512e4c818b5f631eaa7d14fe38f0b70d4630cc327a640d2c3",
+    "ready": "4e534c8ec9fc222ef8e7d85e22de2bb8300a4acb54e321f424c76a30063c59f6",
+    "result": "6889fc5314f11ff61ec5d7ca6591e86c2da35df93f691f0d05a97983467670b5"
+  },
+  "emulator_sha256": {
+    "initial": "df08c56bbfa97c19d18852639ea05dc2d8943f502e9e19f4e857a1b8cc37d5b9",
+    "final3": "c370de00dcc6c9dfdf64052b9f1cdab239dac44396bf4b135a939c1e56200f9c",
+    "final4": "7b1c6c997fbc24b8defdad9766f765a796b7dcde7fa7aab19e65aaee01e7ffb7"
+  }
+}

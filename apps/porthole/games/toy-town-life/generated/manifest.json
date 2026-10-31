@@ -1,0 +1,39 @@
+{
+  "sources": {
+    "scene-quiet-atlas.png": "654d304a57d8a3082d45839a16a605ace55788ce7919a6ccc7449619e2ac50c7",
+    "street-quiet.png": "c68bf6c8c9d1e5de04d971711d0335bd666578096c922fef4844250f185581ab",
+    "scene-atlas.png": "816cff64976297863fed9a7b2a23f115ea0baf5ed8ff6cc62eb60ec1ea8b01a6",
+    "doll-atlas.png": "ba71687d7ab72c7f911b1f4106b59b7d0ed161dd3f167ffb872f6cec7d17e26d",
+    "park.png": "a0942d2b3df574f18e8cfeea16e8a4c3b92899f795bdfbd8ed392bd18f9b5c1e",
+    "scene-world-atlas.png": "e2e7c1d7891b2d971474ec96d981898de39fc75cb93b6eb76451eb9af5d740e8",
+    "scene-sprite-atlas.png": "0d22b7836464953487aecccf867295672a41a5c92d182755ca72753f6e2a6250",
+    "scene-pose-atlas.png": "5e5b4888623a9c5bccbdd16e3d856749f01852ad80d4ed29c3cfd44b8fe5bc7d",
+    "scene-objects-atlas.png": "b4d0379e20224bf4cee2e8b8ad07388f5a2a32a94073771f189d2d985b6ff31d",
+    "scene-bag-atlas.png": "dcd8493d8cedc8144a6bc59005cc8ca8a3082f6239f5909dbcf27dce59823669",
+    "scene-pictures-atlas.png": "938207d069f0ecc1a7305a6685af7ea24556c5977307e40bb2715399a505cd33",
+    "fonts/OpenSans-Semibold.ttf": "aa3b0ef53db12e3d45094030cac0e69d384e44cc5978643dd4390041cad546e2",
+    "fonts/OpenSans-Bold.ttf": "5894a3649b213cf5b2d673b6e7a871815fd1d120fa68a463592f27db14eae323",
+    "../../os/palette.h": "8bf833d02941525fbcc232576963e389592712aebc93b1fc635f7ee600e84631"
+  },
+  "conversion_pillow": "12.3.0",
+  "conversion_cache_sha256": "e88d7342191fa698dbaaf5042658c631f4de152e105dde3f7a5ad2e0ae0b35c4",
+  "runtime_bytes": 569682,
+  "scene_resolution": [
+    240,
+    240
+  ],
+  "doll_resolution": [
+    96,
+    160
+  ],
+  "palette_colors": 64,
+  "runtime_source_sha256": "3a8c74a2be5002dd86385eca7870bc816213fcedded9ed11ced6aabd689d078f",
+  "parts": {
+    "art_part_0.inc": "df26921b9c527e7f080ee3bfb2b6d2fedc1253d4f44a2efb995e66777bea6c8d",
+    "art_part_1.inc": "2106e067c37b017f0dd1f4b90965bab63076a2bfa404a9844557751c95106354",
+    "art_part_2.inc": "0fa70e912db7202baebd392841b19139700b581e6d7e8b235f11a98df8333a3d",
+    "art_part_3.inc": "c3f060166bc4cde90868772909e189e661a0fd50dd5f3b6ef02ab32efa55d0e3",
+    "art_part_4.inc": "67ae4abec15aba285b793b3a9e648ed45d685bf9dcffd5d7de8c0c2f6720bf4d",
+    "art_part_5.inc": "ca5552aa17948bac13a77a99343121dc4724f7c055c68c78d246c54d4bb74086"
+  }
+}

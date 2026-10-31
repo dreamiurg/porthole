@@ -1,15 +1,20 @@
 ---
 name: playtest
-description: Any game (apps/porthole). Use before calling any gameplay or UI change done. Runs the playtest suite (`make -C apps/porthole playtest`), explains how to read apps/porthole/build/playtest/report.md and its FAIL/WARN severities, and says when to escalate to the playtester agent instead of reading it yourself.
+description: Any game (apps/porthole). Use before calling gameplay/UI changes done. Requires an independent child-perspective emulator playtest and iterative game/brief refinement, then supplementary automated playtests and report inspection.
 ---
 
-Before the automated steps below, perform the **required black-box playthrough**
-in `apps/porthole/docs/playtesting.md`. Every gameplay/UI change needs actual
-play of the final build using visible touch/tilt inputs, natural completion and
-relevant failure/replay/exit checks. Inspect UI, wording, feedback, pacing and
-playability; report issues to their owner, then replay after fixes. Preserve
-setup, outcomes, findings, screenshots and input evidence. Debug fixtures,
-state-aware bots, unobserved trace replays and green CI cannot substitute for
+Before the automated steps below, dispatch an independent `playtester` for the
+**required black-box playthrough**, child-perspective brief, qualitative
+assessment and iteration loop in `apps/porthole/docs/playtesting.md`. Every game's
+gameplay/UI change needs actual final-build play through visible controls; new
+games and major changes need a source-free first-play agent. Specify target age,
+reading/experience and imprecise touch/tilt behavior; test curiosity, wrong
+choices, recovery and boredom alongside completion/replay/exit. Iterate on game
+mechanics, controls, player instructions and the playtester brief, then retest
+until the documented acceptance is met. Preserve persona/brief revisions, build
+hash, outcomes, findings, screenshots and inputs. The implementer's own run is
+supplementary. If independent play is blocked, leave the gate incomplete.
+Debug fixtures, state-aware bots, unobserved trace replays and green CI cannot substitute for
 this pass. Keep hidden-state probes and the automated work below separate from
 the black-box session. Documentation-only/non-player-visible changes are exempt.
 
@@ -30,5 +35,5 @@ the black-box session. Documentation-only/non-player-visible changes are exempt.
    The contact sheet (`make_sheet()`) keeps the 160px round-trip only when the snapshot is an exact 3x nearest-neighbor replicate (an indexed game), and otherwise resamples straight from 480 to 320 so native RGB565 screenshots stay sharp.
 5. For a quick ad hoc check of one screen outside the formal suite, write a short raw script instead (see the `tour` skill) and use its `ui` command — faster, but it prints raw hit-region/text-box numbers; it does not apply the FAIL/WARN rules above for you.
 6. To add a new formal scenario, add a file under `apps/porthole/tests/playtests/` using the directive language (`expect`, `expect-screen`, `ui-check`, `sheet`, `follow-glow`, `solve-word`, `answer-book`, `repeat N ... end`, plus raw sim commands from the `tour` skill) — read an existing scenario file and `apps/porthole/tools/playtest.py`'s `play()` function first; directives are compiled into a raw sim script under the hood, they are not understood by `apps/porthole/host/sim.cpp` directly.
-7. Escalate to the `playtester` agent when the change touches more than one screen, adds a new interactive control, produces a FAIL you're not confident how to fix, or a monkey scenario times out or trips the sanitizer.
+7. Route supplementary FAIL findings, monkey timeouts and sanitizer errors to the appropriate owner, and have the independent `playtester` retest any resulting player-visible changes. The independent pass above is mandatory even when the automated suite passes.
 8. Never call a UI or gameplay-feel change done from `make -C apps/porthole test` alone — `apps/porthole/host/test_pet.cpp` never renders a frame, so it cannot catch a layout, contrast, or feedback problem.

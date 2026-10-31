@@ -9,6 +9,8 @@
 #include "games/pumpkin-hide-seek/game.h"
 #include "games/starfighter/game.h"
 #include "games/tilt-fc/game.h"
+#include "games/toy-town-life/game.h"
+#include "games/racing/game.h"
 #include "shell.h"
 
 static Game g_pets;
@@ -19,6 +21,8 @@ static pumpkin::Game g_pumpkin;
 static radar::Game g_radar;
 static starfighter::Game g_starfighter;
 static kingdom::Game g_kingdom;
-static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom};
+static toytown::Game g_toytown;
+static racing::Game g_racing;
+static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
 static constexpr int N_APPS = sizeof APPS / sizeof APPS[0];
 static_assert(N_APPS <= MAX_APPS, "the launcher and Shell hold at most MAX_APPS games: raise it and its layouts first");

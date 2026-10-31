@@ -1,0 +1,158 @@
+{"seq": 1, "event": "start", "binary": "/tmp/toytown-quiet-final3-snap", "sha256": "c370de00dcc6c9dfdf64052b9f1cdab239dac44396bf4b135a939c1e56200f9c"}
+{"seq": 2, "event": "wait", "ms": 600}
+{"seq": 3, "event": "frame", "path": "frames/000003.png", "sha256": "6622c1198ab9311d256d68ca007682ee01ca645bfa5d7dd36d628c7e1de7309d"}
+{"seq": 4, "event": "input", "type": "down", "x": 237, "y": 202}
+{"seq": 5, "event": "wait", "ms": 80}
+{"seq": 6, "event": "input", "type": "up", "x": 237, "y": 202}
+{"seq": 7, "event": "wait", "ms": 600}
+{"seq": 8, "event": "frame", "path": "frames/000008.png", "sha256": "ef61c0ea6d1d70213ab97179bf841998ff77206c9eef6011eb5f08c71745557b"}
+{"seq": 9, "event": "input", "type": "down", "x": 327, "y": 409}
+{"seq": 10, "event": "wait", "ms": 80}
+{"seq": 11, "event": "input", "type": "up", "x": 327, "y": 409}
+{"seq": 12, "event": "wait", "ms": 600}
+{"seq": 13, "event": "frame", "path": "frames/000013.png", "sha256": "52ad2e22d9bfe2ff49f4f90610800710b78ec76a225777c1e944067783d1132c"}
+{"seq": 14, "event": "input", "type": "down", "x": 327, "y": 409}
+{"seq": 15, "event": "wait", "ms": 80}
+{"seq": 16, "event": "input", "type": "up", "x": 327, "y": 409}
+{"seq": 17, "event": "wait", "ms": 600}
+{"seq": 18, "event": "frame", "path": "frames/000018.png", "sha256": "2702997ded24f805da837752d8d081e4c6b8bbb56bdd198b87583b95d7c21b5f"}
+{"seq": 19, "event": "input", "type": "down", "x": 327, "y": 409}
+{"seq": 20, "event": "wait", "ms": 80}
+{"seq": 21, "event": "input", "type": "up", "x": 327, "y": 409}
+{"seq": 22, "event": "wait", "ms": 600}
+{"seq": 23, "event": "frame", "path": "frames/000023.png", "sha256": "43aab0c7261a2ea115576240feda2f172ab1d3d660e8f76b1921cb449df671fb"}
+{"seq": 24, "event": "input", "type": "down", "x": 240, "y": 241}
+{"seq": 25, "event": "wait", "ms": 80}
+{"seq": 26, "event": "input", "type": "up", "x": 240, "y": 241}
+{"seq": 27, "event": "wait", "ms": 600}
+{"seq": 28, "event": "frame", "path": "frames/000028.png", "sha256": "8cd09600721333dc14a7becfd42c4389751bfa2505ae5afea52765a90b3e24b7"}
+{"seq": 29, "event": "input", "type": "down", "x": 153, "y": 349}
+{"seq": 30, "event": "wait", "ms": 80}
+{"seq": 31, "event": "input", "type": "up", "x": 153, "y": 349}
+{"seq": 32, "event": "wait", "ms": 600}
+{"seq": 33, "event": "frame", "path": "frames/000033.png", "sha256": "d1b986eb7ceda2714e8ac9d9517f0ee7eb79c864fe9f84fe0ce9f1a9c6e48df0"}
+{"seq": 34, "event": "input", "type": "down", "x": 366, "y": 239}
+{"seq": 35, "event": "wait", "ms": 80}
+{"seq": 36, "event": "input", "type": "up", "x": 366, "y": 239}
+{"seq": 37, "event": "wait", "ms": 600}
+{"seq": 38, "event": "frame", "path": "frames/000038.png", "sha256": "89648dccac3e7a1322b27447fc245856c784387b40ef3bc967180ef46ad351db"}
+{"seq": 39, "event": "input", "type": "down", "x": 327, "y": 349}
+{"seq": 40, "event": "wait", "ms": 80}
+{"seq": 41, "event": "input", "type": "up", "x": 327, "y": 349}
+{"seq": 42, "event": "wait", "ms": 600}
+{"seq": 43, "event": "frame", "path": "frames/000043.png", "sha256": "ffd5a01aae1dc8500f6a759b42fa3d92b888df73cebd80e9dadbcce9ce0ecdb6"}
+{"seq": 44, "event": "input", "type": "down", "x": 97, "y": 272}
+{"seq": 45, "event": "wait", "ms": 80}
+{"seq": 46, "event": "input", "type": "up", "x": 97, "y": 272}
+{"seq": 47, "event": "wait", "ms": 600}
+{"seq": 48, "event": "frame", "path": "frames/000048.png", "sha256": "ffd5a01aae1dc8500f6a759b42fa3d92b888df73cebd80e9dadbcce9ce0ecdb6"}
+{"seq": 49, "event": "input", "type": "down", "x": 180, "y": 285}
+{"seq": 50, "event": "wait", "ms": 80}
+{"seq": 51, "event": "input", "type": "up", "x": 180, "y": 285}
+{"seq": 52, "event": "wait", "ms": 600}
+{"seq": 53, "event": "frame", "path": "frames/000053.png", "sha256": "ffd5a01aae1dc8500f6a759b42fa3d92b888df73cebd80e9dadbcce9ce0ecdb6"}
+{"seq": 54, "event": "input", "type": "down", "x": 150, "y": 348}
+{"seq": 55, "event": "wait", "ms": 80}
+{"seq": 56, "event": "input", "type": "up", "x": 150, "y": 348}
+{"seq": 57, "event": "wait", "ms": 600}
+{"seq": 58, "event": "frame", "path": "frames/000058.png", "sha256": "31e8b300a4f2c47a64495fbcbdd09d70a3fb0692f1c5670a3a36f4b9c318c1ec"}
+{"seq": 59, "event": "input", "type": "down", "x": 325, "y": 348}
+{"seq": 60, "event": "wait", "ms": 80}
+{"seq": 61, "event": "input", "type": "up", "x": 325, "y": 348}
+{"seq": 62, "event": "wait", "ms": 600}
+{"seq": 63, "event": "frame", "path": "frames/000063.png", "sha256": "961b27bcbce06d732663e4ab8bdd33a4ec6c58e16d03c92d196232ba886e24ae"}
+{"seq": 64, "event": "input", "type": "down", "x": 337, "y": 74}
+{"seq": 65, "event": "wait", "ms": 80}
+{"seq": 66, "event": "input", "type": "up", "x": 337, "y": 74}
+{"seq": 67, "event": "wait", "ms": 600}
+{"seq": 68, "event": "frame", "path": "frames/000068.png", "sha256": "a472db60f05a7d89f21080c5e7966dea558998fcd86a5b1f730bec24ebbaa73d"}
+{"seq": 69, "event": "input", "type": "down", "x": 370, "y": 240}
+{"seq": 70, "event": "wait", "ms": 80}
+{"seq": 71, "event": "input", "type": "up", "x": 370, "y": 240}
+{"seq": 72, "event": "wait", "ms": 600}
+{"seq": 73, "event": "frame", "path": "frames/000073.png", "sha256": "20b509d1c9f905a9989055259b52df18e7acffb4acd27949468d1596a81e9d6b"}
+{"seq": 74, "event": "input", "type": "down", "x": 241, "y": 427}
+{"seq": 75, "event": "wait", "ms": 80}
+{"seq": 76, "event": "input", "type": "up", "x": 241, "y": 427}
+{"seq": 77, "event": "wait", "ms": 600}
+{"seq": 78, "event": "frame", "path": "frames/000078.png", "sha256": "717a622605ef47543346e89be58a8120a65da19148fa1c8903b08b7ea64995fe"}
+{"seq": 79, "event": "input", "type": "down", "x": 170, "y": 305}
+{"seq": 80, "event": "wait", "ms": 80}
+{"seq": 81, "event": "input", "type": "up", "x": 170, "y": 305}
+{"seq": 82, "event": "wait", "ms": 600}
+{"seq": 83, "event": "frame", "path": "frames/000083.png", "sha256": "7d8149333625a647b5627284999759e4821c83ff7a88e6f074ca54747191805f"}
+{"seq": 84, "event": "input", "type": "down", "x": 327, "y": 350}
+{"seq": 85, "event": "wait", "ms": 80}
+{"seq": 86, "event": "input", "type": "up", "x": 327, "y": 350}
+{"seq": 87, "event": "wait", "ms": 600}
+{"seq": 88, "event": "frame", "path": "frames/000088.png", "sha256": "1fe8b03635a695c133d952bb854734eedf1d082289bdb3f8b37dc97cd2913aac"}
+{"seq": 89, "event": "input", "type": "down", "x": 240, "y": 426}
+{"seq": 90, "event": "wait", "ms": 80}
+{"seq": 91, "event": "input", "type": "up", "x": 240, "y": 426}
+{"seq": 92, "event": "wait", "ms": 600}
+{"seq": 93, "event": "frame", "path": "frames/000093.png", "sha256": "06861816918c1f51992fc5f9e18c9b71703a108bbcadb2718b6ccddc1d5f920f"}
+{"seq": 94, "event": "input", "type": "down", "x": 337, "y": 74}
+{"seq": 95, "event": "wait", "ms": 80}
+{"seq": 96, "event": "input", "type": "up", "x": 337, "y": 74}
+{"seq": 97, "event": "wait", "ms": 600}
+{"seq": 98, "event": "frame", "path": "frames/000098.png", "sha256": "cda618d01031d75175b00e1a8e5d316a1702ff0fe1f77b4fe8cc977b90195a6a"}
+{"seq": 99, "event": "input", "type": "down", "x": 156, "y": 74}
+{"seq": 100, "event": "wait", "ms": 80}
+{"seq": 101, "event": "input", "type": "up", "x": 156, "y": 74}
+{"seq": 102, "event": "wait", "ms": 600}
+{"seq": 103, "event": "frame", "path": "frames/000103.png", "sha256": "1e4ef6c9051d5db60e9593f7a6cfdc4a2db777bc70880f94ba34e341cf43533b"}
+{"seq": 104, "event": "input", "type": "down", "x": 326, "y": 350}
+{"seq": 105, "event": "wait", "ms": 80}
+{"seq": 106, "event": "input", "type": "up", "x": 326, "y": 350}
+{"seq": 107, "event": "wait", "ms": 600}
+{"seq": 108, "event": "frame", "path": "frames/000108.png", "sha256": "f0ba378190d51cf0f40fce9dff38ad22b50617396744cc49fd8fbc1ee6a08184"}
+{"seq": 109, "event": "input", "type": "down", "x": 350, "y": 248}
+{"seq": 110, "event": "wait", "ms": 80}
+{"seq": 111, "event": "input", "type": "up", "x": 350, "y": 248}
+{"seq": 112, "event": "wait", "ms": 600}
+{"seq": 113, "event": "frame", "path": "frames/000113.png", "sha256": "591bdbc9f986dd4351ef6a1a2bfcb7925392ce64a1335e569f10e54605f74767"}
+{"seq": 114, "event": "input", "type": "down", "x": 150, "y": 348}
+{"seq": 115, "event": "wait", "ms": 80}
+{"seq": 116, "event": "input", "type": "up", "x": 150, "y": 348}
+{"seq": 117, "event": "wait", "ms": 600}
+{"seq": 118, "event": "frame", "path": "frames/000118.png", "sha256": "2177dfc9d726a197e8f346d5d25e90bebb86eab3c40f2985f2a8f0cb9cd68545"}
+{"seq": 119, "event": "input", "type": "down", "x": 240, "y": 427}
+{"seq": 120, "event": "wait", "ms": 80}
+{"seq": 121, "event": "input", "type": "up", "x": 240, "y": 427}
+{"seq": 122, "event": "wait", "ms": 600}
+{"seq": 123, "event": "frame", "path": "frames/000123.png", "sha256": "99d4b55f517fc8de103301d271146a664e4305c75bdd16665b272330070929f2"}
+{"seq": 124, "event": "input", "type": "down", "x": 169, "y": 400}
+{"seq": 125, "event": "wait", "ms": 80}
+{"seq": 126, "event": "input", "type": "up", "x": 169, "y": 400}
+{"seq": 127, "event": "wait", "ms": 600}
+{"seq": 128, "event": "frame", "path": "frames/000128.png", "sha256": "a17a2d01ac5acb68edae6cb28de939927cda65c0d99ecd2d4ca91350d7c4cc04"}
+{"seq": 129, "event": "input", "type": "down", "x": 326, "y": 350}
+{"seq": 130, "event": "wait", "ms": 80}
+{"seq": 131, "event": "input", "type": "up", "x": 326, "y": 350}
+{"seq": 132, "event": "wait", "ms": 600}
+{"seq": 133, "event": "frame", "path": "frames/000133.png", "sha256": "a1846cf02792c1c20d3bf7bb3c9272292c7d5f41c44b5d41ce14b46394a9495a"}
+{"seq": 134, "event": "input", "type": "down", "x": 240, "y": 427}
+{"seq": 135, "event": "wait", "ms": 80}
+{"seq": 136, "event": "input", "type": "up", "x": 240, "y": 427}
+{"seq": 137, "event": "wait", "ms": 600}
+{"seq": 138, "event": "frame", "path": "frames/000138.png", "sha256": "791fa94d771d13a31302537dec721d1b08809cd6dfe27d5789004dfb3523f78f"}
+{"seq": 139, "event": "input", "type": "down", "x": 337, "y": 74}
+{"seq": 140, "event": "wait", "ms": 80}
+{"seq": 141, "event": "input", "type": "up", "x": 337, "y": 74}
+{"seq": 142, "event": "wait", "ms": 600}
+{"seq": 143, "event": "frame", "path": "frames/000143.png", "sha256": "f005b70c179cff5858521d934b100cdb736fd4ce03e73c8d01615f563da556d7"}
+{"seq": 144, "event": "input", "type": "down", "x": 240, "y": 427}
+{"seq": 145, "event": "wait", "ms": 80}
+{"seq": 146, "event": "input", "type": "up", "x": 240, "y": 427}
+{"seq": 147, "event": "wait", "ms": 600}
+{"seq": 148, "event": "frame", "path": "frames/000148.png", "sha256": "c9ae67390b9183092fde81fa055182a4e955e56a0620c0bc3cd23e63c733afc4"}
+{"seq": 149, "event": "input", "type": "down", "x": 152, "y": 350}
+{"seq": 150, "event": "wait", "ms": 80}
+{"seq": 151, "event": "input", "type": "up", "x": 152, "y": 350}
+{"seq": 152, "event": "wait", "ms": 600}
+{"seq": 153, "event": "frame", "path": "frames/000153.png", "sha256": "d6841b0bf9d9b8aa547790c58b9388bfad9dd523b5fcf870218306638ddf4809"}
+{"seq": 154, "event": "input", "type": "down", "x": 152, "y": 350}
+{"seq": 155, "event": "wait", "ms": 80}
+{"seq": 156, "event": "input", "type": "up", "x": 152, "y": 350}
+{"seq": 157, "event": "wait", "ms": 600}
+{"seq": 158, "event": "frame", "path": "frames/000158.png", "sha256": "3804ad2f4cbc3f8441b4141677a6f8a88879d7fdd15e2481a96d47cfd801ee88"}

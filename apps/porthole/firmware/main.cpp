@@ -9,6 +9,7 @@
 #include "net.h"
 #include "shell.h"
 #include "timezone.h"
+#include "update_picture.h"
 
 // The shell's storage is the board's NVS, addressed by (namespace, key).
 struct NvsStore : shell::Store {
@@ -135,9 +136,27 @@ static void beginClock() {
 // does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
 extern "C" bool verifyRollbackLater() { return true; }
 
+// Every update needs internal RAM: its SRAM screen, then wifi and TLS (on the board those took about 28 KB more, with
+// 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
+// good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
+static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
+static bool canUpdate() {
+  const size_t need = board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM;
+  const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+  Serial.printf("[porthole] update ram: %u free, %u needed\n", (unsigned)have, (unsigned)need);
+  return have >= need;
+}
+
 static void markValid() {
+  const bool ok = canUpdate();
+  if (!ok) Serial.println("[porthole] WARNING: too little internal RAM to install the next update");
   esp_ota_img_states_t st;
   if (esp_ota_get_state_partition(esp_ota_get_running_partition(), &st) != ESP_OK || st != ESP_OTA_IMG_PENDING_VERIFY) return;
+  if (!ok) {   // back to the firmware that installed this one, which could still update
+    Serial.println("[porthole] new firmware can't update itself: rolling back");
+    esp_ota_mark_app_invalid_rollback_and_reboot();
+    return;   // rollback can fail without a valid spare image; never mark this image valid
+  }
   esp_ota_mark_app_valid_cancel_rollback();
   Serial.println("[porthole] new firmware started; marked valid");
 }

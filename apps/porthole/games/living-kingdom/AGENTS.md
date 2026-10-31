@@ -41,7 +41,9 @@ prose and art are original. This remains an unofficial private prototype.
   SVG is only a schematic. Missing illustrations come from GPT Image Gen, with untouched
   sources and crop provenance; do not recreate them with code-drawn shapes.
   Cached lossless streams retain all source-derived RGB565 pixels. Firmware
-  uses ROM miniz; host builds require zlib. See `art/README.md` for regeneration.
+  uses the shared `os/packed_image` ROM-miniz decoder; host builds require zlib.
+  Games share its serial decoder workspace, never art assets or visual identity.
+  See `art/README.md` for regeneration.
 - Message text uses the exact PR #80 Atkinson Hyperlegible font for readability;
   decorative headings use Willowbook Serif. Keep their bundled licences and
   checksum-verified sources, and measure pagination with the generated faces.
