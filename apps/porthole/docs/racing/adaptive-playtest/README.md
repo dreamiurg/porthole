@@ -253,3 +253,152 @@ Fixed on `claude/rally-adaptive` after this report and the code review. The coor
 | 7 | Two rivals boost past within about 2 s of the kid's boost to 1st | Fixed. No rival fires within 2.5 s of another rival's boost (`RIVAL_BOOST_GAP_MS`). |
 | — | Limitation: the `dbg level -30` value did not persist | Fixed. `dbg level N` now marks the save dirty. |
 | — | Snow and Industrial Ruins tops (review) | Industrial Ruins still won about 52% at the old top (15). Widening the chase window did nothing: rivals spend their charges long before the kid is 40 m clear. Levels 16-18 now let a rival take its three charges back at each lap line, as the kid does from pickups; Industrial's top falls to about 40%. |
+
+## Pass 2 (retest of the resolutions, same playtester, emulator roleplay)
+
+The same independent playtester ran this pass. It did not read `games/racing/` source. It knew the engineer's resolutions
+table above (from the brief), so it is not a fresh first-time-comprehension check. No real child played and no
+board was used.
+
+### Build, setup, brief
+
+- Commit `0128565` on `claude/rally-adaptive`. `build/host/snap` sha256 `f82737a675bf33e024d4a5f1731f4d7c0770540be11bc4d4e33ad06dc8ce8280`,
+  frozen as `snapf` for the session.
+- Same fixture and `drv.py`. The only change to `drv.py` is a `skip` passthrough, so the session can wait out the
+  rest screen. Touch coordinates are logical (160x160). Every menu tap was chosen from a rendered frame.
+  - Zoe: `smooth 1 0 kiddodge` (dodges, taps Boost about every 8 s, Rocket when a rival is close ahead).
+  - Zoe "bad day": `jerky 0.6 25 kid`.
+  - Sam: `jerky 0.5 25 kid`.
+  - Struggling Sam: `jerky 0.5 32 kid`.
+- Levels were read afterwards from copies of the save (`debug` after tapping each track card in a `--script` run).
+  They were not consulted during play.
+- Brief (as received): Zoe plays at least 4 Desert races trying to win, then at least 4 losses in a row on one track
+  if she can produce them, then one race each on Industrial Ruins and Night Run. Sam plays at least 3 races on Snow.
+  Then supplementary fixtures only: `dbg level 6/12/18` (are rival flames readable? any gang-up or rubber-banding?
+  any flameless pull-away?) and `dbg level -10` for Sam (can a struggling kid pass and win?).
+
+### Natural play (no `dbg`)
+
+| # | Kid | Track | Level in | Place | Time | What happened |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Zoe | Desert | 0 | 2nd | 1:32.5 | Green led. It was visible as a dot ahead all of lap 3, and Zoe never closed at 90 mph. |
+| 2 | Zoe | Desert | −2 | **1st** | 1:32.5 | A duel with green. Zoe boosted past it in the final lap (`10`). |
+| 3 | Zoe | Desert | −1 | 2nd | 1:32.7 | Green far ahead in lap 3. |
+| 4 | Zoe | Desert | −3 | 1st | 1:30.9 | 1st from about 12 s, then nobody on screen. **Counted +1, not the runaway +2.** |
+| 5 | Zoe | Desert | −2 | 1st | 1:31.6 | Passed green mid lap 2, then alone. +1. |
+| 6 | Zoe | Desert | −1 | 2nd | 1:32.9 | Green far ahead in lap 3. |
+| 7 | Zoe (bad day) | Desert | −3 | 2nd | 1:34.2 | Wobbly. Swapped places with yellow and green. |
+| 8 | Zoe (bad day) | Desert | −5 | — | — | Led from 10 s. **The 15-minute session rest cut the race in lap 3 while she was 1st** (`11`). No result; level unchanged. |
+| 9 | Zoe | Industrial (new) | −6 | 3rd | 1:57.7 | Blue visible just ahead nearly all race; passed at the end. The helper hit walls often here. |
+| 10 | Zoe | Night Run (new) | −6 | 1st | 1:46.1 | 1st by 12 s and alone. This time the runaway +2 fired (−6 → −4). |
+| 11 | Sam | Snow | 0 | 2nd | 1:58.4 | Yellow close for two laps; Sam passed it in lap 3. Contested. |
+| 12 | Sam | Snow | −2 | 1st | 1:55.7 | 1st from about 12 s; **alone for about 1:45**. +1. |
+| 13 | Sam | Snow | −1 | 1st | 1:55.8 | Same: alone. +1. |
+| 14 | Sam | Snow | 0 | 1st | 1:55.3 | Alone. +1. |
+| 15 | Sam | Snow | 1 | 1st | 1:55.8 | 1st by 6 s, alone (`12`). +1 (→ 2). |
+
+New-track starts behaved as described ("one below the best elsewhere"): Industrial and Night started at −6 after
+Zoe's bad-day dip on Desert (−5).
+
+A natural streak of four losses was not produced. Zoe never got above 0 on Desert, and below 0 a single loss (−2)
+already made the next race easy. The halving was exercised only from the fixture (below).
+
+### Supplementary fixtures (hidden state)
+
+| Driver | Level | Place / time | Observation |
+| --- | --- | --- | --- |
+| Zoe, dodging | 6 | 3rd, 1:34.2 | Yellow just ahead all race; Zoe 2nd twice briefly. No rival flames in the 1 s samples: rivals boost only to pass the kid, and she was behind. |
+| Zoe, dodging | 12 | **1st**, 1:31.3 | Green boosts past from behind with **cyan** flames, clearly unlike Zoe's orange (`13`). Zoe boosts back to 1st in lap 3. Lead changes, no gang-up. |
+| Zoe, dodging | 18 | 3rd, 1:32.6 | Lap 1: green, yellow and blue each boost past, 5.2 s and 4.5 s apart (`14`). The 2.5 s gap holds, but Zoe drops 1st → 4th in about 10 s. A pack all race. |
+| same, natural losses after 18 | 9, 4, 2, 0 | 3rd 1:34.2, 3rd 1:34.5, 2nd 1:33.5, **1st 1:31.3** | Halving confirmed: 18 → 9 → 4 → 2 → 0, then the win at 0 (→ 1). Four losses, then a win. The day's 30-minute cap fired at the GO of one race (no result, level unchanged). |
+| Steady driver, no presses (Snow) | 0 / −10 | 3rd 1:59.4 / 1st 1:56.3 | Consistent with the engineer's claim. At −10 the win is a solo drive from 6 s. |
+| Struggling Sam (Snow) | −10, −12, −14, −16 | 3rd 2:11.4, 3rd 2:14.3, 2nd 2:11.0, 2nd 2:16.1 | 15-20 s off his clean pace. He passes a car in every race and is close behind the leader at −14 (`15`), but **never wins, even at the floor**. |
+| Very sloppy (`jerky 0.35 40`) | −10 | invalid | The helper drove on the snow at 50 mph from the start, so this run is not evidence. In pass 1 the same parameters gave 2:02-2:05, so struggling-Sam numbers are not comparable across passes. |
+
+Rival flames were cyan and readable at 12 and 18, including on a rival several car lengths ahead. No rival pulled
+away at Zoe's top speed without flames. That is a qualitative read of the contact sheets, not a frame-by-frame gap
+measurement. At levels 0-2 a leader ahead held a steady gap at Zoe's 90 mph, as in pass 1.
+
+### Pass-1 findings: status
+
+| # | Status |
+| --- | --- |
+| 1 Levels 2-9 identical | **Mitigated.** A trailing driver still gets the same race at 6 and 9 (3rd, 1:34.2) and at 4 (1:34.5). The halving gets out of that band in two races, and 2 and 0 differ (2nd, then 1st). |
+| 2 Snow solo at 0-1 | **Still present.** See Major 1. |
+| 3 Many losses before a win | **Improved for a steady driver** (wins by −10). A driver 15-20 s off pace places 2nd-3rd and never wins, even at −16. See Minor 2. |
+| 4 `(+N)` reads as the gap to the winner | Deferred; still present (`+3.3` under `3rd`). |
+| 5 Rocket hit then rear-end | Deferred; not re-examined. |
+| 6 Rival flames small, same colour | **Fixed.** Cyan and cream, clearly the rival's (`13`, `14`). |
+| 7 Two boosts right after the kid's | **Fixed as specified** (no two rival boosts within 2.5 s). At 18 the serial version remains. See Nit. |
+
+### Findings (pass 2)
+
+**Major**
+
+1. **The runaway "+2" rarely fires for wins that look solo to the kid, so Snow stays a walk in the park for Sam.**
+   - Screen: race (Snow Track; also Desert race 4).
+   - Concern: boredom / challenge.
+   - Evidence: five natural wins with no rival on screen after the first 6-15 s each added +1 (Zoe race 4;
+     Sam races 12-15). Only Night Run at −6 got +2.
+   - Likely cause: rivals behind the kid are never drawn, so a rival 2 s back (under 100 m at 90 mph) is invisible.
+     The kid drives alone for 1:45, but the rule sees a close finish.
+   - Result: Sam needs about five more solo races before Snow is contested. A 6-year-old stops after two.
+   - Suggestion: base the bonus on what the kid sees (time led with no rival visible ahead, or the lead at the line
+     in seconds), or show rivals behind (a mirror or a "2nd 1.8 s" tag).
+   - Repro: fresh Sam, Snow, `drv.py S "drive 140 X 3000 jerky 0.5 25 kid"` × 5 with Replay (`tap 50 113`). Levels
+     read: −2, −1, 0, 1, 2.
+   - Screenshot: `12-sam-snow-level1-alone.png`.
+
+**Minor**
+
+1. **The play-time rest cuts a race mid-lap, even in the final lap while leading, with no warning.**
+   - Screen: shell rest page during a race.
+   - Concern: recovery / feedback (owned by the shell, not Rally).
+   - Repro: Zoe's natural session, race 8: the 15-minute session ends in lap 3 while she is 1st (`11`). Nothing
+     appeared in the 75 s of 0.5 s frames before it. The daily 30-minute cap also fired at a race's GO.
+   - Impact: the level is unchanged, so the cut is not punishing in the rules. From the kid's seat, though, it is
+     "I was winning and it vanished". This is by design (`AGENTS.md`: running games enforce the schedule).
+   - Suggestion for the owner: a grace period to the race's end, or a "last race" notice at the start.
+2. **A kid 15-20 s off his clean pace never wins on Snow, even at the floor (−16).** He places 2nd-3rd and passes
+   cars, so it is not punishing, but there is no win.
+   - Concern: challenge.
+   - Repro: the fixture table above.
+   - Screenshot: `15-sam-minus14-boost-pass-green-ahead.png`.
+3. **A bad-day dip carries into new tracks.** Zoe's one sloppy loss put Desert at −5, so Night Run started at −6 and
+   was a solo win on her first visit.
+   - Concern: challenge.
+   - Repro: natural races 7, 9 and 10.
+
+**Nit**
+
+1. **At level 18 three rivals boost past one after another in lap 1** (1st → 4th in about 10 s, `14`). The gap rule
+   holds and 18 is earned, so this is drama rather than unfairness. Watch it if it repeats every lap.
+
+### Gesture / interruption matrix (pass 2)
+
+| Case | Result |
+| --- | --- |
+| Offset taps on picker, launcher arrow, Rally tile, track cards, Next, Replay, Tracks | Each acted once |
+| Re-entry after Home or the rest page | The How to race page shows again first (expected; caught a scripted tap meant for Go) |
+| Session rest mid-race; daily cap at GO | Race ends with no result; level unchanged (Minor 1) |
+| Process restart mid-race (Sam at −16, Zoe at 0) | Boots to the picker; level unchanged |
+| Long-press, drag off a button, Resume after pause | **gap** this pass |
+
+### Automated checks
+
+`make -C apps/porthole playtest` at `0128565`: 81 of 81 scenarios pass, 0 UI FAIL / 0 WARN (racing: `a0_racing_flow`
+41 checks, `a1_racing_monkey`, `a4_racing_board`, `a5_racing_level` 19 checks).
+
+### Verdict
+
+**Needs another pass.** Verified: the halving (18 → 0 in four losses, then a win), cyan rival flames, the 2.5 s boost
+gap, the new-track start, and the steady-driver easing. Desert with Zoe alternates wins and losses with rivals
+visible ahead and overtakes, which is the owner's target. Not met: Snow is still a solo drive for Sam at −2..1,
+because the runaway rule's trigger does not match what the kid sees (Major 1).
+
+### Suggested brief changes
+
+- Plan around the 15-minute session cap: `skip 600` between race blocks, or a grown-up Allow 30 min.
+- Ask the engineer to expose (or the brief to allow reading) the finish gap after a race, so "solo" can be checked
+  against the rule.
+- Pin the struggling-Sam helper parameters and validate them before use (one invalid run this pass).

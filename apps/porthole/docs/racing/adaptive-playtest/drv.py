@@ -188,7 +188,7 @@ def main():
             s.cmd(f"down {a[1]} {a[2]}")
             s.cmd(f"tick {a[3]}")
             s.cmd("up")
-        elif k in ("tick", "tilt", "dbg", "down", "move", "up"):
+        elif k in ("tick", "tilt", "dbg", "down", "move", "up", "skip"):
             s.cmd(acts[i])
         elif k == "shot":
             s.frame().save(os.path.join(OUT, a[1] + ".png"))
