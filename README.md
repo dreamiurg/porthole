@@ -3,8 +3,6 @@
 [![Release](https://github.com/dreamiurg/porthole/actions/workflows/release.yml/badge.svg)](https://github.com/dreamiurg/porthole/actions/workflows/release.yml)
 [![Beta](https://img.shields.io/github/v/release/dreamiurg/porthole?include_prereleases&filter=porthole-v*&label=beta)](https://github.com/dreamiurg/porthole/releases)
 [![Stable](https://img.shields.io/github/v/release/dreamiurg/porthole?filter=porthole-v*&label=stable)](https://github.com/dreamiurg/porthole/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform: ESP32-S3](https://img.shields.io/badge/platform-ESP32--S3-e7352c)](docs/hardware.md)
 
 > A growing collection of small apps for one round touchscreen, with a shared
 > toolchain to build, test, release and flash every one of them.
