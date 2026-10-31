@@ -77,7 +77,7 @@ See `docs/superpowers/specs/2026-10-17-pumpkin-hide-and-seek-design.md` at repo 
 Install Pillow in the Python environment used by make (`python3 -m pip install pillow`)
 before running the screenshot checks; CI already includes it.
 
-Eight full-size golden PNGs in `docs/` capture intro, calibration, hiding, victory,
+Eight full-size golden PNGs in `goldens/` capture intro, calibration, hiding, victory,
 catch, two frosting stages and the pie. `make check` compares their pixels with the
 win/loss tours and checks crisp 3x scaling inside the glass. After an intentional
 art change, run `make snap && python3 tools/pumpkin_goldens.py --update` from the

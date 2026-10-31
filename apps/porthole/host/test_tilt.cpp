@@ -2,7 +2,7 @@
 // same amount both ways, the steady neutral ignores a jolt, and the Calibrate preview's reference follows gravity. What
 // each game does with a tilt is in its own test.
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include "host/grip.h"
@@ -10,7 +10,6 @@
 
 using namespace grip;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 
 // From every grip: holding it as calibrated is no tilt, and a tilt away from it reads back as itself.
 static void everyGrip() {

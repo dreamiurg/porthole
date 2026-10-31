@@ -1,5 +1,5 @@
 // Physical sparse scanout and the visible progress/back contract, without ESP32 headers.
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

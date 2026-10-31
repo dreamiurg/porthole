@@ -9,8 +9,7 @@ exclude: |
     apps/porthole/games/biscuit/generated/.*|
     apps/porthole/games/tilt-fc/generated/.*|
     apps/porthole/games/tilt-fc/fonts/OFL\.txt|
-    apps/porthole/os/font8x8_basic\.h|
-    .*\.(ttf|png|bmp)
+    apps/porthole/os/font8x8_basic\.h
   )$
 
 repos:
@@ -26,6 +25,7 @@ repos:
         args: [--branch, main]
       - id: check-added-large-files
         args: [--maxkb=500]
+        exclude: \.(ttf|png|bmp)$  # art sources and fonts are big by nature; text hooks skip binaries on their own
       - id: detect-private-key
 
   - repo: https://github.com/gitleaks/gitleaks
