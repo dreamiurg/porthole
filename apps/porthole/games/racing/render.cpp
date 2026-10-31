@@ -18,6 +18,7 @@ namespace {
 // Rally's own interface colors: a navy-black plate, white and gold numerals with a black outline, a race-orange accent.
 constexpr uint32_t INK = 0x141623, PLATE = 0x1F2438, PLATE_HI = 0x343C5C, RIM = 0x07080C, CREAM = 0xFFF6E4;
 constexpr uint32_t DIM = 0x8A8FA3, ORANGE = 0xFF8A1E, CYAN = 0x45E3FF, GOLD = 0xFFD23A, GREEN = 0x7BE07B;
+constexpr uint32_t HELD = 0xFF5A36;   // the speed held back by a trap
 constexpr uint32_t RING = 0xDCE2EC, STEEL = 0xB4BCC6, STEEL_DARK = 0x5C6470;
 constexpr float MPH_AT_TOP = 90;
 constexpr int HORIZON = 228, CAR_ROW = 402, CAR_DEPTH = CAR_ROW - HORIZON, PIC_SCALE = 2;
@@ -123,13 +124,20 @@ void skyline(int track, int bottom, int offset) {
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
 struct Thing { float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; };   // size: drawn bigger than life
 constexpr int MAX_THINGS = 48;
+// The speed arc hugs the top rim: SEGMENTS slots across ARC_DEG either side of 12 o'clock, between ARC_IN and ARC_OUT.
+// Which slot each of its pixels belongs to (or its dark rim) is worked out once, so a frame only looks it up.
+constexpr int SEGMENTS = 24, ARC_IN = 210, ARC_OUT = 228, ARC_MAX = 9000, ARC_RIM = 255;
+constexpr float ARC_DEG = 56;
 struct Scratch {
   int16_t center[ROWS], half[ROWS];   // road center and half-width for each row below the horizon
   float z[ROWS];
   Thing things[MAX_THINGS];
   int n;
+  uint32_t arc[ARC_MAX];              // panel offset << 8 | slot (ARC_RIM: the dark edge and the gaps)
+  int arcCount;
 };
 Scratch* sc = nullptr;
+void buildArc();   // with the HUD, below
 struct Camera { const Race* r; int track; float dist, x; };
 float rowZ(int y) { return DEPTH_K / (float)(y - HORIZON); }
 void project(const Camera& cam) {   // bottom row up: the bend accumulates with distance
@@ -266,7 +274,7 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   pic(s, x - s.w, CAR_ROW - lift - 2 * s.h, PIC_SCALE);
 }
 void scene(const Race& r, int track, float steer, uint32_t ms) {
-  if (!sc) sc = new (std::nothrow) Scratch();
+  if (!sc) { sc = new (std::nothrow) Scratch(); if (sc) buildArc(); }
   if (!sc) return;
   const Car& p = r.car[PLAYER];
   Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f};
@@ -301,21 +309,46 @@ void action(const ui::Box& b, int item, int count, bool lit, bool full) {
   outlined(cx + inward * 20 - 12, cy + 12, n, 3, count ? CREAM : DIM);   // the count, toward the middle
   if (full) { const int w = textWidth("Full", 2); outlined(cx + inward * 8 - w / 2, cy - 70, "Full", 2, GOLD); }
 }
-// The speed, top center: big digits and a bar that is cyan while boosting and orange while held back (a slow patch,
-// off the road, or the moment after a hit), so a kid sees what a trap costs. 1.0 (dry-road top speed) reads 90 mph.
+void buildArc() {
+  sc->arcCount = 0;
+  for (int y = 240 - ARC_OUT; y < 240; y++)
+    for (int x = 0; x < 480; x++) {
+      const float dx = (float)(x - 240), dy = (float)(240 - y), r = sqrtf(dx * dx + dy * dy);
+      const float deg = atan2f(dx, dy) * (180 / 3.14159265f);
+      if (r < ARC_IN || r > ARC_OUT || fabsf(deg) > ARC_DEG || sc->arcCount >= ARC_MAX) continue;
+      const float at = (deg + ARC_DEG) / (2 * ARC_DEG) * SEGMENTS, inSlot = at - floorf(at);
+      const bool edge = r < ARC_IN + 2 || r > ARC_OUT - 2 || inSlot < 0.12f || inSlot > 0.88f;
+      sc->arc[sc->arcCount++] = (uint32_t)(y * 480 + x) << 8 | (edge ? ARC_RIM : (uint32_t)at);
+    }
+}
+// Slot colors: the road range runs green to gold to orange; the slots past top speed are the boost's cyan.
+uint16_t slotColor(int i) {
+  constexpr int ROAD = (int)(SEGMENTS / BOOST_CAP + 0.5f);
+  if (i >= ROAD) return rgb888_to_565(CYAN);
+  const float t = (float)i / (ROAD - 1);
+  const uint32_t a = t < 0.5f ? GREEN : GOLD, b = t < 0.5f ? GOLD : ORANGE;
+  const float u = t < 0.5f ? t * 2 : t * 2 - 1;
+  auto mix = [&](int s) { return (uint32_t)((a >> s & 255) * (1 - u) + (b >> s & 255) * u) << s; };
+  return rgb888_to_565(mix(16) | mix(8) | mix(0));
+}
+// The speed: an arc of slots along the top rim lighting left to right, and big digits under it. Held back (a slow
+// patch, off the road, the moment after a hit) the lit slots and digits turn red-orange; boosting, the digits are
+// cyan as the boost slots fill. 1.0 (dry-road top speed) reads 90 mph.
 void speedo(const Race& r) {
   const Car& p = r.car[PLAYER];
   bool ice = false;
   const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, p.dist, p.x, &ice) < 1);
-  const uint32_t color = p.boostMs ? CYAN : slowed ? ORANGE : CREAM;
+  const int lit = (int)lroundf(fminf(p.speed / BOOST_CAP, 1) * SEGMENTS);
+  const uint16_t rim = rgb888_to_565(RIM), off = rgb888_to_565(PLATE), held = rgb888_to_565(HELD);
+  for (int i = 0; i < sc->arcCount; i++) {
+    const uint32_t slot = sc->arc[i] & 255;
+    gfx565::fb[sc->arc[i] >> 8] = slot == ARC_RIM ? rim : (int)slot >= lit ? off : slowed ? held : slotColor((int)slot);
+  }
+  const uint32_t color = p.boostMs ? CYAN : slowed ? HELD : CREAM;
   char n[8];
   snprintf(n, sizeof n, "%d", (int)lroundf(p.speed * MPH_AT_TOP));
-  const int w = textWidth(n, 5), x = 262 - w;
-  outlined(x, 28, n, 5, color);
-  outlined(268, 50, "mph", 2, color);
-  const int bw = (int)(110 * fminf(p.speed / BOOST_CAP, 1));
-  fill(184, 78, 114, 9, RIM);
-  fill(186, 80, bw, 5, color);
+  outlined(262 - textWidth(n, 5), 40, n, 5, color);
+  outlined(268, 62, "mph", 2, color);
 }
 void hud(const View& v) {
   const Race& r = *v.race;
