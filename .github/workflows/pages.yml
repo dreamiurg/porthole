@@ -1,0 +1,38 @@
+name: Pages
+
+# Publishes site/ (the install guide) to https://porthole.dreamiurg.net. The game pictures come
+# from docs/games/, the same files the README shows. The custom domain is set in the repo's
+# Pages settings, not by a CNAME file: an Actions-deployed site ignores that file.
+
+on:
+  push:
+    branches: [main]
+    paths: [site/**, docs/games/**, .github/workflows/pages.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - run: cp -r docs/games site/games
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1

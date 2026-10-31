@@ -35,7 +35,7 @@ All ten games run in one firmware, [Porthole](apps/porthole/). Each kid gets a p
 
 No game punishes a kid who is away. Nothing dies, and no progress is lost.
 
-**[Put the games on a board](https://dreamiurg.net/porthole/)** from Chrome, with no tools to install.
+**[Put the games on a board](https://porthole.dreamiurg.net/)** from Chrome, with no tools to install.
 To try them on a computer, run `make -C apps/porthole webemu`. [More about Porthole](apps/porthole/README.md).
 
 ## How this started
@@ -125,7 +125,7 @@ esptool --chip esp32s3 write-flash 0x0 bootloader.bin 0x8000 partitions.bin 0xe0
 esptool 4 spells the command `write_flash`. Do not give `--flash-mode` or `--flash-freq`. They change the
 bootloader header, and a mode the board cannot run (`qio`) puts it in a watchdog reset loop. To recover,
 write the parts again without those options. A step-by-step guide with pictures is at
-[dreamiurg.net/porthole](https://dreamiurg.net/porthole/).
+[porthole.dreamiurg.net](https://porthole.dreamiurg.net/).
 
 ### Updates over Wi-Fi
 
@@ -213,7 +213,8 @@ apps/<app>/         one complete project per directory
 platform/           shared PlatformIO base, pinned requirements, factory-image script
 tools/gallery.py    README screenshot strips from panel captures
 docs/               hardware.md (board, pins, round-screen rules), new-app.md (the app contract)
-.github/            CI, releases, Dependabot
+.github/            CI, releases, Pages, Dependabot
+site/               the install guide at porthole.dreamiurg.net
 .claude/            agents and skills for AI-assisted work (see AGENTS.md)
 ```
 
