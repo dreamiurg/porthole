@@ -1,28 +1,28 @@
 name: CI
 
 # CI is a backstop, not the first line of defense: the pre-commit and pre-push hooks
-# run everything here on the author's machine first (see CONTRIBUTING.md). To keep
-# GitHub minutes low it runs once per PR (not again on merge: the ruleset requires
-# branches to be up to date, so main gets exactly what the PR tested), only builds what
-# the PR touched. A few-second `changes` job decides that, so lint (static) and the app
-# suites run in parallel instead of the suites waiting for lint.
+# run everything here on the author's machine first (see CONTRIBUTING.md). On a PR it
+# only builds what the PR touched; a few-second `changes` job decides that, so lint
+# (static) and the app suites run in parallel instead of the suites waiting for lint.
+# PRs need not be up to date with main to merge, so every push to main runs the full
+# suite again: release.yml publishes only after this run passes on that commit.
 #
 # Caches: a PR can only restore caches saved on main or on its own branch. So PRs only
 # restore the PlatformIO cache (1.4 GB; PR-scoped copies were evicting main's from the 10 GB
-# quota), and main saves it: the weekly run, plus a full run on a push that changes a file
-# the cache keys depend on. Before this, PRs mostly missed and rebuilt everything.
+# quota), and main saves it on a run that missed (a push changing a file the cache key
+# depends on, or eviction). Before this, PRs mostly missed and rebuilt everything.
 
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
-    paths: [.pre-commit-config.yaml, "platform/*.ini", .github/workflows/ci.yml]
   schedule:
     - cron: "0 6 * * 0"  # weekly full run on main: catches toolchain and runner drift, feeds the badge
   workflow_dispatch:
 
 concurrency:
+  # On main, a newer push cancels the older run; its release then ships with the newer commit's.
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
