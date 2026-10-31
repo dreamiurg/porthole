@@ -23,7 +23,8 @@ make check                                 # lint + fast tests for every app
   the changed app's `make ci` (playtests and coverage) and its firmware build.
   If a hook fails, fix the cause rather than skipping the hook.
 - Pushing needs what CI has: PlatformIO (`pip install -r platform/requirements.txt`),
-  Node 22+ (for Biscuit's art check) and `shellcheck` on PATH (actionlint uses it
+  Node 22 from `.tool-versions` (for Biscuit's art check; mise picks it up, and a Node built on another
+  zlib, such as Homebrew's, packs the art to different bytes and fails the check) and `shellcheck` on PATH (actionlint uses it
   for workflow `run:` blocks and silently skips that part without it). The hooks bring their own
   Python packages. By the time you push, you have run everything CI will.
 - CI is a backstop. It runs once per PR, cheapest checks first, and only for the

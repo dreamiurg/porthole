@@ -23,7 +23,8 @@ ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # Python warnings are errors too: -W error raises them, and the wrapper fails on the ones Python can only print
 # (a ResourceWarning from a finalizer). Our scripts only; PlatformIO and gcovr run their own interpreters.
 PY := ../../tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error
-# Biscuit's art generator is Node (22+, no npm packages), a dev-machine tool: lint skips it, loudly, where node is missing.
+# Biscuit's art generator is Node (22, pinned in /.tool-versions: a Node built on another zlib packs the art to different
+# bytes and fails --check; no npm packages), a dev-machine tool: lint skips it, loudly, where node is missing.
 NODE_ART := games/biscuit/tools/art/export-assets.mjs
 SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Host self-checks: every host/test_<name>.cpp, linked with test_<name>_SRC. A new test is its file plus that one line.
@@ -136,7 +137,7 @@ lint: snap
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
 	@command -v node >/dev/null || { [ -z "$(REQUIRE_NODE)" ] || { echo "node not found and REQUIRE_NODE is set: $(NODE_ART) --check can't run"; exit 1; }; \
-	  echo "node not found: skipping $(NODE_ART) --check (install Node 22+ to run it)"; exit 0; }; \
+	  echo "node not found: skipping $(NODE_ART) --check (install Node 22, see /.tool-versions, to run it)"; exit 0; }; \
 	  ../../tools/fail-on-warning.sh 'Warning: ' node $(NODE_ART) --check
 
 # What pre-commit runs: seconds, not minutes.
