@@ -595,3 +595,24 @@ wins on Snow by race 6. What remains:
 - Desert's long losing run for a struggling kid (Minor 2, known).
 - Results wording (Minor 3).
 - The shell's rest timing (Minor 4).
+
+## Resolutions after pass 3 (game-engineer, fourth pass)
+
+The final pass after pass 3 and the review of `88fcff3`. It also adds the difficulty setting the owner asked for.
+No black-box pass has been run on this build.
+
+The level rule now: a win adds one, two after a runaway (the kid led for 3/5 of the race). A loss at 0 or below
+takes two; from 1..3 it drops to 0; from 4..9 straight to -2; above 9 it takes three. From 18 a losing streak is
+below 0 after four losses (15, 12, 9, -2). Below 0 the rivals are slower on **every** track. Before this pass, on
+Industrial Ruins and Night Run the shift could turn a level such as -2 back into charge rungs only, which a trailing
+kid never sees. Now the shift moves only the charge-and-pace ladder, so the slow-down follows the kid's own level.
+
+| Pass / # | Finding | Status |
+| --- | --- | --- |
+| 3 / m1 | Snow swings from contested back to two solo races after one loss at 3 | **Fixed.** A loss from 1..3 now lands at 0. At 0 a kid stuck behind meets the same race as at 1..3; a further loss goes below 0, where the rivals are slower. |
+| 3 / m2 | A struggling kid on Desert loses six or more in a row | **Deferred.** On Desert a driver that wobbly is barely faster than one who never steers, and the never-steering driver must still finish 4th at the floor (a test). |
+| 3 / m3 | `(+0.4)` under a first-ever 1st reads as a shortfall | **Fixed.** The gap to the kid's own best is not shown after a win; "Your best yet!" and "Track record!" are unchanged. |
+| 3 / m4 | The rest screen interrupts Rally | **Deferred: shell-owned** (running games enforce the schedule). The level is unchanged. |
+| 3 / Nit, 2 / Nit | Boost chains at high levels; the bottom step on Snow is a cliff | **Deferred.** The chains are spaced 2.5 s apart and are earned drama at 16-18. The -1 to 0 step (30-36 points on Snow, Industrial and Night in the sweep) is where the pace-setter reaches the kid's own top speed. |
+| — (review) | On a shifted track a loss to -2 or -4 could still give a trailing kid the same race | **Fixed** (above). |
+| — (owner) | A difficulty setting per kid | **Added.** The chip "Rivals" under the track cards reads Adaptive (default), Easy, Normal or Hard; a tap cycles it and saves it. Easy races at level -8, Normal at 0, Hard at a per-track level a competent driver wins 33-53% of. A fixed setting never moves the adaptive levels. `a5_racing_level` taps the chip and checks `mode=`. |

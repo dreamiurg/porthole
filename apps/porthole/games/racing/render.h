@@ -8,7 +8,9 @@
 namespace racing::paint {
 enum class Page : uint8_t { Tracks, HowTo, Calibrate, Race, Pause, Confirm, Results };
 constexpr ui::Box CARD[TRACKS] = {{27, 34, 52, 38}, {81, 34, 52, 38}, {27, 76, 52, 38}, {81, 76, 52, 38}};
-constexpr ui::Box HOME{62, 120, 36, 24};                          // Tracks: back to the launcher
+constexpr ui::Box HOME{34, 118, 40, 24};                          // Tracks: back to the launcher
+constexpr ui::Box MODE_CHIP{78, 118, 48, 24};                     // Tracks: tap to cycle the difficulty setting
+constexpr const char* MODE_NAME[] = {"Adaptive", "Easy", "Normal", "Hard"};   // by Mode (save.h)
 constexpr ui::Box BACK{30, 112, 48, 24}, NEXT{82, 112, 48, 24};   // How to play, Calibrate
 constexpr ui::Box LAP{26, 28, 32, 24};                            // hold to pause
 constexpr ui::Box PLACE{100, 30, 34, 18};                         // shown only, never tapped
@@ -35,6 +37,7 @@ struct View {
   int boardRows = 0;
   uint8_t newBest = 0;          // BEST_RACE / BEST_LAP: what this finish improved on the kid's own record here
   uint32_t prevBestMs = 0;      // the kid's best race here before this finish, for "+1.9" when slower
+  uint8_t mode = 0;             // the kid's difficulty setting (save.h Mode), on the track cards
 };
 void draw(const View& v);
 const gfx::Sprite& icon();

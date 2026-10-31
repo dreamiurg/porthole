@@ -433,7 +433,7 @@ void wheelPreview(float steer, int trackId, int y) {   // a strip of road and th
   const pic::Pic& s = *pic::CAR[0];
   pic(s, 240 + (int)(steer * 90) - s.w, y + 6, 2);
 }
-void tracksPage() {
+void tracksPage(int mode) {
   gfx565::clear(rgb888_to_565(INK));
   banner(38, "RALLY", 4, ORANGE);
   heading(78, "Pick a track", 2, CREAM);
@@ -446,6 +446,12 @@ void tracksPage() {
     centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 84, TRACK[i].line2, 2, CREAM);
   }
   button(HOME, "Home", true);
+  // The difficulty chip: what the rivals are like, in one word under "Rivals".
+  UiAudit::add(MODE_CHIP.x, MODE_CHIP.y, MODE_CHIP.w, MODE_CHIP.h);
+  plate(MODE_CHIP, INK, PLATE_HI);
+  const int cx = MODE_CHIP.x * 3 + MODE_CHIP.w * 3 / 2;
+  centered(cx, MODE_CHIP.y * 3 + 12, "Rivals", 2, DIM);
+  centered(cx, MODE_CHIP.y * 3 + 40, MODE_NAME[mode], 2, GOLD);
 }
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
@@ -505,7 +511,7 @@ void resultsPage(const View& v) {
   const bool top = v.boardRows && v.board[0].me && v.board[0].raceMs == mine;
   if (v.newBest & BEST_RACE) snprintf(line, sizeof line, "%s  %s", t, top && v.boardRows > 1 ? "Track record!" : "Your best yet!");
   else if (v.newBest & BEST_LAP) snprintf(line, sizeof line, "%s  Best lap yet!", t);
-  else if (v.prevBestMs && mine > v.prevBestMs)
+  else if (v.prevBestMs && mine > v.prevBestMs && r.place != 1)   // a win is never a shortfall
     snprintf(line, sizeof line, "%s  (+%u.%u)", t, (unsigned)((mine - v.prevBestMs) / 1000), (unsigned)((mine - v.prevBestMs) / 100 % 10));
   else snprintf(line, sizeof line, "Your time %s", t);
   centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
@@ -530,7 +536,7 @@ void resultsPage(const View& v) {
 void draw(const View& v) {
   if (!gfx565::fb) return;
   switch (v.page) {
-    case Page::Tracks: tracksPage(); break;
+    case Page::Tracks: tracksPage(v.mode); break;
     case Page::HowTo: howToPage(v); break;
     case Page::Calibrate: calibratePage(v); break;
     case Page::Race: scene(*v.race, v.track, v.steer, v.ms); hud(v); callouts(v); break;

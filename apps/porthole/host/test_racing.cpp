@@ -59,7 +59,7 @@ bool apart(const ui::Box& a, const ui::Box& b) {
 void geometry() {
   using namespace paint;
   assert(inside(PLACE, 2) && apart(PLACE, LAP));   // the place is shown, never tapped
-  const ui::Box pages[][6] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, HOME},
+  const ui::Box pages[][6] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, MODE_CHIP},
                               {BACK, NEXT, BACK, NEXT, BACK, NEXT},
                               {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP},
                               {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN},
@@ -288,18 +288,18 @@ void finishAndReplay() {
 void saveBlob() {
   Save s{};
   s.best[2] = {95000, 30100};
-  s.level[2] = -5; s.level[3] = 3;
+  s.level[2] = -5; s.level[3] = 3; s.mode = HARD;
   seal(s);
   Save back{};
   assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
-  assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3);
+  assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3 && back.mode == HARD);
   struct V1 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; uint32_t crc; } v1 = {SAVE_MAGIC, 1, 44, {}, 0};
   static_assert(sizeof(V1) == SAVE_V1_SIZE, "the shipped v1 layout");
   v1.best[1] = {88000, 28000};
   v1.crc = os::crc32(&v1, sizeof v1 - 4);
   Save old{};
-  old.level[1] = 9;   // must be overwritten, not merged
-  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION);
+  old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
+  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == ADAPTIVE);
   for (int8_t l : old.level) assert(l == 0);
   Save bad = s; bad.best[2].raceMs = 1;
   assert(!loadBlob(&bad, sizeof bad, back));
@@ -354,6 +354,43 @@ void leaderboard() {
   r.g.debugPrint();
 }
 
+// The difficulty chip cycles Adaptive, Easy, Normal, Hard and back, saving at once. A fixed setting races at its own
+// level and leaves the adaptive levels alone; the setting is the kid's own, back on the next entry.
+void modes() {
+  static const Profile all[2] = {{0, "Zoe", 0, 9, 0}, {1, "Sam", 1, 6, 0}};
+  Save zoe{};
+  zoe.mode = EASY; zoe.level[0] = 5; zoe.best[0] = {91000, 30000};
+  seal(zoe);
+  const SaveSlot slots[2] = {{&zoe, sizeof zoe}, {nullptr, 0}};
+  Rig r;
+  r.g.enter(AppEnter{&all[0], all, slots, 2, 1000000, r.ms, false});
+  r.toRace(0);
+  assert(r.g.race().level == EASY_LEVEL);   // Zoe's own setting
+  r.wait(500);
+  r.g.debugCmd("lastlap");   // a win on Easy: a record, but her adaptive level stays 5
+  r.wait(5200);
+  const void* data = nullptr; size_t len = 0;
+  Save mine{};
+  assert(r.g.screen() == Game::Screen::Results && r.g.race().place == 1);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == EASY);
+  r.tap(paint::RESULT_TRACKS);
+  const uint8_t order[] = {NORMAL, HARD, ADAPTIVE, EASY};
+  for (uint8_t want : order) {
+    r.tap(paint::MODE_CHIP);
+    assert(r.g.screen() == Game::Screen::Tracks && r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.mode == want);
+  }
+  r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP);   // Hard
+  r.g.debugCmd("lastplace");
+  assert(r.g.race().level == HARD_LEVEL[0]);
+  r.wait(5200);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == HARD);
+  Rig sam;   // Sam has no save: Adaptive, at his own level
+  sam.g.enter(AppEnter{&all[1], all, slots, 2, 1000000, sam.ms, false});
+  sam.toRace(0);
+  assert(sam.g.race().level == 0);
+  sam.g.debugPrint();
+}
+
 // Every glyph drawn on every page stays on the glass.
 void textOnGlass() {
   Rig r;
@@ -398,6 +435,7 @@ int main() {
   textOnGlass();
   saveBlob();
   leaderboard();
+  modes();
   puts("test_racing: ok");
   return 0;
 }

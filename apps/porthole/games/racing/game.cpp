@@ -22,7 +22,7 @@ void Game::enter(const AppEnter& e) {
   neutral_ = {0, 1000, 0};
   track_ = 0;
   loadKids(e);
-  start(race_, TRACK[track_], seed_, save_.level[track_]);
+  start(race_, TRACK[track_], seed_, raceLevel());
   go(Screen::Tracks);
 }
 
@@ -47,8 +47,18 @@ void Game::loadKids(const AppEnter& e) {
 void Game::seedLevels() {
   int top = LEVEL_MIN - 1;   // none raced yet
   for (int t = 0; t < TRACKS; t++) if (save_.best[t].raceMs && save_.level[t] > top) top = save_.level[t];
-  const int seed = top - 1 < 0 ? 0 : top - 1 < LEVEL_SEED_MAX ? top - 1 : LEVEL_SEED_MAX;
-  for (int t = 0; t < TRACKS; t++) if (!save_.best[t].raceMs) save_.level[t] = (int8_t)seed;
+  const int seed = top - 1 < 0 ? 0 : top - 1 < LEVEL_SEED_MAX ? top - 1 : LEVEL_SEED_MAX;   // a level, not a rung
+  for (int t = 0; t < TRACKS; t++) if (!save_.best[t].raceMs) save_.level[t] = (int8_t)clampLevel(seed, t);
+}
+
+int Game::raceLevel() const {
+  static_assert(sizeof HARD_LEVEL == TRACKS, "one per track");
+  switch (save_.mode) {
+    case EASY: return EASY_LEVEL;
+    case NORMAL: return 0;
+    case HARD: return HARD_LEVEL[track_];
+    default: return save_.level[track_];
+  }
 }
 
 // Once per finish: the kid's own record for this track, kept only when it improves, and the rivals' next level.
@@ -57,9 +67,12 @@ void Game::seedLevels() {
 void Game::recordFinish() {
   prevBestMs_ = save_.best[track_].raceMs;
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
-  const int8_t level = (int8_t)nextLevel(race_.level, race_.place, runaway(race_));
-  dirty_ = dirty_ || newBest_ || level != save_.level[track_];
-  save_.level[track_] = level;
+  dirty_ = dirty_ || newBest_;
+  if (save_.mode == ADAPTIVE) {   // a fixed setting races at its own level and leaves the adaptive ones alone
+    const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, race_.place, runaway(race_)), track_);
+    dirty_ = dirty_ || level != save_.level[track_];
+    save_.level[track_] = level;
+  }
   seedLevels();
   if (me_ >= 0) kids_[me_].best[track_] = save_.best[track_];
 }
@@ -96,7 +109,7 @@ void Game::go(Screen s) {
 }
 
 void Game::startRace() {
-  start(race_, TRACK[track_], seed_ + ++runs_, save_.level[track_]);   // every run is fresh: inventory, timers and rivals reset
+  start(race_, TRACK[track_], seed_ + ++runs_, raceLevel());   // every run is fresh: inventory, timers and rivals reset
   steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = false; newBest_ = 0;
   go(Screen::Race);
 }
@@ -118,6 +131,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 
 void Game::updateTracks() {
+  if (ui::clicked(in_, paint::MODE_CHIP)) { save_.mode = (uint8_t)((save_.mode + 1) % MODES); dirty_ = true; return; }
   for (int i = 0; i < TRACKS; i++)
     if (ui::clicked(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
   if (ui::clicked(in_, paint::HOME)) home_ = true;
@@ -222,7 +236,7 @@ void Game::render() {
   v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity()); v.gripHeld = controls::held(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
   paint::Row rows[MAX_PROFILES];
-  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_;
+  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_; v.mode = save_.mode % MODES;
   paint::draw(v);
 }
 
@@ -242,8 +256,8 @@ void Game::debugPrint() {
          race_.rocketsFired, race_.rocketHits, race_.impacts);
   tilt::Grav n{};
   const Best& b = save_.best[track_];
-  printf("best_race=%u best_lap=%u new_best=%d kids=%d level=%d\n", (unsigned)b.raceMs, (unsigned)b.lapMs, newBest_, nKids_,
-         (int)save_.level[track_]);
+  printf("best_race=%u best_lap=%u new_best=%d kids=%d level=%d mode=%s race_level=%d\n", (unsigned)b.raceMs,
+         (unsigned)b.lapMs, newBest_, nKids_, (int)save_.level[track_], paint::MODE_NAME[save_.mode % MODES], raceLevel());
   printf("steer=%d grip_lost=%d resume=%u ready=%d calibration=%u neutral=%d,%d,%d\n", (int)lroundf(steer_ * 1000),
          gripLost_, (unsigned)resumeMs_, calibration_.get(&n), calibration_.progress(), neutral_.x, neutral_.y, neutral_.z);
 }
@@ -267,7 +281,7 @@ void Game::debugCmd(const char* cmd) {
   if (!strncmp(cmd, "track ", 6)) { track_ = abs(atoi(cmd + 6)) % TRACKS; return; }
   if (!strncmp(cmd, "level ", 6)) {   // the next race on this track (a finish moves it on as usual)
     const int n = atoi(cmd + 6);
-    save_.level[track_] = (int8_t)(n < LEVEL_MIN ? LEVEL_MIN : n > LEVEL_MAX ? LEVEL_MAX : n);
+    save_.level[track_] = (int8_t)clampLevel(n, track_);
     dirty_ = true;   // kept even when the next finish leaves it where it is
     return;
   }

@@ -2,13 +2,17 @@
 
 A short, silent arcade race for the round 480x480 Porthole: hold the puck like a steering wheel, collect Boost and
 Rocket charges, jump ramps and race three rivals for three laps. Launcher name **Rally**, namespace `racing`; the save
-holds each kid's best times for the leaderboard and the rivals' level for that kid on each track. Design package: `docs/superpowers/specs/porthole-racing/` at the repository root (gameplay brief, the four
+holds each kid's best times for the leaderboard, the rivals' level for that kid on each track and the kid's difficulty
+setting. Design package: `docs/superpowers/specs/porthole-racing/` at the repository root (gameplay brief, the four
 tracks, platform contract, and the two approved reference boards the look follows).
 
 ## Player contract
 
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
-  open. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
+  open, with Home and the difficulty chip under them ("Rivals" over Adaptive / Easy / Normal / Hard, a user request of
+  2026-10-31; a tap cycles it and saves it at once, per kid, Adaptive by default). Easy races at level -8, Normal at 0,
+  Hard at `HARD_LEVEL` (by track: a competent driver wins 33-53% there); a fixed setting never moves the
+  adaptive levels. Times count the same in every setting. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
   cards go straight to the grip page.
 - Grip: hold the puck upright like a wheel, steady for 350 ms, then Go. Flat or implausible gravity never passes.
   Clockwise steers right; 3-degree dead zone, full lock at 20 degrees, about 100 ms smoothing (Starfighter's
@@ -40,25 +44,28 @@ tracks, platform contract, and the two approved reference boards the look follow
   gold (a user decision of 2026-10-31: no medals, no ghost mode). Laps run line to line, the first from the flying
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
-- Rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level` in
-  `LEVEL_MIN..LEVEL_MAX` (-16..18, `tune.h`). A win adds one, two after a runaway (the kid led for 60% of the race).
-  A loss at 0 or below takes two; from 1..9 it drops straight to -2 (there rivals only boost to pass a kid who leads,
-  so a kid stuck behind would get the same race again); above 9 it takes three, so from 18 a losing streak is below 0
-  after four losses (15, 12, 9, -2). A competent driver settles near two wins in three on every track. Only a finish
-  counts; Restart, Tracks, Home or leaving never move it. A track never finished starts one below the kid's highest
-  level elsewhere, inside 0..3. Below 0 the rivals' top speed drops, gently first and faster deeper down (to 0.87 of
-  their pace on Desert Canyon at -16, 0.80 elsewhere: Desert's straights let a kid who never steers finish within
-  18%), and from -7 a rival with the kid close behind it (2 m at -7, up to 16 m) moves out of the kid's lane. Level 0
-  is the brief's pace. Above 0 a level is a rung of a ladder: rungs 1-9 each give one rival one Boost charge (the
+- In Adaptive, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
+  from -16 up to the track's top (18; 6 on Industrial Ruins, 10 on Night Run). A win adds one, two after a runaway
+  (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; from 4..9 straight to -2
+  (there rivals only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they
+  are slower); above 9 it takes three. From 18 a losing streak goes 15, 12, 9, -2: below 0 after four losses. A
+  competent driver settles near two wins in three on every track (55-72% in simulation). Only a finish counts;
+  Restart, Tracks, Home or leaving never move it. A track never finished starts one level below the kid's highest
+  level elsewhere, inside 0..3 (a level, so on Industrial Ruins or Night Run it is a higher rung).
+- What a level does. Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (to
+  0.87 of their pace on Desert Canyon at -16, 0.80 elsewhere: Desert's straights let a kid who never steers finish
+  within 18%), and from -7 a rival with the kid close behind it (2 m at -7, up to 16 m) moves out of the kid's lane.
+  Separately each level is a rung of a charge-and-pace ladder: rungs 1-9 each give one rival one Boost charge (the
   slower two first, three at most each, like the kid's); rungs 10-15 raise the slower two by 0.01 (rival 2 stops at
   0.99: level with the pace-setter they form a wall); rungs 16-18 let a rival take its three charges back at each lap
-  line, as the kid does from pickups. Industrial Ruins and Night Run hand a capable kid a long lead, so their levels
-  sit 12 and 8 rungs up (`LEVEL_SHIFT`, fading out by -8 so a struggling kid meets the same easy rivals on every
-  track); their top levels are 6 and 10. A rival fires a charge only while the kid is 3-40 m ahead of it, never within
-  2.5 s of another rival's boost, with the kid's 1.35 cap and 1.5 s, and shows cyan exhaust flames half as big again
-  as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The ladder was
-  ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure function of
-  track, seed, level and inputs.
+  line, as the kid does from pickups. On Desert Canyon and Snow Track the rung is the level (none below 0), so level 0
+  is the brief's rivals. Industrial Ruins and Night Run hand a capable kid a long lead, so their rung is the level
+  plus 12 and 8 (`LEVEL_SHIFT`), the extra fading out by -8: there level 0 already has rival boosts, and a level just
+  below 0 has both slower rivals and boosts. A rival fires a charge only while the kid is 3-40 m ahead of it, never
+  within 2.5 s of another rival's boost, with the kid's 1.35 cap and 1.5 s, and shows cyan exhaust flames half as big
+  again as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The
+  ladder was ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure
+  function of track, seed, level and inputs.
 - No sounds, no network. Leaving and coming back starts at the cards.
 
 ## Module map
@@ -82,11 +89,12 @@ tracks, platform contract, and the two approved reference boards the look follow
 
 ## Save layout
 
-`Save` (`save.h`), 48 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
+`Save` (`save.h`), 52 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
 the shell. Magic `0x594C4C52` ("RLLY"), `version` 2, `size`, then `best[4]` by track index (`TRACK[]` order, never
 reordered): `{raceMs, lapMs}`, 0 = not driven, each kept only when a finish beats it; v2 adds `int8_t level[4]`, the
-rivals' level by track (a v1 44-byte blob loads with every level 0); `crc` last. A finish that moves the level is
-saved even without a new best. Append-only: a new
+adaptive level by track, then `uint8_t mode` (`Mode`: 0 Adaptive, 1 Easy, 2 Normal, 3 Hard; never renumbered) and 3
+pad bytes; a v1 44-byte blob loads with every level 0 and Adaptive. `crc` last. A finish that moves the level, or a
+tap on the chip, is saved even without a new best. Append-only: a new
 field goes right before `crc` with a version bump, and `loadBlob` must keep loading every older size. A blob with a
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
 every profile's save for the leaderboard and writes only the current kid's.
@@ -101,8 +109,9 @@ adaptive rivals' black-box playthrough is `docs/racing/adaptive-playtest/`.
 
 Screens: `race_tracks`, `race_howto`, `race_calibrate`, `race_countdown`, `race_play`, `race_pause`, `race_confirm`,
 `race_results`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
-finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids level` (this track), then `steer grip_lost resume ready calibration neutral`.
-`dbg level N` sets this kid's level on the current track for the next race (clamped) and saves it; on a track the
+finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids level mode race_level` (this track; `level` the stored adaptive
+level, `race_level` the one the next race runs at), then `steer grip_lost resume ready calibration neutral`.
+`dbg level N` sets this kid's adaptive level on the current track (clamped to the track's range) and saves it; on a track the
 kid has never finished, the next entry or finish derives it again (one below the best elsewhere).
 `dbg track N|tracks|calibrate|go|lastlap|lastplace`: `go` starts a race past the countdown from the current grip,
 `lastlap` puts the player 60 m from the finish, `lastplace` also brings every rival home first. Fixtures only, not

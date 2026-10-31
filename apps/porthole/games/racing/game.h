@@ -71,6 +71,7 @@ class Game : public App {
   void loadKids(const AppEnter& e);
   void recordFinish();
   void seedLevels();
+  int raceLevel() const;   // the level this kid's next race on this track runs at
   int board(paint::Row out[MAX_PROFILES]) const;
 };
 }  // namespace racing

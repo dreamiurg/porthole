@@ -35,18 +35,19 @@ struct Race {
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
   uint8_t place = CARS, finishedCount = 0, playerLap = 0;
-  int8_t level = 0;                 // the kid's level on this track (see start), at most the track's last rung
-  int8_t rung = 0;                  // the ladder rung it puts the rivals on (tune.h LEVEL_SHIFT)
+  int8_t level = 0;                 // the kid's level on this track (clampLevel): below 0 the rivals are slower
+  int8_t rung = 0;                  // the charge/pace ladder rung it puts the rivals on (tune.h LEVEL_SHIFT)
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
 };
 
-// level: how hard the rivals push (LEVEL_MIN..LEVEL_MAX, 0 = the brief's pace). The race is a pure function of the
-// track, seed, level and inputs.
+// level: how hard the rivals push (tune.h; clampLevel'd, 0 = the brief's pace except on a shifted track). The race is
+// a pure function of the track (one of TRACK[]), seed, level and inputs.
 void start(Race& r, const Track& t, uint32_t seed, int level);
+int clampLevel(int level, int track);   // LEVEL_MIN..the track's top (LEVEL_MAX less its LEVEL_SHIFT)
 // After a finished race (tune.h): a win steps up one, two after a runaway; a loss at 0 or below steps down two, from
-// 1..LEVEL_EASY drops straight to -2, and above that steps down LEVEL_HIGH_LOSS (18 is below 0 after four losses).
+// 1..LEVEL_GENTLE to 0, from there to LEVEL_EASY straight to -2, and above that steps down LEVEL_HIGH_LOSS.
 int nextLevel(int level, int place, bool runaway);
-bool runaway(const Race& r);   // the player led for at least RUNAWAY_SHARE of the race
+bool runaway(const Race& r);   // the player led for at least RUNAWAY_LED / RUNAWAY_OF of the race
 void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS

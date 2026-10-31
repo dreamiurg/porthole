@@ -79,3 +79,34 @@ dbg lastplace
 wait 5500
 expect place=4
 expect level=-16
+# the difficulty chip on the track cards: tap to cycle, saved for this kid, a fixed setting leaves the level alone
+tap 108 112
+wait 900
+expect-screen race_tracks
+expect mode=Adaptive
+ui-check race_tracks-mode
+tap 102 130
+wait 600
+expect mode=Easy
+expect race_level=-8
+expect level=-16
+snap ra_mode_easy
+tap 102 130
+wait 600
+expect mode=Normal
+tap 102 130
+wait 600
+expect mode=Hard
+tap 102 130
+wait 600
+expect mode=Adaptive
+tap 102 130
+wait 600
+expect mode=Easy
+# Home and back: the setting is Sam's own and stays
+tap 54 130
+wait 900
+app racing
+wait 600
+expect-screen race_tracks
+expect mode=Easy

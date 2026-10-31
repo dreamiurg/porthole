@@ -2,6 +2,7 @@
 #include <math.h>
 
 namespace racing {
+static_assert(sizeof LEVEL_SHIFT == TRACKS && sizeof LEVEL_FLOOR / sizeof LEVEL_FLOOR[0] == TRACKS, "one per track");
 namespace {
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 uint32_t down(uint32_t v) { return v > STEP_MS ? v - STEP_MS : 0; }
@@ -122,8 +123,8 @@ float aroundCars(const Race& r, int i, float line) {   // never sit in the back 
 // Low levels only: a rival with the kid close behind it in its lane moves half a road out of the way, the closer
 // the lower the level (up to 16 m), so a struggling kid can get past.
 float courtesy(const Race& r, int i, float line) {
-  if (r.rung > LEVEL_COURTESY) return line;
-  const int reach = 2 * (LEVEL_COURTESY + 1 - r.rung);
+  if (r.level > LEVEL_COURTESY) return line;
+  const int reach = 2 * (LEVEL_COURTESY + 1 - r.level);
   const Car& p = r.car[PLAYER];
   const float gap = r.car[i].dist - p.dist;
   if (gap <= 0 || gap >= (reach < 16 ? reach : 16) || fabsf(p.x - line) >= 0.4f) return line;
@@ -261,10 +262,10 @@ void laps(Race& r) {
   if (r.car[PLAYER].finished) r.phase = Phase::Finished;   // the place is locked here, once
 }
 // The ladder in tune.h, one step a level: slower below 0, then charges, pace, and charges back each lap.
-void ladder(Car& c, int i, int level, float floor) {
+void ladder(Car& c, int i, int level, int rung, float floor) {
   constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
-  if (level < 0) c.top *= slowdown(level, floor);
-  for (int k = 0; k < level; k++) {
+  if (level < 0) c.top *= slowdown(level, floor);   // keyed on the kid's level: below 0 rivals are slower on every track
+  for (int k = 0; k < rung; k++) {
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
     else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
     else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
@@ -299,17 +300,22 @@ int nextLevel(int level, int place, bool runaway) {
   int next = level - 2;
   if (place == 1) next = level + (runaway ? 2 : 1);
   else if (level > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
-  else if (level > 0) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
+  else if (level > LEVEL_GENTLE) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
+  else if (level > 0) next = 0;
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
 }
-bool runaway(const Race& r) { return r.firstMs >= RUNAWAY_SHARE * r.raceMs; }
+bool runaway(const Race& r) { return r.firstMs * RUNAWAY_OF >= r.raceMs * RUNAWAY_LED; }
+int clampLevel(int level, int track) {   // past the track's top the ladder has no rungs left
+  const int top = LEVEL_MAX - LEVEL_SHIFT[track];
+  return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;
+}
 
 void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
-  const int shift = LEVEL_SHIFT[&t - TRACK], top = LEVEL_MAX - shift;   // past top the ladder has no rungs left
-  r.level = (int8_t)(level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level);
+  const int track = (int)(&t - TRACK), shift = LEVEL_SHIFT[track];
+  r.level = (int8_t)clampLevel(level, track);
   // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
   // easy rivals after the same number of losses on every track.
   const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
@@ -322,7 +328,7 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
-    if (i != PLAYER) ladder(c, i, r.rung, LEVEL_FLOOR[&t - TRACK]);
+    if (i != PLAYER) ladder(c, i, r.level, r.rung, LEVEL_FLOOR[track]);
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;

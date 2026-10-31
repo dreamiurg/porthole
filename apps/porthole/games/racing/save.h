@@ -1,5 +1,5 @@
 // Rally's save: a kid's best race time and best lap on each track, for the leaderboard every profile shares, and (v2)
-// the rivals' level for this kid on each track. Persisted
+// the rivals' level for this kid on each track and the kid's difficulty setting. Persisted
 // as a raw blob per profile (racing/s<id>, written by the shell). Append-only from this first version: a new field
 // goes right before crc (its zero must be a sensible default: loadBlob zero-fills it for older blobs), SAVE_VERSION
 // goes up, nothing is reordered or resized. Header-only, like Marble Kick's.
@@ -13,14 +13,17 @@
 namespace racing {
 constexpr uint32_t SAVE_MAGIC = 0x594C4C52;   // "RLLY"
 constexpr uint16_t SAVE_VERSION = 2;
-constexpr size_t SAVE_V1_SIZE = 44, SAVE_V2_SIZE = 48;
+constexpr size_t SAVE_V1_SIZE = 44, SAVE_V2_SIZE = 52;
 constexpr size_t SAVE_SIZES[] = {0, SAVE_V1_SIZE, SAVE_V2_SIZE};   // by version: a blob is exactly its version's size
 struct Best { uint32_t raceMs, lapMs; };              // 0 = not driven yet
+// The kid's difficulty setting. Persisted: values never change meaning; Adaptive is 0, the default.
+enum Mode : uint8_t { ADAPTIVE, EASY, NORMAL, HARD, MODES };
 struct Save {
   uint32_t magic;
   uint16_t version, size;
   Best best[TRACKS];   // by track index (TRACK[] order: never reordered)
-  int8_t level[TRACKS];   // v2: the rivals' level by track (race.h start); 0 from a v1 blob
+  int8_t level[TRACKS];   // v2: the adaptive level by track (race.h start; on a shifted track a higher rung); 0 from v1
+  uint8_t mode, pad[3];   // v2: the kid's Mode (0, Adaptive, from a v1 blob); pad keeps crc 4-aligned
   uint32_t crc;
 };
 static_assert(sizeof(Save) == SAVE_V2_SIZE, "Save is persisted: append before crc, never resize");
