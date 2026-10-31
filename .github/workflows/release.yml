@@ -6,10 +6,13 @@ name: Release
 # beta channel; promote.yml makes one stable) with generated notes, a flashable factory
 # image, the separate flash parts the web installer uses, the bare app image for
 # over-the-air updates and a version.txt. Nothing is committed back to main.
-# Code reaching main already passed CI on its PR, so this workflow does not re-test it.
+# PRs merge without being up to date with main, so this runs only after ci.yml passes on the
+# pushed main commit, and releases exactly that commit (SHA), not whatever main is by then.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -21,10 +24,13 @@ permissions:
   contents: read
 
 env:
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
   PLATFORMIO_CACHE_DIR: /tmp/pio-downloads  # keep downloaded archives out of the cached ~/.platformio (see ci.yml)
 
 jobs:
   plan:
+    # A push to main, not the weekly or manual CI run; a failed or cancelled run releases nothing.
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     outputs:
@@ -32,6 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          ref: ${{ env.SHA }}
           fetch-depth: 0
       - id: plan
         run: |
@@ -52,6 +59,8 @@ jobs:
         include: ${{ fromJSON(needs.plan.outputs.releases) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.11"
@@ -83,11 +92,11 @@ jobs:
           # Already there on a re-run (say the beta pointer below failed): skip straight to the pointer.
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease \
             "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" "$APP-$VERSION-ota.bin" "$APP-version.txt" \
-            --target "$GITHUB_SHA" --title "$APP $VERSION" --notes-file notes.md
+            --target "$SHA" --title "$APP $VERSION" --notes-file notes.md
           # The beta channel's pointer: one rolling pre-release, <app>-beta, whose <app>-version.txt names the newest
           # release. Boards on beta read it there; the releases API does not list releases newest first.
           if ! gh release view "$APP-beta" >/dev/null 2>&1; then
-            gh release create "$APP-beta" --prerelease --latest=false --target "$GITHUB_SHA" --title "$APP beta channel" \
+            gh release create "$APP-beta" --prerelease --latest=false --target "$SHA" --title "$APP beta channel" \
               --notes "Not a release. Its $APP-version.txt names the newest beta, for boards on the beta channel."
           fi
           gh release upload "$APP-beta" "$APP-version.txt" --clobber
