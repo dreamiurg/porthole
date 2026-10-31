@@ -189,8 +189,7 @@ void setup() {
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
-static void dimWhenIdle(uint32_t ms, bool progress) {
-  uint8_t want = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+static void dimWhenIdle(uint8_t want, bool progress) {
   g_sys.setDark(want == 0);
   if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {
@@ -361,6 +360,20 @@ static void applyClock(uint32_t ms) {
   writeUtcRtc(synchronized);   // I2C, persistence and shell clock changes belong to this main core only
 }
 
+// The finger: the touch panel's, or the harness's press (physical px), which also wakes the screen.
+static board::Touch touchNow(uint32_t ms) {
+  board::Touch t = board::readTouch();
+  if (!g_fake.on) return t;
+  t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
+  if (!t.down) g_fake.on = false;
+  return t;
+}
+static void renderFrame() {
+  if (g_hires) gfx565::target(board::backBuffer());
+  g_shell.render();
+  if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt[g_mtAt];
@@ -368,11 +381,7 @@ void loop() {
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
   applyClock(ms);
-  board::Touch t = board::readTouch();
-  if (g_fake.on) {  // a harness press behaves like a finger (physical px), including waking the screen
-    t = {ms < g_fake.until, g_fake.x * 3, g_fake.y * 3};
-    if (!t.down) g_fake.on = false;
-  }
+  board::Touch t = touchNow(ms);
   static bool swallow = false;  // the touch that wakes a dark screen is not a game input, until released
   if (!t.down) swallow = false;
   else if (g_backlight == 0) swallow = true;
@@ -388,17 +397,17 @@ void loop() {
   g_shell.update(nowSec(), ms, progress ? Input{} : shellInput);
   uint32_t t2 = micros();
   g_hires = g_shell.surface() == SURFACE_RGB565;
-  if (!progress) {
-    if (g_hires) gfx565::target(board::backBuffer());
-    g_shell.render();
-  }
+  // Dark and staying dark: nothing to draw for. The delay keeps the loop near its lit pace (touch and I2C polling).
+  const uint8_t light = shell::backlightFor(g_shell.asleep(), g_activity.idleMs(ms), g_shell.backlight());
+  const bool dark = !progress && g_backlight == 0 && light == 0;
+  if (!progress && !dark) renderFrame();
   uint32_t t3 = micros();
-  if (progress) delay(20);
-  else if (g_hires) board::presentHires(); else board::present(gfx::fb, g_pal[g_shell.tint()]);
+  if (progress || dark) delay(20);
+  else board::presentHires();
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));
-  dimWhenIdle(ms, progress);
+  dimWhenIdle(light, progress);
   g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
 }
