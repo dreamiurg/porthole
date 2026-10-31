@@ -230,6 +230,16 @@ void tick(Race& r) {
   r.cooldownMs = down(r.cooldownMs); r.calloutMs = down(r.calloutMs); r.hitMs = down(r.hitMs);
   r.fullMs[0] = down(r.fullMs[0]); r.fullMs[1] = down(r.fullMs[1]);
 }
+// A rival spends a charge only while chasing: the kid a little ahead of it, never as a hidden head start.
+void rivalBoosts(Race& r) {
+  for (int i = 1; i < CARS; i++) {
+    Car& c = r.car[i];
+    const float gap = r.car[PLAYER].dist - c.dist;
+    if (!c.boosts || c.boostMs || c.finished || gap <= CHASE_MIN || gap >= CHASE_MAX) continue;
+    c.boosts--;
+    c.boostMs = BOOST_MS;
+  }
+}
 void actions(Race& r, const Controls& in) {
   Car& p = r.car[PLAYER];
   if (in.boost && r.inventory[BOOST] && !p.boostMs) { r.inventory[BOOST]--; p.boostMs = BOOST_MS; }
@@ -289,6 +299,10 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
     if (i != PLAYER && r.level < 0) c.top *= 1 + LEVEL_SLOW_STEP * r.level;
+    for (int k = 0; i != PLAYER && k < r.level; k++) {   // the ladder in tune.h, one step a level
+      if (k < (int)sizeof LADDER_CHARGE) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
+      else if (LADDER_TOP[k - sizeof LADDER_CHARGE] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP);   // never past the kid
+    }
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;
@@ -305,6 +319,7 @@ void step(Race& r, const Controls& in) {
   r.raceMs += STEP_MS;
   tick(r);
   actions(r, in);
+  rivalBoosts(r);
   for (int i = 0; i < CARS; i++) {
     if (r.car[i].finished) continue;   // finished rivals keep their order and leave the road
     drive(r, i, i == PLAYER ? in.steer : rivalSteer(r, i));

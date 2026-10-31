@@ -457,6 +457,13 @@ static bool serveExtra(const char* cmd, const char* a, const char* b) {
   puts("ok"); return false;
 }
 
+// dbg passes its argument on too, so a game fixture can take one ("dbg track 2").
+static void dbg(const char* a, const char* b) {
+  char cmd[130];
+  snprintf(cmd, sizeof cmd, "%s%s%s", a, b[0] ? " " : "", b);
+  g_shell.debugCmd(cmd);
+}
+
 // --serve mode: newline-delimited commands on stdin, one response on stdout per command (flushed).
 // down/move/up/tick/skip/reset all print "ok"; frame prints a binary PPM (P6) preceded by "PPM <bytes>".
 static void runServe() {
@@ -472,7 +479,7 @@ static void runServe() {
     else if (!strcmp(cmd, "skip")) { g_epoch += (uint32_t)atol(a); frame(down, cx, cy); g_ms += 33; puts("ok"); }
     else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
     else if (!strcmp(cmd, "frame")) writePPM();
-    else if (!strcmp(cmd, "dbg")) { g_shell.debugCmd(a); puts("ok"); }
+    else if (!strcmp(cmd, "dbg")) { dbg(a, b); puts("ok"); }
     else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
     else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
     else if (serveExtra(cmd, a, b)) { frame(down, cx, cy); g_ms += 33; }
@@ -558,7 +565,7 @@ static const Named COMMANDS[] = {
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
   {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); g_feed.print(); }},
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
-  {"dbg", [](Finger&, const char* a, const char*, const char*) { g_shell.debugCmd(a); }},
+  {"dbg", [](Finger&, const char* a, const char* b, const char*) { dbg(a, b); }},
   {"screen", [](Finger&, const char*, const char*, const char*) { printf("screen=%s\n", g_shell.screenName()); }},
   {"echo", [](Finger&, const char* a, const char*, const char*) { puts(a); }},
   {"watch", [](Finger& f, const char* a, const char*, const char*) { watch(atoi(a), f); }},

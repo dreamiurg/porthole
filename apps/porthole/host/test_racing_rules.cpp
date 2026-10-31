@@ -67,7 +67,12 @@ void levels() {
   assert(r.level == LEVEL_MIN && r.car[PLAYER].top == 1 && r.car[3].top < 1);   // slower rivals, never the kid
   start(r, TRACK[0], 1, 0);
   assert(r.car[1].top == 0.92f && r.car[2].top == 0.97f && r.car[3].top == 1);   // level 0: the brief's pace
+  assert(!r.car[1].boosts && !r.car[2].boosts && !r.car[3].boosts);
+  start(r, TRACK[0], 1, LEVEL_MAX);   // the top: three charges each, like the kid's cap, and nobody faster than the kid
+  for (int i = 1; i < CARS; i++) assert(r.car[i].boosts == MAX_INVENTORY && r.car[i].top < 1 + 1e-6f);
+  assert(r.car[1].top < 1 && r.car[2].top < 1);
 }
+
 
 void countdownFreezes() {
   Race r;
@@ -98,9 +103,9 @@ void impactRule() {
   assert(ice);
 }
 
-Race racingAt(int track, float dist, float x) {
+Race racingAt(int track, float dist, float x, int level = 0) {
   Race r;
-  start(r, TRACK[track], 5, 0);
+  start(r, TRACK[track], 5, level);
   r.phase = Phase::Racing;
   for (Car& c : r.car) { c.dist = -500; c.speed = 0; }   // rivals out of the way
   r.car[PLAYER].dist = dist; r.car[PLAYER].x = x; r.car[PLAYER].speed = 1;
@@ -224,6 +229,87 @@ void finishOrder() {
   step(r, Controls{});
   assert(r.place == 3 && r.car[PLAYER].finishMs == ms);
 }
+
+// A rival spends a Boost only while chasing, the kid 3-40 m ahead of it: never far behind, never in front, never
+// twice at once, and with the kid's own cap and duration.
+void rivalBoosts() {
+  Race r = racingAt(0, 100, 0, LEVEL_MAX);
+  Car& c = r.car[3];
+  c.dist = 100 - 45; c.x = 0.6f; c.speed = 1;   // the kid 45 m ahead: too far
+  step(r, Controls{});
+  assert(c.boosts == MAX_INVENTORY && !c.boostMs);
+  c.dist = r.car[PLAYER].dist + 10;   // ahead of the kid
+  step(r, Controls{});
+  assert(c.boosts == MAX_INVENTORY && !c.boostMs);
+  c.dist = r.car[PLAYER].dist - 2;   // alongside
+  step(r, Controls{});
+  assert(c.boosts == MAX_INVENTORY && !c.boostMs);
+  c.dist = r.car[PLAYER].dist - 20;   // chasing: one charge, the kid's boost
+  step(r, Controls{});
+  assert(c.boosts == MAX_INVENTORY - 1 && c.boostMs == BOOST_MS);
+  for (int i = 0; i < 40; i++) { c.dist = r.car[PLAYER].dist - 20; step(r, Controls{}); }
+  assert(c.boosts == MAX_INVENTORY - 1 && c.speed <= BOOST_CAP + 1e-4f);   // none spent during a boost
+}
+
+// A competent driver: steers its favourite line around cars and hazards ahead, presses Boost after a seeded 0.2-1.2 s
+// reaction whenever it holds a charge, and fires when a rival is lined up. Line and reaction vary driver to driver.
+float aimAround(const Race& r, float aim) {
+  const Car& p = r.car[PLAYER];
+  for (int i = 1; i < CARS; i++) {
+    const Car& o = r.car[i];
+    const float d = o.dist - p.dist;
+    if (!o.finished && d > -2 && d < 24 && fabsf(o.x - aim) < 0.45f) aim = o.x > 0 ? o.x - 0.5f : o.x + 0.5f;
+  }
+  const Track& t = *r.track;
+  for (int f = 0; f < t.nFeatures; f++) {
+    const Feature& o = t.features[f];
+    const float d = featureAt(t, o) - lapPos(t, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
+    if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && d > 0 && d < 40 && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
+  }
+  return std::max(-0.85f, std::min(0.85f, aim));
+}
+bool linedUp(const Race& r) {
+  for (int i = 1; i < CARS; i++) {
+    const float d = r.car[i].dist - r.car[PLAYER].dist;
+    if (d > 5 && d < 50 && fabsf(r.car[i].x - r.car[PLAYER].x) < 0.15f) return true;
+  }
+  return false;
+}
+uint32_t next(uint32_t& s) { s = s * 1664525u + 1013904223u; return s >> 8; }
+int competent(int track, uint32_t seed, int level) {
+  Race r;
+  start(r, TRACK[track], seed, level);
+  uint32_t s = seed * 2654435761u + 7;
+  int wait = -1;
+  const float lane = ((int)(next(s) % 61) - 30) / 100.0f;   // each driver's favourite line
+  for (int n = 0; n < 60 * 60 * 50 && r.phase != Phase::Finished; n++) {
+    Controls c;
+    c.steer = follow(r, aimAround(r, lane));
+    if (r.phase == Phase::Racing && r.inventory[BOOST] && !r.car[PLAYER].boostMs) {
+      if (wait < 0) wait = (200 + (int)(next(s) % 1000)) / (int)STEP_MS;
+      if (wait-- == 0) { c.boost = true; wait = -1; }
+    }
+    c.rocket = linedUp(r);
+    step(r, c);
+  }
+  assert(r.phase == Phase::Finished);
+  return r.place;
+}
+
+// The rule the levels exist for: a competent driver climbing from level 0 over 40 races on each track ends up
+// winning between 55% and 75% of them (the +1/-2 steps aim at two in three).
+void staircase() {
+  for (int t = 0; t < TRACKS; t++) {
+    int level = 0, wins = 0;
+    for (int k = 0; k < 40; k++) {
+      const int place = competent(t, 5000 + k * 104729u, level);
+      wins += place == 1;
+      level = nextLevel(level, place);
+    }
+    printf("%-16s competent driver from level 0: %d/40 wins, level %+d\n", TRACK[t].name, wins, level);
+    assert(wins >= 22 && wins <= 30);
+  }
+}
 }  // namespace
 
 int main() {
@@ -236,7 +322,9 @@ int main() {
   contactOnce();
   finishOrder();
   levels();
+  rivalBoosts();
   everyTrackFinishes();
+  staircase();
   puts("test_racing_rules: ok");
   return 0;
 }

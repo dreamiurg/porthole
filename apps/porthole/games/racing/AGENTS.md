@@ -43,8 +43,13 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`, +1 after a
   win, -2 after any other finished place, clamped to `LEVEL_MIN..LEVEL_MAX` (`tune.h`), so it settles where the kid
   wins about two races in three. Only a finish counts; Restart, Tracks, Home or leaving never move it. Below 0 the
-  rivals' top speed drops half a percent a level and, from -7 down, a rival with the kid close behind it (2 m at -7,
-  up to 16 m) moves out of the kid's lane. Level 0 is the brief's pace. A track never finished starts one below the
+  rivals' top speed drops 0.35% a level and, from -7 down, a rival with the kid close behind it (2 m at -7,
+  up to 16 m) moves out of the kid's lane. Level 0 is the brief's pace. Above 0 (up to 15) levels 1-9 each give one
+  rival one Boost charge (the slower two first, three at most each, like the kid's), levels 10-15 raise the slower two
+  by 0.01 (rival 2 stops at 0.99: level with the pace-setter they form a wall). A rival fires a charge only while the
+  kid is 3-40 m ahead of it, with the kid's 1.35 cap and 1.5 s, and shows the kid's exhaust flames. No rival is ever
+  faster than the kid's dry-road top. The ladder in `tune.h` was ordered by a simulated sweep (`staircase` in
+  `host/test_racing_rules.cpp`: a competent driver from level 0 wins 55-75% of 40 races on every track). A track never finished starts one below the
   kid's highest level elsewhere (0 with none). The race stays a pure function of track, seed, level and inputs.
 - No sounds, no network. Leaving and coming back starts at the cards.
 

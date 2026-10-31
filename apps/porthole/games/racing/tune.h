@@ -28,7 +28,13 @@ constexpr int GRID_SPACING = 7;                    // m between grid slots
 // Adaptive rivals (a user decision of 2026-10-31): each kid has a level per track, +1 after a win, -2 after any other
 // finish, so it settles where the kid wins about two races in three. Below 0 the rivals' top speed drops
 // LEVEL_SLOW_STEP per level and, from LEVEL_COURTESY on, a rival with the kid close behind moves out of its lane.
-// Nothing above 0 yet: raising the slower rivals' pace made races easier in simulation (less traffic to hit).
-constexpr int LEVEL_MIN = -16, LEVEL_MAX = 0, LEVEL_COURTESY = -7;
-constexpr float LEVEL_SLOW_STEP = 0.005f;
+// Above 0, levels 1-9 each give one rival one more Boost charge (the slower two first, the pace-setter last, three at
+// most, like the kid's), fired only while chasing: the kid CHASE_MIN..CHASE_MAX m ahead. Levels 10-15 then raise a
+// slower rival's top by LEVEL_TOP_STEP. Ordered by a simulated sweep so each level wins a little less (raising
+// rival pace first made races easier: less traffic to hit). No rival reaches the kid's 1.0: rival 2 level with the
+// pace-setter forms a two-abreast wall.
+constexpr uint8_t LADDER_CHARGE[] = {1, 2, 1, 2, 1, 2, 3, 3, 3};   // the rival given a charge at levels 1..9
+constexpr uint8_t LADDER_TOP[] = {2, 2, 1, 1, 1, 1};               // the rival a step faster at levels 10..15
+constexpr int LEVEL_MIN = -16, LEVEL_MAX = sizeof LADDER_CHARGE + sizeof LADDER_TOP, LEVEL_COURTESY = -7;
+constexpr float LEVEL_SLOW_STEP = 0.0035f, LEVEL_TOP_STEP = 0.01f, CHASE_MIN = 3, CHASE_MAX = 40;
 }  // namespace racing

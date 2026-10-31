@@ -13,6 +13,7 @@ struct Car {
   uint32_t boostMs = 0, protectMs = 0, airMs = 0, wobbleMs = 0, lineMs = 0, finishMs = 0;
   uint16_t solid = 0;                                 // obstacles this car is inside (bit per feature)
   uint8_t grid = 0;
+  uint8_t boosts = 0;                                 // a rival's Boost charges (the player's are Race::inventory)
   bool finished = false;
 };
 struct Rocket { float dist = 0, x = 0; uint32_t ageMs = 0; bool live = false; };
