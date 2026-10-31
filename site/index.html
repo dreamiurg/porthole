@@ -135,6 +135,40 @@
       .photos { gap: 6px; }
     }
   </style>
+  <script>
+    // Visit counts only, sent through the PostHog proxy at f.dreamiurg.net: page views and leaves, no clicks,
+    // no recordings, no profiles, no cookies. Only the live site reports, so local previews never count.
+    if (location.hostname === "porthole.dreamiurg.net") {
+      !function (t, e) {
+        if (e.__SV) return;
+        window.posthog = e; e._i = [];
+        e.init = function (key, config, name) {
+          const s = t.createElement("script");
+          s.async = true; s.crossOrigin = "anonymous"; s.src = config.api_host + "/static/array.js";
+          t.head.appendChild(s);
+          const stub = name !== undefined ? (e[name] = []) : e;
+          ["capture", "register", "opt_out_capturing"].forEach((m) => {
+            stub[m] = function () { stub.push([m].concat(Array.prototype.slice.call(arguments))); };
+          });
+          e._i.push([key, config, name]);
+        };
+        e.__SV = 1;
+      }(document, window.posthog || []);
+      posthog.init("phc_pJrvjVAMXpWkPcDncG6Sge8vCduDYv9EoaSYXJySUXAY", {
+        api_host: "https://f.dreamiurg.net",
+        ui_host: "https://us.posthog.com",
+        autocapture: false,
+        capture_pageview: true,
+        capture_pageleave: true,
+        disable_session_recording: true,
+        disable_surveys: true,
+        advanced_disable_feature_flags: true,
+        person_profiles: "identified_only",
+        persistence: "localStorage",
+        respect_dnt: true,
+      });
+    }
+  </script>
   <script type="importmap">
     { "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
