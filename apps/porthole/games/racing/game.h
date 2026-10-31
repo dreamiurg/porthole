@@ -35,17 +35,18 @@ class Game : public App {
   Race race_{};
   Input in_{};
   controls::Calibration calibration_;
-  tilt::Grav neutral_ = {0, 1000, 0};
+  tilt::Grav neutral_ = {0, 1000, 0}, grip_ = {0, 1000, 0};   // the race's straight ahead; the grip page's candidate
   ui::FreshGate gate_;
   ui::Hold hold_;
   paint::Leave leave_ = paint::Leave::Restart;
-  uint32_t now_ = 0, rawMs_ = 0, ms_ = 0, stepMs_ = 0, resumeMs_ = 0, badGripMs_ = 0, seed_ = 1, runs_ = 0;
+  uint32_t now_ = 0, rawMs_ = 0, ms_ = 0, stepMs_ = 0, resumeMs_ = 0, badGripMs_ = 0, finishMs_ = 0, seed_ = 1, runs_ = 0;
   int track_ = 0;
   float steer_ = 0;
-  bool home_ = false, daylight_ = false, seenHowTo_ = false, recenter_ = false, gripLost_ = false;
+  bool home_ = false, daylight_ = false, seenHowTo_ = false, recenter_ = false, gripLost_ = false, gripSet_ = false;
   bool boost_ = false, rocket_ = false;   // fresh presses waiting for the next simulation step
 
   tilt::Grav gravity() const { return {in_.gx, in_.gy, in_.gz}; }
+  bool gripReady() const { return gripSet_ && controls::upright(gravity()); }   // a steady grip, still held like a wheel
   void go(Screen s);
   void startRace();
   void updateTracks();

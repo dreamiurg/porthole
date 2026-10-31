@@ -196,6 +196,28 @@ void recenterThenLeave() {
   assert(r.g.screen() == Game::Screen::Race && r.g.race().phase == Phase::Countdown && r.g.race().track == &TRACK[2]);
 }
 
+// The grip page centers on whatever grip is held steady, before Go: no pull left over from the last grip (playtest
+// M1). Laying the puck down after a steady grip still keeps Go shut.
+void recenterPreview() {
+  Rig r;
+  r.grav = rolled(10);
+  r.toRace(0);
+  r.wait(4000);
+  for (int i = 0; i < 18; i++) r.frame(true, paint::LAP.x + 4, paint::LAP.y + 4);
+  r.frame();
+  r.tap(paint::RECENTER);
+  r.grav = rolled(0, {0, 707, -707});   // leaned back, upright in the screen plane
+  r.wait(800);
+  assert(fabsf(r.g.steering()) < 0.01f);
+  r.grav = rolled(12, {0, 707, -707});
+  r.wait(80);
+  assert(r.g.steering() > 0.3f);   // turning from the new grip shows at once
+  r.grav = {0, 0, -1000};
+  r.wait(100);
+  r.tap(paint::NEXT);
+  assert(r.g.screen() == Game::Screen::Calibrate);
+}
+
 void gripLost() {
   Rig r;
   r.toRace(0);
@@ -228,7 +250,9 @@ void finishAndReplay() {
   r.toRace(0);
   r.wait(500);
   r.g.debugCmd("lastplace");
-  r.wait(4000);
+  r.wait(3600);
+  assert(r.g.screen() == Game::Screen::Race && r.g.race().phase == Phase::Finished);   // "Finish!" on the line first
+  r.wait(1500);
   assert(r.g.screen() == Game::Screen::Results && r.g.race().place == CARS && !strcmp(r.g.screenName(), "race_results"));
   r.g.debugPrint();
   r.tap(paint::REPLAY);
@@ -236,13 +260,13 @@ void finishAndReplay() {
   assert(r.g.screen() == Game::Screen::Race && fresh.phase == Phase::Countdown && fresh.inventory[BOOST] == 1 &&
          fresh.inventory[ROCKET] == 1 && !fresh.car[PLAYER].finished && fresh.finishedCount == 0);
   r.g.debugCmd("lastlap");
-  r.wait(4000);
+  r.wait(5500);
   assert(r.g.screen() == Game::Screen::Results);
   r.tap(paint::RESULT_TRACKS);
   assert(r.g.screen() == Game::Screen::Tracks);
   r.g.debugCmd("go");
   r.g.debugCmd("lastlap");
-  r.wait(4000);
+  r.wait(5500);
   r.tap(paint::RESULT_HOME);
   assert(r.g.wantsHome());
 }
@@ -284,6 +308,7 @@ int main() {
   pauseHoldAndResume();
   recenterAndLeave();
   recenterThenLeave();
+  recenterPreview();
   gripLost();
   frameRateInvariant();
   finishAndReplay();

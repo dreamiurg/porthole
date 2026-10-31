@@ -7,7 +7,7 @@
 namespace racing {
 namespace {
 using paint::Leave;
-constexpr uint32_t GRIP_LOST_MS = 300, RESUME_MS = 1000;
+constexpr uint32_t GRIP_LOST_MS = 300, RESUME_MS = 1000, FINISH_MS = 1500;
 bool inside(const ui::Box& b, int x, int y) { return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; }
 // A fresh press that began on the button: holding, sliding in from elsewhere or a carried touch never fires.
 bool press(const Input& in, const ui::Box& b) { return in.hit(b.x, b.y, b.w, b.h) && in.pressed && inside(b, in.downX, in.downY); }
@@ -27,7 +27,7 @@ void Game::enter(const AppEnter& e) {
 
 void Game::go(Screen s) {
   screen_ = s;
-  if (s == Screen::Calibrate) calibration_ = {};
+  if (s == Screen::Calibrate) { calibration_ = {}; gripSet_ = false; }
   else if (s != Screen::Race) recenter_ = false;   // a recenter only ever returns to the race it paused
   gate_.shown(ms_); hold_ = {};
   boost_ = rocket_ = false;
@@ -36,7 +36,7 @@ void Game::go(Screen s) {
 
 void Game::startRace() {
   start(race_, TRACK[track_], seed_ + ++runs_);   // every run is fresh: inventory, timers and rivals reset
-  steer_ = 0; resumeMs_ = stepMs_ = 0; gripLost_ = recenter_ = false;
+  steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = false;
   go(Screen::Race);
 }
 
@@ -67,13 +67,16 @@ void Game::updateHowTo() {
   else if (ui::clicked(in_, paint::NEXT)) { seenHowTo_ = true; go(Screen::Calibrate); }
 }
 
+// The grip held steady here becomes straight ahead at once: the preview car centers on it, turning from it moves the
+// car, and Go keeps it. Until a steady grip is seen, the preview follows the previous one.
 void Game::updateCalibrate() {
   calibration_.add(gravity(), rawMs_);
-  steer_ = controls::steer(gravity(), neutral_);   // the preview car follows the wheel as it is set now
-  if (ui::clicked(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }   // clears recenter_
   tilt::Grav n{};
-  if (!ui::clicked(in_, paint::NEXT) || !calibration_.get(&n)) return;
-  neutral_ = n;
+  if (calibration_.get(&n)) { grip_ = n; gripSet_ = true; }
+  steer_ = controls::steer(gravity(), gripSet_ ? grip_ : neutral_);
+  if (ui::clicked(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }   // clears recenter_
+  if (!ui::clicked(in_, paint::NEXT) || !gripReady()) return;
+  neutral_ = grip_;
   if (!recenter_) { startRace(); return; }
   recenter_ = false; gripLost_ = false; resumeMs_ = RESUME_MS; steer_ = 0;   // the race waits a beat, then goes on
   go(Screen::Race);
@@ -90,7 +93,11 @@ bool Game::gripOk(uint32_t dt) {
 }
 
 void Game::updateRace(uint32_t dt) {
-  if (race_.phase == Phase::Finished) { go(Screen::Results); return; }
+  if (race_.phase == Phase::Finished) {   // a moment on the line to see "Finish!" before the results
+    finishMs_ += dt;
+    if (finishMs_ >= FINISH_MS) go(Screen::Results);
+    return;
+  }
   if (!gripOk(dt)) return;
   hold_.step(holding(in_, paint::LAP), ms_);
   if (hold_.progress() >= 1) { gripLost_ = false; go(Screen::Pause); return; }
@@ -143,12 +150,11 @@ void Game::updateResults() {
 }
 
 void Game::render() {
-  tilt::Grav n{};
   paint::View v;
   v.page = screen_;
   v.race = &race_; v.track = track_; v.ms = ms_; v.steer = steer_;
   v.calibration = calibration_.progress(); v.hold = (uint16_t)(hold_.progress() * 1000); v.resumeMs = resumeMs_;
-  v.gripReady = calibration_.get(&n); v.gripUpright = controls::upright(gravity());
+  v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
   paint::draw(v);
 }

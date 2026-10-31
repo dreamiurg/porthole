@@ -136,7 +136,7 @@ void skyline(int track, int bottom, int offset) {
 
 // ---- the road. Its per-row tables and the list of things on it live on the heap (PSRAM on the board), allocated
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
-struct Thing { float z; const pic::Pic* p; float x, lift; bool shadow; };
+struct Thing { float z; const pic::Pic* p; float x, lift, size; bool shadow; };   // size: drawn bigger than life
 constexpr int MAX_THINGS = 48;
 struct Scratch {
   int16_t center[ROWS], half[ROWS];   // road center and half-width for each row below the horizon
@@ -190,7 +190,7 @@ void rails(int y, int cx, int hw, float world) {   // guardrails on both shoulde
   const int h = hw / 8 + 1, w = hw / 60 + 1;
   const bool post = (int)floorf(world / 3) != (int)floorf((world + 0.6f) / 3);
   for (int k = -1; k <= 1; k += 2) {
-    const int x = cx + k * (hw + hw / 7 + hw / 9);
+    const int x = cx + k * (int)(hw * (RAIL + CAR_HALF_W));   // where the car's side stops: the rail it leans on
     fill(x - w, y - h, 2 * w, h / 3 + 1, STEEL);
     fill(x - w, y - h + h / 3 + 1, 2 * w, h / 5 + 1, STEEL_DARK);
     if (post) fill(x - w / 2, y - h, w + 1, h, STEEL_DARK);
@@ -221,9 +221,9 @@ void roadRow(const Camera& cam, int y) {
 }
 
 // ---- things beside and on the road, far to near
-void add(float z, const pic::Pic* p, float x, float lift = 0, bool shadow = false) {
+void add(float z, const pic::Pic* p, float x, float lift = 0, bool shadow = false, float size = 1) {
   if (z < 1.5f || z > rowZ(HORIZON + 3) || sc->n >= MAX_THINGS) return;
-  sc->things[sc->n++] = {z, p, x, lift, shadow};
+  sc->things[sc->n++] = {z, p, x, lift, size, shadow};
 }
 void placeTrack(const Camera& cam) {
   const Track& t = *cam.r->track;
@@ -250,14 +250,14 @@ void placeCars(const Camera& cam) {
     const float lift = hop(c) * 0.9f;
     add(c.dist - cam.dist, pic::CAR[i], c.x, lift, true);
   }
-  for (const Rocket& k : r.rocket) if (k.live) add(k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f);
-  for (const Puff& p : r.puff) if (p.ms) add(p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f);
+  for (const Rocket& k : r.rocket) if (k.live) add(k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f);   // easy to follow
+  for (const Puff& p : r.puff) if (p.ms) add(p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f);
 }
 void drawThing(const Thing& t) {
   const int y = HORIZON + (int)(DEPTH_K / t.z);
   if (y <= HORIZON || y >= 480) return;
   const int i = y - HORIZON - 1;
-  const float scale = PIC_SCALE * sc->half[i] / (ROAD_SLOPE * CAR_DEPTH);
+  const float scale = t.size * PIC_SCALE * sc->half[i] / (ROAD_SLOPE * CAR_DEPTH);
   const int x = sc->center[i] + (int)(t.x * sc->half[i]);
   const int lift = (int)(t.lift * 60 * scale / PIC_SCALE);
   if (t.shadow) fill(x - (int)(t.p->w * scale * 0.42f), y - 2, (int)(t.p->w * scale * 0.84f), (int)(3 * scale) + 1, RIM);
@@ -348,6 +348,8 @@ void callouts(const View& v) {
   } else if (r.raceMs < 700) banner(150, "GO!", 8, GREEN);
   if (r.calloutMs) banner(170, r.playerLap >= LAPS ? "Final lap" : "Lap 2", 4, CREAM);
   if (v.resumeMs) banner(160, "Ready", 5, GOLD);
+  if (r.hitMs) banner(196, "Hit!", 4, ORANGE);
+  if (r.phase == Phase::Finished) banner(150, "Finish!", 6, GOLD);
 }
 
 // ---- pages
@@ -410,7 +412,7 @@ void calibratePage(const View& v) {
 }
 void pausePage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
-  if (v.gripLost) heading(46, "Hold like a wheel", 2, GOLD);
+  if (v.gripLost && !v.gripUpright) heading(46, "Hold like a wheel", 2, GOLD);
   else heading(48, "Paused", 3, ORANGE);
   button(RESUME, "Resume", v.gripUpright);
   button(RECENTER, "Recenter", true);

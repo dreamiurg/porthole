@@ -27,6 +27,6 @@ tilt 0 1000 0
 profile Sam 8
 app racing
 dbg lastlap
-wait 4000
+wait 5500
 monkey 150 933
 expect-screen *

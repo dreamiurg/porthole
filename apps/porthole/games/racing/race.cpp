@@ -190,6 +190,7 @@ void flyRocket(Race& r, Rocket& k) {
     if (fabsf(c.x - k.x) > CAR_HALF_W + 0.06f) continue;
     impact(r, i, ROCKET_LOSS);
     r.rocketHits++;
+    r.hitMs = 900;
     puff(r, c.dist, c.x);
     k.live = false;
     return;
@@ -201,7 +202,7 @@ void tick(Race& r) {
     c.wobbleMs = down(c.wobbleMs); c.lineMs = down(c.lineMs);
   }
   for (Puff& p : r.puff) p.ms = down(p.ms);
-  r.cooldownMs = down(r.cooldownMs); r.calloutMs = down(r.calloutMs);
+  r.cooldownMs = down(r.cooldownMs); r.calloutMs = down(r.calloutMs); r.hitMs = down(r.hitMs);
   r.fullMs[0] = down(r.fullMs[0]); r.fullMs[1] = down(r.fullMs[1]);
 }
 void actions(Race& r, const Controls& in) {

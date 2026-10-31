@@ -88,11 +88,15 @@ wait 600
 expect-screen race_play
 # Fixture: skip to the last metres with every rival already home, so the results page is reachable in this run.
 dbg lastplace
-wait 4000
+wait 3600
+expect finished=1
+snap ra085_finish
+wait 1500
 expect-screen race_results
 expect place=4
 ui-check
 snap ra09_results
+wait 600
 tap 54 112
 wait 600
 expect-screen race_countdown

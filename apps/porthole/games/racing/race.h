@@ -25,6 +25,7 @@ struct Race {
   Rocket rocket[MAX_ROCKETS];
   Puff puff[MAX_PUFFS];
   uint32_t ms = 0, raceMs = 0, cooldownMs = 0, calloutMs = 0, fullMs[2] = {0, 0}, seed = 1;   // calloutMs: a new lap's banner
+  uint32_t hitMs = 0;               // "Hit!" after the player's rocket finds a rival
   uint16_t taken = 0;               // pickup gates collected on the player's current lap (bit per feature)
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
