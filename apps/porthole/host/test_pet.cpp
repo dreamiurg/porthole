@@ -112,6 +112,16 @@ static void dayOnPickedLight() {
   g.enter({&kid, &kid, &none, 1, night, 0, true}); assert(g.tint() == TINT_DAY && !g.nightSky());
 }
 
+static void petting(uint32_t t) {
+  // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
+  Save s; pet::adopt(s, t, "Sam", "Biscuit");
+  s.asleep = 1; assert(!pet::petDog(s, t) && s.petsGiven == 0);
+  s.asleep = 0; s.fun = 50;
+  for (int i = 0; i < 25; i++) assert(pet::petDog(s, t));
+  assert(s.petsGiven == 25 && s.petsToday == 20 && s.fun == 100 && s.bondToday == 20);
+  assert(pet::petDog(s, t + 86400) && s.petsToday == 1 && s.bondToday == 1);   // a new day starts over
+}
+
 int main() {
   Save s;
   decayAndGrowth(s);
@@ -122,6 +132,7 @@ int main() {
   saveV1(s);
   levels(s);
   dayOnPickedLight();
+  petting(day0);
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }
