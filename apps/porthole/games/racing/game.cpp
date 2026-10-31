@@ -67,12 +67,14 @@ void Game::updateHowTo() {
   else if (ui::clicked(in_, paint::NEXT)) { seenHowTo_ = true; go(Screen::Calibrate); }
 }
 
-// The grip held steady here becomes straight ahead at once: the preview car centers on it, turning from it moves the
-// car, and Go keeps it. Until a steady grip is seen, the preview follows the previous one.
+// The first grip held steady here becomes straight ahead at once: the preview car centers on it, turning from it moves
+// the car (and stays turned), and Go keeps it. Laying the puck down lets the next steady grip replace it. Until a
+// steady grip is seen, the preview follows the previous one.
 void Game::updateCalibrate() {
   calibration_.add(gravity(), rawMs_);
   tilt::Grav n{};
-  if (calibration_.get(&n)) { grip_ = n; gripSet_ = true; }
+  if (!controls::upright(gravity())) gripSet_ = false;
+  else if (!gripSet_ && calibration_.get(&n)) { grip_ = n; gripSet_ = true; }
   steer_ = controls::steer(gravity(), gripSet_ ? grip_ : neutral_);
   if (ui::clicked(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }   // clears recenter_
   if (!ui::clicked(in_, paint::NEXT) || !gripReady()) return;

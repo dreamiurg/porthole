@@ -212,6 +212,8 @@ void recenterPreview() {
   r.grav = rolled(12, {0, 707, -707});
   r.wait(80);
   assert(r.g.steering() > 0.3f);   // turning from the new grip shows at once
+  r.wait(1500);
+  assert(r.g.steering() > 0.3f);   // ... and stays: holding a turn does not become the new straight (playtest f1)
   r.grav = {0, 0, -1000};
   r.wait(100);
   r.tap(paint::NEXT);

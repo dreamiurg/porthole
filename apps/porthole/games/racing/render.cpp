@@ -349,7 +349,7 @@ void callouts(const View& v) {
   if (r.calloutMs) banner(170, r.playerLap >= LAPS ? "Final lap" : "Lap 2", 4, CREAM);
   if (v.resumeMs) banner(160, "Ready", 5, GOLD);
   if (r.hitMs) banner(196, "Hit!", 4, ORANGE);
-  if (r.phase == Phase::Finished) banner(150, "Finish!", 6, GOLD);
+  if (r.phase == Phase::Finished) banner(186, "Finish!", 6, GOLD);   // under the lap chip
 }
 
 // ---- pages
