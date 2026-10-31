@@ -224,6 +224,16 @@ void gripLost() {
   Rig r;
   r.toRace(0);
   r.wait(4000);
+  const tilt::Grav back = {0, 342, -940};   // leaned back 70 degrees from upright: still racing, still steering
+  r.grav = back;
+  r.wait(1500);
+  assert(r.g.screen() == Game::Screen::Race);
+  r.grav = rolled(15, back);
+  r.wait(400);
+  assert(r.g.steering() > 0.5f);
+  r.grav = rolled(80);   // a hard turn far past full lock: racing
+  r.wait(1000);
+  assert(r.g.screen() == Game::Screen::Race && r.g.steering() > 0.9f);
   r.grav = {0, 0, -1000};
   r.wait(200);
   assert(r.g.screen() == Game::Screen::Race);   // a brief wobble is not a lost grip

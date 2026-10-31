@@ -12,9 +12,14 @@ tracks, platform contract, and the two approved reference boards the look follow
   cards go straight to the grip page.
 - Grip: hold the puck upright like a wheel, steady for 350 ms, then Go. Flat or implausible gravity never passes.
   Clockwise steers right; 3-degree dead zone, full lock at 20 degrees, about 100 ms smoothing (Starfighter's
-  validated math, kept local in `controls.h`). A flat or implausible pose for 300 ms during a race stops it on the
-  Pause page ("Hold like a wheel"); Resume works only once the puck is upright again.
+  validated math, kept local in `controls.h`). During a race the puck may lean back up to about 75 degrees from upright
+  or turn hard and keep racing (`controls::held`: at least 250 mg of gravity in the screen plane, a user decision of
+  2026-10-31: pausing at 49 degrees caught kids mid-race). Only a nearly flat or implausible pose for 300 ms stops it
+  on the Pause page ("Hold like a wheel"); Resume works once it is held again.
 - Countdown 3-2-1-GO: nothing moves and no press spends a charge before GO. The car accelerates by itself.
+- The speed sits top center in mph (dry-road top speed reads 90, a boost about 121) over a bar that is cyan while
+  boosting and orange while a slow patch, off-road or a hit holds the car back, so a kid sees what a trap costs (a user
+  decision of 2026-10-31; the design brief had no speed readout).
 - Two drawn gameplay buttons, Rocket at 9 o'clock and Boost at 3 o'clock on the rim (moved off the road view at the
   user's request, 2026-10-31). Each shows its icon and a 0-3 count; spent buttons stay visible, dotted. One fresh
   press spends one charge; holding, dragging in from the road or a carried touch never fires. Boost: 1.35 speed cap

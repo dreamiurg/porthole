@@ -84,9 +84,10 @@ void Game::updateCalibrate() {
   go(Screen::Race);
 }
 
-// A flat or implausible pose for GRIP_LOST_MS stops the race: no unstable steering, no driving blind.
+// A flat or implausible pose for GRIP_LOST_MS stops the race: no unstable steering, no driving blind. Leaning back or
+// turning hard is still racing (controls::held); the grip page alone asks for a comfortable upright hold.
 bool Game::gripOk(uint32_t dt) {
-  if (controls::upright(gravity())) { badGripMs_ = 0; return true; }
+  if (controls::held(gravity())) { badGripMs_ = 0; return true; }
   badGripMs_ += dt;
   if (badGripMs_ < GRIP_LOST_MS) return true;
   gripLost_ = true;
@@ -126,7 +127,7 @@ void Game::simulate(uint32_t dt) {
 }
 
 void Game::updatePause() {
-  if (ui::clicked(in_, paint::RESUME) && controls::upright(gravity())) {
+  if (ui::clicked(in_, paint::RESUME) && controls::held(gravity())) {
     gripLost_ = false; resumeMs_ = RESUME_MS;
     go(Screen::Race);   // the exact paused state, down to the partial step
     return;
@@ -156,7 +157,7 @@ void Game::render() {
   v.page = screen_;
   v.race = &race_; v.track = track_; v.ms = ms_; v.steer = steer_;
   v.calibration = calibration_.progress(); v.hold = (uint16_t)(hold_.progress() * 1000); v.resumeMs = resumeMs_;
-  v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity());
+  v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity()); v.gripHeld = controls::held(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
   paint::draw(v);
 }

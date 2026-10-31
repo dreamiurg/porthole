@@ -17,6 +17,7 @@ namespace {
 constexpr uint32_t INK = 0x141623, PLATE = 0x1F2438, PLATE_HI = 0x343C5C, RIM = 0x07080C, CREAM = 0xFFF6E4;
 constexpr uint32_t DIM = 0x8A8FA3, ORANGE = 0xFF8A1E, CYAN = 0x45E3FF, GOLD = 0xFFD23A, GREEN = 0x7BE07B;
 constexpr uint32_t RING = 0xDCE2EC, STEEL = 0xB4BCC6, STEEL_DARK = 0x5C6470;
+constexpr float MPH_AT_TOP = 90;
 constexpr int HORIZON = 228, CAR_ROW = 402, CAR_DEPTH = CAR_ROW - HORIZON, PIC_SCALE = 2;
 constexpr float DEPTH_K = 6.0f * CAR_DEPTH;   // z (m ahead of the camera) = DEPTH_K / rows below the horizon
 constexpr float CAMERA_BACK = 6, ROAD_SLOPE = 1.25f, CURVE_K = 0.0042f;
@@ -316,8 +317,25 @@ void action(const ui::Box& b, int item, int count, bool lit, bool full) {
   outlined(cx + inward * 20 - 12, cy + 12, n, 3, count ? CREAM : DIM);   // the count, toward the middle
   if (full) { const int w = textWidth("Full", 2); outlined(cx + inward * 8 - w / 2, cy - 70, "Full", 2, GOLD); }
 }
+// The speed, top center: big digits and a bar that is cyan while boosting and orange while held back (a slow patch,
+// off the road, or the moment after a hit), so a kid sees what a trap costs. 1.0 (dry-road top speed) reads 90 mph.
+void speedo(const Race& r) {
+  const Car& p = r.car[PLAYER];
+  bool ice = false;
+  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, p.dist, p.x, &ice) < 1);
+  const uint32_t color = p.boostMs ? CYAN : slowed ? ORANGE : CREAM;
+  char n[8];
+  snprintf(n, sizeof n, "%d", (int)lroundf(p.speed * MPH_AT_TOP));
+  const int w = textWidth(n, 5), x = 262 - w;
+  outlined(x, 28, n, 5, color);
+  outlined(268, 50, "mph", 2, color);
+  const int bw = (int)(110 * fminf(p.speed / BOOST_CAP, 1));
+  fill(184, 78, 114, 9, RIM);
+  fill(186, 80, bw, 5, color);
+}
 void hud(const View& v) {
   const Race& r = *v.race;
+  speedo(r);
   UiAudit::add(LAP.x, LAP.y, LAP.w, LAP.h);
   char lap[8];
   snprintf(lap, sizeof lap, "%d/%d", lapOf(r, PLAYER), LAPS);
@@ -412,9 +430,9 @@ void calibratePage(const View& v) {
 }
 void pausePage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
-  if (v.gripLost && !v.gripUpright) heading(46, "Hold like a wheel", 2, GOLD);
+  if (v.gripLost && !v.gripHeld) heading(46, "Hold like a wheel", 2, GOLD);
   else heading(48, "Paused", 3, ORANGE);
-  button(RESUME, "Resume", v.gripUpright);
+  button(RESUME, "Resume", v.gripHeld);
   button(RECENTER, "Recenter", true);
   button(RESTART, "Restart", true);
   button(TRACKS_BTN, "Tracks", true);
