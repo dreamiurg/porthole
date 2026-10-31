@@ -34,7 +34,7 @@ float capFor(const Race& r, const Car& c, bool* ice) {
   float cap = c.boostMs ? BOOST_CAP : c.top;
   *ice = false;
   if (!airborne(c)) {
-    const float terrain = terrainCap(*r.track, c.dist, c.x, ice);
+    const float terrain = terrainCap(*r.track, r.rung, c.dist, c.x, ice);
     if (terrain < 1 && terrain < cap) cap = terrain;   // terrain wins over Boost; never multiplied
   }
   return cap;
@@ -61,7 +61,7 @@ void obstacles(Race& r, int i) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Obstacle) continue;
+    if (o.kind != Kind::Obstacle || !active(o, r.rung)) continue;
     const float ox = o.x / 100.0f, ow = o.w / 100.0f + CAR_HALF_W;
     const uint16_t bit = (uint16_t)(1u << f);
     const bool inside = !airborne(c) && within(t, c.dist, featureAt(t, o), featureLen(t, o), CAR_LEN / 2) && fabsf(c.x - ox) < ow;
@@ -79,7 +79,7 @@ void ramps(Race& r, int i, float prev) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Ramp || airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
+    if (o.kind != Kind::Ramp || !active(o, r.rung) || airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
     if (fabsf(c.x - o.x / 100.0f) > o.w / 100.0f) continue;
     c.airMs = AIR_MS;
     if (i == PLAYER) r.jumps++;
@@ -90,7 +90,7 @@ void pickups(Race& r, float prev) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Pickup || o.raised != airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
+    if (o.kind != Kind::Pickup || !active(o, r.rung) || o.raised != airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
     if (fabsf(c.x - o.x / 100.0f) > PICKUP_HALF_W || (r.taken & (1u << f))) continue;
     if (r.inventory[o.item] >= MAX_INVENTORY) { r.fullMs[o.item] = 900; continue; }   // stays for a later lap
     r.inventory[o.item]++;
@@ -104,7 +104,7 @@ float aroundHazards(const Race& r, int i, float line) {
   const Car& c = r.car[i];
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind == Kind::Pickup || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
+    if (o.kind == Kind::Pickup || !active(o, r.rung) || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
     const float ahead = featureAt(t, o) - lapPos(t, c.dist);
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
     if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
@@ -265,7 +265,7 @@ void laps(Race& r) {
 void ladder(Car& c, int i, int level, int rung, float floor) {
   constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
   if (level < 0) c.top *= slowdown(level, floor);   // keyed on the kid's level: below 0 rivals are slower on every track
-  for (int k = 0; k < rung; k++) {
+  for (int k = 0; k < rung && k < LADDER_RUNGS; k++) {   // Pro rungs change the track, not the rivals
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
     else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
     else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
@@ -284,11 +284,11 @@ float hitSpeed(float before, float factor) {
 }
 bool airborne(const Car& c) { return c.airMs > 0; }
 
-float terrainCap(const Track& t, float dist, float x, bool* onIce) {
+float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce) {
   float cap = fabsf(x) > 1 ? OFFROAD_CAP : 1;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Slow && o.kind != Kind::Ice) continue;
+    if ((o.kind != Kind::Slow && o.kind != Kind::Ice) || !active(o, rung)) continue;
     if (!within(t, dist, featureAt(t, o), featureLen(t, o), 0) || fabsf(x - o.x / 100.0f) > o.w / 100.0f) continue;
     if (o.kind == Kind::Ice) *onIce = true;
     else if (SLOW_CAP < cap) cap = SLOW_CAP;

@@ -52,7 +52,7 @@ void everyTrackFinishes() {
     assert(steady.ms < idle.ms);
     // Even the rivals at their slowest and most courteous beat a kid who never steers; the same seed and level is the
     // same race, to the millisecond.
-    for (int level : {LEVEL_MIN, LEVEL_MAX}) assert(run(t, 0, 7, level).place == 4);
+    for (int level = LEVEL_MIN; level <= LEVEL_MAX - LEVEL_SHIFT[t]; level++) assert(run(t, 0, 7, level).place == 4);
     assert(run(t, 2, 11, LEVEL_MIN).ms == run(t, 2, 11, LEVEL_MIN).ms);
   }
 }
@@ -109,14 +109,14 @@ void impactRule() {
   assert(hitSpeed(0.40f, OBSTACLE_LOSS) == HIT_FLOOR);
   bool ice = false;
   const Track& t = TRACK[0];
-  assert(terrainCap(t, 0, 1.2f, &ice) == OFFROAD_CAP);
+  assert(terrainCap(t, 0, 0, 1.2f, &ice) == OFFROAD_CAP);
   const Feature& mud = t.features[1];
   const float inMud = featureAt(t, mud) + 2;
-  assert(terrainCap(t, inMud, mud.x / 100.0f, &ice) == SLOW_CAP && !ice);
-  assert(terrainCap(t, inMud, -1.3f, &ice) == OFFROAD_CAP);   // strongest cap, not a product
+  assert(terrainCap(t, 0, inMud, mud.x / 100.0f, &ice) == SLOW_CAP && !ice);
+  assert(terrainCap(t, 0, inMud, -1.3f, &ice) == OFFROAD_CAP);   // strongest cap, not a product
   const Feature& patch = TRACK[2].features[1];
   ice = false;
-  terrainCap(TRACK[2], featureAt(TRACK[2], patch) + 2, patch.x / 100.0f, &ice);
+  terrainCap(TRACK[2], 0, featureAt(TRACK[2], patch) + 2, patch.x / 100.0f, &ice);
   assert(ice);
 }
 
@@ -161,6 +161,33 @@ void obstacleOnce() {
   }
   assert(hits == 1);   // one loss per contact, then eased out of the rock rather than trapped
   assert(fabsf(r.car[PLAYER].x - rock.x / 100.0f) >= rock.w / 100.0f + CAR_HALF_W - 0.05f);
+}
+
+// The Pro rungs change the track, never the rivals: a Pro hazard is not there below its rung (no hit, no slow-down)
+// and is from it up, and every track's levels reach each of its rungs.
+void proHazards() {
+  Race top, pro;
+  start(top, TRACK[0], 1, LADDER_RUNGS);
+  start(pro, TRACK[0], 1, LEVEL_MAX);
+  for (int i = 1; i < CARS; i++)
+    assert(pro.car[i].top == top.car[i].top && pro.car[i].boosts == top.car[i].boosts && pro.car[i].refill == top.car[i].refill);
+  for (int t = 0; t < TRACKS; t++) {
+    const Track& k = TRACK[t];
+    for (int f = 0; f < k.nFeatures; f++) {
+      const Feature& o = k.features[f];
+      if (!o.rung) continue;
+      for (int rung : {o.rung - 1, (int)o.rung}) {
+        const int level = rung - LEVEL_SHIFT[t];
+        assert(level <= LEVEL_MAX - LEVEL_SHIFT[t]);
+        Race r = racingAt(t, featureAt(k, o) - 10, o.x / 100.0f, level);
+        assert(r.rung == rung);
+        float slowest = 1;
+        for (int i = 0; i < 30; i++) { step(r, Controls{}); slowest = fminf(slowest, r.car[PLAYER].speed); }
+        if (o.kind == Kind::Obstacle) assert((r.impacts == 1) == (rung == o.rung));
+        else assert((slowest < SLOW_CAP + 0.05f) == (rung == o.rung));
+      }
+    }
+  }
 }
 
 void jumpsAndPickups() {
@@ -272,13 +299,13 @@ void rivalBoosts() {
   while (!d.boostMs && since < 500) { d.dist = r.car[PLAYER].dist - 25; step(r, Controls{}); since++; }
   assert(since == (int)(RIVAL_BOOST_GAP_MS / STEP_MS));
   // The refill levels, one rival a level in LADDER_REFILL order; such a rival takes its charges back at the lap line.
-  for (int level = LEVEL_MAX - 3; level <= LEVEL_MAX; level++) {
+  for (int level = LADDER_RUNGS - 3; level <= LADDER_RUNGS; level++) {
     Race q = racingAt(0, 100, 0, level);
-    for (int k = 0; k < 3; k++) assert(q.car[LADDER_REFILL[k]].refill == (level > LEVEL_MAX - 3 + k));
+    for (int k = 0; k < 3; k++) assert(q.car[LADDER_REFILL[k]].refill == (level > LADDER_RUNGS - 3 + k));
     Car& e = q.car[LADDER_REFILL[0]];
     e.boosts = 0; e.dist = TRACK[0].length - 2; e.speed = 1;   // ahead of the kid: nothing to chase
     for (int i = 0; i < 10; i++) step(q, Controls{});
-    assert(e.boosts == (level > LEVEL_MAX - 3 ? MAX_INVENTORY : 0));
+    assert(e.boosts == (level > LADDER_RUNGS - 3 ? MAX_INVENTORY : 0));
   }
 }
 
@@ -295,7 +322,7 @@ float aimAround(const Race& r, float aim) {
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
     const float d = featureAt(t, o) - lapPos(t, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
-    if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && d > 0 && d < 40 && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
+    if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && active(o, r.rung) && d > 0 && d < 40 && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
   }
   return std::max(-0.85f, std::min(0.85f, aim));
 }
@@ -367,6 +394,7 @@ int main() {
   boostAndTerrain();
   obstacleOnce();
   jumpsAndPickups();
+  proHazards();
   rockets();
   contactOnce();
   finishOrder();

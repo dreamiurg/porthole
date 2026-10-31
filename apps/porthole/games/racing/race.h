@@ -36,7 +36,8 @@ struct Race {
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
   uint8_t place = CARS, finishedCount = 0, playerLap = 0;
   int8_t level = 0;                 // the kid's level on this track (clampLevel): below 0 the rivals are slower
-  int8_t rung = 0;                  // the charge/pace ladder rung it puts the rivals on (tune.h LEVEL_SHIFT)
+  int8_t rung = 0;                  // the ladder rung it puts the rivals on (tune.h LEVEL_SHIFT); past LADDER_RUNGS
+                                    // it switches the track's Pro hazards on instead (Feature::rung)
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
 };
 
@@ -55,6 +56,7 @@ void order(const Race& r, uint8_t out[CARS]);   // car ids, first place first
 uint32_t bestLap(const Race& r);       // the player's fastest finished lap, 0 if none
 float hitSpeed(float before, float factor);    // the impact rule: min(before, max(HIT_FLOOR, before * factor))
 bool airborne(const Car& c);
-// What is under a grounded car at (dist, x): the strongest speed cap (1 = none) and whether it is on ice.
-float terrainCap(const Track& t, float dist, float x, bool* onIce);
+// What is under a grounded car at (dist, x) on a race at ladder `rung` (Race::rung: it switches Pro patches on): the
+// strongest speed cap (1 = none) and whether it is on ice.
+float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce);
 }  // namespace racing

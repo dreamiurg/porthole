@@ -47,10 +47,10 @@ tracks, platform contract, and the two approved reference boards the look follow
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
 - In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
-  from -16 up to the track's top (18; 6 on Industrial Ruins, 10 on Night Run). A win adds one, two after a runaway
+  from -16 up to the track's top (21; 9 on Industrial Ruins, 13 on Night Run). A win adds one, two after a runaway
   (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; from 4..9 straight to -2
   (there rivals only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they
-  are slower); above 9 it takes three. From 18 a losing streak goes 15, 12, 9, -2: below 0 after four losses. A
+  are slower); above 9 it takes three. From 21 a losing streak goes 18, 15, 12, 9, -2: below 0 after five losses. A
   competent driver settles near two wins in three on every track (55-72% in simulation). Only a finish counts;
   Restart, Tracks, Home or leaving never move it. A track never finished starts one level below the kid's highest
   level elsewhere, inside 0..3 (a level, so on Industrial Ruins or Night Run it is a higher rung).
@@ -68,13 +68,22 @@ tracks, platform contract, and the two approved reference boards the look follow
   again as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The
   ladder was ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure
   function of track, seed, level and inputs.
+- Pro: rungs 19-21 (kids asked that a mastered track get harder, 2026-10-31) leave the rivals as at 18; each switches
+  on one more of the track's Pro hazards (`Feature::rung`): three rocks on Desert Canyon, a crate and an oil patch on
+  Industrial Ruins, two barriers on Night Run, a snow block on Snow Track (its `SNOWBLOCK` art, unused before); where a
+  track has fewer than three, its top rungs repeat the one below. Each is drawn with the track's own art, sits on the
+  road at least 1% of a lap clear of every gate and ramp (a `static_assert` in `track.cpp`) and out of a gate's or
+  ramp's lane within 3% of it, and was kept only where a 60-seed sweep with the competent driver and a late, wobbly kid
+  driver found its rung no easier than the one below (win share and mean place). In simulation a narrower road made
+  races easier (rivals jam) and sharper bends changed nothing, so neither is used.
 - No sounds, no network. Leaving and coming back starts at the cards.
 
 ## Module map
 
 - `tune.h`: every tuning number from the brief (normalized speed, meters, road half-widths), the 20 ms step.
 - `track.h` / `track.cpp`: the four circuits as tables (curvature sections, pickup gates, ramps, slow/ice patches,
-  obstacles) in percent of a lap; `curve()` feeds both physics and drawing.
+  obstacles) in percent of a lap; `curve()` feeds both physics and drawing. A Pro hazard carries the rung that
+  switches it on; race and drawing skip it below that rung (`active`), never copying the table.
 - `race.h` / `race.cpp`: the pure race: cars, rockets, pickups, swept gate/ramp/finish crossing, contacts, rival
   lines, ranking. No input or drawing dependencies.
 - `controls.h`: the wheel and its calibration.
@@ -101,7 +110,7 @@ field goes right before `crc` with a version bump, and `loadBlob` must keep load
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
 every profile's save for the leaderboard and writes only the current kid's.
 
-Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the
+Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the idle one last at every level, the
 level rules, rival boosts and the competent-driver staircase) and `host/test_racing.cpp` (wheel, pages, touch rules,
 pause/resume, grip loss, frame-rate invariance, replay, text and targets on the glass, save and levels). Playtests:
 `tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`; the

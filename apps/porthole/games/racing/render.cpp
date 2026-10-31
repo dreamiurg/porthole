@@ -167,7 +167,7 @@ void patches(const Camera& cam, int y, float world) {   // ramps, mud, oil, slus
   const float z = lapPos(t, world);
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if ((o.kind != Kind::Ramp && o.kind != Kind::Slow && o.kind != Kind::Ice) || !patchHere(t, o, z)) continue;
+    if ((o.kind != Kind::Ramp && o.kind != Kind::Slow && o.kind != Kind::Ice) || !active(o, cam.r->rung) || !patchHere(t, o, z)) continue;
     const int cx = sc->center[i] + (int)(o.x / 100.0f * sc->half[i]), hw = (int)(o.w / 100.0f * sc->half[i]);
     const float at = featureAt(t, o), end = o.kind == Kind::Ramp ? at : at + featureLen(t, o);
     const bool edge = o.kind != Kind::Ramp && (z < at + 1.2f || z > end - 1.2f);
@@ -224,6 +224,7 @@ void placeTrack(const Camera& cam) {
   const Track& t = *cam.r->track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
+    if (!active(o, cam.r->rung)) continue;
     const float ahead = featureAt(t, o) - lapPos(t, cam.dist);
     const float z = ahead < -10 ? ahead + t.length : ahead;
     if (o.kind == Kind::Obstacle) add({z + featureLen(t, o) / 2, pic::OBSTACLE[cam.track], o.x / 100.0f});
@@ -350,7 +351,7 @@ uint16_t slotColor(int i) {
 void speedo(const Race& r) {
   const Car& p = r.car[PLAYER];
   bool ice = false;
-  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, p.dist, p.x, &ice) < 1);
+  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, r.rung, p.dist, p.x, &ice) < 1);
   const int lit = (int)lroundf(fminf(p.speed / BOOST_CAP, 1) * SEGMENTS);
   const uint16_t rim = rgb888_to_565(RIM), off = rgb888_to_565(PLATE), held = rgb888_to_565(HELD);
   for (int i = 0; i < sc->arcCount; i++) {
