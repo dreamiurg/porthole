@@ -27,7 +27,7 @@ class Game : public App {
   void debugCmd(const char* cmd) override;
   const Race& race() const { return race_; }
   float steering() const { return steer_; }
-  enum class Screen : uint8_t { Tracks, HowTo, Calibrate, Race, Pause, Confirm, Results };
+  using Screen = paint::Page;   // one page per screen
   Screen screen() const { return screen_; }
 
  private:

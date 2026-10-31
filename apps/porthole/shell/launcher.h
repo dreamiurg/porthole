@@ -24,7 +24,7 @@ inline int muteY(int n) { return twoLines(n) ? 138 : 128; }
 inline int grassY(int n) { return twoLines(n) ? 123 : 116; }
 
 inline int pages(int n) { return n > 8 ? n - 5 : n > 3 ? (n + 2) / 3 : 1; }   // no games is one empty page
-inline int count(int n, int page) {                              // the first pages get the odd one
+inline int count(int n, int page) {   // up to eight: the first pages get the odd one; past eight, one page each
   if (n >= 9) return page >= 3 ? (page < pages(n) ? 1 : 0) : count(8, page);   // Toy Town, then Rally: appended, no tile moves
   return page < pages(n) ? n / pages(n) + (page < n % pages(n) ? 1 : 0) : 0;
 }

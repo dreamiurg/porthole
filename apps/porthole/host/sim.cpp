@@ -302,6 +302,7 @@ static kingdom::Game g_kingdom;
 static toytown::Game g_toytown;
 static racing::Game g_racing;
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
+static_assert(sizeof APPS / sizeof APPS[0] <= MAX_APPS, "raise MAX_APPS (shell/shell.h) and the launcher's layout");
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell g_shell;

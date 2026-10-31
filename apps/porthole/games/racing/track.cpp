@@ -32,6 +32,9 @@ constexpr Feature NIGHT_F[] = {
     gate(80, 0, BOOST), gate(300, -30, ROCKET), slow(410, 30, -55, 30), gate(455, 0, ROCKET), slow(470, 30, 55, 30),
     ramp(610, -50), gate(621, -50, BOOST, true), block(770, 80, 18), block(860, -80, 18), gate(940, 30, BOOST)};
 template <class T, int N> constexpr int count(const T (&)[N]) { return N; }
+// race.cpp keeps a bit per feature in 16-bit masks (gates taken, obstacles touched).
+static_assert(count(DESERT_F) <= MAX_FEATURES && count(INDUSTRIAL_F) <= MAX_FEATURES && count(SNOW_F) <= MAX_FEATURES &&
+              count(NIGHT_F) <= MAX_FEATURES, "a track has more features than the race's bitmasks hold");
 }  // namespace
 
 const Track TRACK[TRACKS] = {

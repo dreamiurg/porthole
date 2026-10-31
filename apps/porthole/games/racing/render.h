@@ -28,7 +28,7 @@ struct View {
   uint16_t calibration = 0;   // permille
   uint16_t hold = 0;          // lap-chip hold, permille
   uint32_t resumeMs = 0;      // the "ready" cue before a paused race moves again
-  bool gripReady = false, gripUpright = false, gripLost = false, recenter = false;
+  bool gripReady = false, gripUpright = false, gripLost = false;
   Leave leave = Leave::Restart;
 };
 void draw(const View& v);

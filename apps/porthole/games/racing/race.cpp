@@ -6,7 +6,6 @@ namespace {
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 uint32_t down(uint32_t v) { return v > STEP_MS ? v - STEP_MS : 0; }
 uint32_t rnd(uint32_t& s) { s = s * 1664525u + 1013904223u; return s >> 8; }
-float lapLen(const Race& r) { return r.track->length; }
 // Did a car moving from prev to cur pass the gate at `at` (meters into a lap), on any lap? Swept, so a long step
 // (or a boost) can never hop over a gate, ramp or line.
 bool crossed(const Track& t, float prev, float cur, float at) {
@@ -142,7 +141,7 @@ void drive(Race& r, int i, float steer) {
   obstacles(r, i);
   if (i == PLAYER) pickups(r, prev);
   ramps(r, i, prev);
-  const float line = LAPS * lapLen(r);
+  const float line = LAPS * r.track->length;
   if (prev < line && c.dist >= line) {   // interpolate the crossing inside this step: a stable, fair order
     c.finished = true;
     c.finishMs = r.raceMs - STEP_MS + (uint32_t)lroundf((line - prev) / (c.dist - prev) * STEP_MS);
@@ -213,7 +212,7 @@ void actions(Race& r, const Controls& in) {
 void laps(Race& r) {
   const int lap = lapOf(r, PLAYER);
   if (lap != r.playerLap) {
-    if (r.playerLap) { r.callout = (uint8_t)lap; r.calloutMs = 1500; }
+    if (r.playerLap) r.calloutMs = 1500;
     r.playerLap = (uint8_t)lap;
     r.taken = 0;   // every gate comes back on the next lap
   }

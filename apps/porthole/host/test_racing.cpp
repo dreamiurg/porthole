@@ -180,6 +180,22 @@ void recenterAndLeave() {
   assert(r.g.wantsHome() && !r.g.wantsHome());
 }
 
+// Backing out of Recenter and leaving for another track starts that track, never the abandoned race.
+void recenterThenLeave() {
+  Rig r;
+  r.toRace(0);
+  r.wait(4000);
+  for (int i = 0; i < 18; i++) r.frame(true, paint::LAP.x + 4, paint::LAP.y + 4);
+  r.frame();
+  r.tap(paint::RECENTER);
+  r.tap(paint::BACK);
+  r.tap(paint::TRACKS_BTN); r.tap(paint::YES);
+  r.tap(paint::CARD[2]);
+  r.wait(600);
+  r.tap(paint::NEXT);
+  assert(r.g.screen() == Game::Screen::Race && r.g.race().phase == Phase::Countdown && r.g.race().track == &TRACK[2]);
+}
+
 void gripLost() {
   Rig r;
   r.toRace(0);
@@ -267,6 +283,7 @@ int main() {
   countdownAndButtons();
   pauseHoldAndResume();
   recenterAndLeave();
+  recenterThenLeave();
   gripLost();
   frameRateInvariant();
   finishAndReplay();

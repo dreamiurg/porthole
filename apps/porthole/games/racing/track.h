@@ -26,7 +26,7 @@ struct Track {
 constexpr int TRACKS = 4;
 extern const Track TRACK[TRACKS];
 
-constexpr int MAX_FEATURES = 16;
+constexpr int MAX_FEATURES = 16;   // bits in Race::taken and Car::solid
 inline float lapPos(const Track& t, float dist) {   // 0 .. length
   float p = dist - (float)(int)(dist / t.length) * t.length;
   if (p < 0) p += t.length;

@@ -9,7 +9,6 @@ namespace {
 using paint::Leave;
 constexpr uint32_t GRIP_LOST_MS = 300, RESUME_MS = 1000;
 bool inside(const ui::Box& b, int x, int y) { return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; }
-bool click(const Input& in, const ui::Box& b) { return ui::clicked(in, b); }
 // A fresh press that began on the button: holding, sliding in from elsewhere or a carried touch never fires.
 bool press(const Input& in, const ui::Box& b) { return in.hit(b.x, b.y, b.w, b.h) && in.pressed && inside(b, in.downX, in.downY); }
 bool holding(const Input& in, const ui::Box& b) {
@@ -29,14 +28,15 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Screen s) {
   screen_ = s;
   if (s == Screen::Calibrate) calibration_ = {};
+  else if (s != Screen::Race) recenter_ = false;   // a recenter only ever returns to the race it paused
   gate_.shown(ms_); hold_ = {};
   boost_ = rocket_ = false;
-  stepMs_ = badGripMs_ = 0;
+  badGripMs_ = 0;
 }
 
 void Game::startRace() {
   start(race_, TRACK[track_], seed_ + ++runs_);   // every run is fresh: inventory, timers and rivals reset
-  steer_ = 0; resumeMs_ = 0; gripLost_ = recenter_ = false;
+  steer_ = 0; resumeMs_ = stepMs_ = 0; gripLost_ = recenter_ = false;
   go(Screen::Race);
 }
 
@@ -58,21 +58,21 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 
 void Game::updateTracks() {
   for (int i = 0; i < TRACKS; i++)
-    if (click(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
-  if (click(in_, paint::HOME)) home_ = true;
+    if (ui::clicked(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
+  if (ui::clicked(in_, paint::HOME)) home_ = true;
 }
 
 void Game::updateHowTo() {
-  if (click(in_, paint::BACK)) go(Screen::Tracks);
-  else if (click(in_, paint::NEXT)) { seenHowTo_ = true; go(Screen::Calibrate); }
+  if (ui::clicked(in_, paint::BACK)) go(Screen::Tracks);
+  else if (ui::clicked(in_, paint::NEXT)) { seenHowTo_ = true; go(Screen::Calibrate); }
 }
 
 void Game::updateCalibrate() {
   calibration_.add(gravity(), rawMs_);
   steer_ = controls::steer(gravity(), neutral_);   // the preview car follows the wheel as it is set now
-  if (click(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }
+  if (ui::clicked(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }   // clears recenter_
   tilt::Grav n{};
-  if (!click(in_, paint::NEXT) || !calibration_.get(&n)) return;
+  if (!ui::clicked(in_, paint::NEXT) || !calibration_.get(&n)) return;
   neutral_ = n;
   if (!recenter_) { startRace(); return; }
   recenter_ = false; gripLost_ = false; resumeMs_ = RESUME_MS; steer_ = 0;   // the race waits a beat, then goes on
@@ -117,43 +117,39 @@ void Game::simulate(uint32_t dt) {
 }
 
 void Game::updatePause() {
-  if (click(in_, paint::RESUME) && controls::upright(gravity())) {
-    gripLost_ = false; resumeMs_ = RESUME_MS; badGripMs_ = 0;
-    const uint32_t keep = stepMs_;
-    go(Screen::Race);
-    stepMs_ = keep;   // exact simulation state, down to the partial step
+  if (ui::clicked(in_, paint::RESUME) && controls::upright(gravity())) {
+    gripLost_ = false; resumeMs_ = RESUME_MS;
+    go(Screen::Race);   // the exact paused state, down to the partial step
     return;
   }
-  if (click(in_, paint::RECENTER)) { recenter_ = true; go(Screen::Calibrate); return; }
+  if (ui::clicked(in_, paint::RECENTER)) { recenter_ = true; go(Screen::Calibrate); return; }
   const ui::Box* boxes[] = {&paint::RESTART, &paint::TRACKS_BTN, &paint::HOME_BTN};
   for (int i = 0; i < 3; i++)
-    if (click(in_, *boxes[i])) { leave_ = (Leave)i; go(Screen::Confirm); return; }
+    if (ui::clicked(in_, *boxes[i])) { leave_ = (Leave)i; go(Screen::Confirm); return; }
 }
 
 void Game::updateConfirm() {
-  if (click(in_, paint::NO)) { go(Screen::Pause); return; }
-  if (!click(in_, paint::YES)) return;
+  if (ui::clicked(in_, paint::NO)) { go(Screen::Pause); return; }
+  if (!ui::clicked(in_, paint::YES)) return;
   if (leave_ == Leave::Restart) startRace();
   else if (leave_ == Leave::Tracks) go(Screen::Tracks);
   else home_ = true;
 }
 
 void Game::updateResults() {
-  if (click(in_, paint::REPLAY)) startRace();
-  else if (click(in_, paint::RESULT_TRACKS)) go(Screen::Tracks);
-  else if (click(in_, paint::RESULT_HOME)) home_ = true;
+  if (ui::clicked(in_, paint::REPLAY)) startRace();
+  else if (ui::clicked(in_, paint::RESULT_TRACKS)) go(Screen::Tracks);
+  else if (ui::clicked(in_, paint::RESULT_HOME)) home_ = true;
 }
 
 void Game::render() {
   tilt::Grav n{};
-  static const paint::Page PAGES[] = {paint::Page::Tracks, paint::Page::HowTo, paint::Page::Calibrate, paint::Page::Race,
-                                      paint::Page::Pause, paint::Page::Confirm, paint::Page::Results};
   paint::View v;
-  v.page = PAGES[(int)screen_];
+  v.page = screen_;
   v.race = &race_; v.track = track_; v.ms = ms_; v.steer = steer_;
   v.calibration = calibration_.progress(); v.hold = (uint16_t)(hold_.progress() * 1000); v.resumeMs = resumeMs_;
   v.gripReady = calibration_.get(&n); v.gripUpright = controls::upright(gravity());
-  v.gripLost = gripLost_; v.recenter = recenter_; v.leave = leave_;
+  v.gripLost = gripLost_; v.leave = leave_;
   paint::draw(v);
 }
 
