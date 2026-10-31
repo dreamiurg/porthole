@@ -436,3 +436,162 @@ the kid's best level elsewhere, inside 0..3.
 | 1 / 4 | `(+N)` reads as the gap to the winner | **Deferred.** It predates this change; results wording needs its own design pass. |
 | 1 / 5 | A rocket hit then rear-ending the slowed car | **Deferred.** It predates adaptive rivals. |
 | 1 / Lim. | The `dbg level` value did not persist | **Fixed.** It saves now. On a track the kid has never finished, the next entry or finish derives it again. |
+
+## Pass 3 (final retest, same playtester, emulator roleplay)
+
+The same playtester ran this pass. It did not read `games/racing/` source, but it knew the rule changes from the brief
+and both earlier passes, so this is not a fresh first-time-comprehension check. No real child played and no board was
+used.
+
+### Build, setup, brief
+
+- Commit `88fcff3` on `claude/rally-adaptive`. `build/host/snap` sha256 `967874117742fec22c2a6d87f28d798f6042aad831b5eacc2a107fa42f8f1122`,
+  frozen as `snapf` for the session.
+- Same fixture and `drv.py` (unchanged). Every menu tap was chosen from a rendered frame. Zoe: `smooth 1 0 kiddodge`.
+  Sam: `jerky 0.5 25 kid`. Struggling Sam: `jerky 0.35 45 kid`, calibrated this pass (Desert 1:36-1:38, about 5-6 s
+  off Zoe's 1:31.6; Snow 2:03-2:07, about 8-11 s off Sam's 1:55.8). It is not comparable with the pass 1-2 struggling
+  numbers.
+- Levels were read after each race from copies of the save (`debug` after tapping each track card in a `--script`
+  run). They were never fed back into the driving.
+- Screen time: one grown-up Reset usage (Admin, Screen time) between Zoe's Industrial and Night blocks. Struggling Sam's
+  Desert and Snow blocks ran in separate fresh sessions.
+- Brief (as received): Sam at least 4 races on Snow (contested within 2-3 races?). Zoe at least 4 on Desert, then 2
+  each on Industrial Ruins and Night Run (first visits: fair or crushing?). A struggling Sam on Desert and Snow until
+  he wins or about 5 races. `dbg level -16` on Desert only if needed. Check each open finding from pass 2.
+
+### Natural play (no `dbg`)
+
+Every level change below matches the stated rules (+1 per win, +2 when the kid led most of the race; a loss at 0 or
+below takes two; a loss from 1..9 drops to -2).
+
+| # | Kid | Track | Level in | Place | Time | What happened |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Zoe | Desert | 0 | 2nd | 1:32.5 | Green led and was visible ahead all of lap 3. Zoe stayed at 90 mph and never closed. |
+| 2 | Zoe | Desert | -2 | 2nd | 1:32.9 | Same shape; green just ahead in lap 3. |
+| 3 | Zoe | Desert | -4 | 1st | 1:31.6 | Passed green in lap 1, then alone. Runaway +2. |
+| 4 | Zoe | Desert | -2 | 2nd | 1:33.0 | Rocket `Hit!` in lap 1; green ahead in lap 3. |
+| 5 | Zoe | Desert | -4 | 1st | 1:33.1 | Passed green in lap 3 (+1). |
+| 6 | Zoe | Desert | -3 | 2nd | 1:33.2 | Green ahead in lap 3. Ended at -5. |
+| 7 | Zoe | Industrial (new) | 0 | 1st | 1:46.8 | Duel; led from mid lap 2. The helper hit a wall (59 mph). |
+| 8 | Zoe | Industrial | 1 | 2nd | 1:47.5 | Lead changed four times with yellow; yellow won, visible ahead (`17`). |
+| 9 | Zoe | Night Run (new) | 0 | 1st | 1:48.3 | Yellow ahead for two laps; Zoe boosted past in the final lap (`17`). |
+| 10 | Zoe | Night Run | 1 | 3rd | 1:49.6 | Pack all race; yellow just ahead at the line. |
+| 11 | Sam | Snow | 0 | 1st | 1:55.8 | Alone from about 5 s. Runaway +2. |
+| 12 | Sam | Snow | 2 | 1st | 1:56.1 | Contested. Sam fell to 4th, then caught green and boosted past it at 113 mph in lap 3 (`16`). |
+| 13 | Sam | Snow | 3 | 2nd | 1:57.9 | Rivals ahead all race. → -2. |
+| 14 | Sam | Snow | -2 | 1st | 1:55.8 | Alone from about 10 s. Runaway +2. |
+| 15 | Sam | Snow | 0 | 1st | 1:55.8 | Alone; the same race as #11. → 2. |
+| 16-21 | Struggling Sam | Desert | 0, -2, -4, -6, -8, -10 | 3rd ×4, then 2nd ×2 | 1:36.4-1:38.6 | No win. At -10 he led lap 1, then green and yellow passed; green visible ahead to the line (`18`). Ended at -12. |
+| 22-27 | Struggling Sam | Snow | 0, -2, -4, -6, -8, -10 | 3rd ×4, 2nd, **1st** | 2:03.6-2:07.2 | First win in race 6, at -10: alone from about 10 s. The rest screen replaced its results page within 3 s (`19`). |
+
+Supplementary (hidden state): with `dbg level -16` on Desert after race 21, struggling Sam won 1st (1:36.6), alone from
+lap 1. Natural play reaches -16 in two more losses, so his first Desert win would come in race 7-9.
+
+### Qualitative assessment
+
+- **Goal and feedback.** Place, lap and the rivals ahead read clearly on every track. Results keep `(+N)`, the gap to
+  the kid's own best, and now show it under a win too: `1st 2:04.0 (+0.4)` was struggling Sam's first win after five
+  losses (`19`).
+- **Decisions and fairness.** The races were won by a boost pass (#9, #12) or a late pass (#5), and lost with the
+  leader in view (#1, #2, #6, #8, #10). No rival pulled away at the kid's top speed without flames. On Desert at -2..-4,
+  green still holds a steady gap at Zoe's 90 mph after she loses time in lap 1 traffic (as in passes 1-2). It is fair,
+  but this helper wins only 2 of 6 there.
+- **First visits.** Fair, not crushing. Both new tracks started at 0 even though Desert sat at -4 (the pass-2 dip no
+  longer carries over). Each first visit was a win by a pass, and the second visit was a close loss.
+- **Stopping points.** Zoe: after two Desert losses in a row (#1-2), she switches track, and Industrial/Night then
+  hold her. Sam: hooked by #12. After the loss in #13, #14-15 are solo again; he likely stops there, bored, at about
+  10 minutes. Struggling Sam: a 6-year-old stops around the third straight 3rd place on either track, well before the
+  win.
+- **Recovery and imprecise input.** Losing never costs anything visible. A long-press on Replay started one race. A
+  tap on the `1/3 Hold` sign does nothing; a 1.5 s hold opens Paused. Resume continues. Restart asks `Start over? This
+  race ends.`, and Yes keeps the level (-5).
+
+### Findings (pass 3)
+
+No Blocker or Major.
+
+**Minor**
+
+1. **Snow swings from contested back to two solo races after one loss.**
+   - Screen: race (Snow Track).
+   - Concern: boredom / challenge.
+   - Repro: fresh Sam, Snow, `drive 125 X 10000 jerky 0.5 25 kid` × 5 with Replay (`tap 52 111`). Levels 0, 2, 3, -2,
+     0; races #11, #14 and #15 were solo.
+   - Detail: Snow was contested by race 2 (the brief's question: yes). The loss at 3 drops to -2, though, and two
+     runaway wins are needed before the rivals are close again. That makes 3 of 5 races a walk in the park.
+     Owner option: drop a loss from 1..3 to 0 instead of -2.
+   - Screenshot: `16-sam-snow-race2-boost-pass.png` (the contested race); the solo races look like `12`.
+2. **A struggling kid on Desert loses at least six in a row.**
+   - Screen: race (Desert Canyon).
+   - Concern: challenge / recovery.
+   - Repro: fresh Sam, Desert, `jerky 0.35 45 kid` × 6.
+   - Detail: this confirms the engineer's "fixed except Desert". He places 2nd-3rd and is never last; at -10 he led
+     lap 1. The -16 floor does produce a win, but it is 7-9 losses away. On Snow the same driver won in race 6.
+   - Screenshot: `18-sam-desert-struggle-six-losses.png`.
+3. **`(+0.4)` sits under struggling Sam's first `1st`.**
+   - Screen: results.
+   - Concern: comprehension / feedback.
+   - Detail: this is pass-1 #4 (owner-deferred), with new evidence. On a first win, a plus number reads like a
+     shortfall. Recommend Minor.
+   - Screenshot: `19-sam-snow-struggle-first-win-race6.png` (7th tile).
+4. **Shell-owned, still present: the rest screen interrupts Rally.** It replaced the results page of struggling Sam's
+   first-ever Snow win within 3 s (`19`, last tile). It also cut a supplementary -16 Desert race in lap 2 while he was
+   1st. The level is unchanged. This is the pass-2 m1 deferral.
+
+**Nit**
+
+1. Struggling Sam's Snow went from a close 2nd at -8 to a solo win at -10. The bottom step is a cliff, but a first win
+   that comes easily is acceptable.
+
+### Earlier findings: status
+
+| Finding | Status |
+| --- | --- |
+| p2 M1 runaway +2 / Snow solo | **Fixed.** +2 fired on every solo win (#3, #11, #14). Snow was contested at race 2. The swing after a loss remains (Minor 1). |
+| p2 m1 rest cuts a race | Still present; shell-owned (Minor 4). |
+| p2 m2 struggling kid never wins | **Fixed on Snow** (win in race 6). **Not on Desert** (Minor 2). |
+| p2 m3 bad-day dip carries into new tracks | **Fixed.** Both new tracks started at 0 while Desert sat at -4. |
+| p2 Nit / p1 #7 boost chains at 18 | Not retested (no high-level fixture this pass). |
+| p1 #1 identical races at 2-9 | Moot: no natural level stayed in 1..9 (a loss there drops to -2). |
+| p1 #4 `(+N)` | Deferred; new evidence (Minor 3). |
+| p1 #5 rocket hit then rear-end | Not re-examined. |
+| p1 #6 rival flames | Not retested: Zoe was mostly behind, and rivals boost only when the kid is ahead. |
+
+### Gesture / interruption matrix (pass 3)
+
+| Case | Result |
+| --- | --- |
+| Long-press on Replay | One race |
+| Tap on the `1/3 Hold` sign; hold 1.5 s on it; hold outside its box | Nothing; Paused; nothing |
+| Resume; Restart → Yes | Continues; countdown, level unchanged |
+| Rest screen at a race finish / mid race | Results replaced; race ends, no result, level unchanged |
+| Reset usage (grown-up) between blocks | Levels and bests kept |
+| Process restart mid-race, drag off a button, lie flat | **gap** this pass (passes 1-2) |
+
+### Limitations
+
+- In one supplementary run at -16, the car crawled on the shoulder at 50 mph all race. That was a harness artifact:
+  the helper's last steering tilt (about 33°) was still held when the grip page set the neutral. The run is not
+  evidence; the rerun held the board level.
+- A `dbg level -16` set on the grip page of a never-finished track did not take, as the engineer's note says.
+- Frames for Sam's Snow races 2-4 were lost on the first run and rebuilt by deterministic replay. A 1 ms `tick` was
+  dropped from the struggling-Desert session log after race 1; the replays stayed consistent (six losses).
+- This Zoe helper won 2 of 6 on Desert, so this pass cannot confirm "settles near 2/3". That reflects the helper's
+  lap-1 bumps, not a measured game rate.
+- Emulator roleplay only: no real child, no physical board.
+
+### Automated checks
+
+`make -C apps/porthole playtest` at `88fcff3`: 81 of 81 scenarios pass, 0 UI FAIL / 0 WARN, no sanitizer report (racing:
+`a0_racing_flow` 41 checks, `a1_racing_monkey` 4, `a4_racing_board` 9, `a5_racing_level` 19).
+
+### Verdict
+
+**Ready, with Minor deferrals for the owner to accept or fix.** On every track, the competent kid gets races with
+rivals visible ahead, passes and lead changes. First visits are fair. Snow is contested by race 2. A struggling kid
+wins on Snow by race 6. What remains:
+- Snow's two solo races after a loss (Minor 1). This is the one owner call: if "never a walk in the park" is strict,
+  it is the next change.
+- Desert's long losing run for a struggling kid (Minor 2, known).
+- Results wording (Minor 3).
+- The shell's rest timing (Minor 4).
