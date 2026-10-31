@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "assets.h"
+#include "font.h"
+#include "fonts.h"
 #include "gfx565.h"
 #include "palette.h"
 #include "pictures.h"
@@ -26,47 +28,29 @@ float scroll = 0, scrollDist = 0;          // the skyline slides the way the roa
 
 void fill(int x, int y, int w, int h, uint32_t c) { gfx565::rect(x, y, w, h, rgb888_to_565(c)); }
 
-// ---- text: Rally's own bundled pixel face, logged for the UI audit in logical pixels.
-const art::Glyph& glyph(char c) { return art::FONT[(c < 32 || c > 126) ? 0 : c - 32]; }
-int textWidth(const char* s, int scale) {
-  int w = 0;
-  for (const char* p = s; *p; p++) w += (glyph(*p).w + 1) * scale;
-  return w > 0 ? w - scale : 0;
-}
-void ink(int x, int y, const char* s, int scale, uint16_t c) {
-  for (const char* p = s; *p; p++) {
-    const art::Glyph& g = glyph(*p);
-    for (int row = 0; row < 10; row++)
-      for (int cx = 0; cx < g.w;) {   // one rect per run of lit bits
-        int end = cx;
-        while (end < g.w && (g.rows[row] >> (g.w - 1 - end) & 1)) end++;
-        if (end > cx) gfx565::rect(x + cx * scale, y + row * scale, (end - cx) * scale, scale, c);
-        cx = end + 1;
-      }
-    x += (g.w + 1) * scale;
-  }
-}
-// Logged in logical px against the background it is drawn on: the pixel under its first corner, sampled first.
-void logText(const gfx565::Rect& b, uint32_t color, uint32_t bg) {
-  if (gfx::textLogEnabled && gfx::textLogCount < 64)
-    gfx::textLog[gfx::textLogCount++] = {(int16_t)(b.x / 3), (int16_t)(b.y / 3), (int16_t)((b.x + b.w + 2) / 3 - b.x / 3),
-                                         (int16_t)((b.y + b.h + 2) / 3 - b.y / 3), color, bg, true};
-}
-uint32_t under(int x, int y) {
-  const int cx = x < 0 ? 0 : x > 479 ? 479 : x, cy = y < 0 ? 0 : y > 479 ? 479 : y;
-  return gfx565::rgb888(gfx565::fb[cy * 480 + cx]);
-}
-void text(int x, int y, const char* s, int scale, uint32_t color) {
-  logText({x, y, textWidth(s, scale), 10 * scale}, color, under(x, y));
+// ---- text: Russo One (fonts.h), four sizes picked by the old scale numbers so layouts read 2 = body ... 8 = countdown.
+// y is the top of the capitals, as before, so a line sits where its letters start.
+const font::Font& face(int scale) { return scale <= 2 ? fonts::SMALL : scale == 3 ? fonts::LABEL : scale <= 5 ? fonts::BIG : fonts::GIANT; }
+int capTop(const font::Font& f) { return f.lineHeight - f.baseLine - f.glyphs['H' - 31].boxH; }   // line top to cap top
+int textWidth(const char* s, int scale) { return font::textWidth(face(scale), s); }
+void ink(int x, int y, const char* s, int scale, uint16_t c) { font::text(face(scale), s, x, y - capTop(face(scale)), c); }
+void text(int x, int y, const char* s, int scale, uint32_t color) {   // font::text logs the line for the UI audit
   ink(x, y, s, scale, rgb888_to_565(color));
 }
 void centered(int cx, int y, const char* s, int scale, uint32_t color) { text(cx - textWidth(s, scale) / 2, y, s, scale, color); }
-// The reference HUD's numerals: bright letters in a thick black outline, straight on the scene.
+// The reference HUD's numerals: bright letters in a thick black outline, straight on the scene. Only the fill is
+// logged, against the outline it sits on.
 void outlined(int x, int y, const char* s, int scale, uint32_t color) {
-  const int t = scale > 2 ? 3 : 2;
-  logText({x - t, y - t, textWidth(s, scale) + 2 * t, 8 * scale + 2 * t}, color, RIM);
+  const int t = scale > 3 ? 3 : 2;
+  const bool logging = gfx::textLogEnabled;
+  gfx::textLogEnabled = false;
   for (int dy = -t; dy <= t; dy += t) for (int dx = -t; dx <= t; dx += t) if (dx || dy) ink(x + dx, y + dy, s, scale, rgb888_to_565(RIM));
   ink(x, y, s, scale, rgb888_to_565(color));
+  gfx::textLogEnabled = logging;
+  const font::Font& f = face(scale);
+  if (logging && gfx::textLogCount < 64)
+    gfx::textLog[gfx::textLogCount++] = {(int16_t)((x - t) / 3), (int16_t)((y - t) / 3), (int16_t)((textWidth(s, scale) + 2 * t + 2) / 3),
+                                         (int16_t)((f.lineHeight - f.baseLine - capTop(f) + 2 * t + 2) / 3), color, RIM, true};
 }
 
 // ---- pictures

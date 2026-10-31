@@ -97,6 +97,7 @@ lint: snap
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) games/racing/tools/art.py --check
 	$(PY) games/racing/tools/pictures.py --check
+	$(PY) games/racing/tools/font.py --check
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
