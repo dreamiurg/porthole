@@ -264,7 +264,7 @@ With SDL2 installed, `make sim` opens a native window instead: `h` / `n` / `d` s
 hours, 1 day; `r` resets; `s` saves a screenshot to `build/host/shot.bmp`; `q` quits. The arrow
 keys turn and lay the device flat, for the tilt games.
 
-The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://dreamiurg.net/porthole/)). This erases saved progress.
+The easiest way to put it on a board: download `porthole-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge ([step by step](https://porthole.dreamiurg.net/)). This erases saved progress.
 
 ## Build and flash
 
