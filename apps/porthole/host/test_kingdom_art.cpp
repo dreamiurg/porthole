@@ -1,6 +1,6 @@
 // Include Kingdom asset tables to verify the shared decoder against every original stream.
 #include <algorithm>
-#include <assert.h>
+#include "host/check.h"
 #include <climits>
 #include <stdio.h>
 #include <random>

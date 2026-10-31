@@ -1,11 +1,10 @@
 // Starfighter's pure, fixed-step simulation. No render/debug shortcuts in the winning pilot.
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include "games/starfighter/rules.h"
 using namespace starfighter;
 static int checks = 0;
-#define CHECK(c) (assert(c), checks++)
 
 static void startAndSteer() {
   Run r{};

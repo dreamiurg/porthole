@@ -1,0 +1,29 @@
+{
+  "dolls": {
+    "identical": true,
+    "sha256": "b4321d6bc32ffa99daeb1dab2ae6fa6575835a9eca07ef4e77c630cdc7f72356"
+  },
+  "icon": {
+    "identical": true,
+    "sha256": "210a426a92d9865f15323bb616026af0f9c715d5e3f758ccb79011c386d7507e"
+  },
+  "world_sprites": {
+    "identical": true,
+    "sha256": "8b20611e6b5ef007aa87bd52dd4daebd8cfdc9e651e046dbc50b81c0b228e5b5"
+  },
+  "fonts": {
+    "identical": true,
+    "sha256": "49824014f7163630bb9501172e4769bffc918673da1d9a498bd42cd819d73ca0"
+  },
+  "pillow": {
+    "identical": true,
+    "sha256": "048c4bc1260b7c2761a45d15d38eeb3f784f82ed5e237a7a4a52732b1d0b68dd"
+  },
+  "changed_backgrounds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ]
+}

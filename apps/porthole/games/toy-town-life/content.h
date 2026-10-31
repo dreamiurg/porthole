@@ -30,6 +30,8 @@ inline const Scene SCENES[PAGE_COUNT] = {
  {"A lovely stopping spot", "Your town is saved. You can leave now, or keep exploring.", {"Save & leave", "Keep exploring", "Scrapbook"}},
  {"Our scrapbook", "", {"Next memory", "Read caption", "Home"}},
  {"Make it yours", "", {"Change caption", "Change sticker", "Back"}},
+ {"Quantity", "", {"Remove", "Add", "Done"}},
+ {"Art display", "Theo: Choose a picture.\nThen tap a frame.", {"Flowers", "Rocket", "Rabbit"}},
 };
 inline const char* PLACES[] = {"Home", "School", "Cafe", "Park"};
 inline const char* DOLLS[] = {"Fashion doll", "Plush rabbit", "Clay doll", "Keychain doll"};

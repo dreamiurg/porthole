@@ -26,7 +26,7 @@ description: |
   user: "We changed feed, play menu, and fetch this week, give it a once-over before we push"
   assistant: "I'll use the independent playtester agent to play the affected activities, judge whether they are clear and engaging, and report fixes before replaying the final build. The automated suite runs separately."
   <commentary>
-  Multi-screen UX sweep before push -- playtester runs first, reviewer runs separately for code correctness. Note CI also runs make -C apps/porthole playtest (via `make ci`), but playtester reads the report with intent instead of just checking the exit code.
+  Multi-screen UX sweep before push -- playtester runs first, reviewer runs separately for code correctness. Note CI also plays every scenario (via `make ci`: coverage plays the scripted ones, the sanitizer sim the monkeys), but playtester reads the report with intent instead of just checking the exit code.
   </commentary>
   </example>
 model: opus
@@ -70,6 +70,13 @@ touch/tilt actions from what you see. Attempt natural completion, plausible wron
 choices, imprecise fingers, alternative paths, replay, exit and resume. Record
 confusion before trying to recover; never consult a solution to hide a blocker.
 Judge whether this child could understand and enjoy play without adult coaching.
+
+Keep the ordinary player goal separate from coverage requirements. Record where
+the persona would voluntarily stop before continuing to finish the test checklist;
+coverage-driven persistence is not evidence of enjoyment or attention span.
+Maintain an explicit gesture and interruption matrix: ordinary save/leave/resume
+and process restart are different checks. Mark untested cells as gaps instead of
+claiming general robustness from a completed story.
 
 Return mechanics, pacing and boredom findings as well as visual/input defects.
 Suggest improvements to your own dispatch instructions if the persona, coverage

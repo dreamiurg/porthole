@@ -153,9 +153,17 @@ void Shell::drawSysInfo() {
 // ---------------------------------------------------------------- optional admin code and everyone's play limits
 // A separate key: existing devices stay unlocked, and no shipped profile/save layout changes. Leaving Info for
 // the picker ends access; every new title hold asks again. The post-update news card never grants menu access.
-void Shell::enterSystem() {
-  resetPin(); firstPin_ = 0;
-  go(adminPin_ ? SH_SYS_PIN : SH_SYS_INFO);
+void Shell::enterSystem() { askAdmin(SH_SYS_INFO); }
+// The system menu and the picker's New and delete: behind the admin code when one is set, so a new profile or a
+// deleted one cannot dodge the limits.
+void Shell::askAdmin(Screen next) {
+  resetPin(); firstPin_ = 0; afterAdmin_ = next;
+  if (adminPin_) go(SH_SYS_PIN); else adminPassed();
+}
+void Shell::adminPassed() {
+  if (afterAdmin_ == SH_NAME) startNew();
+  else if (afterAdmin_ == SH_DELETE) authorized();
+  else go(SH_SYS_INFO);
 }
 static const ui::Box ADMIN_CODE = {30, 60, 100, 20}, ADMIN_RESET = {30, 84, 100, 20}, ADMIN_REMOVE = {30, 108, 100, 20};
 static const ui::Box ADMIN_PLAYERS = {42, 132, 76, 18};
@@ -200,11 +208,9 @@ bool Shell::saveSound(bool on) {
   sound_ = on;
   return true;
 }
-// Read back because Store::save has no result: a failed flash write must not claim the code changed.
+// A failed flash write must not claim the code changed.
 bool Shell::saveAdminPin(uint16_t code) {
-  st_->save("sys", "admin", &code, sizeof code);
-  uint16_t saved = 0xffff;
-  if (st_->load("sys", "admin", &saved, sizeof saved) != sizeof saved || saved != code) return false;
+  if (!st_->save("sys", "admin", &code, sizeof code)) return false;
   adminPin_ = code;
   return true;
 }
@@ -227,7 +233,7 @@ void Shell::submitSysPin() {
   const uint16_t code = pinCode(pin_); resetPin();
   if (screen_ == SH_SYS_PIN_SET) { firstPin_ = code; go(SH_SYS_PIN_AGAIN); return; }
   if (screen_ == SH_SYS_PIN) {
-    if (code == adminPin_) { go(SH_SYS_INFO); return; }
+    if (code == adminPin_) { adminPassed(); return; }
     pinWrongUntil_ = ms_ + 900; toast("Wrong code. Try again."); return;
   }
   if (code != firstPin_) { firstPin_ = 0; go(SH_SYS_PIN_SET); toast("Codes did not match"); return; }

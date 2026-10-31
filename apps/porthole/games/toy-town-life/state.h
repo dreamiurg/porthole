@@ -11,7 +11,7 @@ enum Page : uint8_t {
   HUB, DOLL, STYLE, MAP, PACK, SCHOOL_INTRO, SCHOOL_LISTEN, SCHOOL_PLAN,
   SCHOOL_OTHER, SCHOOL_PAPER, SCHOOL_RESULT, SCHOOL_REPAIR, CAFE_INTRO,
   CAFE_MENU, CAFE_CART, CAFE_COMPARE, CAFE_RESULT, PARK_INTRO, PARK_SEARCH,
-  PARK_CLUE, PARK_GUESS, PARK_WRONG, PARK_FOUND, MEMORY, STOP, BOOK, MEMORY_EDIT, PAGE_COUNT
+  PARK_CLUE, PARK_GUESS, PARK_WRONG, PARK_FOUND, MEMORY, STOP, BOOK, MEMORY_EDIT, CAFE_QUANTITY, SCHOOL_HANG, PAGE_COUNT
 };
 struct Entry { uint8_t place, outcome, caption, sticker; };
 struct State {
@@ -25,22 +25,37 @@ struct State {
   Entry entries[8];
   uint32_t seed;
   uint8_t hairColor, reserved[3]; // V2: 0 keeps the original hair tint; reserved bytes stay zero.
+  uint8_t worldX, worldY, schoolPaper, worldPlace; // V3: logical walking position and borrowed paper.
+  uint8_t schoolHangMask, schoolPicture, schoolPictures, schoolTask; // V3: editable three-picture display.
   uint32_t crc;
 };
 constexpr uint32_t MAGIC = 0x544f5954;
-constexpr uint16_t VERSION = 2;
+constexpr uint16_t VERSION = 3;
 constexpr size_t V1_SIZE = 88;
 constexpr size_t V2_SIZE = 92;
-static_assert(sizeof(State) == V2_SIZE, "Save: append fields before crc, bump version and keep historical sizes");
-static_assert(offsetof(State, seed) == 80 && offsetof(State, hairColor) == V1_SIZE - 4 && offsetof(State, crc) == V2_SIZE - 4,
+constexpr size_t V3_SIZE = 100;
+constexpr uint8_t WORLD_MIN_X = 32, WORLD_MAX_X = 128, WORLD_MIN_Y = 50, WORLD_MAX_Y = 83;
+static_assert(sizeof(State) == V3_SIZE, "Save: append fields before crc, bump version and keep historical sizes");
+static_assert(offsetof(State, seed) == 80 && offsetof(State, hairColor) == V1_SIZE - 4 && offsetof(State, worldX) == V2_SIZE - 4 && offsetof(State, crc) == V3_SIZE - 4,
     "Keep every V1 field through seed at its original offset");
-inline State fresh() { State s{}; s.seed = 17; return s; }
+inline State fresh() { State s{}; s.seed = 17; s.worldX = s.worldY = 80; s.worldPlace = HOME; return s; }
 inline int total(const State& s) {
   return s.cart[0] * 5 + s.cart[1] * 3 + s.cart[2] + s.cart[3] * 2;
 }
 inline bool canOrder(const State& s) { return total(s) <= 10 && (s.cart[0] || s.cart[1]) && s.cart[2]; }
 inline int slots(const State& s) { int n = 0; for (int i = 0; i < 5; ++i) n += (s.bag >> i) & 1; return n; }
+inline bool hasPaper(const State& s) { return (s.bag & 1) || s.schoolPaper; }
+inline void borrowPaper(State& s) { s.schoolPaper = 1; }
+inline bool validPosition(uint8_t x, uint8_t y) {
+  return x >= WORLD_MIN_X && x <= WORLD_MAX_X && y >= WORLD_MIN_Y && y <= WORLD_MAX_Y;
+}
+inline bool moveTo(State& s, uint8_t x, uint8_t y, uint8_t place) {
+  if (!validPosition(x, y) || place > PARK) return false;
+  s.worldX = x; s.worldY = y; s.worldPlace = place; return true;
+}
 inline void start(State& s, uint8_t place) {
+  s.schoolHangMask = s.schoolPicture = s.schoolPictures = s.schoolTask = 0;
+  s.schoolPaper = 0; moveTo(s, 80, 80, place);
   s.destination = place; s.active = 1; s.recorded = 0; s.listened = s.repaired = s.revised = s.clues = 0;
   s.schoolOutcome = s.ordered = s.compared = s.caption = s.sticker = 0;
   memset(s.cart, 0, 4); memset(s.compare, 0, 4);
@@ -50,6 +65,24 @@ inline void start(State& s, uint8_t place) {
 inline void finishSchool(State& s, uint8_t plan) {
   s.schoolOutcome = plan == 1 ? (s.listened ? 2 : 3) : plan == 2 ? 4 : 1;
   s.page = SCHOOL_RESULT;
+}
+inline void repairSchool(State& s, uint8_t task) { if (task == 1 || task == 2) s.repaired |= task; }
+inline void beginDisplay(State& s, bool repair) {
+  s.schoolTask = repair ? 2 : 1;
+  s.page = SCHOOL_HANG;
+}
+inline bool hangPicture(State& s, int slot) {
+  if (slot < 0 || slot > 2 || s.schoolPicture > 2) return false;
+  const int shift = slot * 2;
+  s.schoolPictures = (s.schoolPictures & ~(3 << shift)) | (s.schoolPicture << shift);
+  s.schoolHangMask |= 1 << slot; return true;
+}
+inline bool displayReady(const State& s) { return s.schoolHangMask == 7; }
+inline bool finishDisplay(State& s) {
+  if (!displayReady(s) || !s.schoolTask) return false;
+  if (s.schoolTask == 1) finishSchool(s, 2);
+  else { repairSchool(s, 1); s.page = SCHOOL_REPAIR; }
+  return true;
 }
 inline void complete(State& s) {
   if (s.recorded) return;
@@ -73,7 +106,7 @@ inline bool validCursor(const State& s) {
       s.resumePage < PAGE_COUNT && s.bookIndex <= 7 && s.caption <= 2 && s.sticker <= 2;
 }
 inline bool validFlags(const State& s) {
-  if (slots(s) > 3 || s.listened > 1 || s.repaired > 2 || s.compared > 1 || s.ordered > 1 ||
+  if (slots(s) > 3 || s.listened > 1 || s.repaired > 3 || s.compared > 1 || s.ordered > 1 ||
       s.revised > 1 || s.active > 1 || s.recorded > 1 || s.clues > 7 || (s.completed & ~14u)) return false;
   return s.schoolOutcome <= 4;
 }
@@ -82,22 +115,31 @@ inline bool validEntry(const Entry& e) {
   if (e.place == SCHOOL) return e.outcome >= 1 && e.outcome <= 4;
   return e.outcome <= (e.place == CAFE ? 6 : 2);
 }
+inline bool validDisplay(const State& s) {
+  if (s.schoolHangMask > 7 || s.schoolPicture > 2 || s.schoolPictures > 63 || s.schoolTask > 2) return false;
+  for (int slot = 0; slot < 3; ++slot) if (((s.schoolPictures >> (slot * 2)) & 3) > 2) return false;
+  return true;
+}
 inline bool valid(const State& s) {
   if (!validLook(s) || !validCursor(s) || !validFlags(s) || s.reserved[0] || s.reserved[1] || s.reserved[2]) return false;
   for (int i = 0; i < 4; ++i) if (s.cart[i] > 3 || s.compare[i] > 3) return false;
   for (int i = 0; i < s.count; ++i) if (!validEntry(s.entries[i])) return false;
-  return true;
+  return validDisplay(s) && validPosition(s.worldX, s.worldY) && s.worldPlace <= PARK && s.schoolPaper <= 1;
+}
+inline bool validHistorical(const State& s, size_t n) {
+  if (n < V3_SIZE && (s.page > MEMORY_EDIT || s.resumePage > MEMORY_EDIT || s.repaired > 2)) return false;
+  return n != V1_SIZE || s.category <= 7;
 }
 inline bool load(const void* data, size_t n, State& out) {
-  if (!data || (n != V1_SIZE && n != V2_SIZE)) return false;
+  if (!data || (n != V1_SIZE && n != V2_SIZE && n != V3_SIZE)) return false;
   const uint8_t* bytes = static_cast<const uint8_t*>(data);
   State s = fresh(); memcpy(&s, bytes, offsetof(State, page));
   uint32_t crc; memcpy(&crc, bytes + n - 4, 4);
-  const uint16_t version = n == V1_SIZE ? 1 : VERSION;
+  const uint16_t version = n == V1_SIZE ? 1 : n == V2_SIZE ? 2 : VERSION;
   if (s.magic != MAGIC || s.version != version || s.size != n || crc != os::crc32(bytes, n - 4)) return false;
   // Only verified records may supply the old prefix; new fields keep their fresh defaults.
   memcpy(&s, bytes, n - 4);
-  if ((n == V1_SIZE && s.category > 7) || !valid(s)) return false;
+  if (!validHistorical(s, n) || !valid(s)) return false;
   seal(s);
   out = s; return true;
 }

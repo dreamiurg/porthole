@@ -128,7 +128,8 @@ int Shell::appStores(const char** out) const {
 int Shell::createProfile(const char* name, uint8_t age, const char* code) {
   memset(&draft_, 0, sizeof draft_);
   snprintf(draft_.name, sizeof draft_.name, "%s", name); draft_.age = age;
-  for (int id = 0; id < MAX_PROFILES; id++) if (!prof_.used[id]) { draft_.avatar = (uint8_t)(id % NUM_AVATARS); break; }
+  const int id = prof_.firstFree();
+  if (id >= 0) draft_.avatar = (uint8_t)(id % NUM_AVATARS);
   finishCreate(shell::pinCode(code));
   gate_.closed = false;   // a hook, not a touch
   return screen_ == SH_PICK ? -1 : active_;
@@ -157,14 +158,22 @@ void Shell::openIdx(int k) {
     saves[n] = {blobs_[n], st_->load(app_->store(), shell::key('s', id), blobs_[n], shell::BLOB_MAX)};
     if (id == active_) who = n;
   }
+  memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
   app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
   go(SH_APP);
 }
 void Shell::flushApp(bool allowed) {
+  // The shell keeps what it last wrote: the same bytes again are not rewritten (a story reader's view change), and a
+  // write that failed is retried from this copy at the save cadence, not every frame.
   const void* data; size_t len;
-  if (!app_->takeSave(&data, &len, allowed)) return;
-  if (len) st_->save(app_->store(), shell::key('s', active_), data, len); else st_->erase(app_->store(), shell::key('s', active_));
+  if (app_->takeSave(&data, &len, allowed) && len <= shell::BLOB_MAX) {
+    if (writtenOk_ && len == writtenLen_ && !memcmp(data, written_, len)) return;   // keeps the cadence: a page turn next is still prompt
+    memcpy(written_, data, len); writtenLen_ = len;
+  } else if (writtenOk_ || !allowed) return;
+  const char* k = shell::key('s', active_);
+  if (writtenLen_) writtenOk_ = st_->save(app_->store(), k, written_, writtenLen_);
+  else { st_->erase(app_->store(), k); writtenOk_ = true; }
   lastSaveMs_ = ms_;
 }
 void Shell::closeApp() {
@@ -184,20 +193,23 @@ void Shell::budgetTick() {   // per profile, across every game
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
 void Shell::updatePick() {
   if (titleHeld()) { enterSystem(); return; }
-  int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
+  int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
-    if (i == n) { if (tap) startNew(); }
+    if (i == n) { if (tap) askAdmin(SH_NAME); }
     else if (tap) choose(prof_.nth(i), false);
-    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) choose(prof_.nth(i), true);   // long press: delete
+    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) {   // long press: delete
+      if (adminPin_) { target_ = prof_.nth(i); deleting_ = true; askAdmin(SH_DELETE); }   // the grown-up's code, not the kid's
+      else choose(prof_.nth(i), true);
+    }
     if (screen_ != SH_PICK) return;
   }
 }
 void Shell::drawPick() {
   clear(C_SKY);
   textCentered(80, 18, "Who's playing?", C_NAVY);
-  int n = prof_.count(), rows = n < MAX_PROFILES ? n + 1 : n;
+  int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
     int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
@@ -480,7 +492,8 @@ void Shell::updateApp() {
   app_->update(now_, ms_, in_);
   if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
-  if (screen_ == SH_APP) flushApp(app_->saveUrgent() || ms_ - lastSaveMs_ > 5000);
+  const uint32_t sinceSave = ms_ - lastSaveMs_;   // an urgent checkpoint still waits a second: one flash write per tap at most
+  if (screen_ == SH_APP) flushApp(sinceSave > 5000 || (app_->saveUrgent() && sinceSave >= 1000));
 }
 void Shell::drawApp() { app_->render(); }
 
@@ -489,12 +502,9 @@ bool Shell::clearPin(int id) {
   if (id < 0 || id >= MAX_PROFILES || !prof_.used[id]) return false;
   if (!prof_.rec[id].pin) return true;
   const Record before = prof_.rec[id];
-  prof_.rec[id].pin = 0; shell::saveRecord(*st_, prof_, id);
-  Record saved{};
-  if (st_->load(shell::NS, shell::key('p', id), &saved, sizeof saved) != sizeof saved || memcmp(&saved, &prof_.rec[id], sizeof saved)) {
-    prof_.rec[id] = before; return false;
-  }
-  return true;
+  prof_.rec[id].pin = 0;
+  if (shell::saveRecord(*st_, prof_, id)) return true;
+  prof_.rec[id] = before; return false;
 }
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",

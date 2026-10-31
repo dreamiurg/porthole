@@ -126,6 +126,13 @@ case and any friction; a bare "fun" or "PASS" is not an assessment:
 - Can imprecise input, a wrong guess or an interruption be recovered from without
   losing progress, adult coaching or pressure to keep playing?
 
+Keep the ordinary child goal separate from coverage requirements. Record the
+first voluntary stopping point before continuing for coverage; completing the
+checklist does not demonstrate that a child would naturally keep playing. Use an
+explicit gesture/interruption matrix and distinguish ordinary save/leave/resume
+from process restart. Label untested cases as gaps rather than inferring broad
+input robustness from a completed story.
+
 Iterate until the coordinator and independent reviewer are satisfied by evidence:
 
 1. The playtester reports prioritized findings, including mechanics/pacing and
