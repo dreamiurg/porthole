@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "art.h"
 #include <algorithm>
 #include "gfx565.h"
@@ -157,5 +158,5 @@ uint16_t swatch(const State& s,int category) {
  static const uint32_t hair[]={0,0x76503a,0xd8aa55,0x34485f};
  return rgb888_to_565(category==1 ? skin[s.skin%4] : category==8 ? hair[s.hairColor%4] : cloth[s.color%4]);
 }
-const gfx::Sprite& icon() { return ICON; }
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }}  // namespace toytown::art

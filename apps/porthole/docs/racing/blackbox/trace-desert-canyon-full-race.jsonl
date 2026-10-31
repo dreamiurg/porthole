@@ -1,0 +1,2245 @@
+{"cmd": "tick 1000"}
+{"cmd": "down 68 67"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 600"}
+{"cmd": "down 108 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 400"}
+{"cmd": "down 108 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 400"}
+{"cmd": "down 108 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 400"}
+{"cmd": "down 108 135"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 400"}
+{"cmd": "frame"}
+{"cmd": "tilt 0 1000 0"}
+{"cmd": "down 80 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 800"}
+{"cmd": "down 53 52"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 600"}
+{"cmd": "frame"}
+{"cmd": "down 106 123"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 2500"}
+{"cmd": "frame"}
+{"cmd": "down 106 123"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "tick 3300"}
+{"cmd": "frame"}
+{"cmd": "frame"}
+{"cmd": "tilt -249 968 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -236 971 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -217 975 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -247 968 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -218 975 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -181 983 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -147 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -121 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -96 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -80 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -64 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 10 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 4 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 2 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 5 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 13 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -32 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -32 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -32 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -22 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 4 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -8 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -5 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 1 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 10 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 26 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 102 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 129 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 148 988 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 184 982 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 236 971 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 158 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 163 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 149 988 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 147 988 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 157 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 162 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 163 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 225 974 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 226 974 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 215 976 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 199 979 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 185 982 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 188 982 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 163 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 92 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 93 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 98 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 112 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 145 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 154 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 165 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 229 973 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 223 974 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 215 976 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 196 980 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 155 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 180 983 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 114 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 107 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 107 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 120 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 142 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 153 988 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 160 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 210 977 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 204 978 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 192 981 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 176 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 113 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 126 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 63 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 37 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 26 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 20 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 38 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 34 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 223 974 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 187 982 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 161 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "frame"}
+{"cmd": "tilt 125 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 102 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 71 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 0 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -10 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -195 980 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -258 966 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -231 972 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -189 981 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -156 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -125 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -106 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -96 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -87 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -81 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -82 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -86 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -84 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -78 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -75 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -70 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 0 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 117 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 1 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -71 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -71 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -7 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -63 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -58 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -58 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -69 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -82 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -95 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -112 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -119 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -157 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "down 18 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -152 988 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -145 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -119 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -95 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -39 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -8 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 19 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 43 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 97 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 107 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 69 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 90 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 89 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 95 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 100 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 105 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 109 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 117 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 123 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 128 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 135 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 124 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 116 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 108 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 92 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 78 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 39 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "down 144 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 32 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 0 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 15 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -42 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -100 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -24 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 58 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 64 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 75 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 89 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 108 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 126 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 144 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 159 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 173 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 175 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 173 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 172 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "down 18 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 158 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 146 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 129 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 108 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 86 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 42 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 267 963 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 227 973 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 192 981 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 146 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 118 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 79 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 5 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -4 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -193 981 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -252 967 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -228 973 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -189 981 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -156 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -129 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -106 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -95 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -87 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -80 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -81 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -86 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -82 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -75 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -70 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 0 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 29 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 7 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 72 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -58 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "down 144 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -59 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -71 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -82 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -96 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -106 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -120 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -135 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -164 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -122 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -107 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -89 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -36 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -7 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 17 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 44 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 98 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 90 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 104 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 117 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 123 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 128 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 119 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 106 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 93 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 78 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 67 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 51 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 38 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "down 18 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 46 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 45 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 72 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 91 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 108 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 128 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 144 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 159 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 173 984 0"}
+{"cmd": "down 144 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 174 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 173 984 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 172 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 172 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 165 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 171 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 169 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 168 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 165 986 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 157 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 147 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 127 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 106 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 80 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 58 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 39 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 155 987 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 262 964 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 218 975 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 170 985 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 99 995 0"}
+{"cmd": "down 18 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -1 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -69 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -131 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -194 980 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -244 969 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -215 976 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -181 983 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -147 989 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -123 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -102 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -90 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -82 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -83 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -78 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -75 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -68 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -35 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -22 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 65 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 4 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 5 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 66 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 3 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "down 144 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -54 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -57 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -60 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -73 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -85 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -97 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -116 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -122 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -183 982 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -133 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -132 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -138 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -135 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -121 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -103 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -79 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -56 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -28 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt -2 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 23 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 61 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 74 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 96 995 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 109 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 122 992 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 130 991 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 135 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 139 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 139 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 136 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 137 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 134 990 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 131 991 0"}
+{"cmd": "down 18 80"}
+{"cmd": "tick 66"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 113 993 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 101 994 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 87 996 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 76 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 63 997 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 52 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 49 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 55 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 48 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 53 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 50 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 40 999 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "tilt 47 998 0"}
+{"cmd": "tick 100"}
+{"cmd": "frame"}
+{"cmd": "frame"}

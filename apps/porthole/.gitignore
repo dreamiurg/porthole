@@ -10,3 +10,8 @@ build/
 !docs/toy-town-life/blackbox/*.png
 !docs/toy-town-life/visual-choices/*.png
 !docs/flash-optimization/blackbox/*.png
+!games/racing/art/*.png
+!docs/racing/*.png
+!docs/racing/blackbox/*.png
+!games/*/art/launcher.png
+!docs/launcher/*.png

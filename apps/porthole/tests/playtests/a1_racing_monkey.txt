@@ -1,0 +1,32 @@
+# AddressSanitizer + UBSan: seeded random taps, drags and holds on the cards, the grip page and a live race.
+reset
+tilt 0 1000 0
+profile Sam 8
+app racing
+wait 600
+monkey 200 930
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app racing
+dbg calibrate
+wait 600
+monkey 150 931
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app racing
+dbg go
+wait 600
+monkey 250 932
+expect-screen *
+reset
+tilt 0 1000 0
+profile Sam 8
+app racing
+dbg lastlap
+wait 5500
+monkey 150 933
+expect-screen *
