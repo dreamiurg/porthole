@@ -6,7 +6,7 @@ One header per skyline keeps every generated file under the repository's 500 KB 
 Every PNG came from Codex's built-in image generator with both approved reference boards attached
 (docs/superpowers/specs/porthole-racing/assets/reference/: Style 2 panels 2A-2D and the four-track
 showcase), asked to match that style exactly, on a flat #00FF00 (or #FF00FF) key. PROMPTS below keeps
-each asset's description; the shared preamble is in docs/racing/art.md.
+each asset's description; the shared preamble is in apps/porthole/docs/racing/art.md.
 
 Each output cell takes the most common 4-bit-per-channel color bucket among its source pixels and
 the integer mean of the pixels in that bucket; a cell that is mostly key is transparent. Integer math

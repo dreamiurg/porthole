@@ -1,5 +1,6 @@
 #include "render.h"
 #include <math.h>
+#include <new>
 #include <stdio.h>
 #include <string.h>
 #include "assets.h"
@@ -21,8 +22,6 @@ constexpr int HORIZON = 228, CAR_ROW = 402, CAR_DEPTH = CAR_ROW - HORIZON, PIC_S
 constexpr float DEPTH_K = 6.0f * CAR_DEPTH;   // z (m ahead of the camera) = DEPTH_K / rows below the horizon
 constexpr float CAMERA_BACK = 6, ROAD_SLOPE = 1.25f, CURVE_K = 0.0042f;
 constexpr int ROWS = 480 - HORIZON;
-int16_t centerRow[ROWS], halfRow[ROWS];   // road center and half-width for each row below the horizon
-float zRow[ROWS];
 float scroll = 0, scrollDist = 0;          // the skyline slides the way the road bends
 
 void fill(int x, int y, int w, int h, uint32_t c) { gfx565::rect(x, y, w, h, rgb(c)); }
@@ -43,22 +42,25 @@ void ink(int x, int y, const char* s, int scale, uint16_t c) {
     x += (g.w + 1) * scale;
   }
 }
-void logText(int x, int y, int w, int h, uint32_t color, uint32_t bg) {
+// Logged in logical px against the background it is drawn on: the pixel under its first corner, sampled first.
+void logText(const gfx565::Rect& b, uint32_t color, uint32_t bg) {
   if (gfx::textLogEnabled && gfx::textLogCount < 64)
-    gfx::textLog[gfx::textLogCount++] = {(int16_t)(x / 3), (int16_t)(y / 3), (int16_t)((x + w + 2) / 3 - x / 3),
-                                         (int16_t)((y + h + 2) / 3 - y / 3), color, bg, true};
+    gfx::textLog[gfx::textLogCount++] = {(int16_t)(b.x / 3), (int16_t)(b.y / 3), (int16_t)((b.x + b.w + 2) / 3 - b.x / 3),
+                                         (int16_t)((b.y + b.h + 2) / 3 - b.y / 3), color, bg, true};
 }
-void text(int x, int y, const char* s, int scale, uint32_t color, uint32_t bg) {
-  logText(x, y, textWidth(s, scale), 10 * scale, color, bg);
+uint32_t under(int x, int y) {
+  const int cx = x < 0 ? 0 : x > 479 ? 479 : x, cy = y < 0 ? 0 : y > 479 ? 479 : y;
+  return gfx565::rgb888(gfx565::fb[cy * 480 + cx]);
+}
+void text(int x, int y, const char* s, int scale, uint32_t color) {
+  logText({x, y, textWidth(s, scale), 10 * scale}, color, under(x, y));
   ink(x, y, s, scale, rgb(color));
 }
-void centered(int cx, int y, const char* s, int scale, uint32_t color, uint32_t bg) {
-  text(cx - textWidth(s, scale) / 2, y, s, scale, color, bg);
-}
+void centered(int cx, int y, const char* s, int scale, uint32_t color) { text(cx - textWidth(s, scale) / 2, y, s, scale, color); }
 // The reference HUD's numerals: bright letters in a thick black outline, straight on the scene.
 void outlined(int x, int y, const char* s, int scale, uint32_t color) {
   const int t = scale > 2 ? 3 : 2;
-  logText(x - t, y - t, textWidth(s, scale) + 2 * t, 8 * scale + 2 * t, color, RIM);
+  logText({x - t, y - t, textWidth(s, scale) + 2 * t, 8 * scale + 2 * t}, color, RIM);
   for (int dy = -t; dy <= t; dy += t) for (int dx = -t; dx <= t; dx += t) if (dx || dy) ink(x + dx, y + dy, s, scale, rgb(RIM));
   ink(x, y, s, scale, rgb(color));
 }
@@ -96,9 +98,9 @@ void plate(const ui::Box& b, uint32_t face, uint32_t rim) {
 void button(const ui::Box& b, const char* label, bool on) {
   UiAudit::add(b.x, b.y, b.w, b.h);
   plate(b, on ? PLATE_HI : INK, on ? ORANGE : PLATE);
-  centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + b.h * 3 / 2 - 10, label, 2, on ? CREAM : DIM, on ? PLATE_HI : INK);
+  centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + b.h * 3 / 2 - 10, label, 2, on ? CREAM : DIM);
 }
-void heading(int y, const char* s, int scale, uint32_t color) { centered(240, y, s, scale, color, INK); }
+void heading(int y, const char* s, int scale, uint32_t color) { centered(240, y, s, scale, color); }
 void sky(int track, int bottom) {   // flat bands from the theme's two sky colors, then its clouds
   const art::Theme& t = art::THEME[track];
   for (int i = 0; i < 6; i++) {
@@ -125,7 +127,17 @@ void skyline(int track, int bottom, int offset) {
   }
 }
 
-// ---- the road
+// ---- the road. Its per-row tables and the list of things on it live on the heap (PSRAM on the board), allocated
+// at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
+struct Thing { float z; const pic::Pic* p; float x, lift; bool shadow; };
+constexpr int MAX_THINGS = 48;
+struct Scratch {
+  int16_t center[ROWS], half[ROWS];   // road center and half-width for each row below the horizon
+  float z[ROWS];
+  Thing things[MAX_THINGS];
+  int n;
+};
+Scratch* sc = nullptr;
 struct Camera { const Race* r; int track; float dist, x; };
 float rowZ(int y) { return DEPTH_K / (float)(y - HORIZON); }
 void project(const Camera& cam) {   // bottom row up: the bend accumulates with distance
@@ -137,9 +149,9 @@ void project(const Camera& cam) {   // bottom row up: the bend accumulates with 
     slope += curve(t, cam.dist + z) * CURVE_K * dz;
     offset += slope * dz;
     lastZ = z;
-    zRow[i] = z;
-    halfRow[i] = (int16_t)(ROAD_SLOPE * (y - HORIZON));
-    centerRow[i] = (int16_t)(240 + (offset - cam.x) * halfRow[i]);
+    sc->z[i] = z;
+    sc->half[i] = (int16_t)(ROAD_SLOPE * (y - HORIZON));
+    sc->center[i] = (int16_t)(240 + (offset - cam.x) * sc->half[i]);
   }
 }
 bool patchHere(const Track& t, const Feature& o, float z) {
@@ -154,7 +166,7 @@ void patches(const Camera& cam, int y, float world) {   // ramps, mud, oil, slus
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
     if ((o.kind != Kind::Ramp && o.kind != Kind::Slow && o.kind != Kind::Ice) || !patchHere(t, o, z)) continue;
-    const int cx = centerRow[i] + (int)(o.x / 100.0f * halfRow[i]), hw = (int)(o.w / 100.0f * halfRow[i]);
+    const int cx = sc->center[i] + (int)(o.x / 100.0f * sc->half[i]), hw = (int)(o.w / 100.0f * sc->half[i]);
     const float at = featureAt(t, o), end = o.kind == Kind::Ramp ? at : at + featureLen(t, o);
     const bool edge = o.kind != Kind::Ramp && (z < at + 1.2f || z > end - 1.2f);
     uint32_t c = o.kind == Kind::Ice ? th.ice : th.hazard, ring = o.kind == Kind::Ice ? th.iceEdge : th.hazardEdge;
@@ -179,8 +191,8 @@ void rails(int y, int cx, int hw, float world) {   // guardrails on both shoulde
 }
 void roadRow(const Camera& cam, int y) {
   const art::Theme& th = art::THEME[cam.track];
-  const int i = y - HORIZON - 1, cx = centerRow[i], hw = halfRow[i];
-  const float world = cam.dist + zRow[i];
+  const int i = y - HORIZON - 1, cx = sc->center[i], hw = sc->half[i];
+  const float world = cam.dist + sc->z[i];
   const bool band = (int)floorf(world / 6) & 1;
   fill(0, y, 480, 1, band ? th.grassA : th.grassB);
   const int rumble = hw / 7 + 2;
@@ -199,13 +211,9 @@ void roadRow(const Camera& cam, int y) {
 }
 
 // ---- things beside and on the road, far to near
-struct Thing { float z; const pic::Pic* p; float x, lift; bool shadow; };
-constexpr int MAX_THINGS = 48;
-Thing things[MAX_THINGS];
-int nThings = 0;
 void add(float z, const pic::Pic* p, float x, float lift = 0, bool shadow = false) {
-  if (z < 1.5f || z > rowZ(HORIZON + 3) || nThings >= MAX_THINGS) return;
-  things[nThings++] = {z, p, x, lift, shadow};
+  if (z < 1.5f || z > rowZ(HORIZON + 3) || sc->n >= MAX_THINGS) return;
+  sc->things[sc->n++] = {z, p, x, lift, shadow};
 }
 void placeTrack(const Camera& cam) {
   const Track& t = *cam.r->track;
@@ -238,21 +246,21 @@ void drawThing(const Thing& t) {
   const int y = HORIZON + (int)(DEPTH_K / t.z);
   if (y <= HORIZON || y >= 480) return;
   const int i = y - HORIZON - 1;
-  const float scale = PIC_SCALE * halfRow[i] / (ROAD_SLOPE * CAR_DEPTH);
-  const int x = centerRow[i] + (int)(t.x * halfRow[i]);
+  const float scale = PIC_SCALE * sc->half[i] / (ROAD_SLOPE * CAR_DEPTH);
+  const int x = sc->center[i] + (int)(t.x * sc->half[i]);
   const int lift = (int)(t.lift * 60 * scale / PIC_SCALE);
   if (t.shadow) fill(x - (int)(t.p->w * scale * 0.42f), y - 2, (int)(t.p->w * scale * 0.84f), (int)(3 * scale) + 1, RIM);
   scaled(*t.p, x, y - lift, scale);
 }
 void drawThings() {
-  for (int i = 1; i < nThings; i++)   // far first
-    for (int j = i; j > 0 && things[j].z > things[j - 1].z; j--) { const Thing t = things[j]; things[j] = things[j - 1]; things[j - 1] = t; }
-  for (int i = 0; i < nThings; i++) drawThing(things[i]);
+  for (int i = 1; i < sc->n; i++)   // far first
+    for (int j = i; j > 0 && sc->things[j].z > sc->things[j - 1].z; j--) { const Thing t = sc->things[j]; sc->things[j] = sc->things[j - 1]; sc->things[j - 1] = t; }
+  for (int i = 0; i < sc->n; i++) drawThing(sc->things[i]);
 }
 void player(const Camera& cam, float steer, uint32_t ms) {
   const Car& p = cam.r->car[PLAYER];
   const int i = CAR_ROW - HORIZON - 1;
-  int x = centerRow[i] + (int)((p.x) * halfRow[i]) + (int)(steer * 3);
+  int x = sc->center[i] + (int)((p.x) * sc->half[i]) + (int)(steer * 3);
   if (p.wobbleMs) x += ((ms / 40) & 1) ? 3 : -3;
   const pic::Pic& s = *pic::CAR[0];
   const int lift = airborne(p) ? (int)(sinf((float)(AIR_MS - p.airMs) / AIR_MS * 3.14159f) * 44) : 0;
@@ -262,6 +270,8 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   pic(s, x - s.w, CAR_ROW - lift - 2 * s.h, PIC_SCALE);
 }
 void scene(const Race& r, int track, float steer, uint32_t ms) {
+  if (!sc) sc = new (std::nothrow) Scratch();
+  if (!sc) return;
   const Car& p = r.car[PLAYER];
   Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f};
   if (fabsf(p.dist - scrollDist) < 50) scroll += curve(*r.track, p.dist) * (p.dist - scrollDist) * 0.9f;
@@ -271,8 +281,8 @@ void scene(const Race& r, int track, float steer, uint32_t ms) {
   clouds(track, (int)scroll);
   skyline(track, HORIZON + 1, (int)scroll);
   for (int y = HORIZON + 1; y < 480; y++) roadRow(cam, y);
-  for (int y = HORIZON + 6; y < 480; y++) rails(y, centerRow[y - HORIZON - 1], halfRow[y - HORIZON - 1], cam.dist + zRow[y - HORIZON - 1]);
-  nThings = 0;
+  for (int y = HORIZON + 6; y < 480; y++) rails(y, sc->center[y - HORIZON - 1], sc->half[y - HORIZON - 1], cam.dist + sc->z[y - HORIZON - 1]);
+  sc->n = 0;
   placeTrack(cam);
   placeCars(cam);
   drawThings();
@@ -357,8 +367,8 @@ void tracksPage() {
     UiAudit::add(b.x, b.y, b.w, b.h);
     plate(b, PLATE, PLATE_HI);
     track(i, b.x * 3 + 6, b.y * 3 + 6, b.w * 3 - 12, 52);
-    centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 62, TRACK[i].line1, 2, CREAM, PLATE);
-    centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 84, TRACK[i].line2, 2, CREAM, PLATE);
+    centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 62, TRACK[i].line1, 2, CREAM);
+    centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 84, TRACK[i].line2, 2, CREAM);
   }
   button(HOME, "Home", true);
 }
@@ -366,12 +376,12 @@ void howToPage(const View& v) {
   gfx565::clear(rgb(INK));
   heading(54, "How to race", 3, ORANGE);
   pic(*pic::CAR[0], 92 + (int)(sinf(v.ms / 300.0f) * 6), 100, 2);
-  text(176, 118, "Turn to steer", 2, CREAM, INK);
+  text(176, 118, "Turn to steer", 2, CREAM);
   pic(pic::BOOST, 86, 176, 2); pic(pic::ROCKET, 126, 176, 2);
-  text(176, 182, "Grab boosts", 2, CREAM, INK);
-  text(176, 206, "and rockets", 2, CREAM, INK);
-  centered(240, 246, "Finish 3 laps", 2, CREAM, INK);
-  centered(240, 280, "Hold 1/3 to pause", 2, GOLD, INK);
+  text(176, 182, "Grab boosts", 2, CREAM);
+  text(176, 206, "and rockets", 2, CREAM);
+  centered(240, 246, "Finish 3 laps", 2, CREAM);
+  centered(240, 280, "Hold 1/3 to pause", 2, GOLD);
   button(BACK, "Back", true);
   button(NEXT, "Next", true);
 }
@@ -383,7 +393,7 @@ void calibratePage(const View& v) {
   fill(150, 134, 180, 8, PLATE);
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
   wheelPreview(v.steer, v.track, 162);
-  centered(240, 252, "Turn right: car goes right", 2, DIM, INK);
+  centered(240, 252, "Turn right: car goes right", 2, DIM);
   button(BACK, "Back", true);
   button(NEXT, "Go", v.gripReady);
 }
@@ -420,7 +430,7 @@ void resultsPage(const View& v) {
     if (c.finished) snprintf(line, sizeof line, "%s %s %u:%02u.%u", ordinal(i + 1), WHO[o[i]], (unsigned)(c.finishMs / 60000),
                              (unsigned)(c.finishMs / 1000 % 60), (unsigned)(c.finishMs / 100 % 10));
     else snprintf(line, sizeof line, "%s %s Racing", ordinal(i + 1), WHO[o[i]]);
-    centered(240, 146 + i * 36, line, 2, o[i] == PLAYER ? GOLD : CREAM, INK);
+    centered(240, 146 + i * 36, line, 2, o[i] == PLAYER ? GOLD : CREAM);
   }
   button(REPLAY, "Replay", true);
   button(RESULT_TRACKS, "Tracks", true);

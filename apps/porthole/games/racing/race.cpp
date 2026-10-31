@@ -99,12 +99,9 @@ void pickups(Race& r, float prev) {
   }
 }
 // A rival's line: its lane, the inside of the coming bend, around what it sees ahead, now and then a wobble.
-float rivalLine(Race& r, int i) {
-  Car& c = r.car[i];
+float aroundHazards(const Race& r, int i, float line) {
   const Track& t = *r.track;
-  if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % 4 == 0 ? 1200 : 0; }
-  float line = (i - 2) * 0.45f + curve(t, c.dist + 30) * 0.35f;
-  if (c.wobbleMs > 500) line += (c.lineMs & 1) ? 0.9f : -0.9f;   // a seeded line error, then recovery
+  const Car& c = r.car[i];
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
     if (o.kind == Kind::Pickup || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
@@ -112,12 +109,23 @@ float rivalLine(Race& r, int i) {
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
     if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
   }
+  return line;
+}
+float aroundCars(const Race& r, int i, float line) {   // never sit in the back of a car just ahead
+  const Car& c = r.car[i];
   for (int j = 0; j < CARS; j++) {
     const Car& o = r.car[j];
     if (j == i || o.finished || o.dist < c.dist || o.dist - c.dist > 14 || fabsf(o.x - line) > 0.35f) continue;
     line = o.x + (o.x > 0 ? -0.4f : 0.4f);
   }
-  return clampf(line, -0.85f, 0.85f);
+  return line;
+}
+float rivalLine(Race& r, int i) {
+  Car& c = r.car[i];
+  if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % 4 == 0 ? 1200 : 0; }
+  float line = (i - 2) * 0.45f + curve(*r.track, c.dist + 30) * 0.35f;
+  if (c.wobbleMs > 500) line += (c.lineMs & 1) ? 0.9f : -0.9f;   // a seeded line error, then recovery
+  return clampf(aroundCars(r, i, aroundHazards(r, i, line)), -0.85f, 0.85f);
 }
 float rivalSteer(Race& r, int i) {
   Car& c = r.car[i];
