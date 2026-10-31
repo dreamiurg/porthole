@@ -31,16 +31,20 @@
     .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 
     header.top { border-bottom: 1px solid var(--line); }
-    header.top .wrap { padding-top: 14px; padding-bottom: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+    header.top .wrap { padding-top: 12px; padding-bottom: 12px; display: flex; align-items: center; gap: 16px; }
     .brand { font-weight: 800; font-size: 20px; color: var(--ink); text-decoration: none; }
-    header nav { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-size: 16px; }
+    header nav { margin-left: auto; display: flex; gap: 18px; align-items: center; font-size: 16px; }
     header nav a { color: var(--muted); text-decoration: none; }
     header nav a:hover { color: var(--accent); }
     .gh { width: 1em; height: 1em; vertical-align: -0.125em; margin-right: 0.3em; }
-    .langs { display: flex; gap: 4px; }
-    .langs button { border: 2px solid transparent; border-radius: 8px; padding: 4px; background: none; display: flex; cursor: pointer; }
-    .langs button[aria-pressed="true"] { border-color: var(--accent); background: var(--soft); }
-    .langs svg { display: block; border-radius: 2px; }
+    .lang { position: relative; font-size: 15px; }
+    .lang summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
+    .lang summary::-webkit-details-marker { display: none; }
+    .lang summary > span { display: flex; align-items: center; gap: 6px; }
+    .lang svg { display: block; border-radius: 2px; }
+    .lang .menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 10; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; min-width: 150px; box-shadow: 0 6px 20px rgba(43, 34, 48, 0.12); }
+    .lang .menu button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px; background: none; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+    .lang .menu button[aria-pressed="true"] { background: var(--soft); font-weight: 700; }
 
     .hero { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
     .hero .text { flex: 999 1 480px; min-width: 0; }
@@ -56,11 +60,18 @@
 
     .layout { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; padding-bottom: 64px; }
     .toc { flex: 1 1 200px; max-width: 240px; position: sticky; top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
-    .toc p { margin: 0 0 10px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .toc summary { list-style: none; margin: 0 0 10px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .toc summary::-webkit-details-marker { display: none; }
     .toc ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-weight: 700; font-size: 16px; }
     .toc a { text-decoration: none; color: var(--muted); }
     .toc a.on { color: var(--accent); }
-    @media (max-width: 760px) { .toc { position: static; max-width: none; } }
+    @media (max-width: 760px) {
+      .toc { position: static; max-width: none; padding: 12px 16px; }
+      .toc summary { margin: 0; cursor: pointer; }
+      .toc summary::after { content: " +"; }
+      .toc[open] summary { margin-bottom: 10px; }
+      .toc[open] summary::after { content: " \2212"; }
+    }
     main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 56px; }
     main section { scroll-margin-top: 16px; }
     h2 { margin: 0 0 12px; font-size: 30px; font-weight: 800; }
@@ -108,6 +119,22 @@
 
     footer { border-top: 1px solid var(--line); }
     footer .wrap { padding-top: 24px; padding-bottom: 24px; font-size: 15px; color: var(--muted); }
+    @media (max-width: 560px) {
+      body { font-size: 16px; }
+      .wide-only { display: none; }
+      .hero { gap: 20px; padding-top: 24px; padding-bottom: 28px; }
+      .hero p { font-size: 17px; }
+      .hero .shot img { width: min(260px, 70vw); }
+      .layout { gap: 24px; }
+      main { gap: 40px; }
+      h2 { font-size: 25px; }
+      .games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .game { padding: 12px; }
+      .game img { width: 96px; height: 96px; }
+      .game h3 { font-size: 16px; }
+      .stage { height: 320px; }
+      .photos { gap: 6px; }
+    }
   </style>
   <script type="importmap">
     { "imports": {
@@ -122,13 +149,16 @@
     <a class="brand" href="./">porthole</a>
     <nav aria-label="Site">
       <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
-      <a href="https://dreamiurg.net/"><span lang="en">Blog</span><span lang="uk">Блог</span></a>
-      <a href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a>
-      <span class="langs" role="group" aria-label="Language">
-        <button type="button" data-set-lang="en" aria-pressed="true" aria-label="English"><svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg></button>
-        <button type="button" data-set-lang="uk" aria-pressed="false" aria-label="Українська"><svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg></button>
-      </span>
+      <a class="wide-only" href="https://dreamiurg.net/"><span lang="en">Blog</span><span lang="uk">Блог</span></a>
+      <a class="wide-only" href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a>
     </nav>
+    <details class="lang">
+      <summary aria-label="Language"><span lang="en"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg> EN</span><span lang="uk"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg> УК</span></summary>
+      <div class="menu">
+        <button type="button" data-set-lang="en" aria-pressed="true"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg> English</button>
+        <button type="button" data-set-lang="uk" aria-pressed="false"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg> Українська</button>
+      </div>
+    </details>
   </div>
 </header>
 
@@ -142,8 +172,9 @@
 </div>
 
 <div class="wrap layout">
-  <nav class="toc" aria-label="On this page">
-    <p><span lang="en">On this page</span><span lang="uk">На сторінці</span></p>
+  <details class="toc" id="toc" open>
+    <summary><span lang="en">On this page</span><span lang="uk">На сторінці</span></summary>
+    <nav aria-label="On this page">
     <ol>
       <li><a href="#what"><span lang="en">What it is</span><span lang="uk">Що це</span></a></li>
       <li><a href="#games"><span lang="en">Games</span><span lang="uk">Ігри</span></a></li>
@@ -154,7 +185,8 @@
       <li><a href="#build"><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></a></li>
       <li><a href="#story"><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></a></li>
     </ol>
-  </nav>
+    </nav>
+  </details>
 
   <main>
     <section id="what">
@@ -296,7 +328,7 @@
 </div>
 
 <footer>
-  <div class="wrap"><span lang="en">Made by Dmytro Gaivoronsky:</span><span lang="uk">Зробив Дмитро Гайворонський:</span> <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://github.com/dreamiurg/porthole"><span lang="en">Source on GitHub</span><span lang="uk">Код на GitHub</span></a> &middot; <span lang="en">Font: Nunito (SIL Open Font License).</span><span lang="uk">Шрифт: Nunito (SIL Open Font License).</span></div>
+  <div class="wrap"><span lang="en">Made by Dmytro Gaivoronsky:</span><span lang="uk">Зробив Дмитро Гайворонський:</span> <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a> &middot; <a href="https://github.com/dreamiurg/porthole"><span lang="en">Source on GitHub</span><span lang="uk">Код на GitHub</span></a> &middot; <span lang="en">Font: Nunito (SIL Open Font License).</span><span lang="uk">Шрифт: Nunito (SIL Open Font License).</span></div>
 </footer>
 
 <script>
@@ -312,7 +344,15 @@
   try { saved = localStorage.getItem("porthole.lang"); } catch (e) {}
   const asked = new URLSearchParams(location.search).get("lang");
   setLang([asked, saved].find((l) => l === "en" || l === "uk") || ((navigator.language || "").toLowerCase().startsWith("uk") ? "uk" : "en"), false);
-  document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.setLang, true)));
+  document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => {
+    setLang(b.dataset.setLang, true);
+    b.closest("details").open = false;
+  }));
+  const lang = document.querySelector(".lang");
+  document.addEventListener("click", (e) => { if (!lang.contains(e.target)) lang.open = false; });
+  const toc = document.getElementById("toc"), phone = matchMedia("(max-width: 760px)");
+  if (phone.matches) toc.open = false;
+  toc.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { if (phone.matches) toc.open = false; }));
 
   // The table of contents marks the section being read.
   const links = new Map([...document.querySelectorAll(".toc a")].map((a) => [a.hash.slice(1), a]));
