@@ -4,8 +4,13 @@ name: Promote
 # (beta). Promoting clears the flag and marks it Latest, so releases/latest (what stable boards
 # read) points at it, and moves the `stable` branch to its commit.
 # Promoting an older tag is how stable rolls back.
+# Daily, it also promotes the newest beta by itself once that beta has been the newest for
+# SETTLE_HOURS: any newer beta (a fix, say) restarts the wait, so stable gets a beta that went
+# untouched for two days.
 
 on:
+  schedule:
+    - cron: "0 17 * * *"  # 10:00 Pacific in summer (09:00 in winter)
   workflow_dispatch:
     inputs:
       tag:
@@ -32,11 +37,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
+          SETTLE_HOURS: 48
         run: |
           if [ -z "$TAG" ]; then
-            TAG=$(gh release list --limit 100 --json tagName,isPrerelease \
+            newest=$(gh release list --limit 100 --json tagName,isPrerelease,createdAt \
               --jq '[.[] | select(.isPrerelease and (.tagName | test("^porthole-v[0-9]+[.][0-9]+[.][0-9]+$")))]
-                    | sort_by(.tagName | ltrimstr("porthole-v") | split(".") | map(tonumber)) | last | .tagName // ""')
+                    | sort_by(.tagName | ltrimstr("porthole-v") | split(".") | map(tonumber)) | last
+                    | "\(.tagName // "") \(.createdAt // "")"')
+            TAG=${newest% *}
+            if [ "${{ github.event_name }}" = schedule ]; then
+              if [ -z "$TAG" ]; then echo "no beta newer than stable"; exit 0; fi
+              age=$(( ($(date +%s) - $(date -d "${newest#* }" +%s)) / 3600 ))
+              if [ "$age" -lt "$SETTLE_HOURS" ]; then echo "$TAG is ${age}h old, waiting for ${SETTLE_HOURS}h"; exit 0; fi
+            fi
           fi
           if ! [[ "$TAG" =~ ^porthole-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::no porthole-vX.Y.Z tag to promote (got '$TAG')"
