@@ -52,9 +52,6 @@
     .hero p { margin: 0 0 14px; font-size: 19px; color: var(--body); }
     .hero .shot { flex: 1 1 300px; display: flex; justify-content: center; }
     .hero .shot img { width: min(420px, 90vw); height: auto; }
-    .case-intro { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 16px; }
-    .case-intro p { flex: 999 1 320px; min-width: 0; }
-    .case-intro img { flex: 0 1 180px; width: 180px; height: auto; }
     .now { margin-top: 24px; }
     .now img { width: 100%; height: auto; display: block; border-radius: 14px; margin-top: 10px; }
 
@@ -286,10 +283,7 @@
 
     <section id="case">
       <h2><span lang="en">3D-printed case</span><span lang="uk">Корпус на 3D-принтері</span></h2>
-      <div class="case-intro">
-        <p><span lang="en">I call it the puck: a round case that holds the board and a battery. Print it in PETG, add the battery and close it with three screws. No soldering. Below is the real model: turn it around, or take it apart.</span><span lang="uk">Я називаю його шайбою: круглий корпус для плати й акумулятора. Друкуйте з PETG, додайте акумулятор і закрийте трьома гвинтами. Без паяння. Нижче справжня модель: покрутіть її або розберіть.</span></p>
-        <img src="images/puck-exploded.webp" alt="The case taken apart: bezel, board, plate and lid" width="517" height="900" loading="lazy">
-      </div>
+      <p><span lang="en">I call it the puck: a round case that holds the board and a battery. Print it in PETG, add the battery and close it with three screws. No soldering. Below is the real model: turn it around, or take it apart.</span><span lang="uk">Я називаю його шайбою: круглий корпус для плати й акумулятора. Друкуйте з PETG, додайте акумулятор і закрийте трьома гвинтами. Без паяння. Нижче справжня модель: покрутіть її або розберіть.</span></p>
       <div class="stage" id="stage">
         <div class="msg" id="stage-msg"><span lang="en">Loading the 3D model&hellip;</span><span lang="uk">Завантажується 3D-модель&hellip;</span></div>
         <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Тягніть, щоб повернути, прокрутка чи щипок &mdash; масштаб.</span></div>
@@ -381,6 +375,25 @@
   }, { rootMargin: "400px" });
   near.observe(stage);
 
+  // The Waveshare board, simplified the way hardware/case/puck_v1.py's board_ref() draws it, in the
+  // same frame: a 37.5 mm glass disc (z 1.2 to 3.4) over the 35.5 mm module (z -2.1 to 1.2) and four
+  // M2 standoffs down to z -6.1. The screen shows a real frame of the game menu.
+  async function board(THREE) {
+    const g = new THREE.Group(), dark = new THREE.MeshStandardMaterial({ color: 0x18161c, roughness: 0.35 });
+    const disc = (r, z0, z1, m) => {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, z1 - z0, 96), m);
+      c.rotation.x = Math.PI / 2; c.position.z = (z0 + z1) / 2; g.add(c); return c;
+    };
+    disc(37.5, 1.2, 3.4, dark);
+    disc(35.5, -2.1, 1.2, new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.7 }));
+    for (const [x, y] of [[29.5, 13.6], [-29.5, 13.6], [18, -27.05], [-18, -27.05]]) disc(1.75, -6.1, -2.1, dark).position.set(x, y, -4.1);
+    const map = await new THREE.TextureLoader().loadAsync("images/screen.png");
+    map.colorSpace = THREE.SRGBColorSpace;
+    const screen = new THREE.Mesh(new THREE.CircleGeometry(26.7, 96), new THREE.MeshBasicMaterial({ map }));
+    screen.position.z = 3.42; g.add(screen);
+    return g;
+  }
+
   async function start() {
     const THREE = await import("three");
     const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
@@ -392,13 +405,13 @@
     scene.add(new THREE.HemisphereLight(0xffffff, 0x302838, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(60, -80, 120); scene.add(sun);
     const camera = new THREE.PerspectiveCamera(35, 1, 1, 2000);
-    camera.up.set(0, 0, 1); camera.position.set(110, -170, 120);
+    camera.up.set(0, 0, 1); camera.position.set(80, -125, 95);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.target.set(0, 0, -8);
 
     // The STLs share one assembly frame (mm): bezel on top, plate inside, lid below.
-    const parts = { bezel: { file: "case/puck_bezel.stl", color: 0xb99ae6, lift: 26 },
-                    plate: { file: "case/puck_plate.stl", color: 0xf1ebf5, lift: 0 },
+    const parts = { bezel: { file: "case/puck_bezel.stl", color: 0xb99ae6, lift: 32 },
+                    plate: { file: "case/puck_plate.stl", color: 0xf1ebf5, lift: -6 },
                     lid:   { file: "case/puck_lid.stl",   color: 0x7a4fb3, lift: -26 } };
     const loader = new STLLoader();
     await Promise.all(Object.values(parts).map(async (p) => {
@@ -407,11 +420,17 @@
       p.mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.55, metalness: 0.05 }));
       scene.add(p.mesh);
     }));
+    parts.board = { lift: 12, mesh: await board(THREE) };
+    scene.add(parts.board.mesh);
     msg.remove();
 
     apply = () => {
+      // Back the camera off for the taller exploded stack, keeping the angle the viewer chose.
+      const dist = view === "exploded" ? 260 : 170, dir = camera.position.clone().sub(controls.target).normalize();
+      controls.target.set(0, 0, view === "exploded" ? -4 : -8);
+      camera.position.copy(controls.target).addScaledVector(dir, dist);
       for (const [name, p] of Object.entries(parts)) {
-        p.mesh.visible = view === "assembled" || view === "exploded" || view === name;
+        p.mesh.visible = view === "assembled" || view === "exploded" || view === name;   // the board shows only in the two whole views
         p.mesh.position.z = view === "exploded" ? p.lift : 0;
       }
     };
