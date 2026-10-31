@@ -58,9 +58,8 @@ void everyTrackFinishes() {
 }
 
 // The level after a finished race: a win steps up one (two after a runaway), a loss at 0 or below steps down two,
-// from 1..LEVEL_GENTLE to 0,
-// from 1..LEVEL_EASY lands at -2 (behind, those levels race alike), above that steps down LEVEL_HIGH_LOSS; always
-// inside LEVEL_MIN..LEVEL_MAX. A level out of range is clamped when the race starts.
+// from 1..LEVEL_GENTLE lands at 0, from LEVEL_GENTLE+1..LEVEL_EASY at -2 (behind, those levels race alike and below 0
+// the rivals are slower), above that steps down LEVEL_HIGH_LOSS; always inside LEVEL_MIN..LEVEL_MAX. A level out of range is clamped when the race starts.
 void levels() {
   assert(nextLevel(-3, 1, false) == -2 && nextLevel(-3, 1, true) == -1 && nextLevel(-3, 2, false) == -5);
   assert(nextLevel(1, 2, false) == 0 && nextLevel(LEVEL_GENTLE, 4, false) == 0);
@@ -347,6 +346,19 @@ void staircase() {
     assert(settled >= 18 && settled <= 32);
   }
 }
+// The fixed settings stay what the chip promises on every track: Normal and Hard are races a competent driver
+// both wins and loses, and Hard is never easier than Normal.
+void modeBands() {
+  for (int t = 0; t < TRACKS; t++) {
+    int normal = 0, hard = 0;
+    for (int k = 0; k < 40; k++) {
+      normal += competent(t, 9000 + k * 7919u, 0) == 1;
+      hard += competent(t, 9000 + k * 7919u, HARD_LEVEL[t]) == 1;
+    }
+    printf("%-16s competent driver: Normal %d/40, Hard %d/40\n", TRACK[t].name, normal, hard);
+    assert(normal >= 8 && normal <= 32 && hard >= 8 && hard <= 26 && hard <= normal);
+  }
+}
 }  // namespace
 
 int main() {
@@ -363,6 +375,7 @@ int main() {
   rivalBoosts();
   everyTrackFinishes();
   staircase();
+  modeBands();
   puts("test_racing_rules: ok");
   return 0;
 }

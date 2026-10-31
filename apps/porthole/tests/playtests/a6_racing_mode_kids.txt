@@ -8,7 +8,7 @@ profile Sam 6
 app racing
 wait 600
 expect-screen race_tracks
-expect mode=Adaptive
+expect mode=Auto
 # Sam taps the chip once: Easy
 tap 102 130
 wait 600
@@ -24,7 +24,7 @@ wait 900
 app racing
 wait 600
 expect-screen race_tracks
-expect mode=Adaptive
+expect mode=Auto
 ui-check race_tracks-zoe
 # Zoe cycles to Hard
 tap 102 130

@@ -283,7 +283,7 @@ void finishAndReplay() {
   assert(r.g.wantsHome());
 }
 
-// The save: a sealed blob loads back; a v1 blob (before levels) loads with every level 0; a wrong crc, size or magic
+// The save: a sealed blob loads back (older ones: saveMigration); a wrong crc, size or magic
 // is ignored (no times, never half a record); only a better time replaces one.
 void saveBlob() {
   Save s{};
@@ -293,14 +293,6 @@ void saveBlob() {
   Save back{};
   assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
   assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3 && back.mode == HARD);
-  struct V1 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; uint32_t crc; } v1 = {SAVE_MAGIC, 1, 44, {}, 0};
-  static_assert(sizeof(V1) == SAVE_V1_SIZE, "the shipped v1 layout");
-  v1.best[1] = {88000, 28000};
-  v1.crc = os::crc32(&v1, sizeof v1 - 4);
-  Save old{};
-  old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
-  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == ADAPTIVE);
-  for (int8_t l : old.level) assert(l == 0);
   Save bad = s; bad.best[2].raceMs = 1;
   assert(!loadBlob(&bad, sizeof bad, back));
   assert(!loadBlob(&s, sizeof s - 4, back));   // a v2 blob cut to v1's size is not a v1 blob
@@ -354,7 +346,7 @@ void leaderboard() {
   r.g.debugPrint();
 }
 
-// The difficulty chip cycles Adaptive, Easy, Normal, Hard and back, saving at once. A fixed setting races at its own
+// The difficulty chip cycles Auto, Easy, Normal, Hard and back, saving at once. A fixed setting races at its own
 // level and leaves the adaptive levels alone; the setting is the kid's own, back on the next entry.
 void modes() {
   static const Profile all[2] = {{0, "Zoe", 0, 9, 0}, {1, "Sam", 1, 6, 0}};
@@ -374,9 +366,10 @@ void modes() {
   assert(r.g.screen() == Game::Screen::Results && r.g.race().place == 1);
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == EASY);
   r.tap(paint::RESULT_TRACKS);
-  const uint8_t order[] = {NORMAL, HARD, ADAPTIVE, EASY};
+  const uint8_t order[] = {NORMAL, HARD, AUTO, EASY};
   for (uint8_t want : order) {
     r.tap(paint::MODE_CHIP);
+    assert(r.g.saveUrgent());   // checkpointed at once, not on the 5 s cadence
     assert(r.g.screen() == Game::Screen::Tracks && r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.mode == want);
   }
   r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP);   // Hard
@@ -384,11 +377,28 @@ void modes() {
   assert(r.g.race().level == HARD_LEVEL[0]);
   r.wait(5200);
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == 5 && mine.mode == HARD);
-  Rig sam;   // Sam has no save: Adaptive, at his own level
+  Rig sam;   // Sam has no save: Auto, at his own level
   sam.g.enter(AppEnter{&all[1], all, slots, 2, 1000000, sam.ms, false});
   sam.toRace(0);
   assert(sam.g.race().level == 0);
   sam.g.debugPrint();
+}
+
+// Older and newer blobs: a v1 blob (before levels) loads with every level 0 and Auto; a setting this firmware does
+// not know loads as Auto.
+void saveMigration() {
+  Save s{}, back{};
+  s.level[2] = -5; s.mode = MODES;
+  seal(s);
+  assert(loadBlob(&s, sizeof s, back) && back.mode == AUTO && back.level[2] == -5);
+  struct V1 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; uint32_t crc; } v1 = {SAVE_MAGIC, 1, 44, {}, 0};
+  static_assert(sizeof(V1) == SAVE_V1_SIZE, "the shipped v1 layout");
+  v1.best[1] = {88000, 28000};
+  v1.crc = os::crc32(&v1, sizeof v1 - 4);
+  Save old{};
+  old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
+  assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == AUTO);
+  for (int8_t l : old.level) assert(l == 0);
 }
 
 // Every glyph drawn on every page stays on the glass.
@@ -434,6 +444,7 @@ int main() {
   finishAndReplay();
   textOnGlass();
   saveBlob();
+  saveMigration();
   leaderboard();
   modes();
   puts("test_racing: ok");

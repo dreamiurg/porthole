@@ -27,7 +27,7 @@ void Game::enter(const AppEnter& e) {
 }
 
 void Game::loadKids(const AppEnter& e) {
-  save_ = {}; dirty_ = false; newBest_ = 0; nKids_ = 0; me_ = -1;
+  save_ = {}; dirty_ = urgent_ = false; newBest_ = 0; nKids_ = 0; me_ = -1;
   for (int i = 0; i < e.n && nKids_ < MAX_PROFILES; i++) {
     Kid& k = kids_[nKids_];
     k = {};
@@ -68,7 +68,7 @@ void Game::recordFinish() {
   prevBestMs_ = save_.best[track_].raceMs;
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
   dirty_ = dirty_ || newBest_;
-  if (save_.mode == ADAPTIVE) {   // a fixed setting races at its own level and leaves the adaptive ones alone
+  if (save_.mode == AUTO) {   // a fixed setting races at its own level and leaves the adaptive ones alone
     const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, race_.place, runaway(race_)), track_);
     dirty_ = dirty_ || level != save_.level[track_];
     save_.level[track_] = level;
@@ -95,7 +95,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_) return false;
   seal(save_);
   *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update
-  dirty_ = false;
+  dirty_ = urgent_ = false;
   return true;
 }
 
@@ -131,7 +131,11 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 
 void Game::updateTracks() {
-  if (ui::clicked(in_, paint::MODE_CHIP)) { save_.mode = (uint8_t)((save_.mode + 1) % MODES); dirty_ = true; return; }
+  if (ui::clicked(in_, paint::MODE_CHIP)) {   // saved at once: a power cut right after still keeps the kid's pick
+    save_.mode = (uint8_t)((save_.mode + 1) % MODES);
+    dirty_ = urgent_ = true;
+    return;
+  }
   for (int i = 0; i < TRACKS; i++)
     if (ui::clicked(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
   if (ui::clicked(in_, paint::HOME)) home_ = true;

@@ -16,14 +16,15 @@ constexpr uint16_t SAVE_VERSION = 2;
 constexpr size_t SAVE_V1_SIZE = 44, SAVE_V2_SIZE = 52;
 constexpr size_t SAVE_SIZES[] = {0, SAVE_V1_SIZE, SAVE_V2_SIZE};   // by version: a blob is exactly its version's size
 struct Best { uint32_t raceMs, lapMs; };              // 0 = not driven yet
-// The kid's difficulty setting. Persisted: values never change meaning; Adaptive is 0, the default.
-enum Mode : uint8_t { ADAPTIVE, EASY, NORMAL, HARD, MODES };
+// The kid's difficulty setting (the chip says Auto for AUTO: adaptive rivals). Persisted: values never change
+// meaning; AUTO is 0, the default.
+enum Mode : uint8_t { AUTO, EASY, NORMAL, HARD, MODES };
 struct Save {
   uint32_t magic;
   uint16_t version, size;
   Best best[TRACKS];   // by track index (TRACK[] order: never reordered)
   int8_t level[TRACKS];   // v2: the adaptive level by track (race.h start; on a shifted track a higher rung); 0 from v1
-  uint8_t mode, pad[3];   // v2: the kid's Mode (0, Adaptive, from a v1 blob); pad keeps crc 4-aligned
+  uint8_t mode, pad[3];   // v2: the kid's Mode (AUTO from a v1 blob or out of range); pad keeps crc 4-aligned
   uint32_t crc;
 };
 static_assert(sizeof(Save) == SAVE_V2_SIZE, "Save is persisted: append before crc, never resize");
@@ -44,6 +45,7 @@ inline bool loadBlob(const void* data, size_t n, Save& out) {
   memcpy(&s, b, n - 4);
   if (s.magic != SAVE_MAGIC || !s.version || s.version > SAVE_VERSION || s.size != n || n != SAVE_SIZES[s.version] ||
       crc != os::crc32(b, n - 4)) return false;
+  if (s.mode >= MODES) s.mode = AUTO;   // a value from a later firmware: the default
   seal(s);
   out = s;
   return true;

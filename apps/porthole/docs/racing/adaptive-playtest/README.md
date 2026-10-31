@@ -761,3 +761,19 @@ scenarios pass, 0 UI FAIL / 0 WARN, no sanitizer report (racing: `a0_racing_flow
 Home and a restart, and an accidental tap only makes races easier. Hard is challenging and fair. `(+N)` under a 1st is
 gone. Rename `Adaptive` to `Auto`. If "never a walk in the park" is strict, Snow's low band (Minor 1) and Easy for an
 ordinary driver (Minor 2) are the next changes.
+
+## Resolutions after pass 4 (game-engineer, fifth pass)
+
+| Pass / # | Finding | Status |
+| --- | --- | --- |
+| 4 / m1 | Snow can give a very clean driver two solo races after a loss | **Accepted.** After a loss the runaway +2 climbs back fast, so the race is contested again within a race or two. |
+| 4 / m2 | Easy on Snow is solo for an ordinary 6-year-old | **Accepted.** Easy is meant to be easy. Auto is the default. |
+| 4 / m3 | `Adaptive` fails an early reader | **Fixed.** The chip says **Auto**. The setting's value (0) and its behaviour are unchanged. |
+| 4 / m4 | The rest screen still ends a race | **Deferred: shell-owned**, as before. The level is unchanged. |
+| 4 / Nit 1 | A chip change is lost if the power goes within about 5 s | **Fixed.** A chip tap asks the shell for an urgent checkpoint (`saveUrgent`), written after a second, not five. |
+| 4 / Nit 2 | Holding the chip does nothing | **By design.** It is a tap target. A quick double tap skips a setting, also by design: it cycles. |
+| 4 / Nit 3 | Home and the chip are 4 px apart | **Accepted.** That is inside the layout rule (2 px apart, 24x22 each); the UI audit passes. |
+| 4 / Nit 4 | The `a5_racing_level` header was stale | **Fixed.** |
+| — (review) | A fixed-setting finish on a never-raced track | **Documented.** It makes the track raced, so its seeded level stays and is no longer derived from the other tracks. |
+| — (review) | A setting value from a later firmware | **Fixed.** It loads as Auto. A 48-byte blob from the unshipped first v2 is rejected (v2 never shipped). |
+| — (review) | Normal and Hard bands | **Tested.** `modeBands` in `host/test_racing_rules.cpp`, 40 races per track: Normal 16-25 wins, Hard 14-22, and Hard never easier than Normal. |

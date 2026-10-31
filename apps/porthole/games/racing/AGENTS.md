@@ -9,10 +9,12 @@ tracks, platform contract, and the two approved reference boards the look follow
 ## Player contract
 
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
-  open, with Home and the difficulty chip under them ("Rivals" over Adaptive / Easy / Normal / Hard, a user request of
-  2026-10-31; a tap cycles it and saves it at once, per kid, Adaptive by default). Easy races at level -8, Normal at 0,
+  open, with Home and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
+  2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
+  skips a setting, by design: it cycles). Easy races at level -8, Normal at 0,
   Hard at `HARD_LEVEL` (by track: a competent driver wins 33-53% there); a fixed setting never moves the
-  adaptive levels. Times count the same in every setting. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
+  adaptive levels. Times count the same in every setting. A finish in a fixed setting on a never-raced track still
+  makes it raced, so its seeded level stays as it was and is no longer derived from the other tracks. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
   cards go straight to the grip page.
 - Grip: hold the puck upright like a wheel, steady for 350 ms, then Go. Flat or implausible gravity never passes.
   Clockwise steers right; 3-degree dead zone, full lock at 20 degrees, about 100 ms smoothing (Starfighter's
@@ -44,7 +46,7 @@ tracks, platform contract, and the two approved reference boards the look follow
   gold (a user decision of 2026-10-31: no medals, no ghost mode). Laps run line to line, the first from the flying
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
-- In Adaptive, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
+- In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
   from -16 up to the track's top (18; 6 on Industrial Ruins, 10 on Night Run). A win adds one, two after a runaway
   (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; from 4..9 straight to -2
   (there rivals only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they
@@ -92,8 +94,8 @@ tracks, platform contract, and the two approved reference boards the look follow
 `Save` (`save.h`), 52 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
 the shell. Magic `0x594C4C52` ("RLLY"), `version` 2, `size`, then `best[4]` by track index (`TRACK[]` order, never
 reordered): `{raceMs, lapMs}`, 0 = not driven, each kept only when a finish beats it; v2 adds `int8_t level[4]`, the
-adaptive level by track, then `uint8_t mode` (`Mode`: 0 Adaptive, 1 Easy, 2 Normal, 3 Hard; never renumbered) and 3
-pad bytes; a v1 44-byte blob loads with every level 0 and Adaptive. `crc` last. A finish that moves the level, or a
+adaptive level by track, then `uint8_t mode` (`Mode`: 0 Auto, 1 Easy, 2 Normal, 3 Hard; never renumbered; a value past Hard loads as Auto) and 3
+pad bytes; a v1 44-byte blob loads with every level 0 and Auto. A 48-byte blob from the unshipped first v2 is rejected. `crc` last. A finish that moves the level, or a
 tap on the chip, is saved even without a new best. Append-only: a new
 field goes right before `crc` with a version bump, and `loadBlob` must keep loading every older size. A blob with a
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads

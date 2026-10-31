@@ -10,7 +10,7 @@ enum class Page : uint8_t { Tracks, HowTo, Calibrate, Race, Pause, Confirm, Resu
 constexpr ui::Box CARD[TRACKS] = {{27, 34, 52, 38}, {81, 34, 52, 38}, {27, 76, 52, 38}, {81, 76, 52, 38}};
 constexpr ui::Box HOME{34, 118, 40, 24};                          // Tracks: back to the launcher
 constexpr ui::Box MODE_CHIP{78, 118, 48, 24};                     // Tracks: tap to cycle the difficulty setting
-constexpr const char* MODE_NAME[] = {"Adaptive", "Easy", "Normal", "Hard"};   // by Mode (save.h)
+constexpr const char* MODE_NAME[] = {"Auto", "Easy", "Normal", "Hard"};   // by Mode (save.h)
 constexpr ui::Box BACK{30, 112, 48, 24}, NEXT{82, 112, 48, 24};   // How to play, Calibrate
 constexpr ui::Box LAP{26, 28, 32, 24};                            // hold to pause
 constexpr ui::Box PLACE{100, 30, 34, 18};                         // shown only, never tapped
