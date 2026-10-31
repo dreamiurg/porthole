@@ -1,6 +1,6 @@
 # Toy Town Life
 
-A local, silent doll neighborhood for Porthole. Open **Toy Town** on the fourth
+A local, silent doll neighborhood for Porthole. Open **Toy Town** on the second
 launcher page. Every profile has its own dolls, bag, outing and scrapbook.
 
 - **Doll & wardrobe:** four materials (fashion, plush, clay, keychain), free hair,

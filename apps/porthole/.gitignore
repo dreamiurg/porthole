@@ -13,3 +13,5 @@ build/
 !games/racing/art/*.png
 !docs/racing/*.png
 !docs/racing/blackbox/*.png
+!games/*/art/launcher.png
+!docs/launcher/*.png

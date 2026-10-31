@@ -1,8 +1,8 @@
+#include "launcher_icon.h"
 #include "game.h"
 #include "content_daily.h"
 #include <stdio.h>
 #include <string.h>
-#include "generated/icon.h"
 #include "generated/scenes.h"
 #include "personalize.h"
 
@@ -12,7 +12,7 @@ constexpr uint32_t TICK_SEC = 30, CHECKPOINT_SEC = 300;   // needs move every 30
 constexpr uint32_t SAY_MS = 4000, ONE_SHOT_MS = 800, SURPRISE_MS = 90000;
 }  // namespace
 
-const gfx::Sprite& Game::icon() const { return SPR_BISCUIT_ICON; }
+const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 void Game::enter(const AppEnter& e) {
   who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;

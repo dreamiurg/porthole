@@ -1,3 +1,4 @@
+#include "launcher_icon.h"
 #include "render.h"
 #include <math.h>
 #include <new>
@@ -449,19 +450,6 @@ void resultsPage(const View& v) {
   button(RESULT_HOME, "Home", true);
 }
 
-// Launcher icons use the shell's indexed sprite contract: the player's car, each pixel the nearest shell color.
-uint8_t nearest(uint16_t c) {
-  const int r = (c >> 11) << 3, g = ((c >> 5) & 63) << 2, b = (c & 31) << 3;
-  int best = 0;
-  long bestD = 1L << 30;
-  for (int i = 0; i < 32; i++) {
-    const uint32_t p = PALETTE_RGB[i];
-    const long dr = r - (long)(p >> 16 & 255), dg = g - (long)(p >> 8 & 255), db = b - (long)(p & 255);
-    const long d = dr * dr * 3 + dg * dg * 4 + db * db * 2;
-    if (d < bestD) { bestD = d; best = i; }
-  }
-  return (uint8_t)best;
-}
 }  // namespace
 
 void draw(const View& v) {
@@ -477,21 +465,5 @@ void draw(const View& v) {
   }
 }
 
-const gfx::Sprite& icon() {
-  static uint8_t px[32 * 32];
-  static bool ready = false;
-  static const gfx::Sprite s{32, 32, px};
-  if (!ready) {
-    const pic::Pic& car = *pic::CAR[0];
-    const int side = car.w > car.h ? car.w : car.h;
-    for (int y = 0; y < 32; y++)
-      for (int x = 0; x < 32; x++) {
-        const int sx = x * side / 32 - (side - car.w) / 2, sy = y * side / 32 - (side - car.h) / 2;
-        const uint16_t c = sx < 0 || sy < 0 || sx >= car.w || sy >= car.h ? pic::CLEAR : car.px[sy * car.w + sx];
-        px[y * 32 + x] = c == pic::CLEAR ? C_T : nearest(c);
-      }
-    ready = true;
-  }
-  return s;
-}
+const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }  // namespace racing::paint
