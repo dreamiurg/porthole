@@ -99,7 +99,7 @@ jobs:
       - run: pip install pillow fonttools==4.61.1 'gcovr>=8.3'
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .tool-versions  # the same Node (and bundled zlib) as local hooks via mise
       - run: make -C apps/porthole ci REQUIRE_NODE=1  # the Biscuit art --check must run here, not skip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: failure()
