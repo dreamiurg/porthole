@@ -331,7 +331,7 @@ void leaderboard() {
   assert(r.g.takeSave(&data, &len, true) && len == sizeof(Save) && !r.g.takeSave(&data, &len, true));
   Save mine{};
   assert(loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
-  assert(mine.level[0] == -2 && mine.level[1] == -3 && mine.level[3] == -3);   // fourth: down two; unraced: one below
+  assert(mine.level[0] == -2 && mine.level[1] == 0 && mine.level[3] == 0);   // fourth: down two; unraced: never below 0
   gfx::textLogEnabled = true; gfx::textLogReset();
   r.frame();
   gfx::textLogEnabled = false;
@@ -340,13 +340,13 @@ void leaderboard() {
   r.g.debugCmd("lastplace");   // the same short fixture: no better time, but the level moved, so a save
   r.wait(5200);
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
-  assert(mine.level[0] == -4 && mine.level[1] == -5);
+  assert(mine.level[0] == -4 && mine.level[1] == 0);
   r.g.debugCmd("level -16");
   assert(r.g.takeSave(&data, &len, true));   // the fixture's level is saved
   r.g.debugCmd("lastplace");   // at the floor a loss changes nothing: nothing to save
   r.wait(5200);
   assert(r.g.race().level == LEVEL_MIN && !r.g.takeSave(&data, &len, true));
-  r.g.debugCmd("level 99");   // clamped to the top; a clear win there stays there
+  r.g.debugCmd("level 99");   // clamped to the top; a runaway win there stays there
   r.g.debugCmd("lastlap");
   r.wait(5200);
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == LEVEL_MAX);

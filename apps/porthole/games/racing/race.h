@@ -28,23 +28,25 @@ struct Race {
   Puff puff[MAX_PUFFS];
   uint32_t ms = 0, raceMs = 0, cooldownMs = 0, calloutMs = 0, fullMs[2] = {0, 0}, seed = 1;   // calloutMs: a new lap's banner
   uint32_t hitMs = 0;               // "Hit!" after the player's rocket finds a rival
+  uint32_t firstMs = 0;             // race time the player has led, no rival ahead
   uint32_t rivalBoostMs = 0;        // a rival boosted lately: the next one waits, so boosts never gang up on the kid
   uint32_t lapStartMs = 0, lapMs[LAPS] = {};   // the player's laps, line to line (0 until driven)
   uint16_t taken = 0;               // pickup gates collected on the player's current lap (bit per feature)
   uint8_t contact = 0;              // car pairs touching last step (bit per pair)
   uint8_t inventory[2] = {1, 1};    // BOOST, ROCKET
   uint8_t place = CARS, finishedCount = 0, playerLap = 0;
-  int8_t level = 0;                 // the rivals' difficulty for this kid on this track (see start)
+  int8_t level = 0;                 // the kid's level on this track (see start), at most the track's last rung
+  int8_t rung = 0;                  // the ladder rung it puts the rivals on (tune.h LEVEL_SHIFT)
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
 };
 
 // level: how hard the rivals push (LEVEL_MIN..LEVEL_MAX, 0 = the brief's pace). The race is a pure function of the
 // track, seed, level and inputs.
 void start(Race& r, const Track& t, uint32_t seed, int level);
-// After a finished race: a win steps up one (two when no rival was within CLEAR_LEAD m), any other place steps down
-// two, or halves a level above 0, so a kid losing from the top is back to 0 in about three races.
-int nextLevel(int level, int place, float leadM);
-float lead(const Race& r);   // m the player is ahead of the nearest rival (negative: behind)
+// After a finished race (tune.h): a win steps up one, two after a runaway; a loss at 0 or below steps down two, from
+// 1..LEVEL_EASY drops straight to -2, and above that steps down LEVEL_HIGH_LOSS (18 is below 0 after four losses).
+int nextLevel(int level, int place, bool runaway);
+bool runaway(const Race& r);   // the player led for at least RUNAWAY_SHARE of the race
 void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS

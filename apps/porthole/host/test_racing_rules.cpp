@@ -57,15 +57,27 @@ void everyTrackFinishes() {
   }
 }
 
-// The level after a finished race: a win steps up one (two when clear of every rival), any other place down two (or
-// to half a level above 0), inside LEVEL_MIN..LEVEL_MAX; a level out of range is clamped when the race starts.
+// The level after a finished race: a win steps up one (two after a runaway), a loss at 0 or below steps down two,
+// from 1..LEVEL_EASY lands at -2 (behind, those levels race alike), above that steps down LEVEL_HIGH_LOSS; always
+// inside LEVEL_MIN..LEVEL_MAX. A level out of range is clamped when the race starts.
 void levels() {
-  assert(nextLevel(-3, 1, 5) == -2 && nextLevel(-3, 1, CLEAR_LEAD) == -1 && nextLevel(-3, 2, -1) == -5);
-  assert(nextLevel(9, 2, -1) == 4 && nextLevel(4, 4, -1) == 2 && nextLevel(2, 3, -1) == 0 && nextLevel(1, 2, -1) == -1);
-  assert(nextLevel(LEVEL_MAX, 1, 500) == LEVEL_MAX && nextLevel(LEVEL_MIN + 1, 3, -1) == LEVEL_MIN);
+  assert(nextLevel(-3, 1, false) == -2 && nextLevel(-3, 1, true) == -1 && nextLevel(-3, 2, false) == -5);
+  assert(nextLevel(1, 2, false) == -2 && nextLevel(LEVEL_EASY, 4, false) == -2);
+  assert(nextLevel(LEVEL_MAX, 3, false) == LEVEL_MAX - LEVEL_HIGH_LOSS && nextLevel(LEVEL_EASY + 1, 2, false) > 0);
+  assert(nextLevel(LEVEL_MAX, 1, true) == LEVEL_MAX && nextLevel(LEVEL_MIN + 1, 3, false) == LEVEL_MIN);
 }
 void ladder() {
   Race r;
+  r.raceMs = 1000; r.firstMs = 600;
+  assert(runaway(r));   // led 60% of the race: a runaway, even with a rival close behind at the line
+  r.firstMs = 580;
+  assert(!runaway(r));
+  start(r, TRACK[1], 1, 0);   // Industrial Ruins sits LEVEL_SHIFT rungs up from 0, the shift gone by -LEVEL_SHIFT_FADE
+  assert(r.rung == LEVEL_SHIFT[1] && r.car[3].boosts == MAX_INVENTORY);
+  start(r, TRACK[1], 1, -LEVEL_SHIFT_FADE);
+  assert(r.rung == -LEVEL_SHIFT_FADE);
+  start(r, TRACK[1], 1, LEVEL_MAX);   // a level past the ladder's last rung is that rung
+  assert(r.level == LEVEL_MAX - LEVEL_SHIFT[1] && r.rung == LEVEL_MAX);
   start(r, TRACK[0], 1, LEVEL_MIN - 5);
   assert(r.level == LEVEL_MIN && r.car[PLAYER].top == 1 && r.car[3].top < 1);   // slower rivals, never the kid
   start(r, TRACK[0], 1, 0);
@@ -253,16 +265,17 @@ void rivalBoosts() {
   assert(c.boosts == MAX_INVENTORY - 1 && c.speed <= BOOST_CAP + 1e-4f);   // none spent during a boost
   Car& d = r.car[2];   // a second chaser waits out RIVAL_BOOST_GAP_MS after the first boost: they never gang up
   d.x = -0.6f; d.speed = 1;
-  int steps = 41;
-  for (; !d.boostMs && steps < 500; steps++) { d.dist = r.car[PLAYER].dist - 25; step(r, Controls{}); }
-  assert(d.boostMs && steps * STEP_MS >= RIVAL_BOOST_GAP_MS && steps * STEP_MS <= RIVAL_BOOST_GAP_MS + 2 * STEP_MS);
-  // From the refill levels a rival takes its charges back at the lap line, as the kid does from pickups.
-  for (int level : {LEVEL_MAX - 3, LEVEL_MAX}) {
+  int since = 40;   // steps since the first rival's boost
+  while (!d.boostMs && since < 500) { d.dist = r.car[PLAYER].dist - 25; step(r, Controls{}); since++; }
+  assert(since == (int)(RIVAL_BOOST_GAP_MS / STEP_MS));
+  // The refill levels, one rival a level in LADDER_REFILL order; such a rival takes its charges back at the lap line.
+  for (int level = LEVEL_MAX - 3; level <= LEVEL_MAX; level++) {
     Race q = racingAt(0, 100, 0, level);
-    Car& e = q.car[3];
+    for (int k = 0; k < 3; k++) assert(q.car[LADDER_REFILL[k]].refill == (level > LEVEL_MAX - 3 + k));
+    Car& e = q.car[LADDER_REFILL[0]];
     e.boosts = 0; e.dist = TRACK[0].length - 2; e.speed = 1;   // ahead of the kid: nothing to chase
     for (int i = 0; i < 10; i++) step(q, Controls{});
-    assert(e.boosts == (level == LEVEL_MAX ? MAX_INVENTORY : 0));
+    assert(e.boosts == (level > LEVEL_MAX - 3 ? MAX_INVENTORY : 0));
   }
 }
 
@@ -291,7 +304,7 @@ bool linedUp(const Race& r) {
   return false;
 }
 uint32_t next(uint32_t& s) { s = s * 1664525u + 1013904223u; return s >> 8; }
-int competent(int track, uint32_t seed, int level, float* leadM = nullptr) {
+int competent(int track, uint32_t seed, int level, bool* ran = nullptr) {
   Race r;
   start(r, TRACK[track], seed, level);
   uint32_t s = seed * 2654435761u + 7;
@@ -308,25 +321,24 @@ int competent(int track, uint32_t seed, int level, float* leadM = nullptr) {
     step(r, c);
   }
   assert(r.phase == Phase::Finished);
-  if (leadM) *leadM = lead(r);
+  if (ran) *ran = runaway(r);
   return r.place;
 }
 
 // The rule the levels exist for: a competent driver climbing from level 0 keeps winning some races and losing others
-// on every track once the level has settled (the last 20 of 60 races: 45-90% wins; Industrial Ruins settles near
-// 85%: a loss up high halves the level, back where that track is easy).
+// on every track once the level has settled (the last 40 of 80 races: 45-80% wins, about two in three).
 void staircase() {
   for (int t = 0; t < TRACKS; t++) {
     int level = 0, wins = 0, settled = 0;
-    for (int k = 0; k < 60; k++) {
-      float leadM = 0;
-      const int place = competent(t, 5000 + k * 104729u, level, &leadM);
+    for (int k = 0; k < 80; k++) {
+      bool ran = false;
+      const int place = competent(t, 5000 + k * 104729u, level, &ran);
       wins += place == 1;
       settled += k >= 40 && place == 1;
-      level = nextLevel(level, place, leadM);
+      level = nextLevel(level, place, ran);
     }
-    printf("%-16s competent driver from level 0: %d/60 wins, %d of the last 20, level %+d\n", TRACK[t].name, wins, settled, level);
-    assert(settled >= 9 && settled <= 18);
+    printf("%-16s competent driver from level 0: %d/80 wins, %d of the last 40, level %+d\n", TRACK[t].name, wins, settled, level);
+    assert(settled >= 18 && settled <= 32);
   }
 }
 }  // namespace

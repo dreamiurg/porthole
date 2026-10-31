@@ -19,10 +19,15 @@ names (only after the natural races, for the supplementary pass and the new regr
   ahead. Sam's runs add Gaussian wheel noise (14-40°) and a low gain, so he understeers and wobbles. Frames were
   saved every 1-2 s of play and inspected as contact sheets, with native frames at key moments.
 - Input traces: `zoe-session.json.gz` (Zoe's whole session: four Desert Canyon races) and `sam-session.json.gz`
-  (Sam's two Snow Track races). They are not committed (about 700 KB together); the commands below need them. Each is the full command list after the fixture. In a second process, one replayed
-  frame (level 12, lap 3, the same timestamp) matched byte for byte. Other runs were not re-verified.
-- To rerun: put `drv.py`, `fixture.txt` and a copy of `build/host/snap` named `snapf` in one directory, gunzip a
-  session to `S.json`, then `python3 drv.py S.json ACTION...`. Commands already in `S.json` are replayed first.
+  (Sam's two Snow Track races). Each is the full command list after the fixture. In a second process, one replayed
+  frame (level 12, lap 3, the same timestamp) matched byte for byte. Other runs were not re-verified. **The session
+  traces are not committed** (about 700 KB together), so the `Repro:` lines below that start from them cannot be
+  replayed from the repository; a rerun starts a fresh session with the committed driver.
+- To rerun: `make -C apps/porthole snap`, then `python3 apps/porthole/docs/racing/adaptive-playtest/drv.py S.json
+  ACTION...` (a missing `S.json` starts fresh; commands already in it are replayed first). The driver writes its sim
+  directory and frames under `apps/porthole/build/adaptive-playtest/` (or `$RALLY_DRV_DIR`) and runs a frozen
+  `snapf` there when present, else `build/host/snap`. Since pass 2 it has been tidied (lint, no writes next to
+  itself); its steering is unchanged.
 
 ## Persona and dispatch brief (as received, unchanged)
 
@@ -199,8 +204,10 @@ quits without changing the level. A loss lowers the next race on that track, so 
 ## Automated checks
 
 - `make -C apps/porthole playtest`: 81 of 81 scenarios pass, 0 UI FAIL / 0 WARN. Racing: `a0_racing_flow`,
-  `a1_racing_monkey`, `a4_racing_board`, and the new `a5_racing_level` (19 checks: +1 per win and −2 per loss with
-  `dbg lastlap/lastplace`, persistence across a reboot, per kid and per track, clamped at 15 and −16).
+  `a1_racing_monkey`, `a4_racing_board`, and the new `a5_racing_level`. (At the time: 19 checks of +1 per win and
+  −2 per loss. It now checks the current rules: +2 per runaway win with `dbg lastlap`, a loss from 1..9 to −2 with
+  `dbg lastplace`, persistence across a reboot, per kid and per track, a never-raced track starting inside 0..3, and
+  the clamps at 18 and −16.)
 
 ## Owner's goal and verdict
 
@@ -236,7 +243,7 @@ quits without changing the level. A loss lowers the next race on that track, so 
   correctly.
 - This is emulator roleplay, not a real child and not the physical board.
 
-## Resolutions (second pass, game-engineer)
+## Resolutions after pass 1 (superseded: see "Resolutions after pass 2" at the end)
 
 Fixed on `claude/rally-adaptive` after this report and the code review. The coordinator also asked for
 `dbg level N` to save, which explains the "Limitations" fixture oddity. Numbers come from the sweep in
@@ -402,3 +409,30 @@ because the runaway rule's trigger does not match what the kid sees (Major 1).
 - Ask the engineer to expose (or the brief to allow reading) the finish gap after a race, so "solo" can be checked
   against the rule.
 - Pin the struggling-Sam helper parameters and validate them before use (one invalid run this pass).
+
+## Resolutions after pass 2 (game-engineer, third pass)
+
+Current state of every finding from both passes, after the review of `f8fc072` and pass 2. Numbers come from
+`host/test_racing_rules.cpp`: the `competent` driver and `staircase` (80 races per track from level 0, asserted on the
+last 40). A third black-box pass on this build has not been run.
+
+The level rule now, in full: a win adds one, two after a runaway (the kid led for 60% of the race). A loss at 0 or
+below takes two; from 1..9 it drops straight to -2; above 9 it takes three. So from the top (18) a losing streak is
+below 0 after four losses (15, 12, 9, -2). Industrial Ruins and Night Run top out at 6 and 10 (their levels sit 12
+and 8 rungs up the ladder), so on Industrial Ruins any loss above 0 lands at -2, and on Night Run two losses do. A never-raced track starts one below
+the kid's best level elsewhere, inside 0..3.
+
+| Pass / # | Finding | Status |
+| --- | --- | --- |
+| 1 / 1 | Levels 2-9 played identical races for a driver who stays behind | **Fixed.** A loss from 1..9 now drops straight to -2. Below 0 the rivals are slower for everyone, so the next race differs even for a kid stuck behind. |
+| 1 / 2, 2 / M1 | Snow Track is a solo drive; the runaway +2 rarely fired | **Fixed.** The +2 now follows what the kid sees: leading for 60% of the race, not a 100 m gap at the line (a rival 2 s back was invisible but inside 100 m). Snow check: a competent driver from a fresh 0, six series of eight races: never two runaway (+2) wins in a row; each was followed by a race with a rival close enough to lose to or to win by less. |
+| 1 / 3, 2 / m2 | A struggling kid needs many losses; one 15-20 s off pace never won on Snow | **Fixed except Desert Canyon.** The floor is now set per track: rivals at 0.80 of their pace at -16 (0.87 on Desert, whose straights let a kid who never steers finish within 18%). A simulated wobbly driver about 16-20 s off a clean drive wins 17-19 of 20 at -16 on Industrial Ruins, Snow Track and Night Run. On Desert it does not: that driver is barely faster than one who never steers, and the idle driver must still finish 4th (a test). |
+| 2 / m3 | A bad-day dip carries into new tracks | **Fixed.** A never-raced track starts inside 0..3 (one below the best elsewhere, never below 0). |
+| — (review) | Industrial Ruins settled near 85% wins; the staircase band had been loosened | **Fixed.** Industrial Ruins' levels sit 12 rungs up and Night Run's 8 (`LEVEL_SHIFT`, fading out by -8 so a struggling kid needs the same number of losses on every track). Last 40 of 80 races, seed series of the test: Desert 26, Industrial 30, Snow 28, Night 26 (65-75%); five other seed series 25-31. The band is back to 45-80%. |
+| 1 / 6 | Rival flames small, same colour as the kid's | **Fixed** (pass 2 confirmed: cyan, half as big again). |
+| 1 / 6 (part) | No cue when a rival boosts from behind until it is alongside | **Partly.** Rivals behind the kid are not drawn, so the flames show only once the rival is level or ahead. A mirror or "behind" cue is a separate design. |
+| 1 / 7, 2 / Nit | Rivals boosting one after another | **Fixed as specified** (2.5 s apart). At 18 three passes in a lap remain, as intended drama. |
+| 2 / m1 | The play-time rest cuts a race mid-lap | **Deferred: shell-owned.** Running games enforce the schedule (`apps/porthole/AGENTS.md`). The level is unchanged, so it costs nothing in the rules. A grace period to the line is a shell decision. |
+| 1 / 4 | `(+N)` reads as the gap to the winner | **Deferred.** It predates this change; results wording needs its own design pass. |
+| 1 / 5 | A rocket hit then rear-ending the slowed car | **Deferred.** It predates adaptive rivals. |
+| 1 / Lim. | The `dbg level` value did not persist | **Fixed.** It saves now. On a track the kid has never finished, the next entry or finish derives it again. |

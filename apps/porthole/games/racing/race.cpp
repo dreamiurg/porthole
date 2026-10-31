@@ -122,8 +122,8 @@ float aroundCars(const Race& r, int i, float line) {   // never sit in the back 
 // Low levels only: a rival with the kid close behind it in its lane moves half a road out of the way, the closer
 // the lower the level (up to 16 m), so a struggling kid can get past.
 float courtesy(const Race& r, int i, float line) {
-  if (r.level > LEVEL_COURTESY) return line;
-  const int reach = 2 * (LEVEL_COURTESY + 1 - r.level);
+  if (r.rung > LEVEL_COURTESY) return line;
+  const int reach = 2 * (LEVEL_COURTESY + 1 - r.rung);
   const Car& p = r.car[PLAYER];
   const float gap = r.car[i].dist - p.dist;
   if (gap <= 0 || gap >= (reach < 16 ? reach : 16) || fabsf(p.x - line) >= 0.4f) return line;
@@ -257,12 +257,13 @@ void laps(Race& r) {
     r.taken = 0;   // every gate comes back on the next lap
   }
   r.place = (uint8_t)placeOf(r, PLAYER);
+  if (r.place == 1) r.firstMs += STEP_MS;
   if (r.car[PLAYER].finished) r.phase = Phase::Finished;   // the place is locked here, once
 }
 // The ladder in tune.h, one step a level: slower below 0, then charges, pace, and charges back each lap.
-void ladder(Car& c, int i, int level) {
+void ladder(Car& c, int i, int level, float floor) {
   constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
-  if (level < 0) c.top *= slowdown(level);
+  if (level < 0) c.top *= slowdown(level, floor);
   for (int k = 0; k < level; k++) {
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
     else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
@@ -294,27 +295,25 @@ float terrainCap(const Track& t, float dist, float x, bool* onIce) {
   return cap;
 }
 
-int nextLevel(int level, int place, float leadM) {
+int nextLevel(int level, int place, bool runaway) {
   int next = level - 2;
-  if (place == 1) next = level + (leadM >= CLEAR_LEAD ? 2 : 1);
-  else if (level > 0 && level / 2 < next) next = level / 2;
+  if (place == 1) next = level + (runaway ? 2 : 1);
+  else if (level > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
+  else if (level > 0) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
 }
-float lead(const Race& r) {
-  float best = -1e9f;
-  for (int i = 1; i < CARS; i++) {
-    const Car& c = r.car[i];
-    if (c.finished && (!r.car[PLAYER].finished || c.finishMs < r.car[PLAYER].finishMs)) return -1;   // home first
-    if (c.dist > best) best = c.dist;
-  }
-  return r.car[PLAYER].dist - best;
-}
+bool runaway(const Race& r) { return r.firstMs >= RUNAWAY_SHARE * r.raceMs; }
 
 void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
-  r.level = (int8_t)(level < LEVEL_MIN ? LEVEL_MIN : level > LEVEL_MAX ? LEVEL_MAX : level);
+  const int shift = LEVEL_SHIFT[&t - TRACK], top = LEVEL_MAX - shift;   // past top the ladder has no rungs left
+  r.level = (int8_t)(level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level);
+  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
+  // easy rivals after the same number of losses on every track.
+  const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
+  r.rung = (int8_t)(r.level + (fade > 0 ? shift * fade / LEVEL_SHIFT_FADE : 0));
   static const float TOP[CARS] = {1.0f, 0.92f, 0.97f, 1.0f};
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];
@@ -323,7 +322,7 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
     c.top = TOP[i];
-    if (i != PLAYER) ladder(c, i, r.level);
+    if (i != PLAYER) ladder(c, i, r.rung, LEVEL_FLOOR[&t - TRACK]);
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
   r.playerLap = 1;

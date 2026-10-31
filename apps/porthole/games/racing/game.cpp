@@ -41,15 +41,13 @@ void Game::loadKids(const AppEnter& e) {
   seedLevels();
 }
 
-// A track the kid has never finished starts one level below their best level elsewhere (0 with none), so a kid who
-// is good on one track is not handed easy rivals on the next, but never above LEVEL_SEED_MAX: a new track is learned
-// first. Derived again after every finish until it is raced.
+// A track the kid has never finished starts one level below their best level elsewhere, inside 0..LEVEL_SEED_MAX: a
+// kid good on one track is not handed easy rivals on the next, a new track is still learned first, and one bad day
+// elsewhere never makes it a walk. Derived again after every finish until it is raced.
 void Game::seedLevels() {
   int top = LEVEL_MIN - 1;   // none raced yet
   for (int t = 0; t < TRACKS; t++) if (save_.best[t].raceMs && save_.level[t] > top) top = save_.level[t];
-  int seed = top - 1 < LEVEL_SEED_MAX ? top - 1 : LEVEL_SEED_MAX;
-  if (top < LEVEL_MIN) seed = 0;
-  else if (seed < LEVEL_MIN) seed = LEVEL_MIN;
+  const int seed = top - 1 < 0 ? 0 : top - 1 < LEVEL_SEED_MAX ? top - 1 : LEVEL_SEED_MAX;
   for (int t = 0; t < TRACKS; t++) if (!save_.best[t].raceMs) save_.level[t] = (int8_t)seed;
 }
 
@@ -59,7 +57,7 @@ void Game::seedLevels() {
 void Game::recordFinish() {
   prevBestMs_ = save_.best[track_].raceMs;
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
-  const int8_t level = (int8_t)nextLevel(race_.level, race_.place, lead(race_));
+  const int8_t level = (int8_t)nextLevel(race_.level, race_.place, runaway(race_));
   dirty_ = dirty_ || newBest_ || level != save_.level[track_];
   save_.level[track_] = level;
   seedLevels();

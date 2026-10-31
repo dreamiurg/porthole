@@ -4,7 +4,9 @@ Usage: drv.py SESSION ACTION...   actions:
   tap X Y | hold X Y MS | tick MS | tilt X Y Z | frame NAME | shot NAME (frame saved as png)
   drive SEC LABEL [every_ms] [style]  -- pixel-only steering helper, frames every_ms
   dbg CMD... (supplementary only)
-New actions' raw commands are appended to SESSION.
+New actions' raw commands are appended to SESSION. Everything it writes (the sim's working directory and the frames)
+goes under apps/porthole/build/adaptive-playtest/, or $RALLY_DRV_DIR. It runs that directory's `snapf` (a frozen copy
+of the sim) when there is one, else apps/porthole/build/host/snap.
 """
 
 import json
@@ -16,14 +18,21 @@ import sys
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "frames")
-os.makedirs(OUT, exist_ok=True)
+APP = os.path.normpath(os.path.join(HERE, "..", "..", ".."))
+WORK = os.environ.get("RALLY_DRV_DIR") or os.path.join(APP, "build", "adaptive-playtest")
+OUT = os.path.join(WORK, "frames")
+KID_BOOST_S = 8  # "kid" style taps Boost about this often
+
+
+def snap():
+    frozen = os.path.join(WORK, "snapf")
+    return frozen if os.path.exists(frozen) else os.path.join(APP, "build", "host", "snap")
 
 
 class Sim:
     def __init__(self, wd):
         os.makedirs(os.path.join(wd, "build/host"), exist_ok=True)
-        self.p = subprocess.Popen([os.path.join(HERE, "snapf"), "--serve"], cwd=wd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.p = subprocess.Popen([snap(), "--serve"], cwd=wd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.log = []
         self.t = 0
         self.tilt = (0, 1000, 0)
@@ -136,8 +145,8 @@ def steer_target(img, gain, maxang):
     return max(-maxang, min(maxang, gain * (0.25 * err + 0.12 * ahead)))
 
 
-def kid_presses(s, img, i, kid_boost, last_rocket):
-    if i % int(kid_boost * 10) == 5:
+def kid_presses(s, img, i, last_rocket):
+    if i % (KID_BOOST_S * 10) == 5:
         tap(s, 142, 82)
     if rival_ahead(img) and i - last_rocket[0] > 30:
         last_rocket[0] = i
@@ -145,7 +154,7 @@ def kid_presses(s, img, i, kid_boost, last_rocket):
 
 
 def drive(s, sec, label, every, opt):
-    """opt: style, gain, noise, maxang, kid, kid_boost."""
+    """opt: style, gain, noise, maxang, kid."""
     last_rocket = [-99]
     rnd = random.Random(7)
     ang = 0.0
@@ -159,7 +168,7 @@ def drive(s, sec, label, every, opt):
         if opt.get("noise"):
             target += rnd.gauss(0, opt["noise"])
         if opt.get("kid"):
-            kid_presses(s, img, i, opt.get("kid_boost", 8), last_rocket)
+            kid_presses(s, img, i, last_rocket)
         ang += (target - ang) * (0.6 if opt.get("style", "smooth") == "smooth" else 0.9)
         th = math.radians(ang)
         s.cmd(f"tilt {int(1000 * math.sin(th))} {int(1000 * math.cos(th))} 0")
@@ -169,12 +178,16 @@ def drive(s, sec, label, every, opt):
 
 def main():
     session = sys.argv[1]
-    wd = os.path.join(HERE, "wd-" + os.path.basename(session).split(".")[0])
+    os.makedirs(OUT, exist_ok=True)
+    wd = os.path.join(WORK, "wd-" + os.path.basename(session).split(".")[0])
     subprocess.run(["rm", "-rf", wd])
     os.makedirs(os.path.join(wd, "build/host"))
-    subprocess.run([os.path.join(HERE, "snapf"), "--fresh", "--script", os.path.join(HERE, "fixture.txt")], cwd=wd, stdout=subprocess.DEVNULL, check=True)
+    subprocess.run([snap(), "--fresh", "--script", os.path.join(HERE, "fixture.txt")], cwd=wd, stdout=subprocess.DEVNULL, check=True)
     s = Sim(wd)
-    old = json.load(open(session)) if os.path.exists(session) else []
+    old = []
+    if os.path.exists(session):
+        with open(session) as f:
+            old = json.load(f)
     for c in old:
         s.cmd(c)
     acts = sys.argv[2:]
@@ -204,7 +217,8 @@ def main():
         else:
             print("unknown", acts[i])
         i += 1
-    json.dump(s.log, open(session, "w"))
+    with open(session, "w") as f:
+        json.dump(s.log, f)
     s.p.stdin.close()
     s.p.wait()
 
