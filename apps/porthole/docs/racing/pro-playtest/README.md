@@ -348,3 +348,137 @@ Pro after the contact fix (60 races, seeds 9000 + 7919k; win share / mean place)
 | Industrial Ruins | kid | 18% / 2.12 | 15% / 2.37 | same | same |
 | Night Run | competent | 5% / 2.75 | 1% / 2.92 | same | same |
 | Night Run | kid | 1% / 2.70 | 0% / 2.90 | same | same |
+
+## Pass 3 (after the car-contact fix and the per-track retune)
+
+Same playtester agent as passes 1-2, so again not a fresh first-time-comprehension check. Emulator roleplay only; no
+real child and no board. `games/racing/` source was not read.
+
+- Build: `claude/rally-pro-obstacles` at `94a58e5`, `build/host/snap` sha256
+  `34a6f3804645ef3f62792b8172c84d4a33f5a39f4f02a38faf17ad0308ec154a`, frozen as `build/pro3/snapf` for every run.
+- Brief (as received): (1) the pass-2 repro (fresh fixture, Desert level 0, Go, `drive 60 ZX 0 smooth 1 0`: any bump
+  with visible road between cars? the grid side-bump at t~11009); (2) natural races on Auto from fresh profiles: Sam 6
+  (imprecise) Desert and Snow, Zoe 10 Industrial and Night, two each: fair and not crushing for Sam now that rivals
+  start stronger on Desert, challenging for Zoe; (3) the Rivals chip: Sam on Easy on Desert once (still winnable?),
+  Zoe on Hard on Desert once; (4) top levels via fixture: Desert 12, Night 13.
+- Driver: `drv2.py` unchanged; Sam = see-anything dodge reacting late (`SEEN=2 SEEY=290 SEEW=60`, gain 0.8, 6 degrees
+  of noise), Zoe = `SEEN=2 SEEY=260 SEEW=60`, gain 1, no noise; both tap Boost/Rocket like a kid. Menu taps chosen from
+  rendered frames, as in pass 2, plus the chip (101,130) and Tracks (108,111) on the results page. To inspect a bump
+  frame by frame, the session was replayed to just before it and the recorded steering re-sent in 33 ms steps with a
+  frame after each (exact trajectory). Traces (JSON) under `build/pro3/`, uncommitted; frames deleted for disk.
+- Unsuccessful attempt, kept for the record: the first Snow (Sam) and Night (Zoe) races ran in the same driver process
+  as the previous track, so the helper steered with the previous track's road colour, drove off-road at 50 mph and
+  finished 4th in 2:38.8 / 3:06.4. A driver artifact (`drv2.py` learns the road colour once per process), not the game;
+  both were rerun from the grip page in a fresh process (SS1/ZN1 below).
+- Levels: read with `debug` from a raw-script replay only where no race had run yet (script-mode replay of a race
+  diverges from `--serve`, so the post-race Auto levels are **not verified**). `dbg level 12/13` was confirmed
+  (`race_level=12`, `13`).
+
+| # | Who | Track | Rivals | Place | Time | Speed-loss events (HUD red) |
+| --- | --- | --- | --- | --- | --- | --- |
+| R | hands centred | Desert | Auto, level 0 | - | 60 s | 9: three side/corner bumps with blue in lap 1, then six rear-ends on yellow every ~5 s. All at contact (`08`) |
+| SD1 | Sam | Desert | Auto, level 0 | 2nd | 1:33.4 | 10: rivals 7 (corner touches), mud 3 |
+| SD2 | Sam | Desert | Auto | 2nd | 1:34.8 | 22: about 19 corner bumps on yellow every ~4 s in laps 2-3, mud, one after his own rocket slowed green |
+| SS1 | Sam | Snow | Auto, level 0 | **1st** | 1:55.0 | 5 |
+| SS2 | Sam | Snow | Auto | 3rd | 1:59.1 | 21: yellow corner bumps, ice |
+| ZI1 | Zoe | Industrial | Auto, level 0 | 3rd | 1:50.4 | 11: oil 4, rivals, kerb |
+| ZI2 | Zoe | Industrial | Auto | 3rd | 1:50.2 | 13 |
+| ZN1 | Zoe | Night | Auto, level 0 | 3rd | 1:49.5 | 21: puddles, left-kerb scrapes, rivals |
+| ZN2 | Zoe | Night | Auto | 3rd | 1:51.1 | 15 |
+| SE | Sam | Desert | **Easy** | **1st** | 1:30.7 | 0; alone in front from lap 1 |
+| ZH | Zoe | Desert | **Hard** (level 2) | 3rd | 1:33.3 | 4 |
+| TD | Zoe | Desert | `dbg level 12` | 4th | 1:36.8 | 16: one Pro rock (overlapping), rivals, mud, kerb. Next level 9 |
+| TN | Zoe | Night | `dbg level 13` | 4th | 1:51.1 | 18: one Pro barrier (overlapping), puddles, rivals, kerb |
+
+### Pass-3 findings
+
+1. **Minor. The first tap on Rally's track page, right after opening Rally from the launcher, is often ignored.**
+   (Screen: `race_tracks`. Concern: feedback, input.) From Sam's session (picker, launcher arrow, Rally tile, 1.5 s),
+   one tap on Industrial (106,55), Snow (52,104), Night (106,104), Home (40,130) or the Rivals chip (101,130) changes
+   nothing, not even a pixel; the second tap works. A tap on Desert (52,55/52,60/70,55) works first time. In Zoe's
+   session Industrial worked first time but the chip did not. After Back from a card, or Tracks from the results page,
+   the first tap works. The chip is where Sam would notice: he taps "Rivals Auto", nothing happens, and he may decide
+   it is not a button. Repro: `--serve`, fixture, `down 80 81`/`tick 66`/`up`, `tick 600`, the same at (96,135) and
+   (80,104), `tick 1500`, then `down 106 104`, `tick 66`, `up`, `tick 700`: still `race_tracks`, frame identical
+   (`drv2.py` session `build/pro3/samD.json` cut at t=2898). A raw `--script` run with `tap` does **not** reproduce
+   it. **Not caused by this branch:** the same replay on `origin/main` `7dc6812` (this branch's base, built from
+   `git archive` in the session scratch, run once, deleted) ignores the first tap on Night, Industrial, Snow, Home and
+   the chip too; on the older `7c23bbf` (before the Rivals chip) all four cards work first time. So it arrived on main
+   between those two commits and needs its own owner. Not checked on the board. Screenshot: `09-pass3-track-page-first-tap-ignored.png` (Night tapped once, chip tapped once).
+2. **Nit (observation). A kid who drives on a rival's rear corner is bumped every 4-5 s.** (Concern: pacing.) SD2 and
+   SS2 each had about 15-19 bumps on yellow in laps 2-3. Each one is a real touch now: at 33 ms the corners meet or sit
+   within about 8 physical px (under 3 logical) as the bump fires, the pass-2 graze tolerance (Nit P2-3). Much of the
+   repetition is the helper (its dodge parks the car just far enough over to clip yellow's corner), and Sam still
+   finished 2nd. Because the bump now looks like a bump, he can learn to go round. No change asked. Screenshot:
+   `08-pass3-rival-bump-at-contact.png` (lower row: yellow on the roof line, two 33 ms frames before and the frame of the
+   bump).
+
+Not findings (checked): no bump with clear road between the cars in any race or probe (about 70 rival bumps
+from seven races looked at as before/after pairs, four at 33 ms). The start-grid side bump is gone: in the repro the first bump is
+13 s after Go (about 10 s after the start lights), and none fired at the grid in any race. Pro rock (Desert 12) and Pro barrier (Night 13) hits fire
+only with the hazard overlapping the car (`10`). Chip cycle Auto, Easy, Normal, Hard, Auto, and the pick shows on the
+card page.
+
+### Pass-2 findings, status
+
+| Pass-2 finding | Status in pass 3 |
+| --- | --- |
+| 1 Major: a rival bumps with road visible between the cars | **Fixed.** The repro's nine bumps, and every rival bump inspected (SD1, SD2, SS2, ZI1, ZN1, TD, TN), fire at contact (`08`: blue at the kid's front corner, yellow on the kid's roof line, two 33 ms frames before the bump and the bump frame). The grid side-bump at t~11009 no longer happens. |
+| 2 Minor: Pro on Industrial adds little | Not retested (Industrial's top was not in this brief). |
+| 3 Nit: grazes within about 4 logical px | Unchanged and the same for car corners (finding 2 above). |
+
+### Qualitative (pass 3)
+
+- **Sam, 6, Auto.** Desert from a fresh profile: 2nd and 2nd with "Your best yet!" on the first; Snow: 1st, then
+  3rd. Stronger Desert rivals are not crushing: with the gap-bump gone he is close to the front. The slowdowns he gets
+  are ones he can see (a car he touched, mud, ice). The point he would stop is SD2/SS2's long spell stuck behind
+  yellow; he would say "the yellow car keeps blocking me", but it now visibly is his car hitting it.
+- **Sam on Easy.** Winnable, very: 1st by 1:30.7, alone in front from the first lap with no bumps. For a 6-year-old
+  who wants to win that is the point of Easy; it is a lonely race, which he may find less exciting after a couple.
+- **Zoe, 10, Auto.** Industrial 3rd, 3rd; Night 3rd, 3rd. Not a walk in the park: she has to pass three cars and
+  dodge oil, puddles and kerbs. The helper is worse than a good 10-year-old (it eats every oil patch and scrapes kerbs
+  on long bends), so a real Zoe would place higher, which matches the bot sweep's ~60% Auto wins. On Hard (Desert, 3rd
+  1:33.3) she has a real race.
+- **Top levels (supplementary).** Desert 12 and Night 13: 4th both, with a fair hazard each (visible, hits only on
+  overlap). A loss drops Desert 12 to 9.
+- **Goal, actions, feedback.** Unchanged screens: pick a track picture, How to race (pictures plus four short
+  lines), the wheel test, race, results with place and "Your best yet!". A 6-year-old can act from the pictures; the
+  Rivals chip is the one control that needs reading ("Rivals Auto"), and its ignored first tap (finding 1) makes it
+  look dead. Every speed loss inspected has a visible cause at the moment it fires (a car touched, mud, ice, oil,
+  puddle, kerb, a Pro rock or barrier), and the HUD speed turns red, so both kids can tell what happened.
+- **Where they would stop.** Sam: during SD2/SS2's spell behind yellow, or after SS2's 3rd following SS1's win
+  ("I won and now I'm 3rd"); the results page with Replay/Tracks/Home is a natural stopping point. Zoe: four 3rds in a
+  row at Industrial and Night (within 1.6 s of each other) would make her switch track or try Hard; she would not quit
+  for unfairness, since every slowdown has a cause.
+- **Recovery.** A bump or a hazard costs about 30 mph and two seconds; nothing is lost; a missed menu tap needs a
+  second tap (finding 1); Back exists on every pre-race page.
+
+### Gesture and interruption matrix (pass 3)
+
+| Case | This pass |
+| --- | --- |
+| Picker, launcher arrow, Rally tile, cards, Next/Go, Replay, Tracks, Back from a card | Acted; first tap on the track page often ignored (finding 1) |
+| Rivals chip | Cycles on each tap after the first; the choice holds into the race |
+| Pause hold, Home mid-race, rest screen, reboot mid-race, drag off a button | **Gap** (not in this brief; passes 1-4 of `../adaptive-playtest/` cover them on older builds) |
+
+### Automated (pass 3)
+
+`make -C apps/porthole playtest` at `94a58e5`: 84 of 84 scenarios pass, 0 UI FAIL, 0 UI WARN (monkeys under the
+sanitizers included). No scenario added: finding 1 does not reproduce in the raw script language the scenarios use.
+
+### Limitations (pass 3)
+
+- The helper is not a child: it parks on a rival's corner, eats oil and scrapes kerbs. Places are direction only.
+- Post-race Auto levels were not read (only starting levels and the `dbg` ones), so whether Auto rose after SS1's win
+  is not shown.
+- TN (Night 13, 4th) and ZN2 (Night Auto, 3rd) both finished in 1:51.1 (+1.6) with different rivals and hit counts.
+  Both results pages were read from separate runs; the coincidence was not chased.
+- Only one race each on Easy and Hard; no board; every top-level race is `dbg level` (supplementary).
+
+### Verdict (pass 3)
+
+**Ready.** Pass-2's Major (rival bumps with road between the cars) is fixed: every bump seen is a touch, the grid
+side-bump is gone, and Pro hazards still hit only where drawn. The retune reads fair: Sam is near the front on Desert
+and Snow, Easy is a sure win, Zoe has to work for every place on Auto and Hard. Finding 1 (an ignored first tap on the
+track page) is Minor, already on `origin/main` before this branch, and needs its own fix; it does not block this
+change.
