@@ -124,6 +124,8 @@ class Shell {
   void toast(const char* s);
   void drawSysToast();
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
+  void typeDigit(char d) { pin_[pinLen_++] = d; pin_[pinLen_] = 0; pinMs_ = ms_; }
+  char kidKey() const; char adminDigit() const; bool adminKeysHeld();   // the key released this frame ('1'..), or 0
   // flow
   void startNew();
   void choose(int id, bool del);

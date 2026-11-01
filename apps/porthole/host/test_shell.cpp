@@ -932,6 +932,22 @@ static void padQuickAndSlowKeys() {
   at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
   frame(sh, ms, Input{}); assert(on(sh, "launcher"));
 }
+// A grown-up typing the repeat straight away: the key pressed while the fourth dot still shows is the repeat's first.
+static void adminRepeatRightAway() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, CODE_SET); assert(on(sh, "sys_pin_set"));
+  auto quick = [&](const char* code) {   // 100 ms apart
+    for (; *code; code++) {
+      const int k = *code == '0' ? 9 : *code - '1';
+      const ui::Box b = k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19};
+      Input in{}; in.pressed = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+      ms += 100; sh.update(NOW, ms, in); sh.render();
+    }
+  };
+  quick("1470"); quick("1470"); frame(sh, ms, Input{});
+  assert(on(sh, "sys_admin") && storedAdmin(st) == 1471);
+}
 // The admin keypad: the same waits, its own lock; changing the code clears it.
 static void adminCodeLockout() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1180,6 +1196,7 @@ int main() {
   pinWaits();
   kidCodeLockout();
   padQuickAndSlowKeys();
+  adminRepeatRightAway();
   adminCodeLockout();
   adminGatesProfiles();
   adminChangesAndReset();

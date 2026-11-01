@@ -220,14 +220,22 @@ static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::
 static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
 void Shell::updateSysPin() {
   if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
-  if (pinLen_ == 4) { if (ms_ - pinMs_ >= 400) submitSysPin(); return; }
-  if (ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK))) return;   // pinWait: too many wrong tries (pinlock.h)
-  if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
-  for (int k = 0; k < 10; k++) {
-    if (!ui::clicked(in_, adminKey(k))) continue;   // on release, however long the press
-    pin_[pinLen_++] = k == 9 ? '0' : (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+  if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
+    const char next = adminDigit();
+    if (!next && ms_ - pinMs_ < 400) return;
+    submitSysPin();
+    if (next && screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN && !adminKeysHeld()) typeDigit(next);
     return;
   }
+  if (adminKeysHeld()) return;
+  if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
+  if (const char d = adminDigit()) typeDigit(d);
+}
+// A wrong code's shake, or too many wrong tries (pinlock.h), holds the keys.
+bool Shell::adminKeysHeld() { return ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
+char Shell::adminDigit() const {   // on release, however long the press
+  for (int k = 0; k < 10; k++) if (ui::clicked(in_, adminKey(k))) return k == 9 ? '0' : (char)('1' + k);
+  return 0;
 }
 void Shell::submitSysPin() {
   const uint16_t code = pinCode(pin_); resetPin();

@@ -297,7 +297,13 @@ static ui::Box pinKey(int k) { return {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36,
 static const ui::Box PIN_SKIP = {60, 134, 40, 22};
 void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
-  if (pinLen_ == 4) { if (ms_ - pinMs_ >= PIN_SHOW_MS) submitPin(); return; }
+  if (pinLen_ == 4) {   // a key pressed while the fourth digit shows is already the next screen's first: never lost
+    const char next = kidKey();
+    if (!next && ms_ - pinMs_ < PIN_SHOW_MS) return;
+    submitPin();
+    if (next && screen_ >= SH_PIN_SET && screen_ <= SH_PIN && !kidKeysHidden()) typeDigit(next);
+    return;
+  }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
   if (kidKeysHidden()) {   // too many wrong tries: the keys come back once the wait is over and the finger rests
     if (in_.down) pinCalmUntil_ = ms_ + PIN_CALM_MS;   // a kid tapping the hourglass never types into the keys' return
@@ -305,12 +311,11 @@ void Shell::updatePin() {
     return;
   }
   if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
-  for (int k = 0; k < 9; k++) {
-    ui::Box b = pinKey(k);
-    if (!ui::clicked(in_, b)) continue;   // on release, however long: a slow, deliberate press counts too
-    pin_[pinLen_++] = (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
-    return;
-  }
+  if (const char d = kidKey()) typeDigit(d);
+}
+char Shell::kidKey() const {   // on release, however long: a slow, deliberate press counts too
+  for (int k = 0; k < 9; k++) if (ui::clicked(in_, pinKey(k))) return (char)('1' + k);
+  return 0;
 }
 // A failed write keeps the strikes in RAM until a reboot.
 void Shell::pinStrike(int lock) { shell::pinWrong(locks_.lock[lock], now_, lockCode(lock)); shell::savePinLocks(*st_, locks_); }
