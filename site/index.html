@@ -134,6 +134,15 @@
       .stage { height: 320px; }
       .photos { gap: 6px; }
     }
+    /* Any picture opens bigger in a dialog on click. */
+    .zoomable { cursor: zoom-in; }
+    dialog.zoom { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; }
+    dialog.zoom::backdrop { background: rgb(18 16 22 / 0.88); }
+    dialog.zoom[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: zoom-out; }
+    dialog.zoom img { width: min(94vw, 960px); height: auto; max-height: 80vh; object-fit: contain; }
+    dialog.zoom p { margin: 0; padding: 0 16px; max-width: 760px; text-align: center; color: #f1ebf5; font-size: 15px; }
+    dialog.zoom button { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border: 0; border-radius: 50%;
+      background: rgb(255 255 255 / 0.14); color: #fff; font: 28px/1 system-ui, sans-serif; cursor: pointer; }
   </style>
   <script type="importmap">
     { "imports": {
@@ -327,6 +336,12 @@
   <div class="wrap"><span lang="en">Made by Dmytro Gaivoronsky:</span><span lang="uk">Зробив Дмитро Гайворонський:</span> <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a> &middot; <a href="https://github.com/dreamiurg/porthole"><span lang="en">Source on GitHub</span><span lang="uk">Код на GitHub</span></a> &middot; <span lang="en">Font: Nunito (SIL Open Font License).</span><span lang="uk">Шрифт: Nunito (SIL Open Font License).</span></div>
 </footer>
 
+<dialog class="zoom" id="zoom" aria-label="Picture">
+  <button type="button" aria-label="Close">&times;</button>
+  <img alt="">
+  <p></p>
+</dialog>
+
 <script>
   const TITLES = { en: document.title, uk: "porthole: ігри для круглого сенсорного екрана" };
   function setLang(lang, remember) {
@@ -356,6 +371,17 @@
     entries.forEach((e) => { if (e.isIntersecting) links.forEach((a, id) => a.classList.toggle("on", id === e.target.id)); });
   }, { rootMargin: "-20% 0px -70% 0px" });
   document.querySelectorAll("main section").forEach((s) => seen.observe(s));
+  // Click or Enter on a picture opens it bigger. A click anywhere, Esc or the button closes it.
+  const zoom = document.getElementById("zoom"), zoomImg = zoom.querySelector("img"), zoomText = zoom.querySelector("p");
+  document.querySelectorAll(".shot img, main img").forEach((img) => {
+    img.classList.add("zoomable");
+    img.tabIndex = 0;
+    img.setAttribute("role", "button");
+    const open = () => { zoomImg.src = img.currentSrc || img.src; zoomImg.alt = img.alt; zoomText.textContent = img.alt; zoom.showModal(); };
+    img.addEventListener("click", open);
+    img.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+  });
+  zoom.addEventListener("click", () => zoom.close());
 </script>
 <script type="module">
   // The case viewer loads three.js and the STLs only when the case section comes near.
