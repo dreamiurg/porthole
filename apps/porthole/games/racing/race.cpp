@@ -274,14 +274,14 @@ void ladder(Car& c, int i, int level, int rung, float floor) {
 // tune.h: the three colors shuffled over the parts, then each rival's form, bend line, wobble and care for the day.
 float unit(uint32_t& s) { return (float)(rnd(s) % 1001) / 1000; }   // 0..1
 void rivals(Race& r) {
-  uint8_t paint[CARS - 1] = {1, 2, 3};
+  uint8_t colors[CARS - 1] = {1, 2, 3};
   for (int k = CARS - 2; k > 0; k--) {
     const int j = (int)(rnd(r.seed) % (uint32_t)(k + 1));
-    const uint8_t t = paint[k]; paint[k] = paint[j]; paint[j] = t;
+    const uint8_t t = colors[k]; colors[k] = colors[j]; colors[j] = t;
   }
   for (int i = 1; i < CARS; i++) {
     Car& c = r.car[i];
-    c.paint = paint[i - 1];
+    c.paint = colors[i - 1];
     c.top = fminf(RIVAL_CAP[i - 1], RIVAL_TOP[i - 1] + (unit(r.seed) * 2 - 1) * RIVAL_FORM);
     c.cut = RIVAL_CUT_MIN + (RIVAL_CUT_MAX - RIVAL_CUT_MIN) * unit(r.seed);
     c.wobbleOdds = (uint8_t)(RIVAL_WOBBLE_MIN + rnd(r.seed) % (RIVAL_WOBBLE_MAX - RIVAL_WOBBLE_MIN + 1));

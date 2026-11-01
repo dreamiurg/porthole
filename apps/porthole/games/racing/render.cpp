@@ -510,7 +510,7 @@ void boardRows(const View& v, int y) {
     clock(t, sizeof t, v.board[i].raceMs);
     if (v.board[i].lapMs) lapTime(lap, sizeof lap, v.board[i].lapMs);
     else snprintf(lap, sizeof lap, "-");
-    snprintf(line, sizeof line, "%d %.11s %s  lap %s", i + 1, v.board[i].name, t, lap);
+    snprintf(line, sizeof line, "%d %.8s %s  lap %s", i + 1, v.board[i].name, t, lap);
     centered(240, y + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
   }
 }
