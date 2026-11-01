@@ -96,6 +96,7 @@ class Shell {
   shell::Record draft_{};                          // the profile being created
   char name_[12] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0, pinMs_ = 0;   // pinMs_: the last digit
+  uint32_t pinCalmUntil_ = 0, pinNudgeUntil_ = 0;   // the kids' wait: keys hidden until the finger rests; a tap wiggles it
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
@@ -137,7 +138,11 @@ class Shell {
   void submitPin();
   // A lock is a profile id or shell::ADMIN_LOCK (pinlock.h); its strikes count against the code it has now.
   uint16_t lockCode(int lock) const { return lock == shell::ADMIN_LOCK ? adminPin_ : prof_.rec[lock].pin; }
-  uint32_t pinWait(int lock) const { return shell::pinWaitLeft(locks_.lock[lock], now_, lockCode(lock)); }
+  // Settles in RAM, so a clock set back counts down from now instead of showing the full wait every frame.
+  uint32_t pinWait(int lock) {
+    shell::pinSettle(locks_.lock[lock], now_, lockCode(lock));
+    return shell::pinWaitLeft(locks_.lock[lock], now_, lockCode(lock));
+  }
   void pinStrike(int lock);   // a wrong code; saved
   void pinClear(int lock);    // the right code; saved only if there were strikes
   // screens
@@ -145,6 +150,7 @@ class Shell {
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();
+  bool kidKeysHidden();
   void updatePin(); void drawPin(); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);

@@ -60,6 +60,34 @@ tap 41 62
 tap 41 62
 wait 900
 expect-screen launcher
+# a kid tapping the hourglass (over where key 5 was) right through the end of the wait types nothing: the keys come
+# back only once the finger rests, so the wait never grows by itself
+tap 80 32
+wait 450
+tap 80 67
+wait 450
+repeat 4
+tap 80 62
+tap 80 62
+tap 80 62
+tap 80 62
+wait 1400
+end
+expect pin_wait>=1
+repeat 12
+tap 80 80
+wait 620
+end
+snap 04_mash_nudge
+wait 1200
+expect pin_wait=0
+snap 05_keys_after_mash
+tap 41 62
+tap 41 62
+tap 41 62
+tap 41 62
+wait 900
+expect-screen launcher
 # the admin code: four wrong tries, then the grown-ups' keypad waits too
 # set an admin code 1234 through the menu, then come back as a guesser
 tap 80 32
@@ -104,7 +132,7 @@ tap 79 128
 wait 1400
 end
 expect admin_wait>=2
-snap 04_admin_wait
+snap 06_admin_wait
 ui-check sys_pin-wait
 skip 5
 wait 450

@@ -873,6 +873,8 @@ static void pinWaits() {
   assert(shell::pinWaitLeft(l, NOW, c) == 5 && shell::pinWaitLeft(l, NOW + 4, c) == 1 && !shell::pinWaitLeft(l, NOW + 5, c));
   for (int i = 0; i < 20; i++) shell::pinWrong(l, NOW, c);
   assert(shell::pinWaitLeft(l, NOW, c) == 60 && shell::pinWaitLeft(l, NOW - 86400, c) == 60);   // clock set back a day
+  shell::PinLock back = l; shell::pinSettle(back, NOW - 86400, c);   // the shell settles each frame: it counts down from there
+  assert(shell::pinWaitLeft(back, NOW - 86400 + 30, c) == 30 && !shell::pinWaitLeft(back, NOW - 86400 + 60, c));
   assert(!shell::pinWaitLeft(l, NOW, 4322));   // a grown-up changed (or removed) the code: the guessing is moot
   assert(!shell::pinWaitLeft(l, NOW + shell::PIN_FORGET_SEC, c));
   shell::pinWrong(l, NOW + shell::PIN_FORGET_SEC, c); assert(l.strikes == 1);   // forgotten: a fresh first strike
