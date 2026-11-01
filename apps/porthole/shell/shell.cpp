@@ -18,6 +18,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
   uint8_t sound = 1; sound_ = st.load("sys", "sound", &sound, 1) != 1 || sound != 0;
   if (adminPin_ > 10000) adminPin_ = 0;
+  locks_ = shell::loadPinLocks(st);
   if (sys_) sys_->info(info_);
   if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
@@ -296,6 +297,7 @@ void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
   if (pinLen_ == 4) { if (ms_ - pinMs_ >= PIN_SHOW_MS) submitPin(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
+  if (screen_ == SH_PIN && pinWait(target_)) return;   // too many wrong tries: the keys come back when the wait is over
   if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
   for (int k = 0; k < 9; k++) {
     ui::Box b = pinKey(k);
@@ -304,26 +306,46 @@ void Shell::updatePin() {
     return;
   }
 }
+// A failed write keeps the strikes in RAM until a reboot.
+void Shell::pinStrike(int lock) { shell::pinWrong(locks_.lock[lock], now_, lockCode(lock)); shell::savePinLocks(*st_, locks_); }
+void Shell::pinClear(int lock) {
+  if (!locks_.lock[lock].strikes) return;   // the usual right code: no write
+  locks_.lock[lock] = shell::PinLock{};
+  shell::savePinLocks(*st_, locks_);
+}
 void Shell::submitPin() {
   uint16_t code = shell::pinCode(pin_);
   resetPin();
   if (screen_ == SH_PIN_SET) { firstPin_ = code; go(SH_PIN_AGAIN); }
   else if (screen_ == SH_PIN_AGAIN && code == firstPin_) finishCreate(code);
   else if (screen_ == SH_PIN_AGAIN) { go(SH_PIN_SET); toast("Not the same!"); }
-  else if (code == prof_.rec[target_].pin) authorized();
-  else { pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
+  else if (code == prof_.rec[target_].pin) { pinClear(target_); authorized(); }
+  else { pinStrike(target_); pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
 }
 void Shell::drawPin() {
   clear(C_WALL);
+  const uint32_t wait = screen_ == SH_PIN ? pinWait(target_) : 0;
   char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
   if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
+  else if (screen_ == SH_PIN && wait) snprintf(prompt, sizeof prompt, "Wait a little");
   else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
   textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
   drawPinDigits();
+  if (wait) { drawPinWait(wait); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
+}
+// While a wait runs, the keys give way to its seconds counting down in a big round clock, and a bar under it that
+// empties: a kid who cannot read the number yet still sees the wait end. Nothing to tap but back.
+void Shell::drawPinWait(uint32_t wait) {
+  const uint32_t of = shell::pinWaitFor(locks_.lock[target_].strikes);
+  circle(80, 88, 30, C_CREAM); ring(80, 88, 30, C_DKBROWN);
+  char n[4]; snprintf(n, sizeof n, "%u", (unsigned)wait);
+  textCentered(80, 76, n, C_DKBROWN, 3);
+  const int w = (int)(80 * wait / of);
+  rect(40, 124, 80, 6, C_DKBROWN); rect(41, 125, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
 void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
   bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
@@ -527,6 +549,8 @@ void Shell::debugPrint() {
          (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
   printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
   printf("[hours window_on=%u window_start=%u window_end=%u allow_min=%lu]\n", (unsigned)window_.enabled, (unsigned)window_.startMinute, (unsigned)window_.endMinute, (unsigned long)allowance_.minutesLeft(ms_));
+  printf("[codes pin_wait=%lu admin_wait=%lu]\n", (unsigned long)(target_ >= 0 ? pinWait(target_) : 0),
+         (unsigned long)pinWait(shell::ADMIN_LOCK));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {

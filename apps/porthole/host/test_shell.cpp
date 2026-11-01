@@ -689,7 +689,8 @@ static void bootWithoutHours(Shell& sh, shell::Store& st, App* const* apps, int 
   auto window = shell::loadPlayWindow(st); window.enabled = 0;
   assert(shell::savePlayWindow(st, window)); sh.begin(st, apps, n, sys);
 }
-static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(NOW, ms, in); sh.render(); }   // past FreshGate
+static uint32_t testNow = NOW;   // the wall clock frame() hands the shell; tests that move it put it back
+static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(testNow, ms, in); sh.render(); }   // past FreshGate
 static void tapAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // the middle of b
   Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
   frame(sh, ms, in);
@@ -854,6 +855,71 @@ static void typeAdminCode(Shell& sh, uint32_t& ms, const char* code) {
 }
 static uint16_t storedAdmin(MemStore& st) {
   uint16_t code = 0; st.load("sys", "admin", &code, sizeof code); return code;
+}
+static uint8_t storedStrikes(MemStore& st, int lock) { return shell::loadPinLocks(st).lock[lock].strikes; }
+static void typeKidCode(Shell& sh, uint32_t& ms, const char* code) {   // the kids' nine keys, 1-9
+  for (; *code; code++) { const int k = *code - '1'; tapAt(sh, ms, {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}); }
+  frame(sh, ms, Input{});   // automatic submit after 400 ms
+}
+// The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
+// back never makes a wait longer than the cap, and strikes against one code never slow a new one.
+static void pinWaits() {
+  const uint32_t want[] = {0, 0, 0, 0, 5, 10, 20, 40, 60, 60};
+  for (uint8_t n = 0; n < 10; n++) assert(shell::pinWaitFor(n) == want[n]);
+  assert(shell::pinWaitFor(255) == shell::PIN_MAX_WAIT);
+  const uint16_t c = 1235;
+  shell::PinLock l{};
+  for (int i = 0; i < 4; i++) shell::pinWrong(l, NOW, c);
+  assert(shell::pinWaitLeft(l, NOW, c) == 5 && shell::pinWaitLeft(l, NOW + 4, c) == 1 && !shell::pinWaitLeft(l, NOW + 5, c));
+  for (int i = 0; i < 20; i++) shell::pinWrong(l, NOW, c);
+  assert(shell::pinWaitLeft(l, NOW, c) == 60 && shell::pinWaitLeft(l, NOW - 86400, c) == 60);   // clock set back a day
+  assert(!shell::pinWaitLeft(l, NOW, 4322));   // a grown-up changed (or removed) the code: the guessing is moot
+  assert(!shell::pinWaitLeft(l, NOW + shell::PIN_FORGET_SEC, c));
+  shell::pinWrong(l, NOW + shell::PIN_FORGET_SEC, c); assert(l.strikes == 1);   // forgotten: a fresh first strike
+  shell::pinWrong(l, NOW, 4322); assert(l.strikes == 1 && l.code == 4322);        // a new code starts its own count
+  for (int i = 0; i < 255 + 5; i++) shell::pinWrong(l, NOW, c);
+  assert(l.strikes == 255 && shell::pinWaitLeft(l, NOW, c) == 60);   // never wraps back to free tries
+}
+// Guessing a kid's code: the fourth wrong try hides the keys for 5 s. Back and a reboot do not skip the wait, the
+// keys come back when it ends, the right code then clears the strikes, and the admin code keeps its own count.
+static void kidCodeLockout() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  const ui::Box SAM = {24, 42, 112, 24};
+  bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, SAM); assert(on(sh, "pin"));
+  for (int i = 0; i < 3; i++) { typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{}); }
+  assert(on(sh, "pin") && storedStrikes(st, 0) == 3);
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "launcher") && !storedStrikes(st, 0));   // three slips are free
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, SAM);
+  for (int i = 0; i < 4; i++) { typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{}); }
+  assert(storedStrikes(st, 0) == 4);
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "pin"));   // keys hidden: nothing typed
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker")); tapAt(sh, ms, SAM); typeKidCode(sh, ms, "1111"); assert(on(sh, "pin"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, SAM); typeKidCode(sh, ms, "1111"); assert(on(sh, "pin"));
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_HOME);   // the admin code is not slowed by Sam's strikes
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_info"));
+  bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, SAM);
+  testNow = NOW + 5; typeKidCode(sh, ms, "1111"); assert(on(sh, "launcher") && !storedStrikes(st, 0));
+  testNow = NOW;
+}
+// The admin keypad: the same waits, its own lock; changing the code clears it.
+static void adminCodeLockout() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "");
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_pin"));
+  for (int i = 0; i < 8; i++) { testNow = NOW + i * 60u; typeAdminCode(sh, ms, "9999"); frame(sh, ms, Input{}); }
+  assert(storedStrikes(st, shell::ADMIN_LOCK) == 8);
+  testNow = NOW + 7 * 60 + 59; typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_pin"));   // 60 s, not yet over
+  testNow = NOW + 8 * 60; typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_info") && !storedStrikes(st, shell::ADMIN_LOCK));
+  tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); holdTitle(sh, ms, 5000);
+  for (int i = 0; i < 5; i++) { typeAdminCode(sh, ms, "9999"); frame(sh, ms, Input{}); }   // 5 s wait after the 4th
+  assert(storedStrikes(st, shell::ADMIN_LOCK) == 4);
+  testNow += 5; typeAdminCode(sh, ms, "1234"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, CODE_SET);
+  assert(on(sh, "sys_pin_set")); typeAdminCode(sh, ms, "4321"); frame(sh, ms, Input{});   // setting a code is not throttled
+  typeAdminCode(sh, ms, "4321"); assert(on(sh, "sys_admin") && storedAdmin(st) == 4322);
+  testNow = NOW;
 }
 // Independent from profile codes, optional on existing devices; mismatches/cancel never install a code. Reboot and
 // leaving the menu both require the code again. Leading zeroes work, and a profile's code cannot unlock the menu.
@@ -1086,6 +1152,9 @@ int main() {
   resetSelectedPlayerPin();
   resetLimitsRetry();
   adminAccess();
+  pinWaits();
+  kidCodeLockout();
+  adminCodeLockout();
   adminGatesProfiles();
   adminChangesAndReset();
   resetAllLimits();

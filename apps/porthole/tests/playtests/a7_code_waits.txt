@@ -1,0 +1,117 @@
+# Guessing a code: three wrong tries are free, the fourth hides the keys behind a 5 s countdown (back still works,
+# and leaving or a reboot does not skip it), the keys come back when it ends and the right code clears the strikes.
+# The admin code keeps its own count, with the same waits on the grown-ups' keypad.
+reset
+profile Sam 8 1111
+wait 450
+tap 80 32
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen pin
+repeat 3
+tap 80 62
+tap 80 62
+tap 80 62
+tap 80 62
+wait 1400
+end
+expect-screen pin
+expect pin_wait=0
+tap 80 62
+tap 80 62
+tap 80 62
+tap 80 62
+wait 900
+snap 01_wrong_toast
+wait 900
+expect-screen pin
+expect pin_wait>=2
+ui-check pin-wait
+# the keys are gone: typing the right code does nothing
+tap 41 62
+tap 41 62
+tap 41 62
+tap 41 62
+wait 450
+expect-screen pin
+# back, then in again: still waiting; a reboot too
+tap 80 12
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect pin_wait>=1
+reboot
+wait 450
+tap 80 67
+wait 450
+expect-screen pin
+expect pin_wait>=1
+snap 02_kid_wait
+skip 5
+wait 450
+expect pin_wait=0
+snap 03_keys_back
+tap 41 62
+tap 41 62
+tap 41 62
+tap 41 62
+wait 900
+expect-screen launcher
+# the admin code: four wrong tries, then the grown-ups' keypad waits too
+# set an admin code 1234 through the menu, then come back as a guesser
+tap 80 32
+wait 450
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 80 70
+wait 450
+expect-screen sys_pin_set
+tap 49 63
+tap 79 63
+tap 109 63
+tap 49 84
+wait 900
+tap 49 63
+tap 79 63
+tap 109 63
+tap 49 84
+wait 900
+expect-screen sys_admin
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_pin
+repeat 4
+tap 79 128
+tap 79 128
+tap 79 128
+tap 79 128
+wait 1400
+end
+expect admin_wait>=2
+snap 04_admin_wait
+ui-check sys_pin-wait
+skip 5
+wait 450
+tap 49 63
+tap 79 63
+tap 109 63
+tap 49 84
+wait 900
+expect-screen sys_info
+sheet waits

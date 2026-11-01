@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "pinlock.h"
 #include "profiles.h"
 #include "system.h"
 #include "ui.h"
@@ -79,6 +80,7 @@ class Shell {
   int active_ = -1;                                // the profile on the launcher / in a game
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
+  shell::PinLocks locks_{};                        // wrong tries per code, "sys"/"pinlock" (pinlock.h)
   bool sound_ = true;                              // the buzzer, device-wide: "sys"/"sound" (one byte, 0 = off; missing = on)
   uint8_t adminPage_ = 0;
   Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
@@ -133,12 +135,17 @@ class Shell {
   void flushApp(bool allowed);
   void budgetTick();
   void submitPin();
+  // A lock is a profile id or shell::ADMIN_LOCK (pinlock.h); its strikes count against the code it has now.
+  uint16_t lockCode(int lock) const { return lock == shell::ADMIN_LOCK ? adminPin_ : prof_.rec[lock].pin; }
+  uint32_t pinWait(int lock) const { return shell::pinWaitLeft(locks_.lock[lock], now_, lockCode(lock)); }
+  void pinStrike(int lock);   // a wrong code; saved
+  void pinClear(int lock);    // the right code; saved only if there were strikes
   // screens
   void updatePick(); void drawPick();
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();
-  void updatePin(); void drawPin(); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
+  void updatePin(); void drawPin(); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
   void setLight(shell::Light l);
