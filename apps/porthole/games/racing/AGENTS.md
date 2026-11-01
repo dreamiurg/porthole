@@ -11,10 +11,10 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
   open, with Home and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
-  skips a setting, by design: it cycles). Easy races at level -8, Normal at `NORMAL_LEVEL` (by track, a level a
-  competent driver wins about half of: 9 on Desert Canyon, 2 on Snow Track, 0 on Industrial Ruins and Night Run;
-  since cars touch only where drawn, the brief's level-0 rivals on Desert and Snow lost 95% and 83% of races to it),
-  Hard at `HARD_LEVEL` (by track: a competent driver wins 22-48% there); a fixed setting never moves the
+  skips a setting, by design: it cycles). Easy races at level -8, Normal at level 0 on every track (each track's
+  `LEVEL_SHIFT` sets how strong that is: a competent driver wins 50-65%), Hard at `HARD_LEVEL` (by track: 2 on Desert
+  Canyon and Snow Track, 7 on Industrial Ruins, 4 on Night Run; a competent driver wins 35-40% there; Industrial's 7 is
+  a Pro level, since its 5 and 6 give 55% and 22%); a fixed setting never moves the
   adaptive levels. Times count the same in every setting. A finish in a fixed setting on a never-raced track still
   makes it raced, so its seeded level stays as it was and is no longer derived from the other tracks. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
   cards go straight to the grip page.
@@ -54,41 +54,42 @@ tracks, platform contract, and the two approved reference boards the look follow
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
 - In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
-  from -16 up to the track's top (21; 9 on Industrial Ruins, 13 on Night Run). A win adds one, two after a runaway
+  from -16 up to the track's top (12 on Desert Canyon, 9 on Industrial Ruins, 19 on Snow Track, 13 on Night Run:
+  `LEVEL_MAX` 21 less the track's `LEVEL_SHIFT`). A win adds one, two after a runaway
   (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; above that, while the
   level's rung (below) is 9 or less, straight to -2 (there rivals only boost to pass a kid who leads, so a kid stuck
   behind would get the same race again; at -2 they are slower); from a higher rung it takes three. So a losing streak
-  from the top goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0 on Industrial Ruins and 13,
-  10, 7, 4, 1, 0 on Night Run. A
-  competent driver settles at 58-80% wins (Night Run 58%, Industrial Ruins 65%, Snow Track 75%, Desert Canyon 80%,
-  in simulation). Only a finish counts;
+  from the top goes 12, 9, 6, 3, 0 on Desert Canyon; 9, 6, 3, 0 on Industrial Ruins; 19, 16, 13, 10, 7, -2 on Snow
+  Track; 13, 10, 7, 4, 1, 0 on Night Run. A competent driver settles at 57-65% wins (the staircase's last 40 races:
+  Night Run 57%, Desert Canyon 60%, Snow Track 62%, Industrial Ruins 65%). Only a finish counts;
   Restart, Tracks, Home or leaving never move it. A track never finished starts one level below the kid's highest
-  level elsewhere, inside 0..3 (a level, so on Industrial Ruins or Night Run it is a higher rung).
+  level elsewhere, inside 0..3 (a level, so a higher rung by the track's shift).
 - What a level does. Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (to
   0.87 of their pace on Desert Canyon at -16, 0.80 elsewhere: Desert's straights let a kid who never steers finish
   within 18%), and from -7 a rival with the kid close behind it (2 m at -7, up to 16 m) moves out of the kid's lane.
   Separately each level is a rung of a charge-and-pace ladder: rungs 1-9 each give one rival one Boost charge (the
   slower two first, three at most each, like the kid's); rungs 10-15 raise the slower two by 0.01 (rival 2 stops at
   0.99: level with the pace-setter they form a wall); rungs 16-18 let a rival take its three charges back at each lap
-  line, as the kid does from pickups. On Desert Canyon and Snow Track the rung is the level (none below 0), so level 0
-  is the brief's rivals. Industrial Ruins and Night Run hand a capable kid a long lead, so their rung is the level
-  plus 12 and 8 (`LEVEL_SHIFT`), the extra fading out by -8: there level 0 already has rival boosts, and a level just
-  below 0 has both slower rivals and boosts. A rival fires a charge only while the kid is 3-40 m ahead of it, never
+  line, as the kid does from pickups. A track's rung is its level plus its `LEVEL_SHIFT` (9 on Desert Canyon, 12 on
+  Industrial Ruins, 2 on Snow Track, 8 on Night Run), the extra fading out by -8: the track's base strength, so level
+  0 (Normal) is a race a competent driver wins about half of everywhere. Since cars touch only where drawn
+  (2026-10-31) Desert and Snow needed it too: their unshifted rivals lost 95% and 83% of races. A level just below 0
+  has both slower rivals and boosts. A rival fires a charge only while the kid is 3-40 m ahead of it, never
   within 2.5 s of another rival's boost, with the kid's 1.35 cap and 1.5 s, and shows cyan exhaust flames half as big
   again as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The
   ladder was ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure
   function of track, seed, level and inputs.
-- Pro: rungs 19-21, the top three levels of each track (19-21 on Desert Canyon and Snow Track, 7-9 on Industrial
-  Ruins, 11-13 on Night Run; kids asked that a mastered track get harder, 2026-10-31), leave the rivals as at 18 and
-  can each switch on one more Pro hazard (`Feature::rung`): three rocks on Desert Canyon (19, 20, 21), an oil patch
-  on Industrial Ruins and a barrier on Night Run (19 on each; their 20 and 21 repeat it), none on Snow Track. Each is
+- Pro: rungs 19-21, the top three levels of each track (10-12 on Desert Canyon, 7-9 on Industrial Ruins, 17-19 on
+  Snow Track, 11-13 on Night Run; kids asked that a mastered track get harder, 2026-10-31), leave the rivals as at 18 and
+  can each switch on one more Pro hazard (`Feature::rung`): three rocks on Desert Canyon (rungs 19, 20, 21), an oil
+  patch on Industrial Ruins and a barrier on Night Run (rung 19 on each; 20 and 21 repeat it), none on Snow Track. Each is
   drawn in the track's own art, sits on the road 1% of a lap clear of every gate and ramp, out of their lane within 3%,
   and 1% clear of any hazard in an overlapping lane (a `static_assert` in `track.cpp`). One was kept only where the
   competent driver and a late, wobbly kid driver together placed no better on its rung than on the one below
   (`proNoEasier`: 30 races each, within 2 places; 60 in the sweep that chose them, `docs/racing/pro-playtest/README.md`). A crate on Industrial Ruins,
-  a second barrier on Night Run and a snow block on Snow Track made races easier and were dropped. On Desert Canyon
-  and Snow Track the bots win at most 10% at 18, so Pro there is for kids beyond them (accepted). A loss at 21 drops below
-  the Pro rungs, so the hazards stay off until the kid climbs back (by design). In simulation a narrower road made races easier
+  a second barrier on Night Run and a snow block on Snow Track made races easier and were dropped. The bots win at
+  most 10% at rung 18 on Desert Canyon and Snow Track, so Pro there is for kids beyond them (accepted). A loss at the
+  top drops below the Pro rungs, so the hazards stay off until the kid climbs back (by design). In simulation a narrower road made races easier
   (rivals jam) and sharper bends changed nothing, so neither is used.
 - No sounds, no network. Leaving and coming back starts at the cards.
 

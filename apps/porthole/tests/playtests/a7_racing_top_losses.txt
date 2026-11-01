@@ -1,5 +1,5 @@
-# Rally's top levels (19-21 on Desert Canyon, where the Pro road hazards appear): a loss from the top drops the level
-# by three per race down to 9, then to -2 like any loss from 4..9, so losing at the top takes several races to fall
+# Rally's top levels on Desert Canyon (top 12, Pro hazards at 10-12): a loss from the top steps down three a race
+# (12 -> 9 -> 6 -> 3, then 0 like any loss from 1..3, then -2), so losing at the top takes several races to fall
 # below 0; a win at the top stays at the top.
 # Finishes come from the dbg fixtures (reachability), so this is a regression check, not evidence of how a race feels;
 # the black-box pass is docs/racing/pro-playtest/README.md.
@@ -12,38 +12,38 @@ expect level=0
 dbg lastlap
 wait 5500
 expect-screen race_results
-dbg level 21
+dbg level 12
 # a win at the top stays at the top
 tap 52 111
 wait 4000
-expect race_level=21
+expect race_level=12
 dbg lastlap
 wait 5500
 expect place=1
-expect level=21
-# five losses in a row: 21 -> 18 -> 15 -> 12 -> 9 -> -2
+expect level=12
+# five losses in a row: 12 -> 9 -> 6 -> 3 -> 0 -> -2
 tap 52 111
 wait 4000
 dbg lastplace
 wait 5500
 expect-screen race_results
 expect place=4
-expect level=18
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
-expect level=15
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
-expect level=12
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
 expect level=9
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=6
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=3
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=0
 tap 52 111
 wait 4000
 dbg lastplace

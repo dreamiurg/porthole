@@ -249,8 +249,8 @@ Fixed on `claude/rally-adaptive` after this report and the code review. The coor
 `dbg level N` to save, which explains the "Limitations" fixture oddity. Numbers come from the sweep in
 `host/test_racing_rules.cpp` (`competent`, `staircase`). A fresh black-box pass on the new build has not been run yet.
 
-> Superseded: the level rules and Normal/Hard levels here were changed later (rung-keyed losses, per-track
-> `NORMAL_LEVEL`, cars touching only where drawn). See `games/racing/AGENTS.md` and `docs/racing/pro-playtest/`.
+> Superseded: the level rules and Normal/Hard levels here were changed later (rung-keyed losses, a
+> `LEVEL_SHIFT` on every track, cars touching only where drawn). See `games/racing/AGENTS.md` and `docs/racing/pro-playtest/`.
 
 | # | Finding | Resolution |
 | --- | --- | --- |

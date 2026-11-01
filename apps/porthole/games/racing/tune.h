@@ -35,18 +35,17 @@ constexpr int GRID_SPACING = 7;                    // m between grid slots
 // two after a runaway (the kid led for RUNAWAY_LED/RUNAWAY_OF of the race). A loss at 0 or below takes two; from
 // 1..LEVEL_GENTLE it drops to 0; above that, while the rung is at most LEVEL_EASY, straight to -2 (there the rivals
 // only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they are slower);
-// from a higher rung it takes LEVEL_HIGH_LOSS (keyed on the rung: on the shifted tracks every level from 4 up steps
-// down three). From the top a losing streak goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0
-// on Industrial Ruins and 13, 10, 7, 4, 1, 0 on Night Run. A competent
-// driver settles at 58-80% wins (Night Run 58%, Industrial Ruins 65%, Snow Track 75%, Desert Canyon 80%, the
-// staircase's last 40 races, since cars touch only where drawn).
+// from a higher rung it takes LEVEL_HIGH_LOSS (keyed on the rung). From each track's top a losing streak goes 12, 9,
+// 6, 3, 0 on Desert Canyon; 9, 6, 3, 0 on Industrial Ruins; 19, 16, 13, 10, 7, -2 on Snow Track; 13, 10, 7, 4, 1, 0
+// on Night Run. A competent driver settles at 57-65% wins (the staircase's last 40 races: Night Run 57%, Desert
+// Canyon 60%, Snow Track 62%, Industrial Ruins 65%).
 // Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (slowdown), and from
 // LEVEL_COURTESY on a rival with the kid close behind moves out of its lane. Separately a level is a rung of a
 // charge-and-pace ladder: rungs 1-9 each give one rival one more Boost charge (the slower two first, the pace-setter
 // last, three at most, like the kid's), fired only while chasing (the kid CHASE_MIN..CHASE_MAX m ahead) and never
 // within RIVAL_BOOST_GAP_MS of another rival's boost; rungs 10-15 raise a slower rival's top by LEVEL_TOP_STEP;
 // rungs 16-18 let a rival take its three charges back each lap, as the kid does from road pickups; 19-21 are Pro
-// (below). The rung is the level (none below 0), except on the tracks LEVEL_SHIFT moves up. Ordered by a simulated
+// (below). The rung is the level plus the track's LEVEL_SHIFT (none below 0). Ordered by a simulated
 // sweep so win rates fall with level, roughly (a track can wobble by up to 15 points between neighbours, and Snow
 // Track, Industrial Ruins and Night Run drop 30-36 from -1 to 0): raising rival pace first made races easier (less
 // traffic to hit). No rival's dry-road top exceeds the kid's, and the slower two stay below 1.0: rival 2 level with
@@ -63,22 +62,20 @@ constexpr int LEVEL_MIN = -16, LEVEL_MAX = LADDER_RUNGS + LEVEL_PRO;
 constexpr int LEVEL_COURTESY = -7, LEVEL_SEED_MAX = 3;   // a never-raced track starts one below the best, in 0..3
 constexpr int LEVEL_GENTLE = 3, LEVEL_EASY = sizeof LADDER_CHARGE, LEVEL_HIGH_LOSS = 3;
 // By track: how many rungs up the charge-and-pace ladder a level sits from 0 up, fading out by -LEVEL_SHIFT_FADE (the
-// slow-down below 0 is not shifted). Industrial Ruins and Night Run hand a capable driver a long lead, so their
-// rivals need more to keep the race close: there level 0 already has rival boosts.
-constexpr int8_t LEVEL_SHIFT[] = {0, 12, 0, 8};
+// slow-down below 0 is not shifted): each track's base strength, so level 0 (Normal) is a race a competent driver
+// wins about half of everywhere (since cars touch only where drawn, 2026-10-31, Desert Canyon's and Snow Track's
+// unshifted rivals lost 95% and 83%). A track's top is LEVEL_MAX less its shift: 12, 9, 19, 13.
+constexpr int8_t LEVEL_SHIFT[] = {9, 12, 2, 8};
 constexpr int LEVEL_SHIFT_FADE = 8;
 constexpr float LEVEL_SLOW_STEP = 0.0035f, LEVEL_TOP_STEP = 0.01f;
 constexpr float CHASE_MIN = 3, CHASE_MAX = 40;
 constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led for 3/5 of the race
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
-// Normal, by track, a level a competent driver wins about half of (0 on Industrial Ruins and Night Run, where level 0
-// sits up the ladder; 9 on Desert Canyon and 2 on Snow Track since cars touch only where drawn, 2026-10-31: there the
-// brief's level-0 rivals lost 95% and 83% of races to it); Hard, by track, a level it wins 22-48% of (Industrial
-// Ruins drops from 55% at 5 to 22% at 6).
+// Normal level 0 on every track (its strength set by the track's LEVEL_SHIFT); Hard, by track, a level a competent
+// driver wins 35-40% of (Industrial Ruins jumps from 55% at 5 to 22% at 6, so its Hard is 7, a Pro level).
 constexpr int EASY_LEVEL = -8;
-constexpr int8_t NORMAL_LEVEL[] = {9, 0, 2, 0};
-constexpr int8_t HARD_LEVEL[] = {10, 6, 4, 1};
+constexpr int8_t HARD_LEVEL[] = {2, 7, 2, 4};
 // By track: the rivals' pace at LEVEL_MIN, kept above what a kid who never steers manages there (Desert Canyon's
 // straights let one finish within 18% of a clean drive).
 constexpr float LEVEL_FLOOR[] = {0.87f, 0.80f, 0.80f, 0.80f};

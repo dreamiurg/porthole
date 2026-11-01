@@ -10,7 +10,7 @@ constexpr Feature ice(uint16_t at, uint16_t len, int8_t x, int8_t w) { return {K
 constexpr Feature block(uint16_t at, int8_t x, int8_t w, uint8_t rung = 0) { return {Kind::Obstacle, at, 6, x, w, 0, false, rung}; }
 
 // Desert Canyon: broad bends, one mud patch, a dirt ramp on the left with a flat bypass, two isolated rocks. Pro (rungs
-// 19-21, tune.h LEVEL_PRO): a rock mid-road before the ramp, one on the left shoulder, one past the landing.
+// 19-21, the top three levels, tune.h LEVEL_PRO): a rock mid-road before the ramp, one on the left shoulder, one past the landing.
 constexpr Section DESERT_S[] = {{0, 0}, {20, 70}, {40, -20}, {55, 0}, {72, -50}, {81, 50}, {90, 0}};
 constexpr Feature DESERT_F[] = {
     gate(80, 0, BOOST), slow(450, 40, -45, 35), gate(470, 50, ROCKET), ramp(600, -50), gate(611, -50, BOOST, true),

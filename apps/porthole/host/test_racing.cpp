@@ -341,7 +341,7 @@ void leaderboard() {
   r.g.debugCmd("level 99");   // clamped to the top; a runaway win there stays there
   r.g.debugCmd("lastlap");
   r.wait(5200);
-  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == LEVEL_MAX);
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, mine) && mine.level[0] == clampLevel(LEVEL_MAX, 0));
   assert(mine.level[1] == LEVEL_SEED_MAX && mine.level[3] == LEVEL_SEED_MAX);   // a new track still starts gently
   r.g.debugPrint();
 }
