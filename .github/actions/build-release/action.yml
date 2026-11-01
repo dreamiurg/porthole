@@ -1,0 +1,54 @@
+name: Build release images
+description: >
+  Build one app's firmware under a release version and package what a release publishes, in the workspace root:
+  <app>-<version>-factory.bin, -web.zip, -ota.bin and <app>-version.txt. release.yml (betas) and promote.yml
+  (stable rebuilds) share it, so a stable release ships exactly the images a beta does.
+
+inputs:
+  app:
+    description: App directory under apps/
+    required: true
+  version:
+    description: X.Y.Z, baked into the firmware as PORTHOLE_VERSION
+    required: true
+  root:
+    description: Checkout to build (promote.yml builds an older commit beside its own checkout)
+    default: "."
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.11"
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ~/.platformio
+        key: pio-${{ runner.os }}-${{ hashFiles(format('{0}/platform/*.ini', inputs.root)) }}  # same key as ci.yml
+    - shell: bash
+      run: pip install -r "$ROOT/platform/requirements.txt"
+      env:
+        ROOT: ${{ inputs.root }}
+    - shell: bash
+      run: make -C "$ROOT/apps/$APP" factory
+      env:
+        ROOT: ${{ inputs.root }}
+        APP: ${{ inputs.app }}
+        # Appended to every app's build_flags. PlatformIO keeps the escaped quotes, so the
+        # compiler sees PORTHOLE_VERSION as the C string "X.Y.Z". Local builds leave it unset.
+        PLATFORMIO_BUILD_FLAGS: -DPORTHOLE_VERSION=\"${{ inputs.version }}\"
+        PLATFORMIO_CACHE_DIR: /tmp/pio-downloads  # keep downloaded archives out of the cached ~/.platformio (see ci.yml)
+    - shell: bash
+      run: rm -rf ~/.platformio/tools ~/.platformio/dist  # not needed to build; keep them out of the cache (see ci.yml)
+    - name: Package
+      shell: bash
+      env:
+        APP: ${{ inputs.app }}
+        VERSION: ${{ inputs.version }}
+        ROOT: ${{ inputs.root }}
+      run: |
+        image=$(find "$ROOT/apps/$APP" -path '*/.pio/build/firmware/factory.bin' | head -n1)
+        cp "$image" "$GITHUB_WORKSPACE/$APP-$VERSION-factory.bin"
+        cp "$(dirname "$image")/firmware.bin" "$GITHUB_WORKSPACE/$APP-$VERSION-ota.bin"
+        printf '%s' "$VERSION" > "$GITHUB_WORKSPACE/$APP-version.txt"  # no newline: the board compares it as-is
+        (cd "$(dirname "$image")/web" && zip -q "$GITHUB_WORKSPACE/$APP-$VERSION-web.zip" ./*)

@@ -75,9 +75,11 @@ Per-app targets are listed in `docs/new-app.md`.
   Checks** passes. Hooks block commits on `main`. Never skip hooks with `--no-verify`.
 - Conventional commit titles (`feat(porthole): ...`, `fix(porthole): ...`).
   After each merge, `.github/workflows/release.yml` runs `tools/release.py`: every
-  app with new `feat`/`fix` commits under its folder (or `platform/`) gets a
-  `<app>-vX.Y.Z` tag, a GitHub release with generated notes and a flashable
-  `factory.bin`. No one merges anything to release.
+  app with new `feat`/`fix` commits under its folder (or `platform/`) gets the
+  next patch `<app>-vX.Y.Z` tag, a beta (pre-release) with generated notes and a
+  flashable `factory.bin`. `promote.yml` rebuilds a beta as the next minor,
+  stable: daily once a beta is 3 days old and not yanked (`yank.yml`), or by
+  hand. No one merges anything to release.
 - Shift left. The hooks run everything CI runs for what you changed; CI is a
   backstop that runs once per PR and only for touched apps. If CI catches
   something a hook missed, fix the hook, not just the code.

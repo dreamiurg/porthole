@@ -159,20 +159,24 @@ Grown-ups have a hidden menu. On "Who's playing?", hold the title for 5 seconds.
 
 The running version also shows in small print at the bottom of "Who's playing?".
 
-- **Stable** (the default) gets a beta after two days with no newer beta.
+- **Stable** (the default) gets a beta once it has been out for three days and nobody yanked it.
 - **Beta** gets each new version as soon as the release workflow builds it.
 
 ### Beta and stable
 
-Each release starts as a GitHub pre-release. That is **beta**. Promotion to **stable** makes the release
-GitHub's "Latest" and moves the `stable` branch to it.
+Every merge that changes an app ships a **beta**: a GitHub pre-release with the next patch version
+(0.38.1, 0.38.2, ...). Promotion to **stable** rebuilds a beta's commit as the next minor version (beta
+0.38.7 becomes 0.39.0), makes it GitHub's "Latest" and moves the `stable` branch to it. The next beta
+is 0.39.1. Beta boards skip 0.39.0: it is code they already run.
 
-- The **Promote** workflow runs each morning. It promotes the newest beta when that beta was the newest
-  for 48 hours. So a beta that needed a fix never reaches stable.
-- To promote now, open Actions, pick **Promote**, and run it with a tag. An empty tag means the newest
-  pre-release.
-- To roll stable back, promote an older tag. This helps only boards that did not update yet. A board never
-  installs an older version by itself, so a board on a bad build needs a USB flash.
+- The **Promote** workflow runs each morning. It promotes the newest beta that has been out for 72 hours,
+  is newer than stable, and is not yanked. So stable trails beta by about three days.
+- To keep a broken beta off stable, open Actions, pick **Yank**, and run it with the tag and what is
+  wrong. Its title gets "(yanked)" and Promote skips it.
+- To promote now, run **Promote** by hand. With a tag it promotes that tag; with no tag, the newest
+  beta that is not yanked, whatever its age.
+- To roll stable back, promote an older tag. The old code goes out as the next minor version, so every
+  stable board takes it. Betas after a rollback still carry `main`; yank them until the fix lands.
 
 Each release also has `<app>-<version>-ota.bin` (the app image alone) and `<app>-version.txt` (the bare
 version string) for boards that update themselves. A rolling `<app>-beta` pre-release holds a copy of the
@@ -203,7 +207,8 @@ What you get:
   Pre-push adds the complexity limit, playtests, coverage and the firmware build. CI runs the same checks
   on each PR, only for the apps it changes, and the full suite on each push to `main`.
 - **Automatic releases.** After CI passes on `main`, each new `feat:` or `fix:` in an app makes a new
-  version of that app. The release workflow publishes it as a beta with notes and a flashable factory image. See
+  patch version of that app. The release workflow publishes it as a beta with notes and a flashable factory
+  image; Promote turns a settled beta into the next minor, stable. See
   [Releases](https://github.com/dreamiurg/porthole/releases).
 
 ## Layout
