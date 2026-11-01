@@ -35,7 +35,10 @@ void Game::loadKids(const AppEnter& e) {
     Save s{};
     if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) memcpy(k.best, s.best, sizeof k.best);
     k.me = e.who && e.all[i].id == e.who->id;
-    if (k.me) { me_ = nKids_; save_ = s; }
+    if (k.me) {   // a level saved under an older top races, and reads, at today's
+      me_ = nKids_; save_ = s;
+      for (int t = 0; t < TRACKS; t++) save_.level[t] = (int8_t)clampLevel(s.level[t], t);
+    }
     nKids_++;
   }
   seedLevels();

@@ -399,8 +399,35 @@ void saveMigration() {
   old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
   assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == AUTO);
   for (int8_t l : old.level) assert(l == 0);
+  // A v2 save as released, from before the tracks' tops moved (Desert Canyon's was 21): it loads at today's top.
+  Save v2{};
+  v2.best[0] = {91000, 30000}; v2.level[0] = 18;
+  seal(v2);
+  static const Profile zoe = {0, "Zoe", 0, 9, 0};
+  const SaveSlot slot = {&v2, sizeof v2};
+  Rig r;
+  r.g.enter(AppEnter{&zoe, &zoe, &slot, 1, 1000000, r.ms, false});
+  r.tap(paint::MODE_CHIP);   // any write: the stored level is the clamped one, as `debug` shows it
+  const void* data = nullptr; size_t len = 0;
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, back) && back.level[0] == clampLevel(LEVEL_MAX, 0));
+  r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP);   // back to Auto
+  r.toRace(0);
+  assert(r.g.race().level == clampLevel(LEVEL_MAX, 0) && clampLevel(LEVEL_MAX, 0) < 18);
 }
 
+// The first tap on the track page right after entering from the launcher acts, whatever it hits, at the emulator's
+// 33 ms frames and a 66 ms touch (the pass-3 report saw it ignored once; not reproduced, kept as a regression check).
+void firstTapAfterEntry() {
+  const ui::Box targets[] = {paint::CARD[0], paint::CARD[1], paint::CARD[2], paint::CARD[3], paint::HOME, paint::MODE_CHIP};
+  for (const ui::Box& b : targets) {
+    Rig r;
+    r.wait(1500, 33);
+    const int x = b.x + b.w / 2, y = b.y + b.h / 2;
+    r.frame(true, x, y, 33); r.frame(true, x, y, 33); r.frame(true, x, y, 33); r.frame(false, x, y, 33);
+    const void* data = nullptr; size_t len = 0;
+    assert(r.g.screen() != Game::Screen::Tracks || r.g.wantsHome() || r.g.takeSave(&data, &len, true));
+  }
+}
 // Every glyph drawn on every page stays on the glass.
 void textOnGlass() {
   Rig r;
@@ -468,7 +495,8 @@ void obstaclesHitWhereDrawn() {
     }
 }
 // Cars touch where they are drawn: a car following a rival with a little road visible between the two pictures, or
-// alongside with a few pixels between them, never touches it; a few pixels of overlap is one bump.
+// alongside with a few pixels between them, never touches it; a few pixels of overlap is one bump. The rival is the
+// pace-setter, whose lane (+0.45) is on the far side: any drift in a step only widens the gap.
 void carsTouchWhereDrawn() {
   const float PX = 1 / paint::pxPerHalfWidth();
   const float reach = paint::carReach(), side = 2 * paint::carHalf();
@@ -480,14 +508,15 @@ void carsTouchWhereDrawn() {
     start(r, TRACK[0], 5, 0);
     r.phase = Phase::Racing;
     for (int i = 0; i < CARS; i++) { r.car[i].dist = -500.0f - 50 * i; r.car[i].speed = 0; }
-    Car &p = r.car[PLAYER], &o = r.car[2];
+    Car &p = r.car[PLAYER], &o = r.car[3];
     int bumps = 0;
     for (int n = 0; n < 40; n++) {   // a straight, both held on their lines at the same speed
       p.dist = 20 + n * 0.6f; p.x = 0; p.vx = 0; p.speed = 1;
       o.dist = p.dist + k.gap; o.x = k.dx; o.vx = 0; o.speed = 1; o.top = 1;
-      const bool before = r.contact & 2;   // the pair (player, rival 2)
+      const bool before = r.contact & 4;   // the pair (player, rival 3)
       step(r, Controls{});
-      bumps += (r.contact & 2) && !before;
+      if (!k.touch) assert(fabsf(o.x - p.x) >= k.dx - PX / 4);   // the step kept (or widened) the gap it set
+      bumps += (r.contact & 4) && !before;
     }
     assert(bumps == (k.touch ? 1 : 0));
   }
@@ -518,7 +547,7 @@ void proHazardsDrawn() {
         const float d = featureAt(TRACK[t], TRACK[t].features[g]) - featureAt(TRACK[t], o);
         other = other || (TRACK[t].features[g].rung && TRACK[t].features[g].rung < o.rung && d > -30 && d < 250);
       }
-      if (other || o.rung - 1 == LADDER_RUNGS) continue;   // at 19 the rung below is the top of the ladder
+      if (other) continue;
       frame(t, o, LADDER_RUNGS);
       assert(fb == below);
     }
@@ -528,6 +557,7 @@ void proHazardsDrawn() {
 int main() {
   obstaclesHitWhereDrawn();
   proHazardsDrawn();
+  firstTapAfterEntry();
   carsTouchWhereDrawn();
   geometry();
   wheel();

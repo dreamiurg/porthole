@@ -1,6 +1,6 @@
-# Rally's two tracks with a lower top, Industrial Ruins (top 9, Pro 7-9) and Night Run (top 13, Pro 11-13): a loss
-# at the top steps down three a race (Industrial 9 -> 6 -> 3 -> 0, then -2; Night 13 -> 10 -> 7 -> 4 -> 1), instead
-# of falling from the top straight to -2.
+# Rally's shifted tops on Industrial Ruins (top 15, Pro 13-15) and Night Run (top 16, Pro 14-16): a loss at the top
+# steps down three a race (Industrial 15 -> 12 -> 9 -> 6 -> 3; Night 16 -> 13 -> 10 -> 7 -> 4), keyed on the ladder
+# rung, instead of falling from the top straight to -2.
 # Found by the Pro pass-2 black-box run (docs/racing/pro-playtest/README.md); finishes come from dbg fixtures.
 reset
 tilt 0 1000 0
@@ -10,44 +10,49 @@ wait 600
 tap 106 55
 wait 1000
 expect-screen race_howto
-dbg level 9
+dbg level 15
 tap 106 123
 wait 1000
 tap 106 123
 wait 4000
-expect race_level=9
+expect race_level=15
 dbg lastplace
 wait 5500
 expect-screen race_results
 expect place=4
+expect level=12
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=9
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
 expect level=6
 tap 52 111
 wait 4000
 dbg lastplace
 wait 5500
 expect level=3
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
-expect level=0
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
-expect level=-2
 # Night Run, from the results page through Tracks (a second track skips How to race)
 tap 97 111
 wait 1000
 tap 106 104
 wait 1000
-dbg level 13
+dbg level 16
 tap 106 123
 wait 4000
-expect race_level=13
+expect race_level=16
 dbg lastplace
 wait 5500
 expect-screen race_results
+expect level=13
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
 expect level=10
 tap 52 111
 wait 4000
@@ -59,8 +64,3 @@ wait 4000
 dbg lastplace
 wait 5500
 expect level=4
-tap 52 111
-wait 4000
-dbg lastplace
-wait 5500
-expect level=1

@@ -41,7 +41,7 @@ struct Race {
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
 };
 
-// level: how hard the rivals push (tune.h; clampLevel'd, 0 = the brief's pace except on a shifted track). The race is
+// level: how hard the rivals push (tune.h; clampLevel'd; 0 = Normal, the track's LEVEL_SHIFT rungs up). The race is
 // a pure function of the track (one of TRACK[]), seed, level and inputs.
 void start(Race& r, const Track& t, uint32_t seed, int level);
 int clampLevel(int level, int track);   // LEVEL_MIN..the track's top (LEVEL_MAX less its LEVEL_SHIFT)

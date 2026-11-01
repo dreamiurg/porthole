@@ -482,3 +482,27 @@ side-bump is gone, and Pro hazards still hit only where drawn. The retune reads 
 and Snow, Easy is a sure win, Zoe has to work for every place on Auto and Hard. Finding 1 (an ignored first tap on the
 track page) is Minor, already on `origin/main` before this branch, and needs its own fix; it does not block this
 change.
+
+## Resolutions after pass 3 (game-engineer)
+
+| Finding / review item | Resolution |
+| --- | --- |
+| P3-1 Minor: first tap on the track page ignored | **Not reproduced** on this tree (`fa6e50a`, the same code as `94a58e5` plus docs). The stated repro (fixture, Sam, arrow, Rally, `tick 1500`, a 66 ms touch) run in `--serve` mode, by hand and through `drv2.py` itself (t=2898 at the tap, as in the report), takes Night, Industrial, Snow, Desert, Home and the chip on the first tap, across 0-1500 ms waits and 0-99 ms touches. `samD.json` was under `build/` and lost to a `make clean` before it was replayed. `firstTapAfterEntry` (`host/test_racing.cpp`) now holds every target to acting on the first 66 ms touch at 33 ms frames. Owner: a fresh repro with its full session trace, kept outside `build/`. |
+| P3-2 Nit: rear-corner bumps every 4-5 s | No change (a real touch now). |
+| Review: Industrial's Pro oil made the competent driver better | Dropped; `proNoEasier` checks each driver on its own again (within 2 places of 30 races). With rivals keeping clear of a whole patch (below) Desert's third rock made the kid driver's races easier (93 places against 99 below) and was dropped too. Industrial Ruins and Snow Track have no Pro hazard. |
+| Review: the shift fade skipped rungs near 0 | One rung per level all the way down (`rungOf`). `neighbourLevels` checks levels -4..4 on every track on their own seeds: most steps are under 25 points; two known cliffs remain for the designer (-1 to 0, where the slow-down starts, and Industrial's level 1, the pace-setter's first charge), 42-45 points, held so they grow no worse. |
+| Review: rivals stopped avoiding a patch at its middle | A rival now avoids a patch until past its end (an obstacle until level with it). Rivals got much better on the oil and puddle tracks, so the base strengths moved: `LEVEL_SHIFT` 7, 6, 2, 5 (was 9, 12, 2, 7). |
+| Review: Hard vs Normal for both drivers; Night Hard | `modeBands` checks Hard below Normal for both drivers. `HARD_LEVEL` 2, 1, 2, 4. |
+| Review: a released v2 save above today's top | Clamped on load (`loadKids`), so `debug` and the save read today's top; tested with a level-18 Desert save. |
+
+Final balance (competent / kid driver, wins out of 40, the modeBands seeds; staircase: last 40 of 80):
+
+| Track | Shift | Top | Pro levels (hazards) | Staircase | Normal | Hard (level) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Desert Canyon | 7 | 14 | 12-14 (2 rocks) | 23 (57%) | 21 / 16 | 17 / 13 (2) |
+| Industrial Ruins | 6 | 15 | 13-15 (none) | 24 (60%) | 30 / 30 | 14 / 9 (1) |
+| Snow Track | 2 | 19 | 17-19 (none) | 27 (68%) | 20 / 20 | 12 / 14 (2) |
+| Night Run | 5 | 16 | 14-16 (barrier) | 24 (60%) | 27 / 20 | 14 / 13 (4) |
+
+Neighbour levels -4..4 (competent wins out of 40, their own seeds): Desert 40 40 39 36 18 17 15 15 13; Industrial 40 40
+35 29 26 9 9 9 10; Snow 40 40 40 38 20 20 15 15 9; Night 40 40 40 33 26 24 18 17 15.

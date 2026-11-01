@@ -23,7 +23,7 @@ struct Save {
   uint32_t magic;
   uint16_t version, size;
   Best best[TRACKS];   // by track index (TRACK[] order: never reordered)
-  int8_t level[TRACKS];   // v2: the adaptive level by track (race.h start; on a shifted track a higher rung); 0 from v1
+  int8_t level[TRACKS];   // v2: the adaptive level by track (race.h start; a rung LEVEL_SHIFT higher); 0 from v1
   uint8_t mode, pad[3];   // v2: the kid's Mode (AUTO from a v1 blob or out of range); pad keeps crc 4-aligned
   uint32_t crc;
 };

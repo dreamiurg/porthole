@@ -107,9 +107,10 @@ float aroundHazards(const Race& r, int i, float line) {
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
     if (o.kind == Kind::Pickup || !active(o, r.rung) || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
-    const float ahead = middleAhead(t, o, c.dist);   // until the car is level with its middle, where it is drawn
+    // An obstacle until the car is level with where it is drawn (its middle); a patch until the car is past its end.
+    const float ahead = middleAhead(t, o, c.dist), clear = o.kind == Kind::Obstacle ? 0 : -featureLen(t, o) / 2;
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
-    if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
+    if (ahead > clear && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
   }
   return line;
 }
@@ -307,12 +308,10 @@ int nextLevel(int level, int track, int place, bool runaway) {
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
 }
 bool runaway(const Race& r) { return r.firstMs * RUNAWAY_OF >= r.raceMs * RUNAWAY_LED; }
-int rungOf(int level, int track) {
-  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
-  // easy rivals after the same number of losses on every track.
-  const int fade = level >= 0 ? LEVEL_SHIFT_FADE : level + LEVEL_SHIFT_FADE;
-  return level + (fade > 0 ? LEVEL_SHIFT[track] * fade / LEVEL_SHIFT_FADE : 0);
-}
+// One rung per level everywhere, the track's shift in full: a level just below 0 is the rung just below level 0's
+// (a fade that dropped several rungs a level made a neighbour level 30-50 points easier). Rungs at or below 0 give
+// the rivals nothing, and the slow-down below 0 is keyed on the level, not the rung.
+int rungOf(int level, int track) { return level + LEVEL_SHIFT[track]; }
 int clampLevel(int level, int track) {   // past the track's top the ladder has no rungs left
   const int top = LEVEL_MAX - LEVEL_SHIFT[track];
   return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;

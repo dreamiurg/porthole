@@ -10,21 +10,21 @@ constexpr Feature ice(uint16_t at, uint16_t len, int8_t x, int8_t w) { return {K
 constexpr Feature block(uint16_t at, int8_t x, int8_t w, uint8_t rung = 0) { return {Kind::Obstacle, at, 6, x, w, 0, false, rung}; }
 
 // Desert Canyon: broad bends, one mud patch, a dirt ramp on the left with a flat bypass, two isolated rocks. Pro (rungs
-// 19-21, the top three levels, tune.h LEVEL_PRO): a rock mid-road before the ramp, one on the left shoulder, one past the landing.
+// 19-21, the top three levels, tune.h LEVEL_PRO): a rock mid-road before the ramp, one on the left shoulder (a third,
+// past the landing, made races easier for the kid driver once rivals kept clear of patches).
 constexpr Section DESERT_S[] = {{0, 0}, {20, 70}, {40, -20}, {55, 0}, {72, -50}, {81, 50}, {90, 0}};
 constexpr Feature DESERT_F[] = {
     gate(80, 0, BOOST), slow(450, 40, -45, 35), gate(470, 50, ROCKET), ramp(600, -50), gate(611, -50, BOOST, true),
     block(760, 75, 16), block(850, -75, 16), gate(940, 30, ROCKET),
-    block(540, 0, 16, 19), block(500, -70, 16, 20), block(660, 40, 16, 21)};
+    block(540, 0, 16, 19), block(500, -70, 16, 20)};
 // Industrial Ruins: a left bend with crates on the inside shoulder, a yard of two oil patches, a loading-dock ramp
-// over rough ground, a gantry chicane with crates on alternate shoulders. Pro: oil on the left past the dock (the
-// only candidate the sweep kept once obstacles hit where drawn; a mid-road crate made races easier).
+// over rough ground, a gantry chicane with crates on alternate shoulders. No Pro hazard: a mid-road crate and an oil
+// patch past the dock both made a race easier for one of the drivers.
 constexpr Section INDUSTRIAL_S[] = {{0, 0}, {18, -60}, {38, 0}, {54, 0}, {70, 55}, {79, -55}, {88, 0}};
 constexpr Feature INDUSTRIAL_F[] = {
     gate(90, 0, ROCKET), block(280, -80, 18), gate(330, 40, ROCKET), slow(420, 30, -55, 30), slow(460, 30, 55, 30),
     gate(510, 0, BOOST), ramp(600, 50), slow(612, 8, 50, 30), gate(611, 50, BOOST, true), block(750, -80, 18),
-    block(840, 80, 18), gate(930, -30, BOOST),
-    slow(660, 30, -70, 30, 19)};
+    block(840, 80, 18), gate(930, -30, BOOST)};
 // Snow Track: dark grippy asphalt, marked ice patches on the outside of the long bends, slush outside the S-bend,
 // a snow-bank ramp with a wide dry landing. No Pro hazard: none the sweep tried made a race harder for both drivers.
 constexpr Section SNOW_S[] = {{0, 0}, {20, 60}, {40, -50}, {49, 50}, {58, 0}, {74, -55}, {90, 0}};
