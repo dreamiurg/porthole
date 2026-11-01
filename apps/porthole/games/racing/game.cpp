@@ -127,6 +127,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     case Screen::Pause: updatePause(); break;
     case Screen::Confirm: updateConfirm(); break;
     case Screen::Results: updateResults(); break;
+    case Screen::Board: updateBoard(); break;
   }
 }
 
@@ -138,7 +139,15 @@ void Game::updateTracks() {
   }
   for (int i = 0; i < TRACKS; i++)
     if (ui::clicked(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
-  if (ui::clicked(in_, paint::HOME)) home_ = true;
+  if (ui::clicked(in_, paint::TIMES)) go(Screen::Board);
+  else if (ui::clicked(in_, paint::HOME)) home_ = true;
+}
+
+// Every kid's best times, one track at a time from the last one picked; the arrows go round all four.
+void Game::updateBoard() {
+  if (ui::clicked(in_, paint::PREV_TRACK)) track_ = (track_ + TRACKS - 1) % TRACKS;
+  else if (ui::clicked(in_, paint::NEXT_TRACK)) track_ = (track_ + 1) % TRACKS;
+  else if (ui::clicked(in_, paint::BOARD_BACK)) go(Screen::Tracks);
 }
 
 void Game::updateHowTo() {
@@ -245,7 +254,7 @@ void Game::render() {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm", "race_results"};
+  static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm", "race_results", "race_board"};
   if (screen_ == Screen::Race && race_.phase == Phase::Countdown) return "race_countdown";
   return N[(int)screen_];
 }

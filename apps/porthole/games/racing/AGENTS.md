@@ -9,7 +9,7 @@ tracks, platform contract, and the two approved reference boards the look follow
 ## Player contract
 
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
-  open, with Home and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
+  open, with Home, Times and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
   skips a setting, by design: it cycles). Easy races at level -8, Normal at 0,
   Hard at `HARD_LEVEL` (by track: a competent driver wins 37-50% there); a fixed setting never moves the
@@ -43,7 +43,10 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Finishing three laps locks place and time once, after a 1.5 s "Finish!" on the line. Results show the place, the
   kid's time ("New best!" when it beat their best race or best lap on this track) and the track's **leaderboard
   across every profile on the device**: each kid's best race time and best lap, fastest race first, this kid's row in
-  gold (a user decision of 2026-10-31: no medals, no ghost mode). Laps run line to line, the first from the flying
+  gold (a user decision of 2026-10-31: no medals, no ghost mode). The same board opens without a race from Times on
+  the track cards (a user request of 2026-11-01): "Best times", the track between two arrows that go round all four
+  (starting on the last one picked), the fastest race and the fastest lap across every kid in green, then the rows;
+  "No times yet" on a track nobody has finished; Back to the cards. Looking saves nothing. Laps run line to line, the first from the flying
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
 - In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
@@ -112,7 +115,8 @@ every profile's save for the leaderboard and writes only the current kid's.
 Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the
 level rules, rival boosts and the competent-driver staircase) and `host/test_racing.cpp` (wheel, pages, touch rules,
 pause/resume, grip loss, frame-rate invariance, replay, text and targets on the glass, save and levels). Playtests:
-`tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`; the
+`tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`,
+`a7_racing_times.txt`; the
 adaptive rivals' black-box playthrough is `docs/racing/adaptive-playtest/`.
 
 ## Screens and test hooks
