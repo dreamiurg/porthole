@@ -2,6 +2,7 @@
 #include <math.h>
 
 namespace racing {
+static_assert(BOOST_CAP * V_MAX * DT * 2 < CAR_REACH, "a boosted car could step over an obstacle's hit window");
 static_assert(sizeof LEVEL_SHIFT == TRACKS && sizeof LEVEL_FLOOR / sizeof LEVEL_FLOOR[0] == TRACKS, "one per track");
 namespace {
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -34,7 +35,7 @@ float capFor(const Race& r, const Car& c, bool* ice) {
   float cap = c.boostMs ? BOOST_CAP : c.top;
   *ice = false;
   if (!airborne(c)) {
-    const float terrain = terrainCap(*r.track, c.dist, c.x, ice);
+    const float terrain = terrainCap(*r.track, r.rung, c.dist, c.x, ice);
     if (terrain < 1 && terrain < cap) cap = terrain;   // terrain wins over Boost; never multiplied
   }
   return cap;
@@ -61,14 +62,15 @@ void obstacles(Race& r, int i) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Obstacle) continue;
+    if (o.kind != Kind::Obstacle || !active(o, r.rung)) continue;
     const float ox = o.x / 100.0f, ow = o.w / 100.0f + CAR_HALF_W;
     const uint16_t bit = (uint16_t)(1u << f);
-    const bool inside = !airborne(c) && within(t, c.dist, featureAt(t, o), featureLen(t, o), CAR_LEN / 2) && fabsf(c.x - ox) < ow;
+    const float ahead = middleAhead(t, o, c.dist);
+    const bool inside = !airborne(c) && ahead >= 0 && ahead <= CAR_REACH && fabsf(c.x - ox) < ow;
     if (inside && !(c.solid & bit)) impact(r, i, OBSTACLE_LOSS);
     if (inside) {
       const bool right = ox - ow < -RAIL + 0.1f || (c.x >= ox && ox + ow < RAIL);
-      c.x += (right ? 2.5f : -2.5f) * DT;
+      c.x = clampf(c.x + (right ? OBSTACLE_PUSH : -OBSTACLE_PUSH) * DT, -RAIL, RAIL);
       c.vx = 0;
     }
     c.solid = inside ? (uint16_t)(c.solid | bit) : (uint16_t)(c.solid & ~bit);
@@ -79,7 +81,7 @@ void ramps(Race& r, int i, float prev) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Ramp || airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
+    if (o.kind != Kind::Ramp || !active(o, r.rung) || airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
     if (fabsf(c.x - o.x / 100.0f) > o.w / 100.0f) continue;
     c.airMs = AIR_MS;
     if (i == PLAYER) r.jumps++;
@@ -90,7 +92,7 @@ void pickups(Race& r, float prev) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Pickup || o.raised != airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
+    if (o.kind != Kind::Pickup || !active(o, r.rung) || o.raised != airborne(c) || !crossed(t, prev, c.dist, featureAt(t, o))) continue;
     if (fabsf(c.x - o.x / 100.0f) > PICKUP_HALF_W || (r.taken & (1u << f))) continue;
     if (r.inventory[o.item] >= MAX_INVENTORY) { r.fullMs[o.item] = 900; continue; }   // stays for a later lap
     r.inventory[o.item]++;
@@ -104,10 +106,11 @@ float aroundHazards(const Race& r, int i, float line) {
   const Car& c = r.car[i];
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind == Kind::Pickup || (o.kind != Kind::Obstacle && !c.careful)) continue;   // a careless rival ignores patches
-    const float ahead = featureAt(t, o) - lapPos(t, c.dist);
+    if (o.kind == Kind::Pickup || !active(o, r.rung) || (o.kind != Kind::Obstacle && !c.careful)) continue;   // a careless rival ignores patches
+    // An obstacle until the car is level with where it is drawn (its middle); a patch until the car is past its end.
+    const float ahead = middleAhead(t, o, c.dist), clear = o.kind == Kind::Obstacle ? 0 : -featureLen(t, o) / 2;
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
-    if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
+    if (ahead > clear && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
   }
   return line;
 }
@@ -181,7 +184,7 @@ void contacts(Race& r) {
     Car &a = r.car[i], &b = r.car[j];
     const uint8_t bit = (uint8_t)(1u << pair);
     const bool touch = !a.finished && !b.finished && !airborne(a) && !airborne(b) &&
-                       fabsf(a.dist - b.dist) < CAR_LEN && fabsf(a.x - b.x) < 2 * CAR_HALF_W;
+                       fabsf(a.dist - b.dist) < CAR_REACH && fabsf(a.x - b.x) < 2 * CAR_HALF_W;   // drawn bodies overlap
     if (touch && !(r.contact & bit)) impact(r, a.dist < b.dist ? i : j, CONTACT_LOSS);   // the car behind
     if (touch) {   // ease apart sideways until separated
       const float push = (a.x < b.x ? -1.2f : 1.2f) * DT;
@@ -266,7 +269,7 @@ void ladder(Car& c, int i, int level, int rung, float floor) {
   constexpr int TOPS = sizeof LADDER_CHARGE, REFILLS = TOPS + sizeof LADDER_TOP;
   if (level < 0)   // keyed on the kid's level: below 0 rivals are slower on every track, a bad day never under the floor
     c.top = fmaxf(c.top * slowdown(level, floor), RIVAL_TOP[i - 1] * floor);
-  for (int k = 0; k < rung; k++) {
+  for (int k = 0; k < rung && k < LADDER_RUNGS; k++) {   // Pro rungs change the track, not the rivals
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
     else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(RIVAL_CAP[i - 1], c.top + LEVEL_TOP_STEP); }
     else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
@@ -306,11 +309,11 @@ float hitSpeed(float before, float factor) {
 }
 bool airborne(const Car& c) { return c.airMs > 0; }
 
-float terrainCap(const Track& t, float dist, float x, bool* onIce) {
+float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce) {
   float cap = fabsf(x) > 1 ? OFFROAD_CAP : 1;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind != Kind::Slow && o.kind != Kind::Ice) continue;
+    if ((o.kind != Kind::Slow && o.kind != Kind::Ice) || !active(o, rung)) continue;
     if (!within(t, dist, featureAt(t, o), featureLen(t, o), 0) || fabsf(x - o.x / 100.0f) > o.w / 100.0f) continue;
     if (o.kind == Kind::Ice) *onIce = true;
     else if (SLOW_CAP < cap) cap = SLOW_CAP;
@@ -318,15 +321,19 @@ float terrainCap(const Track& t, float dist, float x, bool* onIce) {
   return cap;
 }
 
-int nextLevel(int level, int place, bool runaway) {
+int nextLevel(int level, int track, int place, bool runaway) {
   int next = level - 2;
   if (place == 1) next = level + (runaway ? 2 : 1);
-  else if (level > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
+  else if (level > LEVEL_GENTLE && rungOf(level, track) > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
   else if (level > LEVEL_GENTLE) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
   else if (level > 0) next = 0;
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
 }
 bool runaway(const Race& r) { return r.firstMs * RUNAWAY_OF >= r.raceMs * RUNAWAY_LED; }
+// One rung per level everywhere, the track's shift in full: a level just below 0 is the rung just below level 0's
+// (a fade that dropped several rungs a level made a neighbour level 30-50 points easier). Rungs at or below 0 give
+// the rivals nothing, and the slow-down below 0 is keyed on the level, not the rung.
+int rungOf(int level, int track) { return level + LEVEL_SHIFT[track]; }
 int clampLevel(int level, int track) {   // past the track's top the ladder has no rungs left
   const int top = LEVEL_MAX - LEVEL_SHIFT[track];
   return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;
@@ -336,12 +343,9 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
-  const int track = (int)(&t - TRACK), shift = LEVEL_SHIFT[track];
+  const int track = (int)(&t - TRACK);
   r.level = (int8_t)clampLevel(level, track);
-  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
-  // easy rivals after the same number of losses on every track.
-  const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
-  r.rung = (int8_t)(r.level + (fade > 0 ? shift * fade / LEVEL_SHIFT_FADE : 0));
+  r.rung = (int8_t)rungOf(r.level, track);
   rivals(r);
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];

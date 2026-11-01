@@ -124,7 +124,9 @@ void skyline(int track, int bottom, int offset) {
 
 // ---- the road. Its per-row tables and the list of things on it live on the heap (PSRAM on the board), allocated
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
-struct Thing { float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; bool flames = false; };   // size: drawn bigger than life
+struct Thing {   // size: drawn bigger than life; copies: the picture repeated side by side
+  float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; bool flames = false; int copies = 1;
+};
 constexpr int MAX_THINGS = 48;
 // The speed arc hugs the top rim: SEGMENTS slots across ARC_DEG either side of 12 o'clock, between ARC_IN and ARC_OUT.
 // Which slot each of its pixels belongs to (or its dark rim) is worked out once, so a frame only looks it up.
@@ -141,6 +143,14 @@ struct Scratch {
 Scratch* sc = nullptr;
 void buildArc();   // with the HUD, below
 struct Camera { const Race* r; int track; float dist, x; };
+// An obstacle is drawn exactly as wide as it hits (2 * w, race.cpp obstacles), its picture scaled up to that; a narrow
+// picture (Industrial's crate stack) is repeated side by side rather than stretched past 1.5 times the car's scale.
+float obstaclePx(const Feature& o) { return 2 * o.w / 100.0f * ROAD_SLOPE * CAR_DEPTH; }   // at the car's depth
+int obstacleCopies(int track, const Feature& o) {
+  const int n = (int)ceilf(obstaclePx(o) / (pic::OBSTACLE[track]->w * PIC_SCALE * 1.5f));
+  return n < 1 ? 1 : n;
+}
+float obstacleSize(int track, const Feature& o, int copies) { return obstaclePx(o) / (copies * pic::OBSTACLE[track]->w * PIC_SCALE); }
 float rowZ(int y) { return DEPTH_K / (float)(y - HORIZON); }
 void project(const Camera& cam) {   // bottom row up: the bend accumulates with distance
   const Track& t = *cam.r->track;
@@ -167,7 +177,7 @@ void patches(const Camera& cam, int y, float world) {   // ramps, mud, oil, slus
   const float z = lapPos(t, world);
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if ((o.kind != Kind::Ramp && o.kind != Kind::Slow && o.kind != Kind::Ice) || !patchHere(t, o, z)) continue;
+    if ((o.kind != Kind::Ramp && o.kind != Kind::Slow && o.kind != Kind::Ice) || !active(o, cam.r->rung) || !patchHere(t, o, z)) continue;
     const int cx = sc->center[i] + (int)(o.x / 100.0f * sc->half[i]), hw = (int)(o.w / 100.0f * sc->half[i]);
     const float at = featureAt(t, o), end = o.kind == Kind::Ramp ? at : at + featureLen(t, o);
     const bool edge = o.kind != Kind::Ramp && (z < at + 1.2f || z > end - 1.2f);
@@ -224,9 +234,13 @@ void placeTrack(const Camera& cam) {
   const Track& t = *cam.r->track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
+    if (!active(o, cam.r->rung)) continue;
     const float ahead = featureAt(t, o) - lapPos(t, cam.dist);
     const float z = ahead < -10 ? ahead + t.length : ahead;
-    if (o.kind == Kind::Obstacle) add({z + featureLen(t, o) / 2, pic::OBSTACLE[cam.track], o.x / 100.0f});
+    if (o.kind == Kind::Obstacle) {
+      const int copies = obstacleCopies(cam.track, o);
+      add({z + featureLen(t, o) / 2, pic::OBSTACLE[cam.track], o.x / 100.0f, 0, false, obstacleSize(cam.track, o, copies), false, copies});
+    }
     if (o.kind == Kind::Pickup && !(cam.r->taken & (1u << f)))
       add({z, pic::PICKUP[o.item], o.x / 100.0f, o.raised ? 0.9f : 0.15f, o.raised});
   }
@@ -268,7 +282,8 @@ void drawThing(const Thing& t, uint32_t ms) {
   const int lift = (int)(t.lift * 60 * scale / PIC_SCALE);
   if (t.shadow) fill(x - (int)(t.p->w * scale * 0.42f), y - 2, (int)(t.p->w * scale * 0.84f), (int)(3 * scale) + 1, RIM);
   if (t.flames) flames(x, y - lift, scale / PIC_SCALE, ms, true);
-  scaled(*t.p, x, y - lift, scale);
+  const float w = t.p->w * scale;
+  for (int k = 0; k < t.copies; k++) scaled(*t.p, x + (int)lroundf((k - (t.copies - 1) / 2.0f) * w), y - lift, scale);
 }
 void drawThings(uint32_t ms) {
   for (int i = 1; i < sc->n; i++)   // far first
@@ -350,7 +365,7 @@ uint16_t slotColor(int i) {
 void speedo(const Race& r) {
   const Car& p = r.car[PLAYER];
   bool ice = false;
-  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, p.dist, p.x, &ice) < 1);
+  const bool slowed = p.protectMs || (!airborne(p) && terrainCap(*r.track, r.rung, p.dist, p.x, &ice) < 1);
   const int lit = (int)lroundf(fminf(p.speed / BOOST_CAP, 1) * SEGMENTS);
   const uint16_t rim = rgb888_to_565(RIM), off = rgb888_to_565(PLATE), held = rgb888_to_565(HELD);
   for (int i = 0; i < sc->arcCount; i++) {
@@ -581,4 +596,12 @@ void draw(const View& v) {
 }
 
 const gfx::Sprite& icon() { return LAUNCHER_ICON; }
+float carReach() { return DEPTH_K / (float)(CAR_DEPTH - PIC_SCALE * pic::CAR[0]->h) - DEPTH_K / CAR_DEPTH; }
+float pxPerHalfWidth() { return ROAD_SLOPE * CAR_DEPTH; }
+float carHalf() { return (float)(pic::CAR[0]->w * PIC_SCALE / 2) / (ROAD_SLOPE * CAR_DEPTH); }
+float obstacleHalf(int track, const Feature& o) {
+  const int copies = obstacleCopies(track, o);
+  const float scale = obstacleSize(track, o, copies) * PIC_SCALE;
+  return copies * (int)(pic::OBSTACLE[track]->w * scale + 0.5f) / 2.0f / (ROAD_SLOPE * CAR_DEPTH);   // as scaled() rounds
+}
 }  // namespace racing::paint

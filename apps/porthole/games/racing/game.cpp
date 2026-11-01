@@ -36,7 +36,13 @@ void Game::loadKids(const AppEnter& e) {
     Save s{};
     if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) memcpy(k.best, s.best, sizeof k.best);
     k.me = e.who && e.all[i].id == e.who->id;
-    if (k.me) { me_ = nKids_; save_ = s; }
+    if (k.me) {   // a level saved under an older top races, reads and is saved again at today's top
+      me_ = nKids_; save_ = s;
+      for (int t = 0; t < TRACKS; t++) {
+        save_.level[t] = (int8_t)clampLevel(s.level[t], t);
+        dirty_ = dirty_ || save_.level[t] != s.level[t];
+      }
+    }
     nKids_++;
   }
   seedLevels();
@@ -70,7 +76,7 @@ void Game::recordFinish() {
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
   dirty_ = dirty_ || newBest_;
   if (save_.mode == AUTO) {   // a fixed setting races at its own level and leaves the adaptive ones alone
-    const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, race_.place, runaway(race_)), track_);
+    const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, track_, race_.place, runaway(race_)), track_);
     dirty_ = dirty_ || level != save_.level[track_];
     save_.level[track_] = level;
   }

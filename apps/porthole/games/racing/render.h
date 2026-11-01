@@ -43,4 +43,10 @@ struct View {
 };
 void draw(const View& v);
 const gfx::Sprite& icon();
+// What is drawn, for the host tests to hold the race to: a car's picture covers its dist up to carReach() m ahead and
+// carHalf() road half-widths either side; an obstacle's, obstacleHalf() either side of its x.
+float carReach();
+float carHalf();
+float obstacleHalf(int track, const Feature& o);
+float pxPerHalfWidth();   // screen px in a road half-width at the car's depth
 }  // namespace racing::paint

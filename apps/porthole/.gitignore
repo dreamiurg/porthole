@@ -14,5 +14,6 @@ build/
 !docs/racing/*.png
 !docs/racing/blackbox/*.png
 !docs/racing/adaptive-playtest/*.png
+!docs/racing/pro-playtest/*.png
 !games/*/art/launcher.png
 !docs/launcher/*.png

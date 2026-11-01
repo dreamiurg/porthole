@@ -52,22 +52,34 @@ void everyTrackFinishes() {
     assert(steady.ms < idle.ms);
     // Even the rivals at their slowest and most courteous beat a kid who never steers; the same seed and level is the
     // same race, to the millisecond.
-    // Over many seeds: a rival's bad day must never hand a race to the idle kid (one seed once hid that).
+    // Over many seeds: a rival's bad day must never hand a race to the idle kid (one seed once hid that), at any level.
     for (uint32_t seed = 1; seed <= 30; seed++)
-      for (int level : {LEVEL_MIN, LEVEL_MAX}) assert(run(t, 0, seed, level).place == 4);
+      for (int level = LEVEL_MIN; level <= LEVEL_MAX - LEVEL_SHIFT[t]; level++) assert(run(t, 0, seed, level).place == 4);
     assert(run(t, 2, 11, LEVEL_MIN).ms == run(t, 2, 11, LEVEL_MIN).ms);
   }
 }
 
 // The level after a finished race: a win steps up one (two after a runaway), a loss at 0 or below steps down two,
-// from 1..LEVEL_GENTLE lands at 0, from LEVEL_GENTLE+1..LEVEL_EASY at -2 (behind, those levels race alike and below 0
-// the rivals are slower), above that steps down LEVEL_HIGH_LOSS; always inside LEVEL_MIN..LEVEL_MAX. A level out of range is clamped when the race starts.
+// from 1..LEVEL_GENTLE lands at 0, above that at -2 while the rung is at most LEVEL_EASY (behind, those levels race
+// alike and below 0 the rivals are slower), and from a higher rung steps down LEVEL_HIGH_LOSS; always inside
+// LEVEL_MIN..LEVEL_MAX. A level out of range is clamped when the race starts.
 void levels() {
-  assert(nextLevel(-3, 1, false) == -2 && nextLevel(-3, 1, true) == -1 && nextLevel(-3, 2, false) == -5);
-  assert(nextLevel(1, 2, false) == 0 && nextLevel(LEVEL_GENTLE, 4, false) == 0);
-  assert(nextLevel(LEVEL_GENTLE + 1, 2, false) == -2 && nextLevel(LEVEL_EASY, 4, false) == -2);
-  assert(nextLevel(LEVEL_MAX, 3, false) == LEVEL_MAX - LEVEL_HIGH_LOSS && nextLevel(LEVEL_EASY + 1, 2, false) > 0);
-  assert(nextLevel(LEVEL_MAX, 1, true) == LEVEL_MAX && nextLevel(LEVEL_MIN + 1, 3, false) == LEVEL_MIN);
+  assert(nextLevel(-3, 2, 1, false) == -2 && nextLevel(-3, 2, 1, true) == -1 && nextLevel(-3, 2, 2, false) == -5);
+  assert(nextLevel(1, 2, 2, false) == 0 && nextLevel(LEVEL_GENTLE, 2, 4, false) == 0);
+  // Snow Track (2 rungs up): 4..7 sit on rungs 6..9, so a loss there goes to -2; from 8 (rung 10) it steps down three.
+  assert(nextLevel(LEVEL_GENTLE + 1, 2, 2, false) == -2 && nextLevel(LEVEL_EASY - 2, 2, 4, false) == -2);
+  assert(nextLevel(LEVEL_EASY - 1, 2, 2, false) == LEVEL_EASY - 1 - LEVEL_HIGH_LOSS);
+  assert(nextLevel(LEVEL_MAX, 2, 1, true) == LEVEL_MAX && nextLevel(LEVEL_MIN + 1, 2, 3, false) == LEVEL_MIN);
+  // A losing streak from each track's top: Desert 14 ... 2, 0; Industrial 15 ... 3, 0; Snow 19 ... 7, -2; Night 16
+  // ... 4, -2 (Night's 4 sits on rung 9). Every track's 0 and below and 1..3 lose alike.
+  const int streak[TRACKS][2] = {{0, 5}, {0, 5}, {-2, 5}, {-2, 5}};   // where it ends, after how many losses
+  for (int t = 0; t < TRACKS; t++) {
+    int level = clampLevel(LEVEL_MAX, t), losses = 0;
+    assert(nextLevel(level, t, 3, false) == level - LEVEL_HIGH_LOSS);
+    while (level > 0) { level = nextLevel(level, t, 4, false); losses++; }
+    assert(level == streak[t][0] && losses == streak[t][1]);
+    assert(nextLevel(LEVEL_GENTLE, t, 2, false) == 0 && nextLevel(0, t, 2, false) == -2 && nextLevel(-1, t, 2, false) == -3);
+  }
 }
 void ladder() {
   Race r;
@@ -75,18 +87,23 @@ void ladder() {
   assert(runaway(r));   // led exactly 60% of the race: a runaway, even with a rival close behind at the line
   r.firstMs = 59;
   assert(!runaway(r));
-  start(r, TRACK[1], 1, 0);   // Industrial Ruins sits LEVEL_SHIFT rungs up from 0, the shift gone by -LEVEL_SHIFT_FADE
-  assert(r.rung == LEVEL_SHIFT[1] && r.car[3].boosts == MAX_INVENTORY);
-  start(r, TRACK[1], 1, -2);   // below 0 the rivals are slower on every track, shifted or not, still with charges
-  assert(r.rung > 0 && r.car[3].top < 1 && r.car[1].boosts > 0);
-  start(r, TRACK[1], 1, -LEVEL_SHIFT_FADE);
-  assert(r.rung == -LEVEL_SHIFT_FADE && !r.car[1].boosts);
+  start(r, TRACK[1], 1, 0);   // Industrial Ruins sits LEVEL_SHIFT rungs up the ladder, one rung a level all the way down
+  assert(r.rung == LEVEL_SHIFT[1] && r.car[1].boosts == MAX_INVENTORY && !r.car[3].boosts);
+  start(r, TRACK[1], 1, -2);   // below 0 the rivals are slower on every track, still with charges
+  assert(r.rung == LEVEL_SHIFT[1] - 2 && r.car[3].top < 1 && r.car[1].boosts > 0);
+  start(r, TRACK[1], 1, -LEVEL_SHIFT[1]);   // the shift spent: no charges
+  assert(r.rung == 0 && !r.car[1].boosts && !r.car[2].boosts && !r.car[3].boosts);
   start(r, TRACK[1], 1, LEVEL_MAX);   // a level past the ladder's last rung is that rung
   assert(r.level == LEVEL_MAX - LEVEL_SHIFT[1] && r.rung == LEVEL_MAX);
+}
+// Both ends of the ladder on Desert Canyon: the bottom slows the rivals, never the kid; level 0 and the top.
+void ladderEnds() {
+  Race r;
   start(r, TRACK[0], 1, LEVEL_MIN - 5);
   assert(r.level == LEVEL_MIN && r.car[PLAYER].top == 1 && r.car[3].top < 1);   // slower rivals, never the kid
-  start(r, TRACK[0], 1, 0);
-  assert(!r.car[1].boosts && !r.car[2].boosts && !r.car[3].boosts);   // level 0: no charges (variety: the pace)
+  start(r, TRACK[0], 1, 0);   // Desert Canyon's level 0 sits on rung 7: the slower two hold three charges, the
+  assert(r.rung == LEVEL_SHIFT[0] && r.car[1].boosts == MAX_INVENTORY && r.car[2].boosts == MAX_INVENTORY);
+  assert(r.car[3].boosts == 1);   // pace-setter one (charges follow the part, not the color: variety)
   start(r, TRACK[0], 1, LEVEL_MAX);   // the top: three charges each, like the kid's cap, and nobody faster than the kid
   for (int i = 1; i < CARS; i++) assert(r.car[i].boosts == MAX_INVENTORY && r.car[i].top < 1 + 1e-6f);
   assert(r.car[1].top < 1 && r.car[2].top < 1);
@@ -145,14 +162,14 @@ void impactRule() {
   assert(hitSpeed(0.40f, OBSTACLE_LOSS) == HIT_FLOOR);
   bool ice = false;
   const Track& t = TRACK[0];
-  assert(terrainCap(t, 0, 1.2f, &ice) == OFFROAD_CAP);
+  assert(terrainCap(t, 0, 0, 1.2f, &ice) == OFFROAD_CAP);
   const Feature& mud = t.features[1];
   const float inMud = featureAt(t, mud) + 2;
-  assert(terrainCap(t, inMud, mud.x / 100.0f, &ice) == SLOW_CAP && !ice);
-  assert(terrainCap(t, inMud, -1.3f, &ice) == OFFROAD_CAP);   // strongest cap, not a product
+  assert(terrainCap(t, 0, inMud, mud.x / 100.0f, &ice) == SLOW_CAP && !ice);
+  assert(terrainCap(t, 0, inMud, -1.3f, &ice) == OFFROAD_CAP);   // strongest cap, not a product
   const Feature& patch = TRACK[2].features[1];
   ice = false;
-  terrainCap(TRACK[2], featureAt(TRACK[2], patch) + 2, patch.x / 100.0f, &ice);
+  terrainCap(TRACK[2], 0, featureAt(TRACK[2], patch) + 2, patch.x / 100.0f, &ice);
   assert(ice);
 }
 
@@ -197,6 +214,33 @@ void obstacleOnce() {
   }
   assert(hits == 1);   // one loss per contact, then eased out of the rock rather than trapped
   assert(fabsf(r.car[PLAYER].x - rock.x / 100.0f) >= rock.w / 100.0f + CAR_HALF_W - 0.05f);
+}
+
+// The Pro rungs change the track, never the rivals: a Pro hazard is not there below its rung (no hit, no slow-down)
+// and is from it up, and every track's levels reach each of its rungs.
+void proHazards() {
+  Race top, pro;
+  start(top, TRACK[0], 1, LADDER_RUNGS);
+  start(pro, TRACK[0], 1, LEVEL_MAX);
+  for (int i = 1; i < CARS; i++)
+    assert(pro.car[i].top == top.car[i].top && pro.car[i].boosts == top.car[i].boosts && pro.car[i].refill == top.car[i].refill);
+  for (int t = 0; t < TRACKS; t++) {
+    const Track& k = TRACK[t];
+    for (int f = 0; f < k.nFeatures; f++) {
+      const Feature& o = k.features[f];
+      if (!o.rung) continue;
+      for (int rung : {o.rung - 1, (int)o.rung}) {
+        const int level = rung - LEVEL_SHIFT[t];
+        assert(level <= LEVEL_MAX - LEVEL_SHIFT[t]);
+        Race r = racingAt(t, featureAt(k, o) - 10, o.x / 100.0f, level);
+        assert(r.rung == rung);
+        float slowest = 1;
+        for (int i = 0; i < 30; i++) { step(r, Controls{}); slowest = fminf(slowest, r.car[PLAYER].speed); }
+        if (o.kind == Kind::Obstacle) assert((r.impacts == 1) == (rung == o.rung));
+        else assert((slowest < SLOW_CAP + 0.05f) == (rung == o.rung));
+      }
+    }
+  }
 }
 
 void jumpsAndPickups() {
@@ -308,19 +352,19 @@ void rivalBoosts() {
   while (!d.boostMs && since < 500) { d.dist = r.car[PLAYER].dist - 25; step(r, Controls{}); since++; }
   assert(since == (int)(RIVAL_BOOST_GAP_MS / STEP_MS));
   // The refill levels, one rival a level in LADDER_REFILL order; such a rival takes its charges back at the lap line.
-  for (int level = LEVEL_MAX - 3; level <= LEVEL_MAX; level++) {
-    Race q = racingAt(0, 100, 0, level);
-    for (int k = 0; k < 3; k++) assert(q.car[LADDER_REFILL[k]].refill == (level > LEVEL_MAX - 3 + k));
+  for (int level = LADDER_RUNGS - 3; level <= LADDER_RUNGS; level++) {   // as rungs
+    Race q = racingAt(0, 100, 0, level - LEVEL_SHIFT[0]);
+    for (int k = 0; k < 3; k++) assert(q.car[LADDER_REFILL[k]].refill == (level > LADDER_RUNGS - 3 + k));
     Car& e = q.car[LADDER_REFILL[0]];
     e.boosts = 0; e.dist = TRACK[0].length - 2; e.speed = 1;   // ahead of the kid: nothing to chase
     for (int i = 0; i < 10; i++) step(q, Controls{});
-    assert(e.boosts == (level > LEVEL_MAX - 3 ? MAX_INVENTORY : 0));
+    assert(e.boosts == (level > LADDER_RUNGS - 3 ? MAX_INVENTORY : 0));
   }
 }
 
 // A competent driver: steers its favourite line around cars and hazards ahead, presses Boost after a seeded 0.2-1.2 s
 // reaction whenever it holds a charge, and fires when a rival is lined up. Line and reaction vary driver to driver.
-float aimAround(const Race& r, float aim) {
+float aimAround(const Race& r, float aim, float look = 40) {
   const Car& p = r.car[PLAYER];
   for (int i = 1; i < CARS; i++) {
     const Car& o = r.car[i];
@@ -330,8 +374,8 @@ float aimAround(const Race& r, float aim) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    const float d = featureAt(t, o) - lapPos(t, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
-    if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && d > 0 && d < 40 && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
+    const float d = middleAhead(t, o, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
+    if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && active(o, r.rung) && d > 0 && d < look && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
   }
   return std::max(-0.85f, std::min(0.85f, aim));
 }
@@ -365,8 +409,78 @@ int competent(int track, uint32_t seed, int level, bool* ran = nullptr, int* rac
   return r.place;
 }
 
+// A kid driver: sees the road 300 ms late, judges a bend at 70% of what it needs, looks 30 m ahead and wobbles its
+// line; boosts and fires like the competent driver.
+int kid(int track, uint32_t seed, int level) {
+  Race r;
+  start(r, TRACK[track], seed, level);
+  uint32_t s = seed * 2654435761u + 7;
+  int wait = -1;
+  const float lane = ((int)(next(s) % 61) - 30) / 100.0f;
+  float seenX[16] = {}, seenFeed[16] = {}, wobble = 0;
+  for (int n = 0; n < 60 * 60 * 50 && r.phase != Phase::Finished; n++) {
+    const Car& p = r.car[PLAYER];
+    seenX[n % 16] = p.x;
+    seenFeed[n % 16] = curve(*r.track, p.dist) * DRIFT * p.speed * p.speed / STEER_RATE;
+    const int late = n >= 15 ? (n - 15) % 16 : 0;   // 15 steps: 300 ms
+    if (n % 50 == 0) wobble = ((int)(next(s) % 41) - 20) / 100.0f;
+    Controls c;
+    c.steer = std::max(-1.0f, std::min(1.0f, (aimAround(r, lane + wobble, 30) - seenX[late]) * 1.8f + 0.7f * seenFeed[late]));
+    if (r.phase == Phase::Racing && r.inventory[BOOST] && !p.boostMs) {
+      if (wait < 0) wait = (200 + (int)(next(s) % 1000)) / (int)STEP_MS;
+      if (wait-- == 0) { c.boost = true; wait = -1; }
+    }
+    c.rocket = linedUp(r);
+    step(r, c);
+  }
+  assert(r.phase == Phase::Finished);
+  return r.place;
+}
+// The Pro rungs make a track harder, never easier: on every rung that switches a hazard on, the competent driver and
+// the kid each place no better than on the rung below (places summed over N races, within TOLERANCE: the rivals are
+// the same from LADDER_RUNGS up, so only the hazard differs).
+void proNoEasier() {
+  constexpr int N = 30, TOLERANCE = 2;
+  auto places = [](int t, int rung, bool kidDriver) {
+    int sum = 0;
+    for (int k = 0; k < N; k++) {
+      const uint32_t seed = 9000 + k * 7919u;
+      sum += kidDriver ? kid(t, seed, rung - LEVEL_SHIFT[t]) : competent(t, seed, rung - LEVEL_SHIFT[t]);
+    }
+    return sum;
+  };
+  for (int t = 0; t < TRACKS; t++)
+    for (int f = 0; f < TRACK[t].nFeatures; f++) {
+      const int rung = TRACK[t].features[f].rung;
+      for (int d = 0; rung && d < 2; d++) {
+        const int below = places(t, rung - 1, d), on = places(t, rung, d);
+        printf("%-16s Pro rung %d, %s: places %d, %d below (%d races)\n", TRACK[t].name, rung, d ? "kid" : "competent", on, below, N);
+        assert(on >= below - TOLERANCE);
+      }
+    }
+}
+// Neighbouring levels race alike: a competent driver's wins move at most 20 in 40 a level from -4 to 4. Most steps are
+// under 10 (25 points); two known cliffs reach 17-18 (2 races of headroom) and are held here so they grow no worse, for the game designer:
+// where the slow-down starts (-1 to 0: even 0.35% off the pace-setter's top hands it the race) and Industrial Ruins'
+// level 1, rung 7, the pace-setter's first Boost charge. A rung skipped a level (the old fade) made 19-20. Its own
+// seeds, apart from the ones the levels were tuned on.
+void neighbourLevels() {
+  for (int t = 0; t < TRACKS; t++) {
+    int last = -1;
+    printf("%-16s competent driver, wins/40 at levels -4..4:", TRACK[t].name);
+    for (int level = -4; level <= 4; level++) {
+      int wins = 0;
+      for (int k = 0; k < 40; k++) wins += competent(t, 3000 + k * 6007u, level) == 1;
+      printf(" %d", wins);
+      if (last >= 0) assert(abs(wins - last) <= 20);
+      last = wins;
+    }
+    printf("\n");
+  }
+}
 // The rule the levels exist for: a competent driver climbing from level 0 keeps winning some races and losing others
-// on every track once the level has settled (the last 40 of 80 races: 45-80% wins, about two in three).
+// on every track once the level has settled (the last 40 of 80 races: 55-75% wins; today 55-70%, so a track's base
+// strength can move a race or two either way before this fails).
 void staircase() {
   for (int t = 0; t < TRACKS; t++) {
     int level = 0, wins = 0, settled = 0;
@@ -376,23 +490,27 @@ void staircase() {
       const int place = competent(t, 5000 + k * 104729u, level, &ran, &raced);
       wins += place == 1;
       settled += k >= 40 && place == 1;
-      level = clampLevel(nextLevel(raced, place, ran), t);
+      level = clampLevel(nextLevel(raced, t, place, ran), t);
     }
     printf("%-16s competent driver from level 0: %d/80 wins, %d of the last 40, level %+d\n", TRACK[t].name, wins, settled, level);
-    assert(settled >= 18 && settled <= 32);
+    assert(settled >= 22 && settled <= 30);
   }
 }
-// The fixed settings stay what the chip promises on every track: Normal and Hard are races a competent driver
-// both wins and loses, and Hard is never easier than Normal.
+// The fixed settings stay what the chip promises on every track: Normal (level 0) is a race a competent driver wins
+// 40-80% of (today 45-73%), Hard 20-50% (today 33-43%), and Hard is harder than Normal for the competent driver and
+// the kid alike.
 void modeBands() {
   for (int t = 0; t < TRACKS; t++) {
-    int normal = 0, hard = 0;
+    int normal[2] = {0, 0}, hard[2] = {0, 0};
     for (int k = 0; k < 40; k++) {
-      normal += competent(t, 9000 + k * 7919u, 0) == 1;
-      hard += competent(t, 9000 + k * 7919u, HARD_LEVEL[t]) == 1;
+      const uint32_t seed = 9000 + k * 7919u;
+      normal[0] += competent(t, seed, 0) == 1; hard[0] += competent(t, seed, HARD_LEVEL[t]) == 1;
+      normal[1] += kid(t, seed, 0) == 1; hard[1] += kid(t, seed, HARD_LEVEL[t]) == 1;
     }
-    printf("%-16s competent driver: Normal %d/40, Hard %d/40\n", TRACK[t].name, normal, hard);
-    assert(normal >= 8 && normal <= 32 && hard >= 8 && hard <= 26 && hard <= normal);
+    printf("%-16s Normal %d/40, Hard %d/40 (competent); Normal %d/40, Hard %d/40 (kid)\n", TRACK[t].name, normal[0], hard[0],
+           normal[1], hard[1]);
+    assert(normal[0] >= 16 && normal[0] <= 32 && hard[0] >= 8 && hard[0] <= 20);
+    assert(hard[0] < normal[0] && hard[1] < normal[1]);
   }
 }
 }  // namespace
@@ -403,16 +521,20 @@ int main() {
   boostAndTerrain();
   obstacleOnce();
   jumpsAndPickups();
+  proHazards();
   rockets();
   contactOnce();
   finishOrder();
   levels();
   ladder();
+  ladderEnds();
   variety();
   rivalBoosts();
   everyTrackFinishes();
   staircase();
   modeBands();
+  neighbourLevels();
+  proNoEasier();
   puts("test_racing_rules: ok");
   return 0;
 }
