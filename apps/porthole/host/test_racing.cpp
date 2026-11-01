@@ -399,7 +399,7 @@ void saveMigration() {
   old.level[1] = 9; old.mode = EASY;   // must be overwritten, not merged
   assert(loadBlob(&v1, sizeof v1, old) && old.best[1].raceMs == 88000 && old.version == SAVE_VERSION && old.mode == AUTO);
   for (int8_t l : old.level) assert(l == 0);
-  // A v2 save as released, from before the tracks' tops moved (Desert Canyon's was 21): it loads at today's top.
+  // A v2 save as released, from before the tracks' tops moved (Desert Canyon's was 18): it loads at today's top.
   Save v2{};
   v2.best[0] = {91000, 30000}; v2.level[0] = 18;
   seal(v2);
@@ -407,23 +407,21 @@ void saveMigration() {
   const SaveSlot slot = {&v2, sizeof v2};
   Rig r;
   r.g.enter(AppEnter{&zoe, &zoe, &slot, 1, 1000000, r.ms, false});
-  r.tap(paint::MODE_CHIP);   // any write: the stored level is the clamped one, as `debug` shows it
-  const void* data = nullptr; size_t len = 0;
+  const void* data = nullptr; size_t len = 0;   // the clamp alone is written back
   assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, back) && back.level[0] == clampLevel(LEVEL_MAX, 0));
-  r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP); r.tap(paint::MODE_CHIP);   // back to Auto
   r.toRace(0);
   assert(r.g.race().level == clampLevel(LEVEL_MAX, 0) && clampLevel(LEVEL_MAX, 0) < 18);
 }
 
-// The first tap on the track page right after entering from the launcher acts, whatever it hits, at the emulator's
-// 33 ms frames and a 66 ms touch (the pass-3 report saw it ignored once; not reproduced, kept as a regression check).
+// The first tap on the track page acts, whatever it hits, as soon as the 450 ms fresh-touch gate opens, at the
+// emulator's 33 ms frames and a 66 ms touch (the pass-3 report was a tap inside the gate: ignored by design).
 void firstTapAfterEntry() {
   const ui::Box targets[] = {paint::CARD[0], paint::CARD[1], paint::CARD[2], paint::CARD[3], paint::HOME, paint::MODE_CHIP};
   for (const ui::Box& b : targets) {
     Rig r;
-    r.wait(1500, 33);
+    r.wait(ui::FreshGate::FRESH_MS + 33, 33);
     const int x = b.x + b.w / 2, y = b.y + b.h / 2;
-    r.frame(true, x, y, 33); r.frame(true, x, y, 33); r.frame(true, x, y, 33); r.frame(false, x, y, 33);
+    r.frame(true, x, y, 33); r.frame(true, x, y, 33); r.frame(false, x, y, 33);
     const void* data = nullptr; size_t len = 0;
     assert(r.g.screen() != Game::Screen::Tracks || r.g.wantsHome() || r.g.takeSave(&data, &len, true));
   }

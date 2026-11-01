@@ -73,7 +73,7 @@ constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led 
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
 // Normal level 0 on every track (its strength set by the track's LEVEL_SHIFT); Hard, by track, a level both the
-// competent and the kid driver win less often than Normal: the competent one 30-42%.
+// competent and the kid driver win less often than Normal: the competent one 30-43%.
 constexpr int EASY_LEVEL = -8;
 constexpr int8_t HARD_LEVEL[] = {2, 1, 2, 4};
 // By track: the rivals' pace at LEVEL_MIN, kept above what a kid who never steers manages there (Desert Canyon's

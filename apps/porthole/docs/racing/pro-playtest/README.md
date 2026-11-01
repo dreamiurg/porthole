@@ -491,7 +491,7 @@ change.
 | P3-2 Nit: rear-corner bumps every 4-5 s | No change (a real touch now). |
 | Review: Industrial's Pro oil made the competent driver better | Dropped; `proNoEasier` checks each driver on its own again (within 2 places of 30 races). With rivals keeping clear of a whole patch (below) Desert's third rock made the kid driver's races easier (93 places against 99 below) and was dropped too. Industrial Ruins and Snow Track have no Pro hazard. |
 | Review: the shift fade skipped rungs near 0 | One rung per level all the way down (`rungOf`). `neighbourLevels` checks levels -4..4 on every track on their own seeds: most steps are under 25 points; two known cliffs remain for the designer (-1 to 0, where the slow-down starts, and Industrial's level 1, the pace-setter's first charge), 42-45 points, held so they grow no worse. |
-| Review: rivals stopped avoiding a patch at its middle | A rival now avoids a patch until past its end (an obstacle until level with it). Rivals got much better on the oil and puddle tracks, so the base strengths moved: `LEVEL_SHIFT` 7, 6, 2, 5 (was 9, 12, 2, 7). |
+| Review: rivals stopped avoiding a patch at its middle | A rival now avoids a patch until past its end (an obstacle until level with it). Rivals got much better on the oil and puddle tracks, so the base strengths moved: `LEVEL_SHIFT` 7, 6, 2, 5 (was 9, 12, 2, 8). |
 | Review: Hard vs Normal for both drivers; Night Hard | `modeBands` checks Hard below Normal for both drivers. `HARD_LEVEL` 2, 1, 2, 4. |
 | Review: a released v2 save above today's top | Clamped on load (`loadKids`), so `debug` and the save read today's top; tested with a level-18 Desert save. |
 
@@ -506,3 +506,98 @@ Final balance (competent / kid driver, wins out of 40, the modeBands seeds; stai
 
 Neighbour levels -4..4 (competent wins out of 40, their own seeds): Desert 40 40 39 36 18 17 15 15 13; Industrial 40 40
 35 29 26 9 9 9 10; Snow 40 40 40 38 20 20 15 15 9; Night 40 40 40 33 26 24 18 17 15.
+
+## Pass 4 (final gate: rivals clear whole patches, per-track base strength, Pro trimmed)
+
+Same playtester agent as passes 1-3, so again not a fresh first-time-comprehension check. Emulator roleplay only; no
+real child and no board. `games/racing/` source was not read. The app brief (`apps/porthole/AGENTS.md`) was read and
+says `FreshGate` makes every screen change ignore touches for 450 ms.
+
+- Build: `claude/rally-pro-obstacles` at `392d4f0`, `build/host/snap` sha256
+  `7fe6d9a934923ff9e9dd4186194bed50e2030e1bf04f1164a2b1ccde63f95442`, frozen as a scratch copy for every run and deleted after.
+- Brief (as received): Sam 6 on Auto, Desert and Industrial from a fresh profile (2 each): fair, fun, not crushing?
+  Zoe 10 on Auto, Snow and Night (1-2 each): not a walk in the park? Zoe on Hard on Industrial once. Top via fixture:
+  Desert 14, Night 16 once each. Try hard to reproduce pass-3 finding 1 (first tap on the track page ignored after
+  opening Rally from the launcher).
+- Driver: `drv2.py` unchanged, settings as pass 3 (Sam `SEEN=2 SEEY=290 SEEW=60`, gain 0.8, 6 degrees of noise;
+  Zoe `SEEY=260`, gain 1, no noise; both tap Boost/Rocket like a kid). One driver process per track. The fixture's
+  Zoe is 9, as in every pass. Session traces (JSON) are in the session scratch `pro4/` (uncommitted); frames deleted.
+- Unsuccessful runs, kept for the record: Zoe's first `dbg level 14` attempt never raced: the shell's rest screen
+  ("Zoe is resting. Back in 10 min") cut her 9th race of the session mid-lap 2 (shell-owned, known since
+  `../adaptive-playtest/` pass 2). The top runs were redone in a fresh session.
+
+| # | Who | Track | Rivals | Place | Time | Speed-loss events (HUD red) |
+| --- | --- | --- | --- | --- | --- | --- |
+| SD1 | Sam | Desert | Auto, level 0 | 3rd | 1:34.4 | 11: rivals, mud, kerb; stuck behind yellow in laps 2-3 |
+| SD2 | Sam | Desert | Auto | **1st** | 1:30.8 | 0; alone in front from about 8 s |
+| SI1 | Sam | Industrial | Auto | **1st** | 1:47.7 | 13; 4th to 1st, the lead taken in the final lap |
+| SI2 | Sam | Industrial | Auto | **1st** | 1:48.6 | 14; 2nd most of the race, the lead taken at the end |
+| ZS1 | Zoe | Snow | Auto, level 0 | 3rd | 2:00.6 | 31: about 20 rear bumps on blue (the helper parks behind it), ice |
+| ZS2 | Zoe | Snow | Auto | **1st** | 1:56.5 | 8; alone in front from lap 1 |
+| ZN1 | Zoe | Night | Auto, level 0 | 3rd | 1:51.0 | 17: puddles, kerbs, rivals |
+| ZN2 | Zoe | Night | Auto | **1st** | 1:47.3 | 3; alone from about 12 s |
+| ZN3 | Zoe | Night | Auto | 3rd | 1:50.3 | 12 |
+| ZH | Zoe | Industrial | **Hard** | 2nd | 1:48.3 | 11; in a group all race |
+| TD | Zoe | Desert | `dbg level 14` | 4th | 1:34.9 | 8: one Pro rock (at contact, `12` top row), mud, kerb, cones, a rival |
+| TN | Zoe | Night | `dbg level 16` | 4th | 1:51.3 | 15: Pro barriers (at contact, `12` bottom row), puddles, rival bumps |
+
+(Each top run followed one Auto race on the same track in that session to reach a results page: Desert 4th,
+Night 4th. Not counted above.) The levels were not read back in `--serve` (`debug` answers nothing there); the
+suite's `a7_racing_top_losses.txt` and `a8_racing_short_top_losses.txt`, passing on this build, take the same path
+(results page, `dbg level 14` / `16`, Replay) and read `race_level=14` / `16` back. Night's barriers are drawn only at
+Pro levels, so TN shows one; Desert also has an ordinary rock, so the rock in `12` alone does not prove 14.
+
+Method notes: a second track in a session skips How to race, so on Zoe's later tracks the "Next" tap landed on Go
+about 0.9 s before the driver's `tilt 0 1000 0` (harmless: the start lights were still on). ZH's Hard was read on
+the track-page chip only (`Rivals Hard`); nothing later shows the mode.
+
+### Pass-3 finding 1: not reproduced
+
+0 of 31 attempts reproduced it: Sam (16) and Zoe (15) from the picker, launcher arrow, Rally tile, then a 66 ms touch on
+Desert, Industrial, Snow, Night, Home or the Rivals chip 900, 1000, 1500, 2500 or 3000 ms after the tile; every first tap
+acted. What does happen: a tap 0-300 ms after the tile's release changes nothing (frame identical, `11`), from 400 ms
+on it acts. The launcher arrow behaves the same after the picker (ignored at 100 and 300 ms, acts at 400 ms). This is
+the shell's documented 450 ms `FreshGate`, not a Rally defect. Trace: `pro4/early.json` (fixture, then
+`down 80 81, tick 66, up, tick 600, down 96 135, tick 66, up, tick 600, down 80 104, tick 66, up, tick 300,
+down 106 104, tick 66, up, tick 700` = still the track page; the same touch again opens How to race).
+
+### Findings (pass 4)
+
+No Blocker or Major.
+
+- **Minor (observation, pacing). After a loss, Auto's next race can be a lonely win.** SD2, ZS2 and ZN2 each followed a
+  3rd with a race led alone from the first 10-15 s; ZN3 went back to 3rd. Each kid alternates a hard race and an easy
+  one. For Sam this is welcome. For Zoe two of the five Auto races were a walk; the other three (and Hard) were not.
+  The helper is worse than a good 10-year-old in the losses (it parks on a rival's bumper), so a real Zoe would see
+  fewer losses and fewer drops. No change asked; the designer may want to know.
+- **Minor (known, shell-owned). The rest screen ends a race mid-lap** (see above). Unchanged since its deferral.
+- Nit, carried: a kid who drives on a rival's rear corner is bumped every few seconds (ZS1). Each is a visible touch.
+
+### Qualitative (pass 4)
+
+- **Sam, 6.** Desert 3rd then 1st; Industrial 1st, 1st, both decided in the last lap. Fair, fun, not crushing: the
+  Industrial wins were close races, which is the best outcome for him. The point he would stop: the Desert loss spent
+  behind yellow, or happily after two wins.
+- **Zoe, 10.** Snow 3rd, 1st; Night 3rd, 1st, 3rd; Hard Industrial 2nd in a pack. Not a walk in the park overall; the
+  wins after a loss are (Minor above). She would try Hard after an easy win; Hard gave her a real race.
+- **Top levels (supplementary).** Desert 14 and Night 16: 4th both, close to 3rd. Rocks and barriers are visible about
+  a second ahead and hit only on overlap. Industrial and Snow have no Pro hazard now.
+- **Goal, actions, feedback, recovery.** Unchanged screens; every speed loss inspected has a visible cause.
+
+### Gesture and interruption matrix (pass 4)
+
+| Case | This pass |
+| --- | --- |
+| Picker, launcher, Rally tile, cards, Go, Replay, Tracks, chip to Hard | Acted on the first tap after the 450 ms gate |
+| Rest screen mid-race | Hit once (ZD): race ends, rest page |
+| Pause hold, Home mid-race, reboot mid-race, drag off a button | **Gap** (not in this brief) |
+
+### Automated (pass 4)
+
+`make -C apps/porthole playtest` at `392d4f0`: 84 of 84 scenarios pass, 0 UI FAIL, 0 UI WARN.
+
+### Verdict (pass 4)
+
+**Ready.** No Blocker or Major. Sam is near or at the front on Auto and enjoys close wins; Zoe has real races on Auto
+and Hard, with an easy race after each loss; Pro hazards at the top are visible and hit only where drawn. Pass-3
+finding 1 does not reproduce on this build; only the shell's intended 450 ms gate is seen.

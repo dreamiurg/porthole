@@ -13,7 +13,7 @@ tracks, platform contract, and the two approved reference boards the look follow
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
   skips a setting, by design: it cycles). Easy races at level -8, Normal at level 0 on every track (each track's
   `LEVEL_SHIFT` sets how strong that is: a competent driver wins 50-75%), Hard at `HARD_LEVEL` (by track: 2 on Desert
-  Canyon and Snow Track, 1 on Industrial Ruins, 4 on Night Run; a competent driver wins 30-42% there, and both the
+  Canyon and Snow Track, 1 on Industrial Ruins, 4 on Night Run; a competent driver wins 30-43% there, and both the
   competent and the kid driver win Hard less often than Normal, `modeBands`); a fixed setting never moves the
   adaptive levels. Times count the same in every setting. A finish in a fixed setting on a never-raced track still
   makes it raced, so its seeded level stays as it was and is no longer derived from the other tracks. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
@@ -90,8 +90,8 @@ tracks, platform contract, and the two approved reference boards the look follow
   competent driver and a late, wobbly kid driver each place no better on its rung than on the one below
   (`proNoEasier`: 30 races each, within 2 places; the sweeps are in `docs/racing/pro-playtest/README.md`). A crate and
   an oil patch on Industrial Ruins, a second barrier on Night Run, a third rock on Desert Canyon and a snow block on
-  Snow Track made a race easier for one of the drivers and were dropped. Both bots win at most 6% at rung 18 on
-  Desert Canyon and Night Run, so Pro is for kids beyond them (accepted). A loss at the top drops below the Pro rungs,
+  Snow Track made a race easier for one of the drivers and were dropped. The bots rarely win at rung 18 on Desert Canyon
+  and Night Run (a few percent in the sweeps), so Pro is for kids beyond them (accepted). A loss at the top drops below the Pro rungs,
   so the hazards stay off until the kid climbs back (by design). In simulation a narrower road made races easier
   (rivals jam) and sharper bends changed nothing, so neither is used.
 - No sounds, no network. Leaving and coming back starts at the cards.
