@@ -1,10 +1,13 @@
-"""Grip v4, built in Blender from Meshy's yoke and the build123d snap cradle.
+"""Grip v6, built in Blender from Meshy's yoke and the build123d snap cradle, printed as two glued pieces.
 
-Run inside Blender (e.g. through the Blender MCP: exec(open(path).read(), {"__file__": path})).
+Run inside Blender (e.g. through the Blender MCP: exec(open(path).read(), {"__file__": path})), or headless:
+  Blender -b --factory-startup --python-expr "p='hardware/grip/build_grip_blender.py'; exec(open(p).read(), {'__file__': p})"
 Inputs, next to this file:
   source/meshy_yoke_v2.glb   Meshy multi-image-to-3D of the "Yoke Pro" concept with a simplified centre
   stl/snap_test.stl          the snap cradle from grip_v1.py (fingers, key rib, ledge, root ring)
-Output: stl/grip_v4.stl.
+Outputs in stl/, each lying in its print orientation (cut face on the bed):
+  grip_v6_front.stl, grip_v6_back.stl            the grip
+  grip_v6_test_front.stl, grip_v6_test_back.stl  the right horn above the spoke, cut the same way
 
 Frame as in puck_v1.py: origin = puck centre, +Z out of the screen, +Y = top of the screen, mm.
 Meshy supplies only the handles and the bottom bar; the centre (cradle, two spokes, a pad to the bar)
@@ -15,6 +18,17 @@ v4 after the first print: the handles were too thick for a kid's hand and too fa
 thumb, and their rounded backs hung in the air (spaghetti). Every surface is pulled in by INSET (thinner
 tubes, same shape), the back is cut flat FLATTEN above its lowest point and set on the bed, and each half
 moves PULL_IN towards the puck, the bottom bar shortened on both sides of its badge to match.
+
+v5 after the v4 print: the flat back left sharp edges where it met the sides, so the back is fully round
+again and printed on supports (v6 removes them). The handles are thinner (INSET 3.5) with shallower grooves (SMOOTH), and PULL_IN drops
+to 12 so fingers fit between the handles and the hub.
+
+v6 after the v5 print: supports under the round back left a rough surface where fingers wrap. The v5 shape is
+cut at SPLIT_Z into a front piece and a back skin, and each prints with its cut face on the bed, so no surface
+needs support. The cut sits under the cradle's root ring, so the snap fingers stay one piece with their roots
+and the front piece prints like v1-v5. The skin is up to 2 mm thick (thinner under the handles, whose backs
+curve). Pins cut from 1.75 mm filament go into blind holes where the skin is full thickness, to line the pieces
+up for gluing.
 """
 
 import math
@@ -23,18 +37,25 @@ import os
 import bmesh
 import bpy
 from mathutils import Matrix
+from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BACK_Z = -26.2  # print bed plane (grip_v1.BACK_Z)
 ROOT_Z = -22.2  # cradle finger roots (grip_v1.ROOT_Z)
 CUP_TOP = -12.6  # cradle rim (grip_v1.CUP_TOP)
 WIDTH = 215.0  # overall grip width
-DEPTH_SCALE = 1.25  # Meshy's model is shallow; this gives ~24 mm deep handles
-INSET = 2.0  # mm off every surface: handles 31 -> 27 mm across
-FLATTEN = 2.5  # flat back this far above the lowest point, so the rounded handle backs sit on the bed
-PULL_IN = 20.0  # each half moves this far towards the puck: the thumb is 2 cm closer to the screen
+DEPTH_SCALE = 1.45  # Meshy's model is shallow; with INSET this gives ~20 mm deep handles
+INSET = 3.5  # mm off every surface: handles 31 -> 24 mm across
+SMOOTH = 1.0  # closing radius: fills the grip grooves part way, so they stay but get shallow
+PULL_IN = 12.0  # each half moves this far towards the puck: thumb closer to the screen, room left for fingers
 BADGE_X = 17.0  # the bottom bar's centre (badge) stays; the bar is shortened outside it
 VOXEL = 0.25  # distance-field resolution for the inset
+SPLIT_Z = ROOT_Z - 2.0  # the cut: the front piece keeps 2 mm of root ring under the fingers
+PIN_D = 2.0  # holes for 1.75 mm filament pins; printed holes come out ~0.1 mm small, so the pins sit snug
+PIN_FRONT, PIN_BACK = 6.0, 1.3  # hole depths: cut the pins 7 mm long; the skin keeps a 0.45 mm roof or more
+PINS = [(57.0, 21.0), (66.0, 52.0), (-57.0, 21.0), (-57.0, 47.0)]  # spokes and horn tops, where the skin is thickest (Meshy is not symmetric)
+TEST_MIN = (51.0, 0.0)  # test piece: the right horn above the spoke, x > 51 and y > 0
+TRIS = 220_000  # triangles in the whole grip before the cut, so each STL stays under 12 MB
 SC = bpy.context.scene
 
 
@@ -77,8 +98,8 @@ def extrude(name, pts, z0, z1, bevel=0.0):
     return ob
 
 
-def cylinder(r, z0, z1):
-    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=z1 - z0, vertices=256, location=(0, 0, (z0 + z1) / 2))
+def cylinder(r, z0, z1, x=0.0, y=0.0, vertices=256):
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=z1 - z0, vertices=vertices, location=(x, y, (z0 + z1) / 2))
     return bpy.context.active_object
 
 
@@ -125,23 +146,27 @@ def import_meshy(path):
     return m
 
 
-def sdf_offset(m, distance):
-    """Move every surface of m by distance (negative = inwards) through a signed distance field: an exact
-    offset that never folds, unlike pushing vertices along their normals."""
+def sdf_offset(m, *distances):
+    """Move every surface of m by each distance in turn (negative = inwards) through a signed distance
+    field, re-meshing between steps so a dilate followed by an erode closes grooves (and the reverse
+    rounds edges). An exact offset that never folds, unlike pushing vertices along their normals."""
     ng = bpy.data.node_groups.new("sdf_offset", "GeometryNodeTree")
     ng.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
     ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
     gin, gout = ng.nodes.new("NodeGroupInput"), ng.nodes.new("NodeGroupOutput")
-    sdf = ng.nodes.new("GeometryNodeMeshToSDFGrid")
-    sdf.inputs["Voxel Size"].default_value = VOXEL
-    sdf.inputs["Band Width"].default_value = int(abs(distance) / VOXEL) + 4  # the band must reach the new surface
-    off = ng.nodes.new("GeometryNodeSDFGridOffset")
-    off.inputs["Distance"].default_value = distance
-    mesh = ng.nodes.new("GeometryNodeGridToMesh")
-    ng.links.new(gin.outputs[0], sdf.inputs["Mesh"])
-    ng.links.new(sdf.outputs["SDF Grid"], off.inputs["Grid"])
-    ng.links.new(off.outputs["Grid"], mesh.inputs["Grid"])
-    ng.links.new(mesh.outputs["Mesh"], gout.inputs[0])
+    out = gin.outputs[0]
+    for d in distances:
+        sdf = ng.nodes.new("GeometryNodeMeshToSDFGrid")
+        sdf.inputs["Voxel Size"].default_value = VOXEL
+        sdf.inputs["Band Width"].default_value = int(abs(d) / VOXEL) + 4  # the band must reach the new surface
+        off = ng.nodes.new("GeometryNodeSDFGridOffset")
+        off.inputs["Distance"].default_value = d
+        mesh = ng.nodes.new("GeometryNodeGridToMesh")
+        ng.links.new(out, sdf.inputs["Mesh"])
+        ng.links.new(sdf.outputs["SDF Grid"], off.inputs["Grid"])
+        ng.links.new(off.outputs["Grid"], mesh.inputs["Grid"])
+        out = mesh.outputs["Mesh"]
+    ng.links.new(out, gout.inputs[0])
     select_only(m)
     mod = m.modifiers.new("sdf", "NODES")
     mod.node_group = ng
@@ -149,29 +174,30 @@ def sdf_offset(m, distance):
     bpy.data.node_groups.remove(ng)
 
 
-def inset_and_flatten(m):
-    """Pull every surface in by INSET, then cut the back flat and set it on the bed."""
-    sdf_offset(m, -INSET)
-    zcut = min(v.co.z for v in m.data.vertices) + FLATTEN
-    boolean(m, extrude("flat", [(-400, -400), (400, -400), (400, 400), (-400, 400)], zcut - 100, zcut), "DIFFERENCE")
-    m.data.transform(Matrix.Translation((0, 0, (BACK_Z - 0.3) - zcut)))  # 0.3 below the bed; the floor cut trims it
+def inset(m):
+    """Make the grooves shallow, pull every surface in by INSET and set the lowest point on the bed. The
+    handle backs stay fully round (ergonomics first), so the print needs supports under them."""
+    sdf_offset(m, SMOOTH, -(SMOOTH + INSET))
+    zmin = min(v.co.z for v in m.data.vertices)
+    m.data.transform(Matrix.Translation((0, 0, BACK_Z - 0.3 - zmin)))  # the floor cut leaves a thin strip on the bed
 
 
-def keep(m, x0, x1, name):
-    """A copy of m clipped to x0 < x < x1."""
+def keep(m, name, x=(-400, 400), y=(-400, 400), z=(-400, 400)):
+    """A copy of m clipped to the box x[0] < x < x[1], y[0] < y < y[1], z[0] < z < z[1]."""
     c = m.copy()
     c.data = m.data.copy()
     c.name = name
     SC.collection.objects.link(c)
-    boolean(c, extrude(f"{name}_box", [(x0, -400), (x1, -400), (x1, 400), (x0, 400)], -400, 400), "INTERSECT")
+    (x0, x1), (y0, y1) = x, y
+    boolean(c, extrude(f"{name}_box", [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], *z), "INTERSECT")
     return c
 
 
 def pull_in(m):
     """Move each half PULL_IN towards the puck; cut the bar between the badge and the moved halves."""
-    left = keep(m, -400, -(BADGE_X + PULL_IN - 0.5), "left")  # 0.5 overlap with the badge: no coincident faces
-    right = keep(m, BADGE_X + PULL_IN - 0.5, 400, "right")
-    centre = keep(m, -BADGE_X, BADGE_X, "centre")
+    left = keep(m, "left", x=(-400, -(BADGE_X + PULL_IN - 0.5)))  # 0.5 overlap with the badge: no coincident faces
+    right = keep(m, "right", x=(BADGE_X + PULL_IN - 0.5, 400))
+    centre = keep(m, "centre", x=(-BADGE_X, BADGE_X))
     left.data.transform(Matrix.Translation((PULL_IN, 0, 0)))
     right.data.transform(Matrix.Translation((-PULL_IN, 0, 0)))
     bpy.data.objects.remove(m, do_unlink=True)
@@ -182,7 +208,7 @@ def pull_in(m):
 
 def build_grip():
     m = import_meshy(os.path.join(HERE, "source", "meshy_yoke_v2.glb"))
-    inset_and_flatten(m)
+    inset(m)
     # Meshy's centre out: its ring (r 56, r 53 above the bottom bar), the ring's top arc, its spokes
     centre = [polar(53.0 if -150 <= a <= -30 else 56.0, a) for a in range(-180, 180)]
     cuts = [centre, sector(51.5, 68, 35, 145), sector(51.5, 64, 25, 155)]
@@ -190,7 +216,7 @@ def build_grip():
     for i, pts in enumerate(cuts):
         boolean(m, extrude(f"cut{i}", pts, -60, 60), "DIFFERENCE")
     m = pull_in(m)
-    m.name = "grip_v4"
+    m.name = "grip_v6"
     # new centre: two rounded spokes into the handles and a pad to the bottom bar
     for pts in both_sides([(40, 12), (73 - PULL_IN, 12), (73 - PULL_IN, 29), (40, 29)]):
         boolean(m, extrude("spoke", pts, BACK_Z - 0.5, -11.0, bevel=3.0), "UNION")
@@ -202,42 +228,107 @@ def build_grip():
     boolean(m, bpy.context.selected_objects[0], "UNION")
     floor = extrude("floor", [(-400, -400), (400, -400), (400, 400), (-400, 400)], BACK_Z - 100, BACK_Z + 0.01)
     boolean(m, floor, "DIFFERENCE")
+    clean(m)
     return m
+
+
+def clean(ob):
+    """Booleans and decimation leave a few zero-length edges that break the manifold."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-3, edges=bm.edges[:])
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-3)
+    bm.to_mesh(ob.data)
+    bm.free()
+
+
+def cm3(ob):
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    vol = bm.calc_volume() / 1000
+    bm.free()
+    return vol
 
 
 def check(ob):
     bm = bmesh.new()
     bm.from_mesh(ob.data)
     bad = sum(1 for e in bm.edges if not e.is_manifold)
-    vol = bm.calc_volume() / 1000
     bm.free()
     assert bad == 0, f"{ob.name}: {bad} non-manifold edges"
-    return round(vol, 1)
+    return round(cm3(ob), 1)
 
 
-def export(ob, name, decimate=1.0):
-    """Write ob as an STL, decimated on a copy and cleaned so the file stays watertight."""
-    c = ob.copy()
-    c.data = ob.data.copy()
-    SC.collection.objects.link(c)
-    if decimate < 1.0:
-        select_only(c)
-        d = c.modifiers.new("dec", "DECIMATE")
-        d.ratio = decimate
+def decimate(ob, tris):
+    """Thin the dense distance-field mesh to about tris triangles, cleaned so it stays watertight."""
+    ratio = tris / sum(len(p.vertices) - 2 for p in ob.data.polygons)
+    if ratio < 1.0:
+        select_only(ob)
+        d = ob.modifiers.new("dec", "DECIMATE")
+        d.ratio = ratio
         bpy.ops.object.modifier_apply(modifier="dec")
-        bm = bmesh.new()  # decimation leaves a few zero-length edges that break the manifold
-        bm.from_mesh(c.data)
-        bmesh.ops.dissolve_degenerate(bm, dist=1e-3, edges=bm.edges[:])
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-3)
-        bm.to_mesh(c.data)
-        bm.free()
-    check(c)
-    select_only(c)
-    bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", name), export_selected_objects=True)
-    bpy.data.objects.remove(c, do_unlink=True)
+        clean(ob)
+
+
+def pin_room(tree, x, y):
+    """Skin under the cut and front piece over it, at a pin and 2 mm around it, by vertical rays."""
+    skin, front = [], []
+    for dx, dy in [(0.0, 0.0)] + [polar(2.0, a) for a in range(0, 360, 45)]:
+        down = tree.ray_cast((x + dx, y + dy, SPLIT_Z), (0, 0, -1))[0]
+        up = tree.ray_cast((x + dx, y + dy, SPLIT_Z), (0, 0, 1))[0]
+        assert down and up, f"pin at {x}, {y} is off the grip"
+        skin.append(SPLIT_Z - down.z)
+        front.append(up.z - SPLIT_Z)
+    return round(min(skin), 2), round(min(front), 1)
+
+
+def split(m, pins):
+    """Front piece and back skin, cut at SPLIT_Z, with blind pin holes facing each other."""
+    front = keep(m, "front", z=(SPLIT_Z, 400))
+    back = keep(m, "back", z=(-400, SPLIT_Z))
+    for x, y in pins:
+        boolean(front, cylinder(PIN_D / 2, SPLIT_Z - 1, SPLIT_Z + PIN_FRONT, x, y, 32), "DIFFERENCE")
+        boolean(back, cylinder(PIN_D / 2, SPLIT_Z - PIN_BACK, SPLIT_Z + 1, x, y, 32), "DIFFERENCE")
+    return front, back
+
+
+def drop_specks(ob, min_cm3=0.05):
+    """Where the back curves up through the cut, the skin thins to nothing and can leave loose specks."""
+    select_only(ob)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.separate(type="LOOSE")
+    bpy.ops.object.mode_set(mode="OBJECT")
+    vols = {p: cm3(p) for p in bpy.context.selected_objects}
+    keepers = [p for p, v in vols.items() if v >= min_cm3]
+    specks = [p for p, v in vols.items() if v < min_cm3]
+    assert len(keepers) == 1, f"{ob.name} came out in {len(keepers)} pieces of {min_cm3} cm3 or more"
+    for p in specks:
+        bpy.data.objects.remove(p, do_unlink=True)
+    return keepers[0], len(specks), round(sum(vols[p] for p in specks), 3)
+
+
+def lay_flat(ob, flip):
+    """Cut face down at z = 0 for printing; flip turns the skin over so its round back is on top."""
+    if flip:
+        ob.data.transform(Matrix.Rotation(math.pi, 4, "X"))
+    ob.data.transform(Matrix.Translation((0, 0, -min(v.co.z for v in ob.data.vertices))))
 
 
 grip = build_grip()
+decimate(grip, TRIS)  # the distance-field mesh is dense; keeps each STL under 12 MB
 volume = check(grip)
-export(grip, "grip_v4.stl", decimate=0.25)  # the distance-field mesh is dense; keeps the STL under 12 MB
-result = {"grip_v4_cm3": volume, "size_mm": [round(d, 1) for d in grip.dimensions]}
+tree = BVHTree.FromObject(grip, bpy.context.evaluated_depsgraph_get())
+room = {f"{x:g},{y:g}": pin_room(tree, x, y) for x, y in PINS}
+for skin, over in room.values():
+    assert skin >= PIN_BACK + 0.45 and over >= PIN_FRONT + 1.0, f"a pin has no room (skin, front): {room}"
+front, back = split(grip, PINS)
+test = {f"test_{p.name}": keep(p, f"test_{p.name}", x=(TEST_MIN[0], 400), y=(TEST_MIN[1], 400)) for p in (front, back)}
+result = {"grip_v6_cm3": volume, "size_mm": [round(d, 1) for d in grip.dimensions], "pins_skin_front_mm": room}
+for name, ob in {"front": front, "back": back, **test}.items():
+    ob, specks, dropped = drop_specks(ob)
+    lay_flat(ob, flip=name.endswith("back"))
+    result[name] = {"cm3": check(ob), "size_mm": [round(d, 1) for d in ob.dimensions], "specks": (specks, dropped)}
+    select_only(ob)
+    bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"grip_v6_{name}.stl"), export_selected_objects=True)
+print("RESULT", result)
