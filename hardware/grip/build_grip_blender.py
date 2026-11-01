@@ -20,7 +20,7 @@ tubes, same shape), the back is cut flat FLATTEN above its lowest point and set 
 moves PULL_IN towards the puck, the bottom bar shortened on both sides of its badge to match.
 
 v5 after the v4 print: the flat back left sharp edges where it met the sides, so the back is fully round
-again and prints on supports. The handles are thinner (INSET 3.5) with shallower grooves (SMOOTH), and PULL_IN drops
+again and printed on supports (v6 removes them). The handles are thinner (INSET 3.5) with shallower grooves (SMOOTH), and PULL_IN drops
 to 12 so fingers fit between the handles and the hub.
 
 v6 after the v5 print: supports under the round back left a rough surface where fingers wrap. The v5 shape is
@@ -299,17 +299,13 @@ def drop_specks(ob, min_cm3=0.05):
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.separate(type="LOOSE")
     bpy.ops.object.mode_set(mode="OBJECT")
-    parts = sorted(bpy.context.selected_objects, key=cm3, reverse=True)
-    specks = [p for p in parts if cm3(p) < min_cm3]
-    dropped = sum(cm3(p) for p in specks)
+    vols = {p: cm3(p) for p in bpy.context.selected_objects}
+    keepers = [p for p, v in vols.items() if v >= min_cm3]
+    specks = [p for p, v in vols.items() if v < min_cm3]
+    assert len(keepers) == 1, f"{ob.name} came out in {len(keepers)} pieces of {min_cm3} cm3 or more"
     for p in specks:
         bpy.data.objects.remove(p, do_unlink=True)
-    keepers = parts[: len(parts) - len(specks)]
-    select_only(keepers[0])
-    for p in keepers[1:]:
-        p.select_set(True)
-    bpy.ops.object.join()
-    return keepers[0], len(keepers), len(specks), round(dropped, 3)
+    return keepers[0], len(specks), round(sum(vols[p] for p in specks), 3)
 
 
 def lay_flat(ob, flip):
@@ -330,9 +326,9 @@ front, back = split(grip, PINS)
 test = {f"test_{p.name}": keep(p, f"test_{p.name}", x=(TEST_MIN[0], 400), y=(TEST_MIN[1], 400)) for p in (front, back)}
 result = {"grip_v6_cm3": volume, "size_mm": [round(d, 1) for d in grip.dimensions], "pins_skin_front_mm": room}
 for name, ob in {"front": front, "back": back, **test}.items():
-    ob, parts, specks, dropped = drop_specks(ob)
+    ob, specks, dropped = drop_specks(ob)
     lay_flat(ob, flip=name.endswith("back"))
-    result[name] = {"cm3": check(ob), "size_mm": [round(d, 1) for d in ob.dimensions], "parts": parts, "specks": (specks, dropped)}
+    result[name] = {"cm3": check(ob), "size_mm": [round(d, 1) for d in ob.dimensions], "specks": (specks, dropped)}
     select_only(ob)
     bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"grip_v6_{name}.stl"), export_selected_objects=True)
 print("RESULT", result)
