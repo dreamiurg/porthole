@@ -267,7 +267,7 @@ void ladder(Car& c, int i, int level, int rung, float floor) {
   if (level < 0) c.top *= slowdown(level, floor);   // keyed on the kid's level: below 0 rivals are slower on every track
   for (int k = 0; k < rung; k++) {
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
-    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(RIVAL_TOP_MAX, c.top + LEVEL_TOP_STEP); }   // the slower two only
+    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(RIVAL_CAP[i - 1], c.top + LEVEL_TOP_STEP); }
     else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
   }
 }
@@ -282,11 +282,10 @@ void rivals(Race& r) {
   for (int i = 1; i < CARS; i++) {
     Car& c = r.car[i];
     c.paint = paint[i - 1];
-    c.form = (unit(r.seed) * 2 - 1) * RIVAL_FORM;
-    c.top = fminf(i == CARS - 1 ? 1 : RIVAL_TOP_MAX, RIVAL_TOP[i - 1] + c.form);
+    c.top = fminf(RIVAL_CAP[i - 1], RIVAL_TOP[i - 1] + (unit(r.seed) * 2 - 1) * RIVAL_FORM);
     c.cut = RIVAL_CUT_MIN + (RIVAL_CUT_MAX - RIVAL_CUT_MIN) * unit(r.seed);
     c.wobbleOdds = (uint8_t)(RIVAL_WOBBLE_MIN + rnd(r.seed) % (RIVAL_WOBBLE_MAX - RIVAL_WOBBLE_MIN + 1));
-    c.careful = i != 1 && rnd(r.seed) % 4 < RIVAL_CAREFUL;
+    c.careful = RIVAL_CAREFUL[i - 1] && rnd(r.seed) % RIVAL_CAREFUL_OF < RIVAL_CAREFUL[i - 1];
   }
 }
 }  // namespace

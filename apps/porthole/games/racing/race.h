@@ -16,7 +16,7 @@ struct Car {
   uint8_t paint = 0;                                  // which car picture: a rival's color is shuffled every race
   uint8_t wobbleOdds = 4;                             // a rival's line error: one new line in this many
   bool careful = true;                                // a rival that steers around slow patches, not only obstacles
-  float form = 0, cut = 0.35f;                        // a rival's pace on the day (+-) and how much it cuts a bend
+  float cut = 0.35f;                                  // how much a rival cuts a bend
   uint8_t boosts = 0;                                 // a rival's Boost charges (the player's are Race::inventory)
   bool refill = false;                                // a rival taking its charges back at every lap line
   bool finished = false;

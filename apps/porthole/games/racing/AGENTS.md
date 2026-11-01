@@ -71,8 +71,8 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Every race is a new field (a user request of 2026-11-01: each color used to finish in the same place every time).
   The three colors are dealt to the three parts (slowest, middle, pace-setter: pace, grid slot, lane, ladder rungs)
   in a seeded shuffle; the parts keep their car slots, so the shuffle never touches the balance. Each rival also
-  gets its day: pace within +-0.035 of its part's (never past 0.99 for the slower two or the kid's 1.0 for the
-  pace-setter), how much it cuts a bend (0.2-0.5 of the road), how often it drifts off line (one new line in 2-6),
+  gets its day: pace within +-0.035 of its part's, capped (`RIVAL_CAP`: 0.99 for the slower two, the kid's 1.0 for
+  the pace-setter, which so is at the kid's pace about half the time and otherwise a little slower), how much it cuts a bend (0.2-0.5 of the road), how often it drifts off line (one new line in 2-6),
   and whether it steers round slow patches (three in four; the slowest part never does). The forms overlap, so the
   middle rival beats the pace-setter in roughly a fifth to four fifths of races, depending on track, and the slowest
   sometimes passes too (`tune.h` `RIVAL_*`, `variety` in `host/test_racing_rules.cpp`).

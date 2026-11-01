@@ -57,16 +57,15 @@ constexpr float LEVEL_SLOW_STEP = 0.0035f, LEVEL_TOP_STEP = 0.01f;
 constexpr float CHASE_MIN = 3, CHASE_MAX = 40;
 constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led for 3/5 of the race
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
-// Every race the three colors go to the rivals' three parts (slowest, middle, pace-setter: RIVAL_TOP, grid slot, lane,
-// ladder rungs) in a seeded shuffle, so no color always finishes in the same place; the parts themselves never move,
-// so the shuffle cannot change the balance. Each rival also gets a form
-// for the day (its top moves by up to +-RIVAL_FORM, never past RIVAL_TOP_MAX for the slower two or 1 for the
-// pace-setter), a bend line (cuts the inside by RIVAL_CUT_MIN..MAX), how often it wobbles off line (one new line in
-// RIVAL_WOBBLE_MIN..MAX) and whether it steers around slow patches (RIVAL_CAREFUL in 4; the slowest part always did
-// not). The forms overlap, so the middle rival sometimes beats the pace-setter and a slow one can pass the middle.
-constexpr float RIVAL_TOP[] = {0.92f, 0.97f, 1.0f};   // by part (car 1..3), slowest first: the brief's pace
-constexpr float RIVAL_FORM = 0.035f, RIVAL_TOP_MAX = 0.99f, RIVAL_CUT_MIN = 0.2f, RIVAL_CUT_MAX = 0.5f;
-constexpr int RIVAL_WOBBLE_MIN = 2, RIVAL_WOBBLE_MAX = 6, RIVAL_CAREFUL = 3;
+// Every race the three colors are shuffled over the rivals' fixed parts (car 1 slowest .. 3 pace-setter), so the
+// shuffle never moves the balance, and each rival gets its day inside these bands (the racing brief has the whole rule).
+constexpr float RIVAL_TOP[] = {0.92f, 0.97f, 1.0f};   // by part: the brief's pace
+constexpr float RIVAL_CAP[] = {0.99f, 0.99f, 1.0f};   // by part: never past the kid, the slower two below 1, ladder too
+constexpr float RIVAL_FORM = 0.035f;                  // a rival's pace on the day: its part's +- this, then capped
+constexpr float RIVAL_CUT_MIN = 0.2f, RIVAL_CUT_MAX = 0.5f;   // how much of the road it cuts toward a bend's inside
+constexpr int RIVAL_WOBBLE_MIN = 2, RIVAL_WOBBLE_MAX = 6;     // a line error: one new line in this many
+constexpr uint8_t RIVAL_CAREFUL[] = {0, 3, 3};        // by part: steers round slow patches, this many in RIVAL_CAREFUL_OF
+constexpr uint32_t RIVAL_CAREFUL_OF = 4;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
 // Normal level 0 (the brief's rivals, though on Industrial Ruins and Night Run level 0 sits up the ladder, so their
 // rivals there carry boosts); Hard, by track, a level a competent driver wins 37-50% of (the sweep's closest to

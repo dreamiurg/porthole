@@ -84,10 +84,7 @@ void ladder() {
   start(r, TRACK[0], 1, LEVEL_MIN - 5);
   assert(r.level == LEVEL_MIN && r.car[PLAYER].top == 1 && r.car[3].top < 1);   // slower rivals, never the kid
   start(r, TRACK[0], 1, 0);
-  for (int i = 1; i < CARS; i++) {   // level 0: the brief's pace give or take the day's form, and no charges
-    const Car& c = r.car[i];
-    assert(c.top == fminf(i == 3 ? 1 : RIVAL_TOP_MAX, RIVAL_TOP[i - 1] + c.form) && !c.boosts);
-  }
+  assert(!r.car[1].boosts && !r.car[2].boosts && !r.car[3].boosts);   // level 0: no charges (variety: the pace)
   start(r, TRACK[0], 1, LEVEL_MAX);   // the top: three charges each, like the kid's cap, and nobody faster than the kid
   for (int i = 1; i < CARS; i++) assert(r.car[i].boosts == MAX_INVENTORY && r.car[i].top < 1 + 1e-6f);
   assert(r.car[1].top < 1 && r.car[2].top < 1);
@@ -109,9 +106,9 @@ void variety() {
       assert(c.paint >= 1 && c.paint < CARS && !(seen & (1 << c.paint)));
       seen |= 1 << c.paint;
       plays[c.paint][i]++;
-      assert(fabsf(c.form) <= RIVAL_FORM && c.cut >= RIVAL_CUT_MIN && c.cut <= RIVAL_CUT_MAX);
+      assert(fabsf(c.top - RIVAL_TOP[i - 1]) <= RIVAL_FORM + 1e-6f && c.cut >= RIVAL_CUT_MIN && c.cut <= RIVAL_CUT_MAX);
       assert(c.wobbleOdds >= RIVAL_WOBBLE_MIN && c.wobbleOdds <= RIVAL_WOBBLE_MAX);
-      assert(c.top <= (i == 3 ? 1 : RIVAL_TOP_MAX) && (i != 1 || !c.careful));
+      assert(c.top <= RIVAL_CAP[i - 1] && (RIVAL_CAREFUL[i - 1] || !c.careful));
       assert(again.car[i].paint == c.paint && again.car[i].top == c.top && again.car[i].cut == c.cut);
       careless += !c.careful; jittery += c.wobbleOdds == RIVAL_WOBBLE_MIN;
       cutLo = fminf(cutLo, c.cut); cutHi = fmaxf(cutHi, c.cut);
