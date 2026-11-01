@@ -50,24 +50,14 @@ jobs:
           MIN_AGE: ${{ github.event_name == 'schedule' && env.MIN_AGE_HOURS || '0' }}
         run: |
           gh release list --limit 200 --json tagName,name,isPrerelease,createdAt \
-            | python3 tools/release.py promote --app "$APP" --tag "$TAG" --min-age-hours "$MIN_AGE" > plan.json
-          if [ "$(cat plan.json)" = null ]; then
-            if [ -n "$TAG" ]; then echo "::error::'$TAG' is not a $APP-vX.Y.Z tag"; exit 1; fi
-            echo "nothing to promote: no beta newer than stable that is ${MIN_AGE}h old and not yanked"
-            exit 0
-          fi
-          field() { python3 -c 'import json,sys; print(json.load(open("plan.json"))[sys.argv[1]])' "$1"; }
-          field notes > notes.md
-          source=$(field source) tag=$(field tag)
-          sha=$(git rev-parse "$source^{commit}")  # fails on a tag that does not exist
-          printf 'version=%s\ntag=%s\nsha=%s\n' "$(field version)" "$tag" "$sha" >> "$GITHUB_OUTPUT"
-          echo "promoting $source ($sha) as $tag"
-      # The beta's own commit, beside this checkout: the shared build action and the channel check come from here.
-      - if: steps.plan.outputs.tag
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          ref: ${{ steps.plan.outputs.sha }}
-          path: src
+            | python3 tools/release.py promote --app "$APP" --tag "$TAG" --min-age-hours "$MIN_AGE" --notes notes.md > plan.txt
+          if [ ! -s plan.txt ]; then echo "nothing to promote: no beta newer than stable that is ${MIN_AGE}h old and not yanked"; exit 0; fi
+          source=$(sed -n 's/^source=//p' plan.txt)
+          sha=$(git rev-parse "$source^{commit}")
+          { cat plan.txt; echo "sha=$sha"; } >> "$GITHUB_OUTPUT"
+          echo "promoting $source ($sha) as $(sed -n 's/^tag=//p' plan.txt)"
+          # Build the beta's own commit in src/; the build action and channel check still come from this checkout.
+          git worktree add --detach src "$sha"
       - if: steps.plan.outputs.tag
         uses: ./.github/actions/build-release
         with:
@@ -83,8 +73,7 @@ jobs:
           SHA: ${{ steps.plan.outputs.sha }}
         run: |
           # Already there on a re-run (say the branch push below failed): skip to the branch.
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --latest \
-            "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" "$APP-$VERSION-ota.bin" "$APP-version.txt" \
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --latest dist/* \
             --target "$SHA" --title "$APP $VERSION" --notes-file notes.md
           # --force: normally a fast-forward, but a rollback moves stable back, so `stable` must not get a
           # fast-forward-only rule.

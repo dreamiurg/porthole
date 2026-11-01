@@ -1,7 +1,7 @@
 name: Build release images
 description: >
-  Build one app's firmware under a release version and package what a release publishes, in the workspace root:
-  <app>-<version>-factory.bin, -web.zip, -ota.bin and <app>-version.txt. release.yml (betas) and promote.yml
+  Build one app's firmware under a release version and package everything a release publishes into dist/ in the
+  workspace: <app>-<version>-factory.bin, -web.zip, -ota.bin and <app>-version.txt. Workflows upload dist/*. release.yml (betas) and promote.yml
   (stable rebuilds) share it, so a stable release ships exactly the images a beta does.
 
 inputs:
@@ -12,7 +12,7 @@ inputs:
     description: X.Y.Z, baked into the firmware as PORTHOLE_VERSION
     required: true
   root:
-    description: Checkout to build (promote.yml builds an older commit beside its own checkout)
+    description: Tree to build (promote.yml builds a beta's commit in a worktree beside its own checkout)
     default: "."
 
 runs:
@@ -48,7 +48,9 @@ runs:
         ROOT: ${{ inputs.root }}
       run: |
         image=$(find "$ROOT/apps/$APP" -path '*/.pio/build/firmware/factory.bin' | head -n1)
-        cp "$image" "$GITHUB_WORKSPACE/$APP-$VERSION-factory.bin"
-        cp "$(dirname "$image")/firmware.bin" "$GITHUB_WORKSPACE/$APP-$VERSION-ota.bin"
-        printf '%s' "$VERSION" > "$GITHUB_WORKSPACE/$APP-version.txt"  # no newline: the board compares it as-is
-        (cd "$(dirname "$image")/web" && zip -q "$GITHUB_WORKSPACE/$APP-$VERSION-web.zip" ./*)
+        dist=$GITHUB_WORKSPACE/dist
+        mkdir -p "$dist"
+        cp "$image" "$dist/$APP-$VERSION-factory.bin"
+        cp "$(dirname "$image")/firmware.bin" "$dist/$APP-$VERSION-ota.bin"
+        printf '%s' "$VERSION" > "$dist/$APP-version.txt"  # no newline: the board compares it as-is
+        (cd "$(dirname "$image")/web" && zip -q "$dist/$APP-$VERSION-web.zip" ./*)

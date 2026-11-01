@@ -66,7 +66,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert all(h in notes for h in ("### Breaking changes", "### Features", "### Fixes")), notes
     assert "alpha-0.1.1-factory.bin" in notes, notes
 
-    commit(repo, "apps/alpha/main.cpp", "fix: wording\n\nThis is not a BREAKING CHANGE: just prose.")
     assert release.classify("fix: wording", "This is not a BREAKING CHANGE: just prose.")[0] == "fix", "mid-line is prose"
     assert release.classify("fix: x", "BREAKING-CHANGE: hyphenated")[0] == "breaking", "the hyphenated footer counts"
     assert release.classify("feat!: x", "")[0] == "breaking"
@@ -92,11 +91,16 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "patch 2" in p["notes"] and "patch 3" not in p["notes"] and "the previous stable, alpha-v0.1.0" in p["notes"], p["notes"]
     assert "alpha-0.2.0-factory.bin" in p["notes"], p["notes"]
 
-    releases[2] = rel("alpha-v0.1.2", 3.5, name="alpha 0.1.2 (yanked)")
+    releases[2] = rel("alpha-v0.1.2", 3.5, name="alpha 0.1.2 (Yanked)")
     assert (p := promote(releases)) and p["source"] == "alpha-v0.1.1", "a yanked beta is skipped"
     assert (p := promote(releases, min_age=timedelta(0))) and p["source"] == "alpha-v0.1.3", "promote now: the newest beta"
     assert (p := promote(releases, tag="alpha-v0.1.2")) and p["source"] == "alpha-v0.1.2", "an explicit tag wins, yanked or young"
-    assert promote(releases, tag="other-v1.0.0") is None, "another app's tag"
+    for bad in ("other-v1.0.0", "alpha-v0.9.0"):
+        try:
+            promote(releases, tag=bad)
+            raise AssertionError(f"{bad}: another app's tag, or no such release")
+        except ValueError:
+            pass
 
     releases += [rel("alpha-v0.2.0", 2, pre=False)]  # 0.1.2 went stable as 0.2.0; the next beta is 0.2.1
     assert promote(releases) is None, "every beta is older than stable"

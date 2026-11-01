@@ -11,8 +11,8 @@ a tag and a GitHub pre-release (beta) with a factory image, web-installer parts,
 OTA image and a version.txt; nothing is committed back to main.
 
 `promote` reads the app's GitHub releases on stdin and prints the stable release to cut, or
-null: {"app", "source", "version", "tag", "notes"}. promote.yml rebuilds the source tag's
-commit under the new version and publishes it as GitHub's Latest.
+nothing: `source=`, `version=` and `tag=` lines for $GITHUB_OUTPUT, with the notes in --notes.
+promote.yml rebuilds the source tag's commit under the new version and publishes it as GitHub's Latest.
 
 Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
@@ -25,8 +25,8 @@ Rules
   and the next beta is 0.39.1. A board never installs an older version, so a rollback is a
   promotion too: the old code goes out under a new, higher version.
 - Unattended promotion picks the newest beta that is newer than the current stable, is at least
-  --min-age-hours old, and is not yanked (its release title says "yanked"). With --tag, that tag
-  is promoted whatever its age; with --min-age-hours 0, the newest beta is.
+  --min-age-hours old, and is not yanked (its release title says "(yanked)"). With --tag, that
+  published release is promoted whatever its age; with --min-age-hours 0, the newest beta is.
 - An app's first release is 0.1.0.
 """
 
@@ -45,6 +45,7 @@ BREAKING = re.compile(r"^BREAKING[ -]CHANGE:", re.M)  # a footer starts its line
 SECTIONS = [("breaking", "Breaking changes"), ("feat", "Features"), ("fix", "Fixes"), ("other", "Other changes")]
 RELEASABLE = {"breaking", "feat", "fix"}
 FIRST = (0, 1, 0)
+YANK_MARK = "(yanked)"  # yank.yml appends it to a beta's release title
 Version = tuple[int, int, int]
 
 
@@ -122,33 +123,30 @@ def plan(ref: str) -> list[dict[str, str]]:
     return out
 
 
-def pick_source(app: str, releases: list[dict[str, Any]], tag: str | None, min_age: timedelta, now: datetime) -> str | None:
-    if tag:
-        return tag if parse(app, tag) else None
-    stable = newest(app, [r["tagName"] for r in releases if not r["isPrerelease"]])
+def is_yanked(release: dict[str, Any]) -> bool:
+    return YANK_MARK in (release.get("name") or "").lower()
 
+
+def pick_source(app: str, releases: list[dict[str, Any]], stable: tuple[str, Version] | None, min_age: timedelta, now: datetime) -> str | None:
     def eligible(r: dict[str, Any]) -> bool:
         v = parse(app, r["tagName"])  # None for the rolling <app>-beta pointer
-        return (
-            r["isPrerelease"]
-            and v is not None
-            and (stable is None or v > stable[1])
-            and "yanked" not in (r.get("name") or "").lower()
-            and now - datetime.fromisoformat(r["createdAt"]) >= min_age
-        )
+        return r["isPrerelease"] and v is not None and (stable is None or v > stable[1]) and not is_yanked(r) and now - datetime.fromisoformat(r["createdAt"]) >= min_age
 
     best = newest(app, [r["tagName"] for r in releases if eligible(r)])
     return best[0] if best else None
 
 
 def promotion(app: str, releases: list[dict[str, Any]], tag: str | None, min_age: timedelta, now: datetime) -> dict[str, str] | None:
-    source = pick_source(app, releases, tag, min_age, now)
+    """The stable release to cut, or None when no beta qualifies. Raises ValueError for a --tag that is not a release."""
+    if tag and not (parse(app, tag) and any(r["tagName"] == tag for r in releases)):
+        raise ValueError(f"{tag} is not a published {app}-vX.Y.Z release")
+    stable = newest(app, [r["tagName"] for r in releases if not r["isPrerelease"]])
+    source = tag or pick_source(app, releases, stable, min_age, now)
     if source is None:
         return None
-    top = newest(app, git("tag", "--list", f"{app}-v*").split() + [r["tagName"] for r in releases])
+    top = newest(app, git("tag", "--list", f"{app}-v*").split())
     assert top, "a source tag exists, so the app has tags"
     version = f"{top[1][0]}.{top[1][1] + 1}.0"
-    stable = newest(app, [r["tagName"] for r in releases if not r["isPrerelease"]])
     items = [classify(s, b) for _, s, b in commits(app, stable[0] if stable else None, source)]
     intro = (
         f"Stable release of beta {source}, rebuilt from the same commit under a new version. "
@@ -166,12 +164,18 @@ def main() -> None:
     ap.add_argument("--app", default="porthole")
     ap.add_argument("--tag", default="", help="promote: this tag, whatever its age (empty: pick a beta)")
     ap.add_argument("--min-age-hours", type=float, default=72)
+    ap.add_argument("--notes", default="notes.md", help="promote: where to write the release notes")
     args = ap.parse_args()
     if args.command == "plan":
         print(json.dumps(plan(args.ref)))
-    else:
-        min_age = timedelta(hours=args.min_age_hours)
-        print(json.dumps(promotion(args.app, json.load(sys.stdin), args.tag or None, min_age, datetime.now(UTC))))
+        return
+    try:
+        p = promotion(args.app, json.load(sys.stdin), args.tag or None, timedelta(hours=args.min_age_hours), datetime.now(UTC))
+    except ValueError as e:
+        sys.exit(f"error: {e}")
+    if p:  # GITHUB_OUTPUT lines; nothing at all when there is nothing to promote
+        Path(args.notes).write_text(p["notes"] + "\n")
+        print(f"source={p['source']}\nversion={p['version']}\ntag={p['tag']}")
 
 
 if __name__ == "__main__":

@@ -29,10 +29,13 @@ jobs:
           TAG: ${{ inputs.tag }}
           REASON: ${{ inputs.reason }}
         run: |
-          if ! [[ "$TAG" =~ ^[a-z0-9-]+-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error::'$TAG' is not an <app>-vX.Y.Z tag"; exit 1; fi
-          read -r pre title < <(gh release view "$TAG" --json isPrerelease,name --jq '"\(.isPrerelease) \(.name)"')
-          if [ "$pre" != true ]; then echo "::error::$TAG is a stable release; to replace it, promote another tag"; exit 1; fi
-          case "$title" in *yanked*) echo "$TAG is already yanked"; exit 0 ;; esac
-          { printf '> **Yanked:** %s\n\n' "$REASON"; gh release view "$TAG" --json body --jq .body; } > notes.md
+          gh release view "$TAG" --json isPrerelease,name,body > release.json  # fails on a tag with no release
+          title=$(jq -r .name release.json)
+          if [ "$(jq -r .isPrerelease release.json)" != true ]; then
+            echo "::error::$TAG is a stable release; to replace it, promote another tag"; exit 1
+          fi
+          # The mark release.py's is_yanked looks for, case-insensitively.
+          case "${title,,}" in *"(yanked)"*) echo "$TAG is already yanked"; exit 0 ;; esac
+          { printf '> **Yanked:** %s\n\n' "$REASON"; jq -r .body release.json; } > notes.md
           gh release edit "$TAG" --title "$title (yanked)" --notes-file notes.md
           echo "yanked $TAG: $REASON"
