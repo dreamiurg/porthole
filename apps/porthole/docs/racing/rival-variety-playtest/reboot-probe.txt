@@ -1,0 +1,41 @@
+reset
+tilt 0 1000 0
+profile Kim 8
+app racing
+wait 2500
+tap 53 55
+wait 900
+tap 106 123
+wait 900
+tap 106 123
+wait 1500
+snap e1
+wait 10000
+snap e1b
+wait 20000
+hold 42 36
+wait 600
+tap 108 108
+wait 700
+tap 53 103
+wait 6000
+skip 90000
+reboot
+wait 2000
+tap 80 68
+wait 1000
+screen
+tap 96 135
+wait 900
+tap 80 104
+wait 2500
+tap 53 55
+wait 900
+tap 106 123
+wait 900
+tap 106 123
+wait 1500
+snap e2
+wait 10000
+snap e2b
+screen

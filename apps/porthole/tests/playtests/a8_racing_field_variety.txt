@@ -1,0 +1,87 @@
+# Rally's starting field across Restart, Home + reopen and a power cycle, as one contact sheet
+# (build/playtest/a8_racing_field_variety-grids.png). From the rival-variety black-box playtest
+# (docs/racing/rival-variety-playtest/): the three rivals' grid order should change from race to race. The sim
+# cannot read rival order, so this scenario asserts only the screens; look at the sheet. Natural input only.
+reset
+tilt 0 1000 0
+profile Sam 8
+wait 600
+tap 96 135
+wait 700
+tap 80 104
+wait 2500
+expect-screen race_tracks
+tap 53 55
+wait 900
+tap 106 123
+wait 900
+expect-screen race_calibrate
+tap 106 123
+wait 1500
+expect-screen race_countdown
+snap rv1_first
+# Restart from the pause menu, twice
+wait 4000
+hold 42 36
+wait 600
+expect-screen race_pause
+tap 108 78
+wait 700
+expect-screen race_confirm
+tap 53 103
+wait 1500
+expect-screen race_countdown
+snap rv2_restart
+wait 4000
+hold 42 36
+wait 600
+tap 108 78
+wait 700
+tap 53 103
+wait 1500
+expect-screen race_countdown
+snap rv3_restart
+# Home, then back in through the launcher
+wait 4000
+hold 42 36
+wait 600
+tap 108 108
+wait 700
+tap 53 103
+wait 1500
+expect-screen launcher
+tap 80 104
+wait 2500
+tap 53 55
+wait 900
+tap 106 123
+wait 900
+tap 106 123
+wait 1500
+expect-screen race_countdown
+snap rv4_reopen
+# A power cycle: the playtest saw this grid repeat rv1_first exactly
+wait 4000
+hold 42 36
+wait 600
+tap 108 108
+wait 700
+tap 53 103
+wait 1500
+reboot
+wait 2000
+tap 80 68
+wait 1000
+tap 96 135
+wait 900
+tap 80 104
+wait 2500
+tap 53 55
+wait 900
+tap 106 123
+wait 900
+tap 106 123
+wait 1500
+expect-screen race_countdown
+snap rv5_after_reboot
+sheet grids

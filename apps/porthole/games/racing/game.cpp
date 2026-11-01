@@ -17,7 +17,8 @@ bool holding(const Input& in, const ui::Box& b) {
 }  // namespace
 
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; rawMs_ = e.ms; seed_ = e.ms ? e.ms : 1; ms_ = runs_ = 0;
+  now_ = e.nowSec; rawMs_ = e.ms; ms_ = runs_ = 0;
+  seed_ = (e.ms ^ e.nowSec * 2654435761u) | 1;   // the clock too: after a power cycle the boot's ms repeats
   daylight_ = e.daylight; home_ = seenHowTo_ = recenter_ = gripLost_ = false; in_ = {};
   neutral_ = {0, 1000, 0};
   track_ = 0;

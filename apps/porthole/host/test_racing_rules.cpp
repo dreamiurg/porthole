@@ -52,7 +52,9 @@ void everyTrackFinishes() {
     assert(steady.ms < idle.ms);
     // Even the rivals at their slowest and most courteous beat a kid who never steers; the same seed and level is the
     // same race, to the millisecond.
-    for (int level : {LEVEL_MIN, LEVEL_MAX}) assert(run(t, 0, 7, level).place == 4);
+    // Over many seeds: a rival's bad day must never hand a race to the idle kid (one seed once hid that).
+    for (uint32_t seed = 1; seed <= 30; seed++)
+      for (int level : {LEVEL_MIN, LEVEL_MAX}) assert(run(t, 0, seed, level).place == 4);
     assert(run(t, 2, 11, LEVEL_MIN).ms == run(t, 2, 11, LEVEL_MIN).ms);
   }
 }
@@ -95,7 +97,7 @@ void ladder() {
 // careful, nobody past the kid). The same seed is the same field.
 void dayInBands(const Car& c, const Car& again, int i) {   // rival i's day, inside its part's bands, the same each time
   assert(c.paint >= 1 && c.paint < CARS);
-  assert(fabsf(c.top - RIVAL_TOP[i - 1]) <= RIVAL_FORM + 1e-6f && c.top <= RIVAL_CAP[i - 1]);
+  assert(fabsf(c.top - RIVAL_TOP[i - 1]) <= RIVAL_FORM[i - 1] + 1e-6f && c.top <= RIVAL_CAP[i - 1]);
   assert(c.cut >= RIVAL_CUT_MIN && c.cut <= RIVAL_CUT_MAX);
   assert(c.wobbleOdds >= RIVAL_WOBBLE_MIN && c.wobbleOdds <= RIVAL_WOBBLE_MAX);
   assert(RIVAL_CAREFUL[i - 1] || !c.careful);
@@ -117,11 +119,11 @@ void variety() {
       dayInBands(c, again.car[i], i);
       careless += !c.careful; jittery += c.wobbleOdds == RIVAL_WOBBLE_MIN;
       cutLo = fminf(cutLo, c.cut); cutHi = fmaxf(cutHi, c.cut);
-      if (i == 2) { lo = fminf(lo, c.top); hi = fmaxf(hi, c.top); }
+      if (i == 2) { lo = fminf(lo, c.top); hi = fmaxf(hi, c.top); }   // the middle part: room both ways
     }
   }
   for (int p = 1; p < CARS; p++) for (int i = 1; i < CARS; i++) assert(plays[p][i] > 70);   // about 100 each
-  assert(hi - lo > RIVAL_FORM && cutHi - cutLo > (RIVAL_CUT_MAX - RIVAL_CUT_MIN) / 2);
+  assert(hi - lo > RIVAL_FORM[1] && cutHi - cutLo > (RIVAL_CUT_MAX - RIVAL_CUT_MIN) / 2);
   assert(careless > 350 && careless < 550 && jittery > 50);   // 300 slowest + about a quarter of the others
 }
 
