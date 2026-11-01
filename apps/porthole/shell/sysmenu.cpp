@@ -220,21 +220,29 @@ static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::
 static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
 void Shell::updateSysPin() {
   if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
-  if (pinLen_ == 4) { if (ms_ - pinMs_ >= 400) submitSysPin(); return; }
-  if (ms_ < pinWrongUntil_) return;
-  if (tapped(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
-  for (int k = 0; k < 10; k++) {
-    if (!tapped(in_, adminKey(k))) continue;
-    pin_[pinLen_++] = k == 9 ? '0' : (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+  if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
+    const char next = adminDigit();
+    if (!next && (ms_ - pinMs_ < 400 || in_.down)) return;   // a finger down waits: its lift is that key
+    submitSysPin();
+    if (next && screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN && !adminKeysHeld()) typeDigit(next);
     return;
   }
+  if (adminKeysHeld()) return;
+  if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
+  if (const char d = adminDigit()) typeDigit(d);
+}
+// A wrong code's shake, or too many wrong tries (pinlock.h), holds the keys.
+bool Shell::adminKeysHeld() { return ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
+char Shell::adminDigit() const {   // on release, however long the press
+  for (int k = 0; k < 10; k++) if (ui::clicked(in_, adminKey(k))) return k == 9 ? '0' : (char)('1' + k);
+  return 0;
 }
 void Shell::submitSysPin() {
   const uint16_t code = pinCode(pin_); resetPin();
   if (screen_ == SH_SYS_PIN_SET) { firstPin_ = code; go(SH_SYS_PIN_AGAIN); return; }
   if (screen_ == SH_SYS_PIN) {
-    if (code == adminPin_) { adminPassed(); return; }
-    pinWrongUntil_ = ms_ + 900; toast("Wrong code. Try again."); return;
+    if (code == adminPin_) { pinClear(shell::ADMIN_LOCK); adminPassed(); return; }
+    pinStrike(shell::ADMIN_LOCK); pinWrongUntil_ = ms_ + 900; toast(pinWait(shell::ADMIN_LOCK) ? "Wrong code" : "Wrong code. Try again."); return;
   }
   if (code != firstPin_) { firstPin_ = 0; go(SH_SYS_PIN_SET); toast("Codes did not match"); return; }
   const bool ok = saveAdminPin(code); firstPin_ = 0;
@@ -243,11 +251,16 @@ void Shell::submitSysPin() {
 void Shell::drawSysPin() {
   sclear(C_NAVY);
   const char* prompt = screen_ == SH_SYS_PIN ? "Admin code?" : screen_ == SH_SYS_PIN_SET ? "Choose 4 digits" : "Repeat admin code";
-  shead(80, 32, ms_ < toastUntil_ ? toast_ : prompt, C_WHITE);
+  const uint32_t wait = screen_ == SH_SYS_PIN ? pinWait(shell::ADMIN_LOCK) : 0;
+  shead(80, 32, ms_ < toastUntil_ ? toast_ : wait ? "Too many tries" : prompt, C_WHITE);
   for (int i = 0; i < 4; i++) {
     const int x = 58 + i * 12;
     sframe(x, 43, 10, 9, ms_ < pinWrongUntil_ ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE);
     if (i < pinLen_) scircle(x + 5, 47, 2, C_WHITE);
+  }
+  if (wait) {   // the keys come back when the wait is over
+    char line[32]; snprintf(line, sizeof line, "Try again in %u s", (unsigned)wait);
+    stextC(80, 80, line, C_WHITE); sback(); return;
   }
   for (int k = 0; k < 10; k++) {
     const ui::Box b = adminKey(k); char digit[2] = {k == 9 ? '0' : (char)('1' + k), 0};

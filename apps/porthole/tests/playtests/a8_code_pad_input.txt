@@ -1,0 +1,75 @@
+# Code pads and real fingers: a quick kid's first key right after the pad opens counts (only a second press where the
+# opening tap landed, a double tap, waits out the fresh-screen guard), a slow, deliberate press counts once lifted,
+# and a key pressed while the fourth digit still shows is the next screen's first (typing "once more" straight away).
+reset
+profile Sam 8 1234
+wait 450
+tap 80 32
+wait 450
+expect-screen picker
+# no pause after the picker tap: all four digits count
+tap 80 67
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen launcher
+# a double tap on Sam's row types nothing: the code that follows is still 1234
+tap 80 32
+wait 450
+tap 80 67
+wait 40
+tap 80 67
+wait 450
+expect-screen pin
+snap 01_after_double_tap
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen launcher
+# a slow press on each key (a second each, past the long press) still types it
+tap 80 32
+wait 450
+tap 80 67
+wait 450
+hold 41 62
+hold 80 62
+hold 119 62
+hold 41 90
+wait 900
+expect-screen launcher
+# a new profile's code typed twice with no pause between: the repeat's first key is not lost, even a press that
+# goes down while the fourth digit shows and lifts after its 400 ms (the pause waits for the finger)
+tap 80 32
+wait 450
+tap 80 93
+wait 450
+expect-screen new_name
+tap 93 101
+tap 41 53
+tap 41 101
+tap 119 125
+wait 450
+tap 64 57
+wait 450
+tap 79 69
+wait 450
+expect-screen pin_set
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 200
+down 41 62
+wait 200
+up
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen launcher
+expect profile=1/2
+sheet pad_input

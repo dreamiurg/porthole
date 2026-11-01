@@ -55,10 +55,14 @@ class Hold {
 // A fresh screen ignores every touch until a press begins FRESH_MS after it appeared: the finger that changed it
 // (still down after a long press) and the second tap of a kid's slow double tap (300-400 ms apart) would otherwise
 // act on whatever now sits under them. Call shown() on every screen change and filter() on every frame's input.
+// shownAt() is for a keypad, where a quick first key must count: only a press near (x, y), the tap that opened it,
+// waits out FRESH_MS; one anywhere else (SPOT_R away) is a new tap and opens the gate at once.
 struct FreshGate {
   static constexpr uint32_t FRESH_MS = 450;
-  uint32_t shownMs = 0; bool closed = false;
-  void shown(uint32_t now) { shownMs = now; closed = true; }
+  static constexpr int SPOT_R = 16;
+  uint32_t shownMs = 0; bool closed = false, spot = false; int spotX = 0, spotY = 0;
+  void shown(uint32_t now) { shownMs = now; closed = true; spot = false; }
+  void shownAt(uint32_t now, int x, int y) { shown(now); spot = true; spotX = x; spotY = y; }
   void filter(Input& in, uint32_t now);
 };
 }  // namespace ui

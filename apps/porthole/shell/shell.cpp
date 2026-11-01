@@ -18,6 +18,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
   uint8_t sound = 1; sound_ = st.load("sys", "sound", &sound, 1) != 1 || sound != 0;
   if (adminPin_ > 10000) adminPin_ = 0;
+  locks_ = shell::loadPinLocks(st);
   if (sys_) sys_->info(info_);
   if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
   gate_.closed = false;   // boot: no finger to guard against
@@ -29,8 +30,9 @@ uint32_t Shell::lastSeen() const {
   return t;
 }
 void Shell::go(Screen s) {
-  screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
-  gate_.shown(ms_);
+  screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
+  const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
+  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
@@ -118,6 +120,7 @@ void Shell::finishCreate(uint16_t pin) {
   const char* stores[MAX_APPS]; int n = appStores(stores);
   int id = shell::create(*st_, prof_, draft_, stores, n);
   if (id < 0) { go(SH_PICK); return; }   // full: the picker hides "+" at four, so only a sim script gets here
+  pinClear(id);   // a new kid never inherits a deleted one's strikes, even with the same code
   select(id);
 }
 int Shell::appStores(const char** out) const {
@@ -289,41 +292,83 @@ void Shell::drawAge() {
 // and bigger keys are what a small finger hits on this screen. The fourth digit submits by itself once its box has
 // shown for PIN_SHOW_MS (touches wait meanwhile), so a kid sees what they typed. A slip is fixed by typing on: a wrong
 // or mismatched code just starts over. "skip" (no code, only while choosing one) sits under the pad.
-static const uint32_t PIN_SHOW_MS = 400;
+static const uint32_t PIN_SHOW_MS = 400, PIN_CALM_MS = 1000;
 static ui::Box pinKey(int k) { return {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}; }   // rows 50..131
 static const ui::Box PIN_SKIP = {60, 134, 40, 22};
 void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
-  if (pinLen_ == 4) { if (ms_ - pinMs_ >= PIN_SHOW_MS) submitPin(); return; }
+  if (pinLen_ == 4) { fourthShown(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
-  if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
-  for (int k = 0; k < 9; k++) {
-    ui::Box b = pinKey(k);
-    if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    pin_[pinLen_++] = (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
+  if (kidKeysHidden()) {   // too many wrong tries: the keys come back once the wait is over and the finger rests
+    if (in_.down) pinCalmUntil_ = ms_ + PIN_CALM_MS;   // a kid tapping the hourglass never types into the keys' return
+    if (in_.pressed) pinNudgeUntil_ = ms_ + 300;
     return;
   }
+  if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
+  if (const char d = kidKey()) typeDigit(d);
 }
+void Shell::fourthShown() {   // a key pressed while the fourth digit shows is already the next screen's first: never lost
+  const char next = kidKey();
+  if (!next && (ms_ - pinMs_ < PIN_SHOW_MS || in_.down)) return;   // a finger down waits: its lift is that key
+  submitPin();
+  if (next && screen_ >= SH_PIN_SET && screen_ <= SH_PIN && !kidKeysHidden()) typeDigit(next);
+}
+char Shell::kidKey() const {   // on release, however long: a slow, deliberate press counts too
+  for (int k = 0; k < 9; k++) if (ui::clicked(in_, pinKey(k))) return (char)('1' + k);
+  return 0;
+}
+// A failed write keeps the strikes in RAM until a reboot.
+void Shell::pinStrike(int lock) { shell::pinWrong(locks_.lock[lock], now_, lockCode(lock)); shell::savePinLocks(*st_, locks_); }
+void Shell::pinClear(int lock) {
+  if (!locks_.lock[lock].strikes) return;   // the usual right code: no write
+  locks_.lock[lock] = shell::PinLock{};
+  shell::savePinLocks(*st_, locks_);
+}
+bool Shell::kidKeysHidden() { return screen_ == SH_PIN && (pinWait(target_) || (int32_t)(pinCalmUntil_ - ms_) > 0); }
 void Shell::submitPin() {
   uint16_t code = shell::pinCode(pin_);
   resetPin();
   if (screen_ == SH_PIN_SET) { firstPin_ = code; go(SH_PIN_AGAIN); }
   else if (screen_ == SH_PIN_AGAIN && code == firstPin_) finishCreate(code);
   else if (screen_ == SH_PIN_AGAIN) { go(SH_PIN_SET); toast("Not the same!"); }
-  else if (code == prof_.rec[target_].pin) authorized();
-  else { pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
+  else if (code == prof_.rec[target_].pin) { pinClear(target_); authorized(); }
+  else { pinStrike(target_); pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
 }
 void Shell::drawPin() {
   clear(C_WALL);
+  const bool hidden = kidKeysHidden();
+  const uint32_t wait = hidden ? pinWait(target_) : 0;
   char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
   if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
+  else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
   else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
   textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
   drawPinDigits();
+  if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
+}
+// While a wait runs, the keys give way to an hourglass whose sand runs down, its seconds and a bar that empties: a
+// kid who cannot read the number still sees the wait end, and nothing looks like a key. A tap wiggles it, silently.
+void Shell::drawPinWait(uint32_t wait) {
+  const uint32_t of = shell::pinWaitFor(locks_.lock[target_].strikes);
+  const int top = of ? (int)(24 * wait / of) : 0;   // rows of sand still in the top bulb, of 24
+  const int dx = (int32_t)(pinNudgeUntil_ - ms_) > 0 ? ((ms_ / 50) % 2 ? 2 : -2) : 0, cx = 80 + dx;
+  rect(cx - 18, 50, 37, 4, C_DKBROWN); rect(cx - 18, 103, 37, 4, C_DKBROWN);   // the caps
+  for (int r = 0; r < 24; r++) {   // r = 0 at a cap, 23 at the waist; the top bulb above y 78, the bottom below
+    const int hw = 15 - r * 14 / 23, yt = 54 + r, yb = 102 - r;
+    hline(cx - hw, yt, 2 * hw + 1, r >= 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
+    hline(cx - hw, yb, 2 * hw + 1, r < 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
+    hline(cx - hw - 1, yt, 1, C_DKBROWN); hline(cx + hw + 1, yt, 1, C_DKBROWN);
+    hline(cx - hw - 1, yb, 1, C_DKBROWN); hline(cx + hw + 1, yb, 1, C_DKBROWN);
+  }
+  if (wait) line(cx, 78, cx, 101 - (24 - top), C_ORANGE);   // the falling stream
+  char n[4]; snprintf(n, sizeof n, "%u", (unsigned)wait);
+  textCentered(80, 110, n, C_DKBROWN, 2);
+  const int w = of ? (int)(80 * wait / of) : 0;
+  rect(40, 128, 80, 6, C_DKBROWN); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
 void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
   bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
@@ -527,6 +572,8 @@ void Shell::debugPrint() {
          (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
   printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
   printf("[hours window_on=%u window_start=%u window_end=%u allow_min=%lu]\n", (unsigned)window_.enabled, (unsigned)window_.startMinute, (unsigned)window_.endMinute, (unsigned long)allowance_.minutesLeft(ms_));
+  printf("[codes pin_wait=%lu admin_wait=%lu]\n", (unsigned long)(target_ >= 0 ? pinWait(target_) : 0),
+         (unsigned long)pinWait(shell::ADMIN_LOCK));
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
 void Shell::debugCmd(const char* cmd) {
