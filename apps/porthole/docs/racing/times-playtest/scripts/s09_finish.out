@@ -1,0 +1,47 @@
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+screen=race_play
+wrote build/host/tm_s09_end1.bmp
+ui screen=race_play regions=3 texts=9
+region 26 28 32 24
+region 5 66 26 28
+region 129 66 26 28
+text 67 12 21 12 rgb=FFF6E4 bg=07080C
+text 88 20 18 7 rgb=FFF6E4 bg=07080C
+text 28 29 27 12 rgb=FFF6E4 bg=07080C
+text 35 42 19 7 rgb=FFF6E4 bg=07080C
+text 100 29 16 17 rgb=FFD23A bg=07080C
+text 116 31 12 8 rgb=FFD23A bg=07080C
+text 20 83 6 8 rgb=FFF6E4 bg=07080C
+text 130 83 6 8 rgb=FFF6E4 bg=07080C
+text 43 61 73 17 rgb=FFD23A bg=07080C
+wrote build/host/tm_s09_end2.bmp
+ui screen=race_results regions=3 texts=8
+region 26 100 52 24
+region 82 100 52 24
+region 62 128 36 24
+text 58 11 44 12 rgb=FF8A18 bg=101421
+text 66 25 27 12 rgb=FFD23A bg=07080C
+text 40 43 80 10 rgb=7BE37B bg=101421
+text 59 53 42 10 rgb=8C8EA5 bg=101421
+text 41 63 78 10 rgb=FFD339 bg=101421
+text 39 107 27 10 rgb=FFF7E7 bg=313C5A
+text 95 107 26 10 rgb=FFF7E7 bg=313C5A
+text 69 135 22 10 rgb=FFF7E7 bg=313C5A

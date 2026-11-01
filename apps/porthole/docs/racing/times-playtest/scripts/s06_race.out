@@ -1,0 +1,24 @@
+wrote build/host/tm_s06_a.bmp
+ui screen=race_howto regions=2 texts=8
+region 30 112 48 24
+region 82 112 48 24
+text 51 16 58 12 rgb=FF8A18 bg=101421
+text 58 37 52 10 rgb=FFF7E7 bg=101421
+text 58 59 48 10 rgb=FFF7E7 bg=101421
+text 58 67 46 10 rgb=FFF7E7 bg=101421
+text 55 80 50 10 rgb=FFF7E7 bg=101421
+text 26 91 108 10 rgb=FFD339 bg=101421
+text 45 119 19 10 rgb=FFF7E7 bg=313C5A
+text 97 119 18 10 rgb=FFF7E7 bg=313C5A
+wrote build/host/tm_s06_b.bmp
+ui screen=race_howto regions=2 texts=8
+region 30 112 48 24
+region 82 112 48 24
+text 51 16 58 12 rgb=FF8A18 bg=101421
+text 58 37 52 10 rgb=FFF7E7 bg=101421
+text 58 59 48 10 rgb=FFF7E7 bg=101421
+text 58 67 46 10 rgb=FFF7E7 bg=101421
+text 55 80 50 10 rgb=FFF7E7 bg=101421
+text 26 91 108 10 rgb=FFD339 bg=101421
+text 45 119 19 10 rgb=FFF7E7 bg=313C5A
+text 97 119 18 10 rgb=FFF7E7 bg=313C5A

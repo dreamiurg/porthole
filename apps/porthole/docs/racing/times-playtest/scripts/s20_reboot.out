@@ -1,0 +1,7 @@
+screen=picker
+wrote build/host/tm_s20_after_reboot.bmp
+screen=launcher
+screen=launcher
+screen=race_tracks
+screen=race_board
+wrote build/host/tm_s20_board_after_reboot.bmp

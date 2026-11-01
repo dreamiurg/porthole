@@ -1,0 +1,12 @@
+wrote build/host/tm_s03_launcher_leo.bmp
+wrote build/host/tm_s03_launcher_p2.bmp
+ui screen=launcher regions=8 texts=1
+region 64 -4 32 32
+region 21 30 91 24
+region 114 30 24 24
+region 52 124 24 22
+region 16 57 40 30
+region 60 57 40 30
+region 104 57 40 30
+region 60 89 40 30
+text 47 38 21 8 color=17 bg=18

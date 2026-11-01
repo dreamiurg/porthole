@@ -59,14 +59,15 @@ bool apart(const ui::Box& a, const ui::Box& b) {
 void geometry() {
   using namespace paint;
   assert(inside(PLACE, 2) && apart(PLACE, LAP));   // the place is shown, never tapped
-  const ui::Box pages[][6] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, MODE_CHIP},
-                              {BACK, NEXT, BACK, NEXT, BACK, NEXT},
-                              {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP},
-                              {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN},
-                              {YES, NO, YES, NO, YES, NO},
-                              {REPLAY, RESULT_TRACKS, RESULT_HOME, REPLAY, REPLAY, REPLAY}};
+  const ui::Box pages[][7] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, TIMES, MODE_CHIP},
+                              {BACK, NEXT, BACK, NEXT, BACK, NEXT, NEXT},
+                              {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP, LAP},
+                              {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN, HOME_BTN},
+                              {YES, NO, YES, NO, YES, NO, NO},
+                              {REPLAY, RESULT_TRACKS, RESULT_HOME, REPLAY, REPLAY, REPLAY, REPLAY},
+                              {PREV_TRACK, NEXT_TRACK, BOARD_BACK, BOARD_BACK, BOARD_BACK, BOARD_BACK, BOARD_BACK}};
   for (const auto& page : pages)
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
       assert(page[i].w >= 24 && page[i].h >= 22 && inside(page[i], 2));   // whole 8 mm targets, off the bezel
       for (int j = 0; j < i; j++) if (memcmp(&page[i], &page[j], sizeof page[i])) assert(apart(page[i], page[j]));
     }
@@ -346,6 +347,41 @@ void leaderboard() {
   r.g.debugPrint();
 }
 
+// Times, straight from the track cards: every kid's board without a race, the arrows going round the four tracks
+// (an empty one too), Back to the cards; looking saves nothing, and the widest 8-letter names stay on the glass.
+void timesPage() {
+  static const Profile all[3] = {{0, "WWWWWWWW", 0, 9, 0}, {1, "Sam", 1, 7, 0}, {2, "MMMMMMMM", 2, 6, 0}};
+  Save a{}, b{};
+  a.best[0] = {91200, 31800}; a.best[1] = {599900, 599900}; seal(a);
+  b.best[0] = {99000, 29800}; b.best[1] = {598000, 0}; seal(b);
+  const SaveSlot slots[3] = {{&a, sizeof a}, {nullptr, 0}, {&b, sizeof b}};
+  Rig r;
+  r.g.enter(AppEnter{&all[1], all, slots, 3, 1000000, r.ms, false});
+  r.tap(paint::TIMES);
+  assert(r.g.screen() == Game::Screen::Board && !strcmp(r.g.screenName(), "race_board"));
+  gfx::textLogEnabled = true;
+  for (int k = 0; k < TRACKS + 1; k++) {
+    gfx::textLogReset();
+    r.frame();
+    for (int i = 0; i < gfx::textLogCount; i++) {
+      const gfx::TextBox& t = gfx::textLog[i];
+      if (!inside({t.x, t.y, t.w, t.h}, 1)) printf("off glass: track %d %d %d %d %d\n", k, t.x, t.y, t.w, t.h);
+      assert(inside({t.x, t.y, t.w, t.h}, 1));
+    }
+    r.tap(paint::NEXT_TRACK);
+  }
+  gfx::textLogEnabled = false;
+  r.tap(paint::PREV_TRACK);
+  r.tap(paint::PREV_TRACK);
+  r.g.debugPrint();   // track 3, then: the arrows wrap both ways
+  r.tap(paint::BOARD_BACK);
+  assert(r.g.screen() == Game::Screen::Tracks);
+  const void* data = nullptr; size_t len = 0;
+  assert(!r.g.takeSave(&data, &len, true));
+  r.tap(paint::CARD[2]);   // the cards still work after
+  assert(r.g.screen() == Game::Screen::HowTo);
+}
+
 // The difficulty chip cycles Auto, Easy, Normal, Hard and back, saving at once. A fixed setting races at its own
 // level and leaves the adaptive levels alone; the setting is the kid's own, back on the next entry.
 void modes() {
@@ -446,6 +482,7 @@ int main() {
   saveBlob();
   saveMigration();
   leaderboard();
+  timesPage();
   modes();
   puts("test_racing: ok");
   return 0;

@@ -1,0 +1,79 @@
+reset
+profile WWWWWWWW 9
+wait 600
+app racing
+wait 4500
+screen
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 4000
+dbg lastlap
+wait 50000
+screen
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+screen
+profile MMMMMMMM 9
+wait 600
+app racing
+wait 4500
+screen
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 4000
+dbg lastlap
+wait 50000
+screen
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+screen
+profile Wmwmwmwm 9
+wait 600
+app racing
+wait 4500
+screen
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 4000
+dbg lastlap
+wait 50000
+screen
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+screen
+profile QWERTYUI 9
+wait 600
+app racing
+wait 4500
+screen
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 4000
+dbg lastlap
+wait 50000
+screen
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+screen
+snap tm_s18_four_wide
+ui

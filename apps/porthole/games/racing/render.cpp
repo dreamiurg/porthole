@@ -243,7 +243,7 @@ void placeCars(const Camera& cam) {
     const Car& c = r.car[i];
     if (c.finished) continue;   // home rivals leave the road
     const float lift = hop(c) * 0.9f;
-    add({c.dist - cam.dist, pic::CAR[i], c.x, lift, true, 1, c.boostMs > 0});
+    add({c.dist - cam.dist, pic::CAR[c.paint], c.x, lift, true, 1, c.boostMs > 0});
   }
   for (const Rocket& k : r.rocket) if (k.live) add({k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f});   // easy to follow
   for (const Puff& p : r.puff) if (p.ms) add({p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f});
@@ -446,6 +446,7 @@ void tracksPage(int mode) {
     centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + 84, TRACK[i].line2, 2, CREAM);
   }
   button(HOME, "Home", true);
+  button(TIMES, "Times", true);
   // The difficulty chip: what the rivals are like, in one word under "Rivals".
   UiAudit::add(MODE_CHIP.x, MODE_CHIP.y, MODE_CHIP.w, MODE_CHIP.h);
   plate(MODE_CHIP, INK, PLATE_HI);
@@ -498,6 +499,47 @@ void confirmPage(const View& v) {
   button(YES, "Yes", true);
   button(NO, "No", true);
 }
+void lapTime(char* out, size_t n, uint32_t ms) {   // "29.8", or "1:02.4" past a minute
+  if (ms < 60000) snprintf(out, n, "%u.%u", (unsigned)(ms / 1000), (unsigned)(ms / 100 % 10));
+  else clock(out, n, ms);
+}
+// This track's leaderboard, one row a kid from `y` down: best race and best lap, fastest race first, this kid in gold.
+void boardRows(const View& v, int y) {
+  char t[16], lap[16], line[64];
+  for (int i = 0; i < v.boardRows; i++) {
+    clock(t, sizeof t, v.board[i].raceMs);
+    if (v.board[i].lapMs) lapTime(lap, sizeof lap, v.board[i].lapMs);
+    else snprintf(lap, sizeof lap, "-");
+    snprintf(line, sizeof line, "%d %.8s %s  lap %s", i + 1, v.board[i].name, t, lap);
+    centered(240, y + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
+  }
+}
+// Times, from the track cards without a race: one track's board, its race and lap records across every kid on top.
+void boardPage(const View& v) {
+  gfx565::clear(rgb888_to_565(INK));
+  heading(46, "Best times", 3, ORANGE);
+  button(PREV_TRACK, "<", true);
+  button(NEXT_TRACK, ">", true);
+  centered(240, 104, TRACK[v.track].line1, 2, CREAM);
+  centered(240, 130, TRACK[v.track].line2, 2, CREAM);
+  int fast = -1;   // the fastest lap on the board, whoever drove it
+  for (int i = 0; i < v.boardRows; i++)
+    if (v.board[i].lapMs && (fast < 0 || v.board[i].lapMs < v.board[fast].lapMs)) fast = i;
+  char t[16], line[64];
+  if (!v.boardRows) heading(214, "No times yet", 2, DIM);
+  else {
+    clock(t, sizeof t, v.board[0].raceMs);
+    snprintf(line, sizeof line, "Fastest race %.8s %s", v.board[0].name, t);
+    heading(172, line, 2, GREEN);
+  }
+  if (fast >= 0) {
+    lapTime(t, sizeof t, v.board[fast].lapMs);
+    snprintf(line, sizeof line, "Fastest lap %.8s %s", v.board[fast].name, t);
+    heading(198, line, 2, GREEN);
+  }
+  boardRows(v, 236);
+  button(BOARD_BACK, "Back", true);
+}
 // The finish, then this track's leaderboard: every kid's best race and best lap, fastest first, this kid in gold.
 void resultsPage(const View& v) {
   const Race& r = *v.race;
@@ -516,16 +558,7 @@ void resultsPage(const View& v) {
   else snprintf(line, sizeof line, "Your time %s", t);
   centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
   centered(240, 166, "Best times", 2, DIM);
-  for (int i = 0; i < v.boardRows; i++) {
-    char lap[16];
-    clock(t, sizeof t, v.board[i].raceMs);
-    const uint32_t lm = v.board[i].lapMs;
-    if (!lm) snprintf(lap, sizeof lap, "-");
-    else if (lm < 60000) snprintf(lap, sizeof lap, "%u.%u", (unsigned)(lm / 1000), (unsigned)(lm / 100 % 10));   // "29.8"
-    else clock(lap, sizeof lap, lm);
-    snprintf(line, sizeof line, "%d %.11s %s  lap %s", i + 1, v.board[i].name, t, lap);
-    centered(240, 194 + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
-  }
+  boardRows(v, 194);
   button(REPLAY, "Replay", true);
   button(RESULT_TRACKS, "Tracks", true);
   button(RESULT_HOME, "Home", true);
@@ -543,6 +576,7 @@ void draw(const View& v) {
     case Page::Pause: pausePage(v); break;
     case Page::Confirm: confirmPage(v); break;
     case Page::Results: resultsPage(v); break;
+    case Page::Board: boardPage(v); break;
   }
 }
 
