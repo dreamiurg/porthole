@@ -601,3 +601,136 @@ No Blocker or Major.
 **Ready.** No Blocker or Major. Sam is near or at the front on Auto and enjoys close wins; Zoe has real races on Auto
 and Hard, with an easy race after each loss; Pro hazards at the top are visible and hit only where drawn. Pass-3
 finding 1 does not reproduce on this build; only the shell's intended 450 ms gate is seen.
+
+## Pass 5 (after merging main, b3d33d5)
+
+A new playtester agent, but not a fresh first-time-comprehension check: it read the earlier passes in this file and
+`drv2.py` before playing (the brief asked it to follow their method) and knew the change from the brief. It did not
+read `games/racing/` source or tests. Emulator roleplay only; no real child and no board.
+
+- Build: `claude/rally-pro-obstacles` at `b3d33d5` (merge of main, incl. #128 rivals vary every race and the Times
+  page). `build/host/snap` sha256 `ced5e81abf550fc6c731697f16b83c76e17a24528caf017eec3e67d86266f046`, frozen as a
+  scratch copy for every run and deleted afterwards (disk is tight; traces and frames deleted too).
+- Persona (as received): an 8-year-old who has raced Rally a lot and is good at it, reads short words, holds the puck
+  like a wheel, sometimes over-steers and taps a little off-target. Played on the fixture's Zoe profile (age 9 in
+  `../adaptive-playtest/fixture.txt`; nothing in Rally depends on the age).
+- Brief (as received, summarised): Desert Canyon Pro 12-14 now shows two rocks from level 12 (mid-road before the
+  ramp, left shoulder) and rivals vary every race: are both rocks visible early enough, do they hit only where
+  drawn, is the race fair and close? Desert on Hard now races at level 3 (was 2): harder than Normal but winnable,
+  is Normal vs Hard noticeable? Night Run Pro (14+) barrier as a control. At least 3 Desert Pro, 2 Desert Hard,
+  1 Desert Normal, 1 Night Pro, a pause/resume, a finish and an exit to the cards. `dbg level N` only to reach Pro.
+- Input: everything through taps and tilt in `snap --serve` via `drv2.py` (unchanged), from the picker: Zoe, the
+  launcher arrow, the Rally tile, the Rivals chip, the track cards, Next/Go, Replay/Tracks. Taps are in the 160x160
+  logical space (the first two taps at native 480 px coordinates did nothing; that was my mistake, not the game).
+  Driver `SEEN=2 SEEY=260 SEEW=60`, gain 1, 2 degrees of steering noise (the over-steer), kid taps Boost/Rocket.
+  N1 used gain 1.2 and 4 degrees of noise (a sloppier kid) and was not used for comparisons.
+- Fixture (supplementary, hidden state): `dbg level 12`, `13`, `14` on the Desert cards/results page before the
+  race, and `dbg level 14` on the cards before Night. Night's barriers appear only at Pro, and they were on the road,
+  which confirms the level took. The Desert levels were not read back (`debug` answers nothing in `--serve`).
+
+| # | Track | Rivals / level | Place | Time | Speed-loss events (HUD red) | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| N1 | Desert | Normal | 3rd | 1:37.5 | 34 | First race, How to race read; sloppier driver |
+| N2 | Desert | Normal | 3rd | 1:35.7 | 21 | Replay |
+| N3 | Desert | Normal | 3rd | 1:34.9 | 17 | Second session; yellow 2nd a few car lengths ahead all last lap |
+| H1 | Desert | **Hard** | 3rd | 1:33.8 | 6 | Pause at 40 s (lap 2, in 2nd), Resume, "Ready" restart; then Results, Tracks |
+| H2 | Desert | Hard | 3rd | 1:35.8 | 17 | Replay |
+| H3 | Desert | Hard | 3rd | 1:33.3 | 8 | Second session; 2nd and 3rd swapped in the last lap |
+| P1 | Desert | `dbg level 12` | 4th | 1:33.8 | 8 | Both rocks seen together in lap 2 (`13` top row) |
+| P2 | Desert | `dbg level 13` | 4th | 1:36.3 | 27 | Helper parked behind yellow most of the race; 3rd until the last 10 s |
+| P3 | Desert | `dbg level 14` | 4th | 1:34.1 | 9 | One mid-road rock clip, rest rivals/kerb/mud |
+| NP | Night | `dbg level 14` | — | — | 15 | **Cut mid-lap 2 in 3rd** by the shell rest page ("Zoe is resting", `15`) about 14.7 min into the session |
+| NQ | Night | `dbg level 14` | 4th | 1:52.2 | 27 | Fresh session; barriers seen, none hit; losses were kerbs, puddles, rivals |
+| N4 | Desert | Normal | 3rd | 1:36.8 | 27 | Probe: same driver with **no** steering noise; most losses are bumps into the pack |
+| H4 | Desert | Hard | 3rd | 1:33.2 | 6 | Probe: no steering noise; clear road behind the leaders |
+
+Exit to the cards: Tracks from Results (four times) and Back on How to race. Every race ended on Results.
+
+### What I checked about the rocks (Desert Pro)
+
+- **Both rocks visible together at 12.** In P1 lap 2, after the mud on the left, the left-shoulder rock and the
+  mid-road rock come into view about a second apart (`13` top row). The mid-road rock is visible as a distinct orange
+  rock about 1.3 s before it reaches the car at 90 mph (P3, 33 ms frames), longer at the left one.
+- **Hit only where drawn.** Every rock hit inspected frame by frame (P1 x2, P3 x1) was a corner clip with 10-15 px
+  of sprite overlap, the puff between the rock and the car (`13` bottom row). No rock hit with a clear gap and no hit
+  on an empty road. Three P1/P3 hits that first looked unexplained were, at 33 ms steps, rear-corner touches on the
+  rival just ahead (yellow or blue), already a carried Nit. One P1 puff on blue was blue in the mud.
+- **Dodging works.** The driver (reacts about 0.5 s ahead) took 1 rock hit in P3 and 2 in P1, out of 6 rock passes
+  each (3 laps x 2 rocks, inferred from the layout, not counted pass by pass). A kid
+  who looks ahead can steer round both; the gap between them is wide enough to pass.
+- **Rivals vary.** Grid colour order differed race to race (e.g. blue/yellow/green, then green/blue/yellow), and
+  who finished 2nd changed.
+
+### Findings (pass 5)
+
+No Blocker. One Major (finding 1).
+
+1. **Major (challenge, meaningful choice): Hard on Desert did not feel harder than Normal.** Screen: track
+   cards / Results. The brief's goal for this change ("harder than Normal but winnable, Normal vs Hard noticeable")
+   was not shown. Four Normal and four Hard races, all 3rd, no win in either mode. Hard was if anything easier:
+   fewer slowdowns (6, 17, 8, 6 against 21, 17, 27; N1 excluded) and faster times (1:33.2-1:35.8 against
+   1:34.9-1:36.8). In the frames, on Normal the kid catches the pack and loses speed bumping into it; on Hard the
+   leaders pull away and she drives clean road to a lonely 3rd. To an 8-year-old who flips the chip to Hard, the
+   result does not change, and on Desert she never wins either mode. The noise-free probe (N4, H4) gave the same
+   picture, so the 2-degree over-steer is not the cause. Caveats: the helper is weaker than this persona in traffic
+   (it parks on a rival's bumper), so the modes may separate at the front of the field, and I cannot tell whether
+   #128's rival variety made the field stronger. The pass-3 neighbour row above (Desert levels 0, 2, 3: 18, 15, 15
+   competent wins of 40, before pass 4's retune) suggests Hard 2 to 3 is a small step. Repro: Rally cards, chip to
+   Normal, Desert, Go, race; Tracks, chip to Hard, Desert, race (driver `smooth 1 0 kidsee`). Screenshot:
+   `14-pass5-desert-normal-vs-hard-both-3rd.png`. Owner: game-designer, to check Hard vs Normal on Desert by place
+   and gap, not only win counts, and with a driver that races in traffic.
+2. **Minor (known, shell-owned). The rest page ends a Pro race mid-lap.** NP was in 3rd in lap 2 of Night Pro when
+   "Zoe is resting. Back in 10 min" replaced it; the race is lost. Same as pass 4; unchanged. Repro: one session,
+   eight races back to back (about 14.7 min of play). Screenshot: `15-pass5-night-pro-race-cut-by-rest-page.png`.
+3. **Observation (pacing at the top).** 4th in all four finished Pro races (three Desert, one Night), close to 3rd
+   (P2 was 3rd until the last 10 s). For a kid who climbed to Pro by winning, four 4ths in a row would be where she
+   stops ("too hard now"); but the ladder drops a level after a loss, so a real kid would not stay at 14. Helper
+   caveat as in 1. No change asked.
+4. Nit, carried: rear-corner touches on the rival just ahead slow the car with a small puff (P1, P3); each is a
+   visible touch at 33 ms steps.
+
+### Qualitative (pass 5)
+
+- **Goal, actions, feedback.** Unchanged screens; the chip reads Easy/Normal/Hard/Auto in yellow and the kid can tell
+  which is on. Every speed loss inspected has a visible cause (rock, mud, kerb, puddle, rival). The rocks look like
+  the desert's own rocks and sit where a kid would expect them.
+- **Fair, close, not cheap.** Rocks are seen in time and only hit on overlap, so a kid blames her own steering, not
+  the game. Two rocks a lap at Pro make the race busier, not unfair. Close: rivals in sight in the last lap in most
+  races. Not cheap.
+- **Where she would stop.** After a few 3rds on Normal and Hard that feel the same (finding 1), or after the
+  rest page cut a Pro race she was doing well in (finding 2). Satisfying stop: the Results page with "Your best yet!".
+- **Recovery.** Pause by holding the lap text, Resume gives a "Ready" count before racing; Tracks and Back return to
+  the cards. A hold just above the lap text (on the speed arc, logical 22,20) did nothing; the hold region is
+  26-58 x 28-52 logical, covering the "1/3 II Hold" text, so this was a genuine miss, not a defect.
+
+### Gesture and interruption matrix (pass 5)
+
+| Case | This pass |
+| --- | --- |
+| Picker, launcher arrow, Rally tile, cards, chip to Normal/Hard/Auto, Next, Go, Replay, Tracks, Back | Acted |
+| Pause hold on the lap text, Resume | Acted (H1); a hold above the text did nothing |
+| Rest page mid-race | Hit once (NP): race ends |
+| Home mid-race, Restart, New grip, reboot mid-race, drag off a button | **Gap** (not in this brief) |
+
+### Automated (pass 5)
+
+`make -C apps/porthole playtest` at `b3d33d5`: 87 of 87 scenarios pass, 0 UI FAIL, 0 UI WARN (report read in full).
+
+### Verdict (pass 5)
+
+**Needs another pass for change 2 (Desert Hard); ready for changes 1 and 3.** Desert Pro's two rocks are visible
+together from level 12 about a second ahead and hit only on overlap, and the races stay close (4th, near 3rd); Night
+Pro's barrier is unchanged. Finding 1 (Major): Hard at level 3 was not shown to be harder than Normal or winnable for
+this driver; the designer should check it, then replay Normal vs Hard on Desert. Finding 2 is the known shell rest
+page.
+
+### Pass 5 resolutions (game designer, 2026-11-01)
+
+- Major 1 (Desert Hard not harder than Normal): not changed. Same place (3rd) in both modes, but the driver's own
+  times were faster on Hard (1:33.2-1:35.8 against 1:34.9-1:36.8 on Normal) because it drove clear road while the
+  leaders pulled away: the rivals were faster, so Hard was harder, only lonelier. On Normal the car caught the pack and
+  lost speed in it. Over 40 races (`modeBands`), Desert Hard (level 3) is won less often than Normal by both drivers:
+  competent 14 against 18, kid 8 against 11. Eight races cannot overturn that. Winnable on Hard rests on those sweeps;
+  this pass got no win.
+- Minor 2 (rest page cuts a race): the shell's, known; no change here.
+- Rocks (change 1) and the Night Run barrier: accepted as played.
