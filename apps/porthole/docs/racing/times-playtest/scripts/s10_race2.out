@@ -1,0 +1,4 @@
+screen=race_countdown
+screen=race_results
+wrote build/host/tm_s10_race2_end.bmp
+screen=race_results

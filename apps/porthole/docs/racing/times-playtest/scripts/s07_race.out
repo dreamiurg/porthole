@@ -1,0 +1,18 @@
+wrote build/host/tm_s07_a.bmp
+ui screen=race_calibrate regions=2 texts=5
+region 30 112 48 24
+region 82 112 48 24
+text 47 18 66 10 rgb=FF8A18 bg=101421
+text 42 30 76 10 rgb=7BE37B bg=101421
+text 31 82 98 10 rgb=8C8EA5 bg=101421
+text 45 119 19 10 rgb=FFF7E7 bg=313C5A
+text 101 119 10 10 rgb=FFF7E7 bg=313C5A
+wrote build/host/tm_s07_b.bmp
+ui screen=race_calibrate regions=2 texts=5
+region 30 112 48 24
+region 82 112 48 24
+text 47 18 66 10 rgb=FF8A18 bg=101421
+text 42 30 76 10 rgb=7BE37B bg=101421
+text 31 82 98 10 rgb=8C8EA5 bg=101421
+text 45 119 19 10 rgb=FFF7E7 bg=313C5A
+text 101 119 10 10 rgb=FFF7E7 bg=313C5A

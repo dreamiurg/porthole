@@ -1,0 +1,7 @@
+screen=launcher
+wrote build/host/tm_s12_after_home.bmp
+screen=picker
+wrote build/host/tm_s12_mia_launcher.bmp
+screen=launcher
+screen=race_tracks
+wrote build/host/tm_s12_mia_tracks.bmp

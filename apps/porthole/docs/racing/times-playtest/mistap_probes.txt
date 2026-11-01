@@ -1,0 +1,43 @@
+# pinned build snap sha256 eab188695305ca98 at 79ca717 (worktree)
+# tracks row per ui: Home x32-60, Times x62-94, Rivals x96-128, all y117-141
+tracks tap 56 129 -> screen=launcher
+tracks tap 58 129 -> screen=launcher
+tracks tap 59 129 -> screen=launcher
+tracks tap 60 129 -> screen=race_tracks
+tracks tap 61 129 -> screen=race_tracks
+tracks tap 62 129 -> screen=race_board
+tracks tap 63 129 -> screen=race_board
+tracks tap 78 115 -> screen=race_tracks
+tracks tap 78 116 -> screen=race_tracks
+tracks tap 78 117 -> screen=race_board
+tracks tap 78 141 -> screen=race_tracks
+tracks tap 78 142 -> screen=race_tracks
+tracks tap 78 143 -> screen=race_tracks
+tracks tap 93 129 -> screen=race_board
+tracks tap 94 129 -> screen=race_tracks
+tracks tap 95 129 -> screen=race_tracks
+tracks tap 96 129 -> screen=race_tracks
+tracks tap 97 129 -> screen=race_tracks
+tracks tap 100 129 -> screen=race_tracks
+# board per ui: < x22-48 y32-56, > x112-138 y32-56, Back x56-104 y120-144
+board tap 54 132 -> screen=race_board
+board tap 55 132 -> screen=race_board
+board tap 56 132 -> screen=race_tracks
+board tap 80 118 -> screen=race_board
+board tap 80 119 -> screen=race_board
+board tap 80 146 -> screen=race_board
+board tap 106 132 -> screen=race_board
+board tap 20 44 -> screen=race_board
+board tap 50 44 -> screen=race_board
+board tap 80 100 -> screen=race_board
+double-tap Times gap 100ms -> screen=race_board
+double-tap Times gap 300ms -> screen=race_board
+double-tap Times gap 500ms -> screen=race_tracks
+double-tap Times gap 700ms -> screen=race_tracks
+double-tap Back gap 100ms -> screen=race_tracks
+double-tap Back gap 300ms -> screen=race_tracks
+double-tap Back gap 500ms -> screen=race_board
+double-tap Back gap 700ms -> screen=race_board
+hold Times -> screen=race_board
+drag off Times -> screen=race_tracks
+long press Times 2s -> screen=race_board

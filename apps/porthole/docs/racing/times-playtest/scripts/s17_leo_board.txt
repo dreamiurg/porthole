@@ -1,0 +1,310 @@
+reset
+profile Leo 10
+profile Mia 6
+wait 600
+tap 80 12
+wait 600
+tap 80 54
+wait 800
+tap 96 135
+wait 800
+tap 80 104
+wait 4500
+tap 53 52
+wait 1000
+tap 106 124
+wait 600
+tap 106 124
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 3000
+tap 52 112
+wait 1500
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+wait 1000
+tap 108 112
+wait 1500
+tap 107 94
+wait 1000
+tap 106 124
+wait 1000
+tap 106 124
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 3000
+tap 80 140
+wait 1500
+tap 80 12
+wait 800
+tap 80 80
+wait 800
+tap 96 135
+wait 800
+tap 80 104
+wait 4500
+tap 50 50
+wait 800
+tap 52 124
+wait 800
+tap 97 129
+wait 800
+tap 76 131
+wait 800
+tap 80 132
+wait 800
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+tap 80 132
+wait 800
+tap 46 129
+wait 1500
+tap 80 12
+wait 800
+tap 80 54
+wait 800
+tap 96 135
+wait 800
+tap 80 104
+wait 4500
+tap 50 50
+wait 800
+tap 106 124
+wait 800
+tap 106 124
+wait 800
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+wait 3000
+tap 142 80
+wait 3000
+tap 108 112
+wait 800
+tap 78 129
+wait 800
+screen
+snap tm_s17_leo_board_desert
+ui
+tap 35 44
+wait 400
+snap tm_s17_leo_board_night
+tap 80 132
+wait 800
+tap 78 129
+wait 800
+snap tm_s17_leo_board_reopen

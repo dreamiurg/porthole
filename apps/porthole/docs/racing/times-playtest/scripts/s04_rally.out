@@ -1,0 +1,24 @@
+wrote build/host/tm_s04_rally_a.bmp
+wrote build/host/tm_s04_rally_b.bmp
+ui screen=race_tracks regions=7 texts=14
+region 96 117 32 24
+region 27 33 52 38
+region 81 33 52 38
+region 27 75 52 38
+region 81 75 52 38
+region 62 117 32 24
+region 32 117 28 24
+text 54 11 52 12 rgb=FF8A1E bg=07080C
+text 57 24 46 10 rgb=FFF7E7 bg=101421
+text 40 52 26 10 rgb=FFF7E7 bg=182439
+text 39 59 28 10 rgb=FFF7E7 bg=182439
+text 88 52 39 10 rgb=FFF7E7 bg=182439
+text 96 59 22 10 rgb=FFF7E7 bg=182439
+text 42 94 22 10 rgb=FFF7E7 bg=182439
+text 42 101 22 10 rgb=FFF7E7 bg=182439
+text 97 94 21 10 rgb=FFF7E7 bg=182439
+text 99 101 16 10 rgb=FFF7E7 bg=182439
+text 35 124 22 10 rgb=FFF7E7 bg=313C5A
+text 66 124 24 10 rgb=FFF7E7 bg=313C5A
+text 100 119 24 10 rgb=8C8EA5 bg=101421
+text 103 128 19 10 rgb=FFD339 bg=101421
