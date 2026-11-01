@@ -13,6 +13,10 @@ struct Car {
   uint32_t boostMs = 0, protectMs = 0, airMs = 0, wobbleMs = 0, lineMs = 0, finishMs = 0;
   uint16_t solid = 0;                                 // obstacles this car is inside (bit per feature)
   uint8_t grid = 0;
+  uint8_t paint = 0;                                  // which car picture: a rival's color is shuffled every race
+  uint8_t wobbleOdds = 4;                             // a rival's line error: one new line in this many
+  bool careful = true;                                // a rival that steers around slow patches, not only obstacles
+  float form = 0, cut = 0.35f;                        // a rival's pace on the day (+-) and how much it cuts a bend
   uint8_t boosts = 0;                                 // a rival's Boost charges (the player's are Race::inventory)
   bool refill = false;                                // a rival taking its charges back at every lap line
   bool finished = false;

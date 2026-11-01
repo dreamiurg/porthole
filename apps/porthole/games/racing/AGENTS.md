@@ -12,7 +12,7 @@ tracks, platform contract, and the two approved reference boards the look follow
   open, with Home and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
   skips a setting, by design: it cycles). Easy races at level -8, Normal at 0,
-  Hard at `HARD_LEVEL` (by track: a competent driver wins 33-53% there); a fixed setting never moves the
+  Hard at `HARD_LEVEL` (by track: a competent driver wins 37-50% there); a fixed setting never moves the
   adaptive levels. Times count the same in every setting. A finish in a fixed setting on a never-raced track still
   makes it raced, so its seeded level stays as it was and is no longer derived from the other tracks. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
   cards go straight to the grip page.
@@ -68,6 +68,14 @@ tracks, platform contract, and the two approved reference boards the look follow
   again as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The
   ladder was ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure
   function of track, seed, level and inputs.
+- Every race is a new field (a user request of 2026-11-01: each color used to finish in the same place every time).
+  The three colors are dealt to the three parts (slowest, middle, pace-setter: pace, grid slot, lane, ladder rungs)
+  in a seeded shuffle; the parts keep their car slots, so the shuffle never touches the balance. Each rival also
+  gets its day: pace within +-0.035 of its part's (never past 0.99 for the slower two or the kid's 1.0 for the
+  pace-setter), how much it cuts a bend (0.2-0.5 of the road), how often it drifts off line (one new line in 2-6),
+  and whether it steers round slow patches (three in four; the slowest part never does). The forms overlap, so the
+  middle rival beats the pace-setter in roughly a fifth to four fifths of races, depending on track, and the slowest
+  sometimes passes too (`tune.h` `RIVAL_*`, `variety` in `host/test_racing_rules.cpp`).
 - No sounds, no network. Leaving and coming back starts at the cards.
 
 ## Module map

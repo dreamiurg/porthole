@@ -243,7 +243,7 @@ void placeCars(const Camera& cam) {
     const Car& c = r.car[i];
     if (c.finished) continue;   // home rivals leave the road
     const float lift = hop(c) * 0.9f;
-    add({c.dist - cam.dist, pic::CAR[i], c.x, lift, true, 1, c.boostMs > 0});
+    add({c.dist - cam.dist, pic::CAR[c.paint], c.x, lift, true, 1, c.boostMs > 0});
   }
   for (const Rocket& k : r.rocket) if (k.live) add({k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f});   // easy to follow
   for (const Puff& p : r.puff) if (p.ms) add({p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f});

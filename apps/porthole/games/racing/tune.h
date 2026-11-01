@@ -57,12 +57,22 @@ constexpr float LEVEL_SLOW_STEP = 0.0035f, LEVEL_TOP_STEP = 0.01f;
 constexpr float CHASE_MIN = 3, CHASE_MAX = 40;
 constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led for 3/5 of the race
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
+// Every race the three colors go to the rivals' three parts (slowest, middle, pace-setter: RIVAL_TOP, grid slot, lane,
+// ladder rungs) in a seeded shuffle, so no color always finishes in the same place; the parts themselves never move,
+// so the shuffle cannot change the balance. Each rival also gets a form
+// for the day (its top moves by up to +-RIVAL_FORM, never past RIVAL_TOP_MAX for the slower two or 1 for the
+// pace-setter), a bend line (cuts the inside by RIVAL_CUT_MIN..MAX), how often it wobbles off line (one new line in
+// RIVAL_WOBBLE_MIN..MAX) and whether it steers around slow patches (RIVAL_CAREFUL in 4; the slowest part always did
+// not). The forms overlap, so the middle rival sometimes beats the pace-setter and a slow one can pass the middle.
+constexpr float RIVAL_TOP[] = {0.92f, 0.97f, 1.0f};   // by part (car 1..3), slowest first: the brief's pace
+constexpr float RIVAL_FORM = 0.035f, RIVAL_TOP_MAX = 0.99f, RIVAL_CUT_MIN = 0.2f, RIVAL_CUT_MAX = 0.5f;
+constexpr int RIVAL_WOBBLE_MIN = 2, RIVAL_WOBBLE_MAX = 6, RIVAL_CAREFUL = 3;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
 // Normal level 0 (the brief's rivals, though on Industrial Ruins and Night Run level 0 sits up the ladder, so their
-// rivals there carry boosts); Hard, by track, a level a competent driver wins 33-53% of (the sweep's closest to
-// 35-50%: Snow Track goes 53% at 1, 25% at 2).
+// rivals there carry boosts); Hard, by track, a level a competent driver wins 37-50% of (the sweep's closest to
+// 35-50%, re-swept with the rivals' varied form: Industrial Ruins goes 50% at 5, 21% at its top, 6).
 constexpr int EASY_LEVEL = -8;
-constexpr int8_t HARD_LEVEL[] = {4, 6, 1, 1};
+constexpr int8_t HARD_LEVEL[] = {4, 5, 4, 1};
 // By track: the rivals' pace at LEVEL_MIN, kept above what a kid who never steers manages there (Desert Canyon's
 // straights let one finish within 18% of a clean drive).
 constexpr float LEVEL_FLOOR[] = {0.87f, 0.80f, 0.80f, 0.80f};

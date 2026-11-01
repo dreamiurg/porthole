@@ -104,7 +104,7 @@ float aroundHazards(const Race& r, int i, float line) {
   const Car& c = r.car[i];
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    if (o.kind == Kind::Pickup || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
+    if (o.kind == Kind::Pickup || (o.kind != Kind::Obstacle && !c.careful)) continue;   // a careless rival ignores patches
     const float ahead = featureAt(t, o) - lapPos(t, c.dist);
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
     if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
@@ -132,8 +132,8 @@ float courtesy(const Race& r, int i, float line) {
 }
 float rivalLine(Race& r, int i) {
   Car& c = r.car[i];
-  if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % 4 == 0 ? 1200 : 0; }
-  float line = (i - 2) * 0.45f + curve(*r.track, c.dist + 30) * 0.35f;
+  if (c.lineMs == 0) { c.lineMs = 6000 + rnd(r.seed) % 7000; c.wobbleMs = rnd(r.seed) % c.wobbleOdds == 0 ? 1200 : 0; }
+  float line = (i - 2) * 0.45f + curve(*r.track, c.dist + 30) * c.cut;
   if (c.wobbleMs > 500) line += (c.lineMs & 1) ? 0.9f : -0.9f;   // a seeded line error, then recovery
   return clampf(courtesy(r, i, aroundCars(r, i, aroundHazards(r, i, line))), -0.85f, 0.85f);
 }
@@ -267,8 +267,26 @@ void ladder(Car& c, int i, int level, int rung, float floor) {
   if (level < 0) c.top *= slowdown(level, floor);   // keyed on the kid's level: below 0 rivals are slower on every track
   for (int k = 0; k < rung; k++) {
     if (k < TOPS) c.boosts = (uint8_t)(c.boosts + (LADDER_CHARGE[k] == i));
-    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(1, c.top + LEVEL_TOP_STEP); }   // never past the kid
+    else if (k < REFILLS) { if (LADDER_TOP[k - TOPS] == i) c.top = fminf(RIVAL_TOP_MAX, c.top + LEVEL_TOP_STEP); }   // the slower two only
     else c.refill = c.refill || LADDER_REFILL[k - REFILLS] == i;
+  }
+}
+// tune.h: the three colors shuffled over the parts, then each rival's form, bend line, wobble and care for the day.
+float unit(uint32_t& s) { return (float)(rnd(s) % 1001) / 1000; }   // 0..1
+void rivals(Race& r) {
+  uint8_t paint[CARS - 1] = {1, 2, 3};
+  for (int k = CARS - 2; k > 0; k--) {
+    const int j = (int)(rnd(r.seed) % (uint32_t)(k + 1));
+    const uint8_t t = paint[k]; paint[k] = paint[j]; paint[j] = t;
+  }
+  for (int i = 1; i < CARS; i++) {
+    Car& c = r.car[i];
+    c.paint = paint[i - 1];
+    c.form = (unit(r.seed) * 2 - 1) * RIVAL_FORM;
+    c.top = fminf(i == CARS - 1 ? 1 : RIVAL_TOP_MAX, RIVAL_TOP[i - 1] + c.form);
+    c.cut = RIVAL_CUT_MIN + (RIVAL_CUT_MAX - RIVAL_CUT_MIN) * unit(r.seed);
+    c.wobbleOdds = (uint8_t)(RIVAL_WOBBLE_MIN + rnd(r.seed) % (RIVAL_WOBBLE_MAX - RIVAL_WOBBLE_MIN + 1));
+    c.careful = i != 1 && rnd(r.seed) % 4 < RIVAL_CAREFUL;
   }
 }
 }  // namespace
@@ -320,14 +338,13 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
   // easy rivals after the same number of losses on every track.
   const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
   r.rung = (int8_t)(r.level + (fade > 0 ? shift * fade / LEVEL_SHIFT_FADE : 0));
-  static const float TOP[CARS] = {1.0f, 0.92f, 0.97f, 1.0f};
+  rivals(r);
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];
     const int slot = i == PLAYER ? CARS : i;   // the player starts at the back of the staggered grid
     c.grid = (uint8_t)slot;
     c.dist = -(float)(slot * GRID_SPACING);
     c.x = slot % 2 ? -0.35f : 0.35f;
-    c.top = TOP[i];
     if (i != PLAYER) ladder(c, i, r.level, r.rung, LEVEL_FLOOR[track]);
     c.lineMs = 2000 + rnd(r.seed) % 3000;
   }
