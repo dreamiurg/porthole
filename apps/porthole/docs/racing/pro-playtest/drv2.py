@@ -185,6 +185,43 @@ def kid_presses(s, img, i, last_rocket):
         tap(s, 18, 82)
 
 
+def red_pixels(img):
+    return sum(1 for x in range(195, 275, 2) for y in range(35, 80, 2) if img.getpixel((x, y))[0] > 200 and img.getpixel((x, y))[1] < 120 and img.getpixel((x, y))[2] < 100)
+
+
+def log_hits(s, img, label):
+    red = red_pixels(img)
+    RING.append((s.t, img))
+    del RING[:-16]
+    if red > 150 and not HIT[0]:
+        HITLOG.write(f"{label} hit t={s.t}\n")
+        HITLOG.flush()
+        HIT[1] = 3
+        for t0, im in RING:
+            im.save(os.path.join(OUT, f"{label}-hit-{t0:07d}.png"))
+    elif HIT[1] > 0:
+        HIT[1] -= 1
+        img.save(os.path.join(OUT, f"{label}-hit-{s.t:07d}.png"))
+    HIT[0] = red > 150
+
+
+def log_slides(s, img, label):
+    px = player_x(img)
+    if px is not None and LASTX[0] is not None and abs(px - LASTX[0]) > 18:
+        HITLOG.write(f"{label} slide t={s.t} dx={px - LASTX[0]:.0f}\n")
+        HITLOG.flush()
+        for t0, im in RING[-8:]:
+            im.save(os.path.join(OUT, f"{label}-hit-{t0:07d}.png"))
+    LASTX[0] = px
+
+
+def save_frame(s, img, label, i, every):
+    fine = os.environ.get("FINE")
+    fa, fb = map(int, fine.split("-")) if fine else (1, 0)
+    if (every and (i * 99) % every < 99) or fa <= s.t <= fb:
+        img.save(os.path.join(OUT, f"{label}-{s.t:07d}.png"))
+
+
 def drive(s, sec, label, every, opt):
     """opt: style, gain, noise, maxang, kid."""
     last_rocket = [-99]
@@ -192,32 +229,11 @@ def drive(s, sec, label, every, opt):
     ang = 0.0
     for i in range(int(sec * 1000 / 99)):
         img = s.frame()
-        red = sum(1 for x in range(195, 275, 2) for y in range(35, 80, 2) if img.getpixel((x, y))[0] > 200 and img.getpixel((x, y))[1] < 120 and img.getpixel((x, y))[2] < 100)
-        RING.append((s.t, img))
-        del RING[:-16]
-        if red > 150 and not HIT[0]:
-            HITLOG.write(f"{label} hit t={s.t}\n")
-            HITLOG.flush()
-            HIT[1] = 3
-            for t0, im in RING:
-                im.save(os.path.join(OUT, f"{label}-hit-{t0:07d}.png"))
-        elif HIT[1] > 0:
-            HIT[1] -= 1
-            img.save(os.path.join(OUT, f"{label}-hit-{s.t:07d}.png"))
-        HIT[0] = red > 150
-        px = player_x(img)
-        if px is not None and LASTX[0] is not None and abs(px - LASTX[0]) > 18:
-            HITLOG.write(f"{label} slide t={s.t} dx={px - LASTX[0]:.0f}\n")
-            HITLOG.flush()
-            for t0, im in RING[-8:]:
-                im.save(os.path.join(OUT, f"{label}-hit-{t0:07d}.png"))
-        LASTX[0] = px
+        log_hits(s, img, label)
+        log_slides(s, img, label)
         if REF[0] is None:
             learn_ref(img)
-        fine = os.environ.get("FINE")
-        fa, fb = map(int, fine.split("-")) if fine else (1, 0)
-        if (every and (i * 99) % every < 99) or fa <= s.t <= fb:
-            img.save(os.path.join(OUT, f"{label}-{s.t:07d}.png"))
+        save_frame(s, img, label, i, every)
         target = steer_target(img, opt.get("gain", 1.0), opt.get("maxang", 60))
         if opt.get("noise"):
             target += rnd.gauss(0, opt["noise"])
@@ -228,6 +244,37 @@ def drive(s, sec, label, every, opt):
         s.cmd(f"tilt {int(1000 * math.sin(th))} {int(1000 * math.cos(th))} 0")
         s.cmd("tick 99")
     return s.frame()
+
+
+def drive_action(s, a):
+    every = int(a[3]) if len(a) > 3 else 2000
+    style = a[4] if len(a) > 4 else "smooth"
+    gain = float(a[5]) if len(a) > 5 else 1.0
+    noise = float(a[6]) if len(a) > 6 else 0.0
+    kid = len(a) > 7 and a[7].startswith("kid")
+    DODGE[0] = len(a) > 7 and a[7] in ("kiddodge", "kidsee")
+    SEE[0] = len(a) > 7 and a[7] == "kidsee"
+    drive(s, float(a[1]), a[2], every, {"style": style, "gain": gain, "noise": noise, "kid": kid})
+
+
+def run_action(s, act):
+    a = act.split()
+    k = a[0]
+    if k == "tap":
+        tap(s, a[1], a[2])
+    elif k == "hold":
+        s.cmd(f"down {a[1]} {a[2]}")
+        s.cmd(f"tick {a[3]}")
+        s.cmd("up")
+    elif k in ("tick", "tilt", "dbg", "down", "move", "up", "skip"):
+        s.cmd(act)
+    elif k == "shot":
+        s.frame().save(os.path.join(OUT, a[1] + ".png"))
+        print("shot", a[1], "t=", s.t)
+    elif k == "drive":
+        drive_action(s, a)
+    else:
+        print("unknown", act)
 
 
 def main():
@@ -244,34 +291,8 @@ def main():
             old = json.load(f)
     for c in old:
         s.cmd(c)
-    acts = sys.argv[2:]
-    i = 0
-    while i < len(acts):
-        a = acts[i].split()
-        k = a[0]
-        if k == "tap":
-            tap(s, a[1], a[2])
-        elif k == "hold":
-            s.cmd(f"down {a[1]} {a[2]}")
-            s.cmd(f"tick {a[3]}")
-            s.cmd("up")
-        elif k in ("tick", "tilt", "dbg", "down", "move", "up", "skip"):
-            s.cmd(acts[i])
-        elif k == "shot":
-            s.frame().save(os.path.join(OUT, a[1] + ".png"))
-            print("shot", a[1], "t=", s.t)
-        elif k == "drive":
-            every = int(a[3]) if len(a) > 3 else 2000
-            style = a[4] if len(a) > 4 else "smooth"
-            gain = float(a[5]) if len(a) > 5 else 1.0
-            noise = float(a[6]) if len(a) > 6 else 0.0
-            kid = len(a) > 7 and a[7].startswith("kid")
-            DODGE[0] = len(a) > 7 and a[7] in ("kiddodge", "kidsee")
-            SEE[0] = len(a) > 7 and a[7] == "kidsee"
-            drive(s, float(a[1]), a[2], every, {"style": style, "gain": gain, "noise": noise, "kid": kid})
-        else:
-            print("unknown", acts[i])
-        i += 1
+    for act in sys.argv[2:]:
+        run_action(s, act)
     with open(session, "w") as f:
         json.dump(s.log, f)
     s.p.stdin.close()
