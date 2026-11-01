@@ -947,6 +947,16 @@ static void adminRepeatRightAway() {
   };
   quick("1470"); quick("1470"); frame(sh, ms, Input{});
   assert(on(sh, "sys_admin") && storedAdmin(st) == 1471);
+  // a press that goes down in the pause and lifts after it would have ended still counts: the pause waits for it
+  tapAt(sh, ms, CODE_SET); assert(on(sh, "sys_pin_set")); quick("1580");   // 1: away from the button just tapped
+  const ui::Box k3 = {95, 54, 28, 19};
+  auto finger = [&](uint32_t dt, bool down, bool pressed, bool released) {
+    Input in{}; in.down = down; in.pressed = pressed; in.released = released;
+    in.x = in.downX = k3.x + k3.w / 2; in.y = in.downY = k3.y + k3.h / 2; ms += dt; sh.update(NOW, ms, in); sh.render();
+  };
+  finger(300, true, true, false); finger(80, true, false, false); finger(80, true, false, false); finger(40, false, false, true);
+  quick("580"); frame(sh, ms, Input{});
+  assert(on(sh, "sys_pin_set") && storedAdmin(st) == 1471);   // 1580 then 3580: a mismatch, so the 3 was typed
 }
 // The admin keypad: the same waits, its own lock; changing the code clears it.
 static void adminCodeLockout() {

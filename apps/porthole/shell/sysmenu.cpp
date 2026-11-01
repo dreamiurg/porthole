@@ -222,7 +222,7 @@ void Shell::updateSysPin() {
   if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
   if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
     const char next = adminDigit();
-    if (!next && ms_ - pinMs_ < 400) return;
+    if (!next && (ms_ - pinMs_ < 400 || in_.down)) return;   // a finger down waits: its lift is that key
     submitSysPin();
     if (next && screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN && !adminKeysHeld()) typeDigit(next);
     return;

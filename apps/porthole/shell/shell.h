@@ -153,6 +153,7 @@ class Shell {
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();
   bool kidKeysHidden();
+  void fourthShown();   // the kids' pad while its fourth digit shows
   void updatePin(); void drawPin(); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
