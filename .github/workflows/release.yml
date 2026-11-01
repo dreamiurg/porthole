@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: release  # shared with promote.yml: both create <app>-v tags
+  group: release
   cancel-in-progress: false
 
 permissions:

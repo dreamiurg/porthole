@@ -123,6 +123,10 @@ def plan(ref: str) -> list[dict[str, str]]:
     return out
 
 
+def commit_of(tag: str) -> str:
+    return git("rev-parse", f"{tag}^{{commit}}").strip()
+
+
 def is_yanked(release: dict[str, Any]) -> bool:
     return YANK_MARK in (release.get("name") or "").lower()
 
@@ -137,19 +141,19 @@ def pick_source(app: str, releases: list[dict[str, Any]], stable: tuple[str, Ver
 
 
 def promotion(app: str, releases: list[dict[str, Any]], tag: str | None, min_age: timedelta, now: datetime) -> dict[str, str] | None:
-    """The stable release to cut, or None when no beta qualifies. Raises ValueError for a --tag that is not a release."""
+    """The stable release to cut, or None when no beta qualifies or stable already runs that code. Raises ValueError for a --tag that is not a release."""
     if tag and not (parse(app, tag) and any(r["tagName"] == tag for r in releases)):
         raise ValueError(f"{tag} is not a published {app}-vX.Y.Z release")
     stable = newest(app, [r["tagName"] for r in releases if not r["isPrerelease"]])
     source = tag or pick_source(app, releases, stable, min_age, now)
-    if source is None:
-        return None
+    if source is None or (stable and commit_of(stable[0]) == commit_of(source)):
+        return None  # nothing qualifies, or stable already is this code (say, a re-run after publishing)
     top = newest(app, git("tag", "--list", f"{app}-v*").split())
     assert top, "a source tag exists, so the app has tags"
     version = f"{top[1][0]}.{top[1][1] + 1}.0"
     items = [classify(s, b) for _, s, b in commits(app, stable[0] if stable else None, source)]
     intro = (
-        f"Stable release of beta {source}, rebuilt from the same commit under a new version. "
+        f"Stable release of {source}, rebuilt from the same commit under a new version. "
         f"Changes to `apps/{app}` since {f'the previous stable, {stable[0]}' if stable else 'the start'}."
     )
     if not items:

@@ -105,6 +105,7 @@ with tempfile.TemporaryDirectory() as tmp:
     releases += [rel("alpha-v0.2.0", 2, pre=False)]  # 0.1.2 went stable as 0.2.0; the next beta is 0.2.1
     assert promote(releases) is None, "every beta is older than stable"
     run(repo, "git", "tag", "alpha-v0.2.0", "alpha-v0.1.2")
+    assert promote(releases, tag="alpha-v0.1.2") is None, "stable already is that code: a re-run must not cut 0.3.0"
     commit(repo, "apps/alpha/main.cpp", "fix: after stable")
     assert versions(repo)["alpha"] == "0.2.1", versions(repo)
 
