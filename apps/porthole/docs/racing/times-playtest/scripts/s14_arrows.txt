@@ -1,0 +1,217 @@
+reset
+profile Leo 10
+profile Mia 6
+wait 600
+tap 80 12
+wait 600
+tap 80 54
+wait 800
+tap 96 135
+wait 800
+tap 80 104
+wait 4500
+tap 53 52
+wait 1000
+tap 106 124
+wait 600
+tap 106 124
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 3000
+tap 52 112
+wait 1500
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+tap 142 80
+wait 3000
+tap 18 80
+wait 3000
+wait 1000
+tap 108 112
+wait 1500
+tap 107 94
+wait 1000
+tap 106 124
+wait 1000
+tap 106 124
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 6000
+wait 3000
+tap 80 140
+wait 1500
+tap 80 12
+wait 800
+tap 80 80
+wait 800
+tap 96 135
+wait 800
+tap 80 104
+wait 4500
+tap 50 50
+wait 800
+tap 52 124
+wait 800
+tap 97 129
+wait 800
+tap 76 131
+wait 800
+tap 125 44
+wait 400
+snap tm_s14_next1
+tap 125 44
+wait 400
+snap tm_s14_next2
+tap 125 44
+wait 400
+snap tm_s14_next3
+tap 125 44
+wait 400
+snap tm_s14_next4
+tap 35 44
+wait 400
+snap tm_s14_prev1
+tap 80 70
+wait 400
+screen
+tap 140 44
+wait 400
+snap tm_s14_offarrow
+tap 125 44
+wait 100
+tap 125 44
+wait 400
+snap tm_s14_double
+hold 125 44
+wait 300
+snap tm_s14_hold
+down 125 44
+move 125 70
+move 125 90
+up
+wait 300
+snap tm_s14_dragoff
+tap 80 132
+wait 600
+screen
+snap tm_s14_back

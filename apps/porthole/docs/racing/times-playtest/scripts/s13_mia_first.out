@@ -1,0 +1,20 @@
+screen=race_howto
+wrote build/host/tm_s13_1_howto.bmp
+screen=race_tracks
+wrote build/host/tm_s13_2_rivals_tap.bmp
+screen=race_tracks
+screen=race_board
+wrote build/host/tm_s13_3_board.bmp
+ui screen=race_board regions=3 texts=9
+region 22 32 26 24
+region 112 32 26 24
+region 56 120 48 24
+text 54 13 52 12 rgb=FF8A18 bg=101421
+text 33 39 4 10 rgb=FFF7E7 bg=313C5A
+text 123 39 4 10 rgb=FFF7E7 bg=313C5A
+text 67 33 26 10 rgb=FFF7E7 bg=101421
+text 66 41 28 10 rgb=FFF7E7 bg=101421
+text 36 55 88 10 rgb=7BE37B bg=101421
+text 40 64 80 10 rgb=7BE37B bg=101421
+text 41 77 78 10 rgb=FFF7E7 bg=101421
+text 71 127 19 10 rgb=FFF7E7 bg=313C5A

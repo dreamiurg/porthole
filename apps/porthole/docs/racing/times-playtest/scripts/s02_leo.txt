@@ -1,0 +1,8 @@
+reset
+profile Leo 10
+profile Mia 6
+wait 600
+tap 80 12
+wait 600
+snap tm_s02_picker
+ui

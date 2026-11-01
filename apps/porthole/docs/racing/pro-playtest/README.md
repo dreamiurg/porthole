@@ -76,7 +76,7 @@ Solo and probe runs (supplementary):
 | Desert 21 solo, boost (122 mph) into the centre rock | Visible about 0.8 s before contact (about 1.1 s at 90 mph). The 0.5 s-ahead dodge did not clear it; a no-dodge run hit it too. |
 | Snow 21 solo, five lanes (-70..+70 px from the road centre) | No snow-block hits. The block sits at the right edge of the road, on the kerb line, just after a left bend, visible about 1 s. The kerb line itself was not driven (two tries at +100/+130 px went off the road earlier). |
 | Industrial 9 vs 0 solo, left lane, diffed | The new oil patch is in the left lane; it looks exactly like the existing ones (black with a purple edge) and is visible about 1.2 s ahead. It is wide and easy to see. |
-| Losses from Desert 21 (`dbg lastplace`) | 21 → 18 → 15 → 12 → 9 → -2 → -4 → -6 → -8. A win at 21 stays 21. Now `tests/playtests/a7_racing_top_losses.txt`. |
+| Losses from Desert 21 (`dbg lastplace`) | 21 → 18 → 15 → 12 → 9 → -2 → -4 → -6 → -8. A win at 21 stays 21. Now `tests/playtests/a10_racing_top_losses.txt`. |
 
 ## Findings
 
@@ -173,7 +173,7 @@ if it sits outside every line a kid drives, it adds no challenge (not shown eith
 ## Automated checks
 
 `make -C apps/porthole playtest` at `67918f2` plus the new scenario: 83 of 83 scenarios pass, 0 UI FAIL, 0 UI WARN.
-The racing scenarios a0-a7 pass. New: `tests/playtests/a7_racing_top_losses.txt` (a win at 21 stays 21, then five
+The racing scenarios a0-a7 pass. New: `tests/playtests/a10_racing_top_losses.txt` (a win at 21 stays 21, then five
 losses go 21 → 18 → 15 → 12 → 9 → -2).
 
 ## Limitations
@@ -263,7 +263,7 @@ Probes (solo, fixed lane offset from the road centre, no dodge):
 | Night 13, lanes -50/0/+50, 3 laps | Barrier hits at +50 overlap the car's top corner by about 15 px (`05`, upper row). The pass-1 "hit 0.2 s after it passed" did not recur. |
 | Industrial 9, lanes -50/0/+50 and +15..+45, 3 laps | The Pro oil patch (left lane) slows the car only when driven into; it is wide and visible. The crate stack sits by the right kerb and was not reached by lanes up to +45; P1 hit it with about 10 px overlap. |
 | Sam Desert t=34142 (rock passed, then a slowdown) | 33 ms frames: the base rock passes on the right with clear road and no hit; the slowdown 0.2 s later comes with the yellow rival diagonally ahead, puff on that side. A rival bump, not the rock. |
-| Losses from the top (script, `dbg lastplace`) | Industrial 9 -> 6 -> 3 -> 0 -> -2; Night 13 -> 10 -> 7 -> 4 -> 1. A hands-off loss (car scraping the kerb at 55 mph, 2:56.9) from Industrial 9 lands on 6 and the results page says "Finished! 4th ... Your best yet!" New scenario `tests/playtests/a8_racing_short_top_losses.txt`. |
+| Losses from the top (script, `dbg lastplace`) | Industrial 9 -> 6 -> 3 -> 0 -> -2; Night 13 -> 10 -> 7 -> 4 -> 1. A hands-off loss (car scraping the kerb at 55 mph, 2:56.9) from Industrial 9 lands on 6 and the results page says "Finished! 4th ... Your best yet!" New scenario `tests/playtests/a11_racing_short_top_losses.txt`. |
 
 ### Pass-2 findings
 
@@ -543,7 +543,7 @@ says `FreshGate` makes every screen change ignore touches for 450 ms.
 
 (Each top run followed one Auto race on the same track in that session to reach a results page: Desert 4th,
 Night 4th. Not counted above.) The levels were not read back in `--serve` (`debug` answers nothing there); the
-suite's `a7_racing_top_losses.txt` and `a8_racing_short_top_losses.txt`, passing on this build, take the same path
+suite's `a10_racing_top_losses.txt` and `a11_racing_short_top_losses.txt`, passing on this build, take the same path
 (results page, `dbg level 14` / `16`, Replay) and read `race_level=14` / `16` back. Night's barriers are drawn only at
 Pro levels, so TN shows one; Desert also has an ordinary rock, so the rock in `12` alone does not prove 14.
 

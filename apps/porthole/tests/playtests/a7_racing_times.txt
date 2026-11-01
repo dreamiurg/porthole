@@ -1,0 +1,56 @@
+# Rally's Times button: from the track cards, every kid's best times without a race. Zoe finishes Desert Canyon,
+# then Sam opens Times and sees Zoe's record there before racing at all; the arrows go round the tracks (an empty
+# one says so) and Back returns to the cards. The finish uses the `lastlap` fixture, marked below.
+reset
+tilt 0 1000 0
+profile Sam 6
+profile Zoe 9
+app racing
+wait 600
+expect-screen race_tracks
+tap 53 53
+wait 600
+tap 106 124
+wait 600
+tap 106 124
+wait 600
+tap 106 124
+wait 200
+# fixture: Zoe 60 m from the finish, for a recorded time
+dbg lastlap
+wait 7000
+expect-screen race_results
+tap 80 140
+wait 900
+expect-screen launcher
+tap 80 13
+wait 900
+tap 80 55
+wait 900
+app racing
+wait 600
+expect-screen race_tracks
+ui-check race_tracks
+tap 78 129
+wait 700
+expect-screen race_board
+ui-check race_board
+expect kids=2
+snap rt00_board
+tap 125 44
+wait 700
+expect-screen race_board
+ui-check race_board-empty
+snap rt01_empty
+tap 35 44
+wait 700
+tap 35 44
+wait 700
+expect track=3
+tap 80 132
+wait 700
+expect-screen race_tracks
+tap 53 53
+wait 600
+expect-screen race_howto
+sheet times

@@ -1,0 +1,21 @@
+screen=race_howto
+screen=race_calibrate
+screen=race_results
+wrote build/host/tm_s15_mia_result.bmp
+screen=race_tracks
+screen=race_board
+wrote build/host/tm_s15_mia_board.bmp
+ui screen=race_board regions=3 texts=10
+region 22 32 26 24
+region 112 32 26 24
+region 56 120 48 24
+text 54 13 52 12 rgb=FF8A18 bg=101421
+text 33 39 4 10 rgb=FFF7E7 bg=313C5A
+text 123 39 4 10 rgb=FFF7E7 bg=313C5A
+text 67 33 26 10 rgb=FFF7E7 bg=101421
+text 66 41 28 10 rgb=FFF7E7 bg=101421
+text 36 55 88 10 rgb=7BE37B bg=101421
+text 41 64 79 10 rgb=7BE37B bg=101421
+text 42 77 77 10 rgb=FFD339 bg=101421
+text 40 85 80 10 rgb=FFF7E7 bg=101421
+text 71 127 19 10 rgb=FFF7E7 bg=313C5A

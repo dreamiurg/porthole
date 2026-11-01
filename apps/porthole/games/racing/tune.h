@@ -37,8 +37,8 @@ constexpr int GRID_SPACING = 7;                    // m between grid slots
 // only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they are slower);
 // from a higher rung it takes LEVEL_HIGH_LOSS (keyed on the rung). From each track's top a losing streak goes 14, 11,
 // 8, 5, 2, 0 on Desert Canyon; 15, 12, 9, 6, 3, 0 on Industrial Ruins; 19, 16, 13, 10, 7, -2 on Snow Track; 16, 13,
-// 10, 7, 4, -2 on Night Run. A competent driver settles at 57-68% wins (the staircase's last 40 races: Desert Canyon 57%,
-// Industrial Ruins and Night Run 60%, Snow Track 68%).
+// 10, 7, 4, -2 on Night Run. A competent driver settles at 55-70% wins (the staircase's last 40 races: Desert Canyon 55%,
+// Industrial Ruins 60%, Night Run 65%, Snow Track 70%).
 // Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (slowdown), and from
 // LEVEL_COURTESY on a rival with the kid close behind moves out of its lane. Separately a level is a rung of a
 // charge-and-pace ladder: rungs 1-9 each give one rival one more Boost charge (the slower two first, the pace-setter
@@ -64,18 +64,29 @@ constexpr int LEVEL_COURTESY = -7, LEVEL_SEED_MAX = 3;   // a never-raced track 
 constexpr int LEVEL_GENTLE = 3, LEVEL_EASY = sizeof LADDER_CHARGE, LEVEL_HIGH_LOSS = 3;
 // By track: how many rungs up the charge-and-pace ladder every level sits, one rung a level (race.cpp rungOf; the
 // slow-down below 0 is keyed on the level): each track's base strength, so level 0 (Normal) is a race a competent
-// driver wins 50-75% of everywhere (since cars touch only where drawn and rivals keep clear of a whole patch,
+// driver wins 45-73% of everywhere (since cars touch only where drawn and rivals keep clear of a whole patch,
 // 2026-10-31). A track's top is LEVEL_MAX less its shift: 14, 15, 19, 16.
 constexpr int8_t LEVEL_SHIFT[] = {7, 6, 2, 5};
 constexpr float LEVEL_SLOW_STEP = 0.0035f, LEVEL_TOP_STEP = 0.01f;
 constexpr float CHASE_MIN = 3, CHASE_MAX = 40;
 constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led for 3/5 of the race
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
+// Every race the three colors are shuffled over the rivals' fixed parts (car 1 slowest .. 3 pace-setter), so the
+// shuffle never moves the balance, and each rival gets its day inside these bands (the racing brief has the whole rule).
+constexpr float RIVAL_TOP[] = {0.92f, 0.97f, 1.0f};   // by part: the brief's pace
+constexpr float RIVAL_CAP[] = {0.99f, 0.99f, 1.0f};   // by part: never past the kid, the slower two below 1, ladder too
+// By part: a rival's pace on the day, its part's +- this, then capped. The pace-setter keeps the kid's pace: since
+// nothing passes the kid's top, its form could only ever slow it, and that made Normal easier on every track.
+constexpr float RIVAL_FORM[] = {0.035f, 0.035f, 0};
+constexpr float RIVAL_CUT_MIN = 0.2f, RIVAL_CUT_MAX = 0.5f;   // how much of the road it cuts toward a bend's inside
+constexpr int RIVAL_WOBBLE_MIN = 2, RIVAL_WOBBLE_MAX = 6;     // a line error: one new line in this many
+constexpr uint8_t RIVAL_CAREFUL[] = {0, 3, 3};        // by part: steers round slow patches, this many in RIVAL_CAREFUL_OF
+constexpr uint32_t RIVAL_CAREFUL_OF = 4;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
 // Normal level 0 on every track (its strength set by the track's LEVEL_SHIFT); Hard, by track, a level both the
-// competent and the kid driver win less often than Normal: the competent one 30-43%.
+// competent and the kid driver win less often than Normal: the competent one 33-43% (re-swept with the rivals' varied form, 2026-11-01).
 constexpr int EASY_LEVEL = -8;
-constexpr int8_t HARD_LEVEL[] = {2, 1, 2, 4};
+constexpr int8_t HARD_LEVEL[] = {3, 1, 2, 4};
 // By track: the rivals' pace at LEVEL_MIN, kept above what a kid who never steers manages there (Desert Canyon's
 // straights let one finish within 18% of a clean drive).
 constexpr float LEVEL_FLOOR[] = {0.87f, 0.80f, 0.80f, 0.80f};

@@ -1,11 +1,12 @@
 name: Release
 
 # Unattended releases. After every merge to main, tools/release.py looks at each app's
-# conventional commits since its last <app>-vX.Y.Z tag (feat -> minor, fix/perf -> patch,
-# breaking -> major). Apps with releasable changes get a tag, a GitHub pre-release (the
-# beta channel; promote.yml makes one stable) with generated notes, a flashable factory
-# image, the separate flash parts the web installer uses, the bare app image for
-# over-the-air updates and a version.txt. Nothing is committed back to main.
+# conventional commits since its last <app>-vX.Y.Z tag. Any feat, fix, perf or breaking
+# commit makes the next patch version. Apps with releasable changes get a tag, a GitHub
+# pre-release (the beta channel; promote.yml rebuilds one as the next minor, stable) with
+# generated notes, a flashable factory image, the separate flash parts the web installer
+# uses, the bare app image for over-the-air updates and a version.txt. Nothing is committed
+# back to main.
 # PRs merge without being up to date with main, so this runs only after ci.yml passes on the
 # pushed main commit, and releases exactly that commit (SHA), not whatever main is by then.
 
@@ -25,7 +26,6 @@ permissions:
 
 env:
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-  PLATFORMIO_CACHE_DIR: /tmp/pio-downloads  # keep downloaded archives out of the cached ~/.platformio (see ci.yml)
 
 jobs:
   plan:
@@ -61,20 +61,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ env.SHA }}
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      - uses: ./.github/actions/build-release
         with:
-          python-version: "3.11"
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: ~/.platformio
-          key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # same key as ci.yml
-      - run: pip install -r platform/requirements.txt
-      - run: make -C "apps/${{ matrix.app }}" factory
-        env:
-          # Appended to every app's build_flags. PlatformIO keeps the escaped quotes, so the
-          # compiler sees PORTHOLE_VERSION as the C string "X.Y.Z". Local builds leave it unset.
-          PLATFORMIO_BUILD_FLAGS: -DPORTHOLE_VERSION=\"${{ matrix.version }}\"
-      - run: rm -rf ~/.platformio/tools ~/.platformio/dist  # not needed to build; keep them out of the cache (see ci.yml)
+          app: ${{ matrix.app }}
+          version: ${{ matrix.version }}
       - name: Tag and publish
         env:
           GH_TOKEN: ${{ github.token }}
@@ -83,15 +73,9 @@ jobs:
           TAG: ${{ matrix.tag }}
           NOTES: ${{ matrix.notes }}
         run: |
-          image=$(find "apps/$APP" -path '*/.pio/build/firmware/factory.bin' | head -n1)
-          cp "$image" "$APP-$VERSION-factory.bin"
-          cp "$(dirname "$image")/firmware.bin" "$APP-$VERSION-ota.bin"
-          printf '%s' "$VERSION" > "$APP-version.txt"  # no newline: the board compares it as-is
-          (cd "$(dirname "$image")/web" && zip -q "$GITHUB_WORKSPACE/$APP-$VERSION-web.zip" ./*)
           printf '%s\n' "$NOTES" > notes.md
           # Already there on a re-run (say the beta pointer below failed): skip straight to the pointer.
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease \
-            "$APP-$VERSION-factory.bin" "$APP-$VERSION-web.zip" "$APP-$VERSION-ota.bin" "$APP-version.txt" \
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease dist/* \
             --target "$SHA" --title "$APP $VERSION" --notes-file notes.md
           # The beta channel's pointer: one rolling pre-release, <app>-beta, whose <app>-version.txt names the newest
           # release. Boards on beta read it there; the releases API does not list releases newest first.
@@ -99,7 +83,7 @@ jobs:
             gh release create "$APP-beta" --prerelease --latest=false --target "$SHA" --title "$APP beta channel" \
               --notes "Not a release. Its $APP-version.txt names the newest beta, for boards on the beta channel."
           fi
-          gh release upload "$APP-beta" "$APP-version.txt" --clobber
+          gh release upload "$APP-beta" "dist/$APP-version.txt" --clobber
       - name: Beta channel resolves to this release
         # What a board on beta does next: read the pointer, then fetch that version's image. Catches a missing or
         # mismatched asset here instead of on a board.

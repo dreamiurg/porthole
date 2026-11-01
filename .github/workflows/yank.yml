@@ -1,0 +1,41 @@
+name: Yank
+
+# Marks a beta as bad so promote.yml never promotes it by itself: its release title gets "(yanked)" and its notes
+# say why. Boards that already run it keep it until the next beta (on beta) or are never offered it (on stable).
+# Promoting a yanked tag by hand still works. To undo, edit the release title back.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Beta tag to yank, e.g. porthole-v0.38.5"
+        required: true
+      reason:
+        description: "What is wrong with it (goes into the release notes)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  yank:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Yank
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          gh release view "$TAG" --json isPrerelease,name,body > release.json  # fails on a tag with no release
+          title=$(jq -r .name release.json)
+          if [ "$(jq -r .isPrerelease release.json)" != true ]; then
+            echo "::error::$TAG is a stable release; to replace it, promote another tag"; exit 1
+          fi
+          # The mark release.py's is_yanked looks for, case-insensitively.
+          case "${title,,}" in *"(yanked)"*) echo "$TAG is already yanked"; exit 0 ;; esac
+          { printf '> **Yanked:** %s\n\n' "$REASON"; jq -r .body release.json; } > notes.md
+          gh release edit "$TAG" --title "$title (yanked)" --notes-file notes.md
+          echo "yanked $TAG: $REASON"

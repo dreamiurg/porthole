@@ -6,10 +6,12 @@
 #include "ui.h"
 
 namespace racing::paint {
-enum class Page : uint8_t { Tracks, HowTo, Calibrate, Race, Pause, Confirm, Results };
-constexpr ui::Box CARD[TRACKS] = {{27, 34, 52, 38}, {81, 34, 52, 38}, {27, 76, 52, 38}, {81, 76, 52, 38}};
-constexpr ui::Box HOME{34, 118, 40, 24};                          // Tracks: back to the launcher
-constexpr ui::Box MODE_CHIP{78, 118, 48, 24};                     // Tracks: tap to cycle the difficulty setting
+enum class Page : uint8_t { Tracks, HowTo, Calibrate, Race, Pause, Confirm, Results, Board };
+constexpr ui::Box CARD[TRACKS] = {{27, 33, 52, 38}, {81, 33, 52, 38}, {27, 75, 52, 38}, {81, 75, 52, 38}};
+constexpr ui::Box HOME{32, 117, 28, 24};                          // Tracks: back to the launcher
+constexpr ui::Box TIMES{62, 117, 32, 24};                         // Tracks: every kid's best times, no race needed
+constexpr ui::Box MODE_CHIP{96, 117, 32, 24};                     // Tracks: tap to cycle the difficulty setting
+constexpr ui::Box PREV_TRACK{22, 32, 26, 24}, NEXT_TRACK{112, 32, 26, 24}, BOARD_BACK{56, 120, 48, 24};   // Times
 constexpr const char* MODE_NAME[] = {"Auto", "Easy", "Normal", "Hard"};   // by Mode (save.h)
 constexpr ui::Box BACK{30, 112, 48, 24}, NEXT{82, 112, 48, 24};   // How to play, Calibrate
 constexpr ui::Box LAP{26, 28, 32, 24};                            // hold to pause

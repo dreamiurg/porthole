@@ -66,6 +66,7 @@ class Game : public App {
   void updatePause();
   void updateConfirm();
   void updateResults();
+  void updateBoard();
   bool gripOk(uint32_t dt);
   void simulate(uint32_t dt);
   void debugFixture(const char* cmd);

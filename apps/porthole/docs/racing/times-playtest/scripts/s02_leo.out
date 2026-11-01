@@ -1,0 +1,11 @@
+wrote build/host/tm_s02_picker.bmp
+ui screen=picker regions=4 texts=5
+region 44 5 72 22
+region 24 42 112 24
+region 24 68 112 24
+region 24 94 112 24
+text 34 18 92 8 color=1 bg=19
+text 54 51 21 8 color=17 bg=18
+text 54 77 20 8 color=17 bg=18
+text 72 103 22 8 color=17 bg=25
+text 70 140 21 8 color=5 bg=19

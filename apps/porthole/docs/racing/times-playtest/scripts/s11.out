@@ -1,0 +1,4 @@
+screen=race_calibrate
+screen=race_countdown
+screen=race_results
+wrote build/host/tm_s11_night_end.bmp
