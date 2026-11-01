@@ -31,7 +31,8 @@ uint32_t Shell::lastSeen() const {
 }
 void Shell::go(Screen s) {
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
-  gate_.shown(ms_);
+  const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
+  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
@@ -306,7 +307,7 @@ void Shell::updatePin() {
   if (screen_ == SH_PIN_SET && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { finishCreate(0); return; }   // no code
   for (int k = 0; k < 9; k++) {
     ui::Box b = pinKey(k);
-    if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
+    if (!ui::clicked(in_, b)) continue;   // on release, however long: a slow, deliberate press counts too
     pin_[pinLen_++] = (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
     return;
   }

@@ -96,7 +96,9 @@ bool pressing(const Input& in, int cx, int cy, int r) {
 }
 void FreshGate::filter(Input& in, uint32_t now) {
   if (!closed) return;
-  if (in.pressed && now - shownMs >= FRESH_MS) { closed = false; return; }
+  const int dx = in.x - spotX, dy = in.y - spotY;
+  const bool away = spot && dx * dx + dy * dy > SPOT_R * SPOT_R;
+  if (in.pressed && (away || now - shownMs >= FRESH_MS)) { closed = false; return; }
   in.down = in.pressed = in.released = in.tap = in.longPress = false;   // a held finger stays invisible until lifted
 }
 }  // namespace ui

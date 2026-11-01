@@ -846,10 +846,14 @@ static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
 }
 static const ui::Box ADMIN_HOME = {64, -4, 32, 32}, ADMIN_OPEN = {82, 122, 48, 20};
 static const ui::Box CODE_SET = {30, 60, 100, 20}, LIMIT_RESET = {30, 84, 100, 20}, CODE_REMOVE = {30, 108, 100, 20};
+static void keyAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // a key: pressed and lifted in one frame
+  Input in{}; in.pressed = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  frame(sh, ms, in);
+}
 static void typeAdminCode(Shell& sh, uint32_t& ms, const char* code) {
   for (; *code; code++) {
     int k = *code == '0' ? 9 : *code - '1';
-    tapAt(sh, ms, k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19});
+    keyAt(sh, ms, k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19});
   }
   frame(sh, ms, Input{});   // automatic submit after 400 ms
 }
@@ -858,7 +862,7 @@ static uint16_t storedAdmin(MemStore& st) {
 }
 static uint8_t storedStrikes(MemStore& st, int lock) { return shell::loadPinLocks(st).lock[lock].strikes; }
 static void typeKidCode(Shell& sh, uint32_t& ms, const char* code) {   // the kids' nine keys, 1-9
-  for (; *code; code++) { const int k = *code - '1'; tapAt(sh, ms, {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}); }
+  for (; *code; code++) { const int k = *code - '1'; keyAt(sh, ms, {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}); }
   frame(sh, ms, Input{});   // automatic submit after 400 ms
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
@@ -904,6 +908,29 @@ static void kidCodeLockout() {
   bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, SAM);
   testNow = NOW + 5; typeKidCode(sh, ms, "1111"); assert(on(sh, "launcher") && !storedStrikes(st, 0));
   testNow = NOW;
+}
+// Keypads take a quick first key anywhere but where the tap that opened them landed (a double tap's second press
+// there still waits out the fresh-screen gate), and a slow, deliberate press counts once lifted.
+static void padQuickAndSlowKeys() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1234"); sh.createProfile("Kai", 6, "");
+  const ui::Box SAM = {24, 42, 112, 24};   // tapped at its middle, (80, 54)
+  auto key = [&](int d) { const int k = d - 1; return ui::Box{23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}; };
+  auto at = [&](const ui::Box& b, uint32_t dt, bool down, bool pressed, bool released) {
+    Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = pressed && released;
+    in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; in.heldMs = down ? dt : 0;
+    ms += dt; sh.update(NOW, ms, in); sh.render();
+  };
+  bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, SAM); assert(on(sh, "pin"));
+  at(key(2), 100, false, true, true);    // 100 ms later at (80, 62), 8 px from the opening tap: a double tap, ignored
+  at(key(1), 100, false, true, true);    // 200 ms in, far from it: a quick first key, typed
+  at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
+  frame(sh, ms, Input{}); assert(on(sh, "launcher"));   // 1234, not 2123
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, SAM); assert(on(sh, "pin"));
+  at(key(1), 700, true, true, false);    // a slow press: down 1.4 s, past the long press
+  at(key(1), 700, true, false, false); at(key(1), 40, false, false, true);
+  at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
+  frame(sh, ms, Input{}); assert(on(sh, "launcher"));
 }
 // The admin keypad: the same waits, its own lock; changing the code clears it.
 static void adminCodeLockout() {
@@ -1089,10 +1116,6 @@ static void familyAllowanceFlow() {
   sh.begin(st, apps, 1, &sys); sh.update(NOW, ms, Input{});
   sh.createProfile("Kai", 8, ""); assert(on(sh, "rest") && !sh.openApp("One"));
 }
-static void keyAt(Shell& sh, uint32_t& ms, const ui::Box& b) {
-  Input in{}; in.pressed = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
-  frame(sh, ms, in);
-}
 static void zoneSelectionFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
@@ -1156,6 +1179,7 @@ int main() {
   adminAccess();
   pinWaits();
   kidCodeLockout();
+  padQuickAndSlowKeys();
   adminCodeLockout();
   adminGatesProfiles();
   adminChangesAndReset();

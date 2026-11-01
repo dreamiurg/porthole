@@ -222,9 +222,9 @@ void Shell::updateSysPin() {
   if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
   if (pinLen_ == 4) { if (ms_ - pinMs_ >= 400) submitSysPin(); return; }
   if (ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK))) return;   // pinWait: too many wrong tries (pinlock.h)
-  if (tapped(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
+  if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
   for (int k = 0; k < 10; k++) {
-    if (!tapped(in_, adminKey(k))) continue;
+    if (!ui::clicked(in_, adminKey(k))) continue;   // on release, however long the press
     pin_[pinLen_++] = k == 9 ? '0' : (char)('1' + k); pin_[pinLen_] = 0; pinMs_ = ms_;
     return;
   }
