@@ -93,6 +93,14 @@ void ladder() {
 // Every race shuffles the three colors over the rivals' parts and gives each rival its own day: over many seeds every
 // color plays every part, the forms spread across their band and each part stays in its own (the slowest never
 // careful, nobody past the kid). The same seed is the same field.
+void dayInBands(const Car& c, const Car& again, int i) {   // rival i's day, inside its part's bands, the same each time
+  assert(c.paint >= 1 && c.paint < CARS);
+  assert(fabsf(c.top - RIVAL_TOP[i - 1]) <= RIVAL_FORM + 1e-6f && c.top <= RIVAL_CAP[i - 1]);
+  assert(c.cut >= RIVAL_CUT_MIN && c.cut <= RIVAL_CUT_MAX);
+  assert(c.wobbleOdds >= RIVAL_WOBBLE_MIN && c.wobbleOdds <= RIVAL_WOBBLE_MAX);
+  assert(RIVAL_CAREFUL[i - 1] || !c.careful);
+  assert(again.paint == c.paint && again.top == c.top && again.cut == c.cut);
+}
 void variety() {
   int plays[CARS][CARS] = {}, careless = 0, jittery = 0;
   float lo = 1, hi = 0, cutLo = 1, cutHi = 0;
@@ -103,13 +111,10 @@ void variety() {
     int seen = 0;
     for (int i = 1; i < CARS; i++) {
       const Car& c = r.car[i];
-      assert(c.paint >= 1 && c.paint < CARS && !(seen & (1 << c.paint)));
+      assert(!(seen & (1 << c.paint)));
       seen |= 1 << c.paint;
       plays[c.paint][i]++;
-      assert(fabsf(c.top - RIVAL_TOP[i - 1]) <= RIVAL_FORM + 1e-6f && c.cut >= RIVAL_CUT_MIN && c.cut <= RIVAL_CUT_MAX);
-      assert(c.wobbleOdds >= RIVAL_WOBBLE_MIN && c.wobbleOdds <= RIVAL_WOBBLE_MAX);
-      assert(c.top <= RIVAL_CAP[i - 1] && (RIVAL_CAREFUL[i - 1] || !c.careful));
-      assert(again.car[i].paint == c.paint && again.car[i].top == c.top && again.car[i].cut == c.cut);
+      dayInBands(c, again.car[i], i);
       careless += !c.careful; jittery += c.wobbleOdds == RIVAL_WOBBLE_MIN;
       cutLo = fminf(cutLo, c.cut); cutHi = fmaxf(cutHi, c.cut);
       if (i == 2) { lo = fminf(lo, c.top); hi = fmaxf(hi, c.top); }
