@@ -1,0 +1,51 @@
+# Rally's top levels (19-21 on Desert Canyon, where the Pro road hazards appear): a loss from the top drops the level
+# by three per race down to 9, then to -2 like any loss from 4..9, so losing at the top takes several races to fall
+# below 0; a win at the top stays at the top.
+# Finishes come from the dbg fixtures (reachability), so this is a regression check, not evidence of how a race feels;
+# the black-box pass is docs/racing/pro-playtest/README.md.
+reset
+tilt 0 1000 0
+profile Zoe 10
+app racing
+wait 600
+expect level=0
+dbg lastlap
+wait 5500
+expect-screen race_results
+dbg level 21
+# a win at the top stays at the top
+tap 52 111
+wait 4000
+expect race_level=21
+dbg lastlap
+wait 5500
+expect place=1
+expect level=21
+# five losses in a row: 21 -> 18 -> 15 -> 12 -> 9 -> -2
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect-screen race_results
+expect place=4
+expect level=18
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=15
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=12
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=9
+tap 52 111
+wait 4000
+dbg lastplace
+wait 5500
+expect level=-2
