@@ -222,3 +222,109 @@ Pro hazards after fix 1, re-swept (60 races each, seeds 9000 + 7919k; win share 
 Dropped after fix 1 because a driver placed better on their rung than on the one below: the Industrial mid-road crate
 (kid 2.08 → 2.03), the Snow Track snow block (competent 3.47 → 3.42) and the Night mid-road barrier (kid 2.82 → 2.70).
 `proNoEasier` in `host/test_racing_rules.cpp` keeps the rule with both drivers (30 races a rung, ties allowed).
+
+## Pass 2 (after the hit-where-drawn fix)
+
+Same playtester agent as pass 1, so again not a fresh first-time-comprehension check. Emulator roleplay only; no real
+child and no board. `games/racing/` source was not read. To tell a periodic slowdown's cause apart, the pre-fix build
+(`e66d277`) was built from `git archive` in the session scratch directory, run once, and deleted.
+
+- Build: `claude/rally-pro-obstacles` at `71c43b7`, `build/host/snap` sha256
+  `32bfe63fce242518cf6baa699100093f0c4f93895faad671b40478443cda0a93`.
+- Brief (as received): retest finding 1 with the pass-1 repros, deliberate near-misses and grazes at 90 mph and
+  boosting; base game: Sam 6 (imprecise) one natural race on Desert and one on Snow at level 0, Zoe 10 one on
+  Industrial at level 0; Zoe at the top (`dbg level`): Desert 21, Industrial 9, Night 13; a loss from Industrial 9.
+- The pass-1 session traces were lost with `build/`, so the exact repros (Desert t=200959, Industrial 395597, Night
+  740310) were **not replayed**. They were replaced by races on the same track and level plus lane, graze and boost
+  probes (solo, after letting the rivals go), every hit inspected at the frame where the HUD speed turns red.
+- Driver: `drv2.py` unchanged, plus a wrapper (session scratch, not committed) that also saves a frame whenever
+  something that is not road is just beside or above the car, so near-misses can be inspected. Sam's runs use the same
+  "see anything" dodge reacting later (`SEEY=290`), gain 0.8 and 6 degrees of steering noise. Menu taps were chosen
+  from rendered frames: picker Zoe (80,55) / Sam (80,81), launcher arrow (96,135), Rally (80,104), cards Desert
+  (52,55), Industrial (106,55), Snow (52,104), Night (106,104), Next/Go (106,123), Replay (52,111).
+- Session traces (JSON, uncommitted) are under `build/pro2/`.
+
+| # | Who | Track | Level | Driver | Place | Time | Hits (all causes) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| P1 | Zoe | Industrial | 0 (natural) | see-anything | 3rd | 1:49.2 | 10: oil 4, rivals 3, kerbs 2, the base crate stack 1 (overlap at the car's corner) |
+| P2 | Zoe | Industrial | 9 | see-anything | 3rd | 1:49.1 | 9: oil 3, rivals 4 (one, t=193988, with the green rival beside and about 25 px clear: finding 1), kerbs 2; no crate |
+| P3 | Zoe | Desert | 21 | see-anything | 3rd | 1:34.3 | 9: one Pro rock (overlap), rivals 2, kerbs 3, mud 2, one unclear kerb/dirt |
+| P4 | Zoe | Night | 13 | see-anything | 3rd | 1:50.8 | 12: barrier 1 (overlap), puddle 1, rivals 2, one probable rival rocket, kerbs 7 (the helper hugged the left kerb in lap 2). At t=34142 the speed went red with no puff as a barrier passed about 11 px clear on the left, with the right wheels on the kerb: a kerb scrape, but a kid could blame the barrier |
+| P5 | Sam | Desert | 0 (natural) | late dodge, noisy | 3rd | 1:35.0 | 19, about 13 of them rival bumps every ~5 s while following yellow (finding P2-1) |
+| P6 | Sam | Snow | 0 (natural) | late dodge, noisy | 2nd | 1:56.6 | 12 in lap 1, mostly rival bumps and ice |
+
+Probes (solo, fixed lane offset from the road centre, no dodge):
+
+| Probe | Result |
+| --- | --- |
+| Desert 21, lanes -55 / 0 / +55, 3 laps | Every rock hit fires with the rock drawn level with the car and touching or overlapping a corner (`05`). Rocks passed on other lanes go by with clear road and no hit. |
+| Desert 21, rock A at +12/+24/+36/+46 | +12..+36 hit, +46 clear. At the hit frame the rock is beside the car's roof with at most about 13 physical px (about 4 logical) of road between them, mostly under the puff; +46 passes with about 14 px and no hit (`06`). Nit P2-3. |
+| Desert 21 boosting (122 mph), lanes 0/30/46/60 | Same: hits touch or overlap (0, 30; rock B at 60), 46 passes about 15 px clear (`05`, lower row). |
+| Night 13, lanes -50/0/+50, 3 laps | Barrier hits at +50 overlap the car's top corner by about 15 px (`05`, upper row). The pass-1 "hit 0.2 s after it passed" did not recur. |
+| Industrial 9, lanes -50/0/+50 and +15..+45, 3 laps | The Pro oil patch (left lane) slows the car only when driven into; it is wide and visible. The crate stack sits by the right kerb and was not reached by lanes up to +45; P1 hit it with about 10 px overlap. |
+| Sam Desert t=34142 (rock passed, then a slowdown) | 33 ms frames: the base rock passes on the right with clear road and no hit; the slowdown 0.2 s later comes with the yellow rival diagonally ahead, puff on that side. A rival bump, not the rock. |
+| Losses from the top (script, `dbg lastplace`) | Industrial 9 -> 6 -> 3 -> 0 -> -2; Night 13 -> 10 -> 7 -> 4 -> 1. A hands-off loss (car scraping the kerb at 55 mph, 2:56.9) from Industrial 9 lands on 6 and the results page says "Finished! 4th ... Your best yet!" New scenario `tests/playtests/a8_racing_short_top_losses.txt`. |
+
+### Pass-2 findings
+
+1. **Major (pre-existing, not a regression; outside this change). A rival "bumps" the kid's car with visible road
+   between them.** (Screen: race. Concern: fairness, feedback.) Following a rival, the slowdown and puff fire while the
+   rival is still about 20-25 physical px (7-8 logical) ahead of the car's nose, and repeat every time the car catches
+   up again: Sam's Desert race had about 13 of these at a steady ~5 s, Snow about 10 in lap 1. Steering does not
+   matter (three different steering settings gave the same hit times), and the pre-fix build `e66d277` gives
+   byte-identical hit times, so it predates the obstacle fix. It is the same "I didn't touch it" moment the fix removed
+   for obstacles, and for a 6-year-old who follows a car it is far more frequent than any Pro hazard. Ask: rivals should
+   follow the same hit-where-drawn rule. The start-grid side bump at t=11009 in every race looks like the same family
+   (a rival beside, puff with little or no overlap). Repro: fresh fixture, Zoe or Sam, Desert, level 0, Go, `drive 60
+   ZX 0 smooth 1 0` (hits at 42260, 47309, 52259, ...). Screenshot: `07-pass2-rival-tailgate-bump-with-gap.png`.
+2. **Minor. Pro on Industrial adds almost nothing.** Zoe's same driver: 3rd 1:49.2 at level 0, 3rd 1:49.1 at
+   level 9. One oil patch, easy to see and drive around, is not a felt difficulty step for a good 10-year-old. Desert
+   21 (three rocks) and Night 13 (barrier) do change the line she has to drive. Owner's call; the sweep in the
+   resolutions table shows a measurable effect for the bots.
+3. **Nit. Grazes are judged within about 4 logical px.** A rock beside the car's roof with up to about 13 physical px
+   of road showing (under the puff) can still register, while about 14 px passes. That is within one frame of motion
+   at 90 mph and reads as a clip, not a phantom. No change needed unless the owner wants the test's 4 px tightened.
+   Screenshot: `06-pass2-desert-graze-threshold.png` (left: +12 hit, middle: +36 hit, right: +46 clear).
+
+### Pass-1 findings, status
+
+| Pass-1 finding | Status in pass 2 |
+| --- | --- |
+| 1 Major: hits do not match the drawing | **Fixed** for every obstacle met: Desert rocks (base and Pro, 90 and 122 mph), Night barrier, Industrial crate stack and oil, Desert mud, Night puddles. No obstacle hit with a car-length gap, none after the obstacle had passed, no pass-through with overlap. Residual graze tolerance: Nit 3. |
+| 2 Major: top level 9 / 13 | Design documented; losses now step down three (checked, `a8`). |
+| 3 Minor: rock behind a rival | Accepted by owner; not re-seen. |
+| 4 Minor: unexplained Snow hit | Snow has no Pro hazard now. The unexplained hits seen this pass were rival bumps (finding 1 above) or a rival rocket on Night. |
+| 5 Minor: crate reads as scenery | Better: the base crate is two stacks side by side and reads as a road block (P1, t=40016-40214). |
+| 6 Nit: hazards vanish after a loss | By design; unchanged. |
+
+### Qualitative (pass 2)
+
+- **Sam, 6, level 0 (Desert, Snow).** The rocks, mud and cones look the same kind of thing as before; the wider crate
+  is the only obstacle that looks different. Obstacles he hits, he can see he hit. What he cannot explain is the
+  repeated bump behind a rival car (finding 1): on Desert it is the main thing slowing him, about every five seconds
+  in laps 2-3, and the HUD speed goes red with nothing touching. He still finished 3rd and 2nd with "Your best yet!", so
+  nothing is lost, but this is where he would get cross ("it keeps crashing by itself"). Obstacles are not too easy
+  to dodge for him: with a late, noisy reaction the base rock still clipped him once on Desert.
+- **Zoe, 10, at the top.** Desert 21 is the real Pro challenge: three rocks in fixed places, a dodge made about 0.5 s
+  ahead clears them, boosting through them is a gamble, and a clip now always looks like a clip. Night 13's barrier is
+  fair and readable. Industrial 9 feels like Industrial 0 (finding 2). She would replay Desert to learn the rocks; the
+  pass-1 stop point (phantom hits costing a race) is gone for obstacles.
+- **Losing at the top** is gentle: one loss costs three levels, a results page with no blame, Replay one tap away.
+
+### Gaps
+
+Pause hold, Home mid-race, rest screen, reboot mid-race and drag-off were not retested (nothing in this change touches
+them). No physical board. Every top-level race is `dbg level` (supplementary). The Snow kerb-line hazard and the
+Industrial crate graze threshold were not probed lane by lane.
+
+### Automated
+
+`make -C apps/porthole playtest` at `71c43b7` with the new scenario: 84 of 84 scenarios pass, 0 UI FAIL, 0 UI WARN
+(monkeys under the sanitizers included).
+
+### Verdict (pass 2)
+
+**Ready for the obstacle change.** Finding 1 of pass 1 is fixed: every obstacle hit seen this pass happens where the
+obstacle is drawn, at 90 mph and boosting. The rival bump with a visible gap (pass-2 finding 1) is Major for the base
+game, but it predates this branch (identical on `e66d277`) and needs its own fix and playthrough; it should not be
+read as a regression of this change.
