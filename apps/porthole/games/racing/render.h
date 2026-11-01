@@ -46,4 +46,5 @@ const gfx::Sprite& icon();
 float carReach();
 float carHalf();
 float obstacleHalf(int track, const Feature& o);
+float pxPerHalfWidth();   // screen px in a road half-width at the car's depth
 }  // namespace racing::paint

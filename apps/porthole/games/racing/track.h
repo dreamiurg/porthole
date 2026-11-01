@@ -36,5 +36,10 @@ inline float lapPos(const Track& t, float dist) {   // 0 .. length
 inline bool active(const Feature& f, int rung) { return !f.rung || f.rung <= rung; }   // rung: Race::rung
 inline float featureAt(const Track& t, const Feature& f) { return f.at * t.length / 1000; }
 inline float featureLen(const Track& t, const Feature& f) { return f.len * t.length / 1000; }
+// m from dist to the middle of f (where an obstacle is drawn), wrapped to within half a lap either way.
+inline float middleAhead(const Track& t, const Feature& f, float dist) {
+  const float ahead = featureAt(t, f) + featureLen(t, f) / 2 - lapPos(t, dist);
+  return ahead < -t.length / 2 ? ahead + t.length : ahead > t.length / 2 ? ahead - t.length : ahead;
+}
 float curve(const Track& t, float dist);   // -1..1, blended across the first 4% of each section
 }  // namespace racing

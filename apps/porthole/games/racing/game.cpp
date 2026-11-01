@@ -52,10 +52,10 @@ void Game::seedLevels() {
 }
 
 int Game::raceLevel() const {
-  static_assert(sizeof HARD_LEVEL == TRACKS, "one per track");
+  static_assert(sizeof HARD_LEVEL == TRACKS && sizeof NORMAL_LEVEL == TRACKS, "one per track");
   switch (save_.mode) {
     case EASY: return EASY_LEVEL;
-    case NORMAL: return 0;
+    case NORMAL: return NORMAL_LEVEL[track_];
     case HARD: return HARD_LEVEL[track_];
     default: return save_.level[track_];
   }

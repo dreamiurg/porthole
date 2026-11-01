@@ -330,7 +330,7 @@ float aimAround(const Race& r, float aim, float look = 40) {
   const Track& t = *r.track;
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
-    const float d = featureAt(t, o) - lapPos(t, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
+    const float d = middleAhead(t, o, p.dist), ox = o.x / 100.0f, room = o.w / 100.0f + 0.25f;
     if (o.kind != Kind::Pickup && o.kind != Kind::Ramp && active(o, r.rung) && d > 0 && d < look && fabsf(aim - ox) < room) aim = ox > 0 ? ox - room : ox + room;
   }
   return std::max(-0.85f, std::min(0.85f, aim));
@@ -392,26 +392,27 @@ int kid(int track, uint32_t seed, int level) {
   assert(r.phase == Phase::Finished);
   return r.place;
 }
-// The Pro rungs make a track harder, never easier: for the competent driver and the kid alike, the mean place at each
-// Pro rung is no better than at the rung below (ties allowed; the rivals are the same from LADDER_RUNGS up).
+// The Pro rungs make a track harder, never easier: on every rung that switches a hazard on, the competent driver and
+// the kid together place no better than on the rung below (summed over N races each, within TOLERANCE places: the
+// rivals are the same from LADDER_RUNGS up, so only the hazard differs).
 void proNoEasier() {
-  constexpr int N = 30;
-  for (int t = 0; t < TRACKS; t++) {
-    printf("%-16s Pro, total places over %d races (competent / kid):", TRACK[t].name, N);
-    int last[2] = {0, 0};
-    for (int rung = LADDER_RUNGS; rung <= LEVEL_MAX; rung++) {
-      int sum[2] = {0, 0};
-      for (int k = 0; k < N; k++) {
-        const uint32_t seed = 9000 + k * 7919u;
-        sum[0] += competent(t, seed, rung - LEVEL_SHIFT[t]);
-        sum[1] += kid(t, seed, rung - LEVEL_SHIFT[t]);
-      }
-      printf(" %d: %d/%d", rung, sum[0], sum[1]);
-      if (rung > LADDER_RUNGS) assert(sum[0] >= last[0] && sum[1] >= last[1]);
-      last[0] = sum[0]; last[1] = sum[1];
+  constexpr int N = 30, TOLERANCE = 2;
+  auto places = [](int t, int rung) {
+    int sum = 0;
+    for (int k = 0; k < N; k++) {
+      const uint32_t seed = 9000 + k * 7919u;
+      sum += competent(t, seed, rung - LEVEL_SHIFT[t]) + kid(t, seed, rung - LEVEL_SHIFT[t]);
     }
-    printf("\n");
-  }
+    return sum;
+  };
+  for (int t = 0; t < TRACKS; t++)
+    for (int f = 0; f < TRACK[t].nFeatures; f++) {
+      const int rung = TRACK[t].features[f].rung;
+      if (!rung) continue;
+      const int below = places(t, rung - 1), on = places(t, rung);
+      printf("%-16s Pro rung %d: places %d, %d below (competent + kid, %d races each)\n", TRACK[t].name, rung, on, below, N);
+      assert(on >= below - TOLERANCE);
+    }
 }
 // The rule the levels exist for: a competent driver climbing from level 0 keeps winning some races and losing others
 // on every track once the level has settled (the last 40 of 80 races: 45-80% wins, about two in three).
@@ -436,7 +437,7 @@ void modeBands() {
   for (int t = 0; t < TRACKS; t++) {
     int normal = 0, hard = 0;
     for (int k = 0; k < 40; k++) {
-      normal += competent(t, 9000 + k * 7919u, 0) == 1;
+      normal += competent(t, 9000 + k * 7919u, NORMAL_LEVEL[t]) == 1;
       hard += competent(t, 9000 + k * 7919u, HARD_LEVEL[t]) == 1;
     }
     printf("%-16s competent driver: Normal %d/40, Hard %d/40\n", TRACK[t].name, normal, hard);

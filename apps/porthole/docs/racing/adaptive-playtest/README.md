@@ -249,6 +249,9 @@ Fixed on `claude/rally-adaptive` after this report and the code review. The coor
 `dbg level N` to save, which explains the "Limitations" fixture oddity. Numbers come from the sweep in
 `host/test_racing_rules.cpp` (`competent`, `staircase`). A fresh black-box pass on the new build has not been run yet.
 
+> Superseded: the level rules and Normal/Hard levels here were changed later (rung-keyed losses, per-track
+> `NORMAL_LEVEL`, cars touching only where drawn). See `games/racing/AGENTS.md` and `docs/racing/pro-playtest/`.
+
 | # | Finding | Resolution |
 | --- | --- | --- |
 | 1 | Levels 2-9 played identical races for a driver who stays behind | Fixed on the easing side. Rival boosts only fire when the kid is ahead of that rival, so for a kid who stays behind those levels are the same race by design. A loss above 0 now halves the level instead of taking two (`nextLevel`): 9 → 4 → 2 → 0, so a losing streak from the top reaches 0 in about three races. Below 0 a loss still takes two. |

@@ -328,3 +328,23 @@ Industrial crate graze threshold were not probed lane by lane.
 obstacle is drawn, at 90 mph and boosting. The rival bump with a visible gap (pass-2 finding 1) is Major for the base
 game, but it predates this branch (identical on `e66d277`) and needs its own fix and playthrough; it should not be
 read as a regression of this change.
+
+## Resolutions after pass 2 (game-engineer)
+
+| Finding | Resolution |
+| --- | --- |
+| P2-1 Major: a rival bumps with road visible between the cars | **Fixed** for every pair of cars (kid and rival, rival and rival): two cars touch only while their pictures overlap, their dists under `CAR_REACH` (2.85 m) apart (was `CAR_LEN`, 4.5 m) and closer than both drawn half-widths. `carsTouchWhereDrawn` (`host/test_racing.cpp`) holds a car behind a rival with one clear row of road (no bump) and with a little overlap (one bump), and alongside with 4 px between them and 4 px of overlap. Before/after frame of the first bump of a hands-off Desert race (the old build bumped with the blue rival about 4 m ahead, drawn clear of the car) is in the session scratch. Balance: rivals as traffic cost the kid much less, so on Desert Canyon and Snow Track the brief's level-0 rivals lost 95% and 83% of races to the competent driver and Normal failed its band; Normal now races at a per-track level (`NORMAL_LEVEL`: 9 on Desert, 2 on Snow, 0 elsewhere; 50-65% wins) and Hard moved to 10 on Desert and 4 on Snow (35%). Auto is unchanged and settles at 58-80% wins. |
+| P2-2 Minor: Industrial Pro adds little | Accepted: one oil patch is the only Industrial item that passed the gate. After the contact fix it still makes the two drivers together place worse (60 races: competent 2.02 to 1.90, kid 2.12 to 2.37 mean place; `proNoEasier` compares the sum within 2 places). |
+| P2-3 Nit: grazes judged within about 4 logical px | Accepted as a clip: the car's drawn half-width (0.156) and its hit half-width (0.16) differ by under a pixel; the rest is the rock's transparent corners. |
+| Night kerb scrape read as a barrier hit | Accepted, no change: off-road caps speed without a puff; the barrier passed clear. |
+
+Pro after the contact fix (60 races, seeds 9000 + 7919k; win share / mean place):
+
+| Track | Driver | 18 | 19 | 20 | 21 |
+| --- | --- | --- | --- | --- | --- |
+| Desert Canyon | competent | 10% / 2.70 | 0% / 2.92 | 3% / 3.02 | 0% / 3.12 |
+| Desert Canyon | kid | 0% / 2.97 | 1% / 2.98 | 0% / 3.20 | 0% / 3.22 |
+| Industrial Ruins | competent | 30% / 2.02 | 31% / 1.90 | same | same |
+| Industrial Ruins | kid | 18% / 2.12 | 15% / 2.37 | same | same |
+| Night Run | competent | 5% / 2.75 | 1% / 2.92 | same | same |
+| Night Run | kid | 1% / 2.70 | 0% / 2.90 | same | same |

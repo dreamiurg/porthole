@@ -25,7 +25,9 @@ constexpr float RAIL = 1.35f;                      // guardrail: the car stops s
 constexpr float CAR_HALF_W = 0.16f, CAR_LEN = 4.5f;
 // An obstacle hits only while drawn level with a car: its middle between the car's dist (the picture's bottom row)
 // and CAR_REACH m ahead (its top row; render.h carReach), and closer sideways than both drawn half-widths
-// (render.cpp draws an obstacle exactly 2 * w wide). A wider window hit a hazard still drawn a car length away.
+// (render.cpp draws an obstacle exactly 2 * w wide). Two cars touch the same way: their dists less than CAR_REACH
+// apart (one's picture overlaps the other's rows) and closer than both half-widths. The wider windows (CAR_LEN) hit
+// a hazard still drawn a car length away and bumped a rival with road visible between the cars.
 constexpr float CAR_REACH = 2.85f, OBSTACLE_PUSH = 4;   // OBSTACLE_PUSH: half-widths a second out of one
 constexpr float PICKUP_HALF_W = 0.26f;
 constexpr int GRID_SPACING = 7;                    // m between grid slots
@@ -36,7 +38,8 @@ constexpr int GRID_SPACING = 7;                    // m between grid slots
 // from a higher rung it takes LEVEL_HIGH_LOSS (keyed on the rung: on the shifted tracks every level from 4 up steps
 // down three). From the top a losing streak goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0
 // on Industrial Ruins and 13, 10, 7, 4, 1, 0 on Night Run. A competent
-// driver settles near two wins in three on every track (55-72% in simulation).
+// driver settles at 58-80% wins (Night Run 58%, Industrial Ruins 65%, Snow Track 75%, Desert Canyon 80%, the
+// staircase's last 40 races, since cars touch only where drawn).
 // Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (slowdown), and from
 // LEVEL_COURTESY on a rival with the kid close behind moves out of its lane. Separately a level is a rung of a
 // charge-and-pace ladder: rungs 1-9 each give one rival one more Boost charge (the slower two first, the pace-setter
@@ -69,11 +72,13 @@ constexpr float CHASE_MIN = 3, CHASE_MAX = 40;
 constexpr uint32_t RUNAWAY_LED = 3, RUNAWAY_OF = 5;   // a runaway: the kid led for 3/5 of the race
 constexpr uint32_t RIVAL_BOOST_GAP_MS = 2500;
 // The fixed difficulty settings race at one level and never move the adaptive ones: Easy slower, courteous rivals;
-// Normal level 0 (the brief's rivals, though on Industrial Ruins and Night Run level 0 sits up the ladder, so their
-// rivals there carry boosts); Hard, by track, a level a competent driver wins 33-53% of (the sweep's closest to
-// 35-50%: Snow Track goes 53% at 1, 25% at 2).
+// Normal, by track, a level a competent driver wins about half of (0 on Industrial Ruins and Night Run, where level 0
+// sits up the ladder; 9 on Desert Canyon and 2 on Snow Track since cars touch only where drawn, 2026-10-31: there the
+// brief's level-0 rivals lost 95% and 83% of races to it); Hard, by track, a level it wins 22-48% of (Industrial
+// Ruins drops from 55% at 5 to 22% at 6).
 constexpr int EASY_LEVEL = -8;
-constexpr int8_t HARD_LEVEL[] = {4, 6, 1, 1};
+constexpr int8_t NORMAL_LEVEL[] = {9, 0, 2, 0};
+constexpr int8_t HARD_LEVEL[] = {10, 6, 4, 1};
 // By track: the rivals' pace at LEVEL_MIN, kept above what a kid who never steers manages there (Desert Canyon's
 // straights let one finish within 18% of a clean drive).
 constexpr float LEVEL_FLOOR[] = {0.87f, 0.80f, 0.80f, 0.80f};

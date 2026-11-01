@@ -444,7 +444,7 @@ Race alone(int track, const Feature& o, float ahead, float x, int level) {
 // road between the two pictures never hits, and one overlapping it by a few pixels hits once, while the obstacle is
 // drawn level with the car (its middle between the car's dist and the top of the car's picture).
 void obstaclesHitWhereDrawn() {
-  constexpr float PX = 1 / 217.5f;   // a pixel at the car's depth, in road half-widths (render.cpp ROAD_SLOPE * CAR_DEPTH)
+  const float PX = 1 / paint::pxPerHalfWidth();   // a pixel at the car's depth, in road half-widths
   assert(fabsf(paint::carHalf() - CAR_HALF_W) < 2 * PX && fabsf(paint::carReach() - CAR_REACH) < 0.05f);
   for (int t = 0; t < TRACKS; t++)
     for (int f = 0; f < TRACK[t].nFeatures; f++) {
@@ -466,6 +466,31 @@ void obstaclesHitWhereDrawn() {
           assert(r.impacts == (gap > 0 ? 0u : 1u));
         }
     }
+}
+// Cars touch where they are drawn: a car following a rival with a little road visible between the two pictures, or
+// alongside with a few pixels between them, never touches it; a few pixels of overlap is one bump.
+void carsTouchWhereDrawn() {
+  const float PX = 1 / paint::pxPerHalfWidth();
+  const float reach = paint::carReach(), side = 2 * paint::carHalf();
+  struct Case { float gap, dx; bool touch; };
+  const Case cases[] = {{reach + 0.15f, 0, false}, {reach - 0.15f, 0, true},   // tailgating, a clear row vs overlap
+                        {0, side + 4 * PX, false}, {0, side - 4 * PX, true}};  // alongside
+  for (const Case& k : cases) {
+    Race r;
+    start(r, TRACK[0], 5, 0);
+    r.phase = Phase::Racing;
+    for (int i = 0; i < CARS; i++) { r.car[i].dist = -500.0f - 50 * i; r.car[i].speed = 0; }
+    Car &p = r.car[PLAYER], &o = r.car[2];
+    int bumps = 0;
+    for (int n = 0; n < 40; n++) {   // a straight, both held on their lines at the same speed
+      p.dist = 20 + n * 0.6f; p.x = 0; p.vx = 0; p.speed = 1;
+      o.dist = p.dist + k.gap; o.x = k.dx; o.vx = 0; o.speed = 1; o.top = 1;
+      const bool before = r.contact & 2;   // the pair (player, rival 2)
+      step(r, Controls{});
+      bumps += (r.contact & 2) && !before;
+    }
+    assert(bumps == (k.touch ? 1 : 0));
+  }
 }
 // A Pro hazard is drawn from its rung up and not below it.
 void proHazardsDrawn() {
@@ -493,7 +518,7 @@ void proHazardsDrawn() {
         const float d = featureAt(TRACK[t], TRACK[t].features[g]) - featureAt(TRACK[t], o);
         other = other || (TRACK[t].features[g].rung && TRACK[t].features[g].rung < o.rung && d > -30 && d < 250);
       }
-      if (other) continue;
+      if (other || o.rung - 1 == LADDER_RUNGS) continue;   // at 19 the rung below is the top of the ladder
       frame(t, o, LADDER_RUNGS);
       assert(fb == below);
     }
@@ -503,6 +528,7 @@ void proHazardsDrawn() {
 int main() {
   obstaclesHitWhereDrawn();
   proHazardsDrawn();
+  carsTouchWhereDrawn();
   geometry();
   wheel();
   calibrationGate();

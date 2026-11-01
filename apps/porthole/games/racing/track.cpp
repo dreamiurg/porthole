@@ -45,39 +45,45 @@ constexpr int gapTo(const Feature& h, int at) {   // tenths of a lap from a poin
   return at >= h.at && at <= h.at + h.len ? 0 : lapGap(h.at, at) < lapGap(h.at + h.len, at) ? lapGap(h.at, at) : lapGap(h.at + h.len, at);
 }
 constexpr int GATE_W = (int)(PICKUP_HALF_W * 100 + 0.5f);   // a gate's lane, hundredths of a half-width
-// A Pro hazard keeps 1% of a lap from every gate and ramp and out of their lane within 3%, so it never blocks a pickup
-// or a jump nor springs out just behind one; and 1% from any other hazard in an overlapping lane, so none stack.
-constexpr bool clearOf(const Feature& h, const Feature& g) {
+constexpr int CAR_W = (int)(2 * CAR_HALF_W * 100 + 0.5f) + 5;   // room for a car between two things, and a margin
+// A Pro hazard keeps 1% of a lap from every gate and ramp and out of their lane (a car taking them would touch it)
+// within 3%, or for a ramp within a boosted jump's length, so it never blocks a pickup or a jump nor springs out just
+// behind one or under a landing; and 1% from any other hazard in an overlapping lane, so none stack. length: m a lap.
+constexpr bool clearOf(const Feature& h, const Feature& g, float length) {
   if (&h == &g) return true;
   const bool gate = g.kind == Kind::Pickup || g.kind == Kind::Ramp;
-  const bool lane = absi(h.x - g.x) < h.w + (gate ? (g.w > GATE_W ? g.w : GATE_W) : g.w);
+  const bool lane = absi(h.x - g.x) < h.w + (gate ? (g.w > GATE_W ? g.w : GATE_W) : g.w) + CAR_W;
   const int gap = gapTo(h, g.at) < gapTo(h, g.at + g.len) ? gapTo(h, g.at) : gapTo(h, g.at + g.len);
   const bool overlap = !(h.at + h.len < g.at || g.at + g.len < h.at);
-  if (gate) return gap >= 10 && !(lane && gap < 30);
+  const int jump = (int)(AIR_MS / 1000.0f * BOOST_CAP * V_MAX / length * 1000) + 1;   // tenths of a lap
+  const int near = g.kind == Kind::Ramp && jump > 30 ? jump : 30;
+  if (gate) return gap >= 10 && !(lane && gap < near);
   return !lane || (!overlap && gap >= 10);
 }
 // Each Pro hazard sits on a Pro rung and on the road, clear of the rest (clearOf); a track has at most LEVEL_PRO.
-template <int N> constexpr bool proFits(const Feature (&f)[N]) {
+template <int N> constexpr bool proFits(const Feature (&f)[N], float length) {
   int pro = 0;
   for (const Feature& h : f) {
     if (!h.rung) continue;
     pro++;
     if (h.rung <= LADDER_RUNGS || h.rung > LEVEL_MAX || absi(h.x) + h.w > 100) return false;
-    for (const Feature& g : f) if (!clearOf(h, g)) return false;
+    for (const Feature& g : f) if (!clearOf(h, g, length)) return false;
   }
   return pro <= LEVEL_PRO;
 }
-static_assert(proFits(DESERT_F) && proFits(INDUSTRIAL_F) && proFits(SNOW_F) && proFits(NIGHT_F), "a Pro hazard is misplaced");
+constexpr float DESERT_M = 900, INDUSTRIAL_M = 1050, SNOW_M = 1140, NIGHT_M = 1050;   // a lap
+static_assert(proFits(DESERT_F, DESERT_M) && proFits(INDUSTRIAL_F, INDUSTRIAL_M) && proFits(SNOW_F, SNOW_M) &&
+              proFits(NIGHT_F, NIGHT_M), "a Pro hazard is misplaced");
 // race.cpp keeps a bit per feature in 16-bit masks (gates taken, obstacles touched).
 static_assert(count(DESERT_F) <= MAX_FEATURES && count(INDUSTRIAL_F) <= MAX_FEATURES && count(SNOW_F) <= MAX_FEATURES &&
               count(NIGHT_F) <= MAX_FEATURES, "a track has more features than the race's bitmasks hold");
 }  // namespace
 
 const Track TRACK[TRACKS] = {
-    {"Desert Canyon", "Desert", "Canyon", 900, DESERT_S, count(DESERT_S), DESERT_F, count(DESERT_F)},
-    {"Industrial Ruins", "Industrial", "Ruins", 1050, INDUSTRIAL_S, count(INDUSTRIAL_S), INDUSTRIAL_F, count(INDUSTRIAL_F)},
-    {"Snow Track", "Snow", "Track", 1140, SNOW_S, count(SNOW_S), SNOW_F, count(SNOW_F)},
-    {"Night Run", "Night", "Run", 1050, NIGHT_S, count(NIGHT_S), NIGHT_F, count(NIGHT_F)},
+    {"Desert Canyon", "Desert", "Canyon", DESERT_M, DESERT_S, count(DESERT_S), DESERT_F, count(DESERT_F)},
+    {"Industrial Ruins", "Industrial", "Ruins", INDUSTRIAL_M, INDUSTRIAL_S, count(INDUSTRIAL_S), INDUSTRIAL_F, count(INDUSTRIAL_F)},
+    {"Snow Track", "Snow", "Track", SNOW_M, SNOW_S, count(SNOW_S), SNOW_F, count(SNOW_F)},
+    {"Night Run", "Night", "Run", NIGHT_M, NIGHT_S, count(NIGHT_S), NIGHT_F, count(NIGHT_F)},
 };
 
 float curve(const Track& t, float dist) {

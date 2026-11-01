@@ -2,6 +2,7 @@
 #include <math.h>
 
 namespace racing {
+static_assert(BOOST_CAP * V_MAX * DT * 2 < CAR_REACH, "a boosted car could step over an obstacle's hit window");
 static_assert(sizeof LEVEL_SHIFT == TRACKS && sizeof LEVEL_FLOOR / sizeof LEVEL_FLOOR[0] == TRACKS, "one per track");
 namespace {
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -55,10 +56,6 @@ void slide(const Race& r, Car& c, float steer, bool ice) {
   c.x += c.vx * DT;
   if (fabsf(c.x) > RAIL) { c.x = copysignf(RAIL, c.x); c.vx = 0; }
 }
-float drawnAhead(const Track& t, const Feature& o, float dist) {   // m from a car to where an obstacle is drawn, wrapped
-  const float ahead = featureAt(t, o) + featureLen(t, o) / 2 - lapPos(t, dist);
-  return ahead < -t.length / 2 ? ahead + t.length : ahead > t.length / 2 ? ahead - t.length : ahead;
-}
 // Solid obstacles: one speed loss on entry; while overlapping, the car is eased sideways to the nearer free road.
 void obstacles(Race& r, int i) {
   Car& c = r.car[i];
@@ -68,12 +65,12 @@ void obstacles(Race& r, int i) {
     if (o.kind != Kind::Obstacle || !active(o, r.rung)) continue;
     const float ox = o.x / 100.0f, ow = o.w / 100.0f + CAR_HALF_W;
     const uint16_t bit = (uint16_t)(1u << f);
-    const float ahead = drawnAhead(t, o, c.dist);
+    const float ahead = middleAhead(t, o, c.dist);
     const bool inside = !airborne(c) && ahead >= 0 && ahead <= CAR_REACH && fabsf(c.x - ox) < ow;
     if (inside && !(c.solid & bit)) impact(r, i, OBSTACLE_LOSS);
     if (inside) {
       const bool right = ox - ow < -RAIL + 0.1f || (c.x >= ox && ox + ow < RAIL);
-      c.x += (right ? OBSTACLE_PUSH : -OBSTACLE_PUSH) * DT;
+      c.x = clampf(c.x + (right ? OBSTACLE_PUSH : -OBSTACLE_PUSH) * DT, -RAIL, RAIL);
       c.vx = 0;
     }
     c.solid = inside ? (uint16_t)(c.solid | bit) : (uint16_t)(c.solid & ~bit);
@@ -110,7 +107,7 @@ float aroundHazards(const Race& r, int i, float line) {
   for (int f = 0; f < t.nFeatures; f++) {
     const Feature& o = t.features[f];
     if (o.kind == Kind::Pickup || !active(o, r.rung) || (o.kind != Kind::Obstacle && i == 1)) continue;   // the slowest rival ignores patches
-    const float ahead = featureAt(t, o) - lapPos(t, c.dist);
+    const float ahead = middleAhead(t, o, c.dist);   // until the car is level with its middle, where it is drawn
     const float ox = o.x / 100.0f, room = o.w / 100.0f + 0.3f;
     if (ahead > 0 && ahead < 60 && fabsf(line - ox) < room) line = ox + (ox > 0 ? -room : room);
   }
@@ -186,7 +183,7 @@ void contacts(Race& r) {
     Car &a = r.car[i], &b = r.car[j];
     const uint8_t bit = (uint8_t)(1u << pair);
     const bool touch = !a.finished && !b.finished && !airborne(a) && !airborne(b) &&
-                       fabsf(a.dist - b.dist) < CAR_LEN && fabsf(a.x - b.x) < 2 * CAR_HALF_W;
+                       fabsf(a.dist - b.dist) < CAR_REACH && fabsf(a.x - b.x) < 2 * CAR_HALF_W;   // drawn bodies overlap
     if (touch && !(r.contact & bit)) impact(r, a.dist < b.dist ? i : j, CONTACT_LOSS);   // the car behind
     if (touch) {   // ease apart sideways until separated
       const float push = (a.x < b.x ? -1.2f : 1.2f) * DT;

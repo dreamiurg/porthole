@@ -563,6 +563,7 @@ void draw(const View& v) {
 
 const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 float carReach() { return DEPTH_K / (float)(CAR_DEPTH - PIC_SCALE * pic::CAR[0]->h) - DEPTH_K / CAR_DEPTH; }
+float pxPerHalfWidth() { return ROAD_SLOPE * CAR_DEPTH; }
 float carHalf() { return (float)(pic::CAR[0]->w * PIC_SCALE / 2) / (ROAD_SLOPE * CAR_DEPTH); }
 float obstacleHalf(int track, const Feature& o) {
   const int copies = obstacleCopies(track, o);

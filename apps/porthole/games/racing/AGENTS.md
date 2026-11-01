@@ -11,8 +11,10 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
   open, with Home and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
-  skips a setting, by design: it cycles). Easy races at level -8, Normal at 0,
-  Hard at `HARD_LEVEL` (by track: a competent driver wins 33-53% there); a fixed setting never moves the
+  skips a setting, by design: it cycles). Easy races at level -8, Normal at `NORMAL_LEVEL` (by track, a level a
+  competent driver wins about half of: 9 on Desert Canyon, 2 on Snow Track, 0 on Industrial Ruins and Night Run;
+  since cars touch only where drawn, the brief's level-0 rivals on Desert and Snow lost 95% and 83% of races to it),
+  Hard at `HARD_LEVEL` (by track: a competent driver wins 22-48% there); a fixed setting never moves the
   adaptive levels. Times count the same in every setting. A finish in a fixed setting on a never-raced track still
   makes it raced, so its seeded level stays as it was and is no longer derived from the other tracks. The first card of a visit shows "How to race" (steer, pickups, three laps, hold the lap chip to pause); later
   cards go straight to the grip page.
@@ -38,7 +40,9 @@ tracks, platform contract, and the two approved reference boards the look follow
   `min(before, max(0.25, before * factor))`) with 0.8 s protection, never damage, lives or removal. A rock, crate,
   snow block or barrier hits only where it is drawn: its picture is exactly as wide as its hit box (Industrial's
   narrow crate stack drawn twice side by side), and it hits only while drawn level with the car (`CAR_REACH`;
-  `obstaclesHitWhereDrawn` in `host/test_racing.cpp`), a fix of 2026-10-31 after a dodged hazard still hit. Mud, oil, slush,
+  `obstaclesHitWhereDrawn` in `host/test_racing.cpp`), a fix of 2026-10-31 after a dodged hazard still hit. Two cars
+  touch the same way, only when their pictures overlap (dists under `CAR_REACH` apart and closer than both
+  half-widths; `carsTouchWhereDrawn`): a car following a rival with road showing between them is never bumped. Mud, oil, slush,
   puddles and off-road cap speed; ice softens steering. Ramps give a fixed 0.7 s hop over continuous road.
 - Hold the "1/3 Hold" lap chip 600 ms to pause; sliding off cancels, and the opening touch never presses a menu
   button. Pause: Resume (1 s "Ready" cue, then the exact same race), Recenter (grip page, race frozen), Restart,
@@ -56,7 +60,8 @@ tracks, platform contract, and the two approved reference boards the look follow
   behind would get the same race again; at -2 they are slower); from a higher rung it takes three. So a losing streak
   from the top goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0 on Industrial Ruins and 13,
   10, 7, 4, 1, 0 on Night Run. A
-  competent driver settles near two wins in three on every track (55-72% in simulation). Only a finish counts;
+  competent driver settles at 58-80% wins (Night Run 58%, Industrial Ruins 65%, Snow Track 75%, Desert Canyon 80%,
+  in simulation). Only a finish counts;
   Restart, Tracks, Home or leaving never move it. A track never finished starts one level below the kid's highest
   level elsewhere, inside 0..3 (a level, so on Industrial Ruins or Night Run it is a higher rung).
 - What a level does. Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (to
@@ -79,10 +84,10 @@ tracks, platform contract, and the two approved reference boards the look follow
   on Industrial Ruins and a barrier on Night Run (19 on each; their 20 and 21 repeat it), none on Snow Track. Each is
   drawn in the track's own art, sits on the road 1% of a lap clear of every gate and ramp, out of their lane within 3%,
   and 1% clear of any hazard in an overlapping lane (a `static_assert` in `track.cpp`). One was kept only where the
-  competent driver and a late, wobbly kid driver placed no better on its rung than on the one below (`proNoEasier`,
-  30 races each; 60 in the sweep that chose them, `docs/racing/pro-playtest/README.md`). A crate on Industrial Ruins,
+  competent driver and a late, wobbly kid driver together placed no better on its rung than on the one below
+  (`proNoEasier`: 30 races each, within 2 places; 60 in the sweep that chose them, `docs/racing/pro-playtest/README.md`). A crate on Industrial Ruins,
   a second barrier on Night Run and a snow block on Snow Track made races easier and were dropped. On Desert Canyon
-  and Snow Track the bots never win at 18, so Pro there is for kids beyond them (accepted). A loss at 21 drops below
+  and Snow Track the bots win at most 10% at 18, so Pro there is for kids beyond them (accepted). A loss at 21 drops below
   the Pro rungs, so the hazards stay off until the kid climbs back (by design). In simulation a narrower road made races easier
   (rivals jam) and sharper bends changed nothing, so neither is used.
 - No sounds, no network. Leaving and coming back starts at the cards.
@@ -119,11 +124,15 @@ field goes right before `crc` with a version bump, and `loadBlob` must keep load
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
 every profile's save for the leaderboard and writes only the current kid's.
 
-Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the idle one last at every level, the
-level rules, rival boosts and the competent-driver staircase) and `host/test_racing.cpp` (wheel, pages, touch rules,
-pause/resume, grip loss, frame-rate invariance, replay, text and targets on the glass, save and levels). Playtests:
-`tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`; the
-adaptive rivals' black-box playthrough is `docs/racing/adaptive-playtest/`.
+Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the
+idle one last at every level, the level rules, rival boosts, the `competent` driver and the `kid` driver (300 ms late,
+bends at 70%, a wobbly line), the competent-driver `staircase`, `modeBands`, `proHazards` (on from their rung only)
+and `proNoEasier` (each Pro rung no easier than the one below for both drivers)) and `host/test_racing.cpp` (wheel,
+pages, touch rules, pause/resume, grip loss, frame-rate invariance, replay, text and targets on the glass, save and
+levels, `obstaclesHitWhereDrawn`, `carsTouchWhereDrawn` and `proHazardsDrawn`). Playtests:
+`tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`,
+`a6_racing_mode_kids.txt`, `a7_racing_top_losses.txt`, `a8_racing_short_top_losses.txt`; the black-box playthroughs
+are `docs/racing/adaptive-playtest/` and `docs/racing/pro-playtest/`.
 
 ## Screens and test hooks
 
