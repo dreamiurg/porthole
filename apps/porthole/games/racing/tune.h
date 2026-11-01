@@ -23,13 +23,19 @@ constexpr uint32_t COUNTDOWN_MS = 3000;
 constexpr float STEER_RATE = 1.5f, DRIFT = 0.85f, GRIP_TAU = 0.06f, ICE_TAU = 0.25f, ICE_RESPONSE = 0.75f;
 constexpr float RAIL = 1.35f;                      // guardrail: the car stops sliding here, no penalty
 constexpr float CAR_HALF_W = 0.16f, CAR_LEN = 4.5f;
+// An obstacle hits only while drawn level with a car: its middle between the car's dist (the picture's bottom row)
+// and CAR_REACH m ahead (its top row; render.h carReach), and closer sideways than both drawn half-widths
+// (render.cpp draws an obstacle exactly 2 * w wide). A wider window hit a hazard still drawn a car length away.
+constexpr float CAR_REACH = 2.85f, OBSTACLE_PUSH = 4;   // OBSTACLE_PUSH: half-widths a second out of one
 constexpr float PICKUP_HALF_W = 0.26f;
 constexpr int GRID_SPACING = 7;                    // m between grid slots
 // Adaptive rivals (a user decision of 2026-10-31): each kid has a level per track (race.h nextLevel). A win adds one,
 // two after a runaway (the kid led for RUNAWAY_LED/RUNAWAY_OF of the race). A loss at 0 or below takes two; from
-// 1..LEVEL_GENTLE it drops to 0; from there to LEVEL_EASY straight to -2 (there the rivals only boost to pass a kid
-// who leads, so a kid stuck behind would get the same race again; at -2 they are slower); above that it takes
-// LEVEL_HIGH_LOSS, so from the top (21) a losing streak is below 0 after five losses (18, 15, 12, 9, -2). A competent
+// 1..LEVEL_GENTLE it drops to 0; above that, while the rung is at most LEVEL_EASY, straight to -2 (there the rivals
+// only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they are slower);
+// from a higher rung it takes LEVEL_HIGH_LOSS (keyed on the rung: on the shifted tracks every level from 4 up steps
+// down three). From the top a losing streak goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0
+// on Industrial Ruins and 13, 10, 7, 4, 1, 0 on Night Run. A competent
 // driver settles near two wins in three on every track (55-72% in simulation).
 // Below 0, on every track, the rivals' top speed drops, gently first and faster deeper down (slowdown), and from
 // LEVEL_COURTESY on a rival with the kid close behind moves out of its lane. Separately a level is a rung of a
@@ -46,8 +52,9 @@ constexpr uint8_t LADDER_CHARGE[] = {1, 2, 1, 2, 1, 2, 3, 3, 3};   // the rival 
 constexpr uint8_t LADDER_TOP[] = {2, 2, 1, 1, 1, 1};               // the rival a step faster at levels 10..15
 constexpr uint8_t LADDER_REFILL[] = {3, 1, 2};                     // the rival recharged each lap from 16..18
 constexpr int LADDER_RUNGS = sizeof LADDER_CHARGE + sizeof LADDER_TOP + sizeof LADDER_REFILL;   // 18
-// Pro (a user request of 2026-10-31: tracks get harder as a kid masters them): rungs 19-21 leave the rivals as at 18
-// and each switch on one more of a track's Pro hazards (track.cpp, Feature::rung).
+// Pro (a user request of 2026-10-31: tracks get harder as a kid masters them): rungs 19-21, each track's top three
+// levels, leave the rivals as at 18 and can each switch on one more of the track's Pro hazards (track.cpp,
+// Feature::rung; kept only where a sweep found the race no easier, host/test_racing_rules.cpp proNoEasier).
 constexpr int LEVEL_PRO = 3;
 constexpr int LEVEL_MIN = -16, LEVEL_MAX = LADDER_RUNGS + LEVEL_PRO;
 constexpr int LEVEL_COURTESY = -7, LEVEL_SEED_MAX = 3;   // a never-raced track starts one below the best, in 0..3

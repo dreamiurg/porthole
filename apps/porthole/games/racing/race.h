@@ -45,9 +45,11 @@ struct Race {
 // a pure function of the track (one of TRACK[]), seed, level and inputs.
 void start(Race& r, const Track& t, uint32_t seed, int level);
 int clampLevel(int level, int track);   // LEVEL_MIN..the track's top (LEVEL_MAX less its LEVEL_SHIFT)
+int rungOf(int level, int track);       // the ladder rung a level puts the rivals on (tune.h LEVEL_SHIFT)
 // After a finished race (tune.h): a win steps up one, two after a runaway; a loss at 0 or below steps down two, from
-// 1..LEVEL_GENTLE to 0, from there to LEVEL_EASY straight to -2, and above that steps down LEVEL_HIGH_LOSS.
-int nextLevel(int level, int place, bool runaway);
+// 1..LEVEL_GENTLE to 0, above that to -2 while the rung is at most LEVEL_EASY, and from a higher rung steps down
+// LEVEL_HIGH_LOSS.
+int nextLevel(int level, int track, int place, bool runaway);
 bool runaway(const Race& r);   // the player led for at least RUNAWAY_LED / RUNAWAY_OF of the race
 void step(Race& r, const Controls& in);
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)

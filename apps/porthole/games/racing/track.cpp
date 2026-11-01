@@ -17,49 +17,53 @@ constexpr Feature DESERT_F[] = {
     block(760, 75, 16), block(850, -75, 16), gate(940, 30, ROCKET),
     block(540, 0, 16, 19), block(500, -70, 16, 20), block(660, 40, 16, 21)};
 // Industrial Ruins: a left bend with crates on the inside shoulder, a yard of two oil patches, a loading-dock ramp
-// over rough ground, a gantry chicane with crates on alternate shoulders. Pro: a crate mid-road on the bend, oil on
-// the left past the dock. (Rung 21 adds nothing: each third
-// candidate tried made a race easier in the sweep.)
+// over rough ground, a gantry chicane with crates on alternate shoulders. Pro: oil on the left past the dock (the
+// only candidate the sweep kept once obstacles hit where drawn; a mid-road crate made races easier).
 constexpr Section INDUSTRIAL_S[] = {{0, 0}, {18, -60}, {38, 0}, {54, 0}, {70, 55}, {79, -55}, {88, 0}};
 constexpr Feature INDUSTRIAL_F[] = {
     gate(90, 0, ROCKET), block(280, -80, 18), gate(330, 40, ROCKET), slow(420, 30, -55, 30), slow(460, 30, 55, 30),
     gate(510, 0, BOOST), ramp(600, 50), slow(612, 8, 50, 30), gate(611, 50, BOOST, true), block(750, -80, 18),
     block(840, 80, 18), gate(930, -30, BOOST),
-    block(220, 0, 18, 19), slow(660, 30, -70, 30, 20)};
+    slow(660, 30, -70, 30, 19)};
 // Snow Track: dark grippy asphalt, marked ice patches on the outside of the long bends, slush outside the S-bend,
-// a snow-bank ramp with a wide dry landing. Pro: a snow block on the right of the last straight (the only candidate
-// the sweep kept).
+// a snow-bank ramp with a wide dry landing. No Pro hazard: none the sweep tried made a race harder for both drivers.
 constexpr Section SNOW_S[] = {{0, 0}, {20, 60}, {40, -50}, {49, 50}, {58, 0}, {74, -55}, {90, 0}};
 constexpr Feature SNOW_F[] = {
     gate(80, 0, BOOST), ice(280, 40, -45, 35), slow(430, 30, 75, 25), gate(470, 0, ROCKET), slow(520, 30, -75, 25),
-    ramp(630, 45), gate(641, 45, BOOST, true), ice(800, 40, 45, 35), gate(940, -30, ROCKET),
-    block(900, 70, 16, 19)};
+    ramp(630, 45), gate(641, 45, BOOST, true), ice(800, 40, 45, 35), gate(940, -30, ROCKET)};
 // Night Run: lit bends, puddles on alternating sides of the plaza, an overpass ramp, two marked barriers. Pro: a
-// barrier mid-road before the marked pair, then one right of center after the overpass.
+// barrier right of center after the overpass.
 constexpr Section NIGHT_S[] = {{0, 0}, {18, 60}, {38, 0}, {54, 0}, {72, -55}, {81, 55}, {90, 0}};
 constexpr Feature NIGHT_F[] = {
     gate(80, 0, BOOST), gate(300, -30, ROCKET), slow(410, 30, -55, 30), gate(455, 0, ROCKET), slow(470, 30, 55, 30),
     ramp(610, -50), gate(621, -50, BOOST, true), block(770, 80, 18), block(860, -80, 18), gate(940, 30, BOOST),
-    block(740, 0, 18, 19), block(660, 40, 18, 20)};
+    block(660, 40, 18, 19)};
 template <class T, int N> constexpr int count(const T (&)[N]) { return N; }
 constexpr int lapGap(int a, int b) { const int d = a > b ? a - b : b - a; return d > 500 ? 1000 - d : d; }   // tenths, wrapped
 constexpr int absi(int v) { return v < 0 ? -v : v; }
-// Each Pro hazard sits on a Pro rung, on the road, at least 1% of a lap clear of every gate and ramp and out of their
-// lane within 3% (a gate's lane: PICKUP_HALF_W), so turning it on never blocks a pickup or a jump, nor springs out
-// just behind one; a track has at most LEVEL_PRO of them.
-constexpr bool clearOf(const Feature& h, const Feature& g) {   // g: a gate or ramp
-  const int gap = lapGap(h.at, g.at) < lapGap(h.at + h.len, g.at) ? lapGap(h.at, g.at) : lapGap(h.at + h.len, g.at);
-  const bool lane = absi(h.x - g.x) < h.w + (g.w > 26 ? g.w : 26);
-  return gap >= 10 && !(g.at >= h.at && g.at <= h.at + h.len) && !(lane && gap < 30);
+constexpr int gapTo(const Feature& h, int at) {   // tenths of a lap from a point to h's span, 0 inside it
+  return at >= h.at && at <= h.at + h.len ? 0 : lapGap(h.at, at) < lapGap(h.at + h.len, at) ? lapGap(h.at, at) : lapGap(h.at + h.len, at);
 }
+constexpr int GATE_W = (int)(PICKUP_HALF_W * 100 + 0.5f);   // a gate's lane, hundredths of a half-width
+// A Pro hazard keeps 1% of a lap from every gate and ramp and out of their lane within 3%, so it never blocks a pickup
+// or a jump nor springs out just behind one; and 1% from any other hazard in an overlapping lane, so none stack.
+constexpr bool clearOf(const Feature& h, const Feature& g) {
+  if (&h == &g) return true;
+  const bool gate = g.kind == Kind::Pickup || g.kind == Kind::Ramp;
+  const bool lane = absi(h.x - g.x) < h.w + (gate ? (g.w > GATE_W ? g.w : GATE_W) : g.w);
+  const int gap = gapTo(h, g.at) < gapTo(h, g.at + g.len) ? gapTo(h, g.at) : gapTo(h, g.at + g.len);
+  const bool overlap = !(h.at + h.len < g.at || g.at + g.len < h.at);
+  if (gate) return gap >= 10 && !(lane && gap < 30);
+  return !lane || (!overlap && gap >= 10);
+}
+// Each Pro hazard sits on a Pro rung and on the road, clear of the rest (clearOf); a track has at most LEVEL_PRO.
 template <int N> constexpr bool proFits(const Feature (&f)[N]) {
   int pro = 0;
   for (const Feature& h : f) {
     if (!h.rung) continue;
     pro++;
     if (h.rung <= LADDER_RUNGS || h.rung > LEVEL_MAX || absi(h.x) + h.w > 100) return false;
-    for (const Feature& g : f)
-      if ((g.kind == Kind::Pickup || g.kind == Kind::Ramp) && !clearOf(h, g)) return false;
+    for (const Feature& g : f) if (!clearOf(h, g)) return false;
   }
   return pro <= LEVEL_PRO;
 }

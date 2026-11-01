@@ -69,7 +69,7 @@ void Game::recordFinish() {
   newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
   dirty_ = dirty_ || newBest_;
   if (save_.mode == AUTO) {   // a fixed setting races at its own level and leaves the adaptive ones alone
-    const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, race_.place, runaway(race_)), track_);
+    const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, track_, race_.place, runaway(race_)), track_);
     dirty_ = dirty_ || level != save_.level[track_];
     save_.level[track_] = level;
   }

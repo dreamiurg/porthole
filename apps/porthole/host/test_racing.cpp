@@ -428,9 +428,81 @@ void textOnGlass() {
   (void)paint::icon();
   assert(paint::icon().w == 38 && paint::icon().h == 28);
 }
+
+// A race with the player alone `ahead` m before the middle of feature f, at x; rivals parked far behind.
+Race alone(int track, const Feature& o, float ahead, float x, int level) {
+  Race r;
+  start(r, TRACK[track], 5, level);
+  r.phase = Phase::Racing;
+  for (Car& c : r.car) { c.dist = -500; c.speed = 0; }
+  Car& p = r.car[PLAYER];
+  p.dist = featureAt(TRACK[track], o) + featureLen(TRACK[track], o) / 2 - ahead;
+  p.x = x; p.speed = 1;
+  return r;
+}
+// Every obstacle hits where it is drawn: it is drawn as wide as it hits, a car passing it with a few pixels of clear
+// road between the two pictures never hits, and one overlapping it by a few pixels hits once, while the obstacle is
+// drawn level with the car (its middle between the car's dist and the top of the car's picture).
+void obstaclesHitWhereDrawn() {
+  constexpr float PX = 1 / 217.5f;   // a pixel at the car's depth, in road half-widths (render.cpp ROAD_SLOPE * CAR_DEPTH)
+  assert(fabsf(paint::carHalf() - CAR_HALF_W) < 2 * PX && fabsf(paint::carReach() - CAR_REACH) < 0.05f);
+  for (int t = 0; t < TRACKS; t++)
+    for (int f = 0; f < TRACK[t].nFeatures; f++) {
+      const Feature& o = TRACK[t].features[f];
+      if (o.kind != Kind::Obstacle) continue;
+      const float half = paint::obstacleHalf(t, o), ox = o.x / 100.0f;
+      assert(fabsf(half - o.w / 100.0f) < 2 * PX);
+      for (int side = -1; side <= 1; side += 2)
+        for (float gap : {4 * PX, -4 * PX}) {
+          const float x = ox + side * (half + paint::carHalf() + gap);
+          Race r = alone(t, o, 15, x, LEVEL_MAX);
+          for (int n = 0; n < 45; n++) {
+            r.car[PLAYER].x = x; r.car[PLAYER].vx = 0;   // held on its line
+            const uint32_t before = r.impacts;
+            step(r, Controls{});
+            const float ahead = featureAt(TRACK[t], o) + featureLen(TRACK[t], o) / 2 - r.car[PLAYER].dist;
+            if (r.impacts != before) assert(ahead >= -0.01f && ahead <= paint::carReach());
+          }
+          assert(r.impacts == (gap > 0 ? 0u : 1u));
+        }
+    }
+}
+// A Pro hazard is drawn from its rung up and not below it.
+void proHazardsDrawn() {
+  std::vector<uint16_t> fb(480 * 480), below(480 * 480);
+  gfx565::target(fb.data());
+  auto frame = [&](int t, const Feature& o, int rung) {
+    const Race r = alone(t, o, 12, o.x > 0 ? -0.6f : 0.6f, rung - LEVEL_SHIFT[t]);
+    assert(r.rung == rung);
+    paint::View v;
+    v.page = paint::Page::Race; v.race = &r; v.track = t;
+    paint::draw(v);
+  };
+  for (int t = 0; t < TRACKS; t++)
+    for (int f = 0; f < TRACK[t].nFeatures; f++) {
+      const Feature& o = TRACK[t].features[f];
+      if (!o.rung) continue;
+      frame(t, o, o.rung - 1);
+      below = fb;
+      frame(t, o, o.rung);
+      int changed = 0;
+      for (int i = 0; i < 480 * 480; i++) changed += fb[i] != below[i];
+      assert(changed > 100);   // the rungs differ only in this hazard: rivals are parked and alike from 18 up
+      bool other = false;      // with no lower Pro hazard in view, the rung below looks like the top of the ladder
+      for (int g = 0; g < TRACK[t].nFeatures; g++) {
+        const float d = featureAt(TRACK[t], TRACK[t].features[g]) - featureAt(TRACK[t], o);
+        other = other || (TRACK[t].features[g].rung && TRACK[t].features[g].rung < o.rung && d > -30 && d < 250);
+      }
+      if (other) continue;
+      frame(t, o, LADDER_RUNGS);
+      assert(fb == below);
+    }
+}
 }  // namespace
 
 int main() {
+  obstaclesHitWhereDrawn();
+  proHazardsDrawn();
   geometry();
   wheel();
   calibrationGate();

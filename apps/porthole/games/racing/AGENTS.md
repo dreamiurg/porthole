@@ -35,7 +35,10 @@ tracks, platform contract, and the two approved reference boards the look follow
 - Road pickups (cyan bolt = Boost, orange rocket = Rocket) add one, capped at three; at three the gate stays for a
   later lap and "Full" shows by the button. Raised pickups over a ramp are only reachable in the air.
 - Rocks, crates, barriers, rivals and rockets cost speed once per contact (floor rule:
-  `min(before, max(0.25, before * factor))`) with 0.8 s protection, never damage, lives or removal. Mud, oil, slush,
+  `min(before, max(0.25, before * factor))`) with 0.8 s protection, never damage, lives or removal. A rock, crate,
+  snow block or barrier hits only where it is drawn: its picture is exactly as wide as its hit box (Industrial's
+  narrow crate stack drawn twice side by side), and it hits only while drawn level with the car (`CAR_REACH`;
+  `obstaclesHitWhereDrawn` in `host/test_racing.cpp`), a fix of 2026-10-31 after a dodged hazard still hit. Mud, oil, slush,
   puddles and off-road cap speed; ice softens steering. Ramps give a fixed 0.7 s hop over continuous road.
 - Hold the "1/3 Hold" lap chip 600 ms to pause; sliding off cancels, and the opening touch never presses a menu
   button. Pause: Resume (1 s "Ready" cue, then the exact same race), Recenter (grip page, race frozen), Restart,
@@ -48,9 +51,11 @@ tracks, platform contract, and the two approved reference boards the look follow
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
 - In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
   from -16 up to the track's top (21; 9 on Industrial Ruins, 13 on Night Run). A win adds one, two after a runaway
-  (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; from 4..9 straight to -2
-  (there rivals only boost to pass a kid who leads, so a kid stuck behind would get the same race again; at -2 they
-  are slower); above 9 it takes three. From 21 a losing streak goes 18, 15, 12, 9, -2: below 0 after five losses. A
+  (the kid led for 3/5 of the race). A loss at 0 or below takes two; from 1..3 it drops to 0; above that, while the
+  level's rung (below) is 9 or less, straight to -2 (there rivals only boost to pass a kid who leads, so a kid stuck
+  behind would get the same race again; at -2 they are slower); from a higher rung it takes three. So a losing streak
+  from the top goes 21, 18, 15, 12, 9, -2 on Desert Canyon and Snow Track, 9, 6, 3, 0 on Industrial Ruins and 13,
+  10, 7, 4, 1, 0 on Night Run. A
   competent driver settles near two wins in three on every track (55-72% in simulation). Only a finish counts;
   Restart, Tracks, Home or leaving never move it. A track never finished starts one level below the kid's highest
   level elsewhere, inside 0..3 (a level, so on Industrial Ruins or Night Run it is a higher rung).
@@ -68,14 +73,18 @@ tracks, platform contract, and the two approved reference boards the look follow
   again as the kid's orange ones. No rival's dry-road top exceeds the kid's; the slower two stay below 1.0. The
   ladder was ordered by a simulated sweep (`staircase` in `host/test_racing_rules.cpp`). The race stays a pure
   function of track, seed, level and inputs.
-- Pro: rungs 19-21 (kids asked that a mastered track get harder, 2026-10-31) leave the rivals as at 18; each switches
-  on one more of the track's Pro hazards (`Feature::rung`): three rocks on Desert Canyon, a crate and an oil patch on
-  Industrial Ruins, two barriers on Night Run, a snow block on Snow Track (its `SNOWBLOCK` art, unused before); where a
-  track has fewer than three, its top rungs repeat the one below. Each is drawn with the track's own art, sits on the
-  road at least 1% of a lap clear of every gate and ramp (a `static_assert` in `track.cpp`) and out of a gate's or
-  ramp's lane within 3% of it, and was kept only where a 60-seed sweep with the competent driver and a late, wobbly kid
-  driver found its rung no easier than the one below (win share and mean place). In simulation a narrower road made
-  races easier (rivals jam) and sharper bends changed nothing, so neither is used.
+- Pro: rungs 19-21, the top three levels of each track (19-21 on Desert Canyon and Snow Track, 7-9 on Industrial
+  Ruins, 11-13 on Night Run; kids asked that a mastered track get harder, 2026-10-31), leave the rivals as at 18 and
+  can each switch on one more Pro hazard (`Feature::rung`): three rocks on Desert Canyon (19, 20, 21), an oil patch
+  on Industrial Ruins and a barrier on Night Run (19 on each; their 20 and 21 repeat it), none on Snow Track. Each is
+  drawn in the track's own art, sits on the road 1% of a lap clear of every gate and ramp, out of their lane within 3%,
+  and 1% clear of any hazard in an overlapping lane (a `static_assert` in `track.cpp`). One was kept only where the
+  competent driver and a late, wobbly kid driver placed no better on its rung than on the one below (`proNoEasier`,
+  30 races each; 60 in the sweep that chose them, `docs/racing/pro-playtest/README.md`). A crate on Industrial Ruins,
+  a second barrier on Night Run and a snow block on Snow Track made races easier and were dropped. On Desert Canyon
+  and Snow Track the bots never win at 18, so Pro there is for kids beyond them (accepted). A loss at 21 drops below
+  the Pro rungs, so the hazards stay off until the kid climbs back (by design). In simulation a narrower road made races easier
+  (rivals jam) and sharper bends changed nothing, so neither is used.
 - No sounds, no network. Leaving and coming back starts at the cards.
 
 ## Module map

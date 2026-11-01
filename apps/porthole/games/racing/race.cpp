@@ -55,6 +55,10 @@ void slide(const Race& r, Car& c, float steer, bool ice) {
   c.x += c.vx * DT;
   if (fabsf(c.x) > RAIL) { c.x = copysignf(RAIL, c.x); c.vx = 0; }
 }
+float drawnAhead(const Track& t, const Feature& o, float dist) {   // m from a car to where an obstacle is drawn, wrapped
+  const float ahead = featureAt(t, o) + featureLen(t, o) / 2 - lapPos(t, dist);
+  return ahead < -t.length / 2 ? ahead + t.length : ahead > t.length / 2 ? ahead - t.length : ahead;
+}
 // Solid obstacles: one speed loss on entry; while overlapping, the car is eased sideways to the nearer free road.
 void obstacles(Race& r, int i) {
   Car& c = r.car[i];
@@ -64,11 +68,12 @@ void obstacles(Race& r, int i) {
     if (o.kind != Kind::Obstacle || !active(o, r.rung)) continue;
     const float ox = o.x / 100.0f, ow = o.w / 100.0f + CAR_HALF_W;
     const uint16_t bit = (uint16_t)(1u << f);
-    const bool inside = !airborne(c) && within(t, c.dist, featureAt(t, o), featureLen(t, o), CAR_LEN / 2) && fabsf(c.x - ox) < ow;
+    const float ahead = drawnAhead(t, o, c.dist);
+    const bool inside = !airborne(c) && ahead >= 0 && ahead <= CAR_REACH && fabsf(c.x - ox) < ow;
     if (inside && !(c.solid & bit)) impact(r, i, OBSTACLE_LOSS);
     if (inside) {
       const bool right = ox - ow < -RAIL + 0.1f || (c.x >= ox && ox + ow < RAIL);
-      c.x += (right ? 2.5f : -2.5f) * DT;
+      c.x += (right ? OBSTACLE_PUSH : -OBSTACLE_PUSH) * DT;
       c.vx = 0;
     }
     c.solid = inside ? (uint16_t)(c.solid | bit) : (uint16_t)(c.solid & ~bit);
@@ -296,15 +301,21 @@ float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce) {
   return cap;
 }
 
-int nextLevel(int level, int place, bool runaway) {
+int nextLevel(int level, int track, int place, bool runaway) {
   int next = level - 2;
   if (place == 1) next = level + (runaway ? 2 : 1);
-  else if (level > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
+  else if (level > LEVEL_GENTLE && rungOf(level, track) > LEVEL_EASY) next = level - LEVEL_HIGH_LOSS;
   else if (level > LEVEL_GENTLE) next = -2;   // rivals here only boost to pass a kid who leads: behind, the race would not change
   else if (level > 0) next = 0;
   return next < LEVEL_MIN ? LEVEL_MIN : next > LEVEL_MAX ? LEVEL_MAX : next;
 }
 bool runaway(const Race& r) { return r.firstMs * RUNAWAY_OF >= r.raceMs * RUNAWAY_LED; }
+int rungOf(int level, int track) {
+  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
+  // easy rivals after the same number of losses on every track.
+  const int fade = level >= 0 ? LEVEL_SHIFT_FADE : level + LEVEL_SHIFT_FADE;
+  return level + (fade > 0 ? LEVEL_SHIFT[track] * fade / LEVEL_SHIFT_FADE : 0);
+}
 int clampLevel(int level, int track) {   // past the track's top the ladder has no rungs left
   const int top = LEVEL_MAX - LEVEL_SHIFT[track];
   return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;
@@ -314,12 +325,9 @@ void start(Race& r, const Track& t, uint32_t seed, int level) {
   r = Race{};
   r.track = &t;
   r.seed = seed ? seed : 1;
-  const int track = (int)(&t - TRACK), shift = LEVEL_SHIFT[track];
+  const int track = (int)(&t - TRACK);
   r.level = (int8_t)clampLevel(level, track);
-  // The track's shift in full from level 0 up, fading out by -LEVEL_SHIFT_FADE: a kid who struggles reaches the same
-  // easy rivals after the same number of losses on every track.
-  const int fade = r.level >= 0 ? LEVEL_SHIFT_FADE : r.level + LEVEL_SHIFT_FADE;
-  r.rung = (int8_t)(r.level + (fade > 0 ? shift * fade / LEVEL_SHIFT_FADE : 0));
+  r.rung = (int8_t)rungOf(r.level, track);
   static const float TOP[CARS] = {1.0f, 0.92f, 0.97f, 1.0f};
   for (int i = 0; i < CARS; i++) {
     Car& c = r.car[i];

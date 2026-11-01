@@ -195,3 +195,30 @@ way a good 10-year-old would enjoy. Finding 1 is what blocks "ready": a dodged h
 the fairness the brief asks about. Finding 2 does not block by itself. If the per-track caps are the design, the
 impact is a curve question: crates after about four wins on Industrial, rocks after about ten on Desert. It needs an
 owner decision and a brief fix. Replay Desert, Industrial and Night at their top levels after a fix to finding 1.
+
+## Resolutions (game-engineer, after this pass)
+
+| Finding | Resolution |
+| --- | --- |
+| 1 Major: hits do not match the drawing | **Fixed in the shared obstacle code**, for every rock, crate, snow block and barrier. Root cause, two parts: (a) along the road an obstacle hit while the car was anywhere within half a car length of its whole authored span (about 5-7 m, 0.6% of a lap), so it fired with the obstacle still drawn about a car length ahead, and up to 0.2 s after it had been passed (Night); (b) sideways it hit at its authored half-width (0.16-0.18 of a road half-width) while its picture was narrower (the crate stack 0.06, the barrier 0.14). Now an obstacle hits only while its middle lies between the car's position and the top of the car's picture (`CAR_REACH`, 2.85 m), and it is drawn exactly as wide as it hits (the crate stack twice side by side). A car held off it eases out at 4 half-widths/s (was 2.5) so the shorter window still clears it. `obstaclesHitWhereDrawn` (`host/test_racing.cpp`) passes every obstacle on every track with 4 px of clear road between the pictures (no hit) and 4 px of overlap (one hit, while drawn level with the car). |
+| 2 Major: top levels on Industrial and Night | **Design kept and documented**: Pro is each track's top three levels (Desert/Snow 19-21, Industrial 7-9, Night 11-13). A loss there now steps down three (the drop is keyed on the rung), so one loss no longer sends an Industrial kid from 7-9 to -2. |
+| 3 Minor: rock hidden behind a rival | Accepted, no change: any obstacle can be behind a rival. |
+| 4 Minor: unexplained Snow slowdown | Accepted, no change: likely a rival rocket. Snow Track has no Pro hazard after this fix (below). |
+| 5 Minor: the crate reads as scenery | Partly addressed by fix 1: the crate is drawn at its hit width now, two stacks side by side, so it reads wider. Its art is unchanged. |
+| 6 Nit: hazards vanish after a loss at the top | By design: a loss at the top drops below the Pro levels. |
+
+Pro hazards after fix 1, re-swept (60 races each, seeds 9000 + 7919k; win share / mean place):
+
+| Track | Driver | 18 | 19 | 20 | 21 |
+| --- | --- | --- | --- | --- | --- |
+| Desert Canyon | competent | 0% / 2.90 | 0% / 3.07 | 0% / 3.23 | 0% / 3.32 |
+| Desert Canyon | kid | 0% / 2.98 | 0% / 3.08 | 0% / 3.23 | 0% / 3.23 |
+| Industrial Ruins | competent | 41% / 1.73 | 26% / 2.20 | same | same |
+| Industrial Ruins | kid | 25% / 2.08 | 13% / 2.43 | same | same |
+| Snow Track | both | no Pro hazard | | | |
+| Night Run | competent | 10% / 2.72 | 3% / 2.92 | same | same |
+| Night Run | kid | 5% / 2.82 | 0% / 2.98 | same | same |
+
+Dropped after fix 1 because a driver placed better on their rung than on the one below: the Industrial mid-road crate
+(kid 2.08 → 2.03), the Snow Track snow block (competent 3.47 → 3.42) and the Night mid-road barrier (kid 2.82 → 2.70).
+`proNoEasier` in `host/test_racing_rules.cpp` keeps the rule with both drivers (30 races a rung, ties allowed).
