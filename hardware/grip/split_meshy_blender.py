@@ -160,13 +160,8 @@ def half(m, name, keep_top, pins, seat):
     h.data = m.data.copy()
     h.name = name
     SC.collection.objects.link(h)
-    bm = bmesh.new()
-    bm.from_mesh(h.data)
-    cut = bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, 0), plane_no=(0, 0, 1), clear_inner=keep_top, clear_outer=not keep_top)
-    bmesh.ops.holes_fill(bm, edges=[e for e in cut["geom_cut"] if isinstance(e, bmesh.types.BMEdge)])
-    bmesh.ops.triangulate(bm, faces=bm.faces[:])
-    bm.to_mesh(h.data)
-    bm.free()
+    # a boolean, not bisect + hole fill: filling the cut's loops one by one also skins over the windows
+    subtract(h, cylinder(400, -200, 0) if keep_top else cylinder(400, 0, 200))
     for x, y in pins:
         subtract(h, cylinder(PIN_D / 2, -PIN_DEPTH, PIN_DEPTH, x, y, 32))
     if keep_top:
@@ -177,6 +172,20 @@ def half(m, name, keep_top, pins, seat):
         h.data.transform(Matrix.Rotation(math.pi, 4, "X"))  # back half: cut face down, round back up
     h.data.transform(Matrix.Translation((0, 0, -min(v.co.z for v in h.data.vertices))))
     return h
+
+
+def films(ob):
+    """Grid points where a vertical ray crosses the surface an odd number of times: a skin with nothing behind it."""
+    tree = BVHTree.FromObject(ob, bpy.context.evaluated_depsgraph_get())
+    lo, hi = [min(v.co[i] for v in ob.data.vertices) for i in range(2)], [max(v.co[i] for v in ob.data.vertices) for i in range(2)]
+    odd = 0
+    for x in range(int(lo[0]), int(hi[0]) + 1, 2):
+        for y in range(int(lo[1]), int(hi[1]) + 1, 2):
+            z, hits = 1000.0, 0
+            while (hit := tree.ray_cast((x + 0.37, y + 0.53, z), (0, 0, -1))[0]) is not None:
+                hits, z = hits + 1, hit.z - 1e-3
+            odd += hits % 2
+    return odd
 
 
 def report(ob):
@@ -199,6 +208,7 @@ def report(ob):
     vol = bm.calc_volume() / 1000
     bm.free()
     assert bad == 0 and bodies == 1, f"{ob.name}: {bad} non-manifold edges, {bodies} bodies"
+    assert (odd := films(ob)) == 0, f"{ob.name}: {odd} spots with a zero-thickness skin"
     return {"cm3": round(vol, 1), "size_mm": [round(d, 1) for d in ob.dimensions], "overhang_mm2": round(overhang)}
 
 
