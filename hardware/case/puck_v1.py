@@ -71,7 +71,31 @@ STANDOFFS = [(29.5, 13.6), (-29.5, 13.6), (18.0, -27.05), (-18.0, -27.05)]
 USB = {"USB (native)": -43.45, "UART": -136.4}  # receptacle axis angles, mouth at r = 36.8
 USB_Z = -3.27
 USB_OPEN = (13.0, 7.5)  # tangential x height, fits a standard USB-C overmold
-SWITCH = (-11.3, -2.75, 9.0, 3.6)  # angle, z, tangential slot length, height
+# Power switch SW1 (from the v2 Fusion script's reading of the STEP): body and lever in board xy.
+SW_BODY = (29.4, 32.5, 9.0, -4.1, -1.4)  # x from, x to, length along y, z from, z to
+LEVER = (34.8, 1.5, 0.7, -3.1)  # tip x, width (y), height (z), centre z; it slides along y
+LEVER_YC = -7.3  # lever travel centre = switch body centre
+SW_ANG = math.degrees(math.atan2(LEVER_YC, LEVER[0]))  # -11.85
+R_LEVER = math.hypot(LEVER[0], LEVER_YC)
+# Power slider: an arc that rides in the gap between the board edge and the bezel wall, held by
+# the glass above and the plate below. Two prongs under the PCB hug the lever; a fin through a
+# slot in the wall is the knob. The slot allows SLIDER_SLOT_TRAVEL each way; each test slider's
+# fin width sets its own travel, because the switch's real travel is not in the STEP.
+SLIDER_R = (35.8, R_IN - 0.2)  # radial band of the arc: 0.3 off the PCB edge, 0.2 off the wall
+SLIDER_Z = (STANDOFF_Z + 0.5, 1.0)  # 0.5 over the plate, 0.2 under the glass
+SLIDER_LEN = 8.0  # arc length of the body at mid band
+PRONG_X0 = 33.3  # prong inner face: 0.8 off the switch body
+PRONG_HALF = 2.8  # prong block half-width along y
+PRONG_TOP = -2.45  # stays under the PCB (-2.1)
+NOTCH_BACK = 1.4  # notch depth past the lever tip, into the arc (the lever reaches r 35.96 at the travel
+# ends); deeper than the prong-to-body gap, so a push on the knob lands on the switch body, not the lever
+FIN_Z = (SLIDER_Z[0], -1.6)  # the knob fin runs from the slider bottom, so it prints on the bed
+FIN_PROUD = 1.2  # how far the fin stands out of the wall
+SLIDER_SLOT_TRAVEL = 1.5
+SLIDER_SLOT_W = 6.4  # slot width at the wall surface; the fin is narrower by the travel each way
+SLOT_FIT = 0.2  # slot clearance above and below the fin
+SLIDER_GAPS = (0.25, 0.45)  # lever clearance each side, per test slider
+SLIDER_TRAVELS = (1.0, 1.5)  # travel each way, per test slider
 BUTTONS = {"BOOT": 13.5, "RESET": 0.9}  # angles; plungers at r = 34, z = -2.85
 LEDS = {"CHG": -23.3, "PWR": -30.3}
 LED_Z = -2.85  # window center; LEDs sit on the back of the PCB (z -2.1 down), -4.4 in v1 missed them
@@ -121,6 +145,54 @@ def lid_buzzer_holes():
     return holes
 
 
+def sector(r0, r1, a0, a1, z0, z1):
+    """Annular sector between radii r0..r1 and angles a0..a1 (degrees, a1 - a0 < 180)."""
+    big = r1 * 2
+    pts = [(0, 0)] + [polar(big, a0 + (a1 - a0) * i / 8) for i in range(9)]
+    wedge = bd.Pos(0, 0, z0) * bd.extrude(bd.Polygon(*pts, align=None), z1 - z0)
+    return (cyl(r1, z0, z1) - cyl(r0, z0 - 1, z1 + 1)) & wedge
+
+
+def arc_deg(length, r):
+    return math.degrees(length / r)
+
+
+def slider_slot():
+    half = arc_deg(SLIDER_SLOT_W / 2, R_OUT)
+    return sector(R_IN - 1, R_OUT + 1, SW_ANG - half, SW_ANG + half, FIN_Z[0] - SLOT_FIT, FIN_Z[1] + SLOT_FIT)
+
+
+def switch_ref(lever_dy=0.0):
+    x0, x1, length, z0, z1 = SW_BODY
+    tip, w, h, zc = LEVER
+    s = box((x0 + x1) / 2, LEVER_YC, (z0 + z1) / 2, x1 - x0, length, z1 - z0)
+    return s + box((x1 + tip) / 2, LEVER_YC + lever_dy, zc, tip - x1, w, h)
+
+
+def slider_body(gap, travel, marks=0):
+    """Power slider at the middle of its travel, lever in the notch."""
+    rm = sum(SLIDER_R) / 2
+    half = arc_deg(SLIDER_LEN / 2, rm)
+    s = sector(*SLIDER_R, SW_ANG - half, SW_ANG + half, *SLIDER_Z)
+    fin_half = arc_deg(SLIDER_SLOT_W / 2, R_OUT) - arc_deg(travel, R_LEVER)  # travel is measured at the lever
+    s += sector(SLIDER_R[1] - 0.1, R_OUT + FIN_PROUD, SW_ANG - fin_half, SW_ANG + fin_half, *FIN_Z)
+    x1 = SLIDER_R[0] + 0.3  # prong block reaches into the arc body
+    prongs = box((PRONG_X0 + x1) / 2, LEVER_YC, (SLIDER_Z[0] + PRONG_TOP) / 2, x1 - PRONG_X0, 2 * PRONG_HALF, PRONG_TOP - SLIDER_Z[0])
+    tip, w, _, _ = LEVER
+    notch_x1 = tip + NOTCH_BACK
+    prongs -= box((PRONG_X0 - 1 + notch_x1) / 2, LEVER_YC, (SLIDER_Z[0] - 1 + PRONG_TOP + 1) / 2, notch_x1 - PRONG_X0 + 1, w + 2 * gap, PRONG_TOP - SLIDER_Z[0] + 2)
+    s += prongs
+    s -= box(tip + NOTCH_BACK / 2, LEVER_YC, (SLIDER_Z[0] + PRONG_TOP) / 2, NOTCH_BACK, w + 2 * gap, PRONG_TOP - SLIDER_Z[0] + 2)  # notch runs on into the arc
+    for i in range(marks):  # dimples on the top face tell the variants apart
+        s -= cyl(0.4, SLIDER_Z[1] - 0.4, SLIDER_Z[1] + 1, *polar(rm, SW_ANG - half + 1.5 * (i + 1) * 360 / (2 * math.pi * rm)))
+    return s
+
+
+def at_travel(shape, off):
+    """A slider moved `off` mm along its travel (rotates about the puck axis at the lever radius)."""
+    return bd.Rot(0, 0, arc_deg(off, R_LEVER)) * shape
+
+
 def fillet_rim(body, r_edge, z_edge, radius):
     edges = [
         e
@@ -136,8 +208,7 @@ def bezel_body():
     b = cyl(R_OUT, SPLIT_Z, TOP_Z) - cyl(R_IN, SPLIT_Z - 1, GLASS_TOP) - cyl(GLASS_R - LIP_W, GLASS_TOP - 1, TOP_Z + 1)
     for deg in USB.values():
         b -= radial_box(R_OUT, deg, USB_Z, CUT_DEPTH, *USB_OPEN)
-    ang, z, length, height = SWITCH
-    b -= radial_box(R_OUT, ang, z, CUT_DEPTH, length, height)
+    b -= slider_slot()
     for deg in BUTTONS.values():
         b -= radial_hole(deg, -2.85, 1.6, R_IN - 1, R_OUT + 1)
     for deg in LEDS.values():
@@ -196,10 +267,9 @@ def board_ref():
         g += cyl(1.75, STANDOFF_Z, -2.1, x, y)
     for deg in USB.values():
         g += radial_box(33.0, deg, USB_Z, 7.6, 8.94, 3.26)
-    g += radial_box(31.0, SWITCH[0], -2.75, 7.5, 9.3, 2.7)
     g += box(J1[0], J1[1], -3.7, 7.6, 5.2, 3.4)
     g.label, g.color = "board_ref", "#2b2b2b"
-    return g
+    return g  # the switch is added per check by switch_ref(), so its lever can move
 
 
 def ring_ref():
@@ -251,9 +321,55 @@ def screw_test():
     return screw_test_body()
 
 
+def slider_checks(bez, pl, board):
+    """Every test slider clears the case and the board at both ends of its travel, and pushes the
+    lever there (the lever, moved with it, still sits in the notch)."""
+    for gap in SLIDER_GAPS:
+        for travel in SLIDER_TRAVELS:
+            for off in (-travel, 0.0, travel):
+                sl = at_travel(slider_body(gap, travel), off)
+                for other, name in ((bez, "bezel"), (pl, "plate"), (board, "board"), (switch_ref(off), "switch")):
+                    v = overlap_volume(sl, other)
+                    assert v < 1e-3, f"slider gap {gap} travel {travel} at {off:+}: hits {name} ({v:.3f} mm3)"
+            # past the travel the fin hits the slot end: the slider cannot go further
+            assert overlap_volume(at_travel(slider_body(gap, travel), travel + 0.15), bez) > 1e-3, (gap, travel)
+
+
+@model
+def slider():
+    s = slider_body(SLIDER_GAPS[0], SLIDER_TRAVELS[0])
+    s.label, s.color = "slider", "#d9534f"
+    return s
+
+
+@model
+def slider_test():
+    """Four test sliders, gap x travel, marked by 1-4 dimples on top, laid out to print standing."""
+    cx, cy = polar(sum(SLIDER_R) / 2, SW_ANG)
+    parts = []
+    for i, (gap, travel) in enumerate((g, t) for g in SLIDER_GAPS for t in SLIDER_TRAVELS):
+        sl = bd.Pos(-cx, -cy + 12.0 * i, -SLIDER_Z[0]) * slider_body(gap, travel, marks=i + 1)
+        sl.label = f"slider_gap{gap}_travel{travel}"
+        parts.append(sl)
+    return bd.Compound(children=parts, label="slider_test")
+
+
+@model
+def switch_section():
+    """The bezel around the switch, to try the test sliders on the real board; prints lip down."""
+    piece = bezel().shape & sector(0, R_OUT + 2, SW_ANG - 40, SW_ANG + 40, SPLIT_Z - 1, TOP_Z + 1)
+    piece = bd.Pos(0, 0, TOP_Z) * bd.Rot(180, 0, 0) * piece
+    piece.label = "switch_section"
+    return piece
+
+
 @model
 def puck():
-    parts = [bezel().shape, plate().shape, lid().shape, board_ref(), cell_ref(), ring_ref()]
+    bez, pl = bezel().shape, plate().shape
+    slider_checks(bez, pl, board_ref())
+    board = board_ref() + switch_ref()
+    board.label, board.color = "board_ref", "#2b2b2b"
+    parts = [bez, pl, lid().shape, board, cell_ref(), ring_ref(), slider().shape]
     for i, a in enumerate(parts):  # nothing interferes: the same check the Fusion script printed
         for b in parts[i + 1 :]:
             v = overlap_volume(a, b)
@@ -266,3 +382,5 @@ def puck():
 if __name__ == "__main__":
     puck()
     screw_test()
+    slider_test()
+    switch_section()
