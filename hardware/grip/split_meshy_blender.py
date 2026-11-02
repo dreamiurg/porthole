@@ -3,12 +3,17 @@
 Headless:
   Blender -b --factory-startup --python-expr "p='hardware/grip/split_meshy_blender.py'; exec(open(p).read(), {'__file__': p})"
 Input:  source/meshy_yoke_v3.glb (Meshy "Kids Game Yoke Grip CAD Ready", task 2a61e941)
-Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed
+Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed,
+        stl/grip_v7_spacer.stl, the tube that holds the magnet ring up against the front
 
-Only the feel in the hand is tested: the centre is Meshy's solid disc, no puck cradle yet. The mesh is
-scaled to WIDTH and otherwise left alone, cut at half its depth so each half prints as a dome without
-support. Pins cut from 1.75 mm filament go into blind holes at the ends of both handles to line the
+The mesh is scaled to WIDTH and otherwise left alone, cut at half its depth so each half prints as a dome
+without support. Pins cut from 1.75 mm filament go into blind holes at the ends of both handles to line the
 halves up for gluing.
+
+The puck sticks on magnetically: an aftermarket MagSafe magnet ring (RING_OD x RING_ID x RING_T) sits under
+the centre disc's flat face, behind COVER of plastic printed with the front half, so nothing shows outside.
+The ring goes in from the cut side through an annular trench, its phone side towards the face, and the
+spacer tube under it holds it there when the back half is glued on.
 """
 
 import math
@@ -25,6 +30,9 @@ TRIS = 200_000  # whole grip before the cut, so each STL stays under 12 MB
 PIN_D = 2.0  # holes for 1.75 mm filament pins; printed holes come out ~0.1 mm small
 PIN_DEPTH = 5.0  # each side: cut the pins 9 mm long
 PIN_WALL = 1.5  # material kept past the hole end and around it
+RING_OD, RING_ID, RING_T = 56.0, 46.0, 1.5  # MagSafe magnet ring as sold (56 x 46 x 1.5 mm N52)
+RING_FIT = 0.2  # clearance on each wall of the trench
+COVER = 0.8  # plastic between the ring and the face: thin enough to keep the pull, 4 layers to bridge
 SC = bpy.context.scene
 
 
@@ -101,7 +109,52 @@ def pin_spots(m):
     return spots
 
 
-def half(m, name, keep_top, pins):
+def subtract(ob, tool):
+    select_only(ob)
+    mod = ob.modifiers.new("b", "BOOLEAN")
+    mod.operation, mod.object, mod.solver = "DIFFERENCE", tool, "MANIFOLD"
+    bpy.ops.object.modifier_apply(modifier="b")
+    bpy.data.objects.remove(tool, do_unlink=True)
+
+
+def cylinder(r, z0, z1, x=0.0, y=0.0, vertices=256):
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=z1 - z0, vertices=vertices, location=(x, y, (z0 + z1) / 2))
+    return bpy.context.active_object
+
+
+def tube(r_in, r_out, z0, z1, x, y):
+    t = cylinder(r_out, z0, z1, x, y)
+    subtract(t, cylinder(r_in, z0 - 1, z1 + 1, x, y))
+    return t
+
+
+def ring_seat(m):
+    """Centre of the flat centre disc and the height of the trench roof, COVER under its face."""
+    tree = BVHTree.FromObject(m, bpy.context.evaluated_depsgraph_get())
+
+    def face(x, y):
+        hit = tree.ray_cast((x, y, 100), (0, 0, -1))[0]
+        return hit.z if hit else -100
+
+    top = face(0, 0)
+
+    def edge(dx, dy):
+        r = 0.0
+        while face(r * dx, r * dy) > top - 0.3:
+            r += 0.25
+        return r
+
+    cx, cy = (edge(1, 0) - edge(-1, 0)) / 2, (edge(0, 1) - edge(0, -1)) / 2
+    r_out = RING_OD / 2 + RING_FIT
+    assert min(edge(1, 0), edge(-1, 0), edge(0, 1), edge(0, -1)) > r_out + 3, "the centre disc is too small for the ring"
+    heights = [face(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a))) for r in (RING_ID / 2, r_out) for a in range(0, 360, 15)]
+    assert max(heights) - min(heights) < 0.3, f"the disc face under the ring is not flat: {min(heights):.2f}..{max(heights):.2f}"
+    roof = min(heights) - COVER
+    assert roof > RING_T + 2, "the front half is too thin for the ring"
+    return round(cx, 2), round(cy, 2), round(roof, 2)
+
+
+def half(m, name, keep_top, pins, seat):
     h = m.copy()
     h.data = m.data.copy()
     h.name = name
@@ -114,13 +167,10 @@ def half(m, name, keep_top, pins):
     bm.to_mesh(h.data)
     bm.free()
     for x, y in pins:
-        bpy.ops.mesh.primitive_cylinder_add(radius=PIN_D / 2, depth=2 * PIN_DEPTH, vertices=32, location=(x, y, 0))
-        tool = bpy.context.active_object
-        select_only(h)
-        mod = h.modifiers.new("b", "BOOLEAN")
-        mod.operation, mod.object, mod.solver = "DIFFERENCE", tool, "MANIFOLD"
-        bpy.ops.object.modifier_apply(modifier="b")
-        bpy.data.objects.remove(tool, do_unlink=True)
+        subtract(h, cylinder(PIN_D / 2, -PIN_DEPTH, PIN_DEPTH, x, y, 32))
+    if keep_top:
+        cx, cy, roof = seat
+        subtract(h, tube(RING_ID / 2 - RING_FIT, RING_OD / 2 + RING_FIT, -1, roof, cx, cy))
     clean(h)
     if not keep_top:
         h.data.transform(Matrix.Rotation(math.pi, 4, "X"))  # back half: cut face down, round back up
@@ -156,10 +206,12 @@ for o in list(SC.objects):
 yoke = import_yoke(os.path.join(HERE, "source", "meshy_yoke_v3.glb"))
 decimate(yoke, TRIS)
 pins = pin_spots(yoke)
-result = {"size_mm": [round(d, 1) for d in yoke.dimensions], "pins": pins}
-for name, top in (("front", True), ("back", False)):
-    h = half(yoke, name, top, pins)
-    result[name] = report(h)
-    select_only(h)
+seat = ring_seat(yoke)
+result = {"size_mm": [round(d, 1) for d in yoke.dimensions], "pins": pins, "ring_centre_and_roof": seat}
+parts = {name: half(yoke, name, top, pins, seat) for name, top in (("front", True), ("back", False))}
+parts["spacer"] = tube(RING_ID / 2, RING_OD / 2, 0, seat[2] - RING_T - 0.3, 0, 0)  # 0.3 short so the halves close
+for name, ob in parts.items():
+    result[name] = report(ob)
+    select_only(ob)
     bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"grip_v7_{name}.stl"), export_selected_objects=True)
 print("RESULT", result)
