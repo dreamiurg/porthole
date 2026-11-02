@@ -6,6 +6,7 @@ Input:  source/meshy_yoke_v3.glb (Meshy "Kids Game Yoke Grip CAD Ready", task 2a
 Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed,
         stl/grip_v7_cover.stl, the lid over the steel ring, and stl/grip_v7_pin.stl, one alignment pin on its side;
         stl/grip_v8_kid_front.stl and stl/grip_v8_kid_back.stl, the same grip at 80% (ring, cover and pins unscaled)
+        with a puck pocket sunk into its centre
 
 The mesh is scaled to each variant's width and otherwise left alone, cut at half its depth so each half prints as a dome
 without support. Square printed pins go into blind square holes at the ends of both handles to line the
@@ -26,7 +27,10 @@ from mathutils import Matrix
 from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VARIANTS = (("grip_v7", 215.0), ("grip_v8_kid", 172.0))  # name, overall width: v7 matches v5/v6 (adult hands), v8 is v7 at 80% for kids
+# name, overall width, puck pocket depth: v7 matches v5/v6 (adult hands); v8 is v7 at 80% for kids, its centre
+# sunk POCKET deep over the puck's whole footprint (wider than the scaled hub) so the puck sits lower
+VARIANTS = (("grip_v7", 215.0, 0.0), ("grip_v8_kid", 172.0, 3.0))
+PUCK_D, PUCK_FIT = 84.0, 0.3  # puck case v1.3 outer diameter; radial clearance in the pocket
 TRIS = 200_000  # whole grip before the cut, so each STL stays under 12 MB
 PIN_HOLE = 4.0  # square hole side; printed holes come out ~0.1 mm small
 PIN_SIDE = 3.8  # square pin side: snug in the printed hole
@@ -158,7 +162,7 @@ def ring_seat(m):
     return round(cx, 2), round(cy, 2), round(face, 2)
 
 
-def half(m, name, keep_top, pins, seat):
+def half(m, name, keep_top, pins, seat, pocket):
     h = m.copy()
     h.data = m.data.copy()
     h.name = name
@@ -169,7 +173,10 @@ def half(m, name, keep_top, pins, seat):
         subtract(h, box(PIN_HOLE, PIN_HOLE, -PIN_DEPTH, PIN_DEPTH, x, y))
     if keep_top:
         cx, cy, face = seat
-        subtract(h, cylinder(RING_OD / 2 + RING_FIT, face - RING_T - COVER, face + 5, cx, cy))
+        floor = face - pocket
+        if pocket:
+            subtract(h, cylinder(PUCK_D / 2 + PUCK_FIT, floor, face + 20, cx, cy))
+        subtract(h, cylinder(RING_OD / 2 + RING_FIT, floor - RING_T - COVER, floor + 5, cx, cy))
     clean(h)
     if not keep_top:
         h.data.transform(Matrix.Rotation(math.pi, 4, "X"))  # back half: cut face down, round back up
@@ -215,15 +222,16 @@ def report(ob):
     return {"cm3": round(vol, 1), "size_mm": [round(d, 1) for d in ob.dimensions], "overhang_mm2": round(overhang)}
 
 
-def build(tag, width, extras):
+def build(tag, width, pocket, extras):
     for o in list(SC.objects):
         bpy.data.objects.remove(o, do_unlink=True)
     yoke = import_yoke(os.path.join(HERE, "source", "meshy_yoke_v3.glb"), width)
     decimate(yoke, TRIS)
     pins = pin_spots(yoke)
     seat = ring_seat(yoke)  # ring, recess and cover keep their size at every scale
+    assert seat[2] - pocket - RING_T - COVER > 3, f"{tag}: the pocket leaves too little under the ring"
     result = {"size_mm": [round(d, 1) for d in yoke.dimensions], "pins": pins, "ring_centre_and_face": seat}
-    parts = {name: half(yoke, name, top, pins, seat) for name, top in (("front", True), ("back", False))}
+    parts = {name: half(yoke, name, top, pins, seat, pocket) for name, top in (("front", True), ("back", False))}
     if extras:  # cover and pin do not scale: the v7 files serve every variant
         parts["cover"] = cylinder(RING_OD / 2, 0, COVER)
         parts["pin"] = box(2 * PIN_DEPTH - 0.6, PIN_SIDE, 0, PIN_SIDE)  # lying on a side
@@ -234,5 +242,5 @@ def build(tag, width, extras):
     print("RESULT", tag, result)
 
 
-for i, (tag, width) in enumerate(VARIANTS):
-    build(tag, width, extras=i == 0)
+for i, (tag, width, pocket) in enumerate(VARIANTS):
+    build(tag, width, pocket, extras=i == 0)
