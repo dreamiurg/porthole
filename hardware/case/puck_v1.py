@@ -9,8 +9,8 @@ v1.1 after the first print: M2 pilots 1.6 -> 1.8 (screws drove too tight), wall 
 fatter puck (dia 79.6 -> 84). The radial screw counterbore deepens with the wall so the same
 screws still reach the posts; side cutouts span the thicker wall.
 
-v1.2: the lid gets a V groove and a key notch so it clicks into the snap-on grip
-(hardware/grip/grip_v1.py) in one orientation only, keeping the tilt axes square to the grips.
+v1.2: the lid gets a V groove and a key notch so it clicks into the snap-on grip v3 (its model,
+grip_v1.py, was removed with v1.3) in one orientation only, keeping the tilt axes square to the grips.
 Bezel and plate are unchanged from v1.1.
 
 v1.3 after the v1.2 print: the lid screws pulled through, because the counterbore left 0.2 mm of
@@ -19,7 +19,8 @@ hex-socket cap head self-tapper (flat head ~3.5 x 1.8): it sits in a flat seat w
 solid plastic under it, on a boss in the lid and behind a deeper seat in the bezel wall. The lid
 floor also carries a MagSafe magnet ring (RING_OD x RING_ID x RING_T) in a groove under the cell,
 so the puck sticks to the steel ring in grip v7; the cell holds it down. The buzzer holes in the
-lid move outward to clear the ring.
+lid move outward to clear the ring. The v1.2 snap groove and key notch are gone: the grip now
+holds the puck by the magnet.
 """
 
 import math
@@ -78,11 +79,6 @@ BUZZER = (-27.5, -12.3)  # from Waveshare's labelled photo; not in the STEP by n
 BUZZER_HOLES = [(0, 0), (2.2, 0), (-2.2, 0), (0, 2.2), (0, -2.2)]
 LID_BUZZER_R = 32.5  # the lid's set of buzzer holes sits further out, past the ring groove
 J1 = (21.2, 8.6)  # battery socket center
-SNAP_Z = -14.5  # lid groove center: clear of the seam (-12) and the bottom fillet (-18.0)
-SNAP_D = 1.0  # groove depth into the 4.2 mm wall
-SNAP_FLAT = 1.0  # groove floor height; 45 degree flanks open it to 3 mm at the surface
-KEY_DEG = -90.0  # key notch at the bottom of the screen, between the two USB ports
-KEY_W, KEY_D = 4.0, 1.5  # notch width and depth, full lid height
 
 
 # ---- primitives (same signatures as the Fusion script) --------------------------------------
@@ -109,17 +105,6 @@ def radial_hole(deg, z, d, r0, r1):
 def polar(r, deg):
     a = math.radians(deg)
     return r * math.cos(a), r * math.sin(a)
-
-
-def revolved(*rz):
-    """Solid of revolution about Z from (r, z) profile points."""
-    return bd.revolve(bd.Plane.XZ * bd.Polygon(*rz, align=None), bd.Axis.Z)
-
-
-def snap_groove():
-    r0, h = R_OUT - SNAP_D, SNAP_FLAT / 2
-    out = R_OUT + 1  # run the flanks past the surface so the cut is clean
-    return revolved((r0, SNAP_Z - h), (out, SNAP_Z - h - (out - r0)), (out, SNAP_Z + h + (out - r0)), (r0, SNAP_Z + h))
 
 
 def ring_groove():
@@ -201,8 +186,6 @@ def lid_body():
     for x, y in lid_buzzer_holes():
         lid -= cyl(0.75, BOT_Z - 1, FLOOR_TOP + 1, x, y)
     lid = fillet_rim(lid, R_OUT, BOT_Z, EDGE_FILLET_BOT)
-    lid -= snap_groove()
-    lid -= radial_box(R_OUT, KEY_DEG, (BOT_Z + SPLIT_Z) / 2, 2 * KEY_D, KEY_W, SPLIT_Z - BOT_Z + 2)
     lid.label, lid.color = "lid", "#e8e4dc"
     return lid
 
