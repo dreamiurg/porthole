@@ -4,16 +4,17 @@ Headless:
   Blender -b --factory-startup --python-expr "p='hardware/grip/split_meshy_blender.py'; exec(open(p).read(), {'__file__': p})"
 Input:  source/meshy_yoke_v3.glb (Meshy "Kids Game Yoke Grip CAD Ready", task 2a61e941)
 Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed,
-        stl/grip_v7_spacer.stl, the tube that holds the magnet ring up against the front
+        stl/grip_v7_spacer.stl, the tube that holds the steel ring up against the front
 
 The mesh is scaled to WIDTH and otherwise left alone, cut at half its depth so each half prints as a dome
 without support. Pins cut from 1.75 mm filament go into blind holes at the ends of both handles to line the
 halves up for gluing.
 
-The puck sticks on magnetically: an aftermarket MagSafe magnet ring (RING_OD x RING_ID x RING_T) sits under
-the centre disc's flat face, behind COVER of plastic printed with the front half, so nothing shows outside.
-The ring goes in from the cut side through an annular trench, its phone side towards the face, and the
-spacer tube under it holds it there when the back half is glued on.
+The puck sticks on magnetically: it carries its own MagSafe magnet ring and Qi coil, like an iPhone, and the
+grip holds an aftermarket steel MagSafe ring (RING_OD x RING_ID x RING_T, not a magnet, so it has no polarity)
+under the centre disc's flat face, behind COVER of plastic printed with the front half, so nothing shows
+outside. The ring goes in from the cut side through an annular trench, and the spacer tube under it holds it
+there when the back half is glued on.
 """
 
 import math
@@ -30,9 +31,9 @@ TRIS = 200_000  # whole grip before the cut, so each STL stays under 12 MB
 PIN_D = 2.0  # holes for 1.75 mm filament pins; printed holes come out ~0.1 mm small
 PIN_DEPTH = 5.0  # each side: cut the pins 9 mm long
 PIN_WALL = 1.5  # material kept past the hole end and around it
-RING_OD, RING_ID, RING_T = 56.0, 46.0, 1.5  # MagSafe magnet ring as sold (56 x 46 x 1.5 mm N52)
+RING_OD, RING_ID, RING_T = 56.0, 46.0, 0.5  # steel MagSafe ring sticker as sold (56 x 46 x 0.5 mm)
 RING_FIT = 0.2  # clearance on each wall of the trench
-COVER = 0.8  # plastic between the ring and the face: thin enough to keep the pull, 4 layers to bridge
+COVER = 0.8  # plastic between the ring and the puck's magnets: thin enough to keep the pull, 4 layers to bridge
 SC = bpy.context.scene
 
 
