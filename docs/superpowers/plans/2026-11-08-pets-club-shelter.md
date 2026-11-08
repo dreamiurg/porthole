@@ -59,7 +59,7 @@ Each line has a test in the task that owns it (Tasks 1, 1, 4, 4, 1).
 
 - [ ] **Step 1: Write the failing tests** in `host/test_pet.cpp`, following the shape of `saveV1`:
   - `saveV2Migrates`: build a 156-byte v2 blob (version 2, crc over 152). It loads: `breed == 0`, `hasDog == 1`, `wallCount == 0`, `streak` kept. A corrupted byte is rejected.
-  - `retireKeepsKidProgress`: a save with `stickersMask = 0x5`, `hatsMask = 3`, `booksRead = 7`, `trickProgress[0] = 3`, `bond = 900`, `asleep = 1`, age 31 days. `canRetire` is true at day 30 and false at day 29. After `retire`: stickers/hats/books equal, `hasDog == 0`, `wallCount == 1`, `wallNames[0]` == old name, `dogsRaised == 1`. After `adoptFromShelter(s, now, 3, "Cocoa")`: `trickProgress[0] == 0`, `bond == 0`, `asleep == 0`, `stage == STAGE_PUPPY`, `breed == 3`, petName "Cocoa", stickers still 0x5.
+  - `retireKeepsKidProgress`: a save with `stickersMask = 0x5`, `hatsMask = 3`, `booksRead = 7`, `trickProgress[0] = 3`, `bond = 900`, `asleep = 1`, age 31 days. `canRetire` is true at day 30 and false at day 29. After `retire`: stickers/hats/books equal, `hasDog == 0`, `wallCount == 1`, `wallNames[0]` == old name, `dogsRaised == 1`. After `adoptFromShelter(s, now, 3, "Choco")`: `trickProgress[0] == 0`, `bond == 0`, `asleep == 0`, `stage == STAGE_PUPPY`, `breed == 3`, petName "Choco", stickers still 0x5.
   - `wallRollsAtFour`: retire five dogs named A..E. `wallCount == 4`, names B,C,D,E in slots 0..3, `dogsRaised == 5`.
   - `breedSurvivesRoundTrip`: seal, then loadBlob of a v3 save keeps `breed`, the wall and `hasDog`.
 
@@ -82,7 +82,7 @@ Owner: `pixel-artist` (opus).
 - Modify: `games/pets-club/content.h` (shelter names)
 
 **Interfaces:**
-- Produces: `DOG_FRAMES[NUM_BREEDS][3][NUM_POSES]`, `DOG_PARTS[NUM_BREEDS][3][NUM_POSES]`, `enum Breed { BR_GOLDEN, BR_DALMATIAN, BR_HUSKY, BR_BEAGLE, BR_POODLE, BR_CORGI, BR_LAB, NUM_BREEDS_ART }` in sprites.h. content.h: `static const char* const SHELTER_NAMES[7] = {"Connor","Boxy","Romeo","Cocoa","Marsha","Waffles","Charcoal"}; static const char* const BREED_NAMES[7] = {"Golden pup","Dalmatian","Husky","Beagle","Poodle","Corgi","Black Lab"};` plus `static_assert(NUM_BREEDS_ART == pet::NUM_BREEDS)` in game.cpp.
+- Produces: `DOG_FRAMES[NUM_BREEDS][3][NUM_POSES]`, `DOG_PARTS[NUM_BREEDS][3][NUM_POSES]`, `enum Breed { BR_GOLDEN, BR_DALMATIAN, BR_HUSKY, BR_BEAGLE, BR_POODLE, BR_CORGI, BR_LAB, NUM_BREEDS_ART }` in sprites.h. content.h: `static const char* const SHELTER_NAMES[7] = {"Connor","Boxy","Romeo","Choco","Marsha","Waffles","Charcoal"}; static const char* const BREED_NAMES[7] = {"Golden pup","Dalmatian","Husky","Beagle","Poodle","Corgi","Black Lab"};` plus `static_assert(NUM_BREEDS_ART == pet::NUM_BREEDS)` in game.cpp.
 - Consumes: `save_.breed` (Task 1).
 
 - [ ] **Step 1:** Add `BREEDS` with the spec's art notes (colors from the existing palette; ear shape pointy/floppy/upright; Corgi's `legH` shorter with the body lowered to keep the ground line; Dalmatian spots and Poodle curls as post-outline overlays). Breed 0 must reproduce today's pixels exactly.
@@ -117,7 +117,7 @@ Owner: `pixel-artist` (opus).
 - Consumes: `SHELTER_NAMES`, `BREED_NAMES`, `DOG_FRAMES[breed][SZ_PUP]`, `pet::adoptFromShelter`, `ui::keyboard`.
 - Produces: screen `shelter`. Member `uint8_t shelterSel_`.
 
-- [ ] **Step 1: Extend the playtest:** from the empty room, `snap 02_empty_room`, the four care buttons are absent and a "Shelter" button shows. Tap it, `expect-screen shelter`, `snap 03_kennel_connor`, tap the right arrow 3 times, `snap 04_kennel_cocoa`. Back returns to home with no dog (Review Focus 3). Leave to the launcher and reopen: still the empty room. Shelter again, Pick me on Cocoa, `expect-screen name_pet` with "Cocoa" prefilled, OK, `expect-screen home`, `expect` the debug line shows `pet=Cocoa` and the breed. A second run backspaces to empty and presses OK: stays on the keyboard (Review Focus 4). Types "Choco" instead: the pet is named Choco.
+- [ ] **Step 1: Extend the playtest:** from the empty room, `snap 02_empty_room`, the four care buttons are absent and a "Shelter" button shows. Tap it, `expect-screen shelter`, `snap 03_kennel_connor`, tap the right arrow 3 times, `snap 04_kennel_cocoa`. Back returns to home with no dog (Review Focus 3). Leave to the launcher and reopen: still the empty room. Shelter again, Pick me on Choco, `expect-screen name_pet` with "Choco" prefilled, OK, `expect-screen home`, `expect` the debug line shows `pet=Choco` and the breed. A second run backspaces to empty and presses OK: stays on the keyboard (Review Focus 4). Types "Bingo" instead: the pet is named Bingo.
 - [ ] **Step 2: Run** the playtest. Expected: FAIL at the Shelter button.
 - [ ] **Step 3: Implement.**
   - `drawHome` with `!hasDog`: the room, wall included, with no dog, poop, toasts or want bubbles. In place of the care buttons, one centered "Shelter" button. The back button still goes to the launcher. No daily gift in the empty room (it waits for the new pup). `pet::simulate` with `!hasDog` only sets `lastSeen = now` and returns `EV_NONE` (test `simulateEmptyRoom` in `host/test_pet.cpp`: a week later, no stage-up, no poop, stats unchanged).

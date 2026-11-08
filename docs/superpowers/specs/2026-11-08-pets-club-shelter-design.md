@@ -31,13 +31,13 @@ the wall.
 | 0 | Connor | Golden pup | today's dog, unchanged (tan, brown ears) |
 | 1 | Boxy | Dalmatian | white coat, black spots, black ears |
 | 2 | Romeo | Husky | gray back, white belly and muzzle, pointy ears, blue eyes |
-| 3 | Cocoa | Beagle | tan, black saddle, white belly and tail tip, long floppy ears |
+| 3 | Choco | Beagle | tan, black saddle, white belly and tail tip, long floppy ears |
 | 4 | Marsha | Poodle | cream, curly puffs on head, tail tip and paws |
 | 5 | Waffles | Corgi | orange and white, short legs, big upright ears |
 | 6 | Charcoal | Black Lab | black coat, dark gray outline accents |
 
 `ui::NAME_LEN` is 8 letters, and every name fits. She picked "Chocolate" (9 letters) for the beagle; it
-becomes **Cocoa**, the same idea in 5 letters. As her dad asked, shelter names are suggestions the kid
+becomes **Choco**, her pick, the same idea in 5 letters. As her dad asked, shelter names are suggestions the kid
 keeps or changes on the existing name keyboard.
 
 ## Design
@@ -71,7 +71,7 @@ wears. Nothing the kid earned is lost.
 - `SC_FARM`: a farm scene (field, fence, sun) with the dog in its grown size, a wooden sign with its name,
   and **Go home**. One rare sound here is fine (a goodbye moment), through the existing `Sound` enum.
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
-  not fit on the round screen at once in the 8x8 font. The tag reads "Cocoa" / "Beagle". The puppy
+  not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
 - Name step: reuse the existing pet-name keyboard (`SC_NAME_PET`), prefilled with the shelter name. OK
   keeps it, editing changes it.
