@@ -36,7 +36,8 @@ the wall.
 | 5 | Waffles | Corgi | orange and white, short legs, big upright ears |
 | 6 | Charcoal | Black Lab | black coat, dark gray outline accents |
 
-Every name fits `ui::NAME_LEN` and the 8x8 font.
+`ui::NAME_LEN` is 8 letters. Every name fits except **Chocolate (9)**, and she has been asked for a shorter
+version. Pet names are checked in the game's text boxes at 8 letters wide, so the limit stays.
 
 ## Design
 
