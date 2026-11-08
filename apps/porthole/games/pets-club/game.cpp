@@ -180,47 +180,51 @@ void Game::drawParticles() {
 }
 
 // ---------------------------------------------------------------- dog drawing
+static_assert(NUM_BREEDS_ART == NUM_BREEDS, "art.py BREEDS and pet.h NUM_BREEDS must agree");
+static_assert(sizeof SHELTER_NAMES / sizeof *SHELTER_NAMES == NUM_BREEDS && sizeof BREED_NAMES / sizeof *BREED_NAMES == NUM_BREEDS, "one name per breed");
+static int breedOf(const Save& s) { return s.breed < NUM_BREEDS ? s.breed : 0; }  // a corrupt breed draws the Golden pup (0), never out of bounds
+int Game::breed() const { return breedOf(save_); }
 int Game::dogSize() const { return save_.stage == STAGE_GROWN ? SZ_BIG : save_.stage == STAGE_DOG ? SZ_DOG : SZ_PUP; }
-const Sprite& Game::dogFrame(int pose) const { return DOG_FRAMES[dogSize()][pose]; }
+const Sprite& Game::dogFrame(int pose) const { return DOG_FRAMES[breed()][dogSize()][pose]; }
 void Game::drawDog(int x, int y, int pose, bool flip, int scale) {
   // x,y = bottom-left of the sprite's bounding box (feet on y)
   const Sprite& s = dogFrame(pose);
   int top = y - s.h * scale;
   if (scale == 1) blit(s, x, top, flip); else blitScaled(s, x, top, scale, flip);
   if (save_.dirty) {  // mud spots
-    const DogParts& dp = DOG_PARTS[dogSize()][pose];
+    const DogParts& dp = DOG_PARTS[breed()][dogSize()][pose];
     int bx = flip ? s.w - dp.bodyX : dp.bodyX;
     blit(SPR_MUD, x + (bx - 3) * scale, top + (dp.bodyY - 1) * scale);
     blit(SPR_MUD, x + (bx + 2) * scale, top + (dp.bodyY + 2) * scale);
   }
   drawHat(x, top, pose, flip, scale);
 }
+int Game::wornHat() const {
+  if (save_.hat || save_.stage < STAGE_DOG) return save_.hat;
+  return save_.variant == VAR_BOOKWORM ? 3 : save_.variant == VAR_SPORTY ? 4 : 0;  // personality accessory once grown
+}
+static void blitHat(const Sprite& h, int x, int y, int scale, bool flip) {
+  if (scale == 1) blit(h, x, y, flip); else blitScaled(h, x, y, scale, flip);
+}
 void Game::drawHat(int x, int top, int pose, bool flip, int scale) {
-  int hat = save_.hat;
-  if (!hat) {  // personality accessory once grown
-    if (save_.stage >= STAGE_DOG && save_.variant == VAR_BOOKWORM) hat = 3;
-    else if (save_.stage >= STAGE_DOG && save_.variant == VAR_SPORTY) hat = 4;
-  }
+  const int hat = wornHat();
   if (!hat || pose == P_BACK || pose == P_DEAD) return;
-  const DogParts& dp = DOG_PARTS[dogSize()][pose];
+  const DogParts& dp = DOG_PARTS[breed()][dogSize()][pose];
   const Sprite& s = dogFrame(pose);
   const Sprite& h = SPR_HATS[hat];
   if (hat == 3) {  // glasses sit on the eye
     int ex = flip ? s.w - 1 - dp.eyeX : dp.eyeX;
     int gx = x + ex * scale - 1 * scale, gy = top + dp.eyeY * scale - 1 * scale;
-    if (scale == 1) blit(h, flip ? gx - 3 : gx, gy, flip); else blitScaled(h, flip ? gx - 3 * scale : gx, gy, scale, flip);
+    blitHat(h, flip ? gx - 3 * scale : gx, gy, scale, flip);
     return;
   }
   if (hat == 4) {  // bandana hangs from the neck
     int nx = flip ? s.w - dp.headX : dp.headX;
-    int bx = x + (nx - h.w / 2 - (flip ? 3 : -3)) * scale, by = top + (dp.headY + dp.headR - 2) * scale;
-    if (scale == 1) blit(h, bx, by, flip); else blitScaled(h, bx, by, scale, flip);
+    blitHat(h, x + (nx - h.w / 2 - (flip ? 3 : -3)) * scale, top + (dp.headY + dp.headR - 2) * scale, scale, flip);
     return;
   }
   int hx = flip ? s.w - 1 - dp.headX : dp.headX;
-  int px = x + (hx - h.w / 2 + (flip ? -1 : 1)) * scale;
-  int py = top + (dp.headY - dp.headR - h.h + 2) * scale;
-  if (scale == 1) blit(h, px, py, flip); else blitScaled(h, px, py, scale, flip);
+  blitHat(h, x + (hx - h.w / 2 + (flip ? -1 : 1)) * scale, top + (dp.headY - dp.headR - h.h + 2) * scale, scale, flip);
 }
 
 // ---------------------------------------------------------------- UI widgets
@@ -316,7 +320,7 @@ void Game::drawSplash() {
   textCenteredShadow(80, 38, "PETS", C_YELLOW, C_PLUM, 2);
   textCenteredShadow(80, 56, "CLUB", C_YELLOW, C_PLUM, 2);
   textCentered(80, 80, "a pixel puppy", C_LTGRAY);
-  blit(DOG_FRAMES[SZ_DOG][(ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0], 64, 92);
+  blit(DOG_FRAMES[BR_GOLDEN][SZ_DOG][(ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0], 64, 92);
   if ((ms_ / 500) % 2) textCentered(80, 126, "tap to start", C_WHITE);
 }
 
@@ -340,7 +344,7 @@ void Game::drawIntro() {
   } else {
     rect(64, 96, 32, 8, C_WOOD); rect(60, 88, 40, 6, C_DKWOOD);
     int hop = ms_ - screenMs_ < 600 ? -(int)((600 - (ms_ - screenMs_)) / 60) : 0;
-    blit(DOG_FRAMES[SZ_PUP][(ms_ / 300) % 2 ? P_JUMP : P_IDLE1], 68, 72 + hop);
+    blit(DOG_FRAMES[BR_GOLDEN][SZ_PUP][(ms_ / 300) % 2 ? P_JUMP : P_IDLE1], 68, 72 + hop);
     textCentered(80, 40, "A puppy!", C_NAVY);
     textCentered(80, 52, "It needs a home.", C_NAVY);
     if (ms_ - screenMs_ > 900 && (ms_ / 500) % 2) textCentered(80, 136, "tap to adopt", C_NAVY);
@@ -835,7 +839,7 @@ void Game::updateLibrary() {
   if (in_.tapIn(44, 118, 72, 24)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
   if (in_.tapIn(56, 33, 48, 61)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
 }
-static void drawCover(int x, int y, int w, int h, const Book& bk, uint32_t ms) {
+void Game::drawCover(int x, int y, int w, int h, const Book& bk) {
   rect(x + 2, y + 2, w, h, C_DKBROWN);
   rect(x, y, w, h, bk.cover); frame(x, y, w, h, C_DKBROWN);
   rect(x + 3, y, 2, h, C_CREAM); rect(x + 8, y + 5, w - 12, h - 10, C_CREAM); frame(x + 8, y + 5, w - 12, h - 10, C_DKBROWN);
@@ -843,7 +847,7 @@ static void drawCover(int x, int y, int w, int h, const Book& bk, uint32_t ms) {
   const Sprite* ic = &SPR_HEART;
   switch (bk.icon) { case 0: ic = nullptr; break; case 1: ic = &SPR_MOON; break; case 2: ic = &SPR_STAR; break; case 3: ic = &SPR_HEART; break;
     case 4: ic = &SPR_CLOUD; break; case 5: ic = &SPR_BONE; break; case 6: ic = &SPR_BOOK; break; case 7: ic = &SPR_PAW; break; }
-  if (!ic) blit(DOG_FRAMES[SZ_PUP][(ms / 600) % 2 ? P_IDLE1 : P_IDLE0], cx - 12, cy - 9);
+  if (!ic) blit(DOG_FRAMES[breed()][SZ_PUP][(ms_ / 600) % 2 ? P_IDLE1 : P_IDLE0], cx - 12, cy - 9);
   else if (bk.icon == 7) blitTint(*ic, cx - ic->w / 2, cy - ic->h / 2, C_DKBROWN);
   else blit(*ic, cx - ic->w / 2, cy - ic->h / 2);
 }
@@ -851,7 +855,7 @@ void Game::drawLibrary() {
   clear(C_DKWOOD);
   for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKBROWN);
   const Book& bk = curBook();
-  drawCover(56, 33, 48, 60, bk, ms_);   // 1 px under "book N of M"
+  drawCover(56, 33, 48, 60, bk);   // 1 px under "book N of M"
   bool done = save_.booksDoneMask & (1u << bookList_[bookSel_]);
   if (!done) { blit(SPR_SPARKLE, 108, 30 + (int)((ms_ / 400) % 2)); textCentered(122, 40, "NEW!", C_YELLOW); }
   else blitTint(SPR_CHECK, 96, 84, C_GREEN);
@@ -972,7 +976,7 @@ void Game::drawTricks() {
 static const int ZONE_N = 3;  // 0 head, 1 belly, 2 tail
 void Game::trainZones(int zx[3], int zy[3], int& scale, int& dx, int& dy) const {
   scale = dogSize() == SZ_PUP ? 3 : 2;
-  const Sprite& s = dogFrame(P_SIT); const DogParts& dp = DOG_PARTS[dogSize()][P_SIT];
+  const Sprite& s = dogFrame(P_SIT); const DogParts& dp = DOG_PARTS[breed()][dogSize()][P_SIT];
   dx = 80 - s.w * scale / 2; dy = 118;
   int top = dy - s.h * scale;
   zx[0] = dx + dp.headX * scale; zy[0] = top + (dp.headY - dp.headR / 2) * scale;   // top of the head
@@ -1063,7 +1067,7 @@ void Game::drawTrain() {
 
 // ---------------------------------------------------------------- bath
 void Game::startBath() {
-  const int scale = 2; const Sprite& s = dogFrame(P_IDLE0); const DogParts& dp = DOG_PARTS[dogSize()][P_IDLE0];
+  const int scale = 2; const Sprite& s = dogFrame(P_IDLE0); const DogParts& dp = DOG_PARTS[breed()][dogSize()][P_IDLE0];
   int DX = 80 - s.w, top = 120 - s.h * scale;
   spotsLeft_ = 6;
   static const int8_t SPREAD[6][2] = {{-6, -3}, {0, -5}, {6, -2}, {-3, 4}, {4, 5}, {0, 0}};  // tenths of the body radii
@@ -1206,7 +1210,7 @@ void Game::drawGift() {
     if ((ms_ / 500) % 2) textCentered(80, 108, "tap to open", C_DKGRAY);
   } else {
     switch (gift_.kind) {
-      case pet::GIFT_BOOK: textCentered(80, 36, "A new book!", C_PLUM); drawCover(64, 48, 32, 40, BOOKS[gift_.index], ms_);
+      case pet::GIFT_BOOK: textCentered(80, 36, "A new book!", C_PLUM); drawCover(64, 48, 32, 40, BOOKS[gift_.index]);
         { char lines[2][40]; int nl = wrap(BOOKS[gift_.index].title, 110, lines, 2); for (int i = 0; i < nl; i++) textCentered(80, 94 + i * 9, lines[i], C_DKBROWN); } break;
       case pet::GIFT_HAT: textCentered(80, 36, "A new hat!", C_PLUM); blitScaled(SPR_HATS[gift_.index], 80 - SPR_HATS[gift_.index].w, 52, 2);
         textCentered(80, 94, HAT_NAMES[gift_.index], C_DKBROWN); textCentered(80, 104, "Find it under Hats", C_DKGRAY); break;
@@ -1270,7 +1274,7 @@ void Game::drawStreetHouse(int i, bool night) {   // the house, its pup by the d
   bool pr = mine && in_.down && in_.hit(cx - 18, gy - 36, 36, 50);
   drawHouseIcon(cx, gy + (pr ? 1 : 0), 24, has ? themeOf(h) : THEMES[0], night && has && !h.asleep);
   if (has && h.asleep) textCentered(cx - 12, gy - 22 - (int)((ms_ / 400) % 3), "z", night ? C_WHITE : C_NAVY);
-  else if (has) blit(DOG_FRAMES[SZ_PUP][(ms_ / 500 + i) % 2 ? P_IDLE1 : P_IDLE0], cx - 24, gy - 18, false);
+  else if (has) blit(DOG_FRAMES[breedOf(h)][SZ_PUP][(ms_ / 500 + i) % 2 ? P_IDLE1 : P_IDLE0], cx - 24, gy - 18, false);
   char nm[12]; fitName(kids_[i].name, nm, 42);
   int w = textWidth(nm) + 6; ui::panel({cx - w / 2, gy + 1, w, 11}, mine ? C_YELLOW : C_CREAM, C_DKBROWN); textCentered(cx, gy + 3, nm, C_DKBROWN);
 }

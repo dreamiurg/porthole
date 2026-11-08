@@ -85,10 +85,13 @@ class Game : public App {
   void updateParticles();
   void drawParticles();
   void markDirty() { dirty_ = true; }
+  int breed() const;  // save_.breed, clamped to a drawable breed
   int dogSize() const;
   const gfx::Sprite& dogFrame(int pose) const;
   void drawDog(int x, int y, int pose, bool flip, int scale = 1);
   void drawHat(int x, int y, int pose, bool flip, int scale);
+  int wornHat() const;
+  void drawCover(int x, int y, int w, int h, const struct Book& bk);
   void drawBackButton();
   bool backButton();
   void drawToast();
