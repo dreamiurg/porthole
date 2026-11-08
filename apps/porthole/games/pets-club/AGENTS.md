@@ -30,14 +30,23 @@ layout, and the age-based content tables.
 `s<profile id>`, written by the shell. Magic `0x4F475243` ("CRGO"), `version`, `size`,
 fields, then `crc` last -- the append-only rule in the app brief applies exactly here.
 
-`SAVE_VERSION` is currently 2. The v1 -> v2 migration is the reference pattern for any
+`SAVE_VERSION` is currently 3. The v1 -> v2 migration is the reference pattern for any
 future bump: `SAVE_V1_SIZE = 140` marks the pre-v2 blob size; `pet::loadBlob` checks for
 that exact size, reads the v1 fields (everything up to `SAVE_V1_SIZE - 4`), validates the
 v1 CRC, and zero-fills the new fields (v2 added houses, reading level and turn-taking --
-zero means "not asked yet" for `kidAge`, "none" for `pin`, and so on). `host/test_pet.cpp`
-has the round-trip case for this; copy its shape for the next bump. To add a field: put
-it immediately before `crc`, bump `SAVE_VERSION`, extend `loadBlob`, add a test case.
-Never touch `SAVE_V1_SIZE` or reorder/resize an existing field.
+zero means "not asked yet" for `kidAge`, "none" for `pin`, and so on). v3 added the
+dog's `breed`, the farm (`hasDog`, `dogsRaised`) and the memory wall (`wallCount`,
+`wallNames`, `wallBreeds`); a v1 or v2 blob (`SAVE_V2_SIZE = 156`) loads with
+`hasDog = 1`, since every save before the farm has its dog, and the rest zero (Golden
+pup, empty wall). `host/test_pet.cpp` has the round-trip cases for both; copy their shape
+for the next bump. To add a field: put it immediately before `crc`, bump `SAVE_VERSION`,
+extend `loadBlob`, add a test case. Never touch `SAVE_V1_SIZE`/`SAVE_V2_SIZE` or
+reorder/resize an existing field.
+
+`hasDog == 0` is the empty room between `pet::retire` (dog to the farm, onto the wall)
+and `pet::adoptFromShelter`; `pet::simulate` only moves `lastSeen` then. Retiring keeps
+everything the kid earned (stickers, hats owned, books, streak, counters, theme, wall) and
+resets only the dog's own fields, through the same defaults `pet::adopt` uses.
 
 Since Porthole, the shell's profile owns the kid's name, age, secret code, mute and rest
 budget. `Save`'s own `kidName`/`kidAge` are copied in from the profile on every entry

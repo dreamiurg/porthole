@@ -87,12 +87,77 @@ static void saveV1(const Save& s) {
   uint16_t ver = 1, size = (uint16_t)SAVE_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
   uint32_t crc = pet::crc32(v1, SAVE_V1_SIZE - 4); memcpy(v1 + SAVE_V1_SIZE - 4, &crc, 4);
   Save m; assert(pet::loadBlob(v1, sizeof v1, m));
-  assert(pet::valid(m) && m.version == 2 && m.size == sizeof(Save));
-  assert(!strcmp(m.petName, "Biscuit") && m.booksRead == s.booksRead && m.bond == s.bond);
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(!strcmp(m.petName, "Biscuit") && m.booksRead == s.booksRead && m.bond == s.bond && m.hasDog == 1);
   assert(m.kidAge == 0 && m.pin == 0 && m.restUntil == 0);
   v1[20] ^= 1; assert(!pet::loadBlob(v1, sizeof v1, m));          // corrupted v1 rejected
-  assert(pet::loadBlob(&s, sizeof s, m) && m.streak == s.streak);   // v2 round trip
+  assert(pet::loadBlob(&s, sizeof s, m) && m.streak == s.streak);   // current-version round trip
   assert(!pet::loadBlob(&s, 17, m));
+}
+
+// v2 blob (156 bytes, version 2) migrates: it still has its dog, a Golden pup, and an empty wall
+static void saveV2Migrates(const Save& s) {
+  uint8_t v2[SAVE_V2_SIZE]; memcpy(v2, &s, SAVE_V2_SIZE - 4);
+  uint16_t ver = 2, size = (uint16_t)SAVE_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
+  uint32_t crc = pet::crc32(v2, SAVE_V2_SIZE - 4); memcpy(v2 + SAVE_V2_SIZE - 4, &crc, 4);
+  Save m; assert(pet::loadBlob(v2, sizeof v2, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(m.breed == 0 && m.hasDog == 1 && m.wallCount == 0 && m.dogsRaised == 0 && m.streak == s.streak);
+  assert(!strcmp(m.petName, s.petName) && m.kidAge == s.kidAge && m.playSec == s.playSec);
+  v2[20] ^= 1; assert(!pet::loadBlob(v2, sizeof v2, m));          // corrupted v2 rejected
+  v2[20] ^= 1; ver = 3; memcpy(v2 + 4, &ver, 2); assert(!pet::loadBlob(v2, sizeof v2, m));   // v2 size must say v2
+}
+
+static void shelterPupStartsFresh(Save& s, uint32_t now) {
+  pet::adoptFromShelter(s, now, 3, "Choco");
+  assert(pet::valid(s) && s.hasDog == 1 && s.breed == 3 && !strcmp(s.petName, "Choco"));
+  assert(s.trickProgress[0] == 0 && s.bond == 0 && s.asleep == 0 && s.stage == STAGE_PUPPY && pet::ageDays(s, now) == 0);
+  assert(s.food == 70 && s.fun == 80 && s.energy == 90 && s.clean == 100);
+  assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.wallCount == 1 && s.dogsRaised == 1);
+}
+
+// The farm: the dog moves on, the kid keeps everything they earned, the next pup starts fresh.
+static void retireKeepsKidProgress() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor");
+  s.stickersMask = 0x5; s.hatsMask = 3; s.hat = 2; s.booksRead = 7; s.trickProgress[0] = 3; s.bond = 900; s.asleep = 1;
+  s.poop = 1; s.dirty = 1; s.want = WANT_SLEEP; s.stage = STAGE_GROWN;
+  const uint32_t now = day0 + 31 * 86400;
+  assert(!pet::canRetire(s, day0 + 29 * 86400) && pet::canRetire(s, day0 + 30 * 86400) && pet::canRetire(s, now));
+  pet::retire(s, now);
+  assert(pet::valid(s) && !pet::canRetire(s, now + 60 * 86400));
+  assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.booksRead == 7 && s.streak == 1 && !strcmp(s.kidName, "Sam"));
+  assert(s.hasDog == 0 && s.wallCount == 1 && !strcmp(s.wallNames[0], "Connor") && s.dogsRaised == 1);
+  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 0);
+  shelterPupStartsFresh(s, now);
+}
+// The wall keeps the last four dogs, oldest first; dogsRaised counts them all.
+static void wallRollsAtFour() {
+  Save s; pet::adopt(s, day0, "Sam", "A");
+  const char* names[] = {"A", "B", "C", "D", "E"};
+  for (int i = 0; i < 5; i++) {
+    if (i) pet::adoptFromShelter(s, day0, (uint8_t)i, names[i]);
+    pet::retire(s, day0);
+  }
+  pet::retire(s, day0);   // no dog: nothing to put on the wall
+  assert(s.wallCount == WALL_SLOTS && s.dogsRaised == 5);
+  for (int i = 0; i < WALL_SLOTS; i++) assert(!strcmp(s.wallNames[i], names[i + 1]) && s.wallBreeds[i] == i + 1);
+}
+
+// An empty room (dog on the farm, no pup yet) stands still: nothing grows, decays or poops.
+static void simulateEmptyRoom() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::retire(s, day0);
+  const Save before = s;
+  const uint32_t later = day0 + 7 * 86400;
+  assert(pet::simulate(s, later, false) == pet::EV_NONE);
+  assert(s.lastSeen == later && s.stage == before.stage && s.poop == 0);
+  assert(s.food == before.food && s.fun == before.fun && s.energy == before.energy && s.clean == before.clean);
+}
+
+static void breedSurvivesRoundTrip() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::retire(s, day0); pet::adoptFromShelter(s, day0, 5, "Waffles");
+  Save m; assert(pet::loadBlob(&s, sizeof s, m));
+  assert(m.breed == 5 && m.hasDog == 1 && m.wallCount == 1 && !strcmp(m.wallNames[0], "Connor") && m.dogsRaised == 1);
+  pet::retire(s, day0); assert(pet::loadBlob(&s, sizeof s, m) && m.hasDog == 0 && m.wallBreeds[1] == 5);
 }
 
 static void levels(const Save& s) {
@@ -130,6 +195,11 @@ int main() {
   bondAndTricks(s, t);
   giftsStreakReading(s, t);
   saveV1(s);
+  saveV2Migrates(s);
+  retireKeepsKidProgress();
+  wallRollsAtFour();
+  simulateEmptyRoom();
+  breedSurvivesRoundTrip();
   levels(s);
   dayOnPickedLight();
   petting(day0);

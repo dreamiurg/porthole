@@ -12,13 +12,14 @@ bool valid(const Save& s) {
 }
 bool loadBlob(const void* d, size_t n, Save& out) {
   if (n == sizeof(Save)) { memcpy(&out, d, n); return valid(out); }
-  if (n == SAVE_V1_SIZE) {
+  if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE) {
     const uint8_t* p = (const uint8_t*)d;
-    uint32_t crc; memcpy(&crc, p + SAVE_V1_SIZE - 4, 4);
+    uint32_t crc; memcpy(&crc, p + n - 4, 4);
     uint16_t ver; memcpy(&ver, p + 4, 2);
-    if (ver != 1 || crc != crc32(p, SAVE_V1_SIZE - 4)) return false;
+    if (ver != (n == SAVE_V1_SIZE ? 1 : 2) || crc != crc32(p, n - 4)) return false;
     memset(&out, 0, sizeof out);
-    memcpy(&out, p, SAVE_V1_SIZE - 4);   // every v1 field keeps its offset; new fields stay zero (age unknown)
+    memcpy(&out, p, n - 4);   // every old field keeps its offset; new fields stay zero (age unknown, Golden pup, empty wall)
+    out.hasDog = 1;           // every save before the farm has its dog
     seal(out);
     return true;
   }
@@ -46,16 +47,45 @@ uint32_t rnd(Save& s) { uint32_t x = s.seed ? s.seed : 0x9E3779B9u; x ^= x << 13
 static uint8_t clamp100(int v) { return (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v); }
 static void decayTo(uint8_t& v, int amount, int floor) { int nv = (int)v - amount; if (nv < floor) nv = v < floor ? v : floor; v = (uint8_t)nv; }
 
-void adopt(Save& s, uint32_t now, const char* kid, const char* pet) {
-  memset(&s, 0, sizeof s);
-  strncpy(s.kidName, kid, sizeof s.kidName - 1); strncpy(s.petName, pet, sizeof s.petName - 1);
+// The dog's own state, shared by a first adoption, the farm and the shelter so their defaults can't drift.
+static void freshDog(Save& s, uint32_t now, const char* name) {
+  memset(s.petName, 0, sizeof s.petName); strncpy(s.petName, name, sizeof s.petName - 1);
   s.adoptedAt = s.lastSeen = now;
   s.food = 70; s.fun = 80; s.energy = 90; s.clean = 100;
+  s.asleep = s.poop = s.dirty = s.stage = s.variant = s.hat = s.want = s.wantSince = 0;
+  s.bond = s.bondToday = 0; s.bondDay = (uint16_t)dayIndex(now);
+  s.nextPoopAt = now + POOP_MIN_SEC; s.poopSince = 0;
+  memset(s.trickProgress, 0, sizeof s.trickProgress); memset(s.trickLastDay, 0, sizeof s.trickLastDay);
+}
+
+void adopt(Save& s, uint32_t now, const char* kid, const char* pet) {
+  memset(&s, 0, sizeof s);
+  strncpy(s.kidName, kid, sizeof s.kidName - 1);
+  freshDog(s, now, pet); s.hasDog = 1;
   s.booksUnlocked = STARTER_BOOKS;
   s.streak = 1; s.lastPlayDay = (uint16_t)dayIndex(now); s.lastGiftDay = (uint16_t)dayIndex(now);  // first gift tomorrow
   s.seed = now ^ 0xC0FFEEu;
-  s.nextPoopAt = now + POOP_MIN_SEC;
-  s.bondDay = (uint16_t)dayIndex(now); s.treatsDay = s.bondDay;
+  s.treatsDay = s.bondDay;
+  seal(s);
+}
+
+bool canRetire(const Save& s, uint32_t now) { return s.hasDog && ageDays(s, now) >= RETIRE_DAYS; }
+
+void retire(Save& s, uint32_t now) {
+  if (!s.hasDog) return;   // an empty room has no one to hang on the wall
+  if (s.wallCount >= WALL_SLOTS) {   // full: the oldest frame comes down
+    memmove(s.wallNames[0], s.wallNames[1], sizeof s.wallNames[0] * (WALL_SLOTS - 1));
+    memmove(s.wallBreeds, s.wallBreeds + 1, WALL_SLOTS - 1);
+    s.wallCount = WALL_SLOTS - 1;
+  }
+  memcpy(s.wallNames[s.wallCount], s.petName, sizeof s.petName); s.wallBreeds[s.wallCount] = s.breed; s.wallCount++;
+  if (s.dogsRaised < 255) s.dogsRaised++;
+  freshDog(s, now, ""); s.hasDog = 0;
+  seal(s);
+}
+
+void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name) {
+  freshDog(s, now, name); s.breed = breed; s.hasDog = 1;
   seal(s);
 }
 
@@ -67,6 +97,7 @@ static void schedulePoop(Save& s, uint32_t now) { s.nextPoopAt = now + (uint32_t
 
 uint32_t simulate(Save& s, uint32_t now, bool online) {
   uint32_t ev = EV_NONE;
+  if (!s.hasDog) { s.lastSeen = now; return ev; }   // empty room: nothing to grow, decay or poop
   if (now <= s.lastSeen) { s.lastSeen = now; return ev; }
   uint32_t elapsed = now - s.lastSeen;
   if (elapsed > 300) online = false;  // a jump this big means the device was off (or the clock was set)
