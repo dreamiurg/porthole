@@ -95,7 +95,7 @@ Owner: `pixel-artist` (opus).
 
 **Files:**
 - Modify: `games/pets-club/game.h` (append `SC_CONFIRM_FARM, SC_FARM` after `SC_THEME`), `games/pets-club/game.cpp`
-- Test: `tests/playtests/26_farm_shelter.txt` (new; started here, extended in Tasks 4-5)
+- Test: `tests/playtests/b0_pets_farm_shelter.txt` (new; started here, extended in Tasks 4-5)
 
 **Interfaces:**
 - Consumes: `pet::canRetire`, `pet::retire`, `save_.hasDog`.
@@ -111,7 +111,7 @@ Owner: `pixel-artist` (opus).
 
 **Files:**
 - Modify: `games/pets-club/game.h` (append `SC_SHELTER`), `games/pets-club/game.cpp` (`updateHome`/`drawHome` when `!hasDog`, shelter, name step)
-- Test: `tests/playtests/26_farm_shelter.txt` (extend)
+- Test: `tests/playtests/b0_pets_farm_shelter.txt` (extend)
 
 **Interfaces:**
 - Consumes: `SHELTER_NAMES`, `BREED_NAMES`, `DOG_FRAMES[breed][SZ_PUP]`, `pet::adoptFromShelter`, `ui::keyboard`.
@@ -131,7 +131,7 @@ Owner: `pixel-artist` (opus).
 
 **Files:**
 - Modify: `games/pets-club/game.h` (append `SC_WALL`), `games/pets-club/game.cpp` (`drawRoom` frames, home hotspot, wall screen)
-- Test: `tests/playtests/26_farm_shelter.txt` (extend), `host/test_pet.cpp` if any helper is added
+- Test: `tests/playtests/b0_pets_farm_shelter.txt` (extend), `host/test_pet.cpp` if any helper is added
 
 **Interfaces:**
 - Consumes: `wallCount`, `wallNames`, `wallBreeds`, `DOG_FRAMES[breed][SZ_PUP][P_SIT]`.
