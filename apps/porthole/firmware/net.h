@@ -20,6 +20,9 @@ class Updater final : public shell::System {
   // Call every loop: clock sync soon after boot and every six hours, independent of screen/build version;
   // once a minute (the first a minute after boot) it also starts the daily update check if one is due.
   void tick(uint32_t ms);
+  // A radio job runs (an update check, a clock or zone sync, a menu job, Radar), or today's daily check is still due:
+  // it only starts in the dark, so the board must stay awake in the dark until it has.
+  bool busy();
   // Daily checks start in the dark and stop on activity. Explicit checks wait for the loop to install an
   // SRAM-backed display before any flash writes; it remains installed through all cleanup. A daily check
   // respects the idle backlight; only a manual check keeps its progress lit.
@@ -57,6 +60,7 @@ class Updater final : public shell::System {
   bool startLookup(const char* address) override;
   int lookupResult(shell::Home& out) override;
  private:
+  bool checkDue();
   void applyZoneResult();
   bool storeTimeZone(const char* iana, bool automatic, bool detected);
 };

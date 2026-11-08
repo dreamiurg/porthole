@@ -39,6 +39,9 @@ inline uint8_t backlightFor(bool asleep, uint32_t idleMs, uint8_t active) {
   if (asleep) return idleMs > ASLEEP_DARK_MS ? 0 : 40;
   return idleMs > DARK_MS ? 0 : idleMs > IDLE_MS ? 30 : active;
 }
+// True once the dark has lasted SLEEP_AFTER_DARK_MS more: the firmware light-sleeps until a tap (a move no longer wakes it).
+constexpr uint32_t SLEEP_AFTER_DARK_MS = 10000;
+inline bool sleepFor(bool asleep, uint32_t idleMs) { return idleMs > (asleep ? ASLEEP_DARK_MS : DARK_MS) + SLEEP_AFTER_DARK_MS; }
 }
 
 class Shell {

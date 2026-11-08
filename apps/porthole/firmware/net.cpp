@@ -798,6 +798,12 @@ void Updater::begin(uint32_t (*utcNow)()) {
   if (g_sd) wifiFromSd();
 }
 
+static uint32_t g_triedDay = UINT32_MAX;   // the day tick() last tried to start the daily check
+static uint32_t today() { return timezones::local(g_now()) / 86400u; }
+bool Updater::checkDue() {   // not on a dev build, without wifi, or once today's has run
+  return isRelease() && g_ssid[0] && status().lastCheck / 86400u != today();
+}
+
 void Updater::tick(uint32_t ms) {
   applyZoneResult();
   if (g_zoneRetry.afterSync(g_clockSequence.load(), ms, g_clock.automaticZone && g_clock.zoneState == shell::ZONE_FAILED))
@@ -809,10 +815,13 @@ void Updater::tick(uint32_t ms) {
   if (g_zoneNeeded && g_clock.automaticZone && g_ssid[0] && !g_busy) detectTimeZone();
   if ((int32_t)(ms - g_nextPoll) < 0) return;
   g_nextPoll = ms + POLL_MS;
-  if (!isRelease() || !g_ssid[0] || status().lastCheck / 86400u == timezones::local(g_now()) / 86400u) return;   // dev, no wifi, done today
+  if (!checkDue()) return;
   if (!g_dark) return;   // the daily check runs while nobody is looking: it may write flash
+  g_triedDay = today();
   startCheck(channel(), false);
 }
+// Until today's check has been tried: a refused start (an update already waiting, no RAM) must not keep the board up.
+bool Updater::busy() { return g_busy || (checkDue() && g_triedDay != today()); }
 
 // "No wifi" or "Check failed" was about the network before: idle again, as setChannel does. Only those resting states:
 // never a run going (CHECKING, DOWNLOADING) or an update waiting (READY).
