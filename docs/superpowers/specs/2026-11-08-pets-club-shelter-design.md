@@ -1,6 +1,6 @@
 # Pets Club: the Farm, the Memory Wall and the Shelter
 
-Status: **draft. A grown-up must approve it before any code is written** (see "Needs a grown-up's decision").
+Status: **approved** by her dad on 2026-11-08, with all four proposals in "Grown-up decisions" accepted.
 Designed with an 8-year-old player in a chat session on 2026-11-08. Her words and choices are kept below.
 
 ## What she asked for
@@ -31,13 +31,14 @@ the wall.
 | 0 | Connor | Golden pup | today's dog, unchanged (tan, brown ears) |
 | 1 | Boxy | Dalmatian | white coat, black spots, black ears |
 | 2 | Romeo | Husky | gray back, white belly and muzzle, pointy ears, blue eyes |
-| 3 | Chocolate | Beagle | tan, black saddle, white belly and tail tip, long floppy ears |
+| 3 | Cocoa | Beagle | tan, black saddle, white belly and tail tip, long floppy ears |
 | 4 | Marsha | Poodle | cream, curly puffs on head, tail tip and paws |
 | 5 | Waffles | Corgi | orange and white, short legs, big upright ears |
 | 6 | Charcoal | Black Lab | black coat, dark gray outline accents |
 
-`ui::NAME_LEN` is 8 letters. Every name fits except **Chocolate (9)**, and she has been asked for a shorter
-version. Pet names are checked in the game's text boxes at 8 letters wide, so the limit stays.
+`ui::NAME_LEN` is 8 letters, and every name fits. She picked "Chocolate" (9 letters) for the beagle; it
+becomes **Cocoa**, the same idea in 5 letters. As her dad asked, shelter names are suggestions the kid
+keeps or changes on the existing name keyboard.
 
 ## Design
 
@@ -70,7 +71,7 @@ wears. Nothing the kid earned is lost.
 - `SC_FARM`: a farm scene (field, fence, sun) with the dog in its grown size, a wooden sign with its name,
   and **Go home**. One rare sound here is fine (a goodbye moment), through the existing `Sound` enum.
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
-  not fit on the round screen at once in the 8x8 font. The tag reads "Chocolate" / "Beagle". The puppy
+  not fit on the round screen at once in the 8x8 font. The tag reads "Cocoa" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
 - Name step: reuse the existing pet-name keyboard (`SC_NAME_PET`), prefilled with the shelter name. OK
   keeps it, editing changes it.
@@ -81,7 +82,7 @@ wears. Nothing the kid earned is lost.
 only once the dog is old enough (decision 1). It asks once, "Move Connor to the farm?", Yes / No, like the
 reset confirm.
 
-## Needs a grown-up's decision
+## Grown-up decisions (approved: every proposal below)
 
 1. **This bends a hard rule.** The app brief says the pet "never runs away, and never resets". In this
    design the dog leaves only when the kid chooses, like the existing Start over, but gentler: the dog is
