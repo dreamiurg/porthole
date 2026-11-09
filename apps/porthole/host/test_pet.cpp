@@ -2,6 +2,7 @@
 // One pup's life, in order: each step starts from the state the previous one left.
 #include "host/check.h"
 #include <stdio.h>
+#include <unistd.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"
 #include "games/pets-club/game.h"
@@ -293,8 +294,10 @@ static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 
 // A long habit's press on the farm's Yes: Go home, then Bring back in the empty room (after a restart too) puts the
 // same dog home (its age, tricks and stats, and the wall as it was) and asks for the one-second checkpoint.
 struct Finger {   // frames of 20 ms through the real InputTracker, the clock standing still (no tick, no decay)
-  Game& g; uint32_t now, ms = 2000; InputTracker tr;
-  void hold(bool down, int x, int y, uint32_t dur) { for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(now, ms, tr.step(down, x, y, ms)); } }
+  Game& g; uint32_t now, ms = 2000; InputTracker tr; bool draw = false;   // draw: render each frame (home's buttons act there)
+  void hold(bool down, int x, int y, uint32_t dur) {
+    for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(now, ms, tr.step(down, x, y, ms)); if (draw) g.render(); }
+  }
   void tap(int x, int y) { hold(true, x, y, 60); hold(false, x, y, 500); }
 };
 static Save taken(Game& g) { const void* d = nullptr; size_t n = 0; assert(g.takeSave(&d, &n, true) && n == sizeof(Save)); Save s; memcpy(&s, d, n); return s; }
@@ -349,6 +352,45 @@ static void statsStripDoesNothing() {
   assert(taken(g).hasDog == 1);
 }
 
+// Word Fetch's live round as `debug` prints it (word=, cols=, typed=, tiles=): the test reads what the kid sees.
+struct WordRound { char word[16], tiles[16]; int cols, typed; };
+static WordRound wordRound(Game& g) {
+  fflush(stdout); FILE* tmp = tmpfile(); const int out = dup(1); dup2(fileno(tmp), 1);
+  g.debugPrint(); fflush(stdout); dup2(out, 1); close(out); rewind(tmp);
+  WordRound w{}; char line[256];
+  while (fgets(line, sizeof line, tmp)) sscanf(line, "word=%15s cols=%d typed=%d tiles=%15s", w.word, &w.cols, &w.typed, w.tiles);
+  fclose(tmp);
+  return w;
+}
+static void tileCenter(const WordRound& w, char ch, int& x, int& y) {
+  const int i = (int)(strchr(w.tiles, ch) - w.tiles);
+  x = (w.cols == 3 ? 41 : 28) + (i % w.cols) * 26 + 12; y = (w.cols == 3 ? 66 : 60) + (i / w.cols) * 26 + 12;
+}
+static void wordsUpToSecond(Game& g, Finger& f, const Save& s, uint32_t t) {   // the first word spelled, its pause begun
+  enterAt(g, s, t); f.draw = true;
+  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
+  WordRound w = wordRound(g);
+  for (const char* c = w.word; *c; c++) {   // a used tile is blanked so a repeated letter takes its next tile
+    int x, y; tileCenter(w, *c, x, y); w.tiles[strchr(w.tiles, *c) - w.tiles] = '.';
+    f.hold(true, x, y, 60); f.hold(false, 0, 0, 100);
+  }
+}
+// A press begun in the pause between words that lifts on the next word's first letter types nothing; a fresh tap
+// there does. The second word is read from a twin game fed the same touches (the round is seeded by the save).
+static void wordPauseTypesNothing() {
+  static Game ahead, g;
+  const uint32_t t = day0 + 3 * 86400;
+  Save s = dogWithWall(0); s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  Finger fa{ahead, t}; wordsUpToSecond(ahead, fa, s, t); fa.hold(false, 0, 0, 2000);
+  const WordRound next = wordRound(ahead); assert(next.typed == 0 && next.word[0]);
+  int x, y; tileCenter(next, next.word[0], x, y);
+  Finger f{g, t}; wordsUpToSecond(g, f, s, t);
+  f.hold(true, x, y, 2000); f.hold(false, x, y, 100);
+  WordRound w = wordRound(g); assert(!strcmp(w.word, next.word) && w.typed == 0);
+  f.hold(true, x, y, 60); f.hold(false, x, y, 100);
+  w = wordRound(g); assert(w.typed == 1);
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -384,6 +426,7 @@ int main() {
   bringBackOntoFullWall();
   bringBackFromTheEmptyRoom();
   statsStripDoesNothing();
+  wordPauseTypesNothing();
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }

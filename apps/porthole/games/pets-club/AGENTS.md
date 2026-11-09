@@ -16,7 +16,7 @@ layout, and the age-based content tables.
   nothing to write). `wantsHome()` reports whether the game wants
   the shell to show the launcher instead of resuming mid-screen. `pressMs_` is when the
   current press began, and `pressedAfter(ms)` holds a tap to a press begun at least `ms`
-  after `screenMs_`: a screen that changes in place (Fetch's and Word Fetch's results, the
+  after `screenMs_`: a screen that changes in place (Fetch's and Word Fetch's results and each next word, the
   lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift.
 - `content.h`, plus its level-3 extensions `content_level3_books.h` and
   `content_level3_words.h`: story text (`Book`) and spelling words (`WordClue`). Plain

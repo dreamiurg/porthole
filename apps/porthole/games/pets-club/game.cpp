@@ -830,7 +830,7 @@ void Game::nextWord() {
   while (k < nt) { char c = (char)('A' + pet::rnd(save_) % 26); pool[k++] = c; }
   for (int i = nt - 1; i > 0; i--) { int j = (int)(pet::rnd(save_) % (uint32_t)(i + 1)); char t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
   memcpy(tiles_, pool, (size_t)nt); for (auto& u : tileUsed_) u = false;
-  wordTyped_ = 0; wordWrongTile_ = -1; wordSolvedUntil_ = 0;
+  wordTyped_ = 0; wordWrongTile_ = -1; wordSolvedUntil_ = 0; screenMs_ = ms_;   // a press begun in the pause types nothing
 }
 void Game::updateWords() {
   if (wordsDone_) {
@@ -849,7 +849,7 @@ void Game::updateWords() {
   const char* w = WORDS[wordIdx_[wordRound_]].word; int n = (int)strlen(w);
   for (int i = 0; i < wordCols_ * 3; i++) {
     int x = tileX(i), y = tileY(i);
-    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28)) {
+    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28) && pressedAfter(0)) {
       if (tiles_[i] == w[wordTyped_]) {
         tileUsed_[i] = true; wordTyped_++; spawn(x + 12, y + 12, 1, 2);
         if (wordTyped_ >= n) { wordCorrect_++; wordSolvedUntil_ = ms_ + 1600; spawn(80, 50, 0, 5); }
@@ -892,7 +892,7 @@ void Game::drawWordTiles() {
     if (wordSolvedUntil_) continue;
     bool wrong = wordWrongTile_ == i && ms_ < wordWrongUntil_;
     int sh = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
-    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28});
+    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28}) && pressedAfter(0);
     roundRect(x + sh, y + 2, 24, 24, C_DKBROWN); roundRect(x + sh, y + (pr ? 1 : 0), 24, 24, C_DKBROWN);
     roundRect(x + 1 + sh, y + 1 + (pr ? 1 : 0), 22, 22, wrong ? C_RED : pr ? C_YELLOW : C_WHITE);
     char l[2] = {tiles_[i], 0}; textCentered(x + 12 + sh, y + 5 + (pr ? 1 : 0), l, C_DKBROWN, 2);
