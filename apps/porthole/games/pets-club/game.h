@@ -78,6 +78,8 @@ class Game : public App {
   int statsPage_ = 0; int hatSel_ = 0;
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
+  ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
+  uint32_t bounceUntil_ = 0;  // a screen's short reaction: the farm confirm's hint wiggles, the farm dog jumps (go() ends it)
 
   // ---- helpers
   void go(Screen s);

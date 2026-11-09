@@ -75,7 +75,10 @@ void Game::finishAdoption() {
 }
 const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
 
-void Game::go(Screen s) { screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_); }  // a tap acts on one screen only
+void Game::go(Screen s) {   // a tap acts on one screen only
+  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_);
+  yesHold_ = {}; bounceUntil_ = 0;
+}
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
 
 Tint Game::tint() const {
@@ -1233,7 +1236,7 @@ void Game::drawHats() {
   char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
   drawBackButton();
 }
-// Start over and the farm ask the same No / Yes.
+// Start over and the farm ask with the same No / Yes (the farm's Yes is held, below).
 static const ui::Box NO_BTN = {20, 90, 50, 24}, YES_BTN = {90, 90, 50, 24};
 static void drawNoYes(const Input& in) {
   ui::button(in, {NO_BTN, "No!", nullptr, C_GREEN});
@@ -1255,13 +1258,19 @@ void Game::drawConfirmReset() {
 }
 
 // ---------------------------------------------------------------- the farm: an old dog leaves only on the kid's yes
+// Yes can't be undone, so it takes a ui::HOLD_MS hold that fills the button: a sibling mashing the glass got there in
+// three taps. A tap on it only wiggles the "Hold Yes" hint.
+static bool holding(const Input& in, const ui::Box& b) {   // the finger went down in b and is still on it
+  return in.down && in.hit(b.x, b.y, b.w, b.h) && in.downX >= b.x && in.downX < b.x + b.w && in.downY >= b.y && in.downY < b.y + b.h;
+}
 void Game::updateConfirmFarm() {
-  if (tapBox(in_, NO_BTN)) go(SC_STATS);
-  if (tapBox(in_, YES_BTN)) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
+  if (tapBox(in_, NO_BTN)) { go(SC_STATS); return; }
+  yesHold_.step(holding(in_, YES_BTN), ms_);
+  if (yesHold_.progress() >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
     pet::retire(save_, now_); markDirty();
     farmSlot_ = (uint8_t)(save_.wallCount - 1); farmVisit_ = false; event_ = 0; weather_ = 0;
     go(SC_FARM);
-  }
+  } else if (tapBox(in_, YES_BTN)) bounceUntil_ = ms_ + 500;
 }
 void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pup comes next
   clear(C_NAVY);
@@ -1271,13 +1280,24 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
   snprintf(b, sizeof b, "%s will live there.\nThen pick a new pup.", save_.petName);
   n = wrap(b, 150, lines, 3);               // and 151 px at row 54; an 11-letter name takes two lines, never a fourth
   for (int i = 0; i < n; i++) textCentered(80, 54 + i * 9, lines[i], C_YELLOW);
-  drawNoYes(in_);
-  drawDog(80 - dogFrame(P_SIT).w / 2, 146, P_SIT, false);
+  ui::button(in_, {NO_BTN, "No!", nullptr, C_GREEN});
+  const bool pr = holding(in_, YES_BTN); const int dy = pr ? 1 : 0;
+  ui::drawButton({YES_BTN, nullptr, nullptr, C_BROWN}, pr);
+  const int fill = (int)(yesHold_.progress() * (YES_BTN.w - 2));   // white on plum and on brown: both readable
+  if (fill > 0) roundRect(YES_BTN.x + 1, YES_BTN.y + 1 + dy, fill, YES_BTN.h - 2, C_PLUM);
+  textCentered(YES_BTN.x + YES_BTN.w / 2, YES_BTN.y + dy + (YES_BTN.h - 7) / 2, "Yes", C_WHITE);
+  const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
+  textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
+  drawDog(80 - dogFrame(P_SIT).w / 2, 155, P_SIT, false);
 }
 static const ui::Box GO_HOME_BTN = {48, 126, 64, 22};
+static ui::Box farmDog(int breed) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
+  const Sprite& d = DOG_FRAMES[breed][SZ_BIG][P_IDLE0];
+  return {80 - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
+}
 void Game::updateFarm() {   // just moved here: Go home to the empty room; a visit: back to Farm friends
-  if (farmVisit_) { if (backButton()) go(SC_WALL); }
-  else if (tapBox(in_, GO_HOME_BTN)) go(SC_HOME);
+  if (farmVisit_ ? backButton() : tapBox(in_, GO_HOME_BTN)) { go(farmVisit_ ? SC_WALL : SC_HOME); return; }
+  if (tapBox(in_, farmDog(save_.wallBreeds[farmSlot_]))) { spawn(in_.x, in_.y - 6, 0, 3); bounceUntil_ = ms_ + 600; }   // no sound
 }
 void Game::drawFarm() {   // a dog on the farm (farmSlot_ on the wall) in the sun, under a sign with its name
   const char* who = save_.wallNames[farmSlot_];
@@ -1292,8 +1312,9 @@ void Game::drawFarm() {   // a dog on the farm (farmSlot_ on the wall) in the su
   rect(0, 80, 160, 3, C_WOOD); rect(0, 87, 160, 3, C_WOOD);
   rect(78, 60, 4, 16, C_DKWOOD);                                   // the sign's post, behind the dog
   ui::panel({40, 46, 80, 15}, C_TAN, C_DKBROWN); textCentered(80, 50, name, C_DKBROWN);
-  const Sprite& d = DOG_FRAMES[save_.wallBreeds[farmSlot_]][SZ_BIG][(ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0];
-  blitScaled(d, 80 - d.w, 120 - d.h * 2, 2);
+  const bool hop = ms_ < bounceUntil_;   // a pat: up off the grass
+  const Sprite& d = DOG_FRAMES[save_.wallBreeds[farmSlot_]][SZ_BIG][hop ? P_JUMP : (ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0];
+  blitScaled(d, 80 - d.w, (hop ? 114 : 120) - d.h * 2, 2);
   if (farmVisit_) drawBackButton(); else ui::button(in_, {GO_HOME_BTN, "Go home", nullptr, C_GREEN});
 }
 
@@ -1331,11 +1352,12 @@ void Game::adoptShelterPup() {
 }
 
 // ---------------------------------------------------------------- Farm friends: the memory wall up close
-// Pups at 2x (head and body: the paws are cropped) in a 2x2 grid, a name under each. Two 8-letter names side by side
-// need about 132 px, so every name row sits between y 36 and 124, where the chord is that wide.
-static ui::Box wallPicture(int n, int i) {   // a picture on Farm friends; a tap visits that dog on the farm
+// Pups at 2x (head and body: the paws are cropped) in a 2x2 grid, a name over each. Every picture sits below the room's
+// frames (WALL ends at y 65), so the second tap of a slow double tap on them can't visit a dog; that leaves no room for
+// names under the bottom row, where the chord is too narrow for two 8-letter names (about 132 px) side by side.
+static ui::Box wallPicture(int n, int i) {   // a picture's gold frame on Farm friends; a tap visits that dog on the farm
   int c2, r2; slot(n, i, c2, r2);
-  return {47 + c2 * 33 - 24, 40 + r2 * 43 / 2, 48, 32};
+  return {32 + c2 * 25, 66 + r2 * 23, 46, 30};
 }
 void Game::updateWall() {
   if (backButton()) { go(SC_HOME); return; }
@@ -1347,10 +1369,13 @@ void Game::drawWall() {
   const int n = save_.wallCount;
   for (int i = 0; i < n; i++) {
     const ui::Box p = wallPicture(n, i);
-    rect(p.x, p.y, p.w, p.h, C_DKBROWN);
-    framedPup(p.x + 1, p.y + 1, DOG_PORTRAIT[save_.wallBreeds[i]], 2);
+    rect(p.x - 1, p.y - 1, p.w + 2, p.h + 2, C_DKBROWN);
+    framedPup(p.x, p.y, DOG_PORTRAIT[save_.wallBreeds[i]], 2);
     char name[12]; fitName(save_.wallNames[i], name, 64);
-    textCentered(p.x + 24, p.y + 34, name, C_DKBROWN);
+    const int w = textWidth(name), cx = p.x + p.w / 2; int x = cx - w / 2;   // over the picture, but a long name
+    if (cx < 80 && x > 78 - w) x = 78 - w;                                    // keeps to its own half of the glass
+    if (cx > 80 && x < 82) x = 82;
+    text(x, p.y - 10, name, C_DKBROWN);
   }
   drawBackButton();
 }

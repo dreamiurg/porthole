@@ -44,7 +44,20 @@ expect hasDog=1
 expect pet=Biscuit
 tap 80 77
 wait 450
+# Yes can't be undone, so it takes a hold: a tap, a double tap or letting go early keeps the dog
 tap 115 102
+wait 450
+tap 115 102
+tap 115 102
+wait 450
+down 115 102
+wait 300
+snap 00b_confirm_holding
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+hold 115 102
 wait 450
 expect-screen farm
 expect hasDog=0
@@ -53,6 +66,12 @@ expect farm=Biscuit
 expect visit=0
 ui-check
 snap 01_farm
+# a pat: the dog jumps (hearts), and the farm stays put
+tap 80 95
+wait 80
+expect-screen farm
+snap 01b_farm_pat
+wait 900
 # an impatient finger tapping one spot a little slower than the fresh gate: Go home, then nothing in the empty room
 # (its Shelter sits higher), so the taps never chain on through the shelter into naming a pup
 tap 80 137
@@ -151,14 +170,19 @@ expect-screen wall
 expect oldest=Biscuit
 ui-check wall1
 snap 07b_wall
-# Biscuit's picture visits him on the farm; back is Farm friends
-tap 80 77
+# Biscuit's picture visits him on the farm, where a pat makes him jump; back is Farm friends
+tap 80 104
 wait 450
 expect-screen farm
 expect farm=Biscuit
 expect visit=1
 ui-check farm-visit
 snap 07d_farm_visit
+tap 80 95
+wait 80
+expect-screen farm
+snap 07e_farm_visit_pat
+wait 900
 tap 80 12
 wait 450
 expect-screen wall
@@ -178,7 +202,7 @@ tap 40 27
 wait 450
 tap 80 77
 wait 450
-tap 115 102
+hold 115 102
 wait 450
 expect-screen farm
 expect wall=2
@@ -192,7 +216,7 @@ expect newest=Choco
 ui-check wall2
 snap 07c_wall_two
 # the right-hand picture is Choco's
-tap 113 77
+tap 105 104
 wait 450
 expect-screen farm
 expect farm=Choco
@@ -283,7 +307,7 @@ wait 200
 expect asleep=1
 tap 80 77
 wait 450
-tap 115 102
+hold 115 102
 wait 450
 tap 80 137
 wait 450
@@ -340,8 +364,23 @@ expect oldest=Choco
 expect newest=Charcoal
 ui-check wall4
 snap 14_wall_four
+# Farm friends' pictures sit below the room's frames: a double tap on the frames, quick or a little slower than the
+# fresh gate, stops on Farm friends and never visits the oldest dog
+tap 80 12
+wait 450
+tap 53 53
+tap 53 53
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+tap 53 53
+wait 600
+tap 53 53
+wait 450
+expect-screen wall
 # the newest, bottom right: Charcoal's name is the widest on the farm's two lines too
-tap 113 99
+tap 105 127
 wait 450
 expect-screen farm
 expect farm=Charcoal

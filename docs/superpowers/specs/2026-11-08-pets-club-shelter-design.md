@@ -70,14 +70,17 @@ wears. Nothing the kid earned is lost.
 
 - `SC_FARM`: a farm scene (field, fence, sun) with the dog in its grown size, a wooden sign with its name,
   a line saying "Connor lives here now!", and **Go home**. One rare sound here is fine (a goodbye moment),
-  through the existing `Sound` enum; the build plays none.
+  through the existing `Sound` enum; the build plays none. Tapping the dog pats it: it jumps and a few
+  hearts float up, with no sound and nothing saved, both here and on a visit. (Added after the second
+  playtest, 2026-11-09: the visit was a still picture.)
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
   not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
 - Name step: reuse the existing pet-name keyboard (`SC_NAME_PET`), prefilled with the shelter name. OK
   keeps it, editing changes it.
 - Room: the Memory Wall frames hang on the wall. Tapping them opens **Farm friends** (`SC_WALL`): each dog's
-  picture with its name. Tapping a picture visits that dog on the farm (the same `SC_FARM` scene, its name
+  picture with its name over it. Every picture sits below the room's frames, so the second tap of a slow
+  double tap on the frames stops on Farm friends instead of visiting a dog. Tapping a picture visits that dog on the farm (the same `SC_FARM` scene, its name
   and breed from that frame) with the back button to Farm friends instead of Go home. (Revised after the
   first playtest, 2026-11-09: this replaces the toast, which answered "can I see him?" with words only.)
 - The room without a dog shows only Shelter (and the way back). Every new screen has a visible way back.
@@ -87,7 +90,9 @@ wears. Nothing the kid earned is lost.
 **Where the farm button lives.** On the Stats screen next to the existing long-press "Start over", shown
 only once the dog is old enough (decision 1), in a calm color so it is not the page's call to action. It
 asks once, "Move Connor to the farm?" and says what happens: "Connor will live there. Then pick a new pup."
-No (green, the easy one) / Yes, like the reset confirm.
+No (green, the easy one) / Yes. Yes takes a short press-and-hold (`ui::HOLD_MS`, 600 ms; the button fills
+as it is held, and "Hold Yes" sits under the buttons); a plain tap on Yes only wiggles that hint. (Added
+after the second playtest, 2026-11-09: a random masher reached the farm in three taps, 4 runs in 40.)
 
 ## Grown-up decisions (approved: every proposal below)
 

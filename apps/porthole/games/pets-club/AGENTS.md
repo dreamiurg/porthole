@@ -75,10 +75,14 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   old dog's Stats page then swaps its four stat-pip rows (home still shows them) for "To
   the farm" (sky blue: calm, not a call to action), which asks "Move <name> to the farm?"
   and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No /
-  Yes, like Start over). Yes calls `pet::retire` and shows `SC_FARM` (the dog in the sun
-  under a sign with its name, "<name> lives here now!", "Go home"); no sound. Yes also
-  clears the room's window event and rain, which only run with a dog. Time away never
-  retires a dog.
+  Yes, like Start over). Yes can't be undone, so it takes a `ui::HOLD_MS` (600 ms) hold
+  (`yesHold_`, a `ui::Hold`) that fills the button plum, with "Hold Yes" under the buttons;
+  a tap on Yes only wiggles that hint (a random masher got there in three taps). The hold
+  calls `pet::retire` and shows `SC_FARM` (the dog in the sun under a sign with its name,
+  "<name> lives here now!", "Go home"); no sound. It also clears the room's window event
+  and rain, which only run with a dog. A tap on the farm's dog, on a visit too, pats it: a
+  jump and a few hearts, no sound, nothing saved (`bounceUntil_`; `go()` ends it and
+  resets `yesHold_`). Time away never retires a dog.
 - **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/
   done, streak, every counter, theme, the kid's fields and the wall. Reset, through
   `freshDog`, the same defaults `pet::adopt` uses: `petName` (empty), `adoptedAt`, stage,
@@ -101,9 +105,11 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 - **The memory wall.** The wall keeps the last `WALL_SLOTS` (4) dogs, oldest first; a
   fifth retire takes the oldest frame down. In the room the frames hang between the door
   and the window (the hotspot `WALL`, live whenever `wallCount > 0`, empty room included)
-  and open `SC_WALL`, "Farm friends": each pup at 2x with its name, fitted to 64 px. A
-  picture visits that dog on the farm (`SC_FARM` for that slot, `farmVisit_`): the back
-  button there returns to Farm friends.
+  and open `SC_WALL`, "Farm friends": each pup at 2x with its name over it, fitted to 64
+  px. Every picture sits below `WALL`, so the second tap of a slow double tap on the
+  frames stops on Farm friends instead of visiting a dog. A picture visits that dog on the
+  farm (`SC_FARM` for that slot, `farmVisit_`): the back button there returns to Farm
+  friends.
 
 Debug (see `docs/playtesting.md`): `dbg old` ages the dog to `RETIRE_DAYS`; `dbg wall5`
 puts five shelter pups, Romeo to Charcoal (the widest name), through the farm and keeps
