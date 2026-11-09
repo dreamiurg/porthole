@@ -26,13 +26,13 @@ class Game : public App {
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "sleepy" "younger" "older" "breed N"
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N"
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
                           SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_CONFIRM_RESET, SC_HATS,
-                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER };
+                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -141,6 +141,7 @@ class Game : public App {
   void updateConfirmFarm(); void drawConfirmFarm();
   void updateFarm(); void drawFarm();
   void updateShelter(); void drawShelter(); void adoptShelterPup();
+  void updateWall(); void drawWall();
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

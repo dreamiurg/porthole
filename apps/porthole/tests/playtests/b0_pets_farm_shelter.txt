@@ -1,7 +1,12 @@
 # Pets Club: the farm and the shelter. A dog 30 days old may move to the farm, only on the kid's yes; the empty room
-# then shows only the Shelter, seven kennels with a named pup in each; the kid keeps or changes the name.
+# then shows only the Shelter, seven kennels with a named pup in each; the kid keeps or changes the name. Each dog on
+# the farm hangs as a small frame on the room's wall; the frames open "Farm friends".
 newgame Sam Biscuit
 wait 2400
+# no dog on the farm yet: no frames, and their spot on the wall does nothing
+tap 53 53
+wait 450
+expect-screen home
 tap 40 27
 wait 450
 expect-screen stats
@@ -52,13 +57,20 @@ expect-screen home
 expect hasDog=0
 ui-check home-empty
 snap 02_empty_room
-# only the Shelter: the care buttons, the stat pips and the door are gone
+# only the Shelter (and the door, and Biscuit's frame): the care buttons and the stat pips are gone
 tap 40 129
 tap 118 129
 tap 40 27
-tap 27 51
 wait 450
 expect-screen home
+# the front door still opens Paw Street, and back comes home to the empty room
+tap 27 51
+wait 450
+expect-screen street
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
 tap 80 128
 wait 450
 expect-screen shelter
@@ -119,6 +131,18 @@ wait 900
 expect-screen home
 expect pet=Choco
 snap 07_home_choco
+# Biscuit's frame on the wall opens Farm friends; back comes home
+ui-check home-wall1
+snap 05_room_with_frame
+tap 53 53
+wait 450
+expect-screen wall
+expect oldest=Biscuit
+ui-check wall1
+snap 06_wall
+tap 80 12
+wait 450
+expect-screen home
 sheet farm_shelter
 # Choco grows old too; Waffles the Corgi gets a new name: an empty name cannot be OKed, "Bingo" can
 dbg old
@@ -208,6 +232,7 @@ wait 900
 tap 80 80
 wait 900
 expect-screen home
+ui-check home-grown-wall2
 tap 40 27
 wait 450
 expect-screen stats
@@ -247,3 +272,24 @@ wait 450
 expect-screen street
 snap 12_street_empty_house
 sheet night
+# five more dogs through the farm: the wall keeps the last four, oldest first, and Ann's pup stays home
+tap 80 12
+wait 450
+expect-screen home
+dbg wall5
+wait 100
+expect wall=4
+expect hasDog=1
+ui-check home-wall4
+snap 13_room_four_frames
+tap 53 53
+wait 450
+expect-screen wall
+expect oldest=Boxy
+expect newest=Marsha
+ui-check wall4
+snap 14_wall_four
+tap 80 12
+wait 450
+expect-screen home
+sheet wall

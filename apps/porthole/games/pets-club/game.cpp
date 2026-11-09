@@ -131,10 +131,16 @@ void Game::debugCmd(const char* cmd) {
   else debugAge(cmd);
   markDirty();
 }
-void Game::debugAge(const char* cmd) {   // the dog's age and breed, the kid's age
+void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, the kid's age
   if (!strcmp(cmd, "grown")) save_.adoptedAt -= 10 * 86400;
   else if (!strcmp(cmd, "dog")) save_.adoptedAt -= 4 * 86400;
   else if (!strcmp(cmd, "old")) save_.adoptedAt -= RETIRE_DAYS * 86400;
+  else if (!strcmp(cmd, "wall5")) {   // five shelter pups through the farm (the oldest frame comes down); the kid's dog stays
+    Save s = save_;
+    for (int i = 0; i < 5; i++) { pet::adoptFromShelter(s, now_, (uint8_t)i, SHELTER_NAMES[i]); pet::retire(s, now_); }
+    memcpy(save_.wallNames, s.wallNames, sizeof s.wallNames); memcpy(save_.wallBreeds, s.wallBreeds, sizeof s.wallBreeds);
+    save_.wallCount = s.wallCount; save_.dogsRaised = s.dogsRaised;
+  }
   else if (!strncmp(cmd, "breed ", 6)) save_.breed = (uint8_t)atoi(cmd + 6);   // any byte: a corrupt one must still draw
   else if (!strcmp(cmd, "younger")) { save_.kidAge = 6; refreshBookList(); }
   else if (!strcmp(cmd, "older")) { save_.kidAge = 9; refreshBookList(); }
@@ -142,7 +148,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the kid's a
 const char* Game::screenName() const {
   static const char* N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "library", "read",
                             "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "confirm_reset", "hats", "street", "theme",
-                            "confirm_farm", "farm", "shelter"};
+                            "confirm_farm", "farm", "shelter", "wall"};
   return N[screen_];
 }
 void Game::debugPrint() {
@@ -157,6 +163,7 @@ void Game::debugPrint() {
   if (screen_ == SC_LIBRARY || screen_ == SC_READ) { const Book& bk = curBook(); int np = 0; while (bk.pages[np]) np++; printf("book=%d title=\"%s\" pages=%d page=%d correct=%d\n", bookList_[bookSel_], bk.title, np, page_, bk.correct); }
   if (screen_ == SC_FETCH) printf("fetch score=%d left=%d\n", fetchScore_, fetchDone_ ? 0 : (int)((fetchEndMs_ - ms_) / 1000));
   if (screen_ == SC_BATH) printf("bath spots=%d\n", spotsLeft_);
+  if (screen_ == SC_WALL) printf("oldest=%.11s newest=%.11s\n", save_.wallNames[0], save_.wallNames[clampi(save_.wallCount, 1, WALL_SLOTS) - 1]);
 }
 
 // ---------------------------------------------------------------- particles
@@ -260,8 +267,8 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updatePlayMenu, &Game::updateFetch, &Game::updateWords, &Game::updateLibrary, &Game::updateRead, &Game::updateTricks,
     &Game::updateTrain, &Game::updateBath, &Game::updateStats, &Game::updateStickers, &Game::updateGift, &Game::updateCelebrate,
     &Game::updateConfirmReset, &Game::updateHats, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
-    &Game::updateFarm, &Game::updateShelter};
-  static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_SHELTER + 1, "one update per screen, in Screen order");
+    &Game::updateFarm, &Game::updateShelter, &Game::updateWall};
+  static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_WALL + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   if (haveSave_ && now_ != lastTickSec_) tick();
@@ -288,8 +295,8 @@ void Game::render() {
     &Game::drawPlayMenu, &Game::drawFetch, &Game::drawWords, &Game::drawLibrary, &Game::drawRead, &Game::drawTricks,
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
     &Game::drawConfirmReset, &Game::drawHats, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
-    &Game::drawShelter};
-  static_assert(sizeof DRAW / sizeof DRAW[0] == SC_SHELTER + 1, "one draw per screen, in Screen order");
+    &Game::drawShelter, &Game::drawWall};
+  static_assert(sizeof DRAW / sizeof DRAW[0] == SC_WALL + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   drawParticles();
@@ -408,11 +415,32 @@ void Game::drawShelf(int x, int y) {
   }
   blit(SPR_HEART, x + 27, y + 2);  // a little decoration on top shelf
 }
+static void wallpaper(const Theme& th, int h) {   // the room's wall color and its dots, rows 0..h-1
+  rect(0, 0, 160, h, th.wall);
+  for (int y = 6; y < h; y += 12) for (int x = (y / 12) % 2 ? 6 : 0; x < 160; x += 12) pixel(x, y, th.dots);
+}
+// The memory wall: each dog on the farm, oldest first, as a gold-edged picture of its pup sitting on the grass. Frames
+// fill a 2x2 grid; one or two share a middle row and a lone last one centers, so slot() counts in half cells.
+static void slot(int n, int i, int& col2, int& row2) {
+  col2 = i == n - 1 && n % 2 ? 1 : (i % 2) * 2; row2 = n <= 2 ? 1 : (i / 2) * 2;
+}
+static void framedPup(int x, int y, uint8_t breed, const ui::Box& crop, int scale) {   // crop: of the sitting pup's frame
+  const Sprite& s = DOG_FRAMES[breedOf(breed)][SZ_PUP][P_SIT];
+  const int w = crop.w * scale, h = crop.h * scale, sky = h * 3 / 4;
+  frame(x, y, w + 2, h + 2, C_GOLD);
+  rect(x + 1, y + 1, w, sky, C_SKY); rect(x + 1, y + 1 + sky, w, h - sky, C_LEAF);
+  for (int r = 0; r < crop.h; r++) for (int c = 0; c < crop.w; c++) {
+    const uint8_t px = s.px[(crop.y + r) * s.w + crop.x + c];
+    if (px != C_T) rect(x + 1 + c * scale, y + 1 + r * scale, scale, scale, px);
+  }
+}
+// The frames hang between the door and the window, 12 px each and 1 px apart; the window gave up 10 px (44 -> 34) so
+// that one 25 px hotspot fits 2 px clear of the door's and the gift's.
+static const ui::Box WALL = {41, 41, 25, 25};
 void Game::drawRoom() {
   bool night = save_.asleep;
   const Theme& th = themeOf(save_);
-  rect(0, 0, 160, HOME_FLOOR_Y, th.wall);
-  for (int y = 6; y < HOME_FLOOR_Y; y += 12) for (int x = (y / 12) % 2 ? 6 : 0; x < 160; x += 12) pixel(x, y, th.dots);  // wallpaper dots
+  wallpaper(th, HOME_FLOOR_Y);
   rect(0, HOME_FLOOR_Y, 160, 160 - HOME_FLOOR_Y, th.floor);
   rect(0, HOME_FLOOR_Y, 160, 2, C_DKWOOD);
   for (int y = HOME_FLOOR_Y + 8; y < 160; y += 8) hline(0, y, 160, th.plank);
@@ -420,8 +448,14 @@ void Game::drawRoom() {
   rect(46, 108, 68, 12, th.rug); frame(46, 108, 68, 12, th.rugEdge); checker(50, 111, 60, 6, th.rug, th.rugAlt);
   // front door (to the street)
   rect(20, 40, 14, 26, C_DKWOOD); rect(22, 42, 10, 24, C_WOOD); rect(24, 44, 6, 8, C_DKWOOD); pixel(30, 55, C_GOLD);
-  drawWindow(58, 30, 44, 34);
+  drawWindow(70, 30, 34, 34);
   drawShelf(112, 40);
+  const int n = clampi(save_.wallCount, 0, WALL_SLOTS);
+  for (int i = 0; i < n; i++) {   // 1x: the pup's head
+    int c2, r2; slot(n, i, c2, r2);
+    const DogParts& dp = DOG_PARTS[breedOf(save_.wallBreeds[i])][SZ_PUP][P_SIT];
+    framedPup(WALL.x + c2 * 13 / 2, WALL.y + r2 * 13 / 2, save_.wallBreeds[i], {clampi(dp.headX - 5, 0, 14), clampi(dp.headY - 5, 0, 8), 10, 10}, 1);
+  }
   blitScaled(night ? SPR_LAMP_OFF : SPR_LAMP_ON, 14, 68, 2);
   if (!night) { for (int i = 0; i < 3; i++) pixel(32 + i * 2, 70 + i, C_YELLOW); }
   blitScaled(SPR_BOWL, 20, 100, 2);
@@ -443,6 +477,7 @@ int Game::idlePose() {
 void Game::startTrickShow(int trick) { trickShow_ = trick; dogAct_ = 10; dogActUntil_ = ms_ + 2600; }
 
 // Home layout: the back button sits top center; the stat pips (they open the stats page) stand in two pairs either side.
+// The memory wall's frames (WALL, above) hang in the 25 px between the door's hotspot and the window, under the pips.
 static const int PIPS_L = 30, PIPS_R = 106, PIPS_Y = 19;
 // Every home hotspot is at least 2 px from the others (the UI audit's spacing), the dog's included wherever it walks:
 // it keeps to the rug between the bowl and the ball (its box x-4 .. x+w+4 stays within 48..118), under the shelf's
@@ -469,8 +504,9 @@ void Game::dogBox(int& x, int& y, int& w, int& h) const {   // from 4 px above t
 static const ui::Box SHELTER_BTN = {44, 116, 72, 24};
 void Game::updateHome() {
   if (backButton()) { wantsHome_ = true; return; }
-  if (!save_.hasDog) { if (tapBox(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); } return; }   // the empty room: only the shelter
-  if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street
+  if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
+  if (save_.wallCount && tapBox(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends
+  if (!save_.hasDog) { if (tapBox(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); } return; }   // the empty room: the shelter
   homeBrain();
   homeEvents();
   homeTouches();
@@ -546,6 +582,7 @@ bool Game::butterflyClear(const ui::Box& b) const {
   static const ui::Box FIXED[] = {DOOR, LAMP, BOWL, BALL, SHELF, PIPS_LBOX, PIPS_RBOX};
   for (const ui::Box& o : FIXED) if (!apart(b, o)) return false;
   if (pet::giftReady(save_, now_) && !apart(b, GIFT)) return false;
+  if (save_.wallCount && !apart(b, WALL)) return false;
   if (save_.poop && !apart(b, {poopX(), POOP_Y, POOP_W, POOP_H})) return false;
   ui::Box dog; dogBox(dog.x, dog.y, dog.w, dog.h);
   return apart(b, dog);
@@ -1275,6 +1312,25 @@ void Game::adoptShelterPup() {
   char t[32], b[48];
   snprintf(t, sizeof t, "Welcome home, %s!", save_.petName); snprintf(b, sizeof b, "%s and %s, best friends.", save_.kidName, save_.petName);
   celebrate(t, b, 0, SC_HOME);
+}
+
+// ---------------------------------------------------------------- Farm friends: the memory wall up close
+// Pups at 2x (head and body: the paws are cropped) in a 2x2 grid, a name under each. Two 8-letter names side by side
+// need about 132 px, so every name row sits between y 36 and 124, where the chord is that wide.
+void Game::updateWall() { if (backButton()) go(SC_HOME); }
+void Game::drawWall() {
+  wallpaper(themeOf(save_), 160);
+  textCentered(80, 30, "Farm friends", C_DKBROWN);
+  const int n = clampi(save_.wallCount, 0, WALL_SLOTS);
+  for (int i = 0; i < n; i++) {
+    int c2, r2; slot(n, i, c2, r2);
+    const int cx = 47 + c2 * 33, y = 40 + r2 * 43 / 2;
+    rect(cx - 24, y, 48, 32, C_DKBROWN);
+    framedPup(cx - 23, y + 1, save_.wallBreeds[i], {1, 0, 22, 14}, 2);
+    char name[12]; memcpy(name, save_.wallNames[i], sizeof name); name[11] = 0;
+    textCentered(cx, y + 34, name, C_DKBROWN);
+  }
+  drawBackButton();
 }
 
 // ---------------------------------------------------------------- gift & celebrate

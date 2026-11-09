@@ -191,6 +191,20 @@ static void breedClampDraws() {
   assert(!memcmp(golden, corrupt, sizeof golden) && memcmp(golden, corgi, sizeof golden));
 }
 
+// A dog that falls asleep at 16:00 and moves to the farm leaves the room in daylight: the night tint follows the dog.
+static Tint homeTintAt1600(bool retired) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 6 * 3600;
+  Save s; pet::adopt(s, t, "Sam", "Rex"); pet::setAsleep(s, t, true); s.energy = 20;   // too tired to wake by itself
+  if (retired) pet::retire(s, t);
+  pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+  assert(!strcmp(g.screenName(), "home"));
+  return g.tint();
+}
+static void retiredSleeperLeavesDay() { assert(homeTintAt1600(false) == TINT_NIGHT && homeTintAt1600(true) == TINT_DAY); }
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -217,6 +231,7 @@ int main() {
   levels(s);
   dayOnPickedLight();
   breedClampDraws();
+  retiredSleeperLeavesDay();
   petting(day0);
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
