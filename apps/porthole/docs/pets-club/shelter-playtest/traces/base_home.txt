@@ -1,0 +1,8 @@
+tick 1500
+shot 00_picker
+tap 80 67     # Mia taps her name
+tick 1500
+shot 01_after_mia
+tap 36 72     # Pets Club tile (orange dog)
+tick 3000
+shot 02_open
