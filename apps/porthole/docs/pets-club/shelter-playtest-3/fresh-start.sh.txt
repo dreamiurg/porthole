@@ -1,0 +1,9 @@
+#!/bin/bash
+# fresh.sh RUNDIR: stop driver, restore fixture, start driver (background), go to the farm question
+S=/tmp/claude-0/-home-user-porthole/4e7b951a-0e4f-5eae-859d-2ab6ed697cd9/scratchpad
+$S/send.sh quit >/dev/null 2>&1; sleep 0.5
+cp /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/*.sav /home/user/porthole/apps/porthole/build/host/
+echo "# ---- fresh process, fixture restored ----" >> $1/trace.txt 2>/dev/null
+(cd $S && nohup python3 drv.py $1 $S/sock >/dev/null 2>&1 &)
+sleep 1
+$S/send.sh "tick 1000" "tap 80 67" "tick 1000" "tap 36 72" "tick 1500" "tap 80 100" "tick 1500" "tap 45 22" "tick 800" "tap 80 77" "tick 500"

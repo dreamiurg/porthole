@@ -1,0 +1,240 @@
+tap 65 144 66
+tick 66
+tap 125 71 200
+tick 33
+tap 54 125 200
+tick 99
+tap 126 106 300
+tick 33
+tap 64 43 200
+tick 66
+tap 45 15 99
+tick 33
+tap 73 126 200
+tick 99
+tap 104 114 132
+tick 99
+tap 39 98 40
+tick 33
+tap 39 131 66
+tick 66
+tap 116 82 132
+tick 99
+tap 103 151 99
+tick 99
+tap 91 12 99
+tick 99
+tap 46 88 200
+tick 99
+tap 59 151 99
+tick 66
+tap 36 21 132
+tick 99
+tap 128 27 99
+tick 33
+tap 110 43 40
+tick 66
+tap 114 111 40
+tick 33
+tap 16 101 300
+tick 99
+tap 89 146 99
+tick 99
+tap 65 14 99
+tick 33
+tap 24 32 200
+tick 99
+tap 13 55 132
+tick 66
+tap 72 44 300
+tick 33
+tap 91 85 99
+tick 33
+tap 101 101 132
+tick 99
+tap 103 148 40
+tick 99
+tap 134 74 132
+tick 99
+tap 65 82 132
+tick 66
+tap 138 82 200
+tick 66
+tap 153 85 40
+tick 66
+tap 20 90 132
+tick 66
+tap 95 76 300
+tick 66
+tap 99 69 300
+tick 66
+tap 81 86 66
+tick 66
+tap 52 85 99
+tick 99
+tap 72 81 132
+tick 33
+tap 38 84 200
+tick 33
+tap 73 66 99
+tick 33
+tap 116 29 40
+tick 99
+tap 87 90 300
+tick 33
+tap 117 48 40
+tick 66
+tap 60 150 132
+tick 66
+tap 62 35 40
+tick 99
+tap 53 85 200
+tick 33
+tap 76 92 300
+tick 33
+tap 38 112 99
+tick 99
+tap 74 123 99
+tick 99
+tap 111 79 132
+tick 99
+tap 109 14 132
+tick 33
+tap 127 135 132
+tick 99
+tap 61 13 300
+tick 66
+tap 137 78 200
+tick 66
+tap 63 22 200
+tick 66
+tap 35 67 40
+tick 33
+tap 136 55 132
+tick 99
+tap 128 35 66
+tick 99
+tap 81 66 300
+tick 33
+tap 110 18 200
+tick 33
+tap 92 37 99
+tick 99
+tap 95 61 66
+tick 33
+tap 48 66 99
+tick 33
+tap 17 74 66
+tick 66
+tap 113 18 132
+tick 66
+tap 130 85 66
+tick 66
+tap 23 94 132
+tick 99
+tap 82 97 99
+tick 33
+tap 89 114 40
+tick 33
+tap 102 25 200
+tick 33
+tap 15 100 132
+tick 99
+tap 143 102 300
+tick 33
+tap 115 18 99
+tick 99
+tap 132 85 132
+tick 99
+tap 112 122 40
+tick 33
+tap 60 142 99
+tick 99
+tap 23 113 66
+tick 66
+tap 88 100 200
+tick 66
+tap 36 123 300
+tick 33
+tap 140 101 300
+tick 33
+tap 86 149 200
+tick 33
+tap 126 41 66
+tick 66
+tap 30 101 66
+tick 33
+tap 92 36 40
+tick 33
+tap 128 77 200
+tick 66
+tap 140 66 40
+tick 99
+tap 88 149 66
+tick 33
+tap 66 51 300
+tick 33
+tap 121 105 99
+tick 66
+tap 106 94 200
+tick 66
+tap 26 101 200
+tick 33
+tap 110 46 132
+tick 99
+tap 137 128 66
+tick 99
+tap 107 43 66
+tick 33
+tap 132 128 300
+tick 99
+tap 52 39 99
+tick 33
+tap 136 85 66
+tick 99
+tap 142 80 300
+tick 99
+tap 154 73 66
+tick 66
+tap 10 73 132
+tick 66
+tap 56 49 200
+tick 66
+tap 66 87 132
+tick 33
+tap 112 127 300
+tick 99
+tap 57 124 200
+tick 99
+tap 128 23 132
+tick 99
+tap 63 65 300
+tick 99
+tap 22 60 99
+tick 33
+tap 53 71 66
+tick 33
+tap 14 70 66
+tick 33
+tap 85 51 132
+tick 33
+tap 26 35 40
+tick 66
+tap 79 14 99
+tick 66
+tap 153 91 40
+tick 33
+tap 90 89 132
+tick 66
+tap 129 24 66
+tick 99
+tap 105 37 200
+tick 66
+tap 35 75 40
+tick 99
+tap 115 33 132
+tick 99
+tap 69 29 200
+tick 99
+tap 100 99 132
+tick 66
