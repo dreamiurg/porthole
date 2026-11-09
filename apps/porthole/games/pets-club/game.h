@@ -77,6 +77,7 @@ class Game : public App {
   uint16_t stickersSeen_ = 0;
   int statsPage_ = 0; int hatSel_ = 0;
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
+  uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
 
   // ---- helpers
   void go(Screen s);

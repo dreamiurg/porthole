@@ -226,6 +226,24 @@ static Tint homeTintAt1600(bool retired) {
 }
 static void retiredSleeperLeavesDay() { assert(homeTintAt1600(false) == TINT_NIGHT && homeTintAt1600(true) == TINT_DAY); }
 
+// The week's streak sticker comes with the day's first touch, the empty room's too: its card shows no dog.
+static int celebrateDogInk(bool retired) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 7 * 86400;
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.streak = 6; s.lastPlayDay = (uint16_t)(pet::dayIndex(t) - 1);
+  if (retired) pet::retire(s, t);
+  pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});   // past the splash: home
+  Input press; press.down = press.pressed = true; press.x = 80; press.y = 150;
+  g.update(t, 3000, press); g.render();
+  assert(!strcmp(g.screenName(), "celebrate"));
+  int ink = 0;   // under the card, where the dog stands: anything but the night sky, its stars and the confetti
+  for (int y = 100; y < 134; y++) for (int x = 50; x < 110; x++) { const uint8_t c = gfx::fb[y * gfx::W + x]; ink += c != C_NAVY && (c < C_RED || c > C_PEACH); }
+  return ink;
+}
+static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 && celebrateDogInk(true) == 0); }
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -254,6 +272,7 @@ int main() {
   dayOnPickedLight();
   breedDraws();
   retiredSleeperLeavesDay();
+  emptyRoomCelebratesWithoutDog();
   petting(day0);
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;

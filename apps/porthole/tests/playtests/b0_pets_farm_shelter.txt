@@ -49,8 +49,16 @@ wait 450
 expect-screen farm
 expect hasDog=0
 expect wall=1
+expect farm=Biscuit
+expect visit=0
 ui-check
 snap 01_farm
+# an impatient finger tapping one spot a little slower than the fresh gate: Go home, then nothing in the empty room
+# (its Shelter sits higher), so the taps never chain on through the shelter into naming a pup
+tap 80 137
+wait 600
+tap 80 137
+wait 600
 tap 80 137
 wait 450
 expect-screen home
@@ -71,7 +79,10 @@ tap 80 12
 wait 450
 expect-screen home
 expect hasDog=0
-tap 80 128
+# Shelter twice, 600 ms apart: the kennels, not the keyboard (Pick me! sits lower)
+tap 80 102
+wait 600
+tap 80 102
 wait 450
 expect-screen shelter
 ui-check
@@ -95,7 +106,7 @@ wait 2400
 expect-screen home
 expect hasDog=0
 # the kennels start at Connor again; left wraps round to Charcoal, right comes back
-tap 80 128
+tap 80 102
 wait 450
 tap 26 80
 wait 100
@@ -140,6 +151,17 @@ expect-screen wall
 expect oldest=Biscuit
 ui-check wall1
 snap 07b_wall
+# Biscuit's picture visits him on the farm; back is Farm friends
+tap 80 77
+wait 450
+expect-screen farm
+expect farm=Biscuit
+expect visit=1
+ui-check farm-visit
+snap 07d_farm_visit
+tap 80 12
+wait 450
+expect-screen wall
 tap 80 12
 wait 450
 expect-screen home
@@ -169,11 +191,20 @@ expect-screen wall
 expect newest=Choco
 ui-check wall2
 snap 07c_wall_two
+# the right-hand picture is Choco's
+tap 113 77
+wait 450
+expect-screen farm
+expect farm=Choco
+expect visit=1
+tap 80 12
+wait 450
+expect-screen wall
 tap 80 12
 wait 450
 expect-screen home
 expect hasDog=0
-tap 80 128
+tap 80 102
 wait 450
 tap 134 80
 tap 134 80
@@ -309,6 +340,16 @@ expect oldest=Choco
 expect newest=Charcoal
 ui-check wall4
 snap 14_wall_four
+# the newest, bottom right: Charcoal's name is the widest on the farm's two lines too
+tap 113 99
+wait 450
+expect-screen farm
+expect farm=Charcoal
+ui-check farm-charcoal
+snap 15_farm_charcoal
+tap 80 12
+wait 450
+expect-screen wall
 tap 80 12
 wait 450
 expect-screen home
