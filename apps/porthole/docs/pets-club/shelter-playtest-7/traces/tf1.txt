@@ -1,0 +1,12 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 36 105 2000
+wait 3000
+hold 80 115 2000
+wait 300
+shot tf02_hold_play
+wait 3000
+shot tf03_later
+wait 4000
+shot tf04_later

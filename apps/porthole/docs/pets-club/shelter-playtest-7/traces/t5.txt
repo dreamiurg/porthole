@@ -1,0 +1,20 @@
+wait 1500
+hold 80 20 3000
+wait 600
+shot e01_hold_title3s
+hold 80 143 2000
+wait 600
+shot e02_hold_dev
+hold 80 93 2000
+wait 300
+shot e03_hold_new
+wait 600
+hold 25 60 2000
+wait 200
+shot e04_hold_A
+hold 25 60 1500
+wait 200
+shot e05_hold_A_again
+hold 25 60 1500
+wait 200
+shot e06_hold_A_3

@@ -1,0 +1,35 @@
+wait 1500
+tap 80 93
+wait 800
+hold 41 76 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 41 100 1500
+wait 150
+hold 41 76 1500
+wait 150
+hold 119 124 2000
+wait 300
+wait 1000
+wait 1000
+hold 96 87 2000
+wait 800
+hold 79 67 2000
+wait 300
+wait 1000
+wait 600
+hold 79 90 1500
+wait 200
+shot j01_one_digit
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 100
+shot j02_four_digits
+wait 1500
+shot j03_next

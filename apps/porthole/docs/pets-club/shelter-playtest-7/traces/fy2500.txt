@@ -1,0 +1,16 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 77 2000
+wait 1000
+hold 115 102 2500
+wait 300
+shot fy_2500_a
+wait 2000
+shot fy_2500_b

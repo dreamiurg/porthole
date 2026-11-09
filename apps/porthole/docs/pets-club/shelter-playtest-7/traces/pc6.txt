@@ -1,0 +1,20 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 139 2500
+wait 300
+shot u01_hold_bottom_text
+hold 80 150 2500
+wait 300
+shot u02_hold_very_bottom
+hold 56 132 2500
+wait 300
+shot u03_hold_stickers_low_edge
+wait 1500
+shot u04_after

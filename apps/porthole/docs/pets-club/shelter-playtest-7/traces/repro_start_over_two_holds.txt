@@ -1,0 +1,19 @@
+# Raw sim script (snap --fresh --script): two ordinary holds erase the dog.
+newgame Sam Biscuit
+wait 2500
+debug
+tap 45 22
+wait 1000
+# hold just under "Sam, age 8" on Stats (no visible control there)
+down 80 146
+wait 2500
+up
+wait 800
+screen
+# hold "Yes" for 2.0 s
+down 115 101
+wait 2000
+up
+wait 1500
+screen
+debug

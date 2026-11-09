@@ -1,0 +1,6 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 36 105 2000
+wait 3000
+shot tf01_open

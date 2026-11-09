@@ -1,0 +1,13 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+drag 40 128 80 100 500
+wait 600
+shot lc01_drag_off_food
+drag 80 100 92 128 500
+wait 600
+shot lc02_slide_onto_book

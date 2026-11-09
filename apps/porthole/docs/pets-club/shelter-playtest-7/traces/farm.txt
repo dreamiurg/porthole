@@ -1,0 +1,14 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 77 2000
+wait 300
+shot z01_after_farm_btn
+wait 1500
+shot z02_farm_q
