@@ -69,18 +69,25 @@ wears. Nothing the kid earned is lost.
 **Screens** (`game.cpp`, new `Screen` values appended):
 
 - `SC_FARM`: a farm scene (field, fence, sun) with the dog in its grown size, a wooden sign with its name,
-  and **Go home**. One rare sound here is fine (a goodbye moment), through the existing `Sound` enum.
+  a line saying "Connor lives here now!", and **Go home**. One rare sound here is fine (a goodbye moment),
+  through the existing `Sound` enum; the build plays none.
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
   not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
 - Name step: reuse the existing pet-name keyboard (`SC_NAME_PET`), prefilled with the shelter name. OK
   keeps it, editing changes it.
-- Room: the Memory Wall frames hang on the wall. Tapping a frame shows a toast: "Connor lives on the farm".
+- Room: the Memory Wall frames hang on the wall. Tapping them opens **Farm friends** (`SC_WALL`): each dog's
+  picture with its name. Tapping a picture visits that dog on the farm (the same `SC_FARM` scene, its name
+  and breed from that frame) with the back button to Farm friends instead of Go home. (Revised after the
+  first playtest, 2026-11-09: this replaces the toast, which answered "can I see him?" with words only.)
 - The room without a dog shows only Shelter (and the way back). Every new screen has a visible way back.
+  Decided: the empty room also hides stickers, hats and Start over (they live on the dog's Stats page) until
+  the next pup is adopted; nothing is lost, it all comes back with the new pup.
 
 **Where the farm button lives.** On the Stats screen next to the existing long-press "Start over", shown
-only once the dog is old enough (decision 1). It asks once, "Move Connor to the farm?", Yes / No, like the
-reset confirm.
+only once the dog is old enough (decision 1), in a calm color so it is not the page's call to action. It
+asks once, "Move Connor to the farm?" and says what happens: "Connor will live there. Then pick a new pup."
+No (green, the easy one) / Yes, like the reset confirm.
 
 ## Grown-up decisions (approved: every proposal below)
 

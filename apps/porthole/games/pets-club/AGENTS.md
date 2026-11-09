@@ -73,9 +73,12 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 
 - **The farm.** `pet::canRetire` is true once the dog is `RETIRE_DAYS` (30) days old. An
   old dog's Stats page then swaps its four stat-pip rows (home still shows them) for "To
-  the farm", which asks "Move <name> to the farm?" (`SC_CONFIRM_FARM`, No / Yes, like
-  Start over). Yes calls `pet::retire` and shows `SC_FARM` (the dog in the sun under a
-  sign with its name; "Go home"); no sound. Time away never retires a dog.
+  the farm" (sky blue: calm, not a call to action), which asks "Move <name> to the farm?"
+  and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No /
+  Yes, like Start over). Yes calls `pet::retire` and shows `SC_FARM` (the dog in the sun
+  under a sign with its name, "<name> lives here now!", "Go home"); no sound. Yes also
+  clears the room's window event and rain, which only run with a dog. Time away never
+  retires a dog.
 - **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/
   done, streak, every counter, theme, the kid's fields and the wall. Reset, through
   `freshDog`, the same defaults `pet::adopt` uses: `petName` (empty), `adoptedAt`, stage,
@@ -84,8 +87,11 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 - **The empty room** (`hasDog == 0`, until `pet::adoptFromShelter`): `pet::simulate` only
   moves `lastSeen`; nothing grows, decays or poops, and with no dog asleep there is no night tint.
   Only the Shelter button, the front door (Paw Street, whose house shows no pup) and the
-  wall work; the care buttons, the pips, the gift and the dog are gone. Start over lives on
-  Stats, so it can't be reached from an empty room -- adopt a pup first.
+  wall work; the care buttons, the pips, the gift and the dog are gone (a sticker earned
+  there celebrates with no dog). Stickers, hats and Start over live on Stats, so they
+  can't be reached from an empty room until the next pup is adopted (decided). The Shelter
+  button sits higher than the farm's Go home and the shelter's Pick me!, so a finger
+  tapping one spot a little slower than the fresh gate never chains into naming.
 - **The shelter** (`SC_SHELTER`): one kennel a page, arrows left and right (wrapping),
   starting on Connor each time it opens from the room, a tag with the pup's suggested name and breed, "Pick me!".
   Picking opens the pet-name keyboard (`SC_NAME_PET`) prefilled with that name: OK keeps
@@ -95,12 +101,14 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 - **The memory wall.** The wall keeps the last `WALL_SLOTS` (4) dogs, oldest first; a
   fifth retire takes the oldest frame down. In the room the frames hang between the door
   and the window (the hotspot `WALL`, live whenever `wallCount > 0`, empty room included)
-  and open `SC_WALL`, "Farm friends": each pup at 2x with its name, fitted to 64 px.
+  and open `SC_WALL`, "Farm friends": each pup at 2x with its name, fitted to 64 px. A
+  picture visits that dog on the farm (`SC_FARM` for that slot, `farmVisit_`): the back
+  button there returns to Farm friends.
 
 Debug (see `docs/playtesting.md`): `dbg old` ages the dog to `RETIRE_DAYS`; `dbg wall5`
 puts five shelter pups, Romeo to Charcoal (the widest name), through the farm and keeps
 the kid's dog; `dbg breed N` sets the breed (past the table: the Golden pup, as a load would). `debug` prints `breed=`,
-`hasDog=` and `wall=`, and on the wall screen `oldest=` / `newest=`. The scenario is
+`hasDog=` and `wall=`, on the wall screen `oldest=` / `newest=`, and on the farm `farm=` / `visit=`. The scenario is
 `tests/playtests/b0_pets_farm_shelter.txt`.
 
 Since Porthole, the shell's profile owns the kid's name, age, secret code, mute and rest
