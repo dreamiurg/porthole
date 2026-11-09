@@ -29,9 +29,7 @@ static const uint32_t SYS_HOLD_MS = 5000;
 static const ui::Box TITLE = {44, 5, 72, 22};   // ends 2 px above the first row with four profiles (y 29)
 bool Shell::titleHeld() {
   if (!sys_) return false;
-  const ui::Box& t = TITLE;   // hit() first, finger up or not: the audit frame sees the target
-  bool began = in_.downX >= t.x && in_.downX < t.x + t.w && in_.downY >= t.y && in_.downY < t.y + t.h;
-  return in_.hit(t.x, t.y, t.w, t.h) && in_.down && began && in_.heldMs >= SYS_HOLD_MS;
+  return ui::pressing(in_, TITLE) && in_.heldMs >= SYS_HOLD_MS;   // pressing logs TITLE, finger up or not: the audit sees it
 }
 
 // ---------------------------------------------------------------- "something new" (once, on the boot after an update)
@@ -44,7 +42,7 @@ void Shell::drawSysNew() {
   textCentered(80, 42, "Porthole has", C_NAVY);
   textCentered(80, 56, "something", C_NAVY, 2);
   textCentered(80, 76, "new!", C_NAVY, 2);
-  ui::drawButton({NEW_OK, "OK", nullptr, C_GREEN}, in_.down && in_.hit(NEW_OK.x, NEW_OK.y, NEW_OK.w, NEW_OK.h));
+  ui::drawButton({NEW_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NEW_OK));
 }
 
 // ---------------------------------------------------------------- the menu's font and widgets
@@ -82,7 +80,7 @@ static void fit(char* out, size_t n, const char* s, int room) {
     if (k > 2) out[k - 1] = out[k - 2] = '.';
   }
 }
-static bool down(const Input& in, const ui::Box& b) { return in.down && in.hit(b.x, b.y, b.w, b.h); }
+static bool down(const Input& in, const ui::Box& b) { return ui::pressing(in, b); }   // a press begun on it
 static bool tapped(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
 // ui::drawButton's look in the menu's font. A keyboard key is the same with a 1 px shadow, yellow while pressed.
 static void sbutton(const ui::Box& b, const char* label, uint8_t col, bool pressed, int shadow = 2) {
@@ -383,7 +381,7 @@ void Shell::drawSysTime() {
 static const ui::Box EDIT_MINUS = {26, 68, 24, 24}, EDIT_PLUS = {110, 68, 24, 24};
 static const ui::Box EDIT_CANCEL = {26, 110, 52, 22}, EDIT_SAVE = {82, 110, 52, 22};
 static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
-  const bool tap = tapped(in, box), held = in.longPress && in.hit(box.x, box.y, box.w, box.h);
+  const bool tap = tapped(in, box) && !in.longTap, held = in.longPress && in.hit(box.x, box.y, box.w, box.h);   // the hold's +10 alone
   if (!tap && !held) return value;
   int next = value + delta * (held ? 10 : 1);
   return next < 1 ? 1 : next > 1440 ? 1440 : next;
@@ -409,7 +407,7 @@ void Shell::drawSysLimits() {
 static const ui::Box WINDOW_TOGGLE = {42, 40, 76, 18}, WINDOW_CANCEL = {37, 125, 40, 20}, WINDOW_SAVE = {83, 125, 40, 20};
 static ui::Box windowStep(int row, bool plus) { return {plus ? 110 : 26, 70 + row * 32, 24, 20}; }
 static uint16_t stepTime(const Input& in, const ui::Box& b, uint16_t value, int sign) {
-  if (tapped(in, b)) return (uint16_t)((value + 1440 + sign * 15) % 1440);
+  if (tapped(in, b) && !in.longTap) return (uint16_t)((value + 1440 + sign * 15) % 1440);   // a hold's lift adds nothing
   if (in.longPress && in.hit(b.x, b.y, b.w, b.h)) return (uint16_t)((value + 1440 + sign * 60) % 1440);
   return value;
 }

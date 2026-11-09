@@ -20,8 +20,11 @@ struct Input {
   bool down = false;        // finger currently on screen
   bool pressed = false;     // went down this frame
   bool released = false;    // lifted this frame
-  bool tap = false;         // short press+release with little movement (fires on release)
+  // A press lifted with little movement, however long it was held (fires on release): a 5-7 year old often presses
+  // 1-3 s, and a button that ignores that teaches them buttons are broken.
+  bool tap = false;
   bool longPress = false;   // fires once when held >= 600ms
+  bool longTap = false;     // with tap: this press already fired longPress; a target with its own long press skips it
   int x = 0, y = 0;         // current (or last) logical position
   int downX = 0, downY = 0; // where the press started
   int px = 0, py = 0;       // previous frame position (for drags)
@@ -59,7 +62,7 @@ class InputTracker {
  public:
   Input step(bool rawDown, int rx, int ry, uint32_t ms) {
     Input in = last_;
-    in.pressed = in.released = in.tap = in.longPress = false;
+    in.pressed = in.released = in.tap = in.longPress = in.longTap = false;
     in.px = in.x; in.py = in.y;
     if (rawDown) { in.x = rx; in.y = ry; }
     if (rawDown && !in.down) { in.pressed = true; in.downX = rx; in.downY = ry; downMs_ = ms; longFired_ = false; moved_ = false; }
@@ -71,7 +74,7 @@ class InputTracker {
     }
     if (!rawDown && in.down) {
       in.released = true;
-      if (!moved_ && !longFired_ && in.heldMs < 600) in.tap = true;
+      if (!moved_) { in.tap = true; in.longTap = longFired_; }
       in.heldMs = 0;
     }
     in.down = rawDown;

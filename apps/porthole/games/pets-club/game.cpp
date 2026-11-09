@@ -566,7 +566,7 @@ void Game::homeEvents() {   // butterflies, the squirrel at the window, rain
 // Every hotspot is tested each frame (the UI audit relies on it); only a tap acts, and only the first one that matches.
 void Game::homeTouches() {
   int bx, by, bw, bh; dogBox(bx, by, bw, bh);
-  bool onDog = in_.tapIn(bx, by, bw, bh);
+  bool onDog = in_.tapIn(bx, by, bw, bh) && !(in_.longTap && !save_.asleep && !save_.dirty);   // the long press already petted it (updateHome)
   ui::Box fly = {eventX_ - 8, eventY_ - 8, 24, 22};
   if (event_ == 1 && butterflyClear(fly) && tapBox(in_, fly)) {  // caught the butterfly's attention
     event_ = 0; dogAct_ = 3; dogActUntil_ = ms_ + 1500; spawn(in_.x, in_.y, 1, 6);
@@ -661,7 +661,7 @@ void Game::drawHomeButtons() {
   static const Sprite* BTN_ICONS[4] = {&SPR_BOWL, &SPR_BALL, &SPR_BOOK, &SPR_PAW};
   static const uint8_t BTN_COLS[4] = {C_ORANGE, C_GREEN, C_BLUE, C_PLUM};
   for (int i = 0; i < 4; i++) {
-    bool pr = in_.down && in_.hit(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2);   // the drawn button and its shadow, 2 px apart
+    bool pr = ui::pressing(in_, {BTN_X[i], BTN_Y, BTN_W, BTN_H + 2});   // the drawn button and its shadow, 2 px apart
     ui::drawButton({{BTN_X[i], BTN_Y, BTN_W, BTN_H}, nullptr, nullptr, BTN_COLS[i]}, pr);
     const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
     if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
@@ -704,7 +704,7 @@ void Game::drawFeed() {
   static const char* names[3] = {"Kibble", "Bone", "Cookie"};
   static const Sprite* icons[3] = {&SPR_BOWL, &SPR_BONE, &SPR_COOKIE};
   for (int i = 0; i < 3; i++) {
-    int x = 22 + i * 40; bool pr = in_.down && in_.hit(x - 3, 43, 42, 42);
+    int x = 22 + i * 40; bool pr = ui::pressing(in_, {x - 3, 43, 42, 42});
     bool out = i == 2 && save_.treatsToday >= 3;   // cookies are rationed: three a day
     roundRect(x, 56 + (pr ? 1 : 0), 36, 30, C_DKBROWN); roundRect(x + 1, 57 + (pr ? 1 : 0), 34, 28, out ? C_LTGRAY : pr ? C_YELLOW : C_WHITE);
     blitScaled(*icons[i], x + 18 - icons[i]->w, 60 + (pr ? 1 : 0) + (8 - icons[i]->h), 2);
@@ -725,7 +725,7 @@ void Game::updatePlayMenu() {
 void Game::drawPlayMenu() {
   drawRoom();
   ui::panel({24, 34, 112, 100}, C_CREAM, C_DKBROWN);
-  bool p1 = in_.down && in_.hit(30, 40, 100, 40), p2 = in_.down && in_.hit(30, 88, 100, 40);
+  bool p1 = ui::pressing(in_, {30, 40, 100, 40}), p2 = ui::pressing(in_, {30, 88, 100, 40});
   ui::drawButton({{34, 42, 92, 36}, "Fetch!", nullptr, C_GREEN}, p1); blitScaled(SPR_BALL, 40, 52, 2); blitScaled(SPR_BONE, 96, 55, 2);
   ui::drawButton({{34, 90, 92, 36}, "Word Fetch", nullptr, C_BLUE}, p2); blitScaled(SPR_BOOK, 40, 96, 1); text(106, 96, "A", C_DKBROWN, 2);
   drawBackButton();
@@ -889,7 +889,7 @@ void Game::drawWordTiles() {
     if (wordSolvedUntil_) continue;
     bool wrong = wordWrongTile_ == i && ms_ < wordWrongUntil_;
     int sh = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
-    bool pr = in_.down && in_.hit(x - 2, y - 2, 28, 28);
+    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28});
     roundRect(x + sh, y + 2, 24, 24, C_DKBROWN); roundRect(x + sh, y + (pr ? 1 : 0), 24, 24, C_DKBROWN);
     roundRect(x + 1 + sh, y + 1 + (pr ? 1 : 0), 22, 22, wrong ? C_RED : pr ? C_YELLOW : C_WHITE);
     char l[2] = {tiles_[i], 0}; textCentered(x + 12 + sh, y + 5 + (pr ? 1 : 0), l, C_DKBROWN, 2);
@@ -899,9 +899,12 @@ void Game::drawWordTiles() {
 // ---------------------------------------------------------------- library & reading
 // The paging arrows either side of a picker (books, hats, kennels), centered on row y.
 static const int ARROW_LX = 26, ARROW_RX = 134, ARROW_R = 16;   // centers and the hit radius (drawn 12)
-static void drawArrows(int y) {
-  circle(ARROW_LX, y + 1, 12, C_DKBROWN); circle(ARROW_LX, y, 11, C_ORANGE); blitTint(SPR_ARROW, ARROW_LX - 4, y - 4, C_WHITE, true);
-  circle(ARROW_RX, y + 1, 12, C_DKBROWN); circle(ARROW_RX, y, 11, C_ORANGE); blitTint(SPR_ARROW, ARROW_RX - 2, y - 4, C_WHITE);
+static void drawArrows(const Input& in, int y) {   // sunk and darker while a press that began on one is held
+  for (int right = 0; right < 2; right++) {
+    const int cx = right ? ARROW_RX : ARROW_LX, dy = ui::pressing(in, cx, y, ARROW_R) ? 1 : 0;
+    circle(cx, y + 1, 12, C_DKBROWN); circle(cx, y + dy, 11, dy ? (uint8_t)C_BROWN : (uint8_t)C_ORANGE);
+    blitTint(SPR_ARROW, cx - (right ? 2 : 4), y - 4 + dy, C_WHITE, !right);
+  }
 }
 static int arrowTap(const Input& in, int y) { return in.tapInCircle(ARROW_LX, y, ARROW_R) ? -1 : in.tapInCircle(ARROW_RX, y, ARROW_R) ? 1 : 0; }
 static int arrowClick(const Input& in, int y) { return ui::clicked(in, ARROW_LX, y, ARROW_R) ? -1 : ui::clicked(in, ARROW_RX, y, ARROW_R) ? 1 : 0; }   // on release
@@ -935,7 +938,7 @@ void Game::drawLibrary() {
   else blitTint(SPR_CHECK, 96, 84, C_GREEN);
   char lines[2][40]; int nl = wrap(bk.title, 110, lines, 2);
   for (int i = 0; i < nl; i++) textCenteredShadow(80, 96 + i * 9, lines[i], C_WHITE, C_DKBROWN);
-  drawArrows(70);
+  drawArrows(in_, 70);
   ui::button(in_, {{44, 118, 72, 24}, done ? "Read again" : "Read to me!", nullptr, C_GREEN});
   int shown = save_.booksUnlocked < nBooks_ ? save_.booksUnlocked : nBooks_;
   char b[32]; snprintf(b, sizeof b, "book %d of %d", bookSel_ + 1, shown); textCentered(80, 24, b, C_CREAM);
@@ -1003,7 +1006,7 @@ void Game::drawReadQuestion(int qTop) {
   int na = 0; while (na < 3 && bk.answers[na]) na++;
   for (int i = 0; i < na; i++) {
     uint8_t col = answerPick_ < 0 ? C_BLUE : i == bk.correct ? C_GREEN : i == answerPick_ ? C_RED : C_LTGRAY;
-    bool pr = in_.down && in_.hit(26, ay + i * ANSWER_STEP, 108, 22);
+    bool pr = ui::pressing(in_, {26, ay + i * ANSWER_STEP, 108, 22});
     int by = ay + i * ANSWER_STEP + (pr ? 1 : 0);
     ui::drawButton({{26, ay + i * ANSWER_STEP, 108, 22}, nullptr, nullptr, col}, pr);
     char al[2][40]; int an = wrap(bk.answers[i], 102, al, 2);
@@ -1032,7 +1035,7 @@ void Game::drawTricks() {
     int x = i % 2 ? 82 : 20, y = 34 + (i / 2) * 24;
     bool learned = pet::trickLearned(save_, i), avail = pet::trickAvailable(save_, i);
     uint8_t col = learned ? C_GREEN : avail ? C_BLUE : C_DKGRAY, ink = inkOn(col);
-    bool pr = in_.down && in_.hit(x, y, 60, 22);
+    bool pr = ui::pressing(in_, {x, y, 60, 22});
     int dy = pr ? 1 : 0;
     ui::drawButton({{x, y, 60, 22}, nullptr, nullptr, col}, pr);
     char nl[2][40]; int nn = wrap(TRICK_NAMES[i], 36, nl, 2);   // "Roll Over" and "Play Dead" take two lines
@@ -1244,7 +1247,7 @@ void Game::drawHats() {
   uint8_t keep = save_.hat; save_.hat = (uint8_t)hatSel_;
   drawDog(80 - dogFrame(P_SIT).w, 112, P_SIT, false, 2);
   save_.hat = keep;
-  drawArrows(80);
+  drawArrows(in_, 80);
   ui::button(in_, {{50, 122, 60, 24}, save_.hat == hatSel_ ? "Wearing" : "Wear it", nullptr, save_.hat == hatSel_ ? C_DKGRAY : C_GREEN});
   int owned = 0; for (int i = 1; i < 8; i++) if (save_.hatsMask & (1u << i)) owned++;
   char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
@@ -1378,7 +1381,7 @@ void Game::drawShelter() {
   ui::panel({38, 99, 84, 22}, C_WHITE, C_DKBROWN);
   textCentered(80, 101, SHELTER_NAMES[shelterSel_], C_PLUM); textCentered(80, 111, BREED_NAMES[shelterSel_], C_DKGRAY);
   for (int i = 0; i < NUM_BREEDS; i++) rect(80 - 3 * 7 - 1 + i * 7, 123, 3, 3, i == shelterSel_ ? C_PLUM : C_WHITE);
-  drawArrows(80);
+  drawArrows(in_, 80);
   ui::button(in_, {PICK_BTN, "Pick me!", nullptr, C_GREEN});
   drawBackButton();
 }
@@ -1500,7 +1503,7 @@ void Game::drawStreetHouse(int i, bool night) {   // the house, its pup by the d
   int cx, gy; streetSlot(i, nKids_, cx, gy);
   bool mine = i == self_, has = mine ? haveSave_ : kidHas_[i];
   const Save& h = mine ? save_ : kidSaves_[i];
-  bool pr = mine && in_.down && in_.hit(cx - 18, gy - 36, 36, 50);
+  bool pr = mine && ui::pressing(in_, {cx - 18, gy - 36, 36, 50});
   drawHouseIcon(cx, gy + (pr ? 1 : 0), 24, has ? themeOf(h) : THEMES[0], night && has && !h.asleep);
   if (has && h.asleep) textCentered(cx - 12, gy - 22 - (int)((ms_ / 400) % 3), "z", night ? C_WHITE : C_NAVY);
   else if (has && h.hasDog) blit(DOG_FRAMES[h.breed][SZ_PUP][(ms_ / 500 + i) % 2 ? P_IDLE1 : P_IDLE0], cx - 24, gy - 18, false);
@@ -1517,7 +1520,7 @@ void Game::drawTheme() {
   rect(0, 100, 160, 60, C_LEAF);
   textCentered(80, 30, "Pick your house!", C_NAVY);
   for (int i = 0; i < 4; i++) {
-    bool pr = in_.down && in_.hit(17 + i * 32, 56, 30, 44);
+    bool pr = ui::pressing(in_, {17 + i * 32, 56, 30, 44});
     drawHouseIcon(32 + i * 32, 100 + (pr ? 1 : 0), 24, THEMES[i], false);
   }
   char b[40]; snprintf(b, sizeof b, "for %s and %s", kids_[self_].name, save_.petName); textCentered(80, 118, b, C_NAVY);

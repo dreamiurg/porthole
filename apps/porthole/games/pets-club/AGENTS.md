@@ -121,7 +121,8 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   can't be reached from an empty room until the next pup is adopted (decided). The Shelter
   and Bring back buttons sit higher than the farm's Go home and the shelter's Pick me!, so a
   finger tapping one spot a little slower than the fresh gate never chains into naming or bringing the dog back.
-- **The shelter** (`SC_SHELTER`): one kennel a page, arrows left and right (wrapping),
+- **The shelter** (`SC_SHELTER`): one kennel a page, arrows left and right (wrapping; like the library's and the
+  hats' they sink and turn brown while a press that began on one is held),
   starting on Connor each time it opens from the room, a tag with the pup's suggested name and breed, "Pick me!".
   Picking opens the pet-name keyboard (`SC_NAME_PET`) prefilled with that name: OK keeps
   it, editing changes it, an empty name can't be OKed, and back returns to the kennels.

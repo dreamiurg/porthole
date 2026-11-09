@@ -23,7 +23,7 @@ void drawButton(const Button& bt, bool pressed) {
   if (bt.label) textCentered(b.x + b.w / 2, bt.icon ? b.y + dy + b.h - 9 : b.y + dy + (b.h - 7) / 2, bt.label, inkOn(bt.col));
 }
 bool button(const Input& in, const Button& b) {
-  drawButton(b, in.down && in.hit(b.box.x, b.box.y, b.box.w, b.box.h));
+  drawButton(b, pressing(in, b.box));
   return in.tapIn(b.box.x, b.box.y, b.box.w, b.box.h);
 }
 bool iconButton(const Input& in, int cx, int cy, const Sprite& icon, uint8_t col) {
@@ -67,7 +67,7 @@ bool keyboard(const Input& in, char* buf, int& len, uint8_t& page) {
   return tapped(in, key(K_OK)) && len > 0;
 }
 static void drawKey(const Input& in, const Box& b, const char* label, uint8_t col) {
-  int dy = in.down && in.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  int dy = pressing(in, b) ? 1 : 0;
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN);   // shadow
   roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
   roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);

@@ -63,7 +63,7 @@ void Game::updateFlight(uint32_t dt) {
     return;
   }
   const float target = controls::bank({in_.gx, in_.gy, in_.gz}, neutral_);
-  taps_ += in_.tap ? 1 : 0;
+  taps_ += in_.tap && !in_.longTap ? 1 : 0;   // a quick tap fires; a hand resting on the glass during play does not
   stepMs_ += dt;
   const Stage before = run_.stage;
   while (stepMs_ >= STEP_MS) {

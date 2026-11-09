@@ -1,0 +1,76 @@
+# Long presses must not be ignored (kid playtests 5 and 6 of Pets Club's shelter, 2026-11-08): kids of 5-7 often
+# press for 0.6-3 s, and a button that ignores that teaches them buttons are broken. A press lifted where it began
+# acts however long it was held: the name keyboard's keys and OK, a launcher tile, "No, keep!" and a Pets Club care
+# button. A finger slid onto a button from another never shows that one pressed.
+reset
+wait 450
+expect-screen new_name
+# A, held 1.2 s
+down 41 53
+wait 1200
+up
+wait 450
+# B, the same; a finger slid from C onto D shows neither pressed and types nothing
+down 67 53
+wait 1200
+up
+wait 450
+down 93 53
+move 119 53
+snap 01_slid_onto_key
+up
+wait 450
+# OK, held 1.2 s: the face step
+down 119 125
+wait 1200
+up
+wait 450
+expect-screen new_avatar
+tap 124 57
+wait 450
+tap 79 69
+wait 450
+tap 80 145
+wait 450
+expect-screen launcher
+# a game's tile, held 1.2 s, opens it
+down 48 79
+wait 1200
+up
+wait 450
+expect-screen splash
+tap 80 12
+wait 450
+# "No, keep!" held 1.2 s keeps the profile (it has a code, so deleting can be asked at all)
+reset
+profile Sam 8
+profile Kai 6 1234
+tap 80 32
+wait 450
+expect-screen picker
+hold 80 80
+wait 450
+expect-screen pin
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen delete
+down 80 80
+wait 1200
+snap 02_no_keep_held
+up
+wait 450
+expect-screen picker
+expect profile=-1/2
+# Pets Club's bowl button, held 1.2 s, opens the bowls
+newgame Sam Biscuit
+wait 2400
+expect-screen home
+down 40 129
+wait 1200
+up
+wait 450
+expect-screen feed
+sheet long_presses

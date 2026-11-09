@@ -218,7 +218,7 @@ void Shell::drawPick() {
   int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
-    int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    int dy = ui::pressing(in_, b) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, i == n ? (uint8_t)C_MINT : (uint8_t)C_CREAM}, dy);
     if (i == n) { blitTint(SPR_PLUS, 58, b.y + 8 + dy, C_DKBROWN); text(72, b.y + 9 + dy, "New", C_DKBROWN); continue; }
     const Record& r = prof_.rec[prof_.nth(i)];
@@ -252,7 +252,7 @@ void Shell::drawAvatar() {
   textCentered(80, 28, "Pick a face!", C_DKBROWN);
   for (int i = 0; i < NUM_AVATARS; i++) {
     ui::Box b = avatarCell(i);
-    int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    int dy = ui::pressing(in_, b) ? 1 : 0;
     bool taken = false;   // another profile's face: a gray tile (still allowed, faces may repeat)
     for (int id = 0; id < MAX_PROFILES; id++) taken |= prof_.used[id] && prof_.rec[id].avatar % NUM_AVATARS == i;
     ui::drawButton({{b.x + 1, b.y + 1, b.w - 2, b.h - 4}, nullptr, nullptr, dy ? (uint8_t)C_YELLOW : taken ? (uint8_t)C_LTGRAY : (uint8_t)C_WHITE}, dy);
@@ -280,7 +280,7 @@ void Shell::drawAge() {
   textCentered(80, 30, "How old are you?", C_DKBROWN);
   for (int i = 0; i < 6; i++) {
     ui::Box b = ageButton(i); char l[4]; snprintf(l, sizeof l, "%d", AGES[i]);
-    bool pr = in_.down && in_.hit(b.x, b.y, b.w, b.h);
+    bool pr = ui::pressing(in_, b);
     uint8_t col = i < 2 ? C_GREEN : i < 4 ? C_BLUE : C_PLUM, ink = ui::inkOn(col); int y = b.y + 5 + (pr ? 1 : 0);
     ui::drawButton({b, nullptr, nullptr, col}, pr);
     if (i < 5) { textCentered(b.x + 20, y, l, ink, 2); continue; }
@@ -384,7 +384,7 @@ void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code,
   }
 }
 void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
-  int dy = pinLen_ < 4 && in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;   // no press look while the last digit shows: taps wait
+  int dy = pinLen_ < 4 && ui::pressing(in_, b) ? 1 : 0;   // no press look while the last digit shows: taps wait
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN); roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN); roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
   int s = l[1] ? 1 : 2;   // a digit at double size; "skip" fits only at one
   textCentered(b.x + b.w / 2, b.y + (b.h - 8 * s) / 2 + dy, l, C_DKBROWN, s);
@@ -398,9 +398,7 @@ static const ui::Box DEL_NO = {30, 66, 100, 28};
 static ui::Box delHold(bool top) { return {32, top ? 30 : 104, 96, 24}; }
 void Shell::updateDelete() {
   if (ui::button(in_, {DEL_NO, "No, keep!", nullptr, C_GREEN})) { go(SH_PICK); return; }
-  ui::Box h = delHold(holdTop_);
-  bool began = in_.downX >= h.x && in_.downX < h.x + h.w && in_.downY >= h.y && in_.downY < h.y + h.h;
-  if (!(in_.down && in_.hit(h.x, h.y, h.w, h.h) && began && in_.heldMs >= HOLD_MS)) return;
+  if (!(ui::pressing(in_, delHold(holdTop_)) && in_.heldMs >= HOLD_MS)) return;
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
   land();
@@ -428,8 +426,8 @@ void Shell::drawDelete() {
   char b[32]; snprintf(b, sizeof b, "Delete %s?", r.name); textCentered(80, ty, b, C_WHITE);
   textCentered(80, ty + 12, "Their pets and games", C_YELLOW);
   textCentered(80, ty + 22, "will be gone.", C_YELLOW);
-  ui::drawButton({DEL_NO, "No, keep!", nullptr, C_GREEN}, in_.down && in_.hit(DEL_NO.x, DEL_NO.y, DEL_NO.w, DEL_NO.h));
-  ui::Box h = delHold(holdTop_); bool pr = in_.down && in_.hit(h.x, h.y, h.w, h.h);
+  ui::drawButton({DEL_NO, "No, keep!", nullptr, C_GREEN}, ui::pressing(in_, DEL_NO));
+  ui::Box h = delHold(holdTop_); bool pr = ui::pressing(in_, h);
   ui::drawButton({h, nullptr, nullptr, C_PLUM}, pr);   // white on plum and on the brown fill: both >= 4.5:1
   int fill = pr ? (int)(in_.heldMs >= HOLD_MS ? h.w - 2 : in_.heldMs * (uint32_t)(h.w - 2) / HOLD_MS) : 0;
   if (fill > 0) roundRect(h.x + 1, h.y + 2, fill, h.h - 3, C_BROWN);
@@ -457,19 +455,18 @@ void Shell::updateLauncher() {
 void Shell::drawLauncher() {
   clear(C_SKY);
   rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
-  ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
+  ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, ui::pressing(in_, HEADER));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
   text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
-  const int dy = in_.down && in_.hit(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) ? 1 : 0;   // the sun shows the level picked now
+  const int dy = ui::pressing(in_, LIGHT) ? 1 : 0;   // the sun shows the level picked now
   ui::drawButton({LIGHT, nullptr, nullptr, C_WHITE}, dy);
   const Sprite& sun = SPR_LIGHTS[light_]; blit(sun, LIGHT.x + (LIGHT.w - sun.w) / 2, LIGHT.y + (LIGHT.h - sun.h) / 2 + dy);
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
   for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
-    const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
-    const bool began = in_.downX >= b.x && in_.downX < b.x + b.w && in_.downY >= b.y && in_.downY < b.y + b.h;
-    if (!in_.down || !began || !in_.hit(b.x, b.y, b.w, b.h)) continue;   // only a press that started on it
+    const ui::Box c = launcher::CAPTION;
+    if (!ui::pressing(in_, launcher::tile(i, m))) continue;   // only a press that started on it
     ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
     textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
   }
@@ -479,13 +476,13 @@ void Shell::drawLauncher() {
 }
 void Shell::drawAppTile(int k, int i, int m) {
   const ui::Box b = launcher::tile(i, m);
-  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  const int dy = ui::pressing(in_, b) ? 1 : 0;
   ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // the game's picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
-  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0, cy = b.y + b.h / 2 + dy;
+  const int dy = ui::pressing(in_, b) ? 1 : 0, cy = b.y + b.h / 2 + dy;
   ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
   for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
 }
@@ -510,7 +507,7 @@ void Shell::drawLight() {
   textCentered(80, 40, "How bright?", C_NAVY);
   for (int l = 0; l < shell::LIGHT_COUNT; l++) {
     const ui::Box b = lightBox(l);
-    const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    const int dy = ui::pressing(in_, b) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, l == light_ ? (uint8_t)C_MINT : (uint8_t)C_WHITE}, dy);
     const Sprite& sun = SPR_LIGHTS[l];
     if (l != shell::LIGHT_AUTO) { blitScaled(sun, b.x + (b.w - 2 * sun.w) / 2, b.y + (b.h - 2 * sun.h) / 2 + dy, 2); continue; }
@@ -550,7 +547,7 @@ void Shell::drawRest() {
     char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
     textCentered(80, 106, prof_.count() >= 2 ? "Let a friend play!" : "Time for a break!", C_WHITE);
   }
-  ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, in_.down && in_.hit(50, 120, 60, 24));
+  ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, ui::pressing(in_, {50, 120, 60, 24}));
 }
 
 // ---------------------------------------------------------------- a game is open

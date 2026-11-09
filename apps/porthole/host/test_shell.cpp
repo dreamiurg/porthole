@@ -1057,6 +1057,48 @@ static void deleteNeedsACode() {
   testNow = NOW;
   assert(storedStrikes(st, 0) == 4 && sh.profileCount() == 2);
 }
+// A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
+// one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
+// that began on it, never under a finger slid onto it from another.
+static void longPressStillTaps() {
+  InputTracker t; t.step(true, 50, 50, 1000);
+  Input in = t.step(false, 50, 50, 1080); assert(in.tap && !in.longTap);
+  t.step(true, 50, 50, 2000); in = t.step(true, 53, 51, 2600); assert(in.longPress && !in.tap);
+  in = t.step(true, 53, 51, 4000); assert(!in.longPress && !in.tap);
+  in = t.step(false, 53, 51, 4040); assert(in.released && in.tap && in.longTap);
+  t.step(true, 50, 50, 5000); t.step(true, 70, 50, 5100); in = t.step(false, 70, 50, 5200); assert(in.released && !in.tap);
+  const ui::Box a = {10, 10, 30, 22}, b = {50, 10, 30, 22};
+  Input f{}; f.down = true; f.downX = 20; f.downY = 20; f.x = 60; f.y = 20;
+  assert(!ui::pressing(f, b) && !ui::pressing(f, a));
+  f.x = 25; assert(ui::pressing(f, a));
+}
+// Through a Shell with the real tracker: a 1.5 s press on the name keyboard's keys and OK, a launcher tile and
+// "No, keep!" all act on the lift, and the admin limit's hold adds its 10 alone (no extra 1 on the lift).
+static void slowPresses() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  StubApp a("One"); App* const list[1] = {&a};
+  InputTracker tr;
+  auto slow = [&](const ui::Box& b, uint32_t holdMs) {   // 40 ms frames, starting past the fresh-screen gate
+    const int x = b.x + b.w / 2, y = b.y + b.h / 2;
+    ms += 500;
+    for (uint32_t e = 0; e <= holdMs; e += 40) { ms += 40; sh.update(testNow, ms, tr.step(true, x, y, ms)); sh.render(); }
+    ms += 40; sh.update(testNow, ms, tr.step(false, x, y, ms)); sh.render();
+  };
+  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "new_name"));
+  slow({29, 42, 24, 22}, 1500); slow({107, 114, 24, 22}, 1500);   // A, then OK
+  assert(on(sh, "new_avatar"));
+  sh.createProfile("Sam", 8, ""); assert(on(sh, "launcher"));
+  slow(launcher::tile(0, 1), 1500); assert(on(sh, "stub") && a.entered == 1); home(sh, ms, a);
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  bootWithoutHours(sh, st, list, 1, &sys);
+  Input lp{}; lp.down = lp.pressed = lp.longPress = true; lp.x = lp.downX = 80; lp.y = lp.downY = 67; frame(sh, ms, lp);
+  typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
+  slow({30, 66, 100, 28}, 1500); assert(on(sh, "picker") && sh.profileCount() == 1);   // No, keep!
+  holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
+  slow({110, 68, 24, 24}, 1000);   // + held: 15 -> 25, not 26
+  tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 25);
+}
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1237,6 +1279,8 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
   adminCodeLockout();
   adminGatesProfiles();
   deleteNeedsACode();
+  longPressStillTaps();
+  slowPresses();
 }
 
 int main() {

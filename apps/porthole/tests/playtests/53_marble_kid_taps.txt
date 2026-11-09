@@ -1,7 +1,8 @@
 # Marble Kick as a 6-year-old taps it (playtester, 2026-09-27), written as the right behavior:
 # 1. The launcher with three games passes the UI audit (tiles, names, mute, profile bar).
-# 2. On the Calibrate page only the red button starts play: a tap on the bubble level or the level coin, a long press
-#    on the button, or a press dragged off it leaves the page as it is; a tap near the button's edge still counts.
+# 2. On the Calibrate page only the red button starts play: a tap on the bubble level or the level coin, or a press
+#    dragged off it leaves the page as it is; a tap near the button's edge still counts, and so does a long press on
+#    it (2026-11-09: a press lifted where it began acts however long it was held).
 # 3. A double tap on the red button starts play once, and the second tap does nothing on the tray.
 # 4. A brush of the home knob during play (a thumb on the rim) does not leave the game; holding it does.
 # 5. Each kid has their own level: Sam's finished level 1 does not move Ana on, and switching back finds Sam's.
@@ -16,7 +17,6 @@ expect-screen mk_calibrate
 # 2: mis-taps on the Calibrate page
 tap 80 65
 tap 130 30
-hold 80 110
 wait 100
 expect-screen mk_calibrate
 down 80 110
@@ -72,4 +72,8 @@ wait 500
 expect-screen mk_calibrate
 expect level=2
 expect reached=1
+# a long press on the red button starts play too
+hold 80 110
+wait 100
+expect-screen mk_play
 sheet kid_taps
