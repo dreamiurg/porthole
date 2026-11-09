@@ -64,7 +64,7 @@ class Shell {
   void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level), then the open game
 
  private:
-  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
+  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_NO_DELETE, SH_LAUNCHER, SH_REST,
                          SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
@@ -156,6 +156,8 @@ class Shell {
   void fourthShown();   // the kids' pad while its fourth digit shows
   void updatePin(); void drawPin(); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
+  void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
+  bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
   void setLight(shell::Light l);
   void updateLight(); void drawLight();

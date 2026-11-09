@@ -41,7 +41,7 @@ void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toa
 using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
-    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
+    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateNoDelete, &Shell::updateLauncher, &Shell::updateRest,
     &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
@@ -57,7 +57,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
-    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
+    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawNoDelete, &Shell::drawLauncher, &Shell::drawRest,
     &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
@@ -85,9 +85,15 @@ void Shell::startNew() {
   memset(&draft_, 0, sizeof draft_); nameLen_ = 0; name_[0] = 0; namePage_ = 0; creating_ = true;
   go(SH_NAME);
 }
+// Deleting always takes a code (a parent decision of 2026-11-09: two long presses by a small kid must not delete a
+// profile): the kid's own, or the grown-up's from "Admin" on that pad; with no kid code, the grown-up's; with
+// neither, nobody can, and a card says who can fix that.
 void Shell::choose(int id, bool del) {
   target_ = id; deleting_ = del;
-  if (prof_.rec[id].pin) { resetPin(); go(SH_PIN); } else authorized();
+  if (prof_.rec[id].pin) { resetPin(); go(SH_PIN); }
+  else if (!del) select(id);
+  else if (adminPin_) askAdmin(SH_DELETE);
+  else go(SH_NO_DELETE);
 }
 void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
@@ -202,10 +208,7 @@ void Shell::updatePick() {
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
     if (i == n) { if (tap) askAdmin(SH_NAME); }
     else if (tap) choose(prof_.nth(i), false);
-    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) {   // long press: delete
-      if (adminPin_) { target_ = prof_.nth(i); deleting_ = true; askAdmin(SH_DELETE); }   // the grown-up's code, not the kid's
-      else choose(prof_.nth(i), true);
-    }
+    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) choose(prof_.nth(i), true);   // long press: delete
     if (screen_ != SH_PICK) return;
   }
 }
@@ -299,6 +302,7 @@ void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
   if (pinLen_ == 4) { fourthShown(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
+  if (adminSwitch() && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { askAdmin(SH_DELETE); return; }   // its own lock
   if (kidKeysHidden()) {   // too many wrong tries: the keys come back once the wait is over and the finger rests
     if (in_.down) pinCalmUntil_ = ms_ + PIN_CALM_MS;   // a kid tapping the hourglass never types into the keys' return
     if (in_.pressed) pinNudgeUntil_ = ms_ + 300;
@@ -345,6 +349,7 @@ void Shell::drawPin() {
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
   textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
   drawPinDigits();
+  if (adminSwitch()) drawPinKey(PIN_SKIP, "Admin", C_SKY);   // in the wait too: the grown-up's code is not slowed
   if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
@@ -399,6 +404,22 @@ void Shell::updateDelete() {
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
   land();
+}
+// No code anywhere, so nobody may delete: a kid-safe card, the profile's face, and the ways back.
+static const ui::Box NO_DELETE_OK = {50, 120, 60, 24};
+void Shell::updateNoDelete() {
+  if (ui::back(in_) || ui::button(in_, {NO_DELETE_OK, "OK", nullptr, C_GREEN})) go(SH_PICK);
+}
+void Shell::drawNoDelete() {
+  clear(C_SKY);
+  const Record& r = prof_.rec[target_];
+  blitScaled(SPR_AVATARS[r.avatar % NUM_AVATARS], 60, 28, 2);
+  char b[32]; snprintf(b, sizeof b, "To delete %s,", r.name); textCentered(80, 74, b, C_NAVY);
+  textCentered(80, 86, "ask a grown-up", C_NAVY);
+  textCentered(80, 96, "to set a code", C_NAVY);
+  textCentered(80, 106, "in Admin.", C_NAVY);
+  ui::drawButton({NO_DELETE_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NO_DELETE_OK));
+  ui::drawBack();
 }
 void Shell::drawDelete() {
   clear(C_NAVY);
@@ -552,7 +573,7 @@ bool Shell::clearPin(int id) {
   prof_.rec[id] = before; return false;
 }
 const char* Shell::screenName() const {
-  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
+  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
                               "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");

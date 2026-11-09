@@ -141,4 +141,27 @@ hold 80 116
 wait 450
 expect-screen picker
 expect profile=-1/1
+# no code anywhere (no kid code, no grown-up's): nobody may delete; a card says who can fix it, OK and back keep Ava
+reset
+profile Sam 8
+profile Ava 7
+tap 80 32
+wait 450
+expect-screen picker
+hold 80 80
+wait 450
+expect-screen no_delete
+ui-check no-delete
+snap 05_no_code
+tap 80 132
+wait 450
+expect-screen picker
+expect profile=-1/2
+hold 80 80
+wait 450
+expect-screen no_delete
+tap 80 12
+wait 450
+expect-screen picker
+expect profile=-1/2
 sheet delete

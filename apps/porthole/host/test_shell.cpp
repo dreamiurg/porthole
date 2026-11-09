@@ -1015,6 +1015,48 @@ static void adminGatesProfiles() {
   Input hold{}; hold.down = hold.longPress = true; hold.x = hold.downX = 80; hold.y = hold.downY = 54; frame(sh, ms, hold);
   assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
 }
+// Deleting a profile always takes a code (parent, 2026-11-09): the kid's own on their pad or, from its "Admin" key,
+// the grown-up's; with no kid code, the grown-up's; with neither, a card and no delete. Each code keeps its own strikes
+// and waits, so one locked out never blocks the other.
+static void deleteNeedsACode() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
+  const ui::Box SAM = {24, 42, 112, 24}, KAI = {24, 68, 112, 24}, PAD_ADMIN = {60, 134, 40, 22}, NO = {30, 66, 100, 28};
+  auto longPress = [&](const ui::Box& b) {
+    Input in{}; in.down = in.pressed = in.longPress = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; frame(sh, ms, in);   // pressed: past the fresh gate
+  };
+  bootWithoutHours(sh, st, nullptr, 0, &sys);
+  longPress(KAI); assert(on(sh, "no_delete"));   // no code anywhere: nobody may delete Kai
+  tapAt(sh, ms, {50, 120, 60, 24}); assert(on(sh, "picker"));
+  longPress(KAI); assert(on(sh, "no_delete")); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker") && sh.profileCount() == 2);
+  longPress(SAM); assert(on(sh, "pin"));
+  tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "pin"));   // no grown-up's code: no Admin key
+  typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{});
+  assert(on(sh, "pin") && storedStrikes(st, 0) == 1 && !storedStrikes(st, shell::ADMIN_LOCK));
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "delete") && !storedStrikes(st, 0));
+  tapAt(sh, ms, NO); assert(on(sh, "picker") && sh.profileCount() == 2);
+
+  const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
+  bootWithoutHours(sh, st, nullptr, 0, &sys);
+  longPress(KAI); assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
+  tapAt(sh, ms, NO);
+  longPress(SAM); assert(on(sh, "pin")); typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));   // his own code
+  tapAt(sh, ms, NO);
+  longPress(SAM); tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));   // or the grown-up's
+  for (int i = 0; i < 4; i++) { typeAdminCode(sh, ms, "9999"); frame(sh, ms, Input{}); }
+  assert(storedStrikes(st, shell::ADMIN_LOCK) == 4 && !storedStrikes(st, 0));
+  typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_pin"));   // the grown-up's code waits 5 s...
+  tapAt(sh, ms, ADMIN_HOME); longPress(SAM); typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));   // ...Sam's does not
+  tapAt(sh, ms, NO);
+  longPress(SAM);
+  for (int i = 0; i < 4; i++) { typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{}); }
+  assert(storedStrikes(st, 0) == 4 && storedStrikes(st, shell::ADMIN_LOCK) == 4);
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "pin"));   // Sam's keys hidden; the Admin key still there
+  tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));
+  testNow = NOW + 5; typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete") && !storedStrikes(st, shell::ADMIN_LOCK));
+  testNow = NOW;
+  assert(storedStrikes(st, 0) == 4 && sh.profileCount() == 2);
+}
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1187,6 +1229,16 @@ static void systemMenuWayIn() {
   holdTitle(sh, ms, 6000); assert(on(sh, "picker"));
 }
 
+static void codesAndPresses() {   // the code pads, their waits, what they gate, and how long a press may be
+  pinWaits();
+  kidCodeLockout();
+  padQuickAndSlowKeys();
+  adminRepeatRightAway();
+  adminCodeLockout();
+  adminGatesProfiles();
+  deleteNeedsACode();
+}
+
 int main() {
   static uint16_t nativePixels[gfx565::W * gfx565::H];
   gfx565::target(nativePixels);
@@ -1203,12 +1255,7 @@ int main() {
   resetSelectedPlayerPin();
   resetLimitsRetry();
   adminAccess();
-  pinWaits();
-  kidCodeLockout();
-  padQuickAndSlowKeys();
-  adminRepeatRightAway();
-  adminCodeLockout();
-  adminGatesProfiles();
+  codesAndPresses();
   adminChangesAndReset();
   resetAllLimits();
   versions();

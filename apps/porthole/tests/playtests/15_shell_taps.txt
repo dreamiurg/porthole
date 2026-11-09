@@ -1,7 +1,8 @@
 # Shell taps a kid gets wrong (playtester, 2026-09-24), written as the right behavior:
 # 1. A slow double tap (300-400 ms) must not act on the next screen: every screen ignores touches until a press
 #    begins 450 ms after it appeared (ui::FreshGate).
-# 2. A long press on a picker row opens "Delete?" with "No" under the finger; deleting takes a held press elsewhere.
+# 2. A long press on a picker row asks the kid's code, then opens "Delete?" with "No" under the finger; deleting takes
+#    a held press elsewhere.
 # 3. Session rests still apply with one profile left; only an explicit adult reset clears the existing rest.
 reset
 profile Sam 8
@@ -34,19 +35,26 @@ tap 80 42
 wait 450
 expect-screen picker
 expect profile=-1/2
-# 2: a long press on Ava (bottom row, no code) and a second tap on the same spot keep Ava
+# 2: a long press on Mia (bottom row) asks her code; a second tap where its last digit was keeps Mia
 reset
 profile Sam 8
 profile Kai 6
 profile Ava 7
-profile Mia 9
+profile Mia 9 1234
 tap 80 32
 wait 450
 hold 110 119
 wait 450
+expect-screen pin
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 expect-screen delete
-tap 110 110
+tap 41 90
 wait 450
+expect-screen picker
 expect profile=-1/4
 # 3: Sam rests with two profiles; deleting Kai keeps Sam's rest. A grown-up can explicitly reset it.
 reset
@@ -54,7 +62,7 @@ newgame Sam Biscuit
 wait 2400
 tap 80 12
 wait 450
-profile Kai 6
+profile Kai 6 1234
 tap 80 42
 wait 450
 tap 80 54
@@ -67,6 +75,11 @@ tap 80 132
 wait 450
 hold 80 80
 wait 450
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
 hold 80 42
 wait 450
 expect profile=-1/1

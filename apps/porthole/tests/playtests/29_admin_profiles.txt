@@ -76,4 +76,30 @@ tap 49 84
 wait 900
 expect-screen delete
 snap 03_delete_asks
+tap 80 80
+wait 450
+expect-screen picker
+# a kid with a code: their pad asks it, and its Admin key takes the grown-up's code instead
+profile Kai 6 4567
+tap 80 32
+wait 450
+expect-screen picker
+hold 80 80
+wait 450
+expect-screen pin
+ui-check pin-admin-key
+snap 04_kid_pad_admin
+tap 80 145
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 63
+tap 109 63
+tap 49 84
+wait 900
+expect-screen delete
+tap 80 80
+wait 450
+expect-screen picker
+expect profile=-1/2
 sheet admin_profiles
