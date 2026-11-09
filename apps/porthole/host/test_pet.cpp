@@ -333,6 +333,23 @@ static void bringBackFromTheEmptyRoom() {
   sameDog(again, before);
 }
 
+// Start over's Yes erases the pup, so like the farm's it takes a 2 s hold: a tap or a kid's slow 1 s press only
+// wiggles "Hold Yes"; No! acts on release however long it is held.
+static void startOverTakesAHold() {
+  static Game g;
+  const uint32_t t = day0 + 3 * 86400;
+  Save s = dogWithWall(0); s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  enterAt(g, s, t);
+  Finger f{g, t};
+  auto ask = [&] { f.hold(false, 0, 0, 500); f.tap(40, 27); f.hold(true, 80, 148, 700); f.hold(false, 80, 148, 500); };
+  ask(); assert(!strcmp(g.screenName(), "confirm_reset"));
+  f.hold(true, 45, 102, 1500); f.hold(false, 45, 102, 500); assert(!strcmp(g.screenName(), "stats"));   // a slow No!
+  f.tap(80, 12); ask();
+  f.tap(115, 102); assert(!strcmp(g.screenName(), "confirm_reset"));
+  f.hold(true, 115, 102, 1000); f.hold(false, 115, 102, 500); assert(!strcmp(g.screenName(), "confirm_reset"));
+  f.hold(true, 115, 102, 2100); assert(!strcmp(g.screenName(), "intro"));
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -367,6 +384,7 @@ int main() {
   adoptionEndsBringBack();
   bringBackOntoFullWall();
   bringBackFromTheEmptyRoom();
+  startOverTakesAHold();
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }

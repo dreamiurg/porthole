@@ -1256,15 +1256,36 @@ void Game::drawHats() {
   char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
   drawBackButton();
 }
-// Start over and the farm ask with the same No / Yes (the farm's Yes is held, below).
+// Start over and the farm ask with the same No / Yes. No! acts on release, however long it was held. Yes erases the
+// pup or sends the dog away, so it takes a YES_HOLD_MS hold that slowly fills the button: a sibling mashing the glass
+// got to the farm in three taps, a firm 6-year-old's press in ui::HOLD_MS, and once a slow press counted as a tap, a
+// kid's ordinary 1 s press erased a pup. Letting go or sliding off starts over; letting go early only wiggles the
+// "Hold Yes" hint.
 static const ui::Box NO_BTN = {20, 90, 50, 24}, YES_BTN = {90, 90, 50, 24};
-static void drawNoYes(const Input& in) {
-  ui::button(in, {NO_BTN, "No!", nullptr, C_GREEN});
-  ui::button(in, {YES_BTN, "Yes", nullptr, C_BROWN});
+static const uint32_t YES_HOLD_MS = 2000;
+int Game::askNoYes() {   // -1: No!, 1: Yes held all the way, 0: neither yet
+  if (ui::clicked(in_, NO_BTN)) return -1;
+  yesHold_.step(ui::pressing(in_, YES_BTN), ms_);
+  if (yesHold_.progress(YES_HOLD_MS) >= 1) return 1;
+  if (ui::clicked(in_, YES_BTN)) bounceUntil_ = ms_ + 500;   // let go early
+  return 0;
+}
+float Game::drawNoYes() {   // the buttons and the hint; returns how far Yes is held, 0..1
+  ui::button(in_, {NO_BTN, "No!", nullptr, C_GREEN});
+  const bool pr = ui::pressing(in_, YES_BTN); const int dy = pr ? 1 : 0;
+  const float held = yesHold_.progress(YES_HOLD_MS);
+  ui::drawButton({YES_BTN, nullptr, nullptr, C_BROWN}, pr);
+  const int fill = (int)(held * (YES_BTN.w - 2));   // white on plum and on brown: both readable
+  if (fill > 0) roundRect(YES_BTN.x + 1, YES_BTN.y + 1 + dy, fill, YES_BTN.h - 2, C_PLUM);
+  textCentered(YES_BTN.x + YES_BTN.w / 2, YES_BTN.y + dy + (YES_BTN.h - 7) / 2, "Yes", C_WHITE);
+  const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
+  textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
+  return held;
 }
 void Game::updateConfirmReset() {
-  if (tapBox(in_, NO_BTN)) go(SC_STATS);
-  if (tapBox(in_, YES_BTN)) {   // this kid's pup only: the shell erases the save, the profile stays
+  const int a = askNoYes();
+  if (a < 0) go(SC_STATS);
+  if (a > 0) {   // this kid's pup only: the shell erases the save, the profile stays
     haveSave_ = kidHas_[self_] = false; dirty_ = true; dogAct_ = 0;
     memset(&save_, 0, sizeof save_);
     go(SC_INTRO);
@@ -1274,23 +1295,20 @@ void Game::drawConfirmReset() {
   clear(C_PLUM);
   textCentered(80, 44, "Start over?", C_WHITE);
   char b[48]; snprintf(b, sizeof b, "%s will forget you!", save_.petName); textCentered(80, 60, b, C_YELLOW);
-  drawNoYes(in_);
+  drawNoYes();
 }
 
 // ---------------------------------------------------------------- the farm: an old dog leaves only on the kid's yes
-// Yes takes a FARM_HOLD_MS hold that slowly fills the button while the dog walks off to the right: a sibling mashing
-// the glass got there in three taps, and a firm 6-year-old's press in ui::HOLD_MS. Letting go or sliding off starts
-// over; letting go early only wiggles the "Hold Yes" hint. A longer habit still gets there, so the farm right after and
-// the empty room offer Bring back (pet::bringBack) until a pup is adopted.
-static const uint32_t FARM_HOLD_MS = 2000;
+// Yes is held (askNoYes) while the dog walks off to the right. A longer habit still gets there, so the farm right after
+// and the empty room offer Bring back (pet::bringBack) until a pup is adopted.
 void Game::updateConfirmFarm() {
-  if (ui::clicked(in_, NO_BTN)) { go(SC_STATS); return; }
-  yesHold_.step(ui::pressing(in_, YES_BTN), ms_);
-  if (yesHold_.progress(FARM_HOLD_MS) >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
+  const int a = askNoYes();
+  if (a < 0) { go(SC_STATS); return; }
+  if (a > 0) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
     pet::retire(save_, now_); markDirty(); urgent_ = true;
     farmSlot_ = (uint8_t)(save_.wallCount - 1); farmVisit_ = false; event_ = 0; weather_ = 0;
     go(SC_FARM);
-  } else if (ui::clicked(in_, YES_BTN)) bounceUntil_ = ms_ + 500;   // let go early
+  }
 }
 void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pup comes next
   clear(C_NAVY);
@@ -1300,15 +1318,7 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
   snprintf(b, sizeof b, "%s will live there.\nThen pick a new pup.", save_.petName);
   n = wrap(b, 150, lines, 3);               // and 151 px at row 54; an 11-letter name takes two lines, never a fourth
   for (int i = 0; i < n; i++) textCentered(80, 54 + i * 9, lines[i], C_YELLOW);
-  ui::button(in_, {NO_BTN, "No!", nullptr, C_GREEN});
-  const bool pr = ui::pressing(in_, YES_BTN); const int dy = pr ? 1 : 0;
-  const float held = yesHold_.progress(FARM_HOLD_MS);
-  ui::drawButton({YES_BTN, nullptr, nullptr, C_BROWN}, pr);
-  const int fill = (int)(held * (YES_BTN.w - 2));   // white on plum and on brown: both readable
-  if (fill > 0) roundRect(YES_BTN.x + 1, YES_BTN.y + 1 + dy, fill, YES_BTN.h - 2, C_PLUM);
-  textCentered(YES_BTN.x + YES_BTN.w / 2, YES_BTN.y + dy + (YES_BTN.h - 7) / 2, "Yes", C_WHITE);
-  const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
-  textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
+  const float held = drawNoYes();
   for (int r = 0; r < 6; r++) hline(114 - r, 129 + r, 2 * r + 1, C_DKWOOD);   // the farm's barn, where the dog walks to
   rect(108, 135, 13, 9, C_RED); rect(112, 138, 5, 6, C_WHITE); rect(113, 139, 3, 5, C_DKWOOD); rect(106, 144, 17, 2, C_LEAF);
   if (held > 0) drawDog(80 - dogFrame(P_WALK0).w / 2 + (int)(held * 12), 155, (ms_ / 150) % 2 ? P_WALK0 : P_WALK1, false);

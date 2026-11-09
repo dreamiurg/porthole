@@ -79,8 +79,8 @@ class Game : public App {
   int statsPage_ = 0; int hatSel_ = 0;
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
-  ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
-  uint32_t bounceUntil_ = 0;  // a screen's short reaction: the farm confirm's hint wiggles, the farm dog jumps (go() ends it)
+  ui::Hold yesHold_;          // Start over's and the farm's Yes, held (go() resets it)
+  uint32_t bounceUntil_ = 0;  // a screen's short reaction: a confirm's hint wiggles, the farm dog jumps (go() ends it)
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
 
   // ---- helpers
@@ -145,6 +145,7 @@ class Game : public App {
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();
+  int askNoYes(); float drawNoYes();   // Start over's and the farm's No! (on release) / Yes (held YES_HOLD_MS)
   void updateFarm(); void drawFarm();
   bool farmBringBack() const { return !farmVisit_ && pet::canBringBack(save_); }   // never on a visit
   void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);

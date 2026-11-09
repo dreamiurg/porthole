@@ -75,9 +75,10 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   old dog's Stats page then swaps its four stat-pip rows (home still shows them) for "To
   the farm" (sky blue: calm, not a call to action), which asks "Move <name> to the farm?"
   and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No /
-  Yes, like Start over). Yes sends the dog away, so it takes a 2 s hold (`FARM_HOLD_MS` in
-  `game.cpp`; `yesHold_`, a `ui::Hold` read with `progress(FARM_HOLD_MS)`) that fills the
-  button plum across the whole 2 s while the sitting dog gets up and walks 12 px right,
+  Yes, like Start over: both through `askNoYes`/`drawNoYes`). Yes sends the dog away, so it
+  takes a 2 s hold (`YES_HOLD_MS` in `game.cpp`; `yesHold_`, a `ui::Hold` read with
+  `progress(YES_HOLD_MS)`) that fills the button plum across the whole 2 s while the sitting
+  dog gets up and walks 12 px right,
   toward a little red barn at the card's right edge (the picture says "farm" for a
   non-reader), with "Hold Yes" under the buttons. Letting go or sliding off starts over,
   and a press that starts on No! never counts; letting go early (a tap or up to 2 s) only
@@ -94,6 +95,11 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   tap, a hold or a rub), makes it jump, with a heart every 300 ms and the jump pose for each
   heart's first 200 ms: no sound, nothing saved (`bounceUntil_`; `go()` ends it and resets
   `yesHold_`).
+- **Start over** (`SC_CONFIRM_RESET`, a long press under Stats' last row) asks "Start over? <name> will forget
+  you!" with the same No! / Yes, fill and "Hold Yes" hint (a decision of 2026-11-09): once a slow press counted
+  as a tap, a kid's ordinary 1 s press on Yes erased the pup, so Yes takes the same 2 s hold, and No! acts on
+  release however long it was held. The playtest is `tests/playtests/12_reset.txt` (a tap and a 1 s press keep the
+  pup, a 2.1 s hold erases it).
 - **Bring back.** A habit longer than any hold still gets through, so the move can be undone until a new pup
   is adopted. The farm right after a move (not a visit) shows "Bring back" (`BRING_BACK_BTN`, orange, two lines,
   left of the dog where No! was; the dog steps right), and so does the empty room (`ROOM_BRING_BACK_BTN`, left of

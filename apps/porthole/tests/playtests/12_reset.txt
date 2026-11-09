@@ -1,5 +1,6 @@
-# Start over (Pets Club): a long press under the stats opens the question; No keeps the pup, Yes lets it go and the
-# adoption starts again. Only the pup goes: the profile stays, and the store forgets the pup too.
+# Start over (Pets Club): a long press under the stats opens the question; No keeps the pup, a tap or a 1 s press on
+# Yes keeps it too (it only wiggles "Hold Yes"), and Yes held 2 s lets it go and the adoption starts again. Only the
+# pup goes: the profile stays, and the store forgets the pup too.
 newgame Sam Biscuit
 wait 2400
 tap 40 27
@@ -17,9 +18,20 @@ hold 80 148
 wait 450
 tap 115 102
 wait 450
+down 115 102
+wait 1000
+snap 02_yes_half_held
+up
+wait 450
+expect-screen confirm_reset
+expect food=70
+down 115 102
+wait 2100
+up
+wait 450
 expect-screen intro
 expect profile=0/1
-snap 02_intro_again
+snap 03_intro_again
 # adopting again right away: the new pup is what gets saved, not the pending erase
 tap 80 80
 wait 1000
@@ -44,7 +56,9 @@ tap 40 27
 wait 450
 hold 80 148
 wait 450
-tap 115 102
+down 115 102
+wait 2100
+up
 wait 450
 expect-screen intro
 tap 80 12
