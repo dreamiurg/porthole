@@ -182,7 +182,7 @@ void Shell::flushApp(bool allowed) {
   } else if (writtenOk_ || !allowed) return;
   const char* k = shell::key('s', active_);
   if (writtenLen_) writtenOk_ = st_->save(app_->store(), k, written_, writtenLen_);
-  else { st_->erase(app_->store(), k); writtenOk_ = true; }
+  else { st_->erase(app_->store(), k); writtenOk_ = true; }   // App contract: a 0-byte save erases; no game uses it today
   lastSaveMs_ = ms_;
 }
 void Shell::closeApp() {
@@ -353,7 +353,7 @@ void Shell::drawPin() {
   drawPinPrompt(hidden, del);
   drawPinDigits();
   if (adminSwitch()) drawPinKey(PIN_SKIP, "Admin", C_SKY);   // in the wait too: the grown-up's code is not slowed
-  if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
+  if (hidden) { drawPinWait(wait, del); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
@@ -371,23 +371,25 @@ void Shell::drawPinPrompt(bool hidden, bool del) {
 }
 // While a wait runs, the keys give way to an hourglass whose sand runs down, its seconds and a bar that empties: a
 // kid who cannot read the number still sees the wait end, and nothing looks like a key. A tap wiggles it, silently.
-void Shell::drawPinWait(uint32_t wait) {
+// On a delete's navy pad its edges, the seconds and the bar's frame are white: dark brown on navy barely shows.
+void Shell::drawPinWait(uint32_t wait, bool del) {
   const uint32_t of = shell::pinWaitFor(locks_.lock[target_].strikes);
   const int top = of ? (int)(24 * wait / of) : 0;   // rows of sand still in the top bulb, of 24
   const int dx = (int32_t)(pinNudgeUntil_ - ms_) > 0 ? ((ms_ / 50) % 2 ? 2 : -2) : 0, cx = 80 + dx;
-  rect(cx - 18, 50, 37, 4, C_DKBROWN); rect(cx - 18, 103, 37, 4, C_DKBROWN);   // the caps
+  const uint8_t edge = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN;
+  rect(cx - 18, 50, 37, 4, edge); rect(cx - 18, 103, 37, 4, edge);   // the caps
   for (int r = 0; r < 24; r++) {   // r = 0 at a cap, 23 at the waist; the top bulb above y 78, the bottom below
     const int hw = 15 - r * 14 / 23, yt = 54 + r, yb = 102 - r;
     hline(cx - hw, yt, 2 * hw + 1, r >= 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
     hline(cx - hw, yb, 2 * hw + 1, r < 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
-    hline(cx - hw - 1, yt, 1, C_DKBROWN); hline(cx + hw + 1, yt, 1, C_DKBROWN);
-    hline(cx - hw - 1, yb, 1, C_DKBROWN); hline(cx + hw + 1, yb, 1, C_DKBROWN);
+    hline(cx - hw - 1, yt, 1, edge); hline(cx + hw + 1, yt, 1, edge);
+    hline(cx - hw - 1, yb, 1, edge); hline(cx + hw + 1, yb, 1, edge);
   }
   if (wait) line(cx, 78, cx, 101 - (24 - top), C_ORANGE);   // the falling stream
   char n[4]; snprintf(n, sizeof n, "%u", (unsigned)wait);
-  textCentered(80, 110, n, deleting_ ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN, 2);   // only the kid's pad waits: navy while deleting
+  textCentered(80, 110, n, edge, 2);
   const int w = of ? (int)(80 * wait / of) : 0;
-  rect(40, 128, 80, 6, C_DKBROWN); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
+  rect(40, 128, 80, 6, edge); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
 void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
   bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
@@ -427,7 +429,8 @@ void Shell::drawNoDelete() {
   clear(C_SKY);
   const Record& r = prof_.rec[target_];
   blitScaled(SPR_AVATARS[r.avatar % NUM_AVATARS], 50, 28, 2);
-  blitScaled(SPR_LOCK, 96, 39, 2);
+  for (int y = 0; y < SPR_LOCK.h; y++)   // the picker's lock, twice the size, in its dark gray
+    for (int x = 0; x < SPR_LOCK.w; x++) if (SPR_LOCK.px[y * SPR_LOCK.w + x] != C_T) rect(96 + 2 * x, 39 + 2 * y, 2, 2, C_DKGRAY);
   char b[32]; snprintf(b, sizeof b, "To delete %s,", r.name); textCentered(80, 74, b, C_NAVY);
   textCentered(80, 86, "ask a grown-up", C_NAVY);
   textCentered(80, 96, "to set a code", C_NAVY);

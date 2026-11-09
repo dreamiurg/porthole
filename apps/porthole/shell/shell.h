@@ -154,7 +154,7 @@ class Shell {
   void updateAge(); void drawAge();
   bool kidKeysHidden();
   void fourthShown();   // the kids' pad while its fourth digit shows
-  void updatePin(); void drawPin(); void drawPinPrompt(bool hidden, bool del); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
+  void updatePin(); void drawPin(); void drawPinPrompt(bool hidden, bool del); void drawPinWait(uint32_t wait, bool del); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
   void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
   bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
