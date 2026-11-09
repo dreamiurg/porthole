@@ -70,9 +70,10 @@ wears. Nothing the kid earned is lost.
 
 - `SC_FARM`: a farm scene (field, fence, sun) with the dog in its grown size, a wooden sign with its name,
   a line saying "Connor lives here now!", and **Go home**. One rare sound here is fine (a goodbye moment),
-  through the existing `Sound` enum; the build plays none. Tapping the dog pats it: it jumps and a few
-  hearts float up, with no sound and nothing saved, both here and on a visit. (Added after the second
-  playtest, 2026-11-09: the visit was a still picture.)
+  through the existing `Sound` enum; the build plays none. Touching the dog pats it: it jumps and
+  hearts come while the finger stays on it (a tap, a hold or a rub), with no sound and nothing saved, both
+  here and on a visit. (Added after the second playtest, 2026-11-09: the visit was a still picture; holds
+  and rubs after the fourth.)
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
   not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
@@ -91,8 +92,12 @@ wears. Nothing the kid earned is lost.
 only once the dog is old enough (decision 1), in a calm color so it is not the page's call to action. It
 asks once, "Move Connor to the farm?" and says what happens: "Connor will live there. Then pick a new pup."
 No (green, the easy one) / Yes. Yes takes a 2 s press-and-hold: the button fills across the whole 2 s
-while the little dog gets up and walks off to the right, and "Hold Yes" sits under the buttons. Letting go
-or sliding off starts over; a plain tap on Yes only wiggles the hint. (Added after the second playtest,
+while the little dog gets up and walks toward a small red barn at the card's right edge, and "Hold Yes"
+sits under the buttons. Letting go or sliding off starts over; letting go early only wiggles the hint.
+Every other button on the new screens (No!, Go home, back, Shelter, the kennel arrows, Pick me!, the
+Farm friends pictures, "To the farm") works on release however long it was pressed, so a long press on
+No! always keeps the dog (fourth playtest: a long press on No! did nothing, which steered a non-reader to
+long-press Yes). (Added after the second playtest,
 2026-11-09: a random masher reached the farm in three taps, 4 runs in 40. Lengthened from 600 ms after the
 third: a firm 6-year-old's ordinary press sent the dog away before she could notice the fill.) The move,
 and later the shelter's adoption, are saved within a second, so a restart right after keeps them.

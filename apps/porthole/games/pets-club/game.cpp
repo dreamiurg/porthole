@@ -25,7 +25,7 @@ void Game::enter(const AppEnter& e) {
     if (e.all[i].id == e.who->id) self_ = i;
   }
   memset(&save_, 0, sizeof save_);
-  haveSave_ = dirty_ = wantsHome_ = false; sound_ = SND_NONE;
+  haveSave_ = dirty_ = urgent_ = wantsHome_ = false; sound_ = SND_NONE;
   for (auto& p : parts_) p.life = 0;
   lastTickSec_ = now_; dogX_ = dogTargetX_ = 60; dogAct_ = 0;
   go(SC_SPLASH);
@@ -246,6 +246,10 @@ void Game::drawHat(int x, int top, int pose, bool flip, int scale) {
 static uint8_t inkOn(uint8_t fill) { return ui::inkOn(fill); }
 void Game::drawBackButton() { ui::drawBack(); }
 bool Game::backButton() { return ui::back(in_); }
+// The farm's and the shelter's buttons act on release however long they were held (ui::clicked): a 6-year-old who
+// presses long when a tap seems not to work must find No! and the way out working, not only the 2 s Yes.
+static const ui::Box BACK_BOX = {64, -4, 32, 32};   // ui::back's circle, as a box
+bool Game::backClicked() { ui::drawBack(); return ui::clicked(in_, BACK_BOX); }
 void Game::drawToast() {
   if (ms_ >= toastUntil_ || !toast_[0]) return;
   ui::toast(toast_);
@@ -509,7 +513,7 @@ void Game::updateHome() {
   if (backButton()) { wantsHome_ = true; return; }
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && tapBox(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends
-  if (!save_.hasDog) { if (tapBox(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); } return; }   // the empty room: the shelter
+  if (!save_.hasDog) { if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); } return; }   // the empty room: the shelter
   homeBrain();
   homeEvents();
   homeTouches();
@@ -1174,7 +1178,7 @@ void Game::updateStats() {
   if (backButton()) { go(SC_HOME); return; }
   if (tapBox(in_, STICKERS_BTN)) { go(SC_STICKERS); }
   if (tapBox(in_, HATS_BTN)) { hatSel_ = save_.hat; go(SC_HATS); }
-  if (pet::canRetire(save_, now_) && tapBox(in_, FARM_BTN)) go(SC_CONFIRM_FARM);
+  if (pet::canRetire(save_, now_) && ui::clicked(in_, FARM_BTN)) go(SC_CONFIRM_FARM);
   if (in_.longPress && in_.hit(60, 140, 40, 16)) go(SC_CONFIRM_RESET);
 }
 void Game::drawStats() {
@@ -1263,13 +1267,13 @@ void Game::drawConfirmReset() {
 // go or sliding off starts over; a tap only wiggles the "Hold Yes" hint.
 static const uint32_t FARM_HOLD_MS = 2000;
 void Game::updateConfirmFarm() {
-  if (tapBox(in_, NO_BTN)) { go(SC_STATS); return; }
+  if (ui::clicked(in_, NO_BTN)) { go(SC_STATS); return; }
   yesHold_.step(ui::pressing(in_, YES_BTN), ms_);
   if (yesHold_.progress(FARM_HOLD_MS) >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
     pet::retire(save_, now_); markDirty(); urgent_ = true;
     farmSlot_ = (uint8_t)(save_.wallCount - 1); farmVisit_ = false; event_ = 0; weather_ = 0;
     go(SC_FARM);
-  } else if (tapBox(in_, YES_BTN)) bounceUntil_ = ms_ + 500;
+  } else if (ui::clicked(in_, YES_BTN)) bounceUntil_ = ms_ + 500;   // let go early
 }
 void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pup comes next
   clear(C_NAVY);
@@ -1288,6 +1292,8 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
   textCentered(YES_BTN.x + YES_BTN.w / 2, YES_BTN.y + dy + (YES_BTN.h - 7) / 2, "Yes", C_WHITE);
   const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
   textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
+  for (int r = 0; r < 6; r++) hline(114 - r, 129 + r, 2 * r + 1, C_DKWOOD);   // the farm's barn, where the dog walks to
+  rect(108, 135, 13, 9, C_RED); rect(112, 138, 5, 6, C_WHITE); rect(113, 139, 3, 5, C_DKWOOD); rect(106, 144, 17, 2, C_LEAF);
   if (held > 0) drawDog(80 - dogFrame(P_WALK0).w / 2 + (int)(held * 12), 155, (ms_ / 150) % 2 ? P_WALK0 : P_WALK1, false);
   else drawDog(80 - dogFrame(P_SIT).w / 2, 155, P_SIT, false);
 }
@@ -1297,8 +1303,11 @@ static ui::Box farmDog(int breed) {   // the farm's dog at 2x, feet on y 120: a 
   return {80 - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
 }
 void Game::updateFarm() {   // just moved here: Go home to the empty room; a visit: back to Farm friends
-  if (farmVisit_ ? backButton() : tapBox(in_, GO_HOME_BTN)) { go(farmVisit_ ? SC_WALL : SC_HOME); return; }
-  if (tapBox(in_, farmDog(save_.wallBreeds[farmSlot_]))) { spawn(in_.x, in_.y - 6, 0, 3); bounceUntil_ = ms_ + 600; }   // no sound
+  if (farmVisit_ ? backClicked() : ui::clicked(in_, GO_HOME_BTN)) { go(farmVisit_ ? SC_WALL : SC_HOME); return; }
+  const ui::Box d = farmDog(save_.wallBreeds[farmSlot_]);   // a finger on the dog, a tap, a hold or a rub: it jumps
+  if (in_.hit(d.x, d.y, d.w, d.h) && in_.down && ms_ + 300 >= bounceUntil_) {   // and a heart every 300 ms; no sound
+    spawn(in_.x, in_.y - 6, 0, 2); bounceUntil_ = ms_ + 600;
+  }
 }
 void Game::drawFarm() {   // a dog on the farm (farmSlot_ on the wall) in the sun, under a sign with its name
   const char* who = save_.wallNames[farmSlot_];
@@ -1322,9 +1331,10 @@ void Game::drawFarm() {   // a dog on the farm (farmSlot_ on the wall) in the su
 // ---------------------------------------------------------------- the shelter: one kennel a page, each pup with its name
 static const ui::Box PICK_BTN = {48, 128, 64, 22};
 void Game::updateShelter() {
-  if (backButton()) { go(SC_HOME); return; }   // still the empty room: nothing was adopted
-  if (const int d = arrowTap(in_, 80)) shelterSel_ = (uint8_t)((shelterSel_ + NUM_BREEDS + d) % NUM_BREEDS);
-  if (tapBox(in_, PICK_BTN)) {
+  if (backClicked()) { go(SC_HOME); return; }   // still the empty room: nothing was adopted
+  if (const int d = ui::clicked(in_, {10, 64, 32, 32}) ? -1 : ui::clicked(in_, {118, 64, 32, 32}) ? 1 : 0)   // the arrows
+    shelterSel_ = (uint8_t)((shelterSel_ + NUM_BREEDS + d) % NUM_BREEDS);
+  if (ui::clicked(in_, PICK_BTN)) {
     setNameBuf(SHELTER_NAMES[shelterSel_]); namePage_ = 0;
     go(SC_NAME_PET);
   }
@@ -1361,8 +1371,8 @@ static ui::Box wallPicture(int n, int i) {   // a picture's gold frame on Farm f
   return {32 + c2 * 25, 66 + r2 * 23, 46, 30};
 }
 void Game::updateWall() {
-  if (backButton()) { go(SC_HOME); return; }
-  for (int i = 0; i < save_.wallCount; i++) if (tapBox(in_, wallPicture(save_.wallCount, i))) { farmSlot_ = (uint8_t)i; farmVisit_ = true; go(SC_FARM); return; }
+  if (backClicked()) { go(SC_HOME); return; }
+  for (int i = 0; i < save_.wallCount; i++) if (ui::clicked(in_, wallPicture(save_.wallCount, i))) { farmSlot_ = (uint8_t)i; farmVisit_ = true; go(SC_FARM); return; }
 }
 void Game::drawWall() {
   wallpaper(themeOf(save_), 160);

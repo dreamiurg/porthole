@@ -31,7 +31,7 @@ void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hi
 
 // A press on a logical circle: the finger went down in it and is still in it.
 bool pressing(const Input& in, int cx, int cy, int r);
-bool pressing(const Input& in, const Box& b);   // the same for a box; logs b for the UI audit
+bool pressing(const Input& in, const Box& b);   // the same for a box; logs b for the UI audit every frame
 // The release counterpart: the finger went down in b and came up in it this frame, however long it was held (a slow
 // press from a small finger still counts; Input::tap stops at the long press). Logs b for the UI audit.
 bool clicked(const Input& in, const Box& b);

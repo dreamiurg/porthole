@@ -95,7 +95,7 @@ bool pressing(const Input& in, int cx, int cy, int r) {
   return in.down && dx * dx + dy * dy <= r * r && ex * ex + ey * ey <= r * r;
 }
 bool pressing(const Input& in, const Box& b) {
-  return in.down && in.hit(b.x, b.y, b.w, b.h) && in.downX >= b.x && in.downX < b.x + b.w && in.downY >= b.y && in.downY < b.y + b.h;
+  return in.hit(b.x, b.y, b.w, b.h) && in.down && in.downX >= b.x && in.downX < b.x + b.w && in.downY >= b.y && in.downY < b.y + b.h;
 }
 void FreshGate::filter(Input& in, uint32_t now) {
   if (!closed) return;

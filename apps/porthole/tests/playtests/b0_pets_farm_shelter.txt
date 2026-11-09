@@ -36,8 +36,10 @@ wait 450
 expect-screen confirm_farm
 ui-check
 snap 00_confirm_farm
-# No keeps the dog
-tap 45 102
+# No keeps the dog, however long it is pressed (like every button here but Yes)
+down 45 102
+wait 1000
+up
 wait 450
 expect-screen stats
 expect hasDog=1
@@ -96,6 +98,17 @@ tap 80 95
 wait 80
 expect-screen farm
 snap 01b_farm_pat
+wait 900
+# holding a finger on him and rubbing: he keeps jumping, a heart every 300 ms
+down 70 95
+wait 300
+move 90 95
+wait 300
+move 70 95
+wait 300
+expect-screen farm
+snap 01c_farm_rub
+up
 wait 900
 # an impatient finger tapping one spot a little slower than the fresh gate: Go home, then nothing in the empty room
 # (its Shelter sits higher), so the taps never chain on through the shelter into naming a pup
@@ -233,8 +246,12 @@ up
 wait 450
 expect-screen farm
 expect wall=2
-tap 80 137
+# a long press on Go home still goes home
+down 80 137
+wait 1200
+up
 wait 450
+expect-screen home
 # two frames side by side on Farm friends; back is the empty room again
 tap 53 53
 wait 450
@@ -423,9 +440,9 @@ wait 450
 expect-screen home
 sheet wall
 # the farm and the shelter are saved at once: a restart a second after each keeps the choice (the shell's urgent
-# checkpoint, not its 5 s cadence)
+# checkpoint, not its 5 s cadence); the growing-up card comes on the next whole second
 dbg old
-wait 1500
+wait 2000
 tap 80 80
 wait 900
 tap 80 80
