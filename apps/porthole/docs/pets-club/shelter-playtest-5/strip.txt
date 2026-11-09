@@ -1,0 +1,11 @@
+#!/bin/bash
+# strip.sh file... -> scratch strip.png (2 rows max 3 wide)
+cd /home/user/porthole/apps/porthole/docs/pets-club/shelter-playtest-5
+python3 -c "
+from PIL import Image
+import sys
+ims=[Image.open(p+'.png').resize((320,320)) for p in sys.argv[1:]]
+c=min(3,len(ims)); r=(len(ims)+c-1)//c
+s=Image.new('RGB',(320*c,320*r))
+for k,i in enumerate(ims): s.paste(i,((k%c)*320,(k//c)*320))
+s.save('/tmp/claude-0/-home-user-porthole/4e7b951a-0e4f-5eae-859d-2ab6ed697cd9/scratchpad/strip.png')" "$@"

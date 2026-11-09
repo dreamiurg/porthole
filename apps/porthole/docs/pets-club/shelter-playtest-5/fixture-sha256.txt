@@ -1,0 +1,5 @@
+a048df7b54b09fa839b1da97c81c7170cf5e67847345e8d0816b88826235d31b  /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/crago-s0.sav
+4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a  /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/porthole-m.sav
+4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a  /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/porthole-mb.sav
+845f86e0b2092ce494c6eeea015bcf03ffab5799c14dac8584264cc6bcc70ae2  /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/porthole-p0.sav
+ef260e9aa3c673af240d17a2660480361a8e081d1ffeca2a5ed0e3219fc18567  /home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture/sys-ran.sav

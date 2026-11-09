@@ -1,0 +1,1076 @@
+# run 1 (fresh fixture copy)
+tick 1000
+shot r1_00_boot
+down 75 68
+tick 200
+up
+tick 800
+shot r1_01_after_mia
+down 37 74
+tick 300
+shot r1_02_finger_on_tile
+up
+tick 1500
+shot r1_03_open
+down 80 100
+tick 200
+up
+tick 1500
+shot r1_04_room
+down 80 103
+tick 250
+up
+tick 300
+shot r1_05_pat_dog
+tick 1200
+shot r1_06_pat_after
+down 118 129
+tick 250
+up
+tick 900
+shot r1_07_paw_btn
+down 80 12
+tick 250
+up
+tick 900
+shot r1_08_back
+down 45 25
+tick 250
+up
+tick 900
+shot r1_09_stats
+down 80 77
+tick 120
+up
+tick 200
+shot r1_10_farmbtn_tap_200
+tick 800
+shot r1_11_question
+down 82 143
+tick 200
+up
+tick 500
+shot r1_12_q_tap_dog
+down 114 138
+tick 200
+up
+tick 500
+shot r1_13_q_tap_barn
+down 115 101
+tick 150
+up
+tick 100
+shot r1_14_q_yes_short_100
+tick 900
+shot r1_15_q_yes_short_after
+down 115 101
+tick 360
+shot r1_16_yes_hold_0360
+tick 360
+shot r1_17_yes_hold_0720
+tick 360
+shot r1_18_yes_hold_1080
+tick 400
+shot r1_19_yes_hold_1480
+up
+tick 200
+shot r1_20_yes_release_1480
+tick 1000
+shot r1_21_yes_release_after
+down 45 101
+tick 120
+up
+tick 150
+shot r1_22_no_short_150
+tick 900
+shot r1_23_no_short_after
+down 80 77
+tick 150
+up
+tick 800
+shot r1_24_q_again
+down 45 101
+tick 500
+shot r1_25_no_hold_0500
+tick 500
+shot r1_26_no_hold_1000
+up
+tick 150
+shot r1_27_no_release_1000
+tick 800
+shot r1_28_no_med_after
+down 80 77
+tick 150
+up
+tick 800
+down 45 101
+tick 1200
+shot r1_29_no_hold_1200
+tick 1300
+shot r1_30_no_hold_2500
+up
+tick 150
+shot r1_31_no_release_2500
+tick 800
+shot r1_32_no_long_after
+down 80 77
+tick 1500
+up
+tick 200
+shot r1_33_farmbtn_long1500
+tick 600
+down 115 101
+tick 400
+up
+tick 100
+down 115 101
+tick 400
+up
+tick 100
+down 115 101
+tick 400
+up
+tick 100
+down 115 101
+tick 400
+up
+tick 100
+down 116 100
+tick 400
+shot r1_34_yes_5th_mash
+up
+tick 100
+down 115 102
+tick 400
+up
+tick 800
+shot r1_35_yes_mash_after
+down 115 101
+tick 1400
+shot r1_36_yes_1400_before_slide
+move 105 115
+tick 80
+move 95 125
+tick 80
+shot r1_37_slid_off_yes
+tick 1500
+shot r1_38_slid_off_held_3s
+up
+tick 900
+shot r1_39_slid_off_release
+down 115 101
+tick 800
+move 80 101
+tick 80
+move 45 101
+tick 300
+shot r1_40_yes_slid_to_no
+up
+tick 900
+shot r1_41_yes_slid_to_no_release
+down 45 101
+tick 300
+move 80 101
+tick 80
+move 115 101
+tick 1000
+shot r1_42_no_slid_to_yes_1000
+tick 1500
+shot r1_43_no_slid_to_yes_2500
+up
+tick 900
+shot r1_44_no_slid_to_yes_release
+# Nora long press on Yes (2.5 s)
+down 115 101
+tick 1600
+shot r1_45_yes_long_1600
+tick 200
+shot r1_46_yes_long_1800
+tick 200
+shot r1_47_yes_long_2000
+tick 200
+shot r1_48_yes_long_2200
+tick 300
+shot r1_49_yes_long_2500
+up
+tick 300
+shot r1_50_yes_long_release
+tick 1500
+shot r1_51_yes_long_after
+down 85 64
+tick 150
+up
+tick 250
+shot r1_52_farm_pat
+tick 800
+shot r1_53_farm_pat_after
+down 70 64
+tick 60
+move 80 62
+tick 60
+move 92 64
+tick 60
+move 80 66
+tick 60
+move 70 64
+tick 60
+move 82 62
+tick 60
+move 94 64
+tick 60
+shot r1_54_farm_rub
+up
+tick 600
+shot r1_55_farm_rub_after
+down 83 66
+tick 1000
+shot r1_56_farm_hold_1000
+tick 1500
+shot r1_57_farm_hold_2500
+up
+tick 600
+shot r1_58_farm_hold_after
+down 85 66
+tick 80
+shot r1_59_farm_tap_down80
+tick 80
+up
+tick 40
+shot r1_60_farm_tap_up40
+tick 160
+shot r1_61_farm_tap_up200
+tick 600
+down 75 72
+tick 250
+up
+tick 80
+shot r1_62_farm_tap2_up80
+down 80 102
+tick 200
+up
+tick 600
+shot r1_63_farm_tap_below_gohome
+down 53 91
+tick 200
+up
+tick 600
+shot r1_64_farm_tap_left_of_gohome
+down 80 91
+tick 1000
+shot r1_65_gohome_hold_1000
+tick 1500
+shot r1_66_gohome_hold_2500
+up
+tick 200
+shot r1_67_gohome_release
+tick 1200
+shot r1_68_gohome_after
+down 80 91
+tick 80
+shot r1_69_gohome_tap_down80
+tick 80
+up
+tick 100
+shot r1_70_gohome_tap_up100
+tick 1000
+shot r1_71_gohome_tap_after
+down 66 92
+tick 200
+up
+tick 900
+shot r1_72_gohome_tap_66_92
+down 96 93
+tick 200
+up
+tick 900
+shot r1_73_gohome_tap_96_93
+down 80 96
+tick 700
+up
+tick 900
+shot r1_74_gohome_700_80_96
+tick 5000
+down 80 92
+tick 150
+up
+tick 900
+shot r1_75_gohome_after_wait5
+down 80 92
+tick 150
+up
+tick 100
+down 80 92
+tick 150
+up
+tick 900
+shot r1_76_gohome_doubletap
+down 53 35
+tick 200
+up
+tick 900
+shot r1_77_farm_tap_sign
+down 88 35
+tick 200
+up
+tick 900
+shot r1_78_farm_tap_sun
+down 80 8
+tick 200
+up
+tick 900
+shot r1_79_farm_tap_top
+tick 6000
+quit
+# run 1b: process restart (no fixture copy) after stuck farm
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+shot r1b_01_picker_to_launcher
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+shot r1b_02_open_game
+down 132 106
+tick 2500
+shot r1b_03_ball_hold
+up
+tick 800
+shot r1b_04_ball_after
+down 32 107
+tick 2500
+up
+tick 800
+shot r1b_05_bowl_hold_after
+down 80 102
+tick 1000
+shot r1b_06_shelter_hold_1000
+tick 1500
+shot r1b_07_shelter_hold_2500
+up
+tick 200
+shot r1b_08_shelter_release
+tick 1200
+shot r1b_09_shelter_after
+down 136 67
+tick 1000
+shot r1b_10_right_hold_1000
+tick 1500
+shot r1b_11_right_hold_2500
+up
+tick 600
+shot r1b_12_right_release
+down 136 67
+tick 150
+up
+tick 600
+shot r1b_13_right_tap
+down 24 67
+tick 2500
+up
+tick 600
+shot r1b_14_left_hold_release
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_1
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_2
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_3
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_4
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_5
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_6
+down 137 66
+tick 150
+up
+tick 500
+shot r1b_15_browse_7
+down 80 52
+tick 200
+up
+tick 600
+shot r1b_16_tap_pup
+down 80 82
+tick 200
+up
+tick 600
+shot r1b_17_tap_dots
+down 80 12
+tick 2500
+shot r1b_18_home_hold_2500
+up
+tick 1000
+shot r1b_19_home_release
+down 53 53
+tick 200
+up
+tick 900
+shot r1b_20_tap_photo
+down 80 103
+tick 200
+up
+tick 900
+shot r1b_21_tap_biscuit_frame
+tick 1500
+shot r1b_22_visit
+down 80 65
+tick 150
+up
+tick 60
+shot r1b_23_visit_pat
+tick 600
+down 68 64
+tick 60
+move 80 62
+tick 60
+move 92 64
+tick 60
+move 80 66
+tick 60
+move 70 64
+tick 60
+move 90 64
+tick 60
+shot r1b_24_visit_rub
+up
+tick 600
+down 80 65
+tick 2500
+shot r1b_25_visit_hold
+up
+tick 600
+down 80 12
+tick 1000
+shot r1b_26_visit_home_hold_1000
+tick 1500
+shot r1b_27_visit_home_hold_2500
+up
+tick 1000
+shot r1b_28_visit_home_release
+down 80 103
+tick 200
+up
+tick 2000
+down 80 65
+tick 120
+up
+tick 40
+shot r1b_29_visit_pat1_40
+tick 1500
+down 80 65
+tick 120
+up
+tick 40
+shot r1b_30_visit_pat2_40
+tick 1500
+down 75 68
+tick 120
+up
+tick 40
+shot r1b_31_visit_pat3_40
+tick 1500
+down 80 65
+tick 1000
+shot r1b_32_visit_hold_1000
+up
+tick 500
+# NOTE: r1 farm 'Go home' taps at y=91 were my coordinate error (dog body), not the button (y~138)
+down 80 12
+tick 150
+up
+tick 900
+shot r1b_33_back_to_wall
+down 80 12
+tick 150
+up
+tick 900
+shot r1b_34_back_to_room
+down 80 102
+tick 150
+up
+tick 900
+shot r1b_35_shelter
+down 134 81
+tick 150
+up
+tick 400
+down 134 81
+tick 150
+up
+tick 400
+down 134 81
+tick 150
+up
+tick 400
+down 134 81
+tick 150
+up
+tick 400
+down 134 81
+tick 150
+up
+tick 400
+shot r1b_36_waffles
+down 80 124
+tick 200
+up
+tick 500
+shot r1b_37_tap_dots
+down 80 138
+tick 1000
+shot r1b_38_pickme_hold_1000
+tick 1500
+shot r1b_39_pickme_hold_2500
+up
+tick 200
+shot r1b_40_pickme_release
+tick 1200
+shot r1b_41_pickme_after
+down 123 27
+tick 1000
+shot r1b_42_q_hold_1000
+tick 1500
+shot r1b_43_q_hold_2500
+up
+tick 300
+shot r1b_44_q_release
+tick 1500
+shot r1b_45_q_after
+down 123 27
+tick 150
+up
+tick 600
+shot r1b_46_q_tap1
+down 123 27
+tick 150
+up
+tick 600
+shot r1b_47_q_tap2
+down 123 27
+tick 150
+up
+tick 600
+shot r1b_48_q_tap3
+down 93 125
+tick 2500
+shot r1b_49_bksp_hold_2500
+up
+tick 600
+shot r1b_50_bksp_release
+down 41 52
+tick 2500
+up
+tick 600
+shot r1b_51_A_long
+down 67 125
+tick 2500
+up
+tick 600
+shot r1b_52_NZ_long
+down 67 125
+tick 150
+up
+tick 600
+shot r1b_53_NZ_tap
+down 41 52
+tick 500
+up
+tick 500
+shot r1b_54_N_500
+down 41 52
+tick 750
+up
+tick 500
+shot r1b_55_N_750
+down 41 52
+tick 1000
+up
+tick 500
+shot r1b_56_N_1000
+down 41 52
+tick 1500
+up
+tick 500
+shot r1b_57_N_1500
+down 118 125
+tick 1000
+shot r1b_58_ok_hold_1000
+tick 1500
+shot r1b_59_ok_hold_2500
+up
+tick 300
+shot r1b_60_ok_release
+tick 1500
+shot r1b_61_ok_after
+down 93 125
+tick 150
+up
+tick 500
+shot r1b_62_bksp_tap
+down 118 125
+tick 150
+up
+tick 300
+shot r1b_63_ok_tap
+tick 1500
+shot r1b_64_ok_tap_after
+tick 3000
+shot r1b_65_ok_tap_after2
+down 80 120
+tick 2500
+shot r1b_66_welcome_hold
+up
+tick 300
+shot r1b_67_welcome_release
+tick 1500
+shot r1b_68_welcome_after
+down 80 120
+tick 150
+up
+tick 300
+shot r1b_69_welcome_tap
+tick 1500
+shot r1b_70_new_room
+down 53 53
+tick 2500
+shot r1b_71_photo_hold
+up
+tick 1200
+shot r1b_72_photo_hold_release
+down 80 103
+tick 2500
+shot r1b_73_frame_hold
+up
+tick 1500
+shot r1b_74_frame_hold_release
+down 53 53
+tick 900
+up
+tick 1200
+shot r1b_75_photo_900
+down 53 53
+tick 150
+up
+tick 1200
+shot r1b_76_photo_tap
+down 80 103
+tick 2500
+shot r1b_77_wallframe_hold
+up
+tick 1500
+shot r1b_78_wallframe_hold_release
+down 80 103
+tick 900
+up
+tick 1500
+shot r1b_79_wallframe_900
+down 65 95
+tick 60
+move 75 93
+tick 60
+move 88 95
+tick 60
+move 75 97
+tick 60
+move 65 95
+tick 60
+move 85 94
+tick 60
+shot r1b_80_visit_rub
+up
+tick 1000
+down 80 92
+tick 1200
+shot r1b_81_visit_hold_1200
+up
+tick 1000
+down 80 92
+tick 120
+up
+tick 40
+shot r1b_82_visit_pat
+tick 1000
+down 81 13
+tick 2500
+up
+tick 1200
+shot r1b_83_visit_home_long
+down 80 12
+tick 2500
+up
+tick 1200
+shot r1b_84_wall_home_long
+quit
+# run 2 (fresh fixture copy): brother's deliberate send-off, farm, Go home
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+shot r2_01_room
+down 45 25
+tick 200
+up
+tick 900
+shot r2_02_card
+down 80 77
+tick 200
+up
+tick 900
+shot r2_03_question
+down 115 101
+tick 1600
+shot r2_04_yes_1600
+tick 100
+shot r2_05_yes_1700
+tick 100
+shot r2_06_yes_1800
+tick 100
+shot r2_07_yes_1900
+tick 100
+shot r2_08_yes_2000
+tick 500
+shot r2_09_yes_2500_still_down
+up
+tick 40
+shot r2_10_up_40
+tick 400
+shot r2_11_up_440
+tick 600
+down 80 95
+tick 120
+up
+tick 40
+shot r2_12_farm_first_pat
+tick 1000
+down 65 95
+tick 60
+move 75 93
+tick 60
+move 88 95
+tick 60
+move 75 97
+tick 60
+move 65 95
+tick 60
+move 85 94
+tick 60
+shot r2_13_farm_rub
+up
+tick 1000
+down 80 97
+tick 2500
+shot r2_14_farm_hold_2500
+up
+tick 1000
+shot r2_15_farm_hold_after
+down 80 122
+tick 150
+up
+tick 800
+shot r2_16_tap_above_gohome
+down 44 137
+tick 150
+up
+tick 800
+shot r2_17_tap_left_of_gohome
+down 80 137
+tick 300
+shot r2_18_gohome_300
+tick 700
+shot r2_19_gohome_1000
+tick 1500
+shot r2_20_gohome_2500
+up
+tick 300
+shot r2_21_gohome_release
+tick 1200
+shot r2_22_gohome_after
+down 53 53
+tick 2500
+up
+tick 1200
+shot r2_23_empty_photo_long
+down 53 53
+tick 1000
+up
+tick 1200
+shot r2_24_empty_photo_1000
+down 80 12
+tick 150
+up
+tick 1500
+shot r2_25_left_to_launcher
+down 37 74
+tick 200
+up
+tick 1500
+shot r2_26_reopen_splash
+down 80 100
+tick 200
+up
+tick 1500
+shot r2_27_resume_room
+down 80 102
+tick 150
+up
+tick 900
+down 134 81
+tick 1000
+up
+tick 500
+shot r2_28_right_1000
+down 134 81
+tick 700
+up
+tick 500
+shot r2_29_right_700
+down 26 81
+tick 1500
+up
+tick 500
+shot r2_30_left_1500
+down 80 138
+tick 1000
+up
+tick 1200
+shot r2_31_pickme_1000
+down 80 12
+tick 2500
+up
+tick 1200
+shot r2_32_kb_home_long
+down 80 12
+tick 150
+up
+tick 1200
+shot r2_33_kb_home_tap_or_next
+down 134 81
+tick 150
+up
+tick 400
+down 134 81
+tick 150
+up
+tick 400
+shot r2_34_choco
+down 80 138
+tick 150
+up
+tick 900
+shot r2_35_kb_choco
+down 93 125
+tick 120
+up
+tick 250
+down 93 125
+tick 120
+up
+tick 250
+down 93 125
+tick 120
+up
+tick 250
+down 93 125
+tick 120
+up
+tick 250
+down 93 125
+tick 120
+up
+tick 250
+down 93 125
+tick 120
+up
+tick 250
+shot r2_36_kb_cleared
+down 67 125
+tick 120
+up
+tick 300
+down 41 68
+tick 120
+up
+tick 300
+down 67 125
+tick 120
+up
+tick 300
+down 41 68
+tick 120
+up
+tick 300
+down 67 125
+tick 120
+up
+tick 300
+down 93 84
+tick 120
+up
+tick 400
+shot r2_37_kb_typed
+down 93 125
+tick 120
+up
+tick 300
+down 93 100
+tick 120
+up
+tick 400
+shot r2_38_kb_rex
+down 118 125
+tick 120
+up
+tick 1500
+shot r2_39_welcome_rex
+tick 2000
+down 80 120
+tick 120
+up
+tick 1500
+shot r2_40_room_rex
+down 45 25
+tick 150
+up
+tick 900
+shot r2_41_rex_card
+down 80 12
+tick 150
+up
+tick 900
+down 53 53
+tick 150
+up
+tick 900
+shot r2_42_rex_wall
+quit
+# run 3 (fresh fixture copy): process restart while holding Yes
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+down 45 25
+tick 200
+up
+tick 900
+down 80 77
+tick 200
+up
+tick 900
+down 115 101
+tick 1600
+shot r3_01_yes_1600_then_kill
+quit
+# run 3b: restart (no fixture copy)
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+shot r3_02_after_restart
+down 45 25
+tick 200
+up
+tick 900
+down 80 77
+tick 200
+up
+tick 900
+down 115 101
+tick 2000
+up
+tick 200
+shot r3_03_farm_then_kill_200ms
+quit
+# run 3c: restart (no fixture copy) 200 ms after farm commit
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+shot r3_04_after_restart2
+down 80 102
+tick 150
+up
+tick 900
+down 80 138
+tick 150
+up
+tick 900
+shot r3_05_kb_then_kill
+quit
+# run 3d: restart (no fixture copy) from name keyboard
+tick 1000
+down 75 68
+tick 200
+up
+tick 1000
+down 37 74
+tick 200
+up
+tick 1500
+down 80 100
+tick 200
+up
+tick 1500
+shot r3_06_after_restart3
+quit
