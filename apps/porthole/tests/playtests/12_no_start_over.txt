@@ -1,0 +1,35 @@
+# No Start over in Pets Club (a parent decision of 2026-11-09: two ordinary holds by a 6-year-old erased her pup).
+# A new dog comes from the farm and the shelter; a full reset is deleting the profile, which takes a code. Long and
+# short presses on the strip under the stats, where Start over's hidden long press was, and on its Yes's spot keep
+# the pup and the stats page.
+newgame Sam Biscuit
+wait 2400
+tap 40 27
+wait 450
+expect-screen stats
+down 80 146
+wait 2500
+up
+wait 450
+expect-screen stats
+hold 70 148
+wait 450
+expect-screen stats
+down 115 102
+wait 2500
+up
+wait 450
+expect-screen stats
+expect food=70
+snap 01_stats_kept
+tap 80 12
+wait 450
+expect-screen home
+tap 80 12
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect pet=Biscuit
+sheet no_start_over

@@ -1,0 +1,496 @@
+# Ana session, fresh fixture copy
+tick 1000
+down 70 67
+tick 150
+up
+tick 800
+shot A01_launcher
+# Ana holds a tile to see its name
+down 36 70
+tick 800
+shot A02_caption
+up
+tick 1800
+shot A03_room
+# Ana feeds Biscuit (bowl button)
+down 39 128
+tick 150
+up
+tick 800
+shot A04_bowl
+tick 1500
+shot A05_bowl2
+# Ana taps the stat bars
+down 120 30
+tick 150
+up
+tick 800
+shot A06_stats
+# Ana taps To the farm
+down 80 77
+tick 150
+up
+tick 800
+shot A07_q
+# Ana taps Yes quickly first
+down 115 101
+tick 150
+up
+tick 100
+shot A08_yes_tap
+tick 600
+shot A09_yes_tap2
+# Ana holds Yes until it happens
+down 115 101
+tick 2500
+up
+tick 800
+shot A10_farm
+down 80 137
+tick 150
+up
+tick 800
+shot A11_room
+down 110 101
+tick 150
+up
+tick 800
+shot A12_sh1
+down 140 81
+tick 150
+up
+tick 400
+shot A13_sh2
+down 140 81
+tick 150
+up
+tick 400
+shot A14_sh3
+down 140 81
+tick 150
+up
+tick 400
+shot A15_sh4
+down 140 81
+tick 150
+up
+tick 400
+shot A16_sh5
+down 140 81
+tick 150
+up
+tick 400
+shot A17_sh6
+down 140 81
+tick 150
+up
+tick 400
+shot A18_sh7
+down 140 81
+tick 150
+up
+tick 400
+shot A19_sh8wrap
+down 20 81
+tick 150
+up
+tick 400
+down 20 81
+tick 150
+up
+tick 400
+shot A20_waffles
+down 80 138
+tick 150
+up
+tick 800
+shot A21_name
+# Ana erases Waffles
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+down 93 124
+tick 120
+up
+tick 250
+shot A22_erased
+down 67 124
+tick 120
+up
+tick 400
+shot A23_nz
+# Ana types Toast
+down 93 76
+tick 120
+up
+tick 300
+down 67 52
+tick 120
+up
+tick 300
+down 67 124
+tick 120
+up
+tick 300
+down 41 52
+tick 120
+up
+tick 300
+down 67 124
+tick 120
+up
+tick 300
+down 67 76
+tick 120
+up
+tick 300
+down 93 76
+tick 120
+up
+tick 300
+shot A24_toast
+# Ana backs out to the shelter to compare once more
+down 80 12
+tick 150
+up
+tick 800
+shot A25_back_shelter
+down 140 81
+tick 150
+up
+tick 400
+down 20 81
+tick 150
+up
+tick 400
+down 80 138
+tick 150
+up
+tick 800
+shot A26_name_again
+# Ana retypes Toast and taps OK
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 93 124
+tick 120
+up
+tick 300
+down 67 124
+tick 120
+up
+tick 300
+down 93 76
+tick 120
+up
+tick 300
+down 67 52
+tick 120
+up
+tick 300
+down 67 124
+tick 120
+up
+tick 300
+down 41 52
+tick 120
+up
+tick 300
+down 67 124
+tick 120
+up
+tick 300
+down 67 76
+tick 120
+up
+tick 300
+down 93 76
+tick 120
+up
+tick 300
+shot A27_toast2
+down 120 124
+tick 150
+up
+tick 800
+shot A28_welcome
+down 80 120
+tick 150
+up
+tick 1000
+shot A29_room_toast
+# Ana visits Biscuit via the wall photo
+down 53 53
+tick 150
+up
+tick 800
+shot A30_farmfriends
+down 80 103
+tick 150
+up
+tick 1000
+shot A31_visit
+down 90 100
+tick 1000
+shot A32_visit_pet
+up
+tick 300
+down 80 12
+tick 150
+up
+tick 800
+shot A33_back_ff
+down 80 12
+tick 150
+up
+tick 800
+shot A34_back_room
+# leave to launcher and back
+down 80 12
+tick 150
+up
+tick 800
+shot A35_launcher
+down 36 70
+tick 150
+up
+tick 2500
+shot A36_resume
+# wait 6s for save
+tick 6000
+# process restart (new snap --serve, no fixture copy)
+tick 1000
+down 70 67
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 2500
+shot A37_restart_room
+down 53 53
+tick 150
+up
+tick 800
+shot A38_restart_ff
+# Pumpkin quick look
+down 80 12
+tick 150
+up
+tick 800
+down 80 12
+tick 150
+up
+tick 800
+shot P01_launcher
+down 71 107
+tick 150
+up
+tick 1000
+shot P02_open
+tick 2000
+shot P03_open2
+down 80 130
+tick 150
+up
+tick 1000
+shot P04_start
+tick 2000
+shot P05_start2
+tilt 0 0 -1000
+tick 500
+down 80 130
+tick 150
+up
+tick 1000
+shot P06_ready
+tick 2000
+shot P07_play
+# thumb rests on HIDE sign 3s
+down 80 132
+tick 1000
+shot P08_rest1
+tick 2000
+shot P09_rest3
+up
+tick 500
+shot P10_rest_lift
+tick 1500
+shot P11_after
+tick 1500
+shot P12
+tick 2000
+shot P13
+tick 2000
+shot P14
+# thumb rests on the exit sign 3s
+down 80 11
+tick 1000
+shot P15_exit_rest1
+tick 2000
+shot P16_exit_rest3
+up
+tick 800
+shot P17_exit_lift
+down 71 107
+tick 150
+up
+tick 2000
+down 80 130
+tick 150
+up
+tick 1500
+down 80 130
+tick 150
+up
+tick 1500
+shot P18_play
+# in play thumb rests on exit sign 3s
+down 80 11
+tick 600
+shot P19_exit600
+tick 1000
+shot P20_exit1600
+tick 1400
+shot P21_exit3000
+up
+tick 600
+shot P22_exit_lift
+down 71 107
+tick 150
+up
+tick 2000
+down 80 130
+tick 150
+up
+tick 1500
+down 80 130
+tick 150
+up
+tick 1500
+# in play thumb on exit sign, frames every 100ms
+down 80 11
+tick 100
+shot P23_e100
+tick 100
+shot P24_e200
+tick 100
+shot P25_e300
+tick 100
+shot P26_e400
+tick 100
+shot P27_e500
+up
+tick 300
+shot P28_e_lift
+down 71 107
+tick 150
+up
+tick 2000
+down 80 130
+tick 150
+up
+tick 1500
+down 80 130
+tick 150
+up
+tick 1500
+# in play quick tap on exit sign, then quick tap HIDE when grandma appears
+down 80 11
+tick 120
+up
+tick 500
+shot P29_exit_tap
+tick 1500
+shot P30
+down 80 132
+tick 120
+up
+tick 300
+shot P31_hide_tap
+tick 1500
+shot P32
+tick 2000
+shot P33
+# previous sequence misaligned, ended on picker. Redo with shots
+down 70 67
+tick 150
+up
+tick 800
+down 71 107
+tick 150
+up
+tick 2000
+shot P34_title
+down 80 130
+tick 150
+up
+tick 1500
+shot P35_cal
+down 80 130
+tick 150
+up
+tick 1500
+shot P36_play
+# in play quick tap on exit sign
+down 80 11
+tick 120
+up
+tick 500
+shot P37_exit_tap
+tick 1000
+shot P38
+# quick tap HIDE
+down 80 132
+tick 120
+up
+tick 300
+shot P39_hide_tap
+tick 1500
+shot P40
+tick 2000
+shot P41
+tick 3000

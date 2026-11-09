@@ -31,7 +31,7 @@ void box(const Box& b, uint16_t fill, uint16_t border) {
   gfx565::roundRect({b.x * 3 + 1, b.y * 3 + 1, b.w * 3 - 2, b.h * 3 - 2}, RADIUS - 1, fill);
 }
 void frame(const Input& in, const Button& b) {
-  const bool down = b.enabled && in.down && in.hit(b.box.x, b.box.y, b.box.w, b.box.h);
+  const bool down = b.enabled && ui::pressing(in, b.box);
   box(b.box, !b.enabled ? DISABLED : down ? pressed(b.fill) : b.fill, LINE);
 }
 }  // namespace
@@ -75,7 +75,7 @@ void tile(const Input& in, const Tile& t) {
   font::textBox(TILE_DETAIL.box, t.detail, x + TILE_DETAIL.x, y + TILE_DETAIL.y, DETAIL);
 }
 void hotspot(const Input& in, const Box& b) {
-  if (in.down && in.hit(b.x, b.y, b.w, b.h)) {   // LVGL's pressed hotspot: warm white at 48/255 over the room
+  if (ui::pressing(in, b)) {   // LVGL's pressed hotspot: warm white at 48/255 over the room
     for (int y = b.y * 3; y < (b.y + b.h) * 3; y++) for (int x = b.x * 3; x < (b.x + b.w) * 3; x++) {
       uint16_t& p = gfx565::fb[y * gfx565::W + x];
       unsigned r = p >> 11, g = (p >> 5) & 63, bl = p & 31;
@@ -85,7 +85,7 @@ void hotspot(const Input& in, const Box& b) {
 }
 
 void roundButton(const Input& in, const Box& b, const char* label) {
-  const bool down = in.down && in.hit(b.x, b.y, b.w, b.h);
+  const bool down = ui::pressing(in, b);
   const int cx = b.x * 3 + b.w * 3 / 2, cy = b.y * 3 + b.h * 3 / 2, r = (b.h < b.w ? b.h : b.w) * 3 / 2;
   gfx565::circle(cx, cy, r, LINE);
   gfx565::circle(cx, cy, r - 1, down ? pressed(PURPLE) : PURPLE);

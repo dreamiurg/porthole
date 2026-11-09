@@ -1,0 +1,29 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+press 115 102 2200
+tick 600
+press 80 100 100
+tick 300
+frame S_tap_dog
+press 80 136 100
+tick 800
+frame S_room
+press 26 43 100
+tick 600
+frame S_tap_wall_picture
+press 80 84 100
+tick 800
+frame S_tap_shelter

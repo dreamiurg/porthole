@@ -1,0 +1,4 @@
+wait 2500
+hold 80 93 3000
+wait 500
+snap a_new

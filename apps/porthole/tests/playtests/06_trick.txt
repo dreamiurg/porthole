@@ -28,6 +28,21 @@ tap 80 100
 tap 60 100
 expect phase=1
 expect input=0
+# a finger pressed while it shows and lifted on the kid's turn is no answer
+down 80 100
+wait 2000
+up
+expect phase=2
+expect input=0
+# out and in again: the lesson starts over
+tap 80 12
+wait 450
+expect-screen tricks
+tap 50 44
+wait 450
+expect-screen train
+tap 80 80
+expect phase=1
 follow-glow
 wait 1500
 follow-glow

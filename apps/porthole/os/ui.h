@@ -12,7 +12,7 @@ struct Button { Box box; const char* label; const gfx::Sprite* icon; uint8_t col
 uint8_t inkOn(uint8_t fill);   // readable text color for a fill: dark on bright, white on dark
 void panel(const Box& b, uint8_t fill, uint8_t border);
 void drawButton(const Button& b, bool pressed);
-bool button(const Input& in, const Button& b);   // draws it (sunk while the finger is on it); true on a tap
+bool button(const Input& in, const Button& b);   // draws it (sunk while a press that began on it is on it); true on a tap
 // Round button of radius 11 with a one-color icon mask drawn in white; the hit circle is 4 px wider.
 bool iconButton(const Input& in, int cx, int cy, const gfx::Sprite& icon, uint8_t col);
 void toast(const char* text);   // a one-line note in a white panel across the middle of the glass
@@ -31,9 +31,11 @@ void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hi
 
 // A press on a logical circle: the finger went down in it and is still in it.
 bool pressing(const Input& in, int cx, int cy, int r);
-// The release counterpart: the finger went down in b and came up in it this frame, however long it was held (a slow
-// press from a small finger still counts; Input::tap stops at the long press). Logs b for the UI audit.
+bool pressing(const Input& in, const Box& b);   // the same for a box; logs b for the UI audit every frame
+// The release counterpart: the finger went down in b and came up in it this frame, however long it was held, and
+// however far it wandered inside b (Input::tap stops at an 8 px slide). Logs b for the UI audit.
 bool clicked(const Input& in, const Box& b);
+bool clicked(const Input& in, int cx, int cy, int r);   // the same for a circle (ui::back's, the paging arrows)
 // During play a hand holding the case may brush the glass, so a game's way out there takes a hold, not a tap: HOLD_MS
 // with the finger on the sign. The time counts from when the finger is on it (step's `on`: pressing, every frame), so
 // one that drifts off and back starts over, and it runs on across page changes that do not hide the finger.
@@ -41,10 +43,10 @@ constexpr uint32_t HOLD_MS = 600;
 class Hold {
  public:
   void step(bool on, uint32_t ms) { if (on && !on_) fromMs_ = ms; on_ = on; ms_ = ms; }
-  float progress() const {   // 0..1
+  float progress(uint32_t holdMs = HOLD_MS) const {   // 0..1 over holdMs: a weighty choice may ask longer
     if (!on_) return 0;
     const uint32_t d = ms_ - fromMs_;
-    return d >= HOLD_MS ? 1 : (float)d / HOLD_MS;
+    return d >= holdMs ? 1 : (float)d / holdMs;
   }
 
  private:

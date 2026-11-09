@@ -1,0 +1,151 @@
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+shot m01_room
+press 45 27 150
+tick 1200
+shot m02_stats
+press 80 77 150
+tick 1000
+shot m03_confirm
+press 115 102 150
+tick 400
+shot m04_yes_tap
+tick 600
+down 115 102
+tick 400
+shot m05_hold_04
+tick 400
+shot m06_hold_08
+tick 400
+shot m07_hold_12
+tick 400
+shot m08_hold_16
+tick 400
+shot m09_hold_20
+up
+tick 400
+shot m10_farm
+tick 3000
+shot m11_farm_3s
+press 80 137 150
+tick 1000
+shot m12_empty_room
+press 80 101 150
+tick 1000
+shot m13_pup1
+press 134 80 150
+tick 700
+shot m14_pup2
+press 134 80 150
+tick 700
+shot m15_pup3
+press 134 80 150
+tick 700
+shot m16_pup4
+press 134 80 150
+tick 700
+shot m17_pup5
+press 134 80 150
+tick 700
+shot m18_pup6
+press 134 80 150
+tick 700
+shot m19_pup7
+press 134 80 150
+tick 700
+shot m20_pup8
+press 26 80 150
+tick 700
+shot m21_left
+press 75 125 150
+tick 700
+shot m22_dot_tap
+press 80 80 150
+tick 700
+shot m23_pup_tap
+press 80 108 150
+tick 700
+shot m24_label_tap
+press 80 138 150
+tick 800
+shot m25_kb
+press 120 125 150
+tick 300
+press 120 125 150
+tick 300
+shot m26_ok_double
+tick 1000
+press 80 120 150
+tick 1500
+shot m27_room_charcoal
+press 45 27 150
+tick 1200
+shot m28_stats_charcoal
+press 80 13 150
+tick 1000
+press 53 53 150
+tick 1000
+shot m29_wall
+press 80 104 150
+tick 1000
+shot m30_visit
+tick 3000
+shot m31_visit3s
+press 90 100 150
+tick 300
+shot m32_visit_tap
+tick 1000
+shot m33_visit_tap2
+down 70 100
+move 80 100
+tick 100
+move 95 100
+tick 100
+move 80 100
+tick 100
+move 70 100
+tick 100
+up
+tick 300
+shot m34_visit_rub
+press 80 13 150
+tick 1000
+press 80 13 150
+tick 1000
+press 80 13 150
+tick 6000
+shot m35_launcher
+quit
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+shot m36_reopen
+press 28 52 150
+tick 1500
+shot m37_pawstreet
+press 80 95 150
+tick 1500
+press 44 53 150
+tick 900
+shot m38_pic_left
+press 80 13 150
+tick 900
+press 63 53 150
+tick 900
+shot m39_pic_right
+press 80 13 150
+tick 900
+press 53 43 150
+tick 900
+shot m40_pic_up
+press 80 13 150
+tick 900
+press 53 64 150
+tick 900
+shot m41_pic_down
+quit

@@ -1,0 +1,10 @@
+newgame Leo Biscuit
+wait 2400
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+monkey 60 SEED
+debug

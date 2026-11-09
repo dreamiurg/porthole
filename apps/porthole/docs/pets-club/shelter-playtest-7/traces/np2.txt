@@ -1,0 +1,26 @@
+wait 1500
+tap 80 93
+wait 800
+hold 41 76 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 41 100 1500
+wait 150
+hold 41 76 1500
+wait 150
+hold 119 124 2000
+wait 300
+wait 1000
+wait 1000
+down 96 87
+wait 800
+shot h01_finger_on_frog_800ms
+wait 1200
+up
+wait 300
+shot h02_after_frog
+wait 1000
+shot h03_after_frog_1s

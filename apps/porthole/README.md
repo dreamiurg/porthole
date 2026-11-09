@@ -110,8 +110,8 @@ small sun (full, 65% or 40% backlight, always daylight colors and day scenes), o
 backlight, and the light follows the clock into evening and night, as before). Each kid plays up to 30 minutes a day across every game by default, then the board says "Back
 tomorrow" until local midnight. Each player rests for 10 minutes after their session allowance (15 minutes by default),
 even with only one profile. A minute without a touch or a move of the board does not count as play.
-A long press on a profile (after its code) deletes
-it and everything it made.
+Holding a profile for 3 seconds (then its code, or the grown-ups' admin code) deletes
+it and everything it made; any shorter press just opens it.
 
 For grown-ups, hold the "Who's playing?" title for five seconds to open the system menu,
 then tap **Admin**. The adult menus use smooth, native-resolution Atkinson Hyperlegible text

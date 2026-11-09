@@ -1,0 +1,39 @@
+# replay a trace against snap --serve from the fixture; write PNG snaps
+import subprocess, sys, shutil, glob, os
+from PIL import Image
+ROOT="/home/user/porthole/apps/porthole"
+FIX="/home/user/porthole/.superpowers/sdd/2026-11-08-pets-club-shelter/fixture"
+trace, outdir = sys.argv[1], sys.argv[2]
+os.makedirs(outdir, exist_ok=True)
+RUN=os.path.dirname(os.path.abspath(__file__))+"/root"
+os.makedirs(RUN+"/build/host",exist_ok=True)
+if "--keep" not in sys.argv:
+    for f in glob.glob(RUN+"/build/host/*.sav"): os.remove(f)
+    for f in glob.glob(FIX+"/*.sav"): shutil.copy(f, RUN+"/build/host/")
+p = subprocess.Popen([ROOT+"/build/host/snap","--serve"],cwd=RUN,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+def cmd(l):
+    p.stdin.write((l+"\n").encode()); p.stdin.flush(); return p.stdout.readline().decode().strip()
+def tick(ms):
+    while ms>0:
+        s=min(33,ms); cmd(f"tick {s}"); ms-=s
+def frame(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    h=p.stdout.readline().decode().split(); n=int(h[1]); d=b""
+    while len(d)<n: d+=p.stdout.read(n-len(d))
+    # PPM payload
+    im=Image.open(__import__("io").BytesIO(d)) if d[:2]==b"P6" else Image.frombytes("RGB",(480,480),d[-480*480*3:])
+    im.save(f"{outdir}/{name}.png")
+for line in open(trace):
+    t=line.split("#")[0].split()
+    if not t: continue
+    c=t[0]
+    if c=="tap": cmd(f"down {t[1]} {t[2]}"); tick(66); cmd("up"); tick(33)
+    elif c=="hold": cmd(f"down {t[1]} {t[2]}"); tick(int(t[3])); cmd("up"); tick(33)
+    elif c=="press": cmd(f"down {t[1]} {t[2]}")
+    elif c=="move": cmd(f"move {t[1]} {t[2]}")
+    elif c=="up": cmd("up")
+    elif c=="wait": tick(int(t[1]))
+    elif c=="snap": frame(t[1])
+    elif c=="tilt": cmd("tilt "+" ".join(t[1:]))
+    else: print("??",line)
+p.stdin.close(); p.wait()

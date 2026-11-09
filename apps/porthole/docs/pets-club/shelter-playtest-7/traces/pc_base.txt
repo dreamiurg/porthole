@@ -1,0 +1,7 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000

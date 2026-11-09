@@ -1,0 +1,225 @@
+tick 2000
+shot t00_boot
+press 80 67 2000
+tick 1500
+shot t01_after_mia
+press 80 80 2500
+tick 1000
+shot t02_after_keep
+press 80 80 1000
+tick 800
+shot t03_keep_1s
+press 80 80 300
+tick 800
+shot t04_keep_300
+press 80 67 300
+tick 1500
+shot t05_launcher
+press 33 72 2000
+shot t06_hold_tile
+tick 2500
+shot t07_after
+press 33 72 250
+tick 500
+shot t08_open
+tick 2500
+shot t09_open2
+down 78 105
+tick 1200
+shot t10_hold_dog_mid
+tick 1000
+up
+tick 800
+shot t11_after_dog
+press 118 128 2200
+tick 1000
+shot t12_paw
+press 118 128 200
+tick 1000
+shot t13_paw_tap
+press 80 13 2000
+tick 1000
+shot t14_home_hold
+press 80 13 200
+tick 1000
+shot t15_back
+press 28 52 200
+tick 1200
+shot t16_door
+press 80 95 200
+tick 1500
+shot t17_house
+press 45 27 2000
+tick 1000
+shot t18_stats_hold
+press 45 27 200
+tick 1200
+shot t19_stats_tap
+down 80 77
+tick 700
+shot t20_farm_btn_mid
+tick 1800
+up
+tick 1000
+shot t21_after_farm_btn
+down 115 102
+tick 600
+shot t22_yes_600
+tick 600
+shot t23_yes_1200
+tick 600
+shot t24_yes_1800
+tick 700
+shot t25_yes_2500
+up
+tick 500
+shot t26_after_yes
+tick 2000
+shot t27_after_yes2
+press 100 95 2500
+tick 500
+shot t28_farm_dog_hold
+press 100 95 200
+tick 500
+shot t29_farm_dog_tap
+down 35 103
+tick 800
+shot t30_bring_800
+tick 1700
+up
+tick 600
+shot t31_after_bring
+tick 2000
+shot t32_after_bring2
+press 45 27 200
+tick 1200
+shot t33_stats_after_bringback
+press 80 77 2000
+tick 800
+press 115 102 2600
+tick 800
+shot t34_farm_again
+press 80 137 2200
+tick 600
+shot t35_gohome_a
+tick 2000
+shot t36_gohome_b
+press 53 53 2500
+tick 1000
+shot t37_pic_hold
+press 80 104 2500
+tick 1000
+shot t38_visit
+press 100 100 2500
+tick 500
+shot t39_visit_pet
+press 80 13 2000
+tick 1000
+shot t40_home_hold_visit
+press 80 13 200
+tick 1000
+shot t41_home_tap_visit
+press 32 107 300
+tick 800
+shot t42_bowl_empty
+press 132 105 300
+tick 800
+shot t43_ball_empty
+press 28 52 300
+tick 1200
+shot t44_door_empty
+press 80 95 300
+tick 1200
+press 80 101 2500
+tick 1000
+shot t45_shelter_hold
+press 134 80 2500
+tick 600
+shot t46_arrow_hold
+press 134 80 200
+tick 600
+shot t47_arrow_tap
+press 80 13 300
+tick 1000
+shot t48_shelter_home
+press 80 13 300
+tick 1500
+shot t49_room_home
+press 33 72 250
+tick 3000
+shot t50_reopen
+tick 6000
+quit
+tick 2000
+shot t51_restart_picker
+press 80 67 250
+tick 1500
+press 33 72 250
+tick 3000
+shot t52_restart_room
+press 80 101 300
+tick 1000
+shot t53_shelter2
+press 80 138 2500
+tick 800
+shot t54_pickme_hold
+tick 1500
+shot t55_pickme_hold2
+press 67 53 2000
+tick 300
+shot t56_B_hold
+press 41 53 200
+tick 200
+press 41 53 200
+tick 200
+shot t57_AA
+press 120 125 2500
+tick 800
+shot t58_ok_hold
+tick 2000
+shot t59_ok_after
+press 93 53 1000
+tick 300
+shot t60_C_1s
+press 93 53 650
+tick 300
+shot t61_C_650
+press 93 53 500
+tick 300
+shot t62_C_500
+press 93 125 200
+tick 300
+shot t63_bs
+press 93 53 200
+tick 300
+shot t64_C_tap
+press 93 125 200
+tick 300
+press 93 53 1000
+tick 300
+shot t65_C_1s_after_room
+press 93 125 2000
+tick 300
+shot t66_bs_hold
+press 123 29 2000
+tick 300
+shot t67_q_hold
+press 123 29 200
+tick 300
+shot t68_q_tap
+press 123 29 200
+tick 300
+shot t69_q_tap2
+press 120 125 200
+tick 300
+shot t70_ok_a
+tick 1000
+shot t71_ok_b
+tick 2000
+shot t72_ok_c
+press 80 120 2500
+tick 800
+shot t73_welcome_hold
+tick 2000
+shot t74_room_new
+quit

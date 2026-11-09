@@ -1,0 +1,35 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 77 2000
+wait 1000
+hold 115 102 2600
+wait 1500
+hold 80 137 2000
+wait 2500
+hold 111 101 2000
+wait 1500
+hold 134 80 2000
+wait 300
+shot sa01_hold_right
+hold 134 80 3000
+wait 300
+shot sa02_hold_right_again
+mash 26 80 5
+wait 300
+shot sa03_mash_left
+tap 134 92
+wait 300
+shot sa04_tap_below_right
+tap 80 70
+wait 300
+shot sa05_tap_kennel
+drag 134 80 60 80 400
+wait 300
+shot sa06_drag_off_right

@@ -41,7 +41,7 @@ void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toa
 using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
-    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateLauncher, &Shell::updateRest,
+    &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateNoDelete, &Shell::updateLauncher, &Shell::updateRest,
     &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
@@ -57,7 +57,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
-    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawLauncher, &Shell::drawRest,
+    &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawNoDelete, &Shell::drawLauncher, &Shell::drawRest,
     &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
@@ -85,9 +85,15 @@ void Shell::startNew() {
   memset(&draft_, 0, sizeof draft_); nameLen_ = 0; name_[0] = 0; namePage_ = 0; creating_ = true;
   go(SH_NAME);
 }
+// Deleting always takes a code (a parent decision of 2026-11-09: two long presses by a small kid must not delete a
+// profile): the kid's own, or the grown-up's from "Admin" on that pad; with no kid code, the grown-up's; with
+// neither, nobody can, and a card says who can fix that.
 void Shell::choose(int id, bool del) {
   target_ = id; deleting_ = del;
-  if (prof_.rec[id].pin) { resetPin(); go(SH_PIN); } else authorized();
+  if (prof_.rec[id].pin) { resetPin(); go(SH_PIN); }
+  else if (!del) select(id);
+  else if (adminPin_) askAdmin(SH_DELETE);
+  else go(SH_NO_DELETE);
 }
 void Shell::authorized() {
   if (!deleting_) { select(target_); return; }
@@ -176,7 +182,7 @@ void Shell::flushApp(bool allowed) {
   } else if (writtenOk_ || !allowed) return;
   const char* k = shell::key('s', active_);
   if (writtenLen_) writtenOk_ = st_->save(app_->store(), k, written_, writtenLen_);
-  else { st_->erase(app_->store(), k); writtenOk_ = true; }
+  else { st_->erase(app_->store(), k); writtenOk_ = true; }   // App contract: a 0-byte save erases; no game uses it today
   lastSaveMs_ = ms_;
 }
 void Shell::closeApp() {
@@ -194,6 +200,9 @@ void Shell::budgetTick() {   // per profile, across every game
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
+// A 6-year-old holds their own name 1-3 s to play (playtest 8): any shorter press opens it, and only a hold this long
+// asks to delete. A bar fills under the name from DELETE_HINT_MS, so the longer meaning shows before it acts.
+static const uint32_t DELETE_HOLD_MS = 3000, DELETE_HINT_MS = 1000;
 void Shell::updatePick() {
   if (titleHeld()) { enterSystem(); return; }
   int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
@@ -202,10 +211,7 @@ void Shell::updatePick() {
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
     if (i == n) { if (tap) askAdmin(SH_NAME); }
     else if (tap) choose(prof_.nth(i), false);
-    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) {   // long press: delete
-      if (adminPin_) { target_ = prof_.nth(i); deleting_ = true; askAdmin(SH_DELETE); }   // the grown-up's code, not the kid's
-      else choose(prof_.nth(i), true);
-    }
+    else if (ui::pressing(in_, b) && in_.heldMs >= DELETE_HOLD_MS) choose(prof_.nth(i), true);
     if (screen_ != SH_PICK) return;
   }
 }
@@ -215,13 +221,15 @@ void Shell::drawPick() {
   int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
   for (int i = 0; i < rows; i++) {
     ui::Box b = pickRow(i, rows);
-    int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    int dy = ui::pressing(in_, b) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, i == n ? (uint8_t)C_MINT : (uint8_t)C_CREAM}, dy);
     if (i == n) { blitTint(SPR_PLUS, 58, b.y + 8 + dy, C_DKBROWN); text(72, b.y + 9 + dy, "New", C_DKBROWN); continue; }
     const Record& r = prof_.rec[prof_.nth(i)];
     blit(SPR_AVATARS[r.avatar % NUM_AVATARS], b.x + 4, b.y + 2 + dy);
     text(b.x + 30, b.y + 9 + dy, r.name, C_DKBROWN);
     if (r.pin) blitTint(SPR_LOCK, b.x + b.w - 12, b.y + 8 + dy, C_DKGRAY);
+    if (dy && in_.heldMs > DELETE_HINT_MS)   // under the name, clear of the face and the lock
+      rect(b.x + 30, b.y + 19 + dy, (int)((b.w - 46) * (in_.heldMs - DELETE_HINT_MS) / (DELETE_HOLD_MS - DELETE_HINT_MS)), 2, C_PLUM);
   }
   if (!sys_) return;   // the running firmware, small, under the rows: "v0.16.2", or "dev" for a local build
   int v[3]; char ver[16];   // at most 10 characters: 80 px, inside the glass's 84 px chord at the text's bottom row
@@ -249,7 +257,7 @@ void Shell::drawAvatar() {
   textCentered(80, 28, "Pick a face!", C_DKBROWN);
   for (int i = 0; i < NUM_AVATARS; i++) {
     ui::Box b = avatarCell(i);
-    int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    int dy = ui::pressing(in_, b) ? 1 : 0;
     bool taken = false;   // another profile's face: a gray tile (still allowed, faces may repeat)
     for (int id = 0; id < MAX_PROFILES; id++) taken |= prof_.used[id] && prof_.rec[id].avatar % NUM_AVATARS == i;
     ui::drawButton({{b.x + 1, b.y + 1, b.w - 2, b.h - 4}, nullptr, nullptr, dy ? (uint8_t)C_YELLOW : taken ? (uint8_t)C_LTGRAY : (uint8_t)C_WHITE}, dy);
@@ -277,7 +285,7 @@ void Shell::drawAge() {
   textCentered(80, 30, "How old are you?", C_DKBROWN);
   for (int i = 0; i < 6; i++) {
     ui::Box b = ageButton(i); char l[4]; snprintf(l, sizeof l, "%d", AGES[i]);
-    bool pr = in_.down && in_.hit(b.x, b.y, b.w, b.h);
+    bool pr = ui::pressing(in_, b);
     uint8_t col = i < 2 ? C_GREEN : i < 4 ? C_BLUE : C_PLUM, ink = ui::inkOn(col); int y = b.y + 5 + (pr ? 1 : 0);
     ui::drawButton({b, nullptr, nullptr, col}, pr);
     if (i < 5) { textCentered(b.x + 20, y, l, ink, 2); continue; }
@@ -299,6 +307,7 @@ void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
   if (pinLen_ == 4) { fourthShown(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
+  if (adminSwitch() && ui::clicked(in_, PIN_SKIP)) { askAdmin(SH_DELETE); return; }   // its own lock
   if (kidKeysHidden()) {   // too many wrong tries: the keys come back once the wait is over and the finger rests
     if (in_.down) pinCalmUntil_ = ms_ + PIN_CALM_MS;   // a kid tapping the hourglass never types into the keys' return
     if (in_.pressed) pinNudgeUntil_ = ms_ + 300;
@@ -334,41 +343,53 @@ void Shell::submitPin() {
   else if (code == prof_.rec[target_].pin) { pinClear(target_); authorized(); }
   else { pinStrike(target_); pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
 }
+// A delete's pad is navy like "Delete <name>?" and says so: a kid who types their code by habit on a pad that looked
+// like signing in landed on the delete question.
 void Shell::drawPin() {
-  clear(C_WALL);
+  const bool del = screen_ == SH_PIN && deleting_;
+  clear(del ? C_NAVY : C_WALL);
   const bool hidden = kidKeysHidden();
   const uint32_t wait = hidden ? pinWait(target_) : 0;
-  char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
-  if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
-  else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
-  else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
-  else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
-  textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
+  drawPinPrompt(hidden, del);
   drawPinDigits();
-  if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
+  if (adminSwitch()) drawPinKey(PIN_SKIP, "Admin", C_SKY);   // in the wait too: the grown-up's code is not slowed
+  if (hidden) { drawPinWait(wait, del); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
 }
+void Shell::drawPinPrompt(bool hidden, bool del) {
+  char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
+  const bool msg = ms_ < toastUntil_;
+  if (msg) snprintf(prompt, sizeof prompt, "%s", toast_);
+  else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
+  else if (del) snprintf(prompt, sizeof prompt, "Delete %s?", prof_.rec[target_].name);
+  else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
+  else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
+  const uint8_t ink = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN, alert = del ? (uint8_t)C_YELLOW : (uint8_t)C_PLUM;
+  textCentered(80, 26, prompt, msg ? alert : ink);
+}
 // While a wait runs, the keys give way to an hourglass whose sand runs down, its seconds and a bar that empties: a
 // kid who cannot read the number still sees the wait end, and nothing looks like a key. A tap wiggles it, silently.
-void Shell::drawPinWait(uint32_t wait) {
+// On a delete's navy pad its edges, the seconds and the bar's frame are white: dark brown on navy barely shows.
+void Shell::drawPinWait(uint32_t wait, bool del) {
   const uint32_t of = shell::pinWaitFor(locks_.lock[target_].strikes);
   const int top = of ? (int)(24 * wait / of) : 0;   // rows of sand still in the top bulb, of 24
   const int dx = (int32_t)(pinNudgeUntil_ - ms_) > 0 ? ((ms_ / 50) % 2 ? 2 : -2) : 0, cx = 80 + dx;
-  rect(cx - 18, 50, 37, 4, C_DKBROWN); rect(cx - 18, 103, 37, 4, C_DKBROWN);   // the caps
+  const uint8_t edge = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN;
+  rect(cx - 18, 50, 37, 4, edge); rect(cx - 18, 103, 37, 4, edge);   // the caps
   for (int r = 0; r < 24; r++) {   // r = 0 at a cap, 23 at the waist; the top bulb above y 78, the bottom below
     const int hw = 15 - r * 14 / 23, yt = 54 + r, yb = 102 - r;
     hline(cx - hw, yt, 2 * hw + 1, r >= 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
     hline(cx - hw, yb, 2 * hw + 1, r < 24 - top ? (uint8_t)C_ORANGE : (uint8_t)C_CREAM);
-    hline(cx - hw - 1, yt, 1, C_DKBROWN); hline(cx + hw + 1, yt, 1, C_DKBROWN);
-    hline(cx - hw - 1, yb, 1, C_DKBROWN); hline(cx + hw + 1, yb, 1, C_DKBROWN);
+    hline(cx - hw - 1, yt, 1, edge); hline(cx + hw + 1, yt, 1, edge);
+    hline(cx - hw - 1, yb, 1, edge); hline(cx + hw + 1, yb, 1, edge);
   }
   if (wait) line(cx, 78, cx, 101 - (24 - top), C_ORANGE);   // the falling stream
   char n[4]; snprintf(n, sizeof n, "%u", (unsigned)wait);
-  textCentered(80, 110, n, C_DKBROWN, 2);
+  textCentered(80, 110, n, edge, 2);
   const int w = of ? (int)(80 * wait / of) : 0;
-  rect(40, 128, 80, 6, C_DKBROWN); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
+  rect(40, 128, 80, 6, edge); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
 void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
   bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
@@ -379,7 +400,7 @@ void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code,
   }
 }
 void Shell::drawPinKey(const ui::Box& b, const char* l, uint8_t col) {
-  int dy = pinLen_ < 4 && in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;   // no press look while the last digit shows: taps wait
+  int dy = pinLen_ < 4 && ui::pressing(in_, b) ? 1 : 0;   // no press look while the last digit shows: taps wait
   roundRect(b.x, b.y + 1, b.w, b.h, C_DKBROWN); roundRect(b.x, b.y + dy, b.w, b.h, C_DKBROWN); roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
   int s = l[1] ? 1 : 2;   // a digit at double size; "skip" fits only at one
   textCentered(b.x + b.w / 2, b.y + (b.h - 8 * s) / 2 + dy, l, C_DKBROWN, s);
@@ -393,12 +414,29 @@ static const ui::Box DEL_NO = {30, 66, 100, 28};
 static ui::Box delHold(bool top) { return {32, top ? 30 : 104, 96, 24}; }
 void Shell::updateDelete() {
   if (ui::button(in_, {DEL_NO, "No, keep!", nullptr, C_GREEN})) { go(SH_PICK); return; }
-  ui::Box h = delHold(holdTop_);
-  bool began = in_.downX >= h.x && in_.downX < h.x + h.w && in_.downY >= h.y && in_.downY < h.y + h.h;
-  if (!(in_.down && in_.hit(h.x, h.y, h.w, h.h) && began && in_.heldMs >= HOLD_MS)) return;
+  if (!(ui::pressing(in_, delHold(holdTop_)) && in_.heldMs >= HOLD_MS)) return;
   const char* stores[MAX_APPS]; int n = appStores(stores);
   shell::removeProfile(*st_, prof_, target_, stores, n);
   land();
+}
+// No code anywhere, so nobody may delete: a kid-safe card, the profile's face with a lock beside it (a pre-reader's
+// "it stays"), and the ways back.
+static const ui::Box NO_DELETE_OK = {50, 120, 60, 24};
+void Shell::updateNoDelete() {
+  if (ui::back(in_) || ui::button(in_, {NO_DELETE_OK, "OK", nullptr, C_GREEN})) go(SH_PICK);
+}
+void Shell::drawNoDelete() {
+  clear(C_SKY);
+  const Record& r = prof_.rec[target_];
+  blitScaled(SPR_AVATARS[r.avatar % NUM_AVATARS], 50, 28, 2);
+  for (int y = 0; y < SPR_LOCK.h; y++)   // the picker's lock, twice the size, in its dark gray
+    for (int x = 0; x < SPR_LOCK.w; x++) if (SPR_LOCK.px[y * SPR_LOCK.w + x] != C_T) rect(96 + 2 * x, 39 + 2 * y, 2, 2, C_DKGRAY);
+  char b[32]; snprintf(b, sizeof b, "To delete %s,", r.name); textCentered(80, 74, b, C_NAVY);
+  textCentered(80, 86, "ask a grown-up", C_NAVY);
+  textCentered(80, 96, "to set a code", C_NAVY);
+  textCentered(80, 106, "in Admin.", C_NAVY);
+  ui::drawButton({NO_DELETE_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NO_DELETE_OK));
+  ui::drawBack();
 }
 void Shell::drawDelete() {
   clear(C_NAVY);
@@ -407,8 +445,8 @@ void Shell::drawDelete() {
   char b[32]; snprintf(b, sizeof b, "Delete %s?", r.name); textCentered(80, ty, b, C_WHITE);
   textCentered(80, ty + 12, "Their pets and games", C_YELLOW);
   textCentered(80, ty + 22, "will be gone.", C_YELLOW);
-  ui::drawButton({DEL_NO, "No, keep!", nullptr, C_GREEN}, in_.down && in_.hit(DEL_NO.x, DEL_NO.y, DEL_NO.w, DEL_NO.h));
-  ui::Box h = delHold(holdTop_); bool pr = in_.down && in_.hit(h.x, h.y, h.w, h.h);
+  ui::drawButton({DEL_NO, "No, keep!", nullptr, C_GREEN}, ui::pressing(in_, DEL_NO));
+  ui::Box h = delHold(holdTop_); bool pr = ui::pressing(in_, h);
   ui::drawButton({h, nullptr, nullptr, C_PLUM}, pr);   // white on plum and on the brown fill: both >= 4.5:1
   int fill = pr ? (int)(in_.heldMs >= HOLD_MS ? h.w - 2 : in_.heldMs * (uint32_t)(h.w - 2) / HOLD_MS) : 0;
   if (fill > 0) roundRect(h.x + 1, h.y + 2, fill, h.h - 3, C_BROWN);
@@ -436,19 +474,18 @@ void Shell::updateLauncher() {
 void Shell::drawLauncher() {
   clear(C_SKY);
   rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
-  ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, in_.down && in_.hit(HEADER.x, HEADER.y, HEADER.w, HEADER.h));
+  ui::drawButton({HEADER, nullptr, nullptr, C_CREAM}, ui::pressing(in_, HEADER));
   blit(SPR_AVATARS[rec().avatar % NUM_AVATARS], HEADER.x + 3, HEADER.y + 2);
   text(HEADER.x + 26, HEADER.y + 8, rec().name, C_DKBROWN);
-  const int dy = in_.down && in_.hit(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) ? 1 : 0;   // the sun shows the level picked now
+  const int dy = ui::pressing(in_, LIGHT) ? 1 : 0;   // the sun shows the level picked now
   ui::drawButton({LIGHT, nullptr, nullptr, C_WHITE}, dy);
   const Sprite& sun = SPR_LIGHTS[light_]; blit(sun, LIGHT.x + (LIGHT.w - sun.w) / 2, LIGHT.y + (LIGHT.h - sun.h) / 2 + dy);
   if (page_ >= launcher::pages(nApps_)) page_ = 0;
   const int k0 = launcher::first(nApps_, page_), m = launcher::count(nApps_, page_);
   for (int i = 0; i < m; i++) drawAppTile(k0 + i, i, m);
   for (int i = 0; i < m; i++) {   // a finger on a tile names its game over the header row
-    const ui::Box b = launcher::tile(i, m), c = launcher::CAPTION;
-    const bool began = in_.downX >= b.x && in_.downX < b.x + b.w && in_.downY >= b.y && in_.downY < b.y + b.h;
-    if (!in_.down || !began || !in_.hit(b.x, b.y, b.w, b.h)) continue;   // only a press that started on it
+    const ui::Box c = launcher::CAPTION;
+    if (!ui::pressing(in_, launcher::tile(i, m))) continue;   // only a press that started on it
     ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
     textCentered(80, c.y + (c.h - 7) / 2, apps_[k0 + i]->name(), C_DKBROWN);
   }
@@ -458,13 +495,13 @@ void Shell::drawLauncher() {
 }
 void Shell::drawAppTile(int k, int i, int m) {
   const ui::Box b = launcher::tile(i, m);
-  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+  const int dy = ui::pressing(in_, b) ? 1 : 0;
   ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // the game's picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
-  const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0, cy = b.y + b.h / 2 + dy;
+  const int dy = ui::pressing(in_, b) ? 1 : 0, cy = b.y + b.h / 2 + dy;
   ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
   for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
 }
@@ -489,7 +526,7 @@ void Shell::drawLight() {
   textCentered(80, 40, "How bright?", C_NAVY);
   for (int l = 0; l < shell::LIGHT_COUNT; l++) {
     const ui::Box b = lightBox(l);
-    const int dy = in_.down && in_.hit(b.x, b.y, b.w, b.h) ? 1 : 0;
+    const int dy = ui::pressing(in_, b) ? 1 : 0;
     ui::drawButton({b, nullptr, nullptr, l == light_ ? (uint8_t)C_MINT : (uint8_t)C_WHITE}, dy);
     const Sprite& sun = SPR_LIGHTS[l];
     if (l != shell::LIGHT_AUTO) { blitScaled(sun, b.x + (b.w - 2 * sun.w) / 2, b.y + (b.h - 2 * sun.h) / 2 + dy, 2); continue; }
@@ -529,7 +566,7 @@ void Shell::drawRest() {
     char b[32]; snprintf(b, sizeof b, "Back in %lu min", (unsigned long)((left + 59) / 60)); textCentered(80, 94, b, C_LTGRAY);
     textCentered(80, 106, prof_.count() >= 2 ? "Let a friend play!" : "Time for a break!", C_WHITE);
   }
-  ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, in_.down && in_.hit(50, 120, 60, 24));
+  ui::drawButton({{50, 120, 60, 24}, "OK", nullptr, C_GREEN}, ui::pressing(in_, {50, 120, 60, 24}));
 }
 
 // ---------------------------------------------------------------- a game is open
@@ -552,7 +589,7 @@ bool Shell::clearPin(int id) {
   prof_.rec[id] = before; return false;
 }
 const char* Shell::screenName() const {
-  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
+  static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
                               "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");

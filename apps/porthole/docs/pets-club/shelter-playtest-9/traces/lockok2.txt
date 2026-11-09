@@ -1,0 +1,19 @@
+wait 2500
+hold 40 67 3200
+wait 300
+hold 80 143 1500
+wait 1500
+snap a_back
+press 40 67
+wait 300
+snap b_p300
+wait 1200
+snap c_p1500
+up
+wait 300
+snap d_up
+wait 1000
+snap e_later
+tap 40 67
+wait 500
+snap f_tap

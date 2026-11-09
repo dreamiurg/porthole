@@ -1,0 +1,63 @@
+tick 1500; shot 01_boot
+tap 60 68; tick 800; shot 02_after_mia
+tap 35 74; tick 300; shot 03_tap_icon; tick 1500; shot 04_enter
+tap 78 104; tick 600; shot 05_pet_dog; tick 1500; shot 06_after_pet
+tap 120 130; tick 700; shot 07_paw
+tap 80 12; tick 700; shot 08_back; tap 44 26; tick 700; shot 09_bars
+dbl 78 77; tick 300; shot 10_farm_dbl; tick 1200; shot 11_farm_wait
+tap 50 104; tick 700; shot 12_no
+tap 80 77; tick 700; tap 80 102; tick 500; shot 13_gap_tap; dbl 112 100; tick 200; shot 14_yes_dbl_a; tick 600; shot 14_yes_dbl_b; tick 1200; shot 14_yes_dbl_c
+tick 3000; shot 15_farm_3s; tap 80 95; tick 400; shot 16_farm_pet; tap 80 52; tick 400; shot 17_farm_sign
+tap 62 142; tick 300; shot 18_gohome_a; tick 1000; shot 18_gohome_b
+tap 53 53; tick 300; shot 19_wallpic_a; tick 1000; shot 19_wallpic_b
+tap 84 76; tick 300; shot 20_visit_a; tick 1200; shot 20_visit_b
+tap 85 98; tick 300; shot 21_visit_pet; drag 70 95 100 95; tick 300; shot 22_visit_rub; hold 85 98 900; tick 300; shot 23_visit_hold; tick 4000; shot 24_visit_4s
+tap 84 14; tick 700; shot 25_visit_back
+tap 80 14; tick 700; shot 26_room_again; tap 132 105; tick 500; shot 27_room_ball; tap 32 107; tick 500; shot 28_room_bowl; tap 27 52; tick 700; shot 29_room_door
+tap 80 92; tick 700; shot 30_street_house
+dbl 88 104; tick 300; shot 31_shelter_a; tick 1200; shot 31_shelter_b
+tap 134 81; tick 400; shot 32_pup2; tap 138 84; tick 400; shot 33_pup3; dbl 134 81; tick 400; shot 34_pup_dbl; tap 134 81; tick 400; shot 35_pupN; tap 134 81; tick 400; shot 36_pupN; tap 134 81; tick 400; shot 37_pupN; tap 134 81; tick 400; shot 38_pupN
+tap 134 81; tick 400; tap 134 81; tick 400; shot 39_pup4; tap 24 81; tick 400; shot 40_left
+tap 134 81; tick 400; shot 41_choco; tap 82 78; tick 500; shot 42_tap_kennel_pup
+tap 76 16; tick 700; shot 43_shelter_back; tap 80 101; tick 700; shot 44_shelter_reopen
+tap 80 14; tick 700; shot 45_room; tap 80 13; tick 900; shot 46_launcher; tap 33 72; tick 2000; shot 47_reenter
+tap 76 104; tick 700; tap 134 81; tick 300; tap 134 81; tick 300; tap 134 81; tick 300; tap 134 81; tick 400; shot 48_choco_again; dbl 80 138; tick 200; shot 49_pick_a; tick 500; shot 49_pick_b; tick 1200; shot 49_pick_c
+tap 76 104; tick 700; shot 50_shelter_retry
+tap 76 16; tick 700; tap 80 13; tick 900; tap 33 72; tick 300; shot 51a_open; tick 1700; shot 51b_open; tap 76 104; tick 700; shot 51c_first_tap
+tap 80 13; tick 900; tap 33 72; tick 4000; shot 52a_open4s; tap 76 104; tick 700; shot 52b_first_tap
+tap 134 81; tick 300; tap 134 81; tick 300; tap 134 81; tick 400; shot 53_choco; dbl 80 138; tick 200; shot 54_pick_a; tick 500; shot 54_pick_b; tick 1200; shot 54_pick_c
+tap 124 28; tick 600; shot 55_help
+dbl 93 125; tick 300; shot 56_bksp_dbl; tap 93 125; tick 200; tap 93 125; tick 200; tap 93 125; tick 200; tap 95 127; tick 300; shot 57_empty
+tap 44 128; tick 250; tap 38 50; tick 250; tap 67 125; tick 400; shot 58_nz
+tap 95 102; tick 300; shot 59_max; dbl 119 127; tick 200; shot 60_ok_a; tick 600; shot 60_ok_b; tick 1500; shot 60_ok_c; tick 2000; shot 60_ok_d
+dbl 80 140; tick 300; shot 61_after_welcome_a; tick 1500; shot 61_after_welcome_b
+tap 88 106; tick 500; shot 62_pet_max; tap 44 26; tick 700; shot 63_max_stats
+tap 80 14; tick 700; tap 66 130; tick 800; shot 64_ball_btn
+tap 80 60; tick 1500; shot 65_fetch; drag 80 130 80 60; tick 1500; shot 66_fetch_throw
+tap 80 14; tick 900; shot 67_leave_fetch; tick 2000; shot 67b
+tap 80 95; tick 900; shot 68_room; tap 53 53; tick 800; shot 69_wall_after_adopt; tap 84 76; tick 900; shot 70_visit2
+tap 80 14; tick 700; tap 80 14; tick 700; tap 44 53; tick 700; shot 71_wall_44_53
+tap 80 14; tick 700; tap 80 14; tick 700; tap 62 53; tick 700; shot 71_wall_62_53
+tap 80 14; tick 700; tap 80 14; tick 700; tap 53 44; tick 700; shot 71_wall_53_44
+tap 80 14; tick 700; tap 80 14; tick 700; tap 53 63; tick 700; shot 71_wall_53_63
+tap 80 14; tick 700; tap 80 14; tick 700; tap 46 60; tick 700; shot 71_wall_46_60
+tap 80 14; tick 700; tap 80 14; tick 700; shot 72_where
+tap 60 68; tick 900; tap 35 74; tick 4000; shot 73_room
+tap 62 53; tick 700; shot 74_probe_62_53
+tick 6000
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; shot 75_restart_room; tap 44 26; tick 700; shot 76_restart_stats
+=== RUN 2 (fresh fixture) ===
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; tap 44 26; tick 700; tap 78 77; tick 700; tap 112 100; tick 1500; shot 80_run2_farm
+tick 6000
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; shot 81_run2_after_kill_on_farm
+tap 80 101; tick 700; tap 26 81; tick 300; tap 26 81; tick 400; shot 82_left2; tap 80 138; tick 900; shot 83_kbd; tap 80 14; tick 800; shot 84_kbd_home
+tap 80 138; tick 900; tap 93 125; tick 300; shot 85_kbd_typing; tick 6000
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; shot 86_after_kill_in_kbd
+tap 80 101; tick 700; tap 80 138; tick 900; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 300; tap 119 125; tick 500; shot 87_ok_empty; tap 67 52; tick 150; tap 41 100; tick 150; tap 67 125; tick 300; tap 67 77; tick 150; tap 67 125; tick 300; tap 67 52; tick 150; tap 93 76; tick 150; tap 41 100; tick 150; tap 93 76; tick 300; shot 88_biscuit_typed; hold 119 125 900; tick 300; shot 89_hold_ok; tick 1500; shot 89b
+tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 150; tap 93 125; tick 300; tap 93 52; tick 150; tap 67 125; tick 300; tap 119 76; tick 150; tap 67 125; tick 300; tap 41 100; tick 150; tap 67 125; tick 300; tap 93 76; tick 300; shot 90_biscuit2; hold 119 125 650; tick 600; shot 91_hold650
+hold 119 125 450; tick 200; shot 92_hold450; tick 1500; shot 92b
+tick 500; tap 80 140; tick 1500; shot 93_room_biscuit2; tap 53 53; tick 800; shot 94_wall_two_biscuits
+=== RUN 3 (fresh fixture): impatient repeat taps ===
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; tap 44 26; tick 700; tap 78 77; tick 700; tap 112 100; tick 1500; tap 80 137; tick 600; tap 80 137; tick 600; tap 80 137; tick 600; tap 80 137; tick 800; shot 95_repeat_taps_600
+=== RUN 4 (fresh fixture): drag-off / hold / carried touch on confirm ===
+tick 1000; tap 60 68; tick 900; tap 35 74; tick 4000; tap 44 26; tick 700; tap 78 77; tick 700; drag 112 100 112 140; tick 500; shot 96_yes_dragoff; hold 112 100 1200; tick 500; shot 97_yes_hold; tap 50 104; tick 700; down 78 77; tick 700; move 95 88; move 112 100; tick 300; up; tick 700; shot 98_carried_touch

@@ -1,0 +1,20 @@
+wait 1500
+tap 80 93
+wait 800
+hold 119 124 2000
+wait 200
+shot f01_hold_OK_empty
+hold 41 52 2000
+wait 200
+shot f02_hold_A_2s
+hold 41 52 1000
+wait 200
+hold 41 52 3000
+wait 200
+shot f03_hold_A_x3
+hold 93 124 2000
+wait 200
+shot f04_hold_backspace
+hold 67 124 2000
+wait 300
+shot f05_hold_NZ

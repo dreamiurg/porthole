@@ -1,0 +1,32 @@
+# supplementary geometry dump of the affected screens (fixture loaded, no reset)
+wait 1000
+tap 80 67
+wait 1000
+tap 36 72
+wait 1500
+tap 80 100
+wait 1500
+tap 45 22
+wait 800
+screen
+ui
+tap 80 77
+wait 500
+screen
+ui
+hold 115 102 1000
+wait 300
+screen
+ui
+tap 80 137
+wait 800
+screen
+ui
+tap 53 53
+wait 800
+screen
+ui
+tap 80 103
+wait 800
+screen
+ui

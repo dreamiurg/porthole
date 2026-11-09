@@ -1,4 +1,4 @@
-# Deleting a profile and the four-profile limit: four profiles hide the "+" row; a long press asks for the code,
+# Deleting a profile and the four-profile limit: four profiles hide the "+" row; a 3 s hold on a name asks for the code,
 # then "Delete Kai?"; No keeps Kai, Yes removes Kai and Kai's pups (both games'), and the freed slot starts fresh.
 profile Sam 8
 profile Kai 6 1234
@@ -56,10 +56,15 @@ wait 450
 tap 80 32
 wait 450
 expect-screen picker
-# a long press on Kai: the code first, then the question; No keeps Kai
-hold 80 67
+# a 3 s hold on Kai: the code first, on a navy pad asking "Delete Kai?" (not the sign-in pad), then the
+# question; No keeps Kai
+down 80 67
+wait 3000
+up
 wait 450
 expect-screen pin
+ui-check pin-delete
+snap 01b_delete_pad
 tap 41 62
 tap 80 62
 tap 119 62
@@ -73,7 +78,9 @@ wait 450
 expect-screen picker
 expect profile=-1/4
 # Yes: Kai is gone
-hold 80 67
+down 80 67
+wait 3000
+up
 wait 450
 tap 41 62
 tap 80 62
@@ -121,7 +128,9 @@ profile Zed 7 4563
 tap 80 32
 wait 450
 expect-screen picker
-hold 80 80
+down 80 80
+wait 3000
+up
 wait 450
 expect-screen pin
 tap 41 90
@@ -141,4 +150,31 @@ hold 80 116
 wait 450
 expect-screen picker
 expect profile=-1/1
+# no code anywhere (no kid code, no grown-up's): nobody may delete; a card says who can fix it, OK and back keep Ava
+reset
+profile Sam 8
+profile Ava 7
+tap 80 32
+wait 450
+expect-screen picker
+down 80 80
+wait 3000
+up
+wait 450
+expect-screen no_delete
+ui-check no-delete
+snap 05_no_code
+tap 80 132
+wait 450
+expect-screen picker
+expect profile=-1/2
+down 80 80
+wait 3000
+up
+wait 450
+expect-screen no_delete
+tap 80 12
+wait 450
+expect-screen picker
+expect profile=-1/2
 sheet delete

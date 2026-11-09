@@ -1,0 +1,24 @@
+wait 2500
+hold 40 67 700
+wait 1000
+hold 37 80 800
+wait 2000
+hold 80 120 800
+wait 2500
+hold 67 139 800
+wait 1200
+hold 80 108 900
+wait 2000
+press 53 87
+wait 300
+snap a_Y300
+wait 700
+snap b_Y1000
+up
+wait 300
+snap c_Yup
+wait 1500
+snap d_Ylater
+hold 80 112 1500
+wait 300
+snap e_C

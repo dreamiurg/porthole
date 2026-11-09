@@ -1,0 +1,46 @@
+wait 1500
+tap 80 67
+wait 1500
+tap 33 72
+wait 3000
+tap 45 27
+wait 1200
+echo STATS
+ui
+tap 80 77
+wait 1000
+echo CONFIRM
+ui
+down 115 102
+wait 2500
+up
+wait 600
+screen
+echo FARM
+ui
+tap 80 137
+wait 1000
+echo EMPTYROOM
+ui
+tap 80 101
+wait 1000
+echo SHELTER
+ui
+tap 80 138
+wait 1000
+echo KB
+ui
+tap 120 125
+wait 1000
+echo WELCOME
+ui
+tap 80 120
+wait 1500
+tap 53 53
+wait 1000
+echo WALL
+ui
+tap 80 104
+wait 1000
+echo VISIT
+ui

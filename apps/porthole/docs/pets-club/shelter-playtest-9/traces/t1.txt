@@ -1,0 +1,4 @@
+wait 500
+snap boot
+wait 2000
+snap boot2

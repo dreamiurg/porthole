@@ -106,6 +106,24 @@ class Img:
                 if c != T:
                     self.set(x + xx, y + yy, c)
 
+    def tint(self, ell, c, only, mask=None):
+        """Recolor the `only`-colored pixels inside ell=(cx, cy, rx, ry) where mask(x, y) holds: markings that follow the silhouette."""
+        cx, cy, rx, ry = ell
+        for y in range(self.h):
+            for x in range(self.w):
+                if self.px[y][x] == only and ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1.0 and (mask is None or mask(x, y)):
+                    self.px[y][x] = c
+
+    def tri(self, pts, c):
+        """Fill the triangle pts=[(x, y)] * 3, by pixel centers."""
+        (ax, ay), (bx, by), (qx, qy) = pts
+        for y in range(self.h):
+            for x in range(self.w):
+                px, py = x + 0.5, y + 0.5
+                d = ((bx - ax) * (py - ay) - (by - ay) * (px - ax), (qx - bx) * (py - by) - (qy - by) * (px - bx), (ax - qx) * (py - qy) - (ay - qy) * (px - qx))
+                if min(d) >= 0 or max(d) <= 0:
+                    self.px[y][x] = c
+
 
 def ascii_img(rows):
     rows = [r for r in rows.strip("\n").split("\n")]
@@ -173,196 +191,284 @@ SIZES = {
     ),
 }
 POSES = ["IDLE0", "IDLE1", "WALK0", "WALK1", "SIT", "SIT_PAW", "SLEEP0", "SLEEP1", "EAT0", "EAT1", "JUMP", "SAD", "BACK", "DEAD", "BEG", "BARK", "LISTEN"]
+SIZE_ORDER = ("pup", "dog", "big")
+
+# ---------------------------------------------------------------- breeds
+# A breed is colors plus a few shape knobs on the one rig; breed 0 (the Golden pup) is the original dog, pixel for pixel.
+# ears: floppy (the original), long (hangs past the jaw), pointy / upright (triangles above the head).
+# short: legs cut per size, with everything above them lowered so the feet stay on the ground line.
+GOLDEN = dict(coat=TAN, legs=TAN, belly=CREAM, muzzle=CREAM, ear=BROWN, ears="floppy", line=DKBROWN, ink=DKBROWN, paw=CREAM, pupil=K)
+GOLDEN.update(saddle=None, cap=None, tip=None, spots=None, curls=None, short=None)
+BREEDS = {  # order = enum Breed = save_.breed
+    "GOLDEN": GOLDEN,
+    "DALMATIAN": {**GOLDEN, "coat": WHITE, "legs": WHITE, "belly": WHITE, "muzzle": WHITE, "ear": K, "paw": WHITE, "spots": K},
+    "HUSKY": {
+        **GOLDEN,
+        "coat": LTGRAY,
+        "legs": WHITE,
+        "belly": WHITE,
+        "muzzle": WHITE,
+        "ear": DKGRAY,
+        "ears": "pointy",
+        "paw": WHITE,
+        "pupil": BLUE,
+        "saddle": DKGRAY,
+        "cap": DKGRAY,
+    },
+    "BEAGLE": {**GOLDEN, "coat": WOOD, "belly": WHITE, "legs": WOOD, "muzzle": WHITE, "ear": DKWOOD, "ears": "long", "paw": WHITE, "saddle": K, "tip": WHITE},
+    "POODLE": {**GOLDEN, "coat": CREAM, "legs": CREAM, "belly": CREAM, "muzzle": CREAM, "ear": PEACH, "ears": "long", "curls": TAN},
+    "CORGI": {
+        **GOLDEN,
+        "coat": ORANGE,
+        "legs": ORANGE,
+        "belly": WHITE,
+        "muzzle": WHITE,
+        "ear": ORANGE,
+        "ears": "upright",
+        "paw": WHITE,
+        "short": {"pup": 1, "dog": 2, "big": 2},
+    },
+    "LAB": {**GOLDEN, "coat": K, "legs": K, "belly": K, "muzzle": SLATE, "ear": SLATE, "line": DKGRAY, "ink": LTGRAY, "paw": K},
+}
+SPOTS = [(-0.6, -0.3), (0.1, -0.55), (0.5, 0.15), (-0.25, 0.35), (0.75, -0.35)]  # Dalmatian, in body radii from its center
 
 
-def draw_dog(size, pose):
-    p = SIZES[size]
-    im = Img(p["W"], p["H"])
+def rig(size, b):
+    p = dict(SIZES[size])
+    k = (b["short"] or {}).get(size, 0)
+    if k:
+        p["legY"] += k
+        p["legH"] -= k
+        for key in ("body", "head", "muzzle", "ear", "tail", "collar", "eye", "nose"):
+            if p[key]:
+                p[key] = (p[key][0], p[key][1] + k, *p[key][2:])
+    return p
+
+
+# ---- pose families: each fills the pose state (head offset, legs, tail, body, belly, haunch, extra limbs, face)
+def stand_legs(p, d=0):
+    bk, fr, legY, legH = p["backX"], p["frontX"], p["legY"], p["legH"]
+    return [(bk[0] - d, legY - 1, legH + 1), (bk[1] + d, legY, legH), (fr[0] - d, legY - 1, legH + 1), (fr[1] + d, legY, legH)]
+
+
+def pose_stand(s, p, pose, size):
     bx, by, brx, bry = p["body"]
-    hx, hy, hr = p["head"]
-    mx, my, mrx, mry = p["muzzle"]
+    hr, (tx, ty), legY, legH = p["head"][2], p["tail"], p["legY"], p["legH"]
+    s["legs"] = stand_legs(p, {"WALK0": 1, "WALK1": -1}.get(pose, 0))
+    s["tail"] = (tx, ty, tx - 4, ty - 5) if pose != "IDLE1" else (tx, ty, tx - 5, ty - 2)
+    if pose in ("EAT0", "EAT1"):
+        s.update(hdx=1, hdy=int(hr * 0.7), mouth="open" if pose == "EAT1" else "closed", tail=(tx, ty, tx - 5, ty - 3))
+    if pose == "JUMP":
+        bk, fr = p["backX"], p["frontX"]
+        s.update(hdy=-3, body=(bx, by - 3, brx, bry), belly=(bx + 1, by - 3 + bry * 0.45, brx * 0.6, bry * 0.55), eyes="happy", mouth="open")
+        s["legs"] = [(bk[0] - 1, legY - 3, legH - 1), (bk[1] + 1, legY - 2, legH - 2), (fr[0] - 1, legY - 3, legH - 1), (fr[1] + 1, legY - 2, legH - 2)]
+        s["tail"] = (tx, ty - 3, tx - 4, ty - 8)
+    if pose == "SAD":
+        s.update(hdy=2, tail=(tx, ty, tx - 2, ty + 4), eyes="sad", mouth="sad")
+    if pose == "BARK":
+        s.update(hdy=-1, mouth="open", tail=(tx, ty, tx - 4, ty - 6))
+
+
+def pose_sit(s, p, pose, size):
+    bx, by, brx, bry = p["body"]
+    fr, legY, legW, ground = p["frontX"], p["legY"], p["legW"], p["legY"] + p["legH"]
+    s.update(haunch=(bx - 1, legY + 1, bry + 1.2, bry + 1.2), body=(bx + 2, by - 1.5, brx - 2.5, bry + 1.5), belly=(bx + 3, by + 0.5, brx * 0.45, bry * 0.8), hdy=-1)
+    s["legs"] = [(fr[0], int(by - 1), ground - int(by - 1)), (fr[1], int(by - 1), ground - int(by - 1))]
+    s["tail"] = (int(bx - bry - 1), ground - 1, int(bx - bry - 5), ground - 3)
+    if pose == "SIT_PAW":
+        s["legs"] = s["legs"][:1]
+        s["extra"].append(lambda im, c: im.line(fr[1], int(by), fr[1] + 4, int(by) - 4, c, legW))
+    if pose == "LISTEN":
+        s.update(hdx=1, hdy=-2, eyes="big")
+
+
+def pose_sleep(s, p, pose, size):
+    bx, by, brx, bry = p["body"]
+    hy, hr, tx, ground = p["head"][1], p["head"][2], p["tail"][0], p["legY"] + p["legH"]
+    lift = 1 if pose == "SLEEP1" else 0
+    s.update(body=(bx + 1, ground - bry + 0.5 - lift, brx + 1, bry - 0.5 + lift * 0.5), belly=None, hdx=-2, hdy=ground - hr - hy - 1, eyes="closed")
+    s["extra"].append(lambda im, c: im.rect(p["frontX"][0] + 1, ground - 2, 5, 2, c))
+    s["tail"] = (tx, ground - 2, tx - 4, ground - 1)
+
+
+def pose_back(s, p, pose, size):
+    bx, by, brx, bry = p["body"]
+    bk, fr, legH, ground = p["backX"], p["frontX"], p["legH"], p["legY"] + p["legH"]
+    hy, hr, tx = p["head"][1], p["head"][2], p["tail"][0]
+    s.update(body=(bx + 1, ground - bry - 1, brx, bry), belly=(bx + 1, ground - bry - 1, brx * 0.7, bry * 0.6), hdx=0, hdy=ground - hr - hy - 2)
+    top = ground - 2 * bry
+    s["legs"] = [(bk[0], int(top - 3), legH - 1), (bk[1] + 1, int(top - 2), legH - 2), (fr[0] - 1, int(top - 3), legH - 1), (fr[1], int(top - 2), legH - 2)]
+    s.update(eyes="x" if pose == "DEAD" else "open", mouth="tongue" if pose == "DEAD" else "closed", tail=(tx, ground - 2, tx - 4, ground - 1), belly_up=True)
+
+
+def pose_beg(s, p, pose, size):
+    bx, by, brx, bry = p["body"]
+    legY, legW, ground = p["legY"], p["legW"], p["legY"] + p["legH"]
+    paw = 3 if size != "big" else 4
+    s.update(haunch=(bx - 1, legY + 1, bry + 1.2, bry + 1.2), body=(bx + 2, by - 3, bry + 0.5, brx - 2.5), belly=(bx + 3, by - 1.5, bry * 0.5, brx * 0.45), hdx=-3, hdy=-4)
+    s["extra"].append(lambda im, c: im.rect(int(bx + bry + 1), int(by - 3), paw, legW, c))
+    s["extra"].append(lambda im, c: im.rect(int(bx + bry + 1), int(by), paw, legW, c))
+    s["tail"] = (int(bx - bry - 1), ground - 1, int(bx - bry - 5), ground - 3)
+
+
+POSE_FAMILY = {"SIT": pose_sit, "SIT_PAW": pose_sit, "LISTEN": pose_sit, "SLEEP0": pose_sleep, "SLEEP1": pose_sleep, "BACK": pose_back, "DEAD": pose_back, "BEG": pose_beg}
+
+
+def pose_state(p, pose, size):
+    bx, by, brx, bry = p["body"]
+    s = dict(
+        eyes="open", mouth="closed", hdx=0, hdy=0, legs=[], tail=None, body=(bx, by, brx, bry), belly=(bx + 1, by + bry * 0.45, brx * 0.6, bry * 0.55), haunch=None, extra=[]
+    )
+    s["belly_up"] = False
+    POSE_FAMILY.get(pose, pose_stand)(s, p, pose, size)
+    return s
+
+
+# ---- painting
+def paint_ear(im, p, s, b):
     ex, ey, erx, ery = p["ear"]
-    legY, legH, legW = p["legY"], p["legH"], p["legW"]
-    tx, ty = p["tail"]
-    eyex, eyey = p["eye"]
-    nx, ny = p["nose"]
-    ground = legY + legH
-    parts = {}
-    eyes, mouth = "open", "closed"
-    hdx = hdy = 0
-    legs = []  # (x, ytop, h)
-    tail = None  # (x0,y0,x1,y1)
-    body = (bx, by, brx, bry)
-    belly = (bx + 1, by + bry * 0.45, brx * 0.6, bry * 0.55)
-    haunch = None
-    extra = []  # callables drawn after body, before outline
+    hx, hy, hr = p["head"]
+    HX, HY = hx + s["hdx"], hy + s["hdy"]
+    if b["ears"] == "floppy":
+        im.ellipse(ex + s["hdx"], ey + s["hdy"], erx, ery, b["ear"])
+    elif b["ears"] == "long":
+        im.ellipse(ex + s["hdx"], ey + s["hdy"] + ery * 0.5, erx * 1.1, ery * 1.5, b["ear"])
+    else:
+        ax, ay = HX - hr * 0.4, HY - hr * (1.45 if b["ears"] == "pointy" else 1.8)
+        if ay < 0:  # a jumping or begging head would push the tip off the sprite: the ear folds back instead
+            ax, ay = ax + ay, 0
+        im.tri([(HX - hr * 0.9, HY - hr * 0.2), (ax, ay), (HX + hr * 0.25, HY - hr * 0.8)], b["ear"])
 
-    if pose in ("IDLE0", "IDLE1", "WALK0", "WALK1", "EAT0", "EAT1", "JUMP", "SAD", "BARK"):
-        legs = [(p["backX"][0], legY - 1, legH + 1), (p["backX"][1], legY, legH), (p["frontX"][0], legY - 1, legH + 1), (p["frontX"][1], legY, legH)]
-        tail = (tx, ty, tx - 4, ty - 5) if pose != "IDLE1" else (tx, ty, tx - 5, ty - 2)
-        if pose == "WALK0":
-            legs = [(p["backX"][0] - 1, legY - 1, legH + 1), (p["backX"][1] + 1, legY, legH), (p["frontX"][0] - 1, legY - 1, legH + 1), (p["frontX"][1] + 1, legY, legH)]
-        if pose == "WALK1":
-            legs = [(p["backX"][0] + 1, legY - 1, legH + 1), (p["backX"][1] - 1, legY, legH), (p["frontX"][0] + 1, legY - 1, legH + 1), (p["frontX"][1] - 1, legY, legH)]
-        if pose in ("EAT0", "EAT1"):
-            hdx, hdy = 1, int(hr * 0.7)
-            mouth = "open" if pose == "EAT1" else "closed"
-            tail = (tx, ty, tx - 5, ty - 3)
-        if pose == "JUMP":
-            hdy = -3
-            body = (bx, by - 3, brx, bry)
-            belly = (bx + 1, by - 3 + bry * 0.45, brx * 0.6, bry * 0.55)
-            legs = [
-                (p["backX"][0] - 1, legY - 3, legH - 1),
-                (p["backX"][1] + 1, legY - 2, legH - 2),
-                (p["frontX"][0] - 1, legY - 3, legH - 1),
-                (p["frontX"][1] + 1, legY - 2, legH - 2),
-            ]
-            tail = (tx, ty - 3, tx - 4, ty - 8)
-            eyes = "happy"
-            mouth = "open"
-        if pose == "SAD":
-            hdy = 2
-            tail = (tx, ty, tx - 2, ty + 4)
-            eyes = "sad"
-            mouth = "sad"
-        if pose == "BARK":
-            hdy = -1
-            mouth = "open"
-            tail = (tx, ty, tx - 4, ty - 6)
-    elif pose in ("SIT", "SIT_PAW", "LISTEN"):
-        haunch = (bx - 1, legY + 1, bry + 1.2, bry + 1.2)
-        body = (bx + 2, by - 1.5, brx - 2.5, bry + 1.5)
-        belly = (bx + 3, by + 0.5, brx * 0.45, bry * 0.8)
-        legs = [(p["frontX"][0], int(by - 1), ground - int(by - 1)), (p["frontX"][1], int(by - 1), ground - int(by - 1))]
-        hdy = -1
-        tail = (int(bx - bry - 1), ground - 1, int(bx - bry - 5), ground - 3)
-        if pose == "SIT_PAW":
-            legs = [(p["frontX"][0], int(by - 1), ground - int(by - 1))]
-            extra.append(lambda im: im.line(p["frontX"][1], int(by), p["frontX"][1] + 4, int(by) - 4, TAN, legW))
-        if pose == "LISTEN":
-            hdx, hdy = 1, -2
-            eyes = "big"
-    elif pose in ("SLEEP0", "SLEEP1"):
-        lift = 1 if pose == "SLEEP1" else 0
-        body = (bx + 1, ground - bry + 0.5 - lift, brx + 1, bry - 0.5 + lift * 0.5)
-        belly = None
-        hdx, hdy = -2, ground - hr - hy - 1
-        eyes = "closed"
-        legs = []
-        extra.append(lambda im: im.rect(p["frontX"][0] + 1, ground - 2, 5, 2, TAN))
-        tail = (tx, ground - 2, tx - 4, ground - 1)
-    elif pose in ("BACK", "DEAD"):
-        body = (bx + 1, ground - bry - 1, brx, bry)
-        belly = (bx + 1, ground - bry - 1, brx * 0.7, bry * 0.6)
-        legs = [
-            (p["backX"][0], int(ground - 2 * bry - 3), legH - 1),
-            (p["backX"][1] + 1, int(ground - 2 * bry - 2), legH - 2),
-            (p["frontX"][0] - 1, int(ground - 2 * bry - 3), legH - 1),
-            (p["frontX"][1], int(ground - 2 * bry - 2), legH - 2),
-        ]
-        hdx, hdy = 0, ground - hr - hy - 2
-        eyes = "x" if pose == "DEAD" else "open"
-        mouth = "tongue" if pose == "DEAD" else "closed"
-        tail = (tx, ground - 2, tx - 4, ground - 1)
-    elif pose == "BEG":
-        haunch = (bx - 1, legY + 1, bry + 1.2, bry + 1.2)
-        body = (bx + 2, by - 3, bry + 0.5, brx - 2.5)
-        belly = (bx + 3, by - 1.5, bry * 0.5, brx * 0.45)
-        hdx, hdy = -3, -4
-        legs = []
-        extra.append(lambda im: im.rect(int(bx + bry + 1), int(by - 3), 3 if size != "big" else 4, legW, TAN))
-        extra.append(lambda im: im.rect(int(bx + bry + 1), int(by), 3 if size != "big" else 4, legW, TAN))
-        tail = (int(bx - bry - 1), ground - 1, int(bx - bry - 5), ground - 3)
 
-    # ---- draw order: tail, haunch, body, belly, legs, extra, head, muzzle, ear; then outline; then features
-    if tail:
-        im.line(*tail, TAN, 2)
-    if haunch:
-        im.ellipse(*haunch, TAN)
-    im.ellipse(*body, TAN)
-    if belly:
-        im.ellipse(*belly, CREAM)
-    for lx, ly, lh in legs:
-        im.rect(lx, ly, legW, lh, TAN)
-    for fn in extra:
-        fn(im)
-    HX, HY = hx + hdx, hy + hdy
-    im.ellipse(HX, HY, hr, hr, TAN)
-    im.ellipse(mx + hdx, my + hdy, mrx, mry, CREAM)
-    im.ellipse(ex + hdx, ey + hdy, erx, ery, BROWN)
-    im.outline(DKBROWN)
-    # paws (cream toes) at leg bottoms
-    for lx, ly, lh in legs:
-        if ly + lh >= ground:
-            im.rect(lx, ground - 1, legW, 1, CREAM) if legW > 1 else None
-    # eyes
-    EX, EY = eyex + hdx, eyey + hdy
-    if eyes == "open":
+def puffs(p, s):
+    """Poodle pompoms: topknot, tail tip, one per standing paw."""
+    hx, hy, hr = p["head"]
+    legW, ground = p["legW"], p["legY"] + p["legH"]
+    out = [(hx + s["hdx"] - hr * 0.2, max(hy + s["hdy"] - hr * 0.9, hr * 0.6), hr * 0.8, hr * 0.6)]
+    if s["tail"]:
+        out.append((s["tail"][2] + 1, s["tail"][3] + 1, hr * 0.35, hr * 0.35))
+    out += [(lx + legW / 2, ground - 1.2, legW / 2 + 0.8, 1.3) for lx, ly, lh in s["legs"] if ly + lh >= ground]
+    return out
+
+
+def paint_markings(im, p, s, b, size):
+    """Post-outline: Dalmatian spots and Poodle curls, only on interior coat pixels so the outline stays whole."""
+    if b["spots"] is not None:
+        bx, by, brx, bry = s["body"]
+        hx, hy, hr = p["head"]
+        r, off = (0.8, 0.5) if size == "pup" else (1.2, 0)
+        pts = [(bx + fx * brx, by + fy * bry) for fx, fy in SPOTS] + [(hx + s["hdx"] - hr * 0.35, hy + s["hdy"] - hr * 0.5)]
+        for x, y in pts:
+            im.tint((int(x) + off, int(y) + off, r, r), b["spots"], b["coat"])
+    if b["curls"] is not None:
+        for ell in puffs(p, s):
+            im.tint(ell, b["curls"], b["coat"], lambda x, y: y % 2 == 0 and (x + y // 2) % 2 == 0)
+
+
+def paint_silhouette(im, p, s, b):
+    """Draw order: tail, haunch, body, belly, legs, extra, head, muzzle, ear; then the outline."""
+    coat, sy = b["coat"], 1 if s["belly_up"] else -1
+    if s["tail"]:
+        im.line(*s["tail"], coat, 2)
+        if b["tip"] is not None:
+            im.rect(s["tail"][2], s["tail"][3], 2, 2, b["tip"])
+    if s["haunch"]:
+        im.ellipse(*s["haunch"], coat)
+    bx, by, brx, bry = s["body"]
+    im.ellipse(bx, by, brx, bry, coat)
+    if b["saddle"] is not None:
+        im.tint((bx - brx * 0.1, by + sy * bry * 0.55, brx * 0.8, bry * 0.75), b["saddle"], coat)
+    if s["belly"]:
+        im.ellipse(*s["belly"], b["belly"])
+    for lx, ly, lh in s["legs"]:
+        im.rect(lx, ly, p["legW"], lh, b["legs"])
+    for fn in s["extra"]:
+        fn(im, b["legs"])
+    hx, hy, hr = p["head"]
+    HX, HY = hx + s["hdx"], hy + s["hdy"]
+    im.ellipse(HX, HY, hr, hr, coat)
+    if b["cap"] is not None:
+        im.tint((HX - hr * 0.2, HY - hr * 0.75, hr * 0.95, hr * 0.7), b["cap"], coat)
+    mx, my, mrx, mry = p["muzzle"]
+    im.ellipse(mx + s["hdx"], my + s["hdy"], mrx, mry, b["muzzle"])
+    paint_ear(im, p, s, b)
+    if b["curls"] is not None:
+        for ell in puffs(p, s):
+            im.ellipse(*ell, coat)
+    im.outline(b["line"])
+
+
+def paint_eyes(im, EX, EY, eyes, b):
+    ink, pupil = b["ink"], b["pupil"]
+    if eyes in ("open", "sad"):
         im.rect(EX, EY, 2, 2, WHITE)
-        im.set(EX + 1, EY + 1, K)
+        im.set(EX + 1, EY + 1, pupil)
+        if eyes == "sad":
+            im.set(EX - 1, EY - 1, ink)
+            im.set(EX, EY - 1, ink)
     elif eyes == "big":
         im.rect(EX - 1, EY, 3, 3, WHITE)
-        im.set(EX + 1, EY + 1, K)
-        im.set(EX + 1, EY + 2, K)
+        im.set(EX + 1, EY + 1, pupil)
+        im.set(EX + 1, EY + 2, pupil)
     elif eyes == "closed":
-        im.rect(EX, EY + 1, 3, 1, DKBROWN)
+        im.rect(EX, EY + 1, 3, 1, ink)
     elif eyes == "happy":
-        im.set(EX, EY + 1, DKBROWN)
-        im.set(EX + 1, EY, DKBROWN)
-        im.set(EX + 2, EY + 1, DKBROWN)
-    elif eyes == "sad":
-        im.rect(EX, EY, 2, 2, WHITE)
-        im.set(EX + 1, EY + 1, K)
-        im.set(EX - 1, EY - 1, DKBROWN)
-        im.set(EX, EY - 1, DKBROWN)
+        for dx, dy in ((0, 1), (1, 0), (2, 1)):
+            im.set(EX + dx, EY + dy, ink)
     elif eyes == "x":
-        im.set(EX, EY, DKBROWN)
-        im.set(EX + 2, EY, DKBROWN)
-        im.set(EX + 1, EY + 1, DKBROWN)
-        im.set(EX, EY + 2, DKBROWN)
-        im.set(EX + 2, EY + 2, DKBROWN)
-    # nose + mouth
-    NX, NY = nx + hdx, ny + hdy
+        for dx, dy in ((0, 0), (2, 0), (1, 1), (0, 2), (2, 2)):
+            im.set(EX + dx, EY + dy, ink)
+
+
+def paint_mouth(im, NX, NY, mouth, ink):
     im.rect(NX - 1, NY, 2, 2, K)
     if mouth == "open":
         im.rect(NX - 3, NY + 3, 3, 2, PINK)
-        im.rect(NX - 4, NY + 2, 1, 1, DKBROWN)
-        im.rect(NX - 3, NY + 2, 3, 1, DKBROWN)
+        im.rect(NX - 4, NY + 2, 1, 1, ink)
+        im.rect(NX - 3, NY + 2, 3, 1, ink)
     elif mouth == "tongue":
         im.rect(NX - 2, NY + 3, 2, 3, PINK)
-        im.set(NX - 2, NY + 2, DKBROWN)
+        im.set(NX - 2, NY + 2, ink)
     elif mouth == "sad":
-        im.set(NX - 3, NY + 2, DKBROWN)
-        im.set(NX - 2, NY + 3, DKBROWN)
+        im.set(NX - 3, NY + 2, ink)
+        im.set(NX - 2, NY + 3, ink)
     else:
-        im.set(NX - 2, NY + 2, DKBROWN)
-    # collar (not on puppy)
-    if p["collar"] and pose not in ("BACK", "DEAD", "SLEEP0", "SLEEP1"):
-        cx, cy = p["collar"]
-        cx += hdx
-        cy += hdy
-        if pose in ("SIT", "SIT_PAW", "LISTEN"):
-            cx += 1
-        if pose == "BEG":
-            cx -= 2
-            cy -= 3
-        im.rect(cx - 1, cy, 4, 1, RED)
-        im.set(cx, cy + 1, GOLD)
+        im.set(NX - 2, NY + 2, ink)
+
+
+def paint_collar(im, p, s, pose):
+    if not p["collar"] or pose in ("BACK", "DEAD", "SLEEP0", "SLEEP1"):  # not on the puppy, nor lying down
+        return
+    cx, cy = p["collar"][0] + s["hdx"], p["collar"][1] + s["hdy"]
+    if pose in ("SIT", "SIT_PAW", "LISTEN"):
+        cx += 1
+    if pose == "BEG":
+        cx, cy = cx - 2, cy - 3
+    im.rect(cx - 1, cy, 4, 1, RED)
+    im.set(cx, cy + 1, GOLD)
+
+
+def draw_dog(size, pose, breed="GOLDEN"):
+    b = BREEDS[breed]
+    p = rig(size, b)
+    s = pose_state(p, pose, size)
+    im = Img(p["W"], p["H"])
+    paint_silhouette(im, p, s, b)
+    ground = p["legY"] + p["legH"]
+    for lx, ly, lh in s["legs"]:  # paws (toes) at leg bottoms
+        if ly + lh >= ground:
+            im.rect(lx, ground - 1, p["legW"], 1, b["paw"])
+    paint_markings(im, p, s, b, size)
+    EX, EY = p["eye"][0] + s["hdx"], p["eye"][1] + s["hdy"]
+    paint_eyes(im, EX, EY, s["eyes"], b)
+    paint_mouth(im, p["nose"][0] + s["hdx"], p["nose"][1] + s["hdy"], s["mouth"], b["ink"])
+    paint_collar(im, p, s, pose)
     # anchors for hats/zones: head top-center, eye, body center, tail
-    parts = dict(
-        headX=int(round(HX)),
-        headY=int(round(HY)),
-        headR=int(hr),
-        bodyX=int(round(body[0])),
-        bodyY=int(round(body[1])),
-        bodyRX=int(round(body[2])),
-        bodyRY=int(round(body[3])),
-        tailX=int(tail[2]) if tail else 0,
-        tailY=int(tail[3]) if tail else 0,
-        eyeX=int(EX),
-        eyeY=int(EY),
-    )
+    hx, hy, hr = p["head"]
+    body, tail = s["body"], s["tail"]
+    parts = dict(headX=int(round(hx + s["hdx"])), headY=int(round(hy + s["hdy"])), headR=int(hr))
+    parts.update(bodyX=int(round(body[0])), bodyY=int(round(body[1])), bodyRX=int(round(body[2])), bodyRY=int(round(body[3])))
+    parts.update(tailX=int(tail[2]) if tail else 0, tailY=int(tail[3]) if tail else 0, eyeX=int(EX), eyeY=int(EY))
     return im, parts
 
 
@@ -781,49 +887,76 @@ HATS = ["HAT_BOW", "HAT_PARTY", "HAT_GLASSES", "HAT_BANDANA", "HAT_CROWN", "HAT_
 
 
 # ---------------------------------------------------------------- emit
+PART_KEYS = ("headX", "headY", "headR", "bodyX", "bodyY", "bodyRX", "bodyRY", "tailX", "tailY", "eyeX", "eyeY")
+
+
+def px_data(im):
+    return ",".join(str(c) for row in im.px for c in row)
+
+
+# The memory wall's pictures, cut from the sitting pup: (name, crop) with crop (x, y, w, h) or, for the room's small
+# frames, a 10x10 box around the head. A crop always stays on the art.
+PORTRAITS = (("DOG_PORTRAIT_SMALL", None), ("DOG_PORTRAIT", (1, 0, 22, 14)))
+
+
+def crop(im, x, y, w, h):
+    x, y = max(0, min(x, im.w - w)), max(0, min(y, im.h - h))
+    out = Img(w, h)
+    out.px = [row[x : x + w] for row in im.px[y : y + h]]
+    return out
+
+
+def emit_portraits(w, frames):
+    for name, box in PORTRAITS:
+        for br in BREEDS:
+            im, parts = frames[(br, "pup", "SIT")]
+            pic = crop(im, *(box or (parts["headX"] - 5, parts["headY"] - 5, 10, 10)))
+            w(f"static const uint8_t {name.lower()}_{br.lower()}_px[] = {{{px_data(pic)}}};")
+        w(f"static const gfx::Sprite {name}[NUM_BREEDS_ART] = {{" + ", ".join(f"{{{pic.w},{pic.h},{name.lower()}_{br.lower()}_px}}" for br in BREEDS) + "};")
+
+
+def emit_dogs(w, frames):
+    w("enum Pose { " + ", ".join("P_" + p for p in POSES) + ", NUM_POSES };")
+    w("enum DogSize { SZ_PUP = 0, SZ_DOG = 1, SZ_BIG = 2 };")
+    w("enum Breed { " + ", ".join("BR_" + br for br in BREEDS) + ", NUM_BREEDS_ART };")
+    w("struct DogParts { int8_t headX, headY, headR, bodyX, bodyY, bodyRX, bodyRY, tailX, tailY, eyeX, eyeY; };")
+    for (br, sz, pose), (im, _) in frames.items():
+        w(f"static const uint8_t dog_{br.lower()}_{sz}_{pose.lower()}_px[] = {{{px_data(im)}}};")
+    w("static const gfx::Sprite DOG_FRAMES[NUM_BREEDS_ART][3][NUM_POSES] = {")
+    for br in BREEDS:
+        rows = ["{" + ", ".join(f"{{{frames[(br, sz, p)][0].w},{frames[(br, sz, p)][0].h},dog_{br.lower()}_{sz}_{p.lower()}_px}}" for p in POSES) + "}" for sz in SIZE_ORDER]
+        w("  {" + ", ".join(rows) + "},")
+    w("};")
+    w("static const DogParts DOG_PARTS[NUM_BREEDS_ART][3][NUM_POSES] = {")
+    for br in BREEDS:
+        rows = ["{" + ", ".join("{" + ",".join(str(frames[(br, sz, p)][1][k]) for k in PART_KEYS) + "}" for p in POSES) + "}" for sz in SIZE_ORDER]
+        w("  {" + ", ".join(rows) + "},")
+    w("};")
+
+
+def emit_icons(w):
+    icons = {}
+    for name, art in ICONS.items():
+        im = icons[name] = ascii_img(art)
+        w(f"static const uint8_t spr_{name.lower()}_px[] = {{{px_data(im)}}};")
+        w(f"static const gfx::Sprite SPR_{name} = {{{im.w},{im.h},spr_{name.lower()}_px}};")
+    w("static const gfx::Sprite SPR_HATS[8] = {{0,0,nullptr}, " + ", ".join("SPR_" + h for h in HATS) + "};")
+    return icons
+
+
 def emit(check=False):
     out = []
     w = out.append
     w("// AUTO-GENERATED by tools/art.py. Edit the generator, not this file.")
     w("#pragma once")
     w('#include "gfx.h"')
-    w("enum Pose { " + ", ".join("P_" + p for p in POSES) + ", NUM_POSES };")
-    w("enum DogSize { SZ_PUP = 0, SZ_DOG = 1, SZ_BIG = 2 };")
-    w("struct DogParts { int8_t headX, headY, headR, bodyX, bodyY, bodyRX, bodyRY, tailX, tailY, eyeX, eyeY; };")
-    frames = {}
-    for sz in ("pup", "dog", "big"):
-        for pose in POSES:
-            im, parts = draw_dog(sz, pose)
-            frames[(sz, pose)] = (im, parts)
-            name = f"dog_{sz}_{pose.lower()}_px"
-            data = ",".join(str(c) for row in im.px for c in row)
-            w(f"static const uint8_t {name}[] = {{{data}}};")
-    w("static const gfx::Sprite DOG_FRAMES[3][NUM_POSES] = {")
-    for sz in ("pup", "dog", "big"):
-        w("  {" + ", ".join(f"{{{frames[(sz, p)][0].w},{frames[(sz, p)][0].h},dog_{sz}_{p.lower()}_px}}" for p in POSES) + "},")
-    w("};")
-    w("static const DogParts DOG_PARTS[3][NUM_POSES] = {")
-    for sz in ("pup", "dog", "big"):
-        row = []
-        for p in POSES:
-            pr = frames[(sz, p)][1]
-            row.append("{" + ",".join(str(pr[k]) for k in ("headX", "headY", "headR", "bodyX", "bodyY", "bodyRX", "bodyRY", "tailX", "tailY", "eyeX", "eyeY")) + "}")
-        w("  {" + ", ".join(row) + "},")
-    w("};")
-    icons = {}
-    for name, art in ICONS.items():
-        im = ascii_img(art)
-        icons[name] = im
-        data = ",".join(str(c) for row in im.px for c in row)
-        w(f"static const uint8_t spr_{name.lower()}_px[] = {{{data}}};")
-        w(f"static const gfx::Sprite SPR_{name} = {{{im.w},{im.h},spr_{name.lower()}_px}};")
-    w("static const gfx::Sprite SPR_HATS[8] = {{0,0,nullptr}, " + ", ".join("SPR_" + h for h in HATS) + "};")
+    frames = {(br, sz, pose): draw_dog(sz, pose, br) for br in BREEDS for sz in SIZE_ORDER for pose in POSES}
+    emit_dogs(w, frames)
+    emit_portraits(w, frames)
+    icons = emit_icons(w)
     text = "\n".join(out) + "\n"
     if check:
-        try:
-            current = Path(SPRITES).read_text(encoding="utf-8")
-        except FileNotFoundError:
-            current = ""
+        current = Path(SPRITES).read_text(encoding="utf-8") if Path(SPRITES).exists() else ""
         if current != text:
             print("sprites.h is out of date: run `make art`")
             sys.exit(1)
@@ -835,73 +968,58 @@ def emit(check=False):
     preview(frames, icons)
 
 
+# ---------------------------------------------------------------- preview sheet
+PAL = [0x000000, 0x1D2B53, 0x7E2553, 0x008751, 0xAB5236, 0x5F574F, 0xC2C3C7, 0xFFF1E8, 0xFF004D, 0xFFA300, 0xFFEC27, 0x00E436, 0x29ADFF, 0x83769C, 0xFF77A8, 0xFFCCAA]
+PAL += [0xE6B27A, 0x5C3A1E, 0xFFF7D6, 0xA8E0FF, 0x16213E, 0xC47A3A, 0x8A4B22, 0xF2D9B5, 0xD9A066, 0x6EE7B7, 0x3BAA3B, 0xF5C400, 0x6B4423, 0x5FB8F5, 0xE0587A, 0x3A3F58]
+SHEET_SCALE, CELL_W, CELL_H, HAT_CELL_H = 4, 40, 30, 42
+HAT_CHECKS = [("IDLE0", "HAT_PARTY"), ("SIT", "HAT_WIZARD"), ("IDLE0", "HAT_GLASSES"), ("BEG", "HAT_BANDANA")]
+
+
+def hat_xy(name, h, parts):
+    """Game::drawHat's placement at scale 1, facing right."""
+    if name == "HAT_GLASSES":
+        return parts["eyeX"] - 1, parts["eyeY"] - 1
+    if name == "HAT_BANDANA":
+        return parts["headX"] - h.w // 2 + 3, parts["headY"] + parts["headR"] - 2
+    return parts["headX"] - h.w // 2 + 1, parts["headY"] - parts["headR"] - h.h + 2
+
+
+def sheet_put(px, im, ox, oy):
+    S = SHEET_SCALE
+    for y in range(im.h):
+        for x in range(im.w):
+            if im.px[y][x] == T:
+                continue
+            rgb = PAL[im.px[y][x]]
+            for dy in range(S):
+                for dx in range(S):
+                    px[(ox + x) * S + dx, (oy + y) * S + dy] = ((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255)
+
+
 def preview(frames, icons):
+    """Rows: every breed x size x pose, then a hat on each breed (hats at Game::drawHat's anchors), then the icons."""
     try:
         from PIL import Image
     except ImportError:
         print("Pillow missing; skipping preview")
         return
-    PAL = [
-        0x000000,
-        0x1D2B53,
-        0x7E2553,
-        0x008751,
-        0xAB5236,
-        0x5F574F,
-        0xC2C3C7,
-        0xFFF1E8,
-        0xFF004D,
-        0xFFA300,
-        0xFFEC27,
-        0x00E436,
-        0x29ADFF,
-        0x83769C,
-        0xFF77A8,
-        0xFFCCAA,
-        0xE6B27A,
-        0x5C3A1E,
-        0xFFF7D6,
-        0xA8E0FF,
-        0x16213E,
-        0xC47A3A,
-        0x8A4B22,
-        0xF2D9B5,
-        0xD9A066,
-        0x6EE7B7,
-        0x3BAA3B,
-        0xF5C400,
-        0x6B4423,
-        0x5FB8F5,
-        0xE0587A,
-        0x3A3F58,
-    ]
-    S = 4
-    cols = len(POSES)
-    cellw, cellh = 40, 30
-    W = cols * cellw
-    H = 3 * cellh + 40
-    img = Image.new("RGB", (W * S, H * S), (0x60, 0x80, 0x60))
+    rows = len(BREEDS) * len(SIZE_ORDER)
+    W, hat_top = len(POSES) * CELL_W, rows * CELL_H
+    img = Image.new("RGB", (W * SHEET_SCALE, (hat_top + len(BREEDS) * HAT_CELL_H + 40) * SHEET_SCALE), (0x60, 0x80, 0x60))
     px = img.load()
-
-    def put(im, ox, oy):
-        for y in range(im.h):
-            for x in range(im.w):
-                c = im.px[y][x]
-                if c == T:
-                    continue
-                rgb = PAL[c]
-                col = ((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255)
-                for dy in range(S):
-                    for dx in range(S):
-                        px[(ox + x) * S + dx, (oy + y) * S + dy] = col
-
-    for si, sz in enumerate(("pup", "dog", "big")):
-        for pi, pose in enumerate(POSES):
-            im = frames[(sz, pose)][0]
-            put(im, pi * cellw + 2, si * cellh + (cellh - im.h - 2))
+    for (br, sz, pose), (im, parts) in frames.items():
+        bi, si = list(BREEDS).index(br), SIZE_ORDER.index(sz)
+        put_y = (bi * len(SIZE_ORDER) + si) * CELL_H + CELL_H - im.h - 2
+        sheet_put(px, im, POSES.index(pose) * CELL_W + 2, put_y)
+        for ci, (hat_pose, hat) in enumerate(HAT_CHECKS):
+            if hat_pose == pose:
+                ox, oy = (si * len(HAT_CHECKS) + ci) * CELL_W + 2, hat_top + (bi + 1) * HAT_CELL_H - im.h - 2
+                sheet_put(px, im, ox, oy)
+                hx, hy = hat_xy(hat, icons[hat], parts)
+                sheet_put(px, icons[hat], ox + hx, oy + hy)
     x = 1
     for im in icons.values():
-        put(im, x, 3 * cellh + 4)
+        sheet_put(px, im, x, hat_top + len(BREEDS) * HAT_CELL_H + 4)
         x += im.w + 3
         if x > W - 20:
             break

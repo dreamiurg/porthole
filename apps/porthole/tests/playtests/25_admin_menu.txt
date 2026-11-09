@@ -36,10 +36,8 @@ down 80 94
 move 140 80
 up
 wait 450
+# a slow press counts like a tap
 hold 80 94
-wait 450
-expect-screen sys_admin
-tap 80 94
 wait 450
 expect-screen sys_time
 tap 52 129

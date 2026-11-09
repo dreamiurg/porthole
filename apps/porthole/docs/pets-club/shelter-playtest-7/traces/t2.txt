@@ -1,0 +1,6 @@
+wait 1500
+hold 80 67 2000
+wait 300
+shot b01_after_hold_mia
+wait 1000
+shot b02_later

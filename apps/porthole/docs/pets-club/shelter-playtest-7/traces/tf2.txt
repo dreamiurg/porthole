@@ -1,0 +1,8 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 36 105 2000
+wait 3000
+hold 18 80 2000
+wait 600
+shot tf05_hold_back

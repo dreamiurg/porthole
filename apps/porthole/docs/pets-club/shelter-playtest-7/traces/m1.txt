@@ -1,0 +1,15 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 124 72 2000
+wait 300
+wait 2000
+wait 3000
+wait 1000
+hold 80 113 2000
+wait 300
+shot mka01_hold_play
+wait 2000
+shot mka02_after
+wait 3000
+shot mka03_later

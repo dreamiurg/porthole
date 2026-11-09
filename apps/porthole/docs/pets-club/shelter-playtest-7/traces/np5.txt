@@ -1,0 +1,46 @@
+wait 1500
+tap 80 93
+wait 800
+hold 41 76 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 41 100 1500
+wait 150
+hold 41 76 1500
+wait 150
+hold 119 124 2000
+wait 300
+wait 1000
+wait 1000
+hold 96 87 2000
+wait 800
+hold 79 67 2000
+wait 300
+wait 1000
+wait 600
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 100
+wait 1500
+wait 1500
+hold 40 62 1200
+wait 200
+hold 79 62 1200
+wait 200
+hold 119 62 1200
+wait 200
+hold 40 90 1200
+wait 100
+shot k01_mismatch_4th
+wait 800
+shot k02_mismatch_after
+wait 1500
+shot k03_mismatch_later

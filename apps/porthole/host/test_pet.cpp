@@ -2,6 +2,7 @@
 // One pup's life, in order: each step starts from the state the previous one left.
 #include "host/check.h"
 #include <stdio.h>
+#include <unistd.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"
 #include "games/pets-club/game.h"
@@ -81,18 +82,162 @@ static void giftsStreakReading(Save& s, uint32_t t) {
   pet::seal(s); assert(pet::valid(s)); s.food ^= 1; assert(!pet::valid(s)); s.food ^= 1; pet::seal(s);
 }
 
+static_assert(sizeof(Save::wallNames[0]) == sizeof(Save::petName), "a wall frame holds the whole pet name");
+
+// An older blob: the first n - 4 bytes of s under its version, with a good CRC.
+static void oldBlob(uint8_t* out, const Save& s, size_t n, uint16_t ver) {
+  memcpy(out, &s, n - 4);
+  uint16_t size = (uint16_t)n; memcpy(out + 4, &ver, 2); memcpy(out + 6, &size, 2);
+  uint32_t crc = pet::crc32(out, n - 4); memcpy(out + n - 4, &crc, 4);
+}
+
 // v1 blob (140 bytes, version 1) migrates: old fields keep their values, new fields are zero, age unknown
 static void saveV1(const Save& s) {
-  uint8_t v1[SAVE_V1_SIZE]; memcpy(v1, &s, SAVE_V1_SIZE - 4);
-  uint16_t ver = 1, size = (uint16_t)SAVE_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
-  uint32_t crc = pet::crc32(v1, SAVE_V1_SIZE - 4); memcpy(v1 + SAVE_V1_SIZE - 4, &crc, 4);
-  Save m; assert(pet::loadBlob(v1, sizeof v1, m));
-  assert(pet::valid(m) && m.version == 2 && m.size == sizeof(Save));
-  assert(!strcmp(m.petName, "Biscuit") && m.booksRead == s.booksRead && m.bond == s.bond);
+  uint8_t v1[SAVE_V1_SIZE]; oldBlob(v1, s, sizeof v1, 2);
+  Save m; assert(!pet::loadBlob(v1, sizeof v1, m));                // 140 bytes claiming v2: rejected, even with a good CRC
+  oldBlob(v1, s, sizeof v1, 1);
+  assert(pet::loadBlob(v1, sizeof v1, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(!strcmp(m.petName, "Biscuit") && m.booksRead == s.booksRead && m.bond == s.bond && m.hasDog == 1);
   assert(m.kidAge == 0 && m.pin == 0 && m.restUntil == 0);
   v1[20] ^= 1; assert(!pet::loadBlob(v1, sizeof v1, m));          // corrupted v1 rejected
-  assert(pet::loadBlob(&s, sizeof s, m) && m.streak == s.streak);   // v2 round trip
+  assert(pet::loadBlob(&s, sizeof s, m) && m.streak == s.streak);   // current-version round trip
   assert(!pet::loadBlob(&s, 17, m));
+}
+
+// v2 blob (156 bytes, version 2) migrates: it still has its dog, a Golden pup, and an empty wall
+static void saveV2Migrates(const Save& s) {
+  uint8_t v2[SAVE_V2_SIZE]; oldBlob(v2, s, sizeof v2, 2);
+  Save m; assert(pet::loadBlob(v2, sizeof v2, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(m.breed == 0 && m.hasDog == 1 && m.wallCount == 0 && m.dogsRaised == 0 && m.streak == s.streak);
+  assert(!strcmp(m.petName, s.petName) && m.kidAge == s.kidAge && m.playSec == s.playSec);
+  v2[20] ^= 1; assert(!pet::loadBlob(v2, sizeof v2, m));          // corrupted v2 rejected
+  oldBlob(v2, s, sizeof v2, 3); assert(!pet::loadBlob(v2, sizeof v2, m));   // a v2 size must say v2, even with a good CRC
+}
+
+static void shelterPupStartsFresh(Save& s, uint32_t now) {
+  pet::adoptFromShelter(s, now, 3, "Choco");
+  assert(pet::valid(s) && s.hasDog == 1 && s.breed == 3 && !strcmp(s.petName, "Choco"));
+  assert(s.trickProgress[0] == 0 && s.bond == 0 && s.asleep == 0 && s.stage == STAGE_PUPPY && pet::ageDays(s, now) == 0);
+  assert(s.hat == 0);   // the old dog's hat stays with the old dog
+  assert(s.food == 70 && s.fun == 80 && s.energy == 90 && s.clean == 100);
+  assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.wallCount == 1 && s.dogsRaised == 1);
+}
+
+// Right after retire, before any shelter pup: the empty room is calm (no sleep, mess or want), and the dog's own
+// fields, its hat too, wait in the save for Bring back.
+static void retiredRoomIsCalm(const Save& s) {
+  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 2);
+  assert(!strcmp(s.petName, "Connor") && s.bond == 900 && s.trickProgress[0] == 3 && s.stage == STAGE_GROWN);
+}
+
+// The farm: the dog moves on, the kid keeps everything they earned, the next pup starts fresh.
+static void retireKeepsKidProgress() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor");
+  s.stickersMask = 0x5; s.hatsMask = 3; s.hat = 2; s.booksRead = 7; s.trickProgress[0] = 3; s.bond = 900; s.asleep = 1;
+  s.poop = 1; s.dirty = 1; s.want = WANT_SLEEP; s.stage = STAGE_GROWN;
+  const uint32_t now = day0 + 31 * 86400;
+  assert(!pet::canRetire(s, day0 + 29 * 86400) && pet::canRetire(s, day0 + 30 * 86400) && pet::canRetire(s, now));
+  pet::retire(s, now);
+  assert(pet::valid(s) && !pet::canRetire(s, now + 60 * 86400));
+  assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.booksRead == 7 && s.streak == 1 && !strcmp(s.kidName, "Sam"));
+  assert(s.hasDog == 0 && s.wallCount == 1 && !strcmp(s.wallNames[0], "Connor") && s.dogsRaised == 1);
+  retiredRoomIsCalm(s);
+  shelterPupStartsFresh(s, now);
+}
+// Bring back undoes retire until a pup is adopted: the same dog (name, breed, age, tricks, bond, stats) and the wall
+// as it was; the empty room's days are not time away. Only a full wall differs: the oldest frame retire took down
+// stays down.
+static Save dogWithWall(int frames) {   // frames shelter dogs on the wall, then Rex the Corgi at home with a past
+  Save s; pet::adopt(s, day0, "Sam", "A");
+  const char* names[] = {"A", "B", "C", "D"};
+  for (int i = 0; i < frames; i++) { if (i) pet::adoptFromShelter(s, day0, (uint8_t)i, names[i]); pet::retire(s, day0); }
+  pet::adoptFromShelter(s, day0, 5, "Rex");
+  s.stage = STAGE_GROWN; s.bond = 640; s.trickProgress[2] = 3; s.trickLastDay[2] = 7; s.food = 55; s.fun = 33; s.energy = 41;
+  s.clean = 62; s.hat = 1; pet::seal(s);
+  return s;
+}
+static void sameDog(const Save& a, const Save& b) {
+  assert(!strcmp(a.petName, b.petName) && a.breed == b.breed && a.adoptedAt == b.adoptedAt && a.stage == b.stage);
+  assert(a.bond == b.bond && !memcmp(a.trickProgress, b.trickProgress, sizeof a.trickProgress));
+  assert(!memcmp(a.trickLastDay, b.trickLastDay, sizeof a.trickLastDay));
+  assert(a.food == b.food && a.fun == b.fun && a.energy == b.energy && a.clean == b.clean);
+}
+static void bringBackRestores() {
+  const uint32_t t = day0 + 40 * 86400, later = t + 3 * 86400;
+  Save s = dogWithWall(2); const Save before = s;
+  assert(!pet::canBringBack(s) && !pet::bringBack(s, t));   // a dog at home: nothing to bring back
+  pet::retire(s, t);
+  assert(pet::canBringBack(s) && s.wallCount == 3 && s.dogsRaised == 3);
+  Save m; assert(pet::loadBlob(&s, sizeof s, m) && !memcmp(&m, &s, sizeof m));   // a restart keeps the empty room whole
+  assert(pet::simulate(m, later, false) == pet::EV_NONE);
+  assert(pet::bringBack(m, later) && pet::valid(m) && m.hasDog == 1 && m.lastSeen == later && m.hat == 1);
+  sameDog(m, before); assert(pet::ageDays(m, later) == pet::ageDays(before, later));
+  assert(m.wallCount == before.wallCount && m.dogsRaised == before.dogsRaised);
+  assert(!memcmp(m.wallNames, before.wallNames, sizeof m.wallNames) && !memcmp(m.wallBreeds, before.wallBreeds, sizeof m.wallBreeds));
+  assert(m.nextPoopAt > later && !(pet::simulate(m, later + 60, true) & pet::EV_POOPED) && m.food >= 54 && m.poop == 0);
+  assert(!pet::bringBack(m, later));   // once
+}
+static void adoptionEndsBringBack() {
+  Save m = dogWithWall(1); pet::retire(m, day0); pet::adoptFromShelter(m, day0, 3, "Choco");
+  assert(!pet::canBringBack(m) && !pet::bringBack(m, day0) && !strcmp(m.petName, "Choco") && m.bond == 0);
+}
+// A pup adopted the same day the old dog used up its cookies and pats gets its own: a treat, and bond from a pat.
+static void shelterPupGetsTodaysCare() {
+  const uint32_t t = day0 + 31 * 86400; int d = 0;
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::touchDay(s, t);
+  s.food = 10; for (int i = 0; i < 3; i++) assert(pet::feed(s, t, FOOD_COOKIE, &d));
+  for (int i = 0; i < 20; i++) assert(pet::petDog(s, t));
+  assert(!pet::feed(s, t, FOOD_COOKIE, &d) && s.petsToday == 20);
+  pet::retire(s, t); pet::adoptFromShelter(s, t, 3, "Choco");
+  s.food = 10; assert(pet::feed(s, t, FOOD_COOKIE, &d));
+  const uint16_t bond = s.bond; assert(pet::petDog(s, t) && s.bond == bond + 1);
+}
+// A full wall: retire took the oldest frame (A) down to hang Rex, and Bring back does not hang it again.
+static void bringBackOntoFullWall() {
+  Save f = dogWithWall(WALL_SLOTS); pet::retire(f, day0);
+  assert(f.wallCount == WALL_SLOTS && !strcmp(f.wallNames[0], "B") && !strcmp(f.wallNames[3], "Rex"));
+  assert(pet::bringBack(f, day0) && f.wallCount == WALL_SLOTS - 1 && f.dogsRaised == WALL_SLOTS);
+  for (int i = 0; i < WALL_SLOTS - 1; i++) assert(f.wallBreeds[i] == i + 1);
+  assert(!strcmp(f.wallNames[0], "B") && !strcmp(f.wallNames[2], "D") && f.wallNames[3][0] == 0 && !strcmp(f.petName, "Rex"));
+}
+// The wall keeps the last four dogs, oldest first; dogsRaised counts them all.
+static void wallRollsAtFour() {
+  Save s; pet::adopt(s, day0, "Sam", "A");
+  const char* names[] = {"A", "B", "C", "D", "E"};
+  for (int i = 0; i < 5; i++) {
+    if (i) pet::adoptFromShelter(s, day0, (uint8_t)i, names[i]);
+    pet::retire(s, day0);
+  }
+  pet::retire(s, day0);   // no dog: nothing to put on the wall
+  assert(s.wallCount == WALL_SLOTS && s.dogsRaised == 5);
+  for (int i = 0; i < WALL_SLOTS; i++) assert(!strcmp(s.wallNames[i], names[i + 1]) && s.wallBreeds[i] == i + 1);
+}
+
+// An empty room (dog on the farm, no pup yet) stands still: nothing grows, decays or poops.
+static void simulateEmptyRoom() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::retire(s, day0);
+  const Save before = s;
+  const uint32_t later = day0 + 7 * 86400;
+  assert(pet::simulate(s, later, false) == pet::EV_NONE);
+  assert(s.lastSeen == later && s.stage == before.stage && s.poop == 0);
+  assert(s.food == before.food && s.fun == before.fun && s.energy == before.energy && s.clean == before.clean);
+}
+
+static void breedSurvivesRoundTrip() {
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::retire(s, day0); pet::adoptFromShelter(s, day0, 5, "Waffles");
+  Save m; assert(pet::loadBlob(&s, sizeof s, m));
+  assert(m.breed == 5 && m.hasDog == 1 && m.wallCount == 1 && !strcmp(m.wallNames[0], "Connor") && m.dogsRaised == 1);
+  pet::retire(s, day0); assert(pet::loadBlob(&s, sizeof s, m) && m.hasDog == 0 && m.wallBreeds[1] == 5);
+}
+
+// A crc-valid v3 blob with bytes past the art and the wall loads safe: every reader indexes with them unchecked.
+static void corruptFieldsLoadSafe() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; pet::seal(s);
+  Save m; assert(pet::loadBlob(&s, sizeof s, m) && pet::valid(m));
+  assert(m.breed == 0 && m.wallBreeds[2] == 0 && m.wallCount == WALL_SLOTS && m.hasDog == 1);
 }
 
 static void levels(const Save& s) {
@@ -110,6 +255,152 @@ static void dayOnPickedLight() {
   const uint32_t night = day0 + 12 * 3600;
   g.enter({&kid, &kid, &none, 1, night, 0}); assert(g.tint() == TINT_NIGHT && g.nightSky());
   g.enter({&kid, &kid, &none, 1, night, 0, true}); assert(g.tint() == TINT_DAY && !g.nightSky());
+}
+
+// A Corgi (5) draws as itself at home, not as the Golden pup.
+static void homeFrame(uint8_t breed, uint8_t* out) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.breed = breed; pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, day0, 0}); g.update(day0, 2000, Input{}); g.render();   // past the splash: home
+  memcpy(out, gfx::fb, sizeof gfx::fb);
+}
+static void breedDraws() {
+  static uint8_t golden[sizeof gfx::fb], corgi[sizeof gfx::fb];
+  homeFrame(0, golden); homeFrame(5, corgi);
+  assert(memcmp(golden, corgi, sizeof golden));
+}
+
+// A dog that falls asleep at 16:00 and moves to the farm leaves the room in daylight: the night tint follows the dog.
+static Tint homeTintAt1600(bool retired) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 6 * 3600;
+  Save s; pet::adopt(s, t, "Sam", "Rex"); pet::setAsleep(s, t, true); s.energy = 20;   // too tired to wake by itself
+  if (retired) pet::retire(s, t);
+  pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+  assert(!strcmp(g.screenName(), "home"));
+  return g.tint();
+}
+static void retiredSleeperLeavesDay() { assert(homeTintAt1600(false) == TINT_NIGHT && homeTintAt1600(true) == TINT_DAY); }
+
+// The week's streak sticker comes with the day's first touch, the empty room's too: its card shows no dog.
+static int celebrateDogInk(bool retired) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 7 * 86400;
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.streak = 6; s.lastPlayDay = (uint16_t)(pet::dayIndex(t) - 1);
+  if (retired) pet::retire(s, t);
+  pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});   // past the splash: home
+  Input press; press.down = press.pressed = true; press.x = 80; press.y = 150;
+  g.update(t, 3000, press); g.render();
+  assert(!strcmp(g.screenName(), "celebrate"));
+  int ink = 0;   // under the card, where the dog stands: anything but the night sky, its stars and the confetti
+  for (int y = 100; y < 134; y++) for (int x = 50; x < 110; x++) { const uint8_t c = gfx::fb[y * gfx::W + x]; ink += c != C_NAVY && (c < C_RED || c > C_PEACH); }
+  return ink;
+}
+static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 && celebrateDogInk(true) == 0); }
+
+// A long habit's press on the farm's Yes: Go home, then Bring back in the empty room (after a restart too) puts the
+// same dog home (its age, tricks and stats, and the wall as it was) and asks for the one-second checkpoint.
+struct Finger {   // frames of 20 ms through the real InputTracker, the clock standing still (no tick, no decay)
+  Game& g; uint32_t now, ms = 2000; InputTracker tr; bool draw = false;   // draw: render each frame (home's buttons act there)
+  void hold(bool down, int x, int y, uint32_t dur) {
+    for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(now, ms, tr.step(down, x, y, ms)); if (draw) g.render(); }
+  }
+  void tap(int x, int y) { hold(true, x, y, 60); hold(false, x, y, 500); }
+};
+static Save taken(Game& g) { const void* d = nullptr; size_t n = 0; assert(g.takeSave(&d, &n, true) && n == sizeof(Save)); Save s; memcpy(&s, d, n); return s; }
+static void enterAt(Game& g, const Save& s, uint32_t t) {
+  static const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+}
+static void bringBackFromTheEmptyRoom() {
+  static Game g;
+  const uint32_t t = day0 + 40 * 86400;
+  Save s = dogWithWall(1); s.adoptedAt = t - 31 * 86400; s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  enterAt(g, s, t);
+  Finger f{g, t};
+  f.hold(false, 0, 0, 500); f.tap(40, 27); f.tap(80, 77);
+  assert(!strcmp(g.screenName(), "confirm_farm"));
+  const Save before = taken(g);
+  f.hold(true, 115, 102, 2100); f.hold(false, 115, 102, 500);
+  assert(!strcmp(g.screenName(), "farm") && g.saveUrgent());
+  f.tap(80, 137);
+  assert(!strcmp(g.screenName(), "home"));
+  const Save gone = taken(g); assert(gone.hasDog == 0 && gone.wallCount == 2);
+  // a slow double tap's second press, 500 ms into the room and past the fresh gate, held 700 ms: it lifts after the
+  // room's first second but began before it, so it is not taken
+  f.hold(true, 43, 103, 700); f.hold(false, 43, 103, 20);
+  assert(!strcmp(g.screenName(), "home") && !g.saveUrgent());
+  f.hold(false, 0, 0, 500);
+  f.hold(true, 43, 103, 60); f.hold(false, 43, 103, 20);   // the release frame: home, before the dog's first idle roll
+  assert(!strcmp(g.screenName(), "home") && g.saveUrgent());
+  const Save back = taken(g);
+  assert(back.hasDog == 1 && !strcmp(back.petName, "Rex") && back.breed == 5 && back.hat == 1);
+  sameDog(back, before); assert(back.wallCount == 1 && !strcmp(back.wallNames[0], "A") && back.dogsRaised == 1);
+  // a restart in the empty room: Bring back is still there
+  enterAt(g, gone, t + 600);
+  Finger r{g, t + 600}; r.hold(false, 0, 0, 1000);
+  r.hold(true, 43, 103, 2500); r.hold(false, 43, 103, 20);   // a long press works too
+  const Save again = taken(g);
+  assert(!strcmp(g.screenName(), "home") && again.hasDog == 1 && again.lastSeen == t + 600 && again.wallCount == 1);
+  sameDog(again, before);
+}
+
+// Start over is gone (a parent decision of 2026-11-09: two ordinary holds erased a pup): the strip under Stats'
+// last row, where its long press was, does nothing however long it is held.
+static void statsStripDoesNothing() {
+  static Game g;
+  const uint32_t t = day0 + 3 * 86400;
+  Save s = dogWithWall(0); s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  enterAt(g, s, t);
+  Finger f{g, t};
+  f.hold(false, 0, 0, 500); f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
+  f.hold(true, 80, 146, 2500); f.hold(false, 80, 146, 500); assert(!strcmp(g.screenName(), "stats"));
+  f.hold(true, 115, 102, 2500); f.hold(false, 115, 102, 500); assert(!strcmp(g.screenName(), "stats"));   // Yes's old spot
+  assert(taken(g).hasDog == 1);
+}
+
+// Word Fetch's live round as `debug` prints it (word=, cols=, typed=, tiles=): the test reads what the kid sees.
+struct WordRound { char word[16], tiles[16]; int cols, typed; };
+static WordRound wordRound(Game& g) {
+  fflush(stdout); FILE* tmp = tmpfile(); const int out = dup(1); dup2(fileno(tmp), 1);
+  g.debugPrint(); fflush(stdout); dup2(out, 1); close(out); rewind(tmp);
+  WordRound w{}; char line[256];
+  while (fgets(line, sizeof line, tmp)) sscanf(line, "word=%15s cols=%d typed=%d tiles=%15s", w.word, &w.cols, &w.typed, w.tiles);
+  fclose(tmp);
+  return w;
+}
+static void tileCenter(const WordRound& w, char ch, int& x, int& y) {
+  const int i = (int)(strchr(w.tiles, ch) - w.tiles);
+  x = (w.cols == 3 ? 41 : 28) + (i % w.cols) * 26 + 12; y = (w.cols == 3 ? 66 : 60) + (i / w.cols) * 26 + 12;
+}
+static void wordsUpToSecond(Game& g, Finger& f, const Save& s, uint32_t t) {   // the first word spelled, its pause begun
+  enterAt(g, s, t); f.draw = true;
+  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
+  WordRound w = wordRound(g);
+  for (const char* c = w.word; *c; c++) {   // a used tile is blanked so a repeated letter takes its next tile
+    int x, y; tileCenter(w, *c, x, y); w.tiles[strchr(w.tiles, *c) - w.tiles] = '.';
+    f.hold(true, x, y, 60); f.hold(false, 0, 0, 100);
+  }
+}
+// A press begun in the pause between words that lifts on the next word's first letter types nothing; a fresh tap
+// there does. The second word is read from a twin game fed the same touches (the round is seeded by the save).
+static void wordPauseTypesNothing() {
+  static Game ahead, g;
+  const uint32_t t = day0 + 3 * 86400;
+  Save s = dogWithWall(0); s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  Finger fa{ahead, t}; wordsUpToSecond(ahead, fa, s, t); fa.hold(false, 0, 0, 2000);
+  const WordRound next = wordRound(ahead); assert(next.typed == 0 && next.word[0]);
+  int x, y; tileCenter(next, next.word[0], x, y);
+  Finger f{g, t}; wordsUpToSecond(g, f, s, t);
+  f.hold(true, x, y, 2000); f.hold(false, x, y, 100);
+  WordRound w = wordRound(g); assert(!strcmp(w.word, next.word) && w.typed == 0);
+  f.hold(true, x, y, 60); f.hold(false, x, y, 100);
+  w = wordRound(g); assert(w.typed == 1);
 }
 
 static void petting(uint32_t t) {
@@ -130,9 +421,25 @@ int main() {
   bondAndTricks(s, t);
   giftsStreakReading(s, t);
   saveV1(s);
+  saveV2Migrates(s);
+  retireKeepsKidProgress();
+  wallRollsAtFour();
+  simulateEmptyRoom();
+  breedSurvivesRoundTrip();
+  corruptFieldsLoadSafe();
   levels(s);
   dayOnPickedLight();
+  breedDraws();
+  retiredSleeperLeavesDay();
+  emptyRoomCelebratesWithoutDog();
   petting(day0);
+  bringBackRestores();
+  adoptionEndsBringBack();
+  shelterPupGetsTodaysCare();
+  bringBackOntoFullWall();
+  bringBackFromTheEmptyRoom();
+  statsStripDoesNothing();
+  wordPauseTypesNothing();
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }

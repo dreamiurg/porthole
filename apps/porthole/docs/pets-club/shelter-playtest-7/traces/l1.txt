@@ -1,0 +1,18 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 22 72 2000
+wait 1500
+hold 22 72 2000
+wait 600
+shot la01_lamp_twice
+hold 80 103 2000
+wait 600
+shot la02_hold_sleeping_dog
+tap 40 128
+wait 600
+shot la03_tap_food_asleep

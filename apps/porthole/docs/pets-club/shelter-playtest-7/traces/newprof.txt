@@ -1,0 +1,19 @@
+wait 1500
+tap 80 93
+wait 800
+hold 41 76 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 41 100 1500
+wait 150
+hold 41 76 1500
+wait 150
+shot g01_typed
+hold 119 124 2000
+wait 300
+shot g02_after_ok_held
+wait 1000
+shot g03_after_ok_1s

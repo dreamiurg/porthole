@@ -1,0 +1,13 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+tap 53 128
+wait 600
+shot lb01_tap_between_food_ball
+tap 40 141
+wait 600
+shot lb02_tap_food_low_edge

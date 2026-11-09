@@ -1,0 +1,12 @@
+wait 1500
+tap 80 67
+wait 1000
+shot d01_launcher
+down 80 67
+wait 300
+shot d02_finger_on_tile
+wait 1700
+shot d03_finger_held_2s
+up
+wait 1000
+shot d04_after_release

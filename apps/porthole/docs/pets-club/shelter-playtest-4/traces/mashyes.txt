@@ -1,0 +1,36 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+press 115 102 99
+tick 66
+press 115 102 99
+tick 66
+press 115 102 99
+tick 66
+press 116 100 99
+tick 66
+press 114 104 132
+tick 66
+press 115 102 99
+tick 66
+press 115 102 330
+tick 66
+press 115 102 500
+tick 66
+press 115 102 700
+tick 66
+press 115 102 99
+tick 1000
+frame mashyes_end

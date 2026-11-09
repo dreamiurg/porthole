@@ -105,7 +105,9 @@ ui-check pin-long-name
 snap 05_pin_long
 tap 80 12
 wait 450
-hold 80 80
+down 80 80
+wait 3000
+up
 wait 450
 expect-screen pin
 repeat 4
@@ -157,14 +159,21 @@ wait 450
 expect-screen launcher
 expect profile=3/4
 sheet create
-# deleting the only profile opens "new profile"; its home button shows an empty picker with just "+"
+# deleting the only profile (with its code) opens "new profile"; its home button shows an empty picker with just "+"
 reset
-profile Solo 8
+profile Solo 8 1111
 tap 80 42
 wait 450
 expect-screen picker
-hold 80 67
+down 80 67
+wait 3000
+up
 wait 450
+expect-screen pin
+repeat 4
+tap 41 62
+end
+wait 900
 expect-screen delete
 hold 80 116
 wait 450
