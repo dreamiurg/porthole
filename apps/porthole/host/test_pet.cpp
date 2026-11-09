@@ -177,6 +177,20 @@ static void dayOnPickedLight() {
   g.enter({&kid, &kid, &none, 1, night, 0, true}); assert(g.tint() == TINT_DAY && !g.nightSky());
 }
 
+// A breed byte past the art (a corrupt save) draws the Golden pup at home, never out of bounds; a Corgi (5) draws as itself.
+static void homeFrame(uint8_t breed, uint8_t* out) {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.breed = breed; pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, day0, 0}); g.update(day0, 2000, Input{}); g.render();   // past the splash: home
+  memcpy(out, gfx::fb, sizeof gfx::fb);
+}
+static void breedClampDraws() {
+  static uint8_t golden[sizeof gfx::fb], corrupt[sizeof gfx::fb], corgi[sizeof gfx::fb];
+  homeFrame(0, golden); homeFrame(200, corrupt); homeFrame(5, corgi);
+  assert(!memcmp(golden, corrupt, sizeof golden) && memcmp(golden, corgi, sizeof golden));
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -202,6 +216,7 @@ int main() {
   breedSurvivesRoundTrip();
   levels(s);
   dayOnPickedLight();
+  breedClampDraws();
   petting(day0);
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;

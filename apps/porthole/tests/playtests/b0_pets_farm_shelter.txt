@@ -1,0 +1,249 @@
+# Pets Club: the farm and the shelter. A dog 30 days old may move to the farm, only on the kid's yes; the empty room
+# then shows only the Shelter, seven kennels with a named pup in each; the kid keeps or changes the name.
+newgame Sam Biscuit
+wait 2400
+tap 40 27
+wait 450
+expect-screen stats
+# a young dog has no farm button: its spot does nothing
+tap 80 77
+wait 450
+expect-screen stats
+tap 80 12
+wait 450
+expect-screen home
+# 30 days old: grown up (and the Grown sticker), then the farm button on the stats page
+dbg old
+wait 1500
+expect-screen celebrate
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+expect-screen stats
+ui-check stats-old
+snap 00_stats_old
+tap 80 77
+wait 450
+expect-screen confirm_farm
+ui-check
+snap 00_confirm_farm
+# No keeps the dog
+tap 45 102
+wait 450
+expect-screen stats
+expect hasDog=1
+expect pet=Biscuit
+tap 80 77
+wait 450
+tap 115 102
+wait 450
+expect-screen farm
+expect hasDog=0
+expect wall=1
+ui-check
+snap 01_farm
+tap 80 137
+wait 450
+expect-screen home
+expect hasDog=0
+ui-check home-empty
+snap 02_empty_room
+# only the Shelter: the care buttons, the stat pips and the door are gone
+tap 40 129
+tap 118 129
+tap 40 27
+tap 27 51
+wait 450
+expect-screen home
+tap 80 128
+wait 450
+expect-screen shelter
+ui-check
+snap 03_kennel_connor
+tap 134 80
+tap 134 80
+tap 134 80
+wait 100
+snap 04_kennel_choco
+# back: still the empty room, nobody adopted
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
+# leave the game and come back: still the empty room
+tap 80 12
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+# the kennels start at Connor again; left wraps round to Charcoal, right comes back
+tap 80 128
+wait 450
+tap 26 80
+wait 100
+snap 04_kennel_charcoal
+tap 134 80
+tap 134 80
+tap 134 80
+tap 134 80
+tap 80 139
+wait 450
+expect-screen name_pet
+ui-check name_pet-shelter
+snap 05_name_choco
+# back on the keyboard: the kennels again, still no dog
+tap 80 12
+wait 450
+expect-screen shelter
+expect hasDog=0
+tap 80 139
+wait 450
+expect-screen name_pet
+# keep the name
+tap 119 125
+wait 450
+expect-screen celebrate
+expect pet=Choco
+expect breed=3
+expect hasDog=1
+snap 06_welcome
+wait 450
+tap 80 80
+wait 900
+expect-screen home
+expect pet=Choco
+snap 07_home_choco
+sheet farm_shelter
+# Choco grows old too; Waffles the Corgi gets a new name: an empty name cannot be OKed, "Bingo" can
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+tap 115 102
+wait 450
+expect-screen farm
+expect wall=2
+tap 80 137
+wait 450
+tap 80 128
+wait 450
+tap 134 80
+tap 134 80
+tap 134 80
+tap 134 80
+tap 134 80
+tap 80 139
+wait 450
+expect-screen name_pet
+repeat 7
+tap 93 125
+end
+tap 119 125
+wait 450
+expect-screen name_pet
+expect hasDog=0
+# B, I, (N-Z) N, (A-M) G, (N-Z) O
+tap 67 53
+tap 41 101
+tap 67 125
+tap 41 53
+tap 67 125
+tap 93 77
+tap 67 125
+tap 67 53
+snap 08_name_bingo
+tap 119 125
+wait 450
+expect-screen celebrate
+expect pet=Bingo
+expect breed=5
+wait 450
+tap 80 80
+wait 900
+expect-screen home
+# the Corgi in a red bow (its own hat anchors)
+dbg hats
+tap 40 27
+wait 450
+tap 114 123
+wait 450
+expect-screen hats
+tap 134 80
+wait 100
+tap 80 134
+wait 450
+expect hat=1
+snap 09_corgi_bow
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen home
+snap 10_home_corgi_bow
+# a corrupt breed byte draws the Golden pup, never past the art
+dbg breed 200
+wait 100
+snap 11_breed_200
+dbg breed 5
+sheet bingo
+# Bingo, old and asleep at 22:00 on the stats page, moves to the farm: the empty room is awake, not in night mode
+dbg anytime
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+expect-screen stats
+skip 21600
+wait 200
+expect asleep=1
+tap 80 77
+wait 450
+tap 115 102
+wait 450
+tap 80 137
+wait 450
+expect-screen home
+expect asleep=0
+expect hasDog=0
+expect wall=3
+# Ann's Paw Street: Sam's house has no pup by its door
+tap 80 12
+wait 450
+profile Ann 7
+tap 48 79
+wait 2400
+tap 80 80
+wait 1000
+tap 80 80
+wait 450
+tap 123 28
+tap 119 125
+wait 450
+tap 32 78
+wait 900
+tap 80 80
+wait 450
+expect-screen home
+tap 27 51
+wait 450
+expect-screen street
+snap 12_street_empty_house
+sheet night
