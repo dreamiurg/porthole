@@ -345,20 +345,24 @@ void Shell::drawPin() {
   clear(del ? C_NAVY : C_WALL);
   const bool hidden = kidKeysHidden();
   const uint32_t wait = hidden ? pinWait(target_) : 0;
-  char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
-  if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
-  else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
-  else if (del) snprintf(prompt, sizeof prompt, "Delete %s?", prof_.rec[target_].name);
-  else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
-  else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
-  const uint8_t ink = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN;
-  textCentered(80, 26, prompt, ms_ < toastUntil_ ? (del ? (uint8_t)C_YELLOW : (uint8_t)C_PLUM) : ink);
+  drawPinPrompt(hidden, del);
   drawPinDigits();
   if (adminSwitch()) drawPinKey(PIN_SKIP, "Admin", C_SKY);   // in the wait too: the grown-up's code is not slowed
   if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
   for (int k = 0; k < 9; k++) { char l[2] = {(char)('1' + k), 0}; drawPinKey(pinKey(k), l, C_WHITE); }
   if (screen_ == SH_PIN_SET) drawPinKey(PIN_SKIP, "skip", C_SKY);
   ui::drawBack();
+}
+void Shell::drawPinPrompt(bool hidden, bool del) {
+  char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
+  const bool msg = ms_ < toastUntil_;
+  if (msg) snprintf(prompt, sizeof prompt, "%s", toast_);
+  else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
+  else if (del) snprintf(prompt, sizeof prompt, "Delete %s?", prof_.rec[target_].name);
+  else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
+  else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
+  const uint8_t ink = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN, alert = del ? (uint8_t)C_YELLOW : (uint8_t)C_PLUM;
+  textCentered(80, 26, prompt, msg ? alert : ink);
 }
 // While a wait runs, the keys give way to an hourglass whose sand runs down, its seconds and a bar that empties: a
 // kid who cannot read the number still sees the wait end, and nothing looks like a key. A tap wiggles it, silently.

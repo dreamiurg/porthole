@@ -217,10 +217,7 @@ bool Shell::saveAdminPin(uint16_t code) {
 static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19}; }
 static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
 void Shell::updateSysPin() {
-  if (ui::back(in_)) {   // from the grown-up's code for a delete reached from the kid's pad: back to that pad
-    const bool kidPad = screen_ == SH_SYS_PIN && afterAdmin_ == SH_DELETE && prof_.rec[target_].pin;
-    resetPin(); firstPin_ = 0; go(kidPad ? SH_PIN : screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return;
-  }
+  if (ui::back(in_)) { sysPinBack(); return; }
   if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
     const char next = adminDigit();
     if (!next && (ms_ - pinMs_ < 400 || in_.down)) return;   // a finger down waits: its lift is that key
@@ -231,6 +228,12 @@ void Shell::updateSysPin() {
   if (adminKeysHeld()) return;
   if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
   if (const char d = adminDigit()) typeDigit(d);
+}
+// The grown-up's code for a delete reached from a kid's pad goes back to that pad; otherwise the picker, or Admin.
+void Shell::sysPinBack() {
+  const bool kidPad = screen_ == SH_SYS_PIN && afterAdmin_ == SH_DELETE && prof_.rec[target_].pin;
+  resetPin(); firstPin_ = 0;
+  go(kidPad ? SH_PIN : screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN);
 }
 // A wrong code's shake, or too many wrong tries (pinlock.h), holds the keys.
 bool Shell::adminKeysHeld() { return ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
