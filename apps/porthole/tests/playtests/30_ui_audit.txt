@@ -306,8 +306,10 @@ ui-check rest
 snap e08_rest
 tap 80 132
 wait 450
-# a long press on Sam: Sam's code, then the delete question (answered No)
-hold 80 54
+# a 3 s hold on Sam: Sam's code, then the delete question (answered No)
+down 80 54
+wait 3000
+up
 wait 450
 tap 41 62
 tap 80 62

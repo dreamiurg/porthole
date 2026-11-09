@@ -1,7 +1,7 @@
 # Long presses must not be ignored (kid playtests 5 and 6 of Pets Club's shelter, 2026-11-08): kids of 5-7 often
 # press for 0.6-3 s, and a button that ignores that teaches them buttons are broken. A press lifted where it began
-# acts however long it was held: the name keyboard's keys and OK, a launcher tile, "No, keep!" and a Pets Club care
-# button. A finger slid onto a button from another never shows that one pressed.
+# acts however long it was held: the name keyboard's keys and OK, a picker name (under 3 s), a launcher tile,
+# "No, keep!" and a Pets Club care button. A finger slid onto a button from another never shows that one pressed.
 reset
 wait 450
 expect-screen new_name
@@ -48,7 +48,36 @@ profile Kai 6 1234
 tap 80 32
 wait 450
 expect-screen picker
-hold 80 80
+# a name held 2.5 s (kid playtest 8: a 6-year-old always holds 1-3 s) opens that kid's games; a bar fills under the
+# name from 1 s on, and only a 3 s hold asks to delete
+down 80 54
+wait 2000
+snap 00_name_held
+wait 500
+up
+wait 450
+expect-screen launcher
+tap 80 12
+wait 450
+expect-screen picker
+# with a code, the same press asks it to sign in, and the code opens the games
+down 80 80
+wait 2500
+up
+wait 450
+expect-screen pin
+tap 41 62
+tap 80 62
+tap 119 62
+tap 41 90
+wait 900
+expect-screen launcher
+tap 80 12
+wait 450
+expect-screen picker
+down 80 80
+wait 3000
+up
 wait 450
 expect-screen pin
 tap 41 62

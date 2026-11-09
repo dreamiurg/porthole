@@ -200,6 +200,9 @@ void Shell::budgetTick() {   // per profile, across every game
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
 static ui::Box pickRow(int i, int rows) { return {24, 80 - (rows * 26 - 2) / 2 + i * 26, 112, 24}; }   // an 8-letter name clears the lock
+// A 6-year-old holds their own name 1-3 s to play (playtest 8): any shorter press opens it, and only a hold this long
+// asks to delete. A bar fills under the name from DELETE_HINT_MS, so the longer meaning shows before it acts.
+static const uint32_t DELETE_HOLD_MS = 3000, DELETE_HINT_MS = 1000;
 void Shell::updatePick() {
   if (titleHeld()) { enterSystem(); return; }
   int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
@@ -208,7 +211,7 @@ void Shell::updatePick() {
     bool tap = in_.tapIn(b.x, b.y, b.w, b.h);
     if (i == n) { if (tap) askAdmin(SH_NAME); }
     else if (tap) choose(prof_.nth(i), false);
-    else if (in_.longPress && in_.hit(b.x, b.y, b.w, b.h)) choose(prof_.nth(i), true);   // long press: delete
+    else if (ui::pressing(in_, b) && in_.heldMs >= DELETE_HOLD_MS) choose(prof_.nth(i), true);
     if (screen_ != SH_PICK) return;
   }
 }
@@ -225,6 +228,8 @@ void Shell::drawPick() {
     blit(SPR_AVATARS[r.avatar % NUM_AVATARS], b.x + 4, b.y + 2 + dy);
     text(b.x + 30, b.y + 9 + dy, r.name, C_DKBROWN);
     if (r.pin) blitTint(SPR_LOCK, b.x + b.w - 12, b.y + 8 + dy, C_DKGRAY);
+    if (dy && in_.heldMs > DELETE_HINT_MS)   // under the name, clear of the face and the lock
+      rect(b.x + 30, b.y + 19 + dy, (int)((b.w - 46) * (in_.heldMs - DELETE_HINT_MS) / (DELETE_HOLD_MS - DELETE_HINT_MS)), 2, C_PLUM);
   }
   if (!sys_) return;   // the running firmware, small, under the rows: "v0.16.2", or "dev" for a local build
   int v[3]; char ver[16];   // at most 10 characters: 80 px, inside the glass's 84 px chord at the text's bottom row

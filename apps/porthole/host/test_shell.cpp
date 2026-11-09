@@ -1012,7 +1012,7 @@ static void adminGatesProfiles() {
   tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
   tapAt(sh, ms, NEW_ROW); typeAdminCode(sh, ms, "1234"); assert(on(sh, "new_name"));
   sh.begin(st, nullptr, 0, &sys);
-  Input hold{}; hold.down = hold.longPress = true; hold.x = hold.downX = 80; hold.y = hold.downY = 54; frame(sh, ms, hold);
+  Input hold{}; hold.down = true; hold.heldMs = 3000; hold.x = hold.downX = 80; hold.y = hold.downY = 54; frame(sh, ms, hold);
   assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
 }
 // Deleting a profile always takes a code (parent, 2026-11-09): the kid's own on their pad or, from its "Admin" key,
@@ -1023,9 +1023,12 @@ static void deleteNeedsACode() {
   bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
   const ui::Box SAM = {24, 42, 112, 24}, KAI = {24, 68, 112, 24}, PAD_ADMIN = {60, 134, 40, 22}, NO = {30, 66, 100, 28};
   auto longPress = [&](const ui::Box& b) {
-    Input in{}; in.down = in.pressed = in.longPress = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; frame(sh, ms, in);   // pressed: past the fresh gate
+    Input in{}; in.down = in.pressed = true; in.heldMs = 3000; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; frame(sh, ms, in);   // pressed: past the fresh gate
   };
   bootWithoutHours(sh, st, nullptr, 0, &sys);
+  Input held{}; held.pressed = held.tap = held.longTap = true; held.x = held.downX = 80; held.y = held.downY = 54;
+  frame(sh, ms, held); assert(on(sh, "pin"));   // a press lifted before 3 s signs in: Sam's code opens his games
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "launcher")); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
   longPress(KAI); assert(on(sh, "no_delete"));   // no code anywhere: nobody may delete Kai
   tapAt(sh, ms, {50, 120, 60, 24}); assert(on(sh, "picker"));
   longPress(KAI); assert(on(sh, "no_delete")); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker") && sh.profileCount() == 2);
@@ -1075,7 +1078,7 @@ static void longPressStillTaps() {
   f.x = 25; assert(ui::pressing(f, a));
 }
 // Through a Shell with the real tracker: a 1.5 s press on the name keyboard's keys and OK, a launcher tile and
-// "No, keep!" all act on the lift, and the admin limit's hold adds its 10 alone (no extra 1 on the lift).
+// "No, keep!", and a 2.5 s press on a picker row, all act on the lift (only a 3 s hold there asks to delete), and the admin limit's hold adds its 10 alone (no extra 1 on the lift).
 static void slowPresses() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   StubApp a("One"); App* const list[1] = {&a};
@@ -1093,7 +1096,11 @@ static void slowPresses() {
   slow(launcher::tile(0, 1), 1500); assert(on(sh, "stub") && a.entered == 1); home(sh, ms, a);
   const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
   bootWithoutHours(sh, st, list, 1, &sys);
-  Input lp{}; lp.down = lp.pressed = lp.longPress = true; lp.x = lp.downX = 80; lp.y = lp.downY = 67; frame(sh, ms, lp);
+  slow({24, 55, 112, 24}, 2500); assert(on(sh, "launcher"));   // a 6-year-old's 2.5 s press on his name: his games
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  ms += 500;   // past the fresh gate; a delete asks once the hold reaches 3 s, the finger still down
+  for (uint32_t e = 0; e <= 3000 && on(sh, "picker"); e += 40) { ms += 40; sh.update(testNow, ms, tr.step(true, 80, 67, ms)); sh.render(); }
+  assert(on(sh, "sys_pin")); ms += 40; sh.update(testNow, ms, tr.step(false, 80, 67, ms)); assert(on(sh, "sys_pin"));
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
   slow({30, 66, 100, 28}, 1500); assert(on(sh, "picker") && sh.profileCount() == 1);   // No, keep!
   holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);

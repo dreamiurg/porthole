@@ -105,7 +105,9 @@ ui-check pin-long-name
 snap 05_pin_long
 tap 80 12
 wait 450
-hold 80 80
+down 80 80
+wait 3000
+up
 wait 450
 expect-screen pin
 repeat 4
@@ -163,7 +165,9 @@ profile Solo 8 1111
 tap 80 42
 wait 450
 expect-screen picker
-hold 80 67
+down 80 67
+wait 3000
+up
 wait 450
 expect-screen pin
 repeat 4
