@@ -81,7 +81,9 @@ int bookListFor(const Save& s, uint8_t* out);          // story indices this kid
 void seal(Save& s);                          // sets magic/version/size/crc
 void adopt(Save& s, uint32_t now, const char* kid, const char* pet);
 bool canRetire(const Save& s, uint32_t now);  // old enough for the farm
-void retire(Save& s, uint32_t now);           // dog to the farm and onto the wall; the kid's progress stays
+void retire(Save& s, uint32_t now);           // dog to the farm and onto the wall; its own fields stay until the next pup
+inline bool canBringBack(const Save& s) { return !s.hasDog && s.wallCount > 0; }   // an empty room: the newest frame
+bool bringBack(Save& s, uint32_t now);        // undoes retire, until adoptFromShelter replaces the dog's fields
 void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name);  // next pup into the empty room
 
 // time helpers (local wall-clock seconds since 1970)

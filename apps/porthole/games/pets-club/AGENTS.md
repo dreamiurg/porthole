@@ -94,28 +94,33 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   tap, a hold or a rub), makes it jump, with a heart every 300 ms and the jump pose for each
   heart's first 200 ms: no sound, nothing saved (`bounceUntil_`; `go()` ends it and resets
   `yesHold_`).
-- **Bring back.** A habit longer than any hold still gets through, so the farm right after
-  a move (not a visit) also shows "Bring back" (`BRING_BACK_BTN`, orange, two lines, left of
-  the dog where No! was; the dog steps right). Just before `pet::retire` the confirm copies
-  the save to RAM (`undo_`, `undoOk_`); Bring back puts it back byte for byte, marks it
-  dirty and urgent and goes home to the dog; no sound. `go()` to any other screen drops the
-  copy (Go home, and `enter()` after the launcher or a restart, which starts at the splash),
-  so the move then stands. The move, its undo and the shelter's adoption are saved at once:
-  `saveUrgent()` (`urgent_`) asks the shell for its one-second checkpoint, so a restart
-  right after either keeps it. Time away never retires a dog.
-- **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/
-  done, streak, every counter, theme, the kid's fields and the wall. Reset, through
-  `freshDog`, the same defaults `pet::adopt` uses: `petName` (empty), `adoptedAt`, stage,
-  bond, tricks, the stats, the hat worn, `variant`, poop/dirty/asleep/want. The dog goes
-  onto the wall, `dogsRaised` counts it (all of them, ever, up to 255), and `hasDog = 0`.
+- **Bring back.** A habit longer than any hold still gets through, so the move can be undone until a new pup
+  is adopted. The farm right after a move (not a visit) shows "Bring back" (`BRING_BACK_BTN`, orange, two lines,
+  left of the dog where No! was; the dog steps right), and so does the empty room (`ROOM_BRING_BACK_BTN`, left of
+  the Shelter, with the newest farm dog's little picture on it), after Go home, the launcher or a restart too:
+  both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). It calls
+  `pet::bringBack`, marks the save dirty and urgent, goes home to the dog and says "<name> is home!" with a few
+  hearts; no sound. The move, its undo and the shelter's adoption are saved at once: `saveUrgent()` (`urgent_`)
+  asks the shell for its one-second checkpoint, so a restart right after either keeps it. Time away never
+  retires a dog.
+- **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/done, streak, every
+  counter, theme, the kid's fields, the wall, and the dog's own fields (`petName`, `breed`, `adoptedAt`, stage,
+  bond, tricks, the stats, `variant`), which wait for `pet::bringBack`. Cleared, so the empty room is calm and
+  in day: asleep, poop, dirty, want and the hat worn. The dog goes onto the wall, `dogsRaised` counts it (all of
+  them, ever, up to 255), and `hasDog = 0`. `pet::bringBack` takes the newest frame down, `dogsRaised--`,
+  `hasDog = 1` and `lastSeen = now` (the empty room's time is not time away; a poop already due is moved on).
+  The full-wall caveat: a move onto a full wall (four frames) took the oldest frame down, and Bring back does
+  not hang it again. `pet::adoptFromShelter` replaces the old dog's fields through `freshDog`, the same
+  defaults `pet::adopt` uses, so from then on the move stands.
 - **The empty room** (`hasDog == 0`, until `pet::adoptFromShelter`): `pet::simulate` only
-  moves `lastSeen`; nothing grows, decays or poops, and with no dog asleep there is no night tint.
-  Only the Shelter button, the front door (Paw Street, whose house shows no pup) and the
+  moves `lastSeen`; nothing grows, decays or poops, and with no dog asleep there is no night tint. Nothing
+  else reads the kept dog's fields while `hasDog` is 0 (the room, the gift, growth and Paw Street all check it).
+  Only the Shelter and Bring back buttons, the front door (Paw Street, whose house shows no pup) and the
   wall work; the care buttons, the pips, the gift and the dog are gone (a sticker earned
   there celebrates with no dog). Stickers, hats and Start over live on Stats, so they
   can't be reached from an empty room until the next pup is adopted (decided). The Shelter
-  button sits higher than the farm's Go home and the shelter's Pick me!, so a finger
-  tapping one spot a little slower than the fresh gate never chains into naming.
+  and Bring back buttons sit higher than the farm's Go home and the shelter's Pick me!, so a
+  finger tapping one spot a little slower than the fresh gate never chains into naming or bringing the dog back.
 - **The shelter** (`SC_SHELTER`): one kennel a page, arrows left and right (wrapping),
   starting on Connor each time it opens from the room, a tag with the pup's suggested name and breed, "Pick me!".
   Picking opens the pet-name keyboard (`SC_NAME_PET`) prefilled with that name: OK keeps
@@ -134,7 +139,7 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 Debug (see `docs/playtesting.md`): `dbg old` ages the dog to `RETIRE_DAYS`; `dbg wall5`
 puts five shelter pups, Romeo to Charcoal (the widest name), through the farm and keeps
 the kid's dog; `dbg breed N` sets the breed (past the table: the Golden pup, as a load would). `debug` prints `breed=`,
-`hasDog=` and `wall=`, on the wall screen `oldest=` / `newest=`, and on the farm `farm=` / `visit=`. The scenario is
+`hasDog=`, `bringback=` (`pet::canBringBack`) and `wall=`, on the wall screen `oldest=` / `newest=`, and on the farm `farm=` / `visit=`. The scenario is
 `tests/playtests/b0_pets_farm_shelter.txt`.
 
 Since Porthole, the shell's profile owns the kid's name, age, secret code, mute and rest

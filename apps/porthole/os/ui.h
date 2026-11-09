@@ -43,7 +43,7 @@ constexpr uint32_t HOLD_MS = 600;
 class Hold {
  public:
   void step(bool on, uint32_t ms) { if (on && !on_) fromMs_ = ms; on_ = on; ms_ = ms; }
-  float progress(uint32_t holdMs = HOLD_MS) const {   // 0..1 over holdMs: a choice that can't be undone may ask longer
+  float progress(uint32_t holdMs = HOLD_MS) const {   // 0..1 over holdMs: a weighty choice may ask longer
     if (!on_) return 0;
     const uint32_t d = ms_ - fromMs_;
     return d >= holdMs ? 1 : (float)d / holdMs;

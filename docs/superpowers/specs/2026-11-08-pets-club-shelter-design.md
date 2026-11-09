@@ -64,7 +64,9 @@ the same for every breed.
 
 **What carries over to the new dog.** The kid's progress stays: stickers, hats, the library and books read,
 streak, totals. The dog's own progress starts fresh: stage, age, hearts/bond, tricks, stats and the hat it
-wears. Nothing the kid earned is lost.
+wears. Nothing the kid earned is lost. The move itself clears only the moment (asleep, mess, a want, the hat
+worn); the old dog's own fields stay in the save until the shelter's adoption replaces them, which is what
+lets Bring back undo the move until then.
 
 **Screens** (`game.cpp`, new `Screen` values appended):
 
@@ -76,11 +78,15 @@ wears. Nothing the kid earned is lost.
   and rubs after the fourth.) It bounces once per heart, up only for the heart's first 200 ms.
   Right after the move (never on a visit) a second button, **Bring back** (orange, two lines, left of the
   dog where No! was, so never under the finger that held Yes; the dog steps right to make room), undoes the
-  move completely: the save from just before it, kept in RAM, comes back as it was (the dog, its age,
-  tricks and stats, the wall), is saved within a second, and the room shows the dog; no sound. Leaving
-  the farm any other way (Go home, the launcher, a restart) drops that copy, and the move stands.
-  (Added after the fifth playtest: a 6-year-old's habitual 2.5 s press sent her dog away, and any hold
-  length loses to a longer habit, so the hold stays at 2 s and the mistake is made recoverable instead.)
+  move: the dog comes home with its name, breed, age, tricks, bond and stats as they were (the hat it wore
+  comes off), the newest frame comes off the wall, it is saved within a second and the room says "<name>
+  is home!" with a few hearts; no sound. (Added after the fifth playtest: a 6-year-old's habitual 2.5 s
+  press sent her dog away, and any hold length loses to a longer habit, so the hold stays at 2 s and the
+  mistake is made recoverable instead.) The empty room offers the same Bring back, beside Shelter with the
+  newest farm dog's picture on it, so the move can be undone until a new pup is adopted: after Go home,
+  leaving the game or a restart too (sixth playtest: a 6-year-old who also pressed Go home lost it). The
+  empty room's time is not time away: nothing decays for it. One caveat: with a full wall (four frames)
+  the move took the oldest frame down, and Bring back does not hang it again.
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
   not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
@@ -91,7 +97,8 @@ wears. Nothing the kid earned is lost.
   double tap on the frames stops on Farm friends instead of visiting a dog. Tapping a picture visits that dog on the farm (the same `SC_FARM` scene, its name
   and breed from that frame) with the back button to Farm friends instead of Go home. (Revised after the
   first playtest, 2026-11-09: this replaces the toast, which answered "can I see him?" with words only.)
-- The room without a dog shows only Shelter (and the way back). Every new screen has a visible way back.
+- The room without a dog shows only Shelter and Bring back (and the way back). Every new screen has a
+  visible way back.
   Decided: the empty room also hides stickers, hats and Start over (they live on the dog's Stats page) until
   the next pup is adopted; nothing is lost, it all comes back with the new pup.
 

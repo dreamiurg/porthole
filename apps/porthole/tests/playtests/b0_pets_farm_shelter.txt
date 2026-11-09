@@ -1,6 +1,7 @@
 # Pets Club: the farm and the shelter. A dog 30 days old may move to the farm, only on the kid's yes; the empty room
-# then shows only the Shelter, seven kennels with a named pup in each; the kid keeps or changes the name. Each dog on
-# the farm hangs as a small frame on the room's wall; the frames open "Farm friends".
+# then shows the Shelter, seven kennels with a named pup in each (the kid keeps or changes the name), and Bring back,
+# which undoes the move until a pup is adopted. Each dog on the farm hangs as a small frame on the room's wall; the
+# frames open "Farm friends".
 newgame Sam Biscuit
 wait 2400
 # no dog on the farm yet: no frames, and their spot on the wall does nothing
@@ -137,7 +138,7 @@ snap 01c_farm_rub
 up
 wait 900
 # an impatient finger tapping one spot a little slower than the fresh gate: Go home, then nothing in the empty room
-# (its Shelter sits higher), so the taps never chain on through the shelter into naming a pup
+# (its Shelter and Bring back sit higher), so the taps never chain on into naming a pup or bringing the dog back
 tap 80 137
 wait 600
 tap 80 137
@@ -146,10 +147,33 @@ tap 80 137
 wait 450
 expect-screen home
 expect hasDog=0
+expect bringback=1
 ui-check home-empty
 snap 02_empty_room
-# once the kid has gone home the move stands: visiting Biscuit (the frame and his picture pressed long) has no Bring
-# back, and its spot does nothing
+# Go home did not end it: Bring back (Biscuit's picture on it) in the empty room, and Biscuit is home as he was
+tap 43 103
+wait 80
+expect-screen home
+expect hasDog=1
+expect pet=Biscuit
+expect wall=0
+expect stage=2
+snap 02a_brought_back_from_room
+wait 450
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+tap 80 137
+wait 450
+expect-screen home
+expect hasDog=0
+# visiting Biscuit (the frame and his picture pressed long) has no Bring back, and its spot does nothing
 down 53 53
 wait 1000
 up
@@ -189,9 +213,9 @@ wait 450
 expect-screen home
 expect hasDog=0
 # Shelter twice, 600 ms apart: the kennels, not the keyboard (Pick me! sits lower)
-tap 80 102
+tap 111 102
 wait 600
-tap 80 102
+tap 111 102
 wait 450
 expect-screen shelter
 ui-check
@@ -214,9 +238,10 @@ tap 48 79
 wait 2400
 expect-screen home
 expect hasDog=0
+expect bringback=1
 # the kennels start at Connor again; left wraps round to Charcoal, right comes back
 # the Shelter, an arrow each way and Pick me!, all pressed long: each acts once, on release
-down 80 102
+down 111 102
 wait 1000
 up
 wait 450
@@ -254,6 +279,7 @@ expect-screen celebrate
 expect pet=Choco
 expect breed=3
 expect hasDog=1
+expect bringback=0
 snap 06_welcome
 wait 450
 # the welcome card, pressed long
@@ -311,6 +337,39 @@ up
 wait 450
 expect-screen farm
 expect wall=2
+# a restart on the farm: the empty room, and Bring back (pressed long, 2.5 s) still brings Choco home
+wait 1100
+reboot
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+expect bringback=1
+snap 07f_room_after_restart
+down 43 103
+wait 2500
+up
+wait 80
+expect-screen home
+expect hasDog=1
+expect pet=Choco
+expect wall=1
+wait 450
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect wall=2
 # a long press on Go home still goes home
 down 80 137
 wait 1200
@@ -337,7 +396,7 @@ tap 80 12
 wait 450
 expect-screen home
 expect hasDog=0
-tap 80 102
+tap 111 102
 wait 450
 tap 134 80
 tap 134 80
@@ -533,7 +592,7 @@ wait 2400
 expect-screen home
 expect hasDog=0
 expect wall=4
-tap 80 102
+tap 111 102
 wait 450
 tap 80 139
 wait 450

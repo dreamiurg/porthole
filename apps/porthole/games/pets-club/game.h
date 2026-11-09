@@ -81,7 +81,6 @@ class Game : public App {
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
   ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
   uint32_t bounceUntil_ = 0;  // a screen's short reaction: the farm confirm's hint wiggles, the farm dog jumps (go() ends it)
-  Save undo_{}; bool undoOk_ = false;   // the save from just before a move to the farm: Bring back, until go() leaves the farm
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
 
   // ---- helpers
@@ -147,6 +146,8 @@ class Game : public App {
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();
   void updateFarm(); void drawFarm();
+  bool farmBringBack() const { return !farmVisit_ && pet::canBringBack(save_); }   // never on a visit
+  void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);
   void updateShelter(); void drawShelter(); void adoptShelterPup();
   void updateWall(); void drawWall();
   void enterHouse();

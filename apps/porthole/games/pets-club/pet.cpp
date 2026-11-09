@@ -51,7 +51,7 @@ uint32_t rnd(Save& s) { uint32_t x = s.seed ? s.seed : 0x9E3779B9u; x ^= x << 13
 static uint8_t clamp100(int v) { return (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v); }
 static void decayTo(uint8_t& v, int amount, int floor) { int nv = (int)v - amount; if (nv < floor) nv = v < floor ? v : floor; v = (uint8_t)nv; }
 
-// The dog's own state, shared by a first adoption, the farm and the shelter so their defaults can't drift.
+// The dog's own state, shared by a first adoption and the shelter so their defaults can't drift.
 static void freshDog(Save& s, uint32_t now, const char* name) {
   memset(s.petName, 0, sizeof s.petName); strncpy(s.petName, name, sizeof s.petName - 1);
   s.adoptedAt = s.lastSeen = now;
@@ -84,8 +84,19 @@ void retire(Save& s, uint32_t now) {
   }
   memcpy(s.wallNames[s.wallCount], s.petName, sizeof s.petName); s.wallBreeds[s.wallCount] = s.breed; s.wallCount++;
   if (s.dogsRaised < 255) s.dogsRaised++;
-  freshDog(s, now, ""); s.hasDog = 0;
+  // Only the moment goes: the empty room is calm and in day. The dog's own fields stay for bringBack.
+  s.asleep = s.poop = s.dirty = s.hat = s.want = s.wantSince = 0; s.hasDog = 0; s.lastSeen = now;
   seal(s);
+}
+
+bool bringBack(Save& s, uint32_t now) {
+  if (!canBringBack(s)) return false;
+  s.wallCount--; memset(s.wallNames[s.wallCount], 0, sizeof s.wallNames[0]); s.wallBreeds[s.wallCount] = 0;
+  if (s.dogsRaised) s.dogsRaised--;
+  s.hasDog = 1; s.lastSeen = now;   // the empty room's time is not time away: no decay for it
+  if (s.nextPoopAt < now) s.nextPoopAt = now + POOP_MIN_SEC;   // not a poop the moment it is home
+  seal(s);
+  return true;
 }
 
 void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name) {
