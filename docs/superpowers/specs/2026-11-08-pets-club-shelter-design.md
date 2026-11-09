@@ -99,7 +99,7 @@ lets Bring back undo the move until then.
   first playtest, 2026-11-09: this replaces the toast, which answered "can I see him?" with words only.)
 - The room without a dog shows only Shelter and Bring back (and the way back). Every new screen has a
   visible way back.
-  Decided: the empty room also hides stickers, hats and Start over (they live on the dog's Stats page) until
+  Decided: the empty room also hides stickers and hats (they live on the dog's Stats page) until
   the next pup is adopted; nothing is lost, it all comes back with the new pup.
 
 **Where the farm button lives.** On the Stats screen next to the existing long-press "Start over", shown
@@ -129,6 +129,8 @@ and later the shelter's adoption, are saved within a second, so a restart right 
    fits about 4 small frames), with `dogsRaised` remembering the total.
 4. **Start over.** Keep it as is (erases everything, back to the parcel), or send it to the Shelter too?
    Proposal: keep it as is. It's the grown-up's full reset.
+   Revised 2026-11-09 (the parent): Start over is removed. A 6-year-old erased her dog with two ordinary
+   holds. A new dog comes from the farm and the shelter; a full reset is deleting the profile, with a code.
 
 ## Verification
 

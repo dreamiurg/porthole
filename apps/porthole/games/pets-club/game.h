@@ -32,7 +32,7 @@ class Game : public App {
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
-                          SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_CONFIRM_RESET, SC_HATS,
+                          SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
                           SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
@@ -41,7 +41,7 @@ class Game : public App {
   Save out_{};                                     // the sealed copy takeSave hands to the shell
   // every profile on the device, for Paw Street; kids_[self_] is the one playing
   Profile kids_[MAX_PROFILES] = {}; Save kidSaves_[MAX_PROFILES]; bool kidHas_[MAX_PROFILES] = {}; int nKids_ = 0, self_ = 0;
-  bool dirty_ = false, urgent_ = false, haveSave_ = false, wantsHome_ = false;   // dirty without a pup: erase the save
+  bool dirty_ = false, urgent_ = false, haveSave_ = false, wantsHome_ = false;
   ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
@@ -79,7 +79,7 @@ class Game : public App {
   int statsPage_ = 0; int hatSel_ = 0;
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
-  ui::Hold yesHold_;          // Start over's and the farm's Yes, held (go() resets it)
+  ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
   uint32_t bounceUntil_ = 0;  // a screen's short reaction: a confirm's hint wiggles, the farm dog jumps (go() ends it)
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
 
@@ -140,12 +140,11 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void updateGift(); void drawGift();
   void updateCelebrate(); void drawCelebrate();
-  void updateConfirmReset(); void drawConfirmReset();
   void updateHats(); void drawHats();
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();
-  int askNoYes(); float drawNoYes();   // Start over's and the farm's No! (on release) / Yes (held YES_HOLD_MS)
+  int askNoYes(); float drawNoYes();   // the farm's No! (on release) / Yes (held YES_HOLD_MS)
   void updateFarm(); void drawFarm();
   bool farmBringBack() const { return !farmVisit_ && pet::canBringBack(save_); }   // never on a visit
   void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);

@@ -74,8 +74,8 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 - **The farm.** `pet::canRetire` is true once the dog is `RETIRE_DAYS` (30) days old. An
   old dog's Stats page then swaps its four stat-pip rows (home still shows them) for "To
   the farm" (sky blue: calm, not a call to action), which asks "Move <name> to the farm?"
-  and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No /
-  Yes, like Start over: both through `askNoYes`/`drawNoYes`). Yes sends the dog away, so it
+  and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No! /
+  Yes through `askNoYes`/`drawNoYes`). Yes sends the dog away, so it
   takes a 2 s hold (`YES_HOLD_MS` in `game.cpp`; `yesHold_`, a `ui::Hold` read with
   `progress(YES_HOLD_MS)`) that fills the button plum across the whole 2 s while the sitting
   dog gets up and walks 12 px right,
@@ -95,19 +95,19 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   tap, a hold or a rub), makes it jump, with a heart every 300 ms and the jump pose for each
   heart's first 200 ms: no sound, nothing saved (`bounceUntil_`; `go()` ends it and resets
   `yesHold_`).
-- **Start over** (`SC_CONFIRM_RESET`, a long press under Stats' last row) asks "Start over? <name> will forget
-  you!" with the same No! / Yes, fill and "Hold Yes" hint (a decision of 2026-11-09): once a slow press counted
-  as a tap, a kid's ordinary 1 s press on Yes erased the pup, so Yes takes the same 2 s hold, and No! acts on
-  release however long it was held. The playtest is `tests/playtests/12_reset.txt` (a tap and a 1 s press keep the
-  pup, a 2.1 s hold erases it).
+- **No Start over** (a parent decision of 2026-11-09): the old hidden long press under Stats' last row, whose Yes
+  erased the pup, is gone, since a 6-year-old did it with two ordinary holds. A new dog comes from the farm and
+  the shelter, and a full reset is deleting the profile, which takes a code. Pets Club never erases its save
+  (`takeSave` writes only with a pup). `tests/playtests/12_no_start_over.txt` holds that presses on the old strip
+  do nothing.
 - **Bring back.** A habit longer than any hold still gets through, so the move can be undone until a new pup
   is adopted. The farm right after a move (not a visit) shows "Bring back" (`BRING_BACK_BTN`, orange, two lines,
   left of the dog where No! was; the dog steps right), and so does the empty room (`ROOM_BRING_BACK_BTN`, left of
   the Shelter, with the newest farm dog's little picture on it), after Go home, the launcher or a restart too:
   both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). The room's
-  Bring back takes a press only once the room has shown for a second (`ms_ - screenMs_ > 1000`): taps from Paw
-  Street's own house, the splash pup and a sticker card land where it sits, and a slow double tap's second press
-  gets past the fresh gate. It calls
+  Bring back takes only a press that began once the room had shown for a second (`pressedAfter(1000)`): taps
+  from Paw Street's own house, the splash pup and a sticker card land where it sits, and a slow double tap's
+  second press gets past the fresh gate, however long it is then held. It calls
   `pet::bringBack`, marks the save dirty and urgent, goes home to the dog and says "<name> is home!" with a few
   hearts; no sound. The move, its undo and the shelter's adoption are saved at once: `saveUrgent()` (`urgent_`)
   asks the shell for its one-second checkpoint, so a restart right after either keeps it. Time away never
@@ -126,7 +126,7 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   else reads the kept dog's fields while `hasDog` is 0 (the room, the gift, growth and Paw Street all check it).
   Only the Shelter and Bring back buttons, the front door (Paw Street, whose house shows no pup) and the
   wall work; the care buttons, the pips, the gift and the dog are gone (a sticker earned
-  there celebrates with no dog). Stickers, hats and Start over live on Stats, so they
+  there celebrates with no dog). Stickers and hats live on Stats, so they
   can't be reached from an empty room until the next pup is adopted (decided). The Shelter
   and Bring back buttons sit higher than the farm's Go home and the shelter's Pick me!, so a
   finger tapping one spot a little slower than the fresh gate never chains into naming or bringing the dog back.

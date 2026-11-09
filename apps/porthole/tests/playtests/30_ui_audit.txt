@@ -209,7 +209,7 @@ expect-screen tricks
 tap 80 12
 wait 450
 sheet read_tricks
-# stats, stickers, hats, start over (answered No)
+# stats, stickers, hats
 tap 40 27
 wait 450
 expect-screen stats
@@ -229,13 +229,6 @@ wait 450
 ui-check hats
 snap d03_hats
 tap 80 12
-wait 450
-hold 80 148
-wait 450
-expect-screen confirm_reset
-ui-check confirm_reset
-snap d04_confirm_reset
-tap 45 102
 wait 450
 tap 80 12
 wait 450

@@ -89,9 +89,8 @@ Tint Game::tint() const {
 bool Game::nightSky() const { const int hr = pet::hourOf(now_); return !daylight_ && (hr >= 20 || hr < 6); }
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
-  if (!allowed || !dirty_) return false;
-  if (haveSave_) { pet::seal(save_); out_ = save_; kidSaves_[self_] = save_; *data = &out_; *len = sizeof out_; }
-  else { *data = nullptr; *len = 0; }   // no pup (after "start over"): the shell erases this kid's save
+  if (!allowed || !dirty_ || !haveSave_) return false;   // no pup adopted yet: nothing to write
+  pet::seal(save_); out_ = save_; kidSaves_[self_] = save_; *data = &out_; *len = sizeof out_;
   dirty_ = urgent_ = false;
   return true;
 }
@@ -151,7 +150,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
 }
 const char* Game::screenName() const {
   static const char* N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "library", "read",
-                            "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "confirm_reset", "hats", "street", "theme",
+                            "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "hats", "street", "theme",
                             "confirm_farm", "farm", "shelter", "wall"};
   return N[screen_];
 }
@@ -271,7 +270,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Game::updateSplash, &Game::updateIntro, &Game::updateNamePet, &Game::updateHome, &Game::updateFeed,
     &Game::updatePlayMenu, &Game::updateFetch, &Game::updateWords, &Game::updateLibrary, &Game::updateRead, &Game::updateTricks,
     &Game::updateTrain, &Game::updateBath, &Game::updateStats, &Game::updateStickers, &Game::updateGift, &Game::updateCelebrate,
-    &Game::updateConfirmReset, &Game::updateHats, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
+    &Game::updateHats, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
     &Game::updateFarm, &Game::updateShelter, &Game::updateWall};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_WALL + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
@@ -299,7 +298,7 @@ void Game::render() {
   static const ScreenFn DRAW[] = {&Game::drawSplash, &Game::drawIntro, &Game::drawNamePet, &Game::drawHome, &Game::drawFeed,
     &Game::drawPlayMenu, &Game::drawFetch, &Game::drawWords, &Game::drawLibrary, &Game::drawRead, &Game::drawTricks,
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
-    &Game::drawConfirmReset, &Game::drawHats, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
+    &Game::drawHats, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
     &Game::drawShelter, &Game::drawWall};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_WALL + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
@@ -1195,7 +1194,6 @@ void Game::updateStats() {
   if (tapBox(in_, STICKERS_BTN)) { go(SC_STICKERS); }
   if (tapBox(in_, HATS_BTN)) { hatSel_ = save_.hat; go(SC_HATS); }
   if (pet::canRetire(save_, now_) && ui::clicked(in_, FARM_BTN)) go(SC_CONFIRM_FARM);
-  if (in_.longPress && in_.hit(60, 140, 40, 16)) go(SC_CONFIRM_RESET);
 }
 void Game::drawStats() {
   clear(C_WALL);
@@ -1256,10 +1254,9 @@ void Game::drawHats() {
   char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
   drawBackButton();
 }
-// Start over and the farm ask with the same No / Yes. No! acts on release, however long it was held. Yes erases the
-// pup or sends the dog away, so it takes a YES_HOLD_MS hold that slowly fills the button: a sibling mashing the glass
-// got to the farm in three taps, a firm 6-year-old's press in ui::HOLD_MS, and once a slow press counted as a tap, a
-// kid's ordinary 1 s press erased a pup. Letting go or sliding off starts over; letting go early only wiggles the
+// The farm asks No / Yes. No! acts on release, however long it was held. Yes sends the dog away, so it takes a
+// YES_HOLD_MS hold that slowly fills the button: a sibling mashing the glass got to the farm in three taps, and a firm
+// 6-year-old's press in ui::HOLD_MS. Letting go or sliding off starts over; letting go early only wiggles the
 // "Hold Yes" hint.
 static const ui::Box NO_BTN = {20, 90, 50, 24}, YES_BTN = {90, 90, 50, 24};
 static const uint32_t YES_HOLD_MS = 2000;
@@ -1281,21 +1278,6 @@ float Game::drawNoYes() {   // the buttons and the hint; returns how far Yes is 
   const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
   textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
   return held;
-}
-void Game::updateConfirmReset() {
-  const int a = askNoYes();
-  if (a < 0) go(SC_STATS);
-  if (a > 0) {   // this kid's pup only: the shell erases the save, the profile stays
-    haveSave_ = kidHas_[self_] = false; dirty_ = true; dogAct_ = 0;
-    memset(&save_, 0, sizeof save_);
-    go(SC_INTRO);
-  }
-}
-void Game::drawConfirmReset() {
-  clear(C_PLUM);
-  textCentered(80, 44, "Start over?", C_WHITE);
-  char b[48]; snprintf(b, sizeof b, "%s will forget you!", save_.petName); textCentered(80, 60, b, C_YELLOW);
-  drawNoYes();
 }
 
 // ---------------------------------------------------------------- the farm: an old dog leaves only on the kid's yes

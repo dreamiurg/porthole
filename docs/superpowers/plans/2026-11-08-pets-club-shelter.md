@@ -25,7 +25,7 @@ New screens are appended to `Game::Screen` and reuse the existing widgets, keybo
 - Kept on retire: stickers, hats owned, books read/unlocked/done, streak, every counter, theme, kid fields, the
   wall. Reset: petName, adoptedAt, stage, bond, tricks, the stats (back to `adopt()` defaults), the hat worn,
   poop/dirty/asleep/want.
-- Start over stays the full erase it is now.
+- Start over stays the full erase it is now. (Revised 2026-11-09: Start over was removed; see the spec's decision 4.)
 - `make check` and `make ci` green. `COV_MIN` (98.4) is not lowered.
 
 ## Review Focus
