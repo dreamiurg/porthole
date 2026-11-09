@@ -73,7 +73,14 @@ wears. Nothing the kid earned is lost.
   through the existing `Sound` enum; the build plays none. Touching the dog pats it: it jumps and
   hearts come while the finger stays on it (a tap, a hold or a rub), with no sound and nothing saved, both
   here and on a visit. (Added after the second playtest, 2026-11-09: the visit was a still picture; holds
-  and rubs after the fourth.)
+  and rubs after the fourth.) It bounces once per heart, up only for the heart's first 200 ms.
+  Right after the move (never on a visit) a second button, **Bring back** (orange, two lines, left of the
+  dog where No! was, so never under the finger that held Yes; the dog steps right to make room), undoes the
+  move completely: the save from just before it, kept in RAM, comes back as it was (the dog, its age,
+  tricks and stats, the wall), is saved within a second, and the room shows the dog; no sound. Leaving
+  the farm any other way (Go home, the launcher, a restart) drops that copy, and the move stands.
+  (Added after the fifth playtest: a 6-year-old's habitual 2.5 s press sent her dog away, and any hold
+  length loses to a longer habit, so the hold stays at 2 s and the mistake is made recoverable instead.)
 - `SC_SHELTER`: a carousel with one big kennel per page and left/right arrows, because seven name tags do
   not fit on the round screen at once in the 8x8 font. The tag reads "Choco" / "Beagle". The puppy
   inside idles. **Pick me!** goes to the name step. Back returns to the empty room.
@@ -94,8 +101,9 @@ asks once, "Move Connor to the farm?" and says what happens: "Connor will live t
 No (green, the easy one) / Yes. Yes takes a 2 s press-and-hold: the button fills across the whole 2 s
 while the little dog gets up and walks toward a small red barn at the card's right edge, and "Hold Yes"
 sits under the buttons. Letting go or sliding off starts over; letting go early only wiggles the hint.
-Every other button on the new screens (No!, Go home, back, Shelter, the kennel arrows, Pick me!, the
-Farm friends pictures, "To the farm") works on release however long it was pressed, so a long press on
+Every other button on the new screens (No!, Go home, Bring back, back, Shelter, the kennel arrows, Pick me!,
+the room's wall frames, the Farm friends pictures, "To the farm", and the shelter's "Welcome home" card, which
+any release ends) works on release however long it was pressed, so a long press on
 No! always keeps the dog (fourth playtest: a long press on No! did nothing, which steered a non-reader to
 long-press Yes). (Added after the second playtest,
 2026-11-09: a random masher reached the farm in three taps, 4 runs in 40. Lengthened from 600 ms after the

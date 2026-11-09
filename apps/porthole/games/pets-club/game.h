@@ -81,6 +81,8 @@ class Game : public App {
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
   ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
   uint32_t bounceUntil_ = 0;  // a screen's short reaction: the farm confirm's hint wiggles, the farm dog jumps (go() ends it)
+  Save undo_{}; bool undoOk_ = false;   // the save from just before a move to the farm: Bring back, until go() leaves the farm
+  bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
 
   // ---- helpers
   void go(Screen s);

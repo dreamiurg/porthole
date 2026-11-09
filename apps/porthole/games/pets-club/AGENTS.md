@@ -75,7 +75,7 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   old dog's Stats page then swaps its four stat-pip rows (home still shows them) for "To
   the farm" (sky blue: calm, not a call to action), which asks "Move <name> to the farm?"
   and says "<name> will live there. Then pick a new pup." (`SC_CONFIRM_FARM`, a green No /
-  Yes, like Start over). Yes can't be undone, so it takes a 2 s hold (`FARM_HOLD_MS` in
+  Yes, like Start over). Yes sends the dog away, so it takes a 2 s hold (`FARM_HOLD_MS` in
   `game.cpp`; `yesHold_`, a `ui::Hold` read with `progress(FARM_HOLD_MS)`) that fills the
   button plum across the whole 2 s while the sitting dog gets up and walks 12 px right,
   toward a little red barn at the card's right edge (the picture says "farm" for a
@@ -83,14 +83,24 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   and a press that starts on No! never counts; letting go early (a tap or up to 2 s) only
   wiggles the hint (a random masher got there in three taps, and a firm 6-year-old's press
   in `ui::HOLD_MS`). Every other button on the farm's, the shelter's and Farm friends'
-  screens, and "To the farm" and the empty room's Shelter, acts on release however long it
-  was held (`ui::clicked`; the back button through `backClicked()`), so a kid whose long
-  press "didn't work" on No! is never steered to the long press that Yes rewards. The
+  screens, "To the farm", the empty room's Shelter and the room's wall frames acts on
+  release however long it was held (`ui::clicked`, for a box or a circle; the back button
+  through `backClicked()`, the kennel arrows through `arrowClick`), and the shelter's
+  "Welcome home" card ends on any release (`celebAnyRelease_`), so a kid whose long press
+  "didn't work" on No! is never steered to the long press that Yes rewards. The
   hold calls `pet::retire` and shows `SC_FARM` (the dog in the sun under a sign with its
   name, "<name> lives here now!", "Go home"); no sound. It also clears the room's window
   event and rain, which only run with a dog. A finger on the farm's dog, on a visit too (a
-  tap, a hold or a rub), makes it jump, with a heart every 300 ms: no sound, nothing saved
-  (`bounceUntil_`; `go()` ends it and resets `yesHold_`). The move and the shelter's adoption are saved at once:
+  tap, a hold or a rub), makes it jump, with a heart every 300 ms and the jump pose for each
+  heart's first 200 ms: no sound, nothing saved (`bounceUntil_`; `go()` ends it and resets
+  `yesHold_`).
+- **Bring back.** A habit longer than any hold still gets through, so the farm right after
+  a move (not a visit) also shows "Bring back" (`BRING_BACK_BTN`, orange, two lines, left of
+  the dog where No! was; the dog steps right). Just before `pet::retire` the confirm copies
+  the save to RAM (`undo_`, `undoOk_`); Bring back puts it back byte for byte, marks it
+  dirty and urgent and goes home to the dog; no sound. `go()` to any other screen drops the
+  copy (Go home, and `enter()` after the launcher or a restart, which starts at the splash),
+  so the move then stands. The move, its undo and the shelter's adoption are saved at once:
   `saveUrgent()` (`urgent_`) asks the shell for its one-second checkpoint, so a restart
   right after either keeps it. Time away never retires a dog.
 - **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/

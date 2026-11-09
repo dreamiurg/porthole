@@ -78,6 +78,7 @@ const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? 
 void Game::go(Screen s) {   // a tap acts on one screen only
   screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_);
   yesHold_ = {}; bounceUntil_ = 0;
+  if (s != SC_FARM) undoOk_ = false;   // leaving the farm, or the game (enter() comes here), makes the move stand
 }
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
 
@@ -248,8 +249,7 @@ void Game::drawBackButton() { ui::drawBack(); }
 bool Game::backButton() { return ui::back(in_); }
 // The farm's and the shelter's buttons act on release however long they were held (ui::clicked): a 6-year-old who
 // presses long when a tap seems not to work must find No! and the way out working, not only the 2 s Yes.
-static const ui::Box BACK_BOX = {64, -4, 32, 32};   // ui::back's circle, as a box
-bool Game::backClicked() { ui::drawBack(); return ui::clicked(in_, BACK_BOX); }
+bool Game::backClicked() { ui::drawBack(); return ui::clicked(in_, 80, 12, 16); }   // ui::back's circle
 void Game::drawToast() {
   if (ms_ >= toastUntil_ || !toast_[0]) return;
   ui::toast(toast_);
@@ -321,7 +321,7 @@ void Game::checkStickers() {
 }
 void Game::celebrate(const char* title, const char* text, int icon, Screen next) {
   strncpy(celebTitle_, title, sizeof celebTitle_ - 1); strncpy(celebText_, text, sizeof celebText_ - 1);
-  celebIcon_ = icon; nextAfterCelebrate_ = next == SC_CELEBRATE ? SC_HOME : next;
+  celebIcon_ = icon; nextAfterCelebrate_ = next == SC_CELEBRATE ? SC_HOME : next; celebAnyRelease_ = false;
   toastUntil_ = 0;
   sound(SND_FANFARE); spawn(80, 60, 4, 16); go(SC_CELEBRATE);
 }
@@ -512,7 +512,7 @@ static const ui::Box SHELTER_BTN = {44, 90, 72, 24};
 void Game::updateHome() {
   if (backButton()) { wantsHome_ = true; return; }
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
-  if (save_.wallCount && tapBox(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends
+  if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) { if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); } return; }   // the empty room: the shelter
   homeBrain();
   homeEvents();
@@ -895,6 +895,7 @@ static void drawArrows(int y) {
   circle(134, y + 1, 12, C_DKBROWN); circle(134, y, 11, C_ORANGE); blitTint(SPR_ARROW, 132, y - 4, C_WHITE);
 }
 static int arrowTap(const Input& in, int y) { return in.tapInCircle(26, y, 16) ? -1 : in.tapInCircle(134, y, 16) ? 1 : 0; }
+static int arrowClick(const Input& in, int y) { return ui::clicked(in, 26, y, 16) ? -1 : ui::clicked(in, 134, y, 16) ? 1 : 0; }   // on release
 void Game::updateLibrary() {
   if (backButton()) { go(SC_HOME); return; }
   int n = save_.booksUnlocked < nBooks_ ? save_.booksUnlocked : nBooks_; if (n < 1) n = 1;
@@ -1262,17 +1263,18 @@ void Game::drawConfirmReset() {
 }
 
 // ---------------------------------------------------------------- the farm: an old dog leaves only on the kid's yes
-// Yes can't be undone, so it takes a FARM_HOLD_MS hold that slowly fills the button while the dog walks off to the
-// right: a sibling mashing the glass got there in three taps, and a firm 6-year-old's press in ui::HOLD_MS. Letting
-// go or sliding off starts over; a tap only wiggles the "Hold Yes" hint.
+// Yes takes a FARM_HOLD_MS hold that slowly fills the button while the dog walks off to the right: a sibling mashing
+// the glass got there in three taps, and a firm 6-year-old's press in ui::HOLD_MS. Letting go or sliding off starts
+// over; letting go early only wiggles the "Hold Yes" hint. A longer habit still gets there, so the farm right after
+// offers Bring back, which restores undo_, the save from just before the move.
 static const uint32_t FARM_HOLD_MS = 2000;
 void Game::updateConfirmFarm() {
   if (ui::clicked(in_, NO_BTN)) { go(SC_STATS); return; }
   yesHold_.step(ui::pressing(in_, YES_BTN), ms_);
   if (yesHold_.progress(FARM_HOLD_MS) >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
-    pet::retire(save_, now_); markDirty(); urgent_ = true;
+    undo_ = save_; pet::retire(save_, now_); markDirty(); urgent_ = true;
     farmSlot_ = (uint8_t)(save_.wallCount - 1); farmVisit_ = false; event_ = 0; weather_ = 0;
-    go(SC_FARM);
+    go(SC_FARM); undoOk_ = true;
   } else if (ui::clicked(in_, YES_BTN)) bounceUntil_ = ms_ + 500;   // let go early
 }
 void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pup comes next
@@ -1297,14 +1299,20 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
   if (held > 0) drawDog(80 - dogFrame(P_WALK0).w / 2 + (int)(held * 12), 155, (ms_ / 150) % 2 ? P_WALK0 : P_WALK1, false);
   else drawDog(80 - dogFrame(P_SIT).w / 2, 155, P_SIT, false);
 }
-static const ui::Box GO_HOME_BTN = {48, 126, 64, 22};
-static ui::Box farmDog(int breed) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
+// Bring back sits left, where No! was, never under the finger that held Yes; the dog steps right to make room.
+static const ui::Box GO_HOME_BTN = {48, 126, 64, 22}, BRING_BACK_BTN = {14, 90, 44, 26};
+static ui::Box farmDog(int breed, bool undo) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
   const Sprite& d = DOG_FRAMES[breed][SZ_BIG][P_IDLE0];
-  return {80 - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
+  return {(undo ? 98 : 80) - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
 }
-void Game::updateFarm() {   // just moved here: Go home to the empty room; a visit: back to Farm friends
+void Game::updateFarm() {   // just moved here: Go home to the empty room (or Bring back); a visit: back to Farm friends
+  if (undoOk_ && ui::clicked(in_, BRING_BACK_BTN)) {   // the exact save from before the move, written within a second
+    save_ = undo_; markDirty(); urgent_ = true;
+    dogX_ = dogTargetX_ = walkClamp(60); dogAct_ = 0; trickShow_ = -1;
+    go(SC_HOME); return;
+  }
   if (farmVisit_ ? backClicked() : ui::clicked(in_, GO_HOME_BTN)) { go(farmVisit_ ? SC_WALL : SC_HOME); return; }
-  const ui::Box d = farmDog(save_.wallBreeds[farmSlot_]);   // a finger on the dog, a tap, a hold or a rub: it jumps
+  const ui::Box d = farmDog(save_.wallBreeds[farmSlot_], undoOk_);   // a finger on the dog, a tap, a hold or a rub: it jumps
   if (in_.hit(d.x, d.y, d.w, d.h) && in_.down && ms_ + 300 >= bounceUntil_) {   // and a heart every 300 ms; no sound
     spawn(in_.x, in_.y - 6, 0, 2); bounceUntil_ = ms_ + 600;
   }
@@ -1322,17 +1330,22 @@ void Game::drawFarm() {   // a dog on the farm (farmSlot_ on the wall) in the su
   rect(0, 80, 160, 3, C_WOOD); rect(0, 87, 160, 3, C_WOOD);
   rect(78, 60, 4, 16, C_DKWOOD);                                   // the sign's post, behind the dog
   ui::panel({40, 46, 80, 15}, C_TAN, C_DKBROWN); textCentered(80, 50, name, C_DKBROWN);
-  const bool hop = ms_ < bounceUntil_;   // a pat: up off the grass
+  const bool hop = ms_ + 400 < bounceUntil_;   // a heart's first 200 ms: up off the grass, so a held finger bounces
   const Sprite& d = DOG_FRAMES[save_.wallBreeds[farmSlot_]][SZ_BIG][hop ? P_JUMP : (ms_ / 500) % 2 ? P_IDLE1 : P_IDLE0];
-  blitScaled(d, 80 - d.w, (hop ? 114 : 120) - d.h * 2, 2);
+  blitScaled(d, (undoOk_ ? 98 : 80) - d.w, (hop ? 114 : 120) - d.h * 2, 2);
   if (farmVisit_) drawBackButton(); else ui::button(in_, {GO_HOME_BTN, "Go home", nullptr, C_GREEN});
+  if (undoOk_) {   // two lines: "Bring back" on one (70 px) would reach the dog
+    const ui::Box& b = BRING_BACK_BTN; const bool pr = ui::pressing(in_, b); const int y = b.y + (pr ? 1 : 0) + 5;
+    ui::drawButton({b, nullptr, nullptr, C_ORANGE}, pr);
+    textCentered(b.x + b.w / 2, y, "Bring", inkOn(C_ORANGE)); textCentered(b.x + b.w / 2, y + 9, "back", inkOn(C_ORANGE));
+  }
 }
 
 // ---------------------------------------------------------------- the shelter: one kennel a page, each pup with its name
 static const ui::Box PICK_BTN = {48, 128, 64, 22};
 void Game::updateShelter() {
   if (backClicked()) { go(SC_HOME); return; }   // still the empty room: nothing was adopted
-  if (const int d = ui::clicked(in_, {10, 64, 32, 32}) ? -1 : ui::clicked(in_, {118, 64, 32, 32}) ? 1 : 0)   // the arrows
+  if (const int d = arrowClick(in_, 80))
     shelterSel_ = (uint8_t)((shelterSel_ + NUM_BREEDS + d) % NUM_BREEDS);
   if (ui::clicked(in_, PICK_BTN)) {
     setNameBuf(SHELTER_NAMES[shelterSel_]); namePage_ = 0;
@@ -1359,7 +1372,7 @@ void Game::adoptShelterPup() {
   dogX_ = dogTargetX_ = walkClamp(60); dogAct_ = 0; event_ = 0; trickShow_ = -1;
   char t[32], b[48];
   snprintf(t, sizeof t, "Welcome home, %s!", save_.petName); snprintf(b, sizeof b, "%s and %s, best friends.", save_.kidName, save_.petName);
-  celebrate(t, b, 0, SC_HOME);
+  celebrate(t, b, 0, SC_HOME); celebAnyRelease_ = true;
 }
 
 // ---------------------------------------------------------------- Farm friends: the memory wall up close
@@ -1425,7 +1438,7 @@ void Game::drawGift() {
 }
 void Game::updateCelebrate() {
   if ((ms_ / 200) % 3 == 0 && (ms_ / 33) % 4 == 0) spawn(20 + (int)(pet::rnd(save_) % 120), 10, 4, 1);
-  if (in_.tap && ms_ - screenMs_ > 700) { go(nextAfterCelebrate_); }
+  if ((celebAnyRelease_ ? in_.released : in_.tap) && ms_ - screenMs_ > 700) { go(nextAfterCelebrate_); }
 }
 void Game::drawCelebrate() {
   clear(C_NAVY);

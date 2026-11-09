@@ -90,6 +90,11 @@ bool clicked(const Input& in, const Box& b) {
   auto on = [&](int x, int y) { return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; };
   return in.released && on(in.downX, in.downY) && on(in.x, in.y);
 }
+bool clicked(const Input& in, int cx, int cy, int r) {
+  UiAudit::add(cx - r, cy - r, 2 * r, 2 * r);
+  auto on = [&](int x, int y) { return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r; };
+  return in.released && on(in.downX, in.downY) && on(in.x, in.y);
+}
 bool pressing(const Input& in, int cx, int cy, int r) {
   const int dx = in.downX - cx, dy = in.downY - cy, ex = in.x - cx, ey = in.y - cy;
   return in.down && dx * dx + dy * dy <= r * r && ex * ex + ey * ey <= r * r;

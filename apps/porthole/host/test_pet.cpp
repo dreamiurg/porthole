@@ -244,6 +244,37 @@ static int celebrateDogInk(bool retired) {
 }
 static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 && celebrateDogInk(true) == 0); }
 
+// A long habit's press on the farm's Yes: Bring back, on the farm right after, puts back the exact save from before the
+// move (the same dog, its age, tricks and stats, and the wall as it was) and asks for the one-second checkpoint.
+struct Finger {   // frames of 20 ms through the real InputTracker, the clock standing still (no tick, no decay)
+  Game& g; uint32_t now, ms = 2000; InputTracker tr;
+  void hold(bool down, int x, int y, uint32_t dur) { for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(now, ms, tr.step(down, x, y, ms)); } }
+  void tap(int x, int y) { hold(true, x, y, 60); hold(false, x, y, 500); }
+};
+static Save taken(Game& g) { const void* d = nullptr; size_t n = 0; assert(g.takeSave(&d, &n, true) && n == sizeof(Save)); Save s; memcpy(&s, d, n); return s; }
+static void bringBackUndoesTheFarm() {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 40 * 86400;
+  Save s; pet::adopt(s, day0, "Sam", "Biscuit"); pet::retire(s, day0); pet::adoptFromShelter(s, day0, 5, "Rex");
+  s.adoptedAt = t - 31 * 86400; s.stage = STAGE_GROWN; s.trickProgress[2] = 3; s.bond = 640; s.food = 55; s.hat = 1;
+  s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+  Finger f{g, t};
+  f.hold(false, 0, 0, 500); f.tap(40, 27); f.tap(80, 77);
+  assert(!strcmp(g.screenName(), "confirm_farm"));
+  const Save before = taken(g);
+  f.hold(true, 115, 102, 2100); f.hold(false, 115, 102, 500);
+  assert(!strcmp(g.screenName(), "farm") && g.saveUrgent());
+  const Save gone = taken(g); assert(gone.hasDog == 0 && gone.wallCount == 2);
+  f.hold(true, 36, 103, 60); f.hold(false, 36, 103, 20);   // the release frame: home, before the dog's first idle roll
+  assert(!strcmp(g.screenName(), "home") && g.saveUrgent());
+  const Save back = taken(g);
+  assert(!memcmp(&back, &before, sizeof back));
+  assert(back.hasDog == 1 && !strcmp(back.petName, "Rex") && back.breed == 5 && back.trickProgress[2] == 3 && back.bond == 640);
+  assert(back.wallCount == 1 && !strcmp(back.wallNames[0], "Biscuit"));
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -274,6 +305,7 @@ int main() {
   retiredSleeperLeavesDay();
   emptyRoomCelebratesWithoutDog();
   petting(day0);
+  bringBackUndoesTheFarm();
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
   return 0;
 }

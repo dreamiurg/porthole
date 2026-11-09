@@ -35,6 +35,7 @@ bool pressing(const Input& in, const Box& b);   // the same for a box; logs b fo
 // The release counterpart: the finger went down in b and came up in it this frame, however long it was held (a slow
 // press from a small finger still counts; Input::tap stops at the long press). Logs b for the UI audit.
 bool clicked(const Input& in, const Box& b);
+bool clicked(const Input& in, int cx, int cy, int r);   // the same for a circle (ui::back's, the paging arrows)
 // During play a hand holding the case may brush the glass, so a game's way out there takes a hold, not a tap: HOLD_MS
 // with the finger on the sign. The time counts from when the finger is on it (step's `on`: pressing, every frame), so
 // one that drifts off and back starts over, and it runs on across page changes that do not hide the finger.

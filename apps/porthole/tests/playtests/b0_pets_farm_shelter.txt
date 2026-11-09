@@ -31,7 +31,10 @@ wait 450
 expect-screen stats
 ui-check stats-old
 snap 00_stats_old
-tap 80 77
+# To the farm, pressed long, still opens the question
+down 80 77
+wait 1000
+up
 wait 450
 expect-screen confirm_farm
 ui-check
@@ -93,6 +96,29 @@ expect farm=Biscuit
 expect visit=0
 ui-check
 snap 01_farm
+# Bring back, right after the move and pressed long: Biscuit is home again, just as he was, and the wall as it was
+down 36 103
+wait 1000
+up
+wait 450
+expect-screen home
+expect hasDog=1
+expect pet=Biscuit
+expect breed=0
+expect wall=0
+expect stage=2
+snap 01a_brought_back
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect hasDog=0
+expect wall=1
 # a pat: the dog jumps (hearts), and the farm stays put
 tap 80 95
 wait 80
@@ -122,6 +148,32 @@ expect-screen home
 expect hasDog=0
 ui-check home-empty
 snap 02_empty_room
+# once the kid has gone home the move stands: visiting Biscuit (the frame and his picture pressed long) has no Bring
+# back, and its spot does nothing
+down 53 53
+wait 1000
+up
+wait 450
+expect-screen wall
+down 80 104
+wait 1000
+up
+wait 450
+expect-screen farm
+expect visit=1
+tap 36 103
+wait 450
+expect-screen farm
+expect hasDog=0
+# the visit's back button pressed long: Farm friends
+down 80 12
+wait 1000
+up
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+expect-screen home
 # only the Shelter (and the door, and Biscuit's frame): the care buttons and the stat pips are gone
 tap 40 129
 tap 118 129
@@ -163,16 +215,26 @@ wait 2400
 expect-screen home
 expect hasDog=0
 # the kennels start at Connor again; left wraps round to Charcoal, right comes back
-tap 80 102
+# the Shelter, an arrow each way and Pick me!, all pressed long: each acts once, on release
+down 80 102
+wait 1000
+up
 wait 450
-tap 26 80
+expect-screen shelter
+down 26 80
+wait 1000
+up
 wait 100
 snap 04_kennel_charcoal
+down 134 80
+wait 1000
+up
 tap 134 80
 tap 134 80
 tap 134 80
-tap 134 80
-tap 80 139
+down 80 139
+wait 1000
+up
 wait 450
 expect-screen name_pet
 ui-check name_pet-shelter
@@ -194,7 +256,10 @@ expect breed=3
 expect hasDog=1
 snap 06_welcome
 wait 450
-tap 80 80
+# the welcome card, pressed long
+down 80 80
+wait 1000
+up
 wait 900
 expect-screen home
 expect pet=Choco
