@@ -1,0 +1,59 @@
+import os, socket, subprocess, sys, struct, zlib, time
+SOCK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drv.sock")
+OUT = "/home/user/porthole/apps/porthole/docs/pets-club/shelter-playtest-2"
+TRACE = os.path.join(OUT, "input-trace.txt")
+
+def png(rgb, w, h, path):
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    def chunk(t, d):
+        c = struct.pack(">I", len(d)) + t + d
+        return c + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 6)) + chunk(b"IEND", b""))
+
+def serve():
+    p = subprocess.Popen(["/home/user/porthole/apps/porthole/build/host/snap", "--serve"], cwd="/home/user/porthole/apps/porthole", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    def cmd(c):
+        p.stdin.write((c + "\n").encode()); p.stdin.flush()
+        if c == "frame":
+            hdr = p.stdout.readline().decode().strip(); n = int(hdr.split()[1])
+            buf = b""
+            while len(buf) < n: buf += p.stdout.read(n - len(buf))
+            return buf
+        return p.stdout.readline()
+    if os.path.exists(SOCK): os.unlink(SOCK)
+    s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+    while True:
+        c, _ = s.accept()
+        line = c.recv(4096).decode().strip()
+        if line == "quit":
+            p.stdin.close(); p.wait(); c.send(b"bye"); c.close(); break
+        out = []
+        for part in line.split(";"):
+            a = part.split()
+            if not a: continue
+            k = a[0]
+            if k == "tap":
+                x, y = a[1], a[2]; ms = int(a[3]) if len(a) > 3 else 100
+                cmd(f"down {x} {y}"); cmd(f"tick {ms}"); cmd("up"); cmd("tick 66")
+            elif k == "dbl":
+                x, y = a[1], a[2]
+                cmd(f"down {x} {y}"); cmd("tick 66"); cmd("up"); cmd("tick 66"); cmd(f"down {x} {y}"); cmd("tick 66"); cmd("up"); cmd("tick 66")
+            elif k == "hold":
+                cmd(f"down {a[1]} {a[2]}"); cmd(f"tick {a[3]}"); cmd("up"); cmd("tick 66")
+            elif k == "drag":
+                x1, y1, x2, y2 = map(int, a[1:5]); n = 6
+                cmd(f"down {x1} {y1}")
+                for j in range(1, n + 1): cmd(f"move {x1 + (x2-x1)*j//n} {y1 + (y2-y1)*j//n}")
+                cmd("up"); cmd("tick 66")
+            elif k == "shot":
+                png(cmd("frame"), 480, 480, os.path.join(OUT, a[1] + ".png")); out.append(a[1])
+            else:
+                cmd(part.strip())
+        with open(TRACE, "a") as f: f.write(line + "\n")
+        c.send(("ok " + " ".join(out)).encode()); c.close()
+
+if __name__ == "__main__":
+    if sys.argv[1] == "serve": serve()
+    else:
+        c = socket.socket(socket.AF_UNIX); c.connect(SOCK); c.send(" ".join(sys.argv[1:]).encode()); print(c.recv(4096).decode())
