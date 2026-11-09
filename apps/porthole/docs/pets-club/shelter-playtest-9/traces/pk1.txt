@@ -1,0 +1,11 @@
+wait 2500
+hold 40 67 700
+wait 1000
+snap a_launcher
+hold 80 113 800
+wait 300
+snap b_open
+wait 1500
+snap c_open2
+wait 3000
+snap d_open3

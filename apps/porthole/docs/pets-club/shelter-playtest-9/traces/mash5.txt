@@ -1,0 +1,24 @@
+tilt 0 300 -954
+wait 2500
+hold 40 67 700
+wait 1000
+hold 80 113 800
+wait 3000
+hold 80 130 1000
+wait 1000
+hold 80 140 1000
+wait 300
+wait 300
+tap 80 130
+wait 80
+tap 78 132
+wait 80
+tap 82 129
+wait 80
+tap 80 131
+wait 80
+tap 79 130
+wait 300
+snap a_mash
+wait 1000
+snap b_mash

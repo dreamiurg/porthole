@@ -1,0 +1,9 @@
+wait 2500
+hold 40 67 3200
+wait 300
+hold 80 15 2000
+wait 300
+snap a_afterhome
+hold 80 15 3000
+wait 300
+snap b_homeagain

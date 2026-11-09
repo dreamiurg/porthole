@@ -1,0 +1,14 @@
+wait 2500
+press 40 67
+wait 2000
+move 60 75
+wait 200
+snap a_wiggle
+wait 1500
+snap b_wiggle_long
+move 80 100
+wait 300
+snap c_offrow
+up
+wait 400
+snap d_up

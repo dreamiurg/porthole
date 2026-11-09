@@ -1,0 +1,22 @@
+wait 2500
+hold 40 67 700
+wait 1000
+hold 37 80 800
+wait 2000
+hold 80 120 800
+wait 2500
+hold 67 139 800
+wait 1200
+hold 80 108 900
+wait 2000
+hold 53 87 1200
+wait 400
+hold 107 139 2000
+wait 400
+hold 53 112 1500
+wait 400
+snap a_after3wrong
+wait 3000
+snap b_wait3s
+wait 4000
+snap c_wait7s

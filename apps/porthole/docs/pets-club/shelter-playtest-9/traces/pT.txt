@@ -1,0 +1,82 @@
+wait 2500
+hold 40 67 700
+wait 1000
+hold 37 80 800
+wait 2000
+hold 80 120 800
+wait 2500
+hold 67 139 800
+wait 1200
+hold 80 108 900
+wait 2000
+hold 80 112 800
+wait 300
+hold 80 87 800
+wait 300
+hold 107 87 800
+wait 300
+hold 53 112 800
+wait 300
+hold 80 139 800
+wait 300
+hold 53 139 800
+wait 66
+snap f01
+wait 66
+snap f02
+wait 66
+snap f03
+wait 66
+snap f04
+wait 66
+snap f05
+wait 66
+snap f06
+wait 66
+snap f07
+wait 66
+snap f08
+wait 66
+snap f09
+wait 66
+snap f10
+wait 66
+snap f11
+wait 66
+snap f12
+wait 66
+snap f13
+wait 66
+snap f14
+wait 66
+snap f15
+wait 66
+snap f16
+wait 66
+snap f17
+wait 66
+snap f18
+wait 66
+snap f19
+wait 66
+snap f20
+wait 66
+snap f21
+wait 66
+snap f22
+wait 66
+snap f23
+wait 66
+snap f24
+wait 66
+snap f25
+wait 66
+snap f26
+wait 66
+snap f27
+wait 66
+snap f28
+wait 66
+snap f29
+wait 66
+snap f30

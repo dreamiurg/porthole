@@ -1,0 +1,34 @@
+tilt 0 300 -954
+wait 2500
+hold 40 67 700
+wait 1000
+hold 80 113 800
+wait 3000
+hold 80 130 1000
+wait 1000
+hold 80 140 1000
+wait 300
+tilt 400 300 -866
+tilt 400 300 -866
+wait 2500
+tilt 0 300 -954
+hold 80 130 1200
+wait 7000
+hold 80 130 1000
+tilt -450 250 -857
+wait 4000
+tilt -700 0 -714
+wait 500
+snap s01
+wait 500
+snap s02
+wait 500
+snap s03
+wait 500
+snap s04
+wait 1000
+snap s05
+wait 2000
+snap s06
+wait 3000
+snap s07
