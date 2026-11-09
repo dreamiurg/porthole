@@ -302,7 +302,7 @@ void Shell::updatePin() {
   static const Screen BACK[3] = {SH_AGE, SH_PIN_SET, SH_PICK};   // from SH_PIN_SET, SH_PIN_AGAIN, SH_PIN
   if (pinLen_ == 4) { fourthShown(); return; }
   if (ui::back(in_)) { resetPin(); go(BACK[screen_ - SH_PIN_SET]); return; }
-  if (adminSwitch() && in_.tapIn(PIN_SKIP.x, PIN_SKIP.y, PIN_SKIP.w, PIN_SKIP.h)) { askAdmin(SH_DELETE); return; }   // its own lock
+  if (adminSwitch() && ui::clicked(in_, PIN_SKIP)) { askAdmin(SH_DELETE); return; }   // its own lock
   if (kidKeysHidden()) {   // too many wrong tries: the keys come back once the wait is over and the finger rests
     if (in_.down) pinCalmUntil_ = ms_ + PIN_CALM_MS;   // a kid tapping the hourglass never types into the keys' return
     if (in_.pressed) pinNudgeUntil_ = ms_ + 300;
@@ -338,16 +338,21 @@ void Shell::submitPin() {
   else if (code == prof_.rec[target_].pin) { pinClear(target_); authorized(); }
   else { pinStrike(target_); pinWrongUntil_ = ms_ + 900; toast("Hmm, that's not it"); }
 }
+// A delete's pad is navy like "Delete <name>?" and says so: a kid who types their code by habit on a pad that looked
+// like signing in landed on the delete question.
 void Shell::drawPin() {
-  clear(C_WALL);
+  const bool del = screen_ == SH_PIN && deleting_;
+  clear(del ? C_NAVY : C_WALL);
   const bool hidden = kidKeysHidden();
   const uint32_t wait = hidden ? pinWait(target_) : 0;
   char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
   if (ms_ < toastUntil_) snprintf(prompt, sizeof prompt, "%s", toast_);   // the message takes the prompt's place
   else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
+  else if (del) snprintf(prompt, sizeof prompt, "Delete %s?", prof_.rec[target_].name);
   else if (screen_ == SH_PIN) snprintf(prompt, sizeof prompt, "%s's code?", prof_.rec[target_].name);
   else snprintf(prompt, sizeof prompt, "%s", screen_ == SH_PIN_SET ? "Pick 4 numbers" : "Once more!");
-  textCentered(80, 26, prompt, ms_ < toastUntil_ ? (uint8_t)C_PLUM : (uint8_t)C_DKBROWN);
+  const uint8_t ink = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN;
+  textCentered(80, 26, prompt, ms_ < toastUntil_ ? (del ? (uint8_t)C_YELLOW : (uint8_t)C_PLUM) : ink);
   drawPinDigits();
   if (adminSwitch()) drawPinKey(PIN_SKIP, "Admin", C_SKY);   // in the wait too: the grown-up's code is not slowed
   if (hidden) { drawPinWait(wait); ui::drawBack(); return; }
@@ -371,7 +376,7 @@ void Shell::drawPinWait(uint32_t wait) {
   }
   if (wait) line(cx, 78, cx, 101 - (24 - top), C_ORANGE);   // the falling stream
   char n[4]; snprintf(n, sizeof n, "%u", (unsigned)wait);
-  textCentered(80, 110, n, C_DKBROWN, 2);
+  textCentered(80, 110, n, deleting_ ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN, 2);   // only the kid's pad waits: navy while deleting
   const int w = of ? (int)(80 * wait / of) : 0;
   rect(40, 128, 80, 6, C_DKBROWN); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
@@ -403,7 +408,8 @@ void Shell::updateDelete() {
   shell::removeProfile(*st_, prof_, target_, stores, n);
   land();
 }
-// No code anywhere, so nobody may delete: a kid-safe card, the profile's face, and the ways back.
+// No code anywhere, so nobody may delete: a kid-safe card, the profile's face with a lock beside it (a pre-reader's
+// "it stays"), and the ways back.
 static const ui::Box NO_DELETE_OK = {50, 120, 60, 24};
 void Shell::updateNoDelete() {
   if (ui::back(in_) || ui::button(in_, {NO_DELETE_OK, "OK", nullptr, C_GREEN})) go(SH_PICK);
@@ -411,7 +417,8 @@ void Shell::updateNoDelete() {
 void Shell::drawNoDelete() {
   clear(C_SKY);
   const Record& r = prof_.rec[target_];
-  blitScaled(SPR_AVATARS[r.avatar % NUM_AVATARS], 60, 28, 2);
+  blitScaled(SPR_AVATARS[r.avatar % NUM_AVATARS], 50, 28, 2);
+  blitScaled(SPR_LOCK, 96, 39, 2);
   char b[32]; snprintf(b, sizeof b, "To delete %s,", r.name); textCentered(80, 74, b, C_NAVY);
   textCentered(80, 86, "ask a grown-up", C_NAVY);
   textCentered(80, 96, "to set a code", C_NAVY);

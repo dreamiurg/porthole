@@ -1030,7 +1030,7 @@ static void deleteNeedsACode() {
   tapAt(sh, ms, {50, 120, 60, 24}); assert(on(sh, "picker"));
   longPress(KAI); assert(on(sh, "no_delete")); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker") && sh.profileCount() == 2);
   longPress(SAM); assert(on(sh, "pin"));
-  tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "pin"));   // no grown-up's code: no Admin key
+  keyAt(sh, ms, PAD_ADMIN); assert(on(sh, "pin"));   // no grown-up's code: no Admin key
   typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{});
   assert(on(sh, "pin") && storedStrikes(st, 0) == 1 && !storedStrikes(st, shell::ADMIN_LOCK));
   typeKidCode(sh, ms, "1111"); assert(on(sh, "delete") && !storedStrikes(st, 0));
@@ -1038,21 +1038,23 @@ static void deleteNeedsACode() {
 
   const uint16_t admin = 1235; st.save("sys", "admin", &admin, sizeof admin);
   bootWithoutHours(sh, st, nullptr, 0, &sys);
+  longPress(KAI); assert(on(sh, "sys_pin")); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));   // no kid's pad to go back to
   longPress(KAI); assert(on(sh, "sys_pin")); typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
   tapAt(sh, ms, NO);
   longPress(SAM); assert(on(sh, "pin")); typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));   // his own code
   tapAt(sh, ms, NO);
-  longPress(SAM); tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));   // or the grown-up's
+  longPress(SAM); keyAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));   // or the grown-up's
   for (int i = 0; i < 4; i++) { typeAdminCode(sh, ms, "9999"); frame(sh, ms, Input{}); }
   assert(storedStrikes(st, shell::ADMIN_LOCK) == 4 && !storedStrikes(st, 0));
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "sys_pin"));   // the grown-up's code waits 5 s...
-  tapAt(sh, ms, ADMIN_HOME); longPress(SAM); typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));   // ...Sam's does not
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "pin"));   // back from the grown-up's pad: Sam's pad again, not the picker
+  typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));   // ...and Sam's code does not wait
   tapAt(sh, ms, NO);
   longPress(SAM);
   for (int i = 0; i < 4; i++) { typeKidCode(sh, ms, "2222"); frame(sh, ms, Input{}); }
   assert(storedStrikes(st, 0) == 4 && storedStrikes(st, shell::ADMIN_LOCK) == 4);
   typeKidCode(sh, ms, "1111"); assert(on(sh, "pin"));   // Sam's keys hidden; the Admin key still there
-  tapAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));
+  keyAt(sh, ms, PAD_ADMIN); assert(on(sh, "sys_pin"));
   testNow = NOW + 5; typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete") && !storedStrikes(st, shell::ADMIN_LOCK));
   testNow = NOW;
   assert(storedStrikes(st, 0) == 4 && sh.profileCount() == 2);

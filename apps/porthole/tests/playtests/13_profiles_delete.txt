@@ -56,10 +56,13 @@ wait 450
 tap 80 32
 wait 450
 expect-screen picker
-# a long press on Kai: the code first, then the question; No keeps Kai
+# a long press on Kai: the code first, on a navy pad asking "Delete Kai?" (not the sign-in pad), then the
+# question; No keeps Kai
 hold 80 67
 wait 450
 expect-screen pin
+ui-check pin-delete
+snap 01b_delete_pad
 tap 41 62
 tap 80 62
 tap 119 62

@@ -217,7 +217,10 @@ bool Shell::saveAdminPin(uint16_t code) {
 static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19}; }
 static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
 void Shell::updateSysPin() {
-  if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
+  if (ui::back(in_)) {   // from the grown-up's code for a delete reached from the kid's pad: back to that pad
+    const bool kidPad = screen_ == SH_SYS_PIN && afterAdmin_ == SH_DELETE && prof_.rec[target_].pin;
+    resetPin(); firstPin_ = 0; go(kidPad ? SH_PIN : screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return;
+  }
   if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
     const char next = adminDigit();
     if (!next && (ms_ - pinMs_ < 400 || in_.down)) return;   // a finger down waits: its lift is that key

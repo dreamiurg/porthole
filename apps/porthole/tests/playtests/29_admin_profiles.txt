@@ -79,7 +79,7 @@ snap 03_delete_asks
 tap 80 80
 wait 450
 expect-screen picker
-# a kid with a code: their pad asks it, and its Admin key takes the grown-up's code instead
+# a kid with a code: their pad, navy and asking "Delete Kai?", takes it, and its Admin key the grown-up's code instead
 profile Kai 6 4567
 tap 80 32
 wait 450
@@ -89,6 +89,13 @@ wait 450
 expect-screen pin
 ui-check pin-admin-key
 snap 04_kid_pad_admin
+tap 80 145
+wait 450
+expect-screen sys_pin
+# back from the grown-up's pad: Kai's delete pad again, not the picker
+tap 80 12
+wait 450
+expect-screen pin
 tap 80 145
 wait 450
 expect-screen sys_pin
