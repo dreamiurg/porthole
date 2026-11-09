@@ -1,0 +1,34 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+down 115 102
+tick 1400
+frame slide_on_1400
+move 115 115
+move 115 125
+move 110 135
+tick 66
+frame slide_off_now
+tick 2000
+frame slide_off_2s
+move 112 115
+move 115 102
+tick 33
+frame slide_back_now
+tick 1000
+frame slide_back_1s
+up
+tick 1000
+frame slide_end

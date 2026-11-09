@@ -1,0 +1,26 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+press 115 102 2200
+tick 800
+press 80 136 1000
+tick 600
+frame gl_after_1s_press
+press 80 136 1500
+tick 600
+frame gl_after_15s_press
+press 80 136 100
+tick 600
+frame gl_after_tap
