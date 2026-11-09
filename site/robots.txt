@@ -1,0 +1,7 @@
+User-agent: Yandex
+Disallow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://porthole.dreamiurg.net/sitemap.xml
