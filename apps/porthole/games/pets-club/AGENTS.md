@@ -12,9 +12,12 @@ layout, and the age-based content tables.
   (below). No rendering, no platform calls -- `host/test_pet.cpp` exercises it directly.
 - `game.h` / `game.cpp`: the screens. One `Game` class (an `App`), a `Screen` enum, one
   `update`/`draw` pair per screen, input handling, toast/particle/sound selection, and save
-  hand-off back to the shell via `takeSave()` (an empty/length-0 save means "erase this
-  profile's save," not "nothing to write"). `wantsHome()` reports whether the game wants
-  the shell to show the launcher instead of resuming mid-screen.
+  hand-off back to the shell via `takeSave()` (never an empty save: with no pup there is
+  nothing to write). `wantsHome()` reports whether the game wants
+  the shell to show the launcher instead of resuming mid-screen. `pressMs_` is when the
+  current press began, and `pressedAfter(ms)` holds a tap to a press begun at least `ms`
+  after `screenMs_`: a screen that changes in place (Fetch's and Word Fetch's results, the
+  lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift.
 - `content.h`, plus its level-3 extensions `content_level3_books.h` and
   `content_level3_words.h`: story text (`Book`) and spelling words (`WordClue`). Plain
   data, no logic. `content.h` pulls the level-3 files in via `#if __has_include(...)`; the

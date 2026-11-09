@@ -45,7 +45,7 @@ class Game : public App {
   ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
-  uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTickSec_ = 0;
+  uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, pressMs_ = 0, lastTickSec_ = 0;   // pressMs_: when the current (or last) press began
   bool daylight_ = false;   // AppEnter::daylight: the launcher's brightness overrides the clock's night
   Screen screen_ = SC_SPLASH, nextAfterCelebrate_ = SC_HOME;
   Input in_{};
@@ -91,6 +91,9 @@ class Game : public App {
   void updateParticles();
   void drawParticles();
   void markDirty() { dirty_ = true; }
+  // The press now lifting began at least ms after the screen, or its phase (screenMs_), started: a finger already
+  // down when results or a quiz appear in place, or held from just after a screen change, never answers on its lift.
+  bool pressedAfter(uint32_t ms) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
   void setNameBuf(const char* name);   // the pet-name keyboard's text, cut to ui::NAME_LEN
   void debugAge(const char* cmd);
   int dogSize() const;

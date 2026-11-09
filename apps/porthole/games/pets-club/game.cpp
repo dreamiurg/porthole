@@ -275,6 +275,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_WALL + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
+  if (in_.pressed) pressMs_ = ms_;
   if (haveSave_ && now_ != lastTickSec_) tick();
   if (in_.pressed && haveSave_ && screen_ != SC_SPLASH) pet::touchDay(save_, now_);
   updateParticles();
@@ -515,8 +516,8 @@ void Game::updateHome() {
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
     // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: a slow double
-    // tap's second press gets past the fresh gate, so only a room that has shown a second takes it.
-    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && ms_ - screenMs_ > 1000) bringDogBack();
+    // tap's second press gets past the fresh gate, so only a press begun once the room has shown a second takes it.
+    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && pressedAfter(1000)) bringDogBack();
     else if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); }
     return;
   }
@@ -741,8 +742,8 @@ void Game::startFetch() {
   go(SC_FETCH);
 }
 void Game::updateFetch() {
-  if (fetchDone_) {
-    if (in_.tap && ms_ - screenMs_ > 600) {
+  if (fetchDone_) {   // the sweeping finger, still down as the round ends, never dismisses the results
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) {
       bool muddy = (pet::rnd(save_) % 100) < 40;
       pet::playResult(save_, now_, fetchScore_, muddy); markDirty();
       if (muddy) { toast("Uh oh, muddy paws!", 3000); }
@@ -833,7 +834,7 @@ void Game::nextWord() {
 }
 void Game::updateWords() {
   if (wordsDone_) {
-    if (in_.tap && ms_ - screenMs_ > 600) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
     return;
   }
   if (backButton()) { go(SC_PLAYMENU); return; }
@@ -1084,13 +1085,13 @@ void Game::updateTrain() {
     case 1:  // showing
       if (ms_ >= seqStepMs_) {
         seqShow_++;
-        if (seqShow_ >= seqLen_) { trainPhase_ = 2; seqInput_ = 0; seqShow_ = -1; }
+        if (seqShow_ >= seqLen_) { trainPhase_ = 2; seqInput_ = 0; seqShow_ = -1; screenMs_ = ms_; }   // the kid's turn starts
         else { seqStepMs_ = ms_ + 700; }
       }
       break;
     case 2:  // player input
       for (int z = 0; z < ZONE_N; z++) UiAudit::add(zx[z] - 12, zy[z] - 12, 24, 24);   // anchors; taps resolve to the nearest one
-      if (in_.tap) {
+      if (in_.tap && pressedAfter(0)) {   // a finger held across the demo is no answer
         int hitZone = trainHitZone(in_.x, in_.y);
         if (hitZone < 0) break;
         if (seqInput_ > 0 && hitZone == seq_[seqInput_ - 1] && ms_ - seqStepMs_ < 350) break;  // double tap on the same spot
@@ -1321,7 +1322,8 @@ void Game::bringDogBack() {
   spawn(80, 96, 0, 6);
 }
 void Game::drawBringBack(const ui::Box& b, bool picture) {   // two lines: "Bring back" on one (70 px) would reach the farm's dog
-  const bool pr = ui::pressing(in_, b); const int dy = pr ? 1 : 0, cx = b.x + (picture ? 38 : b.w / 2);
+  const bool pr = ui::pressing(in_, b) && (screen_ != SC_HOME || pressedAfter(1000));   // sinks only under a press it takes
+  const int dy = pr ? 1 : 0, cx = b.x + (picture ? 38 : b.w / 2);
   ui::drawButton({b, nullptr, nullptr, C_ORANGE}, pr);
   if (picture) framedPup(b.x + 4, b.y + 7 + dy, DOG_PORTRAIT_SMALL[save_.wallBreeds[save_.wallCount - 1]], 1);   // who comes back
   textCentered(cx, b.y + 5 + dy, "Bring", inkOn(C_ORANGE)); textCentered(cx, b.y + 14 + dy, "back", inkOn(C_ORANGE));

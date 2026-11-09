@@ -224,6 +224,19 @@ wait 450
 expect-screen home
 expect hasDog=0
 expect bringback=1
+# the same second press held 700 ms: it lifts after the room's first second, but began before it, so still nothing
+tap 27 51
+wait 450
+expect-screen street
+tap 68 100
+wait 500
+down 68 100
+wait 700
+up
+wait 450
+expect-screen home
+expect hasDog=0
+expect bringback=1
 # Shelter twice, 600 ms apart: the kennels, not the keyboard (Pick me! sits lower)
 tap 111 102
 wait 600
@@ -363,6 +376,7 @@ expect-screen home
 expect hasDog=0
 expect bringback=1
 snap 07f_room_after_restart
+wait 600
 down 43 103
 wait 2500
 up

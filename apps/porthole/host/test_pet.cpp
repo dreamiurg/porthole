@@ -316,7 +316,9 @@ static void bringBackFromTheEmptyRoom() {
   f.tap(80, 137);
   assert(!strcmp(g.screenName(), "home"));
   const Save gone = taken(g); assert(gone.hasDog == 0 && gone.wallCount == 2);
-  f.tap(43, 103);   // a slow double tap's second press, 560 ms into the room: past the fresh gate, not taken
+  // a slow double tap's second press, 500 ms into the room and past the fresh gate, held 700 ms: it lifts after the
+  // room's first second but began before it, so it is not taken
+  f.hold(true, 43, 103, 700); f.hold(false, 43, 103, 20);
   assert(!strcmp(g.screenName(), "home") && !g.saveUrgent());
   f.hold(false, 0, 0, 500);
   f.hold(true, 43, 103, 60); f.hold(false, 43, 103, 20);   // the release frame: home, before the dog's first idle roll
@@ -326,7 +328,7 @@ static void bringBackFromTheEmptyRoom() {
   sameDog(back, before); assert(back.wallCount == 1 && !strcmp(back.wallNames[0], "A") && back.dogsRaised == 1);
   // a restart in the empty room: Bring back is still there
   enterAt(g, gone, t + 600);
-  Finger r{g, t + 600}; r.hold(false, 0, 0, 500);
+  Finger r{g, t + 600}; r.hold(false, 0, 0, 1000);
   r.hold(true, 43, 103, 2500); r.hold(false, 43, 103, 20);   // a long press works too
   const Save again = taken(g);
   assert(!strcmp(g.screenName(), "home") && again.hasDog == 1 && again.lastSeen == t + 600 && again.wallCount == 1);
