@@ -11,8 +11,8 @@ bool valid(const Save& s) {
          s.crc == crc32(&s, sizeof(Save) - sizeof(uint32_t));
 }
 bool loadBlob(const void* d, size_t n, Save& out) {
-  if (n == sizeof(Save)) { memcpy(&out, d, n); return valid(out); }
-  if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE) {
+  if (n == sizeof(Save)) { memcpy(&out, d, n); if (!valid(out)) return false; }
+  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE) {
     const uint8_t* p = (const uint8_t*)d;
     uint32_t crc; memcpy(&crc, p + n - 4, 4);
     uint16_t ver; memcpy(&ver, p + 4, 2);
@@ -20,10 +20,14 @@ bool loadBlob(const void* d, size_t n, Save& out) {
     memset(&out, 0, sizeof out);
     memcpy(&out, p, n - 4);   // every old field keeps its offset; new fields stay zero (age unknown, Golden pup, empty wall)
     out.hasDog = 1;           // every save before the farm has its dog
-    seal(out);
-    return true;
-  }
-  return false;
+  } else return false;
+  // Made safe once, here, so every reader can index the art and the wall with them: a bad byte is the Golden pup.
+  if (out.breed >= NUM_BREEDS) out.breed = 0;
+  for (uint8_t& b : out.wallBreeds) if (b >= NUM_BREEDS) b = 0;
+  if (out.wallCount > WALL_SLOTS) out.wallCount = WALL_SLOTS;
+  out.hasDog = out.hasDog != 0;
+  seal(out);
+  return true;
 }
 void levelRange(int age, int& lo, int& hi) {
   if (age <= 6) { lo = 1; hi = 1; } else if (age == 7) { lo = 1; hi = 2; } else if (age == 8) { lo = 2; hi = 3; } else { lo = 3; hi = 3; }

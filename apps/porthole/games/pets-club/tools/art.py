@@ -106,12 +106,12 @@ class Img:
                 if c != T:
                     self.set(x + xx, y + yy, c)
 
-    def tint(self, ell, c, only):
-        """Recolor the `only`-colored pixels inside ell=(cx, cy, rx, ry): markings that follow the silhouette."""
+    def tint(self, ell, c, only, mask=None):
+        """Recolor the `only`-colored pixels inside ell=(cx, cy, rx, ry) where mask(x, y) holds: markings that follow the silhouette."""
         cx, cy, rx, ry = ell
         for y in range(self.h):
             for x in range(self.w):
-                if self.px[y][x] == only and ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1.0:
+                if self.px[y][x] == only and ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1.0 and (mask is None or mask(x, y)):
                     self.px[y][x] = c
 
     def tri(self, pts, c):
@@ -361,11 +361,8 @@ def paint_markings(im, p, s, b, size):
         for x, y in pts:
             im.tint((int(x) + off, int(y) + off, r, r), b["spots"], b["coat"])
     if b["curls"] is not None:
-        for cx, cy, rx, ry in puffs(p, s):
-            for y in range(im.h):
-                for x in range(im.w):
-                    if y % 2 == 0 and (x + y // 2) % 2 == 0 and ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1.0 and im.px[y][x] == b["coat"]:
-                        im.px[y][x] = b["curls"]
+        for ell in puffs(p, s):
+            im.tint(ell, b["curls"], b["coat"], lambda x, y: y % 2 == 0 and (x + y // 2) % 2 == 0)
 
 
 def paint_silhouette(im, p, s, b):
@@ -897,6 +894,27 @@ def px_data(im):
     return ",".join(str(c) for row in im.px for c in row)
 
 
+# The memory wall's pictures, cut from the sitting pup: (name, crop) with crop (x, y, w, h) or, for the room's small
+# frames, a 10x10 box around the head. A crop always stays on the art.
+PORTRAITS = (("DOG_PORTRAIT_SMALL", None), ("DOG_PORTRAIT", (1, 0, 22, 14)))
+
+
+def crop(im, x, y, w, h):
+    x, y = max(0, min(x, im.w - w)), max(0, min(y, im.h - h))
+    out = Img(w, h)
+    out.px = [row[x : x + w] for row in im.px[y : y + h]]
+    return out
+
+
+def emit_portraits(w, frames):
+    for name, box in PORTRAITS:
+        for br in BREEDS:
+            im, parts = frames[(br, "pup", "SIT")]
+            pic = crop(im, *(box or (parts["headX"] - 5, parts["headY"] - 5, 10, 10)))
+            w(f"static const uint8_t {name.lower()}_{br.lower()}_px[] = {{{px_data(pic)}}};")
+        w(f"static const gfx::Sprite {name}[NUM_BREEDS_ART] = {{" + ", ".join(f"{{{pic.w},{pic.h},{name.lower()}_{br.lower()}_px}}" for br in BREEDS) + "};")
+
+
 def emit_dogs(w, frames):
     w("enum Pose { " + ", ".join("P_" + p for p in POSES) + ", NUM_POSES };")
     w("enum DogSize { SZ_PUP = 0, SZ_DOG = 1, SZ_BIG = 2 };")
@@ -934,6 +952,7 @@ def emit(check=False):
     w('#include "gfx.h"')
     frames = {(br, sz, pose): draw_dog(sz, pose, br) for br in BREEDS for sz in SIZE_ORDER for pose in POSES}
     emit_dogs(w, frames)
+    emit_portraits(w, frames)
     icons = emit_icons(w)
     text = "\n".join(out) + "\n"
     if check:

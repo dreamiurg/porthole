@@ -58,11 +58,13 @@ A breed changes only how the dog is drawn; stats, tricks and growth are the same
 Husky, Beagle, Poodle, Corgi, Black Lab) layers coat, belly, ears, legs, spots and curls
 on the one parametric rig, in palette colors, and bakes every breed into `sprites.h` as
 `DOG_FRAMES[breed][size][pose]` (with `DOG_PARTS` the same shape, for the hat and mud
-anchors). `pet.h`'s `NUM_BREEDS` must equal the art's `NUM_BREEDS_ART` (a `static_assert`
+anchors), plus the wall's pictures cut from each breed's sitting pup: `DOG_PORTRAIT_SMALL`
+(the room's 10x10 head) and `DOG_PORTRAIT` (the wall screen's 22x14). `pet.h`'s `NUM_BREEDS` must equal the art's `NUM_BREEDS_ART` (a `static_assert`
 in `game.cpp`), and so must the two name tables in `content.h`: `SHELTER_NAMES` (the
-suggested names, at most `ui::NAME_LEN` letters) and `BREED_NAMES`. Every draw indexes
-through `breedOf(b)` (or `Game::breed()` for the kid's own dog), which draws a corrupt
-byte as the Golden pup, never past the table. A new profile's first dog is still the
+suggested names, at most `ui::NAME_LEN` letters) and `BREED_NAMES`. `pet::loadBlob`
+makes the v3 bytes safe once, for every save it loads: a `breed` or `wallBreeds` byte past
+the table becomes 0 (the Golden pup), `wallCount` is capped at `WALL_SLOTS` and `hasDog`
+is 0 or 1, so every draw indexes the art with them directly. A new profile's first dog is still the
 parcel intro's Golden pup.
 
 ## The farm, the shelter and the wall
@@ -97,7 +99,7 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
 
 Debug (see `docs/playtesting.md`): `dbg old` ages the dog to `RETIRE_DAYS`; `dbg wall5`
 puts five shelter pups, Romeo to Charcoal (the widest name), through the farm and keeps
-the kid's dog; `dbg breed N` sets the breed byte, any value. `debug` prints `breed=`,
+the kid's dog; `dbg breed N` sets the breed (past the table: the Golden pup, as a load would). `debug` prints `breed=`,
 `hasDog=` and `wall=`, and on the wall screen `oldest=` / `newest=`. The scenario is
 `tests/playtests/b0_pets_farm_shelter.txt`.
 

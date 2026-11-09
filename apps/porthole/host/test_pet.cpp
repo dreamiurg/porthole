@@ -173,6 +173,14 @@ static void breedSurvivesRoundTrip() {
   pet::retire(s, day0); assert(pet::loadBlob(&s, sizeof s, m) && m.hasDog == 0 && m.wallBreeds[1] == 5);
 }
 
+// A crc-valid v3 blob with bytes past the art and the wall loads safe: every reader indexes with them unchecked.
+static void corruptFieldsLoadSafe() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; pet::seal(s);
+  Save m; assert(pet::loadBlob(&s, sizeof s, m) && pet::valid(m));
+  assert(m.breed == 0 && m.wallBreeds[2] == 0 && m.wallCount == WALL_SLOTS && m.hasDog == 1);
+}
+
 static void levels(const Save& s) {
   // reading levels by age
   { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
@@ -190,7 +198,7 @@ static void dayOnPickedLight() {
   g.enter({&kid, &kid, &none, 1, night, 0, true}); assert(g.tint() == TINT_DAY && !g.nightSky());
 }
 
-// A breed byte past the art (a corrupt save) draws the Golden pup at home, never out of bounds; a Corgi (5) draws as itself.
+// A Corgi (5) draws as itself at home, not as the Golden pup.
 static void homeFrame(uint8_t breed, uint8_t* out) {
   static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
   Save s; pet::adopt(s, day0, "Sam", "Rex"); s.breed = breed; pet::seal(s);
@@ -198,10 +206,10 @@ static void homeFrame(uint8_t breed, uint8_t* out) {
   g.enter({&kid, &kid, &slot, 1, day0, 0}); g.update(day0, 2000, Input{}); g.render();   // past the splash: home
   memcpy(out, gfx::fb, sizeof gfx::fb);
 }
-static void breedClampDraws() {
-  static uint8_t golden[sizeof gfx::fb], corrupt[sizeof gfx::fb], corgi[sizeof gfx::fb];
-  homeFrame(0, golden); homeFrame(200, corrupt); homeFrame(5, corgi);
-  assert(!memcmp(golden, corrupt, sizeof golden) && memcmp(golden, corgi, sizeof golden));
+static void breedDraws() {
+  static uint8_t golden[sizeof gfx::fb], corgi[sizeof gfx::fb];
+  homeFrame(0, golden); homeFrame(5, corgi);
+  assert(memcmp(golden, corgi, sizeof golden));
 }
 
 // A dog that falls asleep at 16:00 and moves to the farm leaves the room in daylight: the night tint follows the dog.
@@ -241,9 +249,10 @@ int main() {
   wallRollsAtFour();
   simulateEmptyRoom();
   breedSurvivesRoundTrip();
+  corruptFieldsLoadSafe();
   levels(s);
   dayOnPickedLight();
-  breedClampDraws();
+  breedDraws();
   retiredSleeperLeavesDay();
   petting(day0);
   printf("test_pet: all checks passed (sizeof Save = %zu)\n", sizeof(Save));
