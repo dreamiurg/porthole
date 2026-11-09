@@ -1,0 +1,181 @@
+# interruption session, fresh fixture
+tick 1000
+down 70 67
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 2500
+down 120 30
+tick 150
+up
+tick 800
+down 80 77
+tick 150
+up
+tick 800
+down 115 101
+tick 2500
+up
+tick 1500
+shot I01_farm
+# restart right away at the farm (about 1.5 s after Yes)
+# after process restart
+tick 1000
+down 70 67
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 2500
+shot I02_after_restart
+down 110 101
+tick 150
+up
+tick 800
+down 140 81
+tick 150
+up
+tick 400
+down 80 138
+tick 150
+up
+tick 800
+shot I03_naming
+# restart during naming
+tick 1000
+down 70 67
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 2500
+shot I04_after_restart2
+down 45 101
+tick 150
+up
+tick 1000
+shot I05_bringback
+tick 3000
+down 120 30
+tick 150
+up
+tick 800
+shot I06_stats
+# tap Bring back again (Ana-style short tap)
+down 45 101
+tick 150
+up
+tick 800
+shot I07_bb2
+tick 3000
+down 120 30
+tick 150
+up
+tick 800
+down 80 77
+tick 150
+up
+tick 800
+down 115 101
+tick 2500
+up
+tick 1500
+down 80 137
+tick 150
+up
+tick 1500
+shot I08_empty
+down 80 12
+tick 150
+up
+tick 1000
+shot I09_launcher
+down 36 70
+tick 150
+up
+tick 300
+shot I10_splash
+tick 2000
+shot I11_room
+tick 3000
+# wait 5s total then tap Bring back once
+down 45 101
+tick 150
+up
+tick 800
+shot I12_bb_after5s
+tick 1000
+down 80 12
+tick 150
+up
+tick 1000
+down 36 70
+tick 150
+up
+tick 250
+shot T1
+tick 250
+shot T2
+tick 250
+shot T3
+tick 250
+shot T4
+tick 250
+shot T5
+tick 250
+shot T6
+tick 250
+shot T7
+tick 250
+shot T8
+tick 250
+shot T9
+tick 250
+shot T10
+tick 250
+shot T11
+tick 250
+shot T12
+tick 250
+shot T13
+tick 250
+shot T14
+# farm again then reopen and tap Bring back once at room+1.2s
+down 120 30
+tick 150
+up
+tick 800
+down 80 77
+tick 150
+up
+tick 800
+down 115 101
+tick 2500
+up
+tick 1500
+down 80 137
+tick 150
+up
+tick 1500
+down 80 12
+tick 150
+up
+tick 1000
+down 36 70
+tick 150
+up
+tick 1750
+shot U1_room_arrived
+tick 1050
+down 45 101
+tick 150
+up
+tick 600
+shot U2_tap_at_1200

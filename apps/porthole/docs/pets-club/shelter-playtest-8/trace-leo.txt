@@ -1,0 +1,984 @@
+# Leo session 1, fixture copied, snap --serve default clock
+tick 1000
+shot L01_boot
+# Leo holds his name row 2.5s
+down 70 67
+tick 300
+shot L02_hold300
+tick 400
+shot L03_hold700
+tick 1800
+shot L04_hold2500
+up
+tick 500
+shot L05_after_lift
+# Leo presses OK firmly 1.5s
+down 80 130
+tick 1500
+up
+tick 600
+shot L06_ok
+# Leo holds Mia 1.2s (he wants to play)
+down 70 67
+tick 1200
+up
+tick 600
+shot L07_hold_again
+down 80 130
+tick 200
+up
+tick 600
+shot L08_ok2
+down 70 67
+tick 150
+up
+tick 800
+shot L09_tap_mia
+# Leo holds first dog tile 1.5s
+down 39 37
+tick 700
+shot L10_tile1_hold
+tick 800
+up
+tick 300
+shot L11_tile1_lift
+tick 1500
+shot L12_tile1_open
+# my coordinate slip: (39,37) was the Mia header -> picker. Retry
+down 70 67
+tick 150
+up
+tick 800
+# Leo holds first dog tile 1.5s
+down 36 70
+tick 700
+shot L13_tile1_hold
+tick 800
+up
+tick 300
+shot L14_tile1_lift
+tick 1500
+shot L15_open
+# Leo holds the dog 2s
+down 80 105
+tick 800
+shot L16_dog_hold800
+tick 1200
+up
+tick 300
+shot L17_dog_lift
+tick 1500
+shot L18_dog_after
+# Leo taps the heart on the shelf
+down 142 44
+tick 1200
+up
+tick 600
+shot L19_heart
+# Leo presses home on the book screen 1.5s
+down 80 12
+tick 1500
+up
+tick 700
+shot L20_back
+# Leo presses the bone bars
+down 43 22
+tick 1500
+up
+tick 700
+shot L21_bars
+# Leo long-presses Mia age 8 line 2s
+down 80 139
+tick 2000
+up
+tick 600
+shot L22_bottom_hold
+down 80 152
+tick 2500
+up
+tick 600
+shot L23_bottom2
+down 30 130
+tick 2000
+up
+tick 600
+shot L24_lowleft
+down 130 132
+tick 2000
+up
+tick 600
+shot L25_lowright
+down 80 60
+tick 2000
+up
+tick 600
+shot L26_hearts_row
+# home from stickers (hold 1.2s)
+down 80 12
+tick 1200
+up
+tick 700
+shot L27_after_home
+down 43 22
+tick 300
+up
+tick 700
+shot L28_stats
+# Leo presses To the farm 2s
+down 80 77
+tick 2000
+up
+tick 700
+shot L29_farmq
+# Leo presses Yes 1s then lifts
+down 115 101
+tick 500
+shot L30_yes500
+tick 500
+shot L31_yes1000
+up
+tick 500
+shot L32_yes_lift
+# Leo presses Yes firmly 3s
+down 115 101
+tick 1500
+shot L33_yes1500
+tick 700
+shot L34_yes2200
+tick 800
+shot L35_yes3000
+up
+tick 500
+shot L36_after
+tick 1500
+shot L37_after2
+# Leo presses the farm dog 2s
+down 100 95
+tick 2000
+up
+tick 600
+shot L38_farmdog
+# Leo presses green Go home 1.5s
+down 80 137
+tick 1500
+up
+tick 800
+shot L39_gohome
+tick 1500
+shot L40_empty
+# Leo presses the dog photo on the wall 1.5s
+down 53 53
+tick 1500
+up
+tick 700
+shot L41_photo
+# Leo presses the door
+down 27 52
+tick 1200
+up
+tick 1000
+shot L42_door
+# (door press landed on Farm friends: nothing)
+Leo presses Biscuit frame 2s
+down 80 103
+tick 2000
+up
+tick 1000
+shot L43_frame
+# Leo pets the visited farm dog 2s, shots mid-hold
+down 90 100
+tick 700
+shot L44_visitpet700
+tick 1300
+shot L45_visitpet2000
+up
+tick 400
+shot L46_visitpet_lift
+down 90 100
+tick 120
+up
+tick 300
+shot L47_visit_tap
+# home button from visit
+down 80 12
+tick 1500
+up
+tick 800
+shot L48_visit_home
+# door
+down 27 52
+tick 200
+up
+tick 1000
+shot L49_door
+# home from Farm friends
+down 80 12
+tick 300
+up
+tick 800
+shot L50_ff_home
+# door
+down 27 52
+tick 200
+up
+tick 1000
+shot L51_door
+# Leo double-taps his house on Paw Street, 2nd tap lands where Shelter is
+down 82 95
+tick 100
+up
+tick 150
+down 82 95
+tick 100
+up
+tick 300
+shot L52_dbl_house
+tick 1000
+shot L53_dbl_house2
+# door then double tap house with 400ms gap
+down 27 52
+tick 100
+up
+tick 1000
+down 82 95
+tick 100
+up
+tick 400
+down 82 95
+tick 120
+up
+tick 600
+shot L54_dbl400
+# door then house, 2nd press held 1.5s starting 250ms later
+down 27 52
+tick 100
+up
+tick 1000
+down 82 95
+tick 100
+up
+tick 250
+down 82 95
+tick 1500
+up
+tick 600
+shot L55_dblhold
+# L55 invalid (started on shelter). Home from shelter
+down 80 12
+tick 150
+up
+tick 800
+shot L56_shelter_home
+# street double tap gap 250 ms
+down 27 52
+tick 100
+up
+tick 1000
+down 82 95
+tick 100
+up
+tick 33
+shot L57_room_after_first_250
+tick 250
+down 82 95
+tick 120
+up
+tick 600
+shot L58_dbl_gap250
+down 80 12
+tick 150
+up
+tick 800
+shot L59_reset_250
+# street double tap gap 300 ms
+down 27 52
+tick 100
+up
+tick 1000
+down 82 95
+tick 100
+up
+tick 33
+shot L57_room_after_first_300
+tick 300
+down 82 95
+tick 120
+up
+tick 600
+shot L58_dbl_gap300
+down 80 12
+tick 150
+up
+tick 800
+shot L59_reset_300
+# street double tap gap 350 ms
+down 27 52
+tick 100
+up
+tick 1000
+down 82 95
+tick 100
+up
+tick 33
+shot L57_room_after_first_350
+tick 350
+down 82 95
+tick 120
+up
+tick 600
+shot L58_dbl_gap350
+down 80 12
+tick 150
+up
+tick 800
+shot L59_reset_350
+# previous loop invalid: home in room exits to launcher, my later taps hit the picker header and New. Recover: tap Mia
+down 70 67
+tick 150
+up
+tick 800
+shot L60_launcher
+down 36 70
+tick 150
+up
+tick 300
+shot L61_splash
+tick 1500
+shot L62_room
+# street double tap gap 300 ms
+down 27 52
+tick 100
+up
+tick 1000
+shot L63_street_300
+down 82 95
+tick 100
+up
+tick 300
+down 82 95
+tick 120
+up
+tick 600
+shot L64_gap300
+# street double tap gap 350 ms
+down 27 52
+tick 100
+up
+tick 1000
+shot L63_street_350
+down 82 95
+tick 100
+up
+tick 350
+down 82 95
+tick 120
+up
+tick 600
+shot L64_gap350
+# street double tap gap 400 ms
+down 27 52
+tick 100
+up
+tick 1000
+shot L63_street_400
+down 82 95
+tick 100
+up
+tick 400
+down 82 95
+tick 120
+up
+tick 600
+shot L64_gap400
+# street double tap gap 450 ms
+down 27 52
+tick 100
+up
+tick 1000
+shot L63_street_450
+down 82 95
+tick 100
+up
+tick 450
+down 82 95
+tick 120
+up
+tick 600
+shot L64_gap450
+# back to room from shelter
+down 80 12
+tick 150
+up
+tick 800
+shot L65_room
+# door press
+down 27 52
+tick 100
+up
+tick 100
+shot L66_door100
+tick 900
+shot L67_door1000
+# on street now. house double tap gap 300
+down 82 95
+tick 100
+up
+tick 300
+down 82 95
+tick 120
+up
+tick 600
+shot L68_gap300
+# door then house double tap gap 400
+down 27 52
+tick 100
+up
+tick 1000
+shot L69_street
+down 82 95
+tick 100
+up
+tick 400
+down 82 95
+tick 120
+up
+tick 600
+shot L70_gap400
+# shelter home to room, room home to launcher
+down 80 12
+tick 150
+up
+tick 800
+down 80 12
+tick 150
+up
+tick 800
+shot L71_launcher
+# open Pets Club and double tap the splash dog
+down 36 70
+tick 150
+up
+tick 600
+shot L72_splash
+down 75 100
+tick 100
+up
+tick 33
+shot L73_after_tap1
+tick 300
+down 75 100
+tick 120
+up
+tick 700
+shot L74_splash_dbl
+# room home to launcher, open Pets Club, splash dog double tap gap 400 onto Bring back position
+down 80 12
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 600
+shot L75_splash
+down 50 100
+tick 100
+up
+tick 400
+down 50 100
+tick 120
+up
+tick 700
+shot L76_splash_dbl400
+# room home, reopen, splash tap then 2nd tap 600ms later on Bring back
+down 80 12
+tick 150
+up
+tick 800
+down 36 70
+tick 150
+up
+tick 600
+down 50 100
+tick 100
+up
+tick 600
+down 50 100
+tick 120
+up
+tick 100
+shot L77_splash_dbl600
+tick 600
+shot L78_splash_dbl600b
+tick 1500
+# deliberate short tap on Bring back
+down 45 101
+tick 120
+up
+tick 100
+shot L79_bb_tap
+tick 600
+shot L80_bb_tap2
+tick 2000
+# Leo presses the ball button 2s
+down 66 128
+tick 2000
+up
+tick 100
+shot L81_ball
+tick 1000
+shot L82_ball2
+# Leo presses Fetch and keeps holding 3s while it opens
+down 80 60
+tick 1000
+shot L83_fetch_hold1s
+tick 2000
+shot L84_fetch_hold3s
+up
+tick 500
+shot L85_fetch_lift
+tick 1500
+shot L86_fetch_2s
+# Leo puts finger on dog and slides around
+down 75 105
+tick 300
+move 60 105
+tick 500
+shot L87_f1
+move 40 105
+tick 500
+move 70 105
+tick 500
+shot L88_f2
+move 100 105
+tick 700
+move 120 105
+tick 700
+shot L89_f3
+move 80 105
+tick 1000
+shot L90_f4
+up
+tick 500
+shot L91_f5
+# Leo chases a bone
+down 75 105
+tick 100
+move 55 105
+tick 1200
+shot L92_c1
+move 130 105
+tick 1200
+shot L93_c2
+move 83 105
+tick 1000
+shot L94_c3
+move 120 105
+tick 1500
+shot L95_c4
+move 90 105
+tick 1500
+shot L96_c5
+move 60 105
+tick 1500
+move 100 105
+tick 1500
+move 70 105
+tick 1500
+move 110 105
+tick 1500
+move 50 105
+tick 1500
+shot L97_late
+move 80 105
+tick 1500
+move 100 105
+tick 1500
+move 70 105
+tick 1500
+shot L98_end_held
+tick 1500
+shot L99_end_held2
+up
+tick 300
+shot L100_end_lift
+tick 2000
+shot L101_end_after
+tick 2000
+shot L102_end_4s
+# Leo presses OK 2s
+down 80 95
+tick 2000
+up
+tick 800
+shot L103_after_ok
+# Leo presses the paw button 2s
+down 113 128
+tick 2000
+up
+tick 800
+shot L104_paw
+# Leo presses Sit, holds 3s while it changes
+down 50 45
+tick 1000
+shot L105_sit_hold1
+tick 2000
+shot L106_sit_hold3
+up
+tick 500
+shot L107_sit_lift
+tick 1500
+shot L108_sit_2s
+# Leo presses the dog 1.5s to start, keeps finger while glows play
+down 85 90
+tick 400
+shot L109_t1
+tick 400
+shot L110_t2
+tick 400
+shot L111_t3
+tick 400
+shot L112_t4
+up
+tick 400
+shot L113_t5
+tick 600
+shot L114_t6
+tick 800
+shot L115_t7
+tick 300
+shot W1
+tick 300
+shot W2
+tick 300
+shot W3
+tick 300
+shot W4
+tick 300
+shot W5
+tick 300
+shot W6
+tick 300
+shot W7
+tick 300
+shot W8
+tick 300
+shot W9
+tick 300
+shot W10
+tick 300
+shot W11
+tick 300
+shot W12
+# Leo presses head spot 1.5s
+down 96 77
+tick 500
+shot L116_head_hold
+tick 1000
+up
+tick 300
+shot L117_head_lift
+# Leo presses chest 1.5s
+down 81 101
+tick 1500
+up
+tick 300
+shot L118_chest_lift
+tick 800
+shot L119_after
+tick 1200
+shot L120_after2
+tick 250
+shot R2_1
+tick 250
+shot R2_2
+tick 250
+shot R2_3
+tick 250
+shot R2_4
+tick 250
+shot R2_5
+tick 250
+shot R2_6
+tick 250
+shot R2_7
+tick 250
+shot R2_8
+tick 250
+shot R2_9
+tick 250
+shot R2_10
+# Leo guesses tail first (probably wrong)
+down 54 110
+tick 1500
+up
+tick 300
+shot L121_tail
+tick 700
+shot L122_tail2
+tick 1500
+shot L123_tail3
+tick 200
+shot R3_1
+tick 200
+shot R3_2
+tick 200
+shot R3_3
+tick 200
+shot R3_4
+tick 200
+shot R3_5
+tick 200
+shot R3_6
+tick 200
+shot R3_7
+tick 200
+shot R3_8
+tick 200
+shot R3_9
+tick 200
+shot R3_10
+tick 200
+shot R3_11
+tick 200
+shot R3_12
+# Leo presses head, tummy, tail, ~1s each
+down 96 77
+tick 1000
+up
+tick 300
+down 81 101
+tick 1000
+up
+tick 300
+down 54 110
+tick 1000
+up
+tick 300
+shot L124_r2done
+tick 1500
+shot L125_r3watch
+tick 200
+shot R4_1
+tick 200
+shot R4_2
+tick 200
+shot R4_3
+tick 200
+shot R4_4
+tick 200
+shot R4_5
+tick 200
+shot R4_6
+tick 200
+shot R4_7
+tick 200
+shot R4_8
+tick 200
+shot R4_9
+tick 200
+shot R4_10
+tick 200
+shot R4_11
+tick 200
+shot R4_12
+tick 200
+shot R4_13
+tick 200
+shot R4_14
+# head tummy tail head, last press held 3s through the change
+down 96 77
+tick 900
+up
+tick 300
+down 81 101
+tick 900
+up
+tick 300
+down 54 110
+tick 900
+up
+tick 300
+down 96 77
+tick 600
+shot L126_last_held
+tick 1200
+shot L127_last_held2
+tick 1200
+shot L128_last_held3
+up
+tick 300
+shot L129_lift
+tick 1500
+shot L130_after
+tick 2000
+shot L131_after2
+# Leo presses tap card 2s
+down 80 120
+tick 2000
+up
+tick 800
+shot L132_after_lesson
+# stats, To the farm, then Leo presses No! 2s
+down 43 22
+tick 300
+up
+tick 800
+down 80 77
+tick 300
+up
+tick 800
+shot L133_q
+down 45 101
+tick 2000
+up
+tick 800
+shot L134_no
+# To the farm again, press Yes 1.5s then slide onto No! and lift
+down 80 77
+tick 300
+up
+tick 800
+down 115 101
+tick 1500
+shot L135_yes15
+move 80 101
+tick 100
+move 45 101
+tick 300
+shot L136_slid
+up
+tick 600
+shot L137_slid_lift
+# Leo presses Yes 3s again
+down 115 101
+tick 3000
+up
+tick 800
+shot L138_farm
+# double-tap Go home impatiently
+down 80 137
+tick 100
+up
+tick 200
+down 80 137
+tick 100
+up
+tick 800
+shot L139_room_empty
+# Leo presses Shelter 2s
+down 110 101
+tick 2000
+up
+tick 800
+shot L140_shelter
+# Leo presses right arrow 2s
+down 140 81
+tick 2000
+up
+tick 500
+shot L141_r1
+# double tap right arrow
+down 140 81
+tick 100
+up
+tick 150
+down 140 81
+tick 100
+up
+tick 500
+shot L142_r2
+# presses the pup 2s
+down 80 80
+tick 1000
+shot L143_puphold
+tick 1000
+up
+tick 500
+shot L144_pup_lift
+# Leo presses Pick me 2s, keeps finger 1s past the change
+down 80 138
+tick 1000
+shot L145_pick_hold
+tick 2000
+shot L146_pick_hold3
+up
+tick 600
+shot L147_pick_lift
+# Leo mashes letters with firm presses
+down 47 26
+tick 1500
+up
+tick 200
+down 73 26
+tick 1200
+up
+tick 200
+down 47 50
+tick 100
+up
+tick 120
+down 47 50
+tick 100
+up
+tick 300
+shot L148_mash
+# presses pink question button 2s
+down 111 14
+tick 2000
+up
+tick 500
+shot L149_q
+# my mis-tap at (73,26) just under home sent me back to the shelter. Pick me again
+down 80 138
+tick 300
+up
+tick 800
+shot L150_name
+# Leo mashes A 1.5s, B 1.2s, double taps C
+down 41 52
+tick 1500
+up
+tick 200
+down 67 52
+tick 1200
+up
+tick 200
+down 93 52
+tick 100
+up
+tick 120
+down 93 52
+tick 100
+up
+tick 300
+shot L151_mash
+# presses pink question button 2s
+down 123 27
+tick 2000
+up
+tick 500
+shot L152_q
+# Leo presses OK 2s and holds past the change
+down 120 124
+tick 1000
+shot L153_ok_hold
+tick 1500
+shot L154_ok_hold25
+up
+tick 300
+shot L155_ok_lift
+tick 1500
+shot L156_new_pup
+tick 2000
+shot L157_new_pup2
+down 80 120
+tick 1500
+up
+tick 1000
+shot L158_room_pip
+down 43 22
+tick 200
+up
+tick 800
+shot L159_stats_pip

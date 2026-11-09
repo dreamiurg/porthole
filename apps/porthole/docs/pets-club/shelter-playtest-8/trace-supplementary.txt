@@ -1,0 +1,267 @@
+# SUPPLEMENTARY after reading report 7: Leo mashes his name 5x
+tick 1000
+down 80 67
+tick 80
+up
+tick 120
+down 80 67
+tick 80
+up
+tick 120
+down 80 67
+tick 80
+up
+tick 120
+down 80 67
+tick 80
+up
+tick 120
+down 80 67
+tick 80
+up
+tick 1000
+shot Q00_mash_name
+down 80 12
+tick 150
+up
+tick 1000
+shot Q01_exit_kbd
+down 36 70
+tick 150
+up
+tick 3000
+down 120 30
+tick 150
+up
+tick 1000
+shot Q02_stats
+# sweep hold 2.5s at 55 141
+down 55 141
+tick 2500
+up
+tick 700
+shot Qs_55_141
+# sweep hold 2.5s at 65 141
+down 65 141
+tick 2500
+up
+tick 700
+shot Qs_65_141
+# sweep hold 2.5s at 75 141
+down 75 141
+tick 2500
+up
+tick 700
+shot Qs_75_141
+# sweep hold 2.5s at 85 141
+down 85 141
+tick 2500
+up
+tick 700
+shot Qs_85_141
+# sweep hold 2.5s at 100 141
+down 100 141
+tick 2500
+up
+tick 700
+shot Qs_100_141
+# sweep hold 2.5s at 55 143
+down 55 143
+tick 2500
+up
+tick 700
+shot Qs_55_143
+# sweep hold 2.5s at 65 143
+down 65 143
+tick 2500
+up
+tick 700
+shot Qs_65_143
+# sweep hold 2.5s at 75 143
+down 75 143
+tick 2500
+up
+tick 700
+shot Qs_75_143
+# sweep hold 2.5s at 85 143
+down 85 143
+tick 2500
+up
+tick 700
+shot Qs_85_143
+# sweep hold 2.5s at 100 143
+down 100 143
+tick 2500
+up
+tick 700
+shot Qs_100_143
+# sweep hold 2.5s at 55 145
+down 55 145
+tick 2500
+up
+tick 700
+shot Qs_55_145
+# sweep hold 2.5s at 65 145
+down 65 145
+tick 2500
+up
+tick 700
+shot Qs_65_145
+# sweep hold 2.5s at 75 145
+down 75 145
+tick 2500
+up
+tick 700
+shot Qs_75_145
+# sweep hold 2.5s at 85 145
+down 85 145
+tick 2500
+up
+tick 700
+shot Qs_85_145
+# sweep hold 2.5s at 100 145
+down 100 145
+tick 2500
+up
+tick 700
+shot Qs_100_145
+# sweep hold 2.5s at 55 147
+down 55 147
+tick 2500
+up
+tick 700
+shot Qs_55_147
+# sweep hold 2.5s at 65 147
+down 65 147
+tick 2500
+up
+tick 700
+shot Qs_65_147
+# sweep hold 2.5s at 75 147
+down 75 147
+tick 2500
+up
+tick 700
+shot Qs_75_147
+# sweep hold 2.5s at 85 147
+down 85 147
+tick 2500
+up
+tick 700
+shot Qs_85_147
+# sweep hold 2.5s at 100 147
+down 100 147
+tick 2500
+up
+tick 700
+shot Qs_100_147
+# sweep hold 2.5s at 55 149
+down 55 149
+tick 2500
+up
+tick 700
+shot Qs_55_149
+# sweep hold 2.5s at 65 149
+down 65 149
+tick 2500
+up
+tick 700
+shot Qs_65_149
+# sweep hold 2.5s at 75 149
+down 75 149
+tick 2500
+up
+tick 700
+shot Qs_75_149
+# sweep hold 2.5s at 85 149
+down 85 149
+tick 2500
+up
+tick 700
+shot Qs_85_149
+# sweep hold 2.5s at 100 149
+down 100 149
+tick 2500
+up
+tick 700
+shot Qs_100_149
+# sweep hold 2.5s at 55 151
+down 55 151
+tick 2500
+up
+tick 700
+shot Qs_55_151
+# sweep hold 2.5s at 65 151
+down 65 151
+tick 2500
+up
+tick 700
+shot Qs_65_151
+# sweep hold 2.5s at 75 151
+down 75 151
+tick 2500
+up
+tick 700
+shot Qs_75_151
+# sweep hold 2.5s at 85 151
+down 85 151
+tick 2500
+up
+tick 700
+shot Qs_85_151
+# sweep hold 2.5s at 100 151
+down 100 151
+tick 2500
+up
+tick 700
+shot Qs_100_151
+# sweep hold 2.5s at 55 154
+down 55 154
+tick 2500
+up
+tick 700
+shot Qs_55_154
+# sweep hold 2.5s at 65 154
+down 65 154
+tick 2500
+up
+tick 700
+shot Qs_65_154
+# sweep hold 2.5s at 75 154
+down 75 154
+tick 2500
+up
+tick 700
+shot Qs_75_154
+# sweep hold 2.5s at 85 154
+down 85 154
+tick 2500
+up
+tick 700
+shot Qs_85_154
+# sweep hold 2.5s at 100 154
+down 100 154
+tick 2500
+up
+tick 700
+shot Qs_100_154
+# farm Yes threshold
+down 80 77
+tick 150
+up
+tick 800
+down 115 101
+tick 1800
+up
+tick 800
+shot Q03_yes1800
+down 115 101
+tick 1900
+up
+tick 800
+shot Q04_yes1900
+down 115 101
+tick 2000
+up
+tick 800
+shot Q05_yes2000
