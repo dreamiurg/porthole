@@ -137,7 +137,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
   else if (!strcmp(cmd, "old")) save_.adoptedAt -= RETIRE_DAYS * 86400;
   else if (!strcmp(cmd, "wall5")) {   // five shelter pups through the farm (the oldest frame comes down); the kid's dog stays
     Save s = save_;
-    for (int i = 0; i < 5; i++) { pet::adoptFromShelter(s, now_, (uint8_t)i, SHELTER_NAMES[i]); pet::retire(s, now_); }
+    for (int i = 2; i < NUM_BREEDS; i++) { pet::adoptFromShelter(s, now_, (uint8_t)i, SHELTER_NAMES[i]); pet::retire(s, now_); }   // ends on Charcoal, the widest name
     memcpy(save_.wallNames, s.wallNames, sizeof s.wallNames); memcpy(save_.wallBreeds, s.wallBreeds, sizeof s.wallBreeds);
     save_.wallCount = s.wallCount; save_.dogsRaised = s.dogsRaised;
   }
@@ -419,6 +419,10 @@ static void wallpaper(const Theme& th, int h) {   // the room's wall color and i
   rect(0, 0, 160, h, th.wall);
   for (int y = 6; y < h; y += 12) for (int x = (y / 12) % 2 ? 6 : 0; x < 160; x += 12) pixel(x, y, th.dots);
 }
+static void fitName(const char* name, char* out, int maxW) {   // cut to fit a name plate; a house is known by its pup too
+  int n = 0; out[0] = 0;
+  while (name[n] && n < 11) { out[n] = name[n]; out[n + 1] = 0; if (textWidth(out) > maxW) { out[n] = 0; break; } n++; }
+}
 // The memory wall: each dog on the farm, oldest first, as a gold-edged picture of its pup sitting on the grass. Frames
 // fill a 2x2 grid; one or two share a middle row and a lone last one centers, so slot() counts in half cells.
 static void slot(int n, int i, int& col2, int& row2) {
@@ -426,11 +430,12 @@ static void slot(int n, int i, int& col2, int& row2) {
 }
 static void framedPup(int x, int y, uint8_t breed, const ui::Box& crop, int scale) {   // crop: of the sitting pup's frame
   const Sprite& s = DOG_FRAMES[breedOf(breed)][SZ_PUP][P_SIT];
+  const int cx = clampi(crop.x, 0, s.w - crop.w), cy = clampi(crop.y, 0, s.h - crop.h);   // the crop stays on the art
   const int w = crop.w * scale, h = crop.h * scale, sky = h * 3 / 4;
   frame(x, y, w + 2, h + 2, C_GOLD);
   rect(x + 1, y + 1, w, sky, C_SKY); rect(x + 1, y + 1 + sky, w, h - sky, C_LEAF);
   for (int r = 0; r < crop.h; r++) for (int c = 0; c < crop.w; c++) {
-    const uint8_t px = s.px[(crop.y + r) * s.w + crop.x + c];
+    const uint8_t px = s.px[(cy + r) * s.w + cx + c];
     if (px != C_T) rect(x + 1 + c * scale, y + 1 + r * scale, scale, scale, px);
   }
 }
@@ -454,7 +459,7 @@ void Game::drawRoom() {
   for (int i = 0; i < n; i++) {   // 1x: the pup's head
     int c2, r2; slot(n, i, c2, r2);
     const DogParts& dp = DOG_PARTS[breedOf(save_.wallBreeds[i])][SZ_PUP][P_SIT];
-    framedPup(WALL.x + c2 * 13 / 2, WALL.y + r2 * 13 / 2, save_.wallBreeds[i], {clampi(dp.headX - 5, 0, 14), clampi(dp.headY - 5, 0, 8), 10, 10}, 1);
+    framedPup(WALL.x + c2 * 13 / 2, WALL.y + r2 * 13 / 2, save_.wallBreeds[i], {dp.headX - 5, dp.headY - 5, 10, 10}, 1);
   }
   blitScaled(night ? SPR_LAMP_OFF : SPR_LAMP_ON, 14, 68, 2);
   if (!night) { for (int i = 0; i < 3; i++) pixel(32 + i * 2, 70 + i, C_YELLOW); }
@@ -1327,7 +1332,7 @@ void Game::drawWall() {
     const int cx = 47 + c2 * 33, y = 40 + r2 * 43 / 2;
     rect(cx - 24, y, 48, 32, C_DKBROWN);
     framedPup(cx - 23, y + 1, save_.wallBreeds[i], {1, 0, 22, 14}, 2);
-    char name[12]; memcpy(name, save_.wallNames[i], sizeof name); name[11] = 0;
+    char name[12]; fitName(save_.wallNames[i], name, 64);
     textCentered(cx, y + 34, name, C_DKBROWN);
   }
   drawBackButton();
@@ -1395,10 +1400,6 @@ void Game::updateStreet() {
   if (backButton()) { go(SC_HOME); return; }
   int cx, gy; streetSlot(self_, nKids_, cx, gy);
   if (in_.tapIn(cx - 18, gy - 36, 36, 50)) go(SC_HOME);
-}
-static void fitName(const char* name, char* out, int maxW) {   // cut to fit a name plate; a house is known by its pup too
-  int n = 0; out[0] = 0;
-  while (name[n] && n < 11) { out[n] = name[n]; out[n + 1] = 0; if (textWidth(out) > maxW) { out[n] = 0; break; } n++; }
 }
 static void namePlate(int cx, int gy, const char* name, bool mine) {
   char nm[12]; fitName(name, nm, 42);

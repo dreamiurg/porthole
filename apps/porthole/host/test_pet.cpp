@@ -81,12 +81,21 @@ static void giftsStreakReading(Save& s, uint32_t t) {
   pet::seal(s); assert(pet::valid(s)); s.food ^= 1; assert(!pet::valid(s)); s.food ^= 1; pet::seal(s);
 }
 
+static_assert(sizeof(Save::wallNames[0]) == sizeof(Save::petName), "a wall frame holds the whole pet name");
+
+// An older blob: the first n - 4 bytes of s under its version, with a good CRC.
+static void oldBlob(uint8_t* out, const Save& s, size_t n, uint16_t ver) {
+  memcpy(out, &s, n - 4);
+  uint16_t size = (uint16_t)n; memcpy(out + 4, &ver, 2); memcpy(out + 6, &size, 2);
+  uint32_t crc = pet::crc32(out, n - 4); memcpy(out + n - 4, &crc, 4);
+}
+
 // v1 blob (140 bytes, version 1) migrates: old fields keep their values, new fields are zero, age unknown
 static void saveV1(const Save& s) {
-  uint8_t v1[SAVE_V1_SIZE]; memcpy(v1, &s, SAVE_V1_SIZE - 4);
-  uint16_t ver = 1, size = (uint16_t)SAVE_V1_SIZE; memcpy(v1 + 4, &ver, 2); memcpy(v1 + 6, &size, 2);
-  uint32_t crc = pet::crc32(v1, SAVE_V1_SIZE - 4); memcpy(v1 + SAVE_V1_SIZE - 4, &crc, 4);
-  Save m; assert(pet::loadBlob(v1, sizeof v1, m));
+  uint8_t v1[SAVE_V1_SIZE]; oldBlob(v1, s, sizeof v1, 2);
+  Save m; assert(!pet::loadBlob(v1, sizeof v1, m));                // 140 bytes claiming v2: rejected, even with a good CRC
+  oldBlob(v1, s, sizeof v1, 1);
+  assert(pet::loadBlob(v1, sizeof v1, m));
   assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
   assert(!strcmp(m.petName, "Biscuit") && m.booksRead == s.booksRead && m.bond == s.bond && m.hasDog == 1);
   assert(m.kidAge == 0 && m.pin == 0 && m.restUntil == 0);
@@ -97,15 +106,13 @@ static void saveV1(const Save& s) {
 
 // v2 blob (156 bytes, version 2) migrates: it still has its dog, a Golden pup, and an empty wall
 static void saveV2Migrates(const Save& s) {
-  uint8_t v2[SAVE_V2_SIZE]; memcpy(v2, &s, SAVE_V2_SIZE - 4);
-  uint16_t ver = 2, size = (uint16_t)SAVE_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
-  uint32_t crc = pet::crc32(v2, SAVE_V2_SIZE - 4); memcpy(v2 + SAVE_V2_SIZE - 4, &crc, 4);
+  uint8_t v2[SAVE_V2_SIZE]; oldBlob(v2, s, sizeof v2, 2);
   Save m; assert(pet::loadBlob(v2, sizeof v2, m));
   assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
   assert(m.breed == 0 && m.hasDog == 1 && m.wallCount == 0 && m.dogsRaised == 0 && m.streak == s.streak);
   assert(!strcmp(m.petName, s.petName) && m.kidAge == s.kidAge && m.playSec == s.playSec);
   v2[20] ^= 1; assert(!pet::loadBlob(v2, sizeof v2, m));          // corrupted v2 rejected
-  v2[20] ^= 1; ver = 3; memcpy(v2 + 4, &ver, 2); assert(!pet::loadBlob(v2, sizeof v2, m));   // v2 size must say v2
+  oldBlob(v2, s, sizeof v2, 3); assert(!pet::loadBlob(v2, sizeof v2, m));   // a v2 size must say v2, even with a good CRC
 }
 
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
@@ -114,6 +121,12 @@ static void shelterPupStartsFresh(Save& s, uint32_t now) {
   assert(s.trickProgress[0] == 0 && s.bond == 0 && s.asleep == 0 && s.stage == STAGE_PUPPY && pet::ageDays(s, now) == 0);
   assert(s.food == 70 && s.fun == 80 && s.energy == 90 && s.clean == 100);
   assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.wallCount == 1 && s.dogsRaised == 1);
+}
+
+// Right after retire, before any shelter pup: none of the old dog's own state is left in the empty room.
+static void retiredDogIsGone(const Save& s) {
+  assert(s.petName[0] == 0 && s.bond == 0 && s.trickProgress[0] == 0);
+  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 0);
 }
 
 // The farm: the dog moves on, the kid keeps everything they earned, the next pup starts fresh.
@@ -127,7 +140,7 @@ static void retireKeepsKidProgress() {
   assert(pet::valid(s) && !pet::canRetire(s, now + 60 * 86400));
   assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.booksRead == 7 && s.streak == 1 && !strcmp(s.kidName, "Sam"));
   assert(s.hasDog == 0 && s.wallCount == 1 && !strcmp(s.wallNames[0], "Connor") && s.dogsRaised == 1);
-  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 0);
+  retiredDogIsGone(s);
   shelterPupStartsFresh(s, now);
 }
 // The wall keeps the last four dogs, oldest first; dogsRaised counts them all.

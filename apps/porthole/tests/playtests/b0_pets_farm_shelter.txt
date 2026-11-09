@@ -133,13 +133,13 @@ expect pet=Choco
 snap 07_home_choco
 # Biscuit's frame on the wall opens Farm friends; back comes home
 ui-check home-wall1
-snap 05_room_with_frame
+snap 07a_room_with_frame
 tap 53 53
 wait 450
 expect-screen wall
 expect oldest=Biscuit
 ui-check wall1
-snap 06_wall
+snap 07b_wall
 tap 80 12
 wait 450
 expect-screen home
@@ -162,6 +162,17 @@ expect-screen farm
 expect wall=2
 tap 80 137
 wait 450
+# two frames side by side on Farm friends; back is the empty room again
+tap 53 53
+wait 450
+expect-screen wall
+expect newest=Choco
+ui-check wall2
+snap 07c_wall_two
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
 tap 80 128
 wait 450
 tap 134 80
@@ -249,6 +260,15 @@ expect-screen home
 expect asleep=0
 expect hasDog=0
 expect wall=3
+tap 53 53
+wait 450
+expect-screen wall
+expect newest=Bingo
+ui-check wall3
+snap 11a_wall_three
+tap 80 12
+wait 450
+expect-screen home
 # Ann's Paw Street: Sam's house has no pup by its door
 tap 80 12
 wait 450
@@ -272,7 +292,7 @@ wait 450
 expect-screen street
 snap 12_street_empty_house
 sheet night
-# five more dogs through the farm: the wall keeps the last four, oldest first, and Ann's pup stays home
+# five more dogs through the farm, Romeo to Charcoal: the wall keeps the last four, oldest first, and Ann's pup stays home
 tap 80 12
 wait 450
 expect-screen home
@@ -285,8 +305,8 @@ snap 13_room_four_frames
 tap 53 53
 wait 450
 expect-screen wall
-expect oldest=Boxy
-expect newest=Marsha
+expect oldest=Choco
+expect newest=Charcoal
 ui-check wall4
 snap 14_wall_four
 tap 80 12
