@@ -270,15 +270,20 @@ static void gatesAndHome() {
   CHECK(r.game.wantsHome());
 }
 // A thumb resting on the action sign or the ghost while the hand tilts the board does nothing when it lifts.
-static void restingThumb() {
+static void restingThumb() {   // a 2.5 s rest does nothing; a firm 1 s press counts
   Run r; r.start(); r.wait(500);
-  for (int i = 0; i < 70; i++) r.frame(true);
+  for (int i = 0; i < 250; i++) r.frame(true);
   r.frame(false); r.wait(100);
   CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
-  for (int i = 0; i < 70; i++) r.frame(true, 34, 42);
+  for (int i = 0; i < 250; i++) r.frame(true, 34, 42);
   r.frame(false, 34, 42); r.wait(100);
   CHECK(r.at("pumpkin_play") && !r.game.round().ghostUsed);
-  r.tap(34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
+  for (int i = 0; i < 100; i++) r.frame(true, 34, 42);
+  r.frame(false, 34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
+  Run h; h.start(); h.wait(500);
+  for (int i = 0; i < 100; i++) h.frame(true);
+  h.frame(false); h.wait(100);
+  CHECK(h.at("pumpkin_play") && h.game.round().hidden >= 0);
 }
 static void results() {
   Run lost; lost.start();
