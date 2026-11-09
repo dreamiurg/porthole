@@ -22,6 +22,7 @@ class Game : public App {
   bool asleep() const override { return save_.asleep != 0; }
   bool soundOn(uint32_t ms) override;   // buzzer pattern player: true while the buzzer should be on
   bool takeSave(const void** data, size_t* len, bool allowed) override;
+  bool saveUrgent() const override { return urgent_; }   // a dog moved to the farm or adopted: written within a second
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
@@ -40,7 +41,7 @@ class Game : public App {
   Save out_{};                                     // the sealed copy takeSave hands to the shell
   // every profile on the device, for Paw Street; kids_[self_] is the one playing
   Profile kids_[MAX_PROFILES] = {}; Save kidSaves_[MAX_PROFILES]; bool kidHas_[MAX_PROFILES] = {}; int nKids_ = 0, self_ = 0;
-  bool dirty_ = false, haveSave_ = false, wantsHome_ = false;   // dirty without a pup: erase the save
+  bool dirty_ = false, urgent_ = false, haveSave_ = false, wantsHome_ = false;   // dirty without a pup: erase the save
   ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;

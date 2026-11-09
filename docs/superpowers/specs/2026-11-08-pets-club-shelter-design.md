@@ -90,9 +90,12 @@ wears. Nothing the kid earned is lost.
 **Where the farm button lives.** On the Stats screen next to the existing long-press "Start over", shown
 only once the dog is old enough (decision 1), in a calm color so it is not the page's call to action. It
 asks once, "Move Connor to the farm?" and says what happens: "Connor will live there. Then pick a new pup."
-No (green, the easy one) / Yes. Yes takes a short press-and-hold (`ui::HOLD_MS`, 600 ms; the button fills
-as it is held, and "Hold Yes" sits under the buttons); a plain tap on Yes only wiggles that hint. (Added
-after the second playtest, 2026-11-09: a random masher reached the farm in three taps, 4 runs in 40.)
+No (green, the easy one) / Yes. Yes takes a 2 s press-and-hold: the button fills across the whole 2 s
+while the little dog gets up and walks off to the right, and "Hold Yes" sits under the buttons. Letting go
+or sliding off starts over; a plain tap on Yes only wiggles the hint. (Added after the second playtest,
+2026-11-09: a random masher reached the farm in three taps, 4 runs in 40. Lengthened from 600 ms after the
+third: a firm 6-year-old's ordinary press sent the dog away before she could notice the fill.) The move,
+and later the shelter's adoption, are saved within a second, so a restart right after keeps them.
 
 ## Grown-up decisions (approved: every proposal below)
 

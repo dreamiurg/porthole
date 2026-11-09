@@ -31,6 +31,7 @@ void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hi
 
 // A press on a logical circle: the finger went down in it and is still in it.
 bool pressing(const Input& in, int cx, int cy, int r);
+bool pressing(const Input& in, const Box& b);   // the same for a box; logs b for the UI audit
 // The release counterpart: the finger went down in b and came up in it this frame, however long it was held (a slow
 // press from a small finger still counts; Input::tap stops at the long press). Logs b for the UI audit.
 bool clicked(const Input& in, const Box& b);
@@ -41,10 +42,10 @@ constexpr uint32_t HOLD_MS = 600;
 class Hold {
  public:
   void step(bool on, uint32_t ms) { if (on && !on_) fromMs_ = ms; on_ = on; ms_ = ms; }
-  float progress() const {   // 0..1
+  float progress(uint32_t holdMs = HOLD_MS) const {   // 0..1 over holdMs: a choice that can't be undone may ask longer
     if (!on_) return 0;
     const uint32_t d = ms_ - fromMs_;
-    return d >= HOLD_MS ? 1 : (float)d / HOLD_MS;
+    return d >= holdMs ? 1 : (float)d / holdMs;
   }
 
  private:

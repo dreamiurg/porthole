@@ -44,20 +44,45 @@ expect hasDog=1
 expect pet=Biscuit
 tap 80 77
 wait 450
-# Yes can't be undone, so it takes a hold: a tap, a double tap or letting go early keeps the dog
+# Yes can't be undone, so it takes a 2 s hold: a tap, a double tap, a firm press, letting go early, sliding off
+# Yes or sliding onto it from No! all keep the dog
 tap 115 102
 wait 450
 tap 115 102
 tap 115 102
 wait 450
 down 115 102
-wait 300
+wait 1000
 snap 00b_confirm_holding
 up
 wait 450
 expect-screen confirm_farm
 expect hasDog=1
-hold 115 102
+down 115 102
+wait 660
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 115 102
+wait 600
+move 115 130
+wait 2200
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 45 102
+wait 200
+move 115 102
+wait 2200
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 115 102
+wait 2100
+up
 wait 450
 expect-screen farm
 expect hasDog=0
@@ -202,7 +227,9 @@ tap 40 27
 wait 450
 tap 80 77
 wait 450
-hold 115 102
+down 115 102
+wait 2100
+up
 wait 450
 expect-screen farm
 expect wall=2
@@ -307,7 +334,9 @@ wait 200
 expect asleep=1
 tap 80 77
 wait 450
-hold 115 102
+down 115 102
+wait 2100
+up
 wait 450
 tap 80 137
 wait 450
@@ -393,3 +422,48 @@ tap 80 12
 wait 450
 expect-screen home
 sheet wall
+# the farm and the shelter are saved at once: a restart a second after each keeps the choice (the shell's urgent
+# checkpoint, not its 5 s cadence)
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 1100
+expect-screen farm
+reboot
+wait 450
+expect-screen picker
+tap 80 80
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+expect wall=4
+tap 80 102
+wait 450
+tap 80 139
+wait 450
+tap 119 125
+wait 1100
+expect-screen celebrate
+reboot
+wait 450
+tap 80 80
+wait 450
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=1
+expect pet=Connor

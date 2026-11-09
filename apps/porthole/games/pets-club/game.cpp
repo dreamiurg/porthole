@@ -92,7 +92,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_) return false;
   if (haveSave_) { pet::seal(save_); out_ = save_; kidSaves_[self_] = save_; *data = &out_; *len = sizeof out_; }
   else { *data = nullptr; *len = 0; }   // no pup (after "start over"): the shell erases this kid's save
-  dirty_ = false;
+  dirty_ = urgent_ = false;
   return true;
 }
 
@@ -1258,16 +1258,15 @@ void Game::drawConfirmReset() {
 }
 
 // ---------------------------------------------------------------- the farm: an old dog leaves only on the kid's yes
-// Yes can't be undone, so it takes a ui::HOLD_MS hold that fills the button: a sibling mashing the glass got there in
-// three taps. A tap on it only wiggles the "Hold Yes" hint.
-static bool holding(const Input& in, const ui::Box& b) {   // the finger went down in b and is still on it
-  return in.down && in.hit(b.x, b.y, b.w, b.h) && in.downX >= b.x && in.downX < b.x + b.w && in.downY >= b.y && in.downY < b.y + b.h;
-}
+// Yes can't be undone, so it takes a FARM_HOLD_MS hold that slowly fills the button while the dog walks off to the
+// right: a sibling mashing the glass got there in three taps, and a firm 6-year-old's press in ui::HOLD_MS. Letting
+// go or sliding off starts over; a tap only wiggles the "Hold Yes" hint.
+static const uint32_t FARM_HOLD_MS = 2000;
 void Game::updateConfirmFarm() {
   if (tapBox(in_, NO_BTN)) { go(SC_STATS); return; }
-  yesHold_.step(holding(in_, YES_BTN), ms_);
-  if (yesHold_.progress() >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
-    pet::retire(save_, now_); markDirty();
+  yesHold_.step(ui::pressing(in_, YES_BTN), ms_);
+  if (yesHold_.progress(FARM_HOLD_MS) >= 1) {   // no sound: a goodbye, not a fanfare; the room's window goes quiet with the dog
+    pet::retire(save_, now_); markDirty(); urgent_ = true;
     farmSlot_ = (uint8_t)(save_.wallCount - 1); farmVisit_ = false; event_ = 0; weather_ = 0;
     go(SC_FARM);
   } else if (tapBox(in_, YES_BTN)) bounceUntil_ = ms_ + 500;
@@ -1281,14 +1280,16 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
   n = wrap(b, 150, lines, 3);               // and 151 px at row 54; an 11-letter name takes two lines, never a fourth
   for (int i = 0; i < n; i++) textCentered(80, 54 + i * 9, lines[i], C_YELLOW);
   ui::button(in_, {NO_BTN, "No!", nullptr, C_GREEN});
-  const bool pr = holding(in_, YES_BTN); const int dy = pr ? 1 : 0;
+  const bool pr = ui::pressing(in_, YES_BTN); const int dy = pr ? 1 : 0;
+  const float held = yesHold_.progress(FARM_HOLD_MS);
   ui::drawButton({YES_BTN, nullptr, nullptr, C_BROWN}, pr);
-  const int fill = (int)(yesHold_.progress() * (YES_BTN.w - 2));   // white on plum and on brown: both readable
+  const int fill = (int)(held * (YES_BTN.w - 2));   // white on plum and on brown: both readable
   if (fill > 0) roundRect(YES_BTN.x + 1, YES_BTN.y + 1 + dy, fill, YES_BTN.h - 2, C_PLUM);
   textCentered(YES_BTN.x + YES_BTN.w / 2, YES_BTN.y + dy + (YES_BTN.h - 7) / 2, "Yes", C_WHITE);
   const int wig = ms_ < bounceUntil_ ? ((ms_ / 60) % 2 ? 2 : -2) : 0;
   textCentered(80 + wig, 119, "Hold Yes", wig ? C_WHITE : C_YELLOW);
-  drawDog(80 - dogFrame(P_SIT).w / 2, 155, P_SIT, false);
+  if (held > 0) drawDog(80 - dogFrame(P_WALK0).w / 2 + (int)(held * 12), 155, (ms_ / 150) % 2 ? P_WALK0 : P_WALK1, false);
+  else drawDog(80 - dogFrame(P_SIT).w / 2, 155, P_SIT, false);
 }
 static const ui::Box GO_HOME_BTN = {48, 126, 64, 22};
 static ui::Box farmDog(int breed) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
@@ -1344,7 +1345,7 @@ void Game::drawShelter() {
   drawBackButton();
 }
 void Game::adoptShelterPup() {
-  pet::adoptFromShelter(save_, now_, shelterSel_, nameBuf_); markDirty();
+  pet::adoptFromShelter(save_, now_, shelterSel_, nameBuf_); markDirty(); urgent_ = true;
   dogX_ = dogTargetX_ = walkClamp(60); dogAct_ = 0; event_ = 0; trickShow_ = -1;
   char t[32], b[48];
   snprintf(t, sizeof t, "Welcome home, %s!", save_.petName); snprintf(b, sizeof b, "%s and %s, best friends.", save_.kidName, save_.petName);
