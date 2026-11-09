@@ -139,6 +139,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
   else if (!strcmp(cmd, "dog")) save_.adoptedAt -= 4 * 86400;
   else if (!strcmp(cmd, "old")) save_.adoptedAt -= RETIRE_DAYS * 86400;
   else if (!strcmp(cmd, "wall5")) {   // five shelter pups through the farm (the oldest frame comes down); the kid's dog stays
+    if (!save_.hasDog) return;   // an empty room's wall is Bring back's: never rewritten under it
     Save s = save_;
     for (int i = 2; i < NUM_BREEDS; i++) { pet::adoptFromShelter(s, now_, (uint8_t)i, SHELTER_NAMES[i]); pet::retire(s, now_); }   // ends on Charcoal, the widest name
     memcpy(save_.wallNames, s.wallNames, sizeof s.wallNames); memcpy(save_.wallBreeds, s.wallBreeds, sizeof s.wallBreeds);
@@ -514,7 +515,9 @@ void Game::updateHome() {
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
-    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN)) bringDogBack();
+    // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: a slow double
+    // tap's second press gets past the fresh gate, so only a room that has shown a second takes it.
+    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && ms_ - screenMs_ > 1000) bringDogBack();
     else if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); }
     return;
   }
@@ -1313,9 +1316,9 @@ void Game::drawConfirmFarm() {   // says plainly that the dog stays and a new pu
 }
 // Bring back sits left, where No! was, never under the finger that held Yes; the dog steps right to make room.
 static const ui::Box GO_HOME_BTN = {48, 126, 64, 22}, BRING_BACK_BTN = {14, 90, 44, 26};
-static ui::Box farmDog(int breed, bool undo) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
+static ui::Box farmDog(int breed, bool bringBack) {   // the farm's dog at 2x, feet on y 120: a pat makes it jump
   const Sprite& d = DOG_FRAMES[breed][SZ_BIG][P_IDLE0];
-  return {(undo ? 98 : 80) - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
+  return {(bringBack ? 98 : 80) - d.w, 120 - d.h * 2, d.w * 2, d.h * 2};
 }
 // The dog back home as it was (pet::bringBack), written within a second; a few hearts and its name, no sound.
 void Game::bringDogBack() {

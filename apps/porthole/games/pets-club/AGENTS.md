@@ -98,7 +98,10 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   is adopted. The farm right after a move (not a visit) shows "Bring back" (`BRING_BACK_BTN`, orange, two lines,
   left of the dog where No! was; the dog steps right), and so does the empty room (`ROOM_BRING_BACK_BTN`, left of
   the Shelter, with the newest farm dog's little picture on it), after Go home, the launcher or a restart too:
-  both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). It calls
+  both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). The room's
+  Bring back takes a press only once the room has shown for a second (`ms_ - screenMs_ > 1000`): taps from Paw
+  Street's own house, the splash pup and a sticker card land where it sits, and a slow double tap's second press
+  gets past the fresh gate. It calls
   `pet::bringBack`, marks the save dirty and urgent, goes home to the dog and says "<name> is home!" with a few
   hearts; no sound. The move, its undo and the shelter's adoption are saved at once: `saveUrgent()` (`urgent_`)
   asks the shell for its one-second checkpoint, so a restart right after either keeps it. Time away never

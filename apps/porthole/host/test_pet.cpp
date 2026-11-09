@@ -316,6 +316,9 @@ static void bringBackFromTheEmptyRoom() {
   f.tap(80, 137);
   assert(!strcmp(g.screenName(), "home"));
   const Save gone = taken(g); assert(gone.hasDog == 0 && gone.wallCount == 2);
+  f.tap(43, 103);   // a slow double tap's second press, 560 ms into the room: past the fresh gate, not taken
+  assert(!strcmp(g.screenName(), "home") && !g.saveUrgent());
+  f.hold(false, 0, 0, 500);
   f.hold(true, 43, 103, 60); f.hold(false, 43, 103, 20);   // the release frame: home, before the dog's first idle roll
   assert(!strcmp(g.screenName(), "home") && g.saveUrgent());
   const Save back = taken(g);

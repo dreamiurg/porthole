@@ -212,6 +212,18 @@ tap 80 12
 wait 450
 expect-screen home
 expect hasDog=0
+# a slow double tap on Sam's own house, whose box reaches over Bring back's spot in the room: the first goes home,
+# the second (past the fresh gate, before the room has shown a second) brings nothing back
+tap 27 51
+wait 450
+expect-screen street
+tap 68 100
+wait 500
+tap 68 100
+wait 450
+expect-screen home
+expect hasDog=0
+expect bringback=1
 # Shelter twice, 600 ms apart: the kennels, not the keyboard (Pick me! sits lower)
 tap 111 102
 wait 600
