@@ -117,13 +117,13 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   retires a dog.
 - **What `retire` keeps and resets.** Kept: stickers, hats owned, books read/unlocked/done, streak, every
   counter, theme, the kid's fields, the wall, and the dog's own fields (`petName`, `breed`, `adoptedAt`, stage,
-  bond, tricks, the stats, `variant`), which wait for `pet::bringBack`. Cleared, so the empty room is calm and
-  in day: asleep, poop, dirty, want and the hat worn. The dog goes onto the wall, `dogsRaised` counts it (all of
+  bond, tricks, the stats, `variant`, the hat worn), which wait for `pet::bringBack`. Cleared, so the empty room is
+  calm and in day: asleep, poop, dirty and want. The dog goes onto the wall, `dogsRaised` counts it (all of
   them, ever, up to 255), and `hasDog = 0`. `pet::bringBack` takes the newest frame down, `dogsRaised--`,
   `hasDog = 1` and `lastSeen = now` (the empty room's time is not time away; a poop already due is moved on).
   The full-wall caveat: a move onto a full wall (four frames) took the oldest frame down, and Bring back does
   not hang it again. `pet::adoptFromShelter` replaces the old dog's fields through `freshDog`, the same
-  defaults `pet::adopt` uses, so from then on the move stands.
+  defaults `pet::adopt` uses (no hat, and today's cookies and pats its own), so from then on the move stands.
 - **The empty room** (`hasDog == 0`, until `pet::adoptFromShelter`): `pet::simulate` only
   moves `lastSeen`; nothing grows, decays or poops, and with no dog asleep there is no night tint. Nothing
   else reads the kept dog's fields while `hasDog` is 0 (the room, the gift, growth and Paw Street all check it).

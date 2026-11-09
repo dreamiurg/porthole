@@ -152,8 +152,8 @@ void Shell::drawSysInfo() {
 // A separate key: existing devices stay unlocked, and no shipped profile/save layout changes. Leaving Info for
 // the picker ends access; every new title hold asks again. The post-update news card never grants menu access.
 void Shell::enterSystem() { askAdmin(SH_SYS_INFO); }
-// The system menu and the picker's New and delete: behind the admin code when one is set, so a new profile or a
-// deleted one cannot dodge the limits.
+// The system menu and the picker's New: behind the admin code when one is set, so a new profile cannot dodge the
+// limits. Delete comes here only as the grown-up's way in: a profile's own code deletes it too (shell.cpp's choose).
 void Shell::askAdmin(Screen next) {
   resetPin(); firstPin_ = 0; afterAdmin_ = next;
   if (adminPin_) go(SH_SYS_PIN); else adminPassed();

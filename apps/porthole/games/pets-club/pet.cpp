@@ -58,6 +58,7 @@ static void freshDog(Save& s, uint32_t now, const char* name) {
   s.food = 70; s.fun = 80; s.energy = 90; s.clean = 100;
   s.asleep = s.poop = s.dirty = s.stage = s.variant = s.hat = s.want = s.wantSince = 0;
   s.bond = s.bondToday = 0; s.bondDay = (uint16_t)dayIndex(now);
+  s.treatsToday = s.petsToday = 0; s.treatsDay = s.bondDay;   // a pup adopted today has today's cookies and pats
   s.nextPoopAt = now + POOP_MIN_SEC; s.poopSince = 0;
   memset(s.trickProgress, 0, sizeof s.trickProgress); memset(s.trickLastDay, 0, sizeof s.trickLastDay);
 }
@@ -69,7 +70,6 @@ void adopt(Save& s, uint32_t now, const char* kid, const char* pet) {
   s.booksUnlocked = STARTER_BOOKS;
   s.streak = 1; s.lastPlayDay = (uint16_t)dayIndex(now); s.lastGiftDay = (uint16_t)dayIndex(now);  // first gift tomorrow
   s.seed = now ^ 0xC0FFEEu;
-  s.treatsDay = s.bondDay;
   seal(s);
 }
 
@@ -84,8 +84,8 @@ void retire(Save& s, uint32_t now) {
   }
   memcpy(s.wallNames[s.wallCount], s.petName, sizeof s.petName); s.wallBreeds[s.wallCount] = s.breed; s.wallCount++;
   if (s.dogsRaised < 255) s.dogsRaised++;
-  // Only the moment goes: the empty room is calm and in day. The dog's own fields stay for bringBack.
-  s.asleep = s.poop = s.dirty = s.hat = s.want = s.wantSince = 0; s.hasDog = 0; s.lastSeen = now;
+  // Only the moment goes: the empty room is calm and in day. The dog's own fields (its hat too) stay for bringBack.
+  s.asleep = s.poop = s.dirty = s.want = s.wantSince = 0; s.hasDog = 0; s.lastSeen = now;
   seal(s);
 }
 

@@ -120,14 +120,15 @@ static void shelterPupStartsFresh(Save& s, uint32_t now) {
   pet::adoptFromShelter(s, now, 3, "Choco");
   assert(pet::valid(s) && s.hasDog == 1 && s.breed == 3 && !strcmp(s.petName, "Choco"));
   assert(s.trickProgress[0] == 0 && s.bond == 0 && s.asleep == 0 && s.stage == STAGE_PUPPY && pet::ageDays(s, now) == 0);
+  assert(s.hat == 0);   // the old dog's hat stays with the old dog
   assert(s.food == 70 && s.fun == 80 && s.energy == 90 && s.clean == 100);
   assert(s.stickersMask == 0x5 && s.hatsMask == 3 && s.wallCount == 1 && s.dogsRaised == 1);
 }
 
-// Right after retire, before any shelter pup: the empty room is calm (no sleep, mess, want or hat), and the dog's own
-// fields wait in the save for Bring back.
+// Right after retire, before any shelter pup: the empty room is calm (no sleep, mess or want), and the dog's own
+// fields, its hat too, wait in the save for Bring back.
 static void retiredRoomIsCalm(const Save& s) {
-  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 0);
+  assert(s.asleep == 0 && s.poop == 0 && s.dirty == 0 && s.want == WANT_NONE && s.hat == 2);
   assert(!strcmp(s.petName, "Connor") && s.bond == 900 && s.trickProgress[0] == 3 && s.stage == STAGE_GROWN);
 }
 
@@ -171,7 +172,7 @@ static void bringBackRestores() {
   assert(pet::canBringBack(s) && s.wallCount == 3 && s.dogsRaised == 3);
   Save m; assert(pet::loadBlob(&s, sizeof s, m) && !memcmp(&m, &s, sizeof m));   // a restart keeps the empty room whole
   assert(pet::simulate(m, later, false) == pet::EV_NONE);
-  assert(pet::bringBack(m, later) && pet::valid(m) && m.hasDog == 1 && m.lastSeen == later && m.hat == 0);
+  assert(pet::bringBack(m, later) && pet::valid(m) && m.hasDog == 1 && m.lastSeen == later && m.hat == 1);
   sameDog(m, before); assert(pet::ageDays(m, later) == pet::ageDays(before, later));
   assert(m.wallCount == before.wallCount && m.dogsRaised == before.dogsRaised);
   assert(!memcmp(m.wallNames, before.wallNames, sizeof m.wallNames) && !memcmp(m.wallBreeds, before.wallBreeds, sizeof m.wallBreeds));
@@ -181,6 +182,17 @@ static void bringBackRestores() {
 static void adoptionEndsBringBack() {
   Save m = dogWithWall(1); pet::retire(m, day0); pet::adoptFromShelter(m, day0, 3, "Choco");
   assert(!pet::canBringBack(m) && !pet::bringBack(m, day0) && !strcmp(m.petName, "Choco") && m.bond == 0);
+}
+// A pup adopted the same day the old dog used up its cookies and pats gets its own: a treat, and bond from a pat.
+static void shelterPupGetsTodaysCare() {
+  const uint32_t t = day0 + 31 * 86400; int d = 0;
+  Save s; pet::adopt(s, day0, "Sam", "Connor"); pet::touchDay(s, t);
+  s.food = 10; for (int i = 0; i < 3; i++) assert(pet::feed(s, t, FOOD_COOKIE, &d));
+  for (int i = 0; i < 20; i++) assert(pet::petDog(s, t));
+  assert(!pet::feed(s, t, FOOD_COOKIE, &d) && s.petsToday == 20);
+  pet::retire(s, t); pet::adoptFromShelter(s, t, 3, "Choco");
+  s.food = 10; assert(pet::feed(s, t, FOOD_COOKIE, &d));
+  const uint16_t bond = s.bond; assert(pet::petDog(s, t) && s.bond == bond + 1);
 }
 // A full wall: retire took the oldest frame (A) down to hang Rex, and Bring back does not hang it again.
 static void bringBackOntoFullWall() {
@@ -327,7 +339,7 @@ static void bringBackFromTheEmptyRoom() {
   f.hold(true, 43, 103, 60); f.hold(false, 43, 103, 20);   // the release frame: home, before the dog's first idle roll
   assert(!strcmp(g.screenName(), "home") && g.saveUrgent());
   const Save back = taken(g);
-  assert(back.hasDog == 1 && !strcmp(back.petName, "Rex") && back.breed == 5 && back.hat == 0);
+  assert(back.hasDog == 1 && !strcmp(back.petName, "Rex") && back.breed == 5 && back.hat == 1);
   sameDog(back, before); assert(back.wallCount == 1 && !strcmp(back.wallNames[0], "A") && back.dogsRaised == 1);
   // a restart in the empty room: Bring back is still there
   enterAt(g, gone, t + 600);
@@ -423,6 +435,7 @@ int main() {
   petting(day0);
   bringBackRestores();
   adoptionEndsBringBack();
+  shelterPupGetsTodaysCare();
   bringBackOntoFullWall();
   bringBackFromTheEmptyRoom();
   statsStripDoesNothing();
