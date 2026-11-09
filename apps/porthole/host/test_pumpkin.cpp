@@ -269,6 +269,17 @@ static void gatesAndHome() {
   r.frame(); r.enter(); r.wait(500); r.tap(80, 19);
   CHECK(r.game.wantsHome());
 }
+// A thumb resting on the action sign or the ghost while the hand tilts the board does nothing when it lifts.
+static void restingThumb() {
+  Run r; r.start(); r.wait(500);
+  for (int i = 0; i < 70; i++) r.frame(true);
+  r.frame(false); r.wait(100);
+  CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
+  for (int i = 0; i < 70; i++) r.frame(true, 34, 42);
+  r.frame(false, 34, 42); r.wait(100);
+  CHECK(r.at("pumpkin_play") && !r.game.round().ghostUsed);
+  r.tap(34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
+}
 static void results() {
   Run lost; lost.start();
   while (lost.at("pumpkin_play")) lost.frame();
@@ -421,6 +432,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

@@ -52,8 +52,10 @@ void Game::calibrate() {
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  actionPending_ = actionPending_ || action();
-  ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
+  // A hand holding the board for tilt rests a thumb on the glass: only a quick tap hides or calls the ghost.
+  const bool quick = !in_.longTap;
+  actionPending_ = actionPending_ || (quick && action());
+  ghostPending_ = ghostPending_ || (quick && !round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
     step(round_, tilt.x, actionPending_, ghostPending_);
