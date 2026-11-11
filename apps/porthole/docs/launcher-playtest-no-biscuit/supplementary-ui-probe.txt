@@ -1,0 +1,8 @@
+# Supplementary geometry probe of both launcher pages on the default snap build.
+reset
+profile Zoe 8
+wait 300
+ui
+tap 97 133
+wait 300
+ui
