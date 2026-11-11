@@ -169,6 +169,7 @@ bool Shell::openApp(const char* name) {
   return false;
 }
 void Shell::openIdx(int k) {
+  leaveStars(false);   // the sim's `app` opens a game from star mode: its edits were never confirmed
   enforceCurrentBudget();
   if (restingNow()) { go(SH_REST); return; }
   app_ = apps_[k]; opened_[k] = true; fromLibrary_ = screen_ == SH_LIBRARY;
@@ -508,7 +509,7 @@ void Shell::drawHeader() {   // who is playing, and the sun showing the level pi
 }
 static void caption(const ui::Box& c, const char* s) {   // yellow over the header row
   ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
-  textCentered(c.x + (c.w + 1) / 2, c.y + (c.h - 7) / 2, s, C_DKBROWN);   // CAPTION's odd width: the glass's middle, x 80
+  textCentered(c.x + (c.w + 1) / 2, c.y + (c.h - 7) / 2, s, C_DKBROWN);   // rounds up: CAPTION (odd width) centers at x 80
 }
 void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a finger on a tile names it over the header row
   for (int i = 0; i < m; i++)   // only a press that started on it
@@ -590,8 +591,10 @@ void Shell::tapLibrary(int k) {
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
   starMode_ = false;
-  if (!keep) favs_ = starsBefore_;
-  else if (memcmp(&favs_, &starsBefore_, sizeof favs_)) shell::saveFavorites(*st_, active_, favs_);   // a failed write keeps it for this visit
+  if (!keep) { favs_ = starsBefore_; return; }
+  int home[MAX_APPS];   // no star at all is a non-reader's mashing (kid playtest 3), not a wish: the default comes back
+  if (!shell::homeGames(favs_, ids_, nApps_, gamesOff_, home)) { favs_.picked = favs_.count = 0; memset(favs_.ids, 0, sizeof favs_.ids); }
+  if (memcmp(&favs_, &starsBefore_, sizeof favs_)) shell::saveFavorites(*st_, active_, favs_);   // a failed write keeps it for this visit
 }
 // A 9x9 star, outlined: the Library's corner mark (s 1) and its button (s 2); white fill is an empty star.
 static void star(int x, int y, int s, uint8_t fill = C_GOLD) {
@@ -629,13 +632,13 @@ void Shell::drawLibraryTitle(int starred, int starPage) {
 }
 bool Shell::drawLibraryTile(int i, int m, int k, uint32_t home, int hop) {   // true: k is on Home
   const ui::Box b = launcher::tile(i, m);
-  const int dx = starMode_ ? ((ms_ / 200 + i) % 2 ? 1 : -1) : 0;   // neighbors lean apart, then together
+  const int dx = starMode_ ? (int)((ms_ / 200 + i) % 2) : 0;   // neighbors in turn, never left of the target
   drawAppTile(k, b, dx);
   const bool gold = home & shell::gameBit(ids_[k]);   // y + 3: a hop stays in the tile
   if (gold || starMode_) star(b.x + b.w - 11 + dx, b.y + 3 - (gold ? hop : 0), 1, gold ? C_GOLD : C_WHITE);
   return gold;
 }
-// In star mode every game wears a star: gold on Home, empty to pick, on a violet sky with every tile jiggling (a
+// In star mode every game wears a star: gold on Home, empty to pick, on a lavender sky with every tile jiggling (a
 // phone's edit mode), so a kid who cannot read sees something is different. While Home is full the gold ones hop,
 // and so do the arrows toward a page that has one, so they also see where to tap.
 void Shell::drawLibrary() {

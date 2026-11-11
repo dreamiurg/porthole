@@ -824,8 +824,7 @@ static void homeFavorites() {
 static void starEdits(Shell& sh, uint32_t& ms, MemStore& st) {   // One off (a double tap), Six on, Three off, Eight on
   const int before = st.writes;
   tapAt(sh, ms, launcher::tile(0, 6));
-  Input again{}; again.pressed = again.tap = true; again.x = again.downX = 56; again.y = again.downY = 72;
-  ms += 100; sh.update(testNow, ms, again); sh.render();                    // the second tap of a double tap: ignored
+  ms -= 600; tapAt(sh, ms, launcher::tile(0, 6));                            // the second tap, 100 ms later: ignored
   tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::tile(2, 6));
   tapAt(sh, ms, launcher::arrow(true)); tapAt(sh, ms, launcher::tile(1, 2));  // Eight on, from page 2
   tapAt(sh, ms, launcher::tile(0, 2));                                        // Seven: a sixth, refused
@@ -862,6 +861,26 @@ static void starMode() {
   bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);   // a restart mid star mode
   tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3);   // Eight first, and Two still there
   assert(shell::loadFavorites(st, 0, f) && f.count == 5);
+}
+// The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
+// refill it); from the default that is no change, so nothing is written.
+static void emptyHomeIsDefault() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  shell::Favorites f;
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && f.count == 4);   // One off, kept
+  tapAt(sh, ms, launcher::LIGHT);
+  for (int i = 1; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));   // the other four off: none left
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && !f.picked && !f.count);   // the default, saved
+  const int before = st.writes;
+  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6)); tapAt(sh, ms, launcher::tile(0, 6));   // One off, on
+  for (int i = 0; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));
+  tapAt(sh, ms, launcher::LIGHT); assert(st.writes == before);   // emptied from the default: still the default, no write
+  tapAt(sh, ms, {64, -4, 32, 32}); tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1);   // Home: One first
 }
 // A game the kid has never seen (new in this image) wears a red dot on its tile and on "All games" until opened.
 static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 5) * gfx::W + b.x + 5] == C_RED; }
@@ -1082,7 +1101,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); homeFavorites(); starMode(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); homeFavorites(); starMode(); emptyHomeIsDefault(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.

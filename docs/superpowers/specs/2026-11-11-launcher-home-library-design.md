@@ -34,18 +34,20 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   Home. A new game (an id the kid has never seen) shows a small "new" dot until first opened; "All games" wears one
   while a game that is not on Home is new (one on Home already wears its own).
 - **Star mode** (same screen, `library` with a mode): the sky behind the grid turns lavender and every tile jiggles
-  (1 px sideways, neighbors in turn, like a phone's edit mode), so a non-reader sees that something is different.
+  (1 px right and back, neighbors in turn, like a phone's edit mode), so a non-reader sees that something is different.
   Five small stars in the header count Home's places (gold = taken, white = free; no number to read); the star
-  button becomes a green check (Done). Tapping a tile toggles its star; a second tap on the same tile within 400 ms
-  is a double tap and is ignored. Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
+  button becomes a green check (Done). Tapping a tile toggles its star; repeated taps on one tile within 400 ms of
+  each other count once (a double tap or mashing). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
   dimmed tiles read as switched off). A new kid's Home is already full (the defaults), so a 6th star is refused with
   a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
   shown has no gold star, while the gold stars hop and so does the arrow toward a page that holds one, so a
   non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
-  them (only if anything changed, read back) and returns to the Library; leaving any other way (the home button,
+  them (only if anything changed, read back) and returns to the Library; Done with no star left restores the
+  default favorites instead of an empty Home; leaving any other way (the home button,
   which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
   playtests: round 1, M1, n1, n2; round 2 (`apps/porthole/docs/launcher-home-playtest-2.md`), 1-4: a 6-year-old
-  entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart.)
+  entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart; round 3
+  (`apps/porthole/docs/launcher-home-playtest-3.md`), 1: a non-reader emptied his Home and could not refill it.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
@@ -84,6 +86,7 @@ for Home with 0-5 favorites, playtest scenarios (Home, Library paging, star mode
 Library and star mode, and a grown-up playtest of Info -> Games. After the fixes: `b2_home_stars` replays the kid
 report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
 order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
-button dropping star mode's edits; `starMode` the same with the double tap and a restart; `starRules` covers a refused
+button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
+double tap and a restart, `emptyHomeIsDefault` the check with no star; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
-only when missing, and a fresh kid playtest of star mode is due.
+only when missing; kid playtest 3 (`apps/porthole/docs/launcher-home-playtest-3.md`) replayed star mode.
