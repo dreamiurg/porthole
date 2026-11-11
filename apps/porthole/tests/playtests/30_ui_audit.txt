@@ -153,8 +153,8 @@ sheet play
 # library and a story
 tap 92 129
 wait 450
-expect-screen library
-ui-check library
+expect-screen pets_library
+ui-check pets_library
 snap c01_library
 tap 80 130
 wait 450

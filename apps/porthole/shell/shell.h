@@ -43,8 +43,9 @@ inline uint8_t backlightFor(bool asleep, uint32_t idleMs, uint8_t active) {
 
 class Shell {
  public:
-  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null
-  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr);
+  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null; ids are
+  // the games' stable ids (APP_IDS, games/apps.h), nullptr for 1..nApps (tests)
+  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr, const uint8_t* ids = nullptr);
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
@@ -61,11 +62,11 @@ class Shell {
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level), then the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level) "unseen", then the open game
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_NO_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT, SH_LIBRARY,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
                          SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
@@ -74,6 +75,12 @@ class Shell {
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
+  uint8_t ids_[MAX_APPS] = {};                     // each game's stable id (games/apps.h)
+  uint32_t gamesOff_ = 0;                          // the games a grown-up switched off, "sys"/"games" (bit id - 1)
+  shell::Favorites favs_{};                        // the active kid's Home, porthole/f<id>
+  bool starMode_ = false, starsChanged_ = false;   // the Library's star mode, and a star to save when it ends
+  bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
+  uint32_t starNudgeUntil_ = 0;                    // a sixth star wiggles the counter
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
@@ -89,7 +96,7 @@ class Shell {
   shell::Allowance allowance_{};
   uint8_t limitEditor_ = 0;   // session or daily
   shell::TextEntry zoneQuery_{}, zoneSearch_{}; int zonePage_ = 0;
-  int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
+  int page_ = 0;                                   // the Library's page: 0 from Home, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
@@ -158,7 +165,11 @@ class Shell {
   void updateDelete(); void drawDelete();
   void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
   bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
-  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
+  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b); void drawPageArrow(bool right);
+  void drawHeader(); void drawCaption(const ui::Box* tiles, const int* games, int m);
+  int homeTiles(int* games) const;   // Home's games (app indexes) in tile order; -1 is "All games"
+  bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }
+  void updateLibrary(); void drawLibrary(); void tapLibrary(int k); void saveStars(); void drawStarButton();
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
   void updateRest(); void drawRest();
@@ -182,6 +193,7 @@ class Shell {
   void updateSysZone(); void drawSysZone();
   void updateSysZoneSearch(); void drawSysZoneSearch();
   void updateSysNew(); void drawSysNew();
+  void debugHome() const;   // debugPrint's [home] line
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();
   void scan();

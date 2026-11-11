@@ -4,11 +4,14 @@ reset
 tilt 0 0 1000
 profile Sam 8
 wait 600
-tap 96 135
+# Home holds the first five games; Star Fighter is in All games (the Library), on its second page
+tap 124 104
 wait 600
 tap 96 135
 wait 600
-expect-screen launcher
+tap 96 135
+wait 600
+expect-screen library
 ui-check
 snap sf00_launcher
 tap 48 80

@@ -181,7 +181,7 @@ void setup() {
   g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   feedLoopWDT();
   air::setFeed(&g_feed);
-  g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
+  g_shell.begin(g_store, APPS, N_APPS, &g_sys, APP_IDS);   // first boot after Pets Club: its houses become profiles here
   beginClock();
   Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
                 (unsigned long)utcNow(), (unsigned long)board::freeHeap());

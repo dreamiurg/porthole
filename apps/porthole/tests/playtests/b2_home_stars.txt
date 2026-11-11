@@ -1,0 +1,83 @@
+# Star mode: the Library's star button turns taps into stars (nothing opens), dims the games without one and counts
+# the places left ("Pick 5 . N"); a sixth star is refused with a wiggle of the counter; the check (or the home
+# button) saves and comes back to the Library. Home shows the stars in the order they were set, and with none just
+# "All games". A reboot keeps them.
+reset
+tilt 0 1000 0
+profile Sam 8
+wait 600
+tap 124 104
+wait 600
+expect-screen library
+ui-check library_stars_shown
+snap hs0_library
+tap 126 42
+wait 600
+expect-screen library
+expect star_mode=1
+ui-check library_star_mode
+snap hs1_star_mode
+tap 124 104
+wait 100
+snap hs2_sixth_refused
+wait 600
+expect star_mode=1
+expect home_tiles=6
+tap 36 72
+wait 600
+tap 80 72
+wait 600
+tap 80 104
+wait 600
+tap 124 104
+wait 600
+expect home_tiles=4
+expect home_first=marblekick
+snap hs3_picked
+tap 126 42
+wait 600
+expect star_mode=0
+snap hs4_library_after
+tap 80 12
+wait 600
+expect-screen launcher
+expect home_tiles=4
+ui-check launcher_three
+snap hs5_home_three
+tap 124 72
+wait 600
+expect-screen radar_live
+reboot
+wait 600
+tap 80 68
+wait 600
+expect-screen launcher
+expect home_tiles=4
+expect home_first=marblekick
+tap 80 104
+wait 600
+expect-screen library
+tap 126 42
+wait 600
+tap 124 72
+wait 600
+tap 36 104
+wait 600
+tap 124 104
+wait 600
+expect home_tiles=1
+snap hs6_none_left
+tap 80 12
+wait 600
+expect-screen library
+expect star_mode=0
+tap 80 12
+wait 600
+expect-screen launcher
+expect home_tiles=1
+ui-check launcher_none
+snap hs7_home_none
+tap 80 72
+wait 600
+expect-screen library
+sheet stars
