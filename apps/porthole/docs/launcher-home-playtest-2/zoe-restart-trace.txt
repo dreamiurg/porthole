@@ -1,0 +1,6 @@
+# process restart (no --fresh) after the z.txt session
+tick 800
+shot zr01_boot
+tap 80 68
+tick 800
+shot zr02_home_after_restart

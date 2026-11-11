@@ -1,0 +1,117 @@
+reset
+profile Zoe 8
+wait 600
+tap 124 106
+wait 600
+down 36 72
+wait 300
+snap cap1_0
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+down 80 72
+wait 300
+snap cap1_1
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+down 124 72
+wait 300
+snap cap1_2
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+down 36 104
+wait 300
+snap cap1_3
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+down 80 104
+wait 300
+snap cap1_4
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+down 124 104
+wait 300
+snap cap1_5
+move 80 116
+move 80 122
+move 80 128
+move 80 134
+move 80 140
+move 80 146
+up
+wait 100
+tap 96 136
+wait 600
+down 36 72
+wait 300
+snap cap2_0
+move 150 72
+move 150 74
+move 150 76
+move 150 78
+move 150 80
+move 150 82
+up
+wait 100
+down 80 72
+wait 300
+snap cap2_1
+move 150 72
+move 150 74
+move 150 76
+move 150 78
+move 150 80
+move 150 82
+up
+wait 100
+down 124 72
+wait 300
+snap cap2_2
+move 150 72
+move 150 74
+move 150 76
+move 150 78
+move 150 80
+move 150 82
+up
+wait 100
+down 80 104
+wait 300
+snap cap2_3
+move 150 72
+move 150 74
+move 150 76
+move 150 78
+move 150 80
+move 150 82
+up
+wait 100
