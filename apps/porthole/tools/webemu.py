@@ -51,10 +51,8 @@ class Sim:
     """Owns the `snap --serve` child process. All access serialized by self.lock."""
 
     def __init__(self):
-        if not os.path.exists(SNAP):
-            target = os.path.basename(SNAP)
-            print(f"{SNAP} missing, running make {target}...", file=sys.stderr)
-            subprocess.run(["make", target], cwd=ROOT, check=True)
+        if os.path.dirname(SNAP) == os.path.join(ROOT, "build", "host"):  # one of ours: never serve a stale build
+            subprocess.run(["make", os.path.basename(SNAP)], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
         self.proc = subprocess.Popen([SNAP, "--serve"], cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.lock = threading.Lock()
         self.last_frame_time = time.time()

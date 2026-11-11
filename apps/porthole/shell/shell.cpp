@@ -131,8 +131,12 @@ void Shell::finishCreate(uint16_t pin) {
 }
 int Shell::appStores(const char** out) const {
   int n = 0;
-  if (stores_) for (; stores_[n] && n < MAX_APPS; n++) out[n] = stores_[n];
-  else for (; n < nApps_; n++) out[n] = apps_[n]->store();
+  for (; n < nApps_; n++) out[n] = apps_[n]->store();
+  for (const char* const* s = stores_; s && *s && n < MAX_APPS; s++) {   // then the others: switched-off games'
+    bool app = false;
+    for (int k = 0; k < nApps_; k++) app = app || !strcmp(*s, out[k]);
+    if (!app) out[n++] = *s;
+  }
   return n;
 }
 int Shell::createProfile(const char* name, uint8_t age, const char* code) {

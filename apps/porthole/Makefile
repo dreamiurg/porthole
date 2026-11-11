@@ -80,7 +80,7 @@ MAKEFLAGS += -j$(NPROC)
 endif
 objs = $(addprefix $(1)/,$(2:.cpp=.o))
 # Objects depend on this Makefile too: a changed flag (a new warning) must recompile what was already built.
-compile = mkdir -p $(@D) && $(CXX) $(1) $(GAMES) -MMD -MP -c $< -o $@
+compile = mkdir -p $(@D) && $(CXX) $(1) $(PORTHOLE_GAME_FLAGS) -MMD -MP -c $< -o $@
 $(BUILD)/obj/%.o: %.cpp Makefile
 	$(call compile,$(CXXFLAGS))
 $(BUILD)/asan/%.o: %.cpp Makefile
@@ -95,7 +95,7 @@ $(BUILD)/sdl/host/sim.o: host/sim.cpp Makefile
 $(BUILD)/all/host/sim.o: host/sim.cpp Makefile
 	$(call compile,$(CXXFLAGS))
 ALL_GAMES := -DPORTHOLE_ALL_GAMES=1
-$(BUILD)/all/host/sim.o $(BUILD)/asan/host/sim.o: GAMES := $(ALL_GAMES)
+$(BUILD)/all/host/sim.o $(BUILD)/asan/host/sim.o: override PORTHOLE_GAME_FLAGS := $(ALL_GAMES)
 
 all: sim test
 
@@ -182,7 +182,12 @@ endif
 
 $(COV)/obj/%.o: %.cpp Makefile
 	$(call compile,$(COV_CXXFLAGS))
-$(COV)/obj/host/sim.o: GAMES := $(ALL_GAMES)
+$(COV)/obj/host/sim.o: override PORTHOLE_GAME_FLAGS := $(ALL_GAMES)
+# The "shipped" scenarios' sim, with only the games that ship: its own sim.o, every other object shared.
+$(COV)/shipped/host/sim.o: host/sim.cpp Makefile
+	$(call compile,$(COV_CXXFLAGS))
+$(COV)/snap-shipped: $(call objs,$(COV)/obj,$(SRC)) $(COV)/shipped/host/sim.o
+	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
 $(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
 $(COV)/test_%:
 	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
@@ -195,8 +200,8 @@ cov-reset:
 	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
 cov-run-%: $(COV)/% cov-reset
 	$<
-cov-playtest: $(COV)/snap $(BUILD)/snap cov-reset   # the "shipped" scenarios play on snap, uncounted
-	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
+cov-playtest: $(COV)/snap $(COV)/snap-shipped cov-reset
+	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_SHIPPED_SNAP=$(COV)/snap-shipped PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 coverage: $(TESTS:%=cov-run-%) cov-playtest
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj

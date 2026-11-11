@@ -1068,7 +1068,7 @@ static void deleteNeedsACode() {
 static void deleteErasesSwitchedOff() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   StubApp a("One"); App* const list[1] = {&a};
-  static const char* const stores[] = {"stub", "off", nullptr};
+  static const char* const stores[] = {"off", nullptr};   // no "stub": an app's own store is erased all the same
   bootWithoutHours(sh, st, list, 1, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
   const uint32_t pup = 7;
   st.save("off", "s0", &pup, sizeof pup); st.save("off", "s1", &pup, sizeof pup); st.save("stub", "s0", &pup, sizeof pup);
