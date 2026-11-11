@@ -13,23 +13,20 @@ static bool shipped(const char* store) {
   for (App* a : APPS) if (!strcmp(a->store(), store)) return true;
   return false;
 }
-// Every game's switch beside its namespace, in ALL_STORES' order.
-static const struct { const char* store; bool on; } SWITCHES[] = {
-    {"crago", PORTHOLE_GAME_PETS_CLUB}, {biscuit::STORE, PORTHOLE_GAME_BISCUIT}, {marble::STORE, PORTHOLE_GAME_MARBLE_KICK},
-    {fc::STORE, PORTHOLE_GAME_TILT_FC}, {"pumpkin", PORTHOLE_GAME_PUMPKIN}, {"radar", PORTHOLE_GAME_RADAR},
-    {"starfighter", PORTHOLE_GAME_STARFIGHTER}, {"kingdom", PORTHOLE_GAME_KINGDOM}, {"toytown", PORTHOLE_GAME_TOY_TOWN},
-    {"racing", PORTHOLE_GAME_RACING}};
-static constexpr int GAMES = sizeof SWITCHES / sizeof SWITCHES[0];
+// Every game's switch, in ALL_STORES' (and the launcher's) order.
+static const bool ON[] = {PORTHOLE_GAME_PETS_CLUB, PORTHOLE_GAME_BISCUIT, PORTHOLE_GAME_MARBLE_KICK, PORTHOLE_GAME_TILT_FC,
+                          PORTHOLE_GAME_PUMPKIN, PORTHOLE_GAME_RADAR, PORTHOLE_GAME_STARFIGHTER, PORTHOLE_GAME_KINGDOM,
+                          PORTHOLE_GAME_TOY_TOWN, PORTHOLE_GAME_RACING};
+static constexpr int GAMES = sizeof ON / sizeof ON[0];
 
 int main() {
   int stores = 0;
   while (ALL_STORES[stores]) stores++;
-  CHECK(stores == GAMES);   // a new game gets its namespace in ALL_STORES and its switch here
+  CHECK(stores == GAMES);   // a new game gets its STORE in ALL_STORES and its switch here
   int on = 0;
   for (int i = 0; i < GAMES; i++) {
-    CHECK(!strcmp(SWITCHES[i].store, ALL_STORES[i]));
-    CHECK(shipped(SWITCHES[i].store) == SWITCHES[i].on);
-    on += SWITCHES[i].on;
+    CHECK(shipped(ALL_STORES[i]) == ON[i]);
+    on += ON[i];
     for (int j = 0; j < i; j++) CHECK(strcmp(ALL_STORES[i], ALL_STORES[j]));
   }
   CHECK(N_APPS == on);

@@ -82,6 +82,7 @@ static_assert(N_APPS <= MAX_APPS, "the launcher and Shell hold at most MAX_APPS 
 // Every game's save namespace, switched on or off, then null: a profile delete (and a new profile) erases s<id> in
 // each, so a switched-off game's old save never passes to the next kid in that slot. host/test_apps.cpp holds it to
 // APPS' store() names.
-static const char* const ALL_STORES[] = {"crago", biscuit::STORE, marble::STORE, fc::STORE, "pumpkin", "radar",
-                                         "starfighter", "kingdom", "toytown", "racing", nullptr};
+static const char* const ALL_STORES[] = {Game::STORE, biscuit::STORE, marble::STORE, fc::STORE, pumpkin::STORE,
+                                         radar::STORE, starfighter::STORE, kingdom::STORE, toytown::STORE,
+                                         racing::STORE, nullptr};
 static_assert(sizeof ALL_STORES / sizeof ALL_STORES[0] - 1 <= MAX_APPS, "Shell erases at most MAX_APPS stores");

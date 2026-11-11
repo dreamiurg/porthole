@@ -6,11 +6,12 @@
 #include "ui.h"
 
 namespace pumpkin {
+constexpr const char* STORE = "pumpkin";   // NVS namespace, keys s<profile id>: never renamed once shipped
 class Game : public App {
  public:
   const char* name() const override { return "Spooky"; }
   const gfx::Sprite& icon() const override { return paint::icon(); }
-  const char* store() const override { return "pumpkin"; }
+  const char* store() const override { return STORE; }
   void enter(const AppEnter& e) override;
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;

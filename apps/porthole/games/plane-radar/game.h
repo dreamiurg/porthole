@@ -7,6 +7,7 @@
 #include "ui.h"
 
 namespace radar {
+constexpr const char* STORE = "radar";   // NVS namespace, keys s<profile id>: never renamed once shipped
 // The live scope around the device's home (air::Feed), or a note while there is nothing to show. A tap on the scope
 // steps the range; the middle button opens the menu (which way is up, range, what the labels show). Each kid's
 // settings are saved; home is the device's, set by a grown-up and kept by the feed.
@@ -14,7 +15,7 @@ class Game : public App {
  public:
   const char* name() const override { return "Radar"; }
   const gfx::Sprite& icon() const override { return paint::icon(); }
-  const char* store() const override { return "radar"; }   // NVS namespace: never renamed once shipped
+  const char* store() const override { return STORE; }
   void enter(const AppEnter& e) override;
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;
