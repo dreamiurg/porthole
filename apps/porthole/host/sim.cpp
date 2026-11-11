@@ -352,7 +352,7 @@ static void boot(bool seedClock = true) {
   }
   g_sys.powerOn();
   air::setFeed(&g_feed);
-  g_shell.begin(g_store, APPS, n, &g_sys, ALL_STORES);
+  g_shell.begin(g_store, APPS, n, &g_sys);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
 static void reset() { wipe(); boot(); }
@@ -537,7 +537,6 @@ static void audit(const Finger& f) {  // one audited frame: every hit region and
   }
   UiAudit::enabled = false; gfx::textLogEnabled = false;
 }
-#if PORTHOLE_GAME_PETS_CLUB
 // newgame KID PET: a fresh device with one profile (age 8) whose pup is already adopted, opened in Pets Club (splash).
 static void newgame(const char* kid, const char* pup) {
   reset();
@@ -546,7 +545,6 @@ static void newgame(const char* kid, const char* pup) {
   g_store.save(g_pets.store(), shell::key('s', id), &s, sizeof s);
   g_shell.openApp(g_pets.name());
 }
-#endif
 
 // Each script command gets the finger (it persists between lines for down/move/up/wait) and up to three words.
 using Cmd = void (*)(Finger&, const char*, const char*, const char*);
@@ -564,9 +562,7 @@ static const Named COMMANDS[] = {
   {"reset", [](Finger& f, const char*, const char*, const char*) { reset(); f.down = false; }},
   {"profile", [](Finger&, const char* a, const char* b, const char* c) { g_shell.createProfile(a, (uint8_t)atoi(b), c); }},
   {"app", [](Finger&, const char* a, const char*, const char*) { if (!g_shell.openApp(a)) printf("app %s: not opened\n", a); }},
-#if PORTHOLE_GAME_PETS_CLUB
   {"newgame", [](Finger& f, const char* a, const char* b, const char*) { newgame(a, b); f.down = false; }},
-#endif
   {"debug", [](Finger&, const char*, const char*, const char*) { g_shell.debugPrint(); g_sys.print(); g_feed.print(); }},
   {"ui", [](Finger& f, const char*, const char*, const char*) { audit(f); }},
   {"dbg", [](Finger&, const char* a, const char* b, const char*) { dbg(a, b); }},

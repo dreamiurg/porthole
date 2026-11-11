@@ -3,7 +3,7 @@
 HTTP server so the games can be played with a mouse/touch, no hardware needed. The tilt pad under the screen is the
 motion sensor (drag the ball: where gravity points in the glass's plane; the middle is lying flat); Shake jolts it.
 
-Run: make webemu        (or: python3 tools/webemu.py; WEBEMU_SNAP=build/host/snap-all for every game, switched off or not)
+Run: make webemu        (or: python3 tools/webemu.py)
 Then open http://127.0.0.1:8765
 """
 
@@ -19,8 +19,7 @@ import time
 import zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# WEBEMU_SNAP=build/host/snap-all (relative to apps/porthole, or absolute): every game, switched off or not
-SNAP = os.path.join(ROOT, os.environ.get("WEBEMU_SNAP") or "build/host/snap")
+SNAP = os.path.join(ROOT, "build", "host", "snap")
 HOST, PORT = "127.0.0.1", int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8765"))
 
 
@@ -51,8 +50,9 @@ class Sim:
     """Owns the `snap --serve` child process. All access serialized by self.lock."""
 
     def __init__(self):
-        if os.path.dirname(SNAP) == os.path.join(ROOT, "build", "host"):  # one of ours: never serve a stale build
-            subprocess.run(["make", os.path.basename(SNAP)], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+        if not os.path.exists(SNAP):
+            print("build/host/snap missing, running make snap...", file=sys.stderr)
+            subprocess.run(["make", "snap"], cwd=ROOT, check=True)
         self.proc = subprocess.Popen([SNAP, "--serve"], cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.lock = threading.Lock()
         self.last_frame_time = time.time()

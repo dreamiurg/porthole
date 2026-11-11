@@ -181,7 +181,7 @@ void setup() {
   g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   feedLoopWDT();
   air::setFeed(&g_feed);
-  g_shell.begin(g_store, APPS, N_APPS, &g_sys, ALL_STORES);   // first boot after Pets Club: its houses become profiles here
+  g_shell.begin(g_store, APPS, N_APPS, &g_sys);   // first boot after Pets Club: its houses become profiles here
   beginClock();
   Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
                 (unsigned long)utcNow(), (unsigned long)board::freeHeap());
@@ -327,7 +327,7 @@ static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { const uint32_t utc = timezones::toUtc(e); writeUtcRtc(utc); g_bootUtcEpoch = utc; g_bootMillis = millis(); Serial.println("[porthole] local clock set; RTC stores UTC"); } }
   else if (c == 'R') {
     board::eraseNamespace(shell::NS);
-    for (const char* const* s = ALL_STORES; *s; s++) board::eraseNamespace(*s);   // switched-off games' too
+    for (App* a : APPS) board::eraseNamespace(a->store());
     Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
   }
   else if (c == 'P') {  // a digit is required: parseInt reads a bare "P" as 0 and would clear profile 0's code

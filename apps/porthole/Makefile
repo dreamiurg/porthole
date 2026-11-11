@@ -1,7 +1,7 @@
 # Porthole: the device firmware, with Pets Club as its first game. Host simulator, pet self-test,
 # checks and coverage; firmware through PlatformIO.
 # The monorepo's root Makefile and CI call these as `make -C apps/porthole <target>`:
-#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-all snap-asan playtest art webemu clean)
+#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 # os/ is the shared runtime (renderer, input, palette, widgets, the App contract); shell/ is the profile picker and
 # launcher; games/<name>/ compile against os/ only. Every directory under games/ is built in: a game includes its own
@@ -31,9 +31,6 @@ SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 # Each is its own target (build/host/test_<name>, run by run-test_<name>), so make -j and -k work on them.
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_toytown_SRC :=
-# games/apps.h with games/enabled.h's defaults, and (test_apps_all) with every game switched on
-test_apps_SRC := $(SRC)
-test_apps_all_SRC := $(SRC)
 test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
 test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
@@ -80,7 +77,7 @@ MAKEFLAGS += -j$(NPROC)
 endif
 objs = $(addprefix $(1)/,$(2:.cpp=.o))
 # Objects depend on this Makefile too: a changed flag (a new warning) must recompile what was already built.
-compile = mkdir -p $(@D) && $(CXX) $(1) $(PORTHOLE_GAME_FLAGS) -MMD -MP -c $< -o $@
+compile = mkdir -p $(@D) && $(CXX) $(1) -MMD -MP -c $< -o $@
 $(BUILD)/obj/%.o: %.cpp Makefile
 	$(call compile,$(CXXFLAGS))
 $(BUILD)/asan/%.o: %.cpp Makefile
@@ -88,14 +85,6 @@ $(BUILD)/asan/%.o: %.cpp Makefile
 # HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
 $(BUILD)/sdl/host/sim.o: host/sim.cpp Makefile
 	$(call compile,$(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL)
-# Of the sims' sources only host/sim.cpp includes games/apps.h (host/test_apps*.cpp, their own builds, are the others),
-# so it alone changes with games/enabled.h's switches. sim, snap and webemu ship what the firmware ships; the playtest
-# sims (snap-all, snap-asan and coverage's snap) have every game, so a switched-off game's scenarios still play, on the
-# same launcher as before it was switched off. The "shipped" scenarios play on snap.
-$(BUILD)/all/host/sim.o: host/sim.cpp Makefile
-	$(call compile,$(CXXFLAGS))
-ALL_GAMES := -DPORTHOLE_ALL_GAMES=1
-$(BUILD)/all/host/sim.o $(BUILD)/asan/host/sim.o: override PORTHOLE_GAME_FLAGS := $(ALL_GAMES)
 
 all: sim test
 
@@ -103,15 +92,13 @@ $(BUILD)/sim: $(call objs,$(BUILD)/obj,$(SRC)) $(BUILD)/sdl/host/sim.o
 	$(CXX) $^ -o $@ $(SDL_LIBS) $(HOST_LIBS)
 $(BUILD)/snap: $(call objs,$(BUILD)/obj,$(SRC) host/sim.cpp)
 	$(CXX) $^ -o $@ $(HOST_LIBS)
-$(BUILD)/snap-all: $(call objs,$(BUILD)/obj,$(SRC)) $(BUILD)/all/host/sim.o
-	$(CXX) $^ -o $@ $(HOST_LIBS)
 # Same headless sim under AddressSanitizer + UBSan, for the chaos-monkey playtests.
 $(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
 	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
-sim snap snap-all snap-asan: %: $(BUILD)/%
+sim snap snap-asan: %: $(BUILD)/%
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
-playtest: snap snap-all snap-asan
+playtest: snap snap-asan
 	$(PY) tools/playtest.py
 
 # Just the sanitizer monkeys: what ci adds to coverage, which already plays every other scenario.
@@ -182,12 +169,6 @@ endif
 
 $(COV)/obj/%.o: %.cpp Makefile
 	$(call compile,$(COV_CXXFLAGS))
-$(COV)/obj/host/sim.o: override PORTHOLE_GAME_FLAGS := $(ALL_GAMES)
-# The "shipped" scenarios' sim, with only the games that ship: its own sim.o, every other object shared.
-$(COV)/shipped/host/sim.o: host/sim.cpp Makefile
-	$(call compile,$(COV_CXXFLAGS))
-$(COV)/snap-shipped: $(call objs,$(COV)/obj,$(SRC)) $(COV)/shipped/host/sim.o
-	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
 $(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
 $(COV)/test_%:
 	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
@@ -200,8 +181,8 @@ cov-reset:
 	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
 cov-run-%: $(COV)/% cov-reset
 	$<
-cov-playtest: $(COV)/snap $(COV)/snap-shipped cov-reset
-	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_SHIPPED_SNAP=$(COV)/snap-shipped PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
+cov-playtest: $(COV)/snap cov-reset
+	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 coverage: $(TESTS:%=cov-run-%) cov-playtest
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
@@ -241,5 +222,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-all snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean flash-report
+.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean flash-report
 -include $(shell find build -name '*.d' 2>/dev/null)

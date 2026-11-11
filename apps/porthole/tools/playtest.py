@@ -4,11 +4,8 @@
   python3 tools/playtest.py            every scenario in tests/playtests/ (make playtest builds the sims first)
   python3 tools/playtest.py 06 monkey  only scenarios whose file name contains one of the words
 
-A scenario whose name has "monkey" runs on build/host/snap-asan (every game, under the sanitizers), else one whose name
-has "shipped" on build/host/snap (only the games games/enabled.h ships), and every other on build/host/snap-all (every
-game, switched off or not). PLAYTEST_SNAP and PLAYTEST_SHIPPED_SNAP override those last two, PLAYTEST_OUT the report
-directory, and PLAYTEST_TIMEOUT_SCALE multiplies every scenario's time limit (make coverage sets all four: its -O0
-sims are slower).
+PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report directory, and PLAYTEST_TIMEOUT_SCALE
+multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
 Directives that need live state (follow-glow, solve-word, answer-book) run the script so far, read the answer and
@@ -27,8 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(os.environ.get("PLAYTEST_OUT") or ROOT / "build" / "playtest").resolve()
-SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap-all").resolve()  # every game, switched off or not
-SHIPPED_SNAP = Path(os.environ.get("PLAYTEST_SHIPPED_SNAP") or ROOT / "build" / "host" / "snap").resolve()
+SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap").resolve()
 TIMEOUT_SCALE = float(os.environ.get("PLAYTEST_TIMEOUT_SCALE") or 1)
 _pal = (ROOT / "os/palette.h").read_text()
 
@@ -519,10 +515,8 @@ def slowest_first(paths):  # ponytail: monkeys, then the longest scripts; record
     return sorted(paths, key=lambda p: ("monkey" not in p.stem, -p.stat().st_size))
 
 
-def sim_for(path):  # monkeys run under the sanitizers (a shipped one too); a "shipped" scenario with the games that ship
-    if "monkey" in path.stem:
-        return ROOT / "build" / "host" / "snap-asan"
-    return SHIPPED_SNAP if "shipped" in path.stem else SNAP
+def sim_for(path):  # monkeys run under the sanitizers
+    return ROOT / "build" / "host" / "snap-asan" if "monkey" in path.stem else SNAP
 
 
 def main():

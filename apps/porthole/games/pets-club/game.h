@@ -14,8 +14,7 @@ class Game : public App {
  public:
   const char* name() const override { return "Pets Club"; }
   const gfx::Sprite& icon() const override;
-  static constexpr const char* STORE = "crago";   // Pets Club's namespace from before Porthole: never rename
-  const char* store() const override { return STORE; }
+  const char* store() const override { return "crago"; }   // Pets Club's namespace from before Porthole: never rename
   void enter(const AppEnter& e) override;
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;

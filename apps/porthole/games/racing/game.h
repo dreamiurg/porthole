@@ -8,12 +8,11 @@
 #include "ui.h"
 
 namespace racing {
-constexpr const char* STORE = "racing";   // NVS namespace, keys s<profile id>: never renamed once shipped
 class Game : public App {
  public:
   const char* name() const override { return "Rally"; }
   const gfx::Sprite& icon() const override { return paint::icon(); }
-  const char* store() const override { return STORE; }
+  const char* store() const override { return "racing"; }
   void enter(const AppEnter& e) override;
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;

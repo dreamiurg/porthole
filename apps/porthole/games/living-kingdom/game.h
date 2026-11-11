@@ -7,12 +7,11 @@
 #include "ui.h"
 
 namespace kingdom {
-constexpr const char* STORE = "kingdom";   // NVS namespace, keys s<profile id>: never renamed once shipped
 class Game : public App {
  public:
   const char* name() const override { return "Kingdom"; }
   const gfx::Sprite& icon() const override { return art::icon(); }
-  const char* store() const override { return STORE; }
+  const char* store() const override { return "kingdom"; }
   void enter(const AppEnter& e) override;
   void update(uint32_t nowSec, uint32_t ms, const Input& in) override;
   void render() override;

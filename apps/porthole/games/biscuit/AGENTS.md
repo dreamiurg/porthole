@@ -13,9 +13,6 @@ from the monorepo in PR #24 because it shared nothing with the runtime. This is 
 rewrite: same look and content, sharing Porthole's shell, sim, playtests, build, CI,
 release and installer.
 
-Not shipped by default: `PORTHOLE_GAME_BISCUIT` is 0 in `games/enabled.h`, so the firmware and the default sim leave it
-out of `APPS`; its code, host tests, content and art gates and playtests (on `snap-all`) all keep running.
-
 The shared app brief (`apps/porthole/AGENTS.md`) covers what every game shares. This file
 has Biscuit's product contract, its module map, and its content limits.
 
@@ -82,7 +79,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   letters, case-insensitive), else the first profile, else a new one; erases only the
   winning source's keys, and only after the marker `porthole/mb`. `shell::loadAll` runs it
   at every boot after the Pets Club migration (a no-op once the marker exists). Profile
-  delete and create, and serial `R`, erase `biscuit/s<id>` like every game's store in `ALL_STORES` (`games/apps.h`), on or off.
+  delete and create, and serial `R`, erase `biscuit/s<id>` like every game's store in `APPS`.
 - `host/test_biscuit.cpp` (shared `host/` directory, #35): `pet.h`'s rules self-check --
   distinct from `host/test_biscuit_content.cpp` (content/art plumbing, #33).
 - Content: `content_stories.h` (7 branching stories, `Story{id, title, subtitle,

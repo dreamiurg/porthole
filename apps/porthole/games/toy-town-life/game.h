@@ -3,12 +3,11 @@
 #include "state.h"
 #include "ui.h"
 namespace toytown {
-constexpr const char* STORE = "toytown";   // NVS namespace, keys s<profile id>: never renamed once shipped
 class Game : public App {
  public:
   const char* name() const override { return "Toy Town"; }
   const gfx::Sprite& icon() const override;
-  const char* store() const override { return STORE; }
+  const char* store() const override { return "toytown"; }
   void enter(const AppEnter& e) override;
   void update(uint32_t now, uint32_t ms, const Input& in) override;
   void render() override;

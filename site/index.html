@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Porthole: open-source games for the Waveshare ESP32-S3 round touchscreen</title>
-  <meta name="description" content="Porthole is a home project: firmware with nine small games for the Waveshare ESP32-S3 round touchscreen, how to put it on a board, and a 3D-printed case.">
+  <meta name="description" content="Porthole is a home project: firmware with ten small games for the Waveshare ESP32-S3 round touchscreen, how to put it on a board, and a 3D-printed case.">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://porthole.dreamiurg.net/"> <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -- a canonical URL loads nothing -->
   <meta property="og:type" content="website">
@@ -22,7 +22,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
     "name": "Porthole",
-    "description": "Open-source firmware with nine small games for the Waveshare ESP32-S3 2.1-inch round touchscreen, a browser installer and a 3D-printed case.",
+    "description": "Open-source firmware with ten small games for the Waveshare ESP32-S3 2.1-inch round touchscreen, a browser installer and a 3D-printed case.",
     "url": "https://porthole.dreamiurg.net/",
     "codeRepository": "https://github.com/dreamiurg/porthole",
     "license": "https://opensource.org/licenses/MIT",
@@ -239,7 +239,7 @@
 <div class="wrap hero">
   <div class="text">
     <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
-    <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of nine games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з дев&rsquo;яти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
+    <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
     <p><span lang="en">I am sharing it as it is. If you have the same board, this page shows how to put the games on it, and the code is on GitHub if you want to change them.</span><span lang="uk">Ділюся ним як є. Якщо у вас така сама плата, ця сторінка показує, як записати на неї ігри, а код лежить на GitHub, якщо захочете щось змінити.</span></p>
   </div>
   <div class="shot"><img src="images/puck.webp" alt="The board in its 3D-printed case, showing the Porthole game menu" width="746" height="611"></div>
@@ -271,13 +271,13 @@
 
     <section id="games">
       <h2><span lang="en">Games</span><span lang="uk">Ігри</span></h2>
-      <p><span lang="en">Nine come in one file; Biscuit is switched off for now. Each player picks a profile, then a game.</span><span lang="uk">Дев&rsquo;ять в одному файлі; Biscuit поки що вимкнено. Кожен гравець вибирає профіль, а потім гру.</span></p>
+      <p><span lang="en">All ten come in one file. Each player picks a profile, then a game.</span><span lang="uk">Усі десять в одному файлі. Кожен гравець вибирає профіль, а потім гру.</span></p>
       <div class="games">
         <article class="card game"><img src="games/pets-club.png" alt="Pets Club" width="160" height="160" loading="lazy"><h3>Pets Club</h3>
           <p><span lang="en">A pixel puppy that grows over real days and loves stories.</span><span lang="uk">Піксельне цуценя, яке росте з кожним днем і любить історії.</span></p>
           <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">It learns eight tricks and listens to 30 stories at three reading levels. Each player gets their own pup and a house on Paw Street.</span><span lang="uk">Вчить вісім трюків і слухає 30 історій трьох рівнів. У кожного гравця своє цуценя і будиночок на Paw Street.</span></p></details></article>
         <article class="card game"><img src="games/biscuit.png" alt="Biscuit" width="160" height="160" loading="lazy"><h3>Biscuit</h3>
-          <p><span lang="en">A pup with a bookshelf: stories and 96 discoveries. Not on the device for now.</span><span lang="uk">Песик із книжковою поличкою: історії та 96 відкриттів. Поки що його немає на пристрої.</span></p>
+          <p><span lang="en">A pup with a bookshelf: stories and 96 discoveries.</span><span lang="uk">Песик із книжковою поличкою: історії та 96 відкриттів.</span></p>
           <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Branching stories, 96 illustrated discoveries, tricks and a small adventure each day. For readers who are already fluent.</span><span lang="uk">Розгалужені історії, 96 ілюстрованих відкриттів, трюки й маленька пригода щодня. Для тих, хто вже добре читає.</span></p></details></article>
         <article class="card game"><img src="games/marble-kick.png" alt="Marble Kick" width="160" height="160" loading="lazy"><h3>Marble Kick</h3>
           <p><span lang="en">Tilt a marble through 12 wooden mazes.</span><span lang="uk">Котіть кульку нахилом через 12 дерев&rsquo;яних лабіринтів.</span></p>
@@ -392,8 +392,8 @@
       <h2><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></h2>
       <p lang="en">It started with a small project on MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo. A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar. I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on the little screen. I loved that.</p>
       <p lang="uk">Усе почалося з невеликого проєкту на MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> від MatixYo. Крихітна плата ESP32 з круглим екраном 1,28 дюйма бере з інтернету дані про польоти й малює літаки над головою на маленькому радарі. Я зібрав такий із дітьми, а потім показав їм, як змінювати його за допомогою Claude Code. Вони просили зміни й дивилися, як ті з&rsquo;являються на екрані. Мені це дуже сподобалося.</p>
-      <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had a couple of games running on it. Since then it has grown to ten games (nine of them on the device for now), a case and updates over Wi-Fi.</p>
-      <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали кілька ігор. Відтоді їх стало десять (дев&rsquo;ять із них поки що на пристрої), з&rsquo;явилися корпус і оновлення через Wi-Fi.</p>
+      <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had a couple of games running on it. Since then it has grown to ten games, a case and updates over Wi-Fi.</p>
+      <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали кілька ігор. Відтоді їх стало десять, з&rsquo;явилися корпус і оновлення через Wi-Fi.</p>
     </section>
   </main>
 </div>

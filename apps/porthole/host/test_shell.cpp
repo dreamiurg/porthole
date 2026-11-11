@@ -1062,26 +1062,6 @@ static void deleteNeedsACode() {
   testNow = NOW;
   assert(storedStrikes(st, 0) == 4 && sh.profileCount() == 2);
 }
-// A game switched off (games/enabled.h) is not an app, but its namespace is in the stores begin() takes: deleting a
-// profile erases that profile's save there too, and no one else's, and so does a new profile taking the slot (a save
-// left behind by a delete cut short), so the next kid in the slot starts fresh.
-static void deleteErasesSwitchedOff() {
-  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
-  StubApp a("One"); App* const list[1] = {&a};
-  static const char* const stores[] = {"off", nullptr};   // no "stub": an app's own store is erased all the same
-  bootWithoutHours(sh, st, list, 1, &sys); sh.createProfile("Sam", 8, "1111"); sh.createProfile("Kai", 6, "");
-  const uint32_t pup = 7;
-  st.save("off", "s0", &pup, sizeof pup); st.save("off", "s1", &pup, sizeof pup); st.save("stub", "s0", &pup, sizeof pup);
-  bootWithoutHours(sh, st, list, 1, &sys); sh.begin(st, list, 1, &sys, stores);
-  Input in{}; in.down = in.pressed = true; in.heldMs = 3000; in.x = in.downX = 80; in.y = in.downY = 54; frame(sh, ms, in);
-  assert(on(sh, "pin")); typeKidCode(sh, ms, "1111"); assert(on(sh, "delete"));
-  Input hold{}; hold.down = hold.pressed = true; hold.heldMs = 1000; hold.x = hold.downX = 80; hold.y = hold.downY = 116;   // bottom: the last key was up top
-  frame(sh, ms, hold);
-  assert(on(sh, "picker") && sh.profileCount() == 1);
-  assert(!st.has("off", "s0") && !st.has("stub", "s0") && st.has("off", "s1"));
-  st.save("off", "s0", &pup, sizeof pup);
-  assert(sh.createProfile("Ava", 7, "") == 0 && !st.has("off", "s0") && st.has("off", "s1"));
-}
 // A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
 // that began on it, never under a finger slid onto it from another.
@@ -1308,7 +1288,6 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
   adminCodeLockout();
   adminGatesProfiles();
   deleteNeedsACode();
-  deleteErasesSwitchedOff();
   longPressStillTaps();
   slowPresses();
 }
