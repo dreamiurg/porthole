@@ -15,7 +15,8 @@ Fork it, play the games, and make your own.
 
 ## Games
 
-All ten games run in one firmware, [Porthole](apps/porthole/). Each kid gets a profile, up to four per board.
+Nine games run in one firmware, [Porthole](apps/porthole/). Each kid gets a profile, up to four per board. Biscuit is built and
+tested but switched off on the device for now.
 
 | | | | | |
 | :---: | :---: | :---: | :---: | :---: |
@@ -23,7 +24,7 @@ All ten games run in one firmware, [Porthole](apps/porthole/). Each kid gets a p
 | <img src="docs/games/radar.png" width="150" alt="Radar"><br>**Radar** | <img src="docs/games/starfighter.png" width="150" alt="Starfighter"><br>**Starfighter** | <img src="docs/games/kingdom.png" width="150" alt="Kingdom"><br>**Kingdom** | <img src="docs/games/toy-town.png" width="150" alt="Toy Town"><br>**Toy Town** | <img src="docs/games/rally.png" width="150" alt="Rally"><br>**Rally** |
 
 - **Pets Club:** a pixel puppy grows over real days. It learns eight tricks and listens to 30 stories.
-- **Biscuit:** a full-color pup. Read branching stories with him and find 96 illustrated discoveries.
+- **Biscuit:** a full-color pup. Read branching stories with him and find 96 illustrated discoveries. Not on the device for now.
 - **Marble Kick:** tilt the board to roll a marble through 12 labyrinth levels.
 - **Tilt FC:** top-down street football. Tilt to run. Tap to pass or shoot.
 - **Pumpkin Hide & Seek:** hide from Grandma, take three candies, and escape through the door.
