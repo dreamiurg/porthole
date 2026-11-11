@@ -124,7 +124,7 @@ struct Favorites {
   uint32_t magic;
   uint16_t version, size;
   uint8_t count, picked;      // picked 0: the kid never starred anything, Home shows the default
-  uint8_t ids[MAX_FAVS], reserved;   // Home's order: the order the stars were set
+  uint8_t ids[MAX_FAVS], reserved;   // Home's order: the newest star first
   uint32_t seen;              // games known when this was first written or opened since; the rest wear a "new" dot
   uint32_t crc;
 };
@@ -138,11 +138,11 @@ bool saveGamesOff(Store& st, uint32_t off);                          // false un
 // The image's games a kid sees (indexes into the app table, launcher order): never none, so a mask that switches
 // off every game in the image (they all left but the switched-off ones) counts as all on.
 int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out);
-// Home: every enabled game while they fit one page (no Library then), else the kid's favorites that are enabled, in
-// star order (the default when none were ever picked). The Library has the rest; true from libraryOn().
+// Home: every enabled game while they fit one page (no Library then), else the kid's favorites that are enabled, the
+// newest star first (the default when none were ever picked). The Library has the rest; true from libraryOn().
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
 inline bool libraryOn(const uint8_t* ids, int n, uint32_t off) { int all[MAX_GAME_ID]; return enabledGames(ids, n, off, all) > MAX_FAVS + 1; }
-// Star mode's tap on game id: unstars it, or stars it at the end of Home. False (and nothing changes) for a sixth
+// Star mode's tap on game id: unstars it, or stars it first on Home. False (and nothing changes) for a sixth
 // star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star.
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off);
 

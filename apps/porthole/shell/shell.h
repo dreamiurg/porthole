@@ -78,10 +78,10 @@ class Shell {
   uint8_t ids_[MAX_APPS] = {};                     // each game's stable id (games/apps.h)
   uint32_t gamesOff_ = 0;                          // the games a grown-up switched off, "sys"/"games" (bit id - 1)
   shell::Favorites favs_{};                        // the active kid's Home, porthole/f<id>
-  bool starMode_ = false, starsChanged_ = false;   // the Library's star mode, and a star to save when it ends
+  bool starMode_ = false;                          // the Library's star mode
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
-  uint32_t starNudgeUntil_ = 0;                    // a sixth star wiggles the counter
-  uint8_t gamesPage_ = 0;                          // Admin -> Games
+  uint32_t fullUntil_ = 0;                         // a sixth star: "Home full!" until then
+  uint8_t gamesPage_ = 0;                          // Info -> Games
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
@@ -166,11 +166,13 @@ class Shell {
   void updateDelete(); void drawDelete();
   void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
   bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
-  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b); void drawPageArrow(bool right);
+  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b); void drawPageArrow(bool right, int nudge = 0);
+  bool drawMoreGames(const ui::Box& b, int dy); uint32_t homeMask() const;
   void drawHeader(); void drawCaption(const ui::Box* tiles, const int* games, int m);
   int homeTiles(int* games) const;   // Home's games (app indexes) in tile order; -1 is "All games"
   bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }
-  void updateLibrary(); void drawLibrary(); void tapLibrary(int k); void saveStars(); void drawStarButton();
+  void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred); void tapLibrary(int k); void drawStarButton();
+  bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
   void updateRest(); void drawRest();

@@ -1,6 +1,7 @@
-# Admin -> Games (Admin page 2): a row per game with its picture, name and switch, four a page. Off hides a game from
-# every kid's Home and Library; with six or fewer on, Home shows them all and "All games" goes away. The last game
-# on cannot go off. Each switch saves at once; a reboot keeps it.
+# Info -> Games (beside Wifi and Updates): a row per game with its picture, name and switch, three a page, and a line
+# saying off only hides a game and its saves stay. Off hides a game from every kid's Home and Library; with six or
+# fewer on, Home shows them all and "All games" goes away. The last game on cannot go off. Each switch saves at once;
+# a reboot keeps it.
 reset
 tilt 0 1000 0
 profile Sam 8
@@ -13,43 +14,39 @@ wait 5000
 up
 wait 450
 expect-screen sys_info
-tap 106 132
-wait 450
-tap 124 35
-wait 450
-expect-screen sys_admin
-ui-check sys_admin_games_button
-snap ag0_admin_page2
-tap 80 118
+ui-check sys_info_games_button
+snap ag0_info
+tap 80 108
 wait 450
 expect-screen sys_games
 expect games_off=0
 ui-check sys_games_page1
 snap ag1_games_page1
-tap 80 39
+tap 80 40
 wait 450
-tap 80 62
+tap 80 63
 wait 450
 expect games_off=3
 snap ag2_two_off
 tap 119 130
 wait 450
-tap 80 108
-wait 450
-tap 80 85
-wait 450
-expect games_off=195
 ui-check sys_games_page2
-snap ag3_page2
 tap 119 130
 wait 450
+tap 80 63
+wait 450
+tap 80 40
+wait 450
+expect games_off=195
 ui-check sys_games_page3
-snap ag4_page3
+snap ag3_page3
+tap 119 130
+wait 450
+ui-check sys_games_page4
+snap ag4_page4
 tap 80 12
 wait 450
-expect-screen sys_admin
-tap 80 12
-wait 450
+expect-screen sys_info
 tap 80 12
 wait 450
 expect-screen picker
@@ -68,35 +65,31 @@ down 80 16
 wait 5000
 up
 wait 450
-tap 106 132
-wait 450
-tap 124 35
-wait 450
-tap 80 118
-wait 450
-expect-screen sys_games
-tap 80 85
-wait 450
 tap 80 108
 wait 450
-tap 119 130
-wait 450
-tap 80 39
-wait 450
-tap 80 62
+expect-screen sys_games
+tap 80 86
 wait 450
 tap 119 130
 wait 450
-tap 80 39
+tap 80 40
+wait 450
+tap 80 63
+wait 450
+tap 80 86
+wait 450
+tap 119 130
+wait 450
+tap 80 86
 wait 450
 expect games_off=511
-tap 80 62
+tap 119 130
+wait 450
+tap 80 40
 wait 100
 expect games_off=511
 snap ag6_last_stays_on
 wait 1500
-tap 80 12
-wait 450
 tap 80 12
 wait 450
 tap 80 12

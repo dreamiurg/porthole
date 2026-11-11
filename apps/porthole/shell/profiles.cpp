@@ -145,23 +145,22 @@ int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* 
 }
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
   int home[MAX_GAME_ID]; const int h = homeGames(f, ids, n, off, home);
-  if (!f.picked) {   // the default becomes the kid's own list
-    f.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); f.picked = 1;
-    for (int i = 0; i < f.count; i++) f.ids[i] = ids[home[i]];
+  Favorites g = f;   // f changes only on success: a refused star leaves even the default untouched
+  if (!g.picked) {   // the default becomes the kid's own list
+    g.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); g.picked = 1;
+    for (int i = 0; i < g.count; i++) g.ids[i] = ids[home[i]];
   }
-  for (int i = 0; i < f.count; i++) {
-    if (f.ids[i] != id) continue;
-    memmove(f.ids + i, f.ids + i + 1, f.count - i - 1); f.count--;
-    return true;
-  }
+  int i = 0;
+  while (i < g.count && g.ids[i] != id) i++;
+  if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--; f = g; return true; }
   if (h >= MAX_FAVS) return false;
-  if (f.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the first one
-    int i = 0;
-    while (i < MAX_FAVS - 1 && listed(indexOf(f.ids[i], ids, n), home, h)) i++;
-    memmove(f.ids + i, f.ids + i + 1, f.count - i - 1); f.count--;
+  if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the first one
+    i = 0;
+    while (i < MAX_FAVS - 1 && listed(indexOf(g.ids[i], ids, n), home, h)) i++;
+    memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--;
   }
-  f.ids[f.count++] = id;
-  return true;
+  memmove(g.ids + 1, g.ids, g.count); g.ids[0] = id; g.count++;   // what was just picked shows first
+  f = g; return true;
 }
 Profile toProfile(const Profiles& p, int id) {
   const Record& r = p.rec[id];

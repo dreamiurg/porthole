@@ -115,14 +115,15 @@ bool Shell::guardScreenTime() {
   enforceCurrentBudget();
   if (!restingNow()) return false;
   if (screen_ == SH_APP) closeApp();
-  if (starMode_) saveStars();
+  starMode_ = false;   // its stars are already saved
   go(SH_REST); return true;
 }
 void Shell::select(int id) {
   active_ = id; page_ = 0; starMode_ = false;
   if (!shell::loadFavorites(*st_, id, favs_)) {   // a kid's first Home: no game here now is new to them
     for (int k = 0; k < nApps_; k++) favs_.seen |= shell::gameBit(ids_[k]);
-    shell::saveFavorites(*st_, id, favs_);
+    // Written only when missing: a damaged one, or a newer version's after a USB rollback, stays for that firmware.
+    if (!st_->load(shell::NS, shell::key('f', id), blobs_[0], sizeof blobs_[0])) shell::saveFavorites(*st_, id, favs_);
   }
   shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
@@ -467,7 +468,7 @@ void Shell::drawDelete() {
 }
 
 // ---------------------------------------------------------------- Home: back or who is playing (tap: switch), the games
-// The kid's favorites in the order they were starred, then "All games" (the Library), in the grid of shell/launcher.h.
+// The kid's favorites, the newest star first, then "All games" (the Library), in the grid of shell/launcher.h.
 // With six games or fewer switched on there is no Library: Home shows them all.
 using launcher::HEADER;
 using launcher::LIGHT;
@@ -505,42 +506,61 @@ void Shell::drawHeader() {   // who is playing, and the sun showing the level pi
   ui::drawButton({LIGHT, nullptr, nullptr, C_WHITE}, dy);
   const Sprite& sun = SPR_LIGHTS[light_]; blit(sun, LIGHT.x + (LIGHT.w - sun.w) / 2, LIGHT.y + (LIGHT.h - sun.h) / 2 + dy);
 }
-void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a finger on a tile names it over the header row
-  const ui::Box c = launcher::CAPTION;
-  for (int i = 0; i < m; i++) {
-    if (!ui::pressing(in_, tiles[i])) continue;   // only a press that started on it
-    ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
-    textCentered(80, c.y + (c.h - 7) / 2, games[i] >= 0 ? apps_[games[i]]->name() : "All games", C_DKBROWN);
-  }
+static void caption(const ui::Box& c, const char* s) {   // yellow over the header row
+  ui::drawButton({c, nullptr, nullptr, C_YELLOW}, 0);
+  textCentered(c.x + c.w / 2, c.y + (c.h - 7) / 2, s, C_DKBROWN);
 }
-// A game's picture, with a red "new" dot until the kid first opens it; k < 0 is "All games": a cream tile of six
-// colored squares, dotted while any game in the Library is new.
+void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a finger on a tile names it over the header row
+  for (int i = 0; i < m; i++)   // only a press that started on it
+    if (ui::pressing(in_, tiles[i])) caption(launcher::CAPTION, games[i] >= 0 ? apps_[games[i]]->name() : "All games");
+}
+uint32_t Shell::homeMask() const {   // the games on Home (the Library's stars), a bit each
+  int home[MAX_APPS]; uint32_t mask = 0;
+  for (int i = shell::homeGames(favs_, ids_, nApps_, gamesOff_, home) - 1; i >= 0; i--) mask |= shell::gameBit(ids_[home[i]]);
+  return mask;
+}
+// A game's picture, with a red "new" dot until the kid first opens it; k < 0 is "All games".
 void Shell::drawAppTile(int k, const ui::Box& b) {
-  static const uint8_t SQUARES[6] = {C_RED, C_YELLOW, C_GREEN, C_BLUE, C_ORANGE, C_PLUM};
   const int dy = ui::pressing(in_, b) ? 1 : 0;
-  bool dot = k >= 0 && unseen(k);
   ui::drawButton({b, nullptr, nullptr, k >= 0 ? (uint8_t)C_WHITE : (uint8_t)C_CREAM}, dy);   // a picture fills its tile inside the border
+  bool dot = k >= 0 && unseen(k);
   if (k >= 0) { const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy); }
-  else {
-    for (int j = 0; j < 6; j++) rect(b.x + 4 + (j % 3) * 11, b.y + 6 + (j / 3) * 10 + dy, 9, 8, SQUARES[j]);
-    int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
-    for (int i = 0; i < n; i++) dot |= unseen(on[i]);
-  }
+  else dot = drawMoreGames(b, dy);
   if (dot) { circle(b.x + 5, b.y + 5 + dy, 3, C_WHITE); circle(b.x + 5, b.y + 5 + dy, 2, C_RED); }
 }
-void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
+// "All games": six tiny game pictures on cream, the games not on Home first, so it reads as "more games" (a grid of
+// colors read as a painting game). True while one of the games it leads to (not on Home) is new.
+bool Shell::drawMoreGames(const ui::Box& b, int dy) {
+  constexpr int MW = 11, MH = 8;   // a picture at about 1/3.5, nearest neighbor
+  int on[MAX_APPS], pick[launcher::PER_PAGE], n = 0; bool dot = false;
+  const int m = shell::enabledGames(ids_, nApps_, gamesOff_, on); const uint32_t home = homeMask();
+  for (int i = 0; i < m; i++) dot |= unseen(on[i]) && !(home & shell::gameBit(ids_[on[i]]));
+  for (int pass = 0; pass < 2; pass++)   // the games not on Home, then the ones on it
+    for (int i = 0; i < m && n < launcher::PER_PAGE; i++)
+      if (((home & shell::gameBit(ids_[on[i]])) != 0) == (pass == 1)) pick[n++] = on[i];
+  for (int j = 0; j < n; j++) {
+    const Sprite& ic = apps_[pick[j]]->icon(); const int x0 = b.x + 3 + (j % 3) * (MW + 1), y0 = b.y + 6 + (j / 3) * (MH + 2) + dy;
+    for (int r = 0; r < MH; r++)
+      for (int c = 0; c < MW; c++) {
+        const uint8_t px = ic.px[((2 * r + 1) * ic.h / (2 * MH)) * ic.w + (2 * c + 1) * ic.w / (2 * MW)];
+        if (px != C_T) pixel(x0 + c, y0 + r, px);
+      }
+  }
+  return dot;
+}
+void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
-  const int dy = ui::pressing(in_, b) ? 1 : 0, cy = b.y + b.h / 2 + dy;
-  ui::drawButton({b, nullptr, nullptr, C_YELLOW}, dy);
-  for (int i = 0; i < 6; i++) { const int x = right ? b.x + 9 + i : b.x + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
+  const int dy = ui::pressing(in_, b) ? 1 : 0, cy = b.y + b.h / 2 + dy, x0 = b.x + (right ? nudge : -nudge);
+  ui::drawButton({{x0, b.y, b.w, b.h}, nullptr, nullptr, C_YELLOW}, dy);
+  for (int i = 0; i < 6; i++) { const int x = right ? x0 + 9 + i : x0 + 14 - i; line(x, cy - 5 + i, x, cy + 5 - i, C_DKBROWN); }
 }
 
 // ---------------------------------------------------------------- the Library: every game switched on, six a page
 // A gold star marks a favorite. The star button (the sun's place) starts star mode: a tap stars or unstars a game
-// instead of opening it, up to MAX_FAVS, and the check (or the home button) saves and comes back here.
+// instead of opening it, up to MAX_FAVS, saved as it is made; the check (or the home button) comes back here.
 void Shell::updateLibrary() {
-  if (ui::back(in_)) { if (starMode_) { saveStars(); go(SH_LIBRARY); } else go(SH_LAUNCHER); return; }
-  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { if (starMode_) saveStars(); else starMode_ = true; go(SH_LIBRARY); return; }
+  if (ui::back(in_)) { go(starMode_ ? SH_LIBRARY : SH_LAUNCHER); starMode_ = false; return; }
+  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { starMode_ = !starMode_; fullUntil_ = 0; go(SH_LIBRARY); return; }
   int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
   if (page_ >= launcher::pages(n)) page_ = 0;
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);   // only where there is a page that way
@@ -554,20 +574,17 @@ void Shell::updateLibrary() {
 }
 void Shell::tapLibrary(int k) {
   if (!starMode_) { openIdx(k); return; }
-  if (shell::toggleStar(favs_, ids_[k], ids_, nApps_, gamesOff_)) starsChanged_ = true;
-  else starNudgeUntil_ = ms_ + 400;   // a sixth star: the counter wiggles, nothing changes
+  // saved now, so a restart or the rest screen keeps it; a failed write keeps it for this visit
+  if (shell::toggleStar(favs_, ids_[k], ids_, nApps_, gamesOff_)) { shell::saveFavorites(*st_, active_, favs_); fullUntil_ = 0; }
+  else fullUntil_ = ms_ + 2000;   // a sixth star: nothing changes, "Home full!" and the stars hop
 }
-void Shell::saveStars() {
-  if (starsChanged_) shell::saveFavorites(*st_, active_, favs_);   // a failed write keeps them for this visit
-  starMode_ = starsChanged_ = false;
-}
-// A 9x9 star, outlined: the Library's corner mark (s 1) and its button (s 2).
-static void star(int x, int y, int s) {
+// A 9x9 star, outlined: the Library's corner mark (s 1) and its button (s 2); white fill is an empty star.
+static void star(int x, int y, int s, uint8_t fill = C_GOLD) {
   static const char* const ROWS[9] = {"....#....", "...###...", "...###...", "#########", ".#######.", "..#####..", "..#####..", ".###.###.", ".##...##."};
   for (int pass = 0; pass < 2; pass++)
     for (int r = 0; r < 9; r++)
       for (int c = 0; c < 9; c++)
-        if (ROWS[r][c] == '#') { if (pass) rect(x + c * s, y + r * s, s, s, C_GOLD); else rect(x + c * s - 1, y + r * s - 1, s + 2, s + 2, C_DKBROWN); }
+        if (ROWS[r][c] == '#') { if (pass) rect(x + c * s, y + r * s, s, s, fill); else rect(x + c * s - 1, y + r * s - 1, s + 2, s + 2, C_DKBROWN); }
 }
 void Shell::drawStarButton() {   // the star that starts star mode, or the green check that ends it
   const int dy = ui::pressing(in_, LIGHT) ? 1 : 0;
@@ -579,36 +596,46 @@ void Shell::drawStarButton() {   // the star that starts star mode, or the green
     line(LIGHT.x + 9, LIGHT.y + 15 + t + dy, LIGHT.x + 18, LIGHT.y + 6 + t + dy, ink);
   }
 }
+// The title: a plain label on the sky, not a button. In star mode "Pick 5 . N" (N places left, the dot drawn: the font
+// is ASCII), or for 2 s after a refused star "Home full! / Tap a star" in yellow; a finger on the star names it.
+void Shell::drawLibraryTitle(int starred) {
+  const int cx = HEADER.x + HEADER.w / 2, ty = HEADER.y + 8;
+  if (!starMode_) textCentered(cx, ty, "All games", C_NAVY);
+  else if (homeFull()) {
+    ui::drawButton({HEADER, nullptr, nullptr, C_YELLOW}, 0);
+    textCentered(cx, HEADER.y + 3, "Home full!", C_DKBROWN); textCentered(cx, HEADER.y + 13, "Tap a star", C_DKBROWN);
+  } else {
+    char left[12]; snprintf(left, sizeof left, "%d", shell::MAX_FAVS - starred);
+    const int pick = textWidth("Pick 5"), x = cx - (pick + 6 + textWidth(left)) / 2;
+    text(x, ty, "Pick 5", C_NAVY); rect(x + pick + 2, ty + 3, 2, 2, C_NAVY); text(x + pick + 6, ty, left, C_NAVY);
+  }
+  drawStarButton();
+  if (ui::pressing(in_, LIGHT)) caption(HEADER, starMode_ ? "Done" : "Pick games");
+}
+// In star mode every game wears a star: gold on Home, empty to pick. While Home is full the gold ones hop, and so do
+// the arrows toward a page that has one, so a kid who cannot read sees where to tap.
 void Shell::drawLibrary() {
   clear(C_SKY);
   rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
-  int home[MAX_APPS], on[MAX_APPS]; uint32_t starred = 0;
-  const int h = shell::homeGames(favs_, ids_, nApps_, gamesOff_, home), n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
-  for (int i = 0; i < h; i++) starred |= shell::gameBit(ids_[home[i]]);
-  roundRect(HEADER.x, HEADER.y, HEADER.w, HEADER.h, C_DKBROWN);   // a label, not a button: no shadow
-  roundRect(HEADER.x + 1, HEADER.y + 1, HEADER.w - 2, HEADER.h - 2, C_CREAM);
-  const int cx = HEADER.x + HEADER.w / 2, ty = HEADER.y + 8;
-  if (!starMode_) textCentered(cx, ty, "All games", C_DKBROWN);
-  else {   // "Pick 5 . N": N places left, the dot drawn (the font is ASCII)
-    char left[12]; snprintf(left, sizeof left, "%d", shell::MAX_FAVS - h);
-    const int wiggle = (int32_t)(starNudgeUntil_ - ms_) > 0 ? ((ms_ / 50) % 2 ? 2 : -2) : 0;
-    const int pick = textWidth("Pick 5"), x = cx - (pick + 6 + textWidth(left)) / 2 + wiggle;
-    text(x, ty, "Pick 5", C_DKBROWN); rect(x + pick + 2, ty + 3, 2, 2, C_DKBROWN); text(x + pick + 6, ty, left, C_DKBROWN);
-  }
-  drawStarButton();
+  int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
+  const uint32_t home = homeMask(); const int hop = homeFull() && (ms_ / 150) % 2 ? 2 : 0;
   if (page_ >= launcher::pages(n)) page_ = 0;
   const int k0 = launcher::first(n, page_), m = launcher::count(n, page_);
-  int games[launcher::PER_PAGE]; ui::Box tiles[launcher::PER_PAGE];
+  int games[launcher::PER_PAGE] = {}, starred = 0; ui::Box tiles[launcher::PER_PAGE]; bool before = false, after = false;
+  for (int j = 0; j < n; j++) {
+    const bool gold = home & shell::gameBit(ids_[on[j]]);
+    starred += gold; before |= gold && j < k0; after |= gold && j >= k0 + m;
+  }
   for (int i = 0; i < m; i++) {
     const ui::Box b = tiles[i] = launcher::tile(i, m); games[i] = on[k0 + i];
     drawAppTile(games[i], b);
-    if (starred & shell::gameBit(ids_[games[i]])) star(b.x + b.w - 11, b.y + 2, 1);
-    else if (starMode_)   // not a favorite: faded, so the stars stand out
-      for (int y = b.y + 1; y < b.y + b.h - 1; y++) for (int x = b.x + 1 + (y & 1); x < b.x + b.w - 1; x += 2) pixel(x, y, C_LTGRAY);
+    if (home & shell::gameBit(ids_[games[i]])) star(b.x + b.w - 11, b.y + 2 - hop, 1);
+    else if (starMode_) star(b.x + b.w - 11, b.y + 2, 1, C_WHITE);
   }
+  drawLibraryTitle(starred);
   drawCaption(tiles, games, m);
-  if (page_ > 0) drawPageArrow(false);
-  if (page_ + 1 < launcher::pages(n)) drawPageArrow(true);
+  if (page_ > 0) drawPageArrow(false, before ? hop : 0);
+  if (page_ + 1 < launcher::pages(n)) drawPageArrow(true, after ? hop : 0);
   ui::drawBack();
 }
 
@@ -723,8 +750,9 @@ void Shell::debugPrint() {
 }
 void Shell::debugHome() const {   // home_first: the first tile's game by its store ("-" for "All games" or none)
   int games[MAX_APPS + 1]; const int tiles = homeTiles(games);
-  printf("[home home_tiles=%d home_first=%s home_library=%d star_mode=%d games_off=%lu]\n", tiles, tiles && games[0] >= 0 ? apps_[games[0]]->store() : "-",
-         (int)shell::libraryOn(ids_, nApps_, gamesOff_), (int)starMode_, (unsigned long)gamesOff_);
+  printf("[home home_tiles=%d home_first=%s home_library=%d star_mode=%d home_full=%d games_off=%lu]\n", tiles,
+         tiles && games[0] >= 0 ? apps_[games[0]]->store() : "-", (int)shell::libraryOn(ids_, nApps_, gamesOff_), (int)starMode_,
+         (int)homeFull(), (unsigned long)gamesOff_);
 }
 void Shell::debugCmd(const char* cmd) {
   if (!strcmp(cmd, "anytime")) { window_.enabled = 0; shell::savePlayWindow(*st_, window_); }   // declared host test fixture
