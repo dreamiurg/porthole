@@ -13,7 +13,7 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 
 1. The kid picks their own favorites (star mode in the Library). No holds anywhere.
 2. Home holds up to 5 favorites + an "All games" tile (one page, no arrows).
-3. Admin -> Games (per-device on/off) ships in the same change.
+3. Info -> Games (per-device on/off; first on Admin, moved after the grown-up playtest, M2) ships in the same change.
 4. Home order = the newest star first; no drag reordering (unstar and star again to bring a game to the front).
    Amended 2026-11-11 after the kid playtest (`apps/porthole/docs/launcher-home-playtest.md`, m1): first-starred-first
    buried a re-starred game at the end and an accidental double tap moved a game out of place; "what I just picked
@@ -33,13 +33,19 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   and a finger on it shows "Pick games" over the header, as a game's name shows. The top home button returns to
   Home. A new game (an id the kid has never seen) shows a small "new" dot until first opened; "All games" wears one
   while a game that is not on Home is new (one on Home already wears its own).
-- **Star mode** (same screen, `library` with a mode): header caption "Pick 5 · N" (N = places left); the star button
-  becomes a green check (Done). Tapping a tile toggles its star, saved at once (a restart or the rest screen keeps
-  it). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed: dimmed tiles read as switched
-  off). A new kid's Home is already full (the defaults), so a 6th star is refused with a lasting cue: "Home full! /
-  Tap a star" in yellow over the header for 2 s, while the gold stars hop and so does the arrow toward a page that
-  holds one, so a non-reader sees where to tap. No sound. Games don't open in star mode. Done (or the home button)
-  returns to the Library. (Amended after the kid playtest, M1, n1, n2.)
+- **Star mode** (same screen, `library` with a mode): the sky behind the grid turns lavender and every tile jiggles
+  (1 px sideways, neighbors in turn, like a phone's edit mode), so a non-reader sees that something is different.
+  Five small stars in the header count Home's places (gold = taken, white = free; no number to read); the star
+  button becomes a green check (Done). Tapping a tile toggles its star; a second tap on the same tile within 400 ms
+  is a double tap and is ignored. Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
+  dimmed tiles read as switched off). A new kid's Home is already full (the defaults), so a 6th star is refused with
+  a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
+  shown has no gold star, while the gold stars hop and so does the arrow toward a page that holds one, so a
+  non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
+  them (only if anything changed, read back) and returns to the Library; leaving any other way (the home button,
+  which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
+  playtests: round 1, M1, n1, n2; round 2 (`apps/porthole/docs/launcher-home-playtest-2.md`), 1-4: a 6-year-old
+  entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
@@ -63,7 +69,7 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 - **Default favorites:** the first 5 enabled games in launcher order, so an updated device's Home looks like today's
   page 1 with "All games" in the 6th place.
 - Unknown ids (a game removed from the firmware) are skipped silently. Disabled favorites are hidden, not removed, so
-  switching the game back on restores the star.
+  switching the game back on restores the star; when a new star needs the place, the oldest hidden one gives it up.
 
 ## Rules carried over
 
@@ -73,9 +79,11 @@ a long press acts like a tap (os/input.h); FreshGate on every screen change; pro
 ## Verification
 
 Host tests (favorites blob, games mask, defaults, unknown ids, all-off refused, delete erases f<id>), layout tests
-for Home with 0-5 favorites, playtest scenarios (Home, Library paging, star mode, Admin Games), `make ci`,
+for Home with 0-5 favorites, playtest scenarios (Home, Library paging, star mode, Info Games), `make ci`,
 `make complexity`, firmware build, /simplify + /code-review, an independent kid playtest (8-year-old) of Home,
-Library and star mode, and a grown-up playtest of Admin -> Games. After the fixes: `b2_home_stars` replays the kid
-report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full!") and the newest-first order,
-`starRules` covers a refused star on the default, `favoritesKept` the baseline written only when missing, and a fresh
-kid playtest of star mode is due.
+Library and star mode, and a grown-up playtest of Info -> Games. After the fixes: `b2_home_stars` replays the kid
+report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
+order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
+button dropping star mode's edits; `starMode` the same with the double tap and a restart; `starRules` covers a refused
+star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
+only when missing, and a fresh kid playtest of star mode is due.
