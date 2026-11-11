@@ -143,7 +143,7 @@ int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out);
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
 inline bool libraryOn(const uint8_t* ids, int n, uint32_t off) { int all[MAX_GAME_ID]; return enabledGames(ids, n, off, all) > MAX_FAVS + 1; }
 // Star mode's tap on game id: unstars it, or stars it first on Home. False (and nothing changes) for a sixth
-// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star.
+// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star (the oldest such first).
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off);
 
 // Rest budget.

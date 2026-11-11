@@ -1,9 +1,10 @@
-# Star mode: the Library's star button (a finger on it says "Pick games") turns taps into stars, saved as they are
-# made (nothing opens); every game wears a star, gold on Home and empty to pick, and the header counts the places
-# left ("Pick 5 . N"). A new kid's Home is already full, so their first star on a wanted game (the playtest's path:
-# All games, the arrow, the star, Rally) is refused with "Home full! / Tap a star" for 2 s while the gold stars and
-# the arrow toward them hop. A new star goes first on Home, so a double tap brings a game to the front. A restart in
-# star mode keeps every star. With none, Home is just "All games".
+# Star mode: the Library's star button (a finger on it says "Pick games") turns taps into stars (nothing opens);
+# the sky turns violet and the tiles jiggle so a non-reader sees the change, every game wears a star (gold on Home,
+# empty to pick), and five stars in the header count Home's places. Only the green check keeps a visit's stars: the
+# home button (or the rest screen, or a restart) puts Home back. A new kid's Home is already full, so their first
+# star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
+# for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
+# A new star goes first on Home; a double tap on a tile acts once. With none, Home is just "All games".
 reset
 tilt 0 1000 0
 profile Sam 8
@@ -25,6 +26,8 @@ expect-screen library
 expect star_mode=1
 ui-check library_star_mode
 snap hs2_star_mode
+wait 200
+snap hs2_star_mode_jiggle
 tap 80 104
 wait 300
 expect star_mode=1
@@ -32,7 +35,7 @@ expect home_full=1
 expect home_tiles=6
 expect home_first=crago
 ui-check library_home_full
-snap hs3_home_full
+snap hs3_stars_on_page1
 tap 64 135
 wait 300
 expect home_full=1
@@ -42,6 +45,7 @@ expect home_full=0
 tap 36 72
 wait 600
 expect home_tiles=5
+snap hs4_counter
 tap 96 135
 wait 600
 tap 80 104
@@ -55,8 +59,14 @@ tap 124 72
 wait 150
 tap 124 72
 wait 600
+expect home_tiles=5
+tap 124 72
+wait 600
 expect home_first=marblekick
 expect home_tiles=6
+tap 126 42
+wait 600
+expect star_mode=0
 reboot
 wait 600
 tap 80 68
@@ -69,23 +79,57 @@ snap hs6_home_picked
 tap 124 104
 wait 600
 expect-screen library
-expect star_mode=0
 tap 126 42
-wait 600
-tap 80 72
-wait 600
-tap 124 72
 wait 600
 tap 36 104
 wait 600
 tap 80 104
+wait 600
+tap 126 42
+wait 600
+tap 80 12
+wait 600
+expect-screen launcher
+expect home_tiles=4
+expect home_first=marblekick
+ui-check launcher_three
+snap hs7_home_three
+tap 124 72
+wait 600
+expect-screen biscuit_setup_pet
+reboot
+wait 600
+tap 80 68
+wait 600
+tap 80 104
+wait 600
+expect-screen library
+tap 126 42
+wait 600
+tap 124 72
+wait 600
+tap 80 72
+wait 600
+expect home_tiles=2
+tap 80 12
+wait 600
+expect-screen library
+expect star_mode=0
+expect home_tiles=4
+expect home_first=marblekick
+snap hs8_house_drops_edits
+tap 126 42
+wait 600
+tap 124 72
+wait 600
+tap 80 72
 wait 600
 tap 96 135
 wait 600
 tap 80 104
 wait 600
 expect home_tiles=1
-snap hs7_none_left
+snap hs9_none_left
 tap 126 42
 wait 600
 expect star_mode=0
@@ -94,7 +138,7 @@ wait 600
 expect-screen launcher
 expect home_tiles=1
 ui-check launcher_none
-snap hs8_home_none
+snap hs10_home_none
 tap 80 72
 wait 600
 expect-screen library

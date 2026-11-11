@@ -154,9 +154,9 @@ bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t of
   while (i < g.count && g.ids[i] != id) i++;
   if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--; f = g; return true; }
   if (h >= MAX_FAVS) return false;
-  if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the first one
-    i = 0;
-    while (i < MAX_FAVS - 1 && listed(indexOf(g.ids[i], ids, n), home, h)) i++;
+  if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the oldest, the last
+    i = MAX_FAVS - 1;
+    while (i > 0 && listed(indexOf(g.ids[i], ids, n), home, h)) i--;
     memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--;
   }
   memmove(g.ids + 1, g.ids, g.count); g.ids[0] = id; g.count++;   // what was just picked shows first

@@ -795,8 +795,13 @@ static void starRules() {
   assert(shell::toggleStar(f, 4, ids, 8, 0) && shell::toggleStar(f, 4, ids, 8, 0) && f.ids[0] == 4 && f.ids[3] == 3);   // a double tap: first
   const uint32_t off = shell::gameBit(3);   // id 3 switched off: four show, and 6 takes its place
   assert(shell::toggleStar(f, 6, ids, 8, off) && f.count == 5 && f.ids[0] == 6 && f.ids[1] == 4 && f.ids[4] == 5);
-  shell::Favorites gone = favs({20, 1, 3, 4, 5});   // 20 left the image: the first hidden one goes
+  shell::Favorites gone = favs({20, 1, 3, 4, 5});   // 20 left the image: the hidden one goes
   assert(shell::toggleStar(gone, 6, ids, 8, 0) && gone.ids[0] == 6 && gone.ids[1] == 1 && gone.ids[4] == 5);
+}
+static void oldestHiddenGoes() {   // two hidden favorites: the oldest (21, nearer the end) gives its place up, 20 stays
+  shell::Favorites two = favs({20, 1, 3, 21, 4});
+  assert(shell::toggleStar(two, 6, IDS8, 8, 0) && two.count == 5 && two.ids[0] == 6 && two.ids[1] == 20);
+  assert(two.ids[2] == 1 && two.ids[3] == 3 && two.ids[4] == 4);
 }
 // Home with 0..5 favorites: the stars in order, then "All games" (the row centered as the grid's short row is).
 static void homeFavorites() {
@@ -814,7 +819,18 @@ static void homeFavorites() {
     tapAt(sh, ms, launcher::tile(h, h + 1)); assert(on(sh, "library"));
   }
 }
-// Star mode on the Library: the star button, taps that star (saved at once) instead of open, a refused sixth.
+// Star mode on the Library: the star button, taps that star instead of open, a refused sixth, a double tap that acts
+// once; only the check saves: the home button or a restart puts Home back as it was.
+static void starEdits(Shell& sh, uint32_t& ms, MemStore& st) {   // One off (a double tap), Six on, Three off, Eight on
+  const int before = st.writes;
+  tapAt(sh, ms, launcher::tile(0, 6));
+  Input again{}; again.pressed = again.tap = true; again.x = again.downX = 56; again.y = again.downY = 72;
+  ms += 100; sh.update(testNow, ms, again); sh.render();                    // the second tap of a double tap: ignored
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::tile(2, 6));
+  tapAt(sh, ms, launcher::arrow(true)); tapAt(sh, ms, launcher::tile(1, 2));  // Eight on, from page 2
+  tapAt(sh, ms, launcher::tile(0, 2));                                        // Seven: a sixth, refused
+  assert(st.writes == before);                                                // nothing written yet
+}
 static void starMode() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
@@ -825,26 +841,27 @@ static void starMode() {
   shell::Favorites f;
   tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); assert(on(sh, "library"));   // star mode
   int before = st.writes;
-  tapAt(sh, ms, launcher::tile(0, 6)); assert(st.writes == before + 1);       // One off, saved right away
-  tapAt(sh, ms, launcher::tile(5, 6));                                        // Six on
-  tapAt(sh, ms, launcher::tile(2, 6));                                        // Three off
-  tapAt(sh, ms, launcher::arrow(true)); tapAt(sh, ms, launcher::tile(1, 2));  // Eight on, from page 2
-  before = st.writes;
-  tapAt(sh, ms, launcher::tile(0, 2)); assert(st.writes == before);           // Seven: a sixth, refused, nothing written
+  starEdits(sh, ms, st);
   assert(a[5].entered == 0 && a[7].entered == 0 && a[6].entered == 0);        // star mode opens nothing
-  assert(shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 8 && f.ids[1] == 6 && f.ids[2] == 2 && f.ids[4] == 5);
-  tapAt(sh, ms, back); assert(on(sh, "library") && st.writes == before);     // the home button ends star mode
+  tapAt(sh, ms, back); assert(on(sh, "library") && st.writes == before);     // the home button: star mode ends, unsaved
   tapAt(sh, ms, launcher::tile(1, 2)); assert(a[7].entered == 1);              // out of star mode: a tap opens
-  a[7].home = true; frame(sh, ms, Input{});
-  const int after = st.writes;   // (leaving a game saved the kid's record)
+  a[7].home = true; frame(sh, ms, Input{}); tapAt(sh, ms, back); assert(on(sh, "launcher"));
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1); home(sh, ms, a[0]);   // Home as it was: One first
+  assert(shell::loadFavorites(st, 0, f) && !f.picked);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT);
+  starEdits(sh, ms, st);
+  before = st.writes;
+  tapAt(sh, ms, launcher::LIGHT); assert(on(sh, "library") && st.writes == before + 1);   // the check saves
+  assert(shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 8 && f.ids[1] == 6 && f.ids[2] == 2 && f.ids[4] == 5);
+  const int after = st.writes;
   tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::LIGHT); assert(st.writes == after);   // nothing changed: no write
   tapAt(sh, ms, back); assert(on(sh, "launcher"));
   tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 2); home(sh, ms, a[7]);   // Home: the newest star first
   tapAt(sh, ms, launcher::tile(4, 6)); assert(a[4].entered == 1); home(sh, ms, a[4]);
   tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // Two off
   bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);   // a restart mid star mode
-  tapAt(sh, ms, launcher::tile(0, 5)); assert(a[7].entered == 3);   // kept: Eight first, and four stars
-  assert(shell::loadFavorites(st, 0, f) && f.count == 4);
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3);   // Eight first, and Two still there
+  assert(shell::loadFavorites(st, 0, f) && f.count == 5);
 }
 // A game the kid has never seen (new in this image) wears a red dot on its tile and on "All games" until opened.
 static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 5) * gfx::W + b.x + 5] == C_RED; }
@@ -1065,7 +1082,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); homeFavorites(); starMode(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); homeFavorites(); starMode(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.

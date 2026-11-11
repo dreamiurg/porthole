@@ -79,6 +79,8 @@ class Shell {
   uint32_t gamesOff_ = 0;                          // the games a grown-up switched off, "sys"/"games" (bit id - 1)
   shell::Favorites favs_{};                        // the active kid's Home, porthole/f<id>
   bool starMode_ = false;                          // the Library's star mode
+  shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
+  int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
   uint32_t fullUntil_ = 0;                         // a sixth star: "Home full!" until then
   uint8_t gamesPage_ = 0;                          // Info -> Games
@@ -166,12 +168,14 @@ class Shell {
   void updateDelete(); void drawDelete();
   void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
   bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
-  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b); void drawPageArrow(bool right, int nudge = 0);
+  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b, int dx = 0); void drawPageArrow(bool right, int nudge = 0);
   bool drawMoreGames(const ui::Box& b, int dy); uint32_t homeMask() const;
   void drawHeader(); void drawCaption(const ui::Box* tiles, const int* games, int m);
   int homeTiles(int* games) const;   // Home's games (app indexes) in tile order; -1 is "All games"
   bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }
-  void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred); void tapLibrary(int k); void drawStarButton();
+  void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred, int starPage); void tapLibrary(int k); void drawStarButton();
+  bool drawLibraryTile(int i, int m, int k, uint32_t home, int hop);   // tile i of m: game k and its star
+  void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
   bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
