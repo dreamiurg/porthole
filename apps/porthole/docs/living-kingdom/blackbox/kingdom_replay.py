@@ -79,7 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("trace", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--binary", type=Path, default=Path("build/host/snap"))
+    parser.add_argument("--binary", type=Path, default=Path("build/host/snap-all"))  # its traces predate games/enabled.h: the ten-game launcher
     parser.add_argument("--expected", type=Path)
     args = parser.parse_args()
     output = args.output.resolve()

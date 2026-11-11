@@ -80,7 +80,7 @@ MAKEFLAGS += -j$(NPROC)
 endif
 objs = $(addprefix $(1)/,$(2:.cpp=.o))
 # Objects depend on this Makefile too: a changed flag (a new warning) must recompile what was already built.
-compile = mkdir -p $(@D) && $(CXX) $(1) -MMD -MP -c $< -o $@
+compile = mkdir -p $(@D) && $(CXX) $(1) $(GAMES) -MMD -MP -c $< -o $@
 $(BUILD)/obj/%.o: %.cpp Makefile
 	$(call compile,$(CXXFLAGS))
 $(BUILD)/asan/%.o: %.cpp Makefile
@@ -88,13 +88,14 @@ $(BUILD)/asan/%.o: %.cpp Makefile
 # HAVE_SDL only changes host/sim.cpp: the windowed sim shares every other object with snap.
 $(BUILD)/sdl/host/sim.o: host/sim.cpp Makefile
 	$(call compile,$(CXXFLAGS) $(SDL_CFLAGS) -DHAVE_SDL)
-# Only host/sim.cpp includes games/apps.h, so it alone changes with games/enabled.h's switches. sim, snap and webemu
-# ship what the firmware ships; the playtest sims (snap-all, snap-asan and coverage's snap) have every game, so a
-# switched-off game's scenarios still play, on the same launcher as before it was switched off.
-ALL_GAMES := -DPORTHOLE_ALL_GAMES=1
+# Of the sims' sources only host/sim.cpp includes games/apps.h (host/test_apps*.cpp, their own builds, are the others),
+# so it alone changes with games/enabled.h's switches. sim, snap and webemu ship what the firmware ships; the playtest
+# sims (snap-all, snap-asan and coverage's snap) have every game, so a switched-off game's scenarios still play, on the
+# same launcher as before it was switched off. The "shipped" scenarios play on snap.
 $(BUILD)/all/host/sim.o: host/sim.cpp Makefile
-	$(call compile,$(CXXFLAGS) $(ALL_GAMES))
-$(BUILD)/asan/host/sim.o: CXXFLAGS += $(ALL_GAMES)
+	$(call compile,$(CXXFLAGS))
+ALL_GAMES := -DPORTHOLE_ALL_GAMES=1
+$(BUILD)/all/host/sim.o $(BUILD)/asan/host/sim.o: GAMES := $(ALL_GAMES)
 
 all: sim test
 
@@ -110,7 +111,7 @@ $(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
 sim snap snap-all snap-asan: %: $(BUILD)/%
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
-playtest: snap-all snap-asan
+playtest: snap snap-all snap-asan
 	$(PY) tools/playtest.py
 
 # Just the sanitizer monkeys: what ci adds to coverage, which already plays every other scenario.
@@ -181,7 +182,7 @@ endif
 
 $(COV)/obj/%.o: %.cpp Makefile
 	$(call compile,$(COV_CXXFLAGS))
-$(COV)/obj/host/sim.o: COV_CXXFLAGS += $(ALL_GAMES)
+$(COV)/obj/host/sim.o: GAMES := $(ALL_GAMES)
 $(foreach t,$(TESTS),$(eval $(COV)/$(t): $(call objs,$(COV)/obj,$($(t)_SRC) host/$(t).cpp)))
 $(COV)/test_%:
 	$(CXX) --coverage $^ -o $@ $(HOST_LIBS)
@@ -194,7 +195,7 @@ cov-reset:
 	mkdir -p $(COV) && find $(COV) -name '*.gcda' -delete
 cov-run-%: $(COV)/% cov-reset
 	$<
-cov-playtest: $(COV)/snap cov-reset
+cov-playtest: $(COV)/snap $(BUILD)/snap cov-reset   # the "shipped" scenarios play on snap, uncounted
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 coverage: $(TESTS:%=cov-run-%) cov-playtest
 	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \

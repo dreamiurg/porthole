@@ -18,7 +18,7 @@ Debug fixtures, state-aware bots, unobserved trace replays and green CI cannot s
 this pass. Keep hidden-state probes and the automated work below separate from
 the black-box session. Documentation-only/non-player-visible changes are exempt.
 
-1. `make -C apps/porthole playtest` builds `snap-all` (every game, switched off or not: `games/enabled.h`) and `snap-asan` (also every game), then runs `python3 apps/porthole/tools/playtest.py` against every scenario in `apps/porthole/tests/playtests/*.txt`. It writes `apps/porthole/build/playtest/report.md` and one contact-sheet PNG per scenario under `apps/porthole/build/playtest/`.
+1. `make -C apps/porthole playtest` builds `snap-all` (every game, switched off or not: `games/enabled.h`), `snap-asan` (also every game, for the monkeys) and `snap` (only the games that ship, for scenarios named `*shipped*`), then runs `python3 apps/porthole/tools/playtest.py` against every scenario in `apps/porthole/tests/playtests/*.txt`. It writes `apps/porthole/build/playtest/report.md` and one contact-sheet PNG per scenario under `apps/porthole/build/playtest/`.
 2. To iterate on one scenario instead of the whole suite: `python3 apps/porthole/tools/playtest.py 05_read` (matches file names in `apps/porthole/tests/playtests/` by substring; space-separate several substrings, e.g. `06 monkey`).
 3. Read `apps/porthole/build/playtest/report.md` top to bottom, not just the summary line:
    - **Scenario table**: pass/fail, check count, and UI FAIL/WARN counts per scenario. The report's own header states the rule: a scenario fails on a failed directive, a crash, a sanitizer report, or any UI finding — **FAIL and WARN both fail a run (warnings are errors)**.

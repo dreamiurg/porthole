@@ -1063,7 +1063,8 @@ static void deleteNeedsACode() {
   assert(storedStrikes(st, 0) == 4 && sh.profileCount() == 2);
 }
 // A game switched off (games/enabled.h) is not an app, but its namespace is in the stores begin() takes: deleting a
-// profile erases that profile's save there too, and no one else's, so the next kid in the slot starts fresh.
+// profile erases that profile's save there too, and no one else's, and so does a new profile taking the slot (a save
+// left behind by a delete cut short), so the next kid in the slot starts fresh.
 static void deleteErasesSwitchedOff() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   StubApp a("One"); App* const list[1] = {&a};
@@ -1078,6 +1079,8 @@ static void deleteErasesSwitchedOff() {
   frame(sh, ms, hold);
   assert(on(sh, "picker") && sh.profileCount() == 1);
   assert(!st.has("off", "s0") && !st.has("stub", "s0") && st.has("off", "s1"));
+  st.save("off", "s0", &pup, sizeof pup);
+  assert(sh.createProfile("Ava", 7, "") == 0 && !st.has("off", "s0") && st.has("off", "s1"));
 }
 // A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press

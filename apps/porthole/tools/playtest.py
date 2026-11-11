@@ -4,7 +4,9 @@
   python3 tools/playtest.py            every scenario in tests/playtests/ (make playtest builds the sims first)
   python3 tools/playtest.py 06 monkey  only scenarios whose file name contains one of the words
 
-PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report directory, and PLAYTEST_TIMEOUT_SCALE
+Scenarios run on build/host/snap-all (every game, switched off or not), monkeys on snap-asan (also every game), and one
+whose name has "shipped" on build/host/snap (only the games games/enabled.h ships).
+PLAYTEST_SNAP and PLAYTEST_OUT override the all-games sim binary and the report directory, and PLAYTEST_TIMEOUT_SCALE
 multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
@@ -515,7 +517,9 @@ def slowest_first(paths):  # ponytail: monkeys, then the longest scripts; record
     return sorted(paths, key=lambda p: ("monkey" not in p.stem, -p.stat().st_size))
 
 
-def sim_for(path):  # monkeys run under the sanitizers
+def sim_for(path):  # monkeys run under the sanitizers; a "shipped" scenario on the sim with only the games that ship
+    if "shipped" in path.stem:
+        return ROOT / "build" / "host" / "snap"
     return ROOT / "build" / "host" / "snap-asan" if "monkey" in path.stem else SNAP
 
 

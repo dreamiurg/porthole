@@ -20,6 +20,9 @@ progression, difficulty/economy, onboarding or a substantial interaction redesig
    and iteration procedure below. Use the SDL
    simulator, browser emulator, or `snap --serve` with inspected rendered frames
    and ordinary touch/tilt inputs. Base each decision on what is visible.
+   To play a game switched off in `games/enabled.h` (Biscuit today), use
+   `build/host/snap-all --serve` (`make snap-all`), or the browser emulator with
+   `WEBEMU_SNAP=build/host/snap-all python3 tools/webemu.py`.
    Independence is required for every game's gameplay/UI changes; new games and
    major changes require a source-free first-play pass. An implementer can do
    additional checks but cannot certify this gate alone. If delegation or the
@@ -206,7 +209,8 @@ never touch your `build/host/`, and scenarios run in parallel) and reads stdout.
 Three directives need the live game state to decide what to tap (`follow-glow`, `solve-word`, `answer-book`).
 For those the runner runs the script so far, reads the answer, appends the taps and carries on. Because every run
 replays the same game, the final run sees exactly what the earlier ones saw. Scenarios whose name contains
-`monkey` use `build/host/snap-asan`; the rest use `build/host/snap`.
+`monkey` use `build/host/snap-asan`, those whose name contains `shipped` use `build/host/snap` (only the games
+`games/enabled.h` ships), and the rest use `build/host/snap-all` (every game, switched off or not).
 
 ## Scenario syntax
 
