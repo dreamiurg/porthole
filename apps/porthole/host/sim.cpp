@@ -352,7 +352,7 @@ static void boot(bool seedClock = true) {
   }
   g_sys.powerOn();
   air::setFeed(&g_feed);
-  g_shell.begin(g_store, APPS, n, &g_sys);
+  g_shell.begin(g_store, APPS, n, &g_sys, ALL_STORES);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
 static void reset() { wipe(); boot(); }

@@ -43,8 +43,9 @@ inline uint8_t backlightFor(bool asleep, uint32_t idleMs, uint8_t active) {
 
 class Shell {
  public:
-  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null
-  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr);
+  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null. stores:
+  // every game's save namespace, a switched-off game's too, then null (null: the apps'), for delete and create
+  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr, const char* const* stores = nullptr);
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
@@ -74,6 +75,7 @@ class Shell {
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
+  const char* const* stores_ = nullptr;
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
@@ -131,7 +133,7 @@ class Shell {
   void choose(int id, bool del);
   void authorized();
   void select(int id);
-  int appStores(const char** out) const;   // every app's save namespace, for delete and create
+  int appStores(const char** out) const;   // every game's save namespace (stores_, else the apps'), for delete and create
   void finishCreate(uint16_t pin);
   void openIdx(int k);
   void closeApp();

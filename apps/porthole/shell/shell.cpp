@@ -8,8 +8,8 @@
 using namespace gfx;
 using shell::Record;
 
-void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys) {
-  st_ = &st; sys_ = sys; apps_ = apps; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
+void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys, const char* const* stores) {
+  st_ = &st; sys_ = sys; apps_ = apps; stores_ = stores; nApps_ = nApps < MAX_APPS ? nApps : MAX_APPS; app_ = nullptr; active_ = target_ = -1;
   for (bool& o : opened_) o = false;
   shell::loadAll(st, prof_);
   limits_ = shell::loadLimits(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
@@ -131,7 +131,8 @@ void Shell::finishCreate(uint16_t pin) {
 }
 int Shell::appStores(const char** out) const {
   int n = 0;
-  for (int k = 0; k < nApps_ && n < MAX_APPS; k++) out[n++] = apps_[k]->store();
+  if (stores_) for (; stores_[n] && n < MAX_APPS; n++) out[n] = stores_[n];
+  else for (; n < nApps_; n++) out[n] = apps_[n]->store();
   return n;
 }
 int Shell::createProfile(const char* name, uint8_t age, const char* code) {

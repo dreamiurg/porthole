@@ -24,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(os.environ.get("PLAYTEST_OUT") or ROOT / "build" / "playtest").resolve()
-SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap").resolve()
+SNAP = Path(os.environ.get("PLAYTEST_SNAP") or ROOT / "build" / "host" / "snap-all").resolve()  # every game, switched off or not
 TIMEOUT_SCALE = float(os.environ.get("PLAYTEST_TIMEOUT_SCALE") or 1)
 _pal = (ROOT / "os/palette.h").read_text()
 

@@ -5,6 +5,8 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
 launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town and Rally.
+Which of them ship is one switch per game in `games/enabled.h`; Biscuit is switched off on the device for now (still
+built and tested).
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -196,7 +198,8 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 
 A warm, doglike companion for the same kids, drawn full-color at the panel's native 480×480 with
 smooth text. Biscuit grows through care, shared stories, curiosity and little tricks; he talks in
-short, cozy lines and never makes anyone feel bad for being away.
+short, cozy lines and never makes anyone feel bad for being away. Switched off on the device for now
+(`games/enabled.h`); its code, tests and playtests stay.
 
 * **Home.** A room that changes with the time of day, where the pup naps, eats, fetches and shows
   off his tricks. Feed, Play, Read and More; tap the pup to pet him, the window for a nap, the
