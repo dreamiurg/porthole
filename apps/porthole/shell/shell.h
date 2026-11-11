@@ -62,7 +62,7 @@ class Shell {
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level) "unseen", then the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level) "unseen" (saved with the next game opened), then the open game
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_NO_DELETE, SH_LAUNCHER, SH_REST,
@@ -79,6 +79,7 @@ class Shell {
   uint32_t gamesOff_ = 0;                          // the games a grown-up switched off, "sys"/"games" (bit id - 1)
   shell::Favorites favs_{};                        // the active kid's Home, porthole/f<id>
   bool starMode_ = false;                          // the Library's star mode
+  bool favsKept_ = false;                          // f<id> is there but unreadable (damaged, or a newer firmware's): never overwritten
   shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
   int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
@@ -175,6 +176,7 @@ class Shell {
   bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }
   void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred, int starPage); void tapLibrary(int k); void drawStarButton();
   bool drawLibraryTile(int i, int m, int k, uint32_t home, int hop);   // tile i of m: game k and its star
+  void saveFavs() { if (!favsKept_) shell::saveFavorites(*st_, active_, favs_); }
   void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
   bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
   void setLight(shell::Light l);

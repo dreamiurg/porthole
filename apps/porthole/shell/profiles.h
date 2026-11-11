@@ -135,15 +135,22 @@ struct GamesOff { uint16_t version, size; uint32_t off, crc; };    // "sys"/"gam
 static_assert(sizeof(GamesOff) == 12, "sys/games is persisted: append before crc, never resize");
 uint32_t loadGamesOff(Store& st);                                    // 0 (all on) when missing or invalid
 bool saveGamesOff(Store& st, uint32_t off);                          // false unless it reads back
+inline bool allOff(const uint8_t* ids, int n, uint32_t off) {   // every game in the image switched off
+  for (int k = 0; k < n; k++) if (!(off & gameBit(ids[k]))) return false;
+  return true;
+}
 // The image's games a kid sees (indexes into the app table, launcher order): never none, so a mask that switches
 // off every game in the image (they all left but the switched-off ones) counts as all on.
 int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out);
 // Home: every enabled game while they fit one page (no Library then), else the kid's favorites that are enabled, the
-// newest star first (the default when none were ever picked). The Library has the rest; true from libraryOn().
+// newest star first; the default when none were ever picked or none of them shows (switched off, gone, or every star
+// taken off), so Home is never empty and hidden favorites come back with their games. The Library has the rest.
+// True from libraryOn().
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
 inline bool libraryOn(const uint8_t* ids, int n, uint32_t off) { int all[MAX_GAME_ID]; return enabledGames(ids, n, off, all) > MAX_FAVS + 1; }
 // Star mode's tap on game id: unstars it, or stars it first on Home. False (and nothing changes) for a sixth
-// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star (the oldest such first).
+// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star (the oldest such
+// first). A tap while the default shows starts the kid's list from it.
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off);
 
 // Rest budget.

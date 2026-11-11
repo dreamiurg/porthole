@@ -4,8 +4,8 @@
 # home button (or the rest screen, or a restart) puts Home back. A new kid's Home is already full, so their first
 # star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
 # for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
-# A new star goes first on Home; repeated taps on one tile within 400 ms count once. The check with no star left
-# brings the default Home back (a non-reader who emptied it could not refill it).
+# A new star goes first on Home; repeated taps on one tile within 400 ms count once. With no star left (or every
+# favorite switched off) Home is the default again (a non-reader who emptied it could not refill it).
 reset
 tilt 0 1000 0
 profile Sam 8
@@ -129,14 +129,14 @@ tap 96 135
 wait 600
 tap 80 104
 wait 600
-expect home_tiles=1
-snap hs9_none_left
+expect home_tiles=6
+expect home_first=crago
+snap hs9_none_left_default
 tap 126 42
 wait 600
 expect star_mode=0
 expect home_tiles=6
 expect home_first=crago
-snap hs10_default_back
 tap 80 12
 wait 600
 expect-screen launcher

@@ -32,6 +32,7 @@ uint32_t Shell::lastSeen() const {
   return t;
 }
 void Shell::go(Screen s) {
+  if (screen_ == SH_LIBRARY && s != SH_LIBRARY) leaveStars(false);   // star mode ends with the Library: only the check keeps it
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
   if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
@@ -115,15 +116,15 @@ bool Shell::guardScreenTime() {
   enforceCurrentBudget();
   if (!restingNow()) return false;
   if (screen_ == SH_APP) closeApp();
-  leaveStars(false);   // only the check saves stars
   go(SH_REST); return true;
 }
 void Shell::select(int id) {
-  active_ = id; page_ = 0; starMode_ = false;
+  active_ = id; page_ = 0; starMode_ = favsKept_ = false;
   if (!shell::loadFavorites(*st_, id, favs_)) {   // a kid's first Home: no game here now is new to them
     for (int k = 0; k < nApps_; k++) favs_.seen |= shell::gameBit(ids_[k]);
     // Written only when missing: a damaged one, or a newer version's after a USB rollback, stays for that firmware.
-    if (!st_->load(shell::NS, shell::key('f', id), blobs_[0], sizeof blobs_[0])) shell::saveFavorites(*st_, id, favs_);
+    favsKept_ = st_->load(shell::NS, shell::key('f', id), blobs_[0], sizeof blobs_[0]) != 0;
+    saveFavs();
   }
   shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
@@ -169,13 +170,11 @@ bool Shell::openApp(const char* name) {
   return false;
 }
 void Shell::openIdx(int k) {
-  leaveStars(false);   // the sim's `app` opens a game from star mode: its edits were never confirmed
   enforceCurrentBudget();
   if (restingNow()) { go(SH_REST); return; }
   app_ = apps_[k]; opened_[k] = true; fromLibrary_ = screen_ == SH_LIBRARY;
   int on[MAX_APPS]; const int m = shell::enabledGames(ids_, nApps_, gamesOff_, on);
   for (int i = 0; i < m; i++) if (on[i] == k) page_ = launcher::pageOf(m, i);   // back from a game: its Library page
-  if (unseen(k)) { favs_.seen |= shell::gameBit(ids_[k]); shell::saveFavorites(*st_, active_, favs_); }   // no longer new
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
   for (int id; (id = prof_.nth(n)) >= 0; n++) {
     all[n] = shell::toProfile(prof_, id);
@@ -185,7 +184,8 @@ void Shell::openIdx(int k) {
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
   app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
-  go(SH_APP);
+  go(SH_APP);   // first: from star mode (the sim's `app`), the unconfirmed stars are dropped before the save below
+  if (unseen(k)) { favs_.seen |= shell::gameBit(ids_[k]); saveFavs(); }   // no longer new
 }
 void Shell::flushApp(bool allowed) {
   // The shell keeps what it last wrote: the same bytes again are not rewritten (a story reader's view change), and a
@@ -591,10 +591,8 @@ void Shell::tapLibrary(int k) {
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
   starMode_ = false;
-  if (!keep) { favs_ = starsBefore_; return; }
-  int home[MAX_APPS];   // no star at all is a non-reader's mashing (kid playtest 3), not a wish: the default comes back
-  if (!shell::homeGames(favs_, ids_, nApps_, gamesOff_, home)) { favs_.picked = favs_.count = 0; memset(favs_.ids, 0, sizeof favs_.ids); }
-  if (memcmp(&favs_, &starsBefore_, sizeof favs_)) shell::saveFavorites(*st_, active_, favs_);   // a failed write keeps it for this visit
+  if (!keep) favs_ = starsBefore_;
+  else if (memcmp(&favs_, &starsBefore_, sizeof favs_)) saveFavs();   // a failed write keeps it for this visit
 }
 // A 9x9 star, outlined: the Library's corner mark (s 1) and its button (s 2); white fill is an empty star.
 static void star(int x, int y, int s, uint8_t fill = C_GOLD) {
@@ -653,7 +651,8 @@ void Shell::drawLibrary() {
     const bool gold = home & shell::gameBit(ids_[on[j]]);
     starred += gold; before |= gold && j < k0; after |= gold && j >= k0 + m;
   }
-  bool here = false;   // a gold star on this page: "Tap a star", else the next page that way (1-based; MAX_APPS makes two pages at most)
+  static_assert(MAX_APPS <= 2 * launcher::PER_PAGE, "\"Stars: page N\" names the other page: two pages at most");
+  bool here = false;   // a gold star on this page: "Tap a star", else the other page (1-based)
   for (int i = 0; i < m; i++) { tiles[i] = launcher::tile(i, m); games[i] = on[k0 + i]; here |= drawLibraryTile(i, m, games[i], home, hop); }
   drawLibraryTitle(starred, here ? 0 : before ? page_ : page_ + 2);
   drawCaption(tiles, games, m);
@@ -780,7 +779,7 @@ void Shell::debugHome() const {   // home_first: the first tile's game by its st
 void Shell::debugCmd(const char* cmd) {
   if (!strcmp(cmd, "anytime")) { window_.enabled = 0; shell::savePlayWindow(*st_, window_); }   // declared host test fixture
   if (!strcmp(cmd, "light")) setLight((shell::Light)((light_ + 1) % shell::LIGHT_COUNT));   // the sim's `b` key
-  if (!strcmp(cmd, "unseen")) favs_.seen = 0;   // every game new to this kid until opened (RAM only): the "new" dots
+  if (!strcmp(cmd, "unseen")) favs_.seen = 0;   // every game new to this kid until opened: the "new" dots (saved with the next game opened)
   if (active_ >= 0) {
     if (!strcmp(cmd, "tired")) rec().playSec = (uint32_t)limits_.sessionMinutes * 60;
     else if (!strcmp(cmd, "bedtime")) { rec().playDay = now_ / shell::DAY_SEC; rec().dayPlaySec = (uint32_t)limits_.dailyMinutes * 60; }

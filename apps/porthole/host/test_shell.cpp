@@ -773,7 +773,12 @@ static void homeRules() {
   assert(is(shell::enabledGames(ids, 3, 0x7, out), {0, 1, 2}));   // every game off counts as every game on
   assert(is(shell::homeGames(favs({7, 2, 20, 5}), ids, 8, 0, out), {6, 1, 4}));   // star order; id 20 is not here
   assert(is(shell::homeGames(favs({7, 2, 5}), ids, 8, shell::gameBit(2), out), {6, 4}));   // switched off: hidden
-  assert(is(shell::homeGames(favs({}), ids, 8, 0, out), {}));   // no stars at all: just "All games"
+  assert(is(shell::homeGames(favs({}), ids, 8, 0, out), {0, 1, 2, 3, 4}));   // no stars at all: the default
+  static const uint8_t ids12[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  const shell::Favorites late = favs({12, 11, 10, 9, 8});
+  uint32_t lateOff = 0; for (uint8_t id = 8; id <= 12; id++) lateOff |= shell::gameBit(id);
+  assert(is(shell::homeGames(late, ids12, 12, lateOff, out), {0, 1, 2, 3, 4}));   // every favorite off: the default
+  assert(is(shell::homeGames(late, ids12, 12, 0, out), {11, 10, 9, 8, 7}));        // back on: the kid's own Home
 }
 // Star mode's taps: the default becomes the kid's list, a new star goes first, a sixth is refused (even on the
 // default, which stays the default), and a hidden favorite gives its place up only when a new star needs it.
@@ -810,7 +815,7 @@ static void homeFavorites() {
                   StubApp("Seven"), StubApp("Eight")};
   App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
   bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
-  for (int h = 0; h <= shell::MAX_FAVS; h++) {
+  for (int h = 1; h <= shell::MAX_FAVS; h++) {   // none: the default (homeRules)
     shell::Favorites f = {}; f.picked = 1; f.seen = 0xff;
     for (int i = 0; i < h; i++) f.ids[f.count++] = (uint8_t)(8 - i);   // Eight, Seven, ...: not launcher order
     assert(shell::saveFavorites(st, 0, f));
@@ -875,12 +880,38 @@ static void emptyHomeIsDefault() {
   tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && f.count == 4);   // One off, kept
   tapAt(sh, ms, launcher::LIGHT);
   for (int i = 1; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));   // the other four off: none left
-  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && !f.picked && !f.count);   // the default, saved
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && !f.count);   // saved empty
+  tapAt(sh, ms, {64, -4, 32, 32}); tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1);   // Home: the default
+  home(sh, ms, a[0]);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // from it: Two off
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.count == 4 && f.ids[1] == 3);
+}
+// Favorites whose games a grown-up switched off are hidden, never dropped: with none showing Home is the default,
+// the check with no change writes nothing, unstarring every one that shows keeps the hidden ones, and switching
+// their games back on brings the kid's own Home back.
+static void hiddenFavorites() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[12] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                   StubApp("Seven"), StubApp("Eight"), StubApp("Nine"), StubApp("Ten"), StubApp("Eleven"), StubApp("Twelve")};
+  App* list[12]; for (int k = 0; k < 12; k++) list[k] = &a[k];
+  bootWithoutHours(sh, st, list, 12); sh.createProfile("Sam", 8, "");
+  shell::Favorites f = favs({12, 11, 10, 9, 8}); f.seen = 0xfff; assert(shell::saveFavorites(st, 0, f));
+  uint32_t off = 0; for (uint8_t id = 8; id <= 12; id++) off |= shell::gameBit(id);
+  assert(shell::saveGamesOff(st, off));
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1); home(sh, ms, a[0]);   // all five off: the default
   const int before = st.writes;
-  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6)); tapAt(sh, ms, launcher::tile(0, 6));   // One off, on
-  for (int i = 0; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));
-  tapAt(sh, ms, launcher::LIGHT); assert(st.writes == before);   // emptied from the default: still the default, no write
-  tapAt(sh, ms, {64, -4, 32, 32}); tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1);   // Home: One first
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::LIGHT);
+  assert(st.writes == before && shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 12);   // untouched
+  shell::Favorites mixed = favs({8, 1, 2}); mixed.seen = 0xfff; assert(shell::saveFavorites(st, 0, mixed));
+  assert(shell::saveGamesOff(st, shell::gameBit(8)));   // Eight off: Home is One, Two
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(2, 3)); tapAt(sh, ms, launcher::LIGHT);
+  tapAt(sh, ms, launcher::tile(0, 6)); tapAt(sh, ms, launcher::tile(1, 6)); tapAt(sh, ms, launcher::LIGHT);   // both off
+  assert(shell::loadFavorites(st, 0, f) && f.count == 1 && f.ids[0] == 8);   // the hidden one stays
+  assert(shell::saveGamesOff(st, 0));
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(0, 2)); assert(a[7].entered == 1);   // Eight back on: the kid's own Home
 }
 // A game the kid has never seen (new in this image) wears a red dot on its tile and on "All games" until opened.
 static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 5) * gfx::W + b.x + 5] == C_RED; }
@@ -922,6 +953,11 @@ static void favoritesKept() {
     assert(e && e->len == len && !memcmp(e->data, len == sizeof f ? (const void*)&f : newer, len));   // untouched
     tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered);   // the default Home
     a[0].entered = 0; home(sh, ms, a[0]);
+    sh.debugCmd("unseen");   // star mode's check and a newly seen game change it in RAM only
+    tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));
+    tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, {64, -4, 32, 32});
+    tapAt(sh, ms, launcher::tile(0, 5)); assert(a[1].entered == 1); a[1].entered = 0; home(sh, ms, a[1]);   // One off
+    assert(e->len == len && !memcmp(e->data, len == sizeof f ? (const void*)&f : newer, len));
   }
 }
 // The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
@@ -1101,7 +1137,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); homeFavorites(); starMode(); emptyHomeIsDefault(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); homeFavorites(); starMode(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.

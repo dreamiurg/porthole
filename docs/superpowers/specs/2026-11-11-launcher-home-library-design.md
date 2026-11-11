@@ -42,8 +42,8 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
   shown has no gold star, while the gold stars hop and so does the arrow toward a page that holds one, so a
   non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
-  them (only if anything changed, read back) and returns to the Library; Done with no star left restores the
-  default favorites instead of an empty Home; leaving any other way (the home button,
+  them (only if anything changed, read back) and returns to the Library; with no star left Home shows the
+  default favorites again (see Data), never an empty Home; leaving any other way (the home button,
   which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
   playtests: round 1, M1, n1, n2; round 2 (`apps/porthole/docs/launcher-home-playtest-2.md`), 1-4: a 6-year-old
   entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart; round 3
@@ -66,12 +66,16 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 - **Seen baseline on first Home:** when a kid's `f<id>` is missing, their first Home writes it with `seen` = every
   game in the image, so only games added by a later update wear a "new" dot. It is written only when the key is
   missing: a damaged blob or a newer firmware's (after a USB rollback) is kept as it is and the default shows in
-  RAM, so going forward again finds the newer favorites. Opening a game marks it seen.
+  RAM, so going forward again finds the newer favorites; nothing writes it that session (star mode works in RAM and
+  its check saves nothing; a game opened is marked seen in RAM only). Opening a game marks it seen.
 - **Device games:** NVS `sys/games`, a versioned blob with a 32-bit "off" mask by id + crc. Missing = all on.
 - **Default favorites:** the first 5 enabled games in launcher order, so an updated device's Home looks like today's
   page 1 with "All games" in the 6th place.
 - Unknown ids (a game removed from the firmware) are skipped silently. Disabled favorites are hidden, not removed, so
   switching the game back on restores the star; when a new star needs the place, the oldest hidden one gives it up.
+  When none of a kid's favorites shows (all switched off or gone, or every star taken off), Home shows the default
+  and the list is kept as it is, so the hidden ones come back with their games; a star-mode tap while the default
+  shows starts the kid's list from it.
 
 ## Rules carried over
 
@@ -87,6 +91,6 @@ Library and star mode, and a grown-up playtest of Info -> Games. After the fixes
 report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
 order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
 button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
-double tap and a restart, `emptyHomeIsDefault` the check with no star; `starRules` covers a refused
+double tap and a restart, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
 only when missing; kid playtest 3 (`apps/porthole/docs/launcher-home-playtest-3.md`) replayed star mode.

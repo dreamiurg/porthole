@@ -118,11 +118,10 @@ bool saveGamesOff(Store& st, uint32_t off) {
   return st.save("sys", "games", &g, sizeof g) && loadGamesOff(st) == off;
 }
 int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out) {
+  const bool none = allOff(ids, n, off);   // never none: an all-off mask is no mask
   int m = 0;
-  for (int k = 0; k < n; k++) if (!(off & gameBit(ids[k]))) out[m++] = k;
-  if (m) return m;
-  for (int k = 0; k < n; k++) out[k] = k;   // never none: an all-off mask is no mask
-  return n;
+  for (int k = 0; k < n; k++) if (none || !(off & gameBit(ids[k]))) out[m++] = k;
+  return m;
 }
 static int indexOf(uint8_t id, const uint8_t* ids, int n) {
   for (int k = 0; k < n; k++) if (ids[k] == id) return k;
@@ -135,23 +134,27 @@ static bool listed(int k, const int* list, int m) {
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
   int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on);
   if (m <= MAX_FAVS + 1) { memcpy(out, on, m * sizeof *out); return m; }
-  if (!f.picked) { memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS; }
   int h = 0;
-  for (int i = 0; i < f.count && i < MAX_FAVS; i++) {
+  for (int i = 0; f.picked && i < f.count && i < MAX_FAVS; i++) {
     const int k = indexOf(f.ids[i], ids, n);
     if (k >= 0 && listed(k, on, m)) out[h++] = k;
   }
-  return h;
+  if (h) return h;
+  memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS;   // never starred, or every star hidden: the default (the list stays)
+}
+static int place(const Favorites& f, uint8_t id) {   // id's place in the list, or count
+  int i = 0;
+  while (i < f.count && f.ids[i] != id) i++;
+  return i;
 }
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
   int home[MAX_GAME_ID]; const int h = homeGames(f, ids, n, off, home);
   Favorites g = f;   // f changes only on success: a refused star leaves even the default untouched
-  if (!g.picked) {   // the default becomes the kid's own list
+  if (!g.picked || (h && place(g, ids[home[0]]) == g.count)) {   // the default shows (every star hidden too): it becomes the kid's list
     g.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); g.picked = 1;
     for (int i = 0; i < g.count; i++) g.ids[i] = ids[home[i]];
   }
-  int i = 0;
-  while (i < g.count && g.ids[i] != id) i++;
+  int i = place(g, id);
   if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--; f = g; return true; }
   if (h >= MAX_FAVS) return false;
   if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the oldest, the last

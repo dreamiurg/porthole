@@ -351,9 +351,10 @@ void Shell::drawSysPlayerPin() {
 static const int GAME_ROWS = 3;
 static ui::Box gameRow(int i) { return {22, 30 + i * 23, 116, 21}; }   // the picture's 56 physical rows fit inside
 static const ui::Box GAMES_PREV = {32, 122, 22, 18}, GAMES_NEXT = {106, 122, 22, 18};
+static int gamePages(int n) { return (n + GAME_ROWS - 1) / GAME_ROWS; }
 void Shell::updateSysGames() {
   if (ui::back(in_)) { go(SH_SYS_INFO); return; }
-  const int pages = (nApps_ + GAME_ROWS - 1) / GAME_ROWS;
+  const int pages = gamePages(nApps_);
   if (gamesPage_ > 0 && tapped(in_, GAMES_PREV)) gamesPage_--;
   if (gamesPage_ + 1 < pages && tapped(in_, GAMES_NEXT)) gamesPage_++;
   for (int i = 0; i < GAME_ROWS; i++) {
@@ -363,9 +364,7 @@ void Shell::updateSysGames() {
 }
 void Shell::toggleGame(int k) {
   const uint32_t off = gamesOff_ ^ gameBit(ids_[k]);
-  int left = 0;
-  for (int j = 0; j < nApps_; j++) left += !(off & gameBit(ids_[j]));
-  if (!left) { toast("Keep one game on"); return; }
+  if (allOff(ids_, nApps_, off)) { toast("Keep one game on"); return; }
   if (!saveGamesOff(*st_, off)) { toast("Could not save"); return; }
   gamesOff_ = off;
 }
@@ -375,7 +374,7 @@ static void sicon(const gfx::Sprite& s, int x, int y) {   // a launcher picture,
 }
 void Shell::drawSysGames() {
   sclear(C_NAVY);
-  const int pages = (nApps_ + GAME_ROWS - 1) / GAME_ROWS;
+  const int pages = gamePages(nApps_);
   for (int i = 0; i < GAME_ROWS && gamesPage_ * GAME_ROWS + i < nApps_; i++) {
     const int k = gamesPage_ * GAME_ROWS + i; const ui::Box b = gameRow(i);
     const bool pressed = down(in_, b), on = !(gamesOff_ & gameBit(ids_[k]));
