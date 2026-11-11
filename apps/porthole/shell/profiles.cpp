@@ -80,6 +80,7 @@ int create(Store& st, Profiles& p, const Record& draft, const char* const* store
   const int id = p.firstFree();
   if (id < 0) return -1;
   for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
+  st.erase(NS, key('f', id));
   Record& r = p.rec[id];
   memset(&r, 0, sizeof r);
   memcpy(r.name, draft.name, sizeof r.name); r.name[sizeof r.name - 1] = 0;
@@ -90,8 +91,77 @@ int create(Store& st, Profiles& p, const Record& draft, const char* const* store
 }
 void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, int nStores) {
   for (int i = 0; i < nStores; i++) st.erase(stores[i], key('s', id));
+  st.erase(NS, key('f', id));
   st.erase(NS, key('p', id));
   p.used[id] = false;
+}
+static uint32_t favCrc(const Favorites& f) { return os::crc32(&f, sizeof f - sizeof f.crc); }
+bool loadFavorites(Store& st, int profileId, Favorites& out) {
+  const bool ok = st.load(NS, key('f', profileId), &out, sizeof out) == sizeof out && out.magic == FAV_MAGIC &&
+                  out.version == FAV_VERSION && out.size == sizeof out && out.count <= MAX_FAVS && out.crc == favCrc(out);
+  if (!ok) memset(&out, 0, sizeof out);
+  return ok;
+}
+bool saveFavorites(Store& st, int profileId, Favorites& f) {
+  f.magic = FAV_MAGIC; f.version = FAV_VERSION; f.size = sizeof f; f.crc = favCrc(f);
+  Favorites back;
+  return st.save(NS, key('f', profileId), &f, sizeof f) && loadFavorites(st, profileId, back) && !memcmp(&back, &f, sizeof f);
+}
+static uint32_t gamesCrc(const GamesOff& g) { return os::crc32(&g, sizeof g - sizeof g.crc); }
+uint32_t loadGamesOff(Store& st) {
+  GamesOff g{};
+  const bool ok = st.load("sys", "games", &g, sizeof g) == sizeof g && g.version == 1 && g.size == sizeof g && g.crc == gamesCrc(g);
+  return ok ? g.off : 0;
+}
+bool saveGamesOff(Store& st, uint32_t off) {
+  GamesOff g{1, sizeof(GamesOff), off, 0}; g.crc = gamesCrc(g);
+  return st.save("sys", "games", &g, sizeof g) && loadGamesOff(st) == off;
+}
+int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out) {
+  int m = 0;
+  for (int k = 0; k < n; k++) if (!(off & gameBit(ids[k]))) out[m++] = k;
+  if (m) return m;
+  for (int k = 0; k < n; k++) out[k] = k;   // never none: an all-off mask is no mask
+  return n;
+}
+static int indexOf(uint8_t id, const uint8_t* ids, int n) {
+  for (int k = 0; k < n; k++) if (ids[k] == id) return k;
+  return -1;
+}
+static bool listed(int k, const int* list, int m) {
+  for (int j = 0; j < m; j++) if (list[j] == k) return true;
+  return false;
+}
+int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
+  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on);
+  if (m <= MAX_FAVS + 1) { memcpy(out, on, m * sizeof *out); return m; }
+  if (!f.picked) { memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS; }
+  int h = 0;
+  for (int i = 0; i < f.count && i < MAX_FAVS; i++) {
+    const int k = indexOf(f.ids[i], ids, n);
+    if (k >= 0 && listed(k, on, m)) out[h++] = k;
+  }
+  return h;
+}
+bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
+  int home[MAX_GAME_ID]; const int h = homeGames(f, ids, n, off, home);
+  if (!f.picked) {   // the default becomes the kid's own list
+    f.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); f.picked = 1;
+    for (int i = 0; i < f.count; i++) f.ids[i] = ids[home[i]];
+  }
+  for (int i = 0; i < f.count; i++) {
+    if (f.ids[i] != id) continue;
+    memmove(f.ids + i, f.ids + i + 1, f.count - i - 1); f.count--;
+    return true;
+  }
+  if (h >= MAX_FAVS) return false;
+  if (f.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the first one
+    int i = 0;
+    while (i < MAX_FAVS - 1 && listed(indexOf(f.ids[i], ids, n), home, h)) i++;
+    memmove(f.ids + i, f.ids + i + 1, f.count - i - 1); f.count--;
+  }
+  f.ids[f.count++] = id;
+  return true;
 }
 Profile toProfile(const Profiles& p, int id) {
   const Record& r = p.rec[id];

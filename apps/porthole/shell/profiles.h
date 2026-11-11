@@ -94,15 +94,57 @@ inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16
 // porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
 void loadAll(Store& st, Profiles& p);
 bool saveRecord(Store& st, Profiles& p, int id);   // false = the write failed
-// name/avatar/age/pin from draft; erases any s<id> left in the app stores first. The id, or -1 when full.
+// name/avatar/age/pin from draft; erases any s<id> left in the app stores, and f<id>, first. The id, or -1 when full.
 int  create(Store& st, Profiles& p, const Record& draft, const char* const* stores, int nStores);
-// Every app's s<id> first, the record last: power loss in between leaves a profile without saves, never saves
-// waiting for whoever takes the id next.
+// Every app's s<id> and f<id> first, the record last: power loss in between leaves a profile without saves, never
+// saves waiting for whoever takes the id next.
 void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, int nStores);
 Profile toProfile(const Profiles& p, int id);
 void migrate(Store& st, Profiles& p);   // migrate.cpp: Pets Club houses -> profiles; safe to re-run after power loss
 // migrate.cpp: Biscuit's pre-Porthole save -> biscuit/s<id>, once (porthole/mb); safe to re-run after power loss.
 void migrateBiscuit(Store& st, Profiles& p);
+
+// Home and the Library. Every game has a stable id, 1..32 (APP_IDS in games/apps.h): a bit in a mask is bit id - 1.
+// A kid's favorites are porthole/f<profile id>, append-only like Record; missing or invalid is the default (the first
+// MAX_FAVS enabled games, in launcher order). A grown-up's games switched off are "sys"/"games"; missing is all on.
+// An id this image does not know (a game that left the firmware) is skipped, never an error.
+constexpr int MAX_FAVS = 5, MAX_GAME_ID = 32;
+constexpr uint32_t gameBit(uint8_t id) { return id >= 1 && id <= MAX_GAME_ID ? 1u << (id - 1) : 0; }
+constexpr bool validIds(const uint8_t* ids, int n) {   // unique, 1..MAX_GAME_ID: apps.h asserts it at compile time
+  uint32_t seen = 0;
+  for (int k = 0; k < n; k++) {
+    if (!gameBit(ids[k]) || (seen & gameBit(ids[k]))) return false;
+    seen |= gameBit(ids[k]);
+  }
+  return true;
+}
+constexpr uint32_t FAV_MAGIC = 0x56414650;   // "PFAV"
+constexpr uint16_t FAV_VERSION = 1;
+struct Favorites {
+  uint32_t magic;
+  uint16_t version, size;
+  uint8_t count, picked;      // picked 0: the kid never starred anything, Home shows the default
+  uint8_t ids[MAX_FAVS], reserved;   // Home's order: the order the stars were set
+  uint32_t seen;              // games known when this was first written or opened since; the rest wear a "new" dot
+  uint32_t crc;
+};
+static_assert(sizeof(Favorites) == 24, "porthole/f<id> is persisted: append before crc, never resize");
+bool loadFavorites(Store& st, int profileId, Favorites& out);       // false: missing or invalid (out is the default)
+bool saveFavorites(Store& st, int profileId, Favorites& f);         // seals; false unless it reads back
+struct GamesOff { uint16_t version, size; uint32_t off, crc; };    // "sys"/"games"
+static_assert(sizeof(GamesOff) == 12, "sys/games is persisted: append before crc, never resize");
+uint32_t loadGamesOff(Store& st);                                    // 0 (all on) when missing or invalid
+bool saveGamesOff(Store& st, uint32_t off);                          // false unless it reads back
+// The image's games a kid sees (indexes into the app table, launcher order): never none, so a mask that switches
+// off every game in the image (they all left but the switched-off ones) counts as all on.
+int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out);
+// Home: every enabled game while they fit one page (no Library then), else the kid's favorites that are enabled, in
+// star order (the default when none were ever picked). The Library has the rest; true from libraryOn().
+int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
+inline bool libraryOn(const uint8_t* ids, int n, uint32_t off) { int all[MAX_GAME_ID]; return enabledGames(ids, n, off, all) > MAX_FAVS + 1; }
+// Star mode's tap on game id: unstars it, or stars it at the end of Home. False (and nothing changes) for a sixth
+// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star.
+bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off);
 
 // Rest budget.
 // Never more than REST_SEC from now: a clock set backwards must not strand a kid on the rest screen for hours.

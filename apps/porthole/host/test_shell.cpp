@@ -6,6 +6,7 @@
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
+#include <initializer_list>
 #include "games/biscuit/pet.h"
 #include "games/pets-club/pet.h"
 #include "crc32.h"
@@ -416,14 +417,14 @@ static void biscuitCrash() {
   MemStore clean; setup(clean); int base = clean.writes;
   shell::Profiles p; boot(clean, p);
   int total = clean.writes - base;
-  assert(total == 10);   // marker, erase "save" (Pets Club); erase s0 twice, p0, biscuit/s0, marker, three erases
+  assert(total == 11);   // marker, erase "save" (Pets Club); erase s0 twice, f0, p0, biscuit/s0, marker, three erases
   for (int n = 0; n <= total; n++) {
     MemStore st; setup(st); st.budget = st.writes + n;
     shell::Profiles cut; boot(st, cut);
     st.budget = -1;
     shell::Profiles again; boot(st, again);
     assert(again.count() == 1 && !strcmp(again.rec[0].name, "Sam") && biscuitIn(st, 0, "Pip", 30));
-    assert(st.has(shell::NS, "mb") && (n == 7 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
+    assert(st.has(shell::NS, "mb") && (n == 8 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
   }
 }
 
@@ -720,6 +721,68 @@ static void launcherPaging() {
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // the picker's first row
   tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);
 }
+
+// The favorites blob (porthole/f<id>) and the device's games ("sys"/"games"): versioned, crc'd, read back; anything
+// else loads as the default. Ids are unique and 1..32; a profile's create and delete erase its favorites.
+static shell::Favorites favs(std::initializer_list<uint8_t> ids) {
+  shell::Favorites f = {}; f.picked = 1;
+  for (uint8_t id : ids) f.ids[f.count++] = id;
+  return f;
+}
+static void favoritesBlob() {
+  MemStore st; shell::Favorites f = favs({3, 1}), got;
+  assert(!shell::loadFavorites(st, 0, got) && !got.count && !got.picked && !got.seen);   // missing: the default
+  f.seen = 0x3f; assert(shell::saveFavorites(st, 0, f) && shell::loadFavorites(st, 0, got) && !memcmp(&got, &f, sizeof f));
+  assert(!shell::loadFavorites(st, 1, got));                                          // another kid's is their own
+  MemStore::Entry* e = st.find(shell::NS, "f0");
+  e->data[9] ^= 1; assert(!shell::loadFavorites(st, 0, got) && !got.count);           // a flipped bit: the crc
+  e->data[9] ^= 1; e->len = 20; assert(!shell::loadFavorites(st, 0, got));            // a short blob
+  e->len = sizeof f; assert(shell::loadFavorites(st, 0, got));
+  shell::Favorites many = f; many.count = 6; assert(shell::saveFavorites(st, 0, many) == false);   // more than MAX_FAVS
+  st.budget = st.writes; assert(!shell::saveFavorites(st, 0, f)); st.budget = -1;     // a lost write is not a save
+  assert(shell::loadGamesOff(st) == 0 && shell::saveGamesOff(st, 0x5) && shell::loadGamesOff(st) == 0x5);
+  st.find("sys", "games")->data[4] ^= 0x10; assert(shell::loadGamesOff(st) == 0);    // corrupt: every game on
+  st.budget = st.writes; assert(!shell::saveGamesOff(st, 0x1)); st.budget = -1;
+  static const uint8_t good[] = {1, 2, 32}, dup[] = {1, 2, 1}, zero[] = {1, 0}, big[] = {33};
+  assert(shell::validIds(good, 3) && !shell::validIds(dup, 3) && !shell::validIds(zero, 2) && !shell::validIds(big, 1));
+  shell::Profiles p; shell::loadAll(st, p);
+  const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
+  assert(shell::saveFavorites(st, id, f)); shell::removeProfile(st, p, id, STORES, 2); assert(!st.has(shell::NS, "f0"));
+  assert(shell::saveFavorites(st, id, f)); shell::create(st, p, draft("Kai", 6, 0), STORES, 2); assert(!st.has(shell::NS, "f0"));
+}
+// Which games Home and the Library show: the default, star order, switched-off and unknown games.
+static void homeRules() {
+  static const uint8_t ids[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+  int out[12]; const shell::Favorites none = {};
+  auto is = [&](int n, std::initializer_list<int> want) {
+    int i = 0; for (int k : want) { if (out[i] != k) return false; i++; }
+    return n == i;
+  };
+  assert(is(shell::homeGames(none, ids, 8, 0, out), {0, 1, 2, 3, 4}) && shell::libraryOn(ids, 8, 0));   // the first five
+  assert(is(shell::homeGames(none, ids, 8, shell::gameBit(2), out), {0, 2, 3, 4, 5}));   // the first five switched on
+  const uint32_t two = shell::gameBit(1) | shell::gameBit(2);   // six left: no Library, Home has them all
+  assert(is(shell::homeGames(favs({8}), ids, 8, two, out), {2, 3, 4, 5, 6, 7}) && !shell::libraryOn(ids, 8, two));
+  assert(is(shell::homeGames(none, ids, 5, 0, out), {0, 1, 2, 3, 4}) && !shell::libraryOn(ids, 5, 0));
+  assert(is(shell::enabledGames(ids, 3, 0x7, out), {0, 1, 2}));   // every game off counts as every game on
+  assert(is(shell::homeGames(favs({7, 2, 20, 5}), ids, 8, 0, out), {6, 1, 4}));   // star order; id 20 is not here
+  assert(is(shell::homeGames(favs({7, 2, 5}), ids, 8, shell::gameBit(2), out), {6, 4}));   // switched off: hidden
+  assert(is(shell::homeGames(favs({}), ids, 8, 0, out), {}));   // no stars at all: just "All games"
+}
+// Star mode's taps: the default becomes the kid's list, a star goes last, a sixth is refused, and a hidden favorite
+// gives its place up only when a new star needs it.
+static void starRules() {
+  static const uint8_t ids[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+  shell::Favorites f = {};
+  assert(shell::toggleStar(f, 2, ids, 8, 0) && f.picked && f.count == 4 && f.ids[0] == 1 && f.ids[1] == 3);   // unstar 2
+  assert(shell::toggleStar(f, 8, ids, 8, 0) && f.count == 5 && f.ids[4] == 8);
+  const shell::Favorites full = f;
+  assert(!shell::toggleStar(f, 6, ids, 8, 0) && !memcmp(&f, &full, sizeof f));   // a sixth: nothing changes
+  const uint32_t off = shell::gameBit(3);   // id 3 switched off: four show, and 6 takes its place
+  assert(shell::toggleStar(f, 6, ids, 8, off) && f.count == 5 && f.ids[0] == 1 && f.ids[1] == 4 && f.ids[4] == 6);
+  shell::Favorites gone = favs({20, 1, 3, 4, 5});   // 20 left the image: the first hidden one goes
+  assert(shell::toggleStar(gone, 6, ids, 8, 0) && gone.ids[0] == 1 && gone.ids[4] == 6);
+}
+static void homeAndLibrary() { launcherPaging(); favoritesBlob(); homeRules(); starRules(); }
 
 // The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
 // shell's screens and in the games (AppEnter::daylight) at its own backlight, kept in "sys"/"lite" across a reboot;
@@ -1341,7 +1404,7 @@ int main() {
   capClockBack();
   capAfterClockGuess();
   launcherLayout();
-  launcherPaging();
+  homeAndLibrary();
   brightness();
   backlightSteps();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));
