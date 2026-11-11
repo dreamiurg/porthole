@@ -1,0 +1,852 @@
+# start --fresh
+tick 1000
+# shot 01-boot
+down 41 52
+tick 80
+up
+tick 600
+down 119 52
+tick 80
+up
+tick 600
+down 41 52
+tick 80
+up
+tick 600
+# shot 02-name
+down 119 125
+tick 80
+up
+tick 600
+# shot 03-after-ok
+down 123 55
+tick 80
+up
+tick 600
+# shot 04-after-face
+down 78 69
+tick 80
+up
+tick 600
+# shot 05-after-age
+down 80 145
+tick 80
+up
+tick 600
+# shot 06-after-skip
+down 35 71
+tick 200
+# shot 07-ada-home-hold1
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+down 79 71
+tick 200
+# shot 07-ada-home-hold2
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+down 123 71
+tick 200
+# shot 07-ada-home-hold3
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+down 35 104
+tick 200
+# shot 07-ada-home-hold4
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+down 79 104
+tick 200
+# shot 07-ada-home-hold5
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+down 123 104
+tick 200
+# shot 07-ada-home-hold6
+move 10 80
+tick 40
+move 2 80
+tick 40
+up
+tick 600
+# shot 07-ada-home-after
+down 123 104
+tick 80
+up
+tick 600
+# shot 08-ada-library-p1
+down 95 135
+tick 80
+up
+tick 600
+# shot 09-ada-library-p2
+down 35 71
+tick 200
+# shot tmp-107-215
+move 2 80
+tick 40
+up
+tick 600
+down 79 71
+tick 200
+# shot tmp-239-215
+move 2 80
+tick 40
+up
+tick 600
+down 123 71
+tick 200
+# shot tmp-371-215
+move 2 80
+tick 40
+up
+tick 600
+down 35 104
+tick 200
+# shot tmp-107-313
+move 2 80
+tick 40
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+# shot 10-home-from-library
+down 80 11
+tick 80
+up
+tick 600
+# shot 11-home-again
+down 80 93
+tick 80
+up
+tick 600
+# shot 12-new
+down 67 52
+tick 80
+up
+tick 600
+down 41 76
+tick 80
+up
+tick 600
+down 67 125
+tick 80
+up
+tick 600
+# shot 13-nz
+down 41 52
+tick 80
+up
+tick 600
+down 119 125
+tick 80
+up
+tick 600
+down 35 87
+tick 80
+up
+tick 600
+down 119 69
+tick 80
+up
+tick 600
+down 80 145
+tick 80
+up
+tick 600
+# shot 14-ben-home
+down 123 104
+tick 80
+up
+tick 600
+down 125 41
+tick 80
+up
+tick 600
+# shot 15-ben-starmode
+down 35 104
+tick 80
+up
+tick 600
+# shot 16-ben-unstar
+down 95 135
+tick 80
+up
+tick 600
+down 79 104
+tick 80
+up
+tick 600
+# shot 17-ben-star-rally
+down 125 41
+tick 80
+up
+tick 600
+# shot 18-ben-library-saved
+down 80 11
+tick 80
+up
+tick 600
+# shot 19-ben-home-custom
+down 80 11
+tick 80
+up
+tick 600
+down 80 66
+tick 80
+up
+tick 600
+# shot 20-picker2
+down 80 54
+tick 80
+up
+tick 600
+tick 2000
+# shot 21-ada-biscuit
+down 79 71
+tick 80
+up
+tick 600
+tick 3000
+# shot 22-biscuit-open
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 93 125
+tick 80
+up
+tick 600
+down 41 125
+tick 80
+up
+tick 600
+down 41 52
+tick 80
+up
+tick 600
+down 67 125
+tick 80
+up
+tick 600
+down 93 100
+tick 80
+up
+tick 600
+# shot 23-name-max
+down 119 125
+tick 80
+up
+tick 600
+# shot 24-biscuit-after-ok
+tick 4000
+# shot 25-biscuit-later
+down 80 11
+tick 80
+up
+tick 600
+# shot 26-leave-biscuit
+down 80 11
+tick 80
+up
+tick 600
+# shot 27-picker
+down 80 143
+tick 80
+up
+tick 600
+# shot 28-tap-dev
+down 80 143
+tick 2000
+# shot 29-hold-dev-2s
+up
+tick 600
+down 80 22
+tick 1500
+# shot 30-hold-title-1500ms
+tick 1500
+# shot 31-hold-title-3s
+up
+tick 600
+# shot 32-released-3s
+down 80 22
+tick 4800
+# shot 33-hold-4800
+tick 400
+# shot 34-hold-5200
+up
+tick 600
+# shot 35-after-hold
+down 81 131
+tick 80
+up
+tick 600
+# shot 36-info-home-btn
+down 53 131
+tick 80
+up
+tick 600
+# shot 37-info-home
+down 80 11
+tick 80
+up
+tick 600
+# shot 38-back-from-home
+down 106 131
+tick 80
+up
+tick 600
+# shot 39-admin
+down 112 33
+tick 80
+up
+tick 600
+# shot 40-nearmiss-arrow
+down 124 35
+tick 80
+up
+tick 600
+# shot 41-admin-p2
+down 80 117
+tick 80
+up
+tick 600
+# shot 42-games-p1
+down 63 62
+tick 80
+up
+tick 600
+# shot 43-tap-biscuit-name
+down 80 74
+tick 80
+up
+tick 600
+# shot 44-boundary-tap
+down 80 85
+tick 120
+move 80 95
+tick 40
+move 80 110
+tick 40
+move 80 130
+tick 40
+up
+tick 600
+# shot 45-drag-off-marble
+down 80 108
+tick 80
+up
+tick 80
+down 80 108
+tick 80
+up
+tick 600
+# shot 46-doubletap-tiltfc
+down 80 108
+tick 80
+up
+tick 80
+# shot 47-dbl-first
+down 80 108
+tick 80
+up
+tick 80
+# shot 48-dbl-second
+tick 600
+down 116 130
+tick 80
+up
+tick 600
+# shot 49-games-p2
+down 116 130
+tick 80
+up
+tick 600
+# shot 50-games-p3
+down 80 62
+tick 80
+up
+tick 600
+# shot 51-rally-off
+down 80 11
+tick 80
+up
+tick 600
+# shot 52-exit-games
+down 80 11
+tick 80
+up
+tick 600
+# shot 53-exit2
+down 80 11
+tick 80
+up
+tick 600
+# shot 54-exit3
+down 80 36
+tick 80
+up
+tick 600
+# shot 55-ada-home-2off
+tick 1000
+# shot 55b-ada-home-2off
+down 123 104
+tick 80
+up
+tick 600
+# shot 56-ada-lib-2off
+down 95 135
+tick 80
+up
+tick 600
+# shot 57-ada-lib-2off-p2
+down 80 11
+tick 80
+up
+tick 600
+down 80 54
+tick 80
+up
+tick 600
+tick 1000
+# shot 55-ada-home-2off
+down 123 104
+tick 80
+up
+tick 600
+# shot 56-ada-lib-2off
+down 95 135
+tick 80
+up
+tick 600
+# shot 57-ada-lib-2off-p2
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 80
+tick 80
+up
+tick 600
+tick 1000
+# shot 58-ben-home-2off
+down 123 104
+tick 80
+up
+tick 600
+# shot 59-ben-lib-2off
+down 95 135
+tick 80
+up
+tick 600
+# shot 60-ben-lib-2off-p2
+down 80 104
+tick 80
+up
+tick 600
+# shot 59-ben-lib-2off
+down 95 135
+tick 80
+up
+tick 600
+# shot 60-ben-lib-2off-p2
+down 125 41
+tick 80
+up
+tick 600
+# shot 61-ben-starmode-2off
+down 80 11
+tick 80
+up
+tick 600
+# shot 62-starmode-home
+down 80 11
+tick 80
+up
+tick 600
+# shot 63
+down 80 11
+tick 80
+up
+tick 600
+# shot 64
+down 80 22
+tick 5200
+up
+tick 600
+down 106 131
+tick 80
+up
+tick 600
+down 124 35
+tick 80
+up
+tick 600
+down 80 117
+tick 80
+up
+tick 600
+# shot 65-games-again
+down 80 62
+tick 80
+up
+tick 600
+# shot 66-biscuit-on
+down 80 39
+tick 80
+up
+tick 600
+down 80 62
+tick 80
+up
+tick 600
+down 80 85
+tick 80
+up
+tick 600
+down 80 108
+tick 80
+up
+tick 600
+# shot 67-p1-all-off
+down 116 130
+tick 80
+up
+tick 600
+down 80 39
+tick 80
+up
+tick 600
+down 80 62
+tick 80
+up
+tick 600
+down 80 85
+tick 80
+up
+tick 600
+down 80 108
+tick 80
+up
+tick 600
+# shot 68-p2-all-off
+down 116 130
+tick 80
+up
+tick 600
+down 80 39
+tick 80
+up
+tick 600
+# shot 69-last-game-tap
+tick 1500
+# shot 70-last-game-later
+down 43 130
+tick 80
+up
+tick 600
+down 80 39
+tick 80
+up
+tick 600
+down 80 62
+tick 80
+up
+tick 600
+down 80 85
+tick 80
+up
+tick 600
+down 80 108
+tick 80
+up
+tick 600
+# shot 71-p2-on
+down 43 130
+tick 80
+up
+tick 600
+down 80 39
+tick 80
+up
+tick 600
+down 80 62
+tick 80
+up
+tick 600
+down 80 85
+tick 80
+up
+tick 600
+down 80 108
+tick 80
+up
+tick 600
+# shot 72-p1-on
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 54
+tick 80
+up
+tick 600
+tick 1000
+# shot 73-ada-home-final
+down 123 104
+tick 80
+up
+tick 600
+# shot 74-ada-lib-final
+down 95 135
+tick 80
+up
+tick 600
+# shot 75-ada-lib-final-p2
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 80
+tick 80
+up
+tick 600
+tick 1000
+# shot 76-ben-home-final
+down 80 11
+tick 80
+up
+tick 600
+down 80 54
+tick 80
+up
+tick 600
+down 79 71
+tick 80
+up
+tick 600
+tick 3000
+# shot 77-ada-biscuit-kept
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+reboot
+tick 1500
+# shot 78-after-reboot
+down 80 80
+tick 80
+up
+tick 600
+tick 1000
+# shot 79-ben-home-reboot
+down 80 104
+tick 80
+up
+tick 600
+# shot 80-ben-lib-reboot
+down 95 135
+tick 80
+up
+tick 600
+# shot 81-ben-lib-reboot-p2
+down 101 105
+tick 80
+up
+tick 600
+# shot 80-ben-lib-reboot
+down 95 135
+tick 80
+up
+tick 600
+# shot 81-ben-lib-reboot-p2
+# quit
+# start
+tick 1000
+# shot 82-process-restart
+down 80 22
+tick 5200
+up
+tick 600
+down 106 131
+tick 80
+up
+tick 600
+down 124 35
+tick 80
+up
+tick 600
+down 80 117
+tick 80
+up
+tick 600
+down 116 130
+tick 80
+up
+tick 600
+down 116 130
+tick 80
+up
+tick 600
+# shot 83-restart-games-p3
+down 80 62
+tick 80
+up
+tick 600
+# shot 84-rally-on
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 80
+tick 80
+up
+tick 600
+tick 1000
+# shot 85-ben-home-rally-back
+down 80 11
+tick 80
+up
+tick 600
+down 80 22
+tick 5200
+up
+tick 600
+down 106 131
+tick 80
+up
+tick 600
+down 124 35
+tick 80
+up
+tick 600
+down 80 117
+tick 80
+up
+tick 600
+down 116 130
+tick 80
+up
+tick 600
+down 80 57
+tick 1000
+# shot 86-longpress-star-down
+up
+tick 600
+# shot 87-longpress-star-up
+down 33 108
+tick 80
+up
+tick 600
+# shot 88-icon-tap-kingdom
+down 116 130
+tick 80
+up
+tick 600
+down 80 39
+tick 80
+up
+tick 600
+down 80 62
+tick 80
+up
+tick 600
+# shot 89-6on
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 11
+tick 80
+up
+tick 600
+down 80 80
+tick 80
+up
+tick 600
+tick 1000
+# shot 90-ben-home-6on
+down 80 11
+tick 80
+up
+tick 600
+down 80 54
+tick 80
+up
+tick 600
+tick 1000
+# shot 91-ada-home-6on
+# quit
