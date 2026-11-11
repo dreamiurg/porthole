@@ -1,5 +1,7 @@
 # Rally "Times" page: independent black-box playtest
 
+> Recorded on the pre-Home launcher: its replay scripts tap that launcher's tiles, not today's Home and Library.
+
 Emulator roleplay by an independent `playtester` agent (opus). This is not a study with real children and was not run on a physical device.
 
 ## Build identity

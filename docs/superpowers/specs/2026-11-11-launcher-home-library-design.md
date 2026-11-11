@@ -14,33 +14,51 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 1. The kid picks their own favorites (star mode in the Library). No holds anywhere.
 2. Home holds up to 5 favorites + an "All games" tile (one page, no arrows).
 3. Admin -> Games (per-device on/off) ships in the same change.
-4. Home order = the order the stars were set; no drag reordering (unstar and star again to move).
+4. Home order = the newest star first; no drag reordering (unstar and star again to bring a game to the front).
+   Amended 2026-11-11 after the kid playtest (`apps/porthole/docs/launcher-home-playtest.md`, m1): first-starred-first
+   buried a re-starred game at the end and an accidental double tap moved a game out of place; "what I just picked
+   shows first" is the rule a kid can see.
 
 ## Screens
 
 - **Home** (`launcher`, the kid's): the existing header (face + name, sun button), up to 5 favorite tiles in the
   existing 3x2 grid geometry (`launcher::tile`), the 6th slot always "All games" (a cream tile with a 3x2 grid of
-  small colored squares, drawn in the shell palette). Fewer than 5 favorites: the row is centered, as the short last
+  tiny game pictures, the launcher icons downscaled in code by nearest neighbor, the games not on Home first; the
+  first design's colored squares read as a painting game in the kid playtest, m2). Fewer than 5 favorites: the row is centered, as the short last
   row is today. No page arrows. Pressing a tile shows its name in the caption, as today. If 6 or fewer games are
   enabled on the device, there is no Library: Home shows all enabled games, exactly as today's single page.
 - **Library** (`library`): today's launcher grid of every enabled game, 6 a page, page arrows. A gold star in a tile's
-  corner marks a favorite (decoration, not a target). The header row shows the caption "All games"; the sun button's
-  place holds a star button that enters star mode. The top home button returns to Home. A new game (an id the kid
-  has never seen) shows a small "new" dot until first opened.
+  corner marks a favorite (decoration, not a target). The header row shows a plain "All games" title (no border, so
+  it does not look like Home's switch-kid button); the sun button's place holds a star button that enters star mode,
+  and a finger on it shows "Pick games" over the header, as a game's name shows. The top home button returns to
+  Home. A new game (an id the kid has never seen) shows a small "new" dot until first opened; "All games" wears one
+  while a game that is not on Home is new (one on Home already wears its own).
 - **Star mode** (same screen, `library` with a mode): header caption "Pick 5 · N" (N = places left); the star button
-  becomes a green check (Done). Tapping a tile toggles its star; a 6th star is refused with a gentle wiggle of the
-  counter; tiles without a star are dimmed. Games don't open in star mode. Done (or the home button) saves and
-  returns to the Library.
-- **Admin -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): one row per game in
-  the firmware with its picture, name and an on/off switch; pages of 4. Off = hidden from every kid's Home and Library;
-  saves untouched. At least one game must stay on (the last switch can't turn off). Saves only on change, read back.
+  becomes a green check (Done). Tapping a tile toggles its star, saved at once (a restart or the rest screen keeps
+  it). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed: dimmed tiles read as switched
+  off). A new kid's Home is already full (the defaults), so a 6th star is refused with a lasting cue: "Home full! /
+  Tap a star" in yellow over the header for 2 s, while the gold stars hop and so does the arrow toward a page that
+  holds one, so a non-reader sees where to tap. No sound. Games don't open in star mode. Done (or the home button)
+  returns to the Library. (Amended after the kid playtest, M1, n1, n2.)
+- **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
+  between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
+  "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
+  on/off switch; pages of 3, with the line "Off only hides a game; saves stay." (M1). Off = hidden from every kid's
+  Home and Library; saves untouched. At least one game must stay on (the last switch can't turn off). Saves only on change, read back.
 
 ## Data (append-only rules hold)
 
 - **Stable game id:** each `App` gets a 1-byte id that never changes or gets reused (Pets Club 1, Biscuit 2, ...),
   kept next to `APPS[]` in `games/apps.h`; a host test asserts ids are unique and non-zero.
-- **Favorites per kid:** NVS `porthole/f<profile id>`, a versioned blob {magic, version, size, count, ids[5],
-  crc}. Missing or invalid = default. Profile delete and create erase it (like the game saves).
+- **Favorites per kid:** NVS `porthole/f<profile id>`, a versioned 24-byte blob {magic u32, version u16 (1), size
+  u16, count u8, picked u8, ids[5] u8, reserved u8, seen u32, crc u32}. `picked` 0 = the kid never starred anything
+  (Home shows the default); `ids` is Home's order, the newest star first; `seen` is a bit per game id the kid has
+  seen. Missing or invalid = default. A refused star never changes the blob, not even turning the default into a
+  list. Profile delete and create erase it (like the game saves).
+- **Seen baseline on first Home:** when a kid's `f<id>` is missing, their first Home writes it with `seen` = every
+  game in the image, so only games added by a later update wear a "new" dot. It is written only when the key is
+  missing: a damaged blob or a newer firmware's (after a USB rollback) is kept as it is and the default shows in
+  RAM, so going forward again finds the newer favorites. Opening a game marks it seen.
 - **Device games:** NVS `sys/games`, a versioned blob with a 32-bit "off" mask by id + crc. Missing = all on.
 - **Default favorites:** the first 5 enabled games in launcher order, so an updated device's Home looks like today's
   page 1 with "All games" in the 6th place.
@@ -57,4 +75,7 @@ a long press acts like a tap (os/input.h); FreshGate on every screen change; pro
 Host tests (favorites blob, games mask, defaults, unknown ids, all-off refused, delete erases f<id>), layout tests
 for Home with 0-5 favorites, playtest scenarios (Home, Library paging, star mode, Admin Games), `make ci`,
 `make complexity`, firmware build, /simplify + /code-review, an independent kid playtest (8-year-old) of Home,
-Library and star mode, and a grown-up playtest of Admin -> Games.
+Library and star mode, and a grown-up playtest of Admin -> Games. After the fixes: `b2_home_stars` replays the kid
+report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full!") and the newest-first order,
+`starRules` covers a refused star on the default, `favoritesKept` the baseline written only when missing, and a fresh
+kid playtest of star mode is due.
