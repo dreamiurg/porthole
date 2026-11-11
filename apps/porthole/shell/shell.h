@@ -70,7 +70,7 @@ class Shell {
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
                          SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
-                         SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_GAMES, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
@@ -81,6 +81,7 @@ class Shell {
   bool starMode_ = false, starsChanged_ = false;   // the Library's star mode, and a star to save when it ends
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
   uint32_t starNudgeUntil_ = 0;                    // a sixth star wiggles the counter
+  uint8_t gamesPage_ = 0;                          // Admin -> Games
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
@@ -127,7 +128,7 @@ class Shell {
   bool guardScreenTime();
   void go(Screen s);
   void land();   // the picker, or the first profile's name on a fresh device
-  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_ZONE_SEARCH); }
+  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_GAMES); }
   void toast(const char* s);
   void drawSysToast();
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
@@ -192,6 +193,7 @@ class Shell {
   void updateSysAllowance(); void drawSysAllowance();
   void updateSysZone(); void drawSysZone();
   void updateSysZoneSearch(); void drawSysZoneSearch();
+  void updateSysGames(); void drawSysGames(); void toggleGame(int k);
   void updateSysNew(); void drawSysNew();
   void debugHome() const;   // debugPrint's [home] line
   void updateSysInfo(); void drawSysInfo();

@@ -172,6 +172,7 @@ void Shell::updateSysAdmin() {
   if (adminPage_) {
     if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
     if (tapped(in_, ADMIN_RESET)) saveSound(!sound_);   // a failed write leaves the switch as it was
+    if (tapped(in_, ADMIN_REMOVE)) { gamesPage_ = 0; go(SH_SYS_GAMES); }
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
@@ -188,6 +189,7 @@ void Shell::drawSysAdmin() {
     stextC(80, 46, "Device settings", C_LTGRAY);
     sbutton(ADMIN_CODE, "Clock", C_SKY, down(in_, ADMIN_CODE));
     sbutton(ADMIN_RESET, sound_ ? "Sound: on" : "Sound: off", sound_ ? C_SKY : C_LTGRAY, down(in_, ADMIN_RESET));
+    sbutton(ADMIN_REMOVE, "Games", C_SKY, down(in_, ADMIN_REMOVE));
     sback(); return;
   }
   stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
@@ -339,6 +341,57 @@ void Shell::drawSysPlayerPin() {
   stextC(80, 72, "not need a PIN.", C_LTGRAY);
   sbutton(CONFIRM_NO, "Cancel", C_GREEN, down(in_, CONFIRM_NO));
   sbutton(CONFIRM_YES, "Reset PIN", C_SKY, down(in_, CONFIRM_YES));
+  sback();
+}
+
+// ---------------------------------------------------------------- Games: the games on this device, 4 a page
+// Off hides a game from every kid's Home and Library (shell::GamesOff); its saves and stars stay for when it is back
+// on. The last game on cannot go off. Each change saves at once and is read back.
+static const int GAME_ROWS = 4;
+static ui::Box gameRow(int i) { return {22, 30 + i * 23, 116, 21}; }   // the picture's 56 physical rows fit inside
+static const ui::Box GAMES_PREV = {32, 122, 22, 18}, GAMES_NEXT = {106, 122, 22, 18};
+void Shell::updateSysGames() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  const int pages = (nApps_ + GAME_ROWS - 1) / GAME_ROWS;
+  if (gamesPage_ > 0 && tapped(in_, GAMES_PREV)) gamesPage_--;
+  if (gamesPage_ + 1 < pages && tapped(in_, GAMES_NEXT)) gamesPage_++;
+  for (int i = 0; i < GAME_ROWS; i++) {
+    const int k = gamesPage_ * GAME_ROWS + i;
+    if (k < nApps_ && tapped(in_, gameRow(i))) { toggleGame(k); return; }
+  }
+}
+void Shell::toggleGame(int k) {
+  const uint32_t off = gamesOff_ ^ gameBit(ids_[k]);
+  int left = 0;
+  for (int j = 0; j < nApps_; j++) left += !(off & gameBit(ids_[j]));
+  if (!left) { toast("Keep one game on"); return; }
+  if (!saveGamesOff(*st_, off)) { toast("Could not save"); return; }
+  gamesOff_ = off;
+}
+static void sicon(const gfx::Sprite& s, int x, int y) {   // a launcher picture, 2 physical px a pixel (2/3 of a tile's)
+  for (int r = 0; r < s.h; r++)
+    for (int c = 0; c < s.w; c++) if (s.px[r * s.w + c] != C_T) gfx565::rect(x + c * 2, y + r * 2, 2, 2, scol(s.px[r * s.w + c]));
+}
+void Shell::drawSysGames() {
+  sclear(C_NAVY);
+  const int pages = (nApps_ + GAME_ROWS - 1) / GAME_ROWS;
+  for (int i = 0; i < GAME_ROWS && gamesPage_ * GAME_ROWS + i < nApps_; i++) {
+    const int k = gamesPage_ * GAME_ROWS + i; const ui::Box b = gameRow(i);
+    const bool pressed = down(in_, b), on = !(gamesOff_ & gameBit(ids_[k]));
+    const int dy = pressed ? 1 : 0, sx = b.x + b.w - 25, sy = b.y + 6 + dy;
+    sbutton(b, "", on ? C_WHITE : C_LTGRAY, pressed);
+    sicon(apps_[k]->icon(), (b.x + 2) * 3, (b.y + 1 + dy) * 3);
+    char name[16]; fit(name, sizeof name, apps_[k]->name(), sx - 2 - (b.x + 30));
+    stext(b.x + 30, b.y + 6 + dy, name, on ? C_NAVY : C_DKGRAY);
+    sround(sx, sy, 20, 10, on ? C_GREEN : C_DKGRAY);   // the switch: its knob right on green when on
+    scircle(on ? sx + 15 : sx + 5, sy + 5, 4, C_WHITE);
+  }
+  char label[32]; snprintf(label, sizeof label, pages > 1 ? "Games %d/%d" : "Games", gamesPage_ + 1, pages);
+  stextC(80, 125, label, C_LTGRAY);
+  if (pages > 1) {
+    sbutton(GAMES_PREV, "<", gamesPage_ > 0 ? (uint8_t)C_SKY : (uint8_t)C_DKGRAY, gamesPage_ > 0 && down(in_, GAMES_PREV));
+    sbutton(GAMES_NEXT, ">", gamesPage_ + 1 < pages ? (uint8_t)C_SKY : (uint8_t)C_DKGRAY, gamesPage_ + 1 < pages && down(in_, GAMES_NEXT));
+  }
   sback();
 }
 

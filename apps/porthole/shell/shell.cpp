@@ -48,7 +48,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateLibrary, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
     &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
-    &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateApp};
+    &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateSysGames, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
   activity_.step(in, in.down, ms);
@@ -64,7 +64,7 @@ void Shell::render() {
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawLibrary, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
     &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
-    &Shell::drawSysZone, &Shell::drawSysZoneSearch, &Shell::drawApp};
+    &Shell::drawSysZone, &Shell::drawSysZoneSearch, &Shell::drawSysGames, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
@@ -697,7 +697,8 @@ bool Shell::clearPin(int id) {
 const char* Shell::screenName() const {
   static const char* N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "library", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
-                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search"};
+                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search",
+                              "sys_games"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
 }
