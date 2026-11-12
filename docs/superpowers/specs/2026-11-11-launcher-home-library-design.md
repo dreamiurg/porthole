@@ -38,8 +38,9 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   Five small stars in the header count Home's places (gold = taken, white = free; no number to read); the star
   button becomes a green check (Done). The star button and the check share one spot, so one rule guards it both ways:
   a press there that starts within 1 s of star mode starting or ending (by the star, the check or the home button),
-  or of the lift of a press this rule ignored, does nothing and neither looks pressed nor shows its caption, so a
-  mash flips the mode once. Tapping a tile toggles its star; a press on the same tile starting within 600 ms
+  or of the lift of a press this rule ignored, and within 3 s of that change itself, does nothing and neither looks
+  pressed nor shows its caption, so a mash flips the mode once while a kid retrying once a second gets through after
+  3 s; only a tap whose press began on the button acts, so a finger slid onto it never bypasses the rule. Tapping a tile toggles its star; a press on the same tile starting within 600 ms
   of the last tap's lift counts with it (a double tap, even a firm one of 250 ms presses, or mashing: once). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
   dimmed tiles read as switched off). A new kid's Home is already full (the defaults), so a 6th star is refused with
   a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
@@ -61,7 +62,8 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   next press) and a third tap on Done re-entered star mode. Round 6 (`launcher-home-playtest-6.md`), F1-F4: a triple
   tap on the star entered and left again, a slow or four-tap burst on Done re-entered, an ignored press still looked
   pressed, and a 450 ms-gap double tap flipped back; hence the one rule above in place of a one-way guard, and the
-  tile's 600 ms.)
+  tile's 600 ms. Round 7 (`launcher-home-playtest-7.md`), K1: each ignored press restarted the second, so a kid
+  retrying once a second was ignored forever; hence the 3 s cap.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an

@@ -53,11 +53,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
   if (in.pressed) pressMs_ = ms;   // a tap's own press start (Input::heldMs is 0 on its release)
-  // Before the gate, which hides a mashing kid's second press: the star button and the check share one spot, so a press
-  // there begun within 1 s of a mode change, or of the lift of a press so ignored, is the same mashing (kid playtest 6).
-  const ui::Box& m = launcher::LIGHT;
-  if (in.pressed) modeIgnore_ = screen_ == SH_LIBRARY && in.hit(m.x, m.y, m.w, m.h) && ms - modeMs_ < 1000;
-  if (modeIgnore_ && (in.pressed || in.released)) modeMs_ = ms;
+  noteModePress(in, ms);   // before the gate, which hides a mashing kid's second press
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   if (guardScreenTime()) return;
@@ -569,12 +565,22 @@ void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a b
 // A gold star marks a favorite. The star button (the sun's place) starts star mode: a tap stars or unstars a game
 // instead of opening it, up to MAX_FAVS, kept only by the green check; the home button (or the rest screen, or a
 // restart) puts Home back as it was, since a kid who wandered in by accident (kid playtest 2) never meant to edit it.
+static bool onModeSpot(int x, int y) {   // a plain box test: the UI audit already logs LIGHT through tapIn
+  const ui::Box& m = launcher::LIGHT; return x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h;
+}
+// The star button and the check share one spot, so a press there begun within 1 s of a mode change, or of the lift of
+// a press so ignored, is the same mashing (kid playtest 6); never past 3 s from the change, so a kid retrying once a
+// second is heard (kid playtest 7, K1).
+void Shell::noteModePress(const Input& in, uint32_t ms) {
+  if (in.pressed) modeIgnore_ = screen_ == SH_LIBRARY && onModeSpot(in.x, in.y) && ms - modeMs_ < 1000 && ms - modeChangeMs_ < 3000;
+  if (modeIgnore_ && (in.pressed || in.released)) modeMs_ = ms;
+}
 void Shell::updateLibrary() {
   if (ui::back(in_)) { const bool stars = starMode_; leaveStars(false); go(stars ? SH_LIBRARY : SH_LAUNCHER); return; }
-  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) {
+  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) && onModeSpot(in_.downX, in_.downY)) {   // begun there: the rule saw it
     if (modeIgnore_) return;
     if (starMode_) leaveStars(true);
-    else { starMode_ = true; starsBefore_ = favs_; fullUntil_ = ms_; lastStar_ = -1; modeMs_ = ms_; }
+    else { starMode_ = true; starsBefore_ = favs_; fullUntil_ = ms_; lastStar_ = -1; modeMs_ = modeChangeMs_ = ms_; }
     go(SH_LIBRARY); return;
   }
   int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
@@ -601,7 +607,7 @@ void Shell::tapLibrary(int k) {
 }
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
-  starMode_ = false; modeMs_ = ms_;
+  starMode_ = false; modeMs_ = modeChangeMs_ = ms_;
   if (!keep) { favs_ = starsBefore_; return; }
   // Every star taken off and none hidden: "not picked", so Home, the Library and star mode all show the default again
   // (kid playtest 4, M1); a hidden one (a game switched off) keeps the kid's list for when it is back.

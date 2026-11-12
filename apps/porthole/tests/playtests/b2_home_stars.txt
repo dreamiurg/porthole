@@ -7,7 +7,8 @@
 # A new star goes first on Home; repeated taps on one tile within 600 ms (lift to the next press) count once, so a
 # firm double tap stars once. The star button and the check share one spot: a press there begun within 1 s of star
 # mode starting or ending, or of the lift of a press so ignored, does nothing, so a mash flips it once (kid playtest 6,
-# F1/F2: a triple tap on the star stays in, a slow triple on the check stays out). Star mode can take every star
+# F1/F2: a triple tap on the star stays in, a slow triple on the check stays out), but never past 3 s from the change
+# (kid playtest 7, K1: a retry once a second gets in). Star mode can take every star
 # off (no gold left) and star a new game after that; Home with no star left (or every favorite switched off) shows
 # the default (a non-reader who emptied it could not refill it); the check with none left and none hidden makes the
 # kid "not picked" again, so the Library's gold stars (home_gold) match Home. home_tiles is what Home would show.
@@ -217,4 +218,35 @@ up
 wait 1200
 expect star_mode=0
 snap hs12_slow_triple_check_out
+# K1 (kid playtest 7): in, out, then a kid retrying about once a second (each down/up adds a 40 ms step: ~320 ms
+# presses, ~640 ms gaps). Three retries within 3 s of the check are ignored; the fourth enters.
+down 126 42
+wait 300
+up
+wait 1200
+expect star_mode=1
+down 126 42
+wait 260
+up
+wait 600
+expect star_mode=0
+down 126 42
+wait 260
+up
+wait 600
+down 126 42
+wait 260
+up
+wait 600
+down 126 42
+wait 260
+up
+wait 600
+expect star_mode=0
+down 126 42
+wait 300
+up
+wait 600
+expect star_mode=1
+snap hs13_retry_enters
 sheet stars

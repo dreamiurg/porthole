@@ -897,26 +897,42 @@ struct Rhythm { int n; uint32_t hold, gap; };   // n presses of hold ms, gap ms 
 static void taps(Shell& sh, uint32_t& ms, const ui::Box& b, Rhythm r) {   // ms: the last lift
   for (int i = 0; i < r.n; i++) { if (i) ms += r.gap; pressAt(sh, ms, b); ms += r.hold; liftAt(sh, ms, b); }
 }
+static bool sameIn(const uint8_t* was, const ui::Box& b) {   // the framebuffer inside b is as it was
+  for (int y = b.y; y < b.y + b.h; y++) if (memcmp(was + y * gfx::W + b.x, gfx::fb + y * gfx::W + b.x, b.w)) return false;
+  return true;
+}
+static bool modeSpotSame(const uint8_t* was) { return sameIn(was, launcher::LIGHT) && sameIn(was, launcher::CAPTION); }
 static bool checkShows() { return gfx::fb[(launcher::LIGHT.y + 20) * gfx::W + launcher::LIGHT.x + 3] == C_GREEN; }
 // The star button and the check share one spot (kid playtest 6): a press there begun within 1 s of a mode change, or
-// of the lift of a press so ignored, neither acts nor looks pressed: a mash flips star mode once. A tile waits 600 ms.
+// of the lift of a press so ignored, neither acts nor looks pressed: a mash flips star mode once. Never past 3 s from
+// the change (kid playtest 7, K1: a kid retrying once a second was ignored forever). A tile waits 600 ms.
 static void modeButtonMashing() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
                   StubApp("Seven"), StubApp("Eight")};
   App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
   bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
-  const ui::Box L = launcher::LIGHT;
+  const ui::Box L = launcher::LIGHT, back = {64, -4, 32, 32};
   tapAt(sh, ms, launcher::tile(5, 6)); assert(on(sh, "library") && !checkShows());
   ms += 1000; taps(sh, ms, L, {3, 300, 150}); assert(checkShows());     // F1: a firm triple tap on the star stays in
   ms += 1200; taps(sh, ms, L, {3, 400, 300}); assert(!checkShows());    // F2: a slow triple tap on the check stays out
   static uint8_t idle[gfx::W * gfx::H]; memcpy(idle, gfx::fb, sizeof idle);
-  ms += 600; pressAt(sh, ms, L); assert(!memcmp(idle, gfx::fb, sizeof idle));   // F3: ignored, so not pressed, no caption
+  ms += 600; pressAt(sh, ms, L); assert(modeSpotSame(idle));   // F3: ignored, so not pressed, no caption
   ms += 300; liftAt(sh, ms, L); assert(!checkShows());
-  ms += 1200; pressAt(sh, ms, L); assert(memcmp(idle, gfx::fb, sizeof idle));   // a deliberate try 1.2 s later is pressed
+  ms += 1200; pressAt(sh, ms, L); assert(!modeSpotSame(idle));   // a deliberate try 1.2 s later is pressed
   ms += 300; liftAt(sh, ms, L); assert(checkShows());                            // and enters
   ms += 1200; taps(sh, ms, L, {5, 300, 150}); assert(!checkShows());    // a 5-tap mash on the check: out, once
   ms += 1200; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());       // re-entry 1.2 s after leaving
+  ms += 1200; taps(sh, ms, L, {1, 300, 0}); assert(!checkShows());      // K1: out, then retries once a second:
+  ms += 700; taps(sh, ms, L, {3, 300, 700}); assert(!checkShows());     // three within 3 s of the check are mashing,
+  ms += 700; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());        // the next one enters
+  ms += 1200; taps(sh, ms, back, {1, 300, 0}); assert(on(sh, "library") && !checkShows());   // the house leaves too:
+  ms += 600; taps(sh, ms, L, {1, 300, 0}); assert(!checkShows());       // a star 600 ms later is ignored,
+  ms += 1200; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());       // one 1.2 s after that enters
+  Input edge{}; edge.down = edge.pressed = true; edge.x = edge.downX = L.x - 3; edge.y = edge.downY = L.y + L.h / 2;
+  ms += 1200; sh.update(testNow, ms, edge); sh.render();
+  edge.down = edge.pressed = false; edge.released = edge.tap = true; edge.x = L.x + 3;
+  ms += 300; sh.update(testNow, ms, edge); sh.render(); assert(checkShows());   // begun beside it: not the check's tap
   ms += 1000; taps(sh, ms, launcher::tile(0, 6), {2, 300, 450});        // F4: a slow double tap on One toggles once
   assert(!goldAt(launcher::tile(0, 6)));
   ms += 1000; taps(sh, ms, launcher::tile(1, 6), {1, 300, 0});          // two games 200 ms apart: both count

@@ -82,7 +82,8 @@ class Shell {
   bool favsKept_ = false;                          // f<id> is there but unreadable (damaged, or a newer firmware's): never overwritten
   shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
   int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
-  uint32_t modeMs_ = 0;                            // star mode last began or ended, or the star/check last ignored a press
+  uint32_t modeChangeMs_ = 0;                      // star mode last began or ended
+  uint32_t modeMs_ = 0;                            // that, or the star/check's last ignored press: the 1 s runs from here
   bool modeIgnore_ = false;                        // the latest press, on the star/check, is mashing: it neither acts nor shows
   uint32_t pressMs_ = 0;                           // when the latest press began
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
@@ -180,6 +181,7 @@ class Shell {
   void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred, int starPage); void tapLibrary(int k); void drawStarButton();
   bool drawLibraryTile(int i, int m, int k, uint32_t home, int hop);   // tile i of m: game k and its star
   void saveFavs() { if (!favsKept_) shell::saveFavorites(*st_, active_, favs_); }
+  void noteModePress(const Input& in, uint32_t ms);   // marks a press on the star/check spot that mashing should not act on
   void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
   bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
   void setLight(shell::Light l);
