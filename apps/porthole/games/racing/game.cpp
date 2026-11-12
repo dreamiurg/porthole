@@ -110,7 +110,7 @@ void Game::go(Screen s) {
   screen_ = s;
   if (s == Screen::Calibrate) { calibration_ = {}; gripSet_ = false; }
   else if (s != Screen::Race) recenter_ = false;   // a recenter only ever returns to the race it paused
-  gate_.changed(ms_, in_); hold_ = {};
+  gate_.shown(ms_); hold_ = {};
   boost_ = rocket_ = false;
   badGripMs_ = 0;
 }

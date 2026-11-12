@@ -7,7 +7,7 @@ tilt 0 1000 0
 profile Sam 8
 wait 600
 tap 124 104
-wait 750
+wait 700
 tap 96 135
 wait 700
 tap 80 104
@@ -28,7 +28,7 @@ hold 42 36
 wait 600
 expect-screen race_pause
 tap 108 78
-wait 750
+wait 700
 expect-screen race_confirm
 tap 53 103
 wait 1500
@@ -38,7 +38,7 @@ wait 4000
 hold 42 36
 wait 600
 tap 108 78
-wait 750
+wait 700
 tap 53 103
 wait 1500
 expect-screen race_countdown
@@ -48,7 +48,7 @@ wait 4000
 hold 42 36
 wait 600
 tap 108 108
-wait 750
+wait 700
 tap 53 103
 wait 1500
 expect-screen library
@@ -67,7 +67,7 @@ wait 4000
 hold 42 36
 wait 600
 tap 108 108
-wait 750
+wait 700
 tap 53 103
 wait 1500
 reboot

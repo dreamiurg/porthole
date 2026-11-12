@@ -3,17 +3,17 @@
 reset
 profile Sam 8
 tap 80 32
-wait 850
+wait 450
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 tap 106 132
-wait 850
+wait 450
 tap 124 35
 wait 450
 tap 80 70
-wait 850
+wait 450
 expect-screen sys_clock
 expect sys_zone=America/Los_Angeles
 expect sys_auto=1
@@ -22,16 +22,16 @@ expect sys_time=idle
 ui-check sys_clock-default
 snap 01_default
 tap 80 87
-wait 850
+wait 450
 expect-screen sys_zone
 ui-check sys_zone-common
 snap 02_common
 tap 80 12
-wait 850
+wait 450
 tap 80 87
-wait 850
+wait 450
 tap 80 79
-wait 850
+wait 450
 expect-screen sys_clock
 expect sys_zone=America/Denver
 expect sys_auto=0
@@ -39,9 +39,9 @@ expect sys_off=-360
 ui-check sys_clock-manual
 snap 03_manual
 tap 80 12
-wait 850
+wait 450
 tap 80 12
-wait 850
+wait 450
 tap 80 12
 wait 450
 reboot
@@ -49,13 +49,13 @@ expect-screen picker
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 tap 106 132
-wait 850
+wait 450
 tap 124 35
 wait 450
 tap 80 70
-wait 850
+wait 450
 expect-screen sys_clock
 expect sys_zone=America/Denver
 expect sys_auto=0
@@ -70,7 +70,7 @@ tap 103 135
 wait 450
 expect sys_syncs=0
 tap 80 87
-wait 850
+wait 450
 tap 124 35
 wait 450
 tap 80 55
@@ -79,7 +79,7 @@ expect-screen sys_clock
 expect sys_zone=America/New_York
 expect sys_auto=0
 sys zoneok America/Chicago
-wait 250
+wait 100
 expect sys_zone=America/New_York
 expect sys_auto=0
 ui-check sys_clock-manual-precedence
@@ -124,14 +124,14 @@ ui-check sys_clock-network-generation
 # Failed zone saving keeps the prior selection and offers a retry.
 sys zonesavefail
 tap 80 87
-wait 850
+wait 450
 tap 80 55
 wait 450
 expect-screen sys_zone
 expect sys_zone=Europe/London
 ui-check sys_zone-save-failed
 tap 80 55
-wait 850
+wait 450
 expect-screen sys_clock
 expect sys_zone=America/Los_Angeles
 expect sys_auto=0
@@ -161,7 +161,7 @@ expect sys_sync>0
 ui-check sys_clock-time-ok
 snap 07_synced
 tap 80 87
-wait 850
+wait 450
 tap 80 55
 wait 450
 expect sys_zone=America/Los_Angeles
@@ -187,11 +187,10 @@ expect sys_local=1793494800
 ui-check sys_clock-fall_after
 snap 08_fall_after
 sheet timezones_and_clock
-wait 250
 tap 80 12
-wait 850
+wait 450
 tap 80 12
-wait 850
+wait 450
 tap 80 12
 wait 450
 reboot
@@ -199,9 +198,9 @@ expect-screen picker
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 tap 106 132
-wait 850
+wait 450
 tap 124 35
 wait 450
 tap 80 70
@@ -210,7 +209,6 @@ expect-screen sys_clock
 expect sys_zone=America/Los_Angeles
 expect sys_auto=0
 sys nowifi
-wait 250
 tap 103 135
 wait 450
 expect sys_time=nowifi
@@ -222,9 +220,9 @@ expect sys_zone=America/Los_Angeles
 ui-check sys_clock-zone-no-wifi
 snap 09_no_wifi
 tap 80 12
-wait 850
+wait 450
 tap 80 12
-wait 850
+wait 450
 tap 80 12
 wait 450
 expect-screen picker

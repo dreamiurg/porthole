@@ -26,12 +26,12 @@ expect-screen picker
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 expect-screen sys_info
 ui-check
 snap 02_info
 tap 110 108
-wait 850
+wait 450
 expect-screen sys_updates
 ui-check sys_updates-idle
 snap 03_updates
@@ -73,11 +73,10 @@ sheet update
 # eight minutes after the restart: the status is idle again, the last check is still on record, and both screens say so
 # ("Checked 8 min ago", "Checks once a day"), not "not yet" / "Not checked yet"
 skip 480
-wait 250
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 expect-screen sys_info
 expect sys_state=idle
 expect sys_last>0
@@ -93,7 +92,7 @@ wait 100
 ui-check sys_updates-current
 snap 08c_current
 sys failed
-wait 150
+wait 100
 ui-check sys_updates-failed
 snap 09_failed
 tap 53 40
@@ -102,30 +101,29 @@ expect sys_chan=stable
 expect sys_state=idle
 ui-check sys_updates-switched
 tap 80 12
-wait 850
+wait 450
 expect-screen sys_info
 tap 80 12
 wait 450
 expect-screen picker
 # no wifi saved: Info says so, and Check now reports it
 sys nowifi
-wait 400
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 expect-screen sys_info
 ui-check sys_info-nowifi
 snap 10_nowifi
 tap 110 108
-wait 850
+wait 450
 tap 80 108
 wait 100
 expect sys_state=nowifi
 ui-check sys_updates-nowifi
 snap 11_nowifi_updates
 tap 80 12
-wait 850
+wait 450
 tap 80 12
 wait 450
 expect-screen picker
@@ -137,18 +135,18 @@ expect-screen picker
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 tap 110 108
 wait 450
 sys current
 sys newest 0.15.0
-wait 250
+wait 100
 expect sys_ver=dev
 expect sys_state=current
 ui-check sys_updates-dev
 snap 12_dev
 tap 80 12
-wait 850
+wait 450
 tap 80 12
 wait 450
 expect-screen picker

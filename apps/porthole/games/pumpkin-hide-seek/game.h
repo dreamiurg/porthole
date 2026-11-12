@@ -35,15 +35,12 @@ class Game : public App {
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
-  uint32_t toggleMs_ = 0;         // when the action sign last toggled hiding
+  uint32_t pressMs_ = 0;          // when the finger last went down (Input::heldMs is 0 by the release)
   bool starting_ = false, home_ = false, actionPending_ = false, ghostPending_ = false;
-  bool actionHeld_ = false;       // the press now down toggled hiding
-  bool late_ = false;             // the press now down began in play and the gate held it back (lateThumb())
   void go(Page page);
   void start();
   void calibrate();
   void play(uint32_t dt);
-  void lateThumb(const Input& raw);
   bool ready() const;
   bool action() const;
   bool leaving();

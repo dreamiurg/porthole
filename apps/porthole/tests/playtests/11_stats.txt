@@ -1,9 +1,9 @@
 # Stats page: stickers, hats (none owned, then all owned: wear one, take it off), back home. (Mute is on the launcher.)
 newgame Sam Biscuit
-wait 2650
+wait 2400
 # the stat pips at the top
 tap 40 27
-wait 850
+wait 450
 expect-screen stats
 snap 01_stats
 # a short tap on the reset area does nothing (it needs a long press)
@@ -11,7 +11,7 @@ tap 80 148
 wait 450
 expect-screen stats
 tap 45 123
-wait 850
+wait 450
 expect-screen stickers
 snap 02_stickers
 # an unearned sticker says "???"
@@ -19,10 +19,10 @@ tap 44 42
 wait 450
 expect-screen stickers
 tap 80 12
-wait 850
+wait 450
 expect-screen stats
 tap 114 123
-wait 850
+wait 450
 expect-screen hats
 # no hats yet: the arrows stay on None
 tap 134 80
@@ -30,11 +30,11 @@ tap 80 134
 wait 450
 expect hat=0
 tap 80 12
-wait 850
+wait 450
 expect-screen stats
 dbg hats
 tap 114 123
-wait 850
+wait 450
 tap 134 80
 wait 450
 tap 80 134
@@ -47,11 +47,11 @@ tap 80 134
 wait 450
 expect hat=0
 tap 80 12
-wait 850
+wait 450
 expect-screen stats
 snap 04_stats_again
 tap 80 12
-wait 850
+wait 450
 expect-screen home
 sheet stats
 # a double tap acts once: the stat pips open the stats page and it stays open

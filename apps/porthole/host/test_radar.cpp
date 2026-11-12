@@ -96,7 +96,7 @@ static void tapAt(Game& g, int x, int y) {   // a finger down, then lifted: a ta
   frame(g, in);
 }
 static void tapBox(Game& g, const ui::Box& b) { tapAt(g, b.x + b.w / 2, b.y + b.h / 2); }
-static void settle(Game& g) { for (uint32_t t = 0; t <= ui::FreshGate::FRESH_MS; t += 40) frame(g); }   // past the fresh-screen tap gate
+static void settle(Game& g) { for (int i = 0; i < 15; i++) frame(g); }   // past the fresh-screen tap gate
 
 static void pages() {
   StubFeed feed;
@@ -123,8 +123,6 @@ static void pages() {
   Save saved; memcpy(&saved, data, sizeof saved);
   tapBox(g, paint::DONE);
   CHECK(!strcmp(g.screenName(), "radar_live"));
-  tapAt(g, 80, 47);   // Done's double tap drifted 30 px: a new target to the gate, but the whole scope is one target
-  CHECK(g.save().range == 0);
   settle(g);
   Input slow; slow.down = slow.pressed = true; slow.x = slow.downX = 60; slow.y = slow.downY = 60;
   frame(g, slow);

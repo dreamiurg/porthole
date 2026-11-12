@@ -4,15 +4,15 @@
 profile Sam 8
 expect-screen launcher
 tap 80 32
-wait 850
+wait 450
 expect-screen picker
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 expect-screen sys_info
 tap 106 132
-wait 850
+wait 450
 tap 80 70
 wait 450
 expect-screen sys_pin_set
@@ -30,10 +30,10 @@ wait 900
 expect-screen sys_admin
 wait 1500
 tap 80 12
-wait 850
+wait 450
 expect-screen sys_info
 tap 80 12
-wait 850
+wait 450
 expect-screen picker
 # New: the admin code first; back keeps the picker
 tap 80 93
@@ -42,7 +42,7 @@ expect-screen sys_pin
 ui-check sys_pin-new
 snap 01_new_asks
 tap 80 12
-wait 850
+wait 450
 expect-screen picker
 expect profile=-1/1
 # a wrong code stays put
@@ -59,11 +59,11 @@ tap 49 63
 tap 79 63
 tap 109 63
 tap 49 84
-wait 1150
+wait 900
 expect-screen new_name
 snap 02_new_open
 tap 80 12
-wait 850
+wait 450
 expect-screen picker
 # delete: a 3 s hold asks for the admin code, then "Delete Sam?"
 down 80 67
@@ -75,7 +75,7 @@ tap 49 63
 tap 79 63
 tap 109 63
 tap 49 84
-wait 1150
+wait 900
 expect-screen delete
 snap 03_delete_asks
 tap 80 80
@@ -84,7 +84,7 @@ expect-screen picker
 # a kid with a code: their pad, navy and asking "Delete Kai?", takes it, and its Admin key the grown-up's code instead
 profile Kai 6 4567
 tap 80 32
-wait 850
+wait 450
 expect-screen picker
 down 80 80
 wait 3000
@@ -107,7 +107,7 @@ tap 49 63
 tap 79 63
 tap 109 63
 tap 49 84
-wait 1150
+wait 900
 expect-screen delete
 tap 80 80
 wait 450

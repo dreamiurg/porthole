@@ -5,13 +5,12 @@ reset
 profile Sam 8 1111
 wait 450
 tap 80 32
-wait 600
+wait 450
 expect-screen picker
 tap 80 67
-wait 600
+wait 450
 expect-screen pin
 repeat 3
-wait 250
 tap 80 62
 tap 80 62
 tap 80 62
@@ -26,7 +25,7 @@ tap 80 62
 tap 80 62
 wait 900
 snap 01_wrong_toast
-wait 500
+wait 900
 expect-screen pin
 expect pin_wait>=2
 ui-check pin-wait
@@ -39,7 +38,7 @@ wait 450
 expect-screen pin
 # back, then in again: still waiting; a reboot too
 tap 80 12
-wait 750
+wait 450
 expect-screen picker
 tap 80 67
 wait 450
@@ -59,16 +58,15 @@ tap 41 62
 tap 41 62
 tap 41 62
 tap 41 62
-wait 1150
+wait 900
 expect-screen launcher
 # a kid tapping the hourglass (over where key 5 was) right through the end of the wait types nothing: the keys come
 # back only once the finger rests, so the wait never grows by itself
 tap 80 32
-wait 600
+wait 450
 tap 80 67
-wait 600
+wait 450
 repeat 4
-wait 250
 tap 80 62
 tap 80 62
 tap 80 62
@@ -88,19 +86,19 @@ tap 41 62
 tap 41 62
 tap 41 62
 tap 41 62
-wait 1150
+wait 900
 expect-screen launcher
 # the admin code: four wrong tries, then the grown-ups' keypad waits too
 # set an admin code 1234 through the menu, then come back as a guesser
 tap 80 32
-wait 850
+wait 450
 down 80 16
 wait 5000
 up
-wait 700
+wait 450
 expect-screen sys_info
 tap 106 132
-wait 750
+wait 450
 expect-screen sys_admin
 tap 80 70
 wait 450
@@ -114,12 +112,12 @@ tap 49 63
 tap 79 63
 tap 109 63
 tap 49 84
-wait 1150
+wait 900
 expect-screen sys_admin
 tap 80 12
-wait 850
+wait 450
 tap 80 12
-wait 850
+wait 450
 expect-screen picker
 down 80 16
 wait 5000

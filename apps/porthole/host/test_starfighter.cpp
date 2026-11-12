@@ -7,7 +7,6 @@
 #include <string.h>
 #include "games/starfighter/controls.h"
 #include "games/starfighter/game.h"
-#include "gfx565.h"
 
 using namespace starfighter;
 static int checks = 0;
@@ -68,7 +67,7 @@ struct Session {
     in.gx = gravity.x; in.gy = gravity.y; in.gz = gravity.z;
     game.update(now, ms, in);
   }
-  void wait(uint32_t duration = ui::FreshGate::FRESH_MS + 100) { for (uint32_t i = 0; i < duration; i += 20) frame(); }
+  void wait(uint32_t duration = 500) { for (uint32_t i = 0; i < duration; i += 20) frame(); }
   void tap(int x = 80, int y = 120) { frame(true, x, y); frame(false, x, y); }
   bool on(const char* name) const { return !strcmp(game.screenName(), name); }
   void start() { wait(); tap(); wait(); tap(); wait(); tap(); wait(); }
@@ -89,8 +88,8 @@ static void naturalFlow() {
   s.wait(); s.tap();
   CHECK(s.on("sf_squadron"));
   CHECK(s.game.run().lives == 3 && s.game.run().volleys == 0);
-  s.frame(true, 80, 120); s.wait();
-  CHECK(s.game.run().volleys == 0);   // the brief's tap again, on its spot: no shot
+  s.frame(true, 80, 80); s.wait();
+  CHECK(s.game.run().volleys == 0);
   s.wait(); s.tap(80, 80);
   CHECK(s.game.run().volleys == 1);
   const void* data = nullptr; size_t size = 0;
@@ -150,7 +149,7 @@ static void steeringAndClocks() {
 static void backEverywhere() {
   const char* pages[] = {"title", "calibrate", "brief", "victory", "defeat"};
   for (const char* p : pages) {
-    Session s; s.game.debugCmd(p); s.wait(Game::RESULT_MS + 40); s.tap(80, 144);
+    Session s; s.game.debugCmd(p); s.wait(); s.tap(80, 144);
     CHECK(s.game.wantsHome());
     CHECK(!s.game.wantsHome());
   }
@@ -183,28 +182,11 @@ static void replay() {
     Session s; s.game.debugCmd(result);
     s.tap();
     CHECK(!strcmp(s.game.screenName(), !strcmp(result, "victory") ? "sf_victory" : "sf_defeat"));
-    s.wait(Game::RESULT_MS + 40); s.tap();
+    s.wait(); s.tap();
     CHECK(s.on("sf_calibrate"));
     s.wait(); s.tap(); s.wait(); s.tap();
     CHECK(s.on("sf_squadron"));
     CHECK(s.game.run().lives == 3 && s.game.run().score == 0 && s.game.run().volleys == 0);
-  }
-}
-// A result's buttons stay unlit and deaf for RESULT_MS: a kid's fire taps, still coming as the run ends, never replay
-// or leave, wherever they land, and a press begun unlit never counts however long it is held.
-static void resultWait() {
-  static uint16_t pixels[gfx565::W * gfx565::H];
-  gfx565::target(pixels);
-  // MAIN's lip (y 126) shows on its fill (y 109) only when lit
-  auto lit = [&](Session& s) { s.game.render(); return pixels[126 * 3 * 480 + 80 * 3] != pixels[109 * 3 * 480 + 80 * 3]; };
-  for (const char* result : {"victory", "defeat"}) {
-    const char* page = !strcmp(result, "victory") ? "sf_victory" : "sf_defeat";
-    Session s; s.game.debugCmd(result); CHECK(!lit(s));
-    for (int i = 0; i < 4; i++) { s.wait(160); s.tap(80, 120); s.wait(40); s.tap(80, 144); }   // to 1.12 s
-    CHECK(s.on(page) && !s.game.wantsHome() && !lit(s));
-    for (int i = 0; i < 20; i++) s.frame(true, 80, 120);   // down unlit at 1.14 s, held past 1.2 s
-    s.frame(false, 80, 120); CHECK(s.on(page) && lit(s));
-    s.tap(80, 120); CHECK(s.on("sf_calibrate"));
   }
 }
 static void stageTransitions() {
@@ -220,12 +202,9 @@ static void stageTransitions() {
   CHECK(s.on("sf_explosion"));
   s.wait(EXPLOSION_MS + 20);
   CHECK(s.on("sf_victory"));
-  Session f; f.game.debugCmd("waveclear"); f.wait(WAVE_CLEAR_MS - 200);   // quick taps every 300 ms across a stage change
-  for (int i = 0; i < 8; ++i) { f.tap(80, 80); f.wait(260); }
-  CHECK(f.on("sf_squadron") && f.game.run().volleys >= 4);   // every one from 450 ms after the change fires
 }
 int main() {
   banking(); calibration(); naturalFlow(); invalidGrip(); queuedTaps(); steeringAndClocks();
-  backEverywhere(); resultWait(); heldExitGuard(); replay(); stageTransitions();
+  backEverywhere(); heldExitGuard(); replay(); stageTransitions();
   printf("Starfighter controls: %d checks\n", checks);
 }

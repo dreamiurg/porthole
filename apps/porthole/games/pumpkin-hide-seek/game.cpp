@@ -4,7 +4,7 @@
 namespace pumpkin {
 namespace {
 constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24}, GHOST = {22, 30, 24, 24};
-constexpr uint32_t AGAIN_MS = 400;   // a press on the sign this soon after it last toggled: a double tap or a mash
+constexpr uint32_t REST_MS = 2000;   // a press this long in play is a resting thumb (a kid's firm press is 0.6-1.5 s)
 bool inside(int x, int y, ui::Box b) {
   return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h;
 }
@@ -26,10 +26,9 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = actionPending_ = ghostPending_ = actionHeld_ = late_ = false;
-  toggleMs_ = ms_ - AGAIN_MS;
+  starting_ = actionPending_ = ghostPending_ = false;
   hold_ = ui::Hold{};
-  if (page != Page::Icing) gate_.changed(ms_, in_);   // the icing goes on from the 600 ms catch: one fresh pause for both
+  gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
 }
 void Game::start() {
@@ -52,26 +51,13 @@ void Game::calibrate() {
   tilt::Grav neutral;
   if (starting_ && steady_.get(ms_, &neutral)) { neutral_ = neutral; start(); }
 }
-// In play the gate holds the spot of the tap that started the round, so the rest of a double tap or mash on READY or
-// TRY AGAIN never hides the pumpkin (screen-gate playtest 2, M1). A press it held back that is still down when the wait
-// ends is a thumb resting on the sign on purpose: it acts then.
-void Game::lateThumb(const Input& raw) {
-  late_ = raw.down && (raw.pressed ? !in_.pressed : late_);
-  if (!late_ || !gate_.waited(ms_)) return;
-  gate_.closed = late_ = false;
-  in_.down = in_.pressed = true;
-}
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // The signs act as a press starts on them, however long it then lasts: a 2.5 s press during QUICK! HIDE! is a kid's
-  // choice (playtest 9, M1). The sign toggles at most once per AGAIN_MS, so a double tap toggles once and a panicked
-  // mash keeps toggling instead of locking the kid out (screen-gate playtest 2, M2).
-  UiAudit::add(GHOST.x, GHOST.y, GHOST.w, GHOST.h);
-  if (!in_.down) actionHeld_ = false;
-  if (in_.pressed && inside(in_.x, in_.y, ACTION) && ms_ - toggleMs_ >= AGAIN_MS) {
-    actionPending_ = actionHeld_ = true; toggleMs_ = ms_;
-  }
-  ghostPending_ = ghostPending_ || (in_.pressed && !round_.ghostUsed && inside(in_.x, in_.y, GHOST));
+  // A hand holding the board for tilt rests a thumb on the glass: a press of REST_MS or more is that thumb, not a
+  // choice. A shorter one counts, a firm deliberate press included (600 ms dropped those).
+  const bool quick = ms_ - pressMs_ < REST_MS;
+  actionPending_ = actionPending_ || (quick && action());
+  ghostPending_ = ghostPending_ || (quick && !round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
     step(round_, tilt.x, actionPending_, ghostPending_);
@@ -88,8 +74,8 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   pageMs_ += dt;
   animationMs_ += dt;
   in_ = in;
+  if (in_.pressed) pressMs_ = ms_;
   gate_.filter(in_, ms_);
-  if (page_ == Page::Play) lateThumb(in);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   if (leaving()) { home_ = true; return; }
   switch (page_) {
@@ -112,7 +98,6 @@ void Game::render() {
   v.ready = ready(); v.starting = starting_;
   v.exposure = (float)round_.exposure / CATCH_MS;
   v.homeHold = hold_.progress();
-  v.actionDown = ui::pressing(in_, ACTION) && (page_ != Page::Play || actionHeld_);   // sunk only under a press it takes
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
   v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;

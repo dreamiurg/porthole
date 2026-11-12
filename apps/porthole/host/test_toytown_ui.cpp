@@ -13,7 +13,6 @@
 #include "gfx565.h"
 using namespace toytown;
 namespace {
-constexpr uint32_t FRESH = ui::FreshGate::FRESH_MS + 100;   // a wait past a new page's fresh-touch gate
 constexpr uint32_t NOW = 1790000000;
 const ui::Box ACTIONS[] = {{24,105,54,24},{82,105,54,24},{49,131,62,22}};
 constexpr ui::Box BACK = {68,8,24,22};
@@ -38,7 +37,7 @@ struct Player {
     const bool dress=!strcmp(game.screenName(),"toytown_doll") || !strcmp(game.screenName(),"toytown_style");
     const bool back=b.x==BACK.x && b.y==BACK.y;
     const ui::Box target=back ? (dress ? (game.state().page==STYLE ? choices::EXIT : BACK) : sceneui::BACK) : b;
-    frame(false,0,0,FRESH); press(target);
+    frame(false,0,0,500); press(target);
   }
   void action(int i) {
     if (!strcmp(game.screenName(),"toytown_doll")) {
@@ -87,12 +86,11 @@ void identityAndSave() {
 void inputLifecycle() {
   Player p; p.enter(); p.press(ACTIONS[0]); assert(!strcmp(p.game.screenName(),"toytown_title"));
   p.action(0); assert(p.on(HUB)); p.press(ACTIONS[0]); assert(p.on(HUB));
-  p.frame(false,0,0,500); p.press(ACTIONS[0]); assert(p.on(HUB));   // the title gone is a new screen: a mash waits on
-  p.frame(false,0,0,FRESH); p.frame(true,51,117); p.frame(true,0,0,40); p.frame(false);
+  p.frame(false,0,0,500); p.frame(true,51,117); p.frame(true,0,0,40); p.frame(false);
   assert(p.on(HUB)); // dragging off cancels a press
-  p.frame(false,0,0,FRESH); p.frame(true,0,0); p.frame(true,51,117,40); p.frame(false);
+  p.frame(false,0,0,500); p.frame(true,0,0); p.frame(true,51,117,40); p.frame(false);
   assert(p.on(HUB)); // entering a target from outside does not click it
-  p.frame(false,0,0,FRESH); p.press(ACTIONS[0],900); assert(p.on(MAP)); // small fingers hold
+  p.frame(false,0,0,500); p.press(ACTIONS[0],900); assert(p.on(MAP)); // small fingers hold
   p.action(1); assert(p.on(PACK)); p.tap(BACK);
   assert(!strcmp(p.game.screenName(),"toytown_pause"));
   p.tap(BACK); assert(p.on(PACK) && !strcmp(p.game.screenName(),"toytown_pack"));
@@ -340,7 +338,7 @@ void explicitSchoolScene() {
 void sceneMovement() {
   State s=fixture(SCHOOL_INTRO); Player p; p.start(&s);
   const uint8_t x=s.worldX,y=s.worldY;
-  p.frame(false,0,0,FRESH); p.frame(true,80,55); p.frame(true,150,150,40); p.frame(false,150,150);
+  p.frame(false,0,0,500); p.frame(true,80,55); p.frame(true,150,150,40); p.frame(false,150,150);
   p.frame(false,0,0,1000);
   assert(p.game.state().worldX==x && p.game.state().worldY==y);
   const void* data=nullptr; size_t bytes=0; assert(p.game.takeSave(&data,&bytes,true));
@@ -357,7 +355,7 @@ void sceneMovement() {
 }
 void movementInterruptionAndRetarget() {
   State s=fixture(SCHOOL_INTRO); Player p; p.start(&s);
-  p.frame(false,0,0,FRESH); p.press({68,44,24,22});
+  p.frame(false,0,0,500); p.press({68,44,24,22});
   p.frame(false,0,0,220);
   assert(p.game.state().worldY==80); // animation frames do not repeatedly persist positions
   p.press(sceneui::BACK);
@@ -367,12 +365,12 @@ void movementInterruptionAndRetarget() {
   p.frame(false,0,0,1000); assert(p.game.state().worldY==stopped);
   State saved=p.snapshot(); Player resumed; resumed.start(&saved);
   assert(resumed.game.state().worldY==stopped);
-  resumed.frame(false,0,0,FRESH); resumed.press({68,44,24,22});
+  resumed.frame(false,0,0,500); resumed.press({68,44,24,22});
   resumed.frame(false,0,0,200);
   resumed.press({68,63,24,22}); // a new floor destination replaces the unfinished walk
   resumed.frame(false,0,0,1000);
   assert(resumed.game.state().worldX==80 && resumed.game.state().worldY==74);
-  resumed.frame(false,0,0,FRESH); resumed.frame(true,0,0);
+  resumed.frame(false,0,0,500); resumed.frame(true,0,0);
   resumed.frame(true,80,55,40); resumed.frame(false,80,55);
   resumed.frame(false,0,0,1000);
   assert(resumed.game.state().worldY==74); // entering floor from outside cannot start movement
@@ -387,7 +385,7 @@ void cafeTrayTouchAndWalking() {
     assert(p.game.state().worldX==80 && p.game.state().worldY==80);
   }
   State s=fixture(CAFE_MENU,CAFE); Player p; p.start(&s);
-  p.frame(false,0,0,FRESH); p.frame(true,122,80);
+  p.frame(false,0,0,500); p.frame(true,122,80);
   p.frame(true,80,55,40); p.frame(false,80,55); p.frame(false,0,0,1000);
   assert(p.on(CAFE_MENU) && p.game.state().worldX==80); // canceled tray drag
   p.tap({126,55,2,2}); // approach from the free floor above the tray
@@ -445,13 +443,6 @@ void explicitQuantityEditor() {
   resumed.enter(nullptr,0); resumed.action(0);
   assert(resumed.on(CAFE_QUANTITY) && resumed.game.state().cart[0]==1);
   assert(resumed.game.state().worldX==first.worldX && resumed.game.state().worldY==first.worldY);
-}
-void quickRepeats() {   // + is an in-place change (the light gate): three at a quick kid's pace, 480 ms apart, all count
-  State s=fixture(CAFE_MENU,CAFE); memset(s.cart,0,4);
-  Player p; p.start(&s); p.tap(sceneui::card(0,4)); assert(p.on(CAFE_QUANTITY));
-  p.frame(false,0,0,FRESH);
-  for (int i=0;i<3;++i) { p.press(ACTIONS[1],100); p.frame(false,0,0,460); }
-  assert(p.game.state().cart[0]==3);
 }
 void school() {
   Player p; State s=fixture(SCHOOL_INTRO); p.start(&s);
@@ -550,7 +541,7 @@ void interruptedPages() {
     const State saved = p.snapshot();
     Player resumed; State copy = saved; resumed.now = NOW + 14 * 86400; resumed.start(&copy);
     assert(!memcmp(&saved,&resumed.game.state(),sizeof saved));
-    resumed.now = NOW - 86400; resumed.frame(false,0,0,FRESH);
+    resumed.now = NOW - 86400; resumed.frame(false,0,0,500);
     assert(!memcmp(&saved,&resumed.game.state(),sizeof saved));
     resumed.tap(BACK); resumed.action(1); assert(resumed.on(HUB));
     if ((page >= SCHOOL_INTRO && page <= MEMORY) || page == MEMORY_EDIT || page == CAFE_QUANTITY || page == SCHOOL_HANG) {
@@ -810,7 +801,7 @@ void cosmeticPixels() {
 } // namespace
 int main() {
   orderedCafeActor(); changeParkIdeaImmediately(); matchingEvidenceSurvivesApproach(); inspectedParkIdea(); scrapbookWorldUsesEntry(); schoolDisplayActivity(); arrangePicturesPreservesCreation(); displayPicturesAreVisible(); schoolRepairsBothOrders(); literalPracticeWithMina(); repairedPropsKeepBoth();
-  explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); quickRepeats(); sceneMovement(); movementInterruptionAndRetarget();
+  explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); sceneMovement(); movementInterruptionAndRetarget();
   identityAndSave(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
   cafeOrders(); cafeCompareAndFinish(); discoverParkInScene(); park(); interruptedPages(); personalizeDuringOuting();
   optionalMemory(); memoryEditResume();

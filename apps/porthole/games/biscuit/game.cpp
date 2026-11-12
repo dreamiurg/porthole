@@ -15,7 +15,7 @@ constexpr uint32_t SAY_MS = 4000, ONE_SHOT_MS = 800, SURPRISE_MS = 90000;
 const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 void Game::enter(const AppEnter& e) {
-  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; in_ = {};   // the last visit's touch is not this one's
+  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   save_ = create(now_);
   for (int i = 0; i < e.n; i++)   // only this kid's pup: other profiles' saves are theirs
     if (e.all[i].id == who_.id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);   // bad: a new pup
@@ -28,7 +28,7 @@ void Game::enter(const AppEnter& e) {
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
 
-void Game::go(Screen s) { screen_ = s; fresh(); gate_.changed(ms_, in_); }   // a new screen: the spot gate
+void Game::go(Screen s) { screen_ = s; fresh(); }
 // The controls under the finger just changed (a new screen, or fetch, the cue pad, a nap on this one): a tap acts on
 // one layout only, and the next one waits for the fresh-screen pause (os/ui.h).
 void Game::fresh() { gate_.shown(ms_); in_.tap = in_.pressed = in_.longPress = false; }

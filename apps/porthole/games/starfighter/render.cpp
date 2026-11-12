@@ -130,13 +130,12 @@ void plaque(int y,const char* s,Color c=WHITE) {
   int w=int(std::strlen(s))*6+7;
   box(80-w/2,y-3,w,13,SPACE); text(y,s,c);
 }
-void control(const Box& b,const char* s,bool primary,bool lit=true) {   // unlit: no lip, and never primary
+void control(const Box& b,const char* s,bool primary) {
   UiAudit::add(b.x,b.y,b.w,b.h);
-  primary=primary&&lit;
   Color rim=primary?ICE:SLATE;
   box(b.x+2,b.y,b.w-4,b.h,rim); box(b.x,b.y+2,b.w,b.h-4,rim);
   box(b.x+2,b.y+2,b.w-4,b.h-4,primary?PANEL:INK);
-  if(lit) box(b.x+5,b.y+b.h-4,b.w-10,1,primary?AZURE:STEEL);
+  box(b.x+5,b.y+b.h-4,b.w-10,1,primary?AZURE:STEEL);
   if(*s) text(b.y+8,s,primary?WHITE:HULL,1,b.x+b.w/2);
 }
 void holdExit(uint16_t progress) {
@@ -394,7 +393,7 @@ void explosionScene(const Run& r) {
   sprite(art::FIGHTER,80,114+retreat,70+retreat,true);
   plaque(42,"GREAT SHOT!",CREAM);
 }
-void endScene(const Run& r,bool lit) {
+void endScene(const Run& r) {
   bool won=r.stage==Stage::Victory;
   stars(r.ms,0,false);
   if(won) {
@@ -407,12 +406,12 @@ void endScene(const Run& r,bool lit) {
   box(11,37,138,22,SPACE); text(41,won?"VICTORY!":"GAME OVER",won?GOLD:WHITE,2);
   char score[24]; std::snprintf(score,sizeof(score),"SCORE %u",unsigned(r.score));
   plaque(63,score,ICE);
-  control(MAIN,won?"PLAY AGAIN":"TRY AGAIN",true,lit); control(EXIT,"EXIT",false,lit);
+  control(MAIN,won?"PLAY AGAIN":"TRY AGAIN",true); control(EXIT,"EXIT",false);
 }
 void flight(const View& v) {
   if(!v.run) return;
   const Run& r=*v.run;
-  if(!playing(r.stage)) { endScene(r,v.lit); return; }
+  if(!playing(r.stage)) { endScene(r); return; }
   if(r.stage==Stage::Explosion) { explosionScene(r); holdExit(v.holdPermille); return; }
   if(r.stage>=Stage::TrenchEntry) trench(r); else space(r.ms,r.player.bank,true);
   combat(r);

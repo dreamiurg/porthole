@@ -34,9 +34,8 @@ uint32_t Shell::lastSeen() const {
 void Shell::go(Screen s) {
   if (screen_ == SH_LIBRARY && s != SH_LIBRARY) leaveStars(false);   // star mode ends with the Library: only the check keeps it
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
-  // A keypad too: a mash on the tap that opened it types nothing, a key elsewhere types at once. The grown-ups' keys
-  // sit 21 px apart, so there the spot is narrower: the key below the last one is a new key.
-  gate_.changed(ms_, in_, s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN ? 20 : ui::FreshGate::SPOT_R);
+  const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
+  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
@@ -488,7 +487,7 @@ void Shell::updateLauncher() {
   for (int i = 0; i < m; i++) {
     const ui::Box b = launcher::tile(i, m);
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    if (games[i] >= 0) openIdx(games[i]); else { page_ = 0; go(SH_LIBRARY); }
+    if (games[i] >= 0) openIdx(games[i]); else { page_ = 0; fromHomeMs_ = tilesWaitMs_ = ms_; go(SH_LIBRARY); }
     return;
   }
 }
@@ -514,6 +513,7 @@ static void caption(const ui::Box& c, const char* s) {   // yellow over the head
   textCentered(c.x + (c.w + 1) / 2, c.y + (c.h - 7) / 2, s, C_DKBROWN);   // rounds up: CAPTION (odd width) centers at x 80
 }
 void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a finger on a tile names it over the header row
+  if (tilesWait()) return;   // a press that will be ignored looks it
   for (int i = 0; i < m; i++)   // only a press that started on it
     if (ui::pressing(in_, tiles[i])) caption(launcher::CAPTION, games[i] >= 0 ? apps_[games[i]]->name() : "All games");
 }
@@ -565,16 +565,18 @@ void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a b
 // A gold star marks a favorite. The star button (the sun's place) starts star mode: a tap stars or unstars a game
 // instead of opening it, up to MAX_FAVS, kept only by the green check; the home button (or the rest screen, or a
 // restart) puts Home back as it was, since a kid who wandered in by accident (kid playtest 2) never meant to edit it.
+// Home's "All games" sits over a Library tile, so a kid's "again!" taps there (kid playtest 8 m2, 9 m1) must not open
+// it: a press begun within 800 ms of the Library opening from Home, or of the lift of a press so ignored, waits,
+// never past 2.5 s from the opening.
+bool Shell::tilesWait() const { return screen_ == SH_LIBRARY && pressMs_ - tilesWaitMs_ < 800 && pressMs_ - fromHomeMs_ < 2500; }
 // Every star taken off and none hidden: "not picked", so Home, the Library and star mode all show the default again
 // (kid playtest 4, M1); a hidden one (a game switched off) keeps the kid's list for when it is back.
 static shell::Favorites kept(shell::Favorites f) { if (f.picked && !f.count) f.picked = 0; return f; }
 // The house in star mode with stars the check would save: the first tap only asks for the check (kid playtest 9, M1:
 // a kid who used the house as "done" lost her edit unseen); a second while it asks drops them, as with nothing to keep.
-// The ask gates the house's spot as a new screen does, so a quick double tap on it only asks (kid playtest 10, m1),
-// while the check it asks for takes a press at once.
 void Shell::libraryBack() {
   const shell::Favorites k = kept(favs_);
-  if (starMode_ && !keepCue() && memcmp(&k, &starsBefore_, sizeof k)) { keepUntil_ = ms_ + 2000; fullUntil_ = ms_; gate_.changed(ms_, in_); return; }
+  if (starMode_ && !keepCue() && memcmp(&k, &starsBefore_, sizeof k)) { keepUntil_ = ms_ + 2000; fullUntil_ = ms_; return; }
   const bool stars = starMode_; leaveStars(false); go(stars ? SH_LIBRARY : SH_LAUNCHER);
 }
 void Shell::updateLibrary() {
@@ -593,7 +595,7 @@ void Shell::updateLibrary() {
   for (int i = 0; i < m; i++) {
     const ui::Box b = launcher::tile(i, m);
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    tapLibrary(on[k0 + i]);
+    if (tilesWait()) tilesWaitMs_ = ms_; else tapLibrary(on[k0 + i]);
     return;
   }
 }

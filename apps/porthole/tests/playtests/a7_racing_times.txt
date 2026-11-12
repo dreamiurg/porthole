@@ -6,14 +6,14 @@ tilt 0 1000 0
 profile Sam 6
 profile Zoe 9
 app racing
-wait 800
+wait 600
 expect-screen race_tracks
 tap 53 53
-wait 750
+wait 600
 tap 106 124
-wait 750
+wait 600
 tap 106 124
-wait 750
+wait 600
 tap 106 124
 wait 200
 # fixture: Zoe 60 m from the finish, for a recorded time
@@ -28,11 +28,11 @@ wait 900
 tap 80 55
 wait 900
 app racing
-wait 750
+wait 600
 expect-screen race_tracks
 ui-check race_tracks
 tap 78 129
-wait 750
+wait 700
 expect-screen race_board
 ui-check race_board
 expect kids=2
@@ -48,7 +48,7 @@ tap 35 44
 wait 700
 expect track=3
 tap 80 132
-wait 750
+wait 700
 expect-screen race_tracks
 tap 53 53
 wait 600

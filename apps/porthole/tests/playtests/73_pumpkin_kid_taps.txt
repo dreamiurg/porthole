@@ -1,28 +1,18 @@
-# Double taps do not spill into a newly opened page, the round included: READY's double tap leaves the pumpkin out
-# (screen-gate playtest 2, M1), while a thumb landing on the sign and staying hides once the round's 800 ms are up.
-# Home in play requires a deliberate hold, canceled on drift.
+# Double taps do not spill into a newly opened page. Home in play requires a deliberate hold, canceled on drift.
 reset
 tilt 0 1000 0
 profile Sam 6
 app pumpkin
-wait 800
+wait 600
 tap 80 131
 tap 80 131
 expect-screen pumpkin_calibrate
 expect starting=0
-wait 850
+wait 600
 tap 80 131
 tap 80 131
-wait 850
+wait 600
 expect-screen pumpkin_play
-expect hidden=-1
-down 80 131
-wait 100
-expect hidden=1
-up
-wait 450
-tap 80 131
-wait 100
 expect hidden=-1
 tap 80 19
 expect-screen pumpkin_play
@@ -47,47 +37,20 @@ wait 800
 up
 expect-screen pumpkin_play
 down 80 19
-wait 850
+wait 750
 up
 wait 100
 expect-screen launcher
 app pumpkin
-wait 850
+wait 600
 expect-screen pumpkin_intro
 tap 80 19
 wait 100
 expect-screen launcher
 app pumpkin
-wait 850
+wait 600
 tap 80 131
-wait 850
+wait 600
 tap 80 19
 wait 100
 expect-screen launcher
-# Shelter playtest 9, M1: during QUICK! HIDE! a firm 2.5 s press on HIDE hides as it lands and stays hidden through
-# the sweep, the sign sunk while held; a double tap on COME OUT comes out once (not out and back in)
-app pumpkin
-wait 850
-tap 80 131
-wait 850
-tap 80 131
-wait 3200
-expect-screen pumpkin_play
-expect phase=1
-down 80 131
-wait 100
-expect hidden=1
-snap pumpkin_hide_held
-wait 2400
-up
-expect hidden=1
-wait 6000
-expect-screen pumpkin_play
-expect hidden=1
-tap 80 131
-wait 100
-tap 80 131
-wait 100
-expect hidden=-1
-expect-screen pumpkin_play
-sheet kid_taps

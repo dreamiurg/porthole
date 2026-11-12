@@ -82,6 +82,8 @@ class Shell {
   bool favsKept_ = false;                          // f<id> is there but unreadable (damaged, or a newer firmware's): never overwritten
   shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
   int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
+  uint32_t fromHomeMs_ = 0;                        // the Library last opened from Home's "All games"
+  uint32_t tilesWaitMs_ = 0;                       // that, or the lift of a tile press ignored after it (tilesWait)
   uint32_t keepUntil_ = 0;                         // the house with stars unkept: "Tap [check] to keep" until then
   uint32_t pressMs_ = 0;                           // when the latest press began
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
@@ -182,6 +184,7 @@ class Shell {
   void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
   bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
   bool keepCue() const { return starMode_ && (int32_t)(keepUntil_ - ms_) > 0; }
+  bool tilesWait() const;   // a Library tile press now is Home's "All games" tapped again: it opens nothing
   void libraryBack();       // the house on the Library
   void setLight(shell::Light l);
   void updateLight(); void drawLight();

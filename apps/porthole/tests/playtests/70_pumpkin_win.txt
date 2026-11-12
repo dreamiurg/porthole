@@ -3,12 +3,12 @@ reset
 tilt 0 1000 0
 profile Sam 6
 app pumpkin
-wait 800
+wait 600
 expect-screen pumpkin_intro
 ui-check pumpkin_intro
 snap pumpkin_intro
 tap 80 131
-wait 750
+wait 600
 expect-screen pumpkin_calibrate
 expect ready=1
 ui-check pumpkin_calibrate

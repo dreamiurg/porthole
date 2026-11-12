@@ -34,7 +34,7 @@ struct Rig {
     g.render();
   }
   void wait(uint32_t t, uint32_t dt = 40) { for (uint32_t e = 0; e < t; e += dt) frame(false, 0, 0, dt); }
-  void tap(const ui::Box& b) { wait(ui::FreshGate::FRESH_MS + 100); frame(true, b.x + b.w / 2, b.y + b.h / 2); frame(true, b.x + b.w / 2, b.y + b.h / 2); frame(); }
+  void tap(const ui::Box& b) { wait(500); frame(true, b.x + b.w / 2, b.y + b.h / 2); frame(true, b.x + b.w / 2, b.y + b.h / 2); frame(); }
   void toRace(int track) {
     tap(paint::CARD[track]);
     if (g.screen() == Game::Screen::HowTo) tap(paint::NEXT);
@@ -449,7 +449,7 @@ void saveMigration() {
   assert(r.g.race().level == clampLevel(LEVEL_MAX, 0) && clampLevel(LEVEL_MAX, 0) < 18);
 }
 
-// The first tap on the track page acts, whatever it hits, as soon as the fresh-touch gate opens, at the
+// The first tap on the track page acts, whatever it hits, as soon as the 450 ms fresh-touch gate opens, at the
 // emulator's 33 ms frames and a 66 ms touch (the pass-3 report was a tap inside the gate: ignored by design).
 void firstTapAfterEntry() {
   const ui::Box targets[] = {paint::CARD[0], paint::CARD[1], paint::CARD[2], paint::CARD[3], paint::HOME, paint::MODE_CHIP};

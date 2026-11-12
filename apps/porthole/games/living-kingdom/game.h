@@ -37,8 +37,7 @@ class Game : public App {
   char prose_[8192] = {}, heading_[96] = {};
   bool title_ = true, dirty_ = false, home_ = false, fresh_ = true;
   uint32_t ms_ = 0;
-  void changed();   // a new screen: the spot gate (os/ui.h)
-  void turned();    // a page turned in place: the light gate
+  void changed();
   void mode(uint8_t value);
   void prepare();
   void prepareStory(const Scene& scene);

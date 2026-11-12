@@ -11,9 +11,9 @@ ui-check
 reset
 profile Sam 8
 app toy-town
-wait 800
+wait 600
 tap 109 117
-wait 850
+wait 600
 expect-screen toytown_doll
 tap 80 142
 wait 600
@@ -25,15 +25,15 @@ ui-check
 reset
 profile Sam 8
 app toy-town
-wait 800
+wait 600
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_hub
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_map
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_pack
 tap 112 25
 wait 600
@@ -45,15 +45,15 @@ ui-check
 reset
 profile Sam 8
 app toy-town
-wait 800
+wait 600
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_hub
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_map
 tap 109 117
-wait 850
+wait 600
 expect-screen toytown_pack
 tap 112 25
 wait 600
@@ -65,15 +65,15 @@ ui-check
 reset
 profile Sam 8
 app toy-town
-wait 800
+wait 600
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_hub
 tap 51 117
-wait 850
+wait 600
 expect-screen toytown_map
 tap 80 142
-wait 850
+wait 600
 expect-screen toytown_pack
 tap 112 25
 wait 600

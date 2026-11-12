@@ -147,8 +147,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     the first finish of a story its three stars). A discovery's cover, pages and wonder
     page, then Keep (`discover`: today's reading, and the notebook) opens the notebook on
     its page; Source shows the name and address as text. Every reader turn waits for the
-    light 450 ms fresh pause (`fresh()`; a new screen, `go()`, holds the tap's spot
-    instead, os/ui.h), since Next's meaning changes at the ends.
+    fresh-screen pause, since Next's meaning changes at the ends.
   - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
     `dailyMask`) as buttons that go and do them (a snack, fetch, a cuddle, the Library,
     the tricks, a nap), marked `* ` once done, and A lovely word. The third earns the

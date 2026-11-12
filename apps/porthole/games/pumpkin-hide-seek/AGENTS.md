@@ -47,24 +47,12 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   or Play -> Won (escaped). Retry starts Play with the current grip. Each launcher visit
   starts Intro and requires calibration again. A jolt delays a pending start
   until `tilt::Steady` reports plausible gravity.
-- Every page uses `ui::FreshGate` (`changed()`: a page a tap opened holds that
-  spot, one a timer opened any press for 450 ms; Icing goes on from the 600 ms Catch
-  without a second gate, so Home works from 0.45 s after the catch). Home is always visible at {68,8,24,22};
-  during Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During
-  Play the action sign and the ghost act as a press lands on them, however long it then
-  lasts (shelter playtest 9: a 2.5 s press on HIDE during QUICK! HIDE! was dropped and the
-  kid was caught), and the sign is drawn sunk (gold lip gone, face 2 px lower) while that
-  press holds. Play keeps the gate on the spot of the tap that started the round, so the
-  second press of a double tap (or a mash) on READY, TRY AGAIN or PLAY AGAIN leaves the
-  pumpkin out (screen-gate playtest 2, M1); a press there that is still down when its
-  800 ms are up is a thumb resting on purpose and hides then (`lateThumb()`), a press away
-  from the spot (the ghost, or the sign 24 px off) acts as it lands, and a thumb landing
-  after the 800 ms hides at once. A thumb resting there since before the round never acts
-  until lifted. The sign toggles at most once per 400 ms (`AGAIN_MS` in `game.cpp`, counted
-  from its last toggle), so a double tap toggles once and a panicked mash keeps toggling
-  instead of locking the kid out (playtest 2, M2). Home never hides or emerges. Only the action sign
-  changes hiding state. Tests: `firmPresses`, `restingThumb`, `earlyThumb`, `doubleTaps`, `pressedLook`
-  in `host/test_pumpkin.cpp`; playtest `73_pumpkin_kid_taps`.
+- All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
+  Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
+  the action sign and the ghost act on the lift of any press shorter than 2 s (`REST_MS`
+  in `game.cpp`): a hand holding the board for tilt rests a thumb on the glass, and that
+  lift must not act, while a firm 1-1.5 s press is a kid's deliberate choice (playtest 8).
+  Home never hides or emerges. Only the action sign changes hiding state.
 - Time comes from the monotonic millisecond input, with frame gaps capped at
   100 ms; the wall clock is unused and absence never advances a round.
 - `render.*`: original crisp pixel art on a 160px logical grid expanded 3x onto

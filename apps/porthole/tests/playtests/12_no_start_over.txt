@@ -3,9 +3,9 @@
 # short presses on the strip under the stats, where Start over's hidden long press was, and on its Yes's spot keep
 # the pup and the stats page.
 newgame Sam Biscuit
-wait 2650
+wait 2400
 tap 40 27
-wait 850
+wait 450
 expect-screen stats
 down 80 146
 wait 2500
@@ -23,10 +23,10 @@ expect-screen stats
 expect food=70
 snap 01_stats_kept
 tap 80 12
-wait 850
+wait 450
 expect-screen home
 tap 80 12
-wait 850
+wait 450
 expect-screen launcher
 tap 48 79
 wait 2400

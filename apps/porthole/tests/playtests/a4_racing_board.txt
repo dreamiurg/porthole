@@ -16,9 +16,9 @@ reboot
 wait 600
 profile Sam 7
 app racing
-wait 750
+wait 600
 tap 53 53
-wait 750
+wait 600
 tap 106 124
 wait 900
 expect-screen race_calibrate

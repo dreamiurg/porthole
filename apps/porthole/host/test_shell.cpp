@@ -696,7 +696,7 @@ static void bootWithoutHours(Shell& sh, shell::Store& st, App* const* apps, int 
   assert(shell::savePlayWindow(st, window)); sh.begin(st, apps, n, sys);
 }
 static uint32_t testNow = NOW;   // the wall clock frame() hands the shell; tests that move it put it back
-static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += ui::FreshGate::FRESH_MS + 100; sh.update(testNow, ms, in); sh.render(); }   // past FreshGate
+static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(testNow, ms, in); sh.render(); }   // past FreshGate
 static void tapAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // the middle of b
   Input in{}; in.pressed = in.tap = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
   frame(sh, ms, in);
@@ -731,7 +731,8 @@ static void launcherPaging() {
   tapAt(sh, ms, sixth); tapAt(sh, ms, r); tapAt(sh, ms, back);   // the Library on page 1, then a new pick: page 0
   tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
   tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
-  tapAt(sh, ms, sixth); tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);   // page 0 again
+  tapAt(sh, ms, sixth); tapAt(sh, ms, first); assert(a[0].entered == 2);   // 0.7 s after Home's "All games": a double tap
+  frame(sh, ms, Input{}); tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);   // 1.4 s after its lift
 }
 
 // The favorites blob (porthole/f<id>) and the device's games ("sys"/"games"): versioned, crc'd, read back; anything
@@ -947,61 +948,32 @@ static void houseAsksToKeep() {
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(checkShows() && yellowAt(F) && !goldAt(ONE));   // it asks
   ms += 2100; frame(sh, ms, Input{}); assert(checkShows() && !yellowAt(F));                          // for 2 s
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(checkShows() && yellowAt(F));   // asks again
-  ms += 900; taps(sh, ms, BACK, {1, 300, 0}); assert(!checkShows() && goldAt(ONE) && g.st.writes == writes);   // dropped
-  ms += 1000; taps(sh, ms, L, {1, 300, 0}); ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 200; taps(sh, ms, launcher::DONE, {1, 300, 0});                 // the check while it asks, at once: kept
+  ms += 600; taps(sh, ms, BACK, {1, 300, 0}); assert(!checkShows() && goldAt(ONE) && g.st.writes == writes);   // dropped
+  ms += 1000; taps(sh, ms, L, {1, 300, 0}); ms += 1000; taps(sh, ms, ONE, {1, 300, 0});
+  ms += 1000; taps(sh, ms, BACK, {5, 300, 150});                       // Leo's house mash: Home untouched
+  assert(g.st.writes == writes && on(sh, "launcher"));
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 1000; taps(sh, ms, L, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 500; taps(sh, ms, launcher::DONE, {1, 300, 0});                 // the check while it asks: kept
   assert(!checkShows() && !goldAt(ONE) && g.st.writes == writes + 1);
 }
-// The ask gates touches as a new screen does (kid playtest 10, m1): a reader's quick double tap on the house, or a
-// mash, only asks; a tap after a pause, while it asks, drops the stars.
-static void houseAskIsFresh() {
-  static Shell sh; EightGames g(sh); uint32_t& ms = g.ms; const ui::Box L = launcher::LIGHT, F = launcher::FULL;
-  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 1000; taps(sh, ms, L, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); const int writes = g.st.writes;
-  ms += 1000; taps(sh, ms, BACK, {2, 250, 250}); assert(checkShows() && yellowAt(F));   // Zoe's quick double tap: asks
-  ms += 2100; taps(sh, ms, BACK, {5, 300, 150});                       // Leo's house mash: it asks, Home untouched
-  assert(g.st.writes == writes && checkShows() && yellowAt(F) && !goldAt(ONE));
-  ms += 2100; taps(sh, ms, BACK, {1, 300, 0}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});   // asks, dropped
-  assert(!checkShows() && goldAt(ONE)); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  assert(g.st.writes == writes && on(sh, "launcher"));
-}
-// No tap carries through a screen change (kid playtest 10): Home's "All games" sits over the Library's sixth tile
-// (M1), the picker's first row over Home's first tile (M2), and a game's way out near the Library's page arrow (m3).
-// A kid's "again!" taps on the spot, 300 ms once a second, open nothing and show no name until 2.5 s after the change
-// (a kid retrying because "it didn't work" then gets in); a mash right after it opens nothing; a tap after a pause, or
-// one on another target at once (screen-gate playtest M2), acts.
-static void againTapsCarryNothing() {
+// Home's "All games" sits over the Library's sixth tile: a kid's "again!" taps there (kid playtest 8 m2, 9 m1) open
+// nothing and show no name, each ignored press restarting the 800 ms from its lift, up to 2.5 s from the opening.
+static void allGamesAgain() {
   static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
   ms += 1000; taps(sh, ms, ALL, {2, 300, 450}); assert(on(sh, "library"));   // a slow double tap
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ALL, {5, 250, 120}); assert(on(sh, "library"));   // a five-tap mash (H6)
+  ms += 1000; taps(sh, ms, ALL, {4, 250, 120}); assert(on(sh, "library"));   // four fast (H6)
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ALL, {1, 250, 0});   // a mash scattered as a kid's is, 3-6 mm: one target wide
-  for (const int d : {8, -8, 20, -20}) { ms += 120; taps(sh, ms, {ALL.x + d, ALL.y + (d > 0 ? 8 : 0), ALL.w, ALL.h}, {1, 250, 0}); }
-  assert(on(sh, "library")); for (const StubApp& a : g.a) assert(a.entered == 0);
+  ms += 1000; taps(sh, ms, ALL, {1, 350, 0});                                 // "again!" once a second (H7)
+  ms += 650; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // ignored: no name
+  liftAt(sh, ms += 350, ALL); ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(on(sh, "library") && g.a[5].entered == 0);
+  ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(g.a[5].entered == 1);   // 2.65 s after the opening: the cap, it opens
+  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ALL, {2, 300, 700}); assert(on(sh, "library") && g.a[5].entered == 0);   // Leo, once a second
-  ms += 700; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // 1.7 s after the change: no name
-  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 0);
-  ms += 700; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // 2.7 s: past the cap, a real tap, named
-  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 1);
-  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
-  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 850; taps(sh, ms, ALL, {1, 300, 0});   // a pause: acts at once
-  assert(g.a[5].entered == 2);
-  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
-  const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);
-  ms += 1000; taps(sh, ms, r, {1, 300, 0}); ms += 1000; taps(sh, ms, launcher::tile(1, 2), {1, 300, 0});
-  assert(g.a[7].entered == 1); pressAt(sh, ms += 1000, l); g.a[7].home = true; liftAt(sh, ms += 100, l);   // the way out, over the arrow
-  taps(sh, ms, l, {3, 300, 700}); ms += 1000; taps(sh, ms, launcher::tile(1, 2), {1, 300, 0});
-  assert(g.a[7].entered == 2);   // the exit's repeat taps on the arrow: still page 2
-  g.a[7].home = true; frame(sh, ms, Input{}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(on(sh, "launcher"));
-  ms += 1000; taps(sh, ms, launcher::HEADER, {1, 300, 0}); assert(on(sh, "picker"));
-  const ui::Box name = {36, 60, 8, 8};   // on the picker's first row and on Home's first tile
-  ms += 1000; taps(sh, ms, name, {3, 300, 700}); assert(on(sh, "launcher") && g.a[0].entered == 0);
-  ms += 700; taps(sh, ms, name, {1, 300, 0}); assert(g.a[0].entered == 1);   // still retrying, 2.7 s on: it opens
-  pressAt(sh, ms += 1000, BACK); g.a[0].home = true; liftAt(sh, ms += 100, BACK); assert(on(sh, "launcher"));
-  ms += 1000; taps(sh, ms, ALL, {1, 120, 0}); ms += 200; taps(sh, ms, ONE, {1, 120, 0});   // Zoe: a new target at once
-  assert(g.a[0].entered == 2);
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0});
+  ms += 850; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // 850 ms after: a real tap, named
+  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 2);
 }
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
@@ -1110,7 +1082,7 @@ static void favoritesKept() {
 static void brightness() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubApp a("One"); App* const list[1] = {&a};
   const uint32_t night = NOW + 12 * 3600;
-  auto step = [&](const Input& in) { ms += ui::FreshGate::FRESH_MS + 100; sh.update(night, ms, in); sh.render(); };
+  auto step = [&](const Input& in) { ms += 700; sh.update(night, ms, in); sh.render(); };
   auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
   auto pick = [&](const ui::Box& b) { tap(launcher::LIGHT); assert(on(sh, "light")); tap(b); assert(on(sh, "launcher")); };
   bootWithoutHours(sh, st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
@@ -1281,7 +1253,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); libraryMashing(); houseAsksToKeep(); houseAskIsFresh(); againTapsCarryNothing(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); libraryMashing(); houseAsksToKeep(); allGamesAgain(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.
@@ -1349,29 +1321,6 @@ static void padQuickAndSlowKeys() {
   at(key(1), 700, true, false, false); at(key(1), 40, false, false, true);
   at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
   frame(sh, ms, Input{}); assert(on(sh, "launcher"));
-}
-// A pad holds the spot of the tap that opened it like any new screen (screen-gate playtest 2, M3: a mash on a name row
-// or an age typed digits into the pad under it, and saved a code): a six-press mash there types nothing, wherever in
-// one target its presses land; a key elsewhere types at once; and a quick "1111" once the gate has passed types four.
-static void padMash() {
-  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
-  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); bootWithoutHours(sh, st, nullptr, 0, &sys);
-  auto press = [&](int x, int y, uint32_t gap, uint32_t hold) {   // gap ms after the last lift, held hold ms
-    Input in{}; in.down = in.pressed = true; in.x = in.downX = x; in.y = in.downY = y;
-    sh.update(NOW, ms += gap, in); sh.render();
-    in.down = in.pressed = false; in.released = in.tap = true; sh.update(NOW, ms += hold, in); sh.render();
-  };
-  // Sam's row at the pad's 1 key (41, 62); 1 then 2 more keys at 150 ms, 100 ms presses
-  auto open = [&]() { ms += 1000; press(41, 62, 0, 250); assert(on(sh, "pin")); };
-  open();
-  const int jitter[5][2] = {{0, 0}, {8, -8}, {-8, 8}, {20, 0}, {0, 20}};   // 250 ms presses 150 ms apart
-  for (const auto& j : jitter) press(41 + j[0], 62 + j[1], 150, 250);
-  for (int i = 0; i < 4; i++) press(41, 62, i ? 150 : 900, 100);   // a pause, then 1111 at once
-  frame(sh, ms, Input{}); assert(on(sh, "launcher") && !storedStrikes(st, 0));
-  tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
-  open(); press(80, 90, 150, 100);   // 5, a new target 150 ms in: typed
-  for (int i = 0; i < 3; i++) press(41, 62, 150, 100);
-  frame(sh, ms, Input{}); assert(on(sh, "pin") && storedStrikes(st, 0) == 1);   // 5111: four digits, one wrong try
 }
 // A grown-up typing the repeat straight away: the key pressed while the fourth dot still shows is the repeat's first.
 static void adminRepeatRightAway() {
@@ -1506,44 +1455,6 @@ static void deleteNeedsACode() {
 // A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
 // that began on it, never under a finger slid onto it from another.
-// FreshGate (os/ui.h). A screen a tap changed: a press within one target (24 px) of where that tap went down waits
-// 800 ms from the change and from each lift it ignored, up to 2.5 s, and one at a new target acts at once. A change no
-// finger made, and one in place, wait a plain 450 ms, re-armed by nothing; so does a finger held across any change.
-static void freshGate() {
-  auto at = [](ui::FreshGate& g, uint32_t ms, bool down, bool pressed, bool released, int x = 40, int y = 60) {
-    Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = released; in.x = x; in.y = y;
-    g.filter(in, ms); return in.pressed || in.tap;
-  };
-  Input tap{}; tap.released = tap.tap = true; tap.x = 46; tap.y = 64; tap.downX = 40; tap.downY = 60;   // lifted 7 px off
-  ui::FreshGate g; g.changed(1000, tap); assert(!at(g, 1600, true, true, false) && !at(g, 1900, false, false, true));
-  g.changed(1000, tap); assert(at(g, 1850, true, true, false));
-  g.changed(1000, tap); assert(at(g, 1200, true, true, false, 90, 100));   // a new target 200 ms after the change
-  g.changed(1000, tap); assert(at(g, 1200, true, true, false, 40, 86));    // 26 px off: past one target, new
-  g.changed(1000, tap);   // a six-tap mash on the spot, 250 ms presses 150 ms apart: nothing within 2.5 s
-  for (uint32_t t = 1100; t < 3500; t += 400) { assert(!at(g, t, true, true, false, 45, 63)); at(g, t + 250, false, false, true, 45, 63); }
-  const int jitter[][2] = {{8, -8}, {-8, 8}, {20, 0}, {-20, 8}, {0, -20}, {8, 20}};   // a kid's mash scatters 3-6 mm
-  g.changed(1000, tap);
-  for (int i = 0; i < 6; i++) {
-    const uint32_t t = 1100 + 400 * i; const int x = 40 + jitter[i][0], y = 60 + jitter[i][1];
-    assert(!at(g, t, true, true, false, x, y)); at(g, t + 250, false, false, true, x, y);
-  }
-  g.changed(1000, tap); assert(!at(g, 1500, true, true, false)); at(g, 1700, false, false, true);   // a mash's press
-  assert(!at(g, 1850, true, true, false)); at(g, 2000, false, false, true);
-  assert(at(g, 2800, true, true, false));   // 800 ms after the last ignored lift
-  g.changed(1000, tap);   // a 1 Hz retry on the spot, 300 ms presses 700 ms apart: in on the first press 2.5 s after
-  for (uint32_t t = 1700; t < 3500; t += 1000) { assert(!at(g, t, true, true, false)); at(g, t + 300, false, false, true); }
-  assert(at(g, 3700, true, true, false));
-  Input held = tap; held.released = held.tap = false; held.down = true; held.x = 40; held.y = 60;
-  g.changed(1000, held); assert(!at(g, 1700, false, false, true) && at(g, 1850, true, true, false));   // held across: its lift
-  g.changed(1000, Input{});   // a timer's change: 450 ms for any press, never re-armed
-  assert(!at(g, 1200, true, true, false, 90, 100)); at(g, 1300, false, false, true, 90, 100);
-  assert(at(g, 1460, true, true, false, 90, 100));
-  g.shown(1000);   // in place: quick repeat taps on one control count from 450 ms, never re-armed
-  assert(!at(g, 1100, true, true, false)); at(g, 1250, false, false, true);
-  assert(!at(g, 1400, true, true, false)); at(g, 1440, false, false, true); assert(at(g, 1460, true, true, false));
-  g.shown(1000, 1200); assert(!at(g, 2150, true, true, false, 90, 100)); at(g, 2190, false, false, true, 90, 100);
-  assert(at(g, 2210, true, true, false, 90, 100));   // a longer wait anywhere: Star Fighter's results
-}
 static void longPressStillTaps() {
   InputTracker t; t.step(true, 50, 50, 1000);
   Input in = t.step(false, 50, 50, 1080); assert(in.tap && !in.longTap);
@@ -1564,7 +1475,7 @@ static void slowPresses() {
   InputTracker tr;
   auto slow = [&](const ui::Box& b, uint32_t holdMs) {   // 40 ms frames, starting past the fresh-screen gate
     const int x = b.x + b.w / 2, y = b.y + b.h / 2;
-    ms += ui::FreshGate::FRESH_MS + 100;
+    ms += 500;
     for (uint32_t e = 0; e <= holdMs; e += 40) { ms += 40; sh.update(testNow, ms, tr.step(true, x, y, ms)); sh.render(); }
     ms += 40; sh.update(testNow, ms, tr.step(false, x, y, ms)); sh.render();
   };
@@ -1577,7 +1488,7 @@ static void slowPresses() {
   bootWithoutHours(sh, st, list, 1, &sys);
   slow({24, 55, 112, 24}, 2500); assert(on(sh, "launcher"));   // a 6-year-old's 2.5 s press on his name: his games
   tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
-  ms += ui::FreshGate::FRESH_MS + 100;   // past the fresh gate; a delete asks once the hold reaches 3 s, the finger still down
+  ms += 500;   // past the fresh gate; a delete asks once the hold reaches 3 s, the finger still down
   for (uint32_t e = 0; e <= 3000 && on(sh, "picker"); e += 40) { ms += 40; sh.update(testNow, ms, tr.step(true, 80, 67, ms)); sh.render(); }
   assert(on(sh, "sys_pin")); ms += 40; sh.update(testNow, ms, tr.step(false, 80, 67, ms)); assert(on(sh, "sys_pin"));
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
@@ -1762,12 +1673,12 @@ static void systemMenuWayIn() {
 static void codesAndPresses() {   // the code pads, their waits, what they gate, and how long a press may be
   pinWaits();
   kidCodeLockout();
-  padQuickAndSlowKeys(); padMash();
+  padQuickAndSlowKeys();
   adminRepeatRightAway();
   adminCodeLockout();
   adminGatesProfiles();
   deleteNeedsACode();
-  freshGate(); longPressStillTaps();
+  longPressStillTaps();
   slowPresses();
 }
 

@@ -5,7 +5,7 @@ reset
 profile Sam 8 1234
 wait 450
 tap 80 32
-wait 750
+wait 450
 expect-screen picker
 # no pause after the picker tap: all four digits count
 tap 80 67
@@ -13,11 +13,11 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-wait 1150
+wait 900
 expect-screen launcher
 # a double tap on Sam's row types nothing: the code that follows is still 1234
 tap 80 32
-wait 750
+wait 450
 tap 80 67
 wait 40
 tap 80 67
@@ -28,33 +28,33 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-wait 1150
+wait 900
 expect-screen launcher
 # a slow press on each key (a second each, past the long press) still types it
 tap 80 32
-wait 750
+wait 450
 tap 80 67
 wait 450
 hold 41 62
 hold 80 62
 hold 119 62
 hold 41 90
-wait 1150
+wait 900
 expect-screen launcher
 # a new profile's code typed twice with no pause between: the repeat's first key is not lost, even a press that
 # goes down while the fourth digit shows and lifts after its 400 ms (the pause waits for the finger)
 tap 80 32
-wait 750
+wait 450
 tap 80 93
-wait 750
+wait 450
 expect-screen new_name
 tap 93 101
 tap 41 53
 tap 41 101
 tap 119 125
-wait 750
+wait 450
 tap 64 57
-wait 750
+wait 450
 tap 79 69
 wait 450
 expect-screen pin_set

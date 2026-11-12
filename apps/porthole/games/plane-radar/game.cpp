@@ -32,7 +32,7 @@ void Game::go(Page p) {
   air::Feed* f = air::feed();
   if (p == P_MENU) spotText(f && f->spot(&lat, &lon), lat, lon, spot_, sizeof spot_);
   frames_.reset();
-  pageMs_ = ms_; gate_.changed(ms_, in_);
+  gate_.shown(ms_);
 }
 
 void Game::setRange(int r) {
@@ -56,10 +56,7 @@ void Game::scope() {
   if (onMenu && within(in_.x, in_.y, MENU_CX, MENU_CY, MENU_HIT)) { go(P_MENU); return; }
   const bool onHome = on(HOME, in_.downX, in_.downY);
   const int dx = in_.x - in_.downX, dy = in_.y - in_.downY;
-  // The whole glass is one target, so a mash's press that drifts off the spot (FreshGate's new target) must not cycle
-  // it: only a press begun LIGHT_MS after the page showed does.
-  const bool fresh = (int32_t)(pressMs_ - pageMs_) < (int32_t)ui::FreshGate::LIGHT_MS;
-  if (!onMenu && !onHome && !fresh && dx * dx + dy * dy <= 36) setRange((save_.range + 1) % RANGES);
+  if (!onMenu && !onHome && dx * dx + dy * dy <= 36) setRange((save_.range + 1) % RANGES);
 }
 
 void Game::menu() {
@@ -77,7 +74,6 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   ms_ = ms;
   in_ = in;
   gate_.filter(in_, ms);
-  if (in_.pressed) pressMs_ = ms;
   if (air::Feed* f = air::feed()) f->read(snap_);
   else snap_.state = air::S_OFF;
   if (snap_.gen != gen_) { gen_ = snap_.gen; fetchMs_ = ms; }

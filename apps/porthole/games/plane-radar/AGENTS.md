@@ -24,8 +24,7 @@ On the board the feed is `net::Radar` (`firmware/net.cpp`: wifi, adsb.fi every 5
   14 px radius).
 - `game.*`: two pages, scope and menu. A press counts on release when it started and ended on the target, however long
   it was held (small kids press and hold). Scope: home, the middle button (menu), anywhere else on the glass steps the
-  range, for a press begun 450 ms after the scope showed (the whole glass is one target, so a double tap on Done that
-  drifts off its spot, a new target to `FreshGate`, would step it). Menu: OK, which way is up (N/E/S/W), range, label lines (Flight, Route, Alt), and home's coordinates, read
+  range. Menu: OK, which way is up (N/E/S/W), range, label lines (Flight, Route, Alt), and home's coordinates, read
   only.
 - `save.h`: per kid: range, up, hideCall/hideRoute/hideAlt (zero = shown). Version 1, 20 bytes, append-only from here.
 

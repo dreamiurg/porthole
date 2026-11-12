@@ -40,7 +40,6 @@ class Game : public App {
   paint::Page page_ = paint::P_SCOPE;
   char spot_[32] = "";   // the menu's line about home
   uint32_t ms_ = 0, fetchMs_ = 0, gen_ = 0;   // when snap_.gen last changed
-  uint32_t pageMs_ = 0, pressMs_ = 0;          // when the page showed, and when the press now down or lifting began
   bool home_ = false, dirty_ = false;
   void go(paint::Page p);
   void setRange(int r);

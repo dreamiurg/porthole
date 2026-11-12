@@ -17,7 +17,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; in_ = {};   // the last visit's touch is not this one's
+  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
   for (int i = 0; i < nKids_; i++) {
     kids_[i] = e.all[i];
@@ -76,7 +76,7 @@ void Game::finishAdoption() {
 const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
 
 void Game::go(Screen s) {   // a tap acts on one screen only
-  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.changed(ms_, in_);
+  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_);
   yesHold_ = {}; bounceUntil_ = 0;
 }
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
@@ -348,9 +348,7 @@ void Game::drawSplash() {
 void Game::updateIntro() {
   // phase encoded in dogAct_: 0 box wobbling, 1 opened
   if (backButton()) { wantsHome_ = true; return; }
-  // The parcel takes a tap anywhere, so a mash's press that drifts off the spot (FreshGate's new target) must not
-  // open it: only a press begun LIGHT_MS after the screen showed does.
-  if (dogAct_ == 0 && in_.tap && pressedAfterPhase(ui::FreshGate::LIGHT_MS)) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
+  if (dogAct_ == 0 && in_.tap) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
   else if (dogAct_ == 1 && ms_ - screenMs_ > 900 && in_.tap) { dogAct_ = 0; setNameBuf(""); namePage_ = 0; memset(&save_, 0, sizeof save_); go(SC_NAME_PET); }
 }
 void Game::drawIntro() {
@@ -517,10 +515,9 @@ void Game::updateHome() {
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
-    // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: FreshGate holds
-    // a second press near the first, but a double tap that drifts SPOT_R is a new target to it, so only a press begun
-    // once the room has shown a second takes this one-way choice.
-    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && pressedAfterPhase(1000)) bringDogBack();
+    // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: a slow double
+    // tap's second press gets past the fresh gate, so only a press begun once the room has shown a second takes it.
+    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && pressedAfter(1000)) bringDogBack();
     else if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); }
     return;
   }
@@ -746,7 +743,7 @@ void Game::startFetch() {
 }
 void Game::updateFetch() {
   if (fetchDone_) {   // the sweeping finger, still down as the round ends, never dismisses the results
-    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfterPhase()) {
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) {
       bool muddy = (pet::rnd(save_) % 100) < 40;
       pet::playResult(save_, now_, fetchScore_, muddy); markDirty();
       if (muddy) { toast("Uh oh, muddy paws!", 3000); }
@@ -837,7 +834,7 @@ void Game::nextWord() {
 }
 void Game::updateWords() {
   if (wordsDone_) {
-    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfterPhase()) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
     return;
   }
   if (backButton()) { go(SC_PLAYMENU); return; }
@@ -852,7 +849,7 @@ void Game::updateWords() {
   const char* w = WORDS[wordIdx_[wordRound_]].word; int n = (int)strlen(w);
   for (int i = 0; i < wordCols_ * 3; i++) {
     int x = tileX(i), y = tileY(i);
-    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28) && pressedAfterPhase()) {
+    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28) && pressedAfter(0)) {
       if (tiles_[i] == w[wordTyped_]) {
         tileUsed_[i] = true; wordTyped_++; spawn(x + 12, y + 12, 1, 2);
         if (wordTyped_ >= n) { wordCorrect_++; wordSolvedUntil_ = ms_ + 1600; spawn(80, 50, 0, 5); }
@@ -895,7 +892,7 @@ void Game::drawWordTiles() {
     if (wordSolvedUntil_) continue;
     bool wrong = wordWrongTile_ == i && ms_ < wordWrongUntil_;
     int sh = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
-    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28}) && pressedAfterPhase();
+    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28}) && pressedAfter(0);
     roundRect(x + sh, y + 2, 24, 24, C_DKBROWN); roundRect(x + sh, y + (pr ? 1 : 0), 24, 24, C_DKBROWN);
     roundRect(x + 1 + sh, y + 1 + (pr ? 1 : 0), 22, 22, wrong ? C_RED : pr ? C_YELLOW : C_WHITE);
     char l[2] = {tiles_[i], 0}; textCentered(x + 12 + sh, y + 5 + (pr ? 1 : 0), l, C_DKBROWN, 2);
@@ -956,7 +953,7 @@ void Game::updateRead() {
   int npages = 0; while (bk.pages[npages]) npages++;
   if (backButton()) { go(SC_LIBRARY); return; }
   if (page_ < npages) {
-    if (in_.tap && in_.y > 26 && (page_ || pressedAfterPhase(ui::FreshGate::LIGHT_MS))) {   // page 1 as the parcel
+    if (in_.tap && in_.y > 26) {
       if (in_.x >= 64) { page_++; if (page_ == npages) { spawn(40, 120, 0, 3); } }
       else if (page_ > 0) { page_--; }
     }
@@ -1094,7 +1091,7 @@ void Game::updateTrain() {
       break;
     case 2:  // player input
       for (int z = 0; z < ZONE_N; z++) UiAudit::add(zx[z] - 12, zy[z] - 12, 24, 24);   // anchors; taps resolve to the nearest one
-      if (in_.tap && pressedAfterPhase()) {   // a finger held across the demo is no answer
+      if (in_.tap && pressedAfter(0)) {   // a finger held across the demo is no answer
         int hitZone = trainHitZone(in_.x, in_.y);
         if (hitZone < 0) break;
         if (seqInput_ > 0 && hitZone == seq_[seqInput_ - 1] && ms_ - seqStepMs_ < 350) break;  // double tap on the same spot
@@ -1325,7 +1322,7 @@ void Game::bringDogBack() {
   spawn(80, 96, 0, 6);
 }
 void Game::drawBringBack(const ui::Box& b, bool picture) {   // two lines: "Bring back" on one (70 px) would reach the farm's dog
-  const bool pr = ui::pressing(in_, b) && (screen_ != SC_HOME || pressedAfterPhase(1000));   // sinks only under a press it takes
+  const bool pr = ui::pressing(in_, b) && (screen_ != SC_HOME || pressedAfter(1000));   // sinks only under a press it takes
   const int dy = pr ? 1 : 0, cx = b.x + (picture ? 38 : b.w / 2);
   ui::drawButton({b, nullptr, nullptr, C_ORANGE}, pr);
   if (picture) framedPup(b.x + 4, b.y + 7 + dy, DOG_PORTRAIT_SMALL[save_.wallBreeds[save_.wallCount - 1]], 1);   // who comes back
@@ -1456,7 +1453,7 @@ void Game::drawGift() {
 }
 void Game::updateCelebrate() {
   if ((ms_ / 200) % 3 == 0 && (ms_ / 33) % 4 == 0) spawn(20 + (int)(pet::rnd(save_) % 120), 10, 4, 1);
-  if ((celebAnyRelease_ ? in_.released : in_.tap) && ms_ - screenMs_ > 700) go(nextAfterCelebrate_);
+  if ((celebAnyRelease_ ? in_.released : in_.tap) && ms_ - screenMs_ > 700) { go(nextAfterCelebrate_); }
 }
 void Game::drawCelebrate() {
   clear(C_NAVY);

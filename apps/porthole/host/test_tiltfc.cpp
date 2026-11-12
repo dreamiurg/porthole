@@ -544,7 +544,7 @@ static void noSkipping() {
   for (int k = 0; k < 20; k++) ft.frame(true, GO_X, FT_GO_Y);   // a long press, let go on the sign
   ft.frame(false, GO_X, FT_GO_Y);
   CHECK(ft.on("fc_calibrate"));
-  ft.wait(ui::FreshGate::FRESH_MS + 100);
+  ft.wait(600);
   for (int k = 0; k < 20; k++) ft.frame(true, LEAVE_X, LEAVE_Y);
   CHECK(!ft.game.wantsHome());
   ft.frame(false, LEAVE_X, LEAVE_Y);

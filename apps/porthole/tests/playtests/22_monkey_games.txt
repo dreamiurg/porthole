@@ -2,9 +2,9 @@
 # and Word Fetch at age 6 (3-4 letters). Runs under ASan/UBSan; afterwards: a real screen, stats in 0..100.
 # seed 7: Fetch
 newgame Sam Biscuit
-wait 2650
+wait 2400
 tap 66 129
-wait 750
+wait 450
 tap 80 60
 wait 450
 expect-screen fetch
@@ -20,10 +20,10 @@ expect clean>=0
 expect clean<=100
 # seed 8: Word Fetch, age 9
 newgame Sam Biscuit
-wait 2650
+wait 2400
 dbg older
 tap 66 129
-wait 750
+wait 450
 tap 80 108
 wait 450
 expect-screen words
@@ -39,10 +39,10 @@ expect clean>=0
 expect clean<=100
 # seed 9: Word Fetch, age 6
 newgame Sam Biscuit
-wait 2650
+wait 2400
 dbg younger
 tap 66 129
-wait 750
+wait 450
 tap 80 108
 wait 450
 expect-screen words

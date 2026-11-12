@@ -6,7 +6,7 @@ tilt 0 1000 0
 profile Zoe 9
 profile Sam 6
 app racing
-wait 800
+wait 600
 expect-screen race_tracks
 expect mode=Auto
 # Sam taps the chip once: Easy
@@ -22,7 +22,7 @@ wait 900
 tap 80 55
 wait 900
 app racing
-wait 750
+wait 600
 expect-screen race_tracks
 expect mode=Auto
 ui-check race_tracks-zoe

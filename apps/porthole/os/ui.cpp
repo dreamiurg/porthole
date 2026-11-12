@@ -105,10 +105,8 @@ bool pressing(const Input& in, const Box& b) {
 void FreshGate::filter(Input& in, uint32_t now) {
   if (!closed) return;
   const int dx = in.x - spotX, dy = in.y - spotY;
-  const bool away = spot && dx * dx + dy * dy > spotR * spotR;
-  if (in.pressed && (away || waited(now))) { closed = false; return; }
-  if (in.pressed) mashed = true;
-  if (in.released && mashed && spot) fromMs = now;   // a mash waits on: only a pause opens the gate (a held finger's lift is no tap)
+  const bool away = spot && dx * dx + dy * dy > SPOT_R * SPOT_R;
+  if (in.pressed && (away || now - shownMs >= FRESH_MS)) { closed = false; return; }
   in.down = in.pressed = in.released = in.tap = in.longPress = false;   // a held finger stays invisible until lifted
 }
 }  // namespace ui

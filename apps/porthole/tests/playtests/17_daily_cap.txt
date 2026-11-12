@@ -17,17 +17,17 @@ ui-check rest-bedtime
 snap c01_bedtime
 # OK goes to the picker; picking the same kid shows the rest screen again
 tap 80 132
-wait 750
+wait 450
 expect-screen picker
 tap 80 67
 wait 450
 expect-screen rest
 # 16:00 + 8 h: midnight, a new day, the rest screen gives way to the picker
 skip 28800
-wait 750
+wait 450
 expect-screen picker
 tap 80 67
-wait 750
+wait 450
 expect-screen launcher
 expect rest=0
 expect today=0

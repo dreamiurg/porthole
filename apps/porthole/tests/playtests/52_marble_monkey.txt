@@ -13,7 +13,7 @@ reset
 tilt 0 1000 0
 profile Sam 6
 app marble-kick
-wait 800
+wait 500
 tap 80 110
 tilt -900 1200 0
 monkey 300 22
@@ -24,7 +24,7 @@ reset
 tilt 0 1000 0
 profile Sam 6
 app marble-kick
-wait 800
+wait 500
 tap 80 110
 tilt 0 866 -500
 wait 1400
@@ -124,7 +124,7 @@ wait 240
 tilt 0 1000 0
 # end solution
 expect-screen mk_goal
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_done
 monkey 300 24

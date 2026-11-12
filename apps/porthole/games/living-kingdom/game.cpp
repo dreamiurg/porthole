@@ -35,9 +35,8 @@ void Game::enter(const AppEnter& e) {
 }
 
 void Game::changed() {
-  dirty_ = true; gate_.changed(ms_, in_); frames_.reset(); prepare();
+  dirty_ = true; gate_.shown(ms_); frames_.reset(); prepare();
 }
-void Game::turned() { changed(); gate_.shown(ms_); }   // a page turn in place: quick taps on one arrow all count
 void Game::mode(uint8_t value) {
   save_.cursor.mode = value; save_.cursor.page = 0;
   changed();
@@ -92,11 +91,11 @@ void Game::updateMap() {
 void Game::updateRead() {
   if (clicked(layout::PREV)) {
     if (!save_.cursor.page) { home_ = true; return; }
-    save_.cursor.page--; turned(); return;
+    save_.cursor.page--; changed(); return;
   }
   if (clicked(layout::NEXT)) {
     if (save_.cursor.page + 1 >= reader_.count()) mode(CHOICE);
-    else { save_.cursor.page++; turned(); }
+    else { save_.cursor.page++; changed(); }
     return;
   }
   if (clicked(layout::MENU)) openMenu();
@@ -107,7 +106,7 @@ void Game::updateChoice() {
   if (clicked(layout::PREV)) { openMenu(); return; }
   if (clicked(layout::NEXT) && scene->choiceCount > 3) {
     save_.cursor.choicePage = (uint8_t)((save_.cursor.choicePage + 1) % ((scene->choiceCount + 2) / 3));
-    turned(); return;
+    changed(); return;
   }
   for (int i = 0; i < 3; i++) {
     const int index = save_.cursor.choicePage * 3 + i;
@@ -121,26 +120,27 @@ void Game::updateChoice() {
 void Game::updateConfirm() {
   const Scene* scene = currentScene(save_); if (!scene) { mode(MAP); return; }
   if (clicked(layout::PREV)) {
-    if (save_.cursor.page) { save_.cursor.page--; turned(); }
+    if (save_.cursor.page) { save_.cursor.page--; changed(); }
     else mode(CHOICE);
     return;
   }
   if (clicked(layout::MENU)) { mode(READ); return; }
   if (clicked(layout::NEXT) && save_.cursor.selectedChoice < scene->choiceCount) {
-    if (save_.cursor.page + 1 < reader_.count()) { save_.cursor.page++; turned(); }
+    if (save_.cursor.page + 1 < reader_.count()) { save_.cursor.page++; changed(); }
     else if (commit(save_, save_.cursor.selectedChoice)) changed();
   }
 }
 void Game::updateResult() {
   if (clicked(layout::PREV)) {
-    if (save_.cursor.page) { save_.cursor.page--; turned(); }
+    if (save_.cursor.page) { save_.cursor.page--; changed(); }
     else openMenu();
     return;
   }
   if (clicked(layout::MENU)) { openMenu(); return; }
   if (!clicked(layout::NEXT)) return;
-  if (save_.cursor.page + 1 < reader_.count()) { save_.cursor.page++; turned(); }
-  else { finishResult(save_); changed(); }
+  if (save_.cursor.page + 1 < reader_.count()) save_.cursor.page++;
+  else finishResult(save_);
+  changed();
 }
 void Game::updateMenu() {
   if (clicked(layout::MENU)) { closeInfo(); return; }

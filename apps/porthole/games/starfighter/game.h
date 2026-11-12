@@ -27,7 +27,6 @@ class Game : public App {
   const Run& run() const { return run_; }
   float steering() const { return bank_; }
   enum class Screen : uint8_t { Title, Calibrate, Brief, Flight };
-  static constexpr uint32_t RESULT_MS = 1200;   // a result shows this long before its buttons work
 
  private:
   Screen screen_ = Screen::Title;
@@ -37,7 +36,7 @@ class Game : public App {
   tilt::Grav neutral_ = {0, 1000, 0};
   ui::FreshGate gate_;
   ui::Hold hold_;
-  uint32_t now_ = 0, rawMs_ = 0, ms_ = 0, stepMs_ = 0, taps_ = 0, seed_ = 1, runNo_ = 0, stageAt_ = 0;
+  uint32_t now_ = 0, rawMs_ = 0, ms_ = 0, stepMs_ = 0, taps_ = 0, seed_ = 1, runNo_ = 0;
   float bank_ = 0;
   bool home_ = false, daylight_ = false;
 

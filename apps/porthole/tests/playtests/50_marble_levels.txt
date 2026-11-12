@@ -64,7 +64,7 @@ expect reached=1
 expect stars=3
 ui-check mk_goal
 snap mk03_goal
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=2
@@ -101,7 +101,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=2
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=3
@@ -146,7 +146,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=3
-wait 750
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=4
@@ -217,7 +217,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=4
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=5
@@ -260,7 +260,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=5
-wait 700
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=6
@@ -305,7 +305,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=6
-wait 650
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=7
@@ -352,7 +352,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=7
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=8
@@ -403,7 +403,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=8
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=9
@@ -474,7 +474,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=9
-wait 550
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=10
@@ -590,7 +590,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=11
-wait 650
+wait 500
 tap 80 60
 expect-screen mk_play
 expect level=12
@@ -681,7 +681,7 @@ tilt 0 707 -707
 # end solution
 expect-screen mk_goal
 expect reached=12
-wait 650
+wait 500
 tap 80 60
 expect-screen mk_done
 expect reached=12
@@ -697,7 +697,7 @@ expect-screen mk_play
 expect level=3
 expect reached=12
 # leaving (a hold on the home knob, after the fresh-page pause); the next visit starts over from level 1
-wait 750
+wait 500
 hold 80 145
 wait 100
 expect-screen launcher

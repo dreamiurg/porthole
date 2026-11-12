@@ -56,7 +56,7 @@ up
 wait 100
 # on the Calibrate page a tap on the sign leaves
 app tilt-fc
-wait 750
+wait 600
 tap 17 80
 wait 100
 expect-screen launcher

@@ -4,7 +4,7 @@
 # Goal page moves on by itself after 2 s; the Done page's button starts over from level 1.
 profile Sam 6
 app marble-kick
-wait 800
+wait 500
 # home from Calibrate: a tap
 tap 80 145
 wait 100
@@ -150,7 +150,7 @@ tilt 0 1000 0
 # end solution
 expect-screen mk_goal
 # home from Goal (after the fresh-page pause): the level reached is kept, and the next visit starts there
-wait 600
+wait 500
 tap 80 145
 wait 100
 expect-screen launcher
@@ -247,10 +247,10 @@ wait 240
 tilt 0 1000 0
 # end solution
 expect-screen mk_goal
-wait 600
+wait 500
 tap 80 60
 expect-screen mk_done
-wait 750
+wait 500
 tap 80 117
 expect-screen mk_play
 expect level=1

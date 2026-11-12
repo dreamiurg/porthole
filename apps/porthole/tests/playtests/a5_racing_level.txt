@@ -43,7 +43,7 @@ wait 600
 tap 80 67
 wait 900
 app racing
-wait 750
+wait 600
 # Desert Canyon keeps Zoe's level after the reboot; never-raced Snow Track starts one below it, never below 0
 tap 53 52
 wait 900
@@ -59,7 +59,7 @@ reboot
 wait 600
 profile Sam 6
 app racing
-wait 750
+wait 600
 tap 53 52
 wait 900
 expect level=0

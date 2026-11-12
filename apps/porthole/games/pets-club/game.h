@@ -91,9 +91,9 @@ class Game : public App {
   void updateParticles();
   void drawParticles();
   void markDirty() { dirty_ = true; }
-  // The press now lifting began at least ms after the phase (screenMs_) started: a finger already down when results
-  // or a quiz appear in place, which FreshGate (screen changes only) does not see, never answers on its lift.
-  bool pressedAfterPhase(uint32_t ms = 0) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
+  // The press now lifting began at least ms after the screen, or its phase (screenMs_), started: a finger already
+  // down when results or a quiz appear in place, or held from just after a screen change, never answers on its lift.
+  bool pressedAfter(uint32_t ms) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
   void setNameBuf(const char* name);   // the pet-name keyboard's text, cut to ui::NAME_LEN
   void debugAge(const char* cmd);
   int dogSize() const;
