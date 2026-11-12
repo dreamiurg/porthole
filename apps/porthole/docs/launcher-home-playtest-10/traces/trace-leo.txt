@@ -1,0 +1,284 @@
+# Leo pass: fresh device
+t=    1500 wait 1500
+# L (A-M page)
+t=    1840 tap 119 101 300
+t=    2540 wait 700
+# N-Z
+t=    2880 tap 67 125 300
+t=    3580 wait 700
+# O
+t=    3920 tap 67 53 300
+t=    4620 wait 700
+# A-M
+t=    4960 tap 67 125 300
+t=    5660 wait 700
+# E
+t=    6000 tap 41 77 300
+t=    6700 wait 700
+t=    6700 shot l00_name
+t=    7040 tap 119 125 300
+t=    7840 wait 800
+t=    7840 shot l01_face
+# Leo picks the fox (name came out Loe: he cannot spell, left as is)
+t=    8180 tap 123 56 300
+t=    8980 wait 800
+t=    8980 shot l02_age
+# age 6
+t=    9320 tap 79 69 300
+t=   10120 wait 800
+t=   10120 shot l03_code
+# skip
+t=   10460 tap 80 145 300
+t=   11360 wait 900
+t=   11360 shot l04_home
+# Leo: "again!" taps on All games tile, 300 ms presses, once a second, 5 times
+t=   12860 wait 1500
+t=   13200 tap 124 104 300
+t=   13860 wait 660
+t=   13860 shot l05_ag1
+t=   14200 tap 125 106 300
+t=   14860 wait 660
+t=   14860 shot l06_ag2
+t=   15200 tap 123 103 300
+t=   15860 wait 660
+t=   15860 shot l07_ag3
+t=   16200 tap 124 105 300
+t=   16860 wait 660
+t=   16860 shot l08_ag4
+t=   17200 tap 124 104 300
+t=   17860 wait 660
+t=   17860 shot l09_ag5
+# Leo in Radar (did not choose it). Mashes the house button 3 times ~1/s
+t=   18200 tap 28 131 300
+t=   18860 wait 660
+t=   18860 shot l10_h1
+t=   19200 tap 28 131 300
+t=   19860 wait 660
+t=   19860 shot l11_h2
+t=   20200 tap 28 131 300
+t=   20860 wait 660
+t=   20860 shot l12_h3
+# Leo sees the big gold star and mashes it 5x, ~1/s, slightly off-center
+t=   22060 wait 1200
+t=   22450 tap 126 42 350
+t=   23100 wait 650
+t=   23100 shot l13_s1
+t=   23440 tap 128 44 300
+t=   24140 wait 700
+t=   24140 shot l14_s2
+t=   24530 tap 124 40 350
+t=   25180 wait 650
+t=   25180 shot l15_s3
+t=   25520 tap 127 43 300
+t=   26220 wait 700
+t=   26660 tap 126 45 400
+t=   27260 wait 600
+t=   27260 shot l16_s5
+# Leo wants the white star on Radar gold: taps it 4x ~1/s
+t=   27600 tap 136 100 300
+t=   27900 wait 300
+t=   27900 shot l17_r1
+t=   28300 wait 400
+t=   28690 tap 135 98 350
+t=   29340 wait 650
+t=   29340 shot l18_r2
+t=   29680 tap 137 101 300
+t=   30380 wait 700
+t=   30720 tap 136 100 300
+t=   31420 wait 700
+t=   31420 shot l19_r4
+t=   32920 wait 1500
+t=   32920 shot l20_r4_later
+t=   33260 tap 136 100 300
+t=   33380 wait 120
+t=   33380 shot l21_hop_a
+t=   33500 wait 120
+t=   33500 shot l21_hop_b
+t=   33620 wait 120
+t=   33620 shot l21_hop_c
+t=   33740 wait 120
+t=   33740 shot l21_hop_d
+# Leo taps the hopping gold star on Pumpkin 3x ~1/s
+t=   34740 wait 1000
+t=   35080 tap 82 101 300
+t=   35780 wait 700
+t=   35780 shot l22_p1
+t=   36170 tap 83 99 350
+t=   36820 wait 650
+t=   36820 shot l23_p2
+t=   37160 tap 81 102 300
+t=   37860 wait 700
+t=   37860 shot l24_p3
+# then Radar 2x ~1/s
+t=   38200 tap 136 100 300
+t=   38900 wait 700
+t=   38900 shot l25_r1
+t=   39240 tap 136 101 300
+t=   39940 wait 700
+t=   39940 shot l26_r2
+# Leo makes Radar gold again, then mashes the green check 4x ~1/s
+t=   40940 wait 1000
+t=   41280 tap 136 100 300
+t=   41980 wait 700
+t=   41980 shot l27_r3
+t=   42370 tap 33 42 350
+t=   43020 wait 650
+t=   43020 shot l28_c1
+t=   43360 tap 34 44 300
+t=   44060 wait 700
+t=   44060 shot l29_c2
+t=   44450 tap 32 41 350
+t=   45100 wait 650
+t=   45440 tap 33 43 300
+t=   46140 wait 700
+t=   46140 shot l30_c4
+# Leo taps the house: Home
+t=   47140 wait 1000
+t=   47480 tap 80 13 300
+t=   48180 wait 700
+t=   48180 shot l31_home
+# Leo mashes the house on Home 4x ~1/s
+t=   48570 tap 80 13 350
+t=   49220 wait 650
+t=   49220 shot l32_hh1
+t=   49560 tap 81 14 300
+t=   50260 wait 700
+t=   50260 shot l33_hh2
+t=   50650 tap 79 12 350
+t=   51300 wait 650
+t=   51300 shot l34_hh3
+t=   51640 tap 80 13 300
+t=   52340 wait 700
+t=   52340 shot l35_hh4
+# Leo taps his fox row 4x ~1/s
+t=   53140 wait 800
+t=   53480 tap 70 40 300
+t=   54180 wait 700
+t=   54180 shot l36_f1
+t=   54570 tap 70 41 350
+t=   55220 wait 650
+t=   55220 shot l37_f2
+t=   55560 tap 69 40 300
+t=   56260 wait 700
+t=   56260 shot l38_f3
+t=   56600 tap 70 40 300
+t=   57300 wait 700
+t=   57300 shot l39_f4
+# Leo taps on the fox itself 4x ~1/s
+t=   57640 tap 36 68 300
+t=   58340 wait 700
+t=   58340 shot l40_f1
+t=   58730 tap 37 69 350
+t=   59380 wait 650
+t=   59380 shot l41_f2
+t=   59720 tap 36 67 300
+t=   60420 wait 700
+t=   60420 shot l42_f3
+t=   60760 tap 36 68 300
+t=   61460 wait 700
+t=   61460 shot l43_f4
+# Leo leaves Radar via its house
+t=   62260 wait 800
+t=   62600 tap 28 131 300
+t=   63400 wait 800
+t=   63400 shot l44_home
+# Leo taps All games once, waits, then the big star, unstars Pets Club (2 taps 1s apart -> toggles twice?) then Marble once; then mashes house 3x ~1/s
+t=   63740 tap 124 104 300
+t=   65740 wait 2000
+t=   66080 tap 126 42 300
+t=   67280 wait 1200
+t=   67620 tap 136 72 300
+t=   68820 wait 1200
+t=   68820 shot l45_unstar_marble
+t=   69160 tap 80 13 300
+t=   69460 wait 300
+t=   69460 shot l46_hs1
+t=   69860 wait 400
+t=   70250 tap 80 13 350
+t=   70900 wait 650
+t=   70900 shot l47_hs2
+t=   71240 tap 80 13 300
+t=   71940 wait 700
+t=   71940 shot l48_hs3
+# Leo taps the puppy (Pets Club) firmly twice ~1/s
+t=   72940 wait 1000
+t=   73380 tap 80 70 400
+t=   73980 wait 600
+t=   74320 tap 80 71 300
+t=   75820 wait 1500
+t=   75820 shot l49_pets
+# Leo leaves Pets Club: house 2x ~1/s
+t=   76160 tap 80 13 300
+t=   76860 wait 700
+t=   76860 shot l50_x1
+t=   77200 tap 80 13 300
+t=   77900 wait 700
+t=   77900 shot l51_x2
+# Leo back to Home (one tap on fox), waits 3 s looking
+t=   78240 tap 36 68 300
+t=   81240 wait 3000
+t=   81240 shot l52_home
+# All games once, then mashes the yellow arrow 4x ~1/s
+t=   81580 tap 124 104 300
+t=   84080 wait 2500
+t=   84420 tap 96 135 300
+t=   85120 wait 700
+t=   85120 shot l53_a1
+t=   85510 tap 96 135 350
+t=   86160 wait 650
+t=   86160 shot l54_a2
+t=   86500 tap 97 136 300
+t=   87200 wait 700
+t=   87540 tap 96 134 300
+t=   88240 wait 700
+t=   88240 shot l55_a4
+# Leo: big star, then taps the spaceship 3x ~1/s (Home full)
+t=   89240 wait 1000
+t=   89580 tap 126 42 300
+t=   90780 wait 1200
+t=   91120 tap 36 70 300
+t=   91270 wait 150
+t=   91270 shot l56_sf1a
+t=   91420 wait 150
+t=   91420 shot l56_sf1b
+t=   91820 wait 400
+t=   92210 tap 36 70 350
+t=   92860 wait 650
+t=   92860 shot l57_sf2
+t=   93200 tap 37 71 300
+t=   93900 wait 700
+t=   93900 shot l58_sf3
+# Leo gives up on the spaceship, taps house (no changes)
+t=   95400 wait 1500
+t=   95740 tap 80 13 300
+t=   96440 wait 700
+t=   96440 shot l59_house_nochange
+t=   96780 tap 80 13 300
+t=   97480 wait 700
+t=   97480 shot l60_house2
+# Leo goes for the spaceship: All games, arrow, spaceship
+t=   98480 wait 1000
+t=   98820 tap 124 104 300
+t=  101820 wait 3000
+t=  102160 tap 96 135 300
+t=  103660 wait 1500
+t=  104100 tap 36 70 400
+t=  105600 wait 1500
+t=  105600 shot l61_starfighter
+# Leo taps EXIT
+t=  105940 tap 80 144 300
+t=  106840 wait 900
+t=  106840 shot l62_after_exit
+# Leo opens the spaceship again and mashes EXIT (left side) 3x ~1/s
+t=  108340 wait 1500
+t=  108680 tap 36 70 300
+t=  110180 wait 1500
+t=  110520 tap 72 143 300
+t=  111220 wait 700
+t=  111220 shot l63_e1
+t=  111610 tap 71 142 350
+t=  112260 wait 650
+t=  112260 shot l64_e2
+t=  112600 tap 72 143 300
+t=  113300 wait 700
+t=  113300 shot l65_e3

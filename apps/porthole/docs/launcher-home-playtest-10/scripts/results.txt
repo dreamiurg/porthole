@@ -1,0 +1,29 @@
+# snap sha256 241c860e80863bb8b641b11959ab37257d9d7dd74db223b12cd251e7547e8042, rev b208c63. Screen after each tap (script: scripts/<name>.txt)
+sweep_1000_120.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1000_200.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1000_250.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1000_300.txt: library library library radar_live radar_live radar_live
+sweep_1000_400.txt: library library library radar_live radar_live radar_live
+sweep_1100_200.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1100_250.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1100_400.txt: library library library radar_live radar_live radar_live
+sweep_1200_120.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1200_300.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1500_120.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_1500_300.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_700_120.txt: library library library library radar_live radar_live
+sweep_700_300.txt: library library radar_live radar_live radar_live radar_live
+sweep_800_200.txt: library library library library radar_live radar_live
+sweep_800_250.txt: library library library library radar_live radar_live
+sweep_800_400.txt: library library radar_live radar_live radar_live radar_live
+sweep_900_120.txt: library radar_live radar_live radar_live radar_live radar_live
+sweep_900_300.txt: library library library radar_live radar_live radar_live
+pick_1000_120.txt: picker launcher splash intro intro
+pick_1000_300.txt: picker launcher splash intro intro
+pick_700_120.txt: picker launcher splash intro intro
+pick_700_300.txt: picker launcher launcher splash splash
+house_100.txt: screen=library home_first=crago star_mode=0 home_gold=5 screen=library
+house_250.txt: screen=library home_first=crago star_mode=0 home_gold=5 screen=library
+house_400.txt: screen=library home_first=crago star_mode=0 home_gold=5 screen=library
+house_600.txt: screen=library home_first=crago star_mode=0 home_gold=5 screen=library
+house_900.txt: screen=library home_first=crago star_mode=0 home_gold=5 screen=library

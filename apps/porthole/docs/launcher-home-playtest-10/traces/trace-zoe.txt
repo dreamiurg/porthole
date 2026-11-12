@@ -1,0 +1,167 @@
+# Zoe pass begins: boot fresh
+t=    1500 wait 1500
+t=    1500 shot z00_boot
+t=    1660 tap 67 125
+t=    2160 wait 500
+t=    2160 shot z01_nz
+t=    2320 tap 41 125
+t=    2720 wait 400
+t=    2880 tap 67 53
+t=    3280 wait 400
+t=    3440 tap 67 125
+t=    3940 wait 500
+t=    4100 tap 41 77
+t=    4600 wait 500
+t=    4600 shot z02_zoe
+t=    4760 tap 119 125
+t=    5360 wait 600
+t=    5360 shot z03_after_ok
+t=    5520 tap 93 56
+t=    6120 wait 600
+t=    6120 shot z04_after_face
+t=    6280 tap 37 100
+t=    6880 wait 600
+t=    6880 shot z05_after_age
+t=    7040 tap 80 145
+t=    7840 wait 800
+t=    7840 shot z06_home_first
+# Zoe: press-and-hold Biscuit tile like a phone to edit
+t=    7840 down 80 70
+t=    8140 wait 300
+t=    8140 shot z07_press_tile
+t=    9040 wait 900
+t=    9040 shot z08_hold_1200
+# Zoe slides off Biscuit to cancel
+t=    9040 move 80 85
+t=    9040 move 80 120
+t=    9040 move 80 135
+t=    9140 wait 100
+t=    9140 up
+t=    9740 wait 600
+t=    9740 shot z09_slid_off
+# Zoe taps the All games tile
+t=    9980 tap 124 104 200
+t=   10680 wait 700
+t=   10680 shot z10_library
+# Zoe reads, then taps the small gold star on Biscuit tile to unstar it
+t=   12180 wait 1500
+t=   12180 down 94 64
+t=   12330 wait 150
+t=   12330 shot z11_press_corner_star
+t=   12330 up
+t=   12930 wait 600
+t=   12930 shot z12_after_corner_star
+# Zoe did not want Biscuit: taps the house
+t=   13090 tap 80 13
+t=   13890 wait 800
+t=   13890 shot z13_back_from_biscuit
+# Zoe taps the big star button
+t=   14890 wait 1000
+t=   15050 tap 126 42
+t=   15350 wait 300
+t=   15350 shot z14_starmode_a
+t=   15650 wait 300
+t=   15650 shot z15_starmode_b
+# Zoe unstars Biscuit (the one she wants off)
+t=   16450 wait 800
+t=   16670 tap 80 72 180
+t=   17170 wait 500
+t=   17170 shot z16_unstar_biscuit
+# Zoe looks for Rally on the next page
+t=   17770 wait 600
+t=   17930 tap 96 135
+t=   18430 wait 500
+t=   18430 shot z17_page2
+# Zoe stars the red car (Rally)
+t=   19130 wait 700
+t=   19130 down 80 104
+t=   19330 wait 200
+t=   19330 shot z18_press_rally
+t=   19330 up
+t=   19830 wait 500
+t=   19830 shot z19_star_rally
+# Zoe: done picking; wants to see her Home, taps the house (Home)
+t=   20830 wait 1000
+t=   21050 tap 80 13 180
+t=   21350 wait 300
+t=   21350 shot z20_house1_a
+t=   22050 wait 700
+t=   22050 shot z21_house1_b
+# Zoe reads it, taps the green check
+t=   22850 wait 800
+t=   23070 tap 33 42 180
+t=   23670 wait 600
+t=   23670 shot z22_after_check
+# Zoe taps house to see Home
+t=   24470 wait 800
+t=   24690 tap 80 13 180
+t=   25390 wait 700
+t=   25390 shot z23_home_after
+# Zoe happy; opens Rally from Home
+t=   26890 wait 1500
+t=   27080 tap 36 70 150
+t=   28580 wait 1500
+t=   28580 shot z24_rally_open
+# Zoe leaves Rally via its Home button
+t=   28770 tap 46 128 150
+t=   29570 wait 800
+t=   29570 shot z25_back_home
+# Zoe probe: wants Pets Club first. All games -> star -> unstar Pets Club -> restar it -> double-tap house
+t=   30570 wait 1000
+t=   30760 tap 124 104 150
+t=   32260 wait 1500
+t=   32450 tap 126 42 150
+t=   33250 wait 800
+t=   33250 shot z26_starmode_p1
+t=   33440 tap 36 70 150
+t=   34340 wait 900
+t=   34340 shot z27_unstar_pets
+t=   34530 tap 36 70 150
+t=   35130 wait 600
+t=   35130 shot z28_restar_pets
+# Zoe double-taps the house quickly (reorder pending)
+t=   35930 wait 800
+t=   36070 tap 80 13 100
+t=   36170 wait 100
+t=   36310 tap 80 13 100
+t=   36510 wait 200
+t=   36510 shot z29_house_double_a
+t=   37210 wait 700
+t=   37210 shot z30_house_double_b
+t=   38010 wait 800
+t=   38200 tap 80 13 150
+t=   38900 wait 700
+t=   38900 shot z31_home_after_double
+# Probe Z-H2: real change (unstar Tilt FC) then a quick double tap on the house, frame between taps
+t=   39900 wait 1000
+t=   40090 tap 124 104 150
+t=   41590 wait 1500
+t=   41780 tap 126 42 150
+t=   42580 wait 800
+t=   42770 tap 36 104 150
+t=   43570 wait 800
+t=   43570 shot z32_unstar_tiltfc
+t=   43730 tap 80 13 120
+t=   43810 wait 80
+t=   43810 shot z33_between_taps
+t=   43970 tap 80 13 120
+t=   44270 wait 300
+t=   44270 shot z34_after_double
+t=   45270 wait 1000
+t=   45460 tap 80 13 150
+t=   46160 wait 700
+t=   46160 shot z35_home_after_double2
+# Zoe curious: the sun button
+t=   47160 wait 1000
+t=   47350 tap 126 42 150
+t=   48050 wait 700
+t=   48050 shot z36_light
+t=   48240 tap 80 13 150
+t=   48940 wait 700
+t=   48940 shot z37_back_from_light
+# ---- process restart (kill + relaunch without --fresh) ----
+t=    1500 wait 1500
+t=    1500 shot z38_restart
+t=    1740 tap 80 68 200
+t=    2540 wait 800
+t=    2540 shot z39_home_after_restart
