@@ -73,7 +73,7 @@ Per-app targets are listed in `docs/new-app.md`.
 
 - `main` is protected: branch, open a PR, squash-merge after **Required
   Checks** passes. Hooks block commits on `main`. Never skip hooks with `--no-verify`.
-- Conventional commit titles (`feat(porthole): ...`, `fix(porthole): ...`).
+- Conventional commit titles, `type(scope): what changed`; see Commit titles below.
   After each merge, `.github/workflows/release.yml` runs `tools/release.py`: every
   app with new `feat`/`fix` commits under its folder (or `platform/`) gets the
   next patch `<app>-vX.Y.Z` tag, a beta (pre-release) with generated notes and a
@@ -106,6 +106,56 @@ Per-app targets are listed in `docs/new-app.md`.
   evidence. Follow `apps/porthole/docs/playtesting.md` for scope and acceptance.
   An implementer's own run is useful but does not replace the independent pass.
   Documentation-only and non-player-visible changes do not require a new run.
+
+## Commit titles
+
+PRs are squash-merged, so the PR title is the commit on `main` and a line in the
+release notes. Write it as `type(scope): what changed`, in words a player or a
+grown-up would use ("Rally rivals vary every race", not "add rivals() shuffle").
+
+**Type** says what kind of change it is, and it decides releases: a `feat`, `fix`
+or `perf` commit that touches `apps/<app>/` or `platform/` cuts a new firmware
+beta (`tools/release.py` picks commits by path, never by scope).
+
+| Type | Use for |
+| --- | --- |
+| `feat` | Something new a player or grown-up can see or do: a game, a page, a setting, a mechanic. |
+| `fix` | Behavior that was wrong and now is right, including balance a playtest proved off. |
+| `perf` | Faster, smaller or lighter on the board, same behavior. Releases like `fix`. |
+| `refactor` | Code restructured with no behavior change (complexity splits included). |
+| `test` | Tests, playtest scripts and test harnesses only. |
+| `docs` | Briefs, READMEs, specs, playtest write-ups. |
+| `build` | Makefiles, PlatformIO config, generators and dev tooling that build or check code. |
+| `ci` | `.github/` workflows and actions, the release scripts they run. |
+| `chore` | Housekeeping that fits nothing above: dependency bumps, gitignore, renames. |
+| `revert` | Undoing an earlier commit; name it in the title. |
+
+So a test or doc change inside `apps/porthole/` is `test` or `docs`, not `feat`:
+it must not cut a release.
+
+**Scope** says where the change lands: the narrowest area that covers all of it,
+named after its folder.
+
+| Scope | Covers |
+| --- | --- |
+| a game's folder name: `pets-club`, `biscuit`, `marble-kick`, `tilt-fc`, `plane-radar`, `pumpkin-hide-seek`, `racing`, `starfighter`, `living-kingdom`, `toy-town-life` | One game under `apps/porthole/games/<game>/`, with its host tests, playtests and docs. A new game takes its folder name. |
+| `shell` | `apps/porthole/shell/`: profiles, picker, launcher, rest and daily caps, the grown-ups' menu (Admin, Wifi, Updates, Clock). |
+| `os` | `apps/porthole/os/`: the shared runtime every game uses (drawing, fonts, input, tilt, UI widgets, time zones). |
+| `firmware` | `apps/porthole/firmware/`, `platformio.ini`, `partitions.csv`: board drivers, display, OTA updates, serial commands. |
+| `sim` | The host simulator and web emulator (`host/sim.cpp`, `tools/webemu.py`), the playtest runner. |
+| `porthole` | A change across several of the scopes above, where none of them owns it (e.g. a rule every game follows). |
+| `platform` | `platform/`: the shared PlatformIO base and factory image. |
+| `hardware` | `hardware/`: the printed case and grip models. |
+| `site` | `site/`: the public website. |
+| `release` | `tools/release.py` and the release, promote and yank workflows. |
+| `deps` | Dependency bumps (with `chore`, `build` or `ci`). |
+
+Leave the scope out only for a repo-wide change (root docs, hooks, the root
+Makefile). One scope per title: if a change needs two, it is usually two PRs;
+otherwise pick the area where most of the change lands. Examples:
+`feat(racing): rivals vary every race`, `fix(shell): admin code waits survive a reboot`,
+`perf(firmware): double the indexed frame rate`, `test(biscuit): content gate covers endings`,
+`ci(release): yank a beta by hand`, `docs: commit title guidance`.
 
 ## Delegation
 

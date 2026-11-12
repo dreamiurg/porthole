@@ -32,11 +32,13 @@ make check                                 # lint + fast tests for every app
   before merging. If CI ever catches something your hooks didn't, that's a bug in
   the hooks: fix them too.
 - PRs are squash-merged, so the PR title becomes the commit message. Use
-  [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`,
-  `docs:`, `chore:`, `refactor:`, `test:`, `ci:`. Scope by app when it helps:
-  `feat(porthole): add a digging trick`. Releases are automatic: after a merge,
-  any app with a new `feat:` (minor) or `fix:` (patch) gets a new version, release
-  notes built from these titles, and a flashable image.
+  [Conventional Commits](https://www.conventionalcommits.org) with the types and
+  scopes listed under "Commit titles" in `AGENTS.md`, e.g.
+  `feat(pets-club): add a digging trick`. Releases are automatic: after a merge,
+  any app with a new `feat:`, `fix:` or `perf:` commit under its folder (or
+  `platform/`) gets a new beta (a patch version), release notes built from these
+  titles, and a flashable image; a beta becomes the next minor stable release
+  once it is 3 days old.
 
 ## Where to start
 
