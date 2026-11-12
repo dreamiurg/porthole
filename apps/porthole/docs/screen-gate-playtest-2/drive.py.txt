@@ -1,0 +1,47 @@
+"""Replay a black-box input trace through a fresh `snap --serve --fresh` and save frames.
+Trace lines: `T x y ms` tap (down, hold ms, up), `D x y` down, `M x y` move, `U` up, `W ms` tick,
+`tilt x y z`, `shot NAME` save frame, `#` comments. Usage: drive.py SNAP TRACE OUTDIR [--last]"""
+import subprocess, sys, os
+from PIL import Image
+
+snap, trace, out = sys.argv[1], sys.argv[2], sys.argv[3]
+last_only = "--last" in sys.argv
+os.makedirs(out, exist_ok=True)
+lines = [l.split("#")[0].strip() for l in open(trace)]
+lines = [l for l in lines if l]
+shots = [i for i, l in enumerate(lines) if l.startswith("shot ")]
+p = subprocess.Popen([snap, "--serve", "--fresh"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=os.path.dirname(trace) or ".")
+
+
+def cmd(c):
+    p.stdin.write((c + "\n").encode()); p.stdin.flush()
+    r = p.stdout.readline().decode().strip()
+    if r != "ok":
+        print("!!", c, "->", r)
+
+
+for i, l in enumerate(lines):
+    a = l.split()
+    k = a[0]
+    if k == "T":
+        cmd(f"down {a[1]} {a[2]}"); cmd(f"tick {a[3]}"); cmd("up")
+    elif k == "D":
+        cmd(f"down {a[1]} {a[2]}")
+    elif k == "M":
+        cmd(f"move {a[1]} {a[2]}")
+    elif k == "U":
+        cmd("up")
+    elif k == "W":
+        cmd(f"tick {a[1]}")
+    elif k == "shot":
+        if last_only and i != shots[-1]:
+            continue
+        p.stdin.write(b"frame\n"); p.stdin.flush()
+        n = int(p.stdout.readline().decode().split()[1])
+        buf = b""
+        while len(buf) < n:
+            buf += p.stdout.read(n - len(buf))
+        Image.frombytes("RGB", (480, 480), buf).save(os.path.join(out, a[1] + ".png"))
+    else:
+        cmd(l)
+p.stdin.close(); p.wait()
