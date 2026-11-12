@@ -1,0 +1,388 @@
+tick 1000
+down 119 100
+tick 250
+up
+tick 600
+down 42 77
+tick 250
+up
+tick 600
+down 68 125
+tick 250
+up
+tick 600
+down 67 53
+tick 250
+up
+tick 600
+down 119 125
+tick 250
+up
+tick 800
+down 93 86
+tick 300
+up
+tick 800
+down 79 69
+tick 300
+up
+tick 800
+down 80 145
+tick 300
+up
+tick 1500
+shot 05_home
+down 124 105
+tick 300
+up
+tick 900
+down 126 42
+tick 300
+up
+tick 900
+shot B10_starmode
+down 125 103
+tick 350
+up
+tick 1000
+shot B11_radar_full
+tick 1500
+down 80 104
+tick 300
+up
+tick 900
+shot B12_pumpkin_off
+down 125 103
+tick 300
+up
+tick 150
+down 125 103
+tick 300
+up
+tick 40
+shot B13_radar_dbl
+tick 900
+shot B13_radar_dbl_settled
+down 125 103
+tick 250
+up
+tick 120
+down 125 103
+tick 350
+up
+tick 120
+down 125 103
+tick 250
+up
+tick 900
+shot B14_radar_triple_off
+down 125 103
+tick 300
+up
+tick 150
+down 125 103
+tick 300
+up
+tick 150
+down 125 103
+tick 300
+up
+tick 900
+shot B15_radar_triple_on
+down 36 104
+tick 300
+up
+tick 150
+down 80 104
+tick 300
+up
+tick 900
+shot B16_two_quick
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 900
+shot B17_check_triple
+down 126 42
+tick 300
+up
+tick 900
+shot B18_reenter
+down 126 42
+tick 400
+up
+tick 300
+down 126 42
+tick 400
+up
+tick 300
+down 126 42
+tick 400
+up
+tick 900
+shot B19_slowtriple_check
+tick 600
+down 126 42
+tick 400
+up
+tick 40
+shot B20_slow_t1
+tick 260
+down 126 42
+tick 400
+up
+tick 40
+shot B20_slow_t2
+tick 260
+down 126 42
+tick 200
+shot B20_slow_t3_down
+tick 200
+up
+tick 40
+shot B20_slow_t3_up
+tick 900
+shot B20_slow_settled
+down 126 42
+tick 300
+up
+tick 1500
+down 126 42
+tick 300
+up
+tick 900
+shot B21_in_sm
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 900
+shot B21_quad_check
+down 126 42
+tick 300
+up
+tick 1500
+down 126 42
+tick 300
+up
+tick 900
+down 126 42
+tick 350
+up
+tick 300
+down 126 42
+tick 350
+up
+tick 300
+down 126 42
+tick 350
+up
+tick 900
+shot B22_triple_350_300
+down 126 42
+tick 300
+up
+tick 1500
+shot B23_lib
+down 80 12
+tick 300
+up
+tick 150
+down 80 12
+tick 300
+up
+tick 150
+down 80 12
+tick 300
+up
+tick 900
+shot B24_house_triple
+down 80 68
+tick 300
+up
+tick 1200
+shot B25_home_after_picker
+down 36 72
+tick 300
+up
+tick 1500
+shot B30_pumpkin_open
+tick 2500
+shot B31_pumpkin_3s
+down 80 130
+tick 300
+up
+tick 1500
+shot B32_after_start
+tick 3000
+shot B33_after_start_4s
+down 80 130
+tick 300
+up
+tick 1500
+shot B34_play
+tilt 300 0 -954
+tick 1500
+shot B35_tilt_right
+tilt -300 0 -954
+tick 2000
+shot B36_tilt_left
+tilt 0 300 -954
+tick 2000
+shot B37_tilt_down
+down 80 130
+tick 300
+up
+tick 150
+down 80 130
+tick 300
+up
+tick 600
+shot B38_hide
+tick 3000
+shot B39
+tilt -300 0 -954
+tick 3000
+shot B40
+tilt 0 0 -1000
+down 80 130
+tick 300
+up
+tick 3000
+shot B41
+tilt 300 0 -954
+tick 4000
+shot B42
+tilt 0 0 -1000
+down 80 16
+tick 300
+up
+tick 900
+shot B43_exit_tap
+down 80 16
+tick 300
+up
+tick 150
+down 80 16
+tick 300
+up
+tick 900
+shot B44_exit_dbl
+down 80 68
+tick 300
+up
+tick 1200
+down 80 72
+tick 300
+up
+tick 2500
+shot B45_radar
+down 60 90
+tick 300
+up
+tick 2000
+shot B46_radar_tap
+tick 10000
+shot B47_radar_10s
+down 36 125
+tick 300
+up
+tick 1200
+shot B48_back_home
+down 124 105
+tick 300
+up
+tick 1200
+shot B49_library_again
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 900
+shot B50_star_dbl
+down 126 42
+tick 300
+up
+tick 1500
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 150
+down 126 42
+tick 300
+up
+tick 900
+shot B51_star_triple
+tick 600
+down 126 42
+tick 300
+up
+tick 40
+shot B52_t1
+tick 110
+down 126 42
+tick 300
+up
+tick 40
+shot B52_t2
+tick 110
+down 126 42
+tick 200
+shot B52_t3_down
+tick 100
+up
+tick 40
+shot B52_t3_up
+tick 900
+shot B52_settled
+tick 1500
+down 126 42
+tick 1000
+up
+tick 900
+shot B60_longpress_star
+down 80 104
+tick 1000
+up
+tick 900
+shot B61_longpress_tile
+down 126 42
+tick 200
+move 110 50
+tick 40
+move 90 60
+tick 200
+up
+tick 900
+shot B62_dragoff_check
+down 132 36
+tick 300
+up
+tick 900
+shot B63_offcenter_check
