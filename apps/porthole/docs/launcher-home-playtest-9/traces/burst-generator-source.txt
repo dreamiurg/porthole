@@ -1,0 +1,10 @@
+import sys
+# gen.py PREFIX OUT X Y N PRESS GAP [JITTER]
+pre, out, x, y, n, press, gap = sys.argv[1], sys.argv[2], *map(int, sys.argv[3:8])
+jit = [(0,0),(3,-2),(-3,2),(2,3),(-2,-3),(4,1)] if len(sys.argv) > 8 else [(0,0)]*6
+lines = open(pre).read().splitlines()
+for i in range(n):
+    dx, dy = jit[i % 6]
+    lines += [f"down {x+dx} {y+dy}", f"tick {press}", f"shot t{i+1}_held", "up", f"tick {gap}", f"shot t{i+1}_after"]
+lines += ["tick 1500", "shot final"]
+open(out, "w").write("\n".join(lines) + "\n")

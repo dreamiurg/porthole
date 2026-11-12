@@ -1,0 +1,59 @@
+tick 3000
+tap 118 101 250
+tick 600
+tap 41 76 250
+tick 600
+tap 67 125 250
+tick 600
+tap 67 53 250
+tick 600
+tap 118 125 250
+tick 1500
+tap 93 85 250
+tick 1500
+tap 79 69 250
+tick 1500
+tap 80 145 250
+tick 2000
+tap 124 103 300
+tick 1500
+tap 126 42 300
+tick 1500
+down 80 18
+tick 250
+shot t1_held
+up
+tick 120
+shot t1_after
+down 80 18
+tick 250
+shot t2_held
+up
+tick 120
+shot t2_after
+down 80 18
+tick 250
+shot t3_held
+up
+tick 120
+shot t3_after
+down 80 18
+tick 250
+shot t4_held
+up
+tick 120
+shot t4_after
+down 80 18
+tick 250
+shot t5_held
+up
+tick 120
+shot t5_after
+down 80 18
+tick 250
+shot t6_held
+up
+tick 120
+shot t6_after
+tick 1500
+shot final

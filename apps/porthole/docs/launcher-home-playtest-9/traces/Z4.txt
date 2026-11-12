@@ -1,0 +1,57 @@
+tick 3000
+tap 67 125 180
+tick 500
+tap 41 125 180
+tick 500
+tap 67 53 180
+tick 500
+tap 67 125 180
+tick 500
+tap 41 76 180
+tick 500
+tap 118 125 180
+tick 1200
+tap 64 55 180
+tick 1200
+tap 36 102 180
+tick 1200
+tap 80 145 180
+tick 2000
+# T=0 Zoe at home. She taps the little-pictures tile.
+tap 124 103 150
+tick 1800
+# looks for Rally; taps the arrow
+tap 93 125 150
+tick 1500
+# sees red car. Wants it on home: taps the star button? There is no star button here? look first
+# taps the star button
+tap 126 42 150
+tick 1500
+# taps Rally
+tap 80 103 150
+tick 600
+tick 1500
+# back to page 1
+tap 63 133 150
+tick 1200
+shot z06_p1
+# remove pumpkin's star
+tap 80 103 150
+tick 1200
+shot z07_pumpkin_off
+# to page 2
+tap 96 133 150
+tick 1200
+tap 80 103 150
+tick 1200
+shot z08_rally_on
+# Zoe taps the house instead of the check
+down 80 18
+tick 150
+shot z11_house_held
+up
+tick 1500
+shot z12_after_house
+tap 80 18 150
+tick 1500
+shot z13_home_again

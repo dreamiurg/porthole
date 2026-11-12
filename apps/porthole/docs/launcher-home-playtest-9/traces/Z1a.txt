@@ -1,0 +1,34 @@
+tick 3000
+tap 67 125 180
+tick 500
+tap 41 125 180
+tick 500
+tap 67 53 180
+tick 500
+tap 67 125 180
+tick 500
+tap 41 76 180
+tick 500
+tap 118 125 180
+tick 1200
+tap 64 55 180
+tick 1200
+tap 36 102 180
+tick 1200
+tap 80 145 180
+tick 2000
+# T=0 Zoe at home. She taps the little-pictures tile.
+tap 124 103 150
+tick 1800
+# looks for Rally; taps the arrow
+tap 93 125 150
+tick 1500
+# sees red car. Wants it on home: taps the star button? There is no star button here? look first
+down 80 103
+tick 500
+shot za_hold500
+tick 600
+shot za_hold1100
+up
+tick 1500
+shot za_after
