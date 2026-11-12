@@ -1,15 +1,15 @@
 # Reading: library -> a story page by page (back works, not before page 1) -> question -> answer -> The End -> home.
 newgame Sam Biscuit
-wait 2400
+wait 2650
 expect books=0/3
 # book button, bottom row third
 tap 92 129
-wait 450
+wait 750
 expect-screen pets_library
 expect page=0
 snap 01_library
 tap 80 130
-wait 450
+wait 750
 expect-screen read
 expect page=0
 snap 02_page
@@ -57,16 +57,16 @@ expect stickers=2
 sheet read
 # a double tap acts once: the library button opens the library (not the story behind the second tap)
 newgame Sam Biscuit
-wait 2400
+wait 2650
 tap 92 129
 tap 92 129
 wait 450
 expect-screen pets_library
 # and a double tap on "Read to me!" opens page 1 (page=0), not page 2
 newgame Sam Biscuit
-wait 2400
+wait 2650
 tap 92 129
-wait 450
+wait 750
 tap 80 130
 tap 80 130
 wait 450

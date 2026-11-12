@@ -8,17 +8,17 @@ wait 10000
 expect today>40
 expect today<50
 tap 80 12
-wait 450
+wait 750
 tap 80 32
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=15
 expect daily_min=30
@@ -28,7 +28,7 @@ expect window_end=1170
 ui-check sys_time-default
 snap 01_defaults
 tap 80 53
-wait 450
+wait 750
 expect-screen sys_limits
 hold 38 80
 wait 450
@@ -37,15 +37,15 @@ wait 450
 ui-check sys_limits-draft
 snap 02_draft
 tap 80 12
-wait 450
+wait 750
 tap 80 53
-wait 450
+wait 750
 expect-screen sys_limits
 tap 54 121
-wait 450
+wait 750
 expect session_min=15
 tap 80 53
-wait 450
+wait 750
 expect-screen sys_limits
 hold 38 80
 wait 450
@@ -63,11 +63,11 @@ up
 wait 450
 ui-check sys_limits-drag-cancelled
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=1
 tap 80 78
-wait 450
+wait 750
 expect-screen sys_limits
 hold 38 80
 wait 450
@@ -78,53 +78,53 @@ wait 450
 tap 122 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect daily_min=2
 ui-check sys_time-saved
 snap 03_saved
 tap 52 129
-wait 450
+wait 750
 expect-screen sys_reset
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 # Re-select the player to inspect retained usage; the adult menu has no active profile.
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 67
-wait 450
+wait 750
 expect-screen launcher
 expect today>40
 expect today<50
 expect play>40
 tap 80 32
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 tap 52 129
-wait 450
+wait 750
 tap 80 118
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=1
 expect daily_min=2
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 67
 wait 450
 expect-screen launcher
@@ -142,71 +142,71 @@ expect today<70
 ui-check rest-single-profile
 snap 04_session
 tap 80 132
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 tap 80 53
-wait 450
+wait 750
 expect-screen sys_limits
 tap 122 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 tap 80 78
-wait 450
+wait 750
 expect-screen sys_limits
 tap 38 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=2
 expect daily_min=1
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 67
-wait 450
+wait 750
 expect-screen rest
 expect rest>28000
 ui-check rest-lowered-daily
 snap 05_lowered
 tap 80 132
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 tap 80 78
-wait 450
+wait 750
 expect-screen sys_limits
 tap 122 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 67
 wait 450
 expect-screen rest
@@ -216,7 +216,7 @@ ui-check rest-raised-daily
 snap 06_raised
 sheet settings_and_caps
 skip 600
-wait 450
+wait 750
 expect-screen picker
 tap 80 67
 wait 450
@@ -233,88 +233,90 @@ expect rest>27000
 ui-check rest-two-minutes
 snap 07_daily
 tap 80 132
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 tap 52 129
-wait 450
+wait 750
 tap 80 118
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
 wait 450
 reboot
 expect-screen picker
 tap 80 67
-wait 450
+wait 750
 expect-screen launcher
 expect today=0
 expect play=0
 expect rest=0
 tap 80 32
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=2
 expect daily_min=2
 ui-check sys_time-reboot
 snap 08_reboot
 tap 80 53
-wait 450
+wait 750
 expect-screen sys_limits
 hold 38 80
 wait 450
 hold 38 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=1
 tap 80 53
 wait 450
 expect-screen sys_limits
 repeat 145
+wait 250
 hold 122 80
 wait 40
 end
 ui-check sys_limits-max-session
 snap 09_max_session
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect session_min=1440
 tap 80 78
-wait 450
+wait 750
 expect-screen sys_limits
 hold 38 80
 wait 450
 hold 38 80
 wait 450
 tap 108 121
-wait 450
+wait 750
 expect-screen sys_time
 expect daily_min=1
 tap 80 78
 wait 450
 expect-screen sys_limits
 repeat 145
+wait 250
 hold 122 80
 wait 40
 end

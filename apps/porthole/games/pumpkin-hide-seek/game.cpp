@@ -28,7 +28,7 @@ void Game::go(Page page) {
   pageMs_ = stepMs_ = 0;
   starting_ = actionPending_ = ghostPending_ = false;
   hold_ = ui::Hold{};
-  gate_.shown(ms_);
+  if (page != Page::Icing) gate_.shown(ms_);   // the icing goes on from the 600 ms catch: one fresh pause for both
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
 }
 void Game::start() {

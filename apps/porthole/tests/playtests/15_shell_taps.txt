@@ -1,6 +1,6 @@
 # Shell taps a kid gets wrong (playtester, 2026-09-24), written as the right behavior:
 # 1. A slow double tap (300-400 ms) must not act on the next screen: every screen ignores touches until a press
-#    begins 450 ms after it appeared (ui::FreshGate).
+#    begins 800 ms after it appeared, and 800 ms after the lift of any press it ignored (ui::FreshGate).
 # 2. A 3 s hold on a picker row asks the kid's code, then opens "Delete?" with "No" under the finger; deleting takes
 #    a held press elsewhere.
 # 3. Session rests still apply with one profile left; only an explicit adult reset clears the existing rest.
@@ -9,7 +9,7 @@ profile Sam 8
 profile Kai 6 1234
 profile Ava 7
 tap 80 32
-wait 450
+wait 750
 expect-screen picker
 # 1a: Kai's code row, slow double tap (second press 220 ms after the first lifts), then 1234 opens Kai
 tap 80 67
@@ -42,7 +42,7 @@ profile Kai 6
 profile Ava 7
 profile Mia 9 1234
 tap 80 32
-wait 450
+wait 750
 down 110 119
 wait 3000
 up
@@ -52,7 +52,7 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-wait 900
+wait 1150
 expect-screen delete
 tap 41 90
 wait 450
@@ -61,20 +61,20 @@ expect profile=-1/4
 # 3: Sam rests with two profiles; deleting Kai keeps Sam's rest. A grown-up can explicitly reset it.
 reset
 newgame Sam Biscuit
-wait 2400
+wait 2650
 tap 80 12
 wait 450
 profile Kai 6 1234
 tap 80 42
-wait 450
+wait 750
 tap 80 54
-wait 450
+wait 750
 dbg tired
 tap 48 79
 wait 2400
 expect-screen rest
 tap 80 132
-wait 450
+wait 750
 down 80 80
 wait 3000
 up
@@ -83,12 +83,12 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-wait 900
+wait 1150
 hold 80 42
-wait 450
+wait 650
 expect profile=-1/1
 tap 80 67
-wait 450
+wait 750
 expect-screen rest
 expect rest>500
 expect profile=0/1
@@ -96,28 +96,28 @@ ui-check rest-after-other-player-deleted
 snap 01_solo_rest
 # Removing a profile does not erase the other player's usage. The adult reset deliberately clears it.
 tap 80 132
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_time
 tap 52 129
-wait 450
+wait 750
 expect-screen sys_reset
 tap 80 118
-wait 450
+wait 750
 expect-screen sys_time
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 67
 wait 450
 expect-screen launcher

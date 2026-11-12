@@ -310,7 +310,7 @@ struct Finger {   // frames of 20 ms through the real InputTracker, the clock st
   void hold(bool down, int x, int y, uint32_t dur) {
     for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(now, ms, tr.step(down, x, y, ms)); if (draw) g.render(); }
   }
-  void tap(int x, int y) { hold(true, x, y, 60); hold(false, x, y, 500); }
+  void tap(int x, int y) { hold(true, x, y, 60); hold(false, x, y, ui::FreshGate::FRESH_MS + 100); }
 };
 static Save taken(Game& g) { const void* d = nullptr; size_t n = 0; assert(g.takeSave(&d, &n, true) && n == sizeof(Save)); Save s; memcpy(&s, d, n); return s; }
 static void enterAt(Game& g, const Save& s, uint32_t t) {
@@ -323,19 +323,18 @@ static void bringBackFromTheEmptyRoom() {
   Save s = dogWithWall(1); s.adoptedAt = t - 31 * 86400; s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
   enterAt(g, s, t);
   Finger f{g, t};
-  f.hold(false, 0, 0, 500); f.tap(40, 27); f.tap(80, 77);
+  f.hold(false, 0, 0, ui::FreshGate::FRESH_MS + 100); f.tap(40, 27); f.tap(80, 77);
   assert(!strcmp(g.screenName(), "confirm_farm"));
   const Save before = taken(g);
-  f.hold(true, 115, 102, 2100); f.hold(false, 115, 102, 500);
+  f.hold(true, 115, 102, 2100); f.hold(false, 115, 102, ui::FreshGate::FRESH_MS + 100);
   assert(!strcmp(g.screenName(), "farm") && g.saveUrgent());
-  f.tap(80, 137);
+  f.hold(true, 80, 137, 60); f.hold(false, 80, 137, 500);
   assert(!strcmp(g.screenName(), "home"));
   const Save gone = taken(g); assert(gone.hasDog == 0 && gone.wallCount == 2);
-  // a slow double tap's second press, 500 ms into the room and past the fresh gate, held 700 ms: it lifts after the
-  // room's first second but began before it, so it is not taken
+  // a slow double tap's second press, 500 ms into the room, held 700 ms: the fresh gate hides it, lift and all
   f.hold(true, 43, 103, 700); f.hold(false, 43, 103, 20);
   assert(!strcmp(g.screenName(), "home") && !g.saveUrgent());
-  f.hold(false, 0, 0, 500);
+  f.hold(false, 0, 0, ui::FreshGate::FRESH_MS);
   f.hold(true, 43, 103, 60); f.hold(false, 43, 103, 20);   // the release frame: home, before the dog's first idle roll
   assert(!strcmp(g.screenName(), "home") && g.saveUrgent());
   const Save back = taken(g);
@@ -358,7 +357,7 @@ static void statsStripDoesNothing() {
   Save s = dogWithWall(0); s.lastSeen = t; s.lastPlayDay = (uint16_t)pet::dayIndex(t); pet::seal(s);
   enterAt(g, s, t);
   Finger f{g, t};
-  f.hold(false, 0, 0, 500); f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
+  f.hold(false, 0, 0, ui::FreshGate::FRESH_MS + 100); f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
   f.hold(true, 80, 146, 2500); f.hold(false, 80, 146, 500); assert(!strcmp(g.screenName(), "stats"));
   f.hold(true, 115, 102, 2500); f.hold(false, 115, 102, 500); assert(!strcmp(g.screenName(), "stats"));   // Yes's old spot
   assert(taken(g).hasDog == 1);
@@ -380,7 +379,7 @@ static void tileCenter(const WordRound& w, char ch, int& x, int& y) {
 }
 static void wordsUpToSecond(Game& g, Finger& f, const Save& s, uint32_t t) {   // the first word spelled, its pause begun
   enterAt(g, s, t); f.draw = true;
-  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
+  f.hold(false, 0, 0, ui::FreshGate::FRESH_MS + 100); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
   WordRound w = wordRound(g);
   for (const char* c = w.word; *c; c++) {   // a used tile is blanked so a repeated letter takes its next tile
     int x, y; tileCenter(w, *c, x, y); w.tiles[strchr(w.tiles, *c) - w.tiles] = '.';

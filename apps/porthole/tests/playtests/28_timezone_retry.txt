@@ -2,19 +2,20 @@
 reset
 profile Sam 8
 tap 80 32
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 124 35
 wait 450
 tap 80 70
 wait 450
 expect-screen sys_clock
 sys nowifi
+wait 250
 tap 57 135
 wait 450
 expect sys_zone_state=failed
@@ -43,9 +44,9 @@ expect sys_zone_state=failed
 expect sys_detections=2
 # Manual choice remains authoritative even after a later successful NTP connection.
 tap 80 87
-wait 450
+wait 750
 tap 80 79
-wait 450
+wait 750
 expect sys_zone=America/Denver
 expect sys_auto=0
 tap 103 135
@@ -78,13 +79,13 @@ expect sys_zone_cached=1
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 124 35
 wait 450
 tap 80 70
-wait 450
+wait 750
 tap 57 135
 wait 450
 sys zonefail
@@ -97,13 +98,13 @@ expect sys_zone_cached=0
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 124 35
 wait 450
 tap 80 70
-wait 450
+wait 750
 tap 103 135
 wait 450
 sys timeok

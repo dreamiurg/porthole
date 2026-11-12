@@ -12,7 +12,7 @@ expect-screen launcher
 ui-check launcher-three-games
 snap mk_k01_launcher
 app marble-kick
-wait 500
+wait 800
 expect-screen mk_calibrate
 # 2: mis-taps on the Calibrate page
 tap 80 65
@@ -35,7 +35,7 @@ expect level=1
 expect x=0
 expect y=110
 # 4: a thumb brushing the knob
-wait 500
+wait 850
 tap 80 145
 wait 100
 expect-screen mk_play
@@ -55,20 +55,20 @@ expect-screen launcher
 profile Ana 7
 wait 500
 app marble-kick
-wait 500
+wait 750
 expect level=1
 expect reached=0
 tap 80 145
-wait 500
+wait 750
 # back to Sam through the picker (the name bar, then Sam's row)
 tap 80 42
-wait 500
+wait 750
 expect-screen picker
 tap 80 54
 wait 500
 expect-screen launcher
 app marble-kick
-wait 500
+wait 750
 expect-screen mk_calibrate
 expect level=2
 expect reached=1

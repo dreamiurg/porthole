@@ -10,11 +10,11 @@ reboot
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 expect-screen sys_info
 expect sys_ssid=Home-Network-5G-Upstairs
 tap 50 108
-wait 450
+wait 750
 expect-screen sys_wifi
 expect sys_scans=1
 expect sys_nets=-1
@@ -22,10 +22,10 @@ ui-check sys_wifi-scanning
 snap 01_scanning
 # Back mid-scan: the radio is still busy, so Updates has no Check now and says why, and a second scan is refused
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_info
 tap 110 108
-wait 450
+wait 750
 expect-screen sys_updates
 ui-check sys_updates-radio
 snap 02_updates_radio
@@ -33,7 +33,7 @@ tap 80 108
 wait 100
 expect sys_checks=0
 tap 80 12
-wait 450
+wait 750
 tap 50 108
 wait 450
 expect sys_scans=1
@@ -42,6 +42,7 @@ snap 03_refused
 # the first scan ends; Rescan starts a new one, which finds six networks (nine heard: a dual-band name and a mesh's two
 # nodes once each, the hidden one not at all)
 sys scan
+wait 250
 tap 80 123
 wait 100
 expect sys_scans=2
@@ -58,7 +59,7 @@ tap 39 123
 wait 100
 # a secured network: the keyboard; Back keeps the list (no new scan)
 tap 80 39
-wait 450
+wait 750
 expect-screen sys_pass
 ui-check sys_pass-empty
 snap 06_keyboard
@@ -76,11 +77,11 @@ snap 06b_preview_right
 move 80 140
 up
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_wifi
 expect sys_scans=2
 tap 80 39
-wait 450
+wait 750
 expect-screen sys_pass
 # "Ab3$x{Y}" on QWERTY: shift a, shift b, 123 3 $, #+= (shown), abc x, 123 #+= {, abc shift (shown) y, shift,
 # 123 #+= }, abc; a stray r and backspace at the end
@@ -124,55 +125,56 @@ ui-check sys_join-joining
 snap 10_joining
 # wrong: nothing saved; Try again keeps the typing; Back mid-join goes back to the keyboard
 sys joinfail
-wait 100
+wait 250
 expect sys_tested=0
 expect sys_pass!=Ab3$x{Y}
 ui-check sys_join-failed
 snap 11_failed
 tap 48 108
-wait 450
+wait 750
 expect-screen sys_pass
 tap 124 117
-wait 450
+wait 750
 expect-screen sys_join
 expect sys_tests=2
 tap 80 12
 wait 450
 expect-screen sys_pass
 sys joinfail
+wait 250
 tap 124 117
 wait 450
 expect sys_tests=3
 # a failed update check was about the old network: a new one saved puts the status back to idle
 sys failed
 sys joinok
-wait 100
+wait 250
 expect sys_pass=Ab3$x{Y}
 expect sys_ssid=Home-Network-5G-Upstairs
 expect sys_state=idle
 ui-check sys_join-joined
 snap 12_joined
 tap 80 108
-wait 450
+wait 750
 expect-screen sys_info
 snap 13_info
 # Save anyway: a network out of reach keeps what was typed
 tap 50 108
 wait 450
 sys scan
-wait 100
+wait 250
 tap 80 99
-wait 450
+wait 750
 expect-screen sys_pass
 tap 45 57
 tap 66 77
 tap 124 117
 wait 450
 sys joinfail
-wait 100
+wait 250
 # Back from a failed join is the keyboard, the typing kept
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_pass
 tap 124 117
 wait 450
@@ -180,6 +182,7 @@ sys joinfail
 wait 100
 # Save anyway, and the save fails (NVS): it says so, nothing changes; Try again saves it
 sys savefail
+wait 150
 tap 112 108
 wait 100
 expect-screen sys_join
@@ -187,7 +190,7 @@ expect sys_ssid=Home-Network-5G-Upstairs
 ui-check sys_join-savefailed
 snap 13b_save_failed
 tap 80 108
-wait 450
+wait 750
 expect-screen sys_info
 expect sys_ssid=Neighbors_2.4GHz
 expect sys_pass=ef
@@ -195,35 +198,36 @@ expect sys_pass=ef
 tap 50 108
 wait 450
 sys scan
-wait 100
+wait 250
 tap 80 79
 wait 450
 expect-screen sys_join
 expect sys_tried=Library Free WiFi
 sys joinfail
-wait 100
+wait 250
 tap 48 108
 wait 450
 expect-screen sys_join
 sys joinok
-wait 100
+wait 250
 expect sys_ssid=Library Free WiFi
 ui-check sys_join-open
 snap 14_open
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_info
 # Back mid-join on an open network is the list; nothing found
 tap 50 108
 wait 450
 sys scan
-wait 100
+wait 250
 tap 80 79
-wait 450
+wait 750
 tap 80 12
 wait 450
 expect-screen sys_wifi
 sys joinok
+wait 250
 tap 80 123
 wait 100
 sys scanempty
@@ -251,12 +255,13 @@ sys ready
 wait 100
 expect sys_tests=9
 sys joinok
-wait 100
+wait 150
 expect sys_ssid=Library Free WiFi
 tap 80 108
 wait 450
 expect-screen sys_info
 sys download 60
+wait 250
 tap 50 108
 wait 450
 expect sys_scans=7
@@ -264,13 +269,14 @@ ui-check sys_wifi-updating
 snap 17_updating
 # Restart now needs no radio: it works while a scan runs
 sys ready
+wait 250
 tap 80 123
 wait 100
 expect sys_scans=8
 tap 80 12
-wait 450
+wait 750
 tap 110 108
-wait 450
+wait 750
 expect-screen sys_updates
 ui-check sys_updates-ready-scanning
 snap 18_ready_scanning
@@ -286,13 +292,13 @@ reboot
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 50 108
 wait 450
 sys scan
-wait 100
+wait 250
 tap 80 39
-wait 450
+wait 750
 expect-screen sys_pass
 tap 24 57
 down 29 77

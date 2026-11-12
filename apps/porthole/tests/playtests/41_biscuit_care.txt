@@ -5,9 +5,9 @@
 dbg anytime
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 expect-screen biscuit_home
 dbg hungry
 expect fullness=20
@@ -37,9 +37,9 @@ tap 34 73
 expect activity=12
 wait 900
 expect-screen biscuit_library
-wait 450
+wait 650
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_home
 expect activity=0
 # another tap before the book is out: the pup stays home
@@ -61,7 +61,7 @@ up
 expect feeds=3
 # the window: a nap. Feed, Play, Pet and the pup rest; Wake wakes
 tap 126 62
-wait 450
+wait 750
 expect sleeping=1
 ui-check biscuit_home-asleep
 snap c03_asleep
@@ -76,11 +76,11 @@ expect feeds=3
 expect pets=3
 expect fetch=-1
 tap 121 129
-wait 450
+wait 750
 expect sleeping=0
 # World's Cozy nap, then a night asleep: energy fills, a new day begins
 tap 121 129
-wait 450
+wait 750
 expect-screen biscuit_world
 ui-check biscuit_world
 tap 109 64
@@ -88,7 +88,7 @@ wait 450
 expect-screen biscuit_home
 expect sleeping=1
 skip 28800
-wait 100
+wait 250
 expect energy=100
 expect days=2
 tap 126 62
@@ -96,7 +96,7 @@ wait 450
 expect sleeping=0
 # a weekend away: at most 8 hours count, and nothing drops below 20
 skip 172800
-wait 100
+wait 250
 expect days=3
 expect fullness>=20
 expect happiness>=20

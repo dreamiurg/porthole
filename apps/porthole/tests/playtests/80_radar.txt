@@ -12,7 +12,7 @@ tap 150 80
 wait 100
 ui-check
 tap 80 80
-wait 600
+wait 750
 expect-screen radar_menu
 ui-check
 sheet

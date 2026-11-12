@@ -16,7 +16,7 @@ tilt 0 1000 0
 profile Sam 8
 wait 600
 tap 124 104
-wait 600
+wait 750
 expect-screen library
 expect home_gold=5
 ui-check library_stars_shown
@@ -77,25 +77,25 @@ expect star_mode=0
 reboot
 wait 600
 tap 80 68
-wait 600
+wait 750
 expect-screen launcher
 expect home_tiles=6
 expect home_first=marblekick
 ui-check launcher_picked
 snap hs6_home_picked
 tap 124 104
-wait 600
+wait 750
 expect-screen library
 tap 126 42
-wait 600
+wait 750
 tap 36 104
 wait 600
 tap 80 104
 wait 600
 tap 33 42
-wait 600
+wait 750
 tap 80 12
-wait 600
+wait 750
 expect-screen launcher
 expect home_tiles=4
 expect home_first=marblekick
@@ -107,21 +107,24 @@ expect-screen biscuit_setup_pet
 reboot
 wait 600
 tap 80 68
-wait 600
+wait 750
 tap 80 104
-wait 600
+wait 750
 expect-screen library
 tap 126 42
-wait 600
+wait 750
 tap 124 72
 wait 600
 tap 80 72
 wait 600
 expect home_tiles=2
 # Kid playtest 9, M1: with stars unkept the house first asks "Tap [check] to keep" (the check hops); a second tap
-# while it asks drops them.
+# while it asks drops them. Kid playtest 10, m1: the ask gates touches as a new screen does, so a reader's quick
+# double tap on the house (250 ms apart) only asks.
 tap 80 12
-wait 300
+wait 170
+tap 80 12
+wait 750
 expect-screen library
 expect star_mode=1
 expect home_tiles=2
@@ -136,7 +139,7 @@ expect home_first=marblekick
 snap hs8_house_drops_edits
 wait 600
 tap 126 42
-wait 600
+wait 750
 tap 124 72
 wait 600
 tap 80 72
@@ -178,17 +181,17 @@ expect home_tiles=6
 expect home_first=crago
 wait 600
 tap 126 42
-wait 600
+wait 750
 expect star_mode=1
 expect home_gold=5
 # nothing to keep: the house leaves at once
 tap 80 12
-wait 600
+wait 750
 expect-screen library
 expect star_mode=0
 expect home_gold=5
 tap 80 12
-wait 600
+wait 700
 expect-screen launcher
 expect home_tiles=6
 expect home_first=crago
@@ -244,10 +247,10 @@ up
 wait 1200
 expect star_mode=0
 snap hs12_check_mash_out
-# m2: a slow double tap on Home's "All games" (the second press past the 450 ms fresh-screen guard) opens the
-# Library, not the game under the finger there.
+# m2: a slow double tap on Home's "All games" (the second press inside the Library's 800 ms fresh-screen gate) opens
+# the Library, not the game under the finger there.
 tap 80 12
-wait 600
+wait 750
 expect-screen launcher
 down 124 104
 wait 300
@@ -256,12 +259,12 @@ wait 460
 down 124 104
 wait 300
 up
-wait 600
+wait 850
 expect-screen library
 snap hs13_all_games_double
 # Kid playtest 9, m1: Leo's "again!" taps on "All games" about once a second open no game under his finger.
 tap 80 12
-wait 600
+wait 850
 expect-screen launcher
 down 124 104
 wait 350
@@ -277,10 +280,57 @@ up
 wait 650
 expect-screen library
 snap hs14_all_games_again
-# A fourth tap at that pace starts past 2.5 s from the opening: the wait is over, so it opens the game there (Radar).
+# Kid playtest 10, M1: a fourth, fifth and sixth at that pace open nothing either, each waiting from the last one's
+# lift; a tap after a pause opens the game there (Radar).
+repeat 3
+down 124 104
+wait 350
+up
+wait 650
+end
+expect-screen library
+wait 300
 down 124 104
 wait 350
 up
 wait 600
 expect-screen radar_live
+# Kid playtest 10, m3: Leo's repeat taps on a game's way out land on the Library's back arrow under it: the page he
+# came from stays (Starfighter, page 2, EXIT a little left, 300 ms presses once a second)
+wait 300
+tap 36 124
+wait 900
+expect-screen library
+tap 96 135
+wait 900
+tap 36 72
+wait 900
+expect-screen sf_title
+repeat 3
+down 72 143
+wait 300
+up
+wait 700
+end
+expect-screen library
+wait 300
+tap 36 72
+wait 900
+expect-screen sf_title
+# Kid playtest 10, M2: "again!" taps on his own name in the picker land on Home's first tile: Home stays
+tap 72 143
+wait 900
+tap 80 12
+wait 900
+expect-screen launcher
+tap 80 42
+wait 900
+expect-screen picker
+repeat 4
+down 40 66
+wait 300
+up
+wait 700
+end
+expect-screen launcher
 sheet stars

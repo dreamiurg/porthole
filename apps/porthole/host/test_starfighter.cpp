@@ -67,7 +67,7 @@ struct Session {
     in.gx = gravity.x; in.gy = gravity.y; in.gz = gravity.z;
     game.update(now, ms, in);
   }
-  void wait(uint32_t duration = 500) { for (uint32_t i = 0; i < duration; i += 20) frame(); }
+  void wait(uint32_t duration = ui::FreshGate::FRESH_MS + 100) { for (uint32_t i = 0; i < duration; i += 20) frame(); }
   void tap(int x = 80, int y = 120) { frame(true, x, y); frame(false, x, y); }
   bool on(const char* name) const { return !strcmp(game.screenName(), name); }
   void start() { wait(); tap(); wait(); tap(); wait(); tap(); wait(); }

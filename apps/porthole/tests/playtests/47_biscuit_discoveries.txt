@@ -4,19 +4,19 @@
 # double tap never turns a page twice or keeps a discovery by itself.
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 tap 94 129
-wait 450
+wait 750
 tap 106 60
-wait 450
+wait 750
 expect-screen biscuit_discoveries
 expect facts=2
 ui-check biscuit_discoveries-empty
 snap d01_empty
 tap 106 60
-wait 450
+wait 750
 expect facts=0
 ui-check biscuit_discoveries-three
 snap d02_three
@@ -27,45 +27,45 @@ ui-check biscuit_discoveries-three2
 tap 52 132
 wait 450
 tap 80 84
-wait 450
+wait 750
 expect-screen biscuit_discovery
 expect fact=19
 expect at=-1
 ui-check biscuit_discovery-cover
 snap d03_cover
 tap 80 132
-wait 450
+wait 750
 expect at=0
 ui-check biscuit_discovery-page
 snap d04_page
 tap 52 132
-wait 450
+wait 750
 expect at=-1
 tap 80 132
-wait 450
+wait 750
 tap 108 132
-wait 450
+wait 750
 expect at=1
 tap 108 132
 wait 100
 tap 108 132
-wait 450
+wait 800
 expect at=2
 expect of=2
 expect kept=0
 ui-check biscuit_discovery-wonder
 snap d05_wonder
 tap 52 132
-wait 450
+wait 750
 expect-screen biscuit_source
 ui-check biscuit_source
 snap d06_source
 tap 80 132
-wait 450
+wait 750
 expect-screen biscuit_discovery
 expect at=2
 tap 108 132
-wait 450
+wait 750
 expect-screen biscuit_discoveries
 expect facts=2
 expect kept=1
@@ -74,40 +74,42 @@ ui-check biscuit_discoveries-notebook
 snap d07_notebook
 # out of the game and back: the notebook keeps it
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_library
 tap 51 25
-wait 450
+wait 750
 tap 80 12
 wait 450
 expect-screen launcher
 app biscuit
-wait 450
+wait 750
 expect kept=1
 tap 94 129
-wait 450
+wait 750
 tap 106 60
-wait 450
+wait 750
 expect facts=2
 tap 80 84
-wait 450
+wait 750
 expect fact=19
 # kept again: still one
 tap 80 132
 wait 450
 repeat 3
+wait 250
 tap 108 132
 wait 450
 end
 expect at=2
+wait 250
 tap 108 132
 wait 450
 expect kept=1
 # Back from a discovery: the list it came from
 tap 80 84
-wait 450
+wait 750
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_discoveries
 expect facts=2
 # the topics, and a topic's eight
@@ -117,13 +119,14 @@ expect-screen biscuit_topics
 ui-check biscuit_topics
 snap d08_topics
 repeat 3
+wait 250
 tap 108 132
 wait 450
 end
 expect page=3
 ui-check biscuit_topics-last
 tap 80 108
-wait 450
+wait 750
 expect-screen biscuit_discoveries
 expect facts=1
 expect topic=11
@@ -137,7 +140,7 @@ tap 108 132
 wait 450
 expect page=3
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_topics
 expect page=3
 # Topics' Back: the list it was opened from (the notebook), never a topic's list
@@ -147,9 +150,9 @@ expect-screen biscuit_discoveries
 expect facts=2
 # the next day: three new ones
 skip 86400
-wait 100
+wait 250
 tap 106 60
-wait 450
+wait 750
 expect facts=0
 tap 80 84
 wait 450

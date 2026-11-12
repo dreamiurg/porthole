@@ -69,7 +69,7 @@ struct Session {
   }
   void tap(const ui::Box& box) {
     const int x = box.x + box.w / 2, y = box.y + box.h / 2;
-    step(false, 0, 0, 500); step(true, x, y); step(false, x, y, 40);
+    step(false, 0, 0, ui::FreshGate::FRESH_MS + 100); step(true, x, y); step(false, x, y, 40);
   }
   void begin() {
     shell.begin(store, apps, 1); step(); assert(shell.createProfile("Reader", 9, "") == 0);
@@ -89,8 +89,8 @@ void urgentPageCheckpoint() {
   rebooted.begin(s.store, apps, 1); rebooted.update(NOW, 10, {});
   Input pick{}; pick.x = pick.downX = 80; pick.y = pick.downY = 67; pick.tap = true;
   rebooted.update(NOW, 600, pick); assert(rebooted.openApp("Kingdom"));
-  InputTracker fingers; resumed.update(NOW, 1200, fingers.step(true, 80, 126, 1200));
-  resumed.update(NOW, 1250, fingers.step(false, 80, 126, 1250));
+  InputTracker fingers; resumed.update(NOW, 1500, fingers.step(true, 80, 126, 1500));
+  resumed.update(NOW, 1550, fingers.step(false, 80, 126, 1550));
   assert(!strcmp(resumed.screenName(), "lk_read")); sameCursor(resumed.save().cursor, saved.cursor);
 }
 void urgentAtomicDecision() {

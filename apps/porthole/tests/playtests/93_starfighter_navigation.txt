@@ -4,7 +4,7 @@ tilt 0 1000 0
 profile Sam 8
 app starfighter
 dbg title
-wait 600
+wait 800
 expect-screen sf_title
 ui-check
 tap 80 144
@@ -12,7 +12,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg calibrate
-wait 600
+wait 750
 expect-screen sf_calibrate
 ui-check
 tap 80 144
@@ -20,7 +20,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg brief
-wait 600
+wait 750
 expect-screen sf_brief
 ui-check
 tap 80 144
@@ -28,7 +28,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg victory
-wait 600
+wait 750
 expect-screen sf_victory
 ui-check
 tap 80 144
@@ -36,7 +36,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg defeat
-wait 600
+wait 750
 expect-screen sf_defeat
 ui-check
 tap 80 144
@@ -44,7 +44,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg squadron
-wait 600
+wait 750
 expect-screen sf_squadron
 ui-check
 down 80 21
@@ -54,7 +54,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg waveclear
-wait 600
+wait 750
 expect-screen sf_waveclear
 ui-check
 down 80 21
@@ -64,7 +64,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg entry
-wait 600
+wait 750
 expect-screen sf_entry
 ui-check
 down 80 21
@@ -74,7 +74,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg trench
-wait 600
+wait 750
 expect-screen sf_trench
 ui-check
 down 80 21
@@ -84,7 +84,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg target
-wait 600
+wait 750
 expect-screen sf_target
 ui-check
 down 80 21
@@ -94,7 +94,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg torpedo
-wait 600
+wait 750
 expect-screen sf_torpedo
 ui-check
 down 80 21
@@ -104,7 +104,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg explosion
-wait 600
+wait 750
 expect-screen sf_explosion
 ui-check
 down 80 21
@@ -115,7 +115,7 @@ expect-screen launcher
 # Short taps fire; brief holds, drifting away and back, and entering the button mid-drag cannot exit.
 app starfighter
 dbg start
-wait 600
+wait 750
 tap 80 21
 expect-screen sf_squadron
 down 80 21

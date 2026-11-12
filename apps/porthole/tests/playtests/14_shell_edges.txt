@@ -24,19 +24,19 @@ wait 450
 snap 01_name_full
 ui-check new_name-full
 tap 119 125
-wait 450
+wait 750
 expect-screen new_avatar
 ui-check new_avatar-long-name
 # back from the face step keeps the name
 tap 80 12
-wait 450
+wait 750
 expect-screen new_name
 tap 119 125
-wait 450
+wait 750
 expect-screen new_avatar
 # face 5 (bear), age 10+
 tap 34 89
-wait 450
+wait 750
 expect-screen age
 ui-check age
 snap 02_age
@@ -59,7 +59,7 @@ expect-screen pin_set
 ui-check pin_set-mismatch
 snap 02b_mismatch
 tap 80 145
-wait 450
+wait 750
 expect-screen launcher
 expect profile=0/1
 expect age=10
@@ -67,18 +67,19 @@ ui-check launcher-long-name
 snap 03_launcher_long
 # second kid: "Mmmmmmmm", face 6 (owl), age 5, code 5555
 tap 80 42
-wait 450
+wait 750
 expect-screen picker
 tap 80 93
 wait 450
 expect-screen new_name
 repeat 8
+wait 250
 tap 41 125
 end
 tap 119 125
-wait 450
+wait 750
 tap 64 89
-wait 450
+wait 750
 tap 37 69
 wait 450
 repeat 4
@@ -86,14 +87,15 @@ tap 80 90
 end
 wait 900
 repeat 4
+wait 250
 tap 80 90
 end
-wait 900
+wait 1150
 expect-screen launcher
 expect profile=1/2
 expect age=5
 tap 80 42
-wait 450
+wait 750
 expect-screen picker
 ui-check picker-long-names
 snap 04_picker_long
@@ -104,53 +106,54 @@ expect-screen pin
 ui-check pin-long-name
 snap 05_pin_long
 tap 80 12
-wait 450
+wait 750
 down 80 80
 wait 3000
 up
 wait 450
 expect-screen pin
 repeat 4
+wait 250
 tap 80 90
 end
-wait 900
+wait 1150
 expect-screen delete
 ui-check delete-long-name
 snap 06_delete_long
 tap 80 80
-wait 450
+wait 750
 expect-screen picker
 expect profile=-1/2
 # third and fourth kids: faces 7 (frog) and 8 (panda); four profiles hide the "+" row
 tap 80 106
-wait 450
+wait 750
 tap 41 53
 tap 119 125
-wait 450
+wait 750
 tap 94 89
-wait 450
+wait 750
 tap 121 69
 wait 450
 tap 80 145
-wait 450
+wait 750
 expect profile=2/3
 tap 80 42
-wait 450
+wait 750
 tap 80 119
-wait 450
+wait 750
 tap 67 125
 tap 41 125
 tap 119 125
-wait 450
+wait 750
 tap 124 89
-wait 450
+wait 750
 tap 79 101
 wait 450
 tap 80 145
-wait 450
+wait 750
 expect profile=3/4
 tap 80 42
-wait 450
+wait 750
 expect-screen picker
 ui-check picker-full
 snap 07_picker_full
@@ -163,7 +166,7 @@ sheet create
 reset
 profile Solo 8 1111
 tap 80 42
-wait 450
+wait 750
 expect-screen picker
 down 80 67
 wait 3000
@@ -173,14 +176,14 @@ expect-screen pin
 repeat 4
 tap 41 62
 end
-wait 900
+wait 1150
 expect-screen delete
 hold 80 116
-wait 450
+wait 650
 expect-screen new_name
 expect profile=-1/0
 tap 80 12
-wait 450
+wait 750
 expect-screen picker
 ui-check picker-empty
 snap 08_picker_empty

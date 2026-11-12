@@ -96,7 +96,7 @@ static void tapAt(Game& g, int x, int y) {   // a finger down, then lifted: a ta
   frame(g, in);
 }
 static void tapBox(Game& g, const ui::Box& b) { tapAt(g, b.x + b.w / 2, b.y + b.h / 2); }
-static void settle(Game& g) { for (int i = 0; i < 15; i++) frame(g); }   // past the fresh-screen tap gate
+static void settle(Game& g) { for (uint32_t t = 0; t <= ui::FreshGate::FRESH_MS; t += 40) frame(g); }   // past the fresh-screen tap gate
 
 static void pages() {
   StubFeed feed;

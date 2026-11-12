@@ -6,13 +6,13 @@ reset
 tilt 0 1000 0
 profile WWWWWWWW 9
 app racing
-wait 600
+wait 800
 tap 53 53
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
 wait 200
 # fixture: a recorded time
@@ -44,7 +44,7 @@ expect-screen race_tracks
 tap 78 129
 wait 100
 tap 78 129
-wait 700
+wait 850
 expect-screen race_board
 expect track=0
 # drag off the next arrow: still Desert Canyon
@@ -64,13 +64,13 @@ expect-screen race_tracks
 # three more kids with wide names finish Desert Canyon
 profile MMMMMMMM 9
 app racing
-wait 600
+wait 750
 tap 53 53
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
 wait 200
 # fixture: a recorded time
@@ -78,13 +78,13 @@ dbg lastlap
 wait 7000
 profile Wmwmwmwm 9
 app racing
-wait 600
+wait 750
 tap 53 53
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
 wait 200
 # fixture: a recorded time
@@ -92,13 +92,13 @@ dbg lastlap
 wait 7000
 profile QWERTYUI 9
 app racing
-wait 600
+wait 750
 tap 53 53
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
-wait 600
+wait 750
 tap 106 124
 wait 200
 # fixture: a recorded time

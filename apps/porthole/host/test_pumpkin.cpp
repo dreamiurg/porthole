@@ -207,6 +207,7 @@ static void variety() {
   CHECK(newRound(9).candy[0] == newRound(9).candy[0] && newRound(0).seed != 0);
 }
 // Feed the actual tracker, so fresh-page gates and held fingers match hardware.
+constexpr int FRESH = ui::FreshGate::FRESH_MS + 50;   // a wait past a new page's fresh-touch gate
 struct Run {
   Game game;
   InputTracker touch;
@@ -223,9 +224,9 @@ struct Run {
   void tap(int x = 80, int y = 131) { frame(true, x, y); frame(false, x, y); }
   bool at(const char* screen) { return !strcmp(game.screenName(), screen); }
   void start() {
-    enter(); wait(500); tap();
+    enter(); wait(FRESH); tap();
     CHECK(at("pumpkin_calibrate"));
-    wait(500); tap();
+    wait(FRESH); tap();
     CHECK(at("pumpkin_play"));
   }
 };
@@ -236,14 +237,14 @@ static void grips() {
     CHECK(r.game.round().x == 80);
     r.gravity = grip::gravityFor(400, 0, n); r.wait(500);
     CHECK(r.game.round().x > 85);
-    r.enter(); r.wait(500); r.tap(); r.wait(500); r.tap();
+    r.enter(); r.wait(FRESH); r.tap(); r.wait(FRESH); r.tap();
     CHECK(r.at("pumpkin_play"));
     r.wait(600);
     CHECK(r.game.round().x == 80);  // the new grip replaced the old neutral
   }
 }
 static void calibration() {
-  Run r; r.enter(); r.wait(500); r.tap(); r.wait(500);
+  Run r; r.enter(); r.wait(FRESH); r.tap(); r.wait(FRESH);
   r.gravity = {2000, 2000, 2000}; r.tap();
   CHECK(r.at("pumpkin_calibrate"));
   r.gravity = grip::UPRIGHT; r.wait(400);
@@ -253,12 +254,12 @@ static void calibration() {
 static void gatesAndHome() {
   Run r; r.enter(); r.tap();
   CHECK(r.at("pumpkin_intro"));
-  r.wait(500); r.tap(); r.wait(200); r.tap();
+  r.wait(FRESH); r.tap(); r.wait(200); r.tap();
   CHECK(r.at("pumpkin_calibrate"));
-  r.wait(300); r.tap();
+  r.wait(FRESH); r.tap();
   CHECK(r.at("pumpkin_play"));
   r.tap(); CHECK(r.game.round().hidden == -1);
-  r.wait(500); r.tap(); CHECK(r.game.round().hidden == 1);
+  r.wait(FRESH); r.tap(); CHECK(r.game.round().hidden == 1);
   r.tap(80, 19); CHECK(!r.game.wantsHome() && r.game.round().hidden == 1);
   for (int i = 0; i < 50; i++) r.frame(true, 80, 19);
   CHECK(!r.game.wantsHome());
@@ -266,12 +267,12 @@ static void gatesAndHome() {
   CHECK(!r.game.wantsHome());
   for (int i = 0; i < 61; i++) r.frame(true, 80, 19);
   CHECK(r.game.wantsHome()); CHECK(!r.game.wantsHome());
-  r.frame(); r.enter(); r.wait(500); r.tap(80, 19);
+  r.frame(); r.enter(); r.wait(FRESH); r.tap(80, 19);
   CHECK(r.game.wantsHome());
 }
 // A thumb resting on the action sign or the ghost while the hand tilts the board does nothing when it lifts.
 static void restingThumb() {   // a 2.5 s rest does nothing; a firm 1 s press counts
-  Run r; r.start(); r.wait(500);
+  Run r; r.start(); r.wait(FRESH);
   for (int i = 0; i < 250; i++) r.frame(true);
   r.frame(false); r.wait(100);
   CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
@@ -280,7 +281,7 @@ static void restingThumb() {   // a 2.5 s rest does nothing; a firm 1 s press co
   CHECK(r.at("pumpkin_play") && !r.game.round().ghostUsed);
   for (int i = 0; i < 100; i++) r.frame(true, 34, 42);
   r.frame(false, 34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
-  Run h; h.start(); h.wait(500);
+  Run h; h.start(); h.wait(FRESH);
   for (int i = 0; i < 100; i++) h.frame(true);
   h.frame(false); h.wait(100);
   CHECK(h.at("pumpkin_play") && h.game.round().hidden >= 0);
@@ -293,14 +294,14 @@ static void results() {
   lost.wait(600); CHECK(lost.at("pumpkin_icing"));
   lost.wait(1600); CHECK(lost.at("pumpkin_lost"));
   lost.tap(); CHECK(lost.at("pumpkin_lost"));
-  lost.wait(500); lost.tap(); CHECK(lost.at("pumpkin_play"));
+  lost.wait(FRESH); lost.tap(); CHECK(lost.at("pumpkin_play"));
   CHECK(lost.game.round().elapsed == 0 && lost.game.round().exposure == 0);
-  Run haunted; haunted.start(); haunted.wait(500); haunted.tap(34, 42); haunted.frame();
+  Run haunted; haunted.start(); haunted.wait(FRESH); haunted.tap(34, 42); haunted.frame();
   CHECK(haunted.game.round().ghostUsed);
   while (haunted.at("pumpkin_play")) haunted.frame();
   haunted.wait(2200); CHECK(haunted.at("pumpkin_lost"));
-  haunted.wait(500); haunted.tap(); CHECK(haunted.at("pumpkin_play") && !haunted.game.round().ghostUsed);
-  haunted.wait(500); haunted.tap(34, 42); haunted.frame();
+  haunted.wait(FRESH); haunted.tap(); CHECK(haunted.at("pumpkin_play") && !haunted.game.round().ghostUsed);
+  haunted.wait(FRESH); haunted.tap(34, 42); haunted.frame();
   CHECK(haunted.game.round().ghostUsed);  // a new round has a new ghost
   Run won; won.start();
   for (int i = 0; i < 18000 && won.at("pumpkin_play"); i++) {
@@ -309,7 +310,7 @@ static void results() {
     if (c.action) won.tap(); else won.frame();
   }
   CHECK(won.at("pumpkin_won"));
-  won.wait(500); won.tap(); CHECK(won.at("pumpkin_play"));
+  won.wait(FRESH); won.tap(); CHECK(won.at("pumpkin_play"));
   CHECK(won.game.round().hidden == -1);
   const void* data = nullptr; size_t len = 0;
   CHECK(!won.game.takeSave(&data, &len, true));
@@ -321,8 +322,8 @@ static void heldAcrossPages() {
   for (int i = 0; i < 300; i++) r.frame(true);
   CHECK(r.at("pumpkin_lost"));
   r.frame(false); CHECK(r.at("pumpkin_lost"));
-  r.tap(); CHECK(r.at("pumpkin_play"));
-  r.wait(500);
+  r.tap(); CHECK(r.at("pumpkin_play"));   // the held finger's lift is no tap, so the next one needs no pause
+  r.wait(FRESH);
   // A drag onto Home from the action sign is never a Home hold.
   r.frame(true, 80, 131);
   for (int i = 0; i < 70; i++) r.frame(true, 80, 19);
@@ -330,7 +331,7 @@ static void heldAcrossPages() {
   r.frame(false); CHECK(r.game.round().hidden == -1);
 }
 static void clocks() {
-  Run r; r.ms = UINT32_MAX - 1400; r.start(); r.wait(600);
+  Run r; r.ms = UINT32_MAX - 2100; r.start(); r.wait(600);
   CHECK(r.game.round().elapsed == 600);  // crosses millis rollover
   const uint32_t before = r.game.round().elapsed;
   r.wall = 1; r.frame(); r.wall = UINT32_MAX; r.frame();

@@ -26,7 +26,7 @@ struct Player {
     ms += delta;
     game.update(NOW, ms, input.step(down, x, y, ms));
   }
-  void tap(const ui::Box& box, uint32_t wait = 500) {
+  void tap(const ui::Box& box, uint32_t wait = ui::FreshGate::FRESH_MS + 100) {
     const int x = box.x + box.w / 2, y = box.y + box.h / 2;
     step(false, 0, 0, wait); step(true, x, y); step(false, x, y, 40);
   }

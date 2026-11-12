@@ -4,11 +4,11 @@
 # its three stars, the second ending counts as reading again and earns nothing more. Back leaves from anywhere.
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 tap 94 129
-wait 450
+wait 750
 expect-screen biscuit_library
 ui-check biscuit_library
 snap s01_library
@@ -24,7 +24,7 @@ tap 52 132
 wait 450
 # The Moon Biscuit
 tap 80 84
-wait 450
+wait 750
 expect-screen biscuit_story
 expect story=0
 expect at=0
@@ -35,34 +35,36 @@ snap s03_page1
 tap 108 132
 wait 100
 tap 108 132
-wait 450
+wait 800
 expect at=1
 tap 52 132
 wait 450
 expect at=0
 repeat 11
+wait 250
 tap 108 132
 wait 450
 end
 expect at=11
 ui-check biscuit_story-last
 snap s04_last
+wait 250
 tap 108 132
-wait 450
+wait 750
 expect-screen biscuit_choice
 ui-check biscuit_choice
 snap s05_choice
 # Back from the choice: the story's last screen
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_story
 expect at=11
 tap 108 132
-wait 450
+wait 750
 expect-screen biscuit_choice
 # the first ending
 tap 80 97
-wait 450
+wait 750
 expect-screen biscuit_ending
 expect choice=0
 expect at=0
@@ -70,18 +72,20 @@ ui-check biscuit_ending
 snap s06_ending1
 # Previous on its first page: the choice again
 tap 52 132
-wait 450
+wait 750
 expect-screen biscuit_choice
 tap 80 97
 wait 450
 expect of=5
 repeat 4
+wait 250
 tap 108 132
 wait 450
 end
 expect at=4
 ui-check biscuit_ending-last
 snap s06b_the_end
+wait 250
 tap 108 132
 wait 450
 expect-screen biscuit_home
@@ -93,16 +97,18 @@ snap s07_shared
 # the other ending: nothing more to earn, and the Library marks the story read
 wait 4100
 tap 94 129
-wait 450
+wait 750
 ui-check biscuit_library-read
 snap s08_read
 tap 80 84
 wait 450
 repeat 12
+wait 250
 tap 108 132
 wait 450
 end
 expect-screen biscuit_choice
+wait 250
 tap 80 121
 wait 450
 expect-screen biscuit_ending
@@ -110,6 +116,7 @@ expect choice=1
 snap s09_ending2
 expect of=5
 repeat 5
+wait 250
 tap 108 132
 wait 450
 end
@@ -117,18 +124,19 @@ expect-screen biscuit_home
 expect stars=3
 expect stories=1
 # Back from a story page and from the Library
+wait 250
 tap 94 129
-wait 450
+wait 750
 tap 80 108
-wait 450
+wait 750
 expect story=1
 tap 108 132
-wait 450
+wait 750
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_library
 tap 51 25
-wait 450
+wait 750
 expect-screen biscuit_home
 # the star holds across a relaunch
 tap 80 12

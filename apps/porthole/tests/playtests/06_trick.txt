@@ -1,11 +1,11 @@
 # Trick lesson: Sit is free, Shake needs a heart. Three Simon-says rounds pass lesson 1 of 3; a second lesson
 # the same day is refused.
 newgame Sam Biscuit
-wait 2400
+wait 2650
 expect tricks=00000000
 # paw button, bottom row fourth
 tap 118 129
-wait 450
+wait 750
 expect-screen tricks
 snap 01_tricks
 # Shake is locked (needs 1 heart): a toast, no lesson
@@ -17,10 +17,10 @@ tap 50 44
 wait 100
 expect-screen train
 snap 02_train_intro
-# a tap in the first 400 ms is ignored (the tap that opened the lesson must not start it)
+# a tap in the first 800 ms is ignored (the tap that opened the lesson must not start it), counted again from its lift
 tap 80 80
 expect phase=0
-wait 450
+wait 800
 tap 80 80
 expect phase=1
 # mashing the dog while it shows the pattern is ignored
@@ -36,10 +36,10 @@ expect phase=2
 expect input=0
 # out and in again: the lesson starts over
 tap 80 12
-wait 450
+wait 750
 expect-screen tricks
 tap 50 44
-wait 450
+wait 750
 expect-screen train
 tap 80 80
 expect phase=1
@@ -54,10 +54,10 @@ expect tricks=10000000
 snap 03_lesson_done
 wait 800
 tap 80 80
-wait 450
+wait 750
 expect-screen home
 tap 118 129
-wait 450
+wait 750
 tap 50 44
 wait 450
 # "More practice tomorrow!": no second lesson today
@@ -67,7 +67,7 @@ snap 04_tomorrow
 sheet trick
 # the whole visible paw button opens tricks, its top-right corner too (the toy ball hotspot sits next to it)
 newgame Sam Biscuit
-wait 2400
+wait 2650
 tap 126 120
 wait 450
 expect-screen tricks

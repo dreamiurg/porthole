@@ -5,27 +5,27 @@ tilt 0 1000 0
 profile Sam 8
 wait 600
 tap 124 104
-wait 600
+wait 750
 tap 96 135
 wait 600
 expect-screen library
 ui-check rally_launcher
 snap ra00_launcher
 tap 80 104
-wait 600
+wait 750
 expect-screen race_tracks
 ui-check
 snap ra01_tracks
 tap 53 53
-wait 600
+wait 750
 expect-screen race_howto
 ui-check
 snap ra02_howto
 tap 54 124
-wait 600
+wait 750
 expect-screen race_tracks
 tap 53 53
-wait 600
+wait 750
 tap 106 124
 wait 600
 expect-screen race_calibrate
@@ -63,13 +63,14 @@ hold 42 40
 expect-screen race_pause
 ui-check
 snap ra06_pause
+wait 300
 tap 54 108
-wait 600
+wait 700
 expect-screen race_confirm
 ui-check
 snap ra07_confirm
 tap 106 96
-wait 600
+wait 750
 expect-screen race_pause
 tap 80 48
 wait 1500
@@ -79,6 +80,7 @@ wait 600
 expect-screen race_pause
 expect grip_lost=1
 snap ra08_grip
+wait 800
 tap 80 48
 wait 600
 expect-screen race_pause
@@ -98,7 +100,7 @@ ui-check
 snap ra09_results
 wait 600
 tap 54 112
-wait 600
+wait 850
 expect-screen race_countdown
 expect boost=1
 expect rocket=1
@@ -106,9 +108,9 @@ expect finished=0
 hold 42 40
 wait 600
 tap 52 108
-wait 600
+wait 750
 tap 54 96
-wait 600
+wait 750
 expect-screen race_tracks
 tap 54 130
 wait 600

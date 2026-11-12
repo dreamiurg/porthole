@@ -18,7 +18,7 @@ up
 wait 600
 expect-screen launcher
 tap 124 104
-wait 600
+wait 750
 expect-screen library
 ui-check library_page1
 snap lp2_library1
@@ -35,17 +35,17 @@ expect-screen library
 ui-check library_page2
 snap lp4_library2
 tap 80 104
-wait 600
+wait 750
 expect-screen race_tracks
 tap 54 130
-wait 600
+wait 750
 expect-screen library
 snap lp5_back_on_page2
 tap 64 135
 wait 600
 expect-screen library
 tap 80 12
-wait 600
+wait 750
 expect-screen launcher
 tap 36 72
 wait 600

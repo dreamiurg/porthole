@@ -7,15 +7,15 @@ expect-screen launcher
 expect sound=1
 ui-check launcher-no-mute
 tap 80 12
-wait 600
+wait 750
 expect-screen picker
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 expect-screen sys_info
 tap 106 132
-wait 450
+wait 750
 expect-screen sys_admin
 tap 124 35
 wait 450
@@ -31,9 +31,9 @@ expect sound=0
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 124 35
 wait 450
 tap 80 94

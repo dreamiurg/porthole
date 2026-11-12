@@ -18,21 +18,21 @@ expect today>=1500
 ui-check rest-bedtime-biscuit
 snap d01_rest
 tap 80 132
-wait 450
+wait 750
 expect-screen picker
 tap 80 67
 wait 450
 expect-screen rest
 # 16:00 + 8 h: midnight. The rest screen gives way to the picker; the same kid gets in, and Biscuit opens
 skip 28800
-wait 450
+wait 750
 expect-screen picker
 tap 80 67
 wait 450
 expect-screen launcher
 expect today=0
 app Biscuit
-wait 450
+wait 750
 expect-screen biscuit_setup_pet
 tap 119 125
 wait 450

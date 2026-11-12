@@ -515,9 +515,7 @@ void Game::updateHome() {
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
-    // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: a slow double
-    // tap's second press gets past the fresh gate, so only a press begun once the room has shown a second takes it.
-    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && pressedAfter(1000)) bringDogBack();
+    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN)) bringDogBack();
     else if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); }
     return;
   }
@@ -743,7 +741,7 @@ void Game::startFetch() {
 }
 void Game::updateFetch() {
   if (fetchDone_) {   // the sweeping finger, still down as the round ends, never dismisses the results
-    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) {
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfterPhase()) {
       bool muddy = (pet::rnd(save_) % 100) < 40;
       pet::playResult(save_, now_, fetchScore_, muddy); markDirty();
       if (muddy) { toast("Uh oh, muddy paws!", 3000); }
@@ -834,7 +832,7 @@ void Game::nextWord() {
 }
 void Game::updateWords() {
   if (wordsDone_) {
-    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfter(0)) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
+    if (in_.tap && ms_ - screenMs_ > 600 && pressedAfterPhase()) { pet::wordsResult(save_, now_, wordCorrect_); markDirty(); go(SC_HOME); dogAct_ = 3; dogActUntil_ = ms_ + 1500; }
     return;
   }
   if (backButton()) { go(SC_PLAYMENU); return; }
@@ -849,7 +847,7 @@ void Game::updateWords() {
   const char* w = WORDS[wordIdx_[wordRound_]].word; int n = (int)strlen(w);
   for (int i = 0; i < wordCols_ * 3; i++) {
     int x = tileX(i), y = tileY(i);
-    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28) && pressedAfter(0)) {
+    if (!tileUsed_[i] && in_.tapIn(x - 2, y - 2, 28, 28) && pressedAfterPhase()) {
       if (tiles_[i] == w[wordTyped_]) {
         tileUsed_[i] = true; wordTyped_++; spawn(x + 12, y + 12, 1, 2);
         if (wordTyped_ >= n) { wordCorrect_++; wordSolvedUntil_ = ms_ + 1600; spawn(80, 50, 0, 5); }
@@ -892,7 +890,7 @@ void Game::drawWordTiles() {
     if (wordSolvedUntil_) continue;
     bool wrong = wordWrongTile_ == i && ms_ < wordWrongUntil_;
     int sh = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
-    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28}) && pressedAfter(0);
+    bool pr = ui::pressing(in_, {x - 2, y - 2, 28, 28}) && pressedAfterPhase();
     roundRect(x + sh, y + 2, 24, 24, C_DKBROWN); roundRect(x + sh, y + (pr ? 1 : 0), 24, 24, C_DKBROWN);
     roundRect(x + 1 + sh, y + 1 + (pr ? 1 : 0), 22, 22, wrong ? C_RED : pr ? C_YELLOW : C_WHITE);
     char l[2] = {tiles_[i], 0}; textCentered(x + 12 + sh, y + 5 + (pr ? 1 : 0), l, C_DKBROWN, 2);
@@ -1076,7 +1074,7 @@ void Game::updateTrain() {
   if (backButton()) { go(SC_TRICKS); return; }
   switch (trainPhase_) {
     case 0:  // intro: tap anywhere to start
-      if (in_.tap && ms_ - screenMs_ > 400) {
+      if (in_.tap) {
         for (int i = 0; i < 6; i++) seq_[i] = (uint8_t)(pet::rnd(save_) % ZONE_N);
         for (int i = 1; i < 6; i++) if (seq_[i] == seq_[i - 1]) seq_[i] = (uint8_t)((seq_[i] + 1) % ZONE_N);
         trainPhase_ = 1; seqShow_ = -1; seqStepMs_ = ms_ + 500;
@@ -1091,7 +1089,7 @@ void Game::updateTrain() {
       break;
     case 2:  // player input
       for (int z = 0; z < ZONE_N; z++) UiAudit::add(zx[z] - 12, zy[z] - 12, 24, 24);   // anchors; taps resolve to the nearest one
-      if (in_.tap && pressedAfter(0)) {   // a finger held across the demo is no answer
+      if (in_.tap && pressedAfterPhase()) {   // a finger held across the demo is no answer
         int hitZone = trainHitZone(in_.x, in_.y);
         if (hitZone < 0) break;
         if (seqInput_ > 0 && hitZone == seq_[seqInput_ - 1] && ms_ - seqStepMs_ < 350) break;  // double tap on the same spot
@@ -1322,7 +1320,7 @@ void Game::bringDogBack() {
   spawn(80, 96, 0, 6);
 }
 void Game::drawBringBack(const ui::Box& b, bool picture) {   // two lines: "Bring back" on one (70 px) would reach the farm's dog
-  const bool pr = ui::pressing(in_, b) && (screen_ != SC_HOME || pressedAfter(1000));   // sinks only under a press it takes
+  const bool pr = ui::pressing(in_, b);
   const int dy = pr ? 1 : 0, cx = b.x + (picture ? 38 : b.w / 2);
   ui::drawButton({b, nullptr, nullptr, C_ORANGE}, pr);
   if (picture) framedPup(b.x + 4, b.y + 7 + dy, DOG_PORTRAIT_SMALL[save_.wallBreeds[save_.wallCount - 1]], 1);   // who comes back
@@ -1422,7 +1420,7 @@ void Game::drawWall() {
 // ---------------------------------------------------------------- gift & celebrate
 void Game::updateGift() {
   if (!giftOpened_) {
-    if (in_.tap && ms_ - screenMs_ > 300) { gift_ = pet::openGift(save_, now_); giftOpened_ = true; screenMs_ = ms_; markDirty(); sound(SND_FANFARE); spawn(80, 70, 4, 18); spawn(80, 70, 1, 8); }
+    if (in_.tap) { gift_ = pet::openGift(save_, now_); giftOpened_ = true; screenMs_ = ms_; markDirty(); sound(SND_FANFARE); spawn(80, 70, 4, 18); spawn(80, 70, 1, 8); }
   } else if (in_.tap && ms_ - screenMs_ > 700) {
     if (gift_.kind == pet::GIFT_PARTY) { save_.hat = 2; celebrate("Party time!", "One whole week together!", 4, SC_HOME); }
     else go(SC_HOME);
@@ -1453,7 +1451,7 @@ void Game::drawGift() {
 }
 void Game::updateCelebrate() {
   if ((ms_ / 200) % 3 == 0 && (ms_ / 33) % 4 == 0) spawn(20 + (int)(pet::rnd(save_) % 120), 10, 4, 1);
-  if ((celebAnyRelease_ ? in_.released : in_.tap) && ms_ - screenMs_ > 700) { go(nextAfterCelebrate_); }
+  if (celebAnyRelease_ ? in_.released : in_.tap) go(nextAfterCelebrate_);
 }
 void Game::drawCelebrate() {
   clear(C_NAVY);

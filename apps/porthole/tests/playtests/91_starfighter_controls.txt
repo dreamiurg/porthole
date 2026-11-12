@@ -4,7 +4,7 @@ tilt 0 1000 0
 profile Sam 8
 app starfighter
 dbg start
-wait 600
+wait 800
 expect-screen sf_squadron
 expect x=240
 expect bank=0
@@ -63,14 +63,14 @@ expect lives=0
 ui-check
 snap sf_controls_defeat
 # Fresh replay returns to calibration and starts a complete new run.
-wait 600
+wait 750
 tap 80 120
 expect-screen sf_calibrate
 tilt 0 1000 0
-wait 600
+wait 750
 tap 80 120
 expect-screen sf_brief
-wait 600
+wait 750
 tap 80 120
 expect-screen sf_squadron
 expect lives=3

@@ -3,25 +3,25 @@
 reset
 wait 450
 tap 80 12
-wait 450
+wait 750
 expect-screen picker
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 expect-screen sys_info
 tap 106 132
-wait 450
+wait 750
 tap 80 141
-wait 450
+wait 750
 expect-screen sys_players
 ui-check sys_players-empty
 snap 01_empty
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_admin
 tap 80 12
-wait 450
+wait 750
 tap 80 12
 wait 450
 reset
@@ -30,16 +30,16 @@ profile Kai 6 5678
 profile Ava 7
 profile Mia 9 9999
 tap 80 32
-wait 450
+wait 750
 expect-screen picker
 down 80 16
 wait 5000
 up
-wait 450
+wait 700
 tap 106 132
-wait 450
+wait 750
 tap 80 141
-wait 450
+wait 750
 expect-screen sys_players
 ui-check sys_players-full
 snap 02_full
@@ -53,9 +53,9 @@ wait 450
 expect-screen sys_players
 wait 1500
 tap 80 12
-wait 450
+wait 750
 tap 80 70
-wait 450
+wait 750
 tap 79 63
 tap 79 63
 tap 79 63
@@ -72,9 +72,9 @@ wait 1500
 ui-check sys_admin-player-pins
 snap 04_admin
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
@@ -91,37 +91,37 @@ tap 79 63
 tap 79 63
 tap 79 63
 tap 79 126
-wait 900
+wait 1150
 expect-screen sys_info
 tap 106 132
-wait 450
+wait 750
 tap 80 141
-wait 450
+wait 750
 expect-screen sys_players
 tap 80 122
-wait 450
+wait 750
 expect-screen sys_player_pin
 ui-check
 snap 05_confirm
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_players
 tap 80 122
-wait 450
+wait 750
 tap 80 94
-wait 450
+wait 750
 expect-screen sys_players
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 12
-wait 450
+wait 750
 tap 80 119
 wait 450
 expect-screen pin
 tap 80 12
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
@@ -131,16 +131,16 @@ tap 79 63
 tap 79 63
 tap 79 63
 tap 79 126
-wait 900
+wait 1150
 tap 106 132
-wait 450
+wait 750
 tap 80 141
-wait 450
+wait 750
 expect-screen sys_players
 tap 80 122
 wait 220
 tap 80 122
-wait 450
+wait 800
 expect-screen sys_player_pin
 ui-check sys_player_pin-double-tap
 snap 06_double_tap
@@ -167,12 +167,12 @@ sheet recovery
 reboot
 expect-screen picker
 tap 80 119
-wait 450
+wait 750
 expect-screen launcher
 expect profile=3/4
 expect age=9
 tap 80 32
-wait 450
+wait 750
 tap 80 41
 wait 450
 expect-screen pin
@@ -187,11 +187,11 @@ tap 41 62
 tap 80 62
 tap 119 62
 tap 41 90
-wait 900
+wait 1150
 expect-screen launcher
 expect profile=0/4
 tap 80 32
-wait 450
+wait 750
 tap 80 67
 wait 450
 expect-screen pin
@@ -199,17 +199,17 @@ tap 80 90
 tap 119 90
 tap 41 118
 tap 80 118
-wait 900
+wait 1150
 expect-screen launcher
 expect profile=1/4
 tap 80 32
-wait 450
+wait 750
 tap 80 93
-wait 450
+wait 750
 expect-screen launcher
 expect profile=2/4
 tap 80 32
-wait 450
+wait 750
 down 80 16
 wait 5000
 up
@@ -219,12 +219,12 @@ tap 79 63
 tap 79 63
 tap 79 63
 tap 79 126
-wait 900
+wait 1150
 expect-screen sys_info
 tap 106 132
-wait 450
+wait 750
 tap 80 141
-wait 450
+wait 750
 expect-screen sys_players
 ui-check sys_players-rebooted
 snap 10_rebooted
@@ -232,10 +232,10 @@ tap 80 122
 wait 450
 expect-screen sys_players
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_admin
 tap 80 12
-wait 450
+wait 750
 expect-screen sys_info
 tap 80 12
 wait 450

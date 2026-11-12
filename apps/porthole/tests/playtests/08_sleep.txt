@@ -1,6 +1,6 @@
 # Sleep: the lamp tucks the pup in; a sleeping pup only shushes; the lamp wakes it once it has 40 energy.
 newgame Sam Biscuit
-wait 2400
+wait 2650
 expect asleep=0
 # lamp
 tap 23 79
@@ -16,14 +16,14 @@ expect bond=1
 expect fun=80
 # the food menu opens but the pup does not eat
 tap 40 129
-wait 450
+wait 750
 expect-screen feed
 tap 40 70
 wait 450
 expect-screen feed
 expect food=70
 tap 80 12
-wait 450
+wait 750
 # lamp again: rested pup wakes up
 tap 23 79
 wait 450

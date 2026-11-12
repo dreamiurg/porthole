@@ -107,6 +107,8 @@ void FreshGate::filter(Input& in, uint32_t now) {
   const int dx = in.x - spotX, dy = in.y - spotY;
   const bool away = spot && dx * dx + dy * dy > SPOT_R * SPOT_R;
   if (in.pressed && (away || now - shownMs >= FRESH_MS)) { closed = false; return; }
+  if (in.pressed) mashed = true;
+  if (in.released && mashed) shownMs = now;   // a mash waits on: only a pause opens the gate (a held finger's lift is no tap)
   in.down = in.pressed = in.released = in.tap = in.longPress = false;   // a held finger stays invisible until lifted
 }
 }  // namespace ui

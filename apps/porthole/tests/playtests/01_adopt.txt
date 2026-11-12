@@ -21,13 +21,13 @@ tap 41 125
 ui-check new_name-typed
 snap 02_name_typed
 tap 119 125
-wait 450
+wait 750
 expect-screen new_avatar
 ui-check
 snap 03_avatar
 # the dog face
 tap 34 57
-wait 450
+wait 750
 expect-screen age
 ui-check
 snap 04_age
@@ -39,7 +39,7 @@ ui-check
 snap 05_pin_set
 # skip the secret code
 tap 80 145
-wait 450
+wait 750
 expect-screen launcher
 ui-check
 snap 06_launcher
@@ -56,7 +56,7 @@ tap 80 80
 wait 1000
 ui-check intro-puppy
 tap 80 80
-wait 450
+wait 750
 expect-screen name_pet
 ui-check
 # the "?" button picks a random pup name
@@ -64,7 +64,7 @@ tap 123 28
 wait 450
 snap 08_name_pet
 tap 119 125
-wait 450
+wait 750
 expect-screen theme
 ui-check
 snap 09_theme
@@ -74,7 +74,7 @@ wait 450
 expect-screen celebrate
 ui-check welcome
 snap 10_welcome
-# the welcome ignores taps for 700 ms
+# the welcome, like every new screen, ignores taps for 800 ms (FreshGate), counted again from an ignored tap's lift
 tap 80 80
 expect-screen celebrate
 wait 800

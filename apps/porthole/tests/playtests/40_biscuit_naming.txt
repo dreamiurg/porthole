@@ -3,7 +3,7 @@
 # own pup, and the scrapbook renames it, keeping everything else.
 profile Sam 8
 app Biscuit
-wait 450
+wait 800
 expect-screen biscuit_setup_pet
 expect named=0
 ui-check biscuit_setup_pet
@@ -18,6 +18,7 @@ expect-screen biscuit_setup_pet
 expect named=0
 # delete "Biscuit", then P (page N-Z) i (page A-M) p: "Pip"
 repeat 7
+wait 250
 tap 93 125
 end
 tap 67 125
@@ -29,7 +30,7 @@ tap 93 53
 ui-check biscuit_setup_pet-typed
 snap n02_typed
 tap 119 125
-wait 450
+wait 750
 expect-screen biscuit_home
 expect named=1
 expect pet=Pip
@@ -41,7 +42,7 @@ tap 80 12
 wait 450
 expect-screen launcher
 app Biscuit
-wait 450
+wait 750
 expect-screen biscuit_home
 expect pet=Pip
 # Kai's Biscuit is Kai's own: a fresh pup to name
@@ -49,19 +50,19 @@ tap 80 12
 wait 450
 profile Kai 6
 app Biscuit
-wait 450
+wait 750
 expect-screen biscuit_setup_pet
 expect named=0
 tap 119 125
-wait 450
+wait 750
 expect pet=Biscuit
 tap 80 75
 expect pets=1
 # the scrapbook: rename Kai's pup to Bo, keeping the care it had
 tap 121 129
-wait 450
+wait 750
 tap 50 99
-wait 450
+wait 750
 expect-screen biscuit_profile
 ui-check biscuit_profile
 snap n04_profile
@@ -70,20 +71,21 @@ wait 450
 expect-screen biscuit_rename_pet
 ui-check biscuit_rename_pet
 repeat 7
+wait 250
 tap 93 125
 end
 tap 67 53
 tap 67 125
 tap 67 53
 tap 119 125
-wait 450
+wait 750
 expect-screen biscuit_profile
 expect pet=Bo
 expect pets=1
 snap n05_renamed
 # back from a rename changes nothing
 tap 108 132
-wait 450
+wait 750
 tap 93 125
 tap 80 12
 wait 450

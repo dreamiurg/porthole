@@ -4,7 +4,7 @@
 # seed 11: home
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
 wait 450
 monkey 600 11
@@ -17,9 +17,9 @@ expect happiness<=100
 reset
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 tap 67 129
 monkey 600 12
 expect-screen *
@@ -30,16 +30,16 @@ expect fullness<=100
 reset
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 dbg unlock
 tap 121 129
-wait 450
+wait 750
 tap 50 64
-wait 450
+wait 750
 tap 80 60
-wait 450
+wait 750
 tap 80 132
 monkey 600 13
 expect-screen *
@@ -49,12 +49,12 @@ expect happiness<=100
 reset
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 dbg unlock
 tap 94 129
-wait 450
+wait 750
 tap 80 84
 wait 450
 monkey 600 14
@@ -65,14 +65,14 @@ expect happiness<=100
 reset
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 dbg read
 tap 94 129
-wait 450
+wait 750
 tap 106 60
-wait 450
+wait 750
 tap 80 84
 wait 450
 monkey 600 15
@@ -82,11 +82,11 @@ expect kept=96
 reset
 profile Sam 8
 app biscuit
-wait 450
+wait 800
 tap 119 125
-wait 450
+wait 750
 tap 121 129
-wait 450
+wait 750
 tap 109 99
 wait 450
 monkey 600 16

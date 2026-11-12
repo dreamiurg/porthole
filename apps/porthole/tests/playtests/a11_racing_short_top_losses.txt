@@ -6,7 +6,7 @@ reset
 tilt 0 1000 0
 profile Zoe 10
 app racing
-wait 600
+wait 800
 tap 106 55
 wait 1000
 expect-screen race_howto

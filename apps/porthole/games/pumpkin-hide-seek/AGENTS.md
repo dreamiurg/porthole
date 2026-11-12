@@ -47,7 +47,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   or Play -> Won (escaped). Retry starts Play with the current grip. Each launcher visit
   starts Intro and requires calibration again. A jolt delays a pending start
   until `tilt::Steady` reports plausible gravity.
-- All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
+- All pages use `ui::FreshGate` (Icing goes on from the 600 ms Catch without a second
+  gate, so Home works from 0.8 s after the catch). Home is always visible at {68,8,24,22}; during
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
   the action sign and the ghost act on the lift of any press shorter than 2 s (`REST_MS`
   in `game.cpp`): a hand holding the board for tilt rests a thumb on the glass, and that

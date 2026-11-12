@@ -48,7 +48,7 @@ snap sf10_target_missed
 tilt 0 1000 0
 wait 80
 dbg target
-wait 600
+wait 750
 tap 120 90
 expect-screen sf_torpedo
 expect score=1750
@@ -67,10 +67,10 @@ wait 600
 tap 80 120
 expect-screen sf_calibrate
 expect ready=0
-wait 600
+wait 750
 tap 80 120
 expect-screen sf_brief
-wait 600
+wait 750
 tap 80 120
 expect-screen sf_squadron
 expect score=0

@@ -12,7 +12,7 @@ expect day=1
 snap 01_gift_waiting
 # the parcel on the window sill
 tap 90 57
-wait 450
+wait 750
 expect-screen gift
 snap 02_gift
 tap 80 80
