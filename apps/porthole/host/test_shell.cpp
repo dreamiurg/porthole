@@ -870,14 +870,16 @@ static void starMode() {
   before = st.writes;
   tapAt(sh, ms, launcher::LIGHT); assert(on(sh, "library") && st.writes == before + 1);   // the check saves
   assert(shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 8 && f.ids[1] == 6 && f.ids[2] == 2 && f.ids[4] == 5);
-  const int after = st.writes;
+  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 2)); assert(a[7].entered == 2);   // a third tap on the
+  a[7].home = true; frame(sh, ms, Input{});                                   // check 0.7 s later: no star mode, Eight opens
+  const int after = st.writes;   // (leaving a game saved the kid's record)
   tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::LIGHT); assert(st.writes == after);   // nothing changed: no write
   tapAt(sh, ms, back); assert(on(sh, "launcher"));
-  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 2); home(sh, ms, a[7]);   // Home: the newest star first
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3); home(sh, ms, a[7]);   // Home: the newest star first
   tapAt(sh, ms, launcher::tile(4, 6)); assert(a[4].entered == 1); home(sh, ms, a[4]);
   tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // Two off
   bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);   // a restart mid star mode
-  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3);   // Eight first, and Two still there
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 4);   // Eight first, and Two still there
   assert(shell::loadFavorites(st, 0, f) && f.count == 5);
 }
 static bool goldAt(const ui::Box& b) { return gfx::fb[(b.y + 7) * gfx::W + b.x + b.w - 7] == C_GOLD; }   // a tile's corner star
@@ -890,9 +892,13 @@ static void emptyHomeIsDefault() {
   App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
   bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
   shell::Favorites f;
-  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));
+  const int fresh = st.writes;   // a new kid: every default off, then the check, is no change at all
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT);
+  for (int i = 0; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));
+  tapAt(sh, ms, launcher::LIGHT); assert(st.writes == fresh);
+  frame(sh, ms, Input{}); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));   // the button waits a second
   tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && f.count == 4);   // One off, kept
-  tapAt(sh, ms, launcher::LIGHT);
+  frame(sh, ms, Input{}); tapAt(sh, ms, launcher::LIGHT);
   for (int i = 1; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));   // the other four off: none left
   tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && !f.picked && !f.count);   // not picked again
   for (int i = 0; i < 6; i++) assert(goldAt(launcher::tile(i, 6)) == (i < shell::MAX_FAVS));   // the Library agrees with Home

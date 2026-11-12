@@ -36,13 +36,14 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 - **Star mode** (same screen, `library` with a mode): the sky behind the grid turns lavender and every tile jiggles
   (1 px right and back, neighbors in turn, like a phone's edit mode), so a non-reader sees that something is different.
   Five small stars in the header count Home's places (gold = taken, white = free; no number to read); the star
-  button becomes a green check (Done). Tapping a tile toggles its star; repeated taps on one tile within 400 ms of
-  each other count once (a double tap or mashing). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
+  button becomes a green check (Done). Tapping a tile toggles its star; a press on the same tile starting within 400 ms
+  of the last tap's lift counts with it (a double tap, even a firm one of 250 ms presses, or mashing: once). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
   dimmed tiles read as switched off). A new kid's Home is already full (the defaults), so a 6th star is refused with
   a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
   shown has no gold star, while the gold stars hop and so does the arrow toward a page that holds one, so a
   non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
-  them (only if anything changed, read back) and returns to the Library; with no star left Home shows the
+  them (only if anything changed, read back) and returns to the Library, whose star button then ignores a press
+  begun within 1 s (it sits where the check was: a third tap on Done must not re-enter star mode); with no star left Home shows the
   default favorites again (see Data), never an empty Home; leaving any other way (the home button,
   which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
   playtests. Round 1 (`apps/porthole/docs/launcher-home-playtest.md`), M1, n1, n2: star mode read as "switched off",
@@ -53,7 +54,9 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   default when none of the kid's favorites shows. Round 4 (`launcher-home-playtest-4.md`), M1: after a check with no
   stars Home and the Library showed the defaults gold while star mode showed them white, and one new star cut Home
   to that game; resolved by the Library's gold stars always being the kid's own list and the check with no star left
-  and none hidden resetting the kid to "not picked", so all three show the default gold.)
+  and none hidden resetting the kid to "not picked", so all three show the default gold. Round 5
+  (`launcher-home-playtest-5.md`): a firm double tap still toggled twice (the guard now runs from the lift to the
+  next press) and a third tap on Done re-entered star mode (the star button waits 1 s).)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an

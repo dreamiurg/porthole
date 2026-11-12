@@ -4,7 +4,8 @@
 # home button (or the rest screen, or a restart) puts Home back. A new kid's Home is already full, so their first
 # star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
 # for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
-# A new star goes first on Home; repeated taps on one tile within 400 ms count once. Star mode can take every star
+# A new star goes first on Home; repeated taps on one tile within 400 ms (lift to the next press) count once, so a
+# firm double tap stars once; the star button waits a second after star mode ends (a third tap on the check). Star mode can take every star
 # off (no gold left) and star a new game after that; Home with no star left (or every favorite switched off) shows
 # the default (a non-reader who emptied it could not refill it); the check with none left and none hidden makes the
 # kid "not picked" again, so the Library's gold stars (home_gold) match Home. home_tiles is what Home would show.
@@ -122,6 +123,7 @@ expect star_mode=0
 expect home_tiles=4
 expect home_first=marblekick
 snap hs8_house_drops_edits
+wait 600
 tap 126 42
 wait 600
 tap 124 72
@@ -135,7 +137,13 @@ wait 600
 expect home_full=0
 expect home_gold=0
 snap hs9_none_left
-tap 80 104
+down 80 104
+wait 250
+up
+wait 200
+down 80 104
+wait 250
+up
 wait 600
 expect home_full=0
 expect home_gold=1
@@ -147,12 +155,25 @@ expect home_gold=0
 expect home_tiles=6
 expect home_first=crago
 tap 126 42
+wait 300
+tap 126 42
+wait 300
+tap 126 42
 wait 600
 expect star_mode=0
 expect home_gold=5
 snap hs10_zero_check_default
 expect home_tiles=6
 expect home_first=crago
+tap 126 42
+wait 600
+expect star_mode=1
+expect home_gold=5
+tap 80 12
+wait 600
+expect-screen library
+expect star_mode=0
+expect home_gold=5
 tap 80 12
 wait 600
 expect-screen launcher

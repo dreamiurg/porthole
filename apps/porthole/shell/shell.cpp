@@ -52,6 +52,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateSysGames, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
+  if (in.pressed) pressMs_ = ms;   // a tap's own press start (Input::heldMs is 0 on its release)
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   if (guardScreenTime()) return;
@@ -119,7 +120,7 @@ bool Shell::guardScreenTime() {
   go(SH_REST); return true;
 }
 void Shell::select(int id) {
-  active_ = id; page_ = 0; starMode_ = favsKept_ = false;
+  active_ = id; page_ = 0; starMode_ = favsKept_ = false; starsOffMs_ = ms_ - 1000;
   if (!shell::loadFavorites(*st_, id, favs_)) {   // a kid's first Home: no game here now is new to them
     for (int k = 0; k < nApps_; k++) favs_.seen |= shell::gameBit(ids_[k]);
     // Written only when missing: a damaged one, or a newer version's after a USB rollback, stays for that firmware.
@@ -566,6 +567,8 @@ void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a b
 void Shell::updateLibrary() {
   if (ui::back(in_)) { const bool stars = starMode_; leaveStars(false); go(stars ? SH_LIBRARY : SH_LAUNCHER); return; }
   if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) {
+    // The star button sits where the check was: a press begun within a second of leaving is the check's third tap.
+    if (!starMode_ && pressMs_ - starsOffMs_ < 1000) return;
     if (starMode_) leaveStars(true);
     else { starMode_ = true; starsBefore_ = favs_; fullUntil_ = ms_; lastStar_ = -1; }
     go(SH_LIBRARY); return;
@@ -584,7 +587,8 @@ void Shell::updateLibrary() {
 void Shell::tapLibrary(int k) {
   if (!starMode_) { openIdx(k); return; }
   // A second tap on the same tile soon after is a double tap (or mashing): one star, not a star and its undo.
-  const bool again = k == lastStar_ && ms_ - lastStarMs_ < 400;
+  // Counted from the last tap's lift to this press's start: a firm double tap holds each press ~250 ms.
+  const bool again = k == lastStar_ && pressMs_ - lastStarMs_ < 400;
   lastStar_ = k; lastStarMs_ = ms_;
   if (again) return;
   if (shell::toggleStar(favs_, ids_[k], ids_, nApps_, gamesOff_)) fullUntil_ = ms_;   // in RAM until the check
@@ -592,7 +596,7 @@ void Shell::tapLibrary(int k) {
 }
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
-  starMode_ = false;
+  starMode_ = false; starsOffMs_ = ms_;
   if (!keep) { favs_ = starsBefore_; return; }
   // Every star taken off and none hidden: "not picked", so Home, the Library and star mode all show the default again
   // (kid playtest 4, M1); a hidden one (a game switched off) keeps the kid's list for when it is back.

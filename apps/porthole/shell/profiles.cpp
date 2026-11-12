@@ -145,7 +145,8 @@ int ownGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* o
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
   const int h = ownGames(f, ids, n, off, out);
   if (h) return h;
-  // h is 0 here with the Library on (every star hidden: the default, the list kept) or with no game at all (d is 0)
+  // h is 0 here with the Library on (every star hidden, or none left in star mode: the default, the list kept) or
+  // with no game at all (d is 0)
   int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on), d = m < MAX_FAVS ? m : MAX_FAVS;
   memcpy(out, on, d * sizeof *out); return d;
 }
