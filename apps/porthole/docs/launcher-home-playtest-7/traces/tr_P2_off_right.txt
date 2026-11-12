@@ -1,0 +1,32 @@
+# setup: name keyboard
+tick 1000
+shot s00_boot
+tap 123 100 250
+tick 500
+tap 41 77 250
+tick 500
+tap 67 125 250
+tick 700
+shot s01_nz
+tap 67 52 250
+tick 500
+tap 118 125 250
+tick 900
+shot s02_after_ok
+tap 93 85 300
+tick 900
+shot s03_age
+tap 79 69 300
+tick 900
+shot s04_code
+tap 80 145 300
+tick 1200
+shot s05_home
+# Leo taps the "lots of little pictures" tile
+tap 124 104 300
+tick 1200
+shot s06_library
+# ---- P2_off_right
+tap 140 43 300 p
+tick 900
+shot p_end

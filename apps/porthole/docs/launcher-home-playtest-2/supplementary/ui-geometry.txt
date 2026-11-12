@@ -1,0 +1,19 @@
+reset
+profile Zoe 8
+wait 600
+echo HOME
+ui
+tap 124 106
+wait 600
+echo LIB
+ui
+tap 127 42
+wait 600
+echo STAR
+ui
+tap 96 136
+wait 600
+tap 82 104
+wait 200
+echo FULL
+ui

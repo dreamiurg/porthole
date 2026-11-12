@@ -1,0 +1,168 @@
+# supplementary: Leo-style mash, 40 random 0.3-2.5 s presses inside r=74, seed 7, from the Library
+reset
+profile Leo 6
+wait 800
+tap 124 105
+wait 800
+down 18 98
+wait 356
+up
+wait 319
+down 120 58
+wait 2025
+up
+wait 249
+down 48 41
+wait 555
+up
+wait 137
+down 109 89
+wait 1478
+up
+wait 119
+down 99 137
+wait 1716
+up
+wait 487
+down 73 128
+wait 658
+up
+wait 488
+down 88 36
+wait 2095
+up
+wait 440
+down 72 141
+wait 627
+up
+wait 395
+down 78 125
+wait 962
+up
+wait 204
+down 121 99
+wait 1495
+up
+wait 205
+down 62 32
+wait 2044
+up
+wait 414
+down 63 95
+wait 868
+up
+wait 481
+down 106 71
+wait 1826
+up
+wait 186
+down 87 32
+wait 1399
+up
+wait 265
+down 144 70
+wait 1396
+up
+wait 191
+down 107 114
+wait 719
+up
+wait 385
+down 124 138
+wait 2430
+up
+wait 315
+down 82 150
+wait 1625
+up
+wait 473
+down 48 55
+wait 786
+up
+wait 336
+down 92 22
+wait 2373
+up
+wait 229
+down 124 54
+wait 1297
+up
+wait 336
+down 84 34
+wait 1008
+up
+wait 164
+down 149 54
+wait 1771
+up
+wait 438
+down 111 112
+wait 996
+up
+wait 285
+down 103 140
+wait 965
+up
+wait 228
+down 23 80
+wait 631
+up
+wait 410
+down 25 73
+wait 317
+up
+wait 108
+down 119 138
+wait 791
+up
+wait 188
+down 7 71
+wait 478
+up
+wait 341
+down 24 96
+wait 1747
+up
+wait 301
+down 113 78
+wait 351
+up
+wait 362
+down 53 80
+wait 970
+up
+wait 128
+down 109 52
+wait 327
+up
+wait 180
+down 74 153
+wait 325
+up
+wait 188
+down 60 32
+wait 1326
+up
+wait 433
+down 65 11
+wait 2030
+up
+wait 273
+down 99 94
+wait 1728
+up
+wait 126
+down 125 42
+wait 690
+up
+wait 208
+down 120 62
+wait 1257
+up
+wait 337
+down 146 112
+wait 2437
+up
+wait 168
+screen
+debug

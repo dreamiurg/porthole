@@ -1,0 +1,45 @@
+E1: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 t4_held=star_p1 t4_after=star_p1 t5_held=star_p1 t5_after=star_p1 t6_held=star_p1 t6_after=star_p1 final=star_p1
+E2: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 t4_held=star_p1 t4_after=star_p1 final=star_p1
+E3: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 final=star_p1
+E4: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 t4_held=star_p1 t4_after=star_p1 t5_held=star_p1 t5_after=star_p1 final=star_p1
+E5: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 t4_held=star_p1 t4_after=star_p1 t5_held=star_p1 t5_after=star_p1 t6_held=star_p1 t6_after=star_p1 final=star_p1
+E6: t1_held=all_p1_pickhint t1_after=star_p1 t2_held=star_p1 t2_after=star_p1 t3_held=star_p1 t3_after=star_p1 final=star_p1
+E7: t1_held=OTHER(~all_p1_pickhint d=64) t1_after=star_p2 t2_held=star_p2 t2_after=star_p2 t3_held=star_p2 t3_after=star_p2 t4_held=star_p2 t4_after=star_p2 t5_held=star_p2 t5_after=star_p2 final=star_p2
+E8: t1_held=OTHER(~all_p1_pickhint d=64) t1_after=star_p2 t2_held=star_p2 t2_after=star_p2 t3_held=star_p2 t3_after=star_p2 t4_held=star_p2 t4_after=star_p2 t5_held=star_p2 t5_after=star_p2 t6_held=star_p2 t6_after=star_p2 final=star_p2
+D1: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 t4_held=all_p1 t4_after=all_p1 t5_held=all_p1 t5_after=all_p1 t6_held=all_p1 t6_after=all_p1 final=all_p1
+D2: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 t4_held=all_p1 t4_after=all_p1 final=all_p1
+D3: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 final=all_p1
+D4: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 t4_held=all_p1 t4_after=all_p1 t5_held=all_p1 t5_after=all_p1 final=all_p1
+D5: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 t4_held=all_p1 t4_after=all_p1 t5_held=all_p1 t5_after=all_p1 t6_held=all_p1 t6_after=all_p1 final=all_p1
+D6: t1_held=OTHER(~star_p1 d=117) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=all_p1 final=all_p1
+D7: t1_held=OTHER(~star_p2 d=117) t1_after=all_p2 t2_held=all_p2 t2_after=all_p2 t3_held=all_p2 t3_after=all_p2 t4_held=all_p2 t4_after=all_p2 t5_held=all_p2 t5_after=all_p2 final=all_p2
+D8: t1_held=OTHER(~star_p2 d=117) t1_after=all_p2 t2_held=all_p2 t2_after=all_p2 t3_held=all_p2 t3_after=all_p2 t4_held=all_p2 t4_after=all_p2 t5_held=all_p2 t5_after=all_p2 t6_held=all_p2 t6_after=all_p2 final=all_p2
+H1: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 final=all_p1
+H2: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 final=all_p1
+H3: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 final=all_p1
+H4: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=OTHER(~all_p1_pickhint d=49) t2_after=all_p1 final=all_p1
+H5: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=OTHER(~all_p1_pickhint d=49) t2_after=all_p1 final=all_p1
+H6: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=OTHER(~all_p1_pickhint d=49) t3_after=all_p1 t4_held=OTHER(~all_p1_pickhint d=49) t4_after=OTHER(~star_p1 d=438) final=OTHER(~star_p1 d=438)
+H7: t1_held=OTHER(~all_p1_pickhint d=84) t1_after=all_p1 t2_held=OTHER(~all_p1_pickhint d=49) t2_after=all_p1 t3_held=OTHER(~all_p1_pickhint d=49) t3_after=OTHER(~star_p1 d=438) final=OTHER(~star_p1 d=438)
+K1: t1_held=star_p1 t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=home_leo t4_held=home_leo t4_after=home_leo t5_held=home_leo t5_after=OTHER(~all_p2 d=295) t6_held=OTHER(~all_p2 d=295) t6_after=OTHER(~all_p2 d=295) final=OTHER(~all_p2 d=295)
+K2: t1_held=star_p1 t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 t3_held=all_p1 t3_after=home_leo t4_held=home_leo t4_after=home_leo final=home_leo
+K3: t1_held=star_p1 t1_after=all_p1 t2_held=all_p1 t2_after=home_leo t3_held=home_leo t3_after=OTHER(~all_p2 d=295) final=OTHER(~all_p2 d=295)
+K4: t1_held=star_p1 t1_after=all_p1 t2_held=all_p1 t2_after=home_leo t3_held=home_leo t3_after=OTHER(~all_p2 d=295) t4_held=OTHER(~all_p2 d=295) t4_after=OTHER(~all_p2 d=295) t5_held=OTHER(~all_p2 d=295) t5_after=OTHER(~all_p2 d=295) final=OTHER(~all_p2 d=295)
+K5: t1_held=star_p1 t1_after=all_p1 t2_held=all_p1 t2_after=all_p1 final=all_p1
+M1: t1_held=OTHER(~all_p1_pickhint d=116) t1_after=star_p1 t2_held=OTHER(~all_p1_pickhint d=116) t2_after=star_p1 t3_held=OTHER(~all_p1_pickhint d=116) t3_after=star_p1 final=star_p1
+M2: t1_held=OTHER(~all_p1_pickhint d=116) t1_after=star_p1 t2_held=OTHER(~all_p1_pickhint d=116) t2_after=star_p1 t3_held=OTHER(~all_p1_pickhint d=116) t3_after=star_p1 t4_held=OTHER(~all_p1_pickhint d=116) t4_after=star_p1 final=star_p1
+P1: p1_dragged=star_p1 final=star_p1
+P2: p2_held=OTHER(~star_p1 d=117) final=all_p1
+P3: final=all_p1
+P4: final=star_p1
+R1: r1_after_house=all_p1 r0_radar=OTHER(~star_p1 d=439)
+G_500_124_103: final=all_p1
+G_500_36_70: final=all_p1
+G_700_124_103: final=all_p1
+G_700_36_70: final=all_p1
+G_800: final=OTHER(~star_p1 d=438)
+G_900: final=OTHER(~star_p1 d=438)
+G_1000_124_103: final=OTHER(~star_p1 d=438)
+G_1000_36_70: final=OTHER(~star_p2 d=367)
+G_1500_124_103: final=OTHER(~star_p1 d=438)
+G_2500_124_103: final=OTHER(~star_p1 d=438)

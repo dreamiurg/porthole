@@ -1,0 +1,31 @@
+tick 1000
+tap 118 100 300
+tick 500
+tap 41 77 300
+tick 500
+tap 67 125 300
+tick 700
+tap 67 52 300
+tick 500
+tap 118 125 300
+tick 900
+tap 93 85 300
+tick 900
+tap 79 69 300
+tick 900
+tap 80 145 300
+tick 1200
+tap 124 105 300
+tick 1200
+tap 126 43 300
+tick 1500
+tap 96 135 300
+tick 1200
+shot n01_page2
+tap 96 105 350 n02_car
+tick 400
+shot n03_car_400
+tick 800
+shot n04_car_1200
+tick 1200
+shot n05_car_2400

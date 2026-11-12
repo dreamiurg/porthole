@@ -1,0 +1,84 @@
+# Leo, 6, non-reader. Firm 1-3 s presses, mashes, double-taps.
+tick 600
+tap 118 102 900
+tick 200
+tap 42 78 1200
+tick 200
+tap 66 126 800
+tick 300
+tap 68 54 1000
+tick 300
+shot l01_name
+tap 118 126 1500
+tick 600
+# frog face, firm press
+tap 92 88 1800
+tick 600
+shot l02_age
+# age 6 (green "6"), firm
+tap 80 68 1400
+tick 600
+shot l03_code
+tap 80 146 1000
+tick 800
+shot l04_home
+# Leo presses the pumpkin firmly for 2 s
+down 78 104
+tick 1000
+midshot l05_holding_pumpkin
+tick 1000
+up
+tick 1500
+shot l06_pumpkin
+# the arrow picture at the top
+tap 79 21 1500
+tick 900
+shot l07_after_pumpkin_back
+# double tap on the many-pictures tile
+tap 124 106
+tick 80
+tap 124 106
+tick 700
+shot l08_lib_after_double
+# holds the big star 2.5 s
+down 127 42
+tick 1200
+midshot l09_holding_star
+tick 1300
+up
+tick 600
+shot l10_after_star_hold
+# wants the dog: firm 2 s press on Pets Club
+tap 36 72 2000
+tick 500
+shot l11_dog_press1
+# didn't open; presses again, 1.5 s
+tap 40 76 1500
+tick 500
+shot l12_dog_press2
+# presses the pumpkin he liked
+tap 80 104 1200
+tick 500
+shot l13_pumpkin_press
+# Radar
+tap 124 106 1000
+tick 500
+shot l14_radar_press
+# frustrated mash on the tiles
+tap 36 74
+tick 150
+tap 80 74
+tick 150
+tap 124 74
+tick 150
+tap 36 106
+tick 150
+tap 80 106
+tick 150
+tap 36 74
+tick 150
+tap 124 106
+tick 500
+shot l15_after_mash
+tick 200
+# process ends here, still in star mode

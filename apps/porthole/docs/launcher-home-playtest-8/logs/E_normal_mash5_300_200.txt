@@ -1,0 +1,22 @@
+t=11300 watch on
+t= 11300 DOWN 126,43 hold 300
+  t= 11340 NORMAL  CAPTION staricon  btnimg=ec8386 finger=down@126,43
+t= 11600 UP
+  t= 11640 STAR    -       check     btnimg=b73036 finger=up
+t= 11800 DOWN 126,43 hold 300
+  t= 11840 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 12100 UP
+  t= 12140 STAR    -       check     btnimg=b73036 finger=up
+t= 12300 DOWN 126,43 hold 300
+  t= 12340 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 12600 UP
+  t= 12640 STAR    -       check     btnimg=b73036 finger=up
+t= 12800 DOWN 126,43 hold 300
+  t= 12840 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 13100 UP
+  t= 13140 STAR    -       check     btnimg=b73036 finger=up
+t= 13300 DOWN 126,43 hold 300
+  t= 13340 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 13600 UP
+  t= 13640 STAR    -       check     btnimg=b73036 finger=up
+t=15100 watch off

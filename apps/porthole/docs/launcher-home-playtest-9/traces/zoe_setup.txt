@@ -1,0 +1,21 @@
+tick 3000
+tap 67 125 180
+tick 500
+tap 41 125 180
+tick 500
+tap 67 53 180
+tick 500
+tap 67 125 180
+tick 500
+tap 41 76 180
+tick 500
+shot z00_name
+tap 118 125 180
+tick 1200
+tap 64 55 180
+tick 1200
+tap 36 102 180
+tick 1200
+tap 80 145 180
+tick 2000
+shot z01_home

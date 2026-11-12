@@ -1,0 +1,15 @@
+reset
+profile Zoe 8
+wait 1500
+tap 124 104
+wait 2000
+tap 126 42
+wait 1000
+tap 36 104
+wait 1000
+tap 80 13
+wait 600
+tap 80 13
+wait 1000
+screen
+debug

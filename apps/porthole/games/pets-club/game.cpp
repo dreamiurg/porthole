@@ -149,7 +149,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
   else if (!strcmp(cmd, "older")) { save_.kidAge = 9; refreshBookList(); }
 }
 const char* Game::screenName() const {
-  static const char* N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "library", "read",
+  static const char* N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "pets_library", "read",
                             "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "hats", "street", "theme",
                             "confirm_farm", "farm", "shelter", "wall"};
   return N[screen_];

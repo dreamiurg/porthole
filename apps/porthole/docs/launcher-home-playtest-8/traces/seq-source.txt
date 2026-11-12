@@ -1,0 +1,18 @@
+# seq.sh NAME PRE tok... (tok = HOLD:GAP or tMS) ; prints per-press acted flag and gap since previous lift
+name=$1; shift; pre=$1; shift
+python3 tools/gen.py $name $pre "$@" && python3 tools/drive.py traces/$name.txt frames/$name | grep -v ' shot ' > logs/$name.txt
+python3 - logs/$name.txt <<'P'
+import sys,re
+L=open(sys.argv[1]).read().splitlines(); presses=[]; lastup=None; cur=None; change=None
+for l in L:
+    m=re.match(r't=\s*(\d+) DOWN',l)
+    if m:
+        t=int(m.group(1)); presses.append([t, None if lastup is None else t-lastup, None if change is None else t-change, False]); cur=presses[-1]
+    m=re.match(r't=\s*(\d+) UP',l)
+    if m:
+        lastup=int(m.group(1))
+        if cur[3]: change=lastup
+    if 'CAPTION' in l and cur: cur[3]=True
+mode=[l.split()[2] for l in L if l.startswith('  t=')][-1]
+print(sys.argv[1].split('/')[-1][:-4], " ".join(("ACT" if a else "ign")+f"(gap{g},chg{c})" for _,g,c,a in presses), "->", mode)
+P

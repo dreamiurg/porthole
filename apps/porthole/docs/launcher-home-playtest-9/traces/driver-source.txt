@@ -1,0 +1,27 @@
+import subprocess, sys, os
+from PIL import Image
+S = os.path.dirname(os.path.abspath(__file__))
+trace, outdir = sys.argv[1], sys.argv[2]
+os.makedirs(outdir, exist_ok=True)
+p = subprocess.Popen([os.path.join(S, "snap"), "--serve", "--fresh"], cwd=os.path.join(S, "run"),
+                     stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def cmd(l):
+    p.stdin.write((l + "\n").encode()); p.stdin.flush(); return p.stdout.readline().decode().strip()
+def shot(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    n = int(p.stdout.readline().decode().split()[1])
+    buf = b""
+    while len(buf) < n: buf += p.stdout.read(n - len(buf))
+    Image.frombytes("RGB", (480, 480), buf).save(os.path.join(outdir, name + ".png"))
+for line in open(trace):
+    line = line.split("#")[0].strip()
+    if not line: continue
+    w = line.split()
+    if w[0] == "shot": shot(w[1])
+    elif w[0] == "tap":  # tap X Y PRESSMS
+        cmd(f"down {w[1]} {w[2]}"); cmd(f"tick {w[3] if len(w)>3 else 120}"); cmd("up")
+    elif w[0] in ("down", "move", "up", "tick"):
+        r = cmd(line)
+        if r and r != "ok": print(line, "->", r)
+    else: print("unknown", line)
+p.stdin.close(); p.wait()

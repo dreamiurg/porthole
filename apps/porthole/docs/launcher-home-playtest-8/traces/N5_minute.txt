@@ -1,0 +1,88 @@
+tick 1000
+tap 118 100 300
+tick 500
+tap 41 77 300
+tick 500
+tap 67 125 300
+tick 700
+tap 67 52 300
+tick 500
+tap 118 125 300
+tick 900
+tap 93 85 300
+tick 900
+tap 79 69 300
+tick 900
+tap 80 145 300
+tick 1200
+tap 124 105 300
+tick 1200
+# Leo enters star mode, goes to page 2 for the red car
+tap 126 43 300
+tick 1500
+tap 96 135 300
+tick 1200
+tap 96 105 350
+tick 400
+# Leo can't read the yellow words: he taps the car again, twice
+tick 800
+tap 96 105 300
+tick 250
+tap 96 105 300
+tick 300
+tick 900
+# the hopping arrow: he follows it
+tap 66 137 300
+tick 1000
+# sister: "take the pumpkin off"
+tap 82 103 300
+tick 900
+tap 96 137 300
+tick 1000
+tap 97 103 350
+tick 900
+tap 128 42 300
+tick 1200
+tap 80 15 300
+tick 1500
+tap 36 105 300 o01_rally
+tick 2500
+tick 3000
+tap 80 145 300 o04_house
+tick 1500
+tap 37 73 300 o06_car
+tick 2500
+tick 2000
+tap 45 129 300 q01_rally_home
+tick 1500
+shot q02_home
+tap 124 105 350
+tick 1200
+shot q03_library
+tap 126 43 350
+tick 1500
+shot q04_star
+# Leo double-taps the soccer kid's gold star (bottom-left), wants it off
+tap 37 105 300
+tick 200
+tap 37 105 300
+tick 900
+shot q05_soccer
+# then the radar (bottom-right): gold
+tap 124 105 300
+tick 900
+shot q06_radar
+# triple-tap the check
+tap 126 43 300 q07_check
+tick 150
+tap 126 43 300
+tick 150
+tap 126 43 300
+tick 1200
+shot q08_after_check
+tap 80 15 300
+tick 1500
+shot q09_home
+tap 124 105 300
+tick 1200
+shot q10_library_again

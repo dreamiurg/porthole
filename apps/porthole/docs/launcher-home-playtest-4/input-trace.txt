@@ -1,0 +1,1791 @@
+# Input trace, launcher star mode playtest 4. Raw snap --serve lines as sent (down X Y / move X Y / up / tick MS),
+# coordinates in logical px (0-159). 'frame NAME' = native 480x480 frame saved as <build>_NAME.png in this folder
+# (only a subset of frames was kept; prefix b1_/b2_/b3_ = build 1/2/3). '# start' = a new snap --serve process;
+# '# quit' = stdin closed (process restart). The one 'args' line in build 3 is a harness typo (unknown command, no effect).
+
+########## BUILD 1: snap sha256 4b3b21c3..., cwd apps/porthole (shared build/host saves; abandoned when a concurrent CI run replaced the saves) ##########
+# start snap --serve --fresh Thu Nov 12 00:02:43 2026
+tick 500
+frame a00_start
+down 118 100
+tick 100
+up
+tick 33
+down 41 77
+tick 100
+up
+tick 33
+down 67 125
+tick 100
+up
+tick 33
+tick 300
+frame a01_nz
+down 67 53
+tick 100
+up
+tick 33
+down 118 125
+tick 100
+up
+tick 33
+tick 400
+frame a02_age
+down 92 85
+tick 1500
+up
+tick 33
+tick 400
+frame a03_next
+down 79 69
+tick 100
+up
+tick 33
+tick 500
+frame a04_after_age
+down 80 145
+tick 100
+up
+tick 33
+tick 800
+frame a05_after_skip
+down 125 104
+tick 100
+up
+tick 33
+tick 600
+frame a06_alltile
+down 126 42
+tick 1200
+up
+tick 33
+tick 600
+frame a07_starbtn
+down 36 72
+tick 100
+up
+tick 33
+tick 400
+frame a08_tap_dog
+down 80 70
+tick 2000
+up
+tick 33
+tick 300
+frame a09_press_pets2s
+down 124 72
+tick 100
+up
+tick 33
+down 124 72
+tick 100
+up
+tick 33
+tick 300
+frame a10_double_football
+down 36 105
+tick 1000
+up
+tick 33
+tick 200
+down 80 105
+tick 3000
+up
+tick 33
+tick 300
+frame a11_all_off_p1
+down 36 72
+tick 100
+up
+tick 33
+tick 200
+frame b01
+down 80 72
+tick 100
+up
+tick 33
+tick 200
+frame b02
+down 124 72
+tick 100
+up
+tick 33
+tick 200
+frame b03
+down 36 105
+tick 100
+up
+tick 33
+tick 200
+frame b04
+down 80 105
+tick 100
+up
+tick 33
+tick 50
+frame b05_t50
+tick 300
+frame b05_t350
+tick 1000
+frame b05_t1350
+down 96 131
+tick 100
+up
+tick 33
+tick 500
+frame a12_page2
+down 36 72
+tick 100
+up
+tick 33
+tick 100
+frame a13_star6
+tick 900
+frame a13_star6_1s
+tick 3000
+frame a14_toast3s
+down 64 131
+tick 100
+up
+tick 33
+tick 400
+frame a15_back_p1
+down 38 70
+tick 1500
+up
+tick 33
+down 82 74
+tick 1200
+up
+tick 33
+down 120 70
+tick 2500
+up
+tick 33
+down 34 108
+tick 1800
+up
+tick 33
+tick 300
+frame c01_one_left
+down 78 108
+tick 1500
+up
+tick 33
+tick 300
+frame c02_last_off
+down 40 75
+tick 70
+up
+tick 90
+down 41 76
+tick 70
+up
+tick 90
+down 85 70
+tick 70
+up
+tick 90
+down 120 105
+tick 70
+up
+tick 90
+down 60 42
+tick 70
+up
+tick 90
+down 30 90
+tick 70
+up
+tick 90
+down 100 88
+tick 70
+up
+tick 90
+down 80 105
+tick 70
+up
+tick 90
+down 80 106
+tick 70
+up
+tick 90
+down 36 108
+tick 70
+up
+tick 90
+down 124 72
+tick 70
+up
+tick 90
+down 130 100
+tick 70
+up
+tick 90
+down 20 80
+tick 70
+up
+tick 90
+down 140 80
+tick 70
+up
+tick 90
+down 80 140
+tick 70
+up
+tick 90
+down 55 130
+tick 70
+up
+tick 90
+down 36 72
+tick 70
+up
+tick 90
+down 80 70
+tick 70
+up
+tick 90
+down 124 108
+tick 70
+up
+tick 90
+down 70 60
+tick 70
+up
+tick 90
+down 90 60
+tick 70
+up
+tick 90
+down 38 110
+tick 70
+up
+tick 90
+tick 300
+frame c03_after_mash
+down 124 72
+tick 1500
+up
+tick 33
+tick 300
+frame c04_radar_only
+down 124 105
+tick 1500
+up
+tick 33
+tick 300
+frame c05_radar_off
+down 36 72
+tick 100
+up
+tick 33
+down 80 72
+tick 100
+up
+tick 33
+down 124 72
+tick 100
+up
+tick 33
+down 36 105
+tick 100
+up
+tick 33
+down 80 105
+tick 100
+up
+tick 33
+tick 200
+frame c06_all_off_again
+down 40 70
+tick 100
+up
+tick 33
+down 44 74
+tick 100
+up
+tick 33
+down 84 108
+tick 100
+up
+tick 33
+tick 300
+frame c07_premash_check
+down 126 42
+tick 1500
+up
+tick 33
+tick 100
+frame c08_check_100
+tick 600
+frame c08_check_700
+down 80 12
+tick 1500
+up
+tick 33
+tick 600
+frame c09_home3
+down 80 72
+tick 1200
+up
+tick 33
+tick 1500
+frame c10_game_open
+down 80 145
+tick 1500
+up
+tick 33
+tick 1200
+frame c11_back_from_game
+down 125 104
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 1000
+up
+tick 33
+tick 400
+frame d01_edit
+down 80 72
+tick 1500
+up
+tick 33
+down 124 72
+tick 1500
+up
+tick 33
+tick 200
+frame d02_one_left
+down 36 105
+tick 1500
+up
+tick 33
+tick 300
+frame d03_all_off
+down 80 12
+tick 1500
+up
+tick 33
+tick 600
+frame d04_house
+down 80 33
+tick 100
+up
+tick 33
+tick 600
+frame d05_home
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame d06_bright
+down 80 67
+tick 100
+up
+tick 33
+tick 600
+frame d05_home
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame d06_bright
+down 80 122
+tick 100
+up
+tick 33
+tick 600
+frame d07_after_auto
+down 80 105
+tick 1200
+up
+tick 33
+tick 500
+frame e00_all
+down 126 42
+tick 1000
+up
+tick 33
+tick 400
+frame e01_edit
+down 80 72
+tick 1500
+up
+tick 33
+down 124 72
+tick 1500
+up
+tick 33
+tick 200
+frame e02_one_left
+down 36 105
+tick 1500
+up
+tick 33
+tick 300
+frame e03_all_off
+down 80 12
+tick 1500
+up
+tick 33
+tick 600
+frame e04_house
+down 126 42
+tick 1000
+up
+tick 33
+tick 400
+down 80 72
+tick 1500
+up
+tick 33
+down 124 72
+tick 1500
+up
+tick 33
+down 36 105
+tick 1500
+up
+tick 33
+tick 300
+frame e05_all_off2
+down 40 70
+tick 100
+up
+tick 33
+down 120 108
+tick 100
+up
+tick 33
+down 80 100
+tick 100
+up
+tick 33
+down 81 101
+tick 100
+up
+tick 33
+down 30 108
+tick 100
+up
+tick 33
+down 128 70
+tick 100
+up
+tick 33
+tick 300
+frame e06_mashed
+down 126 42
+tick 1500
+up
+tick 33
+tick 500
+frame e07_check
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame e08_home
+down 124 72
+tick 100
+up
+tick 33
+tick 500
+frame f00_all
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+frame f01_pets_on
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+frame f02_rally_on
+down 126 42
+tick 100
+up
+tick 33
+tick 500
+frame f03_check
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame f04_home
+down 80 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame f05_edit_p2
+down 64 131
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 400
+frame f06_pets_off
+down 36 72
+tick 100
+up
+tick 33
+tick 400
+frame f07_pets_on
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame f08_home
+down 67 123
+tick 100
+up
+tick 33
+tick 500
+down 51 128
+tick 100
+up
+tick 33
+tick 1200
+frame f09_out
+down 102 105
+tick 100
+up
+tick 33
+tick 500
+frame f10_all
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame f11_edit
+down 36 72
+tick 100
+up
+tick 33
+tick 500
+frame f12_pets_off
+down 36 72
+tick 100
+up
+tick 33
+tick 500
+frame f13_pets_on
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame f14_home
+down 102 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame g00_edit
+down 80 72
+tick 300
+frame g01_tile_pressed
+move 80 90
+tick 100
+move 80 140
+tick 300
+up
+tick 300
+frame g02_dragoff_tile
+down 126 42
+tick 400
+move 100 60
+tick 100
+move 60 60
+tick 200
+up
+tick 400
+frame g03_dragoff_check
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame g04_allgames
+down 126 42
+tick 300
+frame g05_star_down
+tick 2500
+frame g06_star_held
+up
+tick 400
+frame g07_star_up
+down 80 72
+tick 100
+up
+tick 33
+tick 300
+down 124 105
+tick 100
+up
+tick 33
+tick 300
+frame h00_before_quit
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:06:24 2026
+tick 1000
+frame h01_restart
+# quit (stdin closed)
+
+########## BUILD 2: snap sha256 d12ad53c..., isolated cwd copy ##########
+# start snap --serve --fresh Thu Nov 12 00:07:47 2026
+tick 500
+frame A00_start
+down 118 100
+tick 100
+up
+tick 33
+down 41 77
+tick 100
+up
+tick 33
+down 67 125
+tick 100
+up
+tick 33
+tick 300
+down 67 53
+tick 100
+up
+tick 33
+tick 200
+frame A01_name
+down 118 125
+tick 100
+up
+tick 33
+tick 400
+down 92 85
+tick 1500
+up
+tick 33
+tick 400
+down 79 69
+tick 100
+up
+tick 33
+tick 500
+frame A02_code
+down 80 145
+tick 100
+up
+tick 33
+tick 800
+frame A03_home
+down 125 104
+tick 1500
+up
+tick 33
+tick 500
+frame A04_all
+down 126 42
+tick 1800
+up
+tick 33
+tick 400
+frame A05_edit
+down 36 72
+tick 1500
+up
+tick 33
+down 80 72
+tick 2000
+up
+tick 33
+down 124 72
+tick 1200
+up
+tick 33
+down 36 105
+tick 2500
+up
+tick 33
+tick 300
+frame A06_one_left
+down 80 105
+tick 1500
+up
+tick 33
+tick 100
+frame A07_last_off
+tick 2000
+frame A08_last_off_2s
+down 60 42
+tick 70
+up
+tick 90
+down 45 42
+tick 70
+up
+tick 90
+down 75 40
+tick 70
+up
+tick 90
+down 90 42
+tick 70
+up
+tick 90
+down 20 80
+tick 70
+up
+tick 90
+down 140 80
+tick 70
+up
+tick 90
+down 140 100
+tick 70
+up
+tick 90
+down 18 100
+tick 70
+up
+tick 90
+down 80 140
+tick 70
+up
+tick 90
+down 55 130
+tick 70
+up
+tick 90
+down 110 135
+tick 70
+up
+tick 90
+down 58 88
+tick 70
+up
+tick 90
+down 102 88
+tick 70
+up
+tick 90
+down 80 150
+tick 70
+up
+tick 90
+down 50 20
+tick 70
+up
+tick 90
+down 110 20
+tick 70
+up
+tick 90
+tick 300
+frame A09_mashed_bg
+down 36 72
+tick 1200
+up
+tick 33
+down 124 72
+tick 1200
+up
+tick 33
+down 36 105
+tick 1200
+up
+tick 33
+down 124 105
+tick 1200
+up
+tick 33
+tick 300
+frame A10_zero
+down 126 42
+tick 2000
+up
+tick 33
+tick 100
+frame A11_check_100
+tick 800
+frame A12_check_900
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame A13_home
+down 36 72
+tick 2000
+up
+tick 33
+tick 1500
+frame A14_game
+down 80 80
+tick 100
+up
+tick 33
+tick 1500
+frame A15_pets_in
+down 80 12
+tick 1500
+up
+tick 33
+tick 1200
+frame B00_home
+down 125 104
+tick 1500
+up
+tick 33
+tick 500
+down 126 42
+tick 1500
+up
+tick 33
+tick 400
+down 36 72
+tick 1500
+up
+tick 33
+down 80 72
+tick 1500
+up
+tick 33
+down 124 72
+tick 1500
+up
+tick 33
+down 36 105
+tick 1500
+up
+tick 33
+down 80 105
+tick 1500
+up
+tick 33
+tick 300
+frame B01_zero
+down 64 50
+tick 100
+up
+tick 33
+down 100 50
+tick 100
+up
+tick 33
+down 30 60
+tick 100
+up
+tick 33
+tick 300
+frame B02_mash
+down 80 12
+tick 2000
+up
+tick 33
+tick 100
+frame B03_house_100
+tick 600
+frame B04_house_700
+tick 300
+frame B05_all_before
+down 126 42
+tick 1200
+up
+tick 33
+tick 400
+frame B06_edit_enter
+down 36 72
+tick 1500
+up
+tick 33
+tick 300
+frame B07_one_on
+down 126 42
+tick 1500
+up
+tick 33
+tick 500
+frame B08_all
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame B09_home
+down 102 72
+tick 1000
+up
+tick 33
+tick 500
+frame C00_all
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+frame C01_p2
+down 80 105
+tick 300
+frame C02_rally_press
+up
+tick 300
+frame C03_rally_on
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame C04_after_check
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame C05_home
+down 125 72
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 72
+tick 100
+up
+tick 33
+tick 200
+down 124 72
+tick 100
+up
+tick 33
+tick 200
+down 36 105
+tick 100
+up
+tick 33
+tick 300
+frame C06_five
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+frame C07_full_toast
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame C08_home5
+down 36 105
+tick 600
+frame C09_drag_start
+move 36 95
+tick 100
+move 36 85
+tick 100
+move 36 75
+tick 100
+move 36 70
+tick 300
+frame C10_drag_mid
+up
+tick 1500
+frame C11_drag_end
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 100
+up
+tick 33
+tick 400
+frame C12_rally_off
+down 80 105
+tick 100
+up
+tick 33
+tick 400
+frame C13_rally_on
+down 64 131
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 400
+frame C14_pets_reon
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame C15_home
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+down 80 72
+tick 100
+up
+tick 33
+tick 300
+frame R1a_unsaved
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:09:25 2026
+tick 1000
+frame R1b_restart
+down 80 67
+tick 1500
+up
+tick 33
+tick 700
+frame R1c_home
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+frame R2a_edit
+down 126 42
+tick 100
+up
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:09:37 2026
+tick 1000
+down 80 67
+tick 1500
+up
+tick 33
+tick 700
+frame R2b_home
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 250
+down 80 72
+tick 100
+up
+tick 33
+tick 250
+down 124 72
+tick 100
+up
+tick 33
+tick 250
+down 36 105
+tick 100
+up
+tick 33
+tick 250
+down 80 105
+tick 100
+up
+tick 33
+tick 250
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+frame R3a_zero_p2
+down 126 42
+tick 100
+up
+tick 33
+tick 100
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:09:45 2026
+tick 1000
+down 80 67
+tick 1500
+up
+tick 33
+tick 700
+frame R3b_home
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+frame R3c_all
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame R3d_edit
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+frame R4a_one
+tick 60000
+frame R4b_60s
+tick 240000
+frame R4c_300s
+down 80 72
+tick 100
+up
+tick 33
+tick 300
+frame R4d_wake_tap
+tick 600
+frame R4e_wake_after
+tick 300000
+frame R5a_10min
+tick 300000
+frame R5b_15min
+tick 120000
+frame R5c_17min
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+frame R6a_p2
+down 80 12
+tick 1500
+up
+tick 33
+tick 500
+frame R6b_house
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame R6c_home
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+frame R7a_all
+down 126 42
+tick 100
+up
+tick 33
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame R7b_dbl_star_fast
+down 80 12
+tick 100
+up
+tick 33
+tick 400
+frame R7c_after_house
+down 126 42
+tick 100
+up
+tick 33
+tick 250
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+frame R7d_dbl_star_250
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 80 12
+tick 100
+up
+tick 33
+tick 120
+down 80 12
+tick 100
+up
+tick 33
+tick 600
+frame R7e_dbl_house_edit
+down 124 105
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+up
+tick 33
+tick 250
+down 80 72
+tick 100
+up
+tick 33
+tick 250
+down 124 72
+tick 100
+up
+tick 33
+tick 250
+down 36 105
+tick 100
+up
+tick 33
+tick 250
+down 80 105
+tick 100
+up
+tick 33
+tick 250
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 36 72
+tick 100
+frame T1_down
+up
+tick 33
+frame T2_up
+tick 150
+frame T3_150
+tick 300
+frame T4_450
+tick 1500
+frame T5_2s
+tick 2000
+frame T6_4s
+# quit (stdin closed)
+
+########## BUILD 3 (final, = commit c1c5059): snap sha256 4afd4802..., isolated cwd copy ##########
+# start snap --serve --fresh Thu Nov 12 00:12:05 2026
+tick 500
+down 118 100
+tick 100
+up
+tick 33
+down 41 77
+tick 100
+up
+tick 33
+down 67 125
+tick 100
+up
+tick 33
+tick 300
+down 67 53
+tick 100
+up
+tick 33
+tick 200
+down 118 125
+tick 100
+up
+tick 33
+tick 400
+down 92 85
+tick 1500
+up
+tick 33
+tick 400
+down 79 69
+tick 100
+up
+tick 33
+tick 500
+down 80 145
+tick 100
+up
+tick 33
+tick 800
+frame X00_home
+down 125 104
+tick 1500
+up
+tick 33
+tick 500
+frame X01_all
+down 126 42
+tick 1800
+up
+tick 33
+tick 400
+frame X02_edit
+down 36 72
+tick 1500
+up
+tick 33
+down 80 72
+tick 2000
+up
+tick 33
+down 124 72
+tick 1200
+up
+tick 33
+down 36 105
+tick 2500
+up
+tick 33
+down 80 105
+tick 1500
+up
+tick 33
+tick 300
+frame X03_zero
+down 60 42
+tick 100
+up
+tick 33
+down 45 42
+tick 100
+up
+tick 33
+down 90 42
+tick 100
+up
+tick 33
+down 80 150
+tick 100
+up
+tick 33
+down 50 20
+tick 100
+up
+tick 33
+down 110 20
+tick 100
+up
+tick 33
+down 58 140
+tick 100
+up
+tick 33
+tick 300
+frame X04_mash_bg
+down 126 42
+tick 2000
+up
+tick 33
+tick 100
+frame X05_check
+tick 800
+frame X06_all
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame X07_home
+down 124 105
+tick 1200
+up
+tick 33
+tick 500
+frame X08_all
+down 126 42
+tick 1500
+up
+tick 33
+tick 400
+frame X09_edit_reenter
+down 124 105
+tick 1500
+up
+tick 33
+tick 300
+frame X10_radar_on
+down 126 42
+tick 1500
+up
+tick 33
+tick 500
+frame X11_all
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame X12_home
+down 102 72
+tick 1200
+up
+tick 33
+tick 500
+down 126 42
+tick 1500
+up
+tick 33
+tick 400
+down 124 105
+tick 1500
+up
+tick 33
+tick 300
+frame Y01_zero
+down 80 12
+tick 1500
+up
+tick 33
+tick 500
+frame Y02_house_all
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame Y03_home
+down 102 72
+tick 1200
+up
+tick 33
+tick 500
+down 126 42
+tick 1500
+up
+tick 33
+tick 400
+down 124 105
+tick 1500
+up
+tick 33
+tick 300
+down 126 42
+tick 1500
+up
+tick 33
+tick 500
+frame Y04_check_all
+down 80 12
+tick 1500
+up
+tick 33
+tick 700
+frame Y05_home
+down 124 105
+tick 1200
+up
+tick 33
+tick 500
+down 126 42
+tick 1000
+up
+tick 33
+tick 400
+frame Z00_edit
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 400
+frame Z01_rally_label
+up
+tick 300
+frame Z02_rally_on
+down 126 42
+tick 100
+up
+tick 33
+tick 500
+down 80 12
+tick 100
+up
+tick 33
+tick 700
+frame Z03_home
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:12:39 2026
+tick 1000
+frame Z04_restart_picker
+down 80 67
+tick 1500
+up
+tick 33
+tick 700
+frame Z05_restart_home
+down 124 72
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+down 96 131
+tick 100
+up
+tick 33
+tick 400
+down 80 105
+tick 100
+up
+tick 33
+tick 300
+down 36 72
+tick 100
+up
+tick 33
+tick 300
+frame Z06_p2_unsaved
+# quit (stdin closed)
+# start snap --serve  Thu Nov 12 00:12:48 2026
+tick 1000
+down 80 67
+tick 1500
+up
+tick 33
+tick 700
+frame Z07_restart_home
+down 124 72
+tick 100
+up
+tick 33
+tick 500
+down 126 42
+tick 100
+up
+tick 33
+tick 400
+args
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+down 96 131
+tick 100
+up
+tick 33
+down 64 131
+tick 100
+up
+tick 33
+tick 400
+frame Z08_arrow_mash

@@ -1,0 +1,16 @@
+reset
+profile Ada 7
+tap 80 11
+wait 600
+down 80 7
+wait 5200
+up
+wait 600
+tap 106 131
+wait 600
+tap 124 35
+wait 600
+tap 80 117
+wait 600
+screen
+ui

@@ -1,33 +1,52 @@
-# The launcher's picture grid: six games a page, ten on two pages; a finger on a tile names its game; sliding off
-# opens nothing; a tap opens the game and Home comes back to the same page.
+# Home and the Library. Home is the kid's five favorites (by default the first five games) and "All games"; the
+# Library is every game, six a page, ten on two pages. A finger on a tile names its game (or "All games"); sliding
+# off opens nothing; a game opened in the Library comes back to its page, and the home button goes back to Home.
 reset
 tilt 0 1000 0
 profile Sam 8
 wait 600
 expect-screen launcher
-ui-check launcher_page1
-snap lp0_page1
-down 36 72
+expect home_tiles=6
+expect home_first=crago
+ui-check launcher_home
+snap lp0_home
+down 124 104
 wait 200
-snap lp1_caption
+snap lp1_caption_all
 move 80 150
 up
 wait 600
 expect-screen launcher
+tap 124 104
+wait 600
+expect-screen library
+ui-check library_page1
+snap lp2_library1
+down 124 104
+wait 200
+snap lp3_caption_radar
+move 80 150
+up
+wait 600
+expect-screen library
 tap 96 135
 wait 600
-expect-screen launcher
-ui-check launcher_page2
-snap lp2_page2
+expect-screen library
+ui-check library_page2
+snap lp4_library2
 tap 80 104
 wait 600
 expect-screen race_tracks
 tap 54 130
 wait 600
-expect-screen launcher
-snap lp3_back_on_page2
+expect-screen library
+snap lp5_back_on_page2
 tap 64 135
 wait 600
+expect-screen library
+tap 80 12
+wait 600
+expect-screen launcher
 tap 36 72
 wait 600
 expect-screen *

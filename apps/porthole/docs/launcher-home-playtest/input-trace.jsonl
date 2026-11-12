@@ -1,0 +1,642 @@
+{"start": "snap --serve --fresh", "t": 1794436844.285487}
+{"cmd": "tick 1500"}
+{"cmd": "frame a01_start"}
+{"cmd": "down 67 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame a02_nz"}
+{"cmd": "down 41 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 67 53"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 67 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 41 77"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame a03_zoe"}
+{"cmd": "down 119 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a04_afterok"}
+{"cmd": "down 123 56"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a05_afterface"}
+{"cmd": "down 31 101"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a06_afterage"}
+{"cmd": "down 80 145"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame a07_afterskip"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 200"}
+{"cmd": "frame a08_grid_200"}
+{"cmd": "tick 800"}
+{"cmd": "frame a08_grid"}
+{"cmd": "down 95 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a09_page2"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "frame a10_rally_300"}
+{"cmd": "tick 1500"}
+{"cmd": "frame a10_rally"}
+{"cmd": "down 46 128"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a11_back_from_rally"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a12_star_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a12_star"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a13_car_in_pick_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a13_car_in_pick"}
+{"cmd": "down 64 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a14_pick_p1"}
+{"cmd": "down 124 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a15_unstar_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a15_unstar"}
+{"cmd": "down 95 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a16_star_rally_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a16_star_rally"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a17_check_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a17_check"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a18_home_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a18_home"}
+{"cmd": "down 66 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a19_namecard_150"}
+{"cmd": "tick 800"}
+{"cmd": "frame a19_namecard"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a20_relogin"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a21_sunmoon_150"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a21_sunmoon"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a22_back_from_bright"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "frame a23_homebtn_150"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a23_homebtn"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame a24_unstar_pets"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a25_home_mid_pick"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a26_home_no_pets"}
+{"cmd": "down 104 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a27_lib_from4"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 36 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame a28_unstar3"}
+{"cmd": "down 95 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame a29_zero"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame a30_lib_zero"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a31_home_zero"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a32_lib_from0"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 95 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame a33_pick_rally_star"}
+{"cmd": "down 64 135"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame a34_pick_p1"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a35_home_new"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame a36_rally_from_home"}
+{"cmd": "down 46 128"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame a37_back_to"}
+{"cmd": "quit"}
+{"start": "snap --serve ", "t": 1794436984.5537217}
+{"cmd": "tick 1500"}
+{"cmd": "frame b01_restart"}
+{"cmd": "down 80 67"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame b02_restart_home"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 300"}
+{"cmd": "frame c01_hold_300"}
+{"cmd": "tick 400"}
+{"cmd": "frame c01_hold_700"}
+{"cmd": "tick 800"}
+{"cmd": "frame c01_hold_1500"}
+{"cmd": "up"}
+{"cmd": "tick 200"}
+{"cmd": "frame c01_hold_up_200"}
+{"cmd": "tick 1300"}
+{"cmd": "frame c01_hold_up_1500"}
+{"cmd": "down 46 128"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 300"}
+{"cmd": "move 30 90"}
+{"cmd": "tick 50"}
+{"cmd": "move 20 130"}
+{"cmd": "tick 50"}
+{"cmd": "frame c02_dragoff_mid"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame c02_dragoff_after"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 300"}
+{"cmd": "move 80 72"}
+{"cmd": "tick 100"}
+{"cmd": "frame c03_drag_to_star"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame c03_drag_to_star_after"}
+{"cmd": "down 104 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame d01_lib"}
+{"cmd": "down 66 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame d02_tap_banner"}
+{"cmd": "down 112 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame d03_tap_gap"}
+{"cmd": "down 139 31"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame d04_tap_star_corner"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 120"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame d05_dbl_star"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame d06_dbl_check"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame e00_who"}
+{"cmd": "down 80 93"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame e01_new"}
+{"cmd": "down 119 101"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 41 77"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 67 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "down 67 53"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 400"}
+{"cmd": "frame e02_leo"}
+{"cmd": "down 119 125"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 93 88"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame e03_age"}
+{"cmd": "down 80 70"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame e04_pin"}
+{"cmd": "down 80 145"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame e05_leo_home"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 2000"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame e06_leo_lib"}
+{"cmd": "down 128 44"}
+{"cmd": "tick 1500"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame e07_leo_starmode"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 1800"}
+{"cmd": "up"}
+{"cmd": "tick 500"}
+{"cmd": "frame e08_leo_radar1"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 1500"}
+{"cmd": "up"}
+{"cmd": "tick 500"}
+{"cmd": "frame e09_leo_radar2"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 500"}
+{"cmd": "frame e10_leo_dog_dbl"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "frame e11_dog_down"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame e11_dog_up100"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 60"}
+{"cmd": "up"}
+{"cmd": "tick 100"}
+{"cmd": "frame e11_dog_second"}
+{"cmd": "tick 600"}
+{"cmd": "frame e11_dog_settle"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 80"}
+{"cmd": "frame f01_ref_down"}
+{"cmd": "up"}
+{"cmd": "tick 40"}
+{"cmd": "frame f01_ref_40"}
+{"cmd": "tick 80"}
+{"cmd": "frame f01_ref_120"}
+{"cmd": "tick 120"}
+{"cmd": "frame f01_ref_240"}
+{"cmd": "tick 200"}
+{"cmd": "frame f01_ref_440"}
+{"cmd": "tick 400"}
+{"cmd": "frame f01_ref_840"}
+{"cmd": "down 127 43"}
+{"cmd": "tick 2500"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame f02_hold_check"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 2000"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame f03_leo_pets"}
+{"cmd": "down 80 80"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame f04_pets_after_start"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 1500"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame f05_back_from_pets"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 150"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame f06_mash_home4"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 300"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame f07_mash_home6"}
+{"cmd": "down 80 93"}
+{"cmd": "tick 1500"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame g01_leo_home"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 1200"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 96 135"}
+{"cmd": "tick 2000"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame g02_leo_p2"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 2500"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame g03_leo_rally"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame g04_back"}
+{"cmd": "down 80 80"}
+{"cmd": "tick 1500"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame g05_leo_home"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 1200"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 96 135"}
+{"cmd": "tick 2000"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame g06_leo_p2"}
+{"cmd": "down 80 104"}
+{"cmd": "tick 2500"}
+{"cmd": "up"}
+{"cmd": "tick 1500"}
+{"cmd": "frame g07_leo_rally"}
+{"cmd": "down 46 128"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame h00"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 36 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 500"}
+{"cmd": "frame h01_pick_unstar_ship"}
+{"cmd": "quit"}
+{"start": "snap --serve ", "t": 1794437122.782236}
+{"cmd": "tick 1500"}
+{"cmd": "frame h02_restart"}
+{"cmd": "down 80 80"}
+{"cmd": "tick 300"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame h03_leo_home_after_restart"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "down 80 72"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 500"}
+{"cmd": "frame h04_pick_unstar_puppy"}
+{"cmd": "quit"}
+{"start": "snap --serve ", "t": 1794437131.663459}
+{"cmd": "tick 1500"}
+{"cmd": "down 80 80"}
+{"cmd": "tick 300"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "frame h05_leo_home_after_restart2"}
+{"cmd": "down 102 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame i01_gap_tap"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 130 100"}
+{"cmd": "tick 40"}
+{"cmd": "move 110 100"}
+{"cmd": "tick 40"}
+{"cmd": "move 80 100"}
+{"cmd": "tick 40"}
+{"cmd": "move 50 100"}
+{"cmd": "tick 40"}
+{"cmd": "move 30 100"}
+{"cmd": "tick 40"}
+{"cmd": "up"}
+{"cmd": "tick 800"}
+{"cmd": "frame i02_swipe_left"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 200"}
+{"cmd": "frame j01_press_star"}
+{"cmd": "move 150 150"}
+{"cmd": "tick 40"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame j01b_after"}
+{"cmd": "down 80 13"}
+{"cmd": "tick 100"}
+{"cmd": "up"}
+{"cmd": "tick 1000"}
+{"cmd": "down 124 104"}
+{"cmd": "tick 200"}
+{"cmd": "frame j02_press_lib"}
+{"cmd": "move 150 150"}
+{"cmd": "tick 40"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "down 126 42"}
+{"cmd": "tick 200"}
+{"cmd": "frame j03_press_bright"}
+{"cmd": "move 150 150"}
+{"cmd": "tick 40"}
+{"cmd": "up"}
+{"cmd": "tick 600"}
+{"cmd": "frame j04_after"}

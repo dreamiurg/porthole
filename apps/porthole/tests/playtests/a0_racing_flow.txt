@@ -1,12 +1,14 @@
-# Rally from the launcher's second page through every page: cards, lesson, grip, countdown, race, pause and its
+# Rally from the Library's second page through every page: cards, lesson, grip, countdown, race, pause and its
 # confirmations, results, replay and home. Natural input only, except the one results fixture marked below.
 reset
 tilt 0 1000 0
 profile Sam 8
 wait 600
+tap 124 104
+wait 600
 tap 96 135
 wait 600
-expect-screen launcher
+expect-screen library
 ui-check rally_launcher
 snap ra00_launcher
 tap 80 104
@@ -110,5 +112,5 @@ wait 600
 expect-screen race_tracks
 tap 54 130
 wait 600
-expect-screen launcher
+expect-screen library
 sheet flow

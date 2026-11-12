@@ -1,0 +1,18 @@
+# supplementary QA (not first play): geometry of Home, Library, star mode
+reset
+profile Zoe 8
+wait 800
+echo HOME
+ui
+tap 124 105
+wait 800
+echo LIBRARY
+ui
+tap 126 42
+wait 600
+echo STARMODE
+ui
+tap 124 105
+wait 100
+echo FULL
+ui

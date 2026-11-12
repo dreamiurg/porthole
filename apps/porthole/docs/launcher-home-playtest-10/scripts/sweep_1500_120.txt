@@ -1,0 +1,33 @@
+reset
+profile Leo 6
+wait 1500
+down 124 104
+wait 120
+up
+wait 1380
+screen
+down 124 104
+wait 120
+up
+wait 1380
+screen
+down 124 104
+wait 120
+up
+wait 1380
+screen
+down 124 104
+wait 120
+up
+wait 1380
+screen
+down 124 104
+wait 120
+up
+wait 1380
+screen
+down 124 104
+wait 120
+up
+wait 1380
+screen

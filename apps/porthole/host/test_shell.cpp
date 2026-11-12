@@ -6,6 +6,7 @@
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
+#include <initializer_list>
 #include "games/biscuit/pet.h"
 #include "games/pets-club/pet.h"
 #include "crc32.h"
@@ -416,14 +417,14 @@ static void biscuitCrash() {
   MemStore clean; setup(clean); int base = clean.writes;
   shell::Profiles p; boot(clean, p);
   int total = clean.writes - base;
-  assert(total == 10);   // marker, erase "save" (Pets Club); erase s0 twice, p0, biscuit/s0, marker, three erases
+  assert(total == 11);   // marker, erase "save" (Pets Club); erase s0 twice, f0, p0, biscuit/s0, marker, three erases
   for (int n = 0; n <= total; n++) {
     MemStore st; setup(st); st.budget = st.writes + n;
     shell::Profiles cut; boot(st, cut);
     st.budget = -1;
     shell::Profiles again; boot(st, again);
     assert(again.count() == 1 && !strcmp(again.rec[0].name, "Sam") && biscuitIn(st, 0, "Pip", 30));
-    assert(st.has(shell::NS, "mb") && (n == 7 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
+    assert(st.has(shell::NS, "mb") && (n == 8 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
   }
 }
 
@@ -642,6 +643,10 @@ static void launcherPages() {   // six a page; each game on exactly one page, in
     assert(seen == n);
   }
 }
+static void starHeader(const ui::Box& home) {   // star mode's check, its stars and "Home full!" beside it
+  assert(target(launcher::DONE) && apart(launcher::DONE, home) && apart(launcher::DONE, launcher::LIGHT));
+  assert(within(launcher::FULL, 2) && launcher::PLACES.x + launcher::PLACES.w <= launcher::LIGHT.x);
+}
 static void launcherLayout() {
   headerName();
   launcherPages();
@@ -651,6 +656,7 @@ static void launcherLayout() {
     for (int b = 0; b < a; b++) assert(apart(fixed[a], fixed[b]));
   }
   assert(within(launcher::CAPTION, 2));
+  starHeader(fixed[0]);
   for (int m = 1; m <= launcher::PER_PAGE; m++)
     for (int i = 0; i < m; i++) {
       const int rowStart = i / 3 * 3, rowEnd = rowStart + 3 < m ? rowStart + 3 : m;   // this tile's row: [rowStart, rowEnd)
@@ -692,11 +698,14 @@ static void bootWithoutHours(Shell& sh, shell::Store& st, App* const* apps, int 
 static uint32_t testNow = NOW;   // the wall clock frame() hands the shell; tests that move it put it back
 static void frame(Shell& sh, uint32_t& ms, const Input& in) { ms += 700; sh.update(testNow, ms, in); sh.render(); }   // past FreshGate
 static void tapAt(Shell& sh, uint32_t& ms, const ui::Box& b) {   // the middle of b
-  Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  Input in{}; in.pressed = in.tap = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
   frame(sh, ms, in);
 }
 static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenName(), screen); }
 static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
+// Home and the Library through a Shell with eight stub games (ids 1..8): Home is the first five and "All games"; the
+// Library pages through all eight (6 + 2), and a game opened there comes back to its page; star mode re-picks Home.
+static const ui::Box FIRST_ROW = {24, 55, 112, 24};   // the picker's first row
 static void launcherPaging() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
@@ -705,22 +714,368 @@ static void launcherPaging() {
   bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{});
   sh.createProfile("Sam", 8, "");
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true), first = launcher::tile(0, 6), sixth = launcher::tile(5, 6);
-  const ui::Box p1 = launcher::tile(1, 2);
-  assert(on(sh, "launcher"));
-  tapAt(sh, ms, l);                                   // page 0: no page to the left, nothing there
+  const ui::Box p1 = launcher::tile(1, 2), back = {64, -4, 32, 32};
+  assert(on(sh, "launcher") && st.has(shell::NS, "f0"));   // a kid's first Home: what is here now is not new
+  tapAt(sh, ms, r); assert(on(sh, "launcher"));       // Home has no pages
   tapAt(sh, ms, first); assert(a[0].entered == 1); home(sh, ms, a[0]);
-  tapAt(sh, ms, sixth); assert(a[5].entered == 1); home(sh, ms, a[5]);
+  tapAt(sh, ms, launcher::tile(4, 6)); assert(a[4].entered == 1); home(sh, ms, a[4]);
+  tapAt(sh, ms, sixth); assert(on(sh, "library"));    // the sixth tile is "All games"
+  tapAt(sh, ms, l);                                   // page 0: no page to the left, nothing there
+  tapAt(sh, ms, sixth); assert(a[5].entered == 1); a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
   tapAt(sh, ms, r);                                   // page 1: games 6 and 7
   tapAt(sh, ms, r);                                   // the last page: no right arrow
-  tapAt(sh, ms, p1); assert(a[7].entered == 1 && on(sh, "stub")); home(sh, ms, a[7]);
-  tapAt(sh, ms, p1); assert(a[7].entered == 2); home(sh, ms, a[7]);   // back from a game: still its page
-  tapAt(sh, ms, l); tapAt(sh, ms, first); assert(a[0].entered == 2); home(sh, ms, a[0]);
-  tapAt(sh, ms, r);                                   // page 1, then a new pick from the picker lands on page 0
+  tapAt(sh, ms, p1); assert(a[7].entered == 1 && on(sh, "stub")); a[7].home = true; frame(sh, ms, Input{});
+  tapAt(sh, ms, p1); assert(a[7].entered == 2); a[7].home = true; frame(sh, ms, Input{});   // back on its page
+  tapAt(sh, ms, l); tapAt(sh, ms, first); assert(a[0].entered == 2); a[0].home = true; frame(sh, ms, Input{});
+  tapAt(sh, ms, back); assert(on(sh, "launcher"));     // the home button: Home
+  tapAt(sh, ms, sixth); tapAt(sh, ms, r); tapAt(sh, ms, back);   // the Library on page 1, then a new pick: page 0
   tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
-  tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // the picker's first row
-  tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);
+  tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
+  tapAt(sh, ms, sixth); tapAt(sh, ms, first); assert(a[0].entered == 2);   // 0.7 s after Home's "All games": a double tap
+  frame(sh, ms, Input{}); tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);   // 1.4 s after its lift
 }
 
+// The favorites blob (porthole/f<id>) and the device's games ("sys"/"games"): versioned, crc'd, read back; anything
+// else loads as the default. Ids are unique and 1..32; a profile's create and delete erase its favorites.
+static shell::Favorites favs(std::initializer_list<uint8_t> ids) {
+  shell::Favorites f = {}; f.picked = 1;
+  for (uint8_t id : ids) f.ids[f.count++] = id;
+  return f;
+}
+static void favoritesBlob() {
+  MemStore st; shell::Favorites f = favs({3, 1}), got;
+  assert(!shell::loadFavorites(st, 0, got) && !got.count && !got.picked && !got.seen);   // missing: the default
+  f.seen = 0x3f; assert(shell::saveFavorites(st, 0, f) && shell::loadFavorites(st, 0, got) && !memcmp(&got, &f, sizeof f));
+  assert(!shell::loadFavorites(st, 1, got));                                          // another kid's is their own
+  MemStore::Entry* e = st.find(shell::NS, "f0");
+  e->data[9] ^= 1; assert(!shell::loadFavorites(st, 0, got) && !got.count);           // a flipped bit: the crc
+  e->data[9] ^= 1; e->len = 20; assert(!shell::loadFavorites(st, 0, got));            // a short blob
+  e->len = sizeof f; assert(shell::loadFavorites(st, 0, got));
+  shell::Favorites many = f; many.count = 6; assert(shell::saveFavorites(st, 0, many) == false);   // more than MAX_FAVS
+  st.budget = st.writes; assert(!shell::saveFavorites(st, 0, f)); st.budget = -1;     // a lost write is not a save
+  assert(shell::loadGamesOff(st) == 0 && shell::saveGamesOff(st, 0x5) && shell::loadGamesOff(st) == 0x5);
+  st.find("sys", "games")->data[4] ^= 0x10; assert(shell::loadGamesOff(st) == 0);    // corrupt: every game on
+  st.budget = st.writes; assert(!shell::saveGamesOff(st, 0x1)); st.budget = -1;
+  static const uint8_t good[] = {1, 2, 32}, dup[] = {1, 2, 1}, zero[] = {1, 0}, big[] = {33};
+  assert(shell::validIds(good, 3) && !shell::validIds(dup, 3) && !shell::validIds(zero, 2) && !shell::validIds(big, 1));
+  shell::Profiles p; shell::loadAll(st, p);
+  const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
+  assert(shell::saveFavorites(st, id, f)); shell::removeProfile(st, p, id, STORES, 2); assert(!st.has(shell::NS, "f0"));
+  assert(shell::saveFavorites(st, id, f)); shell::create(st, p, draft("Kai", 6, 0), STORES, 2); assert(!st.has(shell::NS, "f0"));
+}
+// Which games Home and the Library show: the default, star order, switched-off and unknown games.
+static void homeRules() {
+  static const uint8_t ids[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+  int out[12]; const shell::Favorites none = {};
+  auto is = [&](int n, std::initializer_list<int> want) {
+    int i = 0; for (int k : want) { if (out[i] != k) return false; i++; }
+    return n == i;
+  };
+  assert(is(shell::homeGames(none, ids, 8, 0, out), {0, 1, 2, 3, 4}) && shell::libraryOn(ids, 8, 0));   // the first five
+  assert(is(shell::homeGames(none, ids, 8, shell::gameBit(2), out), {0, 2, 3, 4, 5}));   // the first five switched on
+  const uint32_t two = shell::gameBit(1) | shell::gameBit(2);   // six left: no Library, Home has them all
+  assert(is(shell::homeGames(favs({8}), ids, 8, two, out), {2, 3, 4, 5, 6, 7}) && !shell::libraryOn(ids, 8, two));
+  assert(is(shell::homeGames(none, ids, 5, 0, out), {0, 1, 2, 3, 4}) && !shell::libraryOn(ids, 5, 0));
+  assert(is(shell::enabledGames(ids, 3, 0x7, out), {0, 1, 2}));   // every game off counts as every game on
+  assert(is(shell::homeGames(favs({7, 2, 20, 5}), ids, 8, 0, out), {6, 1, 4}));   // star order; id 20 is not here
+  assert(is(shell::homeGames(favs({7, 2, 5}), ids, 8, shell::gameBit(2), out), {6, 4}));   // switched off: hidden
+  assert(is(shell::homeGames(favs({}), ids, 8, 0, out), {0, 1, 2, 3, 4}));   // no stars at all: the default
+  static const uint8_t ids12[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  const shell::Favorites late = favs({12, 11, 10, 9, 8});
+  uint32_t lateOff = 0; for (uint8_t id = 8; id <= 12; id++) lateOff |= shell::gameBit(id);
+  assert(is(shell::homeGames(late, ids12, 12, lateOff, out), {0, 1, 2, 3, 4}));   // every favorite off: the default
+  assert(is(shell::homeGames(late, ids12, 12, 0, out), {11, 10, 9, 8, 7}));        // back on: the kid's own Home
+  assert(is(shell::ownGames(late, ids12, 12, lateOff, out), {}));           // star mode: the kid's own, none
+  assert(is(shell::ownGames(none, ids, 8, 0, out), {0, 1, 2, 3, 4}));       // never starred: still the default
+}
+// Star mode's taps: the default becomes the kid's list, a new star goes first, a sixth is refused (even on the
+// default, which stays the default), and a hidden favorite gives its place up only when a new star needs it.
+static const uint8_t IDS8[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+static shell::Favorites starOrder() {
+  const uint8_t* ids = IDS8;
+  shell::Favorites f = {};
+  const shell::Favorites none = {};
+  assert(!shell::toggleStar(f, 6, ids, 8, 0) && !memcmp(&f, &none, sizeof f));   // the default is full: untouched
+  assert(shell::toggleStar(f, 2, ids, 8, 0) && f.picked && f.count == 4 && f.ids[0] == 1 && f.ids[1] == 3);   // unstar 2
+  assert(shell::toggleStar(f, 8, ids, 8, 0) && f.count == 5 && f.ids[0] == 8 && f.ids[1] == 1 && f.ids[4] == 5);
+  return f;
+}
+static void starRules() {
+  const uint8_t* ids = IDS8;
+  shell::Favorites f = starOrder();
+  const shell::Favorites full = f;
+  assert(!shell::toggleStar(f, 6, ids, 8, 0) && !memcmp(&f, &full, sizeof f));   // a sixth: nothing changes
+  assert(shell::toggleStar(f, 4, ids, 8, 0) && shell::toggleStar(f, 4, ids, 8, 0) && f.ids[0] == 4 && f.ids[3] == 3);   // a double tap: first
+  const uint32_t off = shell::gameBit(3);   // id 3 switched off: four show, and 6 takes its place
+  assert(shell::toggleStar(f, 6, ids, 8, off) && f.count == 5 && f.ids[0] == 6 && f.ids[1] == 4 && f.ids[4] == 5);
+  shell::Favorites gone = favs({20, 1, 3, 4, 5});   // 20 left the image: the hidden one goes
+  assert(shell::toggleStar(gone, 6, ids, 8, 0) && gone.ids[0] == 6 && gone.ids[1] == 1 && gone.ids[4] == 5);
+}
+static void swapAndHidden() {   // star mode edits the kid's own list, even when none of it shows
+  shell::Favorites f = favs({8});
+  assert(shell::toggleStar(f, 8, IDS8, 8, 0) && !f.count && !f.ids[0]);         // the last star off: none, no stale id
+  assert(shell::toggleStar(f, 2, IDS8, 8, 0) && f.count == 1 && f.ids[0] == 2);   // then a new one: a swap
+  static const uint8_t ids12[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  uint32_t off = 0; for (uint8_t id = 8; id <= 12; id++) off |= shell::gameBit(id);
+  shell::Favorites h = favs({12, 11, 10, 9, 8});   // every favorite switched off
+  assert(shell::toggleStar(h, 1, ids12, 12, off) && h.count == 5 && h.ids[0] == 1 && h.ids[4] == 9);   // 8, the oldest, goes
+  assert(shell::toggleStar(h, 1, ids12, 12, off) && h.count == 4 && h.ids[0] == 12 && h.ids[3] == 9);   // an unstar: kept
+  assert(shell::toggleStar(h, 2, ids12, 12, off) && h.count == 5 && h.ids[1] == 12);                   // a place free
+}
+static void oldestHiddenGoes() {   // two hidden favorites: the oldest (21, nearer the end) gives its place up, 20 stays
+  shell::Favorites two = favs({20, 1, 3, 21, 4});
+  assert(shell::toggleStar(two, 6, IDS8, 8, 0) && two.count == 5 && two.ids[0] == 6 && two.ids[1] == 20);
+  assert(two.ids[2] == 1 && two.ids[3] == 3 && two.ids[4] == 4);
+}
+// Home with 0..5 favorites: the stars in order, then "All games" (the row centered as the grid's short row is).
+static void homeFavorites() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  for (int h = 1; h <= shell::MAX_FAVS; h++) {   // none: the default (homeRules)
+    shell::Favorites f = {}; f.picked = 1; f.seen = 0xff;
+    for (int i = 0; i < h; i++) f.ids[f.count++] = (uint8_t)(8 - i);   // Eight, Seven, ...: not launcher order
+    assert(shell::saveFavorites(st, 0, f));
+    bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
+    for (int i = 0; i < h; i++) { tapAt(sh, ms, launcher::tile(i, h + 1)); assert(a[7 - i].entered == 1); home(sh, ms, a[7 - i]); a[7 - i].entered = 0; }
+    tapAt(sh, ms, launcher::tile(h, h + 1)); assert(on(sh, "library"));
+  }
+}
+// Star mode on the Library: the star button, taps that star instead of open, a refused sixth, a double tap that acts
+// once; only the check saves: the home button or a restart puts Home back as it was.
+static void starEdits(Shell& sh, uint32_t& ms, MemStore& st) {   // One off (a double tap), Six on, Three off, Eight on
+  const int before = st.writes;
+  tapAt(sh, ms, launcher::tile(0, 6));
+  ms -= 600; tapAt(sh, ms, launcher::tile(0, 6));                            // the second tap, 100 ms later: ignored
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::tile(2, 6));
+  tapAt(sh, ms, launcher::arrow(true)); tapAt(sh, ms, launcher::tile(1, 2));  // Eight on, from page 2
+  tapAt(sh, ms, launcher::tile(0, 2));                                        // Seven: a sixth, refused
+  assert(st.writes == before);                                                // nothing written yet
+}
+static void starMode() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  const ui::Box back = {64, -4, 32, 32};
+  shell::Favorites f;
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); assert(on(sh, "library"));   // star mode
+  int before = st.writes;
+  starEdits(sh, ms, st);
+  assert(a[5].entered == 0 && a[7].entered == 0 && a[6].entered == 0);        // star mode opens nothing
+  tapAt(sh, ms, back); tapAt(sh, ms, back);                                  // the home button twice (the first asks
+  assert(on(sh, "library") && st.writes == before);                           // for the check): star mode ends, unsaved
+  tapAt(sh, ms, launcher::tile(1, 2)); assert(a[7].entered == 1);              // out of star mode: a tap opens
+  a[7].home = true; frame(sh, ms, Input{}); tapAt(sh, ms, back); assert(on(sh, "launcher"));
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1); home(sh, ms, a[0]);   // Home as it was: One first
+  assert(shell::loadFavorites(st, 0, f) && !f.picked);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT);
+  starEdits(sh, ms, st);
+  before = st.writes;
+  tapAt(sh, ms, launcher::DONE); assert(on(sh, "library") && st.writes == before + 1);   // the check saves
+  assert(shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 8 && f.ids[1] == 6 && f.ids[2] == 2 && f.ids[4] == 5);
+  tapAt(sh, ms, launcher::DONE); tapAt(sh, ms, launcher::tile(1, 2)); assert(a[7].entered == 2);   // a third tap on the
+  a[7].home = true; frame(sh, ms, Input{});                                   // check lands on the title: Eight opens
+  const int after = st.writes;   // (leaving a game saved the kid's record)
+  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::DONE); assert(st.writes == after);   // nothing changed: no write
+  tapAt(sh, ms, back); assert(on(sh, "launcher"));
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3); home(sh, ms, a[7]);   // Home: the newest star first
+  tapAt(sh, ms, launcher::tile(4, 6)); assert(a[4].entered == 1); home(sh, ms, a[4]);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // Two off
+  bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);   // a restart mid star mode
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 4);   // Eight first, and Two still there
+  assert(shell::loadFavorites(st, 0, f) && f.count == 5);
+}
+static bool goldAt(const ui::Box& b) { return gfx::fb[(b.y + 7) * gfx::W + b.x + b.w - 7] == C_GOLD; }   // a tile's corner star
+// A press and its lift as separate frames at exact times, for a kid's tap rhythm (frame() steps 700 ms).
+static void pressAt(Shell& sh, uint32_t ms, const ui::Box& b) {
+  Input in{}; in.down = in.pressed = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  sh.update(testNow, ms, in); sh.render();
+}
+static void liftAt(Shell& sh, uint32_t ms, const ui::Box& b) {
+  Input in{}; in.released = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  sh.update(testNow, ms, in); sh.render();
+}
+struct Rhythm { int n; uint32_t hold, gap; };   // n presses of hold ms, gap ms from each lift to the next press
+static void taps(Shell& sh, uint32_t& ms, const ui::Box& b, Rhythm r) {   // ms: the last lift
+  for (int i = 0; i < r.n; i++) { if (i) ms += r.gap; pressAt(sh, ms, b); ms += r.hold; liftAt(sh, ms, b); }
+}
+static void slideTap(Shell& sh, uint32_t& ms, int fromX, int toX, int y) {   // a press slid 6 px, lifted 300 ms later
+  Input in{}; in.down = in.pressed = true; in.x = in.downX = fromX; in.y = in.downY = y;
+  sh.update(testNow, ms, in); sh.render();
+  in.down = in.pressed = false; in.released = in.tap = true; in.x = toX;
+  ms += 300; sh.update(testNow, ms, in); sh.render();
+}
+static bool checkShows() { return gfx::fb[(launcher::DONE.y + 20) * gfx::W + launcher::DONE.x + 3] == C_GREEN; }
+static bool yellowAt(const ui::Box& b) { return gfx::fb[(b.y + 12) * gfx::W + b.x + 2] == C_YELLOW; }   // a cue's banner
+struct EightGames {   // a Shell with eight stub games (ids 1..8) and Sam on Home
+  MemStore st; StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"),
+                               StubApp("Six"), StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};   // the Shell keeps this pointer
+  uint32_t ms = 0;
+  explicit EightGames(Shell& sh) { bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, ""); }
+};
+static const ui::Box BACK = {64, -4, 32, 32}, ONE = launcher::tile(0, 6), ALL = launcher::tile(5, 6);
+// Star mode's check sits at the header's left, not where the star button was (kid playtest 8), so a firm mash on
+// either acts once and its other presses land on nothing; only a press begun on a button counts for it. A tile's
+// repeat waits 600 ms (playtest 6, F4).
+static void libraryMashing() {
+  static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
+  const ui::Box L = launcher::LIGHT, D = launcher::DONE, P = launcher::PLACES;
+  ms += 1000; slideTap(sh, ms, L.x - 3, L.x + 3, L.y + L.h / 2); assert(on(sh, "launcher"));   // not Home's sun's tap
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); assert(on(sh, "library"));
+  ms += 1000; taps(sh, ms, L, {5, 400, 150}); assert(checkShows());     // a firm 5-tap mash on the star: in, once
+  ms += 1000; slideTap(sh, ms, P.x + 4, D.x + D.w - 4, D.y + 12); assert(checkShows());   // slid from the stars: not the check's
+  ms += 1000; taps(sh, ms, D, {5, 400, 150}); assert(!checkShows());    // a 5-tap mash on the check: out, once
+  ms += 1000; slideTap(sh, ms, L.x - 3, L.x + 3, L.y + L.h / 2); assert(!checkShows());   // begun beside the star: not its tap
+  ms += 1000; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());
+  ms += 1000; taps(sh, ms, ONE, {2, 300, 450}); assert(!goldAt(ONE));   // F4: a slow double tap on One toggles once
+  ms += 1000; taps(sh, ms, launcher::tile(1, 6), {1, 300, 0});          // two games 200 ms apart: both count
+  ms += 200; taps(sh, ms, launcher::tile(2, 6), {1, 300, 0});
+  assert(!goldAt(launcher::tile(1, 6)) && !goldAt(launcher::tile(2, 6)) && goldAt(launcher::tile(3, 6)));
+}
+// The house in star mode (kid playtest 9, M1): with nothing to keep it leaves at once; with stars the check would keep,
+// the first tap asks "Tap [check] to keep" for 2 s while the check hops, and a second tap while it asks drops them.
+static void houseAsksToKeep() {
+  static Shell sh; EightGames g(sh); uint32_t& ms = g.ms; const ui::Box L = launcher::LIGHT, F = launcher::FULL;
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 1000; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(on(sh, "library") && !checkShows());   // nothing to keep: out
+  ms += 1000; taps(sh, ms, L, {1, 300, 0}); ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); assert(!goldAt(ONE));
+  const int writes = g.st.writes;
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(checkShows() && yellowAt(F) && !goldAt(ONE));   // it asks
+  ms += 2100; frame(sh, ms, Input{}); assert(checkShows() && !yellowAt(F));                          // for 2 s
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(checkShows() && yellowAt(F));   // asks again
+  ms += 600; taps(sh, ms, BACK, {1, 300, 0}); assert(!checkShows() && goldAt(ONE) && g.st.writes == writes);   // dropped
+  ms += 1000; taps(sh, ms, L, {1, 300, 0}); ms += 1000; taps(sh, ms, ONE, {1, 300, 0});
+  ms += 1000; taps(sh, ms, BACK, {5, 300, 150});                       // Leo's house mash: Home untouched
+  assert(g.st.writes == writes && on(sh, "launcher"));
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 1000; taps(sh, ms, L, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 500; taps(sh, ms, launcher::DONE, {1, 300, 0});                 // the check while it asks: kept
+  assert(!checkShows() && !goldAt(ONE) && g.st.writes == writes + 1);
+}
+// Home's "All games" sits over the Library's sixth tile: a kid's "again!" taps there (kid playtest 8 m2, 9 m1) open
+// nothing and show no name, each ignored press restarting the 800 ms from its lift, up to 2.5 s from the opening.
+static void allGamesAgain() {
+  static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
+  ms += 1000; taps(sh, ms, ALL, {2, 300, 450}); assert(on(sh, "library"));   // a slow double tap
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ALL, {4, 250, 120}); assert(on(sh, "library"));   // four fast (H6)
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ALL, {1, 350, 0});                                 // "again!" once a second (H7)
+  ms += 650; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // ignored: no name
+  liftAt(sh, ms += 350, ALL); ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(on(sh, "library") && g.a[5].entered == 0);
+  ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(g.a[5].entered == 1);   // 2.65 s after the opening: the cap, it opens
+  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0});
+  ms += 850; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // 850 ms after: a real tap, named
+  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 2);
+}
+// The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
+// refill it); from the default that is no change, so nothing is written.
+static void emptyHomeIsDefault() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  shell::Favorites f;
+  const int fresh = st.writes;   // a new kid: every default off, then the check, is no change at all
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT);
+  for (int i = 0; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));
+  tapAt(sh, ms, launcher::DONE); assert(st.writes == fresh);
+  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));
+  tapAt(sh, ms, launcher::DONE); assert(shell::loadFavorites(st, 0, f) && f.picked && f.count == 4);   // One off, kept
+  tapAt(sh, ms, launcher::LIGHT);
+  for (int i = 1; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));   // the other four off: none left
+  tapAt(sh, ms, launcher::DONE); assert(shell::loadFavorites(st, 0, f) && !f.picked && !f.count);   // not picked again
+  for (int i = 0; i < 6; i++) assert(goldAt(launcher::tile(i, 6)) == (i < shell::MAX_FAVS));   // the Library agrees with Home
+  tapAt(sh, ms, {64, -4, 32, 32}); tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1);   // Home: the default
+  home(sh, ms, a[0]);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // as a new kid: Two off
+  tapAt(sh, ms, launcher::DONE); assert(shell::loadFavorites(st, 0, f) && f.count == 4 && f.ids[1] == 3);
+}
+// Favorites whose games a grown-up switched off are hidden, never dropped: with none showing Home is the default,
+// the check with no change writes nothing, unstarring every one that shows keeps the hidden ones, and switching
+// their games back on brings the kid's own Home back.
+static void hiddenFavorites() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[12] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                   StubApp("Seven"), StubApp("Eight"), StubApp("Nine"), StubApp("Ten"), StubApp("Eleven"), StubApp("Twelve")};
+  App* list[12]; for (int k = 0; k < 12; k++) list[k] = &a[k];
+  bootWithoutHours(sh, st, list, 12); sh.createProfile("Sam", 8, "");
+  shell::Favorites f = favs({12, 11, 10, 9, 8}); f.seen = 0xfff; assert(shell::saveFavorites(st, 0, f));
+  uint32_t off = 0; for (uint8_t id = 8; id <= 12; id++) off |= shell::gameBit(id);
+  assert(shell::saveGamesOff(st, off));
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1); home(sh, ms, a[0]);   // all five off: the default
+  const int before = st.writes;
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::DONE);
+  assert(st.writes == before && shell::loadFavorites(st, 0, f) && f.count == 5 && f.ids[0] == 12);   // untouched
+  shell::Favorites mixed = favs({8, 1, 2}); mixed.seen = 0xfff; assert(shell::saveFavorites(st, 0, mixed));
+  assert(shell::saveGamesOff(st, shell::gameBit(8)));   // Eight off: Home is One, Two
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(2, 3)); tapAt(sh, ms, launcher::LIGHT);
+  tapAt(sh, ms, launcher::tile(0, 6)); tapAt(sh, ms, launcher::tile(1, 6)); tapAt(sh, ms, launcher::DONE);   // both off
+  assert(shell::loadFavorites(st, 0, f) && f.count == 1 && f.ids[0] == 8);   // the hidden one stays
+  assert(!goldAt(launcher::tile(0, 6)) && !goldAt(launcher::tile(1, 6)));    // the Library: the kid's list, none showing
+  tapAt(sh, ms, {64, -4, 32, 32});
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 2); home(sh, ms, a[0]);   // Home: the default
+  assert(shell::saveGamesOff(st, 0));
+  bootWithoutHours(sh, st, list, 12); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(0, 2)); assert(a[7].entered == 1);   // Eight back on: the kid's own Home
+}
+// A game the kid has never seen (new in this image) wears a red dot on its tile and on "All games" until opened.
+static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 5) * gfx::W + b.x + 5] == C_RED; }
+static void newGames() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[9] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight"), StubApp("Nine")};
+  App* const list[9] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7], &a[8]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, ""); frame(sh, ms, Input{});
+  assert(!dotAt(launcher::tile(5, 6)));   // a new kid: nothing is new
+  bootWithoutHours(sh, st, list, 9); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW); frame(sh, ms, Input{});   // an update adds Nine
+  assert(dotAt(launcher::tile(5, 6)) && !dotAt(launcher::tile(0, 6)));
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::arrow(true)); frame(sh, ms, Input{});
+  assert(dotAt(launcher::tile(2, 3)) && !dotAt(launcher::tile(1, 3)));
+  tapAt(sh, ms, launcher::tile(2, 3)); assert(a[8].entered == 1); a[8].home = true; frame(sh, ms, Input{}); frame(sh, ms, Input{});
+  assert(on(sh, "library") && !dotAt(launcher::tile(2, 3)));
+  bootWithoutHours(sh, st, list, 9); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW); frame(sh, ms, Input{});
+  assert(!dotAt(launcher::tile(5, 6)));   // opened once: never new again
+  shell::Favorites f; assert(shell::loadFavorites(st, 0, f));
+  f.seen &= ~shell::gameBit(1); assert(shell::saveFavorites(st, 0, f));   // One is new, and on Home: its own dot only
+  bootWithoutHours(sh, st, list, 9); frame(sh, ms, Input{}); tapAt(sh, ms, FIRST_ROW); frame(sh, ms, Input{});
+  assert(dotAt(launcher::tile(0, 6)) && !dotAt(launcher::tile(5, 6)));
+}
+// A kid's first Home writes the "seen" baseline only when porthole/f<id> is missing: a damaged blob, or a newer
+// firmware's after a USB rollback, is kept as it is (the default shows in RAM), so going forward again finds it.
+static void favoritesKept() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  shell::Favorites f = favs({8}); f.version = 2; f.crc = 0;
+  const uint8_t newer[sizeof f + 4] = {};
+  for (const size_t len : {sizeof f, sizeof newer}) {
+    assert(st.save(shell::NS, "f0", len == sizeof f ? (const void*)&f : newer, len));
+    bootWithoutHours(sh, st, list, 8); frame(sh, ms, Input{});
+    tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
+    MemStore::Entry* e = st.find(shell::NS, "f0");
+    assert(e && e->len == len && !memcmp(e->data, len == sizeof f ? (const void*)&f : newer, len));   // untouched
+    tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered);   // the default Home
+    a[0].entered = 0; home(sh, ms, a[0]);
+    sh.debugCmd("unseen");   // star mode's check and a newly seen game change it in RAM only
+    tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(0, 6));
+    tapAt(sh, ms, launcher::DONE); tapAt(sh, ms, {64, -4, 32, 32});
+    tapAt(sh, ms, launcher::tile(0, 5)); assert(a[1].entered == 1); a[1].entered = 0; home(sh, ms, a[1]);   // One off
+    assert(e->len == len && !memcmp(e->data, len == sizeof f ? (const void*)&f : newer, len));
+  }
+}
 // The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
 // shell's screens and in the games (AppEnter::daylight) at its own backlight, kept in "sys"/"lite" across a reboot;
 // picking the level already on writes nothing, and a stray byte is Auto.
@@ -728,7 +1083,7 @@ static void brightness() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubApp a("One"); App* const list[1] = {&a};
   const uint32_t night = NOW + 12 * 3600;
   auto step = [&](const Input& in) { ms += 700; sh.update(night, ms, in); sh.render(); };
-  auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
+  auto tap = [&](const ui::Box& b) { Input in{}; in.pressed = in.tap = in.released = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2; step(in); };
   auto pick = [&](const ui::Box& b) { tap(launcher::LIGHT); assert(on(sh, "light")); tap(b); assert(on(sh, "launcher")); };
   bootWithoutHours(sh, st, list, 1); sh.createProfile("Sam", 8, ""); step(Input{});
   assert(on(sh, "launcher") && sh.tint() == TINT_NIGHT && sh.backlight() == 100);   // Auto, as before
@@ -864,6 +1219,41 @@ static uint8_t storedStrikes(MemStore& st, int lock) { return shell::loadPinLock
 static void typeKidCode(Shell& sh, uint32_t& ms, const char* code) {   // the kids' nine keys, 1-9
   for (; *code; code++) { const int k = *code - '1'; keyAt(sh, ms, {23 + (k % 3) * 39, 50 + (k / 3) * 28, 36, 25}); }
   frame(sh, ms, Input{});   // automatic submit after 400 ms
+}
+// Info -> Games: a switch per game, three a page; off hides a game from Home, the Library and `open`; the last game
+// on stays on; a failed write changes nothing.
+static void adminGames() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, list, 8, &sys);
+  const ui::Box games = {59, 98, 42, 20}, next = {106, 122, 22, 18}, prev = {32, 122, 22, 18};
+  auto row = [](int i) { return ui::Box{22, 30 + i * 23, 116, 21}; };
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, games); assert(on(sh, "sys_games"));   // on Info, beside Wifi and Updates
+  tapAt(sh, ms, row(0)); assert(shell::loadGamesOff(st) == shell::gameBit(1));   // One off
+  tapAt(sh, ms, next); tapAt(sh, ms, row(2)); assert(shell::loadGamesOff(st) == (shell::gameBit(1) | shell::gameBit(6)));
+  tapAt(sh, ms, next); st.budget = st.writes; tapAt(sh, ms, row(0)); st.budget = -1;   // a failed write: Seven stays on
+  assert(shell::loadGamesOff(st) == (shell::gameBit(1) | shell::gameBit(6)));
+  tapAt(sh, ms, prev); tapAt(sh, ms, prev); tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_info"));
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher") && !sh.openApp("One") && !sh.openApp("Six"));
+  tapAt(sh, ms, launcher::tile(0, 6)); assert(a[1].entered == 1); home(sh, ms, a[1]);   // six on: Home shows them all
+  tapAt(sh, ms, launcher::tile(5, 6)); assert(a[7].entered == 1); home(sh, ms, a[7]);
+  shell::Favorites f = favs({1, 2}); f.seen = 0xff; assert(shell::saveFavorites(st, 0, f));
+  assert(shell::saveGamesOff(st, 0xfe));   // all but One off
+  bootWithoutHours(sh, st, list, 8, &sys); holdTitle(sh, ms, 5000);
+  tapAt(sh, ms, games); tapAt(sh, ms, row(0)); assert(shell::loadGamesOff(st) == 0xfe);   // the last one on stays on
+  tapAt(sh, ms, row(1)); tapAt(sh, ms, row(2)); tapAt(sh, ms, next);
+  tapAt(sh, ms, row(0)); tapAt(sh, ms, row(1)); tapAt(sh, ms, row(2)); tapAt(sh, ms, next);
+  tapAt(sh, ms, row(0)); assert(shell::loadGamesOff(st) == 0x80);   // seven on
+  tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, FIRST_ROW);
+  tapAt(sh, ms, launcher::tile(0, 3)); assert(a[0].entered == 1); home(sh, ms, a[0]);   // the stars came back: One, Two
+  tapAt(sh, ms, launcher::tile(1, 3)); assert(a[1].entered == 2); home(sh, ms, a[1]);
+  tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
+}
+static void homeAndLibrary() {
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); libraryMashing(); houseAsksToKeep(); allGamesAgain(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.
@@ -1341,7 +1731,7 @@ int main() {
   capClockBack();
   capAfterClockGuess();
   launcherLayout();
-  launcherPaging();
+  homeAndLibrary();
   brightness();
   backlightSteps();
   printf("test_shell: all checks passed (sizeof Record = %zu)\n", sizeof(shell::Record));

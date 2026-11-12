@@ -1,0 +1,31 @@
+# carried / early touch probes (supplementary, raw sim)
+reset
+profile Zoe 8
+wait 600
+# finger stays down on All games across the screen change? tap acts on release; press-and-hold 1.2 s then lift
+down 124 106
+wait 1200
+up
+wait 100
+# immediate second press at the star spot within the 450 ms gate, held 1 s
+down 127 42
+wait 1000
+up
+wait 300
+echo AFTER_EARLY_STAR
+screen
+snap carry1
+# star mode, press a tile then drag onto another and release
+tap 127 42
+wait 600
+down 36 72
+wait 200
+move 50 72
+move 70 72
+move 80 72
+wait 100
+up
+wait 400
+snap carry2
+echo AFTER_DRAG_TILE_TO_TILE
+debug

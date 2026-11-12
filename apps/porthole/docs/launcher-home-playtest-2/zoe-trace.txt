@@ -1,0 +1,112 @@
+tick 600
+tap 67 125
+tick 500
+shot z01_nz
+tap 42 126
+tick 300
+tap 66 52
+tick 300
+tap 68 124
+tick 300
+tap 40 78
+tick 400
+shot z02_typed
+tap 120 125
+tick 600
+shot z03_afterok
+tap 122 57
+tick 600
+shot z04_afterface
+tap 36 100
+tick 600
+shot z05_afterage
+tap 80 145
+tick 800
+shot z06_first_home
+# Zoe looks for Rally; spots the tile of many pictures. Presses (a bit long) slightly off-centre.
+down 128 110
+tick 300
+midshot z07_press_allgames
+tick 300
+up
+tick 600
+shot z08_after_allgames
+# No car here. Arrow -> next page (tap a bit low-left)
+tap 93 138
+tick 600
+shot z09_lib_p2
+# There's the car! tap Rally
+tap 82 104
+tick 1500
+shot z10_rally
+# Leaves Rally via its Home button
+tap 46 128
+tick 800
+shot z11_back_from_rally
+# Curious about the big star button; presses and holds a bit
+down 124 44
+tick 400
+midshot z12_press_star
+tick 300
+up
+tick 600
+shot z13_star_mode
+# Taps the empty star on Rally's tile (top-right corner of tile, a bit off)
+tap 92 96
+tick 300
+shot z14_rally_star_tap
+tick 900
+shot z15_rally_star_1s
+tick 1500
+shot z16_rally_star_after
+# "Tap a star"? taps Rally's white star again, then the tile itself
+tap 94 94
+tick 200
+shot z17_again
+tick 2400
+tap 80 110
+tick 200
+shot z18_tile_tap
+tick 600
+# follows the arrow back
+tap 64 138
+tick 600
+shot z19_lib_p1_starmode
+# She never plays the green ball-tray game: taps its tile/star area
+tick 2000
+shot z20_p1_calm
+tap 128 70
+tick 500
+shot z21_unstar_marble
+tap 97 136
+tick 600
+tap 82 106
+tick 500
+shot z22_star_rally
+# done: green check
+tap 128 42
+tick 600
+shot z23_after_check
+tap 80 13
+tick 700
+shot z24_home_with_rally
+# Wants pumpkin off too: All games tile, quick tap star button, unstar pumpkin
+tap 122 104
+tick 600
+tap 128 44
+tick 600
+shot z25_starmode_quick
+tap 80 104
+tick 500
+shot z26_pumpkin_off
+# leaves with the orange home button instead of the check
+tap 80 13
+tick 600
+shot z27_orange_from_starmode
+tap 80 13
+tick 600
+shot z28_home_4
+# Done; she taps the orange house on her Home
+tap 80 13
+tick 700
+shot z29_orange_on_home

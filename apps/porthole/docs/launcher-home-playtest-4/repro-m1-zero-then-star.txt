@@ -1,0 +1,39 @@
+# M1 repro (raw sim script). Fresh device, Leo 6, default Home.
+reset
+profile Leo 6
+wait 600
+# Home -> All games
+tap 125 104
+wait 600
+# star mode, take all five stars off, green check
+tap 126 42
+wait 600
+tap 36 72
+wait 300
+tap 80 72
+wait 300
+tap 124 72
+wait 300
+tap 36 105
+wait 300
+tap 80 105
+wait 300
+tap 126 42
+wait 600
+# All games now shows five gold stars again (fallback)
+snap m1_1_library_gold
+ui
+# star button: every star is white
+tap 126 42
+wait 600
+snap m1_2_starmode_white
+# one star on the radar, check, house
+tap 124 105
+wait 300
+tap 126 42
+wait 600
+tap 80 12
+wait 600
+# Home now has only Radar + All games
+snap m1_3_home_one
+screen
