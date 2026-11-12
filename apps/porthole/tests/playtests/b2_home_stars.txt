@@ -277,4 +277,10 @@ up
 wait 650
 expect-screen library
 snap hs14_all_games_again
+# A fourth tap at that pace starts past 2.5 s from the opening: the wait is over, so it opens the game there (Radar).
+down 124 104
+wait 350
+up
+wait 600
+expect-screen radar_live
 sheet stars

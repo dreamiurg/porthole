@@ -968,10 +968,12 @@ static void allGamesAgain() {
   ms += 1000; taps(sh, ms, ALL, {1, 350, 0});                                 // "again!" once a second (H7)
   ms += 650; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // ignored: no name
   liftAt(sh, ms += 350, ALL); ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(on(sh, "library") && g.a[5].entered == 0);
+  ms += 650; taps(sh, ms, ALL, {1, 350, 0}); assert(g.a[5].entered == 1);   // 2.65 s after the opening: the cap, it opens
+  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
   ms += 1000; taps(sh, ms, ALL, {1, 300, 0});
   ms += 850; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // 850 ms after: a real tap, named
-  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 1);
+  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 2);
 }
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
