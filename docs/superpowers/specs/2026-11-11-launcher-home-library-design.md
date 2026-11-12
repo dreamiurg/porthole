@@ -35,15 +35,13 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   while a game that is not on Home is new (one on Home already wears its own).
 - **Star mode** (same screen, `library` with a mode): the sky behind the grid turns lavender and every tile jiggles
   (1 px right and back, neighbors in turn, like a phone's edit mode), so a non-reader sees that something is different.
-  Five small stars in the header count Home's places (gold = taken, white = free; no number to read); the star
-  button becomes a green check (Done). The star button and the check share one spot, so one rule guards it both ways:
-  a press there that starts within 1 s of star mode starting or ending (by the star, the check or the home button),
-  or of the lift of a press this rule ignored, and within 3 s of that change itself, does nothing and neither looks
-  pressed nor shows its caption, so a mash flips the mode once while a kid retrying once a second gets through after
-  3 s; only a tap whose press began on the button acts, so a finger slid onto it never bypasses the rule. Tapping a tile toggles its star; a press on the same tile starting within 600 ms
+  The header row holds a green check (Done, 24x24 at its left) and, beside it, five small stars that count Home's
+  places (gold = taken, white = free; no number to read); the star button's place stays empty. The check and the
+  star never share a spot, so a firm mash on either acts once and its other presses land on nothing (the check's on
+  the Library's plain title); each acts only on a press that began on it. Tapping a tile toggles its star; a press on the same tile starting within 600 ms
   of the last tap's lift counts with it (a double tap, even a firm one of 250 ms presses, or mashing: once). Every tile wears a star: gold on Home, an empty one to pick (nothing is dimmed:
   dimmed tiles read as switched off). A new kid's Home is already full (the defaults), so a 6th star is refused with
-  a lasting cue: "Home full!" in yellow over the header for 2 s, with "Tap a star", or "Stars: page N" when the page
+  a lasting cue: "Home full!" in yellow beside the check (over the stars and the star's empty place) for 2 s, with "Tap a star", or "Stars: page N" when the page
   shown has no gold star, while the gold stars hop and so does the arrow toward a page that holds one, so a
   non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
   them (only if anything changed, read back) and returns to the Library; with no star left Home shows the
@@ -61,9 +59,12 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   (`launcher-home-playtest-5.md`): a firm double tap still toggled twice (the guard now runs from the lift to the
   next press) and a third tap on Done re-entered star mode. Round 6 (`launcher-home-playtest-6.md`), F1-F4: a triple
   tap on the star entered and left again, a slow or four-tap burst on Done re-entered, an ignored press still looked
-  pressed, and a 450 ms-gap double tap flipped back; hence the one rule above in place of a one-way guard, and the
+  pressed, and a 450 ms-gap double tap flipped back; hence a two-way timing rule (since replaced, see round 8), and the
   tile's 600 ms. Round 7 (`launcher-home-playtest-7.md`), K1: each ignored press restarted the second, so a kid
-  retrying once a second was ignored forever; hence the 3 s cap.)
+  retrying once a second was ignored forever. Round 8 (`launcher-home-playtest-8.md`): a 3 s cap then let a long firm
+  mash flip back; no timing can tell the two apart, so the check moved off the star's spot and the timing rule went.
+  Round 8, m2: a slow double tap on Home's "All games" opened the Library game under the finger, so the Library's tiles
+  ignore a press begun within 800 ms of it opening from Home.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
@@ -110,8 +111,8 @@ Library and star mode, and a grown-up playtest of Info -> Games. After the fixes
 report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
 order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
 button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
-double tap and a restart, `modeButtonMashing` the star/check rule and the tile's 600 ms at exact press and lift
-times, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
+double tap and a restart, `libraryMashing` mashes on the star and the check, the house, "All games" double-tapped and the
+tile's 600 ms at exact press and lift times, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
 only when missing; kid playtests 3 and 4 (`apps/porthole/docs/launcher-home-playtest-3.md`, `-4.md`) replayed
 star mode, and b2 asserts `home_gold` (the Library's gold stars) at 0 in star mode and 5 after a check with none.

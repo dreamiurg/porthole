@@ -12,6 +12,12 @@ namespace launcher {
 constexpr ui::Box HEADER = {21, 30, 91, 24};
 constexpr ui::Box LIGHT = {114, 30, 24, 24};
 constexpr ui::Box CAPTION = {HEADER.x, HEADER.y, LIGHT.x + LIGHT.w - HEADER.x, HEADER.h};   // a pressed game's name
+// Star mode's header row: the green check (Done) at its left, Home's five places as stars in the rest of the header,
+// and the sun's place left empty, so neither half of a mash on the star or the check lands on the other (kid playtest
+// 8). "Home full!" over the places takes the sun's place too, for "Stars: page N"; it is not a target.
+constexpr ui::Box DONE = {HEADER.x, HEADER.y, 24, 24};
+constexpr ui::Box PLACES = {DONE.x + DONE.w + 2, HEADER.y, HEADER.x + HEADER.w - DONE.x - DONE.w - 2, HEADER.h};
+constexpr ui::Box FULL = {PLACES.x, HEADER.y, LIGHT.x + LIGHT.w - PLACES.x, HEADER.h};
 constexpr ui::Box LIGHT_AUTO = {50, 108, 60, 30};   // the light screen's Auto, under its row of three suns
 constexpr int GRASS_Y = 123;
 constexpr int PER_PAGE = 6, PER_ROW = 3;

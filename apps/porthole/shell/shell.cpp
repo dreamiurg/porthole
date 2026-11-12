@@ -53,7 +53,6 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
   if (in.pressed) pressMs_ = ms;   // a tap's own press start (Input::heldMs is 0 on its release)
-  noteModePress(in, ms);   // before the gate, which hides a mashing kid's second press
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
   if (guardScreenTime()) return;
@@ -121,7 +120,7 @@ bool Shell::guardScreenTime() {
   go(SH_REST); return true;
 }
 void Shell::select(int id) {
-  active_ = id; page_ = 0; starMode_ = favsKept_ = false; modeMs_ = ms_ - 1000;
+  active_ = id; page_ = 0; starMode_ = favsKept_ = false;
   if (!shell::loadFavorites(*st_, id, favs_)) {   // a kid's first Home: no game here now is new to them
     for (int k = 0; k < nApps_; k++) favs_.seen |= shell::gameBit(ids_[k]);
     // Written only when missing: a damaged one, or a newer version's after a USB rollback, stays for that firmware.
@@ -483,12 +482,12 @@ int Shell::homeTiles(int* games) const {
 }
 void Shell::updateLauncher() {
   if (ui::back(in_) || in_.tapIn(HEADER.x, HEADER.y, HEADER.w, HEADER.h)) { go(SH_PICK); return; }
-  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h)) { go(SH_LIGHT); return; }
+  if (ui::clicked(in_, LIGHT)) { go(SH_LIGHT); return; }
   int games[MAX_APPS + 1]; const int m = homeTiles(games);
   for (int i = 0; i < m; i++) {
     const ui::Box b = launcher::tile(i, m);
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
-    if (games[i] >= 0) openIdx(games[i]); else { page_ = 0; go(SH_LIBRARY); }
+    if (games[i] >= 0) openIdx(games[i]); else { page_ = 0; fromHomeMs_ = ms_; go(SH_LIBRARY); }
     return;
   }
 }
@@ -565,22 +564,11 @@ void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a b
 // A gold star marks a favorite. The star button (the sun's place) starts star mode: a tap stars or unstars a game
 // instead of opening it, up to MAX_FAVS, kept only by the green check; the home button (or the rest screen, or a
 // restart) puts Home back as it was, since a kid who wandered in by accident (kid playtest 2) never meant to edit it.
-static bool onModeSpot(int x, int y) {   // a plain box test: the UI audit already logs LIGHT through tapIn
-  const ui::Box& m = launcher::LIGHT; return x >= m.x && x < m.x + m.w && y >= m.y && y < m.y + m.h;
-}
-// The star button and the check share one spot, so a press there begun within 1 s of a mode change, or of the lift of
-// a press so ignored, is the same mashing (kid playtest 6); never past 3 s from the change, so a kid retrying once a
-// second is heard (kid playtest 7, K1).
-void Shell::noteModePress(const Input& in, uint32_t ms) {
-  if (in.pressed) modeIgnore_ = screen_ == SH_LIBRARY && onModeSpot(in.x, in.y) && ms - modeMs_ < 1000 && ms - modeChangeMs_ < 3000;
-  if (modeIgnore_ && (in.pressed || in.released)) modeMs_ = ms;
-}
 void Shell::updateLibrary() {
   if (ui::back(in_)) { const bool stars = starMode_; leaveStars(false); go(stars ? SH_LIBRARY : SH_LAUNCHER); return; }
-  if (in_.tapIn(LIGHT.x, LIGHT.y, LIGHT.w, LIGHT.h) && onModeSpot(in_.downX, in_.downY)) {   // begun there: the rule saw it
-    if (modeIgnore_) return;
+  if (ui::clicked(in_, starMode_ ? launcher::DONE : LIGHT)) {   // never one spot: a mash on either acts once
     if (starMode_) leaveStars(true);
-    else { starMode_ = true; starsBefore_ = favs_; fullUntil_ = ms_; lastStar_ = -1; modeMs_ = modeChangeMs_ = ms_; }
+    else { starMode_ = true; starsBefore_ = favs_; fullUntil_ = ms_; lastStar_ = -1; }
     go(SH_LIBRARY); return;
   }
   int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
@@ -591,7 +579,8 @@ void Shell::updateLibrary() {
   const int k0 = launcher::first(n, page_), m = launcher::count(n, page_);
   for (int i = 0; i < m; i++) {
     const ui::Box b = launcher::tile(i, m);
-    if (in_.tapIn(b.x, b.y, b.w, b.h)) { tapLibrary(on[k0 + i]); return; }
+    // A slow double tap on Home's "All games" (kid playtest 8, m2) must not open the game under it here.
+    if (in_.tapIn(b.x, b.y, b.w, b.h)) { if (pressMs_ - fromHomeMs_ >= 800) tapLibrary(on[k0 + i]); return; }
   }
 }
 void Shell::tapLibrary(int k) {
@@ -607,7 +596,7 @@ void Shell::tapLibrary(int k) {
 }
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
-  starMode_ = false; modeMs_ = modeChangeMs_ = ms_;
+  starMode_ = false;
   if (!keep) { favs_ = starsBefore_; return; }
   // Every star taken off and none hidden: "not picked", so Home, the Library and star mode all show the default again
   // (kid playtest 4, M1); a hidden one (a game switched off) keeps the kid's list for when it is back.
@@ -622,31 +611,33 @@ static void star(int x, int y, int s, uint8_t fill = C_GOLD) {
       for (int c = 0; c < 9; c++)
         if (ROWS[r][c] == '#') { if (pass) rect(x + c * s, y + r * s, s, s, fill); else rect(x + c * s - 1, y + r * s - 1, s + 2, s + 2, C_DKBROWN); }
 }
-void Shell::drawStarButton() {   // the star that starts star mode, or the green check that ends it
-  const int dy = ui::pressing(in_, LIGHT) && !modeIgnore_ ? 1 : 0;   // an ignored press looks ignored
-  ui::drawButton({LIGHT, nullptr, nullptr, starMode_ ? (uint8_t)C_GREEN : (uint8_t)C_WHITE}, dy);
-  if (!starMode_) { star(LIGHT.x + 3, LIGHT.y + 3 + dy, 2); return; }
+void Shell::drawStarButton(const ui::Box& b) {   // the star that starts star mode, or the green check that ends it
+  const int dy = ui::pressing(in_, b) ? 1 : 0;
+  ui::drawButton({b, nullptr, nullptr, starMode_ ? (uint8_t)C_GREEN : (uint8_t)C_WHITE}, dy);
+  if (!starMode_) { star(b.x + 3, b.y + 3 + dy, 2); return; }
   const uint8_t ink = ui::inkOn(C_GREEN);
   for (int t = 0; t < 3; t++) {
-    line(LIGHT.x + 5, LIGHT.y + 11 + t + dy, LIGHT.x + 9, LIGHT.y + 15 + t + dy, ink);
-    line(LIGHT.x + 9, LIGHT.y + 15 + t + dy, LIGHT.x + 18, LIGHT.y + 6 + t + dy, ink);
+    line(b.x + 5, b.y + 11 + t + dy, b.x + 9, b.y + 15 + t + dy, ink);
+    line(b.x + 9, b.y + 15 + t + dy, b.x + 18, b.y + 6 + t + dy, ink);
   }
 }
-// The title: a plain label on the sky, not a button. In star mode Home's five places as stars (gold taken, white
-// free: no number to read), or for 2 s after a refused star "Home full!" in yellow, then "Tap a star", or the page
-// holding them (starPage, 1-based) when this one has none; a finger on the star button names it.
+// The title: a plain label on the sky, not a button. In star mode the check, then Home's five places as stars (gold
+// taken, white free: no number to read), or for 2 s after a refused star "Home full!" in yellow, then "Tap a star",
+// or the page holding them (starPage, 1-based) when this one has none; a finger on the button names it.
 void Shell::drawLibraryTitle(int starred, int starPage) {
-  const int cx = HEADER.x + HEADER.w / 2;
-  if (!starMode_) textCentered(cx, HEADER.y + 8, "All games", C_NAVY);
+  using launcher::DONE; using launcher::PLACES; using launcher::FULL;
+  if (!starMode_) textCentered(HEADER.x + HEADER.w / 2, HEADER.y + 8, "All games", C_NAVY);
   else if (homeFull()) {
     char where[16] = "Tap a star"; if (starPage) snprintf(where, sizeof where, "Stars: page %d", starPage);
-    ui::drawButton({HEADER, nullptr, nullptr, C_YELLOW}, 0);
-    textCentered(cx, HEADER.y + 3, "Home full!", C_DKBROWN); textCentered(cx, HEADER.y + 13, where, C_DKBROWN);
+    const int cx = FULL.x + FULL.w / 2;
+    ui::drawButton({FULL, nullptr, nullptr, C_YELLOW}, 0);
+    textCentered(cx, FULL.y + 3, "Home full!", C_DKBROWN); textCentered(cx, FULL.y + 13, where, C_DKBROWN);
   } else {
-    for (int i = 0; i < shell::MAX_FAVS; i++) star(cx - 28 + i * 12, HEADER.y + 7, 1, i < starred ? C_GOLD : C_WHITE);
+    for (int i = 0; i < shell::MAX_FAVS; i++) star(PLACES.x + PLACES.w / 2 - 28 + i * 12, PLACES.y + 7, 1, i < starred ? C_GOLD : C_WHITE);
   }
-  drawStarButton();
-  if (ui::pressing(in_, LIGHT) && !modeIgnore_) caption(HEADER, starMode_ ? "Done" : "Pick games");
+  const ui::Box& b = starMode_ ? DONE : LIGHT;
+  drawStarButton(b);
+  if (ui::pressing(in_, b)) caption(starMode_ ? PLACES : HEADER, starMode_ ? "Done" : "Pick games");
 }
 bool Shell::drawLibraryTile(int i, int m, int k, uint32_t home, int hop) {   // true: k is on Home
   const ui::Box b = launcher::tile(i, m);
