@@ -49,9 +49,9 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   until `tilt::Steady` reports plausible gravity.
 - All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
-  the action sign and the ghost act on the lift of any press shorter than 2 s (`REST_MS`
-  in `game.cpp`): a hand holding the board for tilt rests a thumb on the glass, and that
-  lift must not act, while a firm 1-1.5 s press is a kid's deliberate choice (playtest 8).
+  the action sign and the ghost act on the lift of a press of any length (a 6-year-old's
+  firm HIDE lasts 2.5 s), except a press that began before the round did (`roundMs_` in
+  `game.cpp`): a thumb resting on the glass from READY or TRY AGAIN must not act.
   Home never hides or emerges. Only the action sign changes hiding state.
 - Time comes from the monotonic millisecond input, with frame gaps capped at
   100 ms; the wall clock is unused and absence never advances a round.

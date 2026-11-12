@@ -269,21 +269,25 @@ static void gatesAndHome() {
   r.frame(); r.enter(); r.wait(500); r.tap(80, 19);
   CHECK(r.game.wantsHome());
 }
-// A thumb resting on the action sign or the ghost while the hand tilts the board does nothing when it lifts.
-static void restingThumb() {   // a 2.5 s rest does nothing; a firm 1 s press counts
-  Run r; r.start(); r.wait(500);
-  for (int i = 0; i < 250; i++) r.frame(true);
-  r.frame(false); r.wait(100);
-  CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
-  for (int i = 0; i < 250; i++) r.frame(true, 34, 42);
-  r.frame(false, 34, 42); r.wait(100);
-  CHECK(r.at("pumpkin_play") && !r.game.round().ghostUsed);
-  for (int i = 0; i < 100; i++) r.frame(true, 34, 42);
-  r.frame(false, 34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
-  Run h; h.start(); h.wait(500);
-  for (int i = 0; i < 100; i++) h.frame(true);
-  h.frame(false); h.wait(100);
-  CHECK(h.at("pumpkin_play") && h.game.round().hidden >= 0);
+// Any press lifted on the action sign or the ghost acts, however long; a thumb already down when the round began does not.
+static void restingThumb() {
+  for (int frames : {50, 250}) {   // a quick 0.5 s press and a firm 2.5 s one both hide
+    Run r; r.start(); r.wait(500);
+    for (int i = 0; i < frames; i++) r.frame(true);
+    r.frame(false);
+    CHECK(r.at("pumpkin_play") && r.game.round().hidden >= 0);
+  }
+  Run g; g.start(); g.wait(500);
+  for (int i = 0; i < 250; i++) g.frame(true, 34, 42);
+  g.frame(false, 34, 42); g.wait(100); CHECK(g.game.round().ghostUsed);
+  // READY tapped while the board jolts, then a thumb rests on HIDE before the round starts and lifts mid-round.
+  Run t; t.enter(); t.wait(500); t.tap(); t.wait(500);
+  t.gravity = {2000, 2000, 2000}; t.tap(); t.frame(true);
+  t.gravity = grip::FLAT;
+  for (int i = 0; i < 100; i++) t.frame(true);
+  CHECK(t.at("pumpkin_play"));
+  t.frame(false); t.wait(100);
+  CHECK(t.at("pumpkin_play") && t.game.round().hidden == -1);
 }
 static void results() {
   Run lost; lost.start();

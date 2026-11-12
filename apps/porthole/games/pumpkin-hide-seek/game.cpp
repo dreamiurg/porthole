@@ -4,7 +4,6 @@
 namespace pumpkin {
 namespace {
 constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24}, GHOST = {22, 30, 24, 24};
-constexpr uint32_t REST_MS = 2000;   // a press this long in play is a resting thumb (a kid's firm press is 0.6-1.5 s)
 bool inside(int x, int y, ui::Box b) {
   return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h;
 }
@@ -33,6 +32,7 @@ void Game::go(Page page) {
 }
 void Game::start() {
   round_ = newRound(ms_ * 2654435761u + ++plays_);  // a fresh layout and Grandma every round
+  roundMs_ = ms_;
   go(Page::Play);
 }
 bool Game::action() const { return tapped(in_, ACTION); }
@@ -53,11 +53,11 @@ void Game::calibrate() {
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // A hand holding the board for tilt rests a thumb on the glass: a press of REST_MS or more is that thumb, not a
-  // choice. A shorter one counts, a firm deliberate press included (600 ms dropped those).
-  const bool quick = ms_ - pressMs_ < REST_MS;
-  actionPending_ = actionPending_ || (quick && action());
-  ghostPending_ = ghostPending_ || (quick && !round_.ghostUsed && tapped(in_, GHOST));
+  // A press of any length counts (a 6-year-old's firm HIDE lasts 2.5 s), but not a thumb already resting on the
+  // glass when the round began: its lift is not a choice.
+  const bool fresh = pressMs_ > roundMs_;
+  actionPending_ = actionPending_ || (fresh && action());
+  ghostPending_ = ghostPending_ || (fresh && !round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
     step(round_, tilt.x, actionPending_, ghostPending_);
