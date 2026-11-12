@@ -15,6 +15,7 @@ struct View {
   float beamX = 80;  // cone endpoint on y=99; same width (+/-20) as detection
   bool searching = false, warning = false, ready = false, starting = false;
   float exposure = 0, homeHold = 0;
+  bool actionDown = false;            // the action sign is under a press it takes: drawn sunk
   float candy[3] = {58, 102, 134};    // candy corn centers on the lane
   uint8_t got = 0;                    // bit i: candy i collected
   uint32_t sinceCandy = UINT32_MAX;   // ms since the last pickup

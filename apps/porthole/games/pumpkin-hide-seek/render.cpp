@@ -67,8 +67,9 @@ void label(int y,const char* s,int cx=80) {
  int w=static_cast<int>(std::strlen(s))*6+7;
  box((2*cx-w)/2,y-3,w,13,INK); text(y,s,CREAM,1,cx);
 }
-void button(const char* s) {
- box(40,119,80,24,INK); box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
+void button(const char* s,bool down) {  // down: sunk under the finger, its gold lip pressed away
+ const int d=down?2:0;
+ box(40,119,80,24,INK); box(42,121+d,76,20-d,CREAM); if(!down) box(42,139,76,2,GOLD); text(127+d,s,INK);
 }
 void home(float progress) {
  box(68,8,24,22,INK); box(70,10,20,18,PURPLE);
@@ -270,15 +271,15 @@ void scene(const View& v) {
  if(v.hidden>=0) box(x-10,107,21,2,INK);
  sparkle(x,v.sinceCandy);
 }
-void intro() {
+void intro(const View& v) {
  box(40,35,80,21,INK); text(37,"PUMPKIN",GOLD); text(47,"HIDE & SEEK",CREAM);
- label(110,"TILT TO ROLL"); button("START"); label(146,"GET CANDY");
+ label(110,"TILT TO ROLL"); button("START",v.actionDown); label(146,"GET CANDY");
 }
 void calibrate(const View& v) {
  label(37,"HOLD IT COMFY"); label(51,"AND STILL");
  oval(80,79,14,13,INK); box(70,69,20,18,CREAM); box(72,71,16,14,BLUE);
  box(78,87,4,2,GOLD); box(65,79,5,7,SKIN); box(90,79,5,7,SKIN);
- label(108,v.ready?"READY!":"KEEP STILL"); button(v.ready?"READY":"WAIT");
+ label(108,v.ready?"READY!":"KEEP STILL"); button(v.ready?"READY":"WAIT",v.actionDown);
 }
 // Three candy corn slots under Home: outlines fill in as the candy is picked up.
 void candyHud(uint8_t got) {
@@ -311,7 +312,7 @@ void play(const View& v) {
  // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
  // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
- button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER");
+ button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER",v.actionDown);
 }
 void icing(uint32_t ms) {
  for(int x=0;x<160;++x) {
@@ -338,9 +339,9 @@ void endPage(const View& v) {
  int q=v.quip%QUIPS;
  if(v.page==Page::Lost) {
   gfx::clear(colorIndex(ORANGE)); icing(1600); pie(); box(30,39,100,19,INK); text(42,"YOU LOST",CREAM,2);
-  label(108,LOST_QUIP[q]); button("TRY AGAIN");
+  label(108,LOST_QUIP[q]); button("TRY AGAIN",v.actionDown);
  } else {
-  label(37,WON_QUIP[q][0]); label(51,WON_QUIP[q][1]); pumpkinFace(80,86,1,false); button("PLAY AGAIN");
+  label(37,WON_QUIP[q][0]); label(51,WON_QUIP[q][1]); pumpkinFace(80,86,1,false); button("PLAY AGAIN",v.actionDown);
   box(73,88,14,4,INK); box(75,89,10,2,CREAM); box(79,89,2,2,INK);  // a wide grin over the usual mouth
   for(int x=62;x<=98;x+=18) candyCorn(x,x==80?103:100,true);
   for(int x=32;x<136;x+=22) box(x,62+(x%13),2,3,GOLD);
@@ -353,7 +354,7 @@ void mask() {
 void draw(const View& v) {
  gfx::textLogReset(); scene(v);
  switch(v.page) {
-  case Page::Intro: intro(); break;
+  case Page::Intro: intro(v); break;
   case Page::Calibrate: calibrate(v); break;
   case Page::Play: play(v); break;
   case Page::Catch: label(38,CATCH_QUIP[v.quip%QUIPS]); break;

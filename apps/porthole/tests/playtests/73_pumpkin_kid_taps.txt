@@ -54,3 +54,30 @@ wait 750
 tap 80 19
 wait 100
 expect-screen launcher
+# Shelter playtest 9, M1: during QUICK! HIDE! a firm 2.5 s press on HIDE hides as it lands and stays hidden through
+# the sweep, the sign sunk while held; a double tap on COME OUT comes out once (not out and back in)
+app pumpkin
+wait 850
+tap 80 131
+wait 850
+tap 80 131
+wait 3200
+expect-screen pumpkin_play
+expect phase=1
+down 80 131
+wait 100
+expect hidden=1
+snap pumpkin_hide_held
+wait 2400
+up
+expect hidden=1
+wait 6000
+expect-screen pumpkin_play
+expect hidden=1
+tap 80 131
+wait 100
+tap 80 131
+wait 100
+expect hidden=-1
+expect-screen pumpkin_play
+sheet kid_taps

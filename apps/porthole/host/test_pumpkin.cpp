@@ -270,21 +270,46 @@ static void gatesAndHome() {
   r.frame(); r.enter(); r.wait(FRESH); r.tap(80, 19);
   CHECK(r.game.wantsHome());
 }
-// A thumb resting on the action sign or the ghost while the hand tilts the board does nothing when it lifts.
-static void restingThumb() {   // a 2.5 s rest does nothing; a firm 1 s press counts
+// The signs act as a press starts on them, however long it lasts (playtest 9: a 2.5 s press on HIDE was dropped and
+// Grandma caught the kid), and look pressed while it does. A thumb resting there since before the round started never
+// acts, and a double tap (or a mash) toggles once.
+static void firmPresses() {
+  for (int held : {500, 2500}) {
+    Run r; r.start(); r.wait(FRESH);
+    r.frame(true); CHECK(r.game.round().hidden == 1);   // hidden on the press's first frame
+    for (int i = 0; i < held; i += 10) r.frame(true);
+    r.frame(false); r.wait(100); CHECK(r.at("pumpkin_play") && r.game.round().hidden == 1);
+  }
+  Run g; g.start(); g.wait(FRESH);
+  g.frame(true, 34, 42); CHECK(g.game.round().ghostUsed);
+  for (int i = 0; i < 250; i++) g.frame(true, 34, 42);
+  g.frame(false, 34, 42); CHECK(g.at("pumpkin_play"));
+}
+static void restingThumb() {   // on the sign through calibration's wait for a steady board, then 3 s of play
+  Run r; r.enter(); r.wait(FRESH); r.tap(); r.wait(FRESH);
+  r.gravity = {2000, 2000, 2000}; r.tap(); r.frame(true); CHECK(r.at("pumpkin_calibrate"));
+  r.gravity = grip::FLAT;
+  for (int i = 0; i < 300 && !r.at("pumpkin_play"); i++) r.frame(true);
+  CHECK(r.at("pumpkin_play"));
+  for (int i = 0; i < 300; i++) r.frame(true);
+  r.frame(false); r.wait(100); CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
+  r.frame(true); r.frame(false); CHECK(r.game.round().hidden == 1);   // lifted and pressed again: it hides
+}
+static void doubleTaps() {
   Run r; r.start(); r.wait(FRESH);
-  for (int i = 0; i < 250; i++) r.frame(true);
-  r.frame(false); r.wait(100);
-  CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
-  for (int i = 0; i < 250; i++) r.frame(true, 34, 42);
-  r.frame(false, 34, 42); r.wait(100);
-  CHECK(r.at("pumpkin_play") && !r.game.round().ghostUsed);
-  for (int i = 0; i < 100; i++) r.frame(true, 34, 42);
-  r.frame(false, 34, 42); r.wait(100); CHECK(r.game.round().ghostUsed);
-  Run h; h.start(); h.wait(FRESH);
-  for (int i = 0; i < 100; i++) h.frame(true);
-  h.frame(false); h.wait(100);
-  CHECK(h.at("pumpkin_play") && h.game.round().hidden >= 0);
+  r.tap(); r.wait(100); r.tap(); CHECK(r.game.round().hidden == 1);
+  for (int i = 0; i < 4; i++) { r.wait(150); r.tap(); }
+  CHECK(r.game.round().hidden == 1);   // a mash, 150 ms apart: still the one toggle
+  r.wait(500); r.tap(); CHECK(r.game.round().hidden == -1);   // after a pause: out
+}
+static uint16_t pixels[gfx565::W * gfx565::H];
+static void pressedLook() {   // the sign sinks under a press it takes, never under the half of a double tap it drops
+  gfx565::target(pixels);
+  auto sunk = [&](Run& r) { r.game.render(); return pixels[(122 * 3) * 480 + 44 * 3] != pixels[(126 * 3) * 480 + 44 * 3]; };
+  Run r; r.start(); r.wait(FRESH);
+  CHECK(!sunk(r));
+  r.frame(true); CHECK(sunk(r) && r.game.round().hidden == 1);
+  r.frame(false); r.wait(100); r.frame(true); CHECK(!sunk(r) && r.game.round().hidden == 1);
 }
 static void results() {
   Run lost; lost.start();
@@ -324,11 +349,11 @@ static void heldAcrossPages() {
   r.frame(false); CHECK(r.at("pumpkin_lost"));
   r.tap(); CHECK(r.at("pumpkin_play"));   // the held finger's lift is no tap, so the next one needs no pause
   r.wait(FRESH);
-  // A drag onto Home from the action sign is never a Home hold.
+  // A drag onto Home from the action sign is never a Home hold; the press hid the pumpkin as it began.
   r.frame(true, 80, 131);
   for (int i = 0; i < 70; i++) r.frame(true, 80, 19);
   CHECK(!r.game.wantsHome());
-  r.frame(false); CHECK(r.game.round().hidden == -1);
+  r.frame(false); CHECK(r.game.round().hidden == 1);
 }
 static void clocks() {
   Run r; r.ms = UINT32_MAX - 2100; r.start(); r.wait(600);
@@ -340,7 +365,6 @@ static void clocks() {
   CHECK(r.game.round().elapsed == before + 120);
   r.enter(); CHECK(r.at("pumpkin_intro") && r.game.round().elapsed == 0);
 }
-static uint16_t pixels[gfx565::W * gfx565::H];
 static void auditText() {
   for (int i = 0; i < gfx::textLogCount; i++) {
     const auto b = gfx::textLog[i];
@@ -438,6 +462,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); firmPresses(); restingThumb(); doubleTaps(); pressedLook(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

@@ -48,12 +48,17 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   starts Intro and requires calibration again. A jolt delays a pending start
   until `tilt::Steady` reports plausible gravity.
 - All pages use `ui::FreshGate` (Icing goes on from the 600 ms Catch without a second
-  gate, so Home works from 0.8 s after the catch). Home is always visible at {68,8,24,22}; during
-  Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
-  the action sign and the ghost act on the lift of any press shorter than 2 s (`REST_MS`
-  in `game.cpp`): a hand holding the board for tilt rests a thumb on the glass, and that
-  lift must not act, while a firm 1-1.5 s press is a kid's deliberate choice (playtest 8).
-  Home never hides or emerges. Only the action sign changes hiding state.
+  gate, so Home works from 0.8 s after the catch). Home is always visible at {68,8,24,22};
+  during Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During
+  Play the action sign and the ghost act as a press lands on them, however long it then
+  lasts (shelter playtest 9: a 2.5 s press on HIDE during QUICK! HIDE! was dropped and the
+  kid was caught), and the sign is drawn sunk (gold lip gone, face 2 px lower) while that
+  press holds. A thumb resting there since before the round never starts a press:
+  FreshGate hides it until lifted. A press on the sign beginning within 400 ms (`AGAIN_MS`
+  in `game.cpp`) of the lift of the last press begun on it does nothing, so a double tap
+  or a mash toggles once until a pause. Home never hides or emerges. Only the action sign
+  changes hiding state. Tests: `firmPresses`, `restingThumb`, `doubleTaps`, `pressedLook`
+  in `host/test_pumpkin.cpp`; playtest `73_pumpkin_kid_taps`.
 - Time comes from the monotonic millisecond input, with frame gaps capped at
   100 ms; the wall clock is unused and absence never advances a round.
 - `render.*`: original crisp pixel art on a 160px logical grid expanded 3x onto
