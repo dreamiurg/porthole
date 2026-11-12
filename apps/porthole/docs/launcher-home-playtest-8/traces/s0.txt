@@ -1,0 +1,2 @@
+tick 1000
+shot s00_boot

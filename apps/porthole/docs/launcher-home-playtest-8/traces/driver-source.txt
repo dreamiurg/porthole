@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Replay a trace against a fresh `snap --serve --fresh` (cwd run/), saving native PNG frames.
+Trace: down X Y | move X Y | up | tick MS | shot NAME | tap X Y HOLD [NAME] | film MS STEP NAME | # comment
+tap = down, hold HOLD ms (mid-press shot NAME_p if NAME), up. film = shots every STEP ms for MS ms."""
+import os, subprocess, sys, zlib, struct
+HERE = os.path.dirname(os.path.abspath(__file__))
+RUN = os.path.join(HERE, "..", "run")
+trace, outdir = sys.argv[1], sys.argv[2]
+os.makedirs(outdir, exist_ok=True)
+p = subprocess.Popen(["./snap", "--serve", "--fresh"], cwd=RUN, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+t = 0
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+def png(rgb, w, h, path):
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    ch = lambda k, d: struct.pack(">I", len(d)) + k + d + struct.pack(">I", zlib.crc32(k + d) & 0xFFFFFFFF)
+    open(path, "wb").write(b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                           + ch(b"IDAT", zlib.compress(raw, 1)) + ch(b"IEND", b""))
+def shot(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    hdr = p.stdout.readline().decode().split(); n = int(hdr[-1]); buf = b""
+    while len(buf) < n: buf += p.stdout.read(n - len(buf))
+    png(buf, 480, 480, os.path.join(outdir, name + ".png")); print(f"t={t:6d} shot {name}")
+WATCH = False; last = None; finger = "up"
+def grab():
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    hdr = p.stdout.readline().decode().split(); n = int(hdr[-1]); buf = b""
+    while len(buf) < n: buf += p.stdout.read(n - len(buf))
+    return buf
+def px(buf, x, y):
+    i = (y*480 + x)*3; return tuple(buf[i:i+3])
+def state(buf):
+    sky = px(buf, 60, 100)
+    mode = {(168,224,255): "NORMAL", (131,118,156): "STAR"}.get(sky, "sky%02x%02x%02x" % sky)
+    cap = "CAPTION" if px(buf, 80, 110) == (255,236,39) else "-"
+    btn = px(buf, 378, 128)
+    icon = {(245,196,0): "staricon", (92,58,30): "check"}.get(btn, "btn%02x%02x%02x" % btn)
+    import hashlib
+    h = hashlib.md5(b"".join(buf[(y*480+330)*3:(y*480+420)*3] for y in range(80, 170))).hexdigest()[:6]
+    return f"{mode:7s} {cap:7s} {icon:9s} btnimg={h}"
+def tick(ms):
+    global t, last
+    if not WATCH:
+        t += ms; r = cmd(f"tick {ms}")
+        if r != "ok": print("tick:", r)
+        return
+    left = ms
+    while left > 0:
+        st = min(40, left); left -= st; t += st; cmd(f"tick {st}")
+        s = state(grab()) + f" finger={finger}"
+        if s != last: print(f"  t={t:6d} {s}"); last = s
+for raw in open(trace):
+    s = raw.split("#")[0].split()
+    if not s: continue
+    k = s[0]
+    if k == "tick": tick(int(s[1]))
+    elif k == "shot": shot(s[1])
+    elif k in ("down", "move"):
+        r = cmd(" ".join(s))
+        if r != "ok": print(f"t={t} {' '.join(s)} -> {r}")
+    elif k == "up": cmd("up"); finger = "up"
+    elif k == "watch": WATCH = s[1] == "on"; t0 = t; print(f"t={t} watch {s[1]}")
+    elif k == "note": print(f"t={t:6d} NOTE {' '.join(s[1:])}")
+    elif k == "tap":
+        x, y, hold = s[1], s[2], int(s[3]); name = s[4] if len(s) > 4 else None
+        cmd(f"down {x} {y}"); finger = f"down@{x},{y}"
+        if WATCH: print(f"t={t:6d} DOWN {x},{y} hold {hold}")
+        if name: tick(hold // 2); shot(name + "_p"); tick(hold - hold // 2)
+        else: tick(hold)
+        cmd("up"); finger = "up"
+        if WATCH: print(f"t={t:6d} UP")
+    elif k == "film":
+        total, step, name = int(s[1]), int(s[2]), s[3]
+        for i in range(0, total, step): tick(step); shot(f"{name}_{i+step:05d}")
+    else: print("passthru", s, cmd(" ".join(s)))
+p.stdin.close(); p.wait()

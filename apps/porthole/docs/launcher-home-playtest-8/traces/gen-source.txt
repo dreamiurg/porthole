@@ -1,0 +1,18 @@
+import sys
+# gen.py NAME PRE BURST... ; PRE: 'normal' (settled 1.5 s in All games) or 'star' (star mode entered 1.5 s ago)
+# BURST: list of hold:gap pairs e.g. 300:150 300:150 300
+name, pre = sys.argv[1], sys.argv[2]
+out = open(f"traces/{name}.txt", "w")
+out.write(open("traces/setup.txt").read())
+if pre == "star":
+    out.write("tap 126 43 300\ntick 1500\n")
+elif pre == "normal":
+    out.write("tick 300\n")
+out.write("shot a0_before\nwatch on\n")
+for i, tok in enumerate(sys.argv[3:]):
+    if tok.startswith("t"):
+        out.write(f"tick {tok[1:]}\n"); continue
+    hold, _, gap = tok.partition(":")
+    out.write(f"tap 126 43 {hold} p{i+1}\n")
+    if gap: out.write(f"tick {gap}\n")
+out.write("tick 1500\nwatch off\nshot z_end\n")

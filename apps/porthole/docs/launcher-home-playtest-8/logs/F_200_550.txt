@@ -1,0 +1,50 @@
+t=11300 watch on
+t= 11300 DOWN 126,43 hold 200
+  t= 11340 NORMAL  CAPTION staricon  btnimg=ec8386 finger=down@126,43
+t= 11500 UP
+  t= 11540 STAR    -       check     btnimg=b73036 finger=up
+t= 12050 DOWN 126,43 hold 200
+  t= 12090 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 12250 UP
+  t= 12290 STAR    -       check     btnimg=b73036 finger=up
+t= 12800 DOWN 126,43 hold 200
+  t= 12840 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 13000 UP
+  t= 13040 STAR    -       check     btnimg=b73036 finger=up
+t= 13550 DOWN 126,43 hold 200
+  t= 13590 STAR    CAPTION btn00e436 btnimg=10f3c0 finger=down@126,43
+t= 13750 UP
+  t= 13790 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t= 14300 DOWN 126,43 hold 200
+  t= 14340 NORMAL  -       staricon  btnimg=5a06e4 finger=down@126,43
+t= 14500 UP
+  t= 14540 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t= 15050 DOWN 126,43 hold 200
+  t= 15090 NORMAL  -       staricon  btnimg=5a06e4 finger=down@126,43
+t= 15250 UP
+  t= 15290 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t= 15800 DOWN 126,43 hold 200
+  t= 15840 NORMAL  CAPTION staricon  btnimg=ec8386 finger=down@126,43
+t= 16000 UP
+  t= 16040 STAR    -       check     btnimg=b73036 finger=up
+t= 16550 DOWN 126,43 hold 200
+  t= 16590 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 16750 UP
+  t= 16790 STAR    -       check     btnimg=b73036 finger=up
+t= 17300 DOWN 126,43 hold 200
+  t= 17340 STAR    -       check     btnimg=b73036 finger=down@126,43
+t= 17500 UP
+  t= 17540 STAR    -       check     btnimg=b73036 finger=up
+t= 18050 DOWN 126,43 hold 200
+  t= 18090 STAR    CAPTION btn00e436 btnimg=10f3c0 finger=down@126,43
+t= 18250 UP
+  t= 18290 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t= 18800 DOWN 126,43 hold 200
+  t= 18840 NORMAL  -       staricon  btnimg=5a06e4 finger=down@126,43
+t= 19000 UP
+  t= 19040 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t= 19550 DOWN 126,43 hold 200
+  t= 19590 NORMAL  -       staricon  btnimg=5a06e4 finger=down@126,43
+t= 19750 UP
+  t= 19790 NORMAL  -       staricon  btnimg=5a06e4 finger=up
+t=21250 watch off
