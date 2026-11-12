@@ -967,18 +967,22 @@ static void houseAskIsFresh() {
 }
 // No tap carries through a screen change (kid playtest 10): Home's "All games" sits over the Library's sixth tile
 // (M1), the picker's first row over Home's first tile (M2), and a game's way out near the Library's page arrow (m3).
-// A kid's "again!" taps, 300 ms once a second, open nothing and show no name, however many; one after a pause acts.
+// A kid's "again!" taps, 300 ms once a second, open nothing and show no name until 2.5 s after the change (a kid
+// retrying because "it didn't work" then gets in); a mash right after it opens nothing; a tap after a pause acts.
 static void againTapsCarryNothing() {
   static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
   ms += 1000; taps(sh, ms, ALL, {2, 300, 450}); assert(on(sh, "library"));   // a slow double tap
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ALL, {4, 250, 120}); assert(on(sh, "library"));   // four fast (H6)
+  ms += 1000; taps(sh, ms, ALL, {5, 250, 120}); assert(on(sh, "library"));   // a five-tap mash (H6)
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 1000; taps(sh, ms, ALL, {6, 300, 700}); assert(on(sh, "library") && g.a[5].entered == 0);   // Leo, six times
-  ms += 700; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // ignored: no name
-  liftAt(sh, ms += 300, ALL);
-  ms += 850; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // after a pause: a real tap, named
+  ms += 1000; taps(sh, ms, ALL, {2, 300, 700}); assert(on(sh, "library") && g.a[5].entered == 0);   // Leo, once a second
+  ms += 700; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // 1.7 s after the change: no name
+  liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 0);
+  ms += 700; pressAt(sh, ms, ALL); assert(yellowAt(launcher::CAPTION));       // 2.7 s: past the cap, a real tap, named
   liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 1);
+  g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
+  ms += 1000; taps(sh, ms, ALL, {1, 300, 0}); ms += 850; taps(sh, ms, ALL, {1, 300, 0});   // a pause: acts at once
+  assert(g.a[5].entered == 2);
   g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);
   ms += 1000; taps(sh, ms, r, {1, 300, 0}); ms += 1000; taps(sh, ms, launcher::tile(1, 2), {1, 300, 0});
@@ -988,8 +992,8 @@ static void againTapsCarryNothing() {
   g.a[7].home = true; frame(sh, ms, Input{}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(on(sh, "launcher"));
   ms += 1000; taps(sh, ms, launcher::HEADER, {1, 300, 0}); assert(on(sh, "picker"));
   const ui::Box name = {36, 60, 8, 8};   // on the picker's first row and on Home's first tile
-  ms += 1000; taps(sh, ms, name, {4, 300, 700}); assert(on(sh, "launcher") && g.a[0].entered == 0);
-  ms += 850; taps(sh, ms, name, {1, 300, 0}); assert(g.a[0].entered == 1);
+  ms += 1000; taps(sh, ms, name, {3, 300, 700}); assert(on(sh, "launcher") && g.a[0].entered == 0);
+  ms += 700; taps(sh, ms, name, {1, 300, 0}); assert(g.a[0].entered == 1);   // still retrying, 2.7 s on: it opens
 }
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
@@ -1472,7 +1476,8 @@ static void deleteNeedsACode() {
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
 // that began on it, never under a finger slid onto it from another.
 // FreshGate (os/ui.h): a press begun 600 ms after a screen change is ignored, one at 850 ms acts; an ignored press
-// restarts the wait from its lift, a finger held across the change does not, and a keypad's quick first key counts.
+// restarts the wait from its lift, but only up to 2.5 s from the change; a finger held across the change does not
+// restart it, and a keypad's quick first key counts.
 static void freshGate() {
   auto at = [](ui::FreshGate& g, uint32_t ms, bool down, bool pressed, bool released) {
     Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = released; g.filter(in, ms);
@@ -1484,6 +1489,11 @@ static void freshGate() {
   assert(!at(g, 1850, true, true, false)); at(g, 2000, false, false, true);
   assert(at(g, 2800, true, true, false));   // 800 ms after the last ignored lift
   g.shown(1000); assert(!at(g, 1700, false, false, true) && at(g, 1850, true, true, false));   // held across: its lift
+  g.shown(1000);   // a 1 Hz retry, 300 ms presses 700 ms apart: in on the first press 2.5 s or more after the change
+  for (uint32_t t = 1700; t < 3500; t += 1000) { assert(!at(g, t, true, true, false)); at(g, t + 300, false, false, true); }
+  assert(at(g, 3700, true, true, false));
+  g.shown(1000);   // a five-tap mash right after the change, 250 ms presses 150 ms apart: nothing
+  for (uint32_t t = 1100; t < 3000; t += 400) { assert(!at(g, t, true, true, false)); at(g, t + 250, false, false, true); }
   Input key{}; key.down = key.pressed = true; key.x = 80; key.y = 100;
   g.shownAt(1000, 20, 40); g.filter(key, 1100); assert(key.pressed);   // a keypad's first key away from the tap
 }

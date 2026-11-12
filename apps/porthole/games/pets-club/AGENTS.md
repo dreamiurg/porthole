@@ -110,7 +110,7 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). Taps
   from Paw Street's own house, the splash pup and a sticker card land where the room's Bring back sits; a slow
   double tap's second press there, however long it is then held, waits out the room's `FreshGate` (800 ms, and
-  800 ms from the lift of each press it ignored), so Bring back needs no guard of its own. It calls
+  800 ms from the lift of each press it ignored, up to 2.5 s), so Bring back needs no guard of its own. It calls
   `pet::bringBack`, marks the save dirty and urgent, goes home to the dog and says "<name> is home!" with a few
   hearts; no sound. The move, its undo and the shelter's adoption are saved at once: `saveUrgent()` (`urgent_`)
   asks the shell for its one-second checkpoint, so a restart right after either keeps it. Time away never

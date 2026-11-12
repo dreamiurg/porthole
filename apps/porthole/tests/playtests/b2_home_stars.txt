@@ -280,16 +280,9 @@ up
 wait 650
 expect-screen library
 snap hs14_all_games_again
-# Kid playtest 10, M1: a fourth, fifth and sixth at that pace open nothing either, each waiting from the last one's
-# lift; a tap after a pause opens the game there (Radar).
-repeat 3
-down 124 104
-wait 350
-up
-wait 650
-end
-expect-screen library
-wait 300
+# Kid playtest 10, M1: each ignored press restarts the 800 ms wait from its lift, but only up to 2.5 s from the
+# change, so a kid still retrying at that pace because "it didn't work" gets in: the fourth press, 2.7 s after the
+# Library opened, opens the game there (Radar).
 down 124 104
 wait 350
 up
@@ -317,7 +310,7 @@ wait 300
 tap 36 72
 wait 900
 expect-screen sf_title
-# Kid playtest 10, M2: "again!" taps on his own name in the picker land on Home's first tile: Home stays
+# Kid playtest 10, M2: "again!" taps on his own name in the picker land on Home's first tile: Home stays for them
 tap 72 143
 wait 900
 tap 80 12
@@ -326,11 +319,17 @@ expect-screen launcher
 tap 80 42
 wait 900
 expect-screen picker
-repeat 4
+repeat 3
 down 40 66
 wait 300
 up
 wait 700
 end
 expect-screen launcher
+# still retrying 2.7 s after Home opened: that press gets in (Home's first game, Pets Club)
+down 40 66
+wait 300
+up
+wait 700
+expect-screen splash
 sheet stars
