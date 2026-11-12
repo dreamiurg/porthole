@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Replay a trace (.txt) against a fresh `snap --serve --fresh` in run/, saving PNG frames.
+Trace lines: down X Y | move X Y | up | tick MS | shot NAME | tap X Y HOLDMS [NAME] | # comment
+`tap` = down, tick HOLD (shot NAME_p mid-press if NAME), up. Coordinates logical 0-159."""
+import os, subprocess, sys, zlib, struct
+
+RUN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run")
+trace, outdir = sys.argv[1], sys.argv[2]
+os.makedirs(outdir, exist_ok=True)
+p = subprocess.Popen(["./snap", "--serve", "--fresh"], cwd=RUN, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+t_ms = 0
+
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+
+def png(rgb, w, h, path):
+    raw = b"".join(b"\x00" + rgb[y * w * 3:(y + 1) * w * 3] for y in range(h))
+    ch = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+    open(path, "wb").write(b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                           + ch(b"IDAT", zlib.compress(raw, 1)) + ch(b"IEND", b""))
+
+def shot(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    hdr = p.stdout.readline().decode().split()
+    n = int(hdr[-1]); buf = b""
+    while len(buf) < n:
+        buf += p.stdout.read(n - len(buf))
+    png(buf, 480, 480, os.path.join(outdir, name + ".png"))
+    print(f"t={t_ms:6d} shot {name}")
+
+def tick(ms):
+    global t_ms
+    t_ms += ms
+    r = cmd(f"tick {ms}")
+    if r != "ok": print("tick:", r)
+
+for raw in open(trace):
+    s = raw.split("#")[0].split()
+    if not s: continue
+    k = s[0]
+    if k == "tick": tick(int(s[1]))
+    elif k == "shot": shot(s[1])
+    elif k in ("down", "move"):
+        r = cmd(" ".join(s));  print(f"t={t_ms:6d} {' '.join(s)} -> {r}") if r != "ok" else None
+    elif k == "up": cmd("up")
+    elif k == "tap":
+        x, y, hold = s[1], s[2], int(s[3]); name = s[4] if len(s) > 4 else None
+        cmd(f"down {x} {y}")
+        if name:
+            tick(hold // 2); shot(name + "_p"); tick(hold - hold // 2)
+        else:
+            tick(hold)
+        cmd("up")
+    else:
+        print("passthru", s, cmd(" ".join(s)))
+p.stdin.close(); p.wait()
