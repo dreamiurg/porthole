@@ -5,15 +5,13 @@ profile Sam 6
 app pumpkin
 wait 800
 tap 80 131
-wait 750
+wait 850
 tap 80 131
 wait 8000
 expect-screen pumpkin_catch
-# the 600 ms catch is inside its fresh pause, so a tap there waits; the icing goes on from it, and home works
-tap 80 19
-wait 100
+# the icing goes on from the 600 ms catch without a second fresh pause: home works at once
+wait 700
 expect-screen pumpkin_icing
-wait 800
 tap 80 19
 wait 100
 expect-screen launcher

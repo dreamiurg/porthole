@@ -12,13 +12,13 @@ wait 700
 expect-screen sys_info
 ui-check sys_info-home
 tap 54 132
-wait 750
+wait 850
 expect-screen sys_home
 expect sys_home=1
 ui-check
 sheet
 tap 80 114
-wait 750
+wait 850
 expect-screen sys_addr
 ui-check
 tap 143 57
@@ -47,7 +47,7 @@ wait 250
 ui-check sys_find-notfound
 sheet
 tap 80 114
-wait 750
+wait 850
 expect-screen sys_addr
 tap 139 97
 tap 139 97
@@ -63,7 +63,7 @@ expect-screen sys_find
 ui-check sys_find-found
 sheet
 tap 108 114
-wait 750
+wait 850
 expect-screen sys_addr
 tap 124 117
 wait 450
@@ -77,16 +77,16 @@ expect-screen sys_find
 expect sys_lat=47.6200
 ui-check sys_find-savefailed
 tap 80 114
-wait 750
+wait 850
 expect-screen sys_home
 expect sys_lat=47.6205
 expect sys_lon=-122.3493
 ui-check sys_home-set
 # back from every screen
 tap 80 114
-wait 750
+wait 850
 tap 80 12
-wait 750
+wait 850
 expect-screen sys_home
 tap 80 12
 wait 450
@@ -94,7 +94,7 @@ expect-screen sys_info
 sys nohome
 wait 250
 tap 54 132
-wait 750
+wait 850
 expect sys_home=0
 ui-check sys_home-none
 tap 80 12

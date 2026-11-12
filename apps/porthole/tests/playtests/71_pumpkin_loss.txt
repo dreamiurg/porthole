@@ -3,9 +3,9 @@ reset
 tilt 0 1000 0
 profile Sam 6
 app pumpkin
-wait 800
+wait 680
 tap 80 131
-wait 750
+wait 850
 tap 80 131
 wait 7800
 expect-screen pumpkin_catch
@@ -27,6 +27,7 @@ tap 80 131
 tap 80 131
 wait 600
 expect-screen pumpkin_play
-expect hidden=-1
+# TRY AGAIN's double tap: its second press began in the new round, so the sign takes it and the pumpkin hides
+expect hidden=1
 expect exposure=0
 sheet loss

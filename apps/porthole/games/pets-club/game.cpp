@@ -17,7 +17,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
+  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; in_ = {};   // the last visit's touch is not this one's
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
   for (int i = 0; i < nKids_; i++) {
     kids_[i] = e.all[i];
@@ -76,7 +76,7 @@ void Game::finishAdoption() {
 const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
 
 void Game::go(Screen s) {   // a tap acts on one screen only
-  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_);
+  screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.changed(ms_, in_);
   yesHold_ = {}; bounceUntil_ = 0;
 }
 void Game::toast(const char* s, uint32_t ms) { strncpy(toast_, s, sizeof toast_ - 1); toast_[sizeof toast_ - 1] = 0; toastUntil_ = ms_ + ms; }
@@ -515,7 +515,10 @@ void Game::updateHome() {
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
-    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN)) bringDogBack();
+    // Bring back sits where taps from Paw Street's own house, the splash pup and a sticker card land: FreshGate holds
+    // a second press near the first, but a double tap that drifts SPOT_R is a new target to it, so only a press begun
+    // once the room has shown a second takes this one-way choice.
+    if (pet::canBringBack(save_) && ui::clicked(in_, ROOM_BRING_BACK_BTN) && pressedAfterPhase(1000)) bringDogBack();
     else if (ui::clicked(in_, SHELTER_BTN)) { shelterSel_ = 0; go(SC_SHELTER); }
     return;
   }
@@ -1074,7 +1077,7 @@ void Game::updateTrain() {
   if (backButton()) { go(SC_TRICKS); return; }
   switch (trainPhase_) {
     case 0:  // intro: tap anywhere to start
-      if (in_.tap) {
+      if (in_.tap && ms_ - screenMs_ > 400) {
         for (int i = 0; i < 6; i++) seq_[i] = (uint8_t)(pet::rnd(save_) % ZONE_N);
         for (int i = 1; i < 6; i++) if (seq_[i] == seq_[i - 1]) seq_[i] = (uint8_t)((seq_[i] + 1) % ZONE_N);
         trainPhase_ = 1; seqShow_ = -1; seqStepMs_ = ms_ + 500;
@@ -1320,7 +1323,7 @@ void Game::bringDogBack() {
   spawn(80, 96, 0, 6);
 }
 void Game::drawBringBack(const ui::Box& b, bool picture) {   // two lines: "Bring back" on one (70 px) would reach the farm's dog
-  const bool pr = ui::pressing(in_, b);
+  const bool pr = ui::pressing(in_, b) && (screen_ != SC_HOME || pressedAfterPhase(1000));   // sinks only under a press it takes
   const int dy = pr ? 1 : 0, cx = b.x + (picture ? 38 : b.w / 2);
   ui::drawButton({b, nullptr, nullptr, C_ORANGE}, pr);
   if (picture) framedPup(b.x + 4, b.y + 7 + dy, DOG_PORTRAIT_SMALL[save_.wallBreeds[save_.wallCount - 1]], 1);   // who comes back
@@ -1420,7 +1423,7 @@ void Game::drawWall() {
 // ---------------------------------------------------------------- gift & celebrate
 void Game::updateGift() {
   if (!giftOpened_) {
-    if (in_.tap) { gift_ = pet::openGift(save_, now_); giftOpened_ = true; screenMs_ = ms_; markDirty(); sound(SND_FANFARE); spawn(80, 70, 4, 18); spawn(80, 70, 1, 8); }
+    if (in_.tap && ms_ - screenMs_ > 300) { gift_ = pet::openGift(save_, now_); giftOpened_ = true; screenMs_ = ms_; markDirty(); sound(SND_FANFARE); spawn(80, 70, 4, 18); spawn(80, 70, 1, 8); }
   } else if (in_.tap && ms_ - screenMs_ > 700) {
     if (gift_.kind == pet::GIFT_PARTY) { save_.hat = 2; celebrate("Party time!", "One whole week together!", 4, SC_HOME); }
     else go(SC_HOME);
@@ -1451,7 +1454,7 @@ void Game::drawGift() {
 }
 void Game::updateCelebrate() {
   if ((ms_ / 200) % 3 == 0 && (ms_ / 33) % 4 == 0) spawn(20 + (int)(pet::rnd(save_) % 120), 10, 4, 1);
-  if (celebAnyRelease_ ? in_.released : in_.tap) go(nextAfterCelebrate_);
+  if ((celebAnyRelease_ ? in_.released : in_.tap) && ms_ - screenMs_ > 700) go(nextAfterCelebrate_);
 }
 void Game::drawCelebrate() {
   clear(C_NAVY);

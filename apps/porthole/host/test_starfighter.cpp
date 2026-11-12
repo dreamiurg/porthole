@@ -88,8 +88,8 @@ static void naturalFlow() {
   s.wait(); s.tap();
   CHECK(s.on("sf_squadron"));
   CHECK(s.game.run().lives == 3 && s.game.run().volleys == 0);
-  s.frame(true, 80, 80); s.wait();
-  CHECK(s.game.run().volleys == 0);
+  s.frame(true, 80, 120); s.wait();
+  CHECK(s.game.run().volleys == 0);   // the brief's tap again, on its spot: no shot
   s.wait(); s.tap(80, 80);
   CHECK(s.game.run().volleys == 1);
   const void* data = nullptr; size_t size = 0;
@@ -202,6 +202,9 @@ static void stageTransitions() {
   CHECK(s.on("sf_explosion"));
   s.wait(EXPLOSION_MS + 20);
   CHECK(s.on("sf_victory"));
+  Session f; f.game.debugCmd("waveclear"); f.wait(WAVE_CLEAR_MS - 200);   // quick taps every 300 ms across a stage change
+  for (int i = 0; i < 8; ++i) { f.tap(80, 80); f.wait(260); }
+  CHECK(f.on("sf_squadron") && f.game.run().volleys >= 4);   // every one from 450 ms after the change fires
 }
 int main() {
   banking(); calibration(); naturalFlow(); invalidGrip(); queuedTaps(); steeringAndClocks();

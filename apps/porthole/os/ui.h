@@ -54,20 +54,34 @@ class Hold {
   uint32_t fromMs_ = 0, ms_ = 0;
 };
 
-// A fresh screen ignores every touch until a press begins FRESH_MS after it appeared, and FRESH_MS after the lift of
-// any press begun on it that it ignored: the finger that changed it (still down after a long press) and a kid's
-// "again!" taps (300-400 ms presses 150-750 ms apart, kid playtests 9 and 10) would otherwise act on whatever now sits
-// under them, while a deliberate tap after a pause acts. Any press begun MAX_MS after the change acts, so a kid
-// retrying about once a second because "it didn't work" never meets a dead screen for long. Call shown() on every
-// screen change and filter() on every frame's input.
-// shownAt() is for a keypad, where a quick first key must count: only a press near (x, y), the tap that opened it,
-// waits out FRESH_MS; one anywhere else (SPOT_R away) is a new tap and opens the gate at once.
+// A fresh screen ignores touches for a moment, so the press that changed it (still down after a long press, or the
+// next of a kid's mash) never acts on whatever now sits under the finger. Call filter() on every frame's input and one
+// of these on every change; a finger held across any of them stays invisible until lifted, and its lift re-arms nothing.
+// changed(): a new screen. One a tap made (a finger down or lifting as it changes) remembers that spot: a mash happens
+//   on one spot, while deliberate navigation goes to a new target (screen-gate playtest M2: a quick reader's taps
+//   looked exactly like a mash to a gate that waited out every press). A press beginning within SPOT_R of the spot
+//   waits until FRESH_MS after the change and FRESH_MS after the lift of each press so ignored ("again!" taps: 300-400
+//   ms presses 150-750 ms apart, kid playtests 9 and 10), but one begun MAX_MS after the change acts, so a kid
+//   retrying about once a second never meets a dead screen for long; a press anywhere else acts at once. A change no
+//   finger made (a timer, a game event) is shown().
+// shown(): a change in place (a page turn, a +/-, a new cue) or a timer's: any press waits LIGHT_MS, never re-armed,
+//   so quick repeat taps on one control still count.
+// shownAt(): a keypad, where a quick first key must count: only a press near (x, y), the tap that opened it, waits out
+//   FRESH_MS, never re-armed; one anywhere else is a new key and opens the gate at once.
 struct FreshGate {
-  static constexpr uint32_t FRESH_MS = 800, MAX_MS = 2500;
+  static constexpr uint32_t LIGHT_MS = 450, FRESH_MS = 800, MAX_MS = 2500;
   static constexpr int SPOT_R = 16;
-  uint32_t shownMs = 0, changedMs = 0; bool closed = false, spot = false, mashed = false; int spotX = 0, spotY = 0;
-  void shown(uint32_t now) { shownMs = changedMs = now; closed = true; spot = mashed = false; }
-  void shownAt(uint32_t now, int x, int y) { shown(now); spot = true; spotX = x; spotY = y; }
+  uint32_t fromMs = 0, changedMs = 0, waitMs = 0; bool closed = false, spot = false, rearm = false, mashed = false;
+  int spotX = 0, spotY = 0;
+  void shown(uint32_t now) { arm(now, LIGHT_MS); }
+  void shownAt(uint32_t now, int x, int y) { arm(now, FRESH_MS); spot = true; spotX = x; spotY = y; }
+  void changed(uint32_t now, const Input& in) {
+    if (!in.down && !in.released) { shown(now); return; }
+    shownAt(now, in.x, in.y); rearm = true;
+  }
   void filter(Input& in, uint32_t now);
+
+ private:
+  void arm(uint32_t now, uint32_t wait) { fromMs = changedMs = now; waitMs = wait; closed = true; spot = rearm = mashed = false; }
 };
 }  // namespace ui

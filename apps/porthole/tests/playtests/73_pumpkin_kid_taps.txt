@@ -1,4 +1,5 @@
-# Double taps do not spill into a newly opened page. Home in play requires a deliberate hold, canceled on drift.
+# Double taps do not spill into a newly opened page; in play the sign takes any press begun in the round, so READY's
+# double tap hides at once. Home in play requires a deliberate hold, canceled on drift.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -13,7 +14,7 @@ tap 80 131
 tap 80 131
 wait 850
 expect-screen pumpkin_play
-expect hidden=-1
+expect hidden=1
 tap 80 19
 expect-screen pumpkin_play
 down 80 19
@@ -37,20 +38,20 @@ wait 800
 up
 expect-screen pumpkin_play
 down 80 19
-wait 750
+wait 850
 up
 wait 100
 expect-screen launcher
 app pumpkin
-wait 750
+wait 850
 expect-screen pumpkin_intro
 tap 80 19
 wait 100
 expect-screen launcher
 app pumpkin
-wait 750
+wait 850
 tap 80 131
-wait 750
+wait 850
 tap 80 19
 wait 100
 expect-screen launcher

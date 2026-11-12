@@ -32,7 +32,7 @@ void Game::go(Page p) {
   air::Feed* f = air::feed();
   if (p == P_MENU) spotText(f && f->spot(&lat, &lon), lat, lon, spot_, sizeof spot_);
   frames_.reset();
-  gate_.shown(ms_);
+  gate_.changed(ms_, in_);
 }
 
 void Game::setRange(int r) {

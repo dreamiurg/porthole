@@ -2,13 +2,13 @@
 reset
 profile Sam 8
 tap 80 32
-wait 750
+wait 850
 down 80 16
 wait 5000
 up
 wait 700
 tap 106 132
-wait 750
+wait 850
 tap 124 35
 wait 450
 tap 80 70
@@ -44,9 +44,9 @@ expect sys_zone_state=failed
 expect sys_detections=2
 # Manual choice remains authoritative even after a later successful NTP connection.
 tap 80 87
-wait 750
+wait 850
 tap 80 79
-wait 750
+wait 850
 expect sys_zone=America/Denver
 expect sys_auto=0
 tap 103 135
@@ -81,11 +81,11 @@ wait 5000
 up
 wait 700
 tap 106 132
-wait 750
+wait 850
 tap 124 35
 wait 450
 tap 80 70
-wait 750
+wait 850
 tap 57 135
 wait 450
 sys zonefail
@@ -100,11 +100,11 @@ wait 5000
 up
 wait 700
 tap 106 132
-wait 750
+wait 850
 tap 124 35
 wait 450
 tap 80 70
-wait 750
+wait 850
 tap 103 135
 wait 450
 sys timeok

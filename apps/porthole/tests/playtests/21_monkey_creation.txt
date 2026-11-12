@@ -30,9 +30,9 @@ wait 450
 profile Kai 6
 profile Ava 7
 tap 80 32
-wait 750
+wait 850
 tap 80 41
-wait 750
+wait 850
 tap 48 79
 wait 2600
 expect-screen home

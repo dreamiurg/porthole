@@ -3,15 +3,9 @@ newgame Sam Biscuit
 wait 2650
 dbg dirty
 expect dirty=1
-# tap along the rug the pup keeps to (x 50-116 at y=104, clear of the bowl and the ball)
-tap 50 104
+# tap the pup where it stands on the rug (x 60 at y=104, clear of the bowl and the ball); once the tub is open a
+# tap a step away is a new target, and taps rub, so a sweep along the rug would wash the pup by itself
 tap 60 104
-tap 70 104
-tap 80 104
-tap 90 104
-tap 100 104
-tap 110 104
-tap 116 104
 wait 850
 expect-screen bath
 snap 01_bath

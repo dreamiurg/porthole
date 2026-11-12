@@ -17,7 +17,9 @@ layout, and the age-based content tables.
   the shell to show the launcher instead of resuming mid-screen. `pressMs_` is when the
   current press began, and `pressedAfterPhase()` holds a tap to a press begun at or
   after `screenMs_`: a screen change is `FreshGate`'s (`go()`), but a screen that changes in place (Fetch's and Word Fetch's results and each next word, the
-  lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift.
+  lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift. `FreshGate` holds
+  only presses near the tap that changed the screen, so the screens a tap anywhere moves on keep a wait of their own:
+  the celebration (700 ms), the gift (300 ms) and a lesson's start (400 ms).
 - `content.h`, plus its level-3 extensions `content_level3_books.h` and
   `content_level3_words.h`: story text (`Book`) and spelling words (`WordClue`). Plain
   data, no logic. `content.h` pulls the level-3 files in via `#if __has_include(...)`; the
@@ -108,9 +110,9 @@ The one way a dog leaves, and only on the kid's yes (a parent decision of 2026-1
   left of the dog where No! was; the dog steps right), and so does the empty room (`ROOM_BRING_BACK_BTN`, left of
   the Shelter, with the newest farm dog's little picture on it), after Go home, the launcher or a restart too:
   both whenever `pet::canBringBack` (no dog, a frame on the wall), never on a visit (`farmBringBack()`). Taps
-  from Paw Street's own house, the splash pup and a sticker card land where the room's Bring back sits; a slow
-  double tap's second press there, however long it is then held, waits out the room's `FreshGate` (800 ms, and
-  800 ms from the lift of each press it ignored, up to 2.5 s), so Bring back needs no guard of its own. It calls
+  from Paw Street's own house, the splash pup and a sticker card land where the room's Bring back sits; the room's
+  `FreshGate` holds a double tap's second press near the first, but one that drifts `SPOT_R` away is a new target
+  to it, so Bring back takes only a press begun once the room has shown a second (`pressedAfterPhase(1000)`). It calls
   `pet::bringBack`, marks the save dirty and urgent, goes home to the dog and says "<name> is home!" with a few
   hearts; no sound. The move, its undo and the shelter's adoption are saved at once: `saveUrgent()` (`urgent_`)
   asks the shell for its one-second checkpoint, so a restart right after either keeps it. Time away never

@@ -258,8 +258,7 @@ static void gatesAndHome() {
   CHECK(r.at("pumpkin_calibrate"));
   r.wait(FRESH); r.tap();
   CHECK(r.at("pumpkin_play"));
-  r.tap(); CHECK(r.game.round().hidden == -1);
-  r.wait(FRESH); r.tap(); CHECK(r.game.round().hidden == 1);
+  r.tap(); CHECK(r.game.round().hidden == 1);   // play skips the screen gate: a press begun in the round hides
   r.tap(80, 19); CHECK(!r.game.wantsHome() && r.game.round().hidden == 1);
   for (int i = 0; i < 50; i++) r.frame(true, 80, 19);
   CHECK(!r.game.wantsHome());
@@ -294,6 +293,13 @@ static void restingThumb() {   // on the sign through calibration's wait for a s
   for (int i = 0; i < 300; i++) r.frame(true);
   r.frame(false); r.wait(100); CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
   r.frame(true); r.frame(false); CHECK(r.game.round().hidden == 1);   // lifted and pressed again: it hides
+}
+static void earlyThumb() {   // screen-gate playtest M1: a thumb landing 0.3 s into the round and staying hides at once
+  Run r; r.start(); r.wait(300);
+  r.frame(true); CHECK(r.game.round().hidden == 1);
+  for (int i = 0; i < 100; i++) r.frame(true);
+  CHECK(r.at("pumpkin_play") && r.game.round().hidden == 1);
+  Run t; t.start(); t.wait(100); t.tap(); CHECK(t.game.round().hidden == 1);   // after TRY AGAIN's spot too
 }
 static void doubleTaps() {
   Run r; r.start(); r.wait(FRESH);
@@ -462,6 +468,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); firmPresses(); restingThumb(); doubleTaps(); pressedLook(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); firmPresses(); restingThumb(); earlyThumb(); doubleTaps(); pressedLook(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

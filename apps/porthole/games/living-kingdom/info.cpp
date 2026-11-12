@@ -75,6 +75,6 @@ void Game::infoStep(int delta) {
     save_.cursor.page = 0; prepare();
     if (delta < 0) save_.cursor.page = (uint16_t)(reader_.count() - 1);
   }
-  changed();
+  turned();
 }
 } // namespace kingdom

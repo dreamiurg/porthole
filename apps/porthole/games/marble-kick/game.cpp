@@ -52,7 +52,7 @@ void Game::enter(const AppEnter& e) {
 // A new page: every touch waits for the fresh-page pause, and both panel buffers get the whole page.
 void Game::go(Screen s) {
   screen_ = s;
-  gate_.shown(ms_);
+  gate_.changed(ms_, in_);
   pageMs_ = ms_;
   starting_ = false;
   frames_.reset();

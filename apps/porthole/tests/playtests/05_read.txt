@@ -4,12 +4,12 @@ wait 2650
 expect books=0/3
 # book button, bottom row third
 tap 92 129
-wait 750
+wait 850
 expect-screen pets_library
 expect page=0
 snap 01_library
 tap 80 130
-wait 750
+wait 850
 expect-screen read
 expect page=0
 snap 02_page
@@ -66,7 +66,7 @@ expect-screen pets_library
 newgame Sam Biscuit
 wait 2650
 tap 92 129
-wait 750
+wait 850
 tap 80 130
 tap 80 130
 wait 450

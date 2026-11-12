@@ -118,7 +118,7 @@ void readerLoop() {
   const Save committed = p.game.save();
   p.tap(layout::NEXT, 100); worldEqual(p.game.save(), committed);
   Save saved = p.snapshot(); Player resumed; resumed.start(&saved);
-  cursorEqual(resumed.game.save().cursor, committed.cursor); worldEqual(resumed.game.save(), committed);
+  cursorEqual(resumed.game.save().cursor, saved.cursor); worldEqual(resumed.game.save(), committed);
   assert(!commit(saved, 0)); worldEqual(saved, committed);
 }
 void choiceRereadPages() {

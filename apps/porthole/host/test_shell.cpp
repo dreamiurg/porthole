@@ -949,7 +949,7 @@ static void houseAsksToKeep() {
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(checkShows() && yellowAt(F));   // asks again
   ms += 900; taps(sh, ms, BACK, {1, 300, 0}); assert(!checkShows() && goldAt(ONE) && g.st.writes == writes);   // dropped
   ms += 1000; taps(sh, ms, L, {1, 300, 0}); ms += 1000; taps(sh, ms, ONE, {1, 300, 0}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
-  ms += 900; taps(sh, ms, launcher::DONE, {1, 300, 0});                 // the check while it asks: kept
+  ms += 200; taps(sh, ms, launcher::DONE, {1, 300, 0});                 // the check while it asks, at once: kept
   assert(!checkShows() && !goldAt(ONE) && g.st.writes == writes + 1);
 }
 // The ask gates touches as a new screen does (kid playtest 10, m1): a reader's quick double tap on the house, or a
@@ -967,8 +967,9 @@ static void houseAskIsFresh() {
 }
 // No tap carries through a screen change (kid playtest 10): Home's "All games" sits over the Library's sixth tile
 // (M1), the picker's first row over Home's first tile (M2), and a game's way out near the Library's page arrow (m3).
-// A kid's "again!" taps, 300 ms once a second, open nothing and show no name until 2.5 s after the change (a kid
-// retrying because "it didn't work" then gets in); a mash right after it opens nothing; a tap after a pause acts.
+// A kid's "again!" taps on the spot, 300 ms once a second, open nothing and show no name until 2.5 s after the change
+// (a kid retrying because "it didn't work" then gets in); a mash right after it opens nothing; a tap after a pause, or
+// one on another target at once (screen-gate playtest M2), acts.
 static void againTapsCarryNothing() {
   static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
   ms += 1000; taps(sh, ms, ALL, {2, 300, 450}); assert(on(sh, "library"));   // a slow double tap
@@ -986,7 +987,7 @@ static void againTapsCarryNothing() {
   g.a[5].home = true; frame(sh, ms, Input{}); assert(on(sh, "library"));
   const ui::Box l = launcher::arrow(false), r = launcher::arrow(true);
   ms += 1000; taps(sh, ms, r, {1, 300, 0}); ms += 1000; taps(sh, ms, launcher::tile(1, 2), {1, 300, 0});
-  assert(g.a[7].entered == 1); g.a[7].home = true; frame(sh, ms, Input{});
+  assert(g.a[7].entered == 1); pressAt(sh, ms += 1000, l); g.a[7].home = true; liftAt(sh, ms += 100, l);   // the way out, over the arrow
   taps(sh, ms, l, {3, 300, 700}); ms += 1000; taps(sh, ms, launcher::tile(1, 2), {1, 300, 0});
   assert(g.a[7].entered == 2);   // the exit's repeat taps on the arrow: still page 2
   g.a[7].home = true; frame(sh, ms, Input{}); ms += 1000; taps(sh, ms, BACK, {1, 300, 0}); assert(on(sh, "launcher"));
@@ -994,6 +995,9 @@ static void againTapsCarryNothing() {
   const ui::Box name = {36, 60, 8, 8};   // on the picker's first row and on Home's first tile
   ms += 1000; taps(sh, ms, name, {3, 300, 700}); assert(on(sh, "launcher") && g.a[0].entered == 0);
   ms += 700; taps(sh, ms, name, {1, 300, 0}); assert(g.a[0].entered == 1);   // still retrying, 2.7 s on: it opens
+  pressAt(sh, ms += 1000, BACK); g.a[0].home = true; liftAt(sh, ms += 100, BACK); assert(on(sh, "launcher"));
+  ms += 1000; taps(sh, ms, ALL, {1, 120, 0}); ms += 200; taps(sh, ms, ONE, {1, 120, 0});   // Zoe: a new target at once
+  assert(g.a[0].entered == 2);
 }
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
@@ -1475,27 +1479,38 @@ static void deleteNeedsACode() {
 // A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
 // that began on it, never under a finger slid onto it from another.
-// FreshGate (os/ui.h): a press begun 600 ms after a screen change is ignored, one at 850 ms acts; an ignored press
-// restarts the wait from its lift, but only up to 2.5 s from the change; a finger held across the change does not
-// restart it, and a keypad's quick first key counts.
+// FreshGate (os/ui.h). A screen a tap changed: a press near the tap waits 800 ms from the change and from each lift it
+// ignored, up to 2.5 s, and one at a new target acts at once. A change no finger made, and one in place, wait a plain
+// 450 ms, re-armed by nothing; so does a finger held across any change. A keypad's quick first key counts.
 static void freshGate() {
-  auto at = [](ui::FreshGate& g, uint32_t ms, bool down, bool pressed, bool released) {
-    Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = released; g.filter(in, ms);
-    return in.pressed || in.tap;
+  auto at = [](ui::FreshGate& g, uint32_t ms, bool down, bool pressed, bool released, int x = 40, int y = 60) {
+    Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = released; in.x = x; in.y = y;
+    g.filter(in, ms); return in.pressed || in.tap;
   };
-  ui::FreshGate g; g.shown(1000); assert(!at(g, 1600, true, true, false) && !at(g, 1900, false, false, true));
-  g.shown(1000); assert(at(g, 1850, true, true, false));
-  g.shown(1000); assert(!at(g, 1500, true, true, false)); at(g, 1700, false, false, true);   // a mash's press
+  Input tap{}; tap.released = tap.tap = true; tap.x = 40; tap.y = 60;   // the tap that changed the screen
+  ui::FreshGate g; g.changed(1000, tap); assert(!at(g, 1600, true, true, false) && !at(g, 1900, false, false, true));
+  g.changed(1000, tap); assert(at(g, 1850, true, true, false));
+  g.changed(1000, tap); assert(at(g, 1200, true, true, false, 90, 100));   // a new target 200 ms after the change
+  g.changed(1000, tap);   // a six-tap mash on the spot, 250 ms presses 150 ms apart: nothing within 2.5 s
+  for (uint32_t t = 1100; t < 3500; t += 400) { assert(!at(g, t, true, true, false, 45, 63)); at(g, t + 250, false, false, true, 45, 63); }
+  g.changed(1000, tap); assert(!at(g, 1500, true, true, false)); at(g, 1700, false, false, true);   // a mash's press
   assert(!at(g, 1850, true, true, false)); at(g, 2000, false, false, true);
   assert(at(g, 2800, true, true, false));   // 800 ms after the last ignored lift
-  g.shown(1000); assert(!at(g, 1700, false, false, true) && at(g, 1850, true, true, false));   // held across: its lift
-  g.shown(1000);   // a 1 Hz retry, 300 ms presses 700 ms apart: in on the first press 2.5 s or more after the change
+  g.changed(1000, tap);   // a 1 Hz retry on the spot, 300 ms presses 700 ms apart: in on the first press 2.5 s after
   for (uint32_t t = 1700; t < 3500; t += 1000) { assert(!at(g, t, true, true, false)); at(g, t + 300, false, false, true); }
   assert(at(g, 3700, true, true, false));
-  g.shown(1000);   // a five-tap mash right after the change, 250 ms presses 150 ms apart: nothing
-  for (uint32_t t = 1100; t < 3000; t += 400) { assert(!at(g, t, true, true, false)); at(g, t + 250, false, false, true); }
+  Input held = tap; held.released = held.tap = false; held.down = true;
+  g.changed(1000, held); assert(!at(g, 1700, false, false, true) && at(g, 1850, true, true, false));   // held across: its lift
+  g.changed(1000, Input{});   // a timer's change: 450 ms for any press, never re-armed
+  assert(!at(g, 1200, true, true, false, 90, 100)); at(g, 1300, false, false, true, 90, 100);
+  assert(at(g, 1460, true, true, false, 90, 100));
+  g.shown(1000);   // in place: quick repeat taps on one control count from 450 ms, never re-armed
+  assert(!at(g, 1100, true, true, false)); at(g, 1250, false, false, true);
+  assert(!at(g, 1400, true, true, false)); at(g, 1440, false, false, true); assert(at(g, 1460, true, true, false));
   Input key{}; key.down = key.pressed = true; key.x = 80; key.y = 100;
   g.shownAt(1000, 20, 40); g.filter(key, 1100); assert(key.pressed);   // a keypad's first key away from the tap
+  g.shownAt(1000, 40, 60); assert(!at(g, 1100, true, true, false)); at(g, 1300, false, false, true);
+  assert(at(g, 1850, true, true, false));   // its opening tap's spot waits 800 ms, never re-armed
 }
 static void longPressStillTaps() {
   InputTracker t; t.step(true, 50, 50, 1000);

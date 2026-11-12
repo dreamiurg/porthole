@@ -6,50 +6,50 @@ profile Sam 8
 app biscuit
 wait 800
 tap 119 125
-wait 750
+wait 850
 tap 121 129
-wait 750
+wait 850
 expect-screen biscuit_world
 ui-check biscuit_world-today
 tap 109 99
-wait 750
+wait 850
 expect-screen biscuit_today
 expect daily=0
 ui-check biscuit_today
 snap y01_today
 tap 106 115
-wait 750
+wait 850
 expect-screen biscuit_word
 ui-check biscuit_word
 snap y02_word
 tap 80 132
-wait 750
+wait 850
 expect-screen biscuit_today
 # a little snack: home, fed
 tap 53 91
-wait 750
+wait 850
 expect-screen biscuit_home
 expect feeds=1
 expect activity=1
 tap 121 129
-wait 750
+wait 850
 tap 109 99
-wait 750
+wait 850
 ui-check biscuit_today-one-done
 snap y03_one_done
 # a cuddle
 tap 106 91
-wait 750
+wait 850
 expect-screen biscuit_home
 expect pets=1
 expect claimed=0
 tap 121 129
-wait 750
+wait 850
 tap 109 99
-wait 750
+wait 850
 # a cozy nap: the third, and the sticker
 tap 53 115
-wait 750
+wait 850
 expect-screen biscuit_home
 expect sleeping=1
 expect claimed=1
@@ -58,28 +58,28 @@ expect friendship=10
 expect said=12
 snap y04_sticker
 tap 121 129
-wait 750
+wait 850
 expect sleeping=0
 tap 121 129
-wait 750
+wait 850
 ui-check biscuit_world-earned
 snap y05_earned
 tap 109 99
-wait 750
+wait 850
 ui-check biscuit_today-done
 snap y06_done
 # a second nap today earns nothing more
 tap 53 115
-wait 750
+wait 850
 tap 121 129
-wait 750
+wait 850
 expect claimed=1
 expect friendship=10
 # the album opens on the sticker's page (the second)
 tap 121 129
-wait 750
+wait 850
 tap 50 99
-wait 750
+wait 850
 tap 52 132
 wait 450
 expect-screen biscuit_stickers
@@ -102,23 +102,23 @@ wait 250
 expect claimed=0
 expect stickers=32
 tap 51 25
-wait 750
+wait 850
 tap 109 99
-wait 750
+wait 850
 expect daily=0
 snap y08_tomorrow
 # Read together and Try a trick: their screens' Back comes back here
 tap 53 91
-wait 750
+wait 850
 expect-screen biscuit_library
 tap 51 25
-wait 750
+wait 850
 expect-screen biscuit_today
 tap 106 91
-wait 750
+wait 850
 expect-screen biscuit_tricks
 tap 51 25
-wait 750
+wait 850
 expect-screen biscuit_today
 tap 51 25
 wait 450

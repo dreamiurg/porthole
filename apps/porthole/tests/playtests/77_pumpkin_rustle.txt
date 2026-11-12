@@ -3,9 +3,9 @@ reset
 tilt 0 1000 0
 profile Sam 6
 app pumpkin
-wait 800
+wait 680
 tap 80 131
-wait 750
+wait 850
 tap 80 131
 wait 750
 tap 80 131

@@ -7,18 +7,18 @@ profile Mia 9
 expect-screen launcher
 expect profile=3/4
 tap 80 32
-wait 750
+wait 850
 expect-screen picker
 expect profile=-1/4
 ui-check picker-full
 snap 01_four
 # no "+" row: the bottom row is Mia
 tap 80 119
-wait 750
+wait 850
 expect-screen launcher
 expect profile=3/4
 tap 80 32
-wait 750
+wait 850
 # Kai adopts a pup, so there is something to lose
 tap 80 67
 wait 450
@@ -33,28 +33,28 @@ wait 2600
 tap 80 80
 wait 1000
 tap 80 80
-wait 750
+wait 850
 tap 123 28
 tap 119 125
-wait 750
+wait 850
 tap 64 78
 wait 900
 tap 80 80
-wait 750
+wait 850
 expect-screen home
 tap 80 12
 wait 450
 # and a Biscuit pup too
 app Biscuit
-wait 750
+wait 850
 tap 119 125
-wait 750
+wait 850
 expect-screen biscuit_home
 expect named=1
 tap 80 12
-wait 750
+wait 850
 tap 80 32
-wait 750
+wait 850
 expect-screen picker
 # a 3 s hold on Kai: the code first, on a navy pad asking "Delete Kai?" (not the sign-in pad), then the
 # question; No keeps Kai
@@ -74,7 +74,7 @@ expect-screen delete
 ui-check
 snap 02_delete
 tap 80 80
-wait 750
+wait 850
 expect-screen picker
 expect profile=-1/4
 # Yes: Kai is gone
@@ -96,15 +96,15 @@ ui-check picker-after-delete
 snap 03_after_delete
 # the "+" row is back; the new profile reuses Kai's slot and finds no pup waiting
 tap 80 119
-wait 750
+wait 850
 expect-screen new_name
 tap 67 53
 tap 67 125
 tap 67 53
 tap 119 125
-wait 750
+wait 850
 tap 124 57
-wait 750
+wait 850
 tap 79 69
 wait 450
 tap 80 145
@@ -112,11 +112,11 @@ wait 450
 expect-screen launcher
 expect profile=1/4
 app Biscuit
-wait 750
+wait 850
 expect-screen biscuit_setup_pet
 expect named=0
 tap 80 12
-wait 750
+wait 850
 expect-screen launcher
 tap 48 79
 wait 2400
@@ -126,7 +126,7 @@ reset
 profile Sam 8
 profile Zed 7 4563
 tap 80 32
-wait 750
+wait 850
 expect-screen picker
 down 80 80
 wait 3000
@@ -155,7 +155,7 @@ reset
 profile Sam 8
 profile Ava 7
 tap 80 32
-wait 750
+wait 850
 expect-screen picker
 down 80 80
 wait 3000
@@ -165,7 +165,7 @@ expect-screen no_delete
 ui-check no-delete
 snap 05_no_code
 tap 80 132
-wait 750
+wait 850
 expect-screen picker
 expect profile=-1/2
 down 80 80

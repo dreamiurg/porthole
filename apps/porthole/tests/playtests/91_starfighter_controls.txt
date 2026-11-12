@@ -63,14 +63,14 @@ expect lives=0
 ui-check
 snap sf_controls_defeat
 # Fresh replay returns to calibration and starts a complete new run.
-wait 750
+wait 850
 tap 80 120
 expect-screen sf_calibrate
 tilt 0 1000 0
-wait 750
+wait 850
 tap 80 120
 expect-screen sf_brief
-wait 750
+wait 850
 tap 80 120
 expect-screen sf_squadron
 expect lives=3

@@ -4,72 +4,72 @@ profile Sam 8
 app toy-town
 wait 800
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_pack
 ui-check
 tap 112 25
-wait 750
+wait 850
 expect-screen toytown_school_intro
 ui-check
 tap 103 134
-wait 750
+wait 850
 expect outcome=0
 expect bag=0
 expect-screen toytown_school_paper
 ui-check
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_school_plan
 ui-check
 tap 109 117
-wait 750
+wait 850
 expect-screen toytown_school_result
 ui-check
 expect outcome=3
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_school_hang
 ui-check
 tap 103 134
-wait 750
+wait 850
 expect-screen toytown_school_hang
 expect outcome=3
 tap 57 103
-wait 750
+wait 850
 tap 56 70
-wait 750
+wait 850
 tap 103 103
-wait 750
+wait 850
 tap 81 70
-wait 750
+wait 850
 tap 57 134
-wait 750
+wait 850
 tap 106 70
-wait 750
+wait 850
 tap 103 134
-wait 750
+wait 850
 expect repaired=1
 tap 109 117
-wait 750
+wait 850
 expect repaired=3
 tap 80 142
-wait 750
+wait 850
 tap 109 117
-wait 750
+wait 850
 expect-screen toytown_memory_edit
 ui-check
 tap 51 117
-wait 750
+wait 850
 tap 109 117
-wait 750
+wait 850
 tap 80 142
-wait 750
+wait 850
 tap 51 117
 wait 600
 expect-screen toytown_stop
@@ -80,19 +80,19 @@ profile Sam 8
 app toy-town
 wait 800
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_pack
 ui-check
 tap 112 25
-wait 750
+wait 850
 expect-screen toytown_school_intro
 ui-check
 tap 57 134
-wait 750
+wait 850
 tap 51 117
 wait 600
 expect-screen toytown_school_result
@@ -103,25 +103,25 @@ profile Sam 8
 app toy-town
 wait 800
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_pack
 ui-check
 tap 112 25
-wait 750
+wait 850
 expect-screen toytown_school_intro
 ui-check
 tap 126 103
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 109 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 109 117
 wait 600
 expect-screen toytown_school_result
@@ -132,53 +132,53 @@ profile Sam 8
 app toy-town
 wait 800
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_pack
 ui-check
 tap 112 25
-wait 750
+wait 850
 expect-screen toytown_school_intro
 ui-check
 tap 34 103
-wait 750
+wait 850
 expect-screen toytown_school_hang
 ui-check
 tap 103 134
-wait 750
+wait 850
 expect-screen toytown_school_hang
 expect outcome=0
 tap 57 103
-wait 750
+wait 850
 tap 56 70
-wait 750
+wait 850
 tap 103 103
-wait 750
+wait 850
 tap 81 70
-wait 750
+wait 850
 tap 57 134
-wait 750
+wait 850
 tap 106 70
-wait 750
+wait 850
 tap 103 134
-wait 750
+wait 850
 expect-screen toytown_school_result
 ui-check
 expect outcome=4
 # The literal Practice with Mina action performs the rehearsal immediately.
 tap 51 117
-wait 750
+wait 850
 expect-screen toytown_school_repair
 expect repaired=2
 ui-check
 tap 109 117
-wait 750
+wait 850
 expect repaired=2
 tap 80 142
-wait 750
+wait 850
 expect-screen toytown_memory
 tap 80 142
 wait 600

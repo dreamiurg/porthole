@@ -61,7 +61,7 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Screen s) {
   const bool wasInPlay = inPlay();
   screen_ = s;
-  if (!wasInPlay || !inPlay()) gate_.shown(ms_);
+  if (!wasInPlay || !inPlay()) gate_.changed(ms_, in_);
   pageMs_ = ms_;
   starting_ = tapPending_ = false;
   ref_.reset();

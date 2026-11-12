@@ -35,7 +35,7 @@ void Shell::go(Screen s) {
   if (screen_ == SH_LIBRARY && s != SH_LIBRARY) leaveStars(false);   // star mode ends with the Library: only the check keeps it
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
-  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
+  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.changed(ms_, in_);   // a keypad takes a quick first key (os/ui.h)
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
@@ -569,10 +569,11 @@ void Shell::drawPageArrow(bool right, int nudge) {   // a yellow button with a b
 static shell::Favorites kept(shell::Favorites f) { if (f.picked && !f.count) f.picked = 0; return f; }
 // The house in star mode with stars the check would save: the first tap only asks for the check (kid playtest 9, M1:
 // a kid who used the house as "done" lost her edit unseen); a second while it asks drops them, as with nothing to keep.
-// The ask gates touches as a new screen does, so a quick double tap on the house only asks (kid playtest 10, m1).
+// The ask gates the house's spot as a new screen does, so a quick double tap on it only asks (kid playtest 10, m1),
+// while the check it asks for takes a press at once.
 void Shell::libraryBack() {
   const shell::Favorites k = kept(favs_);
-  if (starMode_ && !keepCue() && memcmp(&k, &starsBefore_, sizeof k)) { keepUntil_ = ms_ + 2000; fullUntil_ = ms_; gate_.shown(ms_); return; }
+  if (starMode_ && !keepCue() && memcmp(&k, &starsBefore_, sizeof k)) { keepUntil_ = ms_ + 2000; fullUntil_ = ms_; gate_.changed(ms_, in_); return; }
   const bool stars = starMode_; leaveStars(false); go(stars ? SH_LIBRARY : SH_LAUNCHER);
 }
 void Shell::updateLibrary() {

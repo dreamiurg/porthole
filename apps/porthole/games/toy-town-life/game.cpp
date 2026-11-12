@@ -27,7 +27,7 @@ void Game::enter(const AppEnter& e) {
  destination_ = s_.destination == HOME ? (uint8_t)SCHOOL : s_.destination; changed();
 }
 void Game::changed() { dirty_ = true; ++look_; gate_.shown(ms_); describe(); }
-void Game::go(uint8_t p) { s_.page = p; s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX); if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; changed(); }
+void Game::go(uint8_t p) { s_.page = p; s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX); if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; changed(); gate_.changed(ms_, in_); }
 void Game::update(uint32_t, uint32_t ms, const Input& input) {
  ms_ = ms; in_ = input; gate_.filter(in_,ms);
  const bool overlay=title_ || pause_;

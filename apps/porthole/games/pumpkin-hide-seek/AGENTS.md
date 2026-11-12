@@ -47,17 +47,20 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   or Play -> Won (escaped). Retry starts Play with the current grip. Each launcher visit
   starts Intro and requires calibration again. A jolt delays a pending start
   until `tilt::Steady` reports plausible gravity.
-- All pages use `ui::FreshGate` (Icing goes on from the 600 ms Catch without a second
-  gate, so Home works from 0.8 s after the catch). Home is always visible at {68,8,24,22};
+- Every page but Play uses `ui::FreshGate` (`changed()`: a page a tap opened holds that
+  spot, one a timer opened any press for 450 ms; Icing goes on from the 600 ms Catch
+  without a second gate, so Home works from 0.45 s after the catch). Home is always visible at {68,8,24,22};
   during Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During
   Play the action sign and the ghost act as a press lands on them, however long it then
   lasts (shelter playtest 9: a 2.5 s press on HIDE during QUICK! HIDE! was dropped and the
   kid was caught), and the sign is drawn sunk (gold lip gone, face 2 px lower) while that
-  press holds. A thumb resting there since before the round never starts a press:
-  FreshGate hides it until lifted. A press on the sign beginning within 400 ms (`AGAIN_MS`
-  in `game.cpp`) of the lift of the last press begun on it does nothing, so a double tap
-  or a mash toggles once until a pause. Home never hides or emerges. Only the action sign
-  changes hiding state. Tests: `firmPresses`, `restingThumb`, `doubleTaps`, `pressedLook`
+  press holds. Play skips FreshGate: any press begun in the round counts, so a thumb landing
+  on HIDE 0.3 s into it hides at once (screen-gate playtest M1), and so does the second press
+  of a double tap on READY or TRY AGAIN; the press that started the round, or a thumb resting
+  there since before it, never does. A press on the sign beginning within 400 ms (`AGAIN_MS`
+  in `game.cpp`) of the lift of the last press begun on it in the round does nothing, so a
+  double tap or a mash toggles once until a pause. Home never hides or emerges. Only the action sign
+  changes hiding state. Tests: `firmPresses`, `restingThumb`, `earlyThumb`, `doubleTaps`, `pressedLook`
   in `host/test_pumpkin.cpp`; playtest `73_pumpkin_kid_taps`.
 - Time comes from the monotonic millisecond input, with frame gaps capped at
   100 ms; the wall clock is unused and absence never advances a round.

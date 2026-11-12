@@ -445,6 +445,13 @@ void explicitQuantityEditor() {
   assert(resumed.on(CAFE_QUANTITY) && resumed.game.state().cart[0]==1);
   assert(resumed.game.state().worldX==first.worldX && resumed.game.state().worldY==first.worldY);
 }
+void quickRepeats() {   // + is an in-place change (the light gate): three at a quick kid's pace, 480 ms apart, all count
+  State s=fixture(CAFE_MENU,CAFE); memset(s.cart,0,4);
+  Player p; p.start(&s); p.tap(sceneui::card(0,4)); assert(p.on(CAFE_QUANTITY));
+  p.frame(false,0,0,FRESH);
+  for (int i=0;i<3;++i) { p.press(ACTIONS[1],100); p.frame(false,0,0,460); }
+  assert(p.game.state().cart[0]==3);
+}
 void school() {
   Player p; State s=fixture(SCHOOL_INTRO); p.start(&s);
   p.tap(sceneui::card(2,5)); assert(p.game.state().listened && p.on(SCHOOL_LISTEN));
@@ -802,7 +809,7 @@ void cosmeticPixels() {
 } // namespace
 int main() {
   orderedCafeActor(); changeParkIdeaImmediately(); matchingEvidenceSurvivesApproach(); inspectedParkIdea(); scrapbookWorldUsesEntry(); schoolDisplayActivity(); arrangePicturesPreservesCreation(); displayPicturesAreVisible(); schoolRepairsBothOrders(); literalPracticeWithMina(); repairedPropsKeepBoth();
-  explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); sceneMovement(); movementInterruptionAndRetarget();
+  explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); quickRepeats(); sceneMovement(); movementInterruptionAndRetarget();
   identityAndSave(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
   cafeOrders(); cafeCompareAndFinish(); discoverParkInScene(); park(); interruptedPages(); personalizeDuringOuting();
   optionalMemory(); memoryEditResume();

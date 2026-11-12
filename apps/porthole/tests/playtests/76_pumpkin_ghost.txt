@@ -5,7 +5,7 @@ profile Sam 6
 app pumpkin
 wait 800
 tap 80 131
-wait 750
+wait 850
 tap 80 131
 wait 600
 expect-screen pumpkin_play

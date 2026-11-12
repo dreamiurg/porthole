@@ -22,7 +22,7 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Screen screen) {
   screen_ = screen;
   if (screen == Screen::Calibrate) calibration_ = {};
-  transition();
+  transition(); gate_.changed(ms_, in_);   // a stage change in flight keeps transition()'s light gate
 }
 void Game::transition() {
   gate_.shown(ms_); hold_ = {}; taps_ = stepMs_ = 0;

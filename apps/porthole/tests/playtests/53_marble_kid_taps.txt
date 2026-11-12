@@ -55,20 +55,20 @@ expect-screen launcher
 profile Ana 7
 wait 500
 app marble-kick
-wait 750
+wait 850
 expect level=1
 expect reached=0
 tap 80 145
-wait 750
+wait 850
 # back to Sam through the picker (the name bar, then Sam's row)
 tap 80 42
-wait 750
+wait 850
 expect-screen picker
 tap 80 54
 wait 500
 expect-screen launcher
 app marble-kick
-wait 750
+wait 850
 expect-screen mk_calibrate
 expect level=2
 expect reached=1

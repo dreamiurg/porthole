@@ -5,7 +5,7 @@
 newgame Sam Biscuit
 wait 2650
 tap 40 27
-wait 750
+wait 850
 expect-screen stats
 down 80 146
 wait 2500
@@ -23,10 +23,10 @@ expect-screen stats
 expect food=70
 snap 01_stats_kept
 tap 80 12
-wait 750
+wait 850
 expect-screen home
 tap 80 12
-wait 750
+wait 850
 expect-screen launcher
 tap 48 79
 wait 2400
