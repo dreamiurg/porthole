@@ -1,7 +1,8 @@
 # Star mode: the Library's star button (a finger on it says "Pick games") turns taps into stars (nothing opens);
 # the sky turns lavender and the tiles jiggle so a non-reader sees the change, every game wears a star (gold on Home,
 # empty to pick), and five stars in the header count Home's places. Only the green check keeps a visit's stars: the
-# home button (or the rest screen, or a restart) puts Home back. A new kid's Home is already full, so their first
+# home button (tapped twice when there are stars to keep: the first asks for the check), the rest screen or a restart
+# puts Home back. A new kid's Home is already full, so their first
 # star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
 # for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
 # A new star goes first on Home; repeated taps on one tile within 600 ms (lift to the next press) count once, so a
@@ -117,6 +118,15 @@ wait 600
 tap 80 72
 wait 600
 expect home_tiles=2
+# Kid playtest 9, M1: with stars unkept the house first asks "Tap [check] to keep" (the check hops); a second tap
+# while it asks drops them.
+tap 80 12
+wait 300
+expect-screen library
+expect star_mode=1
+expect home_tiles=2
+ui-check library_keep_cue
+snap hs8a_house_asks
 tap 80 12
 wait 600
 expect-screen library
@@ -171,6 +181,7 @@ tap 126 42
 wait 600
 expect star_mode=1
 expect home_gold=5
+# nothing to keep: the house leaves at once
 tap 80 12
 wait 600
 expect-screen library
@@ -248,4 +259,22 @@ up
 wait 600
 expect-screen library
 snap hs13_all_games_double
+# Kid playtest 9, m1: Leo's "again!" taps on "All games" about once a second open no game under his finger.
+tap 80 12
+wait 600
+expect-screen launcher
+down 124 104
+wait 350
+up
+wait 650
+down 124 104
+wait 350
+up
+wait 650
+down 124 104
+wait 350
+up
+wait 650
+expect-screen library
+snap hs14_all_games_again
 sheet stars

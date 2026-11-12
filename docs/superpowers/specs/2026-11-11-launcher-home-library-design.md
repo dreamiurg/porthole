@@ -46,7 +46,9 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   non-reader sees where to tap. No sound. Games don't open in star mode. Changes apply only on Done, which saves
   them (only if anything changed, read back) and returns to the Library; with no star left Home shows the
   default favorites again (see Data), never an empty Home; leaving any other way (the home button,
-  which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
+  which returns to the Library, the rest screen, a restart) discards that visit's edits. With edits the check would
+  keep, the home button's first tap only asks: "Tap [check] to keep" (a drawn check) in yellow beside the check for
+  2 s while the check hops; a second tap while it asks discards and leaves. With none it leaves at once. (Amended after the kid
   playtests. Round 1 (`apps/porthole/docs/launcher-home-playtest.md`), M1, n1, n2: star mode read as "switched off",
   so nothing is dimmed and a refused star got a lasting cue. Round 2 (`launcher-home-playtest-2.md`), 1-4: a
   6-year-old entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart; hence
@@ -64,7 +66,11 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   retrying once a second was ignored forever. Round 8 (`launcher-home-playtest-8.md`): a 3 s cap then let a long firm
   mash flip back; no timing can tell the two apart, so the check moved off the star's spot and the timing rule went.
   Round 8, m2: a slow double tap on Home's "All games" opened the Library game under the finger, so the Library's tiles
-  ignore a press begun within 800 ms of it opening from Home.)
+  ignore a press begun within 800 ms of it opening from Home. Round 9 (`launcher-home-playtest-9.md`): M1, the house
+  silently undid an 8-year-old's edit she meant to keep; hence its "Tap [check] to keep" ask (a design ruling of
+  2026-11-12: a second tap still discards, so a house mash cannot change Home). m1, "again!" taps on "All games" (three
+  at about 1 Hz, or four fast) opened the game under the finger; each ignored tile press now restarts the 800 ms
+  from its lift, up to 2.5 s from the opening, and an ignored press shows no name.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
@@ -111,8 +117,8 @@ Library and star mode, and a grown-up playtest of Info -> Games. After the fixes
 report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
 order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
 button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
-double tap and a restart, `libraryMashing` mashes on the star and the check, the house, "All games" double-tapped and the
-tile's 600 ms at exact press and lift times, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
+double tap and a restart, `libraryMashing` mashes on the star and the check and the tile's 600 ms, `houseAsksToKeep` the
+house's ask, `allGamesAgain` "All games" tapped again, all at exact press and lift times, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
 only when missing; kid playtests 3 and 4 (`apps/porthole/docs/launcher-home-playtest-3.md`, `-4.md`) replayed
 star mode, and b2 asserts `home_gold` (the Library's gold stars) at 0 in star mode and 5 after a check with none.
