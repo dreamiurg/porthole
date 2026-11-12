@@ -82,7 +82,8 @@ class Shell {
   bool favsKept_ = false;                          // f<id> is there but unreadable (damaged, or a newer firmware's): never overwritten
   shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
   int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
-  uint32_t starsOffMs_ = 0;                        // star mode last ended: the star button waits a second after
+  uint32_t modeMs_ = 0;                            // star mode last began or ended, or the star/check last ignored a press
+  bool modeIgnore_ = false;                        // the latest press, on the star/check, is mashing: it neither acts nor shows
   uint32_t pressMs_ = 0;                           // when the latest press began
   bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
   uint32_t fullUntil_ = 0;                         // a sixth star: "Home full!" until then

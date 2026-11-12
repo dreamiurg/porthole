@@ -4,8 +4,10 @@
 # home button (or the rest screen, or a restart) puts Home back. A new kid's Home is already full, so their first
 # star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
 # for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
-# A new star goes first on Home; repeated taps on one tile within 400 ms (lift to the next press) count once, so a
-# firm double tap stars once; the star button waits a second after star mode ends (a third tap on the check). Star mode can take every star
+# A new star goes first on Home; repeated taps on one tile within 600 ms (lift to the next press) count once, so a
+# firm double tap stars once. The star button and the check share one spot: a press there begun within 1 s of star
+# mode starting or ending, or of the lift of a press so ignored, does nothing, so a mash flips it once (kid playtest 6,
+# F1/F2: a triple tap on the star stays in, a slow triple on the check stays out). Star mode can take every star
 # off (no gold left) and star a new game after that; Home with no star left (or every favorite switched off) shows
 # the default (a non-reader who emptied it could not refill it); the check with none left and none hidden makes the
 # kid "not picked" again, so the Library's gold stars (home_gold) match Home. home_tiles is what Home would show.
@@ -165,6 +167,7 @@ expect home_gold=5
 snap hs10_zero_check_default
 expect home_tiles=6
 expect home_first=crago
+wait 600
 tap 126 42
 wait 600
 expect star_mode=1
@@ -183,4 +186,35 @@ ui-check launcher_default_back
 tap 124 104
 wait 600
 expect-screen library
+# F1 (kid playtest 6): a firm triple tap on the star button, 300 ms presses 150 ms apart, stays in star mode
+wait 1000
+down 126 42
+wait 300
+up
+wait 150
+down 126 42
+wait 300
+up
+wait 150
+down 126 42
+wait 300
+up
+wait 1200
+expect star_mode=1
+snap hs11_triple_star_stays
+# F2: a slow triple tap on the check, 400 ms presses 300 ms apart, stays out
+down 126 42
+wait 400
+up
+wait 300
+down 126 42
+wait 400
+up
+wait 300
+down 126 42
+wait 400
+up
+wait 1200
+expect star_mode=0
+snap hs12_slow_triple_check_out
 sheet stars

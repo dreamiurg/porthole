@@ -873,7 +873,8 @@ static void starMode() {
   tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 2)); assert(a[7].entered == 2);   // a third tap on the
   a[7].home = true; frame(sh, ms, Input{});                                   // check 0.7 s later: no star mode, Eight opens
   const int after = st.writes;   // (leaving a game saved the kid's record)
-  tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::LIGHT); assert(st.writes == after);   // nothing changed: no write
+  tapAt(sh, ms, launcher::LIGHT); frame(sh, ms, Input{}); tapAt(sh, ms, launcher::LIGHT);
+  assert(st.writes == after);   // nothing changed: no write
   tapAt(sh, ms, back); assert(on(sh, "launcher"));
   tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3); home(sh, ms, a[7]);   // Home: the newest star first
   tapAt(sh, ms, launcher::tile(4, 6)); assert(a[4].entered == 1); home(sh, ms, a[4]);
@@ -883,6 +884,45 @@ static void starMode() {
   assert(shell::loadFavorites(st, 0, f) && f.count == 5);
 }
 static bool goldAt(const ui::Box& b) { return gfx::fb[(b.y + 7) * gfx::W + b.x + b.w - 7] == C_GOLD; }   // a tile's corner star
+// A press and its lift as separate frames at exact times, for a kid's tap rhythm (frame() steps 700 ms).
+static void pressAt(Shell& sh, uint32_t ms, const ui::Box& b) {
+  Input in{}; in.down = in.pressed = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  sh.update(testNow, ms, in); sh.render();
+}
+static void liftAt(Shell& sh, uint32_t ms, const ui::Box& b) {
+  Input in{}; in.released = in.tap = true; in.x = in.downX = b.x + b.w / 2; in.y = in.downY = b.y + b.h / 2;
+  sh.update(testNow, ms, in); sh.render();
+}
+struct Rhythm { int n; uint32_t hold, gap; };   // n presses of hold ms, gap ms from each lift to the next press
+static void taps(Shell& sh, uint32_t& ms, const ui::Box& b, Rhythm r) {   // ms: the last lift
+  for (int i = 0; i < r.n; i++) { if (i) ms += r.gap; pressAt(sh, ms, b); ms += r.hold; liftAt(sh, ms, b); }
+}
+static bool checkShows() { return gfx::fb[(launcher::LIGHT.y + 20) * gfx::W + launcher::LIGHT.x + 3] == C_GREEN; }
+// The star button and the check share one spot (kid playtest 6): a press there begun within 1 s of a mode change, or
+// of the lift of a press so ignored, neither acts nor looks pressed: a mash flips star mode once. A tile waits 600 ms.
+static void modeButtonMashing() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
+                  StubApp("Seven"), StubApp("Eight")};
+  App* const list[8] = {&a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &a[6], &a[7]};
+  bootWithoutHours(sh, st, list, 8); sh.createProfile("Sam", 8, "");
+  const ui::Box L = launcher::LIGHT;
+  tapAt(sh, ms, launcher::tile(5, 6)); assert(on(sh, "library") && !checkShows());
+  ms += 1000; taps(sh, ms, L, {3, 300, 150}); assert(checkShows());     // F1: a firm triple tap on the star stays in
+  ms += 1200; taps(sh, ms, L, {3, 400, 300}); assert(!checkShows());    // F2: a slow triple tap on the check stays out
+  static uint8_t idle[gfx::W * gfx::H]; memcpy(idle, gfx::fb, sizeof idle);
+  ms += 600; pressAt(sh, ms, L); assert(!memcmp(idle, gfx::fb, sizeof idle));   // F3: ignored, so not pressed, no caption
+  ms += 300; liftAt(sh, ms, L); assert(!checkShows());
+  ms += 1200; pressAt(sh, ms, L); assert(memcmp(idle, gfx::fb, sizeof idle));   // a deliberate try 1.2 s later is pressed
+  ms += 300; liftAt(sh, ms, L); assert(checkShows());                            // and enters
+  ms += 1200; taps(sh, ms, L, {5, 300, 150}); assert(!checkShows());    // a 5-tap mash on the check: out, once
+  ms += 1200; taps(sh, ms, L, {1, 300, 0}); assert(checkShows());       // re-entry 1.2 s after leaving
+  ms += 1000; taps(sh, ms, launcher::tile(0, 6), {2, 300, 450});        // F4: a slow double tap on One toggles once
+  assert(!goldAt(launcher::tile(0, 6)));
+  ms += 1000; taps(sh, ms, launcher::tile(1, 6), {1, 300, 0});          // two games 200 ms apart: both count
+  ms += 200; taps(sh, ms, launcher::tile(2, 6), {1, 300, 0});
+  assert(!goldAt(launcher::tile(1, 6)) && !goldAt(launcher::tile(2, 6)) && goldAt(launcher::tile(3, 6)));
+}
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
 static void emptyHomeIsDefault() {
@@ -1161,7 +1201,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); modeButtonMashing(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.
