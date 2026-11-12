@@ -1,5 +1,7 @@
 # Rally rival variety: black-box playtest (emulator roleplay)
 
+> Recorded on the pre-Home launcher: its replay scripts tap that launcher's tiles, not today's Home and Library.
+
 This was emulator roleplay by an independent playtester agent. No real child played, and no physical board was
 used. The playtester did not read `games/racing/` or the racing host tests. It read `host/sim.cpp`'s header (the
 `--serve` protocol), the previous Rally playtest reports and their pixel-steering helper, and the existing racing

@@ -1,0 +1,110 @@
+STATS
+ui screen=stats regions=4 texts=8
+region 64 -4 32 32
+region 24 112 64 22
+region 92 112 44 22
+region 40 66 80 22
+text 35 26 90 16 color=2 bg=18
+text 20 46 120 8 color=17 bg=18
+text 44 73 73 8 color=17 bg=11
+text 26 91 109 8 color=1 bg=18
+text 40 100 81 8 color=1 bg=18
+text 29 119 54 8 color=17 bg=14
+text 101 119 27 8 color=7 bg=2
+text 49 136 62 8 color=5 bg=23
+CONFIRM
+ui screen=confirm_farm regions=2 texts=5
+region 20 90 50 24
+region 90 90 50 24
+text 20 38 120 8 color=7 bg=1
+text 62 48 37 8 color=7 bg=1
+text 8 66 144 8 color=10 bg=1
+text 36 98 19 8 color=17 bg=11
+text 105 98 20 8 color=7 bg=4
+FARM
+ui screen=farm regions=1 texts=2
+region 48 126 64 22
+text 58 34 45 8 color=17 bg=16
+text 56 133 48 8 color=17 bg=11
+EMPTY
+ui screen=home regions=4 texts=1
+region 64 -4 32 32
+region 15 39 24 24
+region 41 41 25 25
+region 44 116 72 24
+text 57 124 47 8 color=7 bg=2
+FRIENDS
+ui screen=wall regions=1 texts=2
+region 64 -4 32 32
+text 38 30 84 8 color=17 bg=23
+text 58 95 45 8 color=17 bg=23
+SHELTER
+ui screen=shelter regions=4 texts=4
+region 64 -4 32 32
+region 10 64 32 32
+region 118 64 32 32
+region 48 128 64 22
+text 44 27 72 8 color=1 bg=15
+text 59 101 43 8 color=2 bg=7
+text 46 111 69 8 color=5 bg=7
+text 55 135 51 8 color=17 bg=11
+NAME
+ui screen=name_pet regions=18 texts=18
+region 64 -4 32 32
+region 111 16 24 24
+region 29 42 24 22
+region 55 42 24 22
+region 81 42 24 22
+region 107 42 24 22
+region 29 66 24 22
+region 55 66 24 22
+region 81 66 24 22
+region 107 66 24 22
+region 29 90 24 22
+region 55 90 24 22
+region 81 90 24 22
+region 107 90 24 22
+region 29 114 24 22
+region 55 114 24 22
+region 81 114 24 22
+region 107 114 24 22
+text 53 25 52 8 color=1 bg=7
+text 38 49 6 8 color=17 bg=7
+text 64 49 7 8 color=17 bg=7
+text 90 49 7 8 color=17 bg=7
+text 116 49 7 8 color=17 bg=7
+text 38 73 7 8 color=17 bg=7
+text 64 73 7 8 color=17 bg=7
+text 90 73 7 8 color=17 bg=7
+text 116 73 6 8 color=17 bg=7
+text 39 97 4 8 color=17 bg=7
+text 64 97 7 8 color=17 bg=7
+text 90 97 7 8 color=17 bg=7
+text 116 97 7 8 color=17 bg=7
+text 38 121 7 8 color=17 bg=7
+text 56 121 22 8 color=17 bg=19
+text 91 121 5 8 color=17 bg=6
+text 112 121 15 8 color=17 bg=11
+text 120 25 6 8 color=17 bg=14
+WELCOME
+ui screen=celebrate regions=0 texts=4
+text 37 34 86 8 color=2 bg=18
+text 56 44 48 8 color=2 bg=18
+text 31 56 99 8 color=17 bg=18
+text 39 65 83 8 color=17 bg=18
+HOME
+ui screen=home regions=14 texts=0
+region 64 -4 32 32
+region 15 39 24 24
+region 41 41 25 25
+region 71 94 32 22
+region 10 65 26 26
+region 18 93 28 23
+region 120 94 26 22
+region 110 39 40 44
+region 26 15 36 22
+region 100 15 36 22
+region 28 118 24 24
+region 54 118 24 24
+region 80 118 24 24
+region 106 118 24 24

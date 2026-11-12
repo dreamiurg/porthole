@@ -1,0 +1,8 @@
+tick 1000
+tap 118 100 300
+tick 500
+tap 41 77 300
+tick 500
+tap 67 125 300
+tick 700
+shot s01_nz

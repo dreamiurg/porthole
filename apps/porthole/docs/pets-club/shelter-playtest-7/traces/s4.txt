@@ -1,0 +1,33 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 77 2000
+wait 1000
+hold 115 102 2600
+wait 1500
+hold 80 137 2000
+wait 2500
+hold 111 101 2000
+wait 1500
+hold 134 80 1500
+wait 300
+hold 80 138 2000
+wait 1500
+hold 119 124 2000
+wait 300
+shot sd01_hold_ok
+wait 1500
+shot sd02
+wait 3000
+shot sd03
+tap 80 80
+wait 2000
+shot sd04_tap
+wait 3000
+shot sd05

@@ -1,0 +1,41 @@
+# persistent snap --serve driver: reads command lines from a FIFO, logs trace, saves frames.
+import os, subprocess, sys, time
+from PIL import Image
+RUN = sys.argv[1]; FIFO = os.path.join(RUN, "cmd.fifo"); OUT = os.path.join(RUN, "shots")
+fresh = "--fresh" in sys.argv
+os.makedirs(OUT, exist_ok=True)
+if not os.path.exists(FIFO): os.mkfifo(FIFO)
+trace = open(os.path.join(RUN, "trace.txt"), "a")
+def start(fr):
+    trace.write(f"# start snap --serve{' --fresh' if fr else ''} {time.strftime('%X')}\n"); trace.flush()
+    return subprocess.Popen([os.path.join(RUN, "snap"), "--serve"] + (["--fresh"] if fr else []), cwd=RUN, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+p = start(fresh)
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush(); return p.stdout.readline().decode().strip()
+def frame(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    h = p.stdout.readline().decode().strip(); n = int(h.split()[1]); d = b""
+    while len(d) < n: d += p.stdout.read(n - len(d))
+    i = d.index(b"255\n") + 4 if d.startswith(b"P6") else 0
+    Image.frombytes("RGB", (480, 480), d[i:i + 480 * 480 * 3]).save(os.path.join(OUT, name + ".png"))
+def tick(ms):
+    while ms > 0:
+        s = min(ms, 1000); cmd(f"tick {s}"); ms -= s
+while True:
+    with open(FIFO) as f:
+        for raw in f:
+            line = raw.strip()
+            if not line: continue
+            trace.write(line + "\n"); trace.flush()
+            w = line.split()
+            if w[0] == "shot": frame(w[1])
+            elif w[0] == "tick": tick(int(w[1]))
+            elif w[0] == "tap":  # finger down ~120 ms
+                cmd(f"down {w[1]} {w[2]}"); tick(int(w[3]) if len(w) > 3 else 120); cmd("up"); tick(40)
+            elif w[0] == "kill": p.kill(); p.wait()
+            elif w[0] == "restart": p = start(False)
+            elif w[0] == "quit": p.kill(); sys.exit(0)
+            else:
+                r = cmd(line)
+                if r != "ok": trace.write(f"#  -> {r}\n")
+    trace.flush()

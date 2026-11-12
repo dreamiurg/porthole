@@ -1,0 +1,3186 @@
+######## run1 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+tick 1000
+snap 001_boot
+down 80 67
+tick 47
+up
+tick 1000
+snap 002_after_mia
+down 36 72
+tick 47
+up
+tick 1500
+snap 003_pets
+down 80 100
+tick 47
+up
+tick 1500
+snap 004_room
+down 78 103
+tick 47
+up
+tick 300
+snap 005_pet_dog
+down 80 103
+tick 47
+up
+down 82 104
+tick 47
+up
+tick 600
+snap 006_pet_dog2
+down 118 129
+tick 47
+up
+tick 800
+snap 007_paw
+down 80 12
+tick 47
+up
+tick 800
+snap 008_back
+down 142 44
+tick 47
+up
+tick 800
+snap 009_heart
+down 80 12
+tick 47
+up
+tick 800
+down 45 22
+tick 47
+up
+tick 800
+snap 010_bars
+down 80 77
+tick 47
+up
+tick 500
+snap 011_farm_q
+down 115 102
+tick 47
+up
+snap 012_yes_tap_now
+tick 600
+snap 013_yes_tap_after
+down 109 101
+tick 33
+up
+tick 66
+down 113 106
+tick 33
+up
+tick 66
+down 117 96
+tick 33
+up
+tick 66
+down 121 101
+tick 33
+up
+tick 66
+down 105 106
+tick 33
+up
+tick 66
+down 109 96
+tick 33
+up
+tick 66
+down 113 101
+tick 33
+up
+tick 66
+down 117 106
+tick 33
+up
+tick 66
+down 121 96
+tick 33
+up
+tick 66
+down 105 101
+tick 33
+up
+tick 66
+down 109 106
+tick 33
+up
+tick 66
+down 113 96
+tick 33
+up
+tick 66
+down 117 101
+tick 33
+up
+tick 66
+down 121 106
+tick 33
+up
+tick 66
+down 105 96
+tick 33
+up
+tick 66
+down 109 101
+tick 33
+up
+tick 66
+down 113 106
+tick 33
+up
+tick 66
+down 117 96
+tick 33
+up
+tick 66
+down 121 101
+tick 33
+up
+tick 66
+down 105 106
+tick 33
+up
+tick 66
+snap 014_mash_yes20
+down 115 102
+tick 7
+up
+down 115 102
+tick 7
+up
+snap 015_dbl
+tick 1000
+down 115 102
+tick 300
+snap 016_hold300
+tick 300
+snap 017_hold600
+move 116 103
+tick 300
+snap 018_hold900
+up
+tick 100
+snap 019_release900
+tick 800
+snap 020_after_release900
+down 80 98
+tick 47
+up
+tick 200
+snap 021_farm_pat1
+down 85 95
+tick 47
+up
+tick 100
+down 75 100
+tick 47
+up
+tick 300
+snap 022_farm_pat3
+tick 1500
+snap 023_farm_idle
+down 100 85
+tick 47
+up
+snap 024_h0
+tick 100
+snap 025_h1
+tick 200
+snap 026_h2
+tick 300
+snap 027_h3
+tick 1500
+down 80 53
+tick 47
+up
+tick 300
+snap 028_sign
+down 132 52
+tick 47
+up
+tick 300
+snap 029_sun
+down 30 125
+tick 47
+up
+tick 300
+snap 030_grass
+down 80 137
+tick 47
+up
+tick 300
+snap 031_gohome
+tick 1500
+snap 032_gohome2
+down 53 53
+tick 17
+up
+tick 66
+down 53 53
+tick 17
+up
+tick 300
+snap 033_pic_dbl
+tick 1000
+snap 034_pic_dbl2
+down 80 103
+tick 47
+up
+tick 800
+snap 035_visit
+down 80 98
+tick 47
+up
+tick 300
+snap 036_visit_pat
+down 80 12
+tick 47
+up
+tick 600
+snap 037_back1
+down 80 12
+tick 47
+up
+tick 600
+snap 038_back2
+down 80 102
+tick 47
+up
+tick 800
+snap 039_shelter
+down 135 80
+tick 47
+up
+tick 400
+snap 040_shelter_next
+down 80 138
+tick 47
+up
+tick 1500
+snap 041_picked
+down 119 124
+tick 47
+up
+tick 2000
+snap 042_ok
+tick 2000
+snap 043_ok2
+down 80 120
+tick 47
+up
+tick 1500
+snap 044_room_boxy
+down 53 53
+tick 47
+up
+tick 500
+snap probe_pic_53_53
+down 80 12
+tick 47
+up
+tick 500
+down 42 53
+tick 47
+up
+tick 500
+snap probe_pic_42_53
+down 80 12
+tick 47
+up
+tick 500
+down 64 53
+tick 47
+up
+tick 500
+snap probe_pic_64_53
+down 80 12
+tick 47
+up
+tick 500
+down 53 42
+tick 47
+up
+tick 500
+snap probe_pic_53_42
+down 80 12
+tick 47
+up
+tick 500
+down 53 64
+tick 47
+up
+tick 500
+snap probe_pic_53_64
+down 80 12
+tick 47
+up
+tick 500
+down 45 45
+tick 47
+up
+tick 500
+snap probe_pic_45_45
+down 80 12
+tick 47
+up
+tick 500
+down 61 61
+tick 47
+up
+tick 500
+snap probe_pic_61_61
+down 80 12
+tick 47
+up
+tick 500
+down 38 53
+tick 47
+up
+tick 500
+snap probe_pic_38_53
+down 80 12
+tick 47
+up
+tick 500
+down 68 53
+tick 47
+up
+tick 500
+snap probe_pic_68_53
+down 80 12
+tick 47
+up
+tick 500
+down 53 70
+tick 47
+up
+tick 500
+snap probe_pic_53_70
+down 80 12
+tick 47
+up
+tick 500
+tick 500
+snap 045_where
+quit
+######## run2 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+snap 100_stats
+down 80 77
+tick 47
+up
+tick 500
+snap 101_q
+down 115 102
+snap 110_h033
+tick 33
+snap 110_h066
+tick 33
+snap 110_h099
+tick 33
+snap 110_h132
+tick 33
+snap 110_h165
+tick 33
+snap 110_h198
+tick 33
+snap 110_h231
+tick 33
+snap 110_h264
+tick 33
+snap 110_h297
+tick 33
+snap 110_h330
+tick 33
+snap 110_h363
+tick 33
+snap 110_h396
+tick 33
+snap 110_h429
+tick 33
+snap 110_h462
+tick 33
+snap 110_h495
+tick 33
+snap 110_h528
+tick 33
+snap 110_h561
+tick 33
+snap 110_h594
+tick 33
+snap 110_h627
+tick 33
+snap 110_h660
+tick 33
+snap 110_h693
+tick 33
+snap 110_h726
+tick 33
+snap 110_h759
+tick 33
+snap 110_h792
+tick 33
+snap 110_h825
+tick 33
+snap 110_h858
+tick 33
+snap 110_h891
+tick 33
+snap 110_h924
+tick 33
+snap 110_h957
+tick 33
+snap 110_h990
+tick 33
+snap 110_h1023
+tick 33
+snap 110_h1056
+tick 33
+snap 110_h1089
+tick 33
+snap 110_h1122
+tick 33
+snap 110_h1155
+tick 33
+snap 110_h1188
+tick 33
+snap 110_h1221
+tick 33
+snap 110_h1254
+tick 33
+snap 110_h1287
+tick 33
+snap 110_h1320
+quit
+######## run3 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+snap 200_q
+snap 200_q
+down 115 102
+tick 400
+up
+tick 100
+down 115 102
+tick 400
+snap 201_C_mid
+up
+tick 300
+snap 202_C_after
+down 115 102
+tick 400
+move 118 115
+move 120 125
+tick 100
+snap 203_B_slid
+tick 1000
+up
+tick 300
+snap 204_B_after
+down 115 102
+tick 300
+move 115 125
+tick 200
+move 115 102
+tick 200
+snap 205_back_on
+tick 800
+snap 206_back_on_1s
+up
+tick 300
+snap 207_backon_after
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 45 102
+tick 200
+move 70 102
+move 95 102
+move 115 102
+tick 400
+snap 210_E_noToYes
+tick 1000
+up
+tick 300
+snap 211_E_after
+down 115 70
+tick 200
+move 115 85
+move 115 102
+tick 1200
+up
+tick 300
+snap 212_textToYes
+down 115 125
+tick 100
+move 115 102
+tick 1200
+up
+tick 300
+snap 213_belowToYes
+down 86 102
+tick 1000
+up
+tick 200
+snap edge_86_102
+down 115 86
+tick 1000
+up
+tick 200
+snap edge_115_86
+down 115 120
+tick 1000
+up
+tick 200
+snap edge_115_120
+down 144 102
+tick 1000
+up
+tick 200
+snap edge_144_102
+down 90 102
+tick 1000
+up
+tick 200
+snap edge_90_102
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 90
+tick 1000
+up
+tick 200
+snap edge_115_90
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 116
+tick 1000
+up
+tick 200
+snap edge_115_116
+down 140 102
+tick 1000
+up
+tick 200
+snap edge_140_102
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 21 70
+tick 7
+up
+tick 66
+down 120 125
+tick 267
+up
+tick 66
+down 58 29
+tick 99
+up
+tick 33
+down 104 115
+tick 167
+up
+tick 33
+down 119 73
+tick 267
+up
+tick 33
+down 31 86
+tick 7
+up
+tick 33
+down 60 113
+tick 267
+up
+tick 33
+down 140 61
+tick 99
+up
+tick 66
+down 146 64
+tick 66
+up
+tick 33
+down 61 122
+tick 66
+up
+tick 33
+down 111 147
+tick 267
+up
+tick 33
+down 52 80
+tick 7
+up
+tick 99
+down 90 133
+tick 99
+up
+tick 99
+down 53 82
+tick 66
+up
+tick 99
+down 132 134
+tick 99
+up
+tick 99
+down 67 108
+tick 99
+up
+tick 99
+down 49 98
+tick 167
+up
+tick 99
+down 100 27
+tick 99
+up
+tick 99
+down 135 32
+tick 33
+up
+tick 99
+down 105 99
+tick 99
+up
+tick 99
+down 16 83
+tick 267
+up
+tick 99
+down 48 48
+tick 167
+up
+tick 33
+down 64 108
+tick 167
+up
+tick 66
+down 152 95
+tick 99
+up
+tick 66
+down 103 136
+tick 33
+up
+tick 99
+down 148 57
+tick 99
+up
+tick 33
+down 128 98
+tick 167
+up
+tick 99
+down 56 134
+tick 99
+up
+tick 66
+down 96 111
+tick 66
+up
+tick 33
+down 89 122
+tick 167
+up
+tick 33
+down 63 50
+tick 167
+up
+tick 99
+down 51 28
+tick 167
+up
+tick 66
+down 76 68
+tick 66
+up
+tick 33
+down 52 93
+tick 66
+up
+tick 33
+down 47 45
+tick 66
+up
+tick 99
+down 48 74
+tick 267
+up
+tick 99
+down 80 121
+tick 267
+up
+tick 66
+down 132 126
+tick 7
+up
+tick 33
+down 84 103
+tick 66
+up
+tick 66
+down 53 71
+tick 7
+up
+tick 66
+down 135 58
+tick 167
+up
+tick 66
+down 10 62
+tick 7
+up
+tick 66
+down 46 119
+tick 267
+up
+tick 99
+down 114 144
+tick 33
+up
+tick 99
+down 137 120
+tick 33
+up
+tick 99
+down 12 106
+tick 267
+up
+tick 99
+down 87 114
+tick 7
+up
+tick 99
+down 81 37
+tick 33
+up
+tick 33
+down 83 23
+tick 7
+up
+tick 66
+down 81 45
+tick 99
+up
+tick 99
+down 69 38
+tick 7
+up
+tick 99
+down 14 60
+tick 167
+up
+tick 66
+down 48 135
+tick 7
+up
+tick 66
+down 56 93
+tick 7
+up
+tick 33
+down 54 131
+tick 7
+up
+tick 99
+down 104 80
+tick 167
+up
+tick 66
+down 9 88
+tick 167
+up
+tick 66
+down 77 9
+tick 33
+up
+tick 33
+down 88 149
+tick 33
+up
+tick 66
+down 114 59
+tick 66
+up
+tick 99
+down 29 102
+tick 167
+up
+tick 66
+down 141 65
+tick 7
+up
+tick 99
+down 39 48
+tick 33
+up
+tick 99
+down 59 73
+tick 66
+up
+tick 99
+down 134 70
+tick 66
+up
+tick 66
+down 92 34
+tick 66
+up
+tick 33
+down 130 39
+tick 167
+up
+tick 99
+down 31 87
+tick 7
+up
+tick 66
+down 23 102
+tick 33
+up
+tick 33
+down 92 34
+tick 167
+up
+tick 99
+down 101 24
+tick 167
+up
+tick 99
+down 62 149
+tick 7
+up
+tick 66
+down 98 80
+tick 167
+up
+tick 99
+down 34 122
+tick 66
+up
+tick 33
+down 16 80
+tick 7
+up
+tick 99
+down 110 34
+tick 7
+up
+tick 33
+down 112 46
+tick 7
+up
+tick 66
+down 47 66
+tick 33
+up
+tick 99
+down 31 116
+tick 99
+up
+tick 99
+down 80 145
+tick 66
+up
+tick 99
+down 127 85
+tick 7
+up
+tick 33
+down 86 15
+tick 7
+up
+tick 33
+down 80 86
+tick 99
+up
+tick 66
+down 85 107
+tick 7
+up
+tick 33
+down 86 121
+tick 7
+up
+tick 66
+down 60 143
+tick 267
+up
+tick 66
+down 96 71
+tick 33
+up
+tick 99
+down 58 83
+tick 33
+up
+tick 33
+down 97 25
+tick 66
+up
+tick 33
+down 119 28
+tick 267
+up
+tick 99
+down 91 63
+tick 99
+up
+tick 66
+down 15 88
+tick 33
+up
+tick 66
+down 153 82
+tick 33
+up
+tick 66
+down 67 61
+tick 7
+up
+tick 33
+down 107 23
+tick 66
+up
+tick 99
+down 79 96
+tick 99
+up
+tick 66
+down 44 30
+tick 167
+up
+tick 66
+down 49 50
+tick 33
+up
+tick 33
+down 86 83
+tick 7
+up
+tick 99
+down 136 80
+tick 33
+up
+tick 33
+down 41 144
+tick 267
+up
+tick 33
+down 85 146
+tick 267
+up
+tick 99
+down 57 50
+tick 66
+up
+tick 66
+down 142 45
+tick 7
+up
+tick 99
+down 68 69
+tick 7
+up
+tick 99
+down 119 115
+tick 167
+up
+tick 66
+down 143 117
+tick 167
+up
+tick 66
+down 91 48
+tick 66
+up
+tick 66
+down 20 95
+tick 167
+up
+tick 33
+down 37 40
+tick 66
+up
+tick 66
+down 106 149
+tick 99
+up
+tick 33
+down 27 64
+tick 99
+up
+tick 33
+down 50 140
+tick 66
+up
+tick 99
+down 117 62
+tick 33
+up
+tick 66
+down 131 127
+tick 33
+up
+tick 99
+down 110 91
+tick 167
+up
+tick 99
+down 75 61
+tick 7
+up
+tick 33
+down 135 99
+tick 33
+up
+tick 99
+down 57 84
+tick 66
+up
+tick 99
+down 81 146
+tick 66
+up
+tick 33
+tick 1000
+snap mash_seed1
+down 26 97
+tick 33
+up
+tick 99
+down 83 69
+tick 167
+up
+tick 33
+down 45 115
+tick 267
+up
+tick 66
+down 135 100
+tick 167
+up
+tick 66
+down 133 73
+tick 7
+up
+tick 33
+down 98 124
+tick 66
+up
+tick 66
+down 113 139
+tick 33
+up
+tick 99
+down 50 65
+tick 33
+up
+tick 33
+down 50 88
+tick 33
+up
+tick 33
+down 97 136
+tick 267
+up
+tick 99
+down 51 119
+tick 99
+up
+tick 99
+down 139 98
+tick 167
+up
+tick 66
+down 97 119
+tick 33
+up
+tick 66
+down 123 140
+tick 33
+up
+tick 66
+down 76 132
+tick 167
+up
+tick 99
+down 95 121
+tick 99
+up
+tick 66
+down 121 129
+tick 267
+up
+tick 33
+down 88 47
+tick 167
+up
+tick 66
+down 127 84
+tick 66
+up
+tick 99
+down 84 58
+tick 99
+up
+tick 99
+down 98 24
+tick 66
+up
+tick 99
+down 74 63
+tick 267
+up
+tick 33
+down 138 39
+tick 66
+up
+tick 33
+down 58 20
+tick 99
+up
+tick 99
+down 97 97
+tick 33
+up
+tick 33
+down 34 22
+tick 7
+up
+tick 33
+down 10 100
+tick 66
+up
+tick 33
+down 45 52
+tick 167
+up
+tick 99
+down 68 43
+tick 7
+up
+tick 33
+down 93 33
+tick 66
+up
+tick 66
+down 83 119
+tick 167
+up
+tick 99
+down 16 72
+tick 99
+up
+tick 99
+down 44 126
+tick 33
+up
+tick 33
+down 85 31
+tick 7
+up
+tick 66
+down 37 137
+tick 167
+up
+tick 66
+down 129 136
+tick 66
+up
+tick 33
+down 92 71
+tick 66
+up
+tick 99
+down 19 69
+tick 7
+up
+tick 33
+down 46 48
+tick 7
+up
+tick 66
+down 64 135
+tick 267
+up
+tick 33
+down 68 64
+tick 267
+up
+tick 66
+down 23 69
+tick 7
+up
+tick 99
+down 63 97
+tick 66
+up
+tick 99
+down 113 76
+tick 167
+up
+tick 33
+down 103 109
+tick 33
+up
+tick 33
+down 66 31
+tick 7
+up
+tick 33
+down 51 64
+tick 7
+up
+tick 33
+down 123 121
+tick 66
+up
+tick 99
+down 102 59
+tick 267
+up
+tick 33
+down 116 113
+tick 167
+up
+tick 33
+down 112 139
+tick 167
+up
+tick 33
+down 29 127
+tick 66
+up
+tick 33
+down 137 35
+tick 167
+up
+tick 66
+down 79 100
+tick 66
+up
+tick 33
+down 110 30
+tick 7
+up
+tick 66
+down 120 20
+tick 99
+up
+tick 99
+down 129 123
+tick 33
+up
+tick 99
+down 77 11
+tick 66
+up
+tick 66
+down 24 61
+tick 99
+up
+tick 33
+down 100 105
+tick 267
+up
+tick 66
+down 40 93
+tick 99
+up
+tick 33
+down 70 36
+tick 7
+up
+tick 33
+down 90 105
+tick 33
+up
+tick 99
+down 132 79
+tick 66
+up
+tick 66
+down 41 100
+tick 66
+up
+tick 66
+down 112 130
+tick 267
+up
+tick 66
+down 106 64
+tick 33
+up
+tick 66
+down 71 145
+tick 99
+up
+tick 99
+down 23 96
+tick 33
+up
+tick 99
+down 42 111
+tick 7
+up
+tick 33
+down 80 104
+tick 33
+up
+tick 99
+down 89 117
+tick 33
+up
+tick 99
+down 78 33
+tick 33
+up
+tick 99
+down 113 29
+tick 66
+up
+tick 99
+down 68 136
+tick 66
+up
+tick 33
+down 45 123
+tick 267
+up
+tick 33
+down 108 96
+tick 167
+up
+tick 99
+down 42 124
+tick 99
+up
+tick 99
+down 12 103
+tick 267
+up
+tick 33
+down 105 135
+tick 7
+up
+tick 66
+down 75 108
+tick 66
+up
+tick 99
+down 110 125
+tick 66
+up
+tick 99
+down 89 25
+tick 267
+up
+tick 33
+down 141 53
+tick 99
+up
+tick 99
+down 85 123
+tick 167
+up
+tick 99
+down 124 50
+tick 7
+up
+tick 33
+down 108 60
+tick 267
+up
+tick 99
+down 103 60
+tick 7
+up
+tick 66
+down 147 56
+tick 66
+up
+tick 99
+down 54 130
+tick 167
+up
+tick 33
+down 128 69
+tick 167
+up
+tick 99
+down 49 124
+tick 267
+up
+tick 33
+down 23 94
+tick 7
+up
+tick 66
+down 129 90
+tick 99
+up
+tick 66
+down 133 122
+tick 7
+up
+tick 33
+down 93 49
+tick 99
+up
+tick 66
+down 39 18
+tick 33
+up
+tick 66
+down 102 123
+tick 267
+up
+tick 66
+down 77 147
+tick 99
+up
+tick 33
+down 98 13
+tick 167
+up
+tick 66
+down 57 83
+tick 99
+up
+tick 99
+down 39 128
+tick 267
+up
+tick 99
+down 82 24
+tick 66
+up
+tick 66
+down 82 90
+tick 267
+up
+tick 66
+down 105 137
+tick 7
+up
+tick 99
+down 58 105
+tick 167
+up
+tick 99
+down 43 134
+tick 267
+up
+tick 33
+down 83 15
+tick 33
+up
+tick 66
+down 148 64
+tick 167
+up
+tick 66
+down 33 102
+tick 66
+up
+tick 33
+down 86 96
+tick 7
+up
+tick 66
+down 122 97
+tick 33
+up
+tick 66
+down 118 79
+tick 99
+up
+tick 33
+down 118 60
+tick 66
+up
+tick 66
+down 45 30
+tick 33
+up
+tick 66
+down 53 100
+tick 33
+up
+tick 66
+down 40 39
+tick 33
+up
+tick 66
+down 145 101
+tick 99
+up
+tick 99
+down 92 76
+tick 267
+up
+tick 99
+down 87 107
+tick 267
+up
+tick 99
+tick 1000
+snap mash_seed2
+down 65 144
+tick 33
+up
+tick 66
+down 125 71
+tick 167
+up
+tick 33
+down 54 125
+tick 167
+up
+tick 99
+down 126 106
+tick 267
+up
+tick 33
+down 64 43
+tick 167
+up
+tick 66
+down 45 15
+tick 66
+up
+tick 33
+down 73 126
+tick 167
+up
+tick 99
+down 104 114
+tick 99
+up
+tick 99
+down 39 98
+tick 7
+up
+tick 33
+down 39 131
+tick 33
+up
+tick 66
+down 116 82
+tick 99
+up
+tick 99
+down 103 151
+tick 66
+up
+tick 99
+down 91 12
+tick 66
+up
+tick 99
+down 46 88
+tick 167
+up
+tick 99
+down 59 151
+tick 66
+up
+tick 66
+down 36 21
+tick 99
+up
+tick 99
+down 128 27
+tick 66
+up
+tick 33
+down 110 43
+tick 7
+up
+tick 66
+down 114 111
+tick 7
+up
+tick 33
+down 16 101
+tick 267
+up
+tick 99
+down 89 146
+tick 66
+up
+tick 99
+down 65 14
+tick 66
+up
+tick 33
+down 24 32
+tick 167
+up
+tick 99
+down 13 55
+tick 99
+up
+tick 66
+down 72 44
+tick 267
+up
+tick 33
+down 91 85
+tick 66
+up
+tick 33
+down 101 101
+tick 99
+up
+tick 99
+down 103 148
+tick 7
+up
+tick 99
+down 134 74
+tick 99
+up
+tick 99
+down 65 82
+tick 99
+up
+tick 66
+down 138 82
+tick 167
+up
+tick 66
+down 153 85
+tick 7
+up
+tick 66
+down 20 90
+tick 99
+up
+tick 66
+down 95 76
+tick 267
+up
+tick 66
+down 99 69
+tick 267
+up
+tick 66
+down 81 86
+tick 33
+up
+tick 66
+down 52 85
+tick 66
+up
+tick 99
+down 72 81
+tick 99
+up
+tick 33
+down 38 84
+tick 167
+up
+tick 33
+down 73 66
+tick 66
+up
+tick 33
+down 116 29
+tick 7
+up
+tick 99
+down 87 90
+tick 267
+up
+tick 33
+down 117 48
+tick 7
+up
+tick 66
+down 60 150
+tick 99
+up
+tick 66
+down 62 35
+tick 7
+up
+tick 99
+down 53 85
+tick 167
+up
+tick 33
+down 76 92
+tick 267
+up
+tick 33
+down 38 112
+tick 66
+up
+tick 99
+down 74 123
+tick 66
+up
+tick 99
+down 111 79
+tick 99
+up
+tick 99
+down 109 14
+tick 99
+up
+tick 33
+down 127 135
+tick 99
+up
+tick 99
+down 61 13
+tick 267
+up
+tick 66
+down 137 78
+tick 167
+up
+tick 66
+down 63 22
+tick 167
+up
+tick 66
+down 35 67
+tick 7
+up
+tick 33
+down 136 55
+tick 99
+up
+tick 99
+down 128 35
+tick 33
+up
+tick 99
+down 81 66
+tick 267
+up
+tick 33
+down 110 18
+tick 167
+up
+tick 33
+down 92 37
+tick 66
+up
+tick 99
+down 95 61
+tick 33
+up
+tick 33
+down 48 66
+tick 66
+up
+tick 33
+down 17 74
+tick 33
+up
+tick 66
+down 113 18
+tick 99
+up
+tick 66
+down 130 85
+tick 33
+up
+tick 66
+down 23 94
+tick 99
+up
+tick 99
+down 82 97
+tick 66
+up
+tick 33
+down 89 114
+tick 7
+up
+tick 33
+down 102 25
+tick 167
+up
+tick 33
+down 15 100
+tick 99
+up
+tick 99
+down 143 102
+tick 267
+up
+tick 33
+down 115 18
+tick 66
+up
+tick 99
+down 132 85
+tick 99
+up
+tick 99
+down 112 122
+tick 7
+up
+tick 33
+down 60 142
+tick 66
+up
+tick 99
+down 23 113
+tick 33
+up
+tick 66
+down 88 100
+tick 167
+up
+tick 66
+down 36 123
+tick 267
+up
+tick 33
+down 140 101
+tick 267
+up
+tick 33
+down 86 149
+tick 167
+up
+tick 33
+down 126 41
+tick 33
+up
+tick 66
+down 30 101
+tick 33
+up
+tick 33
+down 92 36
+tick 7
+up
+tick 33
+down 128 77
+tick 167
+up
+tick 66
+down 140 66
+tick 7
+up
+tick 99
+down 88 149
+tick 33
+up
+tick 33
+down 66 51
+tick 267
+up
+tick 33
+down 121 105
+tick 66
+up
+tick 66
+down 106 94
+tick 167
+up
+tick 66
+down 26 101
+tick 167
+up
+tick 33
+down 110 46
+tick 99
+up
+tick 99
+down 137 128
+tick 33
+up
+tick 99
+down 107 43
+tick 33
+up
+tick 33
+down 132 128
+tick 267
+up
+tick 99
+down 52 39
+tick 66
+up
+tick 33
+down 136 85
+tick 33
+up
+tick 99
+down 142 80
+tick 267
+up
+tick 99
+down 154 73
+tick 33
+up
+tick 66
+down 10 73
+tick 99
+up
+tick 66
+down 56 49
+tick 167
+up
+tick 66
+down 66 87
+tick 99
+up
+tick 33
+down 112 127
+tick 267
+up
+tick 99
+down 57 124
+tick 167
+up
+tick 99
+down 128 23
+tick 99
+up
+tick 99
+down 63 65
+tick 267
+up
+tick 99
+down 22 60
+tick 66
+up
+tick 33
+down 53 71
+tick 33
+up
+tick 33
+down 14 70
+tick 33
+up
+tick 33
+down 85 51
+tick 99
+up
+tick 33
+down 26 35
+tick 7
+up
+tick 66
+down 79 14
+tick 66
+up
+tick 66
+down 153 91
+tick 7
+up
+tick 33
+down 90 89
+tick 99
+up
+tick 66
+down 129 24
+tick 33
+up
+tick 99
+down 105 37
+tick 167
+up
+tick 66
+down 35 75
+tick 7
+up
+tick 99
+down 115 33
+tick 99
+up
+tick 99
+down 69 29
+tick 167
+up
+tick 99
+down 100 99
+tick 99
+up
+tick 66
+tick 1000
+snap mash_seed3
+quit
+######## run4 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+snap 300_farm
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+snap 301_boot
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+snap 302_title
+down 80 100
+tick 47
+up
+tick 1500
+snap 303_after_restart
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 60000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 310_restart_after60s_on_farm
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 500
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 311_restart_after_gohome
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 5000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 32x_restart_farm_5000
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 15000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 32x_restart_farm_15000
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 30000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 32x_restart_farm_30000
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 33x_restart_farm_300
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 1000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 33x_restart_farm_1000
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 2000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 33x_restart_farm_2000
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 3000
+quit
+# ---- process restart WITHOUT fixture restore ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+snap 33x_restart_farm_3000
+quit
+######## run5 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 17
+up
+down 80 137
+tick 17
+up
+tick 600
+snap 400_gohome_dbl
+down 53 53
+tick 1200
+up
+tick 500
+snap 401_pic_long
+down 80 103
+tick 17
+up
+tick 50
+down 80 103
+tick 17
+up
+tick 500
+snap 402_card_dbl
+down 80 12
+tick 17
+up
+tick 50
+down 80 12
+tick 17
+up
+tick 600
+snap 403_home_dbl
+down 80 12
+tick 47
+up
+tick 600
+down 53 53
+tick 300
+up
+tick 500
+snap 41x_pic_300
+snap tmp
+down 53 53
+tick 500
+up
+tick 500
+snap 41x_pic_500
+snap tmp
+down 53 53
+tick 700
+up
+tick 500
+snap 41x_pic_700
+snap tmp
+down 53 53
+tick 900
+up
+tick 500
+snap 41x_pic_900
+snap tmp
+down 53 53
+tick 1200
+up
+tick 500
+snap 41x_pic_1200
+snap tmp
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 600
+down 80 102
+tick 47
+up
+tick 600
+snap 420_shelter
+down 80 12
+tick 47
+up
+tick 600
+snap 421_shelter_home
+down 80 12
+tick 47
+up
+tick 600
+snap 422_home2
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 600
+down 53 53
+tick 150
+up
+tick 500
+snap 43x_pic_150
+down 53 53
+tick 300
+up
+tick 500
+snap 43x_pic_300
+down 53 53
+tick 500
+up
+tick 500
+snap 43x_pic_500
+down 53 53
+tick 700
+up
+tick 500
+snap 43x_pic_700
+down 53 53
+tick 900
+up
+tick 500
+snap 43x_pic_900
+down 53 53
+tick 1200
+up
+tick 500
+snap 43x_pic_1200
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 17
+up
+down 80 137
+tick 17
+up
+tick 600
+snap 440_gohome_dbl
+down 53 53
+tick 1200
+up
+tick 500
+snap 441_pic_long
+down 53 53
+tick 47
+up
+tick 500
+snap 442_pic_tap
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 600
+down 53 53
+tick 1200
+up
+tick 500
+snap 450_single_gohome_long
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 17
+up
+down 80 137
+tick 17
+up
+tick 600
+down 53 53
+tick 47
+up
+tick 500
+snap 451_dbl_gohome_tap
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 3000
+down 53 53
+tick 1200
+up
+tick 500
+snap 452_single_gohome_wait_long
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 600
+down 53 53
+tick 47
+up
+tick 500
+down 80 12
+tick 47
+up
+tick 600
+down 53 53
+tick 1200
+up
+tick 500
+snap 453_second_visit_long
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 300
+down 80 137
+tick 47
+up
+tick 600
+down 53 53
+tick 300
+up
+tick 500
+snap 46x_pic_300
+down 80 12
+tick 47
+up
+tick 600
+down 53 53
+tick 500
+up
+tick 500
+snap 46x_pic_500
+down 80 12
+tick 47
+up
+tick 600
+down 53 53
+tick 600
+up
+tick 500
+snap 46x_pic_600
+down 53 53
+tick 700
+up
+tick 500
+snap 46x_pic_700
+down 53 53
+tick 900
+up
+tick 500
+snap 46x_pic_900
+down 53 53
+tick 1200
+up
+tick 500
+snap 46x_pic_1200
+down 53 53
+tick 2000
+up
+tick 500
+snap 46x_pic_2000
+down 80 102
+tick 1200
+up
+tick 500
+snap 470_shelter_long
+quit
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 80 12
+tick 47
+up
+tick 600
+down 80 12
+tick 47
+up
+tick 600
+snap 480_room_dog
+down 118 129
+tick 1200
+up
+tick 500
+snap 481_paw_long
+down 45 22
+tick 1200
+up
+tick 500
+snap 482_bars_long
+down 45 102
+tick 47
+up
+tick 600
+snap 483_after_no
+down 80 12
+tick 47
+up
+tick 600
+snap 480_room_dog
+down 118 129
+tick 1200
+up
+tick 500
+snap 481_paw_long
+down 80 12
+tick 47
+up
+tick 600
+down 45 22
+tick 1200
+up
+tick 500
+snap 482_bars_long
+quit
+######## run6 (logical px; tap X Y [ms] expands to down/tick/up; tick = 33 ms frames)
+# ---- fresh process, fixture restored ----
+tick 1000
+down 80 67
+tick 47
+up
+tick 1000
+down 36 72
+tick 47
+up
+tick 1500
+down 80 100
+tick 47
+up
+tick 1500
+down 45 22
+tick 47
+up
+tick 800
+down 80 77
+tick 47
+up
+tick 500
+down 115 102
+tick 1000
+up
+tick 600
+down 80 98
+tick 300
+snap 500_farm_hold300
+tick 600
+snap 501_farm_hold900
+up
+tick 300
+snap 502_farm_hold_rel
+tick 1500
+down 60 98
+move 70 96
+move 80 98
+move 90 96
+move 100 98
+move 90 96
+move 80 98
+up
+tick 200
+snap 503_farm_rub
+tick 1500
+down 80 137
+tick 47
+up
+tick 600
+down 53 53
+tick 47
+up
+tick 600
+down 80 103
+tick 47
+up
+tick 600
+down 80 12
+tick 17
+up
+tick 50
+down 80 12
+tick 17
+up
+tick 600
+snap 504_visit_home_dbl
+quit

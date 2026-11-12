@@ -106,6 +106,7 @@ GROWN_UPS = {
     "sys_allow",
     "sys_zone",
     "sys_zone_search",
+    "sys_games",
 }
 # The grown-ups' full QWERTY keyboard (a user decision of 2026-10-18): 12 px (4 mm) keys pass on these screens. Every
 # tap goes to the nearest key and the pressed key shows big above the finger; under 12 px still fails.

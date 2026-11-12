@@ -1,0 +1,13 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 36 105 2000
+wait 3000
+hold 80 115 1500
+wait 4000
+tap 18 80
+wait 500
+shot tf06_tap_back_match
+hold 18 80 2500
+wait 600
+shot tf07_hold_back_match

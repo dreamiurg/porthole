@@ -1,0 +1,32 @@
+tick 1500
+shot 00_picker
+tap 80 67     # Mia taps her name
+tick 1500
+shot 01_after_mia
+tap 36 72     # Pets Club tile (orange dog)
+tick 3000
+shot 02_open
+tap 40 128    # food button, like usual
+tick 800
+shot 03_food
+tick 2500
+shot 04_food_after
+tap 115 68    # cookie!
+tick 1500
+shot 05_cookie
+tick 3000
+shot 06_cookie_after
+tap 80 128    # play button
+tick 1000
+shot 07_play
+tap 42 25     # the stat pips (open Stats like she knows)
+tick 1000
+shot 08_stats
+tap 80 77     # "To the farm" - sounds like a fun trip
+tick 1000
+shot 09_farm1
+tick 2000
+shot 10_farm2
+tap 80 12
+tick 700
+shot r

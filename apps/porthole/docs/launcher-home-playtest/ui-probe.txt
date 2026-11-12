@@ -1,0 +1,17 @@
+reset
+profile Sam 8
+wait 1000
+echo HOME
+ui
+tap 124 104
+wait 1000
+echo LIB
+ui
+tap 126 42
+wait 800
+echo PICK
+ui
+tap 95 135
+wait 800
+echo PICK2
+ui

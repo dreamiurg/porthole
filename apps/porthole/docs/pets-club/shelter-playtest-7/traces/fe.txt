@@ -1,0 +1,18 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 66 128 2000
+wait 800
+hold 80 45 2000
+wait 1500
+shot fe01
+tap 80 60
+wait 1500
+shot fe02
+tap 100 80
+wait 1500
+shot fe03

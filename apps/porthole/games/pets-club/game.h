@@ -22,17 +22,18 @@ class Game : public App {
   bool asleep() const override { return save_.asleep != 0; }
   bool soundOn(uint32_t ms) override;   // buzzer pattern player: true while the buzzer should be on
   bool takeSave(const void** data, size_t* len, bool allowed) override;
+  bool saveUrgent() const override { return urgent_; }   // a dog moved to the farm or adopted: written within a second
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "sleepy" "younger" "older"
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N"
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
-                          SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_CONFIRM_RESET, SC_HATS,
-                          SC_STREET, SC_THEME };
+                          SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
+                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -40,11 +41,11 @@ class Game : public App {
   Save out_{};                                     // the sealed copy takeSave hands to the shell
   // every profile on the device, for Paw Street; kids_[self_] is the one playing
   Profile kids_[MAX_PROFILES] = {}; Save kidSaves_[MAX_PROFILES]; bool kidHas_[MAX_PROFILES] = {}; int nKids_ = 0, self_ = 0;
-  bool dirty_ = false, haveSave_ = false, wantsHome_ = false;   // dirty without a pup: erase the save
+  bool dirty_ = false, urgent_ = false, haveSave_ = false, wantsHome_ = false;
   ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
   uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
-  uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTickSec_ = 0;
+  uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, pressMs_ = 0, lastTickSec_ = 0;   // pressMs_: when the current (or last) press began
   bool daylight_ = false;   // AppEnter::daylight: the launcher's brightness overrides the clock's night
   Screen screen_ = SC_SPLASH, nextAfterCelebrate_ = SC_HOME;
   Input in_{};
@@ -76,6 +77,11 @@ class Game : public App {
   pet::Gift gift_{}; bool giftOpened_ = false; char celebTitle_[24] = {0}, celebText_[48] = {0}; int celebIcon_ = 0;
   uint16_t stickersSeen_ = 0;
   int statsPage_ = 0; int hatSel_ = 0;
+  uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
+  uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
+  ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
+  uint32_t bounceUntil_ = 0;  // a screen's short reaction: a confirm's hint wiggles, the farm dog jumps (go() ends it)
+  bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
 
   // ---- helpers
   void go(Screen s);
@@ -85,12 +91,20 @@ class Game : public App {
   void updateParticles();
   void drawParticles();
   void markDirty() { dirty_ = true; }
+  // The press now lifting began at least ms after the screen, or its phase (screenMs_), started: a finger already
+  // down when results or a quiz appear in place, or held from just after a screen change, never answers on its lift.
+  bool pressedAfter(uint32_t ms) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
+  void setNameBuf(const char* name);   // the pet-name keyboard's text, cut to ui::NAME_LEN
+  void debugAge(const char* cmd);
   int dogSize() const;
   const gfx::Sprite& dogFrame(int pose) const;
   void drawDog(int x, int y, int pose, bool flip, int scale = 1);
   void drawHat(int x, int y, int pose, bool flip, int scale);
+  int wornHat() const;
+  void drawCover(int x, int y, int w, int h, const struct Book& bk);
   void drawBackButton();
   bool backButton();
+  bool backClicked();   // the back button on release, however long it was held
   void drawToast();
   void drawHearts(int cx, int y, int hearts);
   void drawStatPips(int x, int y, int value, const gfx::Sprite& icon, uint8_t col);
@@ -129,10 +143,16 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void updateGift(); void drawGift();
   void updateCelebrate(); void drawCelebrate();
-  void updateConfirmReset(); void drawConfirmReset();
   void updateHats(); void drawHats();
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
+  void updateConfirmFarm(); void drawConfirmFarm();
+  int askNoYes(); float drawNoYes();   // the farm's No! (on release) / Yes (held YES_HOLD_MS)
+  void updateFarm(); void drawFarm();
+  bool farmBringBack() const { return !farmVisit_ && pet::canBringBack(save_); }   // never on a visit
+  void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);
+  void updateShelter(); void drawShelter(); void adoptShelterPup();
+  void updateWall(); void drawWall();
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

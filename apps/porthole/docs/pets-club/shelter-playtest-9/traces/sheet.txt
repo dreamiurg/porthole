@@ -1,0 +1,9 @@
+import sys
+from PIL import Image, ImageDraw
+paths=sys.argv[2:]; out=sys.argv[1]
+w=240; cols=min(4,len(paths)); rows=(len(paths)+cols-1)//cols
+sh=Image.new("RGB",(w*cols,(w+14)*rows),(30,30,30)); d=ImageDraw.Draw(sh)
+for i,p in enumerate(paths):
+    im=Image.open(p).resize((w,w)); x=(i%cols)*w; y=(i//cols)*(w+14)
+    sh.paste(im,(x,y+14)); d.text((x+2,y+1),p.split("scratchpad/")[-1],fill=(255,255,0))
+sh.save(out)

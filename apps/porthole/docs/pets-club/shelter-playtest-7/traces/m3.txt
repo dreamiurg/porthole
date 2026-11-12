@@ -1,0 +1,11 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 124 72 2000
+wait 300
+wait 2000
+wait 3000
+wait 1000
+hold 130 125 2000
+wait 600
+shot mkc01_hold_level

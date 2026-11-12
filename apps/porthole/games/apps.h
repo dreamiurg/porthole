@@ -26,3 +26,9 @@ static racing::Game g_racing;
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing};
 static constexpr int N_APPS = sizeof APPS / sizeof APPS[0];
 static_assert(N_APPS <= MAX_APPS, "the launcher and Shell hold at most MAX_APPS games: raise it and its layouts first");
+// Each game's stable id, in APPS order: kids' favorites (porthole/f<id>) and the games a grown-up switched off
+// ("sys"/"games", a bit each) keep these, so an id never changes and is never reused, even once its game is gone.
+// A new game takes the next unused id.
+static constexpr uint8_t APP_IDS[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+static_assert(sizeof APP_IDS == N_APPS, "one id per game, in APPS order");
+static_assert(shell::validIds(APP_IDS, N_APPS), "ids are unique and 1..shell::MAX_GAME_ID");

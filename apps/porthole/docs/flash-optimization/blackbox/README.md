@@ -1,5 +1,7 @@
 # Observed rendering check and pixel comparison
 
+> Recorded on the pre-Home launcher: its replay scripts tap that launcher's tiles, not today's Home and Library.
+
 2026-10-25, optimized source based on `5653dfd`. No physical hardware used.
 The coordinator operated an isolated `tools/webemu.py` / `snap --serve` instance
 through its normal touch endpoint, inspected rendered 480x480 frames and chose

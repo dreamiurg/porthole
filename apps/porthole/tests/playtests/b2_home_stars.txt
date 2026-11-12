@@ -1,0 +1,286 @@
+# Star mode: the Library's star button (a finger on it says "Pick games") turns taps into stars (nothing opens);
+# the sky turns lavender and the tiles jiggle so a non-reader sees the change, every game wears a star (gold on Home,
+# empty to pick), and five stars in the header count Home's places. Only the green check keeps a visit's stars: the
+# home button (tapped twice when there are stars to keep: the first asks for the check), the rest screen or a restart
+# puts Home back. A new kid's Home is already full, so their first
+# star on a wanted game (the playtest's path: All games, the arrow, the star, Rally) is refused with "Home full!"
+# for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
+# A new star goes first on Home; repeated taps on one tile within 600 ms (lift to the next press) count once, so a
+# firm double tap stars once. Star mode's check sits at the header's left, the five stars beside it and the star
+# button's place empty, so a mash on the star or the check acts once (kid playtest 8). Star mode can take every star
+# off (no gold left) and star a new game after that; Home with no star left (or every favorite switched off) shows
+# the default (a non-reader who emptied it could not refill it); the check with none left and none hidden makes the
+# kid "not picked" again, so the Library's gold stars (home_gold) match Home. home_tiles is what Home would show.
+reset
+tilt 0 1000 0
+profile Sam 8
+wait 600
+tap 124 104
+wait 600
+expect-screen library
+expect home_gold=5
+ui-check library_stars_shown
+snap hs0_library
+tap 96 135
+wait 600
+down 126 42
+wait 200
+expect star_mode=0
+snap hs1_star_hint
+up
+wait 600
+expect-screen library
+expect star_mode=1
+ui-check library_star_mode
+snap hs2_star_mode
+wait 200
+snap hs2_star_mode_jiggle
+tap 80 104
+wait 300
+expect star_mode=1
+expect home_full=1
+expect home_tiles=6
+expect home_first=crago
+ui-check library_home_full
+snap hs3_stars_on_page1
+tap 64 135
+wait 300
+expect home_full=1
+snap hs4_home_full_page1
+wait 2000
+expect home_full=0
+tap 36 72
+wait 600
+expect home_tiles=5
+snap hs4_counter
+tap 96 135
+wait 600
+tap 80 104
+wait 600
+expect home_tiles=6
+expect home_first=racing
+snap hs5_rally_first
+tap 64 135
+wait 600
+tap 124 72
+wait 150
+tap 124 72
+wait 600
+expect home_tiles=5
+tap 124 72
+wait 600
+expect home_first=marblekick
+expect home_tiles=6
+tap 33 42
+wait 600
+expect star_mode=0
+reboot
+wait 600
+tap 80 68
+wait 600
+expect-screen launcher
+expect home_tiles=6
+expect home_first=marblekick
+ui-check launcher_picked
+snap hs6_home_picked
+tap 124 104
+wait 600
+expect-screen library
+tap 126 42
+wait 600
+tap 36 104
+wait 600
+tap 80 104
+wait 600
+tap 33 42
+wait 600
+tap 80 12
+wait 600
+expect-screen launcher
+expect home_tiles=4
+expect home_first=marblekick
+ui-check launcher_three
+snap hs7_home_three
+tap 124 72
+wait 600
+expect-screen biscuit_setup_pet
+reboot
+wait 600
+tap 80 68
+wait 600
+tap 80 104
+wait 600
+expect-screen library
+tap 126 42
+wait 600
+tap 124 72
+wait 600
+tap 80 72
+wait 600
+expect home_tiles=2
+# Kid playtest 9, M1: with stars unkept the house first asks "Tap [check] to keep" (the check hops); a second tap
+# while it asks drops them.
+tap 80 12
+wait 300
+expect-screen library
+expect star_mode=1
+expect home_tiles=2
+ui-check library_keep_cue
+snap hs8a_house_asks
+tap 80 12
+wait 600
+expect-screen library
+expect star_mode=0
+expect home_tiles=4
+expect home_first=marblekick
+snap hs8_house_drops_edits
+wait 600
+tap 126 42
+wait 600
+tap 124 72
+wait 600
+tap 80 72
+wait 600
+tap 96 135
+wait 600
+tap 80 104
+wait 600
+expect home_full=0
+expect home_gold=0
+snap hs9_none_left
+down 80 104
+wait 250
+up
+wait 200
+down 80 104
+wait 250
+up
+wait 600
+expect home_full=0
+expect home_gold=1
+expect home_tiles=2
+expect home_first=racing
+tap 80 104
+wait 600
+expect home_gold=0
+expect home_tiles=6
+expect home_first=crago
+tap 33 42
+wait 300
+tap 33 42
+wait 300
+tap 33 42
+wait 600
+expect star_mode=0
+expect home_gold=5
+snap hs10_zero_check_default
+expect home_tiles=6
+expect home_first=crago
+wait 600
+tap 126 42
+wait 600
+expect star_mode=1
+expect home_gold=5
+# nothing to keep: the house leaves at once
+tap 80 12
+wait 600
+expect-screen library
+expect star_mode=0
+expect home_gold=5
+tap 80 12
+wait 600
+expect-screen launcher
+expect home_tiles=6
+expect home_first=crago
+ui-check launcher_default_back
+tap 124 104
+wait 600
+expect-screen library
+# Kid playtest 8: the check sits at the header's left, away from the star, so a firm 5-tap mash (400 ms presses)
+# on the star goes in once and one on the check goes out once; the other presses land on nothing.
+wait 1000
+down 126 42
+wait 400
+up
+wait 150
+down 126 42
+wait 400
+up
+wait 150
+down 126 42
+wait 400
+up
+wait 150
+down 126 42
+wait 400
+up
+wait 150
+down 126 42
+wait 400
+up
+wait 1200
+expect star_mode=1
+ui-check library_star_mashed
+snap hs11_star_mash_in
+down 33 42
+wait 400
+up
+wait 150
+down 33 42
+wait 400
+up
+wait 150
+down 33 42
+wait 400
+up
+wait 150
+down 33 42
+wait 400
+up
+wait 150
+down 33 42
+wait 400
+up
+wait 1200
+expect star_mode=0
+snap hs12_check_mash_out
+# m2: a slow double tap on Home's "All games" (the second press past the 450 ms fresh-screen guard) opens the
+# Library, not the game under the finger there.
+tap 80 12
+wait 600
+expect-screen launcher
+down 124 104
+wait 300
+up
+wait 460
+down 124 104
+wait 300
+up
+wait 600
+expect-screen library
+snap hs13_all_games_double
+# Kid playtest 9, m1: Leo's "again!" taps on "All games" about once a second open no game under his finger.
+tap 80 12
+wait 600
+expect-screen launcher
+down 124 104
+wait 350
+up
+wait 650
+down 124 104
+wait 350
+up
+wait 650
+down 124 104
+wait 350
+up
+wait 650
+expect-screen library
+snap hs14_all_games_again
+# A fourth tap at that pace starts past 2.5 s from the opening: the wait is over, so it opens the game there (Radar).
+down 124 104
+wait 350
+up
+wait 600
+expect-screen radar_live
+sheet stars

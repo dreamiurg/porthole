@@ -1,0 +1,12 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 300
+shot p01_open_pc
+wait 2500
+shot p02_pc_2s
+wait 3000
+shot p03_pc_5s

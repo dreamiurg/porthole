@@ -1,0 +1,17 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 56 123 2000
+wait 1200
+shot st01_hold_stickers
+hold 80 12 2000
+wait 1000
+hold 114 123 2000
+wait 1200
+shot st02_hold_hats

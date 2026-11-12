@@ -1,0 +1,74 @@
+wait 1500
+tap 80 93
+wait 800
+hold 41 76 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 119 100 1500
+wait 150
+hold 41 100 1500
+wait 150
+hold 41 76 1500
+wait 150
+hold 119 124 2000
+wait 300
+wait 1000
+wait 1000
+hold 96 87 2000
+wait 800
+hold 79 67 2000
+wait 300
+wait 1000
+wait 600
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 200
+hold 79 90 1500
+wait 100
+wait 1500
+wait 1500
+hold 40 62 1200
+wait 200
+hold 79 62 1200
+wait 200
+hold 119 62 1200
+wait 200
+hold 40 90 1200
+wait 100
+wait 800
+wait 1500
+wait 1500
+hold 80 145 2500
+wait 300
+wait 1500
+wait 1500
+hold 80 14 2000
+wait 800
+hold 80 80 2500
+wait 300
+shot n01_hold_ellie
+wait 600
+hold 80 131 2500
+wait 300
+shot n02_hold_ok
+wait 600
+hold 80 80 2500
+wait 300
+hold 80 80 2500
+wait 300
+shot n03_hold_ellie_twice
+wait 600
+tap 80 14
+wait 600
+shot n04_home_from_card
+hold 80 54 3000
+wait 300
+shot n05_hold_mia
+wait 600
+mash 80 131 6
+wait 300
+shot n06_mash_ok

@@ -1,0 +1,16 @@
+import sys, os
+from PIL import Image, ImageChops, ImageStat
+S = os.path.dirname(os.path.abspath(__file__))
+def bands(im):
+    return [im.crop((0, 80, 480, 165)), im.crop((0, 365, 480, 450))]
+refs = {f[:-4]: bands(Image.open(os.path.join(S, "refs", f)).convert("RGB")) for f in sorted(os.listdir(os.path.join(S, "refs")))}
+def diff(a, b): return sum(sum(ImageStat.Stat(ImageChops.difference(x, y)).mean) for x, y in zip(a, b))
+def cls(p):
+    im = bands(Image.open(p).convert("RGB"))
+    best = min(refs, key=lambda k: diff(im, refs[k]))
+    d = diff(im, refs[best])
+    return best if d < 4 else f"OTHER(~{best} d={d:.0f})"
+if __name__ == "__main__":
+    d = sys.argv[1]
+    fs = sorted(os.listdir(d), key=lambda f: (f == "final.png", int(f[1:].split("_")[0]) if f[0]=="t" else 0, f.endswith("after.png")))
+    print(" ".join(f"{f[:-4]}={cls(os.path.join(d,f))}" for f in fs))

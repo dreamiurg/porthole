@@ -1,0 +1,15 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 40 128 2000
+wait 800
+tap 80 125
+wait 600
+shot s01_tap_outside_menu
+hold 80 12 2000
+wait 600
+shot s02_hold_home_in_menu

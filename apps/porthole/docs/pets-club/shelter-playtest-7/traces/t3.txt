@@ -1,0 +1,18 @@
+wait 1500
+hold 80 67 2000
+wait 600
+tap 80 55
+wait 500
+shot c01_tap_dogface
+hold 80 131 2000
+wait 300
+shot c02_hold_ok
+hold 80 67 3000
+wait 300
+shot c03_hold_mia_again_3s
+tap 80 14
+wait 500
+shot c04_home_btn
+mash 80 67 5
+wait 300
+shot c05_mash_mia

@@ -1,0 +1,34 @@
+# Relays lines from a unix socket to `snap --serve`, logs every input, saves frames as PNG.
+import socket, subprocess, sys, os, zlib, struct, time
+ROOT = "/tmp/claude-0/-home-user-porthole/4e7b951a-0e4f-5eae-859d-2ab6ed697cd9/scratchpad/wd3"
+SOCK = sys.argv[1]; LOG = sys.argv[2]; OUT = sys.argv[3]; args = sys.argv[4:]
+def png(rgb, w, h):
+    def ch(t, d): return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    return b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + ch(b"IDAT", zlib.compress(raw, 6)) + ch(b"IEND", b"")
+p = subprocess.Popen(["./build/host/snap", "--serve"] + args, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+if os.path.exists(SOCK): os.unlink(SOCK)
+s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+log = open(LOG, "a"); log.write(f"# start snap --serve {' '.join(args)} {time.ctime()}\n"); log.flush()
+while True:
+    c, _ = s.accept(); f = c.makefile("rwb")
+    for line in f:
+        cmd = line.decode().strip()
+        if not cmd: continue
+        if cmd == "quit":
+            log.write("# quit (stdin closed)\n"); log.flush()
+            p.stdin.close(); p.wait(); f.write(b"bye\n"); f.flush(); sys.exit(0)
+        if cmd.startswith("frame"):
+            name = cmd.split()[1]
+            p.stdin.write(b"frame\n"); p.stdin.flush()
+            hdr = p.stdout.readline().decode().strip(); n = int(hdr.split()[1])
+            data = b""
+            while len(data) < n: data += p.stdout.read(n - len(data))
+            open(os.path.join(OUT, name + ".png"), "wb").write(png(data, 480, 480))
+            log.write(f"frame {name}\n"); resp = f"saved {name}\n"
+        else:
+            p.stdin.write((cmd + "\n").encode()); p.stdin.flush()
+            resp = p.stdout.readline().decode()
+            log.write(cmd + "\n")
+        log.flush(); f.write(resp.encode()); f.flush()
+    c.close()

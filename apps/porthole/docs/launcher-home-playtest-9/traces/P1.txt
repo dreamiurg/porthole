@@ -1,0 +1,31 @@
+tick 3000
+tap 118 101 250
+tick 600
+tap 41 76 250
+tick 600
+tap 67 125 250
+tick 600
+tap 67 53 250
+tick 600
+tap 118 125 250
+tick 1500
+tap 93 85 250
+tick 1500
+tap 79 69 250
+tick 1500
+tap 80 145 250
+tick 2000
+tap 124 103 300
+tick 1500
+tap 126 42 300
+tick 1500
+down 33 42
+tick 200
+move 45 60
+tick 40
+move 70 80
+tick 40
+shot p1_dragged
+up
+tick 1500
+shot final

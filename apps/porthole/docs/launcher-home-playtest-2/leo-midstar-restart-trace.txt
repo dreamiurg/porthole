@@ -1,0 +1,4 @@
+tick 800
+tap 70 68 300
+tick 800
+shot lr01_home_after_restart_mid_starmode

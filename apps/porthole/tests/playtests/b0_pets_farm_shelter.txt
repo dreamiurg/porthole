@@ -1,0 +1,636 @@
+# Pets Club: the farm and the shelter. A dog 30 days old may move to the farm, only on the kid's yes; the empty room
+# then shows the Shelter, seven kennels with a named pup in each (the kid keeps or changes the name), and Bring back,
+# which undoes the move until a pup is adopted. Each dog on the farm hangs as a small frame on the room's wall; the
+# frames open "Farm friends".
+newgame Sam Biscuit
+wait 2400
+# no dog on the farm yet: no frames, and their spot on the wall does nothing
+tap 53 53
+wait 450
+expect-screen home
+tap 40 27
+wait 450
+expect-screen stats
+# a young dog has no farm button: its spot does nothing
+tap 80 77
+wait 450
+expect-screen stats
+tap 80 12
+wait 450
+expect-screen home
+# 30 days old: grown up (and the Grown sticker), then the farm button on the stats page
+dbg old
+wait 1500
+expect-screen celebrate
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+expect-screen stats
+ui-check stats-old
+snap 00_stats_old
+# To the farm, pressed long, still opens the question
+down 80 77
+wait 1000
+up
+wait 450
+expect-screen confirm_farm
+ui-check
+snap 00_confirm_farm
+# No keeps the dog, however long it is pressed (like every button here but Yes)
+down 45 102
+wait 1000
+up
+wait 450
+expect-screen stats
+expect hasDog=1
+expect pet=Biscuit
+tap 80 77
+wait 450
+# Yes can't be undone, so it takes a 2 s hold: a tap, a double tap, a firm press, letting go early, sliding off
+# Yes or sliding onto it from No! all keep the dog
+tap 115 102
+wait 450
+tap 115 102
+tap 115 102
+wait 450
+down 115 102
+wait 1000
+snap 00b_confirm_holding
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 115 102
+wait 660
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 115 102
+wait 600
+move 115 130
+wait 2200
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 45 102
+wait 200
+move 115 102
+wait 2200
+up
+wait 450
+expect-screen confirm_farm
+expect hasDog=1
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect hasDog=0
+expect wall=1
+expect farm=Biscuit
+expect visit=0
+ui-check
+snap 01_farm
+# Bring back, right after the move and pressed long: Biscuit is home again, just as he was, and the wall as it was
+down 36 103
+wait 1000
+up
+wait 450
+expect-screen home
+expect hasDog=1
+expect pet=Biscuit
+expect breed=0
+expect wall=0
+expect stage=2
+snap 01a_brought_back
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect hasDog=0
+expect wall=1
+# a pat: the dog jumps (hearts), and the farm stays put
+tap 80 95
+wait 80
+expect-screen farm
+snap 01b_farm_pat
+wait 900
+# holding a finger on him and rubbing: he keeps jumping, a heart every 300 ms
+down 70 95
+wait 300
+move 90 95
+wait 300
+move 70 95
+wait 300
+expect-screen farm
+snap 01c_farm_rub
+up
+wait 900
+# an impatient finger tapping one spot a little slower than the fresh gate: Go home, then nothing in the empty room
+# (its Shelter and Bring back sit higher), so the taps never chain on into naming a pup or bringing the dog back
+tap 80 137
+wait 600
+tap 80 137
+wait 600
+tap 80 137
+wait 450
+expect-screen home
+expect hasDog=0
+expect bringback=1
+ui-check home-empty
+snap 02_empty_room
+# Go home did not end it: Bring back (Biscuit's picture on it) in the empty room, and Biscuit is home as he was
+tap 43 103
+wait 80
+expect-screen home
+expect hasDog=1
+expect pet=Biscuit
+expect wall=0
+expect stage=2
+snap 02a_brought_back_from_room
+wait 450
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+tap 80 137
+wait 450
+expect-screen home
+expect hasDog=0
+# visiting Biscuit (the frame and his picture pressed long) has no Bring back, and its spot does nothing
+down 53 53
+wait 1000
+up
+wait 450
+expect-screen wall
+down 80 104
+wait 1000
+up
+wait 450
+expect-screen farm
+expect visit=1
+tap 36 103
+wait 450
+expect-screen farm
+expect hasDog=0
+# the visit's back button pressed long: Farm friends
+down 80 12
+wait 1000
+up
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+expect-screen home
+# only the Shelter (and the door, and Biscuit's frame): the care buttons and the stat pips are gone
+tap 40 129
+tap 118 129
+tap 40 27
+wait 450
+expect-screen home
+# the front door still opens Paw Street, and back comes home to the empty room
+tap 27 51
+wait 450
+expect-screen street
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
+# a slow double tap on Sam's own house, whose box reaches over Bring back's spot in the room: the first goes home,
+# the second (past the fresh gate, before the room has shown a second) brings nothing back
+tap 27 51
+wait 450
+expect-screen street
+tap 68 100
+wait 500
+tap 68 100
+wait 450
+expect-screen home
+expect hasDog=0
+expect bringback=1
+# the same second press held 700 ms: it lifts after the room's first second, but began before it, so still nothing
+tap 27 51
+wait 450
+expect-screen street
+tap 68 100
+wait 500
+down 68 100
+wait 700
+up
+wait 450
+expect-screen home
+expect hasDog=0
+expect bringback=1
+# Shelter twice, 600 ms apart: the kennels, not the keyboard (Pick me! sits lower)
+tap 111 102
+wait 600
+tap 111 102
+wait 450
+expect-screen shelter
+ui-check
+snap 03_kennel_connor
+tap 134 80
+tap 134 80
+tap 134 80
+wait 100
+snap 04_kennel_choco
+# back: still the empty room, nobody adopted
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
+# leave the game and come back: still the empty room
+tap 80 12
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+expect bringback=1
+# the kennels start at Connor again; left wraps round to Charcoal, right comes back
+# the Shelter, an arrow each way and Pick me!, all pressed long: each acts once, on release
+down 111 102
+wait 1000
+up
+wait 450
+expect-screen shelter
+down 26 80
+wait 1000
+up
+wait 100
+snap 04_kennel_charcoal
+down 134 80
+wait 1000
+up
+tap 134 80
+tap 134 80
+tap 134 80
+down 80 139
+wait 1000
+up
+wait 450
+expect-screen name_pet
+ui-check name_pet-shelter
+snap 05_name_choco
+# back on the keyboard: the kennels again, still no dog
+tap 80 12
+wait 450
+expect-screen shelter
+expect hasDog=0
+tap 80 139
+wait 450
+expect-screen name_pet
+# keep the name
+tap 119 125
+wait 450
+expect-screen celebrate
+expect pet=Choco
+expect breed=3
+expect hasDog=1
+expect bringback=0
+snap 06_welcome
+wait 450
+# the welcome card, pressed long
+down 80 80
+wait 1000
+up
+wait 900
+expect-screen home
+expect pet=Choco
+snap 07_home_choco
+# Biscuit's frame on the wall opens Farm friends; back comes home
+ui-check home-wall1
+snap 07a_room_with_frame
+tap 53 53
+wait 450
+expect-screen wall
+expect oldest=Biscuit
+ui-check wall1
+snap 07b_wall
+# Biscuit's picture visits him on the farm, where a pat makes him jump; back is Farm friends
+tap 80 104
+wait 450
+expect-screen farm
+expect farm=Biscuit
+expect visit=1
+ui-check farm-visit
+snap 07d_farm_visit
+tap 80 95
+wait 80
+expect-screen farm
+snap 07e_farm_visit_pat
+wait 900
+tap 80 12
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+expect-screen home
+sheet farm_shelter
+# Choco grows old too; Waffles the Corgi gets a new name: an empty name cannot be OKed, "Bingo" can
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect wall=2
+# a restart on the farm: the empty room, and Bring back (pressed long, 2.5 s) still brings Choco home
+wait 1100
+reboot
+wait 450
+expect-screen picker
+tap 80 67
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+expect bringback=1
+snap 07f_room_after_restart
+wait 600
+down 43 103
+wait 2500
+up
+wait 80
+expect-screen home
+expect hasDog=1
+expect pet=Choco
+expect wall=1
+wait 450
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+expect-screen farm
+expect wall=2
+# a long press on Go home still goes home
+down 80 137
+wait 1200
+up
+wait 450
+expect-screen home
+# two frames side by side on Farm friends; back is the empty room again
+tap 53 53
+wait 450
+expect-screen wall
+expect newest=Choco
+ui-check wall2
+snap 07c_wall_two
+# the right-hand picture is Choco's
+tap 105 104
+wait 450
+expect-screen farm
+expect farm=Choco
+expect visit=1
+tap 80 12
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+expect-screen home
+expect hasDog=0
+tap 111 102
+wait 450
+tap 134 80
+tap 134 80
+tap 134 80
+tap 134 80
+tap 134 80
+tap 80 139
+wait 450
+expect-screen name_pet
+repeat 7
+tap 93 125
+end
+tap 119 125
+wait 450
+expect-screen name_pet
+expect hasDog=0
+# B, I, (N-Z) N, (A-M) G, (N-Z) O
+tap 67 53
+tap 41 101
+tap 67 125
+tap 41 53
+tap 67 125
+tap 93 77
+tap 67 125
+tap 67 53
+snap 08_name_bingo
+tap 119 125
+wait 450
+expect-screen celebrate
+expect pet=Bingo
+expect breed=5
+wait 450
+tap 80 80
+wait 900
+expect-screen home
+# the Corgi in a red bow (its own hat anchors)
+dbg hats
+tap 40 27
+wait 450
+tap 114 123
+wait 450
+expect-screen hats
+tap 134 80
+wait 100
+tap 80 134
+wait 450
+expect hat=1
+snap 09_corgi_bow
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen home
+snap 10_home_corgi_bow
+# a breed past the art is the Golden pup (as pet::loadBlob makes a corrupt byte)
+dbg breed 200
+wait 100
+snap 11_breed_200
+dbg breed 5
+sheet bingo
+# Bingo, old and asleep at 22:00 on the stats page, moves to the farm: the empty room is awake, not in night mode
+dbg anytime
+dbg old
+wait 1500
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+ui-check home-grown-wall2
+tap 40 27
+wait 450
+expect-screen stats
+skip 21600
+wait 200
+expect asleep=1
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 450
+tap 80 137
+wait 450
+expect-screen home
+expect asleep=0
+expect hasDog=0
+expect wall=3
+tap 53 53
+wait 450
+expect-screen wall
+expect newest=Bingo
+ui-check wall3
+snap 11a_wall_three
+tap 80 12
+wait 450
+expect-screen home
+# Ann's Paw Street: Sam's house has no pup by its door
+tap 80 12
+wait 450
+profile Ann 7
+tap 48 79
+wait 2400
+tap 80 80
+wait 1000
+tap 80 80
+wait 450
+tap 123 28
+tap 119 125
+wait 450
+tap 32 78
+wait 900
+tap 80 80
+wait 450
+expect-screen home
+tap 27 51
+wait 450
+expect-screen street
+snap 12_street_empty_house
+sheet night
+# five more dogs through the farm, Romeo to Charcoal: the wall keeps the last four, oldest first, and Ann's pup stays home
+tap 80 12
+wait 450
+expect-screen home
+dbg wall5
+wait 100
+expect wall=4
+expect hasDog=1
+ui-check home-wall4
+snap 13_room_four_frames
+tap 53 53
+wait 450
+expect-screen wall
+expect oldest=Choco
+expect newest=Charcoal
+ui-check wall4
+snap 14_wall_four
+# Farm friends' pictures sit below the room's frames: a double tap on the frames, quick or a little slower than the
+# fresh gate, stops on Farm friends and never visits the oldest dog
+tap 80 12
+wait 450
+tap 53 53
+tap 53 53
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+tap 53 53
+wait 600
+tap 53 53
+wait 450
+expect-screen wall
+# the newest, bottom right: Charcoal's name is the widest on the farm's two lines too
+tap 105 127
+wait 450
+expect-screen farm
+expect farm=Charcoal
+ui-check farm-charcoal
+snap 15_farm_charcoal
+tap 80 12
+wait 450
+expect-screen wall
+tap 80 12
+wait 450
+expect-screen home
+sheet wall
+# the farm and the shelter are saved at once: a restart a second after each keeps the choice (the shell's urgent
+# checkpoint, not its 5 s cadence); the growing-up card comes on the next whole second
+dbg old
+wait 2000
+tap 80 80
+wait 900
+tap 80 80
+wait 900
+expect-screen home
+tap 40 27
+wait 450
+tap 80 77
+wait 450
+down 115 102
+wait 2100
+up
+wait 1100
+expect-screen farm
+reboot
+wait 450
+expect-screen picker
+tap 80 80
+wait 450
+expect-screen launcher
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=0
+expect wall=4
+tap 111 102
+wait 450
+tap 80 139
+wait 450
+tap 119 125
+wait 1100
+expect-screen celebrate
+reboot
+wait 450
+tap 80 80
+wait 450
+tap 48 79
+wait 2400
+expect-screen home
+expect hasDog=1
+expect pet=Connor

@@ -1,0 +1,345 @@
+# snap --serve --fresh (default clock)
+wait 1000
+shot 00-boot
+tap 118 101
+wait 300
+tap 41 76
+wait 300
+tap 67 125
+wait 600
+shot 01-name-nz
+tap 67 52
+wait 300
+tap 118 125
+wait 800
+shot 02-after-ok
+tap 123 56
+wait 800
+shot 03-after-face
+tap 79 69
+wait 800
+shot 04-after-age
+tap 80 145
+wait 1200
+shot 05-first-home
+down 36 72
+wait 1000
+shot 06-hold-dog-mid
+wait 1000
+up
+wait 1500
+shot 07-after-hold-dog
+wait 3000
+shot 08-pets-after-splash
+hold 80 13 1500
+wait 1000
+shot 09-back-home
+down 124 105
+wait 800
+shot 10-hold-allgames
+wait 1200
+up
+wait 1000
+shot 11-library-p1
+down 126 42
+wait 900
+shot 12-hold-star-mid
+wait 1100
+up
+wait 300
+shot 13-after-star-hold
+wait 300
+shot 13b-starmode-later
+hold 66 42 2000
+wait 400
+shot 14-held-header-stars
+hold 50 64 2000
+wait 300
+shot 15-held-dog-star
+hold 94 64 1200
+wait 200
+hold 138 64 1500
+wait 200
+shot 16-mash-a
+hold 50 98 1000
+wait 200
+hold 94 98 1800
+wait 300
+shot 17-mash-all-unstarred
+hold 126 42 1500
+wait 400
+shot 18-check-with-zero
+wait 1000
+shot 18b-after
+hold 80 13 1200
+wait 800
+shot 19-home-after-zero
+hold 66 42 1500
+wait 800
+shot 20-after-header
+hold 80 67 1500
+wait 800
+shot 21-home-reentered
+restart
+# process restarted (no --fresh)
+wait 1500
+shot 22-after-restart
+hold 80 67 1500
+wait 800
+shot 23-home-after-restart
+hold 80 72 1500
+wait 800
+shot 24-library-from-empty-home
+hold 126 42 1500
+wait 600
+hold 50 64 1200
+wait 200
+hold 94 64 1200
+wait 300
+shot 25-starred-two
+hold 80 13 1500
+wait 800
+shot 26-after-home-btn-in-starmode
+hold 96 136 1500
+wait 800
+shot 27-library-p2
+down 80 72
+wait 900
+shot 28-hold-crown
+wait 1100
+up
+wait 2500
+shot 29-kingdom-open
+hold 54 137 1500
+wait 1000
+shot 30-back-from-kingdom
+drag 126 42 124 72 600
+wait 500
+shot 31-drag-star-to-tile
+dtap 126 42
+wait 300
+shot 32-dtap-star
+dtap 80 72
+wait 300
+shot 33-dtap-kingdom-in-starmode
+hold 64 136 1200
+wait 600
+shot 34-starmode-p1
+hold 36 72 1500
+wait 200
+hold 80 105 2000
+wait 300
+shot 35-starred-p1
+hold 126 42 1200
+wait 600
+shot 36-after-check
+hold 80 13 1200
+wait 800
+shot 37-home-leo
+tap 66 42
+wait 800
+tap 80 93
+wait 800
+shot 40-zoe-new
+tap 67 125
+wait 300
+tap 41 125
+wait 300
+tap 67 52
+wait 300
+tap 67 125
+wait 300
+tap 41 76
+wait 300
+shot 41-zoe-name
+tap 118 125
+wait 800
+tap 65 88
+wait 800
+tap 37 102
+wait 800
+tap 80 145
+wait 1200
+shot 42-zoe-home
+# ZOE time-to-goal starts here
+wait 2500
+tap 117 99
+wait 1000
+shot 43-zoe-lib-p1
+wait 2000
+tap 90 140
+wait 1000
+shot 44-zoe-lib-p2
+wait 1500
+down 82 104
+wait 900
+shot 45-zoe-hold-car
+up
+wait 2000
+shot 46-zoe-rally-opened
+wait 1000
+tap 46 129
+wait 1000
+shot 47-zoe-back-p2
+wait 1500
+tap 121 47
+wait 600
+shot 48-zoe-starmode-p2
+wait 1500
+tap 95 97
+wait 200
+shot 49-zoe-full-a
+wait 500
+shot 49b-zoe-full-b
+wait 1500
+shot 49c-zoe-full-after2s
+wait 1200
+tap 70 140
+wait 700
+shot 50-zoe-starmode-p1
+wait 1500
+down 88 108
+wait 80
+shot 51-zoe-press-pumpkin
+up
+wait 300
+shot 52-zoe-unstarred-pumpkin
+wait 1000
+tap 98 139
+wait 700
+tap 84 108
+wait 400
+shot 53-zoe-rally-starred
+wait 1200
+tap 128 45
+wait 800
+shot 54-zoe-after-check
+wait 1000
+tap 82 14
+wait 800
+shot 55-zoe-home-goal
+# ZOE goal reached
+# --- supplementary probes (after first play) ---
+tap 124 105
+wait 800
+tap 126 42
+wait 600
+tap 36 72
+wait 200
+tap 80 72
+wait 300
+shot 60-zoe-starmode-unstarred2
+tap 66 42
+wait 600
+shot 61-header-tap-in-starmode
+restart
+# process restarted (no --fresh)
+wait 1000
+tap 80 67
+wait 800
+shot 62-after-restart-picker-tap
+tap 80 80
+wait 900
+shot 63-zoe-home-after-restart-in-starmode
+tap 124 105
+wait 800
+tap 126 42
+wait 600
+tap 112 42
+wait 500
+tap 126 56
+wait 500
+tap 140 42
+wait 500
+tap 58 72
+wait 500
+tap 80 88
+wait 500
+shot 64-offtaps-starmode
+tap 36 72
+wait 300
+shot 65-zoe-unstar-before-rest
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 40000
+tap 30 140
+wait 500
+shot 66-after-15min-starmode
+tap 80 13
+wait 700
+shot 67-lib-after-home-discard
+tap 80 13
+wait 700
+shot 68-zoe-home-unchanged
+tap 124 105
+wait 800
+tap 126 42
+wait 600
+tap 126 42
+wait 300
+shot 69-star-then-retap-600ms
+tap 80 13
+wait 800
+hold 126 42 2000
+wait 700
+shot 70-sun-held
+tap 80 13
+wait 800
+tap 80 13
+wait 800
+shot 71-home
+hold 126 42 2000
+wait 700
+shot 72-sun-held
+tap 80 13
+wait 800
+shot 73-home-from-light
+quit

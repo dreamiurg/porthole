@@ -1,0 +1,35 @@
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+press 45 27 2000
+tick 1200
+shot k00
+press 80 77 2000
+tick 1000
+press 115 102 2500
+tick 6000
+shot k01_farm_before_kill
+quit
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+shot k02_after_restart
+press 45 27 150
+tick 1200
+press 80 77 2000
+tick 1000
+press 115 102 2500
+tick 6000
+shot k01_farm_before_kill
+quit
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+shot k02_after_restart
+quit

@@ -1,0 +1,29 @@
+# Persistent driver: owns `snap --serve`, accepts command lines on a unix socket, logs the trace.
+import os, socket, subprocess, sys
+from PIL import Image
+ROOT = "/home/user/porthole/apps/porthole"
+OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
+SOCK = sys.argv[2]
+p = subprocess.Popen([ROOT + "/build/host/snap", "--serve"], cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+trace = open(OUT + "/trace.txt", "a")
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+def frame(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    n = int(p.stdout.readline().decode().split()[1]); data = b""
+    while len(data) < n: data += p.stdout.read(n - len(data))
+    Image.frombytes("RGB", (480, 480), data).save(f"{OUT}/{name}.png")
+if os.path.exists(SOCK): os.unlink(SOCK)
+s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+while True:
+    c, _ = s.accept(); buf = c.makefile("rw")
+    for line in buf:
+        line = line.strip()
+        if not line: continue
+        trace.write(line + "\n"); trace.flush()
+        if line.startswith("snap "): frame(line.split()[1]); r = "saved"
+        elif line == "quit": p.terminate(); buf.write("bye\n"); buf.flush(); sys.exit(0)
+        else: r = cmd(line)
+        buf.write(r + "\n"); buf.flush()
+    c.close()

@@ -1,0 +1,10 @@
+wait 2500
+hold 40 67 3200
+wait 300
+snap a_lock
+hold 80 143 1500
+wait 300
+snap b_afterOK
+hold 40 67 1500
+wait 300
+snap c_again

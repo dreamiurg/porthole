@@ -1,0 +1,31 @@
+# Repro F1: an impatient triple tap on the Library's star button enters star mode,
+# then the third press lands on the green check (same spot) and leaves it again.
+# Presses 300 ms, 150 ms between lift and next press (Leo's cadence).
+reset
+profile Leo 6
+wait 1000
+# Home -> All games tile (bottom right)
+down 124 105
+wait 300
+up
+wait 900
+screen
+# triple tap on the star button
+down 126 42
+wait 300
+up
+wait 40
+screen
+debug
+wait 110
+down 126 42
+wait 300
+up
+wait 150
+down 126 42
+wait 300
+up
+wait 900
+screen
+snap r1_after_triple
+debug

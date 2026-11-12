@@ -1,0 +1,39 @@
+# Replays a trace through `snap --serve --fresh`, saving frames on `shot NAME`.
+# Trace: tap X Y [MS] | hold X Y MS | down X Y | move X Y | up | tick MS | shot NAME | # comment
+import subprocess, sys, os
+from PIL import Image
+ROOT = "/home/user/porthole/apps/porthole"
+trace, outdir = sys.argv[1], sys.argv[2]
+os.makedirs(outdir, exist_ok=True)
+p = subprocess.Popen(["./build/host/snap", "--serve"] + ([] if os.environ.get("NOFRESH") else ["--fresh"]), cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+def rd(n):
+    b = b""
+    while len(b) < n: b += p.stdout.read(n - len(b))
+    return b
+def shot(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    h = p.stdout.readline().decode().strip()
+    data = rd(int(h.split()[1]))
+    # payload is a PPM
+    from io import BytesIO
+    Image.frombytes("RGB", (480, 480), data).save(os.path.join(outdir, name + ".png"))
+for raw in open(trace):
+    line = raw.split("#")[0].strip()
+    if not line: continue
+    a = line.split()
+    if a[0] == "tap":
+        ms = int(a[3]) if len(a) > 3 else 120
+        cmd(f"down {a[1]} {a[2]}"); cmd(f"tick {ms}"); cmd("up"); cmd("tick 40")
+    elif a[0] == "hold":
+        cmd(f"down {a[1]} {a[2]}"); cmd(f"tick {a[3]}"); cmd("up"); cmd("tick 40")
+    elif a[0] == "shot": shot(a[1])
+    elif a[0] in ("down", "move"): cmd(line); cmd("tick 33")
+    elif a[0] == "up": cmd("up"); cmd("tick 33")
+    elif a[0] == "tick": cmd(line)
+    elif a[0] == "midshot":  # frame while finger down
+        shot(a[1])
+    else: print("?", line); sys.exit(1)
+p.stdin.close(); p.wait()

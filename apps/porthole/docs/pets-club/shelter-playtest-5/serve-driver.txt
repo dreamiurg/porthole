@@ -1,0 +1,33 @@
+# daemon: owns snap --serve, reads commands over unix socket, logs trace
+import os, socket, subprocess, sys, zlib, struct
+ROOT="/home/user/porthole/apps/porthole"
+EV=sys.argv[1]; TRACE=sys.argv[2]; SOCK=sys.argv[3]
+p=subprocess.Popen([ROOT+"/build/host/snap","--serve"],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+def cmd(l):
+    p.stdin.write((l+"\n").encode()); p.stdin.flush(); return p.stdout.readline().decode().strip()
+def png(rgb,w,h,path):
+    raw=b"".join(b"\x00"+rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    ch=lambda t,d: struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
+    open(path,"wb").write(b"\x89PNG\r\n\x1a\n"+ch(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))+ch(b"IDAT",zlib.compress(raw,6))+ch(b"IEND",b""))
+def frame(path):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    hdr=p.stdout.readline().decode().strip(); n=int(hdr.split()[1])
+    buf=b""
+    while len(buf)<n: buf+=p.stdout.read(n-len(buf))
+    png(buf,480,480,path); return hdr
+if os.path.exists(SOCK): os.unlink(SOCK)
+s=socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+tr=open(TRACE,"a")
+while True:
+    c,_=s.accept(); data=c.makefile().read(); out=[]
+    for line in data.splitlines():
+        line=line.strip()
+        if not line: continue
+        tr.write(line+"\n"); tr.flush()
+        if line.startswith("shot "):
+            out.append(frame(os.path.join(EV,line[5:]+".png")))
+        elif line=="quit":
+            p.stdin.close(); p.wait(); c.sendall(b"bye\n"); c.close(); sys.exit(0)
+        elif line.startswith("#"): continue
+        else: out.append(line+" -> "+cmd(line))
+    c.sendall(("\n".join(out)+"\n").encode()); c.close()

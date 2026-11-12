@@ -195,3 +195,6 @@ static const char* const STICKER_NAMES[16] = {
   "First Meal", "First Story", "Bookworm", "Library Card", "Bone Catcher", "Super Speller", "One Week", "Two Weeks",
   "Trick Star", "Show Dog", "Squeaky Clean", "Best Friends", "Early Bird", "Party Time", "All Grown Up", "Hat Collector"};
 static const char* const PET_NAME_IDEAS[9] = {"Biscuit", "Pip", "Mochi", "Luna", "Waffles", "Peanut", "Maple", "Noodle", "Cocoa"};
+// The shelter dogs, in enum Breed order (sprites.h); the kid can keep or change the suggested name.
+static const char* const SHELTER_NAMES[7] = {"Connor", "Boxy", "Romeo", "Choco", "Marsha", "Waffles", "Charcoal"};
+static const char* const BREED_NAMES[7] = {"Golden pup", "Dalmatian", "Husky", "Beagle", "Poodle", "Corgi", "Black Lab"};

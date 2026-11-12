@@ -29,9 +29,7 @@ static const uint32_t SYS_HOLD_MS = 5000;
 static const ui::Box TITLE = {44, 5, 72, 22};   // ends 2 px above the first row with four profiles (y 29)
 bool Shell::titleHeld() {
   if (!sys_) return false;
-  const ui::Box& t = TITLE;   // hit() first, finger up or not: the audit frame sees the target
-  bool began = in_.downX >= t.x && in_.downX < t.x + t.w && in_.downY >= t.y && in_.downY < t.y + t.h;
-  return in_.hit(t.x, t.y, t.w, t.h) && in_.down && began && in_.heldMs >= SYS_HOLD_MS;
+  return ui::pressing(in_, TITLE) && in_.heldMs >= SYS_HOLD_MS;   // pressing logs TITLE, finger up or not: the audit sees it
 }
 
 // ---------------------------------------------------------------- "something new" (once, on the boot after an update)
@@ -44,7 +42,7 @@ void Shell::drawSysNew() {
   textCentered(80, 42, "Porthole has", C_NAVY);
   textCentered(80, 56, "something", C_NAVY, 2);
   textCentered(80, 76, "new!", C_NAVY, 2);
-  ui::drawButton({NEW_OK, "OK", nullptr, C_GREEN}, in_.down && in_.hit(NEW_OK.x, NEW_OK.y, NEW_OK.w, NEW_OK.h));
+  ui::drawButton({NEW_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NEW_OK));
 }
 
 // ---------------------------------------------------------------- the menu's font and widgets
@@ -82,7 +80,7 @@ static void fit(char* out, size_t n, const char* s, int room) {
     if (k > 2) out[k - 1] = out[k - 2] = '.';
   }
 }
-static bool down(const Input& in, const ui::Box& b) { return in.down && in.hit(b.x, b.y, b.w, b.h); }
+static bool down(const Input& in, const ui::Box& b) { return ui::pressing(in, b); }   // a press begun on it
 static bool tapped(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
 // ui::drawButton's look in the menu's font. A keyboard key is the same with a 1 px shadow, yellow while pressed.
 static void sbutton(const ui::Box& b, const char* label, uint8_t col, bool pressed, int shadow = 2) {
@@ -121,13 +119,15 @@ static void wifiResult(char* out, size_t n, const UpdStatus& u, uint32_t now) {
   else snprintf(out, n, "%s", u.state == UP_IDLE ? "not yet" : u.state == UP_NO_WIFI ? "no wifi" : u.state == UP_CHECKING ? "trying" : "ok");
 }
 
-static const ui::Box WIFI_BTN = {22, 98, 56, 20}, UPD_BTN = {82, 98, 56, 20};
-static const ui::Box HOME_BTN = {30, 122, 48, 20}, ADMIN_BTN = {82, 122, 48, 20};
+// Games sits beside Wifi and Updates, where a grown-up looks first; Radar's home says whose it is (not the kids' Home).
+static const ui::Box WIFI_BTN = {14, 98, 42, 20}, GAMES_BTN = {59, 98, 42, 20}, UPD_BTN = {104, 98, 42, 20};
+static const ui::Box HOME_BTN = {28, 120, 52, 20}, ADMIN_BTN = {82, 120, 50, 20};
 void Shell::updateSysInfo() {
   upd_ = sys_->status();
   if (ui::back(in_)) { go(SH_PICK); return; }
   if (tapped(in_, ADMIN_BTN)) { adminPage_ = 0; go(SH_SYS_ADMIN); return; }
   if (tapped(in_, UPD_BTN)) { go(SH_SYS_UPD); return; }
+  if (tapped(in_, GAMES_BTN)) { gamesPage_ = 0; go(SH_SYS_GAMES); return; }
   if (sys_->hasHome() && tapped(in_, HOME_BTN)) { go(SH_SYS_HOME); return; }
   if (tapped(in_, WIFI_BTN)) { netPage_ = 0; scan(); go(SH_SYS_WIFI); }
 }
@@ -145,7 +145,8 @@ void Shell::drawSysInfo() {
   row(y, upd_.state == UP_IDLE && upd_.lastCheck ? "Checked" : "Last try", tried);   // before this boot: a time, no result
   sbutton(WIFI_BTN, "Wifi", C_SKY, down(in_, WIFI_BTN));
   sbutton(UPD_BTN, "Updates", C_SKY, down(in_, UPD_BTN));
-  if (sys_->hasHome()) sbutton(HOME_BTN, "Home", C_SKY, down(in_, HOME_BTN));
+  sbutton(GAMES_BTN, "Games", C_SKY, down(in_, GAMES_BTN));
+  if (sys_->hasHome()) sbutton(HOME_BTN, "Radar home", C_SKY, down(in_, HOME_BTN));
   sbutton(ADMIN_BTN, "Admin", C_SKY, down(in_, ADMIN_BTN));
   sback();
 }
@@ -154,8 +155,8 @@ void Shell::drawSysInfo() {
 // A separate key: existing devices stay unlocked, and no shipped profile/save layout changes. Leaving Info for
 // the picker ends access; every new title hold asks again. The post-update news card never grants menu access.
 void Shell::enterSystem() { askAdmin(SH_SYS_INFO); }
-// The system menu and the picker's New and delete: behind the admin code when one is set, so a new profile or a
-// deleted one cannot dodge the limits.
+// The system menu and the picker's New: behind the admin code when one is set, so a new profile cannot dodge the
+// limits. Delete comes here only as the grown-up's way in: a profile's own code deletes it too (shell.cpp's choose).
 void Shell::askAdmin(Screen next) {
   resetPin(); firstPin_ = 0; afterAdmin_ = next;
   if (adminPin_) go(SH_SYS_PIN); else adminPassed();
@@ -219,7 +220,7 @@ bool Shell::saveAdminPin(uint16_t code) {
 static ui::Box adminKey(int k) { return k == 9 ? ui::Box{65, 117, 28, 19} : ui::Box{35 + k % 3 * 30, 54 + k / 3 * 21, 28, 19}; }
 static const ui::Box ADMIN_ERASE = {35, 117, 28, 19};
 void Shell::updateSysPin() {
-  if (ui::back(in_)) { resetPin(); firstPin_ = 0; go(screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN); return; }
+  if (ui::back(in_)) { sysPinBack(); return; }
   if (pinLen_ == 4) {   // a key pressed while the fourth dot shows is the next screen's first (the repeat): never lost
     const char next = adminDigit();
     if (!next && (ms_ - pinMs_ < 400 || in_.down)) return;   // a finger down waits: its lift is that key
@@ -230,6 +231,12 @@ void Shell::updateSysPin() {
   if (adminKeysHeld()) return;
   if (ui::clicked(in_, ADMIN_ERASE)) { if (pinLen_) pin_[--pinLen_] = 0; return; }
   if (const char d = adminDigit()) typeDigit(d);
+}
+// The grown-up's code for a delete reached from a kid's pad goes back to that pad; otherwise the picker, or Admin.
+void Shell::sysPinBack() {
+  const bool kidPad = screen_ == SH_SYS_PIN && afterAdmin_ == SH_DELETE && prof_.rec[target_].pin;
+  resetPin(); firstPin_ = 0;
+  go(kidPad ? SH_PIN : screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN);
 }
 // A wrong code's shake, or too many wrong tries (pinlock.h), holds the keys.
 bool Shell::adminKeysHeld() { return ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
@@ -338,6 +345,57 @@ void Shell::drawSysPlayerPin() {
   sback();
 }
 
+// ---------------------------------------------------------------- Games (from Info): the games on this device, 3 a page
+// Off hides a game from every kid's Home and Library (shell::GamesOff); its saves and stars stay for when it is back
+// on, and a line under the rows says so. The last game on cannot go off. Each change saves at once and is read back.
+static const int GAME_ROWS = 3;
+static ui::Box gameRow(int i) { return {22, 30 + i * 23, 116, 21}; }   // the picture's 56 physical rows fit inside
+static const ui::Box GAMES_PREV = {32, 122, 22, 18}, GAMES_NEXT = {106, 122, 22, 18};
+static int gamePages(int n) { return (n + GAME_ROWS - 1) / GAME_ROWS; }
+void Shell::updateSysGames() {
+  if (ui::back(in_)) { go(SH_SYS_INFO); return; }
+  const int pages = gamePages(nApps_);
+  if (gamesPage_ > 0 && tapped(in_, GAMES_PREV)) gamesPage_--;
+  if (gamesPage_ + 1 < pages && tapped(in_, GAMES_NEXT)) gamesPage_++;
+  for (int i = 0; i < GAME_ROWS; i++) {
+    const int k = gamesPage_ * GAME_ROWS + i;
+    if (k < nApps_ && tapped(in_, gameRow(i))) { toggleGame(k); return; }
+  }
+}
+void Shell::toggleGame(int k) {
+  const uint32_t off = gamesOff_ ^ gameBit(ids_[k]);
+  if (allOff(ids_, nApps_, off)) { toast("Keep one game on"); return; }
+  if (!saveGamesOff(*st_, off)) { toast("Could not save"); return; }
+  gamesOff_ = off;
+}
+static void sicon(const gfx::Sprite& s, int x, int y) {   // a launcher picture, 2 physical px a pixel (2/3 of a tile's)
+  for (int r = 0; r < s.h; r++)
+    for (int c = 0; c < s.w; c++) if (s.px[r * s.w + c] != C_T) gfx565::rect(x + c * 2, y + r * 2, 2, 2, scol(s.px[r * s.w + c]));
+}
+void Shell::drawSysGames() {
+  sclear(C_NAVY);
+  const int pages = gamePages(nApps_);
+  for (int i = 0; i < GAME_ROWS && gamesPage_ * GAME_ROWS + i < nApps_; i++) {
+    const int k = gamesPage_ * GAME_ROWS + i; const ui::Box b = gameRow(i);
+    const bool pressed = down(in_, b), on = !(gamesOff_ & gameBit(ids_[k]));
+    const int dy = pressed ? 1 : 0, sx = b.x + b.w - 25, sy = b.y + 6 + dy;
+    sbutton(b, "", on ? C_WHITE : C_LTGRAY, pressed);
+    sicon(apps_[k]->icon(), (b.x + 3) * 3, (b.y + 1 + dy) * 3);   // clear of the row's rounded corner
+    char name[16]; fit(name, sizeof name, apps_[k]->name(), sx - 2 - (b.x + 30));
+    stext(b.x + 30, b.y + 6 + dy, name, on ? C_NAVY : C_DKGRAY);
+    sround(sx, sy, 20, 10, on ? C_GREEN : C_DKGRAY);   // the switch: its knob right on green when on
+    scircle(on ? sx + 15 : sx + 5, sy + 5, 4, C_WHITE);
+  }
+  stextC(80, 102, "Off only hides a game; saves stay.", C_WHITE);
+  char label[32]; snprintf(label, sizeof label, pages > 1 ? "Games %d/%d" : "Games", gamesPage_ + 1, pages);
+  stextC(80, 125, label, C_LTGRAY);
+  if (pages > 1) {
+    sbutton(GAMES_PREV, "<", gamesPage_ > 0 ? (uint8_t)C_SKY : (uint8_t)C_DKGRAY, gamesPage_ > 0 && down(in_, GAMES_PREV));
+    sbutton(GAMES_NEXT, ">", gamesPage_ + 1 < pages ? (uint8_t)C_SKY : (uint8_t)C_DKGRAY, gamesPage_ + 1 < pages && down(in_, GAMES_NEXT));
+  }
+  sback();
+}
+
 static bool typeInto(const Input& in, TextEntry& t);
 
 // ---------------------------------------------------------------- Screen time: one home for limits, play hours and deliberate exceptions
@@ -383,7 +441,7 @@ void Shell::drawSysTime() {
 static const ui::Box EDIT_MINUS = {26, 68, 24, 24}, EDIT_PLUS = {110, 68, 24, 24};
 static const ui::Box EDIT_CANCEL = {26, 110, 52, 22}, EDIT_SAVE = {82, 110, 52, 22};
 static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
-  const bool tap = tapped(in, box), held = in.longPress && in.hit(box.x, box.y, box.w, box.h);
+  const bool tap = tapped(in, box) && !in.longTap, held = in.longPress && in.hit(box.x, box.y, box.w, box.h);   // the hold's +10 alone
   if (!tap && !held) return value;
   int next = value + delta * (held ? 10 : 1);
   return next < 1 ? 1 : next > 1440 ? 1440 : next;
@@ -409,7 +467,7 @@ void Shell::drawSysLimits() {
 static const ui::Box WINDOW_TOGGLE = {42, 40, 76, 18}, WINDOW_CANCEL = {37, 125, 40, 20}, WINDOW_SAVE = {83, 125, 40, 20};
 static ui::Box windowStep(int row, bool plus) { return {plus ? 110 : 26, 70 + row * 32, 24, 20}; }
 static uint16_t stepTime(const Input& in, const ui::Box& b, uint16_t value, int sign) {
-  if (tapped(in, b)) return (uint16_t)((value + 1440 + sign * 15) % 1440);
+  if (tapped(in, b) && !in.longTap) return (uint16_t)((value + 1440 + sign * 15) % 1440);   // a hold's lift adds nothing
   if (in.longPress && in.hit(b.x, b.y, b.w, b.h)) return (uint16_t)((value + 1440 + sign * 60) % 1440);
   return value;
 }

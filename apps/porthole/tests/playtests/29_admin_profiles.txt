@@ -1,4 +1,4 @@
-# With an admin code set, the picker's New and long-press delete ask for it first: back and a wrong code change
+# With an admin code set, the picker's New and 3 s hold to delete ask for it first: back and a wrong code change
 # nothing, the right code opens the name keyboard or the delete screen. Without the code, a kid could make a fresh
 # profile or delete one to dodge the limits.
 profile Sam 8
@@ -65,8 +65,10 @@ snap 02_new_open
 tap 80 12
 wait 450
 expect-screen picker
-# delete: a long press asks for the admin code, then "Delete Sam?"
-hold 80 67
+# delete: a 3 s hold asks for the admin code, then "Delete Sam?"
+down 80 67
+wait 3000
+up
 wait 450
 expect-screen sys_pin
 tap 49 63
@@ -76,4 +78,39 @@ tap 49 84
 wait 900
 expect-screen delete
 snap 03_delete_asks
+tap 80 80
+wait 450
+expect-screen picker
+# a kid with a code: their pad, navy and asking "Delete Kai?", takes it, and its Admin key the grown-up's code instead
+profile Kai 6 4567
+tap 80 32
+wait 450
+expect-screen picker
+down 80 80
+wait 3000
+up
+wait 450
+expect-screen pin
+ui-check pin-admin-key
+snap 04_kid_pad_admin
+tap 80 145
+wait 450
+expect-screen sys_pin
+# back from the grown-up's pad: Kai's delete pad again, not the picker
+tap 80 12
+wait 450
+expect-screen pin
+tap 80 145
+wait 450
+expect-screen sys_pin
+tap 49 63
+tap 79 63
+tap 109 63
+tap 49 84
+wait 900
+expect-screen delete
+tap 80 80
+wait 450
+expect-screen picker
+expect profile=-1/2
 sheet admin_profiles

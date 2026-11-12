@@ -46,8 +46,9 @@ inline bool sleepFor(bool asleep, uint32_t idleMs) { return idleMs > (asleep ? A
 
 class Shell {
  public:
-  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null
-  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr);
+  // loads (or migrates) profiles, lands on the picker; sys (wireless updates, the system menu) may be null; ids are
+  // the games' stable ids (APP_IDS, games/apps.h), nullptr for 1..nApps (tests)
+  void begin(shell::Store& st, App* const* apps, int nApps, shell::System* sys = nullptr, const uint8_t* ids = nullptr);
   void update(uint32_t nowSec, uint32_t ms, const Input& in);   // also writes saves: app saves at most every 5 s
   void render();
   Tint tint() const;
@@ -64,19 +65,33 @@ class Shell {
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level), then the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level) "unseen" (saved with the next game opened), then the open game
 
  private:
-  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
+  enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_NO_DELETE, SH_LAUNCHER, SH_REST,
+                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT, SH_LIBRARY,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
                          SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
-                         SH_APP };   // SH_APP last: the tables in shell.cpp
+                         SH_SYS_GAMES, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
   shell::System* sys_ = nullptr;
   App* const* apps_ = nullptr; int nApps_ = 0;
+  uint8_t ids_[MAX_APPS] = {};                     // each game's stable id (games/apps.h)
+  uint32_t gamesOff_ = 0;                          // the games a grown-up switched off, "sys"/"games" (bit id - 1)
+  shell::Favorites favs_{};                        // the active kid's Home, porthole/f<id>
+  bool starMode_ = false;                          // the Library's star mode
+  bool favsKept_ = false;                          // f<id> is there but unreadable (damaged, or a newer firmware's): never overwritten
+  shell::Favorites starsBefore_{};                 // Home as star mode found it: leaving by any way but the check restores it
+  int lastStar_ = -1; uint32_t lastStarMs_ = 0;    // star mode's last tile tapped: a double tap on it acts once
+  uint32_t fromHomeMs_ = 0;                        // the Library last opened from Home's "All games"
+  uint32_t tilesWaitMs_ = 0;                       // that, or the lift of a tile press ignored after it (tilesWait)
+  uint32_t keepUntil_ = 0;                         // the house with stars unkept: "Tap [check] to keep" until then
+  uint32_t pressMs_ = 0;                           // when the latest press began
+  bool fromLibrary_ = false;                       // the open game came from the Library: its home button goes back there
+  uint32_t fullUntil_ = 0;                         // a sixth star: "Home full!" until then
+  uint8_t gamesPage_ = 0;                          // Info -> Games
   App* app_ = nullptr;                             // the open game, or the last one (its stats stay readable)
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
@@ -92,7 +107,7 @@ class Shell {
   shell::Allowance allowance_{};
   uint8_t limitEditor_ = 0;   // session or daily
   shell::TextEntry zoneQuery_{}, zoneSearch_{}; int zonePage_ = 0;
-  int page_ = 0;                                   // the launcher's page of games: 0 for a new kid, else the last game's
+  int page_ = 0;                                   // the Library's page: 0 from Home, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
   bool holdTop_ = false;                           // the delete button goes to the half the finger was not on
   bool creating_ = false;                          // the age screen is a creation step (else: a migrated profile)
@@ -123,7 +138,7 @@ class Shell {
   bool guardScreenTime();
   void go(Screen s);
   void land();   // the picker, or the first profile's name on a fresh device
-  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_ZONE_SEARCH); }
+  bool adultScreen() const { return (screen_ >= SH_SYS_INFO && screen_ <= SH_SYS_FIND) || (screen_ >= SH_SYS_ADMIN && screen_ <= SH_SYS_GAMES); }
   void toast(const char* s);
   void drawSysToast();
   void resetPin() { pinLen_ = 0; pin_[0] = 0; }
@@ -157,9 +172,23 @@ class Shell {
   void updateAge(); void drawAge();
   bool kidKeysHidden();
   void fourthShown();   // the kids' pad while its fourth digit shows
-  void updatePin(); void drawPin(); void drawPinWait(uint32_t wait); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
+  void updatePin(); void drawPin(); void drawPinPrompt(bool hidden, bool del); void drawPinWait(uint32_t wait, bool del); void drawPinDigits(); void drawPinKey(const ui::Box& b, const char* label, uint8_t col);
   void updateDelete(); void drawDelete();
-  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, int i, int m); void drawPageArrow(bool right);
+  void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
+  bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
+  void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b, int dx = 0); void drawPageArrow(bool right, int nudge = 0);
+  bool drawMoreGames(const ui::Box& b, int dy); uint32_t homeMask(bool own) const;
+  void drawHeader(); void drawCaption(const ui::Box* tiles, const int* games, int m);
+  int homeTiles(int* games) const;   // Home's games (app indexes) in tile order; -1 is "All games"
+  bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }
+  void updateLibrary(); void drawLibrary(); void drawLibraryTitle(int starred, int starPage); void tapLibrary(int k); void drawStarButton(const ui::Box& b);
+  bool drawLibraryTile(int i, int m, int k, uint32_t home, int hop);   // tile i of m: game k and its star
+  void saveFavs() { if (!favsKept_) shell::saveFavorites(*st_, active_, favs_); }
+  void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
+  bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
+  bool keepCue() const { return starMode_ && (int32_t)(keepUntil_ - ms_) > 0; }
+  bool tilesWait() const;   // a Library tile press now is Home's "All games" tapped again: it opens nothing
+  void libraryBack();       // the house on the Library
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
   void updateRest(); void drawRest();
@@ -169,7 +198,7 @@ class Shell {
   void enterSystem();
   void askAdmin(Screen next); void adminPassed();   // next: SH_SYS_INFO, SH_NAME (New) or SH_DELETE
   void updateSysAdmin(); void drawSysAdmin();
-  void updateSysPin(); void submitSysPin(); void drawSysPin();
+  void updateSysPin(); void sysPinBack(); void submitSysPin(); void drawSysPin();
   bool saveAdminPin(uint16_t code);
   bool saveSound(bool on);
   void updateSysConfirm(); void drawSysConfirm();   // reset all limits, or remove the admin code
@@ -182,7 +211,9 @@ class Shell {
   void updateSysAllowance(); void drawSysAllowance();
   void updateSysZone(); void drawSysZone();
   void updateSysZoneSearch(); void drawSysZoneSearch();
+  void updateSysGames(); void drawSysGames(); void toggleGame(int k);
   void updateSysNew(); void drawSysNew();
+  void debugHome() const;   // debugPrint's [home] line
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();
   void scan();

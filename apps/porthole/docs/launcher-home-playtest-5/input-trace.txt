@@ -1,0 +1,458 @@
+# start snap --serve --fresh 00:25:37
+tick 1000
+shot 000_boot
+tap 119 105
+tick 500
+tap 41 79
+tick 500
+tap 67 131
+tick 600
+shot 001_nz
+tap 67 53
+tick 500
+tap 119 131
+tick 800
+shot 002_afterok
+tap 93 86
+tick 800
+shot 003_age
+tap 79 69
+tick 800
+shot 004_code
+tap 80 145
+tick 1000
+shot 005_home
+down 124 104
+tick 800
+shot 006_hold_all
+tick 1200
+up
+tick 1000
+shot 007_after_hold_all
+down 126 42
+tick 900
+shot 008_hold_star
+tick 1100
+up
+tick 600
+shot 009_starmode
+tap 49 64 1500
+tick 300
+shot 010_unstar1
+tap 94 66 120
+tick 150
+tap 94 66 120
+tick 400
+shot 011_unstar2_dbl
+tick 1000
+tap 94 66 150
+tick 400
+shot 012_unstar2_single
+tick 1000
+tap 138 64 120
+shot 013_dbl_a
+tick 110
+tap 138 64 120
+shot 014_dbl_b
+tick 600
+shot 015_dbl_c
+tick 1000
+tap 49 97 1500
+tick 300
+shot 016_rep_a
+tap 94 99 120
+shot 017_rep_b
+tick 150
+tap 94 99 120
+shot 018_rep_c
+tick 400
+shot 019_rep_d
+tick 1200
+tap 96 100 1200
+tick 400
+shot 020_all_off
+tap 126 42 1500
+tick 700
+shot 021_after_check
+tick 600
+tap 126 42 300
+tick 700
+shot 022_starmode_again
+tap 126 42 200
+tick 700
+tap 80 13 1000
+tick 800
+shot 023_home_after
+tick 600
+tap 36 72 2000
+tick 1500
+shot 024_game1
+tap 80 100 800
+tick 1500
+shot 025_pc_next
+tap 80 13 1200
+tick 1000
+shot 026_back_from_pc
+tick 500
+tap 124 104 300
+tick 700
+tap 126 42 300
+tick 700
+tap 138 104 100
+tick 80
+tap 138 104 100
+tick 80
+tap 138 104 100
+tick 500
+shot 027_mash_radar
+tap 36 72 100
+tick 60
+tap 80 72 100
+tick 60
+tap 124 72 100
+tick 60
+tap 36 104 100
+tick 500
+shot 028_mash_row
+tick 500
+tap 126 42 400
+tick 700
+shot 029_lib_after
+tap 80 13 300
+tick 800
+shot 030_home_one
+tick 400
+down 66 31
+tick 1500
+shot 031_hold_header
+tick 1500
+up
+tick 800
+shot 032_after_header
+tick 300
+down 80 51
+tick 1500
+shot 033_hold_name
+tick 700
+up
+tick 900
+shot 034_after_name
+tick 1000
+tap 80 51 150
+tick 900
+shot 035_tap_name
+down 80 68
+tick 1500
+shot 036_hold_name
+tick 700
+up
+tick 900
+shot 037_after_name
+tick 500
+tap 115 72 300
+tick 800
+tap 126 42 300
+tick 800
+tap 94 97 200
+tick 600
+tap 49 64 200
+tick 600
+tap 138 97 200
+tick 600
+shot 038_sm_before_kill
+kill
+restart
+# start snap --serve 00:28:19
+tick 1500
+shot 039_restart1
+tap 80 68 400
+tick 900
+shot 040_home_after_restart
+tick 300
+tap 115 72 300
+tick 800
+tap 126 42 300
+tick 800
+tap 94 97 200
+tick 600
+tap 49 64 200
+tick 600
+tap 138 97 200
+tick 600
+tap 126 42 200
+kill
+restart
+# start snap --serve 00:28:28
+tick 1000
+tap 80 68 300
+tick 900
+shot 041_home_after_check_kill
+tick 300
+tap 124 72 300
+tick 800
+shot 042_lib_p1
+tap 96 135 300
+tick 800
+shot 043_lib_p2
+tap 126 42 300
+tick 800
+shot 044_sm_p2
+tap 34 71 1000
+tick 500
+tap 79 71 1000
+tick 500
+tap 123 71 1000
+tick 500
+shot 045_p2_three
+tap 79 107 1000
+tick 300
+shot 046_p2_full
+tick 1000
+shot 047_p2_full_later
+tick 1500
+tap 126 42 100
+tick 100
+tap 126 42 100
+tick 100
+tap 126 42 100
+tick 800
+shot 048_after_check_mash
+tap 80 13 200
+tick 800
+shot 049_home5
+tick 600
+tap 126 42 200
+tick 800
+tap 123 71 200
+tick 800
+shot 050_dc_0
+tap 126 42 100
+shot 051_dc_1
+tick 100
+tap 126 42 100
+shot 052_dc_2
+tick 100
+tap 126 42 100
+shot 053_dc_3
+tick 800
+shot 054_dc_4
+tick 300
+tap 80 13 300
+tick 800
+shot 055_lib_after_homebtn
+tap 80 13 300
+tick 800
+shot 056_home
+tick 300
+tap 124 104 300
+tick 800
+tap 96 135 300
+tick 800
+tap 79 107 1500
+tick 1500
+shot 057_rally
+tick 300
+tap 102 105 300
+tick 800
+tap 96 135 300
+tick 800
+tap 79 107 1500
+tick 1500
+shot 058_rally
+tap 46 128 1200
+tick 1000
+shot 059_back_from_rally
+tick 300
+tap 126 42 300
+tick 800
+tap 34 71 300
+tick 500
+tap 79 71 300
+tick 500
+shot 060_p2_off
+tap 64 135 300
+tick 800
+shot 061_p1_sm
+tap 49 64 300
+tick 500
+tap 138 97 300
+tick 500
+shot 062_p1_off
+tap 126 42 300
+tick 300
+kill
+restart
+# start snap --serve 00:29:47
+tick 1000
+tap 80 68 300
+tick 900
+shot 063_home_after_restart_empty
+tap 124 104 300
+tick 800
+shot 064_lib_after
+tap 126 42 300
+tick 800
+shot 065_sm_after
+tap 138 104 300
+tick 80
+shot 066_full_a
+tick 120
+shot 066_full_b
+tick 120
+shot 066_full_c
+tick 120
+shot 066_full_d
+tick 2200
+shot 066_full_e
+tick 300
+tap 80 13 200
+tick 700
+tap 80 13 200
+tick 700
+tap 66 42 200
+tick 700
+shot 070_picker
+tap 80 93 200
+tick 700
+shot 071_new
+tap 67 131
+tick 500
+tap 41 131
+tick 400
+tap 67 53
+tick 400
+tap 67 131
+tick 500
+tap 41 79
+tick 400
+shot 072_zoe_typed
+tap 119 131
+tick 700
+tap 36 86
+tick 700
+tap 93 101
+tick 700
+tap 80 145
+tick 1000
+shot 073_zoe_home
+tick 500
+down 36 72
+tick 700
+shot 074_z_hold_dog1
+move 36 100
+tick 80
+move 30 140
+tick 300
+shot 075_z_slide_off
+up
+tick 600
+shot 076_z_after_slide
+down 36 72
+tick 3000
+shot 077_z_hold3s
+up
+tick 1000
+shot 078_z_after_hold3s
+tick 800
+tap 80 100 200
+tick 1200
+tap 80 13 200
+tick 900
+shot 079_z_home_again
+tap 124 104 200
+tick 800
+shot 080_z_lib
+tap 126 42 200
+tick 800
+shot 081_z_sm
+tap 96 135 200
+tick 800
+shot 082_z_sm_p2
+tap 79 107 200
+tick 200
+shot 083_z_rally_refused
+tick 1000
+shot 083b_z_rally_refused_later
+tick 800
+tap 64 135 200
+tick 800
+tap 94 97 200
+tick 500
+shot 084_z_unstar_pumpkin
+tap 96 135 200
+tick 800
+tap 79 107 200
+tick 500
+shot 085_z_star_rally
+tap 126 42 200
+tick 800
+shot 086_z_lib_after
+tap 80 13 200
+tick 800
+shot 087_z_home_after
+tick 300
+tap 124 104 200
+tick 800
+shot 088_z_lib_returns
+tap 126 42 200
+tick 800
+tap 64 135 200
+tick 800
+tap 49 64 200
+tick 600
+tap 49 64 200
+tick 600
+shot 089_z_restar_pc
+tap 126 42 200
+tick 800
+tap 80 13 200
+tick 800
+shot 090_z_home_pc_first
+tick 300
+tap 80 72 200
+tick 1500
+shot 091_z_rally
+kill
+restart
+# start snap --serve 00:31:16
+tick 1000
+shot 092_z_restart_picker
+tap 80 82 200
+tick 900
+shot 093_z_home_after_kill
+tick 300
+tap 66 42 200
+tick 800
+tap 80 41 200
+tick 900
+shot 094_leo_home_iso
+tap 124 104 200
+tick 800
+tap 126 42 200
+tick 800
+tap 138 104 200
+tick 300
+tap 80 13 200
+tick 800
+shot 095_leo_home_during_toast
+tap 80 13 200
+tick 800
+shot 096_leo_home
+tick 300
+tap 80 55 200
+tick 900
+shot 094_leo_home_iso
+tap 124 104 200
+tick 800
+tap 126 42 200
+tick 800
+tap 138 104 200
+tick 300
+shot 095a_toast
+tap 80 13 200
+tick 800
+shot 095_leo_after_home_during_toast
+tap 80 13 200
+tick 800
+shot 096_leo_home
+quit

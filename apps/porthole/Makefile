@@ -148,10 +148,10 @@ check: lint test
 ci: lint test coverage playtest-monkey
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
-# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.47% measured
-# (Apple clang) on 2026-10-31 after Toy Town and Rally landed; raise it as coverage grows, never lower it.
+# Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.52% measured
+# (gcc) on 2026-11-09 after the Pets Club farm and shelter landed; raise it as coverage grows, never lower it.
 COV := build/coverage
-COV_MIN := 98.4
+COV_MIN := 98.45
 COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(HOST_FLAGS)
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.

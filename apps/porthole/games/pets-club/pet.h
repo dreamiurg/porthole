@@ -17,8 +17,12 @@ enum Sticker : uint8_t {
 
 // Persisted state. Plain data, saved as a blob. Bump SAVE_VERSION on layout changes.
 constexpr uint32_t SAVE_MAGIC = 0x4F475243;  // "CRGO"
-constexpr uint16_t SAVE_VERSION = 2;
+constexpr uint16_t SAVE_VERSION = 3;
 constexpr size_t SAVE_V1_SIZE = 140;      // layout before the house/age fields; still accepted on load
+constexpr size_t SAVE_V2_SIZE = 156;      // layout before breed and the memory wall; still accepted on load
+constexpr int RETIRE_DAYS = 30;           // age at which the kid may move the dog to the farm
+constexpr int WALL_SLOTS = 4;             // memory wall frames: the last four dogs
+constexpr int NUM_BREEDS = 7;             // shelter breeds; 0 = the Golden pup every older save already has
 constexpr int MAX_HOUSES = 3;             // houses (s0..s2) before Porthole: only the shell's migration reads them
 struct Save {
   uint32_t magic;
@@ -46,8 +50,13 @@ struct Save {
   uint8_t kidAge, theme, reserved0, reserved1;   // kidAge 0 = not asked yet; theme = room color scheme
   uint16_t pin, reserved2;                       // 4-digit secret code, 0 = none
   uint32_t restUntil, playSec;                   // turn taking: resting until / seconds played this session
+  // ---- v3: breeds, the farm and the memory wall. hasDog 0 = empty room (dog on the farm, no pup adopted yet).
+  uint8_t breed, dogsRaised, wallCount, hasDog;  // dogsRaised: dogs moved to the farm, ever
+  char wallNames[WALL_SLOTS][12];                // oldest first
+  uint8_t wallBreeds[WALL_SLOTS];
   uint32_t crc;
 };
+static_assert(sizeof(Save) == 212, "Save is append-only: v3 is 212 bytes");
 
 namespace pet {
 // ---- calibration knobs (per real hour unless noted) ----
@@ -65,12 +74,17 @@ static const uint8_t TRICK_UNLOCK_HEARTS[NUM_TRICKS] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 uint32_t crc32(const void* d, size_t n);
 bool valid(const Save& s);
-bool loadBlob(const void* data, size_t n, Save& out);   // accepts v1 (migrates) and v2 blobs
+bool loadBlob(const void* data, size_t n, Save& out);   // accepts v1 and v2 (migrates) and v3 blobs
 void levelRange(int age, int& lo, int& hi);             // story levels 1..3 offered for a kid's age
 void wordLenRange(int age, int& lo, int& hi);           // spelling word lengths for a kid's age
 int bookListFor(const Save& s, uint8_t* out);          // story indices this kid may read (by age), widened if too few
 void seal(Save& s);                          // sets magic/version/size/crc
 void adopt(Save& s, uint32_t now, const char* kid, const char* pet);
+bool canRetire(const Save& s, uint32_t now);  // old enough for the farm
+void retire(Save& s, uint32_t now);           // dog to the farm and onto the wall; its own fields stay until the next pup
+inline bool canBringBack(const Save& s) { return !s.hasDog && s.wallCount > 0; }   // an empty room: the newest frame
+bool bringBack(Save& s, uint32_t now);        // undoes retire, until adoptFromShelter replaces the dog's fields
+void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name);  // next pup into the empty room
 
 // time helpers (local wall-clock seconds since 1970)
 inline uint32_t dayIndex(uint32_t t) { return t / 86400u; }

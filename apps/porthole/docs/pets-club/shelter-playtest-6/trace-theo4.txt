@@ -1,0 +1,8 @@
+tick 1500
+press 80 67 2000
+tick 1000
+shot d01_delete_q
+press 80 115 3000
+tick 1000
+shot d02_after_hold_delete
+quit

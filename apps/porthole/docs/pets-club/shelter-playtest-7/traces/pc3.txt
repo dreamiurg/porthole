@@ -1,0 +1,21 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 40 128 2000
+wait 800
+hold 120 70 2500
+wait 300
+shot r01_hold_cookie
+wait 1500
+shot r02_cookie_after
+wait 3000
+shot r03_cookie_later
+mash 40 128 6
+wait 300
+shot r04_mash_food
+wait 1500
+shot r05_mash_food_after

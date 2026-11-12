@@ -1,0 +1,19 @@
+wait 2500
+press 40 67
+wait 1200
+snap t1200
+wait 300
+snap t1500
+wait 500
+snap t2000
+wait 400
+snap t2400
+wait 300
+snap t2700
+wait 200
+snap t2900
+wait 200
+snap t3100
+up
+wait 100
+snap up

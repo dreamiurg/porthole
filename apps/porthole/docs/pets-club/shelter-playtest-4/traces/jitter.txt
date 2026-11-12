@@ -1,0 +1,104 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+down 113 100
+move 110 103
+move 113 96
+move 109 98
+move 116 101
+move 114 96
+move 113 103
+move 112 102
+move 117 104
+move 110 99
+move 117 100
+move 110 102
+move 114 97
+move 114 102
+move 113 103
+move 110 99
+move 113 97
+move 109 99
+move 114 103
+move 112 104
+move 117 96
+move 114 99
+frame jit_20
+move 115 100
+move 114 97
+move 110 104
+move 117 99
+move 110 100
+move 113 99
+move 115 103
+move 112 98
+move 112 104
+move 109 99
+move 111 96
+move 114 104
+move 113 101
+move 115 104
+move 115 100
+move 111 103
+move 109 98
+move 115 102
+move 110 103
+move 112 97
+frame jit_40
+move 116 103
+move 115 97
+move 117 102
+move 116 100
+move 115 97
+move 112 100
+move 116 103
+move 111 96
+move 109 104
+move 110 100
+move 114 99
+move 113 104
+move 116 101
+move 117 100
+move 115 102
+frame jit_55
+move 116 100
+move 116 103
+move 116 98
+move 115 103
+move 113 103
+move 114 101
+move 111 102
+frame jit_62
+move 113 101
+move 115 103
+move 111 100
+move 117 96
+move 116 96
+move 111 96
+move 110 101
+move 114 103
+frame jit_70
+move 109 99
+move 111 100
+move 109 102
+move 117 103
+move 110 103
+move 112 97
+move 114 101
+move 111 99
+move 114 98
+up
+tick 600
+frame jit_end

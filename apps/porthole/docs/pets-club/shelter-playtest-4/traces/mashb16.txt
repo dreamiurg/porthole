@@ -1,0 +1,76 @@
+tick 500
+press 80 67 100
+tick 800
+frame 01_after_mia
+press 37 72 100
+tick 1500
+frame 02_game
+tick 2000
+frame 03_game_later
+press 43 23 100
+tick 800
+frame 04_tap_bars
+press 80 77 100
+tick 1000
+frame q_open
+press 97 125 800
+tick 66
+press 107 90 330
+tick 132
+press 90 41 330
+tick 33
+press 102 109 66
+tick 264
+press 121 80 330
+tick 132
+frame m005
+press 71 112 500
+tick 264
+press 113 137 330
+tick 33
+press 77 26 66
+tick 132
+press 112 100 1200
+tick 264
+press 21 47 66
+tick 264
+frame m010
+press 126 36 99
+tick 264
+press 64 108 66
+tick 33
+press 107 86 99
+tick 66
+press 86 30 99
+tick 66
+press 133 112 330
+tick 66
+frame m015
+press 7 66 99
+tick 33
+press 95 102 1200
+tick 264
+press 94 112 198
+tick 264
+press 106 93 800
+tick 33
+press 77 34 132
+tick 264
+frame m020
+press 65 37 800
+tick 264
+press 116 111 1200
+tick 66
+press 109 58 66
+tick 264
+press 100 92 330
+tick 264
+press 66 141 198
+tick 264
+frame m025
+press 133 39 99
+tick 33
+press 85 19 1200
+tick 33
+tick 1000
+frame mz_end

@@ -15,8 +15,8 @@ expect-screen fetch
 expect score=0
 snap 01_fetch_start
 down 20 124
-# 15 sweeps of 1.9 s: left to right and back
-repeat 15
+# 6 sweeps of 3.6 s, left to right and back, ending a few seconds before the 30 s round does
+repeat 6
 move 20 124
 wait 450
 move 50 124
@@ -35,7 +35,12 @@ move 50 124
 wait 450
 end
 up
-wait 1500
+wait 100
+# a finger put down before the round ends and lifted 1.5 s into the results does not dismiss them
+down 80 124
+wait 6000
+up
+wait 100
 # the round is over: the results panel waits for a tap
 expect-screen fetch
 expect left=0

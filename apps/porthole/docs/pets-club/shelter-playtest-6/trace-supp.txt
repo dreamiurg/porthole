@@ -1,0 +1,36 @@
+tick 1500
+press 80 67 150
+tick 1500
+press 33 72 150
+tick 3000
+press 45 27 150
+tick 1200
+press 80 77 150
+tick 1000
+down 115 101
+tick 800
+move 80 101
+move 45 101
+tick 300
+shot q01_slide_to_no_held
+up
+tick 800
+shot q02_slide_to_no_release
+press 45 101 150
+tick 900
+press 80 77 150
+tick 900
+press 115 102 2500
+tick 900
+press 80 137 150
+tick 900
+press 80 101 150
+tick 900
+shot q03_shelter_before
+down 134 81
+tick 1000
+shot q04_arrow_held
+up
+tick 400
+shot q05_arrow_release
+quit

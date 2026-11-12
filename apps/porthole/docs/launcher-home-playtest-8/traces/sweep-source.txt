@@ -1,0 +1,16 @@
+# sweep.sh NAME PRE HOLD GAP N  -> prints which presses acted (caption shown) and their begin time relative to first lift
+name=$1; pre=$2; h=$3; g=$4; n=$5
+args=""; for i in $(seq 1 $n); do if [ $i -lt $n ]; then args="$args $h:$g"; else args="$args $h"; fi; done
+python3 tools/gen.py $name $pre $args && python3 tools/drive.py traces/$name.txt frames/$name | grep -v ' shot ' > logs/$name.txt
+python3 - logs/$name.txt <<'P'
+import sys,re
+L=open(sys.argv[1]).read().splitlines(); downs=[]; acts=[]; first_up=None; cur=None
+for l in L:
+    m=re.match(r't=\s*(\d+) DOWN',l)
+    if m: downs.append(int(m.group(1))); cur=len(downs)
+    m=re.match(r't=\s*(\d+) UP',l)
+    if m and first_up is None: first_up=int(m.group(1))
+    if 'CAPTION' in l and cur and (not acts or acts[-1]!=cur): acts.append(cur)
+mode=[l.split()[2] for l in L if l.startswith('  t=')][-1]
+print(sys.argv[1].split('/')[-1][:-4], "acted presses:", acts, "starts after first lift:", [downs[a-1]-first_up for a in acts[1:]], "end:", mode)
+P

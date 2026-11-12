@@ -1,0 +1,5 @@
+#!/bin/bash
+D=/tmp/claude-0/-home-user-porthole/4e7b951a-0e4f-5eae-859d-2ab6ed697cd9/scratchpad
+$D/send.sh quit >/dev/null; sleep 1
+(cd $D && python3 -I broker.py $D/sim.sock $D/trace.log $D/frames > broker.out 2>&1 &)
+sleep 1

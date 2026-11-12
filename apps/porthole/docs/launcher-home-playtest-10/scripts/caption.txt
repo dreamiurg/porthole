@@ -1,0 +1,20 @@
+reset
+profile Zoe 8
+wait 1500
+tap 124 104
+wait 2000
+down 126 42
+wait 400
+snap qa_star_caption
+up
+wait 1000
+down 33 42
+wait 400
+snap qa_check_caption
+move 33 80
+move 60 100
+up
+wait 600
+snap qa_check_dragoff
+screen
+ui

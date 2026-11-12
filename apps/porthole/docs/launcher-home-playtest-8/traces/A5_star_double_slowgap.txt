@@ -1,0 +1,28 @@
+tick 1000
+tap 118 100 300
+tick 500
+tap 41 77 300
+tick 500
+tap 67 125 300
+tick 700
+tap 67 52 300
+tick 500
+tap 118 125 300
+tick 900
+tap 93 85 300
+tick 900
+tap 79 69 300
+tick 900
+tap 80 145 300
+tick 1200
+tap 124 105 300
+tick 1200
+tick 300
+shot a0_before
+watch on
+tap 126 43 300 p1
+tick 400
+tap 126 43 300 p2
+tick 1500
+watch off
+shot z_end

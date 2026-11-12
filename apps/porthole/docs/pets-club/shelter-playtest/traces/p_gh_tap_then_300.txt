@@ -1,0 +1,51 @@
+tick 1500
+shot 00_picker
+tap 80 67     # Mia taps her name
+tick 1500
+shot 01_after_mia
+tap 36 72     # Pets Club tile (orange dog)
+tick 3000
+shot 02_open
+tap 40 128    # food button, like usual
+tick 800
+shot 03_food
+tick 2500
+shot 04_food_after
+tap 115 68    # cookie!
+tick 1500
+shot 05_cookie
+tick 3000
+shot 06_cookie_after
+tap 80 128    # play button
+tick 1000
+shot 07_play
+tap 42 25     # the stat pips (open Stats like she knows)
+tick 1000
+shot 08_stats
+tap 80 77     # "To the farm" - sounds like a fun trip
+tick 1000
+shot 09_farm1
+tick 2000
+shot 10_farm2
+tap 80 135    # pat the sad-looking dog on the question screen
+tick 800
+shot 11_tapdog
+tap 45 102    # No!
+tick 1000
+shot 12_after_no
+tap 80 77     # To the farm again
+tick 800
+tap 115 102   # Yes - "it will be happy"
+tick 300
+shot 13_yes_a
+tick 1000
+shot 13_yes_b
+tick 2000
+shot 13_yes_c
+tick 3000
+shot 13_yes_d
+tap 80 135
+tick 300
+tap 80 135
+tick 1000
+shot r

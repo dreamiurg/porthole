@@ -1,0 +1,82 @@
+tick 1500
+press 80 67 250
+tick 1500
+press 33 72 250
+tick 3000
+press 45 27 250
+tick 1200
+press 80 77 250
+tick 1000
+shot u01_confirm
+press 47 102 2500
+tick 1000
+shot u02_no_hold
+press 80 77 250
+tick 1000
+press 114 100 150
+tick 120
+press 118 102 150
+tick 120
+press 110 104 150
+tick 120
+press 114 98 150
+tick 120
+press 118 100 150
+tick 120
+press 110 102 150
+tick 120
+press 114 104 150
+tick 120
+press 118 98 150
+tick 120
+press 110 100 150
+tick 120
+press 114 102 150
+tick 120
+press 118 104 150
+tick 120
+press 110 98 150
+tick 120
+tick 500
+shot u03_yes_mash
+press 115 102 1000
+tick 500
+shot u04_yes_1000
+press 115 102 1500
+tick 500
+shot u05_yes_1500
+down 115 102
+tick 1800
+move 115 130
+tick 100
+move 100 140
+tick 1000
+up
+tick 500
+shot u06_yes_dragoff
+press 115 102 2000
+tick 500
+shot u07_yes_2000
+press 62 103 200
+tick 600
+shot u08_off_right
+press 35 121 200
+tick 600
+shot u09_off_below
+press 50 123 200
+tick 600
+shot u10_gap
+press 15 103 200
+tick 600
+shot u11_bring_leftedge
+press 45 27 250
+tick 1200
+press 80 77 250
+tick 1000
+press 115 102 6000
+tick 600
+shot u12_yes_6s
+press 80 137 3000
+tick 600
+shot u13_gohome_3s
+quit

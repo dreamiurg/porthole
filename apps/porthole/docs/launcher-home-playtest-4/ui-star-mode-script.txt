@@ -1,0 +1,12 @@
+reset
+profile Leo 6
+wait 500
+tap 125 104
+wait 500
+ui
+tap 126 42
+wait 400
+ui
+tap 96 131
+wait 400
+ui

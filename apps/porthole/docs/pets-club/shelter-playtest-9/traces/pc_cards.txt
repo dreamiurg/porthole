@@ -1,0 +1,10 @@
+wait 2500
+hold 40 67 700
+wait 1000
+hold 37 80 800
+wait 2000
+hold 80 120 800
+wait 2500
+hold 93 139 800
+wait 1200
+snap a

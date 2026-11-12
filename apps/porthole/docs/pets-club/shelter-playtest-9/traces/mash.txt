@@ -1,0 +1,14 @@
+wait 2500
+tap 40 67
+wait 60
+tap 42 66
+wait 60
+tap 38 69
+wait 60
+tap 45 65
+wait 60
+tap 40 67
+wait 300
+snap a_mash
+wait 1500
+snap b_mash

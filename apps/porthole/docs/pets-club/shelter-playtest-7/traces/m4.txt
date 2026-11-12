@@ -1,0 +1,22 @@
+wait 1500
+tap 80 67
+wait 1000
+hold 124 72 2000
+wait 300
+wait 2000
+wait 3000
+wait 1000
+hold 80 113 1500
+wait 1500
+tap 80 147
+wait 600
+shot mkd01_tap_home_in_play
+down 80 147
+wait 500
+shot mkd02_holding_home_500
+wait 700
+shot mkd03_holding_home_1200
+wait 800
+up
+wait 600
+shot mkd04_after_hold_2s

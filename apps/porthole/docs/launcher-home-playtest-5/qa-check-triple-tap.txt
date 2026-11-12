@@ -1,0 +1,23 @@
+# Supplementary QA: three 100 ms presses on the green check, gap G (here 100). Results: G=60 -> star_mode=0; G=100,150,250 -> star_mode=1 (back in star mode).
+# Two presses never re-enter star mode (gaps 100..400, press 80..300 ms).
+reset
+profile Leo 6
+wait 600
+tap 124 104
+wait 700
+tap 126 42
+wait 800
+down 126 42
+wait 100
+up
+wait 100
+down 126 42
+wait 100
+up
+wait 100
+down 126 42
+wait 100
+up
+wait 100
+wait 600
+debug

@@ -1,0 +1,57 @@
+tick 1000
+tap 118 100 300
+tick 500
+tap 41 77 300
+tick 500
+tap 67 125 300
+tick 700
+tap 67 52 300
+tick 500
+tap 118 125 300
+tick 900
+tap 93 85 300
+tick 900
+tap 79 69 300
+tick 900
+tap 80 145 300
+tick 1200
+tap 124 105 300
+tick 1200
+# Leo enters star mode, goes to page 2 for the red car
+tap 126 43 300
+tick 1500
+tap 96 135 300
+tick 1200
+shot n01_page2
+tap 96 105 350 n02_car
+tick 400
+shot n03_homefull
+# Leo can't read the yellow words: he taps the car again, twice
+tick 800
+tap 96 105 300
+tick 250
+tap 96 105 300
+tick 300
+shot n04_car_again
+tick 900
+shot n05_settled
+# the hopping arrow: he follows it
+tap 66 137 300 n06_left
+tick 1000
+shot n07_page1
+# sister: "take the pumpkin off"
+tap 82 103 300 n08_pumpkin
+tick 900
+shot n09_pumpkin_white
+tap 96 137 300
+tick 1000
+shot n10_page2
+tap 97 103 350
+tick 900
+shot n11_car_gold
+tap 128 42 300 n12_check
+tick 1200
+shot n13_done
+tap 80 15 300
+tick 1500
+shot n14_home

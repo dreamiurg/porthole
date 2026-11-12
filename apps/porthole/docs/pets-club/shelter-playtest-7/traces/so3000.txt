@@ -1,0 +1,21 @@
+wait 1500
+tap 80 67
+wait 1000
+down 36 72
+wait 1500
+up
+wait 5000
+hold 45 22 1500
+wait 1000
+hold 80 150 2500
+wait 800
+down 115 101
+wait 1500
+shot v_3000_mid
+wait 1500
+shot v_3000_end
+up
+wait 300
+shot v_3000_released
+wait 2000
+shot v_3000_later

@@ -149,10 +149,8 @@ move 140 80
 up
 wait 450
 expect-screen sys_player_pin
+# a slow press counts like a tap
 hold 80 118
-wait 450
-expect-screen sys_player_pin
-tap 80 118
 wait 450
 expect-screen sys_players
 ui-check sys_players-reset

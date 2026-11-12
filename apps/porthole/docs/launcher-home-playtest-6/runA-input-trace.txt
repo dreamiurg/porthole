@@ -1,0 +1,396 @@
+tick 1000
+shot 00_boot
+down 119 100
+tick 250
+up
+tick 600
+down 42 77
+tick 250
+up
+tick 600
+down 68 125
+tick 250
+up
+tick 600
+shot 01_nz
+down 67 53
+tick 250
+up
+tick 600
+down 119 125
+tick 250
+up
+tick 800
+shot 02_after_ok
+down 93 86
+tick 300
+up
+tick 800
+shot 03_after_face
+down 79 69
+tick 300
+up
+tick 800
+shot 04_after_age
+down 80 145
+tick 300
+up
+tick 1500
+shot 05_home
+down 124 105
+tick 300
+up
+tick 800
+shot 06_library
+down 126 42
+tick 200
+shot 07_star_pressed
+tick 100
+up
+tick 120
+shot 08_starmode_a
+tick 500
+shot 08_starmode_b
+tick 500
+down 127 98
+tick 300
+up
+tick 200
+shot 09_radar_tap_a
+tick 800
+shot 09_radar_tap_b
+tick 1500
+shot 09_radar_tap_c
+down 80 105
+tick 300
+up
+tick 600
+shot 10_pumpkin_unstar
+debug
+tick 40
+tick 40
+tick 40
+down 125 103
+tick 300
+up
+tick 40
+shot 11_dbl_first
+tick 110
+down 125 103
+tick 300
+up
+tick 40
+shot 11_dbl_second
+tick 1000
+shot 11_dbl_settled
+tick 800
+down 124 104
+tick 250
+up
+tick 120
+down 125 105
+tick 350
+up
+tick 120
+down 123 103
+tick 250
+up
+tick 40
+shot 12_triple_on_gold
+tick 1000
+shot 12_triple_on_gold_settled
+down 124 104
+tick 300
+up
+tick 150
+down 124 104
+tick 300
+up
+tick 150
+down 124 104
+tick 300
+up
+tick 40
+shot 13_triple_on_white
+tick 1000
+shot 13_triple_on_white_settled
+tick 800
+down 36 104
+tick 300
+up
+tick 150
+down 80 104
+tick 300
+up
+tick 40
+shot 14_two_games_quick
+tick 1000
+shot 14_two_games_settled
+tick 800
+down 80 104
+tick 300
+up
+tick 350
+down 80 104
+tick 300
+up
+tick 800
+shot 15_gap350
+down 80 104
+tick 300
+up
+tick 450
+down 80 104
+tick 300
+up
+tick 800
+shot 15_gap450
+down 36 104
+tick 300
+up
+tick 60
+down 80 104
+tick 300
+up
+tick 800
+shot 15_two_games_gap60
+tick 2500
+shot 16_before_check
+down 126 42
+tick 300
+up
+tick 40
+shot 16_check_t1
+tick 110
+down 126 42
+tick 300
+up
+tick 40
+shot 16_check_t2
+tick 110
+down 126 42
+tick 300
+up
+tick 40
+shot 16_check_t3
+tick 1000
+shot 16_check_settled
+tick 500
+down 126 42
+tick 300
+up
+tick 600
+shot 17_reenter_ok
+down 126 42
+tick 300
+up
+tick 600
+down 126 42
+tick 300
+up
+tick 600
+shot 17_reenter_600
+down 126 42
+tick 300
+up
+tick 1500
+shot 17_reenter_600_settled
+down 126 42
+tick 300
+up
+tick 500
+down 126 42
+tick 200
+shot 18_ignored_pressing
+tick 100
+up
+tick 300
+shot 18_ignored_after
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 900
+down 126 42
+tick 300
+up
+tick 300
+shot 18_gap900
+tick 1500
+down 126 42
+tick 300
+up
+tick 1000
+down 126 42
+tick 300
+up
+tick 300
+shot 18_gap1000
+tick 1500
+down 126 42
+tick 300
+up
+tick 1100
+down 126 42
+tick 300
+up
+tick 300
+shot 18_gap1100
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 700
+down 126 42
+tick 300
+up
+tick 300
+shot 19_reenter_after_700
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 1000
+down 126 42
+tick 300
+up
+tick 300
+shot 19_reenter_after_1000
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 1100
+down 126 42
+tick 300
+up
+tick 300
+shot 19_reenter_after_1100
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 1300
+down 126 42
+tick 300
+up
+tick 300
+shot 19_reenter_after_1300
+tick 600
+down 126 42
+tick 300
+up
+tick 1500
+down 126 42
+tick 300
+up
+tick 1200
+down 126 42
+tick 300
+up
+tick 900
+down 126 42
+tick 300
+up
+tick 300
+shot 19_reenter_after_900
+tick 1500
+down 126 42
+tick 300
+up
+tick 800
+down 36 104
+tick 300
+up
+tick 800
+shot 20_before_house
+down 80 12
+tick 300
+up
+tick 40
+shot 20_house_t1
+tick 110
+down 80 12
+tick 300
+up
+tick 40
+shot 20_house_t2
+tick 110
+down 80 12
+tick 300
+up
+tick 40
+shot 20_house_t3
+tick 1000
+shot 20_house_settled
+tick 600
+down 124 105
+tick 300
+up
+tick 900
+shot 21_lib
+down 80 12
+tick 300
+up
+tick 150
+down 80 12
+tick 300
+up
+tick 150
+down 80 12
+tick 300
+up
+tick 40
+shot 21_lib_house_t3
+tick 1000
+shot 21_lib_house_settled
+down 80 70
+tick 300
+up
+tick 900
+shot 22_home_back
+down 124 105
+tick 300
+up
+tick 900
+down 126 42
+tick 300
+up
+tick 900
+shot 22_sm
+down 126 42
+tick 400
+up
+tick 300
+down 126 42
+tick 400
+up
+tick 300
+down 126 42
+tick 400
+up
+tick 40
+shot 22_slowtriple_check
+tick 1000
+shot 22_slowtriple_check_settled
+quit
