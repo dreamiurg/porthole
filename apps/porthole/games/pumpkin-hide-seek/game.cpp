@@ -32,7 +32,6 @@ void Game::go(Page page) {
 }
 void Game::start() {
   round_ = newRound(ms_ * 2654435761u + ++plays_);  // a fresh layout and Grandma every round
-  roundMs_ = ms_;
   go(Page::Play);
 }
 bool Game::action() const { return tapped(in_, ACTION); }
@@ -53,11 +52,10 @@ void Game::calibrate() {
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // A press of any length counts (a 6-year-old's firm HIDE lasts 2.5 s), but not a thumb already resting on the
-  // glass when the round began: its lift is not a choice.
-  const bool fresh = pressMs_ > roundMs_;
-  actionPending_ = actionPending_ || (fresh && action());
-  ghostPending_ = ghostPending_ || (fresh && !round_.ghostUsed && tapped(in_, GHOST));
+  // A press of any length counts (a 6-year-old's firm HIDE lasts 2.5 s); a thumb resting on the glass when the
+  // round began is hidden by gate_ until it lifts.
+  actionPending_ = actionPending_ || action();
+  ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
     step(round_, tilt.x, actionPending_, ghostPending_);
@@ -74,7 +72,6 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   pageMs_ += dt;
   animationMs_ += dt;
   in_ = in;
-  if (in_.pressed) pressMs_ = ms_;
   gate_.filter(in_, ms_);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   if (leaving()) { home_ = true; return; }
