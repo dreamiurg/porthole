@@ -1,0 +1,19 @@
+# Supplementary QA (not first play): raw snap --script; one run per (D, G).
+# D = press length ms, G = gap between the two presses ms. Run: ./build/host/snap --script FILE | grep home_gold
+# Results at 169261b: D=80: G<=200 once (4), G>=240 twice (5). D=120: G<=160 once, G>=200 twice. D=250: every G (120..320) twice.
+reset
+profile Leo 6
+wait 600
+tap 124 104
+wait 700
+tap 126 42
+wait 800
+down 94 66
+wait 250
+up
+wait 120
+down 94 66
+wait 250
+up
+wait 600
+debug
