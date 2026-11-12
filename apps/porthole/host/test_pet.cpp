@@ -317,6 +317,17 @@ static void enterAt(Game& g, const Save& s, uint32_t t) {
   static const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot slot = {&s, sizeof s};
   g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
 }
+// The parcel takes a tap anywhere: the splash's double tap, drifted off the spot (a new target to FreshGate), never
+// opens it; only a press begun 450 ms after it showed does.
+static void parcelWantsAFreshPress() {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot none = {nullptr, 0};
+  g.enter({&kid, &kid, &none, 1, day0, 0});
+  Finger f{g, day0, 0};
+  f.hold(false, 0, 0, 500); f.hold(true, 80, 100, 100); f.hold(false, 80, 100, 100); assert(!strcmp(g.screenName(), "intro"));
+  f.hold(true, 80, 140, 100); f.hold(false, 80, 140, 1000);   // 40 px off, 100 ms after the change
+  f.hold(true, 80, 140, 100); f.hold(false, 80, 140, 20); assert(!strcmp(g.screenName(), "intro"));   // this one opens it
+  f.hold(false, 0, 0, 1000); f.hold(true, 80, 140, 100); f.hold(false, 80, 140, 20); assert(!strcmp(g.screenName(), "name_pet"));
+}
 static void bringBackFromTheEmptyRoom() {
   static Game g;
   const uint32_t t = day0 + 40 * 86400;
@@ -428,6 +439,7 @@ int main() {
   corruptFieldsLoadSafe();
   levels(s);
   dayOnPickedLight();
+  parcelWantsAFreshPress();
   breedDraws();
   retiredSleeperLeavesDay();
   emptyRoomCelebratesWithoutDog();

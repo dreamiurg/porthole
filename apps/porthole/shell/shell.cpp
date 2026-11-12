@@ -34,8 +34,9 @@ uint32_t Shell::lastSeen() const {
 void Shell::go(Screen s) {
   if (screen_ == SH_LIBRARY && s != SH_LIBRARY) leaveStars(false);   // star mode ends with the Library: only the check keeps it
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
-  const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
-  if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.changed(ms_, in_);   // a keypad takes a quick first key (os/ui.h)
+  // A keypad too: a mash on the tap that opened it types nothing, a key elsewhere types at once. The grown-ups' keys
+  // sit 21 px apart, so there the spot is narrower: the key below the last one is a new key.
+  gate_.changed(ms_, in_, s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN ? 20 : ui::FreshGate::SPOT_R);
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }

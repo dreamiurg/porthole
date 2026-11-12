@@ -28,7 +28,11 @@ name is **Star Fighter**, which wraps inside its tile; the title art says
   inside it and remain inside; drifting off resets the hold, and dragging in
   from elsewhere cannot leave. FreshGate protects every page change from
   carried touches and a mash on the tap's spot; a stage change in flight takes
-  only its light 450 ms gate, so quick taps keep firing across it.
+  only its light 450 ms gate, so quick taps keep firing across it. Victory and
+  Game Over take `Game::RESULT_MS` (1.2 s) instead: their buttons are drawn
+  unlit (Play/Try again as a plain slate button, no lip on either) and every
+  press begun before then is ignored, so a kid's fire taps as the run ends
+  never replay or leave (`resultWait` in `host/test_starfighter.cpp`).
 - Four enemy waves lead through a brief entrance to a trench, then a generous
   final targeting opportunity. A missed final shot offers another pass. The
   torpedo and explosion lead to Victory; zero lives leads to Game Over.

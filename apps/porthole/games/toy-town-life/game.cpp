@@ -27,7 +27,8 @@ void Game::enter(const AppEnter& e) {
  destination_ = s_.destination == HOME ? (uint8_t)SCHOOL : s_.destination; changed();
 }
 void Game::changed() { dirty_ = true; ++look_; gate_.shown(ms_); describe(); }
-void Game::go(uint8_t p) { s_.page = p; s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX); if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; changed(); gate_.changed(ms_, in_); }
+void Game::newScreen() { changed(); gate_.changed(ms_, in_); }   // a page, or the title or pause card come or gone: not a pick
+void Game::go(uint8_t p) { s_.page = p; s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX); if (s_.active && ((p >= SCHOOL_INTRO && p <= MEMORY) || p==MEMORY_EDIT || p==CAFE_QUANTITY || p==SCHOOL_HANG)) s_.resumePage = p; newScreen(); }
 void Game::update(uint32_t, uint32_t ms, const Input& input) {
  ms_ = ms; in_ = input; gate_.filter(in_,ms);
  const bool overlay=title_ || pause_;
@@ -37,7 +38,7 @@ void Game::update(uint32_t, uint32_t ms, const Input& input) {
  if (back) {
   stopWalk();
   if (title_) { home_=true; changed(); }
-  else { pause_=!pause_; changed(); }
+  else { pause_=!pause_; newScreen(); }
   return;
  }
  const int n=overlay ? 3 : sceneui::count(s_);
@@ -76,7 +77,7 @@ void Game::dollInput(bool exit) {
  int picked=-1;
  for (int i=0;i<4;++i) if (ui::clicked(in_,choices::DOLLS[i])) picked=i;
  const bool wardrobe=ui::clicked(in_,choices::WARDROBE);
- if (exit) { pause_=true; changed(); }
+ if (exit) { pause_=true; newScreen(); }
  else if (wardrobe) go(STYLE);
  else if (picked>=0) { s_.doll=(uint8_t)picked; changed(); }
 }
@@ -87,7 +88,7 @@ bool Game::dressInput() {
  const bool previous=ui::clicked(in_,choices::PREVIOUS), next=ui::clicked(in_,choices::NEXT);
  int picked=-1;
  for (int i=0;i<choices::count(s_.category);++i) if (ui::clicked(in_,choices::LOOKS[i])) picked=i;
- if (exit) { pause_=true; changed(); }
+ if (exit) { pause_=true; newScreen(); }
  else if (done) go(DOLL);
  else if (previous || next) { s_.category=(s_.category+(previous ? choices::CATEGORIES-1 : 1))%choices::CATEGORIES; changed(); }
  else if (picked>=0) { choices::value(s_,s_.category)=(uint8_t)picked; changed(); }

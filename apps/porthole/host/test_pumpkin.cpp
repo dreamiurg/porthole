@@ -258,7 +258,8 @@ static void gatesAndHome() {
   CHECK(r.at("pumpkin_calibrate"));
   r.wait(FRESH); r.tap();
   CHECK(r.at("pumpkin_play"));
-  r.tap(); CHECK(r.game.round().hidden == 1);   // play skips the screen gate: a press begun in the round hides
+  r.tap(); CHECK(r.game.round().hidden == -1);   // READY's double tap: the round holds its spot
+  r.wait(FRESH); r.tap(); CHECK(r.game.round().hidden == 1);
   r.tap(80, 19); CHECK(!r.game.wantsHome() && r.game.round().hidden == 1);
   for (int i = 0; i < 50; i++) r.frame(true, 80, 19);
   CHECK(!r.game.wantsHome());
@@ -271,7 +272,7 @@ static void gatesAndHome() {
 }
 // The signs act as a press starts on them, however long it lasts (playtest 9: a 2.5 s press on HIDE was dropped and
 // Grandma caught the kid), and look pressed while it does. A thumb resting there since before the round started never
-// acts, and a double tap (or a mash) toggles once.
+// acts, a double tap toggles once, and a mash at most once per 400 ms.
 static void firmPresses() {
   for (int held : {500, 2500}) {
     Run r; r.start(); r.wait(FRESH);
@@ -294,19 +295,39 @@ static void restingThumb() {   // on the sign through calibration's wait for a s
   r.frame(false); r.wait(100); CHECK(r.at("pumpkin_play") && r.game.round().hidden == -1);
   r.frame(true); r.frame(false); CHECK(r.game.round().hidden == 1);   // lifted and pressed again: it hides
 }
-static void earlyThumb() {   // screen-gate playtest M1: a thumb landing 0.3 s into the round and staying hides at once
+// Screen-gate playtests: a thumb landing on the start tap's spot early in the round and staying hides once the round's
+// 800 ms are up; one landing away from it, or later, hides as it lands.
+static void earlyThumb() {
   Run r; r.start(); r.wait(300);
-  r.frame(true); CHECK(r.game.round().hidden == 1);
+  r.frame(true); CHECK(r.game.round().hidden == -1);
+  for (int i = 0; i < 45; i++) r.frame(true);
+  CHECK(r.game.round().hidden == -1);   // 760 ms into the round
+  for (int i = 0; i < 6; i++) r.frame(true);
+  CHECK(r.game.round().hidden == 1);    // 820 ms: a resting thumb, on purpose
   for (int i = 0; i < 100; i++) r.frame(true);
-  CHECK(r.at("pumpkin_play") && r.game.round().hidden == 1);
-  Run t; t.start(); t.wait(100); t.tap(); CHECK(t.game.round().hidden == 1);   // after TRY AGAIN's spot too
+  r.frame(false); CHECK(r.at("pumpkin_play") && r.game.round().hidden == 1);
+  Run a; a.start(); a.wait(100); a.frame(true, 50, 131); CHECK(a.game.round().hidden == 1);   // 30 px off: at once
+  Run l; l.start(); l.wait(FRESH); l.frame(true); CHECK(l.game.round().hidden == 1);         // later: at once
+  Run q; q.start(); q.wait(300); q.frame(true); q.wait(500); CHECK(q.game.round().hidden == -1);   // lifted in time
 }
 static void doubleTaps() {
+  for (int dx : {0, 8, -20}) {   // READY, TRY AGAIN or PLAY AGAIN's double tap, scattered as a kid's are
+    Run d; d.start(); d.wait(100); d.tap(80 + dx, 131 + (dx ? 8 : 0)); CHECK(d.game.round().hidden == -1);
+    d.wait(150); d.tap(80 - dx, 131); CHECK(d.game.round().hidden == -1);
+  }
   Run r; r.start(); r.wait(FRESH);
-  r.tap(); r.wait(100); r.tap(); CHECK(r.game.round().hidden == 1);
-  for (int i = 0; i < 4; i++) { r.wait(150); r.tap(); }
-  CHECK(r.game.round().hidden == 1);   // a mash, 150 ms apart: still the one toggle
-  r.wait(500); r.tap(); CHECK(r.game.round().hidden == -1);   // after a pause: out
+  r.tap(); r.wait(100); r.tap(); CHECK(r.game.round().hidden == 1);   // presses 120 ms apart: one toggle
+  r.wait(150); r.tap(); CHECK(r.game.round().hidden == 1);            // 340 ms after it
+  r.wait(150); r.tap(); CHECK(r.game.round().hidden == -1);           // 510 ms: a mash toggles again, never locks out
+  // Then a panicked mash (300 ms presses 200 ms apart): every press toggles, none is ignored (it used to bring the
+  // pumpkin out and then ignore every press until Grandma caught it).
+  r.wait(500);
+  for (int i = 0; i < 6; i++) {
+    const int was = r.game.round().hidden;
+    r.wait(200); r.frame(true); CHECK(r.game.round().hidden == -was);
+    for (int t = 0; t < 300; t += 10) r.frame(true);
+    r.frame(false);
+  }
 }
 static uint16_t pixels[gfx565::W * gfx565::H];
 static void pressedLook() {   // the sign sinks under a press it takes, never under the half of a double tap it drops

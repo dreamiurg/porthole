@@ -28,7 +28,10 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg victory
-wait 750
+tap 80 120
+tap 80 144
+expect-screen sf_victory
+wait 1250
 expect-screen sf_victory
 ui-check
 tap 80 144
@@ -36,7 +39,7 @@ wait 80
 expect-screen launcher
 app starfighter
 dbg defeat
-wait 750
+wait 1250
 expect-screen sf_defeat
 ui-check
 tap 80 144

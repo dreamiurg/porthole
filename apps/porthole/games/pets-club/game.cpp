@@ -348,7 +348,9 @@ void Game::drawSplash() {
 void Game::updateIntro() {
   // phase encoded in dogAct_: 0 box wobbling, 1 opened
   if (backButton()) { wantsHome_ = true; return; }
-  if (dogAct_ == 0 && in_.tap) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
+  // The parcel takes a tap anywhere, so a mash's press that drifts off the spot (FreshGate's new target) must not
+  // open it: only a press begun LIGHT_MS after the screen showed does.
+  if (dogAct_ == 0 && in_.tap && pressedAfterPhase(ui::FreshGate::LIGHT_MS)) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
   else if (dogAct_ == 1 && ms_ - screenMs_ > 900 && in_.tap) { dogAct_ = 0; setNameBuf(""); namePage_ = 0; memset(&save_, 0, sizeof save_); go(SC_NAME_PET); }
 }
 void Game::drawIntro() {
@@ -954,7 +956,7 @@ void Game::updateRead() {
   int npages = 0; while (bk.pages[npages]) npages++;
   if (backButton()) { go(SC_LIBRARY); return; }
   if (page_ < npages) {
-    if (in_.tap && in_.y > 26) {
+    if (in_.tap && in_.y > 26 && (page_ || pressedAfterPhase(ui::FreshGate::LIGHT_MS))) {   // page 1 as the parcel
       if (in_.x >= 64) { page_++; if (page_ == npages) { spawn(40, 120, 0, 3); } }
       else if (page_ > 0) { page_--; }
     }

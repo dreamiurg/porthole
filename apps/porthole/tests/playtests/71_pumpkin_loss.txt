@@ -27,7 +27,7 @@ tap 80 131
 tap 80 131
 wait 600
 expect-screen pumpkin_play
-# TRY AGAIN's double tap: its second press began in the new round, so the sign takes it and the pumpkin hides
-expect hidden=1
+# TRY AGAIN's double tap: its second press lands on the spot the round started from, so the pumpkin stays out
+expect hidden=-1
 expect exposure=0
 sheet loss

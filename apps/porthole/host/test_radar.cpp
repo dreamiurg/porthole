@@ -123,6 +123,8 @@ static void pages() {
   Save saved; memcpy(&saved, data, sizeof saved);
   tapBox(g, paint::DONE);
   CHECK(!strcmp(g.screenName(), "radar_live"));
+  tapAt(g, 80, 47);   // Done's double tap drifted 30 px: a new target to the gate, but the whole scope is one target
+  CHECK(g.save().range == 0);
   settle(g);
   Input slow; slow.down = slow.pressed = true; slow.x = slow.downX = 60; slow.y = slow.downY = 60;
   frame(g, slow);

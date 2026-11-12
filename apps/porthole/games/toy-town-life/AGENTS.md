@@ -68,7 +68,10 @@ its art and typography; do not borrow another game's visual assets.
 `state.h` contains deterministic rules, state validation and the serialized
 record; `content.h` owns authored dialogue; `game.*` owns input/navigation and
 `rendering.cpp` draws the native RGB565 surface. Assets and their reproducible
-build sources live under `art/`, `tools/` and `generated/`.
+build sources live under `art/`, `tools/` and `generated/`. A new page, and the
+title or pause card coming or going, is a new screen (`newScreen()`: FreshGate's
+`changed()`, holding the tap's spot); a pick, +/- or clue in place is `changed()`
+alone, the light 450 ms gate, so quick repeat taps on one control count.
 
 `scene_input.cpp` handles walking, named NPCs and spatial clue inspection;
 `scene_hang.cpp` owns the display editor; `scene_copy.cpp` keeps dialogue short;

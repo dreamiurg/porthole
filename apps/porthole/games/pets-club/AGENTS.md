@@ -19,7 +19,8 @@ layout, and the age-based content tables.
   after `screenMs_`: a screen change is `FreshGate`'s (`go()`), but a screen that changes in place (Fetch's and Word Fetch's results and each next word, the
   lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift. `FreshGate` holds
   only presses near the tap that changed the screen, so the screens a tap anywhere moves on keep a wait of their own:
-  the celebration (700 ms), the gift (300 ms) and a lesson's start (400 ms).
+  the celebration (700 ms), the gift (300 ms) and a lesson's start (400 ms); the adoption parcel and a book's first
+  page take only a press begun `LIGHT_MS` (450 ms) after they showed (`pressedAfterPhase`).
 - `content.h`, plus its level-3 extensions `content_level3_books.h` and
   `content_level3_words.h`: story text (`Book`) and spelling words (`WordClue`). Plain
   data, no logic. `content.h` pulls the level-3 files in via `#if __has_include(...)`; the

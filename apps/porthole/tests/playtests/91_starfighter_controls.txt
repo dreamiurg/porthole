@@ -62,8 +62,8 @@ expect-screen sf_defeat
 expect lives=0
 ui-check
 snap sf_controls_defeat
-# Fresh replay returns to calibration and starts a complete new run.
-wait 850
+# Fresh replay returns to calibration and starts a complete new run, once the result's buttons light (1.2 s).
+wait 1250
 tap 80 120
 expect-screen sf_calibrate
 tilt 0 1000 0

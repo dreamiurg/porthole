@@ -56,6 +56,7 @@ class Game : public App {
   void drawSceneCard(int i,int count);
   void describeScene();
   void changed();
+  void newScreen();
   void go(uint8_t p);
   void act(int i);
   void actHome(int i);

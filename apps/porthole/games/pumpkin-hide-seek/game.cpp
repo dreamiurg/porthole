@@ -4,7 +4,7 @@
 namespace pumpkin {
 namespace {
 constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24}, GHOST = {22, 30, 24, 24};
-constexpr uint32_t AGAIN_MS = 400;   // a press on the sign this soon after the last one there lifted: a double tap or a mash
+constexpr uint32_t AGAIN_MS = 400;   // a press on the sign this soon after it last toggled: a double tap or a mash
 bool inside(int x, int y, ui::Box b) {
   return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h;
 }
@@ -26,7 +26,8 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = actionPending_ = ghostPending_ = actionHeld_ = actionPress_ = false;
+  starting_ = actionPending_ = ghostPending_ = actionHeld_ = late_ = false;
+  toggleMs_ = ms_ - AGAIN_MS;
   hold_ = ui::Hold{};
   if (page != Page::Icing) gate_.changed(ms_, in_);   // the icing goes on from the 600 ms catch: one fresh pause for both
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -51,18 +52,24 @@ void Game::calibrate() {
   tilt::Grav neutral;
   if (starting_ && steady_.get(ms_, &neutral)) { neutral_ = neutral; start(); }
 }
+// In play the gate holds the spot of the tap that started the round, so the rest of a double tap or mash on READY or
+// TRY AGAIN never hides the pumpkin (screen-gate playtest 2, M1). A press it held back that is still down when the wait
+// ends is a thumb resting on the sign on purpose: it acts then.
+void Game::lateThumb(const Input& raw) {
+  late_ = raw.down && (raw.pressed ? !in_.pressed : late_);
+  if (!late_ || !gate_.waited(ms_)) return;
+  gate_.closed = late_ = false;
+  in_.down = in_.pressed = true;
+}
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
   // The signs act as a press starts on them, however long it then lasts: a 2.5 s press during QUICK! HIDE! is a kid's
-  // choice (playtest 9, M1), and so is a thumb landing there 0.3 s into the round (screen-gate playtest M1), so play
-  // skips FreshGate. Only a press begun in the round starts one (the tap that started the round never does), and a
-  // double tap (or a mash, until a pause) toggles once.
+  // choice (playtest 9, M1). The sign toggles at most once per AGAIN_MS, so a double tap toggles once and a panicked
+  // mash keeps toggling instead of locking the kid out (screen-gate playtest 2, M2).
   UiAudit::add(GHOST.x, GHOST.y, GHOST.w, GHOST.h);
-  if (in_.released && actionPress_) liftMs_ = ms_;
-  if (!in_.down) actionPress_ = actionHeld_ = false;
-  if (in_.pressed && inside(in_.x, in_.y, ACTION)) {
-    actionPress_ = true;
-    if (ms_ - liftMs_ >= AGAIN_MS) actionPending_ = actionHeld_ = true;
+  if (!in_.down) actionHeld_ = false;
+  if (in_.pressed && inside(in_.x, in_.y, ACTION) && ms_ - toggleMs_ >= AGAIN_MS) {
+    actionPending_ = actionHeld_ = true; toggleMs_ = ms_;
   }
   ghostPending_ = ghostPending_ || (in_.pressed && !round_.ghostUsed && inside(in_.x, in_.y, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
@@ -81,7 +88,8 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   pageMs_ += dt;
   animationMs_ += dt;
   in_ = in;
-  if (page_ != Page::Play) gate_.filter(in_, ms_);   // play's signs keep their own rule (play())
+  gate_.filter(in_, ms_);
+  if (page_ == Page::Play) lateThumb(in);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   if (leaving()) { home_ = true; return; }
   switch (page_) {

@@ -193,7 +193,8 @@ expect profile=0/4
 tap 80 32
 wait 850
 tap 80 67
-wait 450
+# 5 sits 23 px below the row's tap, one target: it waits out the pad's 800 ms like a mash would
+wait 850
 expect-screen pin
 tap 80 90
 tap 119 90

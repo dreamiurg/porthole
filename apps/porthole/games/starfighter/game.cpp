@@ -24,8 +24,9 @@ void Game::go(Screen screen) {
   if (screen == Screen::Calibrate) calibration_ = {};
   transition(); gate_.changed(ms_, in_);   // a stage change in flight keeps transition()'s light gate
 }
+// A result's buttons stay unlit and deaf for RESULT_MS, so the fire taps of a kid still flying never replay or leave.
 void Game::transition() {
-  gate_.shown(ms_); hold_ = {}; taps_ = stepMs_ = 0;
+  stageAt_ = ms_; gate_.shown(ms_, terminal() ? RESULT_MS : ui::FreshGate::LIGHT_MS); hold_ = {}; taps_ = stepMs_ = 0;
 }
 void Game::startRun() {
   restart(run_, seed_ + ++runNo_);
@@ -79,7 +80,7 @@ void Game::render() {
   const paint::Page pages[] = {paint::Page::Title, paint::Page::Calibrate, paint::Page::Brief, paint::Page::Flight};
   const paint::View view = {pages[(int)screen_], &run_, ms_, bank_, calibration_.progress(),
                             (uint16_t)(hold_.progress() * 1000), calibration_.get(&neutral),
-                            controls::upright({in_.gx, in_.gy, in_.gz})};
+                            controls::upright({in_.gx, in_.gy, in_.gz}), ms_ - stageAt_ >= RESULT_MS};
   paint::draw(view);
 }
 const char* Game::screenName() const {
@@ -103,6 +104,7 @@ void Game::debugStage(Stage stage) {
   restart(run_, 1);
   run_.stage = stage;
   if (stage == Stage::Defeat) run_.lives = 0;
+  transition();
 }
 void Game::debugCmd(const char* cmd) {
   if (!strcmp(cmd, "title")) { go(Screen::Title); return; }

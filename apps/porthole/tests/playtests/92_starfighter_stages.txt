@@ -63,7 +63,7 @@ expect-screen sf_victory
 expect lives=3
 ui-check
 snap sf13_victory
-wait 600
+wait 1250
 tap 80 120
 expect-screen sf_calibrate
 expect ready=0

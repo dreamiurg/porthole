@@ -14,6 +14,7 @@ struct View {
   float bank = 0;
   uint16_t calibrationPermille = 0, holdPermille = 0;
   bool gripReady = false, gripUpright = false;
+  bool lit = true;   // a result's buttons work (Game::RESULT_MS)
 };
 void draw(const View& view);
 const gfx::Sprite& icon();

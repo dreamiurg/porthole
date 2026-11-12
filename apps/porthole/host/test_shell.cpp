@@ -976,6 +976,10 @@ static void againTapsCarryNothing() {
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
   ms += 1000; taps(sh, ms, ALL, {5, 250, 120}); assert(on(sh, "library"));   // a five-tap mash (H6)
   ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
+  ms += 1000; taps(sh, ms, ALL, {1, 250, 0});   // a mash scattered as a kid's is, 3-6 mm: one target wide
+  for (const int d : {8, -8, 20, -20}) { ms += 120; taps(sh, ms, {ALL.x + d, ALL.y + (d > 0 ? 8 : 0), ALL.w, ALL.h}, {1, 250, 0}); }
+  assert(on(sh, "library")); for (const StubApp& a : g.a) assert(a.entered == 0);
+  ms += 1000; taps(sh, ms, BACK, {1, 300, 0});
   ms += 1000; taps(sh, ms, ALL, {2, 300, 700}); assert(on(sh, "library") && g.a[5].entered == 0);   // Leo, once a second
   ms += 700; pressAt(sh, ms, ALL); assert(!yellowAt(launcher::CAPTION));      // 1.7 s after the change: no name
   liftAt(sh, ms += 300, ALL); assert(g.a[5].entered == 0);
@@ -1346,6 +1350,29 @@ static void padQuickAndSlowKeys() {
   at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
   frame(sh, ms, Input{}); assert(on(sh, "launcher"));
 }
+// A pad holds the spot of the tap that opened it like any new screen (screen-gate playtest 2, M3: a mash on a name row
+// or an age typed digits into the pad under it, and saved a code): a six-press mash there types nothing, wherever in
+// one target its presses land; a key elsewhere types at once; and a quick "1111" once the gate has passed types four.
+static void padMash() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1111"); bootWithoutHours(sh, st, nullptr, 0, &sys);
+  auto press = [&](int x, int y, uint32_t gap, uint32_t hold) {   // gap ms after the last lift, held hold ms
+    Input in{}; in.down = in.pressed = true; in.x = in.downX = x; in.y = in.downY = y;
+    sh.update(NOW, ms += gap, in); sh.render();
+    in.down = in.pressed = false; in.released = in.tap = true; sh.update(NOW, ms += hold, in); sh.render();
+  };
+  // Sam's row at the pad's 1 key (41, 62); 1 then 2 more keys at 150 ms, 100 ms presses
+  auto open = [&]() { ms += 1000; press(41, 62, 0, 250); assert(on(sh, "pin")); };
+  open();
+  const int jitter[5][2] = {{0, 0}, {8, -8}, {-8, 8}, {20, 0}, {0, 20}};   // 250 ms presses 150 ms apart
+  for (const auto& j : jitter) press(41 + j[0], 62 + j[1], 150, 250);
+  for (int i = 0; i < 4; i++) press(41, 62, i ? 150 : 900, 100);   // a pause, then 1111 at once
+  frame(sh, ms, Input{}); assert(on(sh, "launcher") && !storedStrikes(st, 0));
+  tapAt(sh, ms, launcher::HEADER); assert(on(sh, "picker"));
+  open(); press(80, 90, 150, 100);   // 5, a new target 150 ms in: typed
+  for (int i = 0; i < 3; i++) press(41, 62, 150, 100);
+  frame(sh, ms, Input{}); assert(on(sh, "pin") && storedStrikes(st, 0) == 1);   // 5111: four digits, one wrong try
+}
 // A grown-up typing the repeat straight away: the key pressed while the fourth dot still shows is the repeat's first.
 static void adminRepeatRightAway() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1479,27 +1506,34 @@ static void deleteNeedsACode() {
 // A press counts however long it is held (kids of 5-7 press 1-3 s), unless it slid away (a drag); longTap marks
 // one that fired the long press, for a target with its own long-press meaning. A button sinks only under a press
 // that began on it, never under a finger slid onto it from another.
-// FreshGate (os/ui.h). A screen a tap changed: a press near the tap waits 800 ms from the change and from each lift it
-// ignored, up to 2.5 s, and one at a new target acts at once. A change no finger made, and one in place, wait a plain
-// 450 ms, re-armed by nothing; so does a finger held across any change. A keypad's quick first key counts.
+// FreshGate (os/ui.h). A screen a tap changed: a press within one target (24 px) of where that tap went down waits
+// 800 ms from the change and from each lift it ignored, up to 2.5 s, and one at a new target acts at once. A change no
+// finger made, and one in place, wait a plain 450 ms, re-armed by nothing; so does a finger held across any change.
 static void freshGate() {
   auto at = [](ui::FreshGate& g, uint32_t ms, bool down, bool pressed, bool released, int x = 40, int y = 60) {
     Input in{}; in.down = down; in.pressed = pressed; in.released = released; in.tap = released; in.x = x; in.y = y;
     g.filter(in, ms); return in.pressed || in.tap;
   };
-  Input tap{}; tap.released = tap.tap = true; tap.x = 40; tap.y = 60;   // the tap that changed the screen
+  Input tap{}; tap.released = tap.tap = true; tap.x = 46; tap.y = 64; tap.downX = 40; tap.downY = 60;   // lifted 7 px off
   ui::FreshGate g; g.changed(1000, tap); assert(!at(g, 1600, true, true, false) && !at(g, 1900, false, false, true));
   g.changed(1000, tap); assert(at(g, 1850, true, true, false));
   g.changed(1000, tap); assert(at(g, 1200, true, true, false, 90, 100));   // a new target 200 ms after the change
+  g.changed(1000, tap); assert(at(g, 1200, true, true, false, 40, 86));    // 26 px off: past one target, new
   g.changed(1000, tap);   // a six-tap mash on the spot, 250 ms presses 150 ms apart: nothing within 2.5 s
   for (uint32_t t = 1100; t < 3500; t += 400) { assert(!at(g, t, true, true, false, 45, 63)); at(g, t + 250, false, false, true, 45, 63); }
+  const int jitter[][2] = {{8, -8}, {-8, 8}, {20, 0}, {-20, 8}, {0, -20}, {8, 20}};   // a kid's mash scatters 3-6 mm
+  g.changed(1000, tap);
+  for (int i = 0; i < 6; i++) {
+    const uint32_t t = 1100 + 400 * i; const int x = 40 + jitter[i][0], y = 60 + jitter[i][1];
+    assert(!at(g, t, true, true, false, x, y)); at(g, t + 250, false, false, true, x, y);
+  }
   g.changed(1000, tap); assert(!at(g, 1500, true, true, false)); at(g, 1700, false, false, true);   // a mash's press
   assert(!at(g, 1850, true, true, false)); at(g, 2000, false, false, true);
   assert(at(g, 2800, true, true, false));   // 800 ms after the last ignored lift
   g.changed(1000, tap);   // a 1 Hz retry on the spot, 300 ms presses 700 ms apart: in on the first press 2.5 s after
   for (uint32_t t = 1700; t < 3500; t += 1000) { assert(!at(g, t, true, true, false)); at(g, t + 300, false, false, true); }
   assert(at(g, 3700, true, true, false));
-  Input held = tap; held.released = held.tap = false; held.down = true;
+  Input held = tap; held.released = held.tap = false; held.down = true; held.x = 40; held.y = 60;
   g.changed(1000, held); assert(!at(g, 1700, false, false, true) && at(g, 1850, true, true, false));   // held across: its lift
   g.changed(1000, Input{});   // a timer's change: 450 ms for any press, never re-armed
   assert(!at(g, 1200, true, true, false, 90, 100)); at(g, 1300, false, false, true, 90, 100);
@@ -1507,10 +1541,8 @@ static void freshGate() {
   g.shown(1000);   // in place: quick repeat taps on one control count from 450 ms, never re-armed
   assert(!at(g, 1100, true, true, false)); at(g, 1250, false, false, true);
   assert(!at(g, 1400, true, true, false)); at(g, 1440, false, false, true); assert(at(g, 1460, true, true, false));
-  Input key{}; key.down = key.pressed = true; key.x = 80; key.y = 100;
-  g.shownAt(1000, 20, 40); g.filter(key, 1100); assert(key.pressed);   // a keypad's first key away from the tap
-  g.shownAt(1000, 40, 60); assert(!at(g, 1100, true, true, false)); at(g, 1300, false, false, true);
-  assert(at(g, 1850, true, true, false));   // its opening tap's spot waits 800 ms, never re-armed
+  g.shown(1000, 1200); assert(!at(g, 2150, true, true, false, 90, 100)); at(g, 2190, false, false, true, 90, 100);
+  assert(at(g, 2210, true, true, false, 90, 100));   // a longer wait anywhere: Star Fighter's results
 }
 static void longPressStillTaps() {
   InputTracker t; t.step(true, 50, 50, 1000);
@@ -1730,7 +1762,7 @@ static void systemMenuWayIn() {
 static void codesAndPresses() {   // the code pads, their waits, what they gate, and how long a press may be
   pinWaits();
   kidCodeLockout();
-  padQuickAndSlowKeys();
+  padQuickAndSlowKeys(); padMash();
   adminRepeatRightAway();
   adminCodeLockout();
   adminGatesProfiles();

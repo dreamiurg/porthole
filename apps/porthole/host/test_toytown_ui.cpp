@@ -87,6 +87,7 @@ void identityAndSave() {
 void inputLifecycle() {
   Player p; p.enter(); p.press(ACTIONS[0]); assert(!strcmp(p.game.screenName(),"toytown_title"));
   p.action(0); assert(p.on(HUB)); p.press(ACTIONS[0]); assert(p.on(HUB));
+  p.frame(false,0,0,500); p.press(ACTIONS[0]); assert(p.on(HUB));   // the title gone is a new screen: a mash waits on
   p.frame(false,0,0,FRESH); p.frame(true,51,117); p.frame(true,0,0,40); p.frame(false);
   assert(p.on(HUB)); // dragging off cancels a press
   p.frame(false,0,0,FRESH); p.frame(true,0,0); p.frame(true,51,117,40); p.frame(false);

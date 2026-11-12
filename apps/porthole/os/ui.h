@@ -57,31 +57,33 @@ class Hold {
 // A fresh screen ignores touches for a moment, so the press that changed it (still down after a long press, or the
 // next of a kid's mash) never acts on whatever now sits under the finger. Call filter() on every frame's input and one
 // of these on every change; a finger held across any of them stays invisible until lifted, and its lift re-arms nothing.
-// changed(): a new screen. One a tap made (a finger down or lifting as it changes) remembers that spot: a mash happens
-//   on one spot, while deliberate navigation goes to a new target (screen-gate playtest M2: a quick reader's taps
-//   looked exactly like a mash to a gate that waited out every press). A press beginning within SPOT_R of the spot
-//   waits until FRESH_MS after the change and FRESH_MS after the lift of each press so ignored ("again!" taps: 300-400
-//   ms presses 150-750 ms apart, kid playtests 9 and 10), but one begun MAX_MS after the change acts, so a kid
-//   retrying about once a second never meets a dead screen for long; a press anywhere else acts at once. A change no
-//   finger made (a timer, a game event) is shown().
-// shown(): a change in place (a page turn, a +/-, a new cue) or a timer's: any press waits LIGHT_MS, never re-armed,
-//   so quick repeat taps on one control still count.
-// shownAt(): a keypad, where a quick first key must count: only a press near (x, y), the tap that opened it, waits out
-//   FRESH_MS, never re-armed; one anywhere else is a new key and opens the gate at once.
+// changed(): a new screen. One a tap made (a finger down or lifting as it changes) remembers where that press went
+//   down: a mash happens on one spot, while deliberate navigation goes to a new target (screen-gate playtest M2: a
+//   quick reader's taps looked exactly like a mash to a gate that waited out every press). A press beginning within
+//   SPOT_R of the spot (one target: a kid's repeated taps scatter 3-6 mm) waits until FRESH_MS after the change and
+//   FRESH_MS after the lift of each press so ignored ("again!" taps: 300-400 ms presses 150-750 ms apart, kid
+//   playtests 9 and 10), but one begun MAX_MS after the change acts, so a kid retrying about once a second never meets
+//   a dead screen for long; a press anywhere else acts at once (a keypad's quick first key, too). r narrows the spot
+//   where targets sit closer than SPOT_R (the grown-ups' keypad). A change no finger made (a timer, a game event) is
+//   shown().
+// shown(): a change in place (a page turn, a +/-, a new cue) or a timer's: any press waits `wait` (LIGHT_MS), never
+//   re-armed, so quick repeat taps on one control still count.
+// waited(): a press near the spot beginning now would act.
 struct FreshGate {
   static constexpr uint32_t LIGHT_MS = 450, FRESH_MS = 800, MAX_MS = 2500;
-  static constexpr int SPOT_R = 16;
-  uint32_t fromMs = 0, changedMs = 0, waitMs = 0; bool closed = false, spot = false, rearm = false, mashed = false;
-  int spotX = 0, spotY = 0;
-  void shown(uint32_t now) { arm(now, LIGHT_MS); }
-  void shownAt(uint32_t now, int x, int y) { arm(now, FRESH_MS); spot = true; spotX = x; spotY = y; }
-  void changed(uint32_t now, const Input& in) {
+  static constexpr int SPOT_R = 24;
+  uint32_t fromMs = 0, changedMs = 0, waitMs = 0; bool closed = false, spot = false, mashed = false;
+  int spotX = 0, spotY = 0, spotR = SPOT_R;
+  void shown(uint32_t now, uint32_t wait = LIGHT_MS) { arm(now, wait); }
+  void changed(uint32_t now, const Input& in, int r = SPOT_R) {
     if (!in.down && !in.released) { shown(now); return; }
-    shownAt(now, in.x, in.y); rearm = true;
+    arm(now, FRESH_MS); spot = true; spotR = r;
+    spotX = in.released ? in.downX : in.x; spotY = in.released ? in.downY : in.y;   // a lift may land a few px off
   }
+  bool waited(uint32_t now) const { return now - fromMs >= waitMs || now - changedMs >= MAX_MS; }
   void filter(Input& in, uint32_t now);
 
  private:
-  void arm(uint32_t now, uint32_t wait) { fromMs = changedMs = now; waitMs = wait; closed = true; spot = rearm = mashed = false; }
+  void arm(uint32_t now, uint32_t wait) { fromMs = changedMs = now; waitMs = wait; closed = true; spot = mashed = false; }
 };
 }  // namespace ui
