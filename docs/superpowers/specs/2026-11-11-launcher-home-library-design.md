@@ -74,8 +74,9 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 - Unknown ids (a game removed from the firmware) are skipped silently. Disabled favorites are hidden, not removed, so
   switching the game back on restores the star; when a new star needs the place, the oldest hidden one gives it up.
   When none of a kid's favorites shows (all switched off or gone, or every star taken off), Home shows the default
-  and the list is kept as it is, so the hidden ones come back with their games; a star-mode tap while the default
-  shows starts the kid's list from it.
+  and the list is kept as it is, so the hidden ones come back with their games. Star mode never uses that fallback:
+  it edits the kid's own list, so it can show no gold star at all and a new star is then accepted (a swap by
+  unstarring then starring works), and hidden favorites give their places up only to new stars, oldest first.
 
 ## Rules carried over
 
@@ -91,6 +92,6 @@ Library and star mode, and a grown-up playtest of Info -> Games. After the fixes
 report's path (fresh profile -> All games -> arrow -> star -> Rally: "Home full! / Stars: page 1"), the newest-first
 order, a double tap acting once, the check keeping a picked Home (3 favorites, a tap opens a game) and the home
 button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
-double tap and a restart, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on; `starRules` covers a refused
+double tap and a restart, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
 only when missing; kid playtest 3 (`apps/porthole/docs/launcher-home-playtest-3.md`) replayed star mode.

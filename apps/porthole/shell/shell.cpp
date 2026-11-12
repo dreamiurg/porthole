@@ -515,9 +515,9 @@ void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a 
   for (int i = 0; i < m; i++)   // only a press that started on it
     if (ui::pressing(in_, tiles[i])) caption(launcher::CAPTION, games[i] >= 0 ? apps_[games[i]]->name() : "All games");
 }
-uint32_t Shell::homeMask() const {   // the games on Home (the Library's stars), a bit each
+uint32_t Shell::homeMask() const {   // the games on Home (the Library's stars), a bit each; star mode's own list
   int home[MAX_APPS]; uint32_t mask = 0;
-  for (int i = shell::homeGames(favs_, ids_, nApps_, gamesOff_, home) - 1; i >= 0; i--) mask |= shell::gameBit(ids_[home[i]]);
+  for (int i = (starMode_ ? shell::ownGames : shell::homeGames)(favs_, ids_, nApps_, gamesOff_, home) - 1; i >= 0; i--) mask |= shell::gameBit(ids_[home[i]]);
   return mask;
 }
 // A game's picture, with a red "new" dot until the kid first opens it; k < 0 is "All games". dx: star mode's jiggle,

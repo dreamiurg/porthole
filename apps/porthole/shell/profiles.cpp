@@ -131,30 +131,32 @@ static bool listed(int k, const int* list, int m) {
   for (int j = 0; j < m; j++) if (list[j] == k) return true;
   return false;
 }
-int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
+int ownGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
   int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on);
   if (m <= MAX_FAVS + 1) { memcpy(out, on, m * sizeof *out); return m; }
+  if (!f.picked) { memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS; }
   int h = 0;
-  for (int i = 0; f.picked && i < f.count && i < MAX_FAVS; i++) {
+  for (int i = 0; i < f.count && i < MAX_FAVS; i++) {
     const int k = indexOf(f.ids[i], ids, n);
     if (k >= 0 && listed(k, on, m)) out[h++] = k;
   }
-  if (h) return h;
-  memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS;   // never starred, or every star hidden: the default (the list stays)
+  return h;
 }
-static int place(const Favorites& f, uint8_t id) {   // id's place in the list, or count
-  int i = 0;
-  while (i < f.count && f.ids[i] != id) i++;
-  return i;
+int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
+  const int h = ownGames(f, ids, n, off, out);
+  if (h) return h;
+  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on), d = m < MAX_FAVS ? m : MAX_FAVS;   // no games: none
+  memcpy(out, on, d * sizeof *out); return d;   // every star hidden or taken off: the default (the list stays)
 }
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
-  int home[MAX_GAME_ID]; const int h = homeGames(f, ids, n, off, home);
+  int home[MAX_GAME_ID]; const int h = ownGames(f, ids, n, off, home);   // even with none showing
   Favorites g = f;   // f changes only on success: a refused star leaves even the default untouched
-  if (!g.picked || (h && place(g, ids[home[0]]) == g.count)) {   // the default shows (every star hidden too): it becomes the kid's list
+  if (!g.picked) {   // the default becomes the kid's own list
     g.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); g.picked = 1;
     for (int i = 0; i < g.count; i++) g.ids[i] = ids[home[i]];
   }
-  int i = place(g, id);
+  int i = 0;
+  while (i < g.count && g.ids[i] != id) i++;
   if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--; f = g; return true; }
   if (h >= MAX_FAVS) return false;
   if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the oldest, the last
