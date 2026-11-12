@@ -45,9 +45,15 @@ lives on the device, not in the build. This is what makes Porthole configurable 
   them (only if anything changed, read back) and returns to the Library; with no star left Home shows the
   default favorites again (see Data), never an empty Home; leaving any other way (the home button,
   which returns to the Library, the rest screen, a restart) discards that visit's edits. (Amended after the kid
-  playtests: round 1, M1, n1, n2; round 2 (`apps/porthole/docs/launcher-home-playtest-2.md`), 1-4: a 6-year-old
-  entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart; round 3
-  (`apps/porthole/docs/launcher-home-playtest-3.md`), 1: a non-reader emptied his Home and could not refill it.)
+  playtests. Round 1 (`apps/porthole/docs/launcher-home-playtest.md`), M1, n1, n2: star mode read as "switched off",
+  so nothing is dimmed and a refused star got a lasting cue. Round 2 (`launcher-home-playtest-2.md`), 1-4: a
+  6-year-old entered star mode unnoticed and mashed his Home from 5 games to 2, which stuck after a restart; hence
+  the lavender sky and jiggle, edits kept only by Done, the star counter, "Stars: page N" and the double-tap guard.
+  Round 3 (`launcher-home-playtest-3.md`), 1: a non-reader emptied his Home and could not refill it; hence Home's
+  default when none of the kid's favorites shows. Round 4 (`launcher-home-playtest-4.md`), M1: after a check with no
+  stars Home and the Library showed the defaults gold while star mode showed them white, and one new star cut Home
+  to that game; resolved by the Library's gold stars always being the kid's own list and the check with no star left
+  and none hidden resetting the kid to "not picked", so all three show the default gold.)
 - **Info -> Games** (`sys_games`, grown-ups, native adult typography like the rest of Admin): a Games button on Info,
   between Wifi and Updates (the grown-up playtest, M2, found it buried on Admin page 2; Info's Radar button now reads
   "Radar home" so it is not taken for the kids' Home). One row per game in the firmware with its picture, name and an
@@ -74,7 +80,9 @@ lives on the device, not in the build. This is what makes Porthole configurable 
 - Unknown ids (a game removed from the firmware) are skipped silently. Disabled favorites are hidden, not removed, so
   switching the game back on restores the star; when a new star needs the place, the oldest hidden one gives it up.
   When none of a kid's favorites shows (all switched off or gone, or every star taken off), Home shows the default
-  and the list is kept as it is, so the hidden ones come back with their games. Star mode never uses that fallback:
+  and the list is kept as it is, so the hidden ones come back with their games (the Library then shows no gold
+  star: its stars are always the kid's own list; Done with none left and none hidden resets the list to "not
+  picked", the default). Star mode never uses that fallback:
   it edits the kid's own list, so it can show no gold star at all and a new star is then accepted (a swap by
   unstarring then starring works), and hidden favorites give their places up only to new stars, oldest first.
 
@@ -94,4 +102,5 @@ order, a double tap acting once, the check keeping a picked Home (3 favorites, a
 button dropping star mode's edits, and an emptied Home coming back as the default; `starMode` the same with the
 double tap and a restart, `emptyHomeIsDefault` the check with no star, `hiddenFavorites` favorites switched off and back on, `swapAndHidden` star mode on the kid's own list; `starRules` covers a refused
 star on the default and the oldest of two hidden favorites giving its place up, `favoritesKept` the baseline written
-only when missing; kid playtest 3 (`apps/porthole/docs/launcher-home-playtest-3.md`) replayed star mode.
+only when missing; kid playtests 3 and 4 (`apps/porthole/docs/launcher-home-playtest-3.md`, `-4.md`) replayed
+star mode, and b2 asserts `home_gold` (the Library's gold stars) at 0 in star mode and 5 after a check with none.

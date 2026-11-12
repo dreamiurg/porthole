@@ -6,7 +6,8 @@
 # for 2 s, saying which page holds the gold stars when this one has none, while they and the arrow toward them hop.
 # A new star goes first on Home; repeated taps on one tile within 400 ms count once. Star mode can take every star
 # off (no gold left) and star a new game after that; Home with no star left (or every favorite switched off) shows
-# the default (a non-reader who emptied it could not refill it). home_tiles is what Home would show.
+# the default (a non-reader who emptied it could not refill it); the check with none left and none hidden makes the
+# kid "not picked" again, so the Library's gold stars (home_gold) match Home. home_tiles is what Home would show.
 reset
 tilt 0 1000 0
 profile Sam 8
@@ -14,6 +15,7 @@ wait 600
 tap 124 104
 wait 600
 expect-screen library
+expect home_gold=5
 ui-check library_stars_shown
 snap hs0_library
 tap 96 135
@@ -131,19 +133,24 @@ wait 600
 tap 80 104
 wait 600
 expect home_full=0
+expect home_gold=0
 snap hs9_none_left
 tap 80 104
 wait 600
 expect home_full=0
+expect home_gold=1
 expect home_tiles=2
 expect home_first=racing
 tap 80 104
 wait 600
+expect home_gold=0
 expect home_tiles=6
 expect home_first=crago
 tap 126 42
 wait 600
 expect star_mode=0
+expect home_gold=5
+snap hs10_zero_check_default
 expect home_tiles=6
 expect home_first=crago
 tap 80 12

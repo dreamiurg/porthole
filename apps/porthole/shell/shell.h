@@ -170,7 +170,7 @@ class Shell {
   void updateNoDelete(); void drawNoDelete();   // a long press on a profile with no code to ask: nobody may delete
   bool adminSwitch() const { return screen_ == SH_PIN && deleting_ && adminPin_; }   // "Admin" on a kid's pad: delete
   void updateLauncher(); void drawLauncher(); void drawAppTile(int k, const ui::Box& b, int dx = 0); void drawPageArrow(bool right, int nudge = 0);
-  bool drawMoreGames(const ui::Box& b, int dy); uint32_t homeMask() const;
+  bool drawMoreGames(const ui::Box& b, int dy); uint32_t homeMask(bool own) const;
   void drawHeader(); void drawCaption(const ui::Box* tiles, const int* games, int m);
   int homeTiles(int* games) const;   // Home's games (app indexes) in tile order; -1 is "All games"
   bool unseen(int k) const { return !(favs_.seen & shell::gameBit(ids_[k])); }

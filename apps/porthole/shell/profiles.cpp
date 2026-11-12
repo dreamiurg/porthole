@@ -145,8 +145,9 @@ int ownGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* o
 int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
   const int h = ownGames(f, ids, n, off, out);
   if (h) return h;
-  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on), d = m < MAX_FAVS ? m : MAX_FAVS;   // no games: none
-  memcpy(out, on, d * sizeof *out); return d;   // every star hidden or taken off: the default (the list stays)
+  // h is 0 here with the Library on (every star hidden: the default, the list kept) or with no game at all (d is 0)
+  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on), d = m < MAX_FAVS ? m : MAX_FAVS;
+  memcpy(out, on, d * sizeof *out); return d;
 }
 bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
   int home[MAX_GAME_ID]; const int h = ownGames(f, ids, n, off, home);   // even with none showing
@@ -157,12 +158,12 @@ bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t of
   }
   int i = 0;
   while (i < g.count && g.ids[i] != id) i++;
-  if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--; f = g; return true; }
+  if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.ids[--g.count] = 0; f = g; return true; }   // 0: no stale byte for a memcmp
   if (h >= MAX_FAVS) return false;
   if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the oldest, the last
     i = MAX_FAVS - 1;
     while (i > 0 && listed(indexOf(g.ids[i], ids, n), home, h)) i--;
-    memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.count--;
+    memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.ids[--g.count] = 0;
   }
   memmove(g.ids + 1, g.ids, g.count); g.ids[0] = id; g.count++;   // what was just picked shows first
   f = g; return true;

@@ -515,9 +515,11 @@ void Shell::drawCaption(const ui::Box* tiles, const int* games, int m) {   // a 
   for (int i = 0; i < m; i++)   // only a press that started on it
     if (ui::pressing(in_, tiles[i])) caption(launcher::CAPTION, games[i] >= 0 ? apps_[games[i]]->name() : "All games");
 }
-uint32_t Shell::homeMask() const {   // the games on Home (the Library's stars), a bit each; star mode's own list
+// A bit for each game: own, the kid's list (the Library's gold stars, in and out of star mode, so the two agree);
+// else what Home shows, the default when none of that list shows.
+uint32_t Shell::homeMask(bool own) const {
   int home[MAX_APPS]; uint32_t mask = 0;
-  for (int i = (starMode_ ? shell::ownGames : shell::homeGames)(favs_, ids_, nApps_, gamesOff_, home) - 1; i >= 0; i--) mask |= shell::gameBit(ids_[home[i]]);
+  for (int i = (own ? shell::ownGames : shell::homeGames)(favs_, ids_, nApps_, gamesOff_, home) - 1; i >= 0; i--) mask |= shell::gameBit(ids_[home[i]]);
   return mask;
 }
 // A game's picture, with a red "new" dot until the kid first opens it; k < 0 is "All games". dx: star mode's jiggle,
@@ -535,7 +537,7 @@ void Shell::drawAppTile(int k, const ui::Box& t, int dx) {
 bool Shell::drawMoreGames(const ui::Box& b, int dy) {
   constexpr int MW = 11, MH = 8;   // a picture at about 1/3.5, nearest neighbor
   int on[MAX_APPS], pick[launcher::PER_PAGE], n = 0; bool dot = false;
-  const int m = shell::enabledGames(ids_, nApps_, gamesOff_, on); const uint32_t home = homeMask();
+  const int m = shell::enabledGames(ids_, nApps_, gamesOff_, on); const uint32_t home = homeMask(false);
   for (int i = 0; i < m; i++) dot |= unseen(on[i]) && !(home & shell::gameBit(ids_[on[i]]));
   for (int pass = 0; pass < 2; pass++)   // the games not on Home, then the ones on it
     for (int i = 0; i < m && n < launcher::PER_PAGE; i++)
@@ -591,8 +593,11 @@ void Shell::tapLibrary(int k) {
 void Shell::leaveStars(bool keep) {
   if (!starMode_) return;
   starMode_ = false;
-  if (!keep) favs_ = starsBefore_;
-  else if (memcmp(&favs_, &starsBefore_, sizeof favs_)) saveFavs();   // a failed write keeps it for this visit
+  if (!keep) { favs_ = starsBefore_; return; }
+  // Every star taken off and none hidden: "not picked", so Home, the Library and star mode all show the default again
+  // (kid playtest 4, M1); a hidden one (a game switched off) keeps the kid's list for when it is back.
+  if (favs_.picked && !favs_.count) favs_.picked = 0;
+  if (memcmp(&favs_, &starsBefore_, sizeof favs_)) saveFavs();   // a failed write keeps it for this visit
 }
 // A 9x9 star, outlined: the Library's corner mark (s 1) and its button (s 2); white fill is an empty star.
 static void star(int x, int y, int s, uint8_t fill = C_GOLD) {
@@ -643,7 +648,7 @@ void Shell::drawLibrary() {
   clear(starMode_ ? C_LAVENDER : C_SKY);
   rect(0, launcher::GRASS_Y, 160, 160 - launcher::GRASS_Y, C_LEAF);
   int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
-  const uint32_t home = homeMask(); const int hop = homeFull() && (ms_ / 150) % 2 ? 2 : 0;
+  const uint32_t home = homeMask(true); const int hop = homeFull() && (ms_ / 150) % 2 ? 2 : 0;
   if (page_ >= launcher::pages(n)) page_ = 0;
   const int k0 = launcher::first(n, page_), m = launcher::count(n, page_);
   int games[launcher::PER_PAGE] = {}, starred = 0; ui::Box tiles[launcher::PER_PAGE]; bool before = false, after = false;
@@ -770,11 +775,11 @@ void Shell::debugPrint() {
   debugHome();
   if (screen_ != SH_APP) printf("screen=%s\n", screenName());
 }
-void Shell::debugHome() const {   // home_first: the first tile's game by its store ("-" for "All games" or none)
+void Shell::debugHome() const {   // home_first: the first tile's game by its store ("-" for "All games" or none); home_gold: the Library's gold stars
   int games[MAX_APPS + 1]; const int tiles = homeTiles(games);
-  printf("[home home_tiles=%d home_first=%s home_library=%d star_mode=%d home_full=%d games_off=%lu]\n", tiles,
+  printf("[home home_tiles=%d home_first=%s home_library=%d star_mode=%d home_full=%d home_gold=%d games_off=%lu]\n", tiles,
          tiles && games[0] >= 0 ? apps_[games[0]]->store() : "-", (int)shell::libraryOn(ids_, nApps_, gamesOff_), (int)starMode_,
-         (int)homeFull(), (unsigned long)gamesOff_);
+         (int)homeFull(), __builtin_popcount(homeMask(true)), (unsigned long)gamesOff_);
 }
 void Shell::debugCmd(const char* cmd) {
   if (!strcmp(cmd, "anytime")) { window_.enabled = 0; shell::savePlayWindow(*st_, window_); }   // declared host test fixture

@@ -807,7 +807,7 @@ static void starRules() {
 }
 static void swapAndHidden() {   // star mode edits the kid's own list, even when none of it shows
   shell::Favorites f = favs({8});
-  assert(shell::toggleStar(f, 8, IDS8, 8, 0) && !f.count);                       // the last star off: none
+  assert(shell::toggleStar(f, 8, IDS8, 8, 0) && !f.count && !f.ids[0]);         // the last star off: none, no stale id
   assert(shell::toggleStar(f, 2, IDS8, 8, 0) && f.count == 1 && f.ids[0] == 2);   // then a new one: a swap
   static const uint8_t ids12[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
   uint32_t off = 0; for (uint8_t id = 8; id <= 12; id++) off |= shell::gameBit(id);
@@ -880,6 +880,7 @@ static void starMode() {
   tapAt(sh, ms, launcher::tile(0, 6)); assert(a[7].entered == 3);   // Eight first, and Two still there
   assert(shell::loadFavorites(st, 0, f) && f.count == 5);
 }
+static bool goldAt(const ui::Box& b) { return gfx::fb[(b.y + 7) * gfx::W + b.x + b.w - 7] == C_GOLD; }   // a tile's corner star
 // The check with no star left brings the default back (kid playtest 3: a non-reader emptied his Home and could not
 // refill it); from the default that is no change, so nothing is written.
 static void emptyHomeIsDefault() {
@@ -893,11 +894,12 @@ static void emptyHomeIsDefault() {
   tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && f.count == 4);   // One off, kept
   tapAt(sh, ms, launcher::LIGHT);
   for (int i = 1; i < shell::MAX_FAVS; i++) tapAt(sh, ms, launcher::tile(i, 6));   // the other four off: none left
-  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.picked && !f.count);   // saved empty
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && !f.picked && !f.count);   // not picked again
+  for (int i = 0; i < 6; i++) assert(goldAt(launcher::tile(i, 6)) == (i < shell::MAX_FAVS));   // the Library agrees with Home
   tapAt(sh, ms, {64, -4, 32, 32}); tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 1);   // Home: the default
   home(sh, ms, a[0]);
-  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // star mode: none; Two on
-  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.count == 1 && f.ids[0] == 2);
+  tapAt(sh, ms, launcher::tile(5, 6)); tapAt(sh, ms, launcher::LIGHT); tapAt(sh, ms, launcher::tile(1, 6));   // as a new kid: Two off
+  tapAt(sh, ms, launcher::LIGHT); assert(shell::loadFavorites(st, 0, f) && f.count == 4 && f.ids[1] == 3);
 }
 // Favorites whose games a grown-up switched off are hidden, never dropped: with none showing Home is the default,
 // the check with no change writes nothing, unstarring every one that shows keeps the hidden ones, and switching
@@ -922,6 +924,7 @@ static void hiddenFavorites() {
   tapAt(sh, ms, launcher::tile(2, 3)); tapAt(sh, ms, launcher::LIGHT);
   tapAt(sh, ms, launcher::tile(0, 6)); tapAt(sh, ms, launcher::tile(1, 6)); tapAt(sh, ms, launcher::LIGHT);   // both off
   assert(shell::loadFavorites(st, 0, f) && f.count == 1 && f.ids[0] == 8);   // the hidden one stays
+  assert(!goldAt(launcher::tile(0, 6)) && !goldAt(launcher::tile(1, 6)));    // the Library: the kid's list, none showing
   tapAt(sh, ms, {64, -4, 32, 32});
   tapAt(sh, ms, launcher::tile(0, 6)); assert(a[0].entered == 2); home(sh, ms, a[0]);   // Home: the default
   assert(shell::saveGamesOff(st, 0));
