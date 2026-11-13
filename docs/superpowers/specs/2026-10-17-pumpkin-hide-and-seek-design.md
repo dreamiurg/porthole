@@ -315,3 +315,13 @@ was the only cue, and with all three candies the chevrons pointed away from the 
   the only cover on the way, and from x 42..66 that run crossed the beam for longer than a catch takes; there the
   table is the safe answer. Nothing named, the door never matters: x < 49 is in the chair's reach.)* This supersedes playtest 5
   m4's kept "arrow toward Grandma when the chair is named" once the door is open.
+
+Deferred playtest-7 findings (accepted build; Leo 9 wins, 4 losses), one line each:
+
+- M1, Minor (rolling toward a named spot gives no warning until it is close): the warning is 3.5 s, the label names
+  the spot, and the scared face starts 20 px out; an earlier cue is a design change for game-designer.
+- m2 (with all candy the arrow still points at cover): on purpose; it points at the door only where that run beats
+  the chair's beam, since following it elsewhere was caught in review.
+- m3 (no pressed state; a TRY AGAIN press as the pie lands is ignored): as playtest 5 m3, and the ignored press is
+  `FreshGate`, which keeps a mash from restarting the round.
+- m4 (a firm press on the exit picture ends the round): the 600 ms Home hold is the shared rule (playtest 2 m1).
