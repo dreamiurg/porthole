@@ -59,9 +59,12 @@ void Game::sign(uint32_t dt, float roll) {
   const bool on = in_.down && inside(in_.x, in_.y, ACTION), near = cover(round_) >= 0;
   holding_ = in_.down && (holding_ || (on && (near || inside(in_.downX, in_.downY, ACTION))));
   if (refusedMs_ < REFUSE_MS) refusedMs_ += dt;
-  // "No" when a finger reaches the sign where it can't hide, unless the hold is armed and the pumpkin really
-  // rolls into cover within 0.5 s (a slide-on isn't armed in the open, so it always gets the "no").
-  if (on && !onSign_ && round_.hidden < 0 && !near && !(holding_ && arriving(round_, roll, 500) >= 0)) refusedMs_ = 0;
+  // "No" from the frame a finger reaches the sign where it can't hide and for as long as it stays there (a 6-year-old
+  // who stopped short with his finger down believed he was hiding, kid playtest 4, m1), unless the hold is armed and
+  // the pumpkin really rolls into cover within 0.5 s (a slide-on isn't armed in the open, so it always gets the "no").
+  // Lifted, it finishes its second, so a quick tap still shows it.
+  const bool no = on && round_.hidden < 0 && !near && !(holding_ && arriving(round_, roll, 500) >= 0);
+  if (no) refusedMs_ = onSign_ ? refusedMs_ % REFUSE_MS : 0;
   onSign_ = on;
 }
 void Game::play(uint32_t dt) {
@@ -116,6 +119,7 @@ void Game::render() {
   const bool play = page_ == Page::Play;
   v.distract = play ? round_.distract : 0;
   v.rustling = play && round_.rustle >= 300; v.heard = play && round_.heard >= 0;
+  v.startle = play ? round_.startle : 0;
   v.quip = (uint8_t)(round_.seed % QUIPS);
   paint::draw(v);
 }
@@ -129,8 +133,8 @@ void Game::debugPrint() {
          round_.hidden, (unsigned)round_.elapsed, (unsigned)round_.exposure, ready(), starting_);
   printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
          (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
-  printf("ghost=%d distract=%d heard=%d rustle=%d\n", round_.ghostUsed, round_.distract > 0, round_.heard,
-         round_.rustle > 0);
+  printf("ghost=%d distract=%d heard=%d rustle=%d startle=%d\n", round_.ghostUsed, round_.distract > 0, round_.heard,
+         round_.rustle > 0, round_.startle > 0);
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }

@@ -110,7 +110,8 @@ gold-lit FIND COVER in the open and being caught (M1), plus four minor gaps. Cha
 - **The sign tells the truth.** It draws pressed (gold) only while the pumpkin is actually hidden. Away from
   cover it is flat and dim, in the game's own WALL and GREY, reads FIND COVER beside an arrow that bobs toward
   the nearest spot, and a touch there shakes it side to side for about half a second: a "no" without words.
-  Seen while hidden (a Check of the kid's own spot), it reads RUN!, agreeing with RUN AWAY!.
+  Seen while hidden (a Check of the kid's own spot), it reads RUN!, agreeing with RUN AWAY!. *(Superseded by the
+  fourth fix pass: the pumpkin startles out of a named spot, so the RUN! sign is gone.)*
 - **A finger that slides onto the sign hides**, wherever it came from (scenery, the ghost, Home), and keeps
   hiding until it lifts. A thumb resting since before the round is still ignored until it lifts, and a press
   slid from the ghost onto the sign never fires the ghost.
@@ -133,6 +134,7 @@ spot looked safe until too late (M1), and that a press on the dark sign showed n
 - **A Check of your own spot never looks safe.** Hidden in the spot Grandma names, from the warning's first
   frame, the sign turns rust and reads RUN!, and the pumpkin shivers and sweats in its spot. Seen at all
   during a Check, mashing included, the label is RUN AWAY!, never QUICK! HIDE!: hiding can't help there.
+  *(Superseded by the fourth fix pass: it startles out instead; the shiver and sweat are back to near misses.)*
 - **The sign never invites a hide in the named spot.** Out in the open, FIND COVER's arrow points to the
   nearest spot she isn't naming, and within reach of the named spot the sign stays FIND COVER rather than
   HOLD TO HIDE and the furniture's in-reach strip stays dark. *(Superseded in part: this pass still let a
@@ -149,6 +151,7 @@ Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptanc
 
 - Playtest 1 m3 (named spot is a reading-only rule): the RUN! sign and shiver fix it for a pumpkin already
   hidden there; it is fixed outright only by the third fix pass, which refuses a new hide in the named spot.
+  *(The fourth fix pass replaces the RUN! sign with the startle.)*
 - Playtest 1 m4 (rustle explained in words): the spot jiggles with marks and "!" over Grandma; rolling in is no
   longer heard, and a heard rustle only brings a warned Check, so it costs a visit, not the round.
 - Playtest 1 m6 / playtest 2 m5 ("YOU LOST"): out of scope for this pass; the pie captions keep it playful
@@ -178,7 +181,7 @@ Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptanc
   and leaves, which an 8-year-old decoded. A clearer cue is game-designer's.
 - Playtest 2 n5 (sign hit area has no padding): 80x24 already exceeds the 24x22 floor.
 - Playtest 2 n6 (arrow flips between two spots): it always points at the nearest real cover, so a flip at the
-  midpoint is truthful.
+  midpoint is truthful. *(Superseded by the fourth fix pass: near the midpoint it points the way it rolls.)*
 
 ## Amendment: hold to hide, third fix pass (2026-11-13)
 
@@ -187,17 +190,20 @@ minor worth fixing (m1); review found the named spot still took a new hide. Chan
 
 - **The named spot is not cover.** Once a Check names a spot it is decided: a new hide there does nothing, so a
   press there gets the chevron "no", a finger slid on there doesn't arm, and a pumpkin held through it rolls
-  on and hides in the next spot. One hidden there before she named it stays hidden under RUN!.
+  on and hides in the next spot. One hidden there before she named it stays hidden under RUN!. *(Superseded
+  by the fourth fix pass: one hidden there startles out.)*
 - **"No" while rolling, unless it really arrives.** The 0.5 s look-ahead rolls a copy of the pumpkin at the
   current tilt, friction included, toward a spot she isn't naming. Speed alone promised arrival for a pumpkin
   just levelled, which stops short, so a 6-year-old's press while it coasted showed nothing (m1).
-- The shiver and sweat show only in Play, not on the catch and frosting pages.
+- The shiver and sweat show only in Play, not on the catch and frosting pages. *(Moot after the fourth fix
+  pass: they show only for a near miss, which never outlasts Play.)*
 
 Deferred playtest-3 findings, one line each:
 
 - m2 (a forgotten thumb keeps it hidden and frozen): the hold lasting wherever the finger drifts is the fix
   for playtest 1's mid-search pop-out; lifting recovers at once, the spot jiggles under SHH!, and a heard
   rustle brings a warned Check with the RUN! sign, so holding on costs a visit before it costs the round.
+  *(The fourth fix pass startles it out of that Check instead.)*
   A "lift your finger" picture would be a new cue for game-designer and pixel-artist.
 - m3 (a mash carried through the frosting restarts from YOU LOST): out of scope; the 2.2 s catch and frosting
   already show the loss, and a longer guard on TRY AGAIN would make it deaf to a deliberate press.
@@ -213,3 +219,36 @@ Deferred playtest-3 findings, one line each:
   just below it.
 - n5 (unseen at Grandma's feet): the beam is the rule, and it is drawn; a 6-year-old can read the light.
 - n6 (slow pumpkin): as playtest 1 n6 above.
+
+## Amendment: hold to hide, fourth fix pass (2026-11-13)
+
+The fourth kid playtest (`apps/porthole/docs/pumpkin-hold-playtest-4.md`) found a 6-year-old non-reader caught
+in three of eight checks of his own spot: the rust RUN! sign was text only and the pumpkin stayed tucked in, so
+he held on (M1). Changes, decided by the lead:
+
+- **A named spot stops being cover for everyone.** On the step a Check's warning begins on the spot the pumpkin
+  hides in, the pumpkin startles out at that spot's x: it hops 4 px with a cream "!" for 400 ms. A finger still
+  held stays armed, so it hides at the next spot it rolls into; the named spot takes no new hide. A heard Check
+  startles it the same way; the teaching opener is never a Check. A ghost during that warning hands the move
+  back, so the spot is cover again and the held finger hides it there on the next step. The RUN! sign state is
+  gone; the shiver and sweat are back to meaning a near miss.
+- **In reach of the named spot during the warning** the label says RUN AWAY! and the sign is the dark FIND
+  COVER, its arrow toward the nearest other spot.
+- **The "no" lasts while the finger stays.** The chevrons start on the frame a finger reaches the sign where it
+  can't hide and last as long as it stays there with no cover, at least 1 s after a quick tap. A press that
+  stopped just short of cover with the finger down showed a calm sign, which Leo took for hiding (m1).
+- **The arrow doesn't flip while coasting.** Within 6 px of the midpoint between two spots it points the way
+  the pumpkin rolls, so coasting past turns it once, ahead of the pumpkin (n1).
+- The bots still win 100 of 100 seeds sharp, 0.7 s late and fidgety; Grandma's timings are unchanged.
+
+Deferred playtest-4 findings, one line each:
+
+- m2 (Grandma returns 2-3 s after leaving, long holds): out of scope; her timing is game-designer's, and the
+  2.5 s minimum rest and the 0.7 s-late bot keep every round winnable.
+- m3 (a forgotten hold plus tilt rustles, explained in words): out of scope; a rustle picture is new art for
+  pixel-artist, and the startle now ends the heard Check's trap without the kid lifting.
+- n2 (tapping the pumpkin or furniture does nothing): out of scope; tap-to-hide in the room would be a second
+  hide control beside the sign, a design change for game-designer.
+- n3 (caught at Grandma's feet while her beam points away): as playtest 3 n5; the beam is the rule and drawn.
+- n4 (the loss card doesn't show what caught him): out of scope; a cause picture on the pie card would change
+  the pie golden, for pixel-artist and game-designer.

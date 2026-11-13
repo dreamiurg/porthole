@@ -10,6 +10,8 @@ constexpr uint32_t RUSTLE_MS = 1000;
 constexpr float RUSTLE_MG = 400;
 // The ghost, once a round: a search or warning stops for GHOST_REST_MS; a rest gets GHOST_EXTRA_MS longer.
 constexpr uint32_t GHOST_REST_MS = 5000, GHOST_EXTRA_MS = 4000, DISTRACT_MS = 1500;
+// A Check naming the spot it hides in startles it out: it hops with a "!" this long.
+constexpr uint32_t STARTLE_MS = 400;
 constexpr float SPOTS[] = {36, 80, 124}, DOOR_X = 24;
 constexpr int CANDIES = 3;
 constexpr uint8_t ALL_CANDY = (1 << CANDIES) - 1;
@@ -40,6 +42,7 @@ struct Round {
   bool fromHeard = false;  // the current move is that heard check (a ghost can hand it back)
   bool ghostUsed = false;
   uint32_t distract = 0;  // ms of "WHAT WAS THAT?" left
+  uint32_t startle = 0;   // ms of the startle hop left: a Check named its spot, so it jumped out
 };
 Round newRound(uint32_t seed);
 int nearby(const Round& round);  // the spot in reach, else -1
@@ -52,6 +55,6 @@ float beamX(const Round& round);
 bool doorOpen(const Round& round);
 // hold: a finger that touched the action sign (pressed there, or slid on within reach of cover) is still on the glass.
 // The pumpkin hides the moment it is within reach of cover while held and comes out when the finger lifts: no toggle,
-// so a double tap can't pop it out. The spot a Check names is not cover: one hidden there before stays hidden.
+// so a double tap can't pop it out. The spot a Check names is not cover: one hidden there jumps out (`startle`).
 void step(Round& round, float roll, bool hold, bool ghost = false);
 }  // namespace pumpkin

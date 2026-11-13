@@ -1,4 +1,4 @@
-# Grandma checks the spot the pumpkin is hiding in: from the warning the sign says RUN! (rust, never the safe gold HIDING) and the pumpkin shivers; let go, roll toward the plant: FIND COVER points away from the named table; hidden in the plant, the check passes.
+# Grandma checks the spot the pumpkin is hiding in: on the warning's first step it startles out with a hop and a "!", the label says RUN AWAY! and the finger still on the sign gets the "no" chevrons for as long as it stays; drifted off the sign, the calm FIND COVER points away from the named table; still held and tilted, it hides in the plant and the check passes.
 reset
 tilt 0 1000 0
 profile Leo 6
@@ -13,22 +13,26 @@ down 80 131
 wait 11000
 expect hidden=1
 expect checking=-1
-wait 2000
-expect hidden=1
-expect checking=1
-expect phase=1
-ui-check pumpkin_play-run
-snap pumpkin_own_spot_run
-up
-tilt 400 917 0
-wait 600
+wait 1600
 expect hidden=-1
 expect checking=1
+expect phase=1
+expect startle=1
+expect x=80
+wait 160
+ui-check pumpkin_play-startle
+snap pumpkin_startled
+wait 500
+expect startle=0
+expect hidden=-1
+ui-check pumpkin_play-named-no
+snap pumpkin_named_no
+move 80 60
+wait 1000
 ui-check pumpkin_play-named-cover
 snap pumpkin_named_find_cover
-wait 1000
-down 80 131
-wait 500
+tilt 600 800 0
+wait 1700
 expect hidden=2
 expect checking=1
 tilt 0 1000 0

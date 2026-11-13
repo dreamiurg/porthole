@@ -67,10 +67,10 @@ void label(int y,const char* s,int cx=80) {
  int w=static_cast<int>(std::strlen(s))*6+7;
  box((2*cx-w)/2,y-3,w,13,INK); text(y,s,CREAM,1,cx);
 }
-// Pressed, the cream face and its gold lip become one face (gold unless told otherwise) and the word sinks 2 px.
-void button(const char* s,bool pressed=false,uint16_t face=GOLD,uint16_t ink=INK) {
+// Pressed, the cream face and its gold lip become one gold face and the word sinks 2 px.
+void button(const char* s,bool pressed=false) {
  box(40,119,80,24,INK);
- if(pressed) { box(42,121,76,20,face); text(129,s,ink); return; }
+ if(pressed) { box(42,121,76,20,GOLD); text(129,s,INK); return; }
  box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
 }
 void home(float progress) {
@@ -206,13 +206,13 @@ void pointArm(int x,int spot) {
  int ex=x-34,ey=66+fall*4;
  box(ex-1,ey-1,6,5,INK); box(ex,ey,4,3,SKIN); box(ex-6,ey-2,6,7,INK); box(ex-5,ey-1,3,5,GOLD);
 }
+// A cream "!" bubble centred on (x,y).
+void bang(int x,int y) { oval(x,y,5,6,INK); oval(x,y,3,4,CREAM); box(x,y-3,1,4,INK); box(x,y+2,1,1,INK); }
 // She leans in on Catch, points when checking a spot, and looks over at the crash during the distraction.
 void grandma(const View& v) {
  int lean=v.page==Page::Catch?int(v.pageMs/50):0,point=v.checking,x=141-lean,bob=(v.animationMs/300)%2;
  int look=point>=0||v.distract?1:0;
- if(v.heard) {  // "!" beside her head: she heard the rustle
-  oval(x-13,40,5,6,INK); box(x-9,41,3,2,INK); oval(x-13,40,3,4,CREAM); box(x-13,37,1,4,INK); box(x-13,42,1,1,INK);
- }
+ if(v.heard) { bang(x-13,40); box(x-9,41,3,2,INK); }  // beside her head: she heard the rustle
  oval(x+6,44,6,6,INK); oval(x+6,43,4,4,GREY); oval(x,53,10,12,INK); oval(x,52,8,10,SKIN);
  box(x-7,43,13,5,GREY); box(x-10,50,9,6,INK); box(x+1,50,8,6,INK);
  box(x-8,51,5,3,CREAM); box(x+3,51,4,3,CREAM); box(x-1,52,3,1,INK);
@@ -261,12 +261,14 @@ void furniture(const View& v) {
  chair(lit==0,v.hidden==0?j:0); table(lit==1,v.hidden==1?j:0); plant(lit==2,v.hidden==2?j:0);
  if(v.rustling&&v.hidden>=0) rustleMarks(v.hidden,v.animationMs);
 }
+// It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px with a "!"
+// up and away from her side, clear of her "?" bubble: the non-word "not safe here" (kid playtest 4, M1).
 void player(const View& v) {
- // Hidden in the spot she names, it shivers and sweats from the warning's first frame: the non-word "not safe".
- const bool shiver=v.page==Page::Play&&(v.shiver||(v.hidden>=0&&v.hidden==v.checking));
  int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
- if(shiver||v.rustling) { x+=int(v.animationMs/(shiver?60:80)%2); if(shiver) sweat(x,v.animationMs); }
- pumpkinFace(x,v.hidden>=0?101:99,squash,v.hidden>=0);
+ if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
+ const int hop=v.startle?4-std::abs(int(STARTLE_MS-v.startle)-200)/50:0;
+ pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0);
+ if(v.startle) bang(x-13,82-hop);
  if(v.hidden>=0) box(x-10,107,21,2,INK);
  sparkle(x,v.sinceCandy);
 }
@@ -296,7 +298,7 @@ void candyHud(uint8_t got) {
 // the one thing to fix.
 const char* alarm(const View& v) {
  // Seen during a Check, hiding can't help (mashing included): only running can.
- if(v.exposure>0) return v.hidden>=0||v.checking>=0?"RUN AWAY!":"QUICK! HIDE!";
+ if(v.exposure>0) return v.checking>=0?"RUN AWAY!":"QUICK! HIDE!";
  if(v.heard&&v.hidden>=0&&v.rustling) return "SHE HEARD YOU!";
  if(v.rustling) return "SHH!";
  if(v.distract) return "WHAT WAS THAT?";
@@ -306,7 +308,7 @@ const char* alarm(const View& v) {
 const char* playLabel(const View& v) {
  constexpr const char* ASK[]={"THE CHAIR?","THE TABLE?","THE PLANT?"};
  if(const char* s=alarm(v)) return s;
- if(v.checking>=0&&v.warning) return ASK[v.checking];
+ if(v.checking>=0&&v.warning) return v.nearby==v.checking?"RUN AWAY!":ASK[v.checking];  // in reach of it: go
  if(v.warning) return "GRANDMA!";
  if(v.searching) return "HMM?";
  if(v.heard&&v.hidden>=0) return "SHE HEARD YOU!";
@@ -318,13 +320,23 @@ const char* playLabel(const View& v) {
 void chevron(int cx,int dir) {
  for(int d=0;d<=6;++d) { const int x=cx+dir*(3-d)-(dir>0); box(x,130-d,2,1,CREAM); box(x,130+d,2,1,CREAM); }
 }
+// The nearest spot she isn't naming, but within 6 px of the midpoint between two the one it rolls toward: coasting
+// past, the arrow turns once, ahead of it, instead of pointing back and flipping (kid playtest 4, n1).
+int coverDir(const View& v) {
+ int near=-1,next=-1;
+ auto far=[&v](int i) { return std::fabs(v.x-SPOTS[i]); };
+ for(int i=0;i<3;++i) {
+  if(i==v.checking) continue;
+  if(near<0||far(i)<far(near)) { next=near; near=i; } else if(next<0||far(i)<far(next)) next=i;
+ }
+ if(next>=0&&far(next)-far(near)<12&&(SPOTS[next]-v.x)*v.velocity>0) near=next;
+ return SPOTS[near]<v.x?-1:1;
+}
 // Away from cover there is nothing to press: the sign goes flat and dim, never gold, with an arrow that bobs toward
-// the nearest spot she isn't naming. A finger on it says "no" for REFUSE_MS: the sign shakes and cream chevrons
-// march toward cover in place of the words, plain in any one frame (a 2 px shake alone went unseen by a 6-year-old).
+// cover. A finger on it says "no" while it stays, and at least REFUSE_MS: the sign shakes and cream chevrons march
+// toward cover in place of the words, plain in any one frame (a 2 px shake alone went unseen by a 6-year-old).
 void coverSign(const View& v) {
- int near=-1;
- for(int i=0;i<3;++i) if(i!=v.checking&&(near<0||std::fabs(v.x-SPOTS[i])<std::fabs(v.x-SPOTS[near]))) near=i;
- const int dir=SPOTS[near]<v.x?-1:1;
+ const int dir=coverDir(v);
  const bool no=v.refusedMs<REFUSE_MS;
  const int shake=no?(v.refusedMs/60%2?3:-3):0;
  box(40+shake,119,80,24,INK); box(42+shake,121,76,20,WALL);
@@ -343,12 +355,9 @@ void play(const View& v) {
  // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
  // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
- // Gold, pressed, only while really hidden. In the spot she names it is rust and says RUN! from the warning's first
- // frame (a safe-looking HIDING held until 0.7 s before the catch), and out of cover it never invites a hide there.
- const int at=v.hidden>=0?v.hidden:v.nearby;
- const bool named=at>=0&&at==v.checking;
- if(v.hidden>=0) button(named?"RUN!":"HIDING",true,named?RUST:GOLD,named?CREAM:INK);
- else if(v.nearby>=0&&!named) button("HOLD TO HIDE");
+ // Gold, pressed, only while really hidden. The spot she names is no cover: in reach of it the sign is FIND COVER.
+ if(v.hidden>=0) button("HIDING",true);
+ else if(v.nearby>=0&&v.nearby!=v.checking) button("HOLD TO HIDE");
  else coverSign(v);
 }
 void icing(uint32_t ms) {

@@ -89,11 +89,12 @@ void collect(Round& r) {
   for (int i = 0; i < CANDIES; i++)
     if (!(r.got & (1 << i)) && fabsf(r.x - r.candy[i]) <= REACH) { r.got |= 1 << i; r.sinceCandy = 0; }
 }
-// Exposure builds only while seen, hidden or not, so mashing the sign can't reset it. PHEW! waits for the end of a
-// search the beam came close in: shown as the beam merely passed, it told a 6-year-old to let go mid-search.
+// Exposure builds only while seen, so mashing the sign can't reset it; hidden is never seen, since nothing hides in the
+// spot a Check names. PHEW! waits for the end of a search the beam came close in: shown as the beam merely passed, it
+// told a 6-year-old to let go mid-search.
 void watch(Round& r) {
   const bool inBeam = searching(r) && fabsf(r.x - beamX(r)) <= 20;
-  const bool seen = inBeam && (r.hidden < 0 || r.hidden == checking(r));
+  const bool seen = inBeam && r.hidden < 0;
   const bool phew = r.close && !searching(r);
   r.close = searching(r) && (r.close || inBeam);
   r.covered = inBeam && !seen;
@@ -141,11 +142,14 @@ void step(Round& r, float roll, bool hold, bool ghost) {
   hide(r, hold);
   if (ghost) haunt(r);
   r.distract = r.distract > STEP_MS ? r.distract - STEP_MS : 0;
+  r.startle = r.startle > STEP_MS ? r.startle - STEP_MS : 0;
   listen(r, roll);
   rollPumpkin(r, roll);
   collect(r);
   r.elapsed += STEP_MS;
   advance(r);
+  // She names the spot it hides in: no cover now, so it jumps out. A held finger hides it at the next cover it reaches.
+  if (r.hidden >= 0 && r.hidden == checking(r)) { r.hidden = -1; r.startle = STARTLE_MS; }
   watch(r);
   r.won = !r.caught && doorOpen(r) && r.hidden < 0 && r.x <= DOOR_X;
 }

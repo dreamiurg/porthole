@@ -1,4 +1,4 @@
-# Wiggling hard while hidden rustles the table: Grandma's next move after the opening sweep checks it, and rolling away in time is safe.
+# Wiggling hard while hidden rustles the table: Grandma's next move after the opening sweep checks it, which startles the pumpkin out of the table, and rolling away in time is safe.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -28,7 +28,7 @@ snap pumpkin_heard
 wait 13300
 expect phase=1
 expect checking=1
-expect hidden=1
+expect hidden=-1
 snap pumpkin_check_heard
 wait 80
 up

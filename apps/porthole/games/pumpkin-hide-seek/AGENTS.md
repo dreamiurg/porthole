@@ -9,23 +9,27 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   exactly while a finger that touched the action sign stays on the glass, wherever it drifts. A press that
   began on the sign arms anywhere; a finger slid onto it arms only where it can hide at once (within reach
   of cover), so a finger crossing the sign in the open never hides the pumpkin later. Cover is a spot a
-  Check isn't naming: the named spot is decided, so a new hide there does nothing (`cover()`), while one
-  hidden there before she named it stays hidden. It hides on the touch if it's within 13 px of cover, or the
-  moment it rolls within 13 px of cover while still held, and comes out when that finger lifts. No toggle,
-  so a double tap ends out and never pops it out mid-press. Tilt never ejects a hidden pumpkin. The sign
-  says HOLD TO HIDE (cream) near a spot and HIDING while hidden; it draws pressed (gold, its word 2 px
-  lower) only while hidden. Hidden in the spot a Check names, from the warning's first frame, it is pressed
-  but RUST with CREAM RUN!, and the pumpkin shivers and sweats (in Play only): a safe-looking HIDING until
-  0.7 s before the catch left a non-reader no way out (kid playtest 2, M1). Away from cover it is flat and
-  dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the nearest
-  spot a Check isn't naming; within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and
-  that furniture's gold in-reach strip stays dark. A finger reaching it away from cover, the named spot
-  included (pressed or slid on), gets the non-word "no" for `REFUSE_MS` (1 s): the sign shakes 3 px side to
-  side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a 2 px
-  shake alone went unseen, kid playtest 2, m2). The "no" is skipped only while it really rolls into cover
-  within 0.5 s at the current tilt (`arriving()` rolls a copy, friction included): it just hides on arrival.
-  Speed alone promised that for a pumpkin just levelled, which stops short, and a 6-year-old's press then
-  showed nothing (kid playtest 3, m1).
+  Check isn't naming: the named spot is decided, so a new hide there does nothing (`cover()`), and one hidden
+  there startles out on the step her warning begins (`hidden = -1`, `startle` = `STARTLE_MS`, 400 ms): it hops
+  4 px with a CREAM "!" up and away from her side, at the spot's x. Kept hidden under a RUN! sign, a non-reader
+  of 6 held on and was caught (kid playtest 4, M1). A finger still held stays armed, so it hides at the next
+  cover it rolls into; a ghost handing the Check back makes the spot cover again, so that hold re-hides it
+  there. It hides on the touch if it's within 13 px of cover, or the moment it rolls within 13 px of cover
+  while still held, and comes out when that finger lifts. No toggle, so a double tap ends out and never pops
+  it out mid-press. Tilt never ejects a hidden pumpkin. The sign says HOLD TO HIDE (cream) near a spot and
+  HIDING while hidden; it draws pressed (gold, its word 2 px lower) only while hidden. Away from cover it is
+  flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the
+  nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it rolls toward,
+  so coasting past turns it once and never flips it back (kid playtest 4, n1); within reach of the named
+  spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A
+  finger on it away from cover, the named spot included (pressed or slid on), gets the non-word "no" from
+  the frame it arrives and for as long as it stays there with no cover, and for at least `REFUSE_MS` (1 s)
+  after a quick tap: the sign shakes 3 px side to side and three CREAM chevrons march toward cover in place
+  of the words, plain in any single frame (a 2 px shake alone went unseen, kid playtest 2, m2). A press
+  that stopped just short of cover with the finger down showed a calm sign, which a 6-year-old took for
+  hiding (kid playtest 4, m1). The "no" is skipped only while an armed hold really rolls it into cover
+  within 0.5 s at the current tilt (`arriving()` rolls a copy, friction included): it just hides on
+  arrival. Speed alone promised that for a pumpkin just levelled, which stops short (kid playtest 3, m1).
 - Goal: roll over three candy corns (within 7 px, never while hidden), then reach the
   door at x=24 out in the open. No timer: staying hidden stalls, it never wins. Candy
   sits at 52..66, 94..108 and 130..136, drawn from the round's seed.
@@ -35,16 +39,17 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   of the lane and returns) or Check (30%, 2 s on one spot, about 73% the pumpkin's own
   spot when it's hidden). Sweeps start from her side two times in three. Warnings last 2 s,
   3.5 s for a Check. Detection shares `beamX` with the drawn cone, 20 px half-width; a
-  Check also sees into the spot it names. Continuous exposure for 900 ms catches, hidden
-  or not, so mashing the sign during a Check of its own spot is caught like holding there;
+  hidden pumpkin is never seen (nothing hides in the spot a Check names). Continuous exposure
+  for 900 ms catches, so mashing the sign during a Check of its own spot is refused and caught;
   hiding elsewhere or leaving the beam resets exposure. PHEW! shows for 1.2 s when a search
   ends after the beam was on the pumpkin, never while she is still looking: shown as the
   beam merely passed, it told a 6-year-old to let go mid-search.
 - Rustle: hidden and tilted past 400 mg for 1 s straight (SHH!, shown from 300 ms so a brief bump
   doesn't flash it) means Grandma heard it (SHE HEARD YOU!, while hidden): her next move, after
-  the teaching opener, is a Check of that spot, with the usual 3.5 s warning. The tilt counts only
-  once it has dropped below 400 mg since that hide began (`settled`), so rolling into cover at full
-  tilt while held is never heard. It never ejects the pumpkin and never shortens a rest.
+  the teaching opener, is a Check of that spot, with the usual 3.5 s warning, which startles it
+  out. The tilt counts only once it has dropped below 400 mg since that hide began (`settled`), so
+  rolling into cover at full tilt while held is never heard. The rustle itself never ejects the
+  pumpkin and never shortens a rest.
 - Ghost: once a round, tapping the ghost at the window ({22,30,24,24}) knocks something
   over across the room (WHAT WAS THAT?, 1.5 s). A warning or search stops and becomes a
   5 s rest; a rest gets 4 s longer. A ghost during a warning hands the announced move back
@@ -53,10 +58,10 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   sweep even after the ghost stretches the first rest. She stays drawn, looking at the crash
   (no beam), while WHAT WAS THAT? shows. The ghost glows, bobs and waves only in Play; on
   every other page it is drawn calm, since taps there do nothing.
-- Play label, most urgent first: RUN AWAY! (seen while hidden, or seen at all during a Check, where hiding
-  can't help: mashing included) / QUICK! HIDE!, SHE HEARD YOU!
-  (heard, hidden and still rustling), SHH!, WHAT WAS THAT?, PHEW!, THE CHAIR?/TABLE?/PLANT?,
-  GRANDMA!, HMM?, SHE HEARD YOU! (heard and hidden), HIDDEN!, TO THE DOOR!. While the ghost
+- Play label, most urgent first: RUN AWAY! (seen during a Check, where hiding can't help: mashing
+  included) / QUICK! HIDE!, SHE HEARD YOU! (heard, hidden and still rustling), SHH!, WHAT WAS THAT?,
+  PHEW!, THE CHAIR?/TABLE?/PLANT? (RUN AWAY! in reach of the named spot), GRANDMA!, HMM?, SHE HEARD
+  YOU! (heard and hidden), HIDDEN!, TO THE DOOR!. While the ghost
   can be tapped, the row at y 49 is centred at x 92 so a 14-letter plate (x 46..136) clears its
   tap box; once it's used the row centres at 80, off Grandma's glasses.
 - Endings vary: four catch lines, four pie captions and four escape lines, picked by
@@ -97,8 +102,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 
 Screen names are prefixed `pumpkin_`. Debug reports position, hiding, elapsed
 round time, exposure, calibration readiness, candy, Grandma's phase/move and PHEW, plus
-`ghost` (used), `distract` (crash showing), `heard` (spot, or -1) and `rustle` (building);
-it provides no gameplay cheats.
+`ghost` (used), `distract` (crash showing), `heard` (spot, or -1), `rustle` (building) and
+`startle` (hopping); it provides no gameplay cheats.
 See `docs/superpowers/specs/2026-10-17-pumpkin-hide-and-seek-design.md` at repo root.
 
 ## Visual regression checks

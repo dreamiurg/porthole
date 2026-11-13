@@ -81,7 +81,8 @@ static void spotCheck() {
     Round r; r.x = SPOTS[spot]; r.hidden = spot;
     stage(r, Move::Check, spot);
     CHECK(warning(r) && checking(r) == spot && beamX(r) == SPOTS[spot]);
-    tick(r, 1000 + CATCH_MS - 2 * STEP_MS); CHECK(searching(r) && !r.caught);
+    step(r, 0, true); CHECK(r.hidden == -1 && r.x == SPOTS[spot]);  // startled out: held there, it stays out
+    tick(r, 1000 + CATCH_MS - 3 * STEP_MS); CHECK(searching(r) && !r.caught);
     tick(r, STEP_MS); CHECK(r.caught);  // she looks right behind it
     r = Round{}; r.x = SPOTS[(spot + 1) % 3]; r.hidden = (spot + 1) % 3;
     stage(r, Move::Check, spot);
@@ -94,14 +95,14 @@ static void spotCheck() {
   CHECK(!r.caught && r.x > SPOTS[1] + 20);
 }
 // The spot she names is decided: a new hide there does nothing, so held through it the pumpkin rolls on to the next
-// spot, and a re-press there neither snaps it back nor stops it. One hidden before she named it stays hidden.
+// spot, and a re-press there neither snaps it back nor stops it.
 static void checkedSpot() {
   Round r; r.x = SPOTS[0] + 14; stage(r, Move::Check, 1); r.phaseLen = 600000;  // a long warning: no catch
   bool table = false;
   for (int t = 0; t < 6000 && r.hidden < 0; t += STEP_MS) { step(r, 1000, true); table = table || r.hidden == 1; }
   CHECK(!table && r.hidden == 2 && r.x == SPOTS[2]);
   r = Round{}; step(r, 0, true); stage(r, Move::Check, 1); r.phaseLen = 600000;
-  tick(r, 100); CHECK(r.hidden == 1);
+  tick(r, 100); CHECK(r.hidden == -1 && r.x == SPOTS[1]);  // startled out
   step(r, 0, false); tick(r, 200, 1000);
   const float x = r.x;
   CHECK(nearby(r) == 1 && r.velocity > 0);
@@ -110,13 +111,30 @@ static void checkedSpot() {
   step(r, 0, true); CHECK(r.hidden == -1);
   step(r, 0, true, true); step(r, 0, true); CHECK(r.phase == Phase::Rest && r.hidden == 1);  // named no more: it hides
 }
+// A Check naming the pumpkin's own spot startles it out on the warning's first step, since the spot is no cover now.
+// A finger still held stays armed, so it hides at the next spot it rolls into; a ghost hands the move back and the
+// held finger hides it again where it sits. A check of another spot leaves it hidden.
+static void startled() {
+  Round r; step(r, 0, true); r.moves = 1; r.heard = 1; r.phaseMs = r.phaseLen - STEP_MS;  // she heard the table
+  step(r, 0, true);
+  CHECK(warning(r) && checking(r) == 1 && r.hidden == -1 && r.x == SPOTS[1] && r.startle == STARTLE_MS);
+  bool table = false;
+  for (int t = 0; t < 3000 && r.hidden < 0; t += STEP_MS) { step(r, 1000, true); table = table || r.hidden == 1; }
+  CHECK(!table && r.hidden == 2 && warning(r) && r.startle == 0);  // held on: hidden in the plant, still warned
+  r = Round{}; step(r, 0, true); r.moves = 1; r.heard = 1; r.phaseMs = r.phaseLen - STEP_MS;
+  step(r, 0, true); CHECK(r.hidden == -1);
+  step(r, 0, true, true); step(r, 0, true);
+  CHECK(r.phase == Phase::Rest && r.hidden == 1 && r.heard == 1);  // handed back: hidden again where it sits
+  r = Round{}; step(r, 0, true); stage(r, Move::Check, 2); step(r, 0, true);
+  CHECK(r.hidden == 1 && r.startle == 0);
+}
 // Mashing the sign during a Check of the pumpkin's own spot is caught as surely as holding there: a hide never
 // resets exposure, so a 120 ms tap every 800 ms can't outlast her.
 static void mashing() {
   for (uint32_t period : {800u, 400u, 200u}) {
     Round r; r.x = SPOTS[1]; step(r, 0, true);
     stage(r, Move::Check, 1);
-    tick(r, 1000); CHECK(searching(r) && r.hidden == 1);
+    tick(r, 1000); CHECK(searching(r) && r.hidden == -1);  // startled out, and the named spot takes no hide
     uint32_t t = 0;
     for (; !r.caught && t < 2000; t += STEP_MS) step(r, 0, t % period < 120);
     CHECK(r.caught && t <= CATCH_MS + STEP_MS);
@@ -153,11 +171,12 @@ static void rustle() {
   tick(r, RUSTLE_MS, -1000); CHECK(r.heard == 1 && r.hidden == 1 && r.x == SPOTS[1]);
   r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS; step(r, 0, true);
   CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.phaseLen == 3500 && r.heard < 0);
+  CHECK(r.hidden == -1 && r.startle == STARTLE_MS);  // the heard check startles it out
   r = newRound(5); r.phaseLen = 600000; tick(r, 2000, 1000);
   CHECK(r.heard < 0 && r.rustle == 0);  // rolling in the open is not rustling
   r = newRound(5); r.x = SPOTS[0]; step(r, 0, true); tick(r, RUSTLE_MS + 100, 1000);
   CHECK(r.heard == 0);
-  tick(r, 3000 - RUSTLE_MS - 100); CHECK(warning(r) && r.move == Move::Sweep && r.heard == 0);  // the opener still teaches
+  tick(r, 3000 - RUSTLE_MS - 100); CHECK(warning(r) && r.move == Move::Sweep && r.heard == 0 && r.hidden == 0);  // the opener still teaches
 }
 // Rolled into cover at full tilt while held: no rustle until the tilt has eased once.
 static void rustleOnArrival() {
@@ -201,10 +220,8 @@ struct Choice { float roll; bool hold; };
 static Choice bot(const Round& r, bool fidget = false) {
   const float toward = r.got & 4 ? -500 : 500;
   const bool danger = warning(r) || searching(r);
-  if (r.hidden >= 0) {  // holds still while hidden, so it never rustles
-    const bool leave = !danger || checking(r) == r.hidden;
-    return {leave || fidget ? toward : 0, !leave};
-  }
+  if (r.hidden >= 0) return {danger && !fidget ? 0 : toward, danger};  // holds still while hidden: no rustle
+  // Startled out of the spot she names, it runs on: that spot is no cover.
   if (danger && nearby(r) >= 0 && nearby(r) != checking(r)) return {0, true};
   return {toward, false};
 }
@@ -385,8 +402,8 @@ static int textW(int y, int* x = nullptr) {
     if (gfx::textLog[i].y == y) { if (x) *x = gfx::textLog[i].x; return gfx::textLog[i].w; }
   return -1;
 }
-// Away from cover the sign never looks pressed. A press there says "no" for a second, visible in any frame: the
-// sign shakes and cream chevrons march toward cover in place of the words. Gold means hidden.
+// Away from cover the sign never looks pressed. A finger there says "no", visible in any frame, for as long as it stays
+// and at least a second: the sign shakes and cream chevrons march toward cover in place of the words. Gold: hidden.
 static constexpr uint16_t INK = rgb(0x201d32);
 static bool findCover(Run& r) {  // renders r: the calm FIND COVER sign, unshaken, no gold, no chevrons
   gfx::textLogReset(); r.game.render();
@@ -394,7 +411,7 @@ static bool findCover(Run& r) {  // renders r: the calm FIND COVER sign, unshake
 }
 static void signLooks() {
   gfx565::target(pixels); gfx::textLogEnabled = true;
-  Run r; r.start(); r.wait(500);
+  Run r; r.start(); r.wait(500); r.tap(34, 42);  // the ghost: a quiet house for the whole test
   r.gravity = grip::gravityFor(400, 0, grip::FLAT);
   while (nearby(r.game.round()) >= 0) r.frame();
   r.gravity = grip::FLAT; r.wait(1500);
@@ -408,44 +425,47 @@ static void signLooks() {
     if (i % 20 == 0) { gfx::textLogReset(); r.game.render(); marching = marching && inSign(CREAM) > 20 && textW(127) < 0; }
   }
   CHECK(marching && goldInSign() == 0);
-  for (int i = 0; i < 20; i++) r.frame(true);
-  CHECK(findCover(r));  // still held: done
+  for (int i = 0; i < 200; i++) r.frame(true);
+  gfx::textLogReset(); r.game.render();
+  CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20 && goldInSign() == 0);  // still held, 3 s on: still "no"
+  r.frame(false); r.wait(1000);
+  CHECK(findCover(r));  // let go: done within its second
+  r.tap(); r.wait(900); gfx::textLogReset(); r.game.render();
+  CHECK(inSign(CREAM) > 20);  // a quick tap still gets the whole second
+  r.wait(110); CHECK(findCover(r));
   Run h; h.start(); h.wait(500); h.frame(true); h.game.render();
   CHECK(h.game.round().hidden == 1 && goldInSign() > 0);
   gfx::textLogEnabled = false;
 }
 // Already rolling into reach of the plant: no "no", it just hides on arrival. Levelled short of it, it stops in the
-// open, so the same press says "no" (kid playtest 3, m1: nothing changed for a 2 s press).
+// open, so the same press says "no" (kid playtest 3, m1: nothing changed for a 2 s press), and so does a press while
+// rolling in that then under-tilts and stops short, from the frame it can't arrive (kid playtest 4, m1).
 static void rollingIn() {
   gfx565::target(pixels);
-  for (bool level : {false, true}) {
+  for (int mode : {0, 1, 2}) {  // tilted on, levelled before the press, levelled just after it
     Run c; c.start(); c.wait(500);
     c.gravity = grip::gravityFor(400, 0, grip::FLAT);
-    for (int i = 0; i < 1000 && c.game.round().x < SPOTS[2] - (level ? 22 : 18); i++) c.frame();
+    for (int i = 0; i < 1000 && c.game.round().x < SPOTS[2] - (mode == 1 ? 22 : 18); i++) c.frame();
     CHECK(nearby(c.game.round()) < 0 && c.game.round().velocity > 15);
-    if (level) c.gravity = grip::FLAT;
+    if (mode == 1) c.gravity = grip::FLAT;
     c.frame(true); c.game.render();
-    CHECK(c.game.round().hidden == -1 && (inSign(CREAM) > 20) == level);
-    for (int i = 0; i < 100 && c.game.round().hidden < 0; i++) c.frame(true);
-    CHECK((c.game.round().hidden == 2) != level);
+    CHECK(c.game.round().hidden == -1 && (inSign(CREAM) > 20) == (mode == 1));
+    if (mode == 2) c.gravity = grip::FLAT;
+    for (int i = 0; i < 150 && c.game.round().hidden < 0; i++) c.frame(true);
+    c.game.render();  // 1.5 s on, still held
+    CHECK((c.game.round().hidden == 2) == (mode == 0) && (inSign(CREAM) > 20) == (mode != 0));
   }
 }
-// A Check of the pumpkin's own spot never looks safe: from the warning's first frame the sign reads RUN! on rust,
-// not gold, and the pumpkin shivers and sweats.
-static void ownSpotChecked() {
+// Hidden, the sign is the gold HIDING whatever she does (she never names the spot it hides in: it startles out), and
+// the pumpkin sweats only while the beam passes over it.
+static void hiddenSign() {
   gfx565::target(pixels); gfx::textLogEnabled = true;
-  for (int checking : {1, 2, -1}) for (bool search : {false, true}) {
+  for (int checking : {2, -1}) for (int search : {0, 1, 2}) {
     View v; v.page = Page::Play; v.hidden = 1; v.nearby = 1; v.x = SPOTS[1]; v.checking = checking;
-    v.warning = !search; v.searching = search; v.exposure = search && checking == 1 ? 0.5f : 0;
+    v.warning = search == 0; v.searching = search > 0; v.shiver = search == 2;
     gfx::textLogReset(); paint::draw(v);
-    const bool own = checking == 1;
-    CHECK(textW(129) == (own ? 23 : 35));  // RUN! or HIDING
-    CHECK(own ? inSign(RUST) > 0 && goldInSign() == 0 : goldInSign() > 0);
-    CHECK((inBox(SKY, 60, 84, 101, 99) > 0) == own);  // sweat drops
-  }
-  for (Page page : {Page::Catch, Page::Icing}) {  // caught there: the round is over, no more "not safe"
-    View v; v.page = page; v.hidden = 1; v.x = SPOTS[1]; v.checking = 1; v.searching = true;
-    paint::draw(v); CHECK(inBox(SKY, 60, 84, 101, 99) == 0);
+    CHECK(textW(129) == 35 && goldInSign() > 0 && inSign(RUST) == 0);  // HIDING
+    CHECK((inBox(SKY, 60, 84, 101, 99) > 0) == v.shiver);  // sweat drops
   }
   gfx::textLogEnabled = false;
 }
@@ -462,15 +482,26 @@ static void slidOntoChecked(Run& r) {
   }
   CHECK(reached && !hid && r.at("pumpkin_play"));
 }
-// Hidden at the table when she names it, the real sign reads RUN! on rust and the pumpkin sweats. Let out, in reach
-// of the table, a press or a finger slid on there gets the chevron "no" and never hides it or arms the hold.
+// Hidden at the table when she names it, the pumpkin startles out (kid playtest 4, M1): it hops with a "!" for 0.4 s,
+// the label says RUN AWAY! and the finger still on the sign gets the chevron "no" until it rolls toward other cover.
+// In reach of the table, a re-press or a finger slid on there gets the "no" and never hides it or arms the hold.
+static constexpr uint16_t SAGE = rgb(0x87a878);
+static void startleLooks(Run& r) {
+  CHECK(r.game.round().x == SPOTS[1]);
+  for (int i = 0; i < 20; i++) r.frame(true);  // 0.2 s: the top of the hop
+  gfx::textLogReset(); r.game.render();
+  CHECK(px(78, 83) == SAGE && inBox(CREAM, 60, 70, 72, 92) > 0);  // its stem up by the tabletop, and a "!"
+  CHECK(textW(49) == 53 && inSign(CREAM) > 20 && inSign(RUST) == 0 && goldInSign() == 0);  // RUN AWAY!, "no"
+  for (int i = 0; i < 25; i++) r.frame(true);
+  gfx::textLogReset(); r.game.render();
+  CHECK(px(78, 83) != SAGE && inBox(CREAM, 60, 70, 72, 92) == 0 && inSign(CREAM) > 20);  // landed, still "no"
+}
 static void checkedSign() {
   gfx565::target(pixels); gfx::textLogEnabled = true;
   Run r; r.start(); r.wait(500);
   for (int i = 0; i < 60000 && !(warning(r.game.round()) && checking(r.game.round()) == 1); i++) r.frame(true);
-  CHECK(warning(r.game.round()) && checking(r.game.round()) == 1 && r.game.round().hidden == 1);
-  gfx::textLogReset(); r.game.render();
-  CHECK(textW(129) == 23 && inSign(RUST) > 0 && goldInSign() == 0 && inBox(SKY, 60, 84, 101, 99) > 0);
+  CHECK(warning(r.game.round()) && checking(r.game.round()) == 1 && r.game.round().hidden == -1);
+  startleLooks(r);
   r.frame(false); r.frame(true); r.game.render();
   CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // pressed there: "no"
   for (int i = 0; i < 110; i++) r.frame(true);
@@ -493,13 +524,29 @@ static void namedSpotArrow() {
     gfx::textLogReset(); paint::draw(v);
     CHECK(textW(127, &x) == 59 && x == 45 && inSign(CREAM) == 0);  // FIND COVER toward the plant, no HOLD TO HIDE
     CHECK(px(75, 83) != GOLD);  // and the table's in-reach strip stays dark
-    CHECK(textW(49) == (search ? 53 : 59));  // RUN AWAY! once seen, not QUICK! HIDE!
+    CHECK(textW(49) == 53);  // RUN AWAY!: in reach of the spot she names, not THE TABLE? or QUICK! HIDE!
   }
   View t; t.page = Page::Play; t.x = SPOTS[1] + 5; t.nearby = 1;
   paint::draw(t); CHECK(px(75, 83) == GOLD);  // in reach, nobody named: lit
   View s; s.page = Page::Play; s.x = 64; s.searching = true; s.exposure = 0.5f;
   gfx::textLogReset(); paint::draw(s);
   CHECK(textW(49) == 71);  // QUICK! HIDE! in a sweep
+  gfx::textLogEnabled = false;
+}
+// Coasting past the midpoint between two spots, the arrow turns once, ahead of it, never back and forth (kid playtest
+// 4, n1). At rest it points to the nearest spot.
+static bool arrowLeft(float x, float velocity) {
+  View v; v.page = Page::Play; v.x = x; v.velocity = velocity;
+  int at = 0; gfx::textLogReset(); paint::draw(v); textW(127, &at);
+  return at == 56;
+}
+static void arrowBand() {
+  gfx565::target(pixels); gfx::textLogEnabled = true;
+  CHECK(!arrowLeft(61, 0) && arrowLeft(61, -10) && !arrowLeft(61, 10) && !arrowLeft(66, -10) && arrowLeft(55, 0));
+  bool was = arrowLeft(66, -20);
+  int turns = 0;
+  for (float x = 66; x > 50; x -= 0.25f) { const bool now = arrowLeft(x, -20); turns += now != was; was = now; }
+  CHECK(!arrowLeft(66, -20) && arrowLeft(63, -20) && turns == 1 && was);
   gfx::textLogEnabled = false;
 }
 // A finger crossing the sign in the open arms nothing: drifted off and rolled into cover, the pumpkin stays out.
@@ -692,6 +739,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); checkedSpot(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); ownSpotChecked(); checkedSign(); namedSpotArrow(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); startled(); checkedSpot(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); hiddenSign(); checkedSign(); namedSpotArrow(); arrowBand(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }
