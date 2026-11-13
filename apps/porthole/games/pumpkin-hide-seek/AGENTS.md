@@ -22,12 +22,12 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   HIDING while hidden; it draws pressed (gold, its word 2 px lower) only while hidden. Away from cover it is
   flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the
   nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it last rolled toward
-  (`Game::heading_`), so coasting past turns it once and stopping there never flips it back (kid playtest 4,
-  n1); within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold
+  (`coverDir()`, from `Round::heading`), so coasting past turns it once and stopping there never flips it back (kid
+  playtest 4, n1); within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold
   in-reach strip stays dark. A finger on it away from cover, the named spot included (pressed or slid on), gets
   the non-word "no" from the frame it arrives and for as long as it stays there or an armed hold lasts (drifted
-  off the sign or not) with no cover, and for at least `REFUSE_MS` (1 s) after a quick tap: the sign shakes 3 px
-  side to side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a
+  off the sign or not) with no cover, and `Game::REFUSE_MS` (1 s) after, so a quick tap shows it: the sign shakes
+  3 px side to side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a
   2 px shake alone went unseen, kid playtest 2, m2). A press that stopped just short of cover with the finger
   down showed a calm sign, which a 6-year-old took for hiding (kid playtest 4, m1). The "no" is skipped only
   while an armed hold really rolls it into cover within 0.5 s at the current tilt (`arriving()` rolls a copy,

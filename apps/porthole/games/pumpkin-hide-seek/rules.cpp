@@ -50,6 +50,7 @@ void rollPumpkin(Round& r, float roll) {
   if (fabsf(r.velocity) < 0.02f) r.velocity = 0;
   r.x += r.velocity * STEP_MS / 1000;
   if (r.x < 24 || r.x > 136) { r.x = clamp(r.x, 24, 136); r.velocity = 0; }
+  if (r.velocity != 0) r.heading = r.velocity < 0 ? -1 : 1;
 }
 void hide(Round& r, bool hold) {
   if (!hold) { r.hidden = -1; return; }
@@ -90,15 +91,14 @@ void collect(Round& r) {
   for (int i = 0; i < CANDIES; i++)
     if (!(r.got & (1 << i)) && fabsf(r.x - r.candy[i]) <= REACH) { r.got |= 1 << i; r.sinceCandy = 0; }
 }
-// Exposure builds only while seen, so mashing the sign can't reset it; hidden is never seen, since nothing hides in the
-// spot a Check names. PHEW! waits for the end of a search the beam came close in: shown as the beam merely passed, it
-// told a 6-year-old to let go mid-search.
+bool inBeam(const Round& r) { return searching(r) && fabsf(r.x - beamX(r)) <= 20; }
+// Exposure builds only while seen: hidden is never seen, since nothing hides in the spot a Check names. PHEW! waits
+// for the end of a search the beam came close in: shown as the beam merely passed, it told a 6-year-old to let go
+// mid-search.
 void watch(Round& r) {
-  const bool inBeam = searching(r) && fabsf(r.x - beamX(r)) <= 20;
-  const bool seen = inBeam && r.hidden < 0;
+  const bool seen = inBeam(r) && r.hidden < 0;
   const bool phew = r.close && !searching(r);
-  r.close = searching(r) && (r.close || inBeam);
-  r.covered = inBeam && !seen;
+  r.close = searching(r) && (r.close || inBeam(r));
   r.exposure = seen ? r.exposure + STEP_MS : 0;
   r.phew = phew ? PHEW_MS : r.phew > STEP_MS ? r.phew - STEP_MS : 0;
   r.caught = r.exposure >= CATCH_MS;
@@ -120,6 +120,19 @@ int cover(const Round& r) {
   const int s = nearby(r);
   return s == checking(r) ? -1 : s;
 }
+// Toward the nearest spot a Check isn't naming (cover()'s exclusion), but within 6 px of the midpoint between two
+// the one it last rolled toward: coasting past, the arrow turns once, ahead of it, instead of pointing back and
+// flipping (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there.
+int coverDir(const Round& r) {
+  int near = -1, next = -1;
+  auto far = [&r](int i) { return fabsf(r.x - SPOTS[i]); };
+  for (int i = 0; i < 3; i++) {
+    if (i == checking(r)) continue;
+    if (near < 0 || far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
+  }
+  if (next >= 0 && far(next) - far(near) < 12 && (SPOTS[next] - r.x) * (float)r.heading > 0) near = next;
+  return SPOTS[near] < r.x ? -1 : 1;
+}
 // Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
 // shortcut: Grandma's phase is frozen for the 0.5 s, so a Check starting or ending inside it can mispredict
 // one "no"; step advance() on the copy if a playtest ever notices.
@@ -130,6 +143,7 @@ int arriving(const Round& r, float roll, uint32_t ms) {
 }
 bool warning(const Round& r) { return r.phase == Phase::Warn; }
 bool searching(const Round& r) { return r.phase == Phase::Search; }
+bool covered(const Round& r) { return r.hidden >= 0 && inBeam(r); }
 int checking(const Round& r) { return r.move == Move::Check && r.phase != Phase::Rest ? r.spot : -1; }
 float beamX(const Round& r) {
   if (checking(r) >= 0) return SPOTS[r.spot];

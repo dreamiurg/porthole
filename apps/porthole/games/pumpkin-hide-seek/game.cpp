@@ -25,9 +25,8 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = holding_ = refusing_ = ghostPending_ = false;
-  refusedMs_ = UINT32_MAX;
-  heading_ = 0;
+  starting_ = holding_ = ghostPending_ = false;
+  refuseMs_ = 0;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -56,17 +55,14 @@ void Game::sign(uint32_t dt, float roll) {
   // Hidden while a finger that touched the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s, double
   // taps when worried, and slides a resting thumb on). One resting since before the round is hidden by gate_.
   // A slide-on arms only where it can hide at once: a finger crossing the sign in the open must not hide later.
-  UiAudit::add(ACTION.x, ACTION.y, ACTION.w, ACTION.h);
-  const bool on = in_.down && inside(in_.x, in_.y, ACTION), near = cover(round_) >= 0;
+  const bool on = in_.hit(ACTION.x, ACTION.y, ACTION.w, ACTION.h) && in_.down, near = cover(round_) >= 0;
   holding_ = in_.down && (holding_ || (on && (near || inside(in_.downX, in_.downY, ACTION))));
-  if (refusedMs_ < REFUSE_MS) refusedMs_ += dt;
   // "No" from the frame a finger reaches the sign where it can't hide and for as long as it stays there or an armed
   // hold lasts, drifted off or not (a 6-year-old who stopped short with his finger down believed he was hiding, kid
   // playtest 4, m1), unless the hold is armed and the pumpkin really rolls into cover within 0.5 s (a slide-on isn't
-  // armed in the open, so it always gets the "no"). Lifted, it finishes its second, so a quick tap still shows it.
+  // armed in the open, so it always gets the "no"). Lifted, it lingers REFUSE_MS, so a quick tap still shows it.
   const bool no = (on || holding_) && round_.hidden < 0 && !near && !(holding_ && arriving(round_, roll, 500) >= 0);
-  if (no) refusedMs_ = refusing_ ? refusedMs_ % REFUSE_MS : 0;
-  refusing_ = no;
+  refuseMs_ = no ? REFUSE_MS : refuseMs_ > dt ? refuseMs_ - dt : 0;
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
@@ -78,7 +74,6 @@ void Game::play(uint32_t dt) {
     ghostPending_ = false;
     stepMs_ -= STEP_MS;
   }
-  if (round_.velocity != 0) heading_ = round_.velocity < 0 ? -1 : 1;
   if (round_.caught) go(Page::Catch);
   else if (round_.won) go(Page::Won);
 }
@@ -104,8 +99,8 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
 void Game::render() {
   View v;
   v.page = page_;
-  v.x = round_.x; v.velocity = round_.velocity; v.heading = heading_;
-  v.hidden = round_.hidden; v.nearby = nearby(round_);
+  v.x = round_.x; v.velocity = round_.velocity;
+  v.hidden = round_.hidden; v.nearby = nearby(round_); v.cover = cover(round_); v.coverDir = coverDir(round_);
   v.pageMs = pageMs_; v.animationMs = animationMs_;
   v.beamX = beamX(round_);
   v.searching = searching(round_); v.warning = warning(round_);
@@ -114,8 +109,8 @@ void Game::render() {
   v.homeHold = hold_.progress();
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
-  v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
-  v.ghostReady = !round_.ghostUsed; v.refusedMs = refusedMs_;
+  v.checking = checking(round_); v.shiver = covered(round_); v.phew = round_.phew > 0;
+  v.ghostReady = !round_.ghostUsed; v.refused = refuseMs_ > 0;
   // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a brief bump
   // doesn't flash it.
   const bool play = page_ == Page::Play;
@@ -136,7 +131,7 @@ void Game::debugPrint() {
   printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
          (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
   printf("ghost=%d distract=%d heard=%d rustle=%d startle=%d refused=%d\n", round_.ghostUsed, round_.distract > 0,
-         round_.heard, round_.rustle > 0, round_.startle > 0, refusedMs_ < REFUSE_MS);
+         round_.heard, round_.rustle > 0, round_.startle > 0, refuseMs_ > 0);
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }

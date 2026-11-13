@@ -35,9 +35,11 @@ class Game : public App {
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
-  uint32_t refusedMs_ = UINT32_MAX;  // into the sign's "no" (away from cover), kept under REFUSE_MS while it lasts
-  int heading_ = 0;                  // the way the pumpkin last rolled, -1 or 1 (0: not yet this round)
-  bool starting_ = false, home_ = false, holding_ = false, refusing_ = false, ghostPending_ = false;
+  // The sign's "no" (away from cover) lingers REFUSE_MS once a finger stops asking: five frames at 200 ms, long enough
+  // to see, short enough to retry. refuseMs_ is what is left of it, REFUSE_MS while the finger still asks.
+  static constexpr uint32_t REFUSE_MS = 1000;
+  uint32_t refuseMs_ = 0;
+  bool starting_ = false, home_ = false, holding_ = false, ghostPending_ = false;
   void go(Page page);
   void start();
   void calibrate();

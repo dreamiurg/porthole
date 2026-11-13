@@ -10,12 +10,6 @@
 #include <cstdio>
 #include <cstring>
 namespace pumpkin { namespace paint { namespace {
-constexpr uint16_t rgb(unsigned c) { return ((c>>8)&0xf800)|((c>>5)&0x7e0)|((c>>3)&31); }
-constexpr uint16_t INK=rgb(0x201d32),WALL=rgb(0x463451),PURPLE=rgb(0x815573),LILAC=rgb(0xb9809a);
-constexpr uint16_t WOOD=rgb(0x925743),FLOOR=rgb(0x633e43),ORANGE=rgb(0xf58b32),RUST=rgb(0xb74f30);
-constexpr uint16_t GOLD=rgb(0xffc875),CREAM=rgb(0xffedc2),SAGE=rgb(0x87a878),GREEN=rgb(0x49674d);
-constexpr uint16_t NIGHT=rgb(0x263449),BLUE=rgb(0x53637a),SKIN=rgb(0xe6b79d),GREY=rgb(0xb6acb4),BEAM=rgb(0x997752);
-constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops
 // The runtime's logical framebuffer is scratch while this RGB565 game owns the screen. Its palette stays ours.
 // Compose all overdraw here before expanding once, rather than repeatedly writing the panel's PSRAM buffer.
 constexpr uint16_t COLORS[]={0,INK,WALL,PURPLE,LILAC,WOOD,FLOOR,ORANGE,RUST,GOLD,CREAM,SAGE,GREEN,NIGHT,BLUE,SKIN,GREY,BEAM,SKY};
@@ -101,7 +95,7 @@ void windowGhost(bool ready,bool lively,uint32_t tick) {
  for(int y=0;y<ghost::H;++y) for(int x=0;x<ghost::W;++x) {
   const uint8_t c=ghost::PX[y*ghost::W+x];
   if(c==ghost::CLEAR) continue;
-  const uint16_t color=rgb(ghost::COLORS[c]);
+  const uint16_t color=rgb888_to_565(ghost::COLORS[c]);
   box(left+x,top+y,1,1,ready?color:color==INK?NIGHT:BLUE);
  }
 }
@@ -261,10 +255,10 @@ void light(const View& v) {
  }
  oval(static_cast<int>(v.beamX),107,22,4,GOLD);
 }
-// The three hiding spots, the one in reach lit unless she names it; the one hiding a rustling pumpkin jiggles 1 px.
+// The three hiding spots, the cover in reach lit; the one hiding a rustling pumpkin jiggles 1 px.
 void furniture(const View& v) {
- const int j=v.rustling?int(v.animationMs/80%2):0,lit=v.nearby==v.checking?-1:v.nearby;
- chair(lit==0,v.hidden==0?j:0); table(lit==1,v.hidden==1?j:0); plant(lit==2,v.hidden==2?j:0);
+ const int j=v.rustling?int(v.animationMs/80%2):0;
+ chair(v.cover==0,v.hidden==0?j:0); table(v.cover==1,v.hidden==1?j:0); plant(v.cover==2,v.hidden==2?j:0);
  if(v.rustling&&v.hidden>=0) rustleMarks(v.hidden,v.animationMs);
 }
 // It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px, and looks
@@ -328,29 +322,15 @@ const char* playLabel(const View& v) {
 void chevron(int cx,int dir) {
  for(int d=0;d<=6;++d) { const int x=cx+dir*(3-d)-(dir>0); box(x,130-d,2,1,CREAM); box(x,130+d,2,1,CREAM); }
 }
-// The nearest spot she isn't naming, but within 6 px of the midpoint between two the one it last rolled toward:
-// coasting past, the arrow turns once, ahead of it, instead of pointing back and flipping (kid playtest 4, n1), and
-// it doesn't flip back when the pumpkin stops there.
-int coverDir(const View& v) {
- int near=-1,next=-1;
- auto far=[&v](int i) { return std::fabs(v.x-SPOTS[i]); };
- for(int i=0;i<3;++i) {
-  if(i==v.checking) continue;
-  if(near<0||far(i)<far(near)) { next=near; near=i; } else if(next<0||far(i)<far(next)) next=i;
- }
- if(next>=0&&far(next)-far(near)<12&&(SPOTS[next]-v.x)*float(v.heading)>0) near=next;
- return SPOTS[near]<v.x?-1:1;
-}
 // Away from cover there is nothing to press: the sign goes flat and dim, never gold, with an arrow that bobs toward
-// cover. A finger on it says "no" while it stays, and at least REFUSE_MS: the sign shakes and cream chevrons march
+// cover. A finger on it says "no" while it stays, and a second after: the sign shakes and cream chevrons march
 // toward cover in place of the words, plain in any one frame (a 2 px shake alone went unseen by a 6-year-old).
 void coverSign(const View& v) {
- const int dir=coverDir(v);
- const bool no=v.refusedMs<REFUSE_MS;
- const int shake=no?(v.refusedMs/60%2?3:-3):0;
+ const int dir=v.coverDir;
+ const int shake=v.refused?(v.animationMs/60%2?3:-3):0;
  box(40+shake,119,80,24,INK); box(42+shake,121,76,20,WALL);
- if(no) {
-  const int march=int(v.refusedMs/100%5)*2*dir;
+ if(v.refused) {
+  const int march=int(v.animationMs/100%5)*2*dir;
   for(int k=-1;k<=1;++k) chevron(80+shake-4*dir+10*k+march,dir);
   return;
  }
@@ -366,7 +346,7 @@ void play(const View& v) {
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
  // Gold, pressed, only while really hidden. The spot she names is no cover: in reach of it the sign is FIND COVER.
  if(v.hidden>=0) button("HIDING",true);
- else if(v.nearby>=0&&v.nearby!=v.checking) button("HOLD TO HIDE");
+ else if(v.cover>=0) button("HOLD TO HIDE");
  else coverSign(v);
 }
 void icing(uint32_t ms) {
@@ -383,7 +363,7 @@ void pie() {
  const int left=80-pie::W/2,top=59;
  for(int y=0;y<pie::H;++y) for(int x=0;x<pie::W;++x) {
   const uint8_t c=pie::PX[y*pie::W+x];
-  if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb(pie::COLORS[c]));
+  if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb888_to_565(pie::COLORS[c]));
  }
 }
 constexpr const char* CATCH_QUIP[QUIPS]={"THERE YOU ARE!","FOUND YOU!","PEEKABOO!","GOTCHA DEAR!"};

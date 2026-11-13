@@ -245,7 +245,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `follow-glow` | `watch 6000`, then taps every reported glow with 250 ms gaps (one lesson round) |
 | `solve-word` | reads `word`, `cols`, `tiles` from `debug` and taps the tiles that spell the word (call it at the start of a word) |
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
-| `wait-until KEY=VALUE MS` | waits in 40 ms steps up to the first frame whose `debug` shows `KEY=VALUE`, at most MS; fails if it never does. For a check that must not hang on exact timing (Pumpkin's `checking=1`) |
+| `wait-until KEY OP VALUE MS` | waits in 40 ms steps up to the first frame whose `debug` value for KEY compares as `expect` would, at most MS; fails if it never does. For a check that must not hang on exact timing (Pumpkin's `checking=1`) |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 
 Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play today rest tint
