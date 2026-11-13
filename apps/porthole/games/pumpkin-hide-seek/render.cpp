@@ -190,12 +190,18 @@ void plant(bool highlight,int dx) {
  b(111,87,25,6,INK); b(113,89,21,3,GOLD); b(115,93,17,12,INK); b(117,93,13,10,RUST);
  b(119,94,2,7,ORANGE); if(highlight) b(115,89,17,2,CREAM);
 }
-void pumpkinFace(int x,int y,int squash,bool peek) {
+// Scared: wide cream eyes and a round "o" in place of the smile, so a non-reader sees "not safe" (kid playtest 5, m4).
+void pumpkinFace(int x,int y,int squash,bool peek,bool scared=false) {
  int ry=peek?6:10-squash,rx=peek?9:12+squash;
  oval(x,y+ry,rx,3,INK); oval(x,y,rx,ry,INK); oval(x,y-1,rx-2,ry-2,RUST); oval(x,y-1,rx-5,ry-2,ORANGE);
  box(x-3,y-ry-4,4,5,INK); box(x-2,y-ry-4,2,4,SAGE);
- box(x-6,y-4,3,4,INK); box(x+3,y-4,3,4,INK); box(x-5,y-4,1,1,CREAM); box(x+4,y-4,1,1,CREAM);
- box(x-4,y+3,8,2,INK); box(x-2,y+5,4,1,INK); box(x-1,y+3,2,1,CREAM);
+ if(scared) {
+  for(int ex=x-7;ex<=x+2;ex+=9) { box(ex,y-6,5,6,INK); box(ex+1,y-5,3,4,CREAM); box(ex+2,y-4,1,2,INK); }
+  box(x-1,y+2,2,1,INK); box(x-2,y+3,4,3,INK); box(x-1,y+6,2,1,INK);
+ } else {
+  box(x-6,y-4,3,4,INK); box(x+3,y-4,3,4,INK); box(x-5,y-4,1,1,CREAM); box(x+4,y-4,1,1,CREAM);
+  box(x-4,y+3,8,2,INK); box(x-2,y+5,4,1,INK); box(x-1,y+3,2,1,CREAM);
+ }
  box(x-9,y,2,2,GOLD); box(x+7,y,2,2,RUST);
 }
 // Her arm out, flashlight first, stepping down toward the spot she is checking.
@@ -261,13 +267,15 @@ void furniture(const View& v) {
  chair(lit==0,v.hidden==0?j:0); table(lit==1,v.hidden==1?j:0); plant(lit==2,v.hidden==2?j:0);
  if(v.rustling&&v.hidden>=0) rustleMarks(v.hidden,v.animationMs);
 }
-// It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px with a "!"
-// up and away from her side, clear of her "?" bubble: the non-word "not safe here" (kid playtest 4, M1).
+// It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px, and looks
+// scared under a "!" up and away from her side, clear of her "?" bubble: the non-word "not safe here" (kid playtests
+// 4, M1 and 5, m4).
 void player(const View& v) {
  int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
  if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
- const int hop=v.startle?4-std::abs(int(STARTLE_MS-v.startle)-200)/50:0;
- pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0);
+ const int into=int(STARTLE_MS-v.startle),half=int(STARTLE_HOP_MS/2);
+ const int hop=v.startle&&into<2*half?4-std::abs(into-half)*4/half:0;
+ pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0,v.startle>0);
  if(v.startle) bang(x-13,82-hop);
  if(v.hidden>=0) box(x-10,107,21,2,INK);
  sparkle(x,v.sinceCandy);
@@ -320,8 +328,9 @@ const char* playLabel(const View& v) {
 void chevron(int cx,int dir) {
  for(int d=0;d<=6;++d) { const int x=cx+dir*(3-d)-(dir>0); box(x,130-d,2,1,CREAM); box(x,130+d,2,1,CREAM); }
 }
-// The nearest spot she isn't naming, but within 6 px of the midpoint between two the one it rolls toward: coasting
-// past, the arrow turns once, ahead of it, instead of pointing back and flipping (kid playtest 4, n1).
+// The nearest spot she isn't naming, but within 6 px of the midpoint between two the one it last rolled toward:
+// coasting past, the arrow turns once, ahead of it, instead of pointing back and flipping (kid playtest 4, n1), and
+// it doesn't flip back when the pumpkin stops there.
 int coverDir(const View& v) {
  int near=-1,next=-1;
  auto far=[&v](int i) { return std::fabs(v.x-SPOTS[i]); };
@@ -329,7 +338,7 @@ int coverDir(const View& v) {
   if(i==v.checking) continue;
   if(near<0||far(i)<far(near)) { next=near; near=i; } else if(next<0||far(i)<far(next)) next=i;
  }
- if(next>=0&&far(next)-far(near)<12&&(SPOTS[next]-v.x)*v.velocity>0) near=next;
+ if(next>=0&&far(next)-far(near)<12&&(SPOTS[next]-v.x)*float(v.heading)>0) near=next;
  return SPOTS[near]<v.x?-1:1;
 }
 // Away from cover there is nothing to press: the sign goes flat and dim, never gold, with an arrow that bobs toward

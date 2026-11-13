@@ -36,7 +36,8 @@ class Game : public App {
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
   uint32_t refusedMs_ = UINT32_MAX;  // into the sign's "no" (away from cover), kept under REFUSE_MS while it lasts
-  bool starting_ = false, home_ = false, holding_ = false, onSign_ = false, ghostPending_ = false;
+  int heading_ = 0;                  // the way the pumpkin last rolled, -1 or 1 (0: not yet this round)
+  bool starting_ = false, home_ = false, holding_ = false, refusing_ = false, ghostPending_ = false;
   void go(Page page);
   void start();
   void calibrate();

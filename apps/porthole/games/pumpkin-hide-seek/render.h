@@ -10,6 +10,7 @@ enum class Page : uint8_t { Intro, Calibrate, Play, Catch, Icing, Lost, Won };
 struct View {
   Page page = Page::Intro;
   float x = 80, velocity = 0;
+  int heading = 0;   // the way it last rolled, -1 or 1 (0: not yet): the arrow's way near a midpoint
   int hidden = -1, nearby = -1;
   uint32_t pageMs = 0, animationMs = 0;
   float beamX = 80;  // cone endpoint on y=99; same width (+/-20) as detection
@@ -26,7 +27,7 @@ struct View {
   uint32_t distract = 0;              // ms left of the crash Grandma goes to look at ("WHAT WAS THAT?")
   bool rustling = false;              // hidden and tilting hard: the spot shakes ("SHH!")
   bool heard = false;                 // Grandma heard it: her next move checks that spot
-  uint32_t startle = 0;               // ms left of the hop and "!": she named the spot it hid in, so it jumped out
+  uint32_t startle = 0;               // ms left of the scared face and "!": she named its spot, so it jumped out
   uint8_t quip = 0;                   // which catch / pie / escape line, 0..QUIPS-1
 };
 constexpr int QUIPS = 4;

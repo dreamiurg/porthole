@@ -253,6 +253,20 @@ def plan(d, seg, where):
     return taps
 
 
+def wait_until(arg, where, probe):
+    """`wait-until <key>=<value> <max ms>`: 40 ms waits up to the first frame whose debug output shows it."""
+    m = re.fullmatch(r"(\w+)=(\S+)\s+(\d+)", arg)
+    if not m:
+        raise Fail(f"{where}: expected `wait-until <key>=<value> <max ms>`")
+    key, want, steps = m.group(1), m.group(2), int(m.group(3)) // 40
+    seg = probe([c for n in range(steps) for c in ("wait 40", f"echo @@w{n}", "debug")])
+    for n in range(steps):
+        got = pairs(seg.get(f"w{n}", [])).get(key)
+        if got is not None and compare(key, got, "=", want):
+            return ["wait 40"] * (n + 1)
+    raise Fail(f"{where}: no {key}={want} within {m.group(3)} ms")
+
+
 def compare(key, got, op, want):
     if key in ("books", "profile") and "/" not in want:
         got = got.split("/")[0]
@@ -443,6 +457,8 @@ def play(path, cwd, res, start):
         elif d in ("follow-glow", "solve-word", "answer-book"):
             qid = query("watch 6000" if d == "follow-glow" else "debug", where, "info")
             lines.extend(plan(d, segments(run()).get(qid, []), where))
+        elif d == "wait-until":
+            lines.extend(wait_until(arg, where, lambda poll: segments(run_script(binary, cwd, lines + poll, start + limit, limit))))
         else:
             lines.append(raw.strip())
     collect_results(path, cwd, res, run(), checks)

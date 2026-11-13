@@ -59,6 +59,7 @@ void hide(Round& r, bool hold) {
   r.x = SPOTS[r.hidden];
   r.velocity = 0;
   r.settled = false;  // it may arrive at full tilt, rolled in while held
+  r.startle = 0;      // safe again: the alarm ends
 }
 void listen(Round& r, float roll) {
   const bool hard = fabsf(roll) > RUSTLE_MG;

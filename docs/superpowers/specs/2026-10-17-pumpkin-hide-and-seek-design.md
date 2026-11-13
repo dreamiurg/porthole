@@ -69,7 +69,8 @@ Phase 1 gives the pumpkin a reason to move and Grandma some surprises, still in 
   The 40-second timer is gone; hiding only stalls.
 - **Grandma's moves vary every round:** full sweep, fast sweep, a sweep that turns back,
   and a spot check ("THE TABLE?") that finds a pumpkin hiding there, so the player has to
-  pick a different spot. Every move is announced first; checks get the longest warning.
+  pick a different spot. Every move is announced first; checks get the longest warning. *(Superseded by the fourth
+  fix pass: a Check startles a pumpkin hiding in the named spot out instead of finding it there.)*
 - **Near misses:** the hidden pumpkin shivers while the beam passes over it, then PHEW!. *(Superseded: PHEW!
   now waits for the search to end; see "Amendment: hold to hide, fix pass".)*
 
@@ -145,7 +146,8 @@ spot looked safe until too late (M1), and that a press on the dark sign showed n
   reaching the sign away from cover now shakes it 3 px and swaps the words for three cream chevrons
   marching toward cover for 1 s, visible in any single frame. No "no" if the pumpkin is already rolling into
   reach (within 0.5 s at its speed). *(Superseded by the third pass below: the look-ahead rolls a copy, and only
-  an armed hold skips the "no".)*
+  an armed hold skips the "no". The 1 s is superseded too: since the fourth pass the "no" lasts while the finger
+  stays, and since the fifth while an armed hold lasts, drifted off the sign or not.)*
 
 Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptance rule 5):
 
@@ -228,9 +230,10 @@ he held on (M1). Changes, decided by the lead:
 
 - **A named spot stops being cover for everyone.** On the step a Check's warning begins on the spot the pumpkin
   hides in, the pumpkin startles out at that spot's x: it hops 4 px with a cream "!" for 400 ms. A finger still
-  held stays armed, so it hides at the next spot it rolls into; the named spot takes no new hide. A heard Check
+  held stays armed, so it hides at the next spot it rolls into; the named spot takes no new hide. *(The fifth
+  fix pass lengthens the cue to 1 s with a scared face; the hop stays 400 ms.)* A heard Check
   startles it the same way; the teaching opener is never a Check. A ghost during that warning hands the move
-  back, so the spot is cover again and the held finger hides it there on the next step. The RUN! sign state is
+  back, so the spot is cover again and a new press there hides it. The RUN! sign state is
   gone; the shiver and sweat are back to meaning a near miss.
 - **In reach of the named spot during the warning** the label says RUN AWAY! and the sign is the dark FIND
   COVER, its arrow toward the nearest other spot.
@@ -252,3 +255,38 @@ Deferred playtest-4 findings, one line each:
 - n3 (caught at Grandma's feet while her beam points away): as playtest 3 n5; the beam is the rule and drawn.
 - n4 (the loss card doesn't show what caught him): out of scope; a cause picture on the pie card would change
   the pie golden, for pixel-artist and game-designer.
+
+## Amendment: hold to hide, fifth fix pass (2026-11-13)
+
+The fifth kid playtest (`apps/porthole/docs/pumpkin-hold-playtest-5.md`) judged the build acceptable. This pass
+takes its one actionable minor and the code review's findings:
+
+- **The startle reads as alarm (m4).** It lasts 1 s (`STARTLE_MS`) instead of 0.4 s, and for that second the
+  pumpkin wears a scared face, wide CREAM eyes and a round INK "o" for its smile, under the CREAM "!". The hop
+  stays 400 ms (`STARTLE_HOP_MS`). A hide ends it early. Game palette only, inside the glass.
+- **Chevrons for any armed hold in the open.** The "no" now shows while a finger is on the sign *or* an armed
+  hold lasts, so a thumb that drifted off the sign while still down gets the chevrons whenever the pumpkin is out
+  in the open with no cover; the `arriving()` exemption stays.
+- **The arrow keeps its way when the pumpkin stops near the midpoint.** The band now uses the way the pumpkin last
+  rolled (`Game::heading_`), not its velocity, so stopping inside the band no longer flips the arrow back.
+- **A clingy bot** that keeps holding while hidden, rests included, is startled out in most of 100 seeds and is
+  never caught. It doesn't always escape within the bot's 180 s: where Grandma never names its spot it stays
+  hidden, which stalls and never loses (staying hidden is not a loss, above). Grandma is not retuned for it.
+
+Deferred playtest-5 findings, one line each:
+
+- m1 (Grandma comes back 0-3 s after leaving): out of scope; her timings are game-designer's, and the 2.5 s minimum
+  rest with the 0.7 s-late bot keeps every round winnable.
+- m2 (too easy for an 8-year-old after two rounds): out of scope; a difficulty ramp is a design change for
+  game-designer, and round 1 must stay this kind for a 6-year-old.
+- m3 (START, READY, PLAY AGAIN and TRY AGAIN show no pressed state): out of scope; they act on the lift and a
+  double tap acts once, and a pressed look for them is a separate change across every page.
+- m4's other parts (the dim chevron panel; the arrow toward Grandma when the chair is named): kept; the dim panel
+  is what says "not here", and from the chair every other cover lies toward her side of the room.
+- n1 (pressing the pumpkin or the furniture does nothing): as playtest 4 n2; a second hide control is a design
+  change for game-designer.
+- n2 (the win card keeps the frozen beam and Grandma pointing): out of scope; clearing the card's scene changes the
+  win golden, for pixel-artist.
+- n3 (the loss card doesn't show what caught him): as playtest 4 n4.
+- n4 (READY! above the READY button on calibrate): out of scope; the label is the state and the button the action,
+  and a non-reader just presses it.

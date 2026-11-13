@@ -1,4 +1,4 @@
-# Grandma checks the spot the pumpkin is hiding in: on the warning's first step it startles out with a hop and a "!", the label says RUN AWAY! and the finger still on the sign gets the "no" chevrons for as long as it stays; drifted off the sign, the calm FIND COVER points away from the named table; still held and tilted, it hides in the plant and the check passes.
+# Grandma checks the spot the pumpkin is hiding in: on the warning's first step it startles out, hops and looks scared under a "!" for about 1 s, the label says RUN AWAY! and the finger still on the sign gets the "no" chevrons for as long as it stays; drifted off the sign but still held, the chevrons stay, since that hold hides nothing at the named table; still held and tilted, it hides in the plant and the check passes.
 reset
 tilt 0 1000 0
 profile Leo 6
@@ -10,12 +10,10 @@ tap 80 131
 wait 600
 expect-screen pumpkin_play
 down 80 131
-wait 11000
+wait 2000
 expect hidden=1
-expect checking=-1
-wait 1600
+wait-until checking=1 30000
 expect hidden=-1
-expect checking=1
 expect phase=1
 expect startle=1
 expect x=80
@@ -23,14 +21,18 @@ wait 160
 ui-check pumpkin_play-startle
 snap pumpkin_startled
 wait 500
-expect startle=0
+expect startle=1
 expect hidden=-1
+expect refused=1
 ui-check pumpkin_play-named-no
 snap pumpkin_named_no
 move 80 60
 wait 1000
-ui-check pumpkin_play-named-cover
-snap pumpkin_named_find_cover
+expect startle=0
+expect hidden=-1
+expect refused=1
+ui-check pumpkin_play-named-drifted
+snap pumpkin_named_drifted_no
 tilt 600 800 0
 wait 1700
 expect hidden=2

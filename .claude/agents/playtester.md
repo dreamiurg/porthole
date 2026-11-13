@@ -47,7 +47,7 @@ in `apps/porthole/docs/playtesting.md`, with the same independent evidence gate.
 
 ## You own
 
-- `apps/porthole/tests/playtests/*.txt` -- you may add new playtest scenarios here (directive language: `expect`, `expect-screen`, `ui-check`, `sheet`, `follow-glow`, `solve-word`, `answer-book`, `repeat N ... end`, plus raw sim commands -- see the `playtest` skill). These are test fixtures, not game code.
+- `apps/porthole/tests/playtests/*.txt` -- you may add new playtest scenarios here (directive language: `expect`, `expect-screen`, `ui-check`, `sheet`, `follow-glow`, `solve-word`, `answer-book`, `wait-until`, `repeat N ... end`, plus raw sim commands -- see the `playtest` skill). These are test fixtures, not game code.
 - Throwaway raw `.txt` tour scripts under `apps/porthole/build/host/` (gitignored) or the session scratch directory, for a quick ad hoc check outside the formal suite.
 - Black-box reports, native screenshots and input evidence under
   `apps/porthole/docs/<game>/`, including your exact persona/dispatch brief,

@@ -10,26 +10,29 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   began on the sign arms anywhere; a finger slid onto it arms only where it can hide at once (within reach
   of cover), so a finger crossing the sign in the open never hides the pumpkin later. Cover is a spot a
   Check isn't naming: the named spot is decided, so a new hide there does nothing (`cover()`), and one hidden
-  there startles out on the step her warning begins (`hidden = -1`, `startle` = `STARTLE_MS`, 400 ms): it hops
-  4 px with a CREAM "!" up and away from her side, at the spot's x. Kept hidden under a RUN! sign, a non-reader
-  of 6 held on and was caught (kid playtest 4, M1). A finger still held stays armed, so it hides at the next
-  cover it rolls into; a ghost handing the Check back makes the spot cover again, so that hold re-hides it
-  there. It hides on the touch if it's within 13 px of cover, or the moment it rolls within 13 px of cover
-  while still held, and comes out when that finger lifts. No toggle, so a double tap ends out and never pops
+  there startles out on the step her warning begins (`hidden = -1`, `startle` = `STARTLE_MS`, 1 s, ended early by
+  a hide): it hops 4 px in the first `STARTLE_HOP_MS` (400 ms) and, for the whole second, wears a scared face (wide
+  CREAM eyes, a round INK "o" for its smile) under a CREAM "!" up and away from her side, at its x. Kept hidden
+  under a RUN! sign, a non-reader of 6 held on and was caught (kid playtest 4, M1); a smile and a 0.4 s "!" undersold
+  the startle (kid playtest 5, m4). A finger still held stays armed, so it hides at the next cover it rolls into;
+  once a ghost hands the Check back, the spot is cover again, so a new press there hides it. It hides on the
+  touch if it's within 13 px of cover, or the moment it rolls within 13 px of cover while still held, and comes
+  out when that finger lifts. No toggle, so a double tap ends out and never pops
   it out mid-press. Tilt never ejects a hidden pumpkin. The sign says HOLD TO HIDE (cream) near a spot and
   HIDING while hidden; it draws pressed (gold, its word 2 px lower) only while hidden. Away from cover it is
   flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the
-  nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it rolls toward,
-  so coasting past turns it once and never flips it back (kid playtest 4, n1); within reach of the named
-  spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A
-  finger on it away from cover, the named spot included (pressed or slid on), gets the non-word "no" from
-  the frame it arrives and for as long as it stays there with no cover, and for at least `REFUSE_MS` (1 s)
-  after a quick tap: the sign shakes 3 px side to side and three CREAM chevrons march toward cover in place
-  of the words, plain in any single frame (a 2 px shake alone went unseen, kid playtest 2, m2). A press
-  that stopped just short of cover with the finger down showed a calm sign, which a 6-year-old took for
-  hiding (kid playtest 4, m1). The "no" is skipped only while an armed hold really rolls it into cover
-  within 0.5 s at the current tilt (`arriving()` rolls a copy, friction included): it just hides on
-  arrival. Speed alone promised that for a pumpkin just levelled, which stops short (kid playtest 3, m1).
+  nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it last rolled toward
+  (`Game::heading_`), so coasting past turns it once and stopping there never flips it back (kid playtest 4,
+  n1); within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold
+  in-reach strip stays dark. A finger on it away from cover, the named spot included (pressed or slid on), gets
+  the non-word "no" from the frame it arrives and for as long as it stays there or an armed hold lasts (drifted
+  off the sign or not) with no cover, and for at least `REFUSE_MS` (1 s) after a quick tap: the sign shakes 3 px
+  side to side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a
+  2 px shake alone went unseen, kid playtest 2, m2). A press that stopped just short of cover with the finger
+  down showed a calm sign, which a 6-year-old took for hiding (kid playtest 4, m1). The "no" is skipped only
+  while an armed hold really rolls it into cover within 0.5 s at the current tilt (`arriving()` rolls a copy,
+  friction included): it just hides on arrival. Speed alone promised that for a pumpkin just levelled, which
+  stops short (kid playtest 3, m1).
 - Goal: roll over three candy corns (within 7 px, never while hidden), then reach the
   door at x=24 out in the open. No timer: staying hidden stalls, it never wins. Candy
   sits at 52..66, 94..108 and 130..136, drawn from the round's seed.
@@ -69,7 +72,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 - `newRound(seed)` seeds candy and moves (xorshift32). The game seeds from the
   millisecond clock and a play counter; tests and tours are deterministic because
   simulated time is. `host/test_pumpkin.cpp` plays 100 seeds with a bot, including one
-  reacting 0.7 s late, to keep every round winnable.
+  reacting 0.7 s late, to keep every round winnable. A clingy bot that never lets go while hidden is startled
+  out in most rounds and never caught; it doesn't always escape within its 180 s, since staying hidden stalls.
 - `game.*`: Intro -> Calibrate -> Play -> Catch (600 ms) -> Icing (1600 ms) -> Lost,
   or Play -> Won (escaped). Retry starts Play with the current grip. Each launcher visit
   starts Intro and requires calibration again. A jolt delays a pending start
@@ -78,7 +82,7 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
   the action sign hides while held (`holding_`: set on the first frame a visible finger is on it,
   whether it pressed there or slid on from the scenery, the ghost or Home within reach of cover (never the
-  spot a Check names; still held when the Check ends or a ghost stops it, it hides there), and
+  spot a Check names; still held when the Check ends, it hides there), and
   kept until that finger lifts; a 6-year-old presses 1-3 s and slides a resting thumb on, and a kid playtest on 2026-11-13
   was caught under his own finger when HIDE acted on lift). The ghost acts on the lift of a press of
   any length that began and ended on it, so a press slid from the ghost onto the sign only hides. A
@@ -103,7 +107,7 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 Screen names are prefixed `pumpkin_`. Debug reports position, hiding, elapsed
 round time, exposure, calibration readiness, candy, Grandma's phase/move and PHEW, plus
 `ghost` (used), `distract` (crash showing), `heard` (spot, or -1), `rustle` (building) and
-`startle` (hopping); it provides no gameplay cheats.
+`startle` (the scared second) and `refused` (the sign's "no" showing); it provides no gameplay cheats.
 See `docs/superpowers/specs/2026-10-17-pumpkin-hide-and-seek-design.md` at repo root.
 
 ## Visual regression checks

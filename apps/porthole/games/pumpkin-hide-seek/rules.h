@@ -10,8 +10,9 @@ constexpr uint32_t RUSTLE_MS = 1000;
 constexpr float RUSTLE_MG = 400;
 // The ghost, once a round: a search or warning stops for GHOST_REST_MS; a rest gets GHOST_EXTRA_MS longer.
 constexpr uint32_t GHOST_REST_MS = 5000, GHOST_EXTRA_MS = 4000, DISTRACT_MS = 1500;
-// A Check naming the spot it hides in startles it out: it hops with a "!" this long.
-constexpr uint32_t STARTLE_MS = 400;
+// A Check naming the spot it hides in startles it out: it looks scared under a "!" this long (0.4 s read as nothing,
+// kid playtest 5, m4), hopping for the first STARTLE_HOP_MS.
+constexpr uint32_t STARTLE_MS = 1000, STARTLE_HOP_MS = 400;
 constexpr float SPOTS[] = {36, 80, 124}, DOOR_X = 24;
 constexpr int CANDIES = 3;
 constexpr uint8_t ALL_CANDY = (1 << CANDIES) - 1;
@@ -42,7 +43,7 @@ struct Round {
   bool fromHeard = false;  // the current move is that heard check (a ghost can hand it back)
   bool ghostUsed = false;
   uint32_t distract = 0;  // ms of "WHAT WAS THAT?" left
-  uint32_t startle = 0;   // ms of the startle hop left: a Check named its spot, so it jumped out
+  uint32_t startle = 0;   // ms of the startle left: a Check named its spot, so it jumped out
 };
 Round newRound(uint32_t seed);
 int nearby(const Round& round);  // the spot in reach, else -1
