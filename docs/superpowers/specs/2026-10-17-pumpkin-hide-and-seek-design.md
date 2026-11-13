@@ -290,3 +290,12 @@ Deferred playtest-5 findings, one line each:
 - n3 (the loss card doesn't show what caught him): as playtest 4 n4.
 - n4 (READY! above the READY button on calibrate): out of scope; the label is the state and the button the action,
   and a non-reader just presses it.
+
+Kept after the final code review (2026-11-13), one line each:
+
+- The ghost acts on the lift of a press of any length, a resting thumb's included: kids of 5-7 press 0.6-3 s, and
+  FreshGate already hides a thumb resting since before the round.
+- A thumb that slides onto the sign within reach of cover hides the pumpkin: playtest 1 m2 asked for it, and a slide
+  in the open arms nothing.
+- The chair's reach covers the door, so a hold kept while heading out hides at the chair until the lift: HIDING says
+  why, no round sticks, and a separate door rule would be a second exception to "within reach of cover while held".
