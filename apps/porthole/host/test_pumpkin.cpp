@@ -574,16 +574,22 @@ static bool arrowLeft(float x, int heading, bool door = false, int spot = -1) {
   if (spot >= 0) stage(r, Move::Check, spot);
   return coverDir(r) < 0;
 }
-// With all three candies the open door is a way out: the arrow points at it when it is nearer than cover, and
-// whenever she names the only cover on the way to it, so it never sends the kid back toward her past the exit (kid
-// playtest 6, M1). The band still applies.
+// With all three candies and the chair named, the arrow points out the door only where that run is no longer than
+// leaving the chair's beam; from farther right it would cross the beam for longer than a catch takes, so the table
+// stays the answer (kid playtest 6, M1; review of the first door arrow). Nothing named, the door changes nothing: there
+// x < 49 is in the chair's reach, which shows no arrow.
 static void doorArrow() {
-  CHECK(!arrowLeft(28, 0) && arrowLeft(28, 0, true) && !arrowLeft(28, 1, true));  // door 4 px, chair 8 px
-  CHECK(!arrowLeft(40, 0, false, 0) && arrowLeft(40, 0, true, 0));  // the chair named: door 16 px, table 40 px
-  CHECK(!arrowLeft(60, 0, false, 0) && arrowLeft(60, 0, true, 0) && arrowLeft(60, 1, true, 0));  // the table nearer
+  CHECK(!arrowLeft(40, 0, false, 0) && arrowLeft(40, 0, true, 0) && arrowLeft(40, 1, true, 0));  // door 16 = beam 16
+  CHECK(!arrowLeft(44, 0, true, 0) && !arrowLeft(60, 0, true, 0) && !arrowLeft(60, -1, true, 0));  // the table
   CHECK(!arrowLeft(60, 0, true) && arrowLeft(60, -1, true));  // nothing named: the nearer cover, band as before
   CHECK(!arrowLeft(100, 0, true, 1));  // the table named, the chair still on the way: the plant is nearer
-  Round r; r.x = 60; r.got = ALL_CANDY; stage(r, Move::Check, 0);
+  for (float x : {40.f, 44.f, 60.f}) {  // following the arrow during the chair's search: out, or under the table
+    Round r; r.x = x; r.got = ALL_CANDY; stage(r, Move::Check, 0); r.phase = Phase::Search; r.phaseLen = 600000;
+    const float roll = coverDir(r) < 0 ? -500.f : 500.f;
+    for (int t = 0; t < 10000 && !r.won && !r.caught && r.hidden < 0; t += STEP_MS) step(r, roll, true);
+    CHECK(!r.caught && (r.won || r.hidden == 1));
+  }
+  Round r; r.x = 40; r.got = ALL_CANDY; stage(r, Move::Check, 0);
   View v; v.page = Page::Play; v.x = r.x; v.checking = 0; v.warning = true; v.doorOpen = true; v.coverDir = coverDir(r);
   int x = 0; gfx::textLogReset(); paint::draw(v);
   CHECK(textW(127, &x) == 59 && x == 56);  // FIND COVER right of a left arrow: to the door

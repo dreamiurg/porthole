@@ -26,9 +26,9 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the
   nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it last rolled toward
   (`coverDir()`, from `Round::heading`), so coasting past turns it once and stopping there never flips it back (kid
-  playtest 4, n1). Once all three candies are collected the door at x=24 is one of those targets (band included), and
-  the arrow points to it whenever a Check names the only cover between the pumpkin and the door, so it never sends the
-  kid back toward Grandma past the exit (kid playtest 6, M1); within reach of the named spot it shows FIND COVER
+  playtest 4, n1). Once all three candies are collected and a Check names the chair, the arrow points out the door where
+  that run is no longer than leaving the chair's 20 px beam (x <= 40); from farther right it would cross the beam
+  for longer than a catch takes, so it points at the table (kid playtest 6, M1, and its review); within reach of the named spot it shows FIND COVER
   too, never HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A finger on it away from
   cover, the named spot included (pressed or slid on), gets
   the non-word "no" from the frame it arrives and for as long as it stays there or an armed hold lasts (drifted

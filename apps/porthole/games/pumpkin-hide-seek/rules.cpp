@@ -120,30 +120,21 @@ int cover(const Round& r) {
   const int s = nearby(r);
   return s == checking(r) ? -1 : s;
 }
-// The door is open and the spot she names is the only cover on the way to it: any other cover is back toward her,
-// past the exit (kid playtest 6, M1).
-namespace {
-bool exitPastNamed(const Round& r) {
-  const int spot = checking(r);
-  if (!doorOpen(r) || spot < 0 || SPOTS[spot] >= r.x) return false;
-  for (int i = 0; i < 3; i++) if (i != spot && SPOTS[i] < r.x) return false;
-  return true;
-}
-}  // namespace
-// Toward the nearest spot a Check isn't naming (cover()'s exclusion), or the open door when it is nearer, but within
-// 6 px of the midpoint between two the one it last rolled toward: coasting past, the arrow turns once, ahead of it,
-// instead of pointing back and flipping (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there.
+// Toward the nearest spot a Check isn't naming (cover()'s exclusion), but within 6 px of the midpoint between two the
+// one it last rolled toward: coasting past, the arrow turns once, ahead of it, instead of pointing back and flipping
+// (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there. With the door open and the chair named,
+// it points out the door where that is no farther than leaving the chair's beam (kid playtest 6, M1): from farther
+// right, the run to the door crosses the beam for longer than a catch takes, and the table is the safe answer.
 int coverDir(const Round& r) {
-  if (exitPastNamed(r)) return -1;
-  float at[4];
-  int n = 0, near = 0, next = -1;
-  for (int i = 0; i < 3; i++) if (i != checking(r)) at[n++] = SPOTS[i];
-  if (doorOpen(r)) at[n++] = DOOR_X;
-  auto far = [&](int i) { return fabsf(r.x - at[i]); };
-  for (int i = 1; i < n; i++)
-    if (far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
-  if (next >= 0 && far(next) - far(near) < 12 && (at[next] - r.x) * (float)r.heading > 0) near = next;
-  return at[near] < r.x ? -1 : 1;
+  if (doorOpen(r) && checking(r) == 0 && r.x - DOOR_X <= SPOTS[0] + BEAM - r.x) return -1;
+  int near = -1, next = -1;
+  auto far = [&r](int i) { return fabsf(r.x - SPOTS[i]); };
+  for (int i = 0; i < 3; i++) {
+    if (i == checking(r)) continue;
+    if (near < 0 || far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
+  }
+  if (next >= 0 && far(next) - far(near) < 12 && (SPOTS[next] - r.x) * (float)r.heading > 0) near = next;
+  return SPOTS[near] < r.x ? -1 : 1;
 }
 // Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
 // shortcut: Grandma's phase is frozen for the 0.5 s, so a Check starting or ending inside it can mispredict

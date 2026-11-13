@@ -310,7 +310,8 @@ was the only cue, and with all three candies the chevrons pointed away from the 
   beam's reach (20 px) of the named spot wears the startle's scared face for as long as that holds (`named()`),
   with no hop and no "!": those stay the startle's, for a pumpkin popped out of hiding.
 - **The arrow knows the door.** Once all three candies are collected, `coverDir()` (FIND COVER's arrow and the
-  chevrons) counts the door at x=24 as a target, so it points there when the door is nearer than the nearest usable
-  cover, with the same 6 px band. It also points to the door whenever a Check names the only cover between the
-  pumpkin and the door, so it never sends the kid back toward Grandma past the exit. This supersedes playtest 5
+  chevrons) points out the door at x=24 when a Check names the chair and that run is no longer than leaving the chair's
+  20 px beam (x <= 40). *(Revised after review: an earlier version pointed to the door whenever the named chair was
+  the only cover on the way, and from x 42..66 that run crossed the beam for longer than a catch takes; there the
+  table is the safe answer. Nothing named, the door never matters: x < 49 is in the chair's reach.)* This supersedes playtest 5
   m4's kept "arrow toward Grandma when the chair is named" once the door is open.
