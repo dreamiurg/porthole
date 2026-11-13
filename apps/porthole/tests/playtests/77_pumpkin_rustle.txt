@@ -8,7 +8,8 @@ tap 80 131
 wait 600
 tap 80 131
 wait 600
-tap 80 131
+down 80 131
+wait 80
 wait 300
 expect hidden=1
 tilt -500 866 0
@@ -29,7 +30,8 @@ expect phase=1
 expect checking=1
 expect hidden=1
 snap pumpkin_check_heard
-tap 80 131
+wait 80
+up
 tilt 500 866 0
 wait 2500
 expect-screen pumpkin_play

@@ -46,5 +46,7 @@ bool searching(const Round& round);
 int checking(const Round& round);  // spot Grandma announces or checks, else -1
 float beamX(const Round& round);
 bool doorOpen(const Round& round);
-void step(Round& round, float roll, bool action, bool ghost = false);
+// hold: a finger that pressed down on the action sign is still on the glass. The pumpkin hides the moment it is
+// within reach of a spot while held and comes out when the finger lifts: no toggle, so a double tap can't pop it out.
+void step(Round& round, float roll, bool hold, bool ghost = false);
 }  // namespace pumpkin

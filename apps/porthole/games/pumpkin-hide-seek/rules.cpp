@@ -51,8 +51,9 @@ void rollPumpkin(Round& r, float roll) {
   r.x += r.velocity * STEP_MS / 1000;
   if (r.x < 24 || r.x > 136) { r.x = clamp(r.x, 24, 136); r.velocity = 0; }
 }
-void toggleHide(Round& r) {
-  if (r.hidden >= 0) { r.hidden = -1; return; }
+void hide(Round& r, bool hold) {
+  if (!hold) { r.hidden = -1; return; }
+  if (r.hidden >= 0) return;
   r.hidden = nearby(r);
   if (r.hidden < 0) return;
   r.x = SPOTS[r.hidden];
@@ -119,9 +120,9 @@ float beamX(const Round& r) {
   return r.fromRight ? 136 - t * 112 : 24 + t * 112;
 }
 bool doorOpen(const Round& r) { return r.got == ALL_CANDY; }
-void step(Round& r, float roll, bool action, bool ghost) {
+void step(Round& r, float roll, bool hold, bool ghost) {
   if (r.caught || r.won) return;
-  if (action) toggleHide(r);
+  hide(r, hold);
   if (ghost) haunt(r);
   r.distract = r.distract > STEP_MS ? r.distract - STEP_MS : 0;
   listen(r, roll);

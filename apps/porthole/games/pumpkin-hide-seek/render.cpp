@@ -67,8 +67,11 @@ void label(int y,const char* s,int cx=80) {
  int w=static_cast<int>(std::strlen(s))*6+7;
  box((2*cx-w)/2,y-3,w,13,INK); text(y,s,CREAM,1,cx);
 }
-void button(const char* s) {
- box(40,119,80,24,INK); box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
+// Pressed, the cream face and its gold lip become one gold face and the word sinks 2 px.
+void button(const char* s,bool pressed=false) {
+ box(40,119,80,24,INK);
+ if(pressed) { box(42,121,76,20,GOLD); text(129,s,INK); return; }
+ box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
 }
 void home(float progress) {
  box(68,8,24,22,INK); box(70,10,20,18,PURPLE);
@@ -311,7 +314,7 @@ void play(const View& v) {
  // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
  // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
- button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER");
+ button(v.hidden>=0?"HIDING":v.nearby>=0?"HOLD TO HIDE":"FIND COVER",v.holding);
 }
 void icing(uint32_t ms) {
  for(int x=0;x<160;++x) {

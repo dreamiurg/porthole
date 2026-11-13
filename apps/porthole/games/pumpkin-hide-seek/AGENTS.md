@@ -6,8 +6,12 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 
 - `rules.*`: allocation-free 10 ms simulation, horizontal roll between x=24..136
   on y=99, three hiding spots (36,80,124), 60 mg dead zone, friction and bounded
-  acceleration. Tap the action sign within 13 px of a spot to hide; tap again
-  to emerge. Tilt never ejects a hidden pumpkin.
+  acceleration. Hold to hide: the pumpkin is hidden exactly while a finger that pressed down on
+  the action sign stays on the glass, wherever it drifts. It hides on the press if it's within 13 px
+  of a spot, or the moment it rolls within 13 px while still held, and comes out when that finger
+  lifts. No toggle, so a double tap ends out and never pops it out mid-press. Tilt never ejects a
+  hidden pumpkin. The sign says HOLD TO HIDE near a spot, FIND COVER away from one and HIDING
+  while hidden, and draws pressed (gold, its word 2 px lower) while held.
 - Goal: roll over three candy corns (within 7 px, never while hidden), then reach the
   door at x=24 out in the open. No timer: staying hidden stalls, it never wins. Candy
   sits at 52..66, 94..108 and 130..136, drawn from the round's seed.
@@ -49,10 +53,12 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   until `tilt::Steady` reports plausible gravity.
 - All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
-  the action sign and the ghost act on the lift of a press of any length (a 6-year-old's
-  firm HIDE lasts 2.5 s), except a thumb already resting on the glass when the round
-  began (from READY or TRY AGAIN): `FreshGate` hides it until it lifts (`restingThumb`).
-  Home never hides or emerges. Only the action sign changes hiding state.
+  the action sign hides while held (`holding_`: set on the press-down frame of a press that
+  began on it, kept until that finger lifts; a 6-year-old presses 1-3 s, and a kid playtest
+  on 2026-11-13 was caught under his own finger when HIDE acted on lift). The ghost acts on
+  the lift of a press of any length. A thumb already resting on the glass when the round
+  began (from READY or TRY AGAIN) does neither: `FreshGate` hides it until it lifts
+  (`restingThumb`). Home never hides or emerges. Only the action sign changes hiding state.
 - Time comes from the monotonic millisecond input, with frame gaps capped at
   100 ms; the wall clock is unused and absence never advances a round.
 - `render.*`: original crisp pixel art on a 160px logical grid expanded 3x onto

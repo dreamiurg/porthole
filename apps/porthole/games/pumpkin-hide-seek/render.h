@@ -21,6 +21,7 @@ struct View {
   bool doorOpen = false;              // all candy collected: the door at the left wall is open
   int checking = -1;                  // spot Grandma announces (warning) or checks (searching)
   bool shiver = false, phew = false;  // beam over a hidden pumpkin / it just passed
+  bool holding = false;               // a finger that pressed the action sign is still down: it draws pressed
   bool ghostReady = true;             // the ghost at the window can still be tapped (box {22,30,24,24})
   uint32_t distract = 0;              // ms left of the crash Grandma goes to look at ("WHAT WAS THAT?")
   bool rustling = false;              // hidden and tilting hard: the spot shakes ("SHH!")

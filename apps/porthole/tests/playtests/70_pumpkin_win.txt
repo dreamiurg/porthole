@@ -1,4 +1,4 @@
-# A first round: calibrate, roll right for two candies, hide in the plant through the opening sweep, then follow the beam out the door and replay.
+# A first round: calibrate, roll right for two candies, hold the sign to hide in the plant through the opening sweep, then follow the beam out the door and replay.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -25,7 +25,8 @@ wait 2400
 expect got=6
 tilt 0 1000 0
 wait 100
-tap 80 131
+down 80 131
+wait 80
 wait 300
 expect hidden=2
 ui-check pumpkin_play-warning
@@ -39,7 +40,8 @@ wait 800
 expect phew=1
 snap pumpkin_phew
 wait 1000
-tap 80 131
+wait 80
+up
 tilt -500 866 0
 wait 3300
 expect got=7

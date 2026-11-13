@@ -11,8 +11,10 @@
 
 using namespace pumpkin;
 static int checks = 0;
+// The finger keeps doing what it does: down on the sign while hidden, off the glass otherwise.
 static void tick(Round& r, int ms, float roll = 0) {
-  for (int t = 0; t < ms; t += STEP_MS) step(r, roll, false);
+  const bool hold = r.hidden >= 0;
+  for (int t = 0; t < ms; t += STEP_MS) step(r, roll, hold);
 }
 // Hold the round in a phase until it ends, so a test can stage one exact Grandma move.
 static void stage(Round& r, Move move, int spot = -1, bool fromRight = true) {
@@ -27,8 +29,12 @@ static void controls() {
   CHECK(r.hidden == 1);
   tick(r, 1000, 1000);
   CHECK(r.x == 80 && r.hidden == 1);  // tilt never ejects
-  step(r, 0, true);
-  CHECK(r.hidden == -1);
+  step(r, 0, false);
+  CHECK(r.hidden == -1);  // the lift comes out
+  r = Round{}; r.x = 100; step(r, 0, true); CHECK(r.hidden == -1);  // held away from cover: still out
+  for (int t = 0; t < 2000 && r.hidden < 0; t += STEP_MS) step(r, 1000, true);
+  CHECK(r.hidden == 2 && r.x == SPOTS[2] && r.velocity == 0);  // held and rolled into the plant
+  step(r, 0, true); CHECK(r.hidden == 2);
   r = Round{}; r.x = 58; step(r, 0, true);
   CHECK(r.hidden == -1);
   r = Round{}; tick(r, 3000, -1000);
@@ -83,7 +89,7 @@ static void spotCheck() {
   }
   Round r; r.x = SPOTS[1]; r.hidden = 1;
   stage(r, Move::Check, 1);
-  tick(r, 500); step(r, 0, true);
+  tick(r, 500); step(r, 0, false);
   tick(r, 1500, 1000);  // came out during the warning and rolled away
   CHECK(!r.caught && r.x > SPOTS[1] + 20);
 }
@@ -112,7 +118,7 @@ static void rustle() {
   tick(r, 300); CHECK(r.rustle == 0);                                    // holding still calms it
   tick(r, 1000, RUSTLE_MG - 50); CHECK(r.rustle == 0 && r.heard < 0);    // a gentle tilt is not a rustle
   tick(r, RUSTLE_MS, -1000); CHECK(r.heard == 1 && r.hidden == 1 && r.x == SPOTS[1]);
-  r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS; step(r, 0, false);
+  r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS; step(r, 0, true);
   CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.phaseLen == 3500 && r.heard < 0);
   r = newRound(5); r.phaseLen = 600000; tick(r, 2000, 1000);
   CHECK(r.heard < 0 && r.rustle == 0);  // rolling in the open is not rustling
@@ -143,19 +149,19 @@ static void ghostUndo() {
   step(r, 0, false, true); tick(r, GHOST_REST_MS);
   CHECK(warning(r) && r.move == Move::Sweep && r.fromRight && r.moves == 1);
   r = newRound(4); r.x = SPOTS[1]; r.hidden = 1; r.heard = 1; r.moves = 3; r.phaseMs = r.phaseLen - STEP_MS;
-  step(r, 0, false); CHECK(warning(r) && checking(r) == 1 && r.heard < 0);
-  step(r, 0, false, true); CHECK(r.phase == Phase::Rest && r.heard == 1);
+  step(r, 0, true); CHECK(warning(r) && checking(r) == 1 && r.heard < 0);
+  step(r, 0, true, true); CHECK(r.phase == Phase::Rest && r.heard == 1);
   tick(r, GHOST_REST_MS); CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.heard < 0);
 }
-// A simple player: fetch the far candy, then head for the door, hiding whenever Grandma comes.
-struct Choice { float roll; bool action; };
+// A simple player: fetch the far candy, then head for the door, holding the sign whenever Grandma comes.
+struct Choice { float roll; bool hold; };
 // A fidgety bot keeps tilting while hidden, so its spot rustles.
 static Choice bot(const Round& r, bool fidget = false) {
   const float toward = r.got & 4 ? -500 : 500;
   const bool danger = warning(r) || searching(r);
   if (r.hidden >= 0) {  // holds still while hidden, so it never rustles
     const bool leave = !danger || checking(r) == r.hidden;
-    return {leave || fidget ? toward : 0, leave};
+    return {leave || fidget ? toward : 0, !leave};
   }
   if (danger && nearby(r) >= 0 && nearby(r) != checking(r)) return {0, true};
   return {toward, false};
@@ -171,7 +177,7 @@ static int wins(uint32_t lateMs, uint32_t* slowest, bool fidget = false) {
     for (uint32_t n = 0; !r.won && !r.caught && r.elapsed < 180000; n++) {
       seen[n % lag] = r;
       const Choice c = bot(seen[(n + 1) % lag], fidget);
-      step(r, c.roll, c.action && r.hidden == seen[(n + 1) % lag].hidden);
+      step(r, c.roll, c.hold);
     }
     if (r.won) { won++; *slowest = r.elapsed > *slowest ? r.elapsed : *slowest; }
   }
@@ -191,7 +197,7 @@ static void variety() {
     uint32_t calm = 0;
     for (int t = 0; t < 120000 && !r.caught; t += STEP_MS) {
       const Phase was = r.phase;
-      step(r, 0, false);
+      step(r, 0, true);
       if (was == Phase::Rest && r.phase == Phase::Warn) {
         moves[(int)r.move]++;
         if (r.move == Move::Check) { spots[r.spot]++; picks++; followed += r.spot == 1; }
@@ -258,8 +264,9 @@ static void gatesAndHome() {
   r.wait(300); r.tap();
   CHECK(r.at("pumpkin_play"));
   r.tap(); CHECK(r.game.round().hidden == -1);
-  r.wait(500); r.tap(); CHECK(r.game.round().hidden == 1);
-  r.tap(80, 19); CHECK(!r.game.wantsHome() && r.game.round().hidden == 1);
+  r.wait(500); r.frame(true); CHECK(r.game.round().hidden == 1);
+  r.frame(false); CHECK(r.game.round().hidden == -1);
+  r.tap(80, 19); CHECK(!r.game.wantsHome() && r.game.round().hidden == -1);  // Home never hides
   for (int i = 0; i < 50; i++) r.frame(true, 80, 19);
   CHECK(!r.game.wantsHome());
   r.frame(true, 40, 60); r.frame(true, 80, 19);
@@ -269,14 +276,40 @@ static void gatesAndHome() {
   r.frame(); r.enter(); r.wait(500); r.tap(80, 19);
   CHECK(r.game.wantsHome());
 }
-// Any press lifted on the action sign or the ghost acts, however long; a thumb already down when the round began does not.
-static void restingThumb() {
-  for (int frames : {50, 250}) {   // a quick 0.5 s press and a firm 2.5 s one both hide
-    Run r; r.start(); r.wait(500);
-    for (int i = 0; i < frames; i++) r.frame(true);
-    r.frame(false);
-    CHECK(r.at("pumpkin_play") && r.game.round().hidden >= 0);
+// The pumpkin hides from the press-down frame while that finger stays on the glass, and comes out on the lift.
+static void holdToHide() {
+  Run r; r.start(); r.wait(500);
+  bool hidden = true;
+  for (int i = 0; i < 300; i++) { r.frame(true); hidden = hidden && r.game.round().hidden == 1; }
+  CHECK(hidden && r.at("pumpkin_play"));  // at once, and through 3 s
+  r.frame(false); CHECK(r.game.round().hidden == -1);
+  // A worried double tap: hidden all through each press, out after the second lift.
+  Run d; d.start(); d.wait(500);
+  hidden = true;
+  for (int press = 0; press < 2; press++) {
+    for (int i = 0; i < 12; i++) { d.frame(true); hidden = hidden && d.game.round().hidden == 1; }
+    for (int i = 0; i < 10; i++) d.frame(false);
   }
+  CHECK(hidden && d.game.round().hidden == -1);
+  // A thumb that drifts off the sign while still down keeps it hidden.
+  Run t; t.start(); t.wait(500); t.frame(true);
+  for (int i = 0; i < 100; i++) t.frame(true, 80, 60);
+  CHECK(t.game.round().hidden == 1);
+  t.frame(false, 80, 60); CHECK(t.game.round().hidden == -1);
+  // Held away from cover: FIND COVER until it rolls in, then hidden on arrival.
+  Run c; c.start(); c.wait(500);
+  c.gravity = grip::gravityFor(400, 0, grip::FLAT);
+  while (nearby(c.game.round()) >= 0) c.frame();
+  c.frame(true); CHECK(c.game.round().hidden == -1);
+  for (int i = 0; i < 300 && c.game.round().hidden < 0; i++) c.frame(true);
+  CHECK(c.game.round().hidden == 2 && c.game.round().x == SPOTS[2]);
+  // A press that begins off the sign and slides onto it does nothing.
+  Run s; s.start(); s.wait(500); s.frame(true, 80, 60);
+  for (int i = 0; i < 50; i++) s.frame(true);
+  CHECK(s.game.round().hidden == -1);
+}
+// The ghost acts on the lift of a press of any length; a thumb already down when the round began does nothing.
+static void restingThumb() {
   Run g; g.start(); g.wait(500);
   for (int i = 0; i < 250; i++) g.frame(true, 34, 42);
   g.frame(false, 34, 42); g.wait(100); CHECK(g.game.round().ghostUsed);
@@ -284,8 +317,9 @@ static void restingThumb() {
   Run t; t.enter(); t.wait(500); t.tap(); t.wait(500);
   t.gravity = {2000, 2000, 2000}; t.tap(); t.frame(true);
   t.gravity = grip::FLAT;
-  for (int i = 0; i < 100; i++) t.frame(true);
-  CHECK(t.at("pumpkin_play"));
+  bool out = true;
+  for (int i = 0; i < 100; i++) { t.frame(true); out = out && t.game.round().hidden == -1; }
+  CHECK(t.at("pumpkin_play") && out);
   t.frame(false); t.wait(100);
   CHECK(t.at("pumpkin_play") && t.game.round().hidden == -1);
 }
@@ -310,7 +344,7 @@ static void results() {
   for (int i = 0; i < 18000 && won.at("pumpkin_play"); i++) {
     const Choice c = bot(won.game.round());
     won.gravity = grip::gravityFor((int)c.roll, 0, grip::FLAT);
-    if (c.action) won.tap(); else won.frame();
+    won.frame(c.hold);
   }
   CHECK(won.at("pumpkin_won"));
   won.wait(500); won.tap(); CHECK(won.at("pumpkin_play"));
@@ -441,6 +475,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

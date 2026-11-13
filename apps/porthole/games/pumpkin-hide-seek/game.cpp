@@ -25,7 +25,7 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = actionPending_ = ghostPending_ = false;
+  starting_ = holding_ = ghostPending_ = false;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -52,14 +52,15 @@ void Game::calibrate() {
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // A press of any length counts (a 6-year-old's firm HIDE lasts 2.5 s); a thumb resting on the glass when the
-  // round began is hidden by gate_ until it lifts.
-  actionPending_ = actionPending_ || action();
+  // Hidden while the finger that pressed the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s and
+  // double taps when worried). A thumb resting on the glass when the round began is hidden by gate_ until it lifts.
+  UiAudit::add(ACTION.x, ACTION.y, ACTION.w, ACTION.h);
+  holding_ = in_.down && (holding_ || (in_.pressed && inside(in_.downX, in_.downY, ACTION)));
   ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
-    step(round_, tilt.x, actionPending_, ghostPending_);
-    actionPending_ = ghostPending_ = false;
+    step(round_, tilt.x, holding_, ghostPending_);
+    ghostPending_ = false;
     stepMs_ -= STEP_MS;
   }
   if (round_.caught) go(Page::Catch);
@@ -98,7 +99,7 @@ void Game::render() {
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
   v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
-  v.ghostReady = !round_.ghostUsed;
+  v.ghostReady = !round_.ghostUsed; v.holding = holding_;
   // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a tilt left
   // over from rolling in doesn't flash it.
   const bool play = page_ == Page::Play;

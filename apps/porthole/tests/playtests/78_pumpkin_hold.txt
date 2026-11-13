@@ -1,0 +1,50 @@
+# Hold the sign to hide: hidden from the press through a firm 2.5 s hold, a worried double tap ends out, a thumb drifting off the sign keeps it hidden, and holding while rolling hides on arrival.
+reset
+tilt 0 1000 0
+profile Sam 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+expect hidden=-1
+ui-check pumpkin_play-hold
+snap pumpkin_hold_to_hide
+down 80 131
+wait 40
+expect hidden=1
+ui-check pumpkin_play-hiding
+snap pumpkin_hiding
+wait 2500
+expect hidden=1
+up
+expect hidden=-1
+tap 80 131
+tap 80 131
+expect hidden=-1
+down 80 131
+move 80 60
+wait 1500
+expect hidden=1
+up
+expect hidden=-1
+tilt -500 866 0
+wait 1000
+expect x<67
+ui-check pumpkin_play-find-cover
+snap pumpkin_find_cover
+down 80 131
+wait 40
+expect hidden=-1
+snap pumpkin_find_cover_held
+wait 1500
+expect hidden=0
+tilt 0 1000 0
+wait 3000
+expect hidden=0
+up
+expect-screen pumpkin_play
+expect hidden=-1
+sheet hold

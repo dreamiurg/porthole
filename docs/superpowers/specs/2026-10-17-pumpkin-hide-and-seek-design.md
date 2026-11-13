@@ -82,3 +82,20 @@ Later phases (not built yet): more rooms with one new idea each, and optional st
   Grandma stops what she is doing and goes to look, buying a few safe seconds.
 - **Endings that change:** catch lines, pie captions and escape lines vary per round.
 Exact numbers live in `apps/porthole/games/pumpkin-hide-seek/CLAUDE.md`.
+
+## Amendment: hold to hide (2026-11-13)
+
+A child-perspective playtest (`apps/porthole/docs/pumpkin-hide-playtest.md`) found a 6-year-old who presses
+1-2.5 s sitting in the flashlight until he let go (HIDE acted on lift), and a worried double tap that hid and
+popped him straight back out. Hiding is now a hold, not a toggle:
+
+- The pumpkin is hidden exactly while a finger that pressed down on the action sign stays on the glass. It
+  hides on the press if it is within 13 px of a spot, otherwise the moment it rolls within 13 px while still
+  held ("hold and roll into cover"), and comes out when that finger lifts. A finger that drifts off the sign
+  keeps it hidden.
+- No toggle: every press hides while held and every lift comes out, so a double tap can never flip it out
+  mid-press.
+- Unchanged: tilt never ejects a hidden pumpkin, the rustle rule, no candy while hidden, a thumb resting on
+  the glass when the round begins does nothing until it lifts, the ghost is a tap, Home is a 600 ms hold.
+- Sign: HOLD TO HIDE near a spot, FIND COVER away from one, HIDING while hidden; it draws pressed while held.
+  RUN AWAY! and QUICK! HIDE! now mean "press and hold".
