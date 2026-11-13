@@ -203,8 +203,9 @@ turns a scenario into a sim script, runs `snap --fresh --script` in a temporary 
 never touch your `build/host/`, and scenarios run in parallel) and reads stdout. Each query is wrapped in
 `echo @@<id>` / `echo @@` markers so its output can be found.
 
-Three directives need the live game state to decide what to tap (`follow-glow`, `solve-word`, `answer-book`).
-For those the runner runs the script so far, reads the answer, appends the taps and carries on. Because every run
+Four directives need the live game state to decide what to tap or how long to wait (`follow-glow`, `solve-word`,
+`answer-book`, `wait-until`). For those the runner runs the script so far, reads the answer, appends the taps or
+waits and carries on. Because every run
 replays the same game, the final run sees exactly what the earlier ones saw. Scenarios whose name contains
 `monkey` use `build/host/snap-asan`; the rest use `build/host/snap`.
 
@@ -244,6 +245,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `follow-glow` | `watch 6000`, then taps every reported glow with 250 ms gaps (one lesson round) |
 | `solve-word` | reads `word`, `cols`, `tiles` from `debug` and taps the tiles that spell the word (call it at the start of a word) |
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
+| `wait-until KEY OP VALUE MS` | waits in 40 ms steps up to the first frame whose `debug` value for KEY compares as `expect` would, at most MS; fails if it never does. For a check that must not hang on exact timing (Pumpkin's `checking=1`) |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 
 Keys printed by `debug`: the shell's `profile` (active id / count, -1 on the picker) `profiles muted play today rest tint

@@ -1,0 +1,2 @@
+# usage: t X Y [holdms] [after]
+t(){ printf 'down %s %s\ntick %s\nup\ntick %s\n' $1 $2 ${3:-80} ${4:-500}; }

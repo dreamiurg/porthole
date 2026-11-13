@@ -1,0 +1,28 @@
+reset
+profile Ivy 8
+tap 81 104
+wait 1200
+echo TITLE
+ui
+tap 80 137
+wait 800
+echo CALIBRATE
+ui
+tap 79 130
+wait 1200
+echo PLAY
+ui
+down 80 137
+wait 600
+echo HIDING
+ui
+up
+wait 300
+tap 34 46
+wait 200
+echo GHOSTUSED
+ui
+wait 20000
+echo LATER
+screen
+ui

@@ -1,0 +1,72 @@
+# Persistent driver for `snap --serve --fresh` (run with python3 -I driver.txt server|client).
+# Client sends lines; server forwards sim commands, handles: shot NAME (save PNG), ms (print sim ms).
+import os, socket, sys, time
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SOCK = os.path.join(HERE, "sim.sock")
+SHOTS = os.environ.get("SHOTS", os.path.join(HERE, "shots"))
+TRACE = os.path.join(HERE, "trace.txt")
+
+def server():
+    import subprocess
+    os.makedirs(SHOTS, exist_ok=True)
+    p = subprocess.Popen([os.path.join(HERE, "snap"), "--serve", "--fresh"], cwd=HERE,
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    simms = 0
+    trace = open(TRACE, "a")
+    if os.path.exists(SOCK):
+        os.unlink(SOCK)
+    s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+    def cmd(line):
+        p.stdin.write((line + "\n").encode()); p.stdin.flush()
+        return p.stdout.readline().decode().strip()
+    while True:
+        c, _ = s.accept()
+        data = b""
+        while not data.endswith(b"\n\n"):
+            chunk = c.recv(65536)
+            if not chunk: break
+            data += chunk
+        out = []
+        for line in data.decode().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                if line: trace.write(line + "\n")
+                continue
+            w = line.split()
+            if w[0] == "shot":
+                p.stdin.write(b"frame\n"); p.stdin.flush()
+                hdr = p.stdout.readline().decode().split()
+                n = int(hdr[1]); buf = b""
+                while len(buf) < n: buf += p.stdout.read(n - len(buf))
+                img = Image.frombytes("RGB", (480, 480), buf)
+                img.save(os.path.join(SHOTS, w[1] + ".png"))
+                out.append(f"shot {w[1]} @{simms}")
+                trace.write(f"@{simms} shot {w[1]}\n")
+            elif w[0] == "ms":
+                out.append(str(simms))
+            elif w[0] == "quit":
+                p.kill(); c.sendall(b"bye\n"); c.close(); return
+            else:
+                r = cmd(line)
+                trace.write(f"@{simms} {line}\n")
+                if w[0] in ("tick", "wait"): simms += int(w[1])
+                if r != "ok": out.append(f"{line} -> {r}")
+                # read extra lines? serve gives one line per cmd
+        trace.flush()
+        c.sendall(("\n".join(out) + "\n").encode()); c.close()
+
+def client():
+    data = sys.stdin.read()
+    s = socket.socket(socket.AF_UNIX); s.connect(SOCK)
+    s.sendall(data.rstrip("\n").encode() + b"\n\n")
+    resp = b""
+    while True:
+        chunk = s.recv(65536)
+        if not chunk: break
+        resp += chunk
+    print(resp.decode(), end="")
+
+if __name__ == "__main__":
+    server() if sys.argv[1] == "server" else client()

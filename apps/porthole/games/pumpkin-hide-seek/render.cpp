@@ -10,12 +10,6 @@
 #include <cstdio>
 #include <cstring>
 namespace pumpkin { namespace paint { namespace {
-constexpr uint16_t rgb(unsigned c) { return ((c>>8)&0xf800)|((c>>5)&0x7e0)|((c>>3)&31); }
-constexpr uint16_t INK=rgb(0x201d32),WALL=rgb(0x463451),PURPLE=rgb(0x815573),LILAC=rgb(0xb9809a);
-constexpr uint16_t WOOD=rgb(0x925743),FLOOR=rgb(0x633e43),ORANGE=rgb(0xf58b32),RUST=rgb(0xb74f30);
-constexpr uint16_t GOLD=rgb(0xffc875),CREAM=rgb(0xffedc2),SAGE=rgb(0x87a878),GREEN=rgb(0x49674d);
-constexpr uint16_t NIGHT=rgb(0x263449),BLUE=rgb(0x53637a),SKIN=rgb(0xe6b79d),GREY=rgb(0xb6acb4),BEAM=rgb(0x997752);
-constexpr uint16_t SKY=rgb(0x9ad4e4);  // sweat drops
 // The runtime's logical framebuffer is scratch while this RGB565 game owns the screen. Its palette stays ours.
 // Compose all overdraw here before expanding once, rather than repeatedly writing the panel's PSRAM buffer.
 constexpr uint16_t COLORS[]={0,INK,WALL,PURPLE,LILAC,WOOD,FLOOR,ORANGE,RUST,GOLD,CREAM,SAGE,GREEN,NIGHT,BLUE,SKIN,GREY,BEAM,SKY};
@@ -67,8 +61,11 @@ void label(int y,const char* s,int cx=80) {
  int w=static_cast<int>(std::strlen(s))*6+7;
  box((2*cx-w)/2,y-3,w,13,INK); text(y,s,CREAM,1,cx);
 }
-void button(const char* s) {
- box(40,119,80,24,INK); box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
+// Pressed, the cream face and its gold lip become one gold face and the word sinks 2 px.
+void button(const char* s,bool pressed=false) {
+ box(40,119,80,24,INK);
+ if(pressed) { box(42,121,76,20,GOLD); text(129,s,INK); return; }
+ box(42,121,76,20,CREAM); box(42,139,76,2,GOLD); text(127,s,INK);
 }
 void home(float progress) {
  box(68,8,24,22,INK); box(70,10,20,18,PURPLE);
@@ -98,7 +95,7 @@ void windowGhost(bool ready,bool lively,uint32_t tick) {
  for(int y=0;y<ghost::H;++y) for(int x=0;x<ghost::W;++x) {
   const uint8_t c=ghost::PX[y*ghost::W+x];
   if(c==ghost::CLEAR) continue;
-  const uint16_t color=rgb(ghost::COLORS[c]);
+  const uint16_t color=rgb888_to_565(ghost::COLORS[c]);
   box(left+x,top+y,1,1,ready?color:color==INK?NIGHT:BLUE);
  }
 }
@@ -187,12 +184,18 @@ void plant(bool highlight,int dx) {
  b(111,87,25,6,INK); b(113,89,21,3,GOLD); b(115,93,17,12,INK); b(117,93,13,10,RUST);
  b(119,94,2,7,ORANGE); if(highlight) b(115,89,17,2,CREAM);
 }
-void pumpkinFace(int x,int y,int squash,bool peek) {
+// Scared: wide cream eyes and a round "o" in place of the smile, so a non-reader sees "not safe" (kid playtest 5, m4).
+void pumpkinFace(int x,int y,int squash,bool peek,bool scared=false) {
  int ry=peek?6:10-squash,rx=peek?9:12+squash;
  oval(x,y+ry,rx,3,INK); oval(x,y,rx,ry,INK); oval(x,y-1,rx-2,ry-2,RUST); oval(x,y-1,rx-5,ry-2,ORANGE);
  box(x-3,y-ry-4,4,5,INK); box(x-2,y-ry-4,2,4,SAGE);
- box(x-6,y-4,3,4,INK); box(x+3,y-4,3,4,INK); box(x-5,y-4,1,1,CREAM); box(x+4,y-4,1,1,CREAM);
- box(x-4,y+3,8,2,INK); box(x-2,y+5,4,1,INK); box(x-1,y+3,2,1,CREAM);
+ if(scared) {
+  for(int ex=x-7;ex<=x+2;ex+=9) { box(ex,y-6,5,6,INK); box(ex+1,y-5,3,4,CREAM); box(ex+2,y-4,1,2,INK); }
+  box(x-1,y+2,2,1,INK); box(x-2,y+3,4,3,INK); box(x-1,y+6,2,1,INK);
+ } else {
+  box(x-6,y-4,3,4,INK); box(x+3,y-4,3,4,INK); box(x-5,y-4,1,1,CREAM); box(x+4,y-4,1,1,CREAM);
+  box(x-4,y+3,8,2,INK); box(x-2,y+5,4,1,INK); box(x-1,y+3,2,1,CREAM);
+ }
  box(x-9,y,2,2,GOLD); box(x+7,y,2,2,RUST);
 }
 // Her arm out, flashlight first, stepping down toward the spot she is checking.
@@ -203,13 +206,13 @@ void pointArm(int x,int spot) {
  int ex=x-34,ey=66+fall*4;
  box(ex-1,ey-1,6,5,INK); box(ex,ey,4,3,SKIN); box(ex-6,ey-2,6,7,INK); box(ex-5,ey-1,3,5,GOLD);
 }
+// A cream "!" bubble centred on (x,y).
+void bang(int x,int y) { oval(x,y,5,6,INK); oval(x,y,3,4,CREAM); box(x,y-3,1,4,INK); box(x,y+2,1,1,INK); }
 // She leans in on Catch, points when checking a spot, and looks over at the crash during the distraction.
 void grandma(const View& v) {
  int lean=v.page==Page::Catch?int(v.pageMs/50):0,point=v.checking,x=141-lean,bob=(v.animationMs/300)%2;
  int look=point>=0||v.distract?1:0;
- if(v.heard) {  // "!" beside her head: she heard the rustle
-  oval(x-13,40,5,6,INK); box(x-9,41,3,2,INK); oval(x-13,40,3,4,CREAM); box(x-13,37,1,4,INK); box(x-13,42,1,1,INK);
- }
+ if(v.heard) { bang(x-13,40); box(x-9,41,3,2,INK); }  // beside her head: she heard the rustle
  oval(x+6,44,6,6,INK); oval(x+6,43,4,4,GREY); oval(x,53,10,12,INK); oval(x,52,8,10,SKIN);
  box(x-7,43,13,5,GREY); box(x-10,50,9,6,INK); box(x+1,50,8,6,INK);
  box(x-8,51,5,3,CREAM); box(x+3,51,4,3,CREAM); box(x-1,52,3,1,INK);
@@ -252,23 +255,31 @@ void light(const View& v) {
  }
  oval(static_cast<int>(v.beamX),107,22,4,GOLD);
 }
-// The three hiding spots; the one hiding a rustling pumpkin jiggles 1 px.
+// The three hiding spots, the cover in reach lit; the one hiding a rustling pumpkin jiggles 1 px.
 void furniture(const View& v) {
- int j=v.rustling?int(v.animationMs/80%2):0;
- chair(v.nearby==0,v.hidden==0?j:0); table(v.nearby==1,v.hidden==1?j:0); plant(v.nearby==2,v.hidden==2?j:0);
+ const int j=v.rustling?int(v.animationMs/80%2):0;
+ chair(v.cover==0,v.hidden==0?j:0); table(v.cover==1,v.hidden==1?j:0); plant(v.cover==2,v.hidden==2?j:0);
  if(v.rustling&&v.hidden>=0) rustleMarks(v.hidden,v.animationMs);
+}
+// It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px, and looks
+// scared under a "!" up and away from her side, clear of her "?" bubble: the non-word "not safe here" (kid playtests
+// 4, M1 and 5, m4). In the open by the spot she names it looks scared too, with no hop or "!" (kid playtest 6, M1).
+void player(const View& v) {
+ int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
+ if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
+ const int into=int(STARTLE_MS-v.startle),half=int(STARTLE_HOP_MS/2);
+ const int hop=v.startle&&into<2*half?4-std::abs(into-half)*4/half:0;
+ pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0,v.startle>0||v.scared);
+ if(v.startle) bang(x-13,82-hop);
+ if(v.hidden>=0) box(x-10,107,21,2,INK);
+ sparkle(x,v.sinceCandy);
 }
 void scene(const View& v) {
  room(v.doorOpen,v.animationMs); windowGhost(v.ghostReady,v.page==Page::Play,v.animationMs); light(v); shelf(v); furniture(v); candies(v);
  // She also turns to look at the crash, so the kid sees what the ghost did (no beam: she is resting).
  if(v.searching||v.warning||v.page==Page::Catch||v.distract) grandma(v);
  if(v.checking>=0&&v.warning) ask(v.checking,v.animationMs);
- if(v.page==Page::Won) return;
- int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
- if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
- pumpkinFace(x,v.hidden>=0?101:99,squash,v.hidden>=0);
- if(v.hidden>=0) box(x-10,107,21,2,INK);
- sparkle(x,v.sinceCandy);
+ if(v.page!=Page::Won) player(v);
 }
 void intro() {
  box(40,35,80,21,INK); text(37,"PUMPKIN",GOLD); text(47,"HIDE & SEEK",CREAM);
@@ -288,7 +299,8 @@ void candyHud(uint8_t got) {
 // The urgent cues, most urgent first. A rustle outranks the crash and PHEW!, since the kid's own tilt is
 // the one thing to fix.
 const char* alarm(const View& v) {
- if(v.exposure>0) return v.hidden>=0?"RUN AWAY!":"QUICK! HIDE!";
+ // Seen during a Check, hiding can't help (mashing included): only running can.
+ if(v.exposure>0) return v.checking>=0?"RUN AWAY!":"QUICK! HIDE!";
  if(v.heard&&v.hidden>=0&&v.rustling) return "SHE HEARD YOU!";
  if(v.rustling) return "SHH!";
  if(v.distract) return "WHAT WAS THAT?";
@@ -298,7 +310,7 @@ const char* alarm(const View& v) {
 const char* playLabel(const View& v) {
  constexpr const char* ASK[]={"THE CHAIR?","THE TABLE?","THE PLANT?"};
  if(const char* s=alarm(v)) return s;
- if(v.checking>=0&&v.warning) return ASK[v.checking];
+ if(v.checking>=0&&v.warning) return v.nearby==v.checking?"RUN AWAY!":ASK[v.checking];  // in reach of it: go
  if(v.warning) return "GRANDMA!";
  if(v.searching) return "HMM?";
  if(v.heard&&v.hidden>=0) return "SHE HEARD YOU!";
@@ -306,12 +318,36 @@ const char* playLabel(const View& v) {
  if(v.doorOpen) return "TO THE DOOR!";
  return nullptr;
 }
+// A cream chevron, 7x13, pointing dir (-1 left, 1 right) with its tip 3 px from cx.
+void chevron(int cx,int dir) {
+ for(int d=0;d<=6;++d) { const int x=cx+dir*(3-d)-(dir>0); box(x,130-d,2,1,CREAM); box(x,130+d,2,1,CREAM); }
+}
+// Away from cover there is nothing to press: the sign goes flat and dim, never gold, with an arrow that bobs toward
+// cover. A finger on it says "no" while it stays, and a second after: the sign shakes and cream chevrons march
+// toward cover in place of the words, plain in any one frame (a 2 px shake alone went unseen by a 6-year-old).
+void coverSign(const View& v) {
+ const int dir=v.coverDir;
+ const int shake=v.refused?(v.animationMs/60%2?3:-3):0;
+ box(40+shake,119,80,24,INK); box(42+shake,121,76,20,WALL);
+ if(v.refused) {
+  const int march=int(v.animationMs/100%5)*2*dir;
+  for(int k=-1;k<=1;++k) chevron(80+shake-4*dir+10*k+march,dir);
+  return;
+ }
+ const int bob=int(v.animationMs/200%2)*dir,tip=(dir<0?45:114)+bob;
+ text(127,"FIND COVER",GREY,1,dir<0?86:75);
+ for(int i=0;i<4;++i) box(tip-dir*i,130-i,1,2*i+1,GREY);  // the head, then the shaft
+ box(dir<0?tip+4:tip-6,129,3,3,GREY);
+}
 void play(const View& v) {
  candyHud(v.got);
  // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
  // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
- button(v.hidden>=0?"COME OUT":v.nearby>=0?"HIDE":"FIND COVER");
+ // Gold, pressed, only while really hidden. The spot she names is no cover: in reach of it the sign is FIND COVER.
+ if(v.hidden>=0) button("HIDING",true);
+ else if(v.cover>=0) button("HOLD TO HIDE");
+ else coverSign(v);
 }
 void icing(uint32_t ms) {
  for(int x=0;x<160;++x) {
@@ -327,7 +363,7 @@ void pie() {
  const int left=80-pie::W/2,top=59;
  for(int y=0;y<pie::H;++y) for(int x=0;x<pie::W;++x) {
   const uint8_t c=pie::PX[y*pie::W+x];
-  if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb(pie::COLORS[c]));
+  if(c!=pie::CLEAR) box(left+x,top+y,1,1,rgb888_to_565(pie::COLORS[c]));
  }
 }
 constexpr const char* CATCH_QUIP[QUIPS]={"THERE YOU ARE!","FOUND YOU!","PEEKABOO!","GOTCHA DEAR!"};

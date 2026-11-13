@@ -1,0 +1,420 @@
+# Zoe pass: profile
+tick 2000
+tap 67 125
+tick 500
+tap 41 125
+tick 500
+tap 67 53
+tick 500
+tap 67 125
+tick 500
+tap 41 77
+tick 500
+tap 118 125
+tick 800
+# face: fox
+tap 132 55
+tick 800
+# age 8
+tap 41 101
+tick 800
+# skip code
+tap 80 145
+tick 1200
+shot z000_launcher
+tap 80 103
+tick 1200
+shot z001_title
+tilt 0 400 -917
+tap 80 131 100
+tick 700
+shot z002_calib
+# mashes READY
+tap 80 138 80
+tick 60
+tap 82 137 80
+tick 60
+tap 79 139 80
+tick 60
+tap 80 136 80
+film z003_r1 3000 500
+# Zoe mashes the sign instead of holding, through Grandma's sweep
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+shot z004_mash_01
+tap 80 134 80
+tick 40
+tap 81 132 80
+tick 40
+shot z004_mash_03
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z004_mash_05
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+shot z004_mash_07
+tap 81 134 80
+tick 40
+tap 82 132 80
+tick 40
+shot z004_mash_09
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z004_mash_11
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+shot z004_mash_13
+tap 82 134 80
+tick 40
+tap 78 132 80
+tick 40
+shot z004_mash_15
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z004_mash_17
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+shot z004_mash_19
+tap 78 134 80
+tick 40
+tap 79 132 80
+tick 40
+shot z004_mash_21
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z004_mash_23
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+shot z004_mash_25
+tap 79 134 80
+tick 40
+tap 80 132 80
+tick 40
+shot z004_mash_27
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z004_mash_29
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+shot z004_mash_31
+tap 80 134 80
+tick 40
+tap 81 132 80
+tick 40
+shot z004_mash_33
+# Zoe tilts right into the open floor and mashes the sign to try to stay safe while moving
+tilt 500 400 -768
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_02
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_05
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_08
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z005_mashmove_11
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z005_mashmove_14
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_17
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_20
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_23
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z005_mashmove_26
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z005_mashmove_29
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_32
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_35
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_38
+tap 82 132 80
+tick 40
+# Zoe holds the sign properly while Grandma is here
+down 80 134
+film z006_hold 5000 625
+up
+tilt -450 400 -799
+film z007_left 3000 375
+tilt 0 400 -917
+down 80 134
+film z008_chair 6000 500
+up
+tilt 700 400 -592
+film z009_right 3000 333
+# Zoe presses the dark sign right away (no cover here) and keeps the tilt toward the arrow
+down 80 134
+film z010_nocover 2000 200
+tilt 0 400 -917
+film z011_wait 3000 500
+up
+tilt 600 400 -692
+film z012_right 1500 250
+tilt -750 400 -527
+film z013_door 4000 333
+film z014_door 2000 333
+# ROUND 2: Zoe mashes PLAY AGAIN
+tap 78 130 70
+tick 50
+tap 79 131 70
+tick 50
+tap 80 132 70
+tick 50
+tap 81 130 70
+tick 50
+tap 78 131 70
+tick 50
+tap 79 132 70
+tick 50
+shot z015_r2start
+# rush strategy: no hiding, straight for candies
+tilt -750 400 -527
+film z016_rush 3000 333
+tilt 800 400 -447
+film z017_rush 4000 333
+film z018_rush 2000 333
+tilt -800 400 -447
+film z019_rushdoor 4000 333
+film z020_rushdoor 2500 500
+# ROUND 3: rush again to test whether hiding is ever needed
+tap 80 131 100
+tick 300
+shot z021_r3start
+tilt 800 400 -447
+film z022_rush 4000 333
+tilt -800 400 -447
+film z023_rush 6000 400
+# ROUND 4: Zoe plays carefully; hides at the table from the start
+tilt 0 400 -917
+tap 80 140 100
+tick 500
+down 80 134
+film z024_r4 14000 875
+# Zoe wiggles the board while hidden to see what happens
+tilt 600 400 -692
+tick 700
+tilt -600 400 -692
+tick 700
+tilt 600 400 -692
+tick 700
+tilt 0 400 -917
+film z025_noise 5000 333
+# Zoe tries to beat the spot check by mashing the sign
+up
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+shot z026_mashcheck_01
+tap 80 134 80
+tick 40
+tap 81 132 80
+tick 40
+shot z026_mashcheck_03
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z026_mashcheck_05
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+shot z026_mashcheck_07
+tap 81 134 80
+tick 40
+tap 82 132 80
+tick 40
+shot z026_mashcheck_09
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z026_mashcheck_11
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+shot z026_mashcheck_13
+tap 82 134 80
+tick 40
+tap 78 132 80
+tick 40
+shot z026_mashcheck_15
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z026_mashcheck_17
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+shot z026_mashcheck_19
+tap 78 134 80
+tick 40
+tap 79 132 80
+tick 40
+shot z026_mashcheck_21
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z026_mashcheck_23
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+shot z026_mashcheck_25
+tap 79 134 80
+tick 40
+tap 80 132 80
+tick 40
+shot z026_mashcheck_27
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z026_mashcheck_29
+# ROUND 5 (started by the mash): Zoe grabs the two candies right of the table first
+tilt 700 400 -592
+film z027_r5 3000 333
+tilt 0 400 -917
+down 80 134
+film z028_r5plant 5000 500
+up
+tilt -800 400 -447
+film z029_r5left 6000 500
+# ROUND 6: no-cover probe from a standstill
+tilt 0 400 -917
+tap 80 131 100
+tick 500
+tilt 500 400 -768
+tick 900
+tilt 0 400 -917
+tick 1200
+shot z030_open_before
+down 80 134
+film z031_open_hold 1500 150
+up
+tick 200
+shot z032_open_after
+tilt 600 400 -692
+film z033_r6 2000 333
+tilt 0 400 -917
+down 80 134
+film z034_r6hide 5000 500
+up
+tilt -800 400 -447
+film z035_r6left 6000 500
+# drag off PLAY AGAIN before lifting (changes her mind)
+down 80 131
+tick 300
+move 80 115
+tick 40
+move 80 95
+tick 40
+move 80 80
+tick 300
+up
+tick 800
+shot z036_dragoff
+# off-center taps around PLAY AGAIN: just above, just left of it
+tap 80 119 120
+tick 600
+shot z037_above
+tap 44 131 120
+tick 600
+shot z038_left
+tap 118 131 120
+tick 600
+shot z039_right

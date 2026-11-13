@@ -8,8 +8,8 @@ PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report
 multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
-Directives that need live state (follow-glow, solve-word, answer-book) run the script so far, read the answer and
-append the taps: the sim is deterministic, so every run replays the same game. Report: build/playtest/report.md.
+Directives that need live state (follow-glow, solve-word, answer-book, wait-until) run the script so far, read the
+answer and append the taps or waits: the sim is deterministic, so every run replays the same game. Report: build/playtest/report.md.
 """
 
 import math
@@ -111,6 +111,7 @@ GROWN_UPS = {
 # The grown-ups' full QWERTY keyboard (a user decision of 2026-10-18): 12 px (4 mm) keys pass on these screens. Every
 # tap goes to the nearest key and the pressed key shows big above the finger; under 12 px still fails.
 KEYBOARDS = {"sys_pass", "sys_addr", "sys_zone_search"}
+KEY_OP_VALUE = r"(\w+)\s*(==|!=|<=|>=|=|<|>)\s*(.+)"  # `expect` and `wait-until`: key, op, value
 SANITIZER = re.compile(r"ERROR: (Address|Leak)Sanitizer|runtime error:")
 OPS = {
     "=": lambda a, b: a == b,
@@ -251,6 +252,20 @@ def plan(d, seg, where):
         used.add(i)
         taps.append(f"tap {x0 + (i % cols) * 26 + 12} {y0 + (i // cols) * 26 + 12}")
     return taps
+
+
+def wait_until(arg, where, probe):
+    """`wait-until <key><op><value> <max ms>`: 40 ms waits up to the first frame whose debug output shows it."""
+    m = re.fullmatch(KEY_OP_VALUE + r"\s+(\d+)", arg)
+    if not m:
+        raise Fail(f"{where}: expected `wait-until <key><op><value> <max ms>`")
+    key, op, want, steps = m.group(1), m.group(2), m.group(3), int(m.group(4)) // 40
+    seg = probe([c for n in range(steps) for c in ("wait 40", f"echo @@w{n}", "debug")])
+    for n in range(steps):
+        got = pairs(seg.get(f"w{n}", [])).get(key)
+        if got is not None and compare(key, got, op, want):
+            return ["wait 40"] * (n + 1)
+    raise Fail(f"{where}: no {key}{op}{want} within {m.group(4)} ms")
 
 
 def compare(key, got, op, want):
@@ -425,8 +440,8 @@ def play(path, cwd, res, start):
         lines.extend([f"echo @@{qid}", *([cmd] if cmd else []), "echo @@"])
         return qid
 
-    def run():
-        return run_script(binary, cwd, lines, start + limit, limit)
+    def run(extra=()):
+        return run_script(binary, cwd, lines + list(extra), start + limit, limit)
 
     for no, raw in unroll(path.read_text()):
         w = raw.split()
@@ -434,7 +449,7 @@ def play(path, cwd, res, start):
             continue
         d, arg, where = w[0], " ".join(w[1:]), f"line {no} `{raw.strip()}`"
         if d == "expect":
-            m = re.fullmatch(r"(\w+)\s*(==|!=|<=|>=|=|<|>)\s*(.+)", arg)
+            m = re.fullmatch(KEY_OP_VALUE, arg)
             if not m:
                 raise Fail(f"{where}: expected `expect <key><op><value>`")
             query("debug", where, d, m.groups())
@@ -443,6 +458,8 @@ def play(path, cwd, res, start):
         elif d in ("follow-glow", "solve-word", "answer-book"):
             qid = query("watch 6000" if d == "follow-glow" else "debug", where, "info")
             lines.extend(plan(d, segments(run()).get(qid, []), where))
+        elif d == "wait-until":
+            lines.extend(wait_until(arg, where, lambda poll: segments(run(poll))))
         else:
             lines.append(raw.strip())
     collect_results(path, cwd, res, run(), checks)

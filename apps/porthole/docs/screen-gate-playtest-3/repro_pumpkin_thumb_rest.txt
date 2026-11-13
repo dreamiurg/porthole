@@ -1,0 +1,22 @@
+reset
+profile Zed 8
+wait 1000
+tap 80 103
+wait 1500
+screen
+tap 80 130
+wait 1000
+tap 80 130
+wait 300
+down 79 131
+wait 100
+snap h300_100
+wait 300
+snap h300_400
+wait 300
+snap h300_700
+wait 500
+snap h300_1200
+up
+wait 100
+snap h300_up

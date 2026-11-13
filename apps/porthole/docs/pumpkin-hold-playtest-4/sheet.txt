@@ -1,0 +1,12 @@
+# python3 -I sheet.txt OUT.png SCALE name1 name2 ... : labeled strip of shots
+import sys, os
+from PIL import Image, ImageDraw
+here = os.path.dirname(os.path.abspath(sys.argv[0]))
+out, sc, names = sys.argv[1], float(sys.argv[2]), sys.argv[3:]
+ims = [Image.open(os.path.join(here, "shots", n + ".png")) for n in names]
+w = int(480 * sc); cols = min(4, len(ims)); rows = (len(ims) + cols - 1) // cols
+S = Image.new("RGB", (cols * w, rows * (w + 14)), (40, 40, 40)); d = ImageDraw.Draw(S)
+for i, (n, im) in enumerate(zip(names, ims)):
+    x, y = (i % cols) * w, (i // cols) * (w + 14)
+    S.paste(im.resize((w, w)), (x, y + 14)); d.text((x + 2, y), n, fill=(255, 255, 0))
+S.save(os.path.join(here, out))

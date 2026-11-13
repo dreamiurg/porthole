@@ -1,0 +1,370 @@
+       0 tick 1000
+    1000 frame 00_boot
+    1000 down 110 100
+    1000 tick 120
+    1120 up
+    1120 tick 40
+    1160 tick 500
+    1660 down 41 77
+    1660 tick 120
+    1780 up
+    1780 tick 40
+    1820 tick 500
+    2320 down 67 125
+    2320 tick 120
+    2440 up
+    2440 tick 40
+    2480 tick 500
+    2980 frame 01_nz
+    2980 down 67 52
+    2980 tick 120
+    3100 up
+    3100 tick 40
+    3140 tick 500
+    3640 down 119 125
+    3640 tick 120
+    3760 up
+    3760 tick 40
+    3800 tick 800
+    4600 frame 02_after_ok
+    4600 down 93 87
+    4600 tick 600
+    5200 up
+    5200 tick 40
+    5240 tick 800
+    6040 frame 03_after_face
+    6040 down 79 69
+    6040 tick 300
+    6340 up
+    6340 tick 40
+    6380 tick 800
+    7180 frame 04_after_age
+    7180 down 80 145
+    7180 tick 120
+    7300 up
+    7300 tick 40
+    7340 tick 1000
+    8340 frame 05_launcher
+    8340 down 80 103
+    8340 tick 500
+    8840 frame 06_finger_on_tile
+    8840 tick 500
+    9340 up
+    9340 tick 300
+    9640 frame 07_open_a
+    9640 tick 1200
+   10840 frame 07_open_b
+   10840 tilt 0 500 -866
+   10840 tick 500
+   11340 down 80 130
+   11340 tick 300
+   11640 frame 08_start_pressed
+   11640 tick 1200
+   12840 up
+   12840 tick 200
+   13040 frame 09_after_start_a
+   13040 tick 800
+   13840 frame 09_after_start_b
+   13840 tick 1500
+   15340 frame 09_after_start_c
+   15340 down 80 130
+   15340 tick 400
+   15740 frame 10_ready_down
+   15740 tick 600
+   16340 frame 10_ready_held1s
+   16340 tick 1000
+   17340 frame 10_ready_held2s
+   17340 tick 1000
+   18340 frame 10_ready_held3s
+   18340 up
+   18340 tick 40
+   18380 frame 11_play_0
+   18380 tick 300
+   18680 frame 11_play_300
+   18680 tick 700
+   19380 frame 11_play_1000
+   19380 tilt 300 500 -812
+   19380 tick 500
+   19880 frame 12_tiltR_500
+   19880 tick 500
+   20380 frame 12_tiltR_1000
+   20380 tick 500
+   20880 frame 12_tiltR_1500
+   20880 tick 300
+   21180 frame 13_a
+   21180 tick 300
+   21480 frame 13_b
+   21480 tick 300
+   21780 frame 13_c
+   21780 tick 300
+   22080 frame 13_d
+   22080 down 80 130
+   22080 tick 120
+   22200 up
+   22200 tick 40
+   22240 frame 14_a
+   22240 tick 300
+   22540 frame 14_b
+   22540 tick 400
+   22940 frame 14_c
+   22940 tick 500
+   23440 frame 14_d
+   23440 tick 500
+   23940 frame 14_e
+   23940 tick 500
+   24440 frame 14_f
+   24440 tick 500
+   24940 frame 14_g
+   24940 tick 500
+   25440 frame 14_h
+   25440 tick 500
+   25940 frame 15_a
+   25940 tick 500
+   26440 frame 15_b
+   26440 tick 500
+   26940 frame 15_c
+   26940 tick 500
+   27440 frame 15_d
+   27440 tick 500
+   27940 frame 15_e
+   27940 tick 500
+   28440 frame 15_f
+   28440 tick 500
+   28940 frame 15_g
+   28940 tick 500
+   29440 frame 15_h
+   29440 tilt -350 500 -792
+   29440 tick 700
+   30140 frame 16_a
+   30140 tick 700
+   30840 frame 16_b
+   30840 tick 700
+   31540 frame 16_c
+   31540 tick 700
+   32240 frame 16_d
+   32240 tick 700
+   32940 frame 17_a
+   32940 tick 700
+   33640 frame 17_b
+   33640 tick 700
+   34340 frame 17_c
+   34340 tick 700
+   35040 frame 17_d
+   35040 tick 700
+   35740 frame 17_e
+   35740 tick 700
+   36440 frame 17_f
+   36440 tick 700
+   37140 frame 17_g
+   37140 tick 700
+   37840 frame 17_h
+   37840 down 79 132
+   37840 tick 600
+   38440 frame 18_a_held600
+   38440 tick 1400
+   39840 frame 18_b_held2s
+   39840 up
+   39840 tick 100
+   39940 frame 18_c_up
+   39940 tick 600
+   40540 frame 18_d
+   40540 tick 700
+   41240 frame 18_e
+   41240 tick 700
+   41940 frame 18_f
+   41940 tick 700
+   42640 frame 18_g
+   42640 tick 700
+   43340 frame 18_h
+   43340 down 82 128
+   43340 tick 120
+   43460 up
+   43460 tick 40
+   43500 down 82 128
+   43500 tick 120
+   43620 up
+   43620 tick 40
+   43660 frame 19_a
+   43660 tick 300
+   43960 frame 19_b
+   43960 tick 300
+   44260 frame 19_c
+   44260 tick 300
+   44560 frame 19_d
+   44560 tick 400
+   44960 frame 19_e
+   44960 tick 400
+   45360 frame 19_f
+   45360 tick 400
+   45760 frame 19_g
+   45760 tick 400
+   46160 frame 19_h
+   46160 tick 500
+   46660 frame 20_a
+   46660 tick 500
+   47160 frame 20_b
+   47160 tick 500
+   47660 frame 20_c
+   47660 tick 500
+   48160 frame 20_d
+   48160 tick 700
+   48860 frame 20_e
+   48860 tick 700
+   49560 frame 20_f
+   49560 tick 1000
+   50560 frame 20_g
+   50560 tick 1000
+   51560 frame 20_h
+   51560 tilt 0 500 -866
+   51560 down 76 131
+   51560 tick 1000
+   52560 up
+   52560 tick 40
+   52600 tick 300
+   52900 frame 21_a
+   52900 tick 700
+   53600 frame 21_b
+   53600 down 48 138
+   53600 tilt 250 500 -829
+   53600 tick 500
+   54100 frame 22_a
+   54100 tick 500
+   54600 frame 22_b
+   54600 tick 500
+   55100 frame 22_c
+   55100 tick 500
+   55600 frame 22_d
+   55600 tick 500
+   56100 frame 22_e
+   56100 tick 500
+   56600 frame 22_f
+   56600 tilt 0 500 -866
+   56600 up
+   56600 tick 80
+   56680 frame 23_a
+   56680 tick 400
+   57080 frame 23_b
+   57080 tick 500
+   57580 frame 23_c
+   57580 tick 500
+   58080 frame 23_d
+   58080 down 112 139
+   58080 tick 300
+   58380 frame 24_a
+   58380 tick 1000
+   59380 frame 24_b
+   59380 tick 1000
+   60380 frame 24_c
+   60380 up
+   60380 tick 80
+   60460 frame 24_d
+   60460 tick 400
+   60860 frame 24_e
+   60860 tick 500
+   61360 frame 24_f
+   61360 tick 500
+   61860 frame 24_g
+   61860 tick 500
+   62360 frame 24_h
+   62360 tilt 300 500 -812
+   62360 tick 600
+   62960 frame 25_a
+   62960 tick 600
+   63560 frame 25_b
+   63560 tilt -300 500 -812
+   63560 tick 600
+   64160 frame 25_c
+   64160 tick 600
+   64760 frame 25_d
+   64760 tick 600
+   65360 frame 25_e
+   65360 tick 600
+   65960 frame 25_f
+   65960 tick 600
+   66560 frame 25_g
+   66560 tick 600
+   67160 frame 25_h
+   67160 tilt 0 500 -866
+   67160 down 80 131
+   67160 tick 300
+   67460 frame 26_a
+   67460 tick 600
+   68060 frame 26_b
+   68060 tick 800
+   68860 frame 26_c
+   68860 tick 800
+   69660 frame 26_d
+   69660 up
+   69660 tick 80
+   69740 frame 26_e
+   69740 tick 500
+   70240 frame 26_f
+   70240 tick 600
+   70840 frame 26_g
+   70840 tick 600
+   71440 frame 26_h
+   71440 tick 1500
+   72940 down 80 131
+   72940 tick 120
+   73060 up
+   73060 tick 40
+   73100 tick 60
+   73160 down 80 131
+   73160 tick 120
+   73280 up
+   73280 tick 40
+   73320 tick 100
+   73420 frame 27_a
+   73420 tick 500
+   73920 frame 27_b
+   73920 tick 600
+   74520 frame 27_c
+   74520 down 33 42
+   74520 tick 300
+   74820 frame 28_a
+   74820 tick 500
+   75320 frame 28_b
+   75320 tick 700
+   76020 frame 28_c
+   76020 up
+   76020 tick 100
+   76120 frame 28_d
+   76120 tick 500
+   76620 frame 28_e
+   76620 tick 800
+   77420 frame 28_f
+   77420 tilt 250 500 -829
+   77420 tick 500
+   77920 frame 29_a
+   77920 tick 500
+   78420 frame 29_b
+   78420 tick 500
+   78920 frame 29_c
+   78920 tick 500
+   79420 frame 29_d
+   79420 tick 500
+   79920 frame 30_a
+   79920 tick 500
+   80420 frame 30_b
+   80420 tick 500
+   80920 frame 30_c
+   80920 tick 500
+   81420 frame 30_d
+   81420 tilt 0 500 -866
+0 down 80 131
+0 tick 120
+0 up
+0 tick 40
+0 frame B_a0
+0 tick 100
+0 frame B_a
+0 tick 500
+0 frame B_b
+0 tick 600
+0 frame B_c
+0 tick 600
+0 frame B_d
+0 tick 1500
+0 frame B_e
+0 tick 1500
+0 frame B_f

@@ -1,0 +1,957 @@
+W 2000
+shot z00_boot
+# Zoe: switch to N-Z, quick tap
+T 67 125 100
+W 300
+shot z01_nz
+T 41 125 100
+W 250
+shot z02_Z
+T 67 53 100
+W 250
+shot z03_O
+T 67 125 100
+W 250
+shot z04_am
+T 41 77 100
+W 250
+shot z05_E
+T 119 125 100
+W 300
+shot z06_ok
+T 124 57 100
+W 300
+shot z07_face
+T 37 101 100
+W 300
+shot z08_age
+T 80 145 100
+W 300
+shot z09_skip
+W 1500
+shot z10_after
+# Home -> All games
+T 124 105 100
+W 300
+shot z11_lib
+T 96 135 100
+W 300
+shot z12_lib2
+# Zoe presses star button to pick games
+T 126 42 100
+W 300
+shot z13_star
+T 124 73 100
+W 300
+shot z14_full
+W 300
+T 63 135 100
+W 250
+shot z15_p1
+T 124 73 100
+W 250
+shot z16_unstar
+T 96 135 100
+W 250
+shot z17_p2
+T 124 73 100
+W 250
+shot z18_stargirl
+W 600
+shot z19_later
+T 33 43 100
+W 250
+shot z20_done
+T 80 12 100
+W 300
+shot z21_home
+# Open Pets Club (dog tile, now middle)
+D 80 73
+W 200
+shot z22_caption
+U
+W 300
+shot z23_pc
+W 1500
+shot z24_pc2
+T 79 88 100
+W 300
+shot z25_pkg
+W 1200
+shot z26_pkg2
+T 79 88 100
+W 300
+shot z27_open
+W 1500
+shot z28_open2
+T 80 80 100
+W 400
+shot z29_adopt
+W 1500
+shot z30_adopt2
+T 41 125 100
+W 250
+T 41 53 100
+W 250
+T 67 125 100
+W 250
+T 93 101 100
+W 250
+shot z31_max
+T 119 125 100
+W 400
+shot z32_ok
+W 1500
+shot z33_ok2
+T 128 85 100
+W 400
+shot z34_house
+W 2000
+shot z35_house2
+T 80 110 100
+W 500
+shot z36_room
+W 1500
+shot z37_room2
+# feed
+T 40 129 100
+W 300
+shot z38_feed
+W 700
+shot z39_feed2
+T 120 67 100
+W 300
+shot z40_cookie
+W 1500
+shot z41_cookie2
+W 1500
+shot z42_room
+T 119 129 100
+W 300
+shot z43_paw
+T 119 129 100
+W 300
+shot z44_paw2
+W 600
+shot z45_paw3
+T 119 129 100
+W 300
+shot z46_paw4
+T 50 45 100
+W 300
+shot z47_sit
+W 1500
+shot z48_sit2
+T 80 140 100
+W 300
+shot z49_l1
+W 300
+shot z49_l2
+W 300
+shot z49_l3
+W 300
+shot z49_l4
+W 300
+shot z49_l5
+W 300
+shot z49_l6
+W 300
+shot z49_l7
+W 300
+shot z49_l8
+T 47 106 100
+W 250
+shot z50_t1
+T 92 75 100
+W 300
+shot z50_t2
+W 900
+shot z50_t3
+T 80 12 100
+W 300
+shot z51_leave
+T 66 129 100
+W 300
+shot z52_ball
+W 1200
+shot z53_ball2
+T 80 12 100
+W 300
+shot z54_room
+T 66 129 100
+W 300
+shot z55_ball
+W 1200
+shot z56_ball2
+T 80 60 100
+W 300
+shot z57_fetch
+W 1500
+shot z58_fetch2
+D 78 105
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+M 60 105
+W 80
+M 40 105
+W 80
+M 30 105
+W 80
+M 40 105
+W 80
+M 60 105
+W 80
+M 80 105
+W 80
+M 100 105
+W 80
+M 120 105
+W 80
+M 130 105
+W 80
+M 120 105
+W 80
+M 100 105
+W 80
+M 80 105
+W 80
+U
+shot z59_fetchend
+W 1500
+shot z60_fetchres
+W 2500
+shot z61_res
+T 80 100 100
+W 300
+shot z62_res_tap
+W 700
+shot z63_res_tap2
+T 80 94 100
+W 300
+shot z64_ok
+W 1500
+shot z65_ok2
+T 142 44 100
+W 400
+shot z66_heart
+T 135 70 100
+W 250
+shot z67_r1
+T 135 70 100
+W 250
+shot z68_r2
+T 135 70 100
+W 250
+shot z69_r3
+W 600
+shot z70_r4
+T 80 129 100
+W 300
+shot z71_read
+W 1200
+shot z72_read2
+W 2000
+T 120 127 100
+W 300
+shot z73_p2
+W 2000
+T 120 127 100
+W 300
+shot z74_p3
+W 1000
+T 80 12 100
+W 300
+shot z75_h1
+T 80 12 100
+W 300
+shot z76_h2
+T 80 12 100
+W 300
+shot z77_h3
+T 80 12 100
+W 300
+shot z78_h4
+W 1000
+shot z79_h5
+T 80 12 100
+W 300
+shot z80_h6
+W 900
+D 80 12
+W 80
+shot z81_press
+U
+W 300
+shot z82_h7
+W 600
+D 36 73
+W 200
+shot z83_cap
+U
+W 300
+shot z84_tt
+W 1500
+shot z85_tt2
+T 108 116 100
+W 400
+shot z86_doll
+T 102 107 100
+W 250
+shot z87_mini
+T 80 141 100
+W 400
+shot z88_dress
+T 64 121 100
+W 250
+shot z89_buns
+T 95 121 100
+W 250
+shot z90_pony
+T 127 82 100
+W 300
+shot z91_skin
+T 127 82 100
+W 300
+shot z92_skin2
+W 300
+T 95 121 100
+W 300
+shot z93_tan
+T 106 26 100
+W 400
+shot z94_done
+W 1000
+shot z95_done2
+T 106 26 100
+W 400
+shot z96_done3
+T 80 18 100
+W 400
+shot z97_back
+T 50 116 100
+W 400
+shot z98_enter
+W 1000
+shot z99_enter2
+T 80 18 100
+W 400
+T 108 116 100
+W 400
+shot z100_town
+W 1000
+shot z101_town2
+T 50 116 100
+W 400
+shot z102_walk
+W 1000
+shot z103_walk2
+T 80 141 100
+W 400
+shot z104_park
+W 1000
+shot z105_park2
+T 32 100 100
+W 250
+shot z106_b1
+T 127 100 100
+W 250
+shot z107_b2
+T 57 130 100
+W 250
+shot z108_b3
+T 112 23 100
+W 400
+shot z109_go
+W 600
+shot z110_go2
+T 112 23 100
+W 400
+shot z111_go3
+W 1500
+shot z112_go4
+T 52 23 100
+W 400
+shot z113_lt
+T 80 146 100
+W 400
+shot z114_leave
+W 1000
+shot z115_leave2
+T 80 105 100
+W 400
+shot z116_pk
+W 1500
+shot z117_pk2
+tilt 0 0 -1000
+T 80 130 100
+W 400
+shot z118_start
+W 1500
+shot z119_start2
+T 80 130 100
+W 400
+shot z120_r1
+W 400
+shot z120_r2
+W 400
+shot z120_r3
+W 400
+shot z120_r4
+W 400
+shot z120_r5
+W 400
+shot z120_r6
+tilt -400 0 -917
+W 300
+shot z121_t1
+W 300
+shot z121_t2
+W 300
+shot z121_t3
+W 300
+shot z121_t4
+W 300
+shot z121_t5
+W 300
+shot z121_t6
+tilt 0 0 -1000
+T 80 130 100
+W 400
+shot z122_h1
+W 400
+shot z122_h2
+W 400
+shot z122_h3
+W 400
+shot z122_h4
+W 400
+shot z122_h5
+W 400
+shot z122_h6
+W 400
+shot z122_h7
+W 400
+shot z122_h8
+W 700
+shot z123_w1
+W 700
+shot z123_w2
+W 700
+shot z123_w3
+W 700
+shot z123_w4
+W 700
+shot z123_w5
+W 700
+shot z123_w6
+W 700
+shot z123_w7
+W 700
+shot z123_w8
+T 80 130 100
+W 300
+shot z124_out
+tilt 400 0 -917
+W 300
+shot z125_m1
+W 300
+shot z125_m2
+W 300
+shot z125_m3
+W 300
+shot z125_m4
+W 300
+shot z125_m5
+W 300
+shot z125_m6
+W 300
+shot z125_m7
+W 300
+shot z125_m8
+tilt 0 0 -1000
+T 80 130 100
+W 500
+shot z126_h1
+W 500
+shot z126_h2
+W 500
+shot z126_h3
+W 500
+shot z126_h4
+W 500
+shot z126_h5
+W 500
+shot z126_h6
+W 500
+shot z126_h7
+W 500
+shot z126_h8
+T 80 130 100
+W 200
+tilt 400 0 -917
+W 300
+shot z127_m1
+W 300
+shot z127_m2
+W 300
+shot z127_m3
+W 300
+shot z127_m4
+W 300
+shot z127_m5
+W 300
+shot z127_m6
+W 300
+shot z127_m7
+W 300
+shot z127_m8
+tilt 0 0 -1000
+T 80 130 100
+W 600
+shot z128_h1
+W 600
+shot z128_h2
+W 600
+shot z128_h3
+W 600
+shot z128_h4
+W 600
+shot z128_h5
+W 600
+shot z128_h6
+W 600
+shot z128_h7
+W 600
+shot z128_h8
+W 800
+shot z129_w1
+W 800
+shot z129_w2
+W 800
+shot z129_w3
+W 800
+shot z129_w4
+W 800
+shot z129_w5
+W 800
+shot z129_w6
+W 800
+shot z130_w1
+W 800
+shot z130_w2
+W 800
+shot z130_w3
+W 800
+shot z130_w4
+W 800
+shot z130_w5
+W 800
+shot z130_w6
+T 80 130 100
+W 200
+tilt 400 0 -917
+W 500
+shot z131_c
+tilt -500 0 -866
+W 400
+shot z132_m1
+W 400
+shot z132_m2
+W 400
+shot z132_m3
+W 400
+shot z132_m4
+W 400
+shot z132_m5
+W 400
+shot z132_m6
+W 400
+shot z132_m7
+W 400
+shot z132_m8
+W 400
+shot z133_m1
+W 400
+shot z133_m2
+W 400
+shot z133_m3
+W 400
+shot z133_m4
+W 400
+shot z133_m5
+W 400
+shot z133_m6
+W 400
+shot z133_m7
+W 400
+shot z133_m8
+tilt 0 0 -1000
+T 80 130 100
+W 400
+shot z134_again
+T 80 22 100
+W 400
+shot z135_exit
+W 1000
+shot z136_exit2
+D 80 22
+W 400
+shot z137_hold1
+W 600
+shot z138_hold2
+W 800
+shot z139_hold3
+U
+W 600
+shot z140_hold4
+T 80 12 100
+W 400
+shot z141_picker
+T 80 67 100
+W 300
+shot z142_home
+T 124 105 100
+W 300
+shot z143_lib
+T 80 12 100
+W 300
+shot z144_back
+T 80 12 100
+W 300
+shot z145_back2
+W 1000
+shot z146_back3

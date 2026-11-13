@@ -1,0 +1,2186 @@
+    1000 tick 1000
+    1000 shot 000_boot
+    1000 # setup: type LEO
+    1000 down 120 100
+    1120 tick 120
+    1120 up
+    1720 tick 600
+    1720 down 41 77
+    1840 tick 120
+    1840 up
+    2440 tick 600
+    2440 down 67 125
+    2560 tick 120
+    2560 up
+    3160 tick 600
+    3160 shot 001_nz
+    3160 down 67 53
+    3280 tick 120
+    3280 up
+    3880 tick 600
+    3880 down 119 125
+    4000 tick 120
+    4000 up
+    4800 tick 800
+    4800 shot 002_after_ok
+    4800 down 93 87
+    4920 tick 120
+    4920 up
+    5720 tick 800
+    5720 shot 003_age
+    5720 down 79 69
+    5840 tick 120
+    5840 up
+    6640 tick 800
+    6640 shot 004_code
+    6640 down 80 145
+    6760 tick 120
+    6760 up
+    7760 tick 1000
+    7760 shot 005_launcher
+    7760 # Leo holds the board in both hands, tipped toward him
+    7760 tilt 0 500 -866
+    7760 down 80 104
+    8160 tick 400
+    8160 shot 006_press_pumpkin_tile
+    9260 tick 1100
+    9260 up
+    9860 tick 600
+    9860 shot 007_open
+   11360 tick 1500
+   11360 shot 008_open2
+   11360 # curious: Leo presses the ghost on the title
+   11360 down 33 40
+   12560 tick 1200
+   12560 up
+   12860 tick 300
+   12860 shot 009_title_ghost
+   14060 tick 1200
+   14060 shot 010_title_ghost_b
+   14060 # Leo presses START firmly
+   14060 down 82 131
+   14560 tick 500
+   14560 shot 011_start_pressed
+   15560 tick 1000
+   15560 up
+   15860 tick 300
+   15860 shot 012_after_start
+   16560 tick 700
+   16560 shot 013_after_start_b
+   17560 tick 1000
+   17560 shot 014_after_start_c
+   17560 down 78 129
+   18860 tick 1300
+   18860 up
+   19160 tick 300
+   19160 shot 015_after_ready
+   19860 tick 700
+   19860 shot 016_play_a
+   20860 tick 1000
+   20860 shot 017_play_b
+   20860 # round 1: Leo tilts right toward the candy
+   20860 tilt 350 470 -810
+   21260 tick 400
+   21260 shot 018_r1_tilt_r_a
+   21660 tick 400
+   21660 shot 019_r1_tilt_r_b
+   22060 tick 400
+   22060 shot 020_r1_tilt_r_c
+   22460 tick 400
+   22460 shot 021_r1_tilt_r_d
+   22460 # Grandma appears; Leo keeps tilt and presses the sign, worried
+   22460 down 80 130
+   22760 tick 300
+   22760 shot 022_r1_press_sign
+   23260 tick 500
+   23260 shot 023_r1_press_sign_b
+   23960 tick 700
+   23960 shot 024_r1_press_sign_c
+   24660 tick 700
+   24660 shot 025_r1_press_sign_d
+   25460 tick 800
+   25460 shot 026_r1_hold_e
+   26260 tick 800
+   26260 shot 027_r1_hold_f
+   27060 tick 800
+   27060 shot 028_r1_hold_g
+   27860 tick 800
+   27860 shot 029_r1_hold_h
+   28660 tick 800
+   28660 shot 030_r1_hold_i
+   29460 tick 800
+   29460 shot 031_r1_hold_j
+   30260 tick 800
+   30260 shot 032_r1_hold_k
+   31060 tick 800
+   31060 shot 033_r1_hold_l
+   31060 up
+   31360 tick 300
+   31360 shot 034_r1_lift
+   31860 tick 500
+   31860 shot 035_r1_lift_b
+   31860 tilt 300 470 -830
+   32360 tick 500
+   32360 shot 036_r1_right
+   32860 tick 500
+   32860 shot 037_r1_right_b
+   32860 # Grandma again: Leo presses the sign, slightly off-centre
+   32860 down 70 133
+   33160 tick 300
+   33160 shot 038_r1_hide2
+   34060 tick 900
+   34060 shot 039_r1_hide2_b
+   34960 tick 900
+   34960 shot 040_r1_hide2_c
+   35860 tick 900
+   35860 shot 041_r1_hide2_d
+   36760 tick 900
+   36760 shot 042_r1_hide2_e
+   37660 tick 900
+   37660 shot 043_r1_hide2_f
+   38560 tick 900
+   38560 shot 044_r1_hide2_g
+   39460 tick 900
+   39460 shot 045_r1_hide2_h
+   39460 up
+   39460 tilt -400 460 -790
+   39860 tick 400
+   39860 shot 046_r1_left_a
+   40260 tick 400
+   40260 shot 047_r1_left_b
+   40660 tick 400
+   40660 shot 048_r1_left_c
+   41060 tick 400
+   41060 shot 049_r1_left_d
+   41460 tick 400
+   41460 shot 050_r1_left_e
+   41860 tick 400
+   41860 shot 051_r1_left_f
+   42260 tick 400
+   42260 shot 052_r1_left_g
+   42660 tick 400
+   42660 shot 053_r1_left_h
+   43060 tick 400
+   43060 shot 054_r1_door_a
+   43460 tick 400
+   43460 shot 055_r1_door_b
+   43860 tick 400
+   43860 shot 056_r1_door_c
+   44260 tick 400
+   44260 shot 057_r1_door_d
+   44260 # pumpkin seems stuck by the armchair; Leo tips harder left
+   44260 tilt -650 450 -610
+   44660 tick 400
+   44660 shot 058_r1_door_e
+   45060 tick 400
+   45060 shot 059_r1_door_f
+   45460 tick 400
+   45460 shot 060_r1_door_g
+   46060 tick 600
+   46060 shot 061_r1_door_h
+   46060 # round 1 won. Leo holds the board level-ish again and presses PLAY AGAIN
+   46060 tilt 0 500 -866
+   47560 tick 1500
+   47560 down 80 130
+   48560 tick 1000
+   48560 up
+   48860 tick 300
+   48860 shot 062_r2_start
+   49560 tick 700
+   49560 shot 063_r2_start_b
+   49560 # round 2: gentle right tilt for the near candy
+   49560 tilt 250 480 -840
+   49960 tick 400
+   49960 shot 064_r2_a
+   50360 tick 400
+   50360 shot 065_r2_b
+   50360 tilt 0 500 -866
+   50760 tick 400
+   50760 shot 066_r2_c
+   51160 tick 400
+   51160 shot 067_r2_d
+   51160 tilt 300 470 -830
+   51560 tick 400
+   51560 shot 068_r2_e
+   51960 tick 400
+   51960 shot 069_r2_f
+   52360 tick 400
+   52360 shot 070_r2_g
+   52760 tick 400
+   52760 shot 071_r2_h
+   52760 down 85 128
+   53160 tick 400
+   53160 shot 072_r2_hide_a
+   53960 tick 800
+   53960 shot 073_r2_hide_b
+   54760 tick 800
+   54760 shot 074_r2_hide_c
+   55560 tick 800
+   55560 shot 075_r2_hide_d
+   56360 tick 800
+   56360 shot 076_r2_hide_e
+   57160 tick 800
+   57160 shot 077_r2_hide_f
+   57960 tick 800
+   57960 shot 078_r2_hide_g
+   58760 tick 800
+   58760 shot 079_r2_hide_h
+   59560 tick 800
+   59560 up
+   59960 tick 400
+   59960 shot 080_r2_lift
+   60560 tick 600
+   60560 shot 081_r2_lift_b
+   61160 tick 600
+   61160 shot 082_r2_lift_c
+   61760 tick 600
+   61760 shot 083_r2_lift_d
+   61760 tilt 0 500 -866
+   61760 down 80 130
+   62160 tick 400
+   62160 shot 084_r2_hide2_a
+   62860 tick 700
+   62860 shot 085_r2_hide2_b
+   63560 tick 700
+   63560 shot 086_r2_hide2_c
+   64260 tick 700
+   64260 shot 087_r2_hide2_d
+   64960 tick 700
+   64960 shot 088_r2_hide2_e
+   65660 tick 700
+   65660 shot 089_r2_hide2_f
+   66360 tick 700
+   66360 shot 090_r2_hide2_g
+   67060 tick 700
+   67060 shot 091_r2_hide2_h
+   67060 # Leo's thumb tires: lifts while Grandma still searches
+   67060 up
+   67260 tick 200
+   67260 shot 092_r2_lift_mid_a
+   67560 tick 300
+   67560 shot 093_r2_lift_mid_b
+   67860 tick 300
+   67860 shot 094_r2_lift_mid_c
+   68160 tick 300
+   68160 shot 095_r2_lift_mid_d
+   68160 tilt -400 460 -790
+   68560 tick 400
+   68560 shot 096_r2_l_a
+   68960 tick 400
+   68960 shot 097_r2_l_b
+   69360 tick 400
+   69360 shot 098_r2_l_c
+   69760 tick 400
+   69760 shot 099_r2_l_d
+   70160 tick 400
+   70160 shot 100_r2_l_e
+   70560 tick 400
+   70560 shot 101_r2_l_f
+   70960 tick 400
+   70960 shot 102_r2_l_g
+   71360 tick 400
+   71360 shot 103_r2_l_h
+   71360 tilt -600 450 -660
+   71760 tick 400
+   71760 shot 104_r2_door_a
+   72160 tick 400
+   72160 shot 105_r2_door_b
+   72560 tick 400
+   72560 shot 106_r2_door_c
+   72960 tick 400
+   72960 shot 107_r2_door_d
+   72960 # round 3
+   72960 tilt 0 500 -866
+   74460 tick 1500
+   74460 down 80 130
+   75660 tick 1200
+   75660 up
+   76260 tick 600
+   76260 shot 108_r3_start
+   76260 tilt 300 470 -830
+   76760 tick 500
+   76760 shot 109_r3_a
+   77260 tick 500
+   77260 shot 110_r3_b
+   77760 tick 500
+   77760 shot 111_r3_c
+   78260 tick 500
+   78260 shot 112_r3_d
+   78760 tick 500
+   78760 shot 113_r3_e
+   79260 tick 500
+   79260 shot 114_r3_f
+   79760 tick 500
+   79760 shot 115_r3_g
+   79760 tilt 0 500 -866
+   79760 down 80 130
+   80160 tick 400
+   80160 shot 116_r3_hide_a
+   80860 tick 700
+   80860 shot 117_r3_hide_b
+   81560 tick 700
+   81560 shot 118_r3_hide_c
+   82260 tick 700
+   82260 shot 119_r3_hide_d
+   82960 tick 700
+   82960 shot 120_r3_hide_e
+   83660 tick 700
+   83660 shot 121_r3_hide_f
+   84360 tick 700
+   84360 shot 122_r3_hide_g
+   85060 tick 700
+   85060 shot 123_r3_hide_h
+   86460 tick 1400
+   86460 shot 124_r3_hide_i
+   86460 up
+   87060 tick 600
+   87060 shot 125_r3_lift
+   87660 tick 600
+   87660 shot 126_r3_lift_b
+   88260 tick 600
+   88260 shot 127_r3_lift_c
+   88860 tick 600
+   88860 shot 128_r3_lift_d
+   89460 tick 600
+   89460 shot 129_r3_lift_e
+   90060 tick 600
+   90060 shot 130_r3_lift_f
+   90660 tick 600
+   90660 shot 131_r3_lift_g
+   90660 down 78 132
+   91060 tick 400
+   91060 shot 132_r3_hide2_a
+   91660 tick 600
+   91660 shot 133_r3_hide2_b
+   92260 tick 600
+   92260 shot 134_r3_hide2_c
+   92860 tick 600
+   92860 shot 135_r3_hide2_d
+   93460 tick 600
+   93460 shot 136_r3_hide2_e
+   94060 tick 600
+   94060 shot 137_r3_hide2_f
+   94660 tick 600
+   94660 shot 138_r3_hide2_g
+   95260 tick 600
+   95260 shot 139_r3_hide2_h
+   96060 tick 800
+   96060 up
+   96760 tick 700
+   96760 shot 140_r3_w_a
+   97460 tick 700
+   97460 shot 141_r3_w_b
+   98160 tick 700
+   98160 shot 142_r3_w_c
+   98860 tick 700
+   98860 shot 143_r3_w_d
+   99160 tick 300
+   99160 down 82 129
+   99560 tick 400
+   99560 shot 144_r3_hide3_a
+  100160 tick 600
+  100160 shot 145_r3_hide3_b
+  100760 tick 600
+  100760 shot 146_r3_hide3_c
+  101360 tick 600
+  101360 shot 147_r3_hide3_d
+  101960 tick 600
+  101960 shot 148_r3_hide3_e
+  102560 tick 600
+  102560 shot 149_r3_hide3_f
+  103160 tick 600
+  103160 shot 150_r3_hide3_g
+  103760 tick 600
+  103760 shot 151_r3_hide3_h
+  104960 tick 1200
+  104960 shot 152_r3_hide3_i
+  104960 up
+  104960 tilt -350 470 -810
+  105460 tick 500
+  105460 shot 153_r3_l_a
+  105960 tick 500
+  105960 shot 154_r3_l_b
+  106460 tick 500
+  106460 shot 155_r3_l_c
+  106960 tick 500
+  106960 shot 156_r3_l_d
+  106960 tilt 0 500 -866
+  107560 tick 600
+  107560 shot 157_r3_t_a
+  108160 tick 600
+  108160 shot 158_r3_t_b
+  108760 tick 600
+  108760 shot 159_r3_t_c
+  109360 tick 600
+  109360 shot 160_r3_t_d
+  109360 down 80 130
+  109760 tick 400
+  109760 shot 161_r3_th_a
+  110360 tick 600
+  110360 shot 162_r3_th_b
+  110960 tick 600
+  110960 shot 163_r3_th_c
+  111560 tick 600
+  111560 shot 164_r3_th_d
+  112160 tick 600
+  112160 shot 165_r3_th_e
+  112760 tick 600
+  112760 shot 166_r3_th_f
+  113360 tick 600
+  113360 shot 167_r3_th_g
+  113960 tick 600
+  113960 shot 168_r3_th_h
+  114760 tick 800
+  114760 up
+  114760 tilt -550 450 -700
+  115260 tick 500
+  115260 shot 169_r3_x_a
+  115760 tick 500
+  115760 shot 170_r3_x_b
+  116260 tick 500
+  116260 shot 171_r3_x_c
+  116760 tick 500
+  116760 shot 172_r3_x_d
+  117260 tick 500
+  117260 shot 173_r3_x_e
+  117760 tick 500
+  117760 shot 174_r3_x_f
+  118260 tick 500
+  118260 shot 175_r3_x_g
+  118760 tick 500
+  118760 shot 176_r3_x_h
+  118760 # round 4
+  118760 tilt 0 500 -866
+  120260 tick 1500
+  120260 down 80 130
+  121260 tick 1000
+  121260 up
+  121860 tick 600
+  121860 shot 177_r4_start
+  121860 tilt 250 480 -840
+  122360 tick 500
+  122360 shot 178_r4_a
+  122860 tick 500
+  122860 shot 179_r4_b
+  123360 tick 500
+  123360 shot 180_r4_c
+  123360 tilt 0 500 -866
+  123860 tick 500
+  123860 shot 181_r4_d
+  124360 tick 500
+  124360 shot 182_r4_e
+  124860 tick 500
+  124860 shot 183_r4_f
+  125360 tick 500
+  125360 shot 184_r4_g
+  125360 # Leo presses the sign in the open (wrong place)
+  125360 down 80 130
+  125560 tick 200
+  125560 shot 185_r4_open_press_a
+  125860 tick 300
+  125860 shot 186_r4_open_press_b
+  126160 tick 300
+  126160 shot 187_r4_open_press_c
+  126460 tick 300
+  126460 shot 188_r4_open_press_d
+  126760 tick 300
+  126760 shot 189_r4_open_press_e
+  127060 tick 300
+  127060 shot 190_r4_open_press_f
+  127360 tick 300
+  127360 shot 191_r4_open_press_g
+  127660 tick 300
+  127660 shot 192_r4_open_press_h
+  128060 tick 400
+  128060 shot 193_r4_caught_a
+  128060 up
+  128460 tick 400
+  128460 shot 194_r4_caught_b
+  129060 tick 600
+  129060 shot 195_r4_caught_c
+  129860 tick 800
+  129860 shot 196_r4_caught_d
+  130860 tick 1000
+  130860 shot 197_r4_caught_e
+  131860 tick 1000
+  131860 shot 198_r4_caught_f
+  132860 tick 1000
+  132860 shot 199_r4_caught_g
+  133860 tick 1000
+  133860 shot 200_r4_caught_h
+  133860 # round 5: TRY AGAIN
+  133860 down 80 130
+  135360 tick 1500
+  135360 up
+  135960 tick 600
+  135960 shot 201_r5_start
+  136560 tick 600
+  136560 shot 202_r5_start_b
+  136560 tilt -300 470 -830
+  137060 tick 500
+  137060 shot 203_r5_a
+  137560 tick 500
+  137560 shot 204_r5_b
+  138060 tick 500
+  138060 shot 205_r5_c
+  138560 tick 500
+  138560 shot 206_r5_d
+  139060 tick 500
+  139060 shot 207_r5_e
+  139560 tick 500
+  139560 shot 208_r5_f
+  139560 tilt 0 500 -866
+  139560 down 80 131
+  139960 tick 400
+  139960 shot 209_r5_ch_a
+  140560 tick 600
+  140560 shot 210_r5_ch_b
+  141160 tick 600
+  141160 shot 211_r5_ch_c
+  141760 tick 600
+  141760 shot 212_r5_ch_d
+  142360 tick 600
+  142360 shot 213_r5_ch_e
+  142960 tick 600
+  142960 shot 214_r5_ch_f
+  143560 tick 600
+  143560 shot 215_r5_ch_g
+  144160 tick 600
+  144160 shot 216_r5_ch_h
+  145760 tick 1600
+  145760 shot 217_r5_ch_i
+  145760 up
+  146460 tick 700
+  146460 shot 218_r5_w_a
+  147160 tick 700
+  147160 shot 219_r5_w_b
+  147860 tick 700
+  147860 shot 220_r5_w_c
+  148560 tick 700
+  148560 shot 221_r5_w_d
+  149260 tick 700
+  149260 shot 222_r5_w_e
+  149960 tick 700
+  149960 shot 223_r5_w_f
+  150660 tick 700
+  150660 shot 224_r5_w_g
+  150660 down 75 128
+  150960 tick 300
+  150960 shot 225_r5_late_a
+  151460 tick 500
+  151460 shot 226_r5_late_b
+  151960 tick 500
+  151960 shot 227_r5_late_c
+  152460 tick 500
+  152460 shot 228_r5_late_d
+  152960 tick 500
+  152960 shot 229_r5_late_e
+  153460 tick 500
+  153460 shot 230_r5_late_f
+  153960 tick 500
+  153960 shot 231_r5_late_g
+  154460 tick 500
+  154460 shot 232_r5_late_h
+  155960 tick 1500
+  155960 shot 233_r5_late_i
+  155960 up
+  155960 tilt 350 470 -810
+  156460 tick 500
+  156460 shot 234_r5_r_a
+  156960 tick 500
+  156960 shot 235_r5_r_b
+  157460 tick 500
+  157460 shot 236_r5_r_c
+  157960 tick 500
+  157960 shot 237_r5_r_d
+  158460 tick 500
+  158460 shot 238_r5_r_e
+  158960 tick 500
+  158960 shot 239_r5_r_f
+  159460 tick 500
+  159460 shot 240_r5_r_g
+  159460 # Leo presses in the open while still tilting right toward the plant
+  159460 down 80 130
+  159660 tick 200
+  159660 shot 241_r5_op_a
+  159860 tick 200
+  159860 shot 242_r5_op_b
+  160060 tick 200
+  160060 shot 243_r5_op_c
+  160260 tick 200
+  160260 shot 244_r5_op_d
+  160460 tick 200
+  160460 shot 245_r5_op_e
+  160660 tick 200
+  160660 shot 246_r5_op_f
+  160960 tick 300
+  160960 shot 247_r5_op_g
+  161360 tick 400
+  161360 shot 248_r5_op_h
+  161360 tilt 0 500 -866
+  162360 tick 1000
+  162360 shot 249_r5_p_a
+  163360 tick 1000
+  163360 shot 250_r5_p_b
+  164360 tick 1000
+  164360 shot 251_r5_p_c
+  165360 tick 1000
+  165360 shot 252_r5_p_d
+  165360 up
+  165360 tilt 300 470 -830
+  165860 tick 500
+  165860 shot 253_r5_q_a
+  166360 tick 500
+  166360 shot 254_r5_q_b
+  166360 tilt 0 500 -866
+  166860 tick 500
+  166860 shot 255_r5_q_c
+  167460 tick 600
+  167460 shot 256_r5_q_d
+  168060 tick 600
+  168060 shot 257_r5_q_e
+  168660 tick 600
+  168660 shot 258_r5_q_f
+  169260 tick 600
+  169260 shot 259_r5_q_g
+  169860 tick 600
+  169860 shot 260_r5_q_h
+  169860 # Leo heads for the glowing door (left), passing the table she is checking
+  169860 tilt -400 460 -790
+  170160 tick 300
+  170160 shot 261_r5_go_a
+  170460 tick 300
+  170460 shot 262_r5_go_b
+  170760 tick 300
+  170760 shot 263_r5_go_c
+  171060 tick 300
+  171060 shot 264_r5_go_d
+  171360 tick 300
+  171360 shot 265_r5_go_e
+  171660 tick 300
+  171660 shot 266_r5_go_f
+  171960 tick 300
+  171960 shot 267_r5_go_g
+  172260 tick 300
+  172260 shot 268_r5_go_h
+  172660 tick 400
+  172660 shot 269_r5_go_i
+  173060 tick 400
+  173060 shot 270_r5_go_j
+  173460 tick 400
+  173460 shot 271_r5_go_k
+  173860 tick 400
+  173860 shot 272_r5_go_l
+  173860 tilt -600 450 -660
+  174260 tick 400
+  174260 shot 273_r5_go_m
+  174660 tick 400
+  174660 shot 274_r5_go_n
+  175060 tick 400
+  175060 shot 275_r5_go_o
+  175460 tick 400
+  175460 shot 276_r5_go_p
+  175460 # round 6
+  175460 tilt 0 500 -866
+  176960 tick 1500
+  176960 down 80 130
+  177960 tick 1000
+  177960 up
+  178560 tick 600
+  178560 shot 277_r6_start
+  178560 tilt 300 470 -830
+  179160 tick 600
+  179160 shot 278_r6_a
+  179760 tick 600
+  179760 shot 279_r6_b
+  180360 tick 600
+  180360 shot 280_r6_c
+  180360 tilt 0 500 -866
+  180960 tick 600
+  180960 shot 281_r6_d
+  181560 tick 600
+  181560 shot 282_r6_e
+  182160 tick 600
+  182160 shot 283_r6_f
+  182760 tick 600
+  182760 shot 284_r6_g
+  182760 down 80 130
+  183060 tick 300
+  183060 shot 285_r6_p_a
+  183060 tilt 250 480 -840
+  183360 tick 300
+  183360 shot 286_r6_p_b
+  183660 tick 300
+  183660 shot 287_r6_p_c
+  183960 tick 300
+  183960 shot 288_r6_p_d
+  183960 tilt 0 500 -866
+  184560 tick 600
+  184560 shot 289_r6_p_e
+  185160 tick 600
+  185160 shot 290_r6_p_f
+  185760 tick 600
+  185760 shot 291_r6_p_g
+  186360 tick 600
+  186360 shot 292_r6_p_h
+  187360 tick 1000
+  187360 shot 293_r6_keep
+  188360 tick 1000
+  188360 shot 294_r6_keep
+  189360 tick 1000
+  189360 shot 295_r6_keep
+  190360 tick 1000
+  190360 shot 296_r6_keep
+  191360 tick 1000
+  191360 shot 297_r6_keep
+  192360 tick 1000
+  192360 shot 298_r6_keep
+  193360 tick 1000
+  193360 shot 299_r6_keep
+  194360 tick 1000
+  194360 shot 300_r6_keep
+  195360 tick 1000
+  195360 shot 301_r6_keep
+  196360 tick 1000
+  196360 shot 302_r6_keep
+  197360 tick 1000
+  197360 shot 303_r6_keep
+  198360 tick 1000
+  198360 shot 304_r6_keep
+  199360 tick 1000
+  199360 shot 305_r6_keep
+  200360 tick 1000
+  200360 shot 306_r6_keep
+  201360 tick 1000
+  201360 shot 307_r6_keep
+  202360 tick 1000
+  202360 shot 308_r6_keep
+  202960 tick 600
+  202960 shot 309_r6_keep
+  203560 tick 600
+  203560 shot 310_r6_keep
+  204160 tick 600
+  204160 shot 311_r6_keep
+  204760 tick 600
+  204760 shot 312_r6_keep
+  205360 tick 600
+  205360 shot 313_r6_keep
+  205960 tick 600
+  205960 shot 314_r6_keep
+  206560 tick 600
+  206560 shot 315_r6_keep
+  207160 tick 600
+  207160 shot 316_r6_keep
+  208660 tick 1500
+  208660 up
+  208660 tilt 300 470 -830
+  209160 tick 500
+  209160 shot 317_r6_go
+  209660 tick 500
+  209660 shot 318_r6_go
+  210160 tick 500
+  210160 shot 319_r6_go
+  210660 tick 500
+  210660 shot 320_r6_go
+  211160 tick 500
+  211160 shot 321_r6_go
+  211660 tick 500
+  211660 shot 322_r6_go
+  212160 tick 500
+  212160 shot 323_r6_go
+  212660 tick 500
+  212660 shot 324_r6_go
+  212660 tilt 0 500 -866
+  213060 tick 400
+  213060 shot 325_r6_watch
+  213460 tick 400
+  213460 shot 326_r6_watch
+  213860 tick 400
+  213860 shot 327_r6_watch
+  214260 tick 400
+  214260 shot 328_r6_watch
+  214260 down 80 130
+  214860 tick 600
+  214860 shot 329_r6_hide
+  215460 tick 600
+  215460 shot 330_r6_hide
+  216060 tick 600
+  216060 shot 331_r6_hide
+  216660 tick 600
+  216660 shot 332_r6_hide
+  217260 tick 600
+  217260 shot 333_r6_hide
+  217860 tick 600
+  217860 shot 334_r6_hide
+  218460 tick 600
+  218460 shot 335_r6_hide
+  219060 tick 600
+  219060 shot 336_r6_hide
+  219660 tick 600
+  219660 up
+  219660 tilt -350 470 -810
+  220160 tick 500
+  220160 shot 337_r6_l
+  220660 tick 500
+  220660 shot 338_r6_l
+  221160 tick 500
+  221160 shot 339_r6_l
+  221660 tick 500
+  221660 shot 340_r6_l
+  222160 tick 500
+  222160 shot 341_r6_l
+  222660 tick 500
+  222660 shot 342_r6_l
+  222660 tilt 0 500 -866
+  223260 tick 600
+  223260 shot 343_r6_l
+  223860 tick 600
+  223860 shot 344_r6_l
+  224460 tick 600
+  224460 shot 345_r6_l
+  225060 tick 600
+  225060 shot 346_r6_l
+  225660 tick 600
+  225660 shot 347_r6_l
+  226260 tick 600
+  226260 shot 348_r6_l
+  228760 tick 2500
+  228760 shot 349_r6_lost
+  228760 down 79 131
+  230560 tick 1800
+  230560 up
+  231160 tick 600
+  231160 shot 350_r7_start
+  231160 tilt -300 470 -830
+  231660 tick 500
+  231660 shot 351_r7
+  232160 tick 500
+  232160 shot 352_r7
+  232660 tick 500
+  232660 shot 353_r7
+  233160 tick 500
+  233160 shot 354_r7
+  233660 tick 500
+  233660 shot 355_r7
+  234160 tick 500
+  234160 shot 356_r7
+  234660 tick 500
+  234660 shot 357_r7
+  235160 tick 500
+  235160 shot 358_r7
+  235160 tilt 0 500 -866
+  235160 down 80 130
+  235760 tick 600
+  235760 shot 359_r7_h
+  236360 tick 600
+  236360 shot 360_r7_h
+  236960 tick 600
+  236960 shot 361_r7_h
+  237560 tick 600
+  237560 shot 362_r7_h
+  238160 tick 600
+  238160 shot 363_r7_h
+  238760 tick 600
+  238760 shot 364_r7_h
+  239360 tick 600
+  239360 shot 365_r7_h
+  239960 tick 600
+  239960 shot 366_r7_h
+  240560 tick 600
+  240560 shot 367_r7_h
+  241160 tick 600
+  241160 shot 368_r7_h
+  241760 tick 600
+  241760 shot 369_r7_h
+  242360 tick 600
+  242360 shot 370_r7_h
+  242360 up
+  242360 tilt 300 470 -830
+  242860 tick 500
+  242860 shot 371_r7_m
+  243360 tick 500
+  243360 shot 372_r7_m
+  243860 tick 500
+  243860 shot 373_r7_m
+  243860 tilt 0 500 -866
+  244460 tick 600
+  244460 shot 374_r7_m
+  245060 tick 600
+  245060 shot 375_r7_m
+  245660 tick 600
+  245660 shot 376_r7_m
+  246260 tick 600
+  246260 shot 377_r7_m
+  246860 tick 600
+  246860 shot 378_r7_m
+  247460 tick 600
+  247460 shot 379_r7_m
+  248060 tick 600
+  248060 shot 380_r7_m
+  248660 tick 600
+  248660 shot 381_r7_m
+  249260 tick 600
+  249260 shot 382_r7_m
+  249260 tilt 300 470 -830
+  249660 tick 400
+  249660 shot 383_r7_t
+  250060 tick 400
+  250060 shot 384_r7_t
+  250460 tick 400
+  250460 shot 385_r7_t
+  250860 tick 400
+  250860 shot 386_r7_t
+  250860 tilt 0 500 -866
+  251360 tick 500
+  251360 shot 387_r7_t
+  251860 tick 500
+  251860 shot 388_r7_t
+  252360 tick 500
+  252360 shot 389_r7_t
+  252860 tick 500
+  252860 shot 390_r7_t
+  252860 # Leo's short worried presses: 2.4 s down, 0.4 s up
+  252860 down 80 130
+  253260 tick 400
+  253260 shot 391_r7_sp
+  253660 tick 400
+  253660 shot 392_r7_sp
+  254060 tick 400
+  254060 shot 393_r7_sp
+  254460 tick 400
+  254460 shot 394_r7_sp
+  254860 tick 400
+  254860 shot 395_r7_sp
+  255260 tick 400
+  255260 shot 396_r7_sp
+  255260 up
+  255460 tick 200
+  255460 shot 397_r7_sp
+  255660 tick 200
+  255660 down 80 130
+  256060 tick 400
+  256060 shot 398_r7_sp
+  256460 tick 400
+  256460 shot 399_r7_sp
+  256860 tick 400
+  256860 shot 400_r7_sp
+  257260 tick 400
+  257260 shot 401_r7_sp
+  257660 tick 400
+  257660 shot 402_r7_sp
+  258060 tick 400
+  258060 shot 403_r7_sp
+  258060 up
+  258260 tick 200
+  258260 shot 404_r7_sp
+  258460 tick 200
+  258460 down 80 130
+  258860 tick 400
+  258860 shot 405_r7_sp
+  259260 tick 400
+  259260 shot 406_r7_sp
+  259660 tick 400
+  259660 shot 407_r7_sp
+  260060 tick 400
+  260060 shot 408_r7_sp
+  260460 tick 400
+  260460 shot 409_r7_sp
+  260860 tick 400
+  260860 shot 410_r7_sp
+  260860 up
+  261060 tick 200
+  261060 shot 411_r7_sp
+  261260 tick 200
+  261260 down 81 129
+  261660 tick 400
+  261660 shot 412_r7_w
+  262060 tick 400
+  262060 shot 413_r7_w
+  262460 tick 400
+  262460 shot 414_r7_w
+  262860 tick 400
+  262860 shot 415_r7_w
+  263260 tick 400
+  263260 shot 416_r7_w
+  263660 tick 400
+  263660 shot 417_r7_w
+  264060 tick 400
+  264060 shot 418_r7_w
+  264060 up
+  264360 tick 300
+  264360 down 81 129
+  264760 tick 400
+  264760 shot 419_r7_w
+  265160 tick 400
+  265160 shot 420_r7_w
+  265560 tick 400
+  265560 shot 421_r7_w
+  265960 tick 400
+  265960 shot 422_r7_w
+  266360 tick 400
+  266360 shot 423_r7_w
+  266760 tick 400
+  266760 shot 424_r7_w
+  267160 tick 400
+  267160 shot 425_r7_w
+  267160 up
+  267460 tick 300
+  267460 down 81 129
+  267860 tick 400
+  267860 shot 426_r7_w
+  268260 tick 400
+  268260 shot 427_r7_w
+  268660 tick 400
+  268660 shot 428_r7_w
+  269060 tick 400
+  269060 shot 429_r7_w
+  269460 tick 400
+  269460 shot 430_r7_w
+  269860 tick 400
+  269860 shot 431_r7_w
+  270260 tick 400
+  270260 shot 432_r7_w
+  270260 up
+  270560 tick 300
+  270560 down 81 129
+  270960 tick 400
+  270960 shot 433_r7_w
+  271360 tick 400
+  271360 shot 434_r7_w
+  271760 tick 400
+  271760 shot 435_r7_w
+  272160 tick 400
+  272160 shot 436_r7_w
+  272560 tick 400
+  272560 shot 437_r7_w
+  272960 tick 400
+  272960 shot 438_r7_w
+  273360 tick 400
+  273360 shot 439_r7_w
+  273360 up
+  273660 tick 300
+  273660 down 81 129
+  274060 tick 400
+  274060 shot 440_r7_w
+  274460 tick 400
+  274460 shot 441_r7_w
+  274860 tick 400
+  274860 shot 442_r7_w
+  275260 tick 400
+  275260 shot 443_r7_w
+  275660 tick 400
+  275660 shot 444_r7_w
+  276060 tick 400
+  276060 shot 445_r7_w
+  276460 tick 400
+  276460 shot 446_r7_w
+  276460 up
+  276760 tick 300
+  276760 down 81 129
+  277160 tick 400
+  277160 shot 447_r7_w
+  277560 tick 400
+  277560 shot 448_r7_w
+  277960 tick 400
+  277960 shot 449_r7_w
+  278360 tick 400
+  278360 shot 450_r7_w
+  278760 tick 400
+  278760 shot 451_r7_w
+  279160 tick 400
+  279160 shot 452_r7_w
+  279560 tick 400
+  279560 shot 453_r7_w
+  279560 up
+  279860 tick 300
+  279860 tilt 300 470 -830
+  280360 tick 500
+  280360 shot 454_r7_r
+  280860 tick 500
+  280860 shot 455_r7_r
+  281360 tick 500
+  281360 shot 456_r7_r
+  281860 tick 500
+  281860 shot 457_r7_r
+  282360 tick 500
+  282360 shot 458_r7_r
+  282860 tick 500
+  282860 shot 459_r7_r
+  283360 tick 500
+  283360 shot 460_r7_r
+  283860 tick 500
+  283860 shot 461_r7_r
+  283860 tilt 0 500 -866
+  283860 down 80 130
+  284360 tick 500
+  284360 shot 462_r7_s
+  284860 tick 500
+  284860 shot 463_r7_s
+  285360 tick 500
+  285360 shot 464_r7_s
+  285860 tick 500
+  285860 shot 465_r7_s
+  286360 tick 500
+  286360 shot 466_r7_s
+  286860 tick 500
+  286860 shot 467_r7_s
+  287360 tick 500
+  287360 shot 468_r7_s
+  287860 tick 500
+  287860 shot 469_r7_s
+  288460 tick 600
+  288460 up
+  288460 tilt -600 450 -660
+  288960 tick 500
+  288960 shot 470_r7_d
+  289460 tick 500
+  289460 shot 471_r7_d
+  289960 tick 500
+  289960 shot 472_r7_d
+  290460 tick 500
+  290460 shot 473_r7_d
+  290960 tick 500
+  290960 shot 474_r7_d
+  291460 tick 500
+  291460 shot 475_r7_d
+  291960 tick 500
+  291960 shot 476_r7_d
+  292460 tick 500
+  292460 shot 477_r7_d
+  292960 tick 500
+  292960 shot 478_r7_d
+  293460 tick 500
+  293460 shot 479_r7_d
+  293960 tick 500
+  293960 shot 480_r7_d
+  294460 tick 500
+  294460 shot 481_r7_d
+  294460 tilt 0 500 -866
+  295960 tick 1500
+  295960 down 80 130
+  297160 tick 1200
+  297160 up
+  297760 tick 600
+  297760 shot 482_r8_start
+  298360 tick 600
+  298360 shot 483_r8
+  298960 tick 600
+  298960 shot 484_r8
+  299560 tick 600
+  299560 shot 485_r8
+  300160 tick 600
+  300160 shot 486_r8
+  300760 tick 600
+  300760 shot 487_r8
+  301360 tick 600
+  301360 shot 488_r8
+  301960 tick 600
+  301960 shot 489_r8
+  302560 tick 600
+  302560 shot 490_r8
+  303160 tick 600
+  303160 shot 491_r8
+  303760 tick 600
+  303760 shot 492_r8
+  304360 tick 600
+  304360 shot 493_r8
+  304960 tick 600
+  304960 shot 494_r8
+  307460 tick 2500
+  307460 shot 495_r8_lost
+  307460 down 80 131
+  308960 tick 1500
+  308960 up
+  309560 tick 600
+  309560 shot 496_r9_start
+  309560 tilt 300 470 -830
+  310060 tick 500
+  310060 shot 497_r9
+  310560 tick 500
+  310560 shot 498_r9
+  311060 tick 500
+  311060 shot 499_r9
+  311560 tick 500
+  311560 shot 500_r9
+  312060 tick 500
+  312060 shot 501_r9
+  312560 tick 500
+  312560 shot 502_r9
+  313060 tick 500
+  313060 shot 503_r9
+  313560 tick 500
+  313560 shot 504_r9
+  313560 tilt 0 500 -866
+  313560 down 80 130
+  314060 tick 500
+  314060 shot 505_r9_h
+  314560 tick 500
+  314560 shot 506_r9_h
+  315060 tick 500
+  315060 shot 507_r9_h
+  315560 tick 500
+  315560 shot 508_r9_h
+  316060 tick 500
+  316060 shot 509_r9_h
+  316060 up
+  316360 tick 300
+  316360 down 80 130
+  316860 tick 500
+  316860 shot 510_r9_h
+  317360 tick 500
+  317360 shot 511_r9_h
+  317860 tick 500
+  317860 shot 512_r9_h
+  318360 tick 500
+  318360 shot 513_r9_h
+  318860 tick 500
+  318860 shot 514_r9_h
+  318860 up
+  319160 tick 300
+  319160 down 80 130
+  319660 tick 500
+  319660 shot 515_r9_h
+  320160 tick 500
+  320160 shot 516_r9_h
+  320660 tick 500
+  320660 shot 517_r9_h
+  321160 tick 500
+  321160 shot 518_r9_h
+  321660 tick 500
+  321660 shot 519_r9_h
+  321660 up
+  321960 tick 300
+  321960 tilt -350 470 -810
+  322460 tick 500
+  322460 shot 520_r9_m
+  322960 tick 500
+  322960 shot 521_r9_m
+  323460 tick 500
+  323460 shot 522_r9_m
+  323960 tick 500
+  323960 shot 523_r9_m
+  324460 tick 500
+  324460 shot 524_r9_m
+  324460 tilt 0 500 -866
+  325060 tick 600
+  325060 shot 525_r9_m
+  325660 tick 600
+  325660 shot 526_r9_m
+  326260 tick 600
+  326260 shot 527_r9_m
+  326860 tick 600
+  326860 shot 528_r9_m
+  327460 tick 600
+  327460 shot 529_r9_m
+  328060 tick 600
+  328060 shot 530_r9_m
+  328660 tick 600
+  328660 shot 531_r9_m
+  329260 tick 600
+  329260 shot 532_r9_m
+  329260 down 80 131
+  330760 tick 1500
+  330760 up
+  331360 tick 600
+  331360 shot 533_r10_start
+  331360 tilt -300 470 -830
+  331860 tick 500
+  331860 shot 534_r10
+  332360 tick 500
+  332360 shot 535_r10
+  332860 tick 500
+  332860 shot 536_r10
+  333360 tick 500
+  333360 shot 537_r10
+  333860 tick 500
+  333860 shot 538_r10
+  334360 tick 500
+  334360 shot 539_r10
+  334360 tilt 0 500 -866
+  335360 tick 1000
+  335360 shot 540_r10_w
+  335760 tick 400
+  335760 shot 541_r10_w
+  335760 down 80 130
+  336460 tick 700
+  336460 shot 542_r10_h
+  337160 tick 700
+  337160 shot 543_r10_h
+  337860 tick 700
+  337860 shot 544_r10_h
+  338560 tick 700
+  338560 shot 545_r10_h
+  339260 tick 700
+  339260 shot 546_r10_h
+  339960 tick 700
+  339960 shot 547_r10_h
+  340660 tick 700
+  340660 shot 548_r10_h
+  341360 tick 700
+  341360 shot 549_r10_h
+  341360 up
+  341660 tick 300
+  341660 shot 550_r10_h
+  342360 tick 700
+  342360 shot 551_r10_w
+  343060 tick 700
+  343060 shot 552_r10_w
+  343760 tick 700
+  343760 shot 553_r10_w
+  344460 tick 700
+  344460 shot 554_r10_w
+  345160 tick 700
+  345160 shot 555_r10_w
+  345860 tick 700
+  345860 shot 556_r10_w
+  346360 tick 500
+  346360 shot 557_r10_w
+  346760 tick 400
+  346760 shot 558_r10_w
+  346760 down 80 130
+  347560 tick 800
+  347560 shot 559_r10_h
+  348360 tick 800
+  348360 shot 560_r10_h
+  349160 tick 800
+  349160 shot 561_r10_h
+  349960 tick 800
+  349960 shot 562_r10_h
+  350760 tick 800
+  350760 shot 563_r10_h
+  351560 tick 800
+  351560 shot 564_r10_h
+  352360 tick 800
+  352360 shot 565_r10_h
+  352360 up
+  352360 tilt 300 470 -830
+  352860 tick 500
+  352860 shot 566_r10_h
+  353360 tick 500
+  353360 shot 567_r10_h
+  353860 tick 500
+  353860 shot 568_r10_h
+  354360 tick 500
+  354360 shot 569_r10_h
+  354760 tick 400
+  354760 shot 570_r10_t
+  355160 tick 400
+  355160 shot 571_r10_t
+  355160 tilt 0 500 -866
+  355760 tick 600
+  355760 shot 572_r10_t
+  356360 tick 600
+  356360 shot 573_r10_t
+  356960 tick 600
+  356960 shot 574_r10_t
+  357560 tick 600
+  357560 shot 575_r10_t
+  358160 tick 600
+  358160 shot 576_r10_t
+  358760 tick 600
+  358760 shot 577_r10_t
+  358760 down 80 130
+  359360 tick 600
+  359360 shot 578_r10_q
+  359960 tick 600
+  359960 shot 579_r10_q
+  360560 tick 600
+  360560 shot 580_r10_q
+  361160 tick 600
+  361160 shot 581_r10_q
+  361760 tick 600
+  361760 shot 582_r10_q
+  362360 tick 600
+  362360 shot 583_r10_q
+  362960 tick 600
+  362960 shot 584_r10_q
+  363560 tick 600
+  363560 shot 585_r10_q
+  363560 up
+  363560 tilt 300 470 -830
+  363960 tick 400
+  363960 shot 586_r10_r
+  364360 tick 400
+  364360 shot 587_r10_r
+  364760 tick 400
+  364760 shot 588_r10_r
+  365160 tick 400
+  365160 shot 589_r10_r
+  365560 tick 400
+  365560 shot 590_r10_r
+  365960 tick 400
+  365960 shot 591_r10_r
+  365960 tilt 0 500 -866
+  365960 down 80 130
+  366560 tick 600
+  366560 shot 592_r10_p
+  367160 tick 600
+  367160 shot 593_r10_p
+  367760 tick 600
+  367760 shot 594_r10_p
+  368360 tick 600
+  368360 shot 595_r10_p
+  368960 tick 600
+  368960 shot 596_r10_p
+  369560 tick 600
+  369560 shot 597_r10_p
+  370160 tick 600
+  370160 shot 598_r10_p
+  370760 tick 600
+  370760 shot 599_r10_p
+  371360 tick 600
+  371360 up
+  371360 tilt 300 470 -830
+  371760 tick 400
+  371760 shot 600_r10_s
+  372160 tick 400
+  372160 shot 601_r10_s
+  372160 tilt 0 500 -866
+  372660 tick 500
+  372660 shot 602_r10_s
+  373160 tick 500
+  373160 shot 603_r10_s
+  373660 tick 500
+  373660 shot 604_r10_s
+  374160 tick 500
+  374160 shot 605_r10_s
+  375060 tick 900
+  375060 shot 606_r10_x
+  375560 tick 500
+  375560 shot 607_r10_x
+  376060 tick 500
+  376060 shot 608_r10_x
+  376360 tick 300
+  376360 shot 609_r10_x
+  376360 down 80 130
+  377060 tick 700
+  377060 shot 610_r10_y
+  377760 tick 700
+  377760 shot 611_r10_y
+  378460 tick 700
+  378460 shot 612_r10_y
+  379160 tick 700
+  379160 shot 613_r10_y
+  379860 tick 700
+  379860 shot 614_r10_y
+  380560 tick 700
+  380560 shot 615_r10_y
+  381260 tick 700
+  381260 shot 616_r10_y
+  381260 up
+  381260 tilt -350 470 -810
+  381660 tick 400
+  381660 shot 617_r10_z
+  382060 tick 400
+  382060 shot 618_r10_z
+  382460 tick 400
+  382460 shot 619_r10_z
+  382860 tick 400
+  382860 shot 620_r10_z
+  382860 tilt 0 500 -866
+  383160 tick 300
+  383160 shot 621_r10_z
+  383160 tilt -400 460 -790
+  383460 tick 300
+  383460 shot 622_r10_c
+  383760 tick 300
+  383760 shot 623_r10_c
+  384060 tick 300
+  384060 shot 624_r10_c
+  384360 tick 300
+  384360 shot 625_r10_c
+  384660 tick 300
+  384660 shot 626_r10_c
+  384960 tick 300
+  384960 shot 627_r10_c
+  385210 tick 250
+  385210 shot 628_r10_c
+  385460 tick 250
+  385460 shot 629_r10_c
+  385710 tick 250
+  385710 shot 630_r10_c
+  385710 tilt 0 500 -866
+  385710 down 80 130
+  385910 tick 200
+  385910 shot 631_r10_named
+  386110 tick 200
+  386110 shot 632_r10_named
+  386310 tick 200
+  386310 shot 633_r10_named
+  386510 tick 200
+  386510 shot 634_r10_named
+  386710 tick 200
+  386710 shot 635_r10_named
+  386910 tick 200
+  386910 shot 636_r10_named
+  387110 tick 200
+  387110 shot 637_r10_named
+  387310 tick 200
+  387310 shot 638_r10_named
+  387310 up
+  389810 tick 2500
+  389810 shot 639_r10_lost
+  389810 down 80 131
+  391310 tick 1500
+  391310 up
+  391910 tick 600
+  391910 shot 640_r11_start
+  391910 tilt 250 480 -840
+  392310 tick 400
+  392310 shot 641_r11
+  392710 tick 400
+  392710 shot 642_r11
+  393110 tick 400
+  393110 shot 643_r11
+  393510 tick 400
+  393510 shot 644_r11
+  393910 tick 400
+  393910 shot 645_r11
+  394310 tick 400
+  394310 shot 646_r11
+  394710 tick 400
+  394710 shot 647_r11
+  395110 tick 400
+  395110 shot 648_r11
+  395110 tilt 0 500 -866
+  395110 down 80 130
+  395810 tick 700
+  395810 shot 649_r11_h
+  396510 tick 700
+  396510 shot 650_r11_h
+  397210 tick 700
+  397210 shot 651_r11_h
+  397910 tick 700
+  397910 shot 652_r11_h
+  398610 tick 700
+  398610 shot 653_r11_h
+  399310 tick 700
+  399310 shot 654_r11_h
+  400010 tick 700
+  400010 shot 655_r11_h
+  400710 tick 700
+  400710 shot 656_r11_h
+  401410 tick 700
+  401410 shot 657_r11_h
+  402310 tick 900
+  402310 shot 658_r11_k
+  403210 tick 900
+  403210 shot 659_r11_k
+  404110 tick 900
+  404110 shot 660_r11_k
+  404110 up
+  404360 tick 250
+  404360 down 80 130
+  405260 tick 900
+  405260 shot 661_r11_k
+  406160 tick 900
+  406160 shot 662_r11_k
+  407060 tick 900
+  407060 shot 663_r11_k
+  407060 up
+  407310 tick 250
+  407310 down 80 130
+  408210 tick 900
+  408210 shot 664_r11_k
+  409110 tick 900
+  409110 shot 665_r11_k
+  410010 tick 900
+  410010 shot 666_r11_k
+  410010 up
+  410260 tick 250
+  410260 down 80 130
+  411160 tick 900
+  411160 shot 667_r11_k
+  412060 tick 900
+  412060 shot 668_r11_k
+  412960 tick 900
+  412960 shot 669_r11_k
+  412960 up
+  413210 tick 250
+  413210 down 80 130
+  414110 tick 900
+  414110 shot 670_r11_k
+  415010 tick 900
+  415010 shot 671_r11_k
+  415910 tick 900
+  415910 shot 672_r11_k
+  415910 up
+  416160 tick 250
+  416160 down 80 130
+  417060 tick 900
+  417060 shot 673_r11_k
+  417960 tick 900
+  417960 shot 674_r11_k
+  418860 tick 900
+  418860 shot 675_r11_k
+  418860 up
+  419110 tick 250
+  419110 down 80 130
+  420010 tick 900
+  420010 shot 676_r11_k
+  420910 tick 900
+  420910 shot 677_r11_k
+  421810 tick 900
+  421810 shot 678_r11_k
+  421810 up
+  422060 tick 250
+  422060 down 80 130
+  422060 up
+  422360 tick 300
+  422360 shot 679_r11_up
+  422560 tick 200
+  422560 shot w11a_001
+  422760 tick 200
+  422760 shot w11a_002
+  422960 tick 200
+  422960 shot w11a_003
+  423160 tick 200
+  423160 shot w11a_004
+  423360 tick 200
+  423360 shot w11a_005
+  423560 tick 200
+  423560 shot w11a_006
+  423760 tick 200
+  423760 shot w11a_007
+  423960 tick 200
+  423960 shot w11a_008
+  424160 tick 200
+  424160 shot w11a_009
+  424160 # Leo sees Grandma (look 9), reacts
+  424460 tick 300
+  424460 shot w11a_react
+  424460 down 80 130
+  424860 tick 400
+  424860 shot w11a_after1
+  425260 tick 400
+  425260 shot w11a_after2
+  425660 tick 400
+  425660 shot w11a_after3
+  426060 tick 400
+  426060 shot w11a_after4
+  426460 tick 400
+  426460 shot w11a_after5
+  426860 tick 400
+  426860 shot w11a_after6
+  427560 tick 700
+  427560 shot 680_r11_h1
+  428260 tick 700
+  428260 shot 680_r11_h2
+  428960 tick 700
+  428960 shot 680_r11_h3
+  429660 tick 700
+  429660 shot 680_r11_h4
+  430360 tick 700
+  430360 shot 680_r11_h5
+  431060 tick 700
+  431060 shot 680_r11_h6
+  431760 tick 700
+  431760 shot 680_r11_h7
+  432460 tick 700
+  432460 shot 680_r11_h8
+  432460 up
+  432460 tilt -350 470 -810
+  432660 tick 200
+  432660 shot w11b_001
+  432860 tick 200
+  432860 shot w11b_002
+  433060 tick 200
+  433060 shot w11b_003
+  433260 tick 200
+  433260 shot w11b_004
+  433260 # Leo sees Grandma (look 4), reacts
+  433560 tick 300
+  433560 shot w11b_react
+  433560 down 80 130
+  433860 tick 300
+  433860 shot 681_r11_arrows1
+  434160 tick 300
+  434160 shot 681_r11_arrows2
+  434460 tick 300
+  434460 shot 681_r11_arrows3
+  434760 tick 300
+  434760 shot 681_r11_arrows4
+  435060 tick 300
+  435060 shot 681_r11_arrows5
+  435360 tick 300
+  435360 shot 681_r11_arrows6
+  435660 tick 300
+  435660 shot 681_r11_arrows7
+  435960 tick 300
+  435960 shot 681_r11_arrows8
+  435960 tilt 0 500 -866
+  436660 tick 700
+  436660 shot 682_r11_t1
+  437360 tick 700
+  437360 shot 682_r11_t2
+  438060 tick 700
+  438060 shot 682_r11_t3
+  438760 tick 700
+  438760 shot 682_r11_t4
+  439460 tick 700
+  439460 shot 682_r11_t5
+  440160 tick 700
+  440160 shot 682_r11_t6
+  440160 up
+  440160 tilt -350 470 -810
+  440660 tick 500
+  440660 tilt 0 500 -866
+  440860 tick 200
+  440860 shot 683_lin_0
+  440860 # press in the open
+  440860 down 80 130
+  441460 tick 600
+  441460 shot 683_lin_1
+  442060 tick 600
+  442060 shot 683_lin_2
+  442060 up
+  442160 tick 100
+  442160 shot 683_lin_03
+  442260 tick 100
+  442260 shot 683_lin_04
+  442360 tick 100
+  442360 shot 683_lin_05
+  442460 tick 100
+  442460 shot 683_lin_06
+  442560 tick 100
+  442560 shot 683_lin_07
+  442660 tick 100
+  442660 shot 683_lin_08
+  442760 tick 100
+  442760 shot 683_lin_09
+  442860 tick 100
+  442860 shot 683_lin_10
+  442960 tick 100
+  442960 shot 683_lin_11
+  443060 tick 100
+  443060 shot 683_lin_12
+  443160 tick 100
+  443160 shot 683_lin_13
+  443260 tick 100
+  443260 shot 683_lin_14
+  443360 tick 100
+  443360 shot 683_lin_15
+  443460 tick 100
+  443460 shot 683_lin_16
+  443560 tick 100
+  443560 shot 683_lin_17
+  443660 tick 100
+  443660 shot 683_lin_18
+  443660 down 80 130
+  444360 tick 700
+  444360 shot 684_r11_h1
+  445060 tick 700
+  445060 shot 684_r11_h2
+  445760 tick 700
+  445760 shot 684_r11_h3
+  446460 tick 700
+  446460 shot 684_r11_h4
+  447160 tick 700
+  447160 shot 684_r11_h5
+  447860 tick 700
+  447860 shot 684_r11_h6
+  448560 tick 700
+  448560 shot 684_r11_h7
+  449260 tick 700
+  449260 shot 684_r11_h8
+  449960 tick 700
+  449960 shot 684_r11_h9
+  450660 tick 700
+  450660 shot 684_r11_h10
+  450660 up
+  450660 tilt -350 470 -810
+  451560 tick 900
+  451560 tilt 0 500 -866
+  451760 tick 200
+  451760 shot 685_lin_0
+  451760 down 80 130
+  452360 tick 600
+  452360 shot 685_lin_1
+  452960 tick 600
+  452960 shot 685_lin_2
+  452960 up
+  453060 tick 100
+  453060 shot 685_lin_03
+  453160 tick 100
+  453160 shot 685_lin_04
+  453260 tick 100
+  453260 shot 685_lin_05
+  453360 tick 100
+  453360 shot 685_lin_06
+  453460 tick 100
+  453460 shot 685_lin_07
+  453560 tick 100
+  453560 shot 685_lin_08
+  453660 tick 100
+  453660 shot 685_lin_09
+  453760 tick 100
+  453760 shot 685_lin_10
+  453860 tick 100
+  453860 shot 685_lin_11
+  453960 tick 100
+  453960 shot 685_lin_12
+  454060 tick 100
+  454060 shot 685_lin_13
+  454160 tick 100
+  454160 shot 685_lin_14
+  454260 tick 100
+  454260 shot 685_lin_15
+  454360 tick 100
+  454360 shot 685_lin_16
+  454460 tick 100
+  454460 shot 685_lin_17
+  454560 tick 100
+  454560 shot 685_lin_18
+  454560 down 80 130
+  454560 tilt 300 470 -830
+  454860 tick 300
+  454860 shot 686_r11_f1
+  455160 tick 300
+  455160 shot 686_r11_f2
+  455460 tick 300
+  455460 shot 686_r11_f3
+  455760 tick 300
+  455760 shot 686_r11_f4
+  455760 tilt 0 500 -866
+  456360 tick 600
+  456360 shot 686_r11_f5
+  456960 tick 600
+  456960 shot 686_r11_f6
+  457560 tick 600
+  457560 shot 686_r11_f7
+  458160 tick 600
+  458160 shot 686_r11_f8
+  458760 tick 600
+  458760 shot 686_r11_f9
+  459360 tick 600
+  459360 shot 686_r11_f10
+  459960 tick 600
+  459960 shot 686_r11_f11
+  460560 tick 600
+  460560 shot 686_r11_f12
+  460560 up
+  460560 tilt 300 470 -830
+  460760 tick 200
+  460760 shot w11c_001
+  460960 tick 200
+  460960 shot w11c_002
+  461160 tick 200
+  461160 shot w11c_003
+  461360 tick 200
+  461360 shot w11c_004
+  461360 # Leo sees Grandma (look 4), reacts
+  461660 tick 300
+  461660 shot w11c_react
+  461660 down 80 130
+  461960 tick 300
+  461960 shot 687_r11_pl1
+  462260 tick 300
+  462260 shot 687_r11_pl2
+  462560 tick 300
+  462560 shot 687_r11_pl3
+  462860 tick 300
+  462860 shot 687_r11_pl4
+  463160 tick 300
+  463160 shot 687_r11_pl5
+  463460 tick 300
+  463460 shot 687_r11_pl6
+  463760 tick 300
+  463760 shot 687_r11_pl7
+  464060 tick 300
+  464060 shot 687_r11_pl8
+  464060 tilt -400 460 -790
+  464360 tick 300
+  464360 shot 688_r11_fl1
+  464660 tick 300
+  464660 shot 688_r11_fl2
+  464960 tick 300
+  464960 shot 688_r11_fl3
+  465260 tick 300
+  465260 shot 688_r11_fl4
+  465560 tick 300
+  465560 shot 688_r11_fl5
+  465860 tick 300
+  465860 shot 688_r11_fl6
+  466160 tick 300
+  466160 shot 688_r11_fl7
+  466460 tick 300
+  466460 shot 688_r11_fl8
+  466460 up
+  466460 tilt 0 500 -866
+  468960 tick 2500
+  468960 shot 689_r11_lost
+  468960 down 80 131
+  470460 tick 1500
+  470460 up
+  471060 tick 600
+  471060 shot 690_r12_start
+  471060 # Leo rests his thumb on the sign while rolling right
+  471060 down 80 130
+  471060 tilt 300 470 -830
+  471460 tick 400
+  471460 shot 691_r12_thumb1
+  471860 tick 400
+  471860 shot 691_r12_thumb2
+  472260 tick 400
+  472260 shot 691_r12_thumb3
+  472660 tick 400
+  472660 shot 691_r12_thumb4
+  473060 tick 400
+  473060 shot 691_r12_thumb5
+  473460 tick 400
+  473460 shot 691_r12_thumb6
+  473860 tick 400
+  473860 shot 691_r12_thumb7
+  474260 tick 400
+  474260 shot 691_r12_thumb8
+  474260 tilt 0 500 -866
+  474960 tick 700
+  474960 shot 692_r12_h1
+  475660 tick 700
+  475660 shot 692_r12_h2
+  476360 tick 700
+  476360 shot 692_r12_h3
+  477060 tick 700
+  477060 shot 692_r12_h4
+  477760 tick 700
+  477760 shot 692_r12_h5
+  478460 tick 700
+  478460 shot 692_r12_h6
+  479160 tick 700
+  479160 shot 692_r12_h7
+  479860 tick 700
+  479860 shot 692_r12_h8
+  481260 tick 1400
+  481260 up
+  481260 tilt 300 470 -830
+  481760 tick 500
+  481760 shot 693_r12_a
+  481760 down 80 130
+  482260 tick 500
+  482260 shot 693_r12_b1
+  482760 tick 500
+  482760 shot 693_r12_b2
+  483260 tick 500
+  483260 shot 693_r12_b3
+  483760 tick 500
+  483760 shot 693_r12_b4
+  484260 tick 500
+  484260 shot 693_r12_b5
+  484760 tick 500
+  484760 shot 693_r12_b6
+  485260 tick 500
+  485260 shot 693_r12_b7
+  485760 tick 500
+  485760 shot 693_r12_b8
+  486260 tick 500
+  486260 shot 693_r12_b9
+  486760 tick 500
+  486760 shot 693_r12_b10
+  487260 tick 500
+  487260 shot 693_r12_b11
+  487760 tick 500
+  487760 shot 693_r12_b12
+  489760 tick 2000
+  489760 up
+  489760 tilt 400 460 -790
+  490260 tick 500
+  490260 shot 694_r12_c1
+  490760 tick 500
+  490760 shot 694_r12_c2
+  491260 tick 500
+  491260 shot 694_r12_c3
+  491260 down 80 130
+  491760 tick 500
+  491760 shot 694_r12_c4
+  492260 tick 500
+  492260 shot 694_r12_c5
+  492760 tick 500
+  492760 shot 694_r12_c6
+  493260 tick 500
+  493260 shot 694_r12_c7
+  493760 tick 500
+  493760 shot 694_r12_c8
+  494260 tick 500
+  494260 shot 694_r12_c9
+  494760 tick 500
+  494760 shot 694_r12_c10
+  495260 tick 500
+  495260 shot 694_r12_c11
+  495760 tick 500
+  495760 shot 694_r12_c12
+  495760 tilt 0 500 -866
+  499260 tick 3500
+  499260 up
+  499260 tilt -400 460 -790
+  499760 tick 500
+  499760 shot 695_r12_d1
+  500260 tick 500
+  500260 shot 695_r12_d2
+  500760 tick 500
+  500760 shot 695_r12_d3
+  500760 down 80 130
+  501260 tick 500
+  501260 shot 695_r12_d4
+  501760 tick 500
+  501760 shot 695_r12_d5
+  502260 tick 500
+  502260 shot 695_r12_d6
+  502760 tick 500
+  502760 shot 695_r12_d7
+  503260 tick 500
+  503260 shot 695_r12_d8
+  503760 tick 500
+  503760 shot 695_r12_d9
+  504260 tick 500
+  504260 shot 695_r12_d10
+  504760 tick 500
+  504760 shot 695_r12_d11
+  505260 tick 500
+  505260 shot 695_r12_d12
+  505760 tick 500
+  505760 shot 695_r12_d13
+  506260 tick 500
+  506260 shot 695_r12_d14
+  506760 tick 500
+  506760 shot 695_r12_d15
+  507260 tick 500
+  507260 shot 695_r12_d16
+  507260 tilt 0 500 -866
+  509760 tick 2500
+  509760 up
+  509760 tilt -400 460 -790
+  510160 tick 400
+  510160 shot 696_r12_e1
+  510560 tick 400
+  510560 shot 696_r12_e2
+  510960 tick 400
+  510960 shot 696_r12_e3
+  511360 tick 400
+  511360 shot 696_r12_e4
+  511760 tick 400
+  511760 shot 696_r12_e5
+  512160 tick 400
+  512160 shot 696_r12_e6
+  512160 tilt 0 500 -866
+  512160 down 80 130
+  512760 tick 600
+  512760 shot 697_r12_f1
+  513360 tick 600
+  513360 shot 697_r12_f2
+  513960 tick 600
+  513960 shot 697_r12_f3
+  514560 tick 600
+  514560 shot 697_r12_f4
+  515160 tick 600
+  515160 shot 697_r12_f5
+  515760 tick 600
+  515760 shot 697_r12_f6
+  516360 tick 600
+  516360 shot 697_r12_f7
+  516960 tick 600
+  516960 shot 697_r12_f8
+  517560 tick 600
+  517560 shot 697_r12_f9
+  518160 tick 600
+  518160 shot 697_r12_f10
+  520660 tick 2500
+  520660 up
+  520960 tick 300
+  520960 shot 698_ghost_0
+  520960 # curious: Leo presses the ghost in play
+  520960 down 33 40
+  521460 tick 500
+  521460 shot 698_ghost_1
+  522160 tick 700
+  522160 up
+  522560 tick 400
+  522560 shot 698_ghost_2
+  522960 tick 400
+  522960 shot 698_ghost_3
+  523360 tick 400
+  523360 shot 698_ghost_4
+  523760 tick 400
+  523760 shot 698_ghost_5
+  524760 tick 1000
+  524760 # Leo presses the picture with the arrow at the top, 1.5 s
+  524760 down 80 20
+  525060 tick 300
+  525060 shot 699_exit_1
+  525660 tick 600
+  525660 shot 699_exit_2
+  526260 tick 600
+  526260 shot 699_exit_3
+  526260 up
+  526660 tick 400
+  526660 shot 699_exit_4
+  527460 tick 800
+  527460 shot 699_exit_5
+  527460 down 80 104
+  528660 tick 1200
+  528660 up
+  529460 tick 800
+  529460 shot 700_reenter
+  529460 # quick 0.3 s brush on the exit picture
+  529460 down 80 20
+  529740 tick 280
+  529740 up
+  530240 tick 500
+  530240 shot 701_brush
+  530240 # double tap on exit picture
+  530240 down 80 20
+  530360 tick 120
+  530360 up
+  530480 tick 120
+  530480 down 80 20
+  530600 tick 120
+  530600 up
+  531100 tick 500
+  531100 shot 702_dbl
+# --- session 2: same saves (Leo's profile kept), new process ---
+    1500 tick 1500
+    1500 shot 800_s2_boot
+    1500 tilt 0 500 -866
+    1500 down 80 68
+    3000 tick 1500
+    3000 up
+    3900 tick 900
+    3900 down 80 104
+    5100 tick 1200
+    5100 up
+    6600 tick 1500
+    6600 down 80 130
+    7600 tick 1000
+    7600 up
+    8800 tick 1200
+    8800 shot 801_s2_cal
+    8800 down 80 130
+    9800 tick 1000
+    9800 up
+   10600 tick 800
+   10600 shot 802_s2_play
+   10600 tilt 350 470 -810
+   11500 tick 900
+   11500 shot 803_a
+   11500 down 80 130
+   12000 tick 500
+   12000 shot 803_b1
+   12500 tick 500
+   12500 shot 803_b2
+   13000 tick 500
+   13000 shot 803_b3
+   13500 tick 500
+   13500 shot 803_b4
+   14000 tick 500
+   14000 shot 803_b5
+   14500 tick 500
+   14500 shot 803_b6
+   15000 tick 500
+   15000 shot 803_b7
+   15500 tick 500
+   15500 shot 803_b8
+   16000 tick 500
+   16000 shot 803_b9
+   16500 tick 500
+   16500 shot 803_b10
+   17000 tick 500
+   17000 shot 803_b11

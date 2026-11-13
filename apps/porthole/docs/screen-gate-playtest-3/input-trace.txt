@@ -1,0 +1,3331 @@
+# session start
+[t=1000] tick 1000
+[t=1000] shot 000_boot
+# LEO pass: name entry, taps L firmly
+# tap 118 100 hold=300 gap=400
+[t=1000] down 118 100
+[t=1300] tick 300
+[t=1300] up
+[t=1700] tick 400
+[t=1700] shot 001_L
+# tap 42 78 hold=250 gap=500
+[t=1700] down 42 78
+[t=1950] tick 250
+[t=1950] up
+[t=2450] tick 500
+# tap 66 124 hold=300 gap=150
+[t=2450] down 66 124
+[t=2750] tick 300
+[t=2750] up
+[t=2900] tick 150
+[t=2900] shot 002_after_NZ
+# tap 68 53 hold=300 gap=600
+[t=2900] down 68 53
+[t=3200] tick 300
+[t=3200] up
+[t=3800] tick 600
+[t=3800] shot 003_Leo
+# Leo mashes OK 4x
+# tap 118 124 hold=250 gap=150
+[t=3800] down 118 124
+[t=4050] tick 250
+[t=4050] up
+[t=4200] tick 150
+[t=4200] shot 004_ok1
+# tap 120 126 hold=300 gap=150
+[t=4200] down 120 126
+[t=4500] tick 300
+[t=4500] up
+[t=4650] tick 150
+[t=4650] shot 004_ok2
+# tap 116 123 hold=300 gap=150
+[t=4650] down 116 123
+[t=4950] tick 300
+[t=4950] up
+[t=5100] tick 150
+[t=5100] shot 004_ok3
+# tap 119 127 hold=250 gap=600
+[t=5100] down 119 127
+[t=5350] tick 250
+[t=5350] up
+[t=5950] tick 600
+[t=5950] shot 004_ok4
+# Leo mashes the fox 3x
+# tap 124 56 hold=300 gap=150
+[t=5950] down 124 56
+[t=6250] tick 300
+[t=6250] up
+[t=6400] tick 150
+[t=6400] shot 005_f1
+# tap 126 58 hold=250 gap=150
+[t=6400] down 126 58
+[t=6650] tick 250
+[t=6650] up
+[t=6800] tick 150
+[t=6800] shot 005_f2
+# tap 122 55 hold=350 gap=600
+[t=6800] down 122 55
+[t=7150] tick 350
+[t=7150] up
+[t=7750] tick 600
+[t=7750] shot 005_f3
+# Leo mashes 6 x5
+# tap 79 69 hold=300 gap=150
+[t=7750] down 79 69
+[t=8050] tick 300
+[t=8050] up
+[t=8200] tick 150
+[t=8200] shot 006_a1
+# tap 81 71 hold=300 gap=150
+[t=8200] down 81 71
+[t=8500] tick 300
+[t=8500] up
+[t=8650] tick 150
+[t=8650] shot 006_a2
+# tap 77 68 hold=250 gap=150
+[t=8650] down 77 68
+[t=8900] tick 250
+[t=8900] up
+[t=9050] tick 150
+[t=9050] shot 006_a3
+# tap 80 72 hold=350 gap=150
+[t=9050] down 80 72
+[t=9400] tick 350
+[t=9400] up
+[t=9550] tick 150
+[t=9550] shot 006_a4
+# tap 78 70 hold=300 gap=800
+[t=9550] down 78 70
+[t=9850] tick 300
+[t=9850] up
+[t=10650] tick 800
+[t=10650] shot 006_a5
+# Leo mashes the 6 key on the code pad 4x
+# tap 99 74 hold=300 gap=150
+[t=10650] down 99 74
+[t=10950] tick 300
+[t=10950] up
+[t=11100] tick 150
+[t=11100] shot 007_c1
+# tap 101 76 hold=300 gap=150
+[t=11100] down 101 76
+[t=11400] tick 300
+[t=11400] up
+[t=11550] tick 150
+[t=11550] shot 007_c2
+# tap 98 73 hold=250 gap=150
+[t=11550] down 98 73
+[t=11800] tick 250
+[t=11800] up
+[t=11950] tick 150
+[t=11950] shot 007_c3
+# tap 100 75 hold=300 gap=800
+[t=11950] down 100 75
+[t=12250] tick 300
+[t=12250] up
+[t=13050] tick 800
+[t=13050] shot 007_c4
+# (prev 4 taps landed in key gap at 99,74 -> nothing). Leo mashes 6 key 4x
+# tap 119 89 hold=300 gap=150
+[t=13050] down 119 89
+[t=13350] tick 300
+[t=13350] up
+[t=13500] tick 150
+[t=13500] shot 008_c1
+# tap 121 91 hold=300 gap=150
+[t=13500] down 121 91
+[t=13800] tick 300
+[t=13800] up
+[t=13950] tick 150
+[t=13950] shot 008_c2
+# tap 117 88 hold=250 gap=150
+[t=13950] down 117 88
+[t=14200] tick 250
+[t=14200] up
+[t=14350] tick 150
+[t=14350] shot 008_c3
+# tap 120 90 hold=300 gap=800
+[t=14350] down 120 90
+[t=14650] tick 300
+[t=14650] up
+[t=15450] tick 800
+[t=15450] shot 008_c4
+# Leo cannot read Once more!, mashes 6 again 5x at ~1/s
+# tap 120 89 hold=300 gap=600
+[t=15450] down 120 89
+[t=15750] tick 300
+[t=15750] up
+[t=16350] tick 600
+[t=16350] shot 009_c1
+# tap 118 90 hold=350 gap=600
+[t=16350] down 118 90
+[t=16700] tick 350
+[t=16700] up
+[t=17300] tick 600
+[t=17300] shot 009_c2
+# tap 121 88 hold=300 gap=600
+[t=17300] down 121 88
+[t=17600] tick 300
+[t=17600] up
+[t=18200] tick 600
+[t=18200] shot 009_c3
+# tap 119 91 hold=300 gap=600
+[t=18200] down 119 91
+[t=18500] tick 300
+[t=18500] up
+[t=19100] tick 600
+[t=19100] shot 009_c4
+# tap 120 89 hold=300 gap=600
+[t=19100] down 120 89
+[t=19400] tick 300
+[t=19400] up
+[t=20000] tick 600
+[t=20000] shot 009_c5
+[t=21000] tick 1000
+[t=21000] shot 009_c6
+# Leo mashes top orange button 3x
+# tap 80 12 hold=300 gap=150
+[t=21000] down 80 12
+[t=21300] tick 300
+[t=21300] up
+[t=21450] tick 150
+[t=21450] shot 010_h1
+# tap 82 14 hold=300 gap=150
+[t=21450] down 82 14
+[t=21750] tick 300
+[t=21750] up
+[t=21900] tick 150
+[t=21900] shot 010_h2
+# tap 79 11 hold=300 gap=800
+[t=21900] down 79 11
+[t=22200] tick 300
+[t=22200] up
+[t=23000] tick 800
+[t=23000] shot 010_h3
+# ZOE pass: New profile, fast deliberate taps (100ms press, 180ms gaps)
+# tap 80 93 hold=100 gap=400
+[t=23000] down 80 93
+[t=23100] tick 100
+[t=23100] up
+[t=23500] tick 400
+[t=23500] shot 011_new
+# tap 67 124 hold=100 gap=180
+[t=23500] down 67 124
+[t=23600] tick 100
+[t=23600] up
+[t=23780] tick 180
+# tap 41 124 hold=100 gap=180
+[t=23780] down 41 124
+[t=23880] tick 100
+[t=23880] up
+[t=24060] tick 180
+# tap 67 52 hold=100 gap=180
+[t=24060] down 67 52
+[t=24160] tick 100
+[t=24160] up
+[t=24340] tick 180
+[t=24340] shot 011_zo
+# tap 66 125 hold=100 gap=180
+[t=24340] down 66 125
+[t=24440] tick 100
+[t=24440] up
+[t=24620] tick 180
+# tap 41 77 hold=100 gap=180
+[t=24620] down 41 77
+[t=24720] tick 100
+[t=24720] up
+[t=24900] tick 180
+[t=24900] shot 011_zoe
+# Zoe: OK, owl, age 8 fast
+# tap 119 124 hold=100 gap=180
+[t=24900] down 119 124
+[t=25000] tick 100
+[t=25000] up
+[t=25180] tick 180
+[t=25180] shot 012_face
+# tap 64 88 hold=100 gap=180
+[t=25180] down 64 88
+[t=25280] tick 100
+[t=25280] up
+[t=25460] tick 180
+[t=25460] shot 012_age
+# tap 37 102 hold=100 gap=300
+[t=25460] down 37 102
+[t=25560] tick 100
+[t=25560] up
+[t=25860] tick 300
+[t=25860] shot 012_code
+# Zoe types code 7 7 3 1 fast
+# tap 41 117 hold=100 gap=150
+[t=25860] down 41 117
+[t=25960] tick 100
+[t=25960] up
+[t=26110] tick 150
+# tap 42 116 hold=100 gap=150
+[t=26110] down 42 116
+[t=26210] tick 100
+[t=26210] up
+[t=26360] tick 150
+[t=26360] shot 013_77
+# tap 119 62 hold=100 gap=150
+[t=26360] down 119 62
+[t=26460] tick 100
+[t=26460] up
+[t=26610] tick 150
+# tap 41 62 hold=100 gap=300
+[t=26610] down 41 62
+[t=26710] tick 100
+[t=26710] up
+[t=27010] tick 300
+[t=27010] shot 013_7731
+# Zoe sees 31, no delete key; types 7 7 to finish (deliberate, 250ms gaps)
+# tap 41 117 hold=100 gap=250
+[t=27010] down 41 117
+[t=27110] tick 100
+[t=27110] up
+[t=27360] tick 250
+# tap 42 117 hold=100 gap=400
+[t=27360] down 42 117
+[t=27460] tick 100
+[t=27460] up
+[t=27860] tick 400
+[t=27860] shot 014_after
+# Zoe confirm: types her intended 7 7 3 1 fast
+# tap 41 117 hold=100 gap=150
+[t=27860] down 41 117
+[t=27960] tick 100
+[t=27960] up
+[t=28110] tick 150
+# tap 40 118 hold=100 gap=150
+[t=28110] down 40 118
+[t=28210] tick 100
+[t=28210] up
+[t=28360] tick 150
+# tap 119 62 hold=100 gap=150
+[t=28360] down 119 62
+[t=28460] tick 100
+[t=28460] up
+[t=28610] tick 150
+# tap 41 62 hold=100 gap=150
+[t=28610] down 41 62
+[t=28710] tick 100
+[t=28710] up
+[t=28860] tick 150
+[t=28860] shot 015_confirm_a
+[t=29460] tick 600
+[t=29460] shot 015_confirm_b
+# Zoe: confused by 31, types 7 7 again deliberately
+# tap 41 117 hold=120 gap=300
+[t=29460] down 41 117
+[t=29580] tick 120
+[t=29580] up
+[t=29880] tick 300
+# tap 41 117 hold=120 gap=600
+[t=29880] down 41 117
+[t=30000] tick 120
+[t=30000] up
+[t=30600] tick 600
+[t=30600] shot 016_done
+# tap 80 12 hold=100 gap=500
+[t=30600] down 80 12
+[t=30700] tick 100
+[t=30700] up
+[t=31200] tick 500
+[t=31200] shot 017_picker
+# retry home button, same 100ms press
+# tap 80 12 hold=100 gap=500
+[t=31200] down 80 12
+[t=31300] tick 100
+[t=31300] up
+[t=31800] tick 500
+[t=31800] shot 018_picker
+# Zoe taps her row
+# tap 82 80 hold=100 gap=400
+[t=31800] down 82 80
+[t=31900] tick 100
+[t=31900] up
+[t=32300] tick 400
+[t=32300] shot 019_signin
+# Zoe types intended 7731 fast
+# tap 41 117 hold=100 gap=150
+[t=32300] down 41 117
+[t=32400] tick 100
+[t=32400] up
+[t=32550] tick 150
+# tap 42 116 hold=100 gap=150
+[t=32550] down 42 116
+[t=32650] tick 100
+[t=32650] up
+[t=32800] tick 150
+# tap 119 62 hold=100 gap=150
+[t=32800] down 119 62
+[t=32900] tick 100
+[t=32900] up
+[t=33050] tick 150
+# tap 41 62 hold=100 gap=100
+[t=33050] down 41 62
+[t=33150] tick 100
+[t=33150] up
+[t=33250] tick 100
+[t=33250] shot 020_a
+[t=33650] tick 400
+[t=33650] shot 020_b
+[t=34450] tick 800
+[t=34450] shot 020_c
+# Zoe recalls the boxes showed 3 1 7 7, types 3177 fast
+# tap 119 62 hold=100 gap=150
+[t=34450] down 119 62
+[t=34550] tick 100
+[t=34550] up
+[t=34700] tick 150
+# tap 41 62 hold=100 gap=150
+[t=34700] down 41 62
+[t=34800] tick 100
+[t=34800] up
+[t=34950] tick 150
+# tap 41 117 hold=100 gap=150
+[t=34950] down 41 117
+[t=35050] tick 100
+[t=35050] up
+[t=35200] tick 150
+# tap 42 117 hold=100 gap=400
+[t=35200] down 42 117
+[t=35300] tick 100
+[t=35300] up
+[t=35700] tick 400
+[t=35700] shot 021_a
+[t=36500] tick 800
+[t=36500] shot 021_b
+# LEO: back to picker (tap firmly), then mash his name row 6x
+# tap 80 12 hold=300 gap=900
+[t=36500] down 80 12
+[t=36800] tick 300
+[t=36800] up
+[t=37700] tick 900
+[t=37700] shot 022_picker
+# tap 80 55 hold=300 gap=150
+[t=37700] down 80 55
+[t=38000] tick 300
+[t=38000] up
+[t=38150] tick 150
+[t=38150] shot 022_r1
+# tap 82 57 hold=350 gap=150
+[t=38150] down 82 57
+[t=38500] tick 350
+[t=38500] up
+[t=38650] tick 150
+[t=38650] shot 022_r2
+# tap 78 54 hold=300 gap=150
+[t=38650] down 78 54
+[t=38950] tick 300
+[t=38950] up
+[t=39100] tick 150
+[t=39100] shot 022_r3
+# tap 81 56 hold=250 gap=150
+[t=39100] down 81 56
+[t=39350] tick 250
+[t=39350] up
+[t=39500] tick 150
+[t=39500] shot 022_r4
+# tap 79 58 hold=300 gap=150
+[t=39500] down 79 58
+[t=39800] tick 300
+[t=39800] up
+[t=39950] tick 150
+[t=39950] shot 022_r5
+# tap 80 55 hold=300 gap=800
+[t=39950] down 80 55
+[t=40250] tick 300
+[t=40250] up
+[t=41050] tick 800
+[t=41050] shot 022_r6
+# LEO: back (top button), then taps row "again!" once a second x6
+# tap 80 12 hold=300 gap=900
+[t=41050] down 80 12
+[t=41350] tick 300
+[t=41350] up
+[t=42250] tick 900
+[t=42250] shot 023_picker
+# tap 80 55 hold=300 gap=700
+[t=42250] down 80 55
+[t=42550] tick 300
+[t=42550] up
+[t=43250] tick 700
+[t=43250] shot 023_r1
+# tap 82 57 hold=350 gap=650
+[t=43250] down 82 57
+[t=43600] tick 350
+[t=43600] up
+[t=44250] tick 650
+[t=44250] shot 023_r2
+# tap 78 54 hold=300 gap=700
+[t=44250] down 78 54
+[t=44550] tick 300
+[t=44550] up
+[t=45250] tick 700
+[t=45250] shot 023_r3
+# tap 81 56 hold=300 gap=700
+[t=45250] down 81 56
+[t=45550] tick 300
+[t=45550] up
+[t=46250] tick 700
+[t=46250] shot 023_r4
+# tap 79 58 hold=300 gap=700
+[t=46250] down 79 58
+[t=46550] tick 300
+[t=46550] up
+[t=47250] tick 700
+[t=47250] shot 023_r5
+# tap 80 55 hold=300 gap=700
+[t=47250] down 80 55
+[t=47550] tick 300
+[t=47550] up
+[t=48250] tick 700
+[t=48250] shot 023_r6
+# LEO one more row-tap then his code 6666 (firm taps ~0.6s)
+# tap 80 55 hold=300 gap=700
+[t=48250] down 80 55
+[t=48550] tick 300
+[t=48550] up
+[t=49250] tick 700
+[t=49250] shot 024_a
+# tap 119 89 hold=300 gap=300
+[t=49250] down 119 89
+[t=49550] tick 300
+[t=49550] up
+[t=49850] tick 300
+# tap 120 90 hold=300 gap=300
+[t=49850] down 120 90
+[t=50150] tick 300
+[t=50150] up
+[t=50450] tick 300
+# tap 118 88 hold=300 gap=300
+[t=50450] down 118 88
+[t=50750] tick 300
+[t=50750] up
+[t=51050] tick 300
+# tap 119 90 hold=300 gap=600
+[t=51050] down 119 90
+[t=51350] tick 300
+[t=51350] up
+[t=51950] tick 600
+[t=51950] shot 024_b
+[t=52550] tick 600
+[t=52550] shot 024_c
+# LEO mashes All-games tile 5x
+# tap 124 105 hold=300 gap=150
+[t=52550] down 124 105
+[t=52850] tick 300
+[t=52850] up
+[t=53000] tick 150
+[t=53000] shot 025_g1
+# tap 126 107 hold=300 gap=150
+[t=53000] down 126 107
+[t=53300] tick 300
+[t=53300] up
+[t=53450] tick 150
+[t=53450] shot 025_g2
+# tap 122 104 hold=300 gap=150
+[t=53450] down 122 104
+[t=53750] tick 300
+[t=53750] up
+[t=53900] tick 150
+[t=53900] shot 025_g3
+# tap 125 106 hold=250 gap=150
+[t=53900] down 125 106
+[t=54150] tick 250
+[t=54150] up
+[t=54300] tick 150
+[t=54300] shot 025_g4
+# tap 123 105 hold=300 gap=800
+[t=54300] down 123 105
+[t=54600] tick 300
+[t=54600] up
+[t=55400] tick 800
+[t=55400] shot 025_g5
+# LEO taps the pumpkin tile, then mashes 3 more
+# tap 79 88 hold=300 gap=150
+[t=55400] down 79 88
+[t=55700] tick 300
+[t=55700] up
+[t=55850] tick 150
+[t=55850] shot 026_p1
+# tap 81 90 hold=300 gap=150
+[t=55850] down 81 90
+[t=56150] tick 300
+[t=56150] up
+[t=56300] tick 150
+[t=56300] shot 026_p2
+# tap 78 87 hold=300 gap=150
+[t=56300] down 78 87
+[t=56600] tick 300
+[t=56600] up
+[t=56750] tick 150
+[t=56750] shot 026_p3
+# tap 80 89 hold=300 gap=600
+[t=56750] down 80 89
+[t=57050] tick 300
+[t=57050] up
+[t=57650] tick 600
+[t=57650] shot 026_p4
+[t=59150] tick 1500
+[t=59150] shot 026_p5
+# LEO taps ghost on title
+# tap 33 40 hold=300 gap=300
+[t=59150] down 33 40
+[t=59450] tick 300
+[t=59450] up
+[t=59750] tick 300
+[t=59750] shot 027_ghost1
+[t=60250] tick 500
+[t=60250] shot 027_ghost2
+# taps the pumpkin character
+# tap 80 96 hold=300 gap=500
+[t=60250] down 80 96
+[t=60550] tick 300
+[t=60550] up
+[t=61050] tick 500
+[t=61050] shot 027_pk
+# LEO double-taps START
+# tap 80 130 hold=300 gap=120
+[t=61050] down 80 130
+[t=61350] tick 300
+[t=61350] up
+[t=61470] tick 120
+[t=61470] shot 028_s1
+# tap 82 131 hold=300 gap=300
+[t=61470] down 82 131
+[t=61770] tick 300
+[t=61770] up
+[t=62070] tick 300
+[t=62070] shot 028_s2
+[t=62870] tick 800
+[t=62870] shot 028_s3
+# Leo holds device comfy (tilt ~30deg toward him), double-taps READY
+[t=62870] tilt 0 500 -866
+[t=63370] tick 500
+# tap 80 130 hold=300 gap=120
+[t=63370] down 80 130
+[t=63670] tick 300
+[t=63670] up
+[t=63790] tick 120
+[t=63790] shot 029_r1
+# tap 81 129 hold=300 gap=300
+[t=63790] down 81 129
+[t=64090] tick 300
+[t=64090] up
+[t=64390] tick 300
+[t=64390] shot 029_r2
+[t=65090] tick 700
+[t=65090] shot 029_r3
+# Leo tilts right
+[t=65090] tilt 300 500 -812
+[t=65490] tick 400
+[t=65490] shot 030_t1
+[t=65890] tick 400
+[t=65890] shot 030_t2
+[t=66290] tick 400
+[t=66290] shot 030_t3
+[t=66290] tilt 0 500 -866
+[t=66690] tick 400
+[t=66690] shot 030_t4
+# LEO mashes the button while Grandma comes, 5x
+# tap 79 130 hold=300 gap=150
+[t=66690] down 79 130
+[t=66990] tick 300
+[t=66990] up
+[t=67140] tick 150
+[t=67140] shot 031_m1
+# tap 82 132 hold=300 gap=150
+[t=67140] down 82 132
+[t=67440] tick 300
+[t=67440] up
+[t=67590] tick 150
+[t=67590] shot 031_m2
+# tap 78 129 hold=250 gap=150
+[t=67590] down 78 129
+[t=67840] tick 250
+[t=67840] up
+[t=67990] tick 150
+[t=67990] shot 031_m3
+# tap 81 131 hold=300 gap=150
+[t=67990] down 81 131
+[t=68290] tick 300
+[t=68290] up
+[t=68440] tick 150
+[t=68440] shot 031_m4
+# tap 80 130 hold=300 gap=150
+[t=68440] down 80 130
+[t=68740] tick 300
+[t=68740] up
+[t=68890] tick 150
+[t=68890] shot 031_m5
+[t=69490] tick 600
+[t=69490] shot 031_m6
+# tap 80 130 hold=300 gap=300
+[t=69490] down 80 130
+[t=69790] tick 300
+[t=69790] up
+[t=70090] tick 300
+[t=70090] shot 032_a
+[t=70790] tick 700
+[t=70790] shot 032_b
+[t=71790] tick 1000
+[t=71790] shot 032_c
+[t=73290] tick 1500
+[t=73290] shot 032_d
+# LEO double-taps TRY AGAIN
+# tap 80 130 hold=300 gap=120
+[t=73290] down 80 130
+[t=73590] tick 300
+[t=73590] up
+[t=73710] tick 120
+[t=73710] shot 033_a1
+# tap 81 131 hold=300 gap=300
+[t=73710] down 81 131
+[t=74010] tick 300
+[t=74010] up
+[t=74310] tick 300
+[t=74310] shot 033_a2
+[t=75110] tick 800
+[t=75110] shot 033_a3
+# LEO round 2: taps HIDE once firmly (pumpkin under table)
+[t=75110] down 80 130
+[t=75230] tick 120
+[t=75230] shot 034_down
+[t=75410] tick 180
+[t=75410] up
+[t=75530] tick 120
+[t=75530] shot 034_up
+[t=76030] tick 500
+[t=76030] shot 034_later
+# LEO mashes the toggle 5x (~450ms cadence)
+# tap 79 130 hold=300 gap=150
+[t=76030] down 79 130
+[t=76330] tick 300
+[t=76330] up
+[t=76480] tick 150
+[t=76480] shot 035_m1
+# tap 82 132 hold=300 gap=150
+[t=76480] down 82 132
+[t=76780] tick 300
+[t=76780] up
+[t=76930] tick 150
+[t=76930] shot 035_m2
+# tap 78 129 hold=250 gap=150
+[t=76930] down 78 129
+[t=77180] tick 250
+[t=77180] up
+[t=77330] tick 150
+[t=77330] shot 035_m3
+# tap 81 131 hold=300 gap=150
+[t=77330] down 81 131
+[t=77630] tick 300
+[t=77630] up
+[t=77780] tick 150
+[t=77780] shot 035_m4
+# tap 80 130 hold=300 gap=150
+[t=77780] down 80 130
+[t=78080] tick 300
+[t=78080] up
+[t=78230] tick 150
+[t=78230] shot 035_m5
+[t=78830] tick 600
+[t=78830] shot 035_m6
+# tap 80 130 hold=300 gap=300
+[t=78830] down 80 130
+[t=79130] tick 300
+[t=79130] up
+[t=79430] tick 300
+[t=79430] shot 036_a
+[t=80930] tick 1500
+[t=80930] shot 036_b
+[t=82430] tick 1500
+[t=82430] shot 036_c
+[t=83930] tick 1500
+[t=83930] shot 036_d
+# tap 80 130 hold=300 gap=200
+[t=83930] down 80 130
+[t=84230] tick 300
+[t=84230] up
+[t=84430] tick 200
+[t=84430] shot 037_out
+[t=84430] tilt -300 500 -812
+[t=84830] tick 400
+[t=84830] shot 037_l1
+[t=85230] tick 400
+[t=85230] shot 037_l2
+[t=85230] tilt 0 500 -866
+[t=85630] tick 400
+[t=85630] shot 037_l3
+[t=85630] tilt -300 500 -812
+[t=86030] tick 400
+[t=86030] shot 038_a
+[t=86030] tilt 0 500 -866
+[t=86330] tick 300
+[t=86330] shot 038_b
+# LEO taps FIND COVER; capture during press
+[t=86330] down 80 130
+[t=86410] tick 80
+[t=86410] shot 039_d1
+[t=86610] tick 200
+[t=86610] up
+[t=86690] tick 80
+[t=86690] shot 039_u
+# tilt right toward table
+[t=86690] tilt 300 500 -812
+[t=86990] tick 300
+[t=86990] shot 039_r
+[t=86990] tilt 0 500 -866
+[t=87190] tick 200
+[t=87190] shot 039_r2
+[t=87190] tilt 300 500 -812
+[t=87590] tick 400
+[t=87590] shot 040_a
+[t=87590] tilt 0 500 -866
+[t=87790] tick 200
+[t=87790] shot 040_b
+# LEO long-presses HIDE 1.2s
+[t=87790] down 81 131
+[t=87990] tick 200
+[t=87990] shot 041_h1
+[t=88990] tick 1000
+[t=88990] shot 041_h2
+[t=88990] up
+[t=89190] tick 200
+[t=89190] shot 041_h3
+[t=91690] tick 2500
+[t=91690] shot 041_h4
+[t=94190] tick 2500
+[t=94190] shot 041_h5
+[t=95690] tick 1500
+[t=95690] shot 042_a
+[t=97190] tick 1500
+[t=97190] shot 042_b
+[t=98690] tick 1500
+[t=98690] shot 042_c
+[t=100190] tick 1500
+[t=100190] shot 042_d
+# tap 80 130 hold=300 gap=200
+[t=100190] down 80 130
+[t=100490] tick 300
+[t=100490] up
+[t=100690] tick 200
+[t=100690] tilt 300 500 -812
+[t=100990] tick 300
+[t=100990] shot 043_a
+[t=101290] tick 300
+[t=101290] shot 043_b
+[t=101290] tilt 0 500 -866
+[t=101590] tick 300
+[t=101590] shot 043_c
+[t=101590] tilt 300 500 -812
+[t=101890] tick 300
+[t=101890] shot 044_a
+[t=101890] tilt 0 500 -866
+[t=102190] tick 300
+[t=102190] shot 044_b
+[t=102190] tilt 300 500 -812
+[t=102690] tick 500
+[t=102690] shot 045_a
+[t=102690] tilt 0 500 -866
+[t=102990] tick 300
+[t=102990] shot 045_b
+[t=102990] tilt 300 750 -589
+[t=103490] tick 500
+[t=103490] shot 046_a
+[t=103490] tilt 0 500 -866
+[t=103790] tick 300
+[t=103790] shot 046_b
+[t=103790] tilt -300 500 -812
+[t=104190] tick 400
+[t=104190] tilt 0 500 -866
+[t=104290] tick 100
+[t=104290] shot 047_a
+# tap 80 130 hold=300 gap=200
+[t=104290] down 80 130
+[t=104590] tick 300
+[t=104590] up
+[t=104790] tick 200
+[t=104790] shot 047_b
+[t=106290] tick 1500
+[t=106290] shot 047_c
+[t=107790] tick 1500
+[t=107790] shot 047_d
+[t=107790] tilt -400 500 -768
+[t=108490] tick 700
+[t=108490] tilt 0 500 -866
+[t=108590] tick 100
+[t=108590] shot 048_a
+[t=110090] tick 1500
+[t=110090] shot 048_b
+[t=111590] tick 1500
+[t=111590] shot 048_c
+[t=111590] tilt 500 500 -707
+[t=112190] tick 600
+[t=112190] shot 049_a
+[t=112590] tick 400
+[t=112590] shot 049_b
+[t=112590] tilt 0 500 -866
+[t=112890] tick 300
+[t=112890] shot 049_c
+# tap 79 131 hold=300 gap=200
+[t=112890] down 79 131
+[t=113190] tick 300
+[t=113190] up
+[t=113390] tick 200
+[t=113390] shot 050_a
+[t=115890] tick 2500
+[t=115890] shot 050_b
+[t=118390] tick 2500
+[t=118390] shot 050_c
+[t=120390] tick 2000
+[t=120390] shot 050_d
+# tap 80 130 hold=300 gap=200
+[t=120390] down 80 130
+[t=120690] tick 300
+[t=120690] up
+[t=120890] tick 200
+[t=120890] tilt 400 500 -768
+[t=121390] tick 500
+[t=121390] shot 051_a
+[t=121390] tilt 0 500 -866
+[t=121690] tick 300
+[t=121690] shot 051_b
+[t=121690] tilt -500 500 -707
+[t=122290] tick 600
+[t=122290] shot 052_a
+[t=122890] tick 600
+[t=122890] shot 052_b
+[t=123490] tick 600
+[t=123490] shot 052_c
+[t=123490] tilt -500 500 -707
+[t=123990] tick 500
+[t=123990] shot 053_a
+[t=124490] tick 500
+[t=124490] shot 053_b
+[t=124990] tick 500
+[t=124990] shot 053_c
+[t=125490] tick 500
+[t=125490] shot 053_d
+[t=125490] tilt -600 500 -624
+[t=125990] tick 500
+[t=125990] shot 054_a
+[t=126490] tick 500
+[t=126490] shot 054_b
+[t=127190] tick 700
+[t=127190] shot 054_c
+[t=128190] tick 1000
+[t=128190] shot 054_d
+# LEO round 3: presses PLAY AGAIN and leaves thumb resting there while tilting right
+[t=128190] tilt 0 500 -866
+[t=128190] down 80 130
+[t=128490] tick 300
+[t=128490] shot 055_a
+[t=128490] tilt 300 500 -812
+[t=129190] tick 700
+[t=129190] shot 055_b
+[t=130190] tick 1000
+[t=130190] shot 055_c
+[t=131190] tick 1000
+[t=131190] shot 055_d
+[t=131190] up
+[t=131390] tick 200
+[t=131390] shot 055_e
+# LEO round 3 start: thumb lands on HIDE right away and rests there while tilting left
+[t=131390] tilt 0 500 -866
+[t=131390] down 79 131
+[t=131690] tick 300
+[t=131690] shot 056_a
+[t=131690] tilt -300 500 -812
+[t=132390] tick 700
+[t=132390] shot 056_b
+[t=133390] tick 1000
+[t=133390] shot 056_c
+[t=134390] tick 1000
+[t=134390] shot 056_d
+[t=134390] up
+[t=134690] tick 300
+[t=134690] shot 056_e
+# LEO taps the ghost in play (twice)
+[t=134690] tilt 0 500 -866
+[t=134690] down 29 34
+[t=134790] tick 100
+[t=134790] shot 057_a
+[t=134990] tick 200
+[t=134990] up
+[t=135190] tick 200
+[t=135190] shot 057_b
+# tap 31 35 hold=300 gap=300
+[t=135190] down 31 35
+[t=135490] tick 300
+[t=135490] up
+[t=135790] tick 300
+[t=135790] shot 057_c
+[t=136790] tick 1000
+[t=136790] shot 057_d
+# LEO mashes the back button in Pumpkin 4x
+# tap 80 20 hold=300 gap=150
+[t=136790] down 80 20
+[t=137090] tick 300
+[t=137090] up
+[t=137240] tick 150
+[t=137240] shot 058_b1
+# tap 82 18 hold=300 gap=150
+[t=137240] down 82 18
+[t=137540] tick 300
+[t=137540] up
+[t=137690] tick 150
+[t=137690] shot 058_b2
+# tap 79 16 hold=300 gap=150
+[t=137690] down 79 16
+[t=137990] tick 300
+[t=137990] up
+[t=138140] tick 150
+[t=138140] shot 058_b3
+# tap 81 19 hold=300 gap=800
+[t=138140] down 81 19
+[t=138440] tick 300
+[t=138440] up
+[t=139240] tick 800
+[t=139240] shot 058_b4
+# try long press on the top back icon
+[t=139240] down 80 18
+[t=139640] tick 400
+[t=139640] shot 059_a
+[t=140040] tick 400
+[t=140040] shot 059_b
+[t=140640] tick 600
+[t=140640] shot 059_c
+[t=140640] up
+[t=140940] tick 300
+[t=140940] shot 059_d
+# LEO taps the yellow arrow, mashes 3x
+# tap 80 135 hold=300 gap=150
+[t=140940] down 80 135
+[t=141240] tick 300
+[t=141240] up
+[t=141390] tick 150
+[t=141390] shot 060_a
+# tap 81 136 hold=300 gap=150
+[t=141390] down 81 136
+[t=141690] tick 300
+[t=141690] up
+[t=141840] tick 150
+[t=141840] shot 060_b
+# tap 79 134 hold=300 gap=800
+[t=141840] down 79 134
+[t=142140] tick 300
+[t=142140] up
+[t=142940] tick 800
+[t=142940] shot 060_c
+# (prev 3 taps at x=80 missed arrow by ~5px) LEO taps arrow at 96,135 then mashes 3x
+# tap 96 135 hold=300 gap=150
+[t=142940] down 96 135
+[t=143240] tick 300
+[t=143240] up
+[t=143390] tick 150
+[t=143390] shot 061_a
+# tap 97 136 hold=300 gap=150
+[t=143390] down 97 136
+[t=143690] tick 300
+[t=143690] up
+[t=143840] tick 150
+[t=143840] shot 061_b
+# tap 95 134 hold=300 gap=150
+[t=143840] down 95 134
+[t=144140] tick 300
+[t=144140] up
+[t=144290] tick 150
+[t=144290] shot 061_c
+# tap 96 135 hold=300 gap=800
+[t=144290] down 96 135
+[t=144590] tick 300
+[t=144590] up
+[t=145390] tick 800
+[t=145390] shot 061_d
+# LEO taps the jet tile, mashes 3x more
+# tap 36 72 hold=300 gap=150
+[t=145390] down 36 72
+[t=145690] tick 300
+[t=145690] up
+[t=145840] tick 150
+[t=145840] shot 062_a
+# tap 38 73 hold=300 gap=150
+[t=145840] down 38 73
+[t=146140] tick 300
+[t=146140] up
+[t=146290] tick 150
+[t=146290] shot 062_b
+# tap 35 71 hold=300 gap=150
+[t=146290] down 35 71
+[t=146590] tick 300
+[t=146590] up
+[t=146740] tick 150
+[t=146740] shot 062_c
+# tap 37 72 hold=300 gap=800
+[t=146740] down 37 72
+[t=147040] tick 300
+[t=147040] up
+[t=147840] tick 800
+[t=147840] shot 062_d
+[t=149340] tick 1500
+[t=149340] shot 062_e
+# LEO double-taps START
+[t=149340] tilt 0 500 -866
+# tap 80 117 hold=300 gap=120
+[t=149340] down 80 117
+[t=149640] tick 300
+[t=149640] up
+[t=149760] tick 120
+[t=149760] shot 063_a
+# tap 81 118 hold=300 gap=300
+[t=149760] down 81 118
+[t=150060] tick 300
+[t=150060] up
+[t=150360] tick 300
+[t=150360] shot 063_b
+[t=151360] tick 1000
+[t=151360] shot 063_c
+# Leo lifts device upright
+[t=151360] tilt 0 950 -312
+[t=151960] tick 600
+[t=151960] shot 064_a
+[t=152960] tick 1000
+[t=152960] shot 064_b
+# tap 80 117 hold=300 gap=300
+[t=152960] down 80 117
+[t=153260] tick 300
+[t=153260] up
+[t=153560] tick 300
+[t=153560] shot 065_a
+[t=154560] tick 1000
+[t=154560] shot 065_b
+[t=156060] tick 1500
+[t=156060] shot 065_c
+# tap 80 117 hold=300 gap=300
+[t=156060] down 80 117
+[t=156360] tick 300
+[t=156360] up
+[t=156660] tick 300
+[t=156660] shot 066_a
+# tap 80 80 hold=250 gap=250
+[t=156660] down 80 80
+[t=156910] tick 250
+[t=156910] up
+[t=157160] tick 250
+# tap 85 90 hold=250 gap=250
+[t=157160] down 85 90
+[t=157410] tick 250
+[t=157410] up
+[t=157660] tick 250
+[t=157660] shot 066_b
+# tap 75 85 hold=300 gap=250
+[t=157660] down 75 85
+[t=157960] tick 300
+[t=157960] up
+[t=158210] tick 250
+# tap 82 70 hold=250 gap=250
+[t=158210] down 82 70
+[t=158460] tick 250
+[t=158460] up
+[t=158710] tick 250
+[t=158710] shot 066_c
+# tap 78 95 hold=250 gap=250
+[t=158710] down 78 95
+[t=158960] tick 250
+[t=158960] up
+[t=159210] tick 250
+# tap 83 80 hold=300 gap=250
+[t=159210] down 83 80
+[t=159510] tick 300
+[t=159510] up
+[t=159760] tick 250
+[t=159760] shot 066_d
+[t=159760] tilt -350 900 -260
+# tap 81 85 hold=250 gap=200
+[t=159760] down 81 85
+[t=160010] tick 250
+[t=160010] up
+[t=160210] tick 200
+# tap 82 85 hold=250 gap=200
+[t=160210] down 82 85
+[t=160460] tick 250
+[t=160460] up
+[t=160660] tick 200
+# tap 83 85 hold=250 gap=200
+[t=160660] down 83 85
+[t=160910] tick 250
+[t=160910] up
+[t=161110] tick 200
+[t=161110] shot 067_a
+[t=161110] tilt 0 950 -312
+# tap 71 90 hold=250 gap=200
+[t=161110] down 71 90
+[t=161360] tick 250
+[t=161360] up
+[t=161560] tick 200
+# tap 72 90 hold=250 gap=200
+[t=161560] down 72 90
+[t=161810] tick 250
+[t=161810] up
+[t=162010] tick 200
+[t=162010] shot 067_b
+[t=162010] tilt 350 900 -260
+# tap 81 80 hold=250 gap=200
+[t=162010] down 81 80
+[t=162260] tick 250
+[t=162260] up
+[t=162460] tick 200
+# tap 82 80 hold=250 gap=200
+[t=162460] down 82 80
+[t=162710] tick 250
+[t=162710] up
+[t=162910] tick 200
+# tap 83 80 hold=250 gap=200
+[t=162910] down 83 80
+[t=163160] tick 250
+[t=163160] up
+[t=163360] tick 200
+[t=163360] shot 067_c
+[t=163360] tilt 0 950 -312
+# tap 71 85 hold=250 gap=200
+[t=163360] down 71 85
+[t=163610] tick 250
+[t=163610] up
+[t=163810] tick 200
+# tap 72 85 hold=250 gap=200
+[t=163810] down 72 85
+[t=164060] tick 250
+[t=164060] up
+[t=164260] tick 200
+# tap 73 85 hold=250 gap=200
+[t=164260] down 73 85
+[t=164510] tick 250
+[t=164510] up
+[t=164710] tick 200
+[t=164710] shot 067_d
+[t=164710] tilt 0 950 -312
+# tap 77 79 hold=250 gap=200
+[t=164710] down 77 79
+[t=164960] tick 250
+[t=164960] up
+[t=165160] tick 200
+# tap 81 86 hold=250 gap=200
+[t=165160] down 81 86
+[t=165410] tick 250
+[t=165410] up
+[t=165610] tick 200
+# tap 79 83 hold=300 gap=200
+[t=165610] down 79 83
+[t=165910] tick 300
+[t=165910] up
+[t=166110] tick 200
+[t=166110] shot 068_01
+[t=166110] tilt 300 900 -310
+# tap 78 80 hold=250 gap=200
+[t=166110] down 78 80
+[t=166360] tick 250
+[t=166360] up
+[t=166560] tick 200
+# tap 82 87 hold=250 gap=200
+[t=166560] down 82 87
+[t=166810] tick 250
+[t=166810] up
+[t=167010] tick 200
+# tap 80 84 hold=300 gap=200
+[t=167010] down 80 84
+[t=167310] tick 300
+[t=167310] up
+[t=167510] tick 200
+[t=167510] shot 068_02
+[t=167510] tilt 0 950 -312
+# tap 79 81 hold=250 gap=200
+[t=167510] down 79 81
+[t=167760] tick 250
+[t=167760] up
+[t=167960] tick 200
+# tap 83 88 hold=250 gap=200
+[t=167960] down 83 88
+[t=168210] tick 250
+[t=168210] up
+[t=168410] tick 200
+# tap 78 85 hold=300 gap=200
+[t=168410] down 78 85
+[t=168710] tick 300
+[t=168710] up
+[t=168910] tick 200
+[t=168910] shot 068_03
+[t=168910] tilt -300 900 -310
+# tap 80 82 hold=250 gap=200
+[t=168910] down 80 82
+[t=169160] tick 250
+[t=169160] up
+[t=169360] tick 200
+# tap 84 89 hold=250 gap=200
+[t=169360] down 84 89
+[t=169610] tick 250
+[t=169610] up
+[t=169810] tick 200
+# tap 79 82 hold=300 gap=200
+[t=169810] down 79 82
+[t=170110] tick 300
+[t=170110] up
+[t=170310] tick 200
+[t=170310] shot 068_04
+[t=170310] tilt 0 950 -312
+# tap 81 83 hold=250 gap=200
+[t=170310] down 81 83
+[t=170560] tick 250
+[t=170560] up
+[t=170760] tick 200
+# tap 80 90 hold=250 gap=200
+[t=170760] down 80 90
+[t=171010] tick 250
+[t=171010] up
+[t=171210] tick 200
+# tap 80 83 hold=300 gap=200
+[t=171210] down 80 83
+[t=171510] tick 300
+[t=171510] up
+[t=171710] tick 200
+[t=171710] shot 068_05
+[t=171710] tilt 300 900 -310
+# tap 82 84 hold=250 gap=200
+[t=171710] down 82 84
+[t=171960] tick 250
+[t=171960] up
+[t=172160] tick 200
+# tap 81 85 hold=250 gap=200
+[t=172160] down 81 85
+[t=172410] tick 250
+[t=172410] up
+[t=172610] tick 200
+# tap 78 84 hold=300 gap=200
+[t=172610] down 78 84
+[t=172910] tick 300
+[t=172910] up
+[t=173110] tick 200
+[t=173110] shot 068_06
+[t=173110] tilt 0 950 -312
+# tap 76 85 hold=250 gap=200
+[t=173110] down 76 85
+[t=173360] tick 250
+[t=173360] up
+[t=173560] tick 200
+# tap 82 86 hold=250 gap=200
+[t=173560] down 82 86
+[t=173810] tick 250
+[t=173810] up
+[t=174010] tick 200
+# tap 79 85 hold=300 gap=200
+[t=174010] down 79 85
+[t=174310] tick 300
+[t=174310] up
+[t=174510] tick 200
+[t=174510] shot 068_07
+[t=174510] tilt -300 900 -310
+# tap 77 86 hold=250 gap=200
+[t=174510] down 77 86
+[t=174760] tick 250
+[t=174760] up
+[t=174960] tick 200
+# tap 83 87 hold=250 gap=200
+[t=174960] down 83 87
+[t=175210] tick 250
+[t=175210] up
+[t=175410] tick 200
+# tap 80 82 hold=300 gap=200
+[t=175410] down 80 82
+[t=175710] tick 300
+[t=175710] up
+[t=175910] tick 200
+[t=175910] shot 068_08
+[t=175910] tilt 0 950 -312
+# tap 78 78 hold=250 gap=200
+[t=175910] down 78 78
+[t=176160] tick 250
+[t=176160] up
+[t=176360] tick 200
+# tap 84 88 hold=250 gap=200
+[t=176360] down 84 88
+[t=176610] tick 250
+[t=176610] up
+[t=176810] tick 200
+# tap 78 83 hold=300 gap=200
+[t=176810] down 78 83
+[t=177110] tick 300
+[t=177110] up
+[t=177310] tick 200
+[t=177310] shot 068_09
+[t=177310] tilt 300 900 -310
+# tap 79 79 hold=250 gap=200
+[t=177310] down 79 79
+[t=177560] tick 250
+[t=177560] up
+[t=177760] tick 200
+# tap 80 89 hold=250 gap=200
+[t=177760] down 80 89
+[t=178010] tick 250
+[t=178010] up
+[t=178210] tick 200
+# tap 79 84 hold=300 gap=200
+[t=178210] down 79 84
+[t=178510] tick 300
+[t=178510] up
+[t=178710] tick 200
+[t=178710] shot 068_10
+[t=178710] tilt 0 950 -312
+# tap 80 80 hold=250 gap=200
+[t=178710] down 80 80
+[t=178960] tick 250
+[t=178960] up
+[t=179160] tick 200
+# tap 81 90 hold=250 gap=200
+[t=179160] down 81 90
+[t=179410] tick 250
+[t=179410] up
+[t=179610] tick 200
+# tap 80 85 hold=300 gap=200
+[t=179610] down 80 85
+[t=179910] tick 300
+[t=179910] up
+[t=180110] tick 200
+[t=180110] shot 068_11
+[t=180110] tilt -300 900 -310
+# tap 81 81 hold=250 gap=200
+[t=180110] down 81 81
+[t=180360] tick 250
+[t=180360] up
+[t=180560] tick 200
+# tap 82 85 hold=250 gap=200
+[t=180560] down 82 85
+[t=180810] tick 250
+[t=180810] up
+[t=181010] tick 200
+# tap 78 82 hold=300 gap=200
+[t=181010] down 78 82
+[t=181310] tick 300
+[t=181310] up
+[t=181510] tick 200
+[t=181510] shot 068_12
+[t=181510] tilt 0 950 -312
+# tap 77 79 hold=250 gap=200
+[t=181510] down 77 79
+[t=181760] tick 250
+[t=181760] up
+[t=181960] tick 200
+# tap 81 86 hold=250 gap=200
+[t=181960] down 81 86
+[t=182210] tick 250
+[t=182210] up
+[t=182410] tick 200
+# tap 79 83 hold=300 gap=200
+[t=182410] down 79 83
+[t=182710] tick 300
+[t=182710] up
+[t=182910] tick 200
+[t=182910] shot 069_01
+[t=182910] tilt 300 900 -310
+# tap 78 80 hold=250 gap=200
+[t=182910] down 78 80
+[t=183160] tick 250
+[t=183160] up
+[t=183360] tick 200
+# tap 82 87 hold=250 gap=200
+[t=183360] down 82 87
+[t=183610] tick 250
+[t=183610] up
+[t=183810] tick 200
+# tap 80 84 hold=300 gap=200
+[t=183810] down 80 84
+[t=184110] tick 300
+[t=184110] up
+[t=184310] tick 200
+[t=184310] shot 069_02
+[t=184310] tilt 0 950 -312
+# tap 79 81 hold=250 gap=200
+[t=184310] down 79 81
+[t=184560] tick 250
+[t=184560] up
+[t=184760] tick 200
+# tap 83 88 hold=250 gap=200
+[t=184760] down 83 88
+[t=185010] tick 250
+[t=185010] up
+[t=185210] tick 200
+# tap 78 85 hold=300 gap=200
+[t=185210] down 78 85
+[t=185510] tick 300
+[t=185510] up
+[t=185710] tick 200
+[t=185710] shot 069_03
+[t=185710] tilt -300 900 -310
+# tap 80 82 hold=250 gap=200
+[t=185710] down 80 82
+[t=185960] tick 250
+[t=185960] up
+[t=186160] tick 200
+# tap 84 89 hold=250 gap=200
+[t=186160] down 84 89
+[t=186410] tick 250
+[t=186410] up
+[t=186610] tick 200
+# tap 79 82 hold=300 gap=200
+[t=186610] down 79 82
+[t=186910] tick 300
+[t=186910] up
+[t=187110] tick 200
+[t=187110] shot 069_04
+[t=187110] tilt 0 950 -312
+# tap 81 83 hold=250 gap=200
+[t=187110] down 81 83
+[t=187360] tick 250
+[t=187360] up
+[t=187560] tick 200
+# tap 80 90 hold=250 gap=200
+[t=187560] down 80 90
+[t=187810] tick 250
+[t=187810] up
+[t=188010] tick 200
+# tap 80 83 hold=300 gap=200
+[t=188010] down 80 83
+[t=188310] tick 300
+[t=188310] up
+[t=188510] tick 200
+[t=188510] shot 069_05
+[t=188510] tilt 300 900 -310
+# tap 82 84 hold=250 gap=200
+[t=188510] down 82 84
+[t=188760] tick 250
+[t=188760] up
+[t=188960] tick 200
+# tap 81 85 hold=250 gap=200
+[t=188960] down 81 85
+[t=189210] tick 250
+[t=189210] up
+[t=189410] tick 200
+# tap 78 84 hold=300 gap=200
+[t=189410] down 78 84
+[t=189710] tick 300
+[t=189710] up
+[t=189910] tick 200
+[t=189910] shot 069_06
+[t=189910] tilt 0 950 -312
+# tap 76 85 hold=250 gap=200
+[t=189910] down 76 85
+[t=190160] tick 250
+[t=190160] up
+[t=190360] tick 200
+# tap 82 86 hold=250 gap=200
+[t=190360] down 82 86
+[t=190610] tick 250
+[t=190610] up
+[t=190810] tick 200
+# tap 79 85 hold=300 gap=200
+[t=190810] down 79 85
+[t=191110] tick 300
+[t=191110] up
+[t=191310] tick 200
+[t=191310] shot 069_07
+[t=191310] tilt -300 900 -310
+# tap 77 86 hold=250 gap=200
+[t=191310] down 77 86
+[t=191560] tick 250
+[t=191560] up
+[t=191760] tick 200
+# tap 83 87 hold=250 gap=200
+[t=191760] down 83 87
+[t=192010] tick 250
+[t=192010] up
+[t=192210] tick 200
+# tap 80 82 hold=300 gap=200
+[t=192210] down 80 82
+[t=192510] tick 300
+[t=192510] up
+[t=192710] tick 200
+[t=192710] shot 069_08
+[t=192710] tilt 0 950 -312
+# tap 78 78 hold=250 gap=200
+[t=192710] down 78 78
+[t=192960] tick 250
+[t=192960] up
+[t=193160] tick 200
+# tap 84 88 hold=250 gap=200
+[t=193160] down 84 88
+[t=193410] tick 250
+[t=193410] up
+[t=193610] tick 200
+# tap 78 83 hold=300 gap=200
+[t=193610] down 78 83
+[t=193910] tick 300
+[t=193910] up
+[t=194110] tick 200
+[t=194110] shot 069_09
+[t=194110] tilt 300 900 -310
+# tap 79 79 hold=250 gap=200
+[t=194110] down 79 79
+[t=194360] tick 250
+[t=194360] up
+[t=194560] tick 200
+# tap 80 89 hold=250 gap=200
+[t=194560] down 80 89
+[t=194810] tick 250
+[t=194810] up
+[t=195010] tick 200
+# tap 79 84 hold=300 gap=200
+[t=195010] down 79 84
+[t=195310] tick 300
+[t=195310] up
+[t=195510] tick 200
+[t=195510] shot 069_10
+[t=195510] tilt 0 950 -312
+# tap 80 80 hold=250 gap=200
+[t=195510] down 80 80
+[t=195760] tick 250
+[t=195760] up
+[t=195960] tick 200
+# tap 81 90 hold=250 gap=200
+[t=195960] down 81 90
+[t=196210] tick 250
+[t=196210] up
+[t=196410] tick 200
+# tap 80 85 hold=300 gap=200
+[t=196410] down 80 85
+[t=196710] tick 300
+[t=196710] up
+[t=196910] tick 200
+[t=196910] shot 069_11
+[t=196910] tilt -300 900 -310
+# tap 81 81 hold=250 gap=200
+[t=196910] down 81 81
+[t=197160] tick 250
+[t=197160] up
+[t=197360] tick 200
+# tap 82 85 hold=250 gap=200
+[t=197360] down 82 85
+[t=197610] tick 250
+[t=197610] up
+[t=197810] tick 200
+# tap 78 82 hold=300 gap=200
+[t=197810] down 78 82
+[t=198110] tick 300
+[t=198110] up
+[t=198310] tick 200
+[t=198310] shot 069_12
+[t=198310] tilt 0 950 -312
+# tap 82 82 hold=250 gap=200
+[t=198310] down 82 82
+[t=198560] tick 250
+[t=198560] up
+[t=198760] tick 200
+# tap 83 86 hold=250 gap=200
+[t=198760] down 83 86
+[t=199010] tick 250
+[t=199010] up
+[t=199210] tick 200
+# tap 79 83 hold=300 gap=200
+[t=199210] down 79 83
+[t=199510] tick 300
+[t=199510] up
+[t=199710] tick 200
+[t=199710] shot 069_13
+[t=199710] tilt 300 900 -310
+# tap 76 83 hold=250 gap=200
+[t=199710] down 76 83
+[t=199960] tick 250
+[t=199960] up
+[t=200160] tick 200
+# tap 84 87 hold=250 gap=200
+[t=200160] down 84 87
+[t=200410] tick 250
+[t=200410] up
+[t=200610] tick 200
+# tap 80 84 hold=300 gap=200
+[t=200610] down 80 84
+[t=200910] tick 300
+[t=200910] up
+[t=201110] tick 200
+[t=201110] shot 069_14
+[t=201110] tilt 0 950 -312
+# tap 77 84 hold=250 gap=200
+[t=201110] down 77 84
+[t=201360] tick 250
+[t=201360] up
+[t=201560] tick 200
+# tap 80 88 hold=250 gap=200
+[t=201560] down 80 88
+[t=201810] tick 250
+[t=201810] up
+[t=202010] tick 200
+# tap 78 85 hold=300 gap=200
+[t=202010] down 78 85
+[t=202310] tick 300
+[t=202310] up
+[t=202510] tick 200
+[t=202510] shot 069_15
+[t=202510] tilt -300 900 -310
+# tap 78 85 hold=250 gap=200
+[t=202510] down 78 85
+[t=202760] tick 250
+[t=202760] up
+[t=202960] tick 200
+# tap 81 89 hold=250 gap=200
+[t=202960] down 81 89
+[t=203210] tick 250
+[t=203210] up
+[t=203410] tick 200
+# tap 79 82 hold=300 gap=200
+[t=203410] down 79 82
+[t=203710] tick 300
+[t=203710] up
+[t=203910] tick 200
+[t=203910] shot 069_16
+[t=203910] tilt 0 950 -312
+# tap 79 86 hold=250 gap=200
+[t=203910] down 79 86
+[t=204160] tick 250
+[t=204160] up
+[t=204360] tick 200
+# tap 82 90 hold=250 gap=200
+[t=204360] down 82 90
+[t=204610] tick 250
+[t=204610] up
+[t=204810] tick 200
+# tap 80 83 hold=300 gap=200
+[t=204810] down 80 83
+[t=205110] tick 300
+[t=205110] up
+[t=205310] tick 200
+[t=205310] shot 069_17
+[t=205310] tilt 300 900 -310
+# tap 80 78 hold=250 gap=200
+[t=205310] down 80 78
+[t=205560] tick 250
+[t=205560] up
+[t=205760] tick 200
+# tap 83 85 hold=250 gap=200
+[t=205760] down 83 85
+[t=206010] tick 250
+[t=206010] up
+[t=206210] tick 200
+# tap 78 84 hold=300 gap=200
+[t=206210] down 78 84
+[t=206510] tick 300
+[t=206510] up
+[t=206710] tick 200
+[t=206710] shot 069_18
+[t=206710] tilt 0 950 -312
+# tap 81 79 hold=250 gap=200
+[t=206710] down 81 79
+[t=206960] tick 250
+[t=206960] up
+[t=207160] tick 200
+# tap 84 86 hold=250 gap=200
+[t=207160] down 84 86
+[t=207410] tick 250
+[t=207410] up
+[t=207610] tick 200
+# tap 79 85 hold=300 gap=200
+[t=207610] down 79 85
+[t=207910] tick 300
+[t=207910] up
+[t=208110] tick 200
+[t=208110] shot 069_19
+[t=208110] tilt -300 900 -310
+# tap 82 80 hold=250 gap=200
+[t=208110] down 82 80
+[t=208360] tick 250
+[t=208360] up
+[t=208560] tick 200
+# tap 80 87 hold=250 gap=200
+[t=208560] down 80 87
+[t=208810] tick 250
+[t=208810] up
+[t=209010] tick 200
+# tap 80 82 hold=300 gap=200
+[t=209010] down 80 82
+[t=209310] tick 300
+[t=209310] up
+[t=209510] tick 200
+[t=209510] shot 069_20
+[t=209510] tilt 0 950 -312
+# tap 76 81 hold=250 gap=200
+[t=209510] down 76 81
+[t=209760] tick 250
+[t=209760] up
+[t=209960] tick 200
+# tap 81 88 hold=250 gap=200
+[t=209960] down 81 88
+[t=210210] tick 250
+[t=210210] up
+[t=210410] tick 200
+# tap 78 83 hold=300 gap=200
+[t=210410] down 78 83
+[t=210710] tick 300
+[t=210710] up
+[t=210910] tick 200
+[t=210910] shot 069_21
+[t=210910] tilt 300 900 -310
+# tap 77 82 hold=250 gap=200
+[t=210910] down 77 82
+[t=211160] tick 250
+[t=211160] up
+[t=211360] tick 200
+# tap 82 89 hold=250 gap=200
+[t=211360] down 82 89
+[t=211610] tick 250
+[t=211610] up
+[t=211810] tick 200
+# tap 79 84 hold=300 gap=200
+[t=211810] down 79 84
+[t=212110] tick 300
+[t=212110] up
+[t=212310] tick 200
+[t=212310] shot 069_22
+[t=212310] tilt 0 950 -312
+# tap 78 83 hold=250 gap=200
+[t=212310] down 78 83
+[t=212560] tick 250
+[t=212560] up
+[t=212760] tick 200
+# tap 83 90 hold=250 gap=200
+[t=212760] down 83 90
+[t=213010] tick 250
+[t=213010] up
+[t=213210] tick 200
+# tap 80 85 hold=300 gap=200
+[t=213210] down 80 85
+[t=213510] tick 300
+[t=213510] up
+[t=213710] tick 200
+[t=213710] shot 069_23
+[t=213710] tilt -300 900 -310
+# tap 79 84 hold=250 gap=200
+[t=213710] down 79 84
+[t=213960] tick 250
+[t=213960] up
+[t=214160] tick 200
+# tap 84 85 hold=250 gap=200
+[t=214160] down 84 85
+[t=214410] tick 250
+[t=214410] up
+[t=214610] tick 200
+# tap 78 82 hold=300 gap=200
+[t=214610] down 78 82
+[t=214910] tick 300
+[t=214910] up
+[t=215110] tick 200
+[t=215110] shot 069_24
+[t=215110] tilt 0 950 -312
+# tap 77 79 hold=250 gap=200
+[t=215110] down 77 79
+[t=215360] tick 250
+[t=215360] up
+[t=215560] tick 200
+# tap 81 86 hold=250 gap=200
+[t=215560] down 81 86
+[t=215810] tick 250
+[t=215810] up
+[t=216010] tick 200
+# tap 79 83 hold=300 gap=200
+[t=216010] down 79 83
+[t=216310] tick 300
+[t=216310] up
+[t=216510] tick 200
+[t=216510] shot 070_01
+[t=216510] tilt 300 900 -310
+# tap 78 80 hold=250 gap=200
+[t=216510] down 78 80
+[t=216760] tick 250
+[t=216760] up
+[t=216960] tick 200
+# tap 82 87 hold=250 gap=200
+[t=216960] down 82 87
+[t=217210] tick 250
+[t=217210] up
+[t=217410] tick 200
+# tap 80 84 hold=300 gap=200
+[t=217410] down 80 84
+[t=217710] tick 300
+[t=217710] up
+[t=217910] tick 200
+[t=217910] shot 070_02
+[t=217910] tilt 0 950 -312
+# tap 79 81 hold=250 gap=200
+[t=217910] down 79 81
+[t=218160] tick 250
+[t=218160] up
+[t=218360] tick 200
+# tap 83 88 hold=250 gap=200
+[t=218360] down 83 88
+[t=218610] tick 250
+[t=218610] up
+[t=218810] tick 200
+# tap 78 85 hold=300 gap=200
+[t=218810] down 78 85
+[t=219110] tick 300
+[t=219110] up
+[t=219310] tick 200
+[t=219310] shot 070_03
+[t=219310] tilt -300 900 -310
+# tap 80 82 hold=250 gap=200
+[t=219310] down 80 82
+[t=219560] tick 250
+[t=219560] up
+[t=219760] tick 200
+# tap 84 89 hold=250 gap=200
+[t=219760] down 84 89
+[t=220010] tick 250
+[t=220010] up
+[t=220210] tick 200
+# tap 79 82 hold=300 gap=200
+[t=220210] down 79 82
+[t=220510] tick 300
+[t=220510] up
+[t=220710] tick 200
+[t=220710] shot 070_04
+[t=220710] tilt 0 950 -312
+# tap 81 83 hold=250 gap=200
+[t=220710] down 81 83
+[t=220960] tick 250
+[t=220960] up
+[t=221160] tick 200
+# tap 80 90 hold=250 gap=200
+[t=221160] down 80 90
+[t=221410] tick 250
+[t=221410] up
+[t=221610] tick 200
+# tap 80 83 hold=300 gap=200
+[t=221610] down 80 83
+[t=221910] tick 300
+[t=221910] up
+[t=222110] tick 200
+[t=222110] shot 070_05
+[t=222110] tilt 300 900 -310
+# tap 82 84 hold=250 gap=200
+[t=222110] down 82 84
+[t=222360] tick 250
+[t=222360] up
+[t=222560] tick 200
+# tap 81 85 hold=250 gap=200
+[t=222560] down 81 85
+[t=222810] tick 250
+[t=222810] up
+[t=223010] tick 200
+# tap 78 84 hold=300 gap=200
+[t=223010] down 78 84
+[t=223310] tick 300
+[t=223310] up
+[t=223510] tick 200
+[t=223510] shot 070_06
+[t=223510] tilt 0 950 -312
+# tap 76 85 hold=250 gap=200
+[t=223510] down 76 85
+[t=223760] tick 250
+[t=223760] up
+[t=223960] tick 200
+# tap 82 86 hold=250 gap=200
+[t=223960] down 82 86
+[t=224210] tick 250
+[t=224210] up
+[t=224410] tick 200
+# tap 79 85 hold=300 gap=200
+[t=224410] down 79 85
+[t=224710] tick 300
+[t=224710] up
+[t=224910] tick 200
+[t=224910] shot 070_07
+[t=224910] tilt -300 900 -310
+# tap 77 86 hold=250 gap=200
+[t=224910] down 77 86
+[t=225160] tick 250
+[t=225160] up
+[t=225360] tick 200
+# tap 83 87 hold=250 gap=200
+[t=225360] down 83 87
+[t=225610] tick 250
+[t=225610] up
+[t=225810] tick 200
+# tap 80 82 hold=300 gap=200
+[t=225810] down 80 82
+[t=226110] tick 300
+[t=226110] up
+[t=226310] tick 200
+[t=226310] shot 070_08
+[t=226310] tilt 0 950 -312
+# tap 78 78 hold=250 gap=200
+[t=226310] down 78 78
+[t=226560] tick 250
+[t=226560] up
+[t=226760] tick 200
+# tap 84 88 hold=250 gap=200
+[t=226760] down 84 88
+[t=227010] tick 250
+[t=227010] up
+[t=227210] tick 200
+# tap 78 83 hold=300 gap=200
+[t=227210] down 78 83
+[t=227510] tick 300
+[t=227510] up
+[t=227710] tick 200
+[t=227710] shot 070_09
+[t=227710] tilt 300 900 -310
+# tap 79 79 hold=250 gap=200
+[t=227710] down 79 79
+[t=227960] tick 250
+[t=227960] up
+[t=228160] tick 200
+# tap 80 89 hold=250 gap=200
+[t=228160] down 80 89
+[t=228410] tick 250
+[t=228410] up
+[t=228610] tick 200
+# tap 79 84 hold=300 gap=200
+[t=228610] down 79 84
+[t=228910] tick 300
+[t=228910] up
+[t=229110] tick 200
+[t=229110] shot 070_10
+[t=229110] tilt 0 950 -312
+# tap 80 80 hold=250 gap=200
+[t=229110] down 80 80
+[t=229360] tick 250
+[t=229360] up
+[t=229560] tick 200
+# tap 81 90 hold=250 gap=200
+[t=229560] down 81 90
+[t=229810] tick 250
+[t=229810] up
+[t=230010] tick 200
+# tap 80 85 hold=300 gap=200
+[t=230010] down 80 85
+[t=230310] tick 300
+[t=230310] up
+[t=230510] tick 200
+[t=230510] shot 070_11
+[t=230510] tilt -300 900 -310
+# tap 81 81 hold=250 gap=200
+[t=230510] down 81 81
+[t=230760] tick 250
+[t=230760] up
+[t=230960] tick 200
+# tap 82 85 hold=250 gap=200
+[t=230960] down 82 85
+[t=231210] tick 250
+[t=231210] up
+[t=231410] tick 200
+# tap 78 82 hold=300 gap=200
+[t=231410] down 78 82
+[t=231710] tick 300
+[t=231710] up
+[t=231910] tick 200
+[t=231910] shot 070_12
+[t=231910] tilt 0 950 -312
+# tap 82 82 hold=250 gap=200
+[t=231910] down 82 82
+[t=232160] tick 250
+[t=232160] up
+[t=232360] tick 200
+# tap 83 86 hold=250 gap=200
+[t=232360] down 83 86
+[t=232610] tick 250
+[t=232610] up
+[t=232810] tick 200
+# tap 79 83 hold=300 gap=200
+[t=232810] down 79 83
+[t=233110] tick 300
+[t=233110] up
+[t=233310] tick 200
+[t=233310] shot 070_13
+[t=233310] tilt 300 900 -310
+# tap 76 83 hold=250 gap=200
+[t=233310] down 76 83
+[t=233560] tick 250
+[t=233560] up
+[t=233760] tick 200
+# tap 84 87 hold=250 gap=200
+[t=233760] down 84 87
+[t=234010] tick 250
+[t=234010] up
+[t=234210] tick 200
+# tap 80 84 hold=300 gap=200
+[t=234210] down 80 84
+[t=234510] tick 300
+[t=234510] up
+[t=234710] tick 200
+[t=234710] shot 070_14
+[t=234710] tilt 0 950 -312
+# tap 77 84 hold=250 gap=200
+[t=234710] down 77 84
+[t=234960] tick 250
+[t=234960] up
+[t=235160] tick 200
+# tap 80 88 hold=250 gap=200
+[t=235160] down 80 88
+[t=235410] tick 250
+[t=235410] up
+[t=235610] tick 200
+# tap 78 85 hold=300 gap=200
+[t=235610] down 78 85
+[t=235910] tick 300
+[t=235910] up
+[t=236110] tick 200
+[t=236110] shot 070_15
+[t=236110] tilt -300 900 -310
+# tap 78 85 hold=250 gap=200
+[t=236110] down 78 85
+[t=236360] tick 250
+[t=236360] up
+[t=236560] tick 200
+# tap 81 89 hold=250 gap=200
+[t=236560] down 81 89
+[t=236810] tick 250
+[t=236810] up
+[t=237010] tick 200
+# tap 79 82 hold=300 gap=200
+[t=237010] down 79 82
+[t=237310] tick 300
+[t=237310] up
+[t=237510] tick 200
+[t=237510] shot 070_16
+[t=237510] tilt 0 950 -312
+# tap 79 86 hold=250 gap=200
+[t=237510] down 79 86
+[t=237760] tick 250
+[t=237760] up
+[t=237960] tick 200
+# tap 82 90 hold=250 gap=200
+[t=237960] down 82 90
+[t=238210] tick 250
+[t=238210] up
+[t=238410] tick 200
+# tap 80 83 hold=300 gap=200
+[t=238410] down 80 83
+[t=238710] tick 300
+[t=238710] up
+[t=238910] tick 200
+[t=238910] shot 070_17
+[t=238910] tilt 300 900 -310
+# tap 80 78 hold=250 gap=200
+[t=238910] down 80 78
+[t=239160] tick 250
+[t=239160] up
+[t=239360] tick 200
+# tap 83 85 hold=250 gap=200
+[t=239360] down 83 85
+[t=239610] tick 250
+[t=239610] up
+[t=239810] tick 200
+# tap 78 84 hold=300 gap=200
+[t=239810] down 78 84
+[t=240110] tick 300
+[t=240110] up
+[t=240310] tick 200
+[t=240310] shot 070_18
+[t=240310] tilt 0 950 -312
+# tap 81 79 hold=250 gap=200
+[t=240310] down 81 79
+[t=240560] tick 250
+[t=240560] up
+[t=240760] tick 200
+# tap 84 86 hold=250 gap=200
+[t=240760] down 84 86
+[t=241010] tick 250
+[t=241010] up
+[t=241210] tick 200
+# tap 79 85 hold=300 gap=200
+[t=241210] down 79 85
+[t=241510] tick 300
+[t=241510] up
+[t=241710] tick 200
+[t=241710] shot 070_19
+[t=241710] tilt -300 900 -310
+# tap 82 80 hold=250 gap=200
+[t=241710] down 82 80
+[t=241960] tick 250
+[t=241960] up
+[t=242160] tick 200
+# tap 80 87 hold=250 gap=200
+[t=242160] down 80 87
+[t=242410] tick 250
+[t=242410] up
+[t=242610] tick 200
+# tap 80 82 hold=300 gap=200
+[t=242610] down 80 82
+[t=242910] tick 300
+[t=242910] up
+[t=243110] tick 200
+[t=243110] shot 070_20
+[t=243110] tilt 0 950 -312
+# tap 76 81 hold=250 gap=200
+[t=243110] down 76 81
+[t=243360] tick 250
+[t=243360] up
+[t=243560] tick 200
+# tap 81 88 hold=250 gap=200
+[t=243560] down 81 88
+[t=243810] tick 250
+[t=243810] up
+[t=244010] tick 200
+# tap 78 83 hold=300 gap=200
+[t=244010] down 78 83
+[t=244310] tick 300
+[t=244310] up
+[t=244510] tick 200
+[t=244510] shot 070_21
+[t=244510] tilt 300 900 -310
+# tap 77 82 hold=250 gap=200
+[t=244510] down 77 82
+[t=244760] tick 250
+[t=244760] up
+[t=244960] tick 200
+# tap 82 89 hold=250 gap=200
+[t=244960] down 82 89
+[t=245210] tick 250
+[t=245210] up
+[t=245410] tick 200
+# tap 79 84 hold=300 gap=200
+[t=245410] down 79 84
+[t=245710] tick 300
+[t=245710] up
+[t=245910] tick 200
+[t=245910] shot 070_22
+[t=245910] tilt 0 950 -312
+# tap 78 83 hold=250 gap=200
+[t=245910] down 78 83
+[t=246160] tick 250
+[t=246160] up
+[t=246360] tick 200
+# tap 83 90 hold=250 gap=200
+[t=246360] down 83 90
+[t=246610] tick 250
+[t=246610] up
+[t=246810] tick 200
+# tap 80 85 hold=300 gap=200
+[t=246810] down 80 85
+[t=247110] tick 300
+[t=247110] up
+[t=247310] tick 200
+[t=247310] shot 070_23
+[t=247310] tilt -300 900 -310
+# tap 79 84 hold=250 gap=200
+[t=247310] down 79 84
+[t=247560] tick 250
+[t=247560] up
+[t=247760] tick 200
+# tap 84 85 hold=250 gap=200
+[t=247760] down 84 85
+[t=248010] tick 250
+[t=248010] up
+[t=248210] tick 200
+# tap 78 82 hold=300 gap=200
+[t=248210] down 78 82
+[t=248510] tick 300
+[t=248510] up
+[t=248710] tick 200
+[t=248710] shot 070_24
+[t=248710] tilt 0 950 -312
+# tap 80 85 hold=250 gap=200
+[t=248710] down 80 85
+[t=248960] tick 250
+[t=248960] up
+[t=249160] tick 200
+# tap 80 86 hold=250 gap=200
+[t=249160] down 80 86
+[t=249410] tick 250
+[t=249410] up
+[t=249610] tick 200
+# tap 79 83 hold=300 gap=200
+[t=249610] down 79 83
+[t=249910] tick 300
+[t=249910] up
+[t=250110] tick 200
+[t=250110] shot 070_25
+[t=250110] tilt 300 900 -310
+# tap 81 86 hold=250 gap=200
+[t=250110] down 81 86
+[t=250360] tick 250
+[t=250360] up
+[t=250560] tick 200
+# tap 81 87 hold=250 gap=200
+[t=250560] down 81 87
+[t=250810] tick 250
+[t=250810] up
+[t=251010] tick 200
+# tap 80 84 hold=300 gap=200
+[t=251010] down 80 84
+[t=251310] tick 300
+[t=251310] up
+[t=251510] tick 200
+[t=251510] shot 070_26
+[t=251510] tilt 0 950 -312
+# tap 82 78 hold=250 gap=200
+[t=251510] down 82 78
+[t=251760] tick 250
+[t=251760] up
+[t=251960] tick 200
+# tap 82 88 hold=250 gap=200
+[t=251960] down 82 88
+[t=252210] tick 250
+[t=252210] up
+[t=252410] tick 200
+# tap 78 85 hold=300 gap=200
+[t=252410] down 78 85
+[t=252710] tick 300
+[t=252710] up
+[t=252910] tick 200
+[t=252910] shot 070_27
+[t=252910] tilt -300 900 -310
+# tap 76 79 hold=250 gap=200
+[t=252910] down 76 79
+[t=253160] tick 250
+[t=253160] up
+[t=253360] tick 200
+# tap 83 89 hold=250 gap=200
+[t=253360] down 83 89
+[t=253610] tick 250
+[t=253610] up
+[t=253810] tick 200
+# tap 79 82 hold=300 gap=200
+[t=253810] down 79 82
+[t=254110] tick 300
+[t=254110] up
+[t=254310] tick 200
+[t=254310] shot 070_28
+[t=254310] tilt 0 950 -312
+# tap 77 80 hold=250 gap=200
+[t=254310] down 77 80
+[t=254560] tick 250
+[t=254560] up
+[t=254760] tick 200
+# tap 84 90 hold=250 gap=200
+[t=254760] down 84 90
+[t=255010] tick 250
+[t=255010] up
+[t=255210] tick 200
+# tap 80 83 hold=300 gap=200
+[t=255210] down 80 83
+[t=255510] tick 300
+[t=255510] up
+[t=255710] tick 200
+[t=255710] shot 070_29
+[t=255710] tilt 300 900 -310
+# tap 78 81 hold=250 gap=200
+[t=255710] down 78 81
+[t=255960] tick 250
+[t=255960] up
+[t=256160] tick 200
+# tap 80 85 hold=250 gap=200
+[t=256160] down 80 85
+[t=256410] tick 250
+[t=256410] up
+[t=256610] tick 200
+# tap 78 84 hold=300 gap=200
+[t=256610] down 78 84
+[t=256910] tick 300
+[t=256910] up
+[t=257110] tick 200
+[t=257110] shot 070_30
+[t=257110] tilt 0 950 -312
+# tap 79 82 hold=250 gap=200
+[t=257110] down 79 82
+[t=257360] tick 250
+[t=257360] up
+[t=257560] tick 200
+# tap 81 86 hold=250 gap=200
+[t=257560] down 81 86
+[t=257810] tick 250
+[t=257810] up
+[t=258010] tick 200
+# tap 79 85 hold=300 gap=200
+[t=258010] down 79 85
+[t=258310] tick 300
+[t=258310] up
+[t=258510] tick 200
+[t=258510] shot 070_31
+[t=258510] tilt -300 900 -310
+# tap 80 83 hold=250 gap=200
+[t=258510] down 80 83
+[t=258760] tick 250
+[t=258760] up
+[t=258960] tick 200
+# tap 82 87 hold=250 gap=200
+[t=258960] down 82 87
+[t=259210] tick 250
+[t=259210] up
+[t=259410] tick 200
+# tap 80 82 hold=300 gap=200
+[t=259410] down 80 82
+[t=259710] tick 300
+[t=259710] up
+[t=259910] tick 200
+[t=259910] shot 070_32
+[t=259910] tilt 0 950 -312
+# tap 81 84 hold=250 gap=200
+[t=259910] down 81 84
+[t=260160] tick 250
+[t=260160] up
+[t=260360] tick 200
+# tap 83 88 hold=250 gap=200
+[t=260360] down 83 88
+[t=260610] tick 250
+[t=260610] up
+[t=260810] tick 200
+# tap 78 83 hold=300 gap=200
+[t=260810] down 78 83
+[t=261110] tick 300
+[t=261110] up
+[t=261310] tick 200
+[t=261310] shot 070_33
+[t=261310] tilt 300 900 -310
+# tap 82 85 hold=250 gap=200
+[t=261310] down 82 85
+[t=261560] tick 250
+[t=261560] up
+[t=261760] tick 200
+# tap 84 89 hold=250 gap=200
+[t=261760] down 84 89
+[t=262010] tick 250
+[t=262010] up
+[t=262210] tick 200
+# tap 79 84 hold=300 gap=200
+[t=262210] down 79 84
+[t=262510] tick 300
+[t=262510] up
+[t=262710] tick 200
+[t=262710] shot 070_34
+[t=262710] tilt 0 950 -312
+# tap 76 86 hold=250 gap=200
+[t=262710] down 76 86
+[t=262960] tick 250
+[t=262960] up
+[t=263160] tick 200
+# tap 80 90 hold=250 gap=200
+[t=263160] down 80 90
+[t=263410] tick 250
+[t=263410] up
+[t=263610] tick 200
+# tap 80 85 hold=300 gap=200
+[t=263610] down 80 85
+[t=263910] tick 300
+[t=263910] up
+[t=264110] tick 200
+[t=264110] shot 070_35
+[t=264110] tilt -300 900 -310
+# tap 77 78 hold=250 gap=200
+[t=264110] down 77 78
+[t=264360] tick 250
+[t=264360] up
+[t=264560] tick 200
+# tap 81 85 hold=250 gap=200
+[t=264560] down 81 85
+[t=264810] tick 250
+[t=264810] up
+[t=265010] tick 200
+# tap 78 82 hold=300 gap=200
+[t=265010] down 78 82
+[t=265310] tick 300
+[t=265310] up
+[t=265510] tick 200
+[t=265510] shot 070_36
+[t=265510] tilt 0 950 -312
+# tap 78 79 hold=250 gap=200
+[t=265510] down 78 79
+[t=265760] tick 250
+[t=265760] up
+[t=265960] tick 200
+# tap 82 86 hold=250 gap=200
+[t=265960] down 82 86
+[t=266210] tick 250
+[t=266210] up
+[t=266410] tick 200
+# tap 79 83 hold=300 gap=200
+[t=266410] down 79 83
+[t=266710] tick 300
+[t=266710] up
+[t=266910] tick 200
+[t=266910] shot 070_37
+[t=266910] tilt 300 900 -310
+# tap 79 80 hold=250 gap=200
+[t=266910] down 79 80
+[t=267160] tick 250
+[t=267160] up
+[t=267360] tick 200
+# tap 83 87 hold=250 gap=200
+[t=267360] down 83 87
+[t=267610] tick 250
+[t=267610] up
+[t=267810] tick 200
+# tap 80 84 hold=300 gap=200
+[t=267810] down 80 84
+[t=268110] tick 300
+[t=268110] up
+[t=268310] tick 200
+[t=268310] shot 070_38
+[t=268310] tilt 0 950 -312
+# tap 80 81 hold=250 gap=200
+[t=268310] down 80 81
+[t=268560] tick 250
+[t=268560] up
+[t=268760] tick 200
+# tap 84 88 hold=250 gap=200
+[t=268760] down 84 88
+[t=269010] tick 250
+[t=269010] up
+[t=269210] tick 200
+# tap 78 85 hold=300 gap=200
+[t=269210] down 78 85
+[t=269510] tick 300
+[t=269510] up
+[t=269710] tick 200
+[t=269710] shot 070_39
+[t=269710] tilt -300 900 -310
+# tap 81 82 hold=250 gap=200
+[t=269710] down 81 82
+[t=269960] tick 250
+[t=269960] up
+[t=270160] tick 200
+# tap 80 89 hold=250 gap=200
+[t=270160] down 80 89
+[t=270410] tick 250
+[t=270410] up
+[t=270610] tick 200
+# tap 79 82 hold=300 gap=200
+[t=270610] down 79 82
+[t=270910] tick 300
+[t=270910] up
+[t=271110] tick 200
+[t=271110] shot 070_40
+[t=271110] tilt 0 950 -312
+# tap 77 79 hold=250 gap=200
+[t=271110] down 77 79
+[t=271360] tick 250
+[t=271360] up
+[t=271560] tick 200
+# tap 81 86 hold=250 gap=200
+[t=271560] down 81 86
+[t=271810] tick 250
+[t=271810] up
+[t=272010] tick 200
+# tap 79 83 hold=300 gap=200
+[t=272010] down 79 83
+[t=272310] tick 300
+[t=272310] up
+[t=272510] tick 200
+[t=272510] shot 071_01
+[t=272510] tilt 300 900 -310
+# tap 78 80 hold=250 gap=200
+[t=272510] down 78 80
+[t=272760] tick 250
+[t=272760] up
+[t=272960] tick 200
+# tap 82 87 hold=250 gap=200
+[t=272960] down 82 87
+[t=273210] tick 250
+[t=273210] up
+[t=273410] tick 200
+# tap 80 84 hold=300 gap=200
+[t=273410] down 80 84
+[t=273710] tick 300
+[t=273710] up
+[t=273910] tick 200
+[t=273910] shot 071_02
+[t=273910] tilt 0 950 -312
+# tap 79 81 hold=250 gap=200
+[t=273910] down 79 81
+[t=274160] tick 250
+[t=274160] up
+[t=274360] tick 200
+# tap 83 88 hold=250 gap=200
+[t=274360] down 83 88
+[t=274610] tick 250
+[t=274610] up
+[t=274810] tick 200
+# tap 78 85 hold=300 gap=200
+[t=274810] down 78 85
+[t=275110] tick 300
+[t=275110] up
+[t=275310] tick 200
+[t=275310] shot 071_03
+[t=275310] tilt -300 900 -310
+# tap 80 82 hold=250 gap=200
+[t=275310] down 80 82
+[t=275560] tick 250
+[t=275560] up
+[t=275760] tick 200
+# tap 84 89 hold=250 gap=200
+[t=275760] down 84 89
+[t=276010] tick 250
+[t=276010] up
+[t=276210] tick 200
+# tap 79 82 hold=300 gap=200
+[t=276210] down 79 82
+[t=276510] tick 300
+[t=276510] up
+[t=276710] tick 200
+[t=276710] shot 071_04
+[t=276710] tilt 0 950 -312
+# tap 81 83 hold=250 gap=200
+[t=276710] down 81 83
+[t=276960] tick 250
+[t=276960] up
+[t=277160] tick 200
+# tap 80 90 hold=250 gap=200
+[t=277160] down 80 90
+[t=277410] tick 250
+[t=277410] up
+[t=277610] tick 200
+# tap 80 83 hold=300 gap=200
+[t=277610] down 80 83
+[t=277910] tick 300
+[t=277910] up
+[t=278110] tick 200
+[t=278110] shot 071_05
+[t=278110] tilt 300 900 -310
+# tap 82 84 hold=250 gap=200
+[t=278110] down 82 84
+[t=278360] tick 250
+[t=278360] up
+[t=278560] tick 200
+# tap 81 85 hold=250 gap=200
+[t=278560] down 81 85
+[t=278810] tick 250
+[t=278810] up
+[t=279010] tick 200
+# tap 78 84 hold=300 gap=200
+[t=279010] down 78 84
+[t=279310] tick 300
+[t=279310] up
+[t=279510] tick 200
+[t=279510] shot 071_06
+[t=279510] tilt 0 950 -312
+# tap 76 85 hold=250 gap=200
+[t=279510] down 76 85
+[t=279760] tick 250
+[t=279760] up
+[t=279960] tick 200
+# tap 82 86 hold=250 gap=200
+[t=279960] down 82 86
+[t=280210] tick 250
+[t=280210] up
+[t=280410] tick 200
+# tap 79 85 hold=300 gap=200
+[t=280410] down 79 85
+[t=280710] tick 300
+[t=280710] up
+[t=280910] tick 200
+[t=280910] shot 071_07
+[t=280910] tilt -300 900 -310
+# tap 77 86 hold=250 gap=200
+[t=280910] down 77 86
+[t=281160] tick 250
+[t=281160] up
+[t=281360] tick 200
+# tap 83 87 hold=250 gap=200
+[t=281360] down 83 87
+[t=281610] tick 250
+[t=281610] up
+[t=281810] tick 200
+# tap 80 82 hold=300 gap=200
+[t=281810] down 80 82
+[t=282110] tick 300
+[t=282110] up
+[t=282310] tick 200
+[t=282310] shot 071_08
+[t=282310] tilt 0 950 -312
+# tap 78 78 hold=250 gap=200
+[t=282310] down 78 78
+[t=282560] tick 250
+[t=282560] up
+[t=282760] tick 200
+# tap 84 88 hold=250 gap=200
+[t=282760] down 84 88
+[t=283010] tick 250
+[t=283010] up
+[t=283210] tick 200
+# tap 78 83 hold=300 gap=200
+[t=283210] down 78 83
+[t=283510] tick 300
+[t=283510] up
+[t=283710] tick 200
+[t=283710] shot 071_09
+[t=283710] tilt 300 900 -310
+# tap 79 79 hold=250 gap=200
+[t=283710] down 79 79
+[t=283960] tick 250
+[t=283960] up
+[t=284160] tick 200
+# tap 80 89 hold=250 gap=200
+[t=284160] down 80 89
+[t=284410] tick 250
+[t=284410] up
+[t=284610] tick 200
+# tap 79 84 hold=300 gap=200
+[t=284610] down 79 84
+[t=284910] tick 300
+[t=284910] up
+[t=285110] tick 200
+[t=285110] shot 071_10
+[t=285110] tilt 0 950 -312
+# tap 80 80 hold=250 gap=200
+[t=285110] down 80 80
+[t=285360] tick 250
+[t=285360] up
+[t=285560] tick 200
+# tap 81 90 hold=250 gap=200
+[t=285560] down 81 90
+[t=285810] tick 250
+[t=285810] up
+[t=286010] tick 200
+# tap 80 85 hold=300 gap=200
+[t=286010] down 80 85
+[t=286310] tick 300
+[t=286310] up
+[t=286510] tick 200
+[t=286510] shot 071_11
+[t=286510] tilt -300 900 -310
+# tap 81 81 hold=250 gap=200
+[t=286510] down 81 81
+[t=286760] tick 250
+[t=286760] up
+[t=286960] tick 200
+# tap 82 85 hold=250 gap=200
+[t=286960] down 82 85
+[t=287210] tick 250
+[t=287210] up
+[t=287410] tick 200
+# tap 78 82 hold=300 gap=200
+[t=287410] down 78 82
+[t=287710] tick 300
+[t=287710] up
+[t=287910] tick 200
+[t=287910] shot 071_12
+[t=287910] tilt 0 950 -312
+# tap 82 82 hold=250 gap=200
+[t=287910] down 82 82
+[t=288160] tick 250
+[t=288160] up
+[t=288360] tick 200
+# tap 83 86 hold=250 gap=200
+[t=288360] down 83 86
+[t=288610] tick 250
+[t=288610] up
+[t=288810] tick 200
+# tap 79 83 hold=300 gap=200
+[t=288810] down 79 83
+[t=289110] tick 300
+[t=289110] up
+[t=289310] tick 200
+[t=289310] shot 071_13
+[t=289310] tilt 300 900 -310
+# tap 76 83 hold=250 gap=200
+[t=289310] down 76 83
+[t=289560] tick 250
+[t=289560] up
+[t=289760] tick 200
+# tap 84 87 hold=250 gap=200
+[t=289760] down 84 87
+[t=290010] tick 250
+[t=290010] up
+[t=290210] tick 200
+# tap 80 84 hold=300 gap=200
+[t=290210] down 80 84
+[t=290510] tick 300
+[t=290510] up
+[t=290710] tick 200
+[t=290710] shot 071_14
+[t=290710] tilt 0 950 -312
+# tap 77 84 hold=250 gap=200
+[t=290710] down 77 84
+[t=290960] tick 250
+[t=290960] up
+[t=291160] tick 200
+# tap 80 88 hold=250 gap=200
+[t=291160] down 80 88
+[t=291410] tick 250
+[t=291410] up
+[t=291610] tick 200
+# tap 78 85 hold=300 gap=200
+[t=291610] down 78 85
+[t=291910] tick 300
+[t=291910] up
+[t=292110] tick 200
+[t=292110] shot 071_15
+[t=292110] tilt -300 900 -310
+# tap 78 85 hold=250 gap=200
+[t=292110] down 78 85
+[t=292360] tick 250
+[t=292360] up
+[t=292560] tick 200
+# tap 81 89 hold=250 gap=200
+[t=292560] down 81 89
+[t=292810] tick 250
+[t=292810] up
+[t=293010] tick 200
+# tap 79 82 hold=300 gap=200
+[t=293010] down 79 82
+[t=293310] tick 300
+[t=293310] up
+[t=293510] tick 200
+[t=293510] shot 071_16
+[t=293510] tilt 0 950 -312
+# tap 79 86 hold=250 gap=200
+[t=293510] down 79 86
+[t=293760] tick 250
+[t=293760] up
+[t=293960] tick 200
+# tap 82 90 hold=250 gap=200
+[t=293960] down 82 90
+[t=294210] tick 250
+[t=294210] up
+[t=294410] tick 200
+# tap 80 83 hold=300 gap=200
+[t=294410] down 80 83
+[t=294710] tick 300
+[t=294710] up
+[t=294910] tick 200
+[t=294910] shot 071_17
+[t=294910] tilt 300 900 -310
+# tap 80 78 hold=250 gap=200
+[t=294910] down 80 78
+[t=295160] tick 250
+[t=295160] up
+[t=295360] tick 200
+# tap 83 85 hold=250 gap=200
+[t=295360] down 83 85
+[t=295610] tick 250
+[t=295610] up
+[t=295810] tick 200
+# tap 78 84 hold=300 gap=200
+[t=295810] down 78 84
+[t=296110] tick 300
+[t=296110] up
+[t=296310] tick 200
+[t=296310] shot 071_18
+[t=296310] tilt 0 950 -312
+# tap 81 79 hold=250 gap=200
+[t=296310] down 81 79
+[t=296560] tick 250
+[t=296560] up
+[t=296760] tick 200
+# tap 84 86 hold=250 gap=200
+[t=296760] down 84 86
+[t=297010] tick 250
+[t=297010] up
+[t=297210] tick 200
+# tap 79 85 hold=300 gap=200
+[t=297210] down 79 85
+[t=297510] tick 300
+[t=297510] up
+[t=297710] tick 200
+[t=297710] shot 071_19
+[t=297710] tilt -300 900 -310
+# tap 82 80 hold=250 gap=200
+[t=297710] down 82 80
+[t=297960] tick 250
+[t=297960] up
+[t=298160] tick 200
+# tap 80 87 hold=250 gap=200
+[t=298160] down 80 87
+[t=298410] tick 250
+[t=298410] up
+[t=298610] tick 200
+# tap 80 82 hold=300 gap=200
+[t=298610] down 80 82
+[t=298910] tick 300
+[t=298910] up
+[t=299110] tick 200
+[t=299110] shot 071_20
+[t=299110] tilt 0 950 -312
+# tap 76 81 hold=250 gap=200
+[t=299110] down 76 81
+[t=299360] tick 250
+[t=299360] up
+[t=299560] tick 200
+# tap 81 88 hold=250 gap=200
+[t=299560] down 81 88
+[t=299810] tick 250
+[t=299810] up
+[t=300010] tick 200
+# tap 78 83 hold=300 gap=200
+[t=300010] down 78 83
+[t=300310] tick 300
+[t=300310] up
+[t=300510] tick 200
+[t=300510] shot 071_21
+[t=300510] tilt 300 900 -310
+# tap 77 82 hold=250 gap=200
+[t=300510] down 77 82
+[t=300760] tick 250
+[t=300760] up
+[t=300960] tick 200
+# tap 82 89 hold=250 gap=200
+[t=300960] down 82 89
+[t=301210] tick 250
+[t=301210] up
+[t=301410] tick 200
+# tap 79 84 hold=300 gap=200
+[t=301410] down 79 84
+[t=301710] tick 300
+[t=301710] up
+[t=301910] tick 200
+[t=301910] shot 071_22
+[t=301910] tilt 0 950 -312
+# tap 78 83 hold=250 gap=200
+[t=301910] down 78 83
+[t=302160] tick 250
+[t=302160] up
+[t=302360] tick 200
+# tap 83 90 hold=250 gap=200
+[t=302360] down 83 90
+[t=302610] tick 250
+[t=302610] up
+[t=302810] tick 200
+# tap 80 85 hold=300 gap=200
+[t=302810] down 80 85
+[t=303110] tick 300
+[t=303110] up
+[t=303310] tick 200
+[t=303310] shot 071_23
+[t=303310] tilt -300 900 -310
+# tap 79 84 hold=250 gap=200
+[t=303310] down 79 84
+[t=303560] tick 250
+[t=303560] up
+[t=303760] tick 200
+# tap 84 85 hold=250 gap=200
+[t=303760] down 84 85
+[t=304010] tick 250
+[t=304010] up
+[t=304210] tick 200
+# tap 78 82 hold=300 gap=200
+[t=304210] down 78 82
+[t=304510] tick 300
+[t=304510] up
+[t=304710] tick 200
+[t=304710] shot 071_24
+[t=304710] tilt 0 950 -312
+# tap 80 85 hold=250 gap=200
+[t=304710] down 80 85
+[t=304960] tick 250
+[t=304960] up
+[t=305160] tick 200
+# tap 80 86 hold=250 gap=200
+[t=305160] down 80 86
+[t=305410] tick 250
+[t=305410] up
+[t=305610] tick 200
+# tap 79 83 hold=300 gap=200
+[t=305610] down 79 83
+[t=305910] tick 300
+[t=305910] up
+[t=306110] tick 200
+[t=306110] shot 071_25
+[t=306110] tilt 300 900 -310
+# tap 81 86 hold=250 gap=200
+[t=306110] down 81 86
+[t=306360] tick 250
+[t=306360] up
+[t=306560] tick 200
+# tap 81 87 hold=250 gap=200
+[t=306560] down 81 87
+[t=306810] tick 250
+[t=306810] up
+[t=307010] tick 200
+# tap 80 84 hold=300 gap=200
+[t=307010] down 80 84
+[t=307310] tick 300
+[t=307310] up
+[t=307510] tick 200
+[t=307510] shot 071_26
+[t=307510] tilt 0 950 -312
+# tap 82 78 hold=250 gap=200
+[t=307510] down 82 78
+[t=307760] tick 250
+[t=307760] up
+[t=307960] tick 200
+# tap 82 88 hold=250 gap=200
+[t=307960] down 82 88
+[t=308210] tick 250
+[t=308210] up
+[t=308410] tick 200
+# tap 78 85 hold=300 gap=200
+[t=308410] down 78 85
+[t=308710] tick 300
+[t=308710] up
+[t=308910] tick 200
+[t=308910] shot 071_27
+[t=308910] tilt -300 900 -310
+# tap 76 79 hold=250 gap=200
+[t=308910] down 76 79
+[t=309160] tick 250
+[t=309160] up
+[t=309360] tick 200
+# tap 83 89 hold=250 gap=200
+[t=309360] down 83 89
+[t=309610] tick 250
+[t=309610] up
+[t=309810] tick 200
+# tap 79 82 hold=300 gap=200
+[t=309810] down 79 82
+[t=310110] tick 300
+[t=310110] up
+[t=310310] tick 200
+[t=310310] shot 071_28
+[t=310310] tilt 0 950 -312
+# tap 77 80 hold=250 gap=200
+[t=310310] down 77 80
+[t=310560] tick 250
+[t=310560] up
+[t=310760] tick 200
+# tap 84 90 hold=250 gap=200
+[t=310760] down 84 90
+[t=311010] tick 250
+[t=311010] up
+[t=311210] tick 200
+# tap 80 83 hold=300 gap=200
+[t=311210] down 80 83
+[t=311510] tick 300
+[t=311510] up
+[t=311710] tick 200
+[t=311710] shot 071_29
+[t=311710] tilt 300 900 -310
+# tap 78 81 hold=250 gap=200
+[t=311710] down 78 81
+[t=311960] tick 250
+[t=311960] up
+[t=312160] tick 200
+# tap 80 85 hold=250 gap=200
+[t=312160] down 80 85
+[t=312410] tick 250
+[t=312410] up
+[t=312610] tick 200
+# tap 78 84 hold=300 gap=200
+[t=312610] down 78 84
+[t=312910] tick 300
+[t=312910] up
+[t=313110] tick 200
+[t=313110] shot 071_30
+[t=313110] tilt 0 950 -312
+# tap 79 82 hold=250 gap=200
+[t=313110] down 79 82
+[t=313360] tick 250
+[t=313360] up
+[t=313560] tick 200
+# tap 81 86 hold=250 gap=200
+[t=313560] down 81 86
+[t=313810] tick 250
+[t=313810] up
+[t=314010] tick 200
+# tap 79 85 hold=300 gap=200
+[t=314010] down 79 85
+[t=314310] tick 300
+[t=314310] up
+[t=314510] tick 200
+[t=314510] shot 071_31
+[t=314510] tilt -300 900 -310
+# tap 80 83 hold=250 gap=200
+[t=314510] down 80 83
+[t=314760] tick 250
+[t=314760] up
+[t=314960] tick 200
+# tap 82 87 hold=250 gap=200
+[t=314960] down 82 87
+[t=315210] tick 250
+[t=315210] up
+[t=315410] tick 200
+# tap 80 82 hold=300 gap=200
+[t=315410] down 80 82
+[t=315710] tick 300
+[t=315710] up
+[t=315910] tick 200
+[t=315910] shot 071_32
+[t=315910] tilt 0 950 -312
+# tap 81 84 hold=250 gap=200
+[t=315910] down 81 84
+[t=316160] tick 250
+[t=316160] up
+[t=316360] tick 200
+# tap 83 88 hold=250 gap=200
+[t=316360] down 83 88
+[t=316610] tick 250
+[t=316610] up
+[t=316810] tick 200
+# tap 78 83 hold=300 gap=200
+[t=316810] down 78 83
+[t=317110] tick 300
+[t=317110] up
+[t=317310] tick 200
+[t=317310] shot 071_33
+[t=317310] tilt 300 900 -310
+# tap 82 85 hold=250 gap=200
+[t=317310] down 82 85
+[t=317560] tick 250
+[t=317560] up
+[t=317760] tick 200
+# tap 84 89 hold=250 gap=200
+[t=317760] down 84 89
+[t=318010] tick 250
+[t=318010] up
+[t=318210] tick 200
+# tap 79 84 hold=300 gap=200
+[t=318210] down 79 84
+[t=318510] tick 300
+[t=318510] up
+[t=318710] tick 200
+[t=318710] shot 071_34
+[t=318710] tilt 0 950 -312
+# tap 76 86 hold=250 gap=200
+[t=318710] down 76 86
+[t=318960] tick 250
+[t=318960] up
+[t=319160] tick 200
+# tap 80 90 hold=250 gap=200
+[t=319160] down 80 90
+[t=319410] tick 250
+[t=319410] up
+[t=319610] tick 200
+# tap 80 85 hold=300 gap=200
+[t=319610] down 80 85
+[t=319910] tick 300
+[t=319910] up
+[t=320110] tick 200
+[t=320110] shot 071_35
+[t=320110] tilt -300 900 -310
+# tap 77 78 hold=250 gap=200
+[t=320110] down 77 78
+[t=320360] tick 250
+[t=320360] up
+[t=320560] tick 200
+# tap 81 85 hold=250 gap=200
+[t=320560] down 81 85
+[t=320810] tick 250
+[t=320810] up
+[t=321010] tick 200
+# tap 78 82 hold=300 gap=200
+[t=321010] down 78 82
+[t=321310] tick 300
+[t=321310] up
+[t=321510] tick 200
+[t=321510] shot 071_36
+[t=321510] tilt 0 950 -312
+# tap 78 79 hold=250 gap=200
+[t=321510] down 78 79
+[t=321760] tick 250
+[t=321760] up
+[t=321960] tick 200
+# tap 82 86 hold=250 gap=200
+[t=321960] down 82 86
+[t=322210] tick 250
+[t=322210] up
+[t=322410] tick 200
+# tap 79 83 hold=300 gap=200
+[t=322410] down 79 83
+[t=322710] tick 300
+[t=322710] up
+[t=322910] tick 200
+[t=322910] shot 071_37
+[t=322910] tilt 300 900 -310
+# tap 79 80 hold=250 gap=200
+[t=322910] down 79 80
+[t=323160] tick 250
+[t=323160] up
+[t=323360] tick 200
+# tap 83 87 hold=250 gap=200
+[t=323360] down 83 87
+[t=323610] tick 250
+[t=323610] up
+[t=323810] tick 200
+# tap 80 84 hold=300 gap=200
+[t=323810] down 80 84
+[t=324110] tick 300
+[t=324110] up
+[t=324310] tick 200
+[t=324310] shot 071_38
+[t=324310] tilt 0 950 -312
+# tap 80 81 hold=250 gap=200
+[t=324310] down 80 81
+[t=324560] tick 250
+[t=324560] up
+[t=324760] tick 200
+# tap 84 88 hold=250 gap=200
+[t=324760] down 84 88
+[t=325010] tick 250
+[t=325010] up
+[t=325210] tick 200
+# tap 78 85 hold=300 gap=200
+[t=325210] down 78 85
+[t=325510] tick 300
+[t=325510] up
+[t=325710] tick 200
+[t=325710] shot 071_39
+[t=325710] tilt -300 900 -310
+# tap 81 82 hold=250 gap=200
+[t=325710] down 81 82
+[t=325960] tick 250
+[t=325960] up
+[t=326160] tick 200
+# tap 80 89 hold=250 gap=200
+[t=326160] down 80 89
+[t=326410] tick 250
+[t=326410] up
+[t=326610] tick 200
+# tap 79 82 hold=300 gap=200
+[t=326610] down 79 82
+[t=326910] tick 300
+[t=326910] up
+[t=327110] tick 200
+[t=327110] shot 071_40
+# LEO double-taps TRY AGAIN on Star Fighter result
+# tap 80 117 hold=300 gap=120
+[t=327110] down 80 117
+[t=327410] tick 300
+[t=327410] up
+[t=327530] tick 120
+[t=327530] shot 072_a
+# tap 81 118 hold=300 gap=300
+[t=327530] down 81 118
+[t=327830] tick 300
+[t=327830] up
+[t=328130] tick 300
+[t=328130] shot 072_b
+[t=329330] tick 1200
+[t=329330] shot 072_c
+# ZOE (handed over): taps EXIT fast
+# tap 80 143 hold=100 gap=250
+[t=329330] down 80 143
+[t=329430] tick 100
+[t=329430] up
+[t=329680] tick 250
+[t=329680] shot 073_a
+[t=330080] tick 400
+[t=330080] shot 073_b
+# ZOE fast: prev arrow, then top home button, 200ms gaps
+# tap 64 135 hold=100 gap=200
+[t=330080] down 64 135
+[t=330180] tick 100
+[t=330180] up
+[t=330380] tick 200
+[t=330380] shot 074_a
+# tap 80 12 hold=100 gap=200
+[t=330380] down 80 12
+[t=330480] tick 100
+[t=330480] up
+[t=330680] tick 200
+[t=330680] shot 074_b
+[t=330980] tick 300
+[t=330980] shot 074_c
+# ZOE fast: home button again
+# tap 80 12 hold=100 gap=200
+[t=330980] down 80 12
+[t=331080] tick 100
+[t=331080] up
+[t=331280] tick 200
+[t=331280] shot 075_a
+[t=331580] tick 300
+[t=331580] shot 075_b
+[t=332080] tick 500
+# tap 80 12 hold=100 gap=300
+[t=332080] down 80 12
+[t=332180] tick 100
+[t=332180] up
+[t=332480] tick 300
+[t=332480] shot 076_a
+# Zoe taps her row fast then code 3177 fast
+# tap 81 81 hold=100 gap=200
+[t=332480] down 81 81
+[t=332580] tick 100
+[t=332580] up
+[t=332780] tick 200
+[t=332780] shot 076_b
+# tap 119 62 hold=100 gap=150
+[t=332780] down 119 62
+[t=332880] tick 100
+[t=332880] up
+[t=333030] tick 150
+# tap 41 62 hold=100 gap=150
+[t=333030] down 41 62
+[t=333130] tick 100
+[t=333130] up
+[t=333280] tick 150
+# tap 41 117 hold=100 gap=150
+[t=333280] down 41 117
+[t=333380] tick 100
+[t=333380] up
+[t=333530] tick 150
+# tap 42 117 hold=100 gap=400
+[t=333530] down 42 117
+[t=333630] tick 100
+[t=333630] up
+[t=334030] tick 400
+[t=334030] shot 076_c
+# ZOE fast: All games tile then Pumpkin tile 250ms later
+# tap 124 105 hold=100 gap=150
+[t=334030] down 124 105
+[t=334130] tick 100
+[t=334130] up
+[t=334280] tick 150
+[t=334280] shot 077_a
+# tap 79 88 hold=100 gap=300
+[t=334280] down 79 88
+[t=334380] tick 100
+[t=334380] up
+[t=334680] tick 300
+[t=334680] shot 077_b
+[t=335280] tick 600
+[t=335280] shot 077_c
+# ZOE retries All games, then Pumpkin tile (79,88 on All games = pumpkin tile) fast
+# tap 124 105 hold=100 gap=250
+[t=335280] down 124 105
+[t=335380] tick 100
+[t=335380] up
+[t=335630] tick 250
+[t=335630] shot 078_a
+# tap 79 88 hold=100 gap=300
+[t=335630] down 79 88
+[t=335730] tick 100
+[t=335730] up
+[t=336030] tick 300
+[t=336030] shot 078_b
+[t=336830] tick 800
+[t=336830] shot 078_c
+# (79,88 was the gap above the tile) ZOE taps Pumpkin tile center
+# tap 80 104 hold=100 gap=300
+[t=336830] down 80 104
+[t=336930] tick 100
+[t=336930] up
+[t=337230] tick 300
+[t=337230] shot 079_a
+[t=338030] tick 800
+[t=338030] shot 079_b
+# ZOE wants to leave Pumpkin title: taps the top back icon 3x (100ms, 400ms gaps)
+# tap 80 20 hold=100 gap=400
+[t=338030] down 80 20
+[t=338130] tick 100
+[t=338130] up
+[t=338530] tick 400
+# tap 80 21 hold=100 gap=400
+[t=338530] down 80 21
+[t=338630] tick 100
+[t=338630] up
+[t=339030] tick 400
+# tap 79 20 hold=100 gap=400
+[t=339030] down 79 20
+[t=339130] tick 100
+[t=339130] up
+[t=339530] tick 400
+[t=339530] shot 080_a
+# capture visual during a hold
+[t=339530] down 80 20
+[t=339730] tick 200
+[t=339730] shot 080_h200
+[t=339930] tick 200
+[t=339930] shot 080_h400
+[t=340080] tick 150
+[t=340080] shot 080_h550
+[t=340230] tick 150
+[t=340230] shot 080_h700
+[t=340230] up
+[t=340530] tick 300
+[t=340530] shot 080_after

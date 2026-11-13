@@ -1,0 +1,8 @@
+import socket, sys, os
+s = socket.socket(socket.AF_UNIX); s.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), "sock"))
+s.sendall((sys.stdin.read().rstrip("\n") + "\n\x00").encode()); d = b""
+while True:
+    b = s.recv(65536)
+    if not b: break
+    d += b
+print(d.decode(), end="")

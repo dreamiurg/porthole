@@ -1,0 +1,94 @@
+W 2000
+shot z00_boot
+# Zoe: switch to N-Z, quick tap
+T 67 125 100
+W 300
+shot z01_nz
+T 41 125 100
+W 250
+shot z02_Z
+T 67 53 100
+W 250
+shot z03_O
+T 67 125 100
+W 250
+shot z04_am
+T 41 77 100
+W 250
+shot z05_E
+T 119 125 100
+W 300
+shot z06_ok
+T 124 57 100
+W 300
+shot z07_face
+T 37 101 100
+W 300
+shot z08_age
+T 80 145 100
+W 300
+shot z09_skip
+W 1500
+shot z10_after
+# Home -> All games
+T 124 105 100
+W 300
+shot z11_lib
+T 96 135 100
+W 300
+shot z12_lib2
+# Zoe presses star button to pick games
+T 126 42 100
+W 300
+shot z13_star
+T 124 73 100
+W 300
+shot z14_full
+W 300
+T 63 135 100
+W 250
+shot z15_p1
+T 124 73 100
+W 250
+shot z16_unstar
+T 96 135 100
+W 250
+shot z17_p2
+T 124 73 100
+W 250
+shot z18_stargirl
+W 600
+shot z19_later
+T 33 43 100
+W 250
+shot z20_done
+T 80 12 100
+W 300
+shot z21_home
+# Open Pets Club (dog tile, now middle)
+D 80 73
+W 200
+W 200
+U
+W 600
+T 80 100 100
+W 500
+T 80 88 100
+W 40
+shot c01
+W 500
+T 80 88 100
+W 40
+shot c02
+W 500
+T 80 88 100
+W 40
+shot c03
+W 500
+T 80 88 100
+W 40
+shot c04
+W 500
+T 80 88 100
+W 40
+shot c05

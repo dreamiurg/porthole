@@ -1,0 +1,49 @@
+# Driver: keeps `snap --serve --fresh` alive behind a unix socket; logs every command (input trace).
+import os, socket, subprocess, sys, struct, zlib, time
+S = sys.argv[1]  # scratch run dir
+snap = os.path.join(os.path.dirname(S), "snap")
+p = subprocess.Popen([snap, "--serve", "--fresh"], cwd=S, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+log = open(os.path.join(S, "trace.txt"), "a")
+shots = os.path.join(S, "shots"); os.makedirs(shots, exist_ok=True)
+def chunk(t, d): return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+def png(rgb, w=480, h=480):
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 1)) + chunk(b"IEND", b"")
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+def frame(name):
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    h = p.stdout.readline().decode().strip(); n = int(h.split()[1]); buf = b""
+    while len(buf) < n: buf += p.stdout.read(n - len(buf))
+    open(os.path.join(shots, name + ".png"), "wb").write(png(buf)); return "shot " + name
+T = 0
+def run(line):
+    global T
+    w = line.split()
+    if not w: return ""
+    if w[0] == "shot": return frame(w[1])
+    if w[0] == "tap":  # finger down ~120 ms
+        cmd(f"down {w[1]} {w[2]}"); cmd("tick 120"); r = cmd("up"); T += 120; return r
+    if w[0] == "hold":  # hold X Y MS
+        cmd(f"down {w[1]} {w[2]}"); cmd(f"tick {w[3]}"); r = cmd("up"); T += int(w[3]); return r
+    if w[0] == "tick": T += int(w[1])
+    return cmd(line)
+sock = os.path.join(S, "sock")
+if os.path.exists(sock): os.unlink(sock)
+srv = socket.socket(socket.AF_UNIX); srv.bind(sock); srv.listen(1)
+while True:
+    c, _ = srv.accept(); data = b""
+    while not data.endswith(b"\n\n"):
+        d = c.recv(65536)
+        if not d: break
+        data += d
+    out = []
+    for line in data.decode().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            if line: log.write(line + "\n")
+            continue
+        if line == "quit": p.kill(); c.sendall(b"bye\n"); c.close(); sys.exit(0)
+        r = run(line); log.write(f"[t={T}] {line}\n"); out.append(f"{line} -> {r}")
+    log.flush(); c.sendall(("\n".join(out) + "\n").encode()); c.close()

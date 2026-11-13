@@ -1,0 +1,60 @@
+# Repro: code whose last digit equals the first, confirmed quickly (Zoe types 7 3 1 7 then 7 3 1 7)
+reset
+wait 600
+tap 67 124
+wait 1000
+tap 41 124
+wait 1000
+tap 119 124
+wait 1000
+tap 64 88
+wait 1000
+tap 37 102
+wait 1500
+# code 7 3 1 7, 250 ms cadence
+down 41 117
+wait 80
+up
+wait 160
+down 119 62
+wait 80
+up
+wait 160
+down 41 62
+wait 80
+up
+wait 160
+down 41 117
+wait 80
+up
+wait 600
+snap zf_1_once_more
+# confirm 7 3 1 7 at the same cadence, starting 600 ms after the last code press
+down 41 117
+wait 80
+up
+wait 160
+down 119 62
+wait 80
+up
+wait 160
+down 41 62
+wait 80
+up
+wait 160
+down 41 117
+wait 80
+up
+wait 40
+snap zf_2_after_confirm
+wait 1200
+snap zf_3_later
+# Zoe sees 3 1 7 _ and adds a 7
+down 41 117
+wait 80
+up
+wait 100
+snap zf_4_mismatch
+wait 1500
+snap zf_5_mismatch_later
+screen

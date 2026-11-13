@@ -4,7 +4,6 @@
 namespace pumpkin {
 namespace {
 constexpr ui::Box HOME = {68, 8, 24, 22}, ACTION = {40, 119, 80, 24}, GHOST = {22, 30, 24, 24};
-constexpr uint32_t REST_MS = 2000;   // a press this long in play is a resting thumb (a kid's firm press is 0.6-1.5 s)
 bool inside(int x, int y, ui::Box b) {
   return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h;
 }
@@ -26,7 +25,8 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = actionPending_ = ghostPending_ = false;
+  starting_ = holding_ = ghostPending_ = false;
+  refuseMs_ = 0;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -51,17 +51,27 @@ void Game::calibrate() {
   tilt::Grav neutral;
   if (starting_ && steady_.get(ms_, &neutral)) { neutral_ = neutral; start(); }
 }
+void Game::sign(uint32_t dt, float roll) {
+  // Hidden while a finger that touched the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s, double
+  // taps when worried, and slides a resting thumb on). One resting since before the round is hidden by gate_.
+  // A slide-on arms only where it can hide at once: a finger crossing the sign in the open must not hide later.
+  const bool on = in_.hit(ACTION.x, ACTION.y, ACTION.w, ACTION.h) && in_.down, near = cover(round_) >= 0;
+  holding_ = in_.down && (holding_ || (on && (near || inside(in_.downX, in_.downY, ACTION))));
+  // "No" from the frame a finger reaches the sign where it can't hide and for as long as it stays there or an armed
+  // hold lasts, drifted off or not (a 6-year-old who stopped short with his finger down believed he was hiding, kid
+  // playtest 4, m1), unless the hold is armed and the pumpkin really rolls into cover within 0.5 s (a slide-on isn't
+  // armed in the open, so it always gets the "no"). Lifted, it lingers REFUSE_MS, so a quick tap still shows it.
+  const bool no = (on || holding_) && round_.hidden < 0 && !near && !(holding_ && arriving(round_, roll, 500) >= 0);
+  refuseMs_ = no ? REFUSE_MS : refuseMs_ > dt ? refuseMs_ - dt : 0;
+}
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // A hand holding the board for tilt rests a thumb on the glass: a press of REST_MS or more is that thumb, not a
-  // choice. A shorter one counts, a firm deliberate press included (600 ms dropped those).
-  const bool quick = ms_ - pressMs_ < REST_MS;
-  actionPending_ = actionPending_ || (quick && action());
-  ghostPending_ = ghostPending_ || (quick && !round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
+  sign(dt, tilt.x);
+  ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
-    step(round_, tilt.x, actionPending_, ghostPending_);
-    actionPending_ = ghostPending_ = false;
+    step(round_, tilt.x, holding_, ghostPending_);
+    ghostPending_ = false;
     stepMs_ -= STEP_MS;
   }
   if (round_.caught) go(Page::Catch);
@@ -74,7 +84,6 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   pageMs_ += dt;
   animationMs_ += dt;
   in_ = in;
-  if (in_.pressed) pressMs_ = ms_;
   gate_.filter(in_, ms_);
   steady_.add(in_.gx, in_.gy, in_.gz, ms_);
   if (leaving()) { home_ = true; return; }
@@ -91,7 +100,7 @@ void Game::render() {
   View v;
   v.page = page_;
   v.x = round_.x; v.velocity = round_.velocity;
-  v.hidden = round_.hidden; v.nearby = nearby(round_);
+  v.hidden = round_.hidden; v.nearby = nearby(round_); v.cover = cover(round_); v.coverDir = coverDir(round_);
   v.pageMs = pageMs_; v.animationMs = animationMs_;
   v.beamX = beamX(round_);
   v.searching = searching(round_); v.warning = warning(round_);
@@ -100,13 +109,14 @@ void Game::render() {
   v.homeHold = hold_.progress();
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
-  v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
-  v.ghostReady = !round_.ghostUsed;
-  // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a tilt left
-  // over from rolling in doesn't flash it.
+  v.checking = checking(round_); v.shiver = covered(round_); v.phew = round_.phew > 0;
+  v.ghostReady = !round_.ghostUsed; v.refused = refuseMs_ > 0;
+  // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a brief bump
+  // doesn't flash it.
   const bool play = page_ == Page::Play;
   v.distract = play ? round_.distract : 0;
   v.rustling = play && round_.rustle >= 300; v.heard = play && round_.heard >= 0;
+  v.startle = play ? round_.startle : 0; v.scared = play && named(round_);
   v.quip = (uint8_t)(round_.seed % QUIPS);
   paint::draw(v);
 }
@@ -120,8 +130,8 @@ void Game::debugPrint() {
          round_.hidden, (unsigned)round_.elapsed, (unsigned)round_.exposure, ready(), starting_);
   printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
          (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
-  printf("ghost=%d distract=%d heard=%d rustle=%d\n", round_.ghostUsed, round_.distract > 0, round_.heard,
-         round_.rustle > 0);
+  printf("ghost=%d distract=%d heard=%d rustle=%d startle=%d refused=%d scared=%d\n", round_.ghostUsed,
+         round_.distract > 0, round_.heard, round_.rustle > 0, round_.startle > 0, refuseMs_ > 0, named(round_));
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }
