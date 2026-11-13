@@ -1,0 +1,2726 @@
+@0 tick 1000
+@1000 shot 000_boot
+# Leo setup: name
+@1000 down 118 100
+@1000 tick 120
+@1120 up
+@1120 tick 500
+@1620 down 41 77
+@1620 tick 120
+@1740 up
+@1740 tick 500
+@2240 down 67 125
+@2240 tick 120
+@2360 up
+@2360 tick 600
+@2960 shot 001_name_nz
+@2960 down 67 52
+@2960 tick 120
+@3080 up
+@3080 tick 500
+@3580 down 118 125
+@3580 tick 120
+@3700 up
+@3700 tick 800
+@4500 shot 002_after_ok
+@4500 down 124 54
+@4500 tick 120
+@4620 up
+@4620 tick 800
+@5420 shot 003_after_face
+@5420 down 79 69
+@5420 tick 120
+@5540 up
+@5540 tick 800
+@6340 shot 004_after_age
+@6340 down 80 145
+@6340 tick 120
+@6460 up
+@6460 tick 1000
+@7460 shot 005_after_skip
+# Leo presses pumpkin tile firmly 1.5 s
+@7460 down 80 104
+@7460 tick 700
+@8160 shot 006_tile_pressed
+@8160 tick 800
+@8960 up
+@8960 tick 600
+@9560 shot 007_open_0_6s
+@9560 tick 1500
+@11060 shot 008_open_2_1s
+# Leo holds board tilted toward him (natural hold), presses START 1.5s
+@11060 tilt 0 500 -866
+@11060 tick 500
+@11560 down 80 130
+@11560 tick 600
+@12160 shot 009_start_pressed
+@12160 tick 900
+@13060 up
+@13060 tick 500
+@13560 shot 010_after_start_0_5
+@13560 tick 1000
+@14560 shot 011_after_start_1_5
+@14560 tick 1500
+@16060 shot 012_after_start_3_0
+# Leo presses READY 1.5s
+@16060 down 80 130
+@16060 tick 600
+@16660 shot 013_ready_pressed
+@16660 tick 900
+@17560 up
+@17560 tick 300
+@17860 shot 014_round1_0_3
+@17860 tick 1000
+@18860 shot 015_round1_1_3
+@18860 tick 2000
+@20860 shot 016_round1_3_3
+# L1: tilt left toward candy
+@20860 tilt -350 500 -793
+@20860 tick 300
+@21160 shot 017_L1_left_1
+@21160 tick 300
+@21460 shot 017_L1_left_2
+@21460 tick 300
+@21760 shot 017_L1_left_3
+@21760 tick 300
+@22060 shot 017_L1_left_4
+@22060 tick 300
+@22360 shot 017_L1_left_5
+@22360 tick 300
+@22660 shot 017_L1_left_6
+# L1: keep tilting left toward chair
+@22660 tick 300
+@22960 shot 018_L1_1
+@22960 tick 300
+@23260 shot 018_L1_2
+@23260 tick 300
+@23560 shot 018_L1_3
+@23560 tick 300
+@23860 shot 018_L1_4
+@23860 tick 300
+@24160 shot 018_L1_5
+@24160 tick 300
+@24460 shot 018_L1_6
+@24460 tick 300
+@24760 shot 018_L1_7
+@24760 tick 300
+@25060 shot 018_L1_8
+# L1: Leo presses the sign at the chair, holds ~2.4s
+@25060 down 80 130
+@25060 tick 300
+@25360 shot 019_L1_hold_1
+@25360 tick 300
+@25660 shot 019_L1_hold_2
+@25660 tick 300
+@25960 shot 019_L1_hold_3
+@25960 tick 300
+@26260 shot 019_L1_hold_4
+@26260 tick 300
+@26560 shot 019_L1_hold_5
+@26560 tick 300
+@26860 shot 019_L1_hold_6
+@26860 tick 300
+@27160 shot 019_L1_hold_7
+@27160 tick 300
+@27460 shot 019_L1_hold_8
+@27460 up
+@27460 tick 300
+@27760 shot 019_L1_rel_1
+@27760 tick 300
+@28060 shot 019_L1_rel_2
+@28060 tick 300
+@28360 shot 019_L1_rel_3
+@28360 tick 300
+@28660 shot 019_L1_rel_4
+# L1: tilt right to the candies
+@28660 tilt 400 500 -768
+@28660 tick 300
+@28960 shot 020_L1_right_1
+@28960 tick 300
+@29260 shot 020_L1_right_2
+@29260 tick 300
+@29560 shot 020_L1_right_3
+@29560 tick 300
+@29860 shot 020_L1_right_4
+@29860 tick 300
+@30160 shot 020_L1_right_5
+@30160 tick 300
+@30460 shot 020_L1_right_6
+@30460 tick 300
+@30760 shot 020_L1_right_7
+@30760 tick 300
+@31060 shot 020_L1_right_8
+# L1: Grandma here; Leo presses sign under table and holds
+@31060 down 79 131
+@31060 tick 300
+@31360 shot 021_L1_hold_01
+@31360 tick 300
+@31660 shot 021_L1_hold_02
+@31660 tick 300
+@31960 shot 021_L1_hold_03
+@31960 tick 300
+@32260 shot 021_L1_hold_04
+@32260 tick 300
+@32560 shot 021_L1_hold_05
+@32560 tick 300
+@32860 shot 021_L1_hold_06
+@32860 tick 300
+@33160 shot 021_L1_hold_07
+@33160 tick 300
+@33460 shot 021_L1_hold_08
+@33460 tick 300
+@33760 shot 021_L1_hold_09
+@33760 tick 300
+@34060 shot 021_L1_hold_10
+@34060 tick 300
+@34360 shot 021_L1_hold_11
+@34360 tick 300
+@34660 shot 021_L1_hold_12
+# L1: still holding
+@34660 tick 400
+@35060 shot 022_L1_hold_1
+@35060 tick 400
+@35460 shot 022_L1_hold_2
+@35460 tick 400
+@35860 shot 022_L1_hold_3
+@35860 tick 400
+@36260 shot 022_L1_hold_4
+@36260 tick 400
+@36660 shot 022_L1_hold_5
+@36660 tick 400
+@37060 shot 022_L1_hold_6
+@37060 tick 400
+@37460 shot 022_L1_hold_7
+@37460 tick 400
+@37860 shot 022_L1_hold_8
+# L1: release, roll right (tilt still right)
+@37860 up
+@37860 tick 300
+@38160 shot 023_L1_01
+@38160 tick 300
+@38460 shot 023_L1_02
+@38460 tick 300
+@38760 shot 023_L1_03
+@38760 tick 300
+@39060 shot 023_L1_04
+@39060 tick 300
+@39360 shot 023_L1_05
+@39360 tick 300
+@39660 shot 023_L1_06
+@39660 tick 300
+@39960 shot 023_L1_07
+@39960 tick 300
+@40260 shot 023_L1_08
+@40260 tick 300
+@40560 shot 023_L1_09
+@40560 tick 300
+@40860 shot 023_L1_10
+@40860 tick 300
+@41160 shot 023_L1_11
+@41160 tick 300
+@41460 shot 023_L1_12
+# L1: Leo panics, tilts hard left toward the lit door
+@41460 tilt -600 500 -624
+@41460 tick 300
+@41760 shot 024_L1_01
+@41760 tick 300
+@42060 shot 024_L1_02
+@42060 tick 300
+@42360 shot 024_L1_03
+@42360 tick 300
+@42660 shot 024_L1_04
+@42660 tick 300
+@42960 shot 024_L1_05
+@42960 tick 300
+@43260 shot 024_L1_06
+@43260 tick 300
+@43560 shot 024_L1_07
+@43560 tick 300
+@43860 shot 024_L1_08
+@43860 tick 300
+@44160 shot 024_L1_09
+@44160 tick 300
+@44460 shot 024_L1_10
+@44460 tick 300
+@44760 shot 024_L1_11
+@44760 tick 300
+@45060 shot 024_L1_12
+# L1: keep tilting left to door
+@45060 tick 300
+@45360 shot 025_L1_1
+@45360 tick 300
+@45660 shot 025_L1_2
+@45660 tick 300
+@45960 shot 025_L1_3
+@45960 tick 300
+@46260 shot 025_L1_4
+@46260 tick 300
+@46560 shot 025_L1_5
+@46560 tick 300
+@46860 shot 025_L1_6
+@46860 tick 300
+@47160 shot 025_L1_7
+@47160 tick 300
+@47460 shot 025_L1_8
+# L2: Leo back to comfy hold, double-taps PLAY AGAIN (worried re-press)
+@47460 tilt 0 500 -866
+@47460 tick 300
+@47760 down 80 130
+@47760 tick 120
+@47880 up
+@47880 tick 150
+@48030 down 81 131
+@48030 tick 120
+@48150 up
+@48150 tick 300
+@48450 shot 026_L2_1
+@48450 tick 300
+@48750 shot 026_L2_2
+@48750 tick 300
+@49050 shot 026_L2_3
+@49050 tick 300
+@49350 shot 026_L2_4
+@49350 tick 300
+@49650 shot 026_L2_5
+@49650 tick 300
+@49950 shot 026_L2_6
+@49950 tick 300
+@50250 shot 026_L2_7
+@50250 tick 300
+@50550 shot 026_L2_8
+# L2: Grandma arrives, Leo hides under table, holds
+@50550 down 80 132
+@50550 tick 300
+@50850 shot 027_L2_01
+@50850 tick 300
+@51150 shot 027_L2_02
+@51150 tick 300
+@51450 shot 027_L2_03
+@51450 tick 300
+@51750 shot 027_L2_04
+@51750 tick 300
+@52050 shot 027_L2_05
+@52050 tick 300
+@52350 shot 027_L2_06
+@52350 tick 300
+@52650 shot 027_L2_07
+@52650 tick 300
+@52950 shot 027_L2_08
+@52950 tick 300
+@53250 shot 027_L2_09
+@53250 tick 300
+@53550 shot 027_L2_10
+@53550 tick 300
+@53850 shot 027_L2_11
+@53850 tick 300
+@54150 shot 027_L2_12
+# L2: still hiding
+@54150 tick 300
+@54450 shot 028_L2_01
+@54450 tick 300
+@54750 shot 028_L2_02
+@54750 tick 300
+@55050 shot 028_L2_03
+@55050 tick 300
+@55350 shot 028_L2_04
+@55350 tick 300
+@55650 shot 028_L2_05
+@55650 tick 300
+@55950 shot 028_L2_06
+@55950 tick 300
+@56250 shot 028_L2_07
+@56250 tick 300
+@56550 shot 028_L2_08
+@56550 tick 300
+@56850 shot 028_L2_09
+@56850 tick 300
+@57150 shot 028_L2_10
+@57150 tick 300
+@57450 shot 028_L2_11
+@57450 tick 300
+@57750 shot 028_L2_12
+# L2: Leo keeps holding (camping under table)
+@57750 tick 400
+@58150 shot 029_L2_01
+@58150 tick 400
+@58550 shot 029_L2_02
+@58550 tick 400
+@58950 shot 029_L2_03
+@58950 tick 400
+@59350 shot 029_L2_04
+@59350 tick 400
+@59750 shot 029_L2_05
+@59750 tick 400
+@60150 shot 029_L2_06
+@60150 tick 400
+@60550 shot 029_L2_07
+@60550 tick 400
+@60950 shot 029_L2_08
+@60950 tick 400
+@61350 shot 029_L2_09
+@61350 tick 400
+@61750 shot 029_L2_10
+@61750 tick 400
+@62150 shot 029_L2_11
+@62150 tick 400
+@62550 shot 029_L2_12
+@62550 tick 400
+@62950 shot 029_L2_13
+@62950 tick 400
+@63350 shot 029_L2_14
+@63350 tick 400
+@63750 shot 029_L2_15
+@63750 tick 400
+@64150 shot 029_L2_16
+# L2: still camping under table
+@64150 tick 400
+@64550 shot 030_L2_01
+@64550 tick 400
+@64950 shot 030_L2_02
+@64950 tick 400
+@65350 shot 030_L2_03
+@65350 tick 400
+@65750 shot 030_L2_04
+@65750 tick 400
+@66150 shot 030_L2_05
+@66150 tick 400
+@66550 shot 030_L2_06
+@66550 tick 400
+@66950 shot 030_L2_07
+@66950 tick 400
+@67350 shot 030_L2_08
+@67350 tick 400
+@67750 shot 030_L2_09
+@67750 tick 400
+@68150 shot 030_L2_10
+@68150 tick 400
+@68550 shot 030_L2_11
+@68550 tick 400
+@68950 shot 030_L2_12
+@68950 tick 400
+@69350 shot 030_L2_13
+@69350 tick 400
+@69750 shot 030_L2_14
+@69750 tick 400
+@70150 shot 030_L2_15
+@70150 tick 400
+@70550 shot 030_L2_16
+# L2: still camping under table
+@70550 tick 400
+@70950 shot 031_L2_01
+@70950 tick 400
+@71350 shot 031_L2_02
+@71350 tick 400
+@71750 shot 031_L2_03
+@71750 tick 400
+@72150 shot 031_L2_04
+@72150 tick 400
+@72550 shot 031_L2_05
+@72550 tick 400
+@72950 shot 031_L2_06
+@72950 tick 400
+@73350 shot 031_L2_07
+@73350 tick 400
+@73750 shot 031_L2_08
+@73750 tick 400
+@74150 shot 031_L2_09
+@74150 tick 400
+@74550 shot 031_L2_10
+@74550 tick 400
+@74950 shot 031_L2_11
+@74950 tick 400
+@75350 shot 031_L2_12
+@75350 tick 400
+@75750 shot 031_L2_13
+@75750 tick 400
+@76150 shot 031_L2_14
+@76150 tick 400
+@76550 shot 031_L2_15
+@76550 tick 400
+@76950 shot 031_L2_16
+# L2: still holding through this visit
+@76950 tick 400
+@77350 shot 032_L2_01
+@77350 tick 400
+@77750 shot 032_L2_02
+@77750 tick 400
+@78150 shot 032_L2_03
+@78150 tick 400
+@78550 shot 032_L2_04
+@78550 tick 400
+@78950 shot 032_L2_05
+@78950 tick 400
+@79350 shot 032_L2_06
+@79350 tick 400
+@79750 shot 032_L2_07
+@79750 tick 400
+@80150 shot 032_L2_08
+@80150 tick 400
+@80550 shot 032_L2_09
+@80550 tick 400
+@80950 shot 032_L2_10
+@80950 tick 400
+@81350 shot 032_L2_11
+@81350 tick 400
+@81750 shot 032_L2_12
+# L2: wait for her to go
+@81750 tick 400
+@82150 shot 033_L2a_1
+@82150 tick 400
+@82550 shot 033_L2a_2
+@82550 tick 400
+@82950 shot 033_L2a_3
+@82950 tick 400
+@83350 shot 033_L2a_4
+@83350 up
+@83350 tilt -350 500 -793
+@83350 tick 300
+@83650 shot 033_L2b_1
+@83650 tick 300
+@83950 shot 033_L2b_2
+@83950 tick 300
+@84250 shot 033_L2b_3
+@84250 tick 300
+@84550 shot 033_L2b_4
+@84550 tick 300
+@84850 shot 033_L2b_5
+@84850 tick 300
+@85150 shot 033_L2b_6
+@85150 tick 300
+@85450 shot 033_L2b_7
+@85450 tick 300
+@85750 shot 033_L2b_8
+# L2: tilt right for other candies
+@85750 tilt 400 500 -768
+@85750 tick 300
+@86050 shot 034_L2_01
+@86050 tick 300
+@86350 shot 034_L2_02
+@86350 tick 300
+@86650 shot 034_L2_03
+@86650 tick 300
+@86950 shot 034_L2_04
+@86950 tick 300
+@87250 shot 034_L2_05
+@87250 tick 300
+@87550 shot 034_L2_06
+@87550 tick 300
+@87850 shot 034_L2_07
+@87850 tick 300
+@88150 shot 034_L2_08
+@88150 tick 300
+@88450 shot 034_L2_09
+@88450 tick 300
+@88750 shot 034_L2_10
+@88750 tick 300
+@89050 shot 034_L2_11
+@89050 tick 300
+@89350 shot 034_L2_12
+# L2: keep right
+@89350 tick 300
+@89650 shot 035_L2_1
+@89650 tick 300
+@89950 shot 035_L2_2
+@89950 tick 300
+@90250 shot 035_L2_3
+@90250 tick 300
+@90550 shot 035_L2_4
+@90550 tick 300
+@90850 shot 035_L2_5
+@90850 tick 300
+@91150 shot 035_L2_6
+@91150 tick 300
+@91450 shot 035_L2_7
+@91450 tick 300
+@91750 shot 035_L2_8
+# L2: tilt hard left to door
+@91750 tilt -600 500 -624
+@91750 tick 400
+@92150 shot 036_L2_01
+@92150 tick 400
+@92550 shot 036_L2_02
+@92550 tick 400
+@92950 shot 036_L2_03
+@92950 tick 400
+@93350 shot 036_L2_04
+@93350 tick 400
+@93750 shot 036_L2_05
+@93750 tick 400
+@94150 shot 036_L2_06
+@94150 tick 400
+@94550 shot 036_L2_07
+@94550 tick 400
+@94950 shot 036_L2_08
+@94950 tick 400
+@95350 shot 036_L2_09
+@95350 tick 400
+@95750 shot 036_L2_10
+@95750 tick 400
+@96150 shot 036_L2_11
+@96150 tick 400
+@96550 shot 036_L2_12
+# L3: Leo holds PLAY AGAIN firmly 2.5s (carried touch into round)
+@96550 tilt 0 500 -866
+@96550 tick 600
+@97150 down 78 131
+@97150 tick 500
+@97650 shot 037_L3_press_1
+@97650 tick 500
+@98150 shot 037_L3_press_2
+@98150 tick 500
+@98650 shot 037_L3_press_3
+@98650 tick 500
+@99150 shot 037_L3_press_4
+@99150 tick 500
+@99650 shot 037_L3_press_5
+@99650 up
+@99650 tick 400
+@100050 shot 037_L3_rel_1
+@100050 tick 400
+@100450 shot 037_L3_rel_2
+@100450 tick 400
+@100850 shot 037_L3_rel_3
+# L3: tilt left to candy and chair
+@100850 tilt -350 500 -793
+@100850 tick 400
+@101250 shot 038_L3_1
+@101250 tick 400
+@101650 shot 038_L3_2
+@101650 tick 400
+@102050 shot 038_L3_3
+@102050 tick 400
+@102450 shot 038_L3_4
+@102450 tick 400
+@102850 shot 038_L3_5
+@102850 tick 400
+@103250 shot 038_L3_6
+@103250 tick 400
+@103650 shot 038_L3_7
+@103650 tick 400
+@104050 shot 038_L3_8
+# L3: hide at chair, firm 2.8s press
+@104050 down 82 129
+@104050 tick 400
+@104450 shot 039_L3_h_1
+@104450 tick 400
+@104850 shot 039_L3_h_2
+@104850 tick 400
+@105250 shot 039_L3_h_3
+@105250 tick 400
+@105650 shot 039_L3_h_4
+@105650 tick 400
+@106050 shot 039_L3_h_5
+@106050 tick 400
+@106450 shot 039_L3_h_6
+@106450 tick 400
+@106850 shot 039_L3_h_7
+@106850 up
+@106850 tick 300
+@107150 shot 039_L3_r_1
+@107150 tick 300
+@107450 shot 039_L3_r_2
+@107450 tick 300
+@107750 shot 039_L3_r_3
+@107750 tick 300
+@108050 shot 039_L3_r_4
+@108050 tick 300
+@108350 shot 039_L3_r_5
+# L3: light coming, Leo re-presses 2.5s
+@108350 down 77 133
+@108350 tick 400
+@108750 shot 040_L3_h_1
+@108750 tick 400
+@109150 shot 040_L3_h_2
+@109150 tick 400
+@109550 shot 040_L3_h_3
+@109550 tick 400
+@109950 shot 040_L3_h_4
+@109950 tick 400
+@110350 shot 040_L3_h_5
+@110350 tick 400
+@110750 shot 040_L3_h_6
+@110750 up
+@110750 tick 300
+@111050 shot 040_L3_r_1
+@111050 tick 300
+@111350 shot 040_L3_r_2
+@111350 tick 300
+@111650 shot 040_L3_r_3
+@111650 tick 300
+@111950 shot 040_L3_r_4
+@111950 tick 300
+@112250 shot 040_L3_r_5
+@112250 tick 300
+@112550 shot 040_L3_r_6
+# L3: Grandma back, Leo hides at chair again
+@112550 down 81 130
+@112550 tick 350
+@112900 shot 041_L3_h_1
+@112900 tick 350
+@113250 shot 041_L3_h_2
+@113250 tick 350
+@113600 shot 041_L3_h_3
+@113600 tick 350
+@113950 shot 041_L3_h_4
+@113950 tick 350
+@114300 shot 041_L3_h_5
+@114300 tick 350
+@114650 shot 041_L3_h_6
+@114650 tick 350
+@115000 shot 041_L3_h_7
+@115000 tick 350
+@115350 shot 041_L3_h_8
+# L3: keep holding while light near
+@115350 tick 400
+@115750 shot 042_L3_h_1
+@115750 tick 400
+@116150 shot 042_L3_h_2
+@116150 tick 400
+@116550 shot 042_L3_h_3
+@116550 tick 400
+@116950 shot 042_L3_h_4
+@116950 tick 400
+@117350 shot 042_L3_h_5
+@117350 tick 400
+@117750 shot 042_L3_h_6
+@117750 up
+@117750 tick 400
+@118150 shot 042_L3_r_1
+@118150 tick 400
+@118550 shot 042_L3_r_2
+@118550 tick 400
+@118950 shot 042_L3_r_3
+@118950 tick 400
+@119350 shot 042_L3_r_4
+@119350 tick 400
+@119750 shot 042_L3_r_5
+@119750 tick 400
+@120150 shot 042_L3_r_6
+# L3: tilt right for candies
+@120150 tilt 400 500 -768
+@120150 tick 350
+@120500 shot 043_L3_01
+@120500 tick 350
+@120850 shot 043_L3_02
+@120850 tick 350
+@121200 shot 043_L3_03
+@121200 tick 350
+@121550 shot 043_L3_04
+@121550 tick 350
+@121900 shot 043_L3_05
+@121900 tick 350
+@122250 shot 043_L3_06
+@122250 tick 350
+@122600 shot 043_L3_07
+@122600 tick 350
+@122950 shot 043_L3_08
+@122950 tick 350
+@123300 shot 043_L3_09
+@123300 tick 350
+@123650 shot 043_L3_10
+@123650 tick 350
+@124000 shot 043_L3_11
+@124000 tick 350
+@124350 shot 043_L3_12
+# L3: in open, Leo presses the FIND COVER sign and holds (tilt still right)
+@124350 down 80 131
+@124350 tick 300
+@124650 shot 044_L3_h_1
+@124650 tick 300
+@124950 shot 044_L3_h_2
+@124950 tick 300
+@125250 shot 044_L3_h_3
+@125250 tick 300
+@125550 shot 044_L3_h_4
+@125550 tick 300
+@125850 shot 044_L3_h_5
+@125850 tick 300
+@126150 shot 044_L3_h_6
+@126150 tick 300
+@126450 shot 044_L3_h_7
+@126450 tick 300
+@126750 shot 044_L3_h_8
+@126750 up
+@126750 tick 300
+@127050 shot 044_L3_r_1
+@127050 tick 300
+@127350 shot 044_L3_r_2
+@127350 tick 300
+@127650 shot 044_L3_r_3
+@127650 tick 300
+@127950 shot 044_L3_r_4
+# L3: tilt hard left to door
+@127950 tilt -600 500 -624
+@127950 tick 400
+@128350 shot 045_L3_01
+@128350 tick 400
+@128750 shot 045_L3_02
+@128750 tick 400
+@129150 shot 045_L3_03
+@129150 tick 400
+@129550 shot 045_L3_04
+@129550 tick 400
+@129950 shot 045_L3_05
+@129950 tick 400
+@130350 shot 045_L3_06
+@130350 tick 400
+@130750 shot 045_L3_07
+@130750 tick 400
+@131150 shot 045_L3_08
+@131150 tick 400
+@131550 shot 045_L3_09
+@131550 tick 400
+@131950 shot 045_L3_10
+@131950 tick 400
+@132350 shot 045_L3_11
+@132350 tick 400
+@132750 shot 045_L3_12
+# L4: Play again (firm 1.2s press)
+@132750 tilt 0 500 -866
+@132750 tick 400
+@133150 down 80 130
+@133150 tick 1200
+@134350 up
+@134350 tick 500
+@134850 shot 046_L4_1
+@134850 tick 500
+@135350 shot 046_L4_2
+@135350 tick 500
+@135850 shot 046_L4_3
+@135850 tick 500
+@136350 shot 046_L4_4
+# L4: tilt right toward the plant this time
+@136350 tilt 400 500 -768
+@136350 tick 400
+@136750 shot 046_L4r_1
+@136750 tick 400
+@137150 shot 046_L4r_2
+@137150 tick 400
+@137550 shot 046_L4r_3
+@137550 tick 400
+@137950 shot 046_L4r_4
+@137950 tick 400
+@138350 shot 046_L4r_5
+@138350 tick 400
+@138750 shot 046_L4r_6
+@138750 tick 400
+@139150 shot 046_L4r_7
+@139150 tick 400
+@139550 shot 046_L4r_8
+# L4: QUICK HIDE - Leo presses at plant
+@139550 tilt 0 500 -866
+@139550 down 79 131
+@139550 tick 300
+@139850 shot 047_L4_01
+@139850 tick 300
+@140150 shot 047_L4_02
+@140150 tick 300
+@140450 shot 047_L4_03
+@140450 tick 300
+@140750 shot 047_L4_04
+@140750 tick 300
+@141050 shot 047_L4_05
+@141050 tick 300
+@141350 shot 047_L4_06
+@141350 tick 300
+@141650 shot 047_L4_07
+@141650 tick 300
+@141950 shot 047_L4_08
+@141950 tick 300
+@142250 shot 047_L4_09
+@142250 tick 300
+@142550 shot 047_L4_10
+@142550 tick 300
+@142850 shot 047_L4_11
+@142850 tick 300
+@143150 shot 047_L4_12
+# L4: Leo lets go after ~3.6s
+@143150 up
+@143150 tick 300
+@143450 shot 048_L4_1
+@143450 tick 300
+@143750 shot 048_L4_2
+@143750 tick 300
+@144050 shot 048_L4_3
+@144050 tick 300
+@144350 shot 048_L4_4
+@144350 tick 300
+@144650 shot 048_L4_5
+@144650 tick 300
+@144950 shot 048_L4_6
+@144950 tick 300
+@145250 shot 048_L4_7
+@145250 tick 300
+@145550 shot 048_L4_8
+# L4: tilt left for last candy
+@145550 tilt -400 500 -768
+@145550 tick 350
+@145900 shot 049_L4_01
+@145900 tick 350
+@146250 shot 049_L4_02
+@146250 tick 350
+@146600 shot 049_L4_03
+@146600 tick 350
+@146950 shot 049_L4_04
+@146950 tick 350
+@147300 shot 049_L4_05
+@147300 tick 350
+@147650 shot 049_L4_06
+@147650 tick 350
+@148000 shot 049_L4_07
+@148000 tick 350
+@148350 shot 049_L4_08
+@148350 tick 350
+@148700 shot 049_L4_09
+@148700 tick 350
+@149050 shot 049_L4_10
+@149050 tick 350
+@149400 shot 049_L4_11
+@149400 tick 350
+@149750 shot 049_L4_12
+# L4: race to door
+@149750 tick 350
+@150100 shot 050_L4_1
+@150100 tick 350
+@150450 shot 050_L4_2
+@150450 tick 350
+@150800 shot 050_L4_3
+@150800 tick 350
+@151150 shot 050_L4_4
+@151150 tick 350
+@151500 shot 050_L4_5
+@151500 tick 350
+@151850 shot 050_L4_6
+@151850 tick 350
+@152200 shot 050_L4_7
+@152200 tick 350
+@152550 shot 050_L4_8
+# L5: Play again
+@152550 tilt 0 500 -866
+@152550 tick 300
+@152850 down 80 130
+@152850 tick 900
+@153750 up
+@153750 tick 500
+# L5: tilt left to chair
+@154250 tilt -400 500 -768
+@154250 tick 400
+@154650 shot 051_L5_1
+@154650 tick 400
+@155050 shot 051_L5_2
+@155050 tick 400
+@155450 shot 051_L5_3
+@155450 tick 400
+@155850 shot 051_L5_4
+@155850 tick 400
+@156250 shot 051_L5_5
+@156250 tick 400
+@156650 shot 051_L5_6
+@156650 tick 400
+@157050 shot 051_L5_7
+@157050 tick 400
+@157450 shot 051_L5_8
+# L5: Leo rests thumb on room then slides it onto the sign, holds
+@157450 down 70 105
+@157450 tick 300
+@157750 move 72 115
+@157750 tick 80
+@157830 move 76 125
+@157830 tick 80
+@157910 move 78 130
+@157910 tick 350
+@158260 shot 052_L5_01
+@158260 tick 350
+@158610 shot 052_L5_02
+@158610 tick 350
+@158960 shot 052_L5_03
+@158960 tick 350
+@159310 shot 052_L5_04
+@159310 tick 350
+@159660 shot 052_L5_05
+@159660 tick 350
+@160010 shot 052_L5_06
+@160010 tick 350
+@160360 shot 052_L5_07
+@160360 tick 350
+@160710 shot 052_L5_08
+@160710 tick 350
+@161060 shot 052_L5_09
+@161060 tick 350
+@161410 shot 052_L5_10
+# L5: holding
+@161410 tick 400
+@161810 shot 053_L5_1
+@161810 tick 400
+@162210 shot 053_L5_2
+@162210 tick 400
+@162610 shot 053_L5_3
+@162610 tick 400
+@163010 shot 053_L5_4
+@163010 tick 400
+@163410 shot 053_L5_5
+@163410 tick 400
+@163810 shot 053_L5_6
+@163810 tick 400
+@164210 shot 053_L5_7
+@164210 tick 400
+@164610 shot 053_L5_8
+# L5: thumb resting on sign through next visit
+@164610 tick 400
+@165010 shot 054_L5_01
+@165010 tick 400
+@165410 shot 054_L5_02
+@165410 tick 400
+@165810 shot 054_L5_03
+@165810 tick 400
+@166210 shot 054_L5_04
+@166210 tick 400
+@166610 shot 054_L5_05
+@166610 tick 400
+@167010 shot 054_L5_06
+@167010 tick 400
+@167410 shot 054_L5_07
+@167410 tick 400
+@167810 shot 054_L5_08
+@167810 tick 400
+@168210 shot 054_L5_09
+@168210 tick 400
+@168610 shot 054_L5_10
+@168610 tick 400
+@169010 shot 054_L5_11
+@169010 tick 400
+@169410 shot 054_L5_12
+# L5: Leo sees >>> and tilts right, thumb still down
+@169410 tilt 400 500 -768
+@169410 tick 300
+@169710 shot 055_L5_01
+@169710 tick 300
+@170010 shot 055_L5_02
+@170010 tick 300
+@170310 shot 055_L5_03
+@170310 tick 300
+@170610 shot 055_L5_04
+@170610 tick 300
+@170910 shot 055_L5_05
+@170910 tick 300
+@171210 shot 055_L5_06
+@171210 tick 300
+@171510 shot 055_L5_07
+@171510 tick 300
+@171810 shot 055_L5_08
+@171810 tick 300
+@172110 shot 055_L5_09
+@172110 tick 300
+@172410 shot 055_L5_10
+@172410 tick 300
+@172710 shot 055_L5_11
+@172710 tick 300
+@173010 shot 055_L5_12
+# L5 LOSS (caught after chair named). L6: Leo lifts thumb, presses TRY AGAIN 1.5s
+@173010 up
+@173010 tilt 0 500 -866
+@173010 tick 1500
+@174510 down 80 130
+@174510 tick 1500
+@176010 up
+@176010 tick 500
+@176510 shot 056_L6_1
+@176510 tick 500
+@177010 shot 056_L6_2
+@177010 tick 500
+@177510 shot 056_L6_3
+@177510 tick 500
+@178010 shot 056_L6_4
+# L6: tilt right a little
+@178010 tilt 350 500 -793
+@178010 tick 350
+@178360 shot 057_L6_1
+@178360 tick 350
+@178710 shot 057_L6_2
+@178710 tick 350
+@179060 shot 057_L6_3
+@179060 tick 350
+@179410 shot 057_L6_4
+@179410 tick 350
+@179760 shot 057_L6_5
+@179760 tick 350
+@180110 shot 057_L6_6
+@180110 tick 350
+@180460 shot 057_L6_7
+@180460 tick 350
+@180810 shot 057_L6_8
+# L6: hide at plant, Leo holds
+@180810 tilt 0 500 -866
+@180810 down 80 131
+@180810 tick 400
+@181210 shot 058_L6_01
+@181210 tick 400
+@181610 shot 058_L6_02
+@181610 tick 400
+@182010 shot 058_L6_03
+@182010 tick 400
+@182410 shot 058_L6_04
+@182410 tick 400
+@182810 shot 058_L6_05
+@182810 tick 400
+@183210 shot 058_L6_06
+@183210 tick 400
+@183610 shot 058_L6_07
+@183610 tick 400
+@184010 shot 058_L6_08
+@184010 tick 400
+@184410 shot 058_L6_09
+@184410 tick 400
+@184810 shot 058_L6_10
+@184810 tick 400
+@185210 shot 058_L6_11
+@185210 tick 400
+@185610 shot 058_L6_12
+@185610 tick 400
+@186010 shot 058_L6_13
+@186010 tick 400
+@186410 shot 058_L6_14
+@186410 tick 400
+@186810 shot 058_L6_15
+@186810 tick 400
+@187210 shot 058_L6_16
+# L6: thumb resting, waits for next visit
+@187210 tick 400
+@187610 shot 059_L6_01
+@187610 tick 400
+@188010 shot 059_L6_02
+@188010 tick 400
+@188410 shot 059_L6_03
+@188410 tick 400
+@188810 shot 059_L6_04
+@188810 tick 400
+@189210 shot 059_L6_05
+@189210 tick 400
+@189610 shot 059_L6_06
+@189610 tick 400
+@190010 shot 059_L6_07
+@190010 tick 400
+@190410 shot 059_L6_08
+@190410 tick 400
+@190810 shot 059_L6_09
+@190810 tick 400
+@191210 shot 059_L6_10
+@191210 tick 400
+@191610 shot 059_L6_11
+@191610 tick 400
+@192010 shot 059_L6_12
+# L6: hold through sweep
+@192010 tick 500
+@192510 shot 060_L6a_1
+@192510 tick 500
+@193010 shot 060_L6a_2
+@193010 tick 500
+@193510 shot 060_L6a_3
+@193510 tick 500
+@194010 shot 060_L6a_4
+@194010 tick 500
+@194510 shot 060_L6a_5
+@194510 tick 500
+@195010 shot 060_L6a_6
+@195010 up
+@195010 tilt -400 500 -768
+@195010 tick 350
+@195360 shot 060_L6b_01
+@195360 tick 350
+@195710 shot 060_L6b_02
+@195710 tick 350
+@196060 shot 060_L6b_03
+@196060 tick 350
+@196410 shot 060_L6b_04
+@196410 tick 350
+@196760 shot 060_L6b_05
+@196760 tick 350
+@197110 shot 060_L6b_06
+@197110 tick 350
+@197460 shot 060_L6b_07
+@197460 tick 350
+@197810 shot 060_L6b_08
+@197810 tick 350
+@198160 shot 060_L6b_09
+@198160 tick 350
+@198510 shot 060_L6b_10
+# L6: Grandma here, in open: Leo presses FIND COVER sign and holds while still tilting left
+@198510 down 80 130
+@198510 tick 200
+@198710 shot 061_L6_1
+@198710 tick 200
+@198910 shot 061_L6_2
+@198910 tick 200
+@199110 shot 061_L6_3
+@199110 tick 200
+@199310 shot 061_L6_4
+@199310 tick 200
+@199510 shot 061_L6_5
+@199510 tick 200
+@199710 shot 061_L6_6
+@199710 tick 200
+@199910 shot 061_L6_7
+@199910 tick 200
+@200110 shot 061_L6_8
+# L6: hold through sweep then wait
+@200110 tick 450
+@200560 shot 062_L6_01
+@200560 tick 450
+@201010 shot 062_L6_02
+@201010 tick 450
+@201460 shot 062_L6_03
+@201460 tick 450
+@201910 shot 062_L6_04
+@201910 tick 450
+@202360 shot 062_L6_05
+@202360 tick 450
+@202810 shot 062_L6_06
+@202810 tick 450
+@203260 shot 062_L6_07
+@203260 tick 450
+@203710 shot 062_L6_08
+@203710 tick 450
+@204160 shot 062_L6_09
+@204160 tick 450
+@204610 shot 062_L6_10
+@204610 tick 450
+@205060 shot 062_L6_11
+@205060 tick 450
+@205510 shot 062_L6_12
+# L6: thumb still resting at chair
+@205510 tick 400
+@205910 shot 063_L6_1
+@205910 tick 400
+@206310 shot 063_L6_2
+@206310 tick 400
+@206710 shot 063_L6_3
+@206710 tick 400
+@207110 shot 063_L6_4
+@207110 tick 400
+@207510 shot 063_L6_5
+@207510 tick 400
+@207910 shot 063_L6_6
+@207910 tick 400
+@208310 shot 063_L6_7
+@208310 tick 400
+@208710 shot 063_L6_8
+# L6: hold through sweep
+@208710 tick 600
+@209310 shot 064_L6a_1
+@209310 tick 600
+@209910 shot 064_L6a_2
+@209910 tick 600
+@210510 shot 064_L6a_3
+@210510 tick 600
+@211110 shot 064_L6a_4
+@211110 tick 600
+@211710 shot 064_L6a_5
+@211710 tick 600
+@212310 shot 064_L6a_6
+@212310 up
+@212310 tilt 450 500 -740
+@212310 tick 350
+@212660 shot 064_L6b_01
+@212660 tick 350
+@213010 shot 064_L6b_02
+@213010 tick 350
+@213360 shot 064_L6b_03
+@213360 tick 350
+@213710 shot 064_L6b_04
+@213710 tick 350
+@214060 shot 064_L6b_05
+@214060 tick 350
+@214410 shot 064_L6b_06
+@214410 tick 350
+@214760 shot 064_L6b_07
+@214760 tick 350
+@215110 shot 064_L6b_08
+@215110 tick 350
+@215460 shot 064_L6b_09
+@215460 tick 350
+@215810 shot 064_L6b_10
+# L6: continue right
+@215810 tick 350
+@216160 shot 065_L6_1
+@216160 tick 350
+@216510 shot 065_L6_2
+@216510 tick 350
+@216860 shot 065_L6_3
+@216860 tick 350
+@217210 shot 065_L6_4
+@217210 tick 350
+@217560 shot 065_L6_5
+@217560 tick 350
+@217910 shot 065_L6_6
+@217910 tick 350
+@218260 shot 065_L6_7
+@218260 tick 350
+@218610 shot 065_L6_8
+# L6: hide at plant
+@218610 tilt 0 500 -866
+@218610 down 81 131
+@218610 tick 400
+@219010 shot 066_L6_01
+@219010 tick 400
+@219410 shot 066_L6_02
+@219410 tick 400
+@219810 shot 066_L6_03
+@219810 tick 400
+@220210 shot 066_L6_04
+@220210 tick 400
+@220610 shot 066_L6_05
+@220610 tick 400
+@221010 shot 066_L6_06
+@221010 tick 400
+@221410 shot 066_L6_07
+@221410 tick 400
+@221810 shot 066_L6_08
+@221810 tick 400
+@222210 shot 066_L6_09
+@222210 tick 400
+@222610 shot 066_L6_10
+@222610 tick 400
+@223010 shot 066_L6_11
+@223010 tick 400
+@223410 shot 066_L6_12
+# L6: release, race left to door
+@223410 up
+@223410 tilt -600 500 -624
+@223410 tick 400
+@223810 shot 067_L6_01
+@223810 tick 400
+@224210 shot 067_L6_02
+@224210 tick 400
+@224610 shot 067_L6_03
+@224610 tick 400
+@225010 shot 067_L6_04
+@225010 tick 400
+@225410 shot 067_L6_05
+@225410 tick 400
+@225810 shot 067_L6_06
+@225810 tick 400
+@226210 shot 067_L6_07
+@226210 tick 400
+@226610 shot 067_L6_08
+@226610 tick 400
+@227010 shot 067_L6_09
+@227010 tick 400
+@227410 shot 067_L6_10
+@227410 tick 400
+@227810 shot 067_L6_11
+@227810 tick 400
+@228210 shot 067_L6_12
+# L6 WIN. L7: play again
+@228210 tilt 0 500 -866
+@228210 tick 500
+@228710 down 80 130
+@228710 tick 1100
+@229810 up
+@229810 tick 400
+# L7: tilt right first
+@230210 tilt 400 500 -768
+@230210 tick 350
+@230560 shot 068_L7_01
+@230560 tick 350
+@230910 shot 068_L7_02
+@230910 tick 350
+@231260 shot 068_L7_03
+@231260 tick 350
+@231610 shot 068_L7_04
+@231610 tick 350
+@231960 shot 068_L7_05
+@231960 tick 350
+@232310 shot 068_L7_06
+@232310 tick 350
+@232660 shot 068_L7_07
+@232660 tick 350
+@233010 shot 068_L7_08
+@233010 tick 350
+@233360 shot 068_L7_09
+@233360 tick 350
+@233710 shot 068_L7_10
+@233710 tick 350
+@234060 shot 068_L7_11
+@234060 tick 350
+@234410 shot 068_L7_12
+# L7: hide at plant: press 2s, lift, quickly re-press (worried)
+@234410 tilt 0 500 -866
+@234410 down 80 131
+@234410 tick 400
+@234810 shot 069_L7a_1
+@234810 tick 400
+@235210 shot 069_L7a_2
+@235210 tick 400
+@235610 shot 069_L7a_3
+@235610 tick 400
+@236010 shot 069_L7a_4
+@236010 tick 400
+@236410 shot 069_L7a_5
+@236410 up
+@236410 tick 120
+@236530 down 82 129
+@236530 tick 400
+@236930 shot 069_L7b_01
+@236930 tick 400
+@237330 shot 069_L7b_02
+@237330 tick 400
+@237730 shot 069_L7b_03
+@237730 tick 400
+@238130 shot 069_L7b_04
+@238130 tick 400
+@238530 shot 069_L7b_05
+@238530 tick 400
+@238930 shot 069_L7b_06
+@238930 tick 400
+@239330 shot 069_L7b_07
+@239330 tick 400
+@239730 shot 069_L7b_08
+@239730 tick 400
+@240130 shot 069_L7b_09
+@240130 tick 400
+@240530 shot 069_L7b_10
+# L7: thumb resting at plant through next visit
+@240530 tick 400
+@240930 shot 070_L7_01
+@240930 tick 400
+@241330 shot 070_L7_02
+@241330 tick 400
+@241730 shot 070_L7_03
+@241730 tick 400
+@242130 shot 070_L7_04
+@242130 tick 400
+@242530 shot 070_L7_05
+@242530 tick 400
+@242930 shot 070_L7_06
+@242930 tick 400
+@243330 shot 070_L7_07
+@243330 tick 400
+@243730 shot 070_L7_08
+@243730 tick 400
+@244130 shot 070_L7_09
+@244130 tick 400
+@244530 shot 070_L7_10
+@244530 tick 400
+@244930 shot 070_L7_11
+@244930 tick 400
+@245330 shot 070_L7_12
+# L7: Leo (thumb still down) tilts left toward <<<
+@245330 tilt -500 500 -707
+@245330 tick 300
+@245630 shot 071_L7_01
+@245630 tick 300
+@245930 shot 071_L7_02
+@245930 tick 300
+@246230 shot 071_L7_03
+@246230 tick 300
+@246530 shot 071_L7_04
+@246530 tick 300
+@246830 shot 071_L7_05
+@246830 tick 300
+@247130 shot 071_L7_06
+@247130 tick 300
+@247430 shot 071_L7_07
+@247430 tick 300
+@247730 shot 071_L7_08
+@247730 tick 300
+@248030 shot 071_L7_09
+@248030 tick 300
+@248330 shot 071_L7_10
+@248330 tick 300
+@248630 shot 071_L7_11
+@248630 tick 300
+@248930 shot 071_L7_12
+# L7: got away under the table; release and roll left for last candy and door
+@248930 up
+@248930 tick 400
+@249330 shot 072_L7_01
+@249330 tick 400
+@249730 shot 072_L7_02
+@249730 tick 400
+@250130 shot 072_L7_03
+@250130 tick 400
+@250530 shot 072_L7_04
+@250530 tick 400
+@250930 shot 072_L7_05
+@250930 tick 400
+@251330 shot 072_L7_06
+@251330 tick 400
+@251730 shot 072_L7_07
+@251730 tick 400
+@252130 shot 072_L7_08
+@252130 tick 400
+@252530 shot 072_L7_09
+@252530 tick 400
+@252930 shot 072_L7_10
+@252930 tick 400
+@253330 shot 072_L7_11
+@253330 tick 400
+@253730 shot 072_L7_12
+# L7 WIN. L8: play again
+@253730 tilt 0 500 -866
+@253730 tick 500
+@254230 down 80 130
+@254230 tick 1000
+@255230 up
+@255230 tick 1000
+# L8: Leo curiously taps the ghost (top-left)
+@256230 down 33 38
+@256230 tick 150
+@256380 up
+@256380 tick 300
+@256680 shot 073_L8_1
+@256680 tick 300
+@256980 shot 073_L8_2
+@256980 tick 300
+@257280 shot 073_L8_3
+@257280 tick 300
+@257580 shot 073_L8_4
+@257580 tick 300
+@257880 shot 073_L8_5
+@257880 tick 300
+@258180 shot 073_L8_6
+# L8: tilt left
+@258180 tilt -400 500 -768
+@258180 tick 350
+@258530 shot 074_L8_01
+@258530 tick 350
+@258880 shot 074_L8_02
+@258880 tick 350
+@259230 shot 074_L8_03
+@259230 tick 350
+@259580 shot 074_L8_04
+@259580 tick 350
+@259930 shot 074_L8_05
+@259930 tick 350
+@260280 shot 074_L8_06
+@260280 tick 350
+@260630 shot 074_L8_07
+@260630 tick 350
+@260980 shot 074_L8_08
+@260980 tick 350
+@261330 shot 074_L8_09
+@261330 tick 350
+@261680 shot 074_L8_10
+# L8: wait at chair
+@261680 tilt 0 500 -866
+@261680 tick 400
+@262080 shot 075_L8_1
+@262080 tick 400
+@262480 shot 075_L8_2
+@262480 tick 400
+@262880 shot 075_L8_3
+@262880 tick 400
+@263280 shot 075_L8_4
+@263280 tick 400
+@263680 shot 075_L8_5
+@263680 tick 400
+@264080 shot 075_L8_6
+# L8: hide at chair, hold
+@264080 down 79 130
+@264080 tick 400
+@264480 shot 076_L8_01
+@264480 tick 400
+@264880 shot 076_L8_02
+@264880 tick 400
+@265280 shot 076_L8_03
+@265280 tick 400
+@265680 shot 076_L8_04
+@265680 tick 400
+@266080 shot 076_L8_05
+@266080 tick 400
+@266480 shot 076_L8_06
+@266480 tick 400
+@266880 shot 076_L8_07
+@266880 tick 400
+@267280 shot 076_L8_08
+@267280 tick 400
+@267680 shot 076_L8_09
+@267680 tick 400
+@268080 shot 076_L8_10
+@268080 tick 400
+@268480 shot 076_L8_11
+@268480 tick 400
+@268880 shot 076_L8_12
+@268880 tick 400
+@269280 shot 076_L8_13
+@269280 tick 400
+@269680 shot 076_L8_14
+@269680 tick 400
+@270080 shot 076_L8_15
+@270080 tick 400
+@270480 shot 076_L8_16
+# L8: hold, waiting
+@270480 tick 400
+@270880 shot 077_L8_1
+@270880 tick 400
+@271280 shot 077_L8_2
+@271280 tick 400
+@271680 shot 077_L8_3
+@271680 tick 400
+@272080 shot 077_L8_4
+@272080 tick 400
+@272480 shot 077_L8_5
+@272480 tick 400
+@272880 shot 077_L8_6
+@272880 tick 400
+@273280 shot 077_L8_7
+@273280 tick 400
+@273680 shot 077_L8_8
+# L8: Leo tilts right toward >>>, thumb down
+@273680 tilt 500 500 -707
+@273680 tick 300
+@273980 shot 078_L8_01
+@273980 tick 300
+@274280 shot 078_L8_02
+@274280 tick 300
+@274580 shot 078_L8_03
+@274580 tick 300
+@274880 shot 078_L8_04
+@274880 tick 300
+@275180 shot 078_L8_05
+@275180 tick 300
+@275480 shot 078_L8_06
+@275480 tick 300
+@275780 shot 078_L8_07
+@275780 tick 300
+@276080 shot 078_L8_08
+@276080 tick 300
+@276380 shot 078_L8_09
+@276380 tick 300
+@276680 shot 078_L8_10
+@276680 tick 300
+@276980 shot 078_L8_11
+@276980 tick 300
+@277280 shot 078_L8_12
+# L8: release, roll right for candies
+@277280 up
+@277280 tick 350
+@277630 shot 079_L8_01
+@277630 tick 350
+@277980 shot 079_L8_02
+@277980 tick 350
+@278330 shot 079_L8_03
+@278330 tick 350
+@278680 shot 079_L8_04
+@278680 tick 350
+@279030 shot 079_L8_05
+@279030 tick 350
+@279380 shot 079_L8_06
+@279380 tick 350
+@279730 shot 079_L8_07
+@279730 tick 350
+@280080 shot 079_L8_08
+@280080 tick 350
+@280430 shot 079_L8_09
+@280430 tick 350
+@280780 shot 079_L8_10
+@280780 tick 350
+@281130 shot 079_L8_11
+@281130 tick 350
+@281480 shot 079_L8_12
+# L8: hide at plant (2.5s press, then re-press)
+@281480 tilt 0 500 -866
+@281480 down 80 130
+@281480 tick 400
+@281880 shot 080_L8a_1
+@281880 tick 400
+@282280 shot 080_L8a_2
+@282280 tick 400
+@282680 shot 080_L8a_3
+@282680 tick 400
+@283080 shot 080_L8a_4
+@283080 tick 400
+@283480 shot 080_L8a_5
+@283480 tick 400
+@283880 shot 080_L8a_6
+@283880 up
+@283880 tick 200
+@284080 down 80 131
+@284080 tick 400
+@284480 shot 080_L8b_1
+@284480 tick 400
+@284880 shot 080_L8b_2
+@284880 tick 400
+@285280 shot 080_L8b_3
+@285280 tick 400
+@285680 shot 080_L8b_4
+@285680 tick 400
+@286080 shot 080_L8b_5
+@286080 tick 400
+@286480 shot 080_L8b_6
+@286480 tick 400
+@286880 shot 080_L8b_7
+@286880 tick 400
+@287280 shot 080_L8b_8
+@287280 up
+@287280 tilt -600 500 -624
+@287280 tick 400
+@287680 shot 080_L8c_01
+@287680 tick 400
+@288080 shot 080_L8c_02
+@288080 tick 400
+@288480 shot 080_L8c_03
+@288480 tick 400
+@288880 shot 080_L8c_04
+@288880 tick 400
+@289280 shot 080_L8c_05
+@289280 tick 400
+@289680 shot 080_L8c_06
+@289680 tick 400
+@290080 shot 080_L8c_07
+@290080 tick 400
+@290480 shot 080_L8c_08
+@290480 tick 400
+@290880 shot 080_L8c_09
+@290880 tick 400
+@291280 shot 080_L8c_10
+# L8: continue to door
+@291280 tick 400
+@291680 shot 081_L8_1
+@291680 tick 400
+@292080 shot 081_L8_2
+@292080 tick 400
+@292480 shot 081_L8_3
+@292480 tick 400
+@292880 shot 081_L8_4
+@292880 tick 400
+@293280 shot 081_L8_5
+@293280 tick 400
+@293680 shot 081_L8_6
+# L8 WIN. L9 probe: press PLAY AGAIN then slide finger off before lifting
+@293680 tilt 0 500 -866
+@293680 tick 500
+@294180 down 80 130
+@294180 tick 400
+@294580 move 80 115
+@294580 tick 80
+@294660 move 80 100
+@294660 tick 80
+@294740 move 80 90
+@294740 tick 300
+@295040 up
+@295040 tick 500
+@295540 shot 082_L9_slideoff_1
+@295540 tick 500
+@296040 shot 082_L9_slideoff_2
+@296040 tick 500
+@296540 shot 082_L9_slideoff_3
+# L9 probe: Leo taps the picture-frame icon at top
+@296540 down 80 19
+@296540 tick 150
+@296690 up
+@296690 tick 500
+@297190 shot 083_exit_1
+@297190 tick 500
+@297690 shot 083_exit_2
+@297690 tick 500
+@298190 shot 083_exit_3
+# resume: Leo opens Spooky again
+@298190 down 80 104
+@298190 tick 300
+@298490 up
+@298490 tick 1200
+@299690 shot 084_reenter
+@299690 down 80 130
+@299690 tick 300
+@299990 up
+@299990 tick 800
+@300790 shot 084_reenter2
+# L9: READY, then probe: no tilt, pumpkin under table; roll right a bit into open then level, then press sign 3s
+@300790 down 80 130
+@300790 tick 300
+@301090 up
+@301090 tick 800
+@301890 tilt 300 500 -812
+@301890 tick 900
+@302790 tilt 0 500 -866
+@302790 tick 400
+@303190 shot 085_open_before
+@303190 down 80 131
+@303190 tick 400
+@303590 shot 085_open_press_1
+@303590 tick 400
+@303990 shot 085_open_press_2
+@303990 tick 400
+@304390 shot 085_open_press_3
+@304390 tick 400
+@304790 shot 085_open_press_4
+@304790 tick 400
+@305190 shot 085_open_press_5
+@305190 tick 400
+@305590 shot 085_open_press_6
+@305590 tick 400
+@305990 shot 085_open_press_7
+@305990 tick 400
+@306390 shot 085_open_press_8
+@306390 up
+@306390 tick 300
+@306690 shot 085_open_rel_1
+@306690 tick 300
+@306990 shot 085_open_rel_2
+# L9: re-press to hide through sweep
+@306990 down 80 131
+@306990 tick 1500
+@308490 shot 086_L9_1
+@308490 tick 1500
+@309990 shot 086_L9_2
+@309990 tick 1500
+@311490 shot 086_L9_3
+@311490 tick 1500
+@312990 shot 086_L9_4
+@312990 up
+# L9 probe: roll right into open, level, press sign 3s with no cover
+@312990 tilt 400 500 -768
+@312990 tick 300
+@313290 shot 087_roll_1
+@313290 tick 300
+@313590 shot 087_roll_2
+@313590 tick 300
+@313890 shot 087_roll_3
+@313890 tick 300
+@314190 shot 087_roll_4
+@314190 tilt 0 500 -866
+@314190 tick 300
+@314490 shot 087_open_before
+@314490 down 80 131
+@314490 tick 400
+@314890 shot 087_open_press_1
+@314890 tick 400
+@315290 shot 087_open_press_2
+@315290 tick 400
+@315690 shot 087_open_press_3
+@315690 tick 400
+@316090 shot 087_open_press_4
+@316090 tick 400
+@316490 shot 087_open_press_5
+@316490 tick 400
+@316890 shot 087_open_press_6
+@316890 tick 400
+@317290 shot 087_open_press_7
+@317290 tick 400
+@317690 shot 087_open_press_8
+@317690 up
+@317690 tick 300
+@317990 shot 087_open_rel_1
+@317990 tick 300
+@318290 shot 087_open_rel_2
+# L9: light at the plant next to him; Leo tilts left
+@318290 tilt -500 500 -707
+@318290 tick 300
+@318590 shot 088_L9_1
+@318590 tick 300
+@318890 shot 088_L9_2
+@318890 tick 300
+@319190 shot 088_L9_3
+@319190 tick 300
+@319490 shot 088_L9_4
+@319490 tick 300
+@319790 shot 088_L9_5
+@319790 tick 300
+@320090 shot 088_L9_6
+@320090 tick 300
+@320390 shot 088_L9_7
+@320390 tick 300
+@320690 shot 088_L9_8
+# L9 probe: at chair, Leo presses the pumpkin itself / the room (not the sign) 2s
+@320690 tilt 0 500 -866
+@320690 tick 300
+@320990 down 30 98
+@320990 tick 500
+@321490 shot 089_room_1
+@321490 tick 500
+@321990 shot 089_room_2
+@321990 tick 500
+@322490 shot 089_room_3
+@322490 tick 500
+@322990 shot 089_room_4
+@322990 up
+@322990 tick 300
+# press on the Grandma/plant area
+@323290 down 125 80
+@323290 tick 500
+@323790 shot 089_room2_1
+@323790 tick 500
+@324290 shot 089_room2_2
+@324290 tick 500
+@324790 shot 089_room2_3
+@324790 up
+# L9: QUICK HIDE - Leo presses the sign now
+@324790 down 80 131
+@324790 tick 400
+@325190 shot 090_L9_01
+@325190 tick 400
+@325590 shot 090_L9_02
+@325590 tick 400
+@325990 shot 090_L9_03
+@325990 tick 400
+@326390 shot 090_L9_04
+@326390 tick 400
+@326790 shot 090_L9_05
+@326790 tick 400
+@327190 shot 090_L9_06
+@327190 tick 400
+@327590 shot 090_L9_07
+@327590 tick 400
+@327990 shot 090_L9_08
+@327990 tick 400
+@328390 shot 090_L9_09
+@328390 tick 400
+@328790 shot 090_L9_10
+# L9: wait sweep out
+@328790 tick 2000
+@330790 shot 091_wait_1
+@330790 tick 2000
+@332790 shot 091_wait_2
+@332790 up
+@332790 tick 500
+# probe: brief brush on exit frame mid-round (120ms)
+@333290 down 80 19
+@333290 tick 120
+@333410 up
+@333410 tick 400
+@333810 shot 091_brush_1
+@333810 tick 400
+@334210 shot 091_brush_2
+# L9: hide again
+@334210 down 80 131
+@334210 tick 2000
+@336210 shot 092_L9_1
+@336210 tick 2000
+@338210 shot 092_L9_2
+@338210 tick 2000
+@340210 shot 092_L9_3
+@340210 up
+@340210 tick 300
+# probe: Leo deliberately presses exit firmly
+@340510 down 80 19
+@340510 tick 300
+@340810 shot 092_exithold_1
+@340810 tick 300
+@341110 shot 092_exithold_2
+@341110 tick 300
+@341410 shot 092_exithold_3
+@341410 tick 300
+@341710 shot 092_exithold_4
+@341710 tick 300
+@342010 shot 092_exithold_5
+@342010 tick 300
+@342310 shot 092_exithold_6
+@342310 up
+@342310 tick 500
+@342810 shot 092_exitrel_1
+@342810 tick 500
+@343310 shot 092_exitrel_2
+# ===== Zoe pass: go to picker
+@343310 tick 500
+@343810 down 80 12
+@343810 tick 120
+@343930 up
+@343930 tick 800
+@344730 shot 100_picker
+# Zoe: new profile
+@344730 down 80 93
+@344730 tick 100
+@344830 up
+@344830 tick 550
+@345380 down 67 125
+@345380 tick 100
+@345480 up
+@345480 tick 550
+@346030 down 41 125
+@346030 tick 100
+@346130 up
+@346130 tick 550
+@346680 down 67 52
+@346680 tick 100
+@346780 up
+@346780 tick 550
+@347330 down 67 125
+@347330 tick 100
+@347430 up
+@347430 tick 550
+@347980 down 41 77
+@347980 tick 100
+@348080 up
+@348080 tick 550
+@348630 shot 101_zoe_name
+@348630 down 118 125
+@348630 tick 100
+@348730 up
+@348730 tick 550
+@349280 tick 300
+@349580 shot 102_face
+# Zoe: owl, age 8, skip code
+@349580 down 67 85
+@349580 tick 100
+@349680 up
+@349680 tick 650
+@350330 shot 103_age
+@350330 down 37 102
+@350330 tick 100
+@350430 up
+@350430 tick 650
+@351080 down 80 145
+@351080 tick 100
+@351180 up
+@351180 tick 650
+@351830 tick 300
+@352130 shot 104_launcher
+# Zoe: open Spooky, START, READY (quick taps), held flatter
+@352130 tilt 0 300 -954
+@352130 down 80 104
+@352130 tick 100
+@352230 up
+@352230 tick 700
+@352930 down 80 130
+@352930 tick 100
+@353030 up
+@353030 tick 700
+@353730 tick 600
+@354330 down 80 130
+@354330 tick 100
+@354430 up
+@354430 tick 700
+@355130 tick 200
+@355330 msg
+@355330 tick 400
+@355730 shot 105_Z1_1
+@355730 tick 400
+@356130 shot 105_Z1_2
+@356130 tick 400
+@356530 shot 105_Z1_3
+@356530 tick 400
+@356930 shot 105_Z1_4
+# Z1: left for candy
+@356930 tilt -500 300 -812
+@356930 tick 300
+@357230 shot 106_Z1_1
+@357230 tick 300
+@357530 shot 106_Z1_2
+@357530 tick 300
+@357830 shot 106_Z1_3
+@357830 tick 300
+@358130 shot 106_Z1_4
+@358130 tick 300
+@358430 shot 106_Z1_5
+@358430 tick 300
+@358730 shot 106_Z1_6
+# Z1: Zoe quick-taps the sign first
+@358730 tilt 0 300 -954
+@358730 down 80 131
+@358730 tick 100
+@358830 shot 107_Z1_tapdown
+@358830 up
+@358830 tick 200
+@359030 shot 107_Z1_tap_1
+@359030 tick 200
+@359230 shot 107_Z1_tap_2
+# then holds (reads HOLD)
+@359230 down 80 131
+@359230 tick 400
+@359630 shot 107_Z1_hold_01
+@359630 tick 400
+@360030 shot 107_Z1_hold_02
+@360030 tick 400
+@360430 shot 107_Z1_hold_03
+@360430 tick 400
+@360830 shot 107_Z1_hold_04
+@360830 tick 400
+@361230 shot 107_Z1_hold_05
+@361230 tick 400
+@361630 shot 107_Z1_hold_06
+@361630 tick 400
+@362030 shot 107_Z1_hold_07
+@362030 tick 400
+@362430 shot 107_Z1_hold_08
+@362430 tick 400
+@362830 shot 107_Z1_hold_09
+@362830 tick 400
+@363230 shot 107_Z1_hold_10
+# Z1: hold until PHEW
+@363230 tick 700
+@363930 shot 108_Z1a_1
+@363930 tick 700
+@364630 shot 108_Z1a_2
+@364630 tick 700
+@365330 shot 108_Z1a_3
+@365330 up
+@365330 tilt 500 300 -812
+@365330 tick 300
+@365630 shot 108_Z1b_01
+@365630 tick 300
+@365930 shot 108_Z1b_02
+@365930 tick 300
+@366230 shot 108_Z1b_03
+@366230 tick 300
+@366530 shot 108_Z1b_04
+@366530 tick 300
+@366830 shot 108_Z1b_05
+@366830 tick 300
+@367130 shot 108_Z1b_06
+@367130 tick 300
+@367430 shot 108_Z1b_07
+@367430 tick 300
+@367730 shot 108_Z1b_08
+@367730 tick 300
+@368030 shot 108_Z1b_09
+@368030 tick 300
+@368330 shot 108_Z1b_10
+# Z1: Zoe taps the ghost to distract Grandma, keeps rolling right
+@368330 down 33 38
+@368330 tick 100
+@368430 up
+@368430 tick 300
+@368730 shot 109_Z1_01
+@368730 tick 300
+@369030 shot 109_Z1_02
+@369030 tick 300
+@369330 shot 109_Z1_03
+@369330 tick 300
+@369630 shot 109_Z1_04
+@369630 tick 300
+@369930 shot 109_Z1_05
+@369930 tick 300
+@370230 shot 109_Z1_06
+@370230 tick 300
+@370530 shot 109_Z1_07
+@370530 tick 300
+@370830 shot 109_Z1_08
+@370830 tick 300
+@371130 shot 109_Z1_09
+@371130 tick 300
+@371430 shot 109_Z1_10
+# Z1: race to door
+@371430 tilt -700 300 -648
+@371430 tick 400
+@371830 shot 110_Z1_1
+@371830 tick 400
+@372230 shot 110_Z1_2
+@372230 tick 400
+@372630 shot 110_Z1_3
+@372630 tick 400
+@373030 shot 110_Z1_4
+@373030 tick 400
+@373430 shot 110_Z1_5
+@373430 tick 400
+@373830 shot 110_Z1_6
+@373830 tick 400
+@374230 shot 110_Z1_7
+@374230 tick 400
+@374630 shot 110_Z1_8
+# Z1: keep running to door
+@374630 tick 400
+@375030 shot 111_Z1_1
+@375030 tick 400
+@375430 shot 111_Z1_2
+@375430 tick 400
+@375830 shot 111_Z1_3
+@375830 tick 400
+@376230 shot 111_Z1_4
+@376230 tick 400
+@376630 shot 111_Z1_5
+@376630 tick 400
+@377030 shot 111_Z1_6
+# Z1 WIN. Z2: quick tap play again; Zoe tries ignoring Grandma: left candy then right
+@377030 tilt 0 300 -954
+@377030 tick 300
+@377330 down 80 130
+@377330 tick 100
+@377430 up
+@377430 tick 300
+@377730 tilt -600 300 -742
+@377730 tick 300
+@378030 shot 112_Z2_1
+@378030 tick 300
+@378330 shot 112_Z2_2
+@378330 tick 300
+@378630 shot 112_Z2_3
+@378630 tick 300
+@378930 shot 112_Z2_4
+@378930 tick 300
+@379230 shot 112_Z2_5
+@379230 tick 300
+@379530 shot 112_Z2_6
+@379530 tilt 700 300 -648
+@379530 tick 300
+@379830 shot 112_Z2r_01
+@379830 tick 300
+@380130 shot 112_Z2r_02
+@380130 tick 300
+@380430 shot 112_Z2r_03
+@380430 tick 300
+@380730 shot 112_Z2r_04
+@380730 tick 300
+@381030 shot 112_Z2r_05
+@381030 tick 300
+@381330 shot 112_Z2r_06
+@381330 tick 300
+@381630 shot 112_Z2r_07
+@381630 tick 300
+@381930 shot 112_Z2r_08
+@381930 tick 300
+@382230 shot 112_Z2r_09
+@382230 tick 300
+@382530 shot 112_Z2r_10
+# Z2: ignore light, keep rolling right
+@382530 tick 250
+@382780 shot 113_Z2_1
+@382780 tick 250
+@383030 shot 113_Z2_2
+@383030 tick 250
+@383280 shot 113_Z2_3
+@383280 tick 250
+@383530 shot 113_Z2_4
+@383530 tick 250
+@383780 shot 113_Z2_5
+@383780 tick 250
+@384030 shot 113_Z2_6
+@384030 tick 250
+@384280 shot 113_Z2_7
+@384280 tick 250
+@384530 shot 113_Z2_8
+# Z2: Zoe runs for the door through the sweep
+@384530 tilt -700 300 -648
+@384530 tick 300
+@384830 shot 114_Z2_01
+@384830 tick 300
+@385130 shot 114_Z2_02
+@385130 tick 300
+@385430 shot 114_Z2_03
+@385430 tick 300
+@385730 shot 114_Z2_04
+@385730 tick 300
+@386030 shot 114_Z2_05
+@386030 tick 300
+@386330 shot 114_Z2_06
+@386330 tick 300
+@386630 shot 114_Z2_07
+@386630 tick 300
+@386930 shot 114_Z2_08
+@386930 tick 300
+@387230 shot 114_Z2_09
+@387230 tick 300
+@387530 shot 114_Z2_10
+@387530 tick 300
+@387830 shot 114_Z2_11
+@387830 tick 300
+@388130 shot 114_Z2_12
+# Z2: to door
+@388130 tick 500
+@388630 shot 115_Z2_1
+@388630 tick 500
+@389130 shot 115_Z2_2
+@389130 tick 500
+@389630 shot 115_Z2_3
+# Z2 WIN (no hiding). Z3: Zoe experiments - stand still in the open during a sweep
+@389630 tilt 0 300 -954
+@389630 tick 300
+@389930 down 80 130
+@389930 tick 100
+@390030 up
+@390030 tick 300
+@390330 tilt 500 300 -812
+@390330 tick 900
+@391230 tilt 0 300 -954
+@391230 tick 400
+@391630 shot 116_Z3_01
+@391630 tick 400
+@392030 shot 116_Z3_02
+@392030 tick 400
+@392430 shot 116_Z3_03
+@392430 tick 400
+@392830 shot 116_Z3_04
+@392830 tick 400
+@393230 shot 116_Z3_05
+@393230 tick 400
+@393630 shot 116_Z3_06
+@393630 tick 400
+@394030 shot 116_Z3_07
+@394030 tick 400
+@394430 shot 116_Z3_08
+@394430 tick 400
+@394830 shot 116_Z3_09
+@394830 tick 400
+@395230 shot 116_Z3_10
+@395230 tick 400
+@395630 shot 116_Z3_11
+@395630 tick 400
+@396030 shot 116_Z3_12
+@396030 tick 400
+@396430 shot 116_Z3_13
+@396430 tick 400
+@396830 shot 116_Z3_14
+@396830 tick 400
+@397230 shot 116_Z3_15
+@397230 tick 400
+@397630 shot 116_Z3_16
+# Z3 LOSS (stood still in light, deliberate experiment). Z4: try again
+@397630 tick 1500
+@399130 shot 117_Z3end_1
+@399130 down 80 130
+@399130 tick 100
+@399230 up
+@399230 tick 400
+# Z4 plan: hide at table, then candies
+@399630 tick 400
+@400030 shot 117_Z4_1
+@400030 tick 400
+@400430 shot 117_Z4_2
+@400430 tick 400
+@400830 shot 117_Z4_3
+@400830 tick 400
+@401230 shot 117_Z4_4
+# Z4: right for candies
+@401230 tilt 600 300 -742
+@401230 tick 300
+@401530 shot 118_Z4_01
+@401530 tick 300
+@401830 shot 118_Z4_02
+@401830 tick 300
+@402130 shot 118_Z4_03
+@402130 tick 300
+@402430 shot 118_Z4_04
+@402430 tick 300
+@402730 shot 118_Z4_05
+@402730 tick 300
+@403030 shot 118_Z4_06
+@403030 tick 300
+@403330 shot 118_Z4_07
+@403330 tick 300
+@403630 shot 118_Z4_08
+@403630 tick 300
+@403930 shot 118_Z4_09
+@403930 tick 300
+@404230 shot 118_Z4_10
+# Z4: hide at plant
+@404230 tilt 0 300 -954
+@404230 down 80 131
+@404230 tick 800
+@405030 shot 119_Z4_1
+@405030 tick 800
+@405830 shot 119_Z4_2
+@405830 tick 800
+@406630 shot 119_Z4_3
+@406630 tick 800
+@407430 shot 119_Z4_4
+@407430 tick 800
+@408230 shot 119_Z4_5
+@408230 tick 800
+@409030 shot 119_Z4_6
+@409030 tick 800
+@409830 shot 119_Z4_7
+@409830 tick 800
+@410630 shot 119_Z4_8
+# Z4: go left
+@410630 up
+@410630 tilt -700 300 -648
+@410630 tick 300
+@410930 shot 120_Z4_01
+@410930 tick 300
+@411230 shot 120_Z4_02
+@411230 tick 300
+@411530 shot 120_Z4_03
+@411530 tick 300
+@411830 shot 120_Z4_04
+@411830 tick 300
+@412130 shot 120_Z4_05
+@412130 tick 300
+@412430 shot 120_Z4_06
+@412430 tick 300
+@412730 shot 120_Z4_07
+@412730 tick 300
+@413030 shot 120_Z4_08
+@413030 tick 300
+@413330 shot 120_Z4_09
+@413330 tick 300
+@413630 shot 120_Z4_10
+@413630 tick 300
+@413930 shot 120_Z4_11
+@413930 tick 300
+@414230 shot 120_Z4_12
+# Z4: door
+@414230 tick 400
+@414630 shot 121_Z4_1
+@414630 tick 400
+@415030 shot 121_Z4_2
+@415030 tick 400
+@415430 shot 121_Z4_3
+@415430 tick 400
+@415830 shot 121_Z4_4
+# Z4 WIN. Z5: play again, Zoe grabs near candies then hides at table
+@415830 tilt 0 300 -954
+@415830 tick 300
+@416130 down 80 130
+@416130 tick 100
+@416230 up
+@416230 tick 300
+@416530 tilt -500 300 -812
+@416530 tick 300
+@416830 shot 122_Z5_1
+@416830 tick 300
+@417130 shot 122_Z5_2
+@417130 tick 300
+@417430 shot 122_Z5_3
+@417430 tick 300
+@417730 shot 122_Z5_4
+@417730 tick 300
+@418030 shot 122_Z5_5
+@418030 tick 300
+@418330 shot 122_Z5_6
+# Z5: Zoe pre-hides at chair and waits
+@418330 tilt 0 300 -954
+@418330 down 80 131
+@418330 tick 500
+@418830 shot 123_Z5_01
+@418830 tick 500
+@419330 shot 123_Z5_02
+@419330 tick 500
+@419830 shot 123_Z5_03
+@419830 tick 500
+@420330 shot 123_Z5_04
+@420330 tick 500
+@420830 shot 123_Z5_05
+@420830 tick 500
+@421330 shot 123_Z5_06
+@421330 tick 500
+@421830 shot 123_Z5_07
+@421830 tick 500
+@422330 shot 123_Z5_08
+@422330 tick 500
+@422830 shot 123_Z5_09
+@422830 tick 500
+@423330 shot 123_Z5_10
+@423330 tick 500
+@423830 shot 123_Z5_11
+@423830 tick 500
+@424330 shot 123_Z5_12
+# Z5: keep holding to next visit
+@424330 tick 500
+@424830 shot 124_Z5_01
+@424830 tick 500
+@425330 shot 124_Z5_02
+@425330 tick 500
+@425830 shot 124_Z5_03
+@425830 tick 500
+@426330 shot 124_Z5_04
+@426330 tick 500
+@426830 shot 124_Z5_05
+@426830 tick 500
+@427330 shot 124_Z5_06
+@427330 tick 500
+@427830 shot 124_Z5_07
+@427830 tick 500
+@428330 shot 124_Z5_08
+@428330 tick 500
+@428830 shot 124_Z5_09
+@428830 tick 500
+@429330 shot 124_Z5_10
+@429330 tick 500
+@429830 shot 124_Z5_11
+@429830 tick 500
+@430330 shot 124_Z5_12
+# Z5: keep holding
+@430330 tick 400
+@430730 shot 125_Z5_1
+@430730 tick 400
+@431130 shot 125_Z5_2
+@431130 tick 400
+@431530 shot 125_Z5_3
+@431530 tick 400
+@431930 shot 125_Z5_4
+# Z5: wait out sweep then go right
+@431930 tick 1500
+@433430 shot 126_Z5a_1
+@433430 tick 1500
+@434930 shot 126_Z5a_2
+@434930 tick 1500
+@436430 shot 126_Z5a_3
+@436430 up
+@436430 tilt 700 300 -648
+@436430 tick 300
+@436730 shot 126_Z5b_01
+@436730 tick 300
+@437030 shot 126_Z5b_02
+@437030 tick 300
+@437330 shot 126_Z5b_03
+@437330 tick 300
+@437630 shot 126_Z5b_04
+@437630 tick 300
+@437930 shot 126_Z5b_05
+@437930 tick 300
+@438230 shot 126_Z5b_06
+@438230 tick 300
+@438530 shot 126_Z5b_07
+@438530 tick 300
+@438830 shot 126_Z5b_08
+@438830 tick 300
+@439130 shot 126_Z5b_09
+@439130 tick 300
+@439430 shot 126_Z5b_10
+# Z5: press sign while rolling to plant (auto-hide on arrival)
+@439430 down 80 131
+@439430 tick 300
+@439730 shot 127_Z5_1
+@439730 tick 300
+@440030 shot 127_Z5_2
+@440030 tick 300
+@440330 shot 127_Z5_3
+@440330 tick 300
+@440630 shot 127_Z5_4
+@440630 tilt 0 300 -954
+@440630 tick 500
+@441130 shot 127_Z5b_01
+@441130 tick 500
+@441630 shot 127_Z5b_02
+@441630 tick 500
+@442130 shot 127_Z5b_03
+@442130 tick 500
+@442630 shot 127_Z5b_04
+@442630 tick 500
+@443130 shot 127_Z5b_05
+@443130 tick 500
+@443630 shot 127_Z5b_06
+@443630 tick 500
+@444130 shot 127_Z5b_07
+@444130 tick 500
+@444630 shot 127_Z5b_08
+@444630 tick 500
+@445130 shot 127_Z5b_09
+@445130 tick 500
+@445630 shot 127_Z5b_10
+@445630 tick 500
+@446130 shot 127_Z5b_11
+@446130 tick 500
+@446630 shot 127_Z5b_12
+# Z5: waiting at plant
+@446630 tick 400
+@447030 shot 128_Z5_1
+@447030 tick 400
+@447430 shot 128_Z5_2
+@447430 tick 400
+@447830 shot 128_Z5_3
+@447830 tick 400
+@448230 shot 128_Z5_4
+@448230 tick 400
+@448630 shot 128_Z5_5
+@448630 tick 400
+@449030 shot 128_Z5_6
+@449030 tick 400
+@449430 shot 128_Z5_7
+@449430 tick 400
+@449830 shot 128_Z5_8
+# Z5: named! Zoe lifts, taps the ghost and tilts left
+@449830 up
+@449830 down 33 38
+@449830 tick 100
+@449930 up
+@449930 tilt -700 300 -648
+@449930 tick 300
+@450230 shot 129_Z5_01
+@450230 tick 300
+@450530 shot 129_Z5_02
+@450530 tick 300
+@450830 shot 129_Z5_03
+@450830 tick 300
+@451130 shot 129_Z5_04
+@451130 tick 300
+@451430 shot 129_Z5_05
+@451430 tick 300
+@451730 shot 129_Z5_06
+@451730 tick 300
+@452030 shot 129_Z5_07
+@452030 tick 300
+@452330 shot 129_Z5_08
+@452330 tick 300
+@452630 shot 129_Z5_09
+@452630 tick 300
+@452930 shot 129_Z5_10
+# Z5: back right for last candy
+@452930 tilt 700 300 -648
+@452930 tick 300
+@453230 shot 130_Z5_01
+@453230 tick 300
+@453530 shot 130_Z5_02
+@453530 tick 300
+@453830 shot 130_Z5_03
+@453830 tick 300
+@454130 shot 130_Z5_04
+@454130 tick 300
+@454430 shot 130_Z5_05
+@454430 tick 300
+@454730 shot 130_Z5_06
+@454730 tick 300
+@455030 shot 130_Z5_07
+@455030 tick 300
+@455330 shot 130_Z5_08
+@455330 tick 300
+@455630 shot 130_Z5_09
+@455630 tick 300
+@455930 shot 130_Z5_10
+@455930 tick 300
+@456230 shot 130_Z5_11
+@456230 tick 300
+@456530 shot 130_Z5_12
+# Z5: hide at plant during table check
+@456530 tilt 0 300 -954
+@456530 down 80 131
+@456530 tick 500
+@457030 shot 131_Z5_1
+@457030 tick 500
+@457530 shot 131_Z5_2
+@457530 tick 500
+@458030 shot 131_Z5_3
+@458030 tick 500
+@458530 shot 131_Z5_4
+@458530 tick 500
+@459030 shot 131_Z5_5
+@459030 tick 500
+@459530 shot 131_Z5_6
+@459530 tick 500
+@460030 shot 131_Z5_7
+@460030 tick 500
+@460530 shot 131_Z5_8
+# Z5: run to the door
+@460530 up
+@460530 tilt -800 300 -520
+@460530 tick 400
+@460930 shot 132_Z5_01
+@460930 tick 400
+@461330 shot 132_Z5_02
+@461330 tick 400
+@461730 shot 132_Z5_03
+@461730 tick 400
+@462130 shot 132_Z5_04
+@462130 tick 400
+@462530 shot 132_Z5_05
+@462530 tick 400
+@462930 shot 132_Z5_06
+@462930 tick 400
+@463330 shot 132_Z5_07
+@463330 tick 400
+@463730 shot 132_Z5_08
+@463730 tick 400
+@464130 shot 132_Z5_09
+@464130 tick 400
+@464530 shot 132_Z5_10
+@464530 tick 400
+@464930 shot 132_Z5_11
+@464930 tick 400
+@465330 shot 132_Z5_12
+# Z5 WIN. Z6: extra round - grab left candy, hide at chair, react fast when named
+@465330 tilt 0 300 -954
+@465330 tick 300
+@465630 down 80 130
+@465630 tick 100
+@465730 up
+@465730 tick 300
+@466030 tilt -600 300 -742
+@466030 tick 1800
+@467830 tilt 0 300 -954
+@467830 down 80 131
+@467830 tick 500
+@468330 shot 133_Z6_1
+@468330 tick 500
+@468830 shot 133_Z6_2
+@468830 tick 500
+@469330 shot 133_Z6_3
+@469330 tick 500
+@469830 shot 133_Z6_4
+# Z6: waiting
+@469830 tick 600
+@470430 shot 134_Z6_1
+@470430 tick 600
+@471030 shot 134_Z6_2
+@471030 tick 600
+@471630 shot 134_Z6_3
+@471630 tick 600
+@472230 shot 134_Z6_4
+# Z6: waiting through sweep
+@472230 tick 2000
+@474230 shot 135_Z6_1
+@474230 tick 2000
+@476230 shot 135_Z6_2
+@476230 tick 2000
+@478230 shot 135_Z6_3
+@478230 tick 2000
+@480230 shot 135_Z6_4
+@480230 tick 500
+@480730 shot 136_Z6_1
+@480730 tick 500
+@481230 shot 136_Z6_2
+@481230 tick 500
+@481730 shot 136_Z6_3
+# Z6: Zoe bored of waiting; after sweep goes right
+@481730 tick 2500
+@484230 shot 137_Z6a_1
+@484230 tick 2500
+@486730 shot 137_Z6a_2
+@486730 up
+@486730 tilt 700 300 -648
+@486730 tick 400
+@487130 shot 137_Z6b_1
+@487130 tick 400
+@487530 shot 137_Z6b_2
+@487530 tick 400
+@487930 shot 137_Z6b_3
+@487930 tick 400
+@488330 shot 137_Z6b_4
+@488330 tick 400
+@488730 shot 137_Z6b_5
+@488730 tick 400
+@489130 shot 137_Z6b_6
+@489130 tick 400
+@489530 shot 137_Z6b_7
+@489530 tick 400
+@489930 shot 137_Z6b_8
+# Z6: hide at plant
+@489930 tilt 0 300 -954
+@489930 down 80 131
+@489930 tick 700
+@490630 shot 138_Z6_1
+@490630 tick 700
+@491330 shot 138_Z6_2
+@491330 tick 700
+@492030 shot 138_Z6_3
+@492030 tick 700
+@492730 shot 138_Z6_4
+@492730 tick 700
+@493430 shot 138_Z6_5
+@493430 tick 700
+@494130 shot 138_Z6_6
+@494130 up
+@494130 tilt 700 300 -648
+@494130 tick 300
+@494430 shot 138_Z6b_1
+@494430 tick 300
+@494730 shot 138_Z6b_2
+@494730 tick 300
+@495030 shot 138_Z6b_3
+@495030 tick 300
+@495330 shot 138_Z6b_4
+# Z6: run for door
+@495330 tilt -800 300 -520
+@495330 tick 400
+@495730 shot 139_Z6_01
+@495730 tick 400
+@496130 shot 139_Z6_02
+@496130 tick 400
+@496530 shot 139_Z6_03
+@496530 tick 400
+@496930 shot 139_Z6_04
+@496930 tick 400
+@497330 shot 139_Z6_05
+@497330 tick 400
+@497730 shot 139_Z6_06
+@497730 tick 400
+@498130 shot 139_Z6_07
+@498130 tick 400
+@498530 shot 139_Z6_08
+@498530 tick 400
+@498930 shot 139_Z6_09
+@498930 tick 400
+@499330 shot 139_Z6_10
+@499330 tick 400
+@499730 shot 139_Z6_11
+@499730 tick 400
+@500130 shot 139_Z6_12

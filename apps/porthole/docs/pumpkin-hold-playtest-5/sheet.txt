@@ -1,0 +1,10 @@
+import sys, glob, os
+from PIL import Image, ImageDraw
+out = sys.argv[1]; paths = []
+for pat in sys.argv[2:]: paths += sorted(glob.glob(pat))
+sc = 240; cols = min(4, len(paths)); rows = (len(paths)+cols-1)//cols
+sh = Image.new("RGB", (cols*sc, rows*(sc+14)), (40,40,40)); d = ImageDraw.Draw(sh)
+for i,p in enumerate(paths):
+    im = Image.open(p).resize((sc,sc)); x=(i%cols)*sc; y=(i//cols)*(sc+14)
+    sh.paste(im,(x,y+14)); d.text((x+2,y+1), os.path.basename(p)[:-4], fill=(255,255,0))
+sh.save(out)
