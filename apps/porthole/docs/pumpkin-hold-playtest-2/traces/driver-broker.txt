@@ -1,0 +1,36 @@
+import os, socket, subprocess, sys, struct, zlib, time
+D = os.path.dirname(os.path.abspath(__file__))
+RUN = os.path.join(D, "run"); SHOTS = os.path.join(D, "shots"); os.makedirs(SHOTS, exist_ok=True)
+SOCK = os.path.join(D, "sock")
+p = subprocess.Popen([os.path.join(D, "snap"), "--serve", "--fresh"], cwd=RUN, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+trace = open(os.path.join(D, "trace.txt"), "a")
+trace.write("# snap --serve --fresh (default clock)\n"); trace.flush()
+def chunk(t, d): return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+def png(rgb, path):
+    raw = b"".join(b"\0" + rgb[y*1440:(y+1)*1440] for y in range(480))
+    open(path, "wb").write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 480, 480, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 1)) + chunk(b"IEND", b""))
+def cmd(line):
+    if line.startswith("shot "):
+        p.stdin.write(b"frame\n"); p.stdin.flush()
+        h = p.stdout.readline().decode().strip(); n = int(h.split()[1]); buf = b""
+        while len(buf) < n: buf += p.stdout.read(n - len(buf))
+        name = line.split()[1]; png(buf, os.path.join(SHOTS, name + ".png")); trace.write(line + "\n"); return "saved " + name
+    if line.startswith("#"):
+        trace.write(line + "\n"); return ""
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    r = p.stdout.readline().decode().rstrip()
+    if not line.startswith("dbg"): trace.write(line + "\n")
+    return r
+if os.path.exists(SOCK): os.unlink(SOCK)
+s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+while True:
+    c, _ = s.accept(); data = b""
+    while not data.endswith(b"\n\x00"):
+        b = c.recv(65536)
+        if not b: break
+        data += b
+    out = []
+    for line in data.decode().rstrip("\n\x00").split("\n"):
+        line = line.strip()
+        if line: out.append(cmd(line))
+    trace.flush(); c.sendall(("\n".join(out) + "\n").encode()); c.close()
