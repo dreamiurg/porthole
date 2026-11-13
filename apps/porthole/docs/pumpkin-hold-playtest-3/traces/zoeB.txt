@@ -1,0 +1,43 @@
+# Zoe pass: profile
+tick 2000
+tap 67 125
+tick 500
+tap 41 125
+tick 500
+tap 67 53
+tick 500
+tap 67 125
+tick 500
+tap 41 77
+tick 500
+tap 118 125
+tick 800
+# face: fox
+tap 132 55
+tick 800
+# age 8
+tap 41 101
+tick 800
+# skip code
+tap 80 145
+tick 1200
+shot z000_launcher
+tap 80 103
+tick 1200
+shot z001_title
+tilt 0 400 -917
+tap 80 131 100
+tick 700
+shot z002_calib
+# mashes READY
+tap 80 138 80
+tick 60
+tap 82 137 80
+tick 60
+tap 79 139 80
+tick 60
+tap 80 136 80
+film z003_r1 3000 500
+# Zoe mashes the sign instead of holding, through Grandma's sweep
+# BRANCH: no touch at all at the table during the sweep
+film zB_idle 6000 375
