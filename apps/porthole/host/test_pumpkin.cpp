@@ -446,6 +446,19 @@ static void ownSpotChecked() {
   }
   gfx::textLogEnabled = false;
 }
+// Let out by the named table, a finger slid onto the sign gets the "no" and arms nothing.
+static void slidOntoChecked(Run& r) {
+  r.frame(false); r.frame(true, 80, 60); r.frame(true); r.game.render();
+  CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // slid on there: "no"
+  r.gravity = grip::gravityFor(-400, 0, grip::FLAT);  // and it armed nothing: drifted off, rolled into the chair
+  bool reached = false, hid = false;
+  for (int i = 0; i < 300 && r.at("pumpkin_play"); i++) {
+    r.frame(true, 80, 60);
+    reached = reached || nearby(r.game.round()) == 0;
+    hid = hid || r.game.round().hidden >= 0;
+  }
+  CHECK(reached && !hid && r.at("pumpkin_play"));
+}
 // Hidden at the table when she names it, the real sign reads RUN! on rust and the pumpkin sweats. Let out, in reach
 // of the table, a press or a finger slid on there gets the chevron "no" and never hides it or arms the hold.
 static void checkedSign() {
@@ -459,16 +472,7 @@ static void checkedSign() {
   CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // pressed there: "no"
   for (int i = 0; i < 110; i++) r.frame(true);
   CHECK(r.game.round().hidden == -1);
-  r.frame(false); r.frame(true, 80, 60); r.frame(true); r.game.render();
-  CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // slid on there: "no"
-  r.gravity = grip::gravityFor(-400, 0, grip::FLAT);  // and it armed nothing: drifted off, rolled into the chair
-  bool reached = false, hid = false;
-  for (int i = 0; i < 300 && r.at("pumpkin_play"); i++) {
-    r.frame(true, 80, 60);
-    reached = reached || nearby(r.game.round()) == 0;
-    hid = hid || r.game.round().hidden >= 0;
-  }
-  CHECK(reached && !hid && r.at("pumpkin_play"));
+  slidOntoChecked(r);
   gfx::textLogEnabled = false;
 }
 // FIND COVER's arrow never points at the spot she names, and within its reach the sign never says HOLD TO HIDE.
