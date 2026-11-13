@@ -29,6 +29,7 @@ struct View {
   bool rustling = false;              // hidden and tilting hard: the spot shakes ("SHH!")
   bool heard = false;                 // Grandma heard it: her next move checks that spot
   uint32_t startle = 0;               // ms left of the scared face and "!": she named its spot, so it jumped out
+  bool scared = false;                // in the open within reach of the spot she names: the scared face, no "!"
   uint8_t quip = 0;                   // which catch / pie / escape line, 0..QUIPS-1
 };
 constexpr int QUIPS = 4;

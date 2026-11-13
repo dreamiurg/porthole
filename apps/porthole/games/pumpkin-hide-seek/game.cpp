@@ -116,7 +116,7 @@ void Game::render() {
   const bool play = page_ == Page::Play;
   v.distract = play ? round_.distract : 0;
   v.rustling = play && round_.rustle >= 300; v.heard = play && round_.heard >= 0;
-  v.startle = play ? round_.startle : 0;
+  v.startle = play ? round_.startle : 0; v.scared = play && named(round_);
   v.quip = (uint8_t)(round_.seed % QUIPS);
   paint::draw(v);
 }
@@ -130,8 +130,8 @@ void Game::debugPrint() {
          round_.hidden, (unsigned)round_.elapsed, (unsigned)round_.exposure, ready(), starting_);
   printf("got=%u door=%d phase=%d move=%d checking=%d phew=%d\n", (unsigned)round_.got, doorOpen(round_),
          (int)round_.phase, (int)round_.move, checking(round_), round_.phew > 0);
-  printf("ghost=%d distract=%d heard=%d rustle=%d startle=%d refused=%d\n", round_.ghostUsed, round_.distract > 0,
-         round_.heard, round_.rustle > 0, round_.startle > 0, refuseMs_ > 0);
+  printf("ghost=%d distract=%d heard=%d rustle=%d startle=%d refused=%d scared=%d\n", round_.ghostUsed,
+         round_.distract > 0, round_.heard, round_.rustle > 0, round_.startle > 0, refuseMs_ > 0, named(round_));
   printf("neutralX=%d neutralY=%d neutralZ=%d\n", neutral_.x, neutral_.y, neutral_.z);
   printf("screen=%s\n", screenName());
 }

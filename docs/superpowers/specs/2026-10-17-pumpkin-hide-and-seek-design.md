@@ -299,3 +299,18 @@ Kept after the final code review (2026-11-13), one line each:
   in the open arms nothing.
 - The chair's reach covers the door, so a hold kept while heading out hides at the chair until the lift: HIDING says
   why, no round sticks, and a separate door rule would be a second exception to "within reach of cover while held".
+
+## Amendment: hold to hide, sixth fix pass (2026-11-13)
+
+The sixth kid playtest (`apps/porthole/docs/pumpkin-hold-playtest-6.md`) found its one major (M1) where Grandma
+names the spot the pumpkin is in or rolling into while it isn't hidden: the pumpkin kept its happy face, the text
+was the only cue, and with all three candies the chevrons pointed away from the lit door beside it. This pass:
+
+- **Scared while in her named reach.** During a Check, warning or search, a pumpkin out in the open within the
+  beam's reach (20 px) of the named spot wears the startle's scared face for as long as that holds (`named()`),
+  with no hop and no "!": those stay the startle's, for a pumpkin popped out of hiding.
+- **The arrow knows the door.** Once all three candies are collected, `coverDir()` (FIND COVER's arrow and the
+  chevrons) counts the door at x=24 as a target, so it points there when the door is nearer than the nearest usable
+  cover, with the same 6 px band. It also points to the door whenever a Check names the only cover between the
+  pumpkin and the door, so it never sends the kid back toward Grandma past the exit. This supersedes playtest 5
+  m4's kept "arrow toward Grandma when the chair is named" once the door is open.

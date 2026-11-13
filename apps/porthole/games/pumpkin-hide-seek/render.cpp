@@ -263,13 +263,13 @@ void furniture(const View& v) {
 }
 // It shivers and sweats while the beam passes over it. Startled out of the spot she names, it hops 4 px, and looks
 // scared under a "!" up and away from her side, clear of her "?" bubble: the non-word "not safe here" (kid playtests
-// 4, M1 and 5, m4).
+// 4, M1 and 5, m4). In the open by the spot she names it looks scared too, with no hop or "!" (kid playtest 6, M1).
 void player(const View& v) {
  int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
  if(v.shiver||v.rustling) { x+=int(v.animationMs/(v.shiver?60:80)%2); if(v.shiver) sweat(x,v.animationMs); }
  const int into=int(STARTLE_MS-v.startle),half=int(STARTLE_HOP_MS/2);
  const int hop=v.startle&&into<2*half?4-std::abs(into-half)*4/half:0;
- pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0,v.startle>0);
+ pumpkinFace(x,v.hidden>=0?101:99-hop,squash,v.hidden>=0,v.startle>0||v.scared);
  if(v.startle) bang(x-13,82-hop);
  if(v.hidden>=0) box(x-10,107,21,2,INK);
  sparkle(x,v.sinceCandy);

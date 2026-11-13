@@ -53,6 +53,7 @@ int coverDir(const Round& round);  // the way to cover, -1 or 1: FIND COVER's ar
 bool warning(const Round& round);
 bool searching(const Round& round);
 bool covered(const Round& round);  // the beam is over the hidden pumpkin
+bool named(const Round& round);    // out in the open within the beam's reach of the spot a Check names
 int checking(const Round& round);  // spot Grandma announces or checks, else -1
 float beamX(const Round& round);
 bool doorOpen(const Round& round);

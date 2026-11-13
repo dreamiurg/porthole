@@ -4,7 +4,7 @@
 namespace pumpkin {
 namespace {
 constexpr uint32_t WARN_MS = 2000, CHECK_WARN_MS = 3500, REST_MS = 2500, REST_SPAN_MS = 2000;
-constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, REACH = 7, TURN_BACK = 0.6f;
+constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, REACH = 7, TURN_BACK = 0.6f, BEAM = 20;
 float clamp(float n, float low, float high) { return n < low ? low : n > high ? high : n; }
 uint32_t rnd(Round& r) {  // xorshift32: a round needs variety, not quality
   r.seed ^= r.seed << 13; r.seed ^= r.seed >> 17; r.seed ^= r.seed << 5;
@@ -91,7 +91,7 @@ void collect(Round& r) {
   for (int i = 0; i < CANDIES; i++)
     if (!(r.got & (1 << i)) && fabsf(r.x - r.candy[i]) <= REACH) { r.got |= 1 << i; r.sinceCandy = 0; }
 }
-bool inBeam(const Round& r) { return searching(r) && fabsf(r.x - beamX(r)) <= 20; }
+bool inBeam(const Round& r) { return searching(r) && fabsf(r.x - beamX(r)) <= BEAM; }
 // Exposure builds only while seen: hidden is never seen, since nothing hides in the spot a Check names. PHEW! waits
 // for the end of a search the beam came close in: shown as the beam merely passed, it told a 6-year-old to let go
 // mid-search.
@@ -120,18 +120,30 @@ int cover(const Round& r) {
   const int s = nearby(r);
   return s == checking(r) ? -1 : s;
 }
-// Toward the nearest spot a Check isn't naming (cover()'s exclusion), but within 6 px of the midpoint between two
-// the one it last rolled toward: coasting past, the arrow turns once, ahead of it, instead of pointing back and
-// flipping (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there.
+// The door is open and the spot she names is the only cover on the way to it: any other cover is back toward her,
+// past the exit (kid playtest 6, M1).
+namespace {
+bool exitPastNamed(const Round& r) {
+  const int spot = checking(r);
+  if (!doorOpen(r) || spot < 0 || SPOTS[spot] >= r.x) return false;
+  for (int i = 0; i < 3; i++) if (i != spot && SPOTS[i] < r.x) return false;
+  return true;
+}
+}  // namespace
+// Toward the nearest spot a Check isn't naming (cover()'s exclusion), or the open door when it is nearer, but within
+// 6 px of the midpoint between two the one it last rolled toward: coasting past, the arrow turns once, ahead of it,
+// instead of pointing back and flipping (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there.
 int coverDir(const Round& r) {
-  int near = -1, next = -1;
-  auto far = [&r](int i) { return fabsf(r.x - SPOTS[i]); };
-  for (int i = 0; i < 3; i++) {
-    if (i == checking(r)) continue;
-    if (near < 0 || far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
-  }
-  if (next >= 0 && far(next) - far(near) < 12 && (SPOTS[next] - r.x) * (float)r.heading > 0) near = next;
-  return SPOTS[near] < r.x ? -1 : 1;
+  if (exitPastNamed(r)) return -1;
+  float at[4];
+  int n = 0, near = 0, next = -1;
+  for (int i = 0; i < 3; i++) if (i != checking(r)) at[n++] = SPOTS[i];
+  if (doorOpen(r)) at[n++] = DOOR_X;
+  auto far = [&](int i) { return fabsf(r.x - at[i]); };
+  for (int i = 1; i < n; i++)
+    if (far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
+  if (next >= 0 && far(next) - far(near) < 12 && (at[next] - r.x) * (float)r.heading > 0) near = next;
+  return at[near] < r.x ? -1 : 1;
 }
 // Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
 // shortcut: Grandma's phase is frozen for the 0.5 s, so a Check starting or ending inside it can mispredict
@@ -144,6 +156,9 @@ int arriving(const Round& r, float roll, uint32_t ms) {
 bool warning(const Round& r) { return r.phase == Phase::Warn; }
 bool searching(const Round& r) { return r.phase == Phase::Search; }
 bool covered(const Round& r) { return r.hidden >= 0 && inBeam(r); }
+bool named(const Round& r) {
+  return r.hidden < 0 && checking(r) >= 0 && fabsf(r.x - SPOTS[checking(r)]) <= BEAM;
+}
 int checking(const Round& r) { return r.move == Move::Check && r.phase != Phase::Rest ? r.spot : -1; }
 float beamX(const Round& r) {
   if (checking(r) >= 0) return SPOTS[r.spot];

@@ -14,8 +14,11 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   a hide): it hops 4 px in the first `STARTLE_HOP_MS` (400 ms) and, for the whole second, wears a scared face (wide
   CREAM eyes, a round INK "o" for its smile) under a CREAM "!" up and away from her side, at its x. Kept hidden
   under a RUN! sign, a non-reader of 6 held on and was caught (kid playtest 4, M1); a smile and a 0.4 s "!" undersold
-  the startle (kid playtest 5, m4). A finger still held stays armed, so it hides at the next cover it rolls into;
-  once a ghost hands the Check back, the spot is cover again, so a new press there hides it. It hides on the
+  the startle (kid playtest 5, m4). Out in the open within the beam's reach (20 px) of the spot a Check names, warned
+  or searched, it wears that scared face too, with no hop or "!", for as long as that holds (`named()`): rolled into
+  the named spot with a smile, a 6-year-old lost three of three (kid playtest 6, M1). A finger still held stays
+  armed, so it hides at the next cover it rolls into; once a ghost hands the Check back, the spot is cover
+  again, so a new press there hides it. It hides on the
   touch if it's within 13 px of cover, or the moment it rolls within 13 px of cover while still held, and comes
   out when that finger lifts. No toggle, so a double tap ends out and never pops
   it out mid-press. Tilt never ejects a hidden pumpkin. The sign says HOLD TO HIDE (cream) near a spot and
@@ -23,8 +26,11 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the
   nearest spot a Check isn't naming, or, within 6 px of the midpoint between two, the one it last rolled toward
   (`coverDir()`, from `Round::heading`), so coasting past turns it once and stopping there never flips it back (kid
-  playtest 4, n1); within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and that furniture's gold
-  in-reach strip stays dark. A finger on it away from cover, the named spot included (pressed or slid on), gets
+  playtest 4, n1). Once all three candies are collected the door at x=24 is one of those targets (band included), and
+  the arrow points to it whenever a Check names the only cover between the pumpkin and the door, so it never sends the
+  kid back toward Grandma past the exit (kid playtest 6, M1); within reach of the named spot it shows FIND COVER
+  too, never HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A finger on it away from
+  cover, the named spot included (pressed or slid on), gets
   the non-word "no" from the frame it arrives and for as long as it stays there or an armed hold lasts (drifted
   off the sign or not) with no cover, and `Game::REFUSE_MS` (1 s) after, so a quick tap shows it: the sign shakes
   3 px side to side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a
@@ -107,7 +113,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 Screen names are prefixed `pumpkin_`. Debug reports position, hiding, elapsed
 round time, exposure, calibration readiness, candy, Grandma's phase/move and PHEW, plus
 `ghost` (used), `distract` (crash showing), `heard` (spot, or -1), `rustle` (building) and
-`startle` (the scared second) and `refused` (the sign's "no" showing); it provides no gameplay cheats.
+`startle` (the scared second), `refused` (the sign's "no" showing) and `scared` (`named()`: in the open by the
+named spot); it provides no gameplay cheats.
 See `docs/superpowers/specs/2026-10-17-pumpkin-hide-and-seek-design.md` at repo root.
 
 ## Visual regression checks

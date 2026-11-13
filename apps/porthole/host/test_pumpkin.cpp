@@ -155,6 +155,21 @@ static void sweepsAndPhew() {
   CHECK(!r.caught && r.exposure == 0);  // ducking mid-exposure saves it
 }
 // Wiggling hard while hidden rustles the spot: Grandma's next move checks it. It never ejects.
+// Out in the open within the beam's reach (20 px) of the spot a Check names, warned or searched, it is in danger
+// (kid playtest 6, M1): the pumpkin keeps that fact, and the render shows the scared face for it.
+static void namedReach() {
+  Round r; r.x = SPOTS[1] + 20; stage(r, Move::Check, 1);
+  CHECK(named(r));
+  r.x = SPOTS[1] - 20; CHECK(named(r));
+  r.phase = Phase::Search; CHECK(named(r));
+  r.x = SPOTS[1] + 21; CHECK(!named(r));  // out of her reach
+  r.x = SPOTS[1]; r.phase = Phase::Rest; CHECK(!named(r));
+  stage(r, Move::Sweep); CHECK(!named(r));  // a sweep names nothing
+  Round h; h.x = SPOTS[1]; step(h, 0, true); stage(h, Move::Check, 1); step(h, 0, true);
+  CHECK(h.hidden == -1 && h.startle == STARTLE_MS && named(h));  // startled out, it stays in her reach
+  Round o; o.x = SPOTS[1]; step(o, 0, true); stage(o, Move::Check, 2); step(o, 0, true);
+  CHECK(o.hidden == 1 && !named(o));  // hidden elsewhere: safe
+}
 static void rustle() {
   Round r = newRound(5); r.x = SPOTS[1]; r.phaseLen = 600000;  // a long quiet rest
   step(r, 0, true);
@@ -502,7 +517,15 @@ static void startleLooks(Run& r) {
   CHECK(px(78, 83) != SAGE && bang() && scared() && saysNo());  // 0.45 s: landed, still alarmed
   for (int i = 0; i < 60; i++) r.frame(true);
   r.draw();
-  CHECK(!bang() && !scared() && saysNo());  // 1.05 s: the smile is back, still "no"
+  CHECK(!bang() && scared() && saysNo());  // 1.05 s: no "!", but still in her reach: still scared, still "no"
+}
+// In the open by the spot she names, the pumpkin wears the scared face with no hop and no "!" (kid playtest 6, M1).
+static void scaredLooks() {
+  View v; v.page = Page::Play; v.x = SPOTS[1]; v.nearby = 1; v.checking = 1; v.warning = true; v.scared = true;
+  paint::draw(v);
+  CHECK(scared() && !bang() && px(78, 83) != SAGE);
+  v.scared = false; paint::draw(v);
+  CHECK(!scared());
 }
 static void checkedSign() {
   Run r; r.playing();
@@ -545,9 +568,25 @@ static void namedSpotArrow() {
 }
 // Coasting past the midpoint between two spots, the arrow turns once, ahead of it, never back and forth (kid playtest
 // 4, n1), and stopped there it keeps pointing the way it last rolled. Never rolled, it points to the nearest spot.
-static bool arrowLeft(float x, int heading) {
+static bool arrowLeft(float x, int heading, bool door = false, int spot = -1) {
   Round r; r.x = x; r.heading = heading;
+  if (door) r.got = ALL_CANDY;
+  if (spot >= 0) stage(r, Move::Check, spot);
   return coverDir(r) < 0;
+}
+// With all three candies the open door is a way out: the arrow points at it when it is nearer than cover, and
+// whenever she names the only cover on the way to it, so it never sends the kid back toward her past the exit (kid
+// playtest 6, M1). The band still applies.
+static void doorArrow() {
+  CHECK(!arrowLeft(28, 0) && arrowLeft(28, 0, true) && !arrowLeft(28, 1, true));  // door 4 px, chair 8 px
+  CHECK(!arrowLeft(40, 0, false, 0) && arrowLeft(40, 0, true, 0));  // the chair named: door 16 px, table 40 px
+  CHECK(!arrowLeft(60, 0, false, 0) && arrowLeft(60, 0, true, 0) && arrowLeft(60, 1, true, 0));  // the table nearer
+  CHECK(!arrowLeft(60, 0, true) && arrowLeft(60, -1, true));  // nothing named: the nearer cover, band as before
+  CHECK(!arrowLeft(100, 0, true, 1));  // the table named, the chair still on the way: the plant is nearer
+  Round r; r.x = 60; r.got = ALL_CANDY; stage(r, Move::Check, 0);
+  View v; v.page = Page::Play; v.x = r.x; v.checking = 0; v.warning = true; v.doorOpen = true; v.coverDir = coverDir(r);
+  int x = 0; gfx::textLogReset(); paint::draw(v);
+  CHECK(textW(127, &x) == 59 && x == 56);  // FIND COVER right of a left arrow: to the door
 }
 static bool arrowLeft(Run& r) {  // as drawn: FIND COVER sits right of a left arrow
   int at = 0; r.draw(); textW(127, &at);
@@ -751,6 +790,6 @@ static void renderPages() {
 }
 int main() {
   gfx565::target(pixels); gfx::textLogEnabled = true;  // every render test reads these pixels and the text log
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); startled(); checkedSpot(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); hiddenSign(); checkedSign(); namedSpotArrow(); arrowBand(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); startled(); namedReach(); checkedSpot(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); hiddenSign(); checkedSign(); scaredLooks(); namedSpotArrow(); arrowBand(); doorArrow(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }
