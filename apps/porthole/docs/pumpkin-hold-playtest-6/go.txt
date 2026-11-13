@@ -1,0 +1,2 @@
+# usage: bash go.txt < batch   (sends a batch to the driver and waits for its reply)
+P=$(dirname "$0"); cat > "$P/cmd.fifo"; cat "$P/resp.fifo"
