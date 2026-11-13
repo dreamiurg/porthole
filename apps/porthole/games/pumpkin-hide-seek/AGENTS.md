@@ -4,25 +4,28 @@ A silent, forgiving hide-and-seek round in one cozy Halloween room: grab three c
 The launcher label is `Spooky` ("Pumpkin" is too wide for a slot on a page of three); namespace `pumpkin` is reserved, but this slice
 writes no saves. No lives, score, offline simulation or progression to migrate.
 
-- `rules.*`: allocation-free 10 ms simulation, horizontal roll between x=24..136
-  on y=99, three hiding spots (36,80,124), 60 mg dead zone, friction and bounded
-  acceleration. Hold to hide: the pumpkin is hidden exactly while a finger that touched the action
-  sign stays on the glass, wherever it drifts. A press that began on the sign arms anywhere; a finger
-  slid onto it arms only where it can hide at once (within reach of a spot), so a finger crossing the
-  sign in the open never hides the pumpkin later. It hides on the touch if it's within 13 px of a
-  spot, or the moment it rolls within 13 px while still held, and comes out when that finger lifts. No
-  toggle, so a double tap ends out and never pops it out mid-press. Tilt never ejects a hidden pumpkin.
-  The sign says HOLD TO HIDE (cream) near a spot and HIDING while hidden; it draws pressed (gold, its
-  word 2 px lower) only while hidden. Hidden in the spot a Check names, from the warning's first frame,
-  it is pressed but RUST with CREAM RUN!, and the pumpkin shivers and sweats: a safe-looking HIDING
-  until 0.7 s before the catch left a non-reader no way out (kid playtest 2, M1). Away from cover it is
-  flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward
-  the nearest spot a Check isn't naming; within reach of the named spot it shows FIND COVER too, never
-  HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A finger reaching it there (pressed or slid on) gets the non-word "no" for
-  `REFUSE_MS` (1 s): the sign shakes 3 px side to side and three CREAM chevrons march toward cover in
-  place of the words, plain in any single frame (a 2 px shake alone went unseen, kid playtest 2, m2). No
-  "no" while the pumpkin is already rolling into reach (within 0.5 s at its speed): it just hides on
-  arrival.
+- `rules.*`: allocation-free 10 ms simulation, horizontal roll between x=24..136 on y=99, three hiding spots
+  (36,80,124), 60 mg dead zone, friction and bounded acceleration. Hold to hide: the pumpkin is hidden
+  exactly while a finger that touched the action sign stays on the glass, wherever it drifts. A press that
+  began on the sign arms anywhere; a finger slid onto it arms only where it can hide at once (within reach
+  of cover), so a finger crossing the sign in the open never hides the pumpkin later. Cover is a spot a
+  Check isn't naming: the named spot is decided, so a new hide there does nothing (`cover()`), while one
+  hidden there before she named it stays hidden. It hides on the touch if it's within 13 px of cover, or the
+  moment it rolls within 13 px of cover while still held, and comes out when that finger lifts. No toggle,
+  so a double tap ends out and never pops it out mid-press. Tilt never ejects a hidden pumpkin. The sign
+  says HOLD TO HIDE (cream) near a spot and HIDING while hidden; it draws pressed (gold, its word 2 px
+  lower) only while hidden. Hidden in the spot a Check names, from the warning's first frame, it is pressed
+  but RUST with CREAM RUN!, and the pumpkin shivers and sweats (in Play only): a safe-looking HIDING until
+  0.7 s before the catch left a non-reader no way out (kid playtest 2, M1). Away from cover it is flat and
+  dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward the nearest
+  spot a Check isn't naming; within reach of the named spot it shows FIND COVER too, never HOLD TO HIDE, and
+  that furniture's gold in-reach strip stays dark. A finger reaching it away from cover, the named spot
+  included (pressed or slid on), gets the non-word "no" for `REFUSE_MS` (1 s): the sign shakes 3 px side to
+  side and three CREAM chevrons march toward cover in place of the words, plain in any single frame (a 2 px
+  shake alone went unseen, kid playtest 2, m2). The "no" is skipped only while it really rolls into cover
+  within 0.5 s at the current tilt (`arriving()` rolls a copy, friction included): it just hides on arrival.
+  Speed alone promised that for a pumpkin just levelled, which stops short, and a 6-year-old's press then
+  showed nothing (kid playtest 3, m1).
 - Goal: roll over three candy corns (within 7 px, never while hidden), then reach the
   door at x=24 out in the open. No timer: staying hidden stalls, it never wins. Candy
   sits at 52..66, 94..108 and 130..136, drawn from the round's seed.

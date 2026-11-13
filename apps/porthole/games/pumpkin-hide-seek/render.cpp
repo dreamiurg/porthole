@@ -263,7 +263,7 @@ void furniture(const View& v) {
 }
 void player(const View& v) {
  // Hidden in the spot she names, it shivers and sweats from the warning's first frame: the non-word "not safe".
- const bool shiver=v.shiver||(v.hidden>=0&&v.hidden==v.checking);
+ const bool shiver=v.page==Page::Play&&(v.shiver||(v.hidden>=0&&v.hidden==v.checking));
  int squash=std::abs(v.velocity)>5?int((v.animationMs/100)%3)-1:0,x=static_cast<int>(v.x);
  if(shiver||v.rustling) { x+=int(v.animationMs/(shiver?60:80)%2); if(shiver) sweat(x,v.animationMs); }
  pumpkinFace(x,v.hidden>=0?101:99,squash,v.hidden>=0);

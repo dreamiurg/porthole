@@ -42,14 +42,16 @@ struct Round {
   uint32_t distract = 0;  // ms of "WHAT WAS THAT?" left
 };
 Round newRound(uint32_t seed);
-int nearby(const Round& round, float leadSec = 0);  // the spot in reach, `leadSec` from now at this speed, else -1
+int nearby(const Round& round);  // the spot in reach, else -1
+int cover(const Round& round);   // the spot in reach it can hide in (not the one a Check names), else -1
+int arriving(const Round& round, float roll, uint32_t ms);  // the cover it rolls into within `ms` at this tilt, else -1
 bool warning(const Round& round);
 bool searching(const Round& round);
 int checking(const Round& round);  // spot Grandma announces or checks, else -1
 float beamX(const Round& round);
 bool doorOpen(const Round& round);
-// hold: a finger that touched the action sign (pressed there, or slid on within reach of a spot) is still on the glass.
-// The pumpkin hides the moment it is within reach of a spot while held and comes out when the finger lifts: no toggle,
-// so a double tap can't pop it out.
+// hold: a finger that touched the action sign (pressed there, or slid on within reach of cover) is still on the glass.
+// The pumpkin hides the moment it is within reach of cover while held and comes out when the finger lifts: no toggle,
+// so a double tap can't pop it out. The spot a Check names is not cover: one hidden there before stays hidden.
 void step(Round& round, float roll, bool hold, bool ghost = false);
 }  // namespace pumpkin

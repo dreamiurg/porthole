@@ -93,6 +93,20 @@ static void spotCheck() {
   tick(r, 1500, 1000);  // came out during the warning and rolled away
   CHECK(!r.caught && r.x > SPOTS[1] + 20);
 }
+// The spot she names is decided: a new hide there does nothing, so held through it the pumpkin rolls on to the next
+// spot, and a re-press there neither snaps it back nor stops it. One hidden before she named it stays hidden.
+static void checkedSpot() {
+  Round r; r.x = SPOTS[0] + 14; stage(r, Move::Check, 1); r.phaseLen = 600000;  // a long warning: no catch
+  bool table = false;
+  for (int t = 0; t < 6000 && r.hidden < 0; t += STEP_MS) { step(r, 1000, true); table = table || r.hidden == 1; }
+  CHECK(!table && r.hidden == 2 && r.x == SPOTS[2]);
+  r = Round{}; step(r, 0, true); stage(r, Move::Check, 1); r.phaseLen = 600000;
+  tick(r, 100); CHECK(r.hidden == 1);
+  step(r, 0, false); tick(r, 200, 1000);
+  const float x = r.x;
+  CHECK(nearby(r) == 1 && r.velocity > 0);
+  step(r, 0, true); CHECK(r.hidden == -1 && r.x > x && r.velocity > 0);
+}
 // Mashing the sign during a Check of the pumpkin's own spot is caught as surely as holding there: a hide never
 // resets exposure, so a 120 ms tap every 800 ms can't outlast her.
 static void mashing() {
@@ -397,16 +411,21 @@ static void signLooks() {
   CHECK(h.game.round().hidden == 1 && goldInSign() > 0);
   gfx::textLogEnabled = false;
 }
-// Already rolling into reach of the plant: no "no", it just hides on arrival.
+// Already rolling into reach of the plant: no "no", it just hides on arrival. Levelled short of it, it stops in the
+// open, so the same press says "no" (kid playtest 3, m1: nothing changed for a 2 s press).
 static void rollingIn() {
   gfx565::target(pixels);
-  Run c; c.start(); c.wait(500);
-  c.gravity = grip::gravityFor(400, 0, grip::FLAT);
-  while (nearby(c.game.round()) >= 0 || nearby(c.game.round(), 0.5f) < 0) c.frame();
-  c.frame(true); gfx::textLogReset(); c.game.render();
-  CHECK(c.game.round().hidden == -1 && inSign(CREAM) == 0 && px(38, 135) != INK);
-  for (int i = 0; i < 100 && c.game.round().hidden < 0; i++) c.frame(true);
-  CHECK(c.game.round().hidden == 2);
+  for (bool level : {false, true}) {
+    Run c; c.start(); c.wait(500);
+    c.gravity = grip::gravityFor(400, 0, grip::FLAT);
+    for (int i = 0; i < 1000 && c.game.round().x < SPOTS[2] - (level ? 22 : 18); i++) c.frame();
+    CHECK(nearby(c.game.round()) < 0 && c.game.round().velocity > 15);
+    if (level) c.gravity = grip::FLAT;
+    c.frame(true); c.game.render();
+    CHECK(c.game.round().hidden == -1 && (inSign(CREAM) > 20) == level);
+    for (int i = 0; i < 100 && c.game.round().hidden < 0; i++) c.frame(true);
+    CHECK((c.game.round().hidden == 2) != level);
+  }
 }
 // A Check of the pumpkin's own spot never looks safe: from the warning's first frame the sign reads RUN! on rust,
 // not gold, and the pumpkin shivers and sweats.
@@ -421,6 +440,35 @@ static void ownSpotChecked() {
     CHECK(own ? inSign(RUST) > 0 && goldInSign() == 0 : goldInSign() > 0);
     CHECK((inBox(SKY, 60, 84, 101, 99) > 0) == own);  // sweat drops
   }
+  for (Page page : {Page::Catch, Page::Icing}) {  // caught there: the round is over, no more "not safe"
+    View v; v.page = page; v.hidden = 1; v.x = SPOTS[1]; v.checking = 1; v.searching = true;
+    paint::draw(v); CHECK(inBox(SKY, 60, 84, 101, 99) == 0);
+  }
+  gfx::textLogEnabled = false;
+}
+// Hidden at the table when she names it, the real sign reads RUN! on rust and the pumpkin sweats. Let out, in reach
+// of the table, a press or a finger slid on there gets the chevron "no" and never hides it or arms the hold.
+static void checkedSign() {
+  gfx565::target(pixels); gfx::textLogEnabled = true;
+  Run r; r.start(); r.wait(500);
+  for (int i = 0; i < 60000 && !(warning(r.game.round()) && checking(r.game.round()) == 1); i++) r.frame(true);
+  CHECK(warning(r.game.round()) && checking(r.game.round()) == 1 && r.game.round().hidden == 1);
+  gfx::textLogReset(); r.game.render();
+  CHECK(textW(129) == 23 && inSign(RUST) > 0 && goldInSign() == 0 && inBox(SKY, 60, 84, 101, 99) > 0);
+  r.frame(false); r.frame(true); r.game.render();
+  CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // pressed there: "no"
+  for (int i = 0; i < 110; i++) r.frame(true);
+  CHECK(r.game.round().hidden == -1);
+  r.frame(false); r.frame(true, 80, 60); r.frame(true); r.game.render();
+  CHECK(r.game.round().hidden == -1 && inSign(CREAM) > 20);  // slid on there: "no"
+  r.gravity = grip::gravityFor(-400, 0, grip::FLAT);  // and it armed nothing: drifted off, rolled into the chair
+  bool reached = false, hid = false;
+  for (int i = 0; i < 300 && r.at("pumpkin_play"); i++) {
+    r.frame(true, 80, 60);
+    reached = reached || nearby(r.game.round()) == 0;
+    hid = hid || r.game.round().hidden >= 0;
+  }
+  CHECK(reached && !hid && r.at("pumpkin_play"));
   gfx::textLogEnabled = false;
 }
 // FIND COVER's arrow never points at the spot she names, and within its reach the sign never says HOLD TO HIDE.
@@ -450,13 +498,15 @@ static void namedSpotArrow() {
 // A finger crossing the sign in the open arms nothing: drifted off and rolled into cover, the pumpkin stays out.
 // A press that began on the sign still hides on arrival, wherever the finger went.
 static void crossingSign() {
+  gfx565::target(pixels);
   for (bool pressedThere : {false, true}) {
     Run r; r.start(); r.wait(500);
     r.gravity = grip::gravityFor(400, 0, grip::FLAT);
     while (nearby(r.game.round()) >= 0) r.frame();
     r.gravity = grip::FLAT; r.wait(1000);
     if (!pressedThere) r.frame(true, 80, 60);
-    for (int i = 0; i < 20; i++) r.frame(true);
+    r.frame(true); r.game.render(); CHECK(inSign(CREAM) > 20);  // reached the sign out in the open: "no"
+    for (int i = 0; i < 19; i++) r.frame(true);
     CHECK(r.game.round().hidden == -1);
     for (int i = 0; i < 20; i++) r.frame(true, 80, 60);
     r.gravity = grip::gravityFor(400, 0, grip::FLAT);
@@ -635,6 +685,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); ownSpotChecked(); namedSpotArrow(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); checkedSpot(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); rollingIn(); ownSpotChecked(); checkedSign(); namedSpotArrow(); crossingSign(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
   printf("pumpkin: %d checks passed\n", checks);
 }

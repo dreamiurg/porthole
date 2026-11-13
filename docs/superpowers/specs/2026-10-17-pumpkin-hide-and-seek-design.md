@@ -135,8 +135,8 @@ spot looked safe until too late (M1), and that a press on the dark sign showed n
   during a Check, mashing included, the label is RUN AWAY!, never QUICK! HIDE!: hiding can't help there.
 - **The sign never invites a hide in the named spot.** Out in the open, FIND COVER's arrow points to the
   nearest spot she isn't naming, and within reach of the named spot the sign stays FIND COVER rather than
-  HOLD TO HIDE and the furniture's in-reach strip stays dark (pressing there still hides; the sign then says
-  RUN!).
+  HOLD TO HIDE and the furniture's in-reach strip stays dark. *(Superseded in part: this pass still let a
+  press there hide, under a RUN! sign; the third fix pass below refuses it.)*
 - **A finger crossing the sign in the open arms nothing.** A finger slid onto the sign arms only where the
   pumpkin can hide at once. A press that began on the sign still hides on arrival, wherever it drifts.
 - **"No" you can see.** The old 2 px, 480 ms shake was in the playtest's frames but went unnoticed. A finger
@@ -146,7 +146,8 @@ spot looked safe until too late (M1), and that a press on the dark sign showed n
 
 Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptance rule 5):
 
-- Playtest 1 m3 (named spot is a reading-only rule): fixed by this pass's RUN! sign and shiver.
+- Playtest 1 m3 (named spot is a reading-only rule): the RUN! sign and shiver fix it for a pumpkin already
+  hidden there; it is fixed outright only by the third fix pass, which refuses a new hide in the named spot.
 - Playtest 1 m4 (rustle explained in words): the spot jiggles with marks and "!" over Grandma; rolling in is no
   longer heard, and a heard rustle only brings a warned Check, so it costs a visit, not the round.
 - Playtest 1 m6 / playtest 2 m5 ("YOU LOST"): out of scope for this pass; the pie captions keep it playful
@@ -164,13 +165,50 @@ Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptanc
 - Playtest 1 n5 / playtest 2 n2 (win card overlap, win picture): cosmetic, for pixel-artist.
 - Playtest 1 n6 / playtest 2 n1 (pumpkin slow for an 8-year-old): suits the 6-year-old; speed is tuned for
   the youngest players and the 0.7 s-late bot.
-- Playtest 1 n7 / playtest 2 m1 (wall-picture exit, 600 ms hold): out of scope; the hold is the shared rule
-  for a way out a hand may brush, and it costs only that round's candy.
+- Playtest 1 n7 / playtest 2 m1 (wall-picture exit, 600 ms hold): out of scope; to outlast a 6-year-old's
+  ordinary 1-3 s press the hold would have to exceed 3 s, which fights a way out that must always be
+  reachable. The cost is real: a mistaken exit ends the round, and the next visit calibrates again.
 - Playtest 1 m5 / playtest 2 m3 (same candy lanes, one room): out of scope; varying them is a design change
   for game-designer (more rooms are the planned later phase).
+- Playtest 1 m5 (the ghost trivializes the first visit): it is once a round, so spending it on the opener,
+  the easiest visit, leaves every later Check and fast sweep unaided; a quick round is the reward for a kid
+  who found the trick, not a hole.
 - Playtest 2 m4 (ghost's purpose invisible to a non-reader): out of scope; Grandma visibly turns to the crash
   and leaves, which an 8-year-old decoded. A clearer cue is game-designer's.
-- Playtest 2 n5 (sign hit area has no padding): 80x24 already exceeds the 24x22 floor; padding below would
-  crowd the bezel.
+- Playtest 2 n5 (sign hit area has no padding): 80x24 already exceeds the 24x22 floor.
 - Playtest 2 n6 (arrow flips between two spots): it always points at the nearest real cover, so a flip at the
   midpoint is truthful.
+
+## Amendment: hold to hide, third fix pass (2026-11-13)
+
+The third kid playtest (`apps/porthole/docs/pumpkin-hold-playtest-3.md`) judged the hold acceptable, with one
+minor worth fixing (m1); review found the named spot still took a new hide. Changes:
+
+- **The named spot is not cover.** Once a Check names a spot it is decided: a new hide there does nothing, so a
+  press there gets the chevron "no", a finger slid on there doesn't arm, and a pumpkin held through it rolls
+  on and hides in the next spot. One hidden there before she named it stays hidden under RUN!.
+- **"No" while rolling, unless it really arrives.** The 0.5 s look-ahead rolls a copy of the pumpkin at the
+  current tilt, friction included, toward a spot she isn't naming. Speed alone promised arrival for a pumpkin
+  just levelled, which stops short, so a 6-year-old's press while it coasted showed nothing (m1).
+- The shiver and sweat show only in Play, not on the catch and frosting pages.
+
+Deferred playtest-3 findings, one line each:
+
+- m2 (a forgotten thumb keeps it hidden and frozen): the hold lasting wherever the finger drifts is the fix
+  for playtest 1's mid-search pop-out; lifting recovers at once, the spot jiggles under SHH!, and a heard
+  rustle brings a warned Check with the RUN! sign, so holding on costs a visit before it costs the round.
+  A "lift your finger" picture would be a new cue for game-designer and pixel-artist.
+- m3 (a mash carried through the frosting restarts from YOU LOST): out of scope; the 2.2 s catch and frosting
+  already show the loss, and a longer guard on TRY AGAIN would make it deaf to a deliberate press.
+- m4 (wall-picture exit after a firm press): as playtest 1 n7 above; Leo never hit it by accident in play.
+- m5 (repetition, passive sweeps): out of scope; candy lanes and Grandma's moves are game-designer's, and the
+  bot suite keeps every round winnable at the current pacing.
+- n1 (bubble flicker during a rustle): each label is true when shown and the rustle cue is meant to be loud;
+  debouncing the label row is a separate change.
+- n2 (no pressed look on START / READY / TRY AGAIN): as playtest 1 n4 above.
+- n3 (the "?" bubble, pointing arm or beam pool left on a result card): cosmetic, and it would change the
+  victory golden; a follow-up for pixel-artist.
+- n4 (the READY! label draws a press): the stumble cost Leo nothing, and his next press found the button
+  just below it.
+- n5 (unseen at Grandma's feet): the beam is the rule, and it is drawn; a 6-year-old can read the light.
+- n6 (slow pumpkin): as playtest 1 n6 above.

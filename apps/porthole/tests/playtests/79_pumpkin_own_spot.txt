@@ -16,6 +16,7 @@ expect checking=-1
 wait 2000
 expect hidden=1
 expect checking=1
+expect phase=1
 ui-check pumpkin_play-run
 snap pumpkin_own_spot_run
 up

@@ -41,7 +41,7 @@ class Game : public App {
   void start();
   void calibrate();
   void play(uint32_t dt);
-  void sign(uint32_t dt);
+  void sign(uint32_t dt, float roll);
   bool ready() const;
   bool action() const;
   bool leaving();

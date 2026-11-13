@@ -54,7 +54,7 @@ void rollPumpkin(Round& r, float roll) {
 void hide(Round& r, bool hold) {
   if (!hold) { r.hidden = -1; return; }
   if (r.hidden >= 0) return;
-  r.hidden = nearby(r);
+  r.hidden = cover(r);
   if (r.hidden < 0) return;
   r.x = SPOTS[r.hidden];
   r.velocity = 0;
@@ -110,10 +110,19 @@ Round newRound(uint32_t seed) {
   r.candy[2] = (float)(130 + rnd(r) % 7);   // out on Grandma's side
   return r;
 }
-int nearby(const Round& r, float leadSec) {
-  const float x = r.x + r.velocity * leadSec;
-  for (int i = 0; i < 3; i++) if (fabsf(x - SPOTS[i]) <= 13) return i;
+int nearby(const Round& r) {
+  for (int i = 0; i < 3; i++) if (fabsf(r.x - SPOTS[i]) <= 13) return i;
   return -1;
+}
+int cover(const Round& r) {
+  const int s = nearby(r);
+  return s == checking(r) ? -1 : s;
+}
+// Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
+int arriving(const Round& r, float roll, uint32_t ms) {
+  Round c = r;
+  for (uint32_t t = 0; cover(c) < 0 && t < ms; t += STEP_MS) rollPumpkin(c, roll);
+  return cover(c);
 }
 bool warning(const Round& r) { return r.phase == Phase::Warn; }
 bool searching(const Round& r) { return r.phase == Phase::Search; }
