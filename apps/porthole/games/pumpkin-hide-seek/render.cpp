@@ -309,12 +309,27 @@ const char* playLabel(const View& v) {
  if(v.doorOpen) return "TO THE DOOR!";
  return nullptr;
 }
+// Away from cover there is nothing to press: the sign goes flat and dim, never gold, with an arrow that bobs
+// toward the nearest spot, and a press shakes it "no" (a non-reader held a gold FIND COVER and was caught).
+void coverSign(const View& v) {
+ int nearest=0;
+ for(int i=1;i<3;++i) if(std::fabs(v.x-SPOTS[i])<std::fabs(v.x-SPOTS[nearest])) nearest=i;
+ const int dir=SPOTS[nearest]<v.x?-1:1,shake=v.refusedMs<480?(v.refusedMs/60%2?2:-2):0;
+ const int bob=int(v.animationMs/200%2)*dir,tip=(dir<0?45:114)+shake+bob;
+ box(40+shake,119,80,24,INK); box(42+shake,121,76,20,WALL);
+ text(127,"FIND COVER",GREY,1,80+shake+(dir<0?6:-5));
+ for(int i=0;i<4;++i) box(tip-dir*i,130-i,1,2*i+1,GREY);  // the head, then the shaft
+ box(dir<0?tip+4:tip-6,129,3,3,GREY);
+}
 void play(const View& v) {
  candyHud(v.got);
  // While the ghost can be tapped the row sits right of middle, so even a 14-letter plate (x 46..136) clears its
  // box {22,30,24,24}; once it's used the box is gone and the row centres, off Grandma's glasses.
  if(const char* s=playLabel(v)) label(49,s,v.ghostReady?92:80);
- button(v.hidden>=0?"HIDING":v.nearby>=0?"HOLD TO HIDE":"FIND COVER",v.holding);
+ // Gold, pressed, only while really hidden; seen there, it agrees with RUN AWAY!.
+ if(v.hidden>=0) button(v.exposure>0?"RUN!":"HIDING",true);
+ else if(v.nearby>=0) button("HOLD TO HIDE");
+ else coverSign(v);
 }
 void icing(uint32_t ms) {
  for(int x=0;x<160;++x) {

@@ -93,12 +93,27 @@ static void spotCheck() {
   tick(r, 1500, 1000);  // came out during the warning and rolled away
   CHECK(!r.caught && r.x > SPOTS[1] + 20);
 }
+// Mashing the sign during a Check of the pumpkin's own spot is caught as surely as holding there: a hide never
+// resets exposure, so a 120 ms tap every 800 ms can't outlast her.
+static void mashing() {
+  for (uint32_t period : {800u, 400u, 200u}) {
+    Round r; r.x = SPOTS[1]; step(r, 0, true);
+    stage(r, Move::Check, 1);
+    tick(r, 1000); CHECK(searching(r) && r.hidden == 1);
+    uint32_t t = 0;
+    for (; !r.caught && t < 2000; t += STEP_MS) step(r, 0, t % period < 120);
+    CHECK(r.caught && t <= CATCH_MS + STEP_MS);
+  }
+}
 static void sweepsAndPhew() {
   Round r; r.x = SPOTS[1]; r.hidden = 1;
   stage(r, Move::Sweep);
   tick(r, 1000 + 2500); CHECK(r.covered && !r.caught && r.phew == 0);
-  tick(r, 1500); CHECK(!r.covered && r.phew > 0 && !r.caught);
+  tick(r, 1500); CHECK(!r.covered && searching(r) && r.phew == 0);  // passed, but she is still looking
+  tick(r, 1000); CHECK(!searching(r) && r.phew > 0 && !r.caught);   // PHEW! once she gives up
   tick(r, PHEW_MS); CHECK(r.phew == 0);
+  r = Round{}; r.x = 30; r.hidden = 0; stage(r, Move::Check, 2); tick(r, 4000);
+  CHECK(!searching(r) && r.phew == 0);  // no close call, no PHEW!
   r = Round{}; r.x = SPOTS[2]; r.hidden = 2; stage(r, Move::TurnBack);
   tick(r, 1000 + 2000); CHECK(beamX(r) < 80 && beamX(r) > 60);  // turns back short of the chair
   tick(r, 1990); CHECK(beamX(r) > 130);
@@ -113,7 +128,8 @@ static void sweepsAndPhew() {
 }
 // Wiggling hard while hidden rustles the spot: Grandma's next move checks it. It never ejects.
 static void rustle() {
-  Round r = newRound(5); r.x = SPOTS[1]; r.hidden = 1; r.phaseLen = 600000;  // a long quiet rest
+  Round r = newRound(5); r.x = SPOTS[1]; r.phaseLen = 600000;  // a long quiet rest
+  step(r, 0, true);
   tick(r, RUSTLE_MS - 100, 1000); CHECK(r.heard < 0 && r.rustle > 0);  // a short wiggle is fine
   tick(r, 300); CHECK(r.rustle == 0);                                    // holding still calms it
   tick(r, 1000, RUSTLE_MG - 50); CHECK(r.rustle == 0 && r.heard < 0);    // a gentle tilt is not a rustle
@@ -122,9 +138,18 @@ static void rustle() {
   CHECK(warning(r) && r.move == Move::Check && checking(r) == 1 && r.phaseLen == 3500 && r.heard < 0);
   r = newRound(5); r.phaseLen = 600000; tick(r, 2000, 1000);
   CHECK(r.heard < 0 && r.rustle == 0);  // rolling in the open is not rustling
-  r = newRound(5); r.x = SPOTS[0]; r.hidden = 0; tick(r, RUSTLE_MS + 100, 1000);
+  r = newRound(5); r.x = SPOTS[0]; step(r, 0, true); tick(r, RUSTLE_MS + 100, 1000);
   CHECK(r.heard == 0);
   tick(r, 3000 - RUSTLE_MS - 100); CHECK(warning(r) && r.move == Move::Sweep && r.heard == 0);  // the opener still teaches
+}
+// Rolled into cover at full tilt while held: no rustle until the tilt has eased once.
+static void rustleOnArrival() {
+  Round r = newRound(5); r.phaseLen = 600000; r.x = SPOTS[1] + 30;
+  for (int t = 0; t < 3000; t += STEP_MS) step(r, -1000, true);
+  CHECK(r.hidden == 1 && r.rustle == 0 && r.heard < 0);
+  step(r, RUSTLE_MG, true); tick(r, RUSTLE_MS, -1000); CHECK(r.heard == 1);  // eased, then a shove rustles
+  step(r, 0, false); step(r, 0, true); tick(r, RUSTLE_MS / 2, 1000);
+  CHECK(r.hidden == 1 && r.rustle > 0);  // each hide settles again, but a level press settles at once
 }
 // The ghost at the window knocks something over once a round: Grandma goes to look.
 static void ghostTap() {
@@ -303,10 +328,53 @@ static void holdToHide() {
   c.frame(true); CHECK(c.game.round().hidden == -1);
   for (int i = 0; i < 300 && c.game.round().hidden < 0; i++) c.frame(true);
   CHECK(c.game.round().hidden == 2 && c.game.round().x == SPOTS[2]);
-  // A press that begins off the sign and slides onto it does nothing.
+}
+static void slideOnto() {
+  // A finger that lands elsewhere and slides onto the sign hides, and keeps it hidden wherever it goes next.
   Run s; s.start(); s.wait(500); s.frame(true, 80, 60);
-  for (int i = 0; i < 50; i++) s.frame(true);
   CHECK(s.game.round().hidden == -1);
+  for (int i = 0; i < 50; i++) s.frame(true);
+  CHECK(s.game.round().hidden == 1);
+  for (int i = 0; i < 50; i++) s.frame(true, 80, 60);
+  CHECK(s.game.round().hidden == 1);
+  s.frame(false, 80, 60); CHECK(s.game.round().hidden == -1);
+  // From the ghost onto the sign: it hides, and the lift on the sign is no ghost tap.
+  Run g; g.start(); g.wait(500);
+  for (int i = 0; i < 20; i++) g.frame(true, 34, 42);
+  for (int i = 0; i < 50; i++) g.frame(true);
+  CHECK(g.game.round().hidden == 1);
+  g.frame(false); g.wait(100);
+  CHECK(g.game.round().hidden == -1 && !g.game.round().ghostUsed);
+  // From Home onto the sign: it hides, and Home's hold stops counting.
+  Run h; h.start(); h.wait(500);
+  for (int i = 0; i < 30; i++) h.frame(true, 80, 19);
+  for (int i = 0; i < 100; i++) h.frame(true);
+  CHECK(h.game.round().hidden == 1 && !h.game.wantsHome() && h.at("pumpkin_play"));
+}
+static uint16_t pixels[gfx565::W * gfx565::H];
+static uint16_t px(int x, int y) { return pixels[(3 * y + 1) * gfx565::W + 3 * x + 1]; }
+static constexpr uint16_t rgb(unsigned c) { return ((c >> 8) & 0xf800) | ((c >> 5) & 0x7e0) | ((c >> 3) & 31); }
+static int goldInSign() {
+  int n = 0;
+  for (int y = 119; y < 143; y++) for (int x = 36; x < 124; x++) n += px(x, y) == rgb(0xffc875);
+  return n;
+}
+// Away from cover the sign never looks pressed: it shakes "no" on the press and stays flat. Gold means hidden.
+static void signLooks() {
+  gfx565::target(pixels);
+  constexpr uint16_t INK = rgb(0x201d32);
+  Run r; r.start(); r.wait(500);
+  r.gravity = grip::gravityFor(400, 0, grip::FLAT);
+  while (nearby(r.game.round()) >= 0) r.frame();
+  r.gravity = grip::FLAT; r.wait(1500);
+  CHECK(nearby(r.game.round()) < 0 && r.game.round().velocity == 0);
+  r.game.render(); CHECK(goldInSign() == 0 && px(38, 135) != INK);
+  r.frame(true); r.game.render();
+  CHECK(r.game.round().hidden == -1 && goldInSign() == 0 && px(38, 135) == INK);  // shaken left
+  for (int i = 0; i < 60; i++) r.frame(true);
+  r.game.render(); CHECK(goldInSign() == 0 && px(38, 135) != INK);  // still held, still flat, done shaking
+  Run h; h.start(); h.wait(500); h.frame(true); h.game.render();
+  CHECK(h.game.round().hidden == 1 && goldInSign() > 0);
 }
 // The ghost acts on the lift of a press of any length; a thumb already down when the round began does nothing.
 static void restingThumb() {
@@ -377,7 +445,6 @@ static void clocks() {
   CHECK(r.game.round().elapsed == before + 120);
   r.enter(); CHECK(r.at("pumpkin_intro") && r.game.round().elapsed == 0);
 }
-static uint16_t pixels[gfx565::W * gfx565::H];
 static void auditText() {
   for (int i = 0; i < gfx::textLogCount; i++) {
     const auto b = gfx::textLog[i];
@@ -422,6 +489,18 @@ static void labelRow() {
       }
       CHECK(found == 1);
     }
+  }
+  gfx::textLogEnabled = false;
+}
+// The sign agrees with the label: RUN! (23 px) while seen hidden, HIDING (35 px) otherwise.
+static void signWord() {
+  gfx565::target(pixels); gfx::textLogEnabled = true;
+  for (float exposure : {0.f, 0.5f}) {
+    View v; v.page = Page::Play; v.hidden = 1; v.x = SPOTS[1]; v.exposure = exposure;
+    gfx::textLogReset(); paint::draw(v);
+    int width = 0;
+    for (int i = 0; i < gfx::textLogCount; i++) if (gfx::textLog[i].y == 129) width = gfx::textLog[i].w;
+    CHECK(width == (exposure > 0 ? 23 : 35));
   }
   gfx::textLogEnabled = false;
 }
@@ -475,6 +554,6 @@ static void renderPages() {
   gfx::textLogEnabled = false;
 }
 int main() {
-  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); sweepsAndPhew(); variety(); winnable(); rustle(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow();
+  controls(); ghostUndo(); openingSweep(); candyAndDoor(); spotCheck(); mashing(); sweepsAndPhew(); variety(); winnable(); rustle(); rustleOnArrival(); ghostTap(); grips(); calibration(); gatesAndHome(); holdToHide(); slideOnto(); signLooks(); restingThumb(); results(); heldAcrossPages(); clocks(); ghostSprite(); renderPages(); labelRow(); signWord();
   printf("pumpkin: %d checks passed\n", checks);
 }

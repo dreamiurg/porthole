@@ -1,4 +1,4 @@
-# A first round: calibrate, roll right for two candies, hold the sign to hide in the plant through the opening sweep, then follow the beam out the door and replay.
+# A first round: calibrate, roll right for two candies, hold the sign to hide in the plant while the opening sweep passes (no PHEW! until she gives up), then follow the beam out the door and replay.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -37,13 +37,16 @@ expect hidden=2
 ui-check pumpkin_play-hidden
 snap pumpkin_hidden_search
 wait 800
-expect phew=1
-snap pumpkin_phew
+expect phew=0
+snap pumpkin_beam_passed
 wait 1000
 wait 80
 up
 tilt -500 866 0
-wait 3300
+wait 2400
+expect phew=1
+snap pumpkin_phew
+wait 900
 expect got=7
 expect door=1
 ui-check pumpkin_play-door

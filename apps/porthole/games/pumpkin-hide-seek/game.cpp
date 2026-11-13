@@ -26,6 +26,7 @@ void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
   starting_ = holding_ = ghostPending_ = false;
+  refusedMs_ = UINT32_MAX;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
   if (page == Page::Calibrate) steady_ = tilt::Steady{};
@@ -52,10 +53,13 @@ void Game::calibrate() {
 }
 void Game::play(uint32_t dt) {
   stepMs_ += dt;
-  // Hidden while the finger that pressed the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s and
-  // double taps when worried). A thumb resting on the glass when the round began is hidden by gate_ until it lifts.
+  // Hidden while a finger that touched the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s, double
+  // taps when worried, and slides a resting thumb on). One resting since before the round is hidden by gate_.
   UiAudit::add(ACTION.x, ACTION.y, ACTION.w, ACTION.h);
-  holding_ = in_.down && (holding_ || (in_.pressed && inside(in_.downX, in_.downY, ACTION)));
+  const bool was = holding_;
+  holding_ = in_.down && (holding_ || inside(in_.x, in_.y, ACTION));
+  if (refusedMs_ < 1000) refusedMs_ += dt;
+  if (holding_ && !was && round_.hidden < 0 && nearby(round_) < 0) refusedMs_ = 0;
   ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {
@@ -99,9 +103,9 @@ void Game::render() {
   for (int i = 0; i < CANDIES; i++) v.candy[i] = round_.candy[i];
   v.got = round_.got; v.sinceCandy = round_.sinceCandy; v.doorOpen = doorOpen(round_);
   v.checking = checking(round_); v.shiver = round_.covered; v.phew = round_.phew > 0;
-  v.ghostReady = !round_.ghostUsed; v.holding = holding_;
-  // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a tilt left
-  // over from rolling in doesn't flash it.
+  v.ghostReady = !round_.ghostUsed; v.refusedMs = refusedMs_;
+  // Play-only cues: a round won mid-crash must not freeze the crash on Won. SHH! waits 300 ms so a brief bump
+  // doesn't flash it.
   const bool play = page_ == Page::Play;
   v.distract = play ? round_.distract : 0;
   v.rustling = play && round_.rustle >= 300; v.heard = play && round_.heard >= 0;

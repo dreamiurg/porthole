@@ -31,9 +31,11 @@ struct Round {
   int spot = -1;          // Check: the spot she looks behind
   uint32_t phaseMs = 0, phaseLen = FIRST_REST_MS;
   bool covered = false;  // the beam is over the hidden pumpkin
+  bool close = false;    // the beam has been on the pumpkin this search: PHEW! when the search ends
   uint32_t phew = 0;     // ms of "PHEW!" left
   uint32_t moves = 0;    // Grandma's moves so far: the first is always a plain sweep
   uint32_t rustle = 0;   // ms of hard tilt while hidden
+  bool settled = false;  // the tilt has eased below RUSTLE_MG since this hide began: only then can it rustle
   int heard = -1;        // spot she heard rustle; her next move checks it
   bool fromHeard = false;  // the current move is that heard check (a ghost can hand it back)
   bool ghostUsed = false;

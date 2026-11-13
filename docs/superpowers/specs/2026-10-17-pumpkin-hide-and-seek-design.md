@@ -99,3 +99,25 @@ popped him straight back out. Hiding is now a hold, not a toggle:
   the glass when the round begins does nothing until it lifts, the ghost is a tap, Home is a 600 ms hold.
 - Sign: HOLD TO HIDE near a spot, FIND COVER away from one, HIDING while hidden; it draws pressed while held.
   RUN AWAY! and QUICK! HIDE! now mean "press and hold".
+
+## Amendment: hold to hide, fix pass (2026-11-13)
+
+The kid playtest of the hold (`apps/porthole/docs/pumpkin-hold-playtest.md`) found a non-reader holding a
+gold-lit FIND COVER in the open and being caught (M1), plus four minor gaps. Changes:
+
+- **The sign tells the truth.** It draws pressed (gold) only while the pumpkin is actually hidden. Away from
+  cover it is flat and dim, in the game's own WALL and GREY, reads FIND COVER beside an arrow that bobs toward
+  the nearest spot, and a touch there shakes it side to side for about half a second: a "no" without words.
+  Seen while hidden (a Check of the kid's own spot), it reads RUN!, agreeing with RUN AWAY!.
+- **A finger that slides onto the sign hides**, wherever it came from (scenery, the ghost, Home), and keeps
+  hiding until it lifts. A thumb resting since before the round is still ignored until it lifts, and a press
+  slid from the ghost onto the sign never fires the ghost.
+- **Mashing can't beat a Check.** Hiding no longer resets exposure; only leaving the beam or hiding where she
+  isn't looking does, so tapping the sign during a Check of that spot is caught like holding there.
+- **Rolling into cover while held is not a rustle.** The hard tilt counts only after it has once eased below
+  the rustle threshold since that hide began.
+- **PHEW! waits for her to give up.** It shows when a search ends after the beam was on the pumpkin, not each
+  time the beam passes, so it never invites a 6-year-old to let go mid-search.
+- Candy positions were checked, not changed: each round's seed mixes the millisecond clock and a play counter,
+  and consecutive rounds do differ, but only within the three narrow lanes (15, 15 and 7 px), which reads as
+  "the same spots".

@@ -58,10 +58,12 @@ void hide(Round& r, bool hold) {
   if (r.hidden < 0) return;
   r.x = SPOTS[r.hidden];
   r.velocity = 0;
-  r.exposure = 0;
+  r.settled = false;  // it may arrive at full tilt, rolled in while held
 }
 void listen(Round& r, float roll) {
-  r.rustle = r.hidden >= 0 && fabsf(roll) > RUSTLE_MG ? r.rustle + STEP_MS : 0;
+  const bool hard = fabsf(roll) > RUSTLE_MG;
+  if (!hard) r.settled = true;
+  r.rustle = r.hidden >= 0 && r.settled && hard ? r.rustle + STEP_MS : 0;
   if (r.rustle < RUSTLE_MS) return;
   r.heard = r.hidden;
   r.rustle = 0;
@@ -87,14 +89,16 @@ void collect(Round& r) {
   for (int i = 0; i < CANDIES; i++)
     if (!(r.got & (1 << i)) && fabsf(r.x - r.candy[i]) <= REACH) { r.got |= 1 << i; r.sinceCandy = 0; }
 }
-// Exposure builds only while seen. PHEW! follows any close call the pumpkin got out of.
+// Exposure builds only while seen, hidden or not, so mashing the sign can't reset it. PHEW! waits for the end of a
+// search the beam came close in: shown as the beam merely passed, it told a 6-year-old to let go mid-search.
 void watch(Round& r) {
-  const bool wasClose = r.covered || r.exposure > 0;
   const bool inBeam = searching(r) && fabsf(r.x - beamX(r)) <= 20;
   const bool seen = inBeam && (r.hidden < 0 || r.hidden == checking(r));
+  const bool phew = r.close && !searching(r);
+  r.close = searching(r) && (r.close || inBeam);
   r.covered = inBeam && !seen;
   r.exposure = seen ? r.exposure + STEP_MS : 0;
-  r.phew = wasClose && !inBeam ? PHEW_MS : r.phew > STEP_MS ? r.phew - STEP_MS : 0;
+  r.phew = phew ? PHEW_MS : r.phew > STEP_MS ? r.phew - STEP_MS : 0;
   r.caught = r.exposure >= CATCH_MS;
 }
 }  // namespace

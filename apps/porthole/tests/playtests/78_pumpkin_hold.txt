@@ -1,4 +1,4 @@
-# Hold the sign to hide: hidden from the press through a firm 2.5 s hold, a worried double tap ends out, a thumb drifting off the sign keeps it hidden, and holding while rolling hides on arrival.
+# Hold the sign to hide: hidden from the press through a firm 2.5 s hold, a worried double tap ends out, a thumb drifting off the sign keeps it hidden, holding while rolling hides on arrival without a rustle, and a thumb sliding onto the sign hides.
 reset
 tilt 0 1000 0
 profile Sam 6
@@ -44,7 +44,19 @@ expect hidden=0
 tilt 0 1000 0
 wait 3000
 expect hidden=0
+expect heard=-1
 up
 expect-screen pumpkin_play
+expect hidden=-1
+wait 100
+down 40 100
+wait 300
+expect hidden=-1
+move 80 131
+wait 40
+expect hidden=0
+snap pumpkin_slid_on
+up
+wait 40
 expect hidden=-1
 sheet hold

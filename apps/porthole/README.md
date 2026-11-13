@@ -12,7 +12,9 @@ launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick,
 
 Open **Pumpkin** (the jack-o'-lantern) on the launcher's first page. Tap to start, hold the device comfortably,
 then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
-table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
+table or plant, press and hold **HOLD TO HIDE**: the pumpkin stays hidden while your finger stays
+down and comes out when you let go (away from cover the sign says **FIND COVER** and points the
+way). Roll over all three candy corns,
 then out the door on the left. A warning announces each of Grandma's moves: full or fast
 flashlight sweeps, a sweep that turns back, and checks of one hiding spot ("THE TABLE?"),
 when it's time to slip somewhere else. Hold still while hidden: a hard wiggle rustles the
