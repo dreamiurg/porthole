@@ -1110,6 +1110,12 @@ static void backlightSteps() {
     assert(shell::backlightFor(true, 0, active) == 40 && shell::backlightFor(true, 20000, active) == 40);
     assert(shell::backlightFor(true, 20001, active) == 0);
   }
+  // Sleep follows whichever dark applies, 10 s into it, and only ever in the dark.
+  for (int a = 0; a < 2; a++) {
+    const bool asleep = a;
+    const uint32_t dark = (asleep ? shell::ASLEEP_DARK_MS : shell::DARK_MS) + shell::SLEEP_AFTER_DARK_MS;
+    assert(!shell::sleepFor(asleep, dark) && shell::sleepFor(asleep, dark + 1) && shell::backlightFor(asleep, dark + 1, 100) == 0);
+  }
 }
 
 // Release order is numeric per part, and a dev build is never offered anything.

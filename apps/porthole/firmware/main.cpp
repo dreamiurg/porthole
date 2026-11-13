@@ -188,7 +188,8 @@ void setup() {
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
-// Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
+// Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor and shell::sleepFor,
+// tested on the host.
 static void dimWhenIdle(uint8_t want, bool progress) {
   g_sys.setDark(want == 0);
   if (progress && g_sys.manualCheck()) want = g_shell.backlight();
@@ -196,6 +197,19 @@ static void dimWhenIdle(uint8_t want, bool progress) {
     if (g_backlight == 0 && !progress && !board::settlePanel()) return;
     g_backlight = want; board::setBacklight(want);
   }
+}
+
+// Light sleep a while into the dark (shell::sleepFor), until a tap: never during an update, while the radio has work
+// (the daily check runs only in the dark) or with a computer on USB (the serial harness would lose the board).
+static void sleepWhenIdle(bool progress, uint32_t ms) {
+  if (progress || g_backlight || !shell::sleepFor(g_shell.asleep(), g_activity.idleMs(ms)) || g_sys.busy() || board::usbHost()) return;
+  Serial.println("[porthole] sleep"); Serial.flush();
+  board::sleepUntilTouch();
+  Input now{}; now.gx = g_grav[0]; now.gy = g_grav[1]; now.gz = g_grav[2];
+  g_activity.step(now, true, millis());   // lit even if the finger is gone; the touch itself is swallowed (g_backlight 0)
+  // millis() counts the sleep on the RC slow clock, which drifts: hours of it are worth the RTC's word.
+  if (g_rtcUtcReady && board::rtcValid()) { g_bootUtcEpoch = board::rtcNow(); g_bootMillis = millis(); }
+  Serial.printf("[porthole] woke after %lu s\n", (unsigned long)((millis() - ms) / 1000));
 }
 
 static bool updateDisplay(const Input& in) {
@@ -410,4 +424,5 @@ void loop() {
   dimWhenIdle(light, progress);
   g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
+  sleepWhenIdle(progress, ms);
 }

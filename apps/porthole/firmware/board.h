@@ -38,6 +38,10 @@ bool readAccel(int16_t& gx, int16_t& gy, int16_t& gz, int16_t* raw = nullptr);
 void setBacklight(uint8_t percent);
 // After flash writes, wait for the DMA restart and a full fresh scan before lighting a dark screen. False on timeout.
 bool settlePanel();
+// Light sleep with the panel asleep and its scan stopped, until a touch; then the panel scans again, still dark (the
+// caller lights it through settlePanel()). Takes back the ST7701's SPI pins from the SD card, which is unusable after.
+void sleepUntilTouch();
+bool usbHost();   // a computer on the ESP32-S3's own USB port (its SOFs); the CH343 port can't be seen from here
 void buzzer(bool on);
 
 // NVS blobs addressed by (namespace, key). Namespaces are at most 15 chars, keys at most 15.

@@ -6,7 +6,11 @@
 #include <Wire.h>
 #include <Preferences.h>
 #include <SD_MMC.h>
+#include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "driver/usb_serial_jtag.h"
+#include "esp_sleep.h"
+#include "hal/lcd_ll.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_heap_caps.h"
@@ -72,23 +76,30 @@ static const uint8_t ST7701_INIT[] = {
   0xFF,5,0x77,0x01,0x00,0x00,0x13, 0xEF,1,0x08,
   0xFF,5,0x77,0x01,0x00,0x00,0x00, 0x36,1,0x00, 0x3A,1,0x66,
 };
-static void lcdInitPanel() {
+// The bus lives only while commands go out: GPIO1/2 are the SD card's otherwise (mountSd).
+static bool lcdSpiOpen() {
   spi_bus_config_t bus = {}; bus.mosi_io_num = PIN_LCD_SPI_MOSI; bus.miso_io_num = -1; bus.sclk_io_num = PIN_LCD_SPI_CLK;
   bus.quadwp_io_num = -1; bus.quadhd_io_num = -1; bus.max_transfer_sz = 64;
-  spi_bus_initialize(SPI2_HOST, &bus, SPI_DMA_CH_AUTO);
+  if (spi_bus_initialize(SPI2_HOST, &bus, SPI_DMA_CH_AUTO) != ESP_OK) return false;
   spi_device_interface_config_t dev = {}; dev.command_bits = 1; dev.address_bits = 8; dev.mode = 0;
   dev.clock_speed_hz = 40000000; dev.spics_io_num = -1; dev.queue_size = 1;
-  spi_bus_add_device(SPI2_HOST, &dev, &g_spi);
-
-  expSet(EX_LCD_RST, false); delay(10); expSet(EX_LCD_RST, true); delay(50);
-  expSet(EX_LCD_CS, false); delay(10);
-  for (size_t i = 0; i < sizeof ST7701_INIT;) {
-    uint8_t cmd = ST7701_INIT[i++], n = ST7701_INIT[i++];
-    lcdCmd(cmd); for (uint8_t k = 0; k < n; k++) lcdDat(ST7701_INIT[i++]);
-  }
-  lcdCmd(0x11); delay(120); lcdCmd(0x20); delay(20); lcdCmd(0x29); delay(20);
+  if (spi_bus_add_device(SPI2_HOST, &dev, &g_spi) == ESP_OK) { expSet(EX_LCD_CS, false); delay(10); return true; }
+  spi_bus_free(SPI2_HOST); return false;
+}
+static void lcdSpiClose() {
   expSet(EX_LCD_CS, true); delay(10);
   spi_bus_remove_device(g_spi); spi_bus_free(SPI2_HOST); g_spi = nullptr;
+}
+static void lcdInitPanel() {
+  expSet(EX_LCD_RST, false); delay(10); expSet(EX_LCD_RST, true); delay(50);
+  if (lcdSpiOpen()) {
+    for (size_t i = 0; i < sizeof ST7701_INIT;) {
+      uint8_t cmd = ST7701_INIT[i++], n = ST7701_INIT[i++];
+      lcdCmd(cmd); for (uint8_t k = 0; k < n; k++) lcdDat(ST7701_INIT[i++]);
+    }
+    lcdCmd(0x11); delay(120); lcdCmd(0x20); delay(20); lcdCmd(0x29); delay(20);
+    lcdSpiClose();
+  } else Serial.println("[board] ST7701 SPI bus failed: panel not initialised");
 
   esp_lcd_rgb_panel_config_t cfg = {};
   cfg.clk_src = LCD_CLK_SRC_DEFAULT;
@@ -264,6 +275,37 @@ bool settlePanel() {
   for (int i = 0; i < 2; i++) if (xSemaphoreTake(g_vsync, pdMS_TO_TICKS(100)) != pdTRUE) return false;
   return true;
 }
+
+// ---- light sleep ----
+// ST7701 timing: 120 ms after Sleep In before the clock stops or Sleep Out may follow, 120 ms after Sleep Out.
+static void lcdSleep(bool in) {
+  if (!lcdSpiOpen()) return;
+  lcdCmd(in ? 0x10 : 0x11); delay(120);
+  lcdSpiClose();
+}
+// The CST820 pulses INT low with its reports while touched, so the pin may be high again by now: ask the chip instead.
+// A wake with no finger on the glass is noise, and the board sleeps again.
+static bool touchedAfterWake() {
+  for (int i = 0; i < 15; i++) { if (readTouch().down) return true; delay(10); }   // 150 ms: a kid's quick tap
+  return false;
+}
+void sleepUntilTouch() {
+  buzzer(false);
+  lcdSleep(true);   // the scan still runs: the panel discharges over its last frames
+  lcd_ll_enable_interrupt(&LCD_CAM, LCD_LL_EVENT_VSYNC_END, false);   // the driver's ISR, same core: no restart behind us
+  update_scanout::stop();
+  gpio_sleep_sel_dis((gpio_num_t)PIN_TP_INT);   // keep the pin's awake config (its pull-up) through the sleep
+  gpio_wakeup_enable((gpio_num_t)PIN_TP_INT, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
+  do { feedLoopWDT(); esp_light_sleep_start(); } while (!touchedAfterWake());
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_GPIO);
+  gpio_wakeup_disable((gpio_num_t)PIN_TP_INT);
+  ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));   // the scan again, vsync ISR included, as endUpdateDisplay() restores it
+  xSemaphoreTake(g_vsync, 0);
+  lcdSleep(false);
+  feedLoopWDT();
+}
+bool usbHost() { return usb_serial_jtag_is_connected(); }
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 
 // Each call opens its namespace read-write (creating it, as the old boot-time begin() did) and the
