@@ -1,0 +1,99 @@
+# Leo's playtest driver (python3 -I drv.txt serve|send ...). Kept as .txt per the brief.
+# serve: runs ./snap --serve --fresh in this folder and listens on a unix socket.
+# send "cmd; cmd; ..." : each line is a raw serve command, plus:
+#   shot NAME          -> save the current frame as shots/NAME.png
+#   press X Y MS       -> down X Y, tick MS, up
+#   slide X1 Y1 X2 Y2 MS STEPS [HOLDMS] -> down, moves over MS, optional extra hold, up
+#   tilt X Y           -> in-plane gravity in milli-g (z computed), like the web pad
+import math, os, socket, struct, subprocess, sys, time
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(sys.argv[0]))
+SOCK = os.path.join(HERE, "drv.sock")
+TRACE = os.path.join(HERE, "trace.txt")
+
+
+def serve():
+    p = subprocess.Popen([os.path.join(HERE, "snap"), "--serve", "--fresh"], cwd=HERE,
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    clock = [0]
+
+    def raw(line):
+        p.stdin.write((line + "\n").encode()); p.stdin.flush()
+        if line == "frame":
+            hdr = p.stdout.readline().decode().strip()
+            n = int(hdr.split()[1]); buf = bytearray()
+            while len(buf) < n:
+                buf += p.stdout.read(n - len(buf))
+            return hdr, bytes(buf)
+        return p.stdout.readline().decode().rstrip(), None
+
+    def tick(ms):
+        clock[0] += ms
+        return raw(f"tick {ms}")[0]
+
+    def run(cmd):
+        w = cmd.split()
+        if not w:
+            return ""
+        with open(TRACE, "a") as t:
+            t.write(f"t={clock[0]:7d}ms  {cmd}\n")
+        if w[0] == "shot":
+            _, px = raw("frame")
+            os.makedirs(os.path.join(HERE, "shots"), exist_ok=True)
+            Image.frombytes("RGB", (480, 480), px).save(os.path.join(HERE, "shots", w[1] + ".png"))
+            return "saved " + w[1]
+        if w[0] == "press":
+            x, y, ms = w[1], w[2], int(w[3])
+            raw(f"down {x} {y}"); r = tick(ms); raw("up"); return r
+        if w[0] == "slide":
+            x1, y1, x2, y2, ms, n = map(int, w[1:7]); hold = int(w[7]) if len(w) > 7 else 0
+            raw(f"down {x1} {y1}")
+            for i in range(1, n + 1):
+                raw(f"move {round(x1 + (x2 - x1) * i / n)} {round(y1 + (y2 - y1) * i / n)}"); tick(ms // n)
+            if hold:
+                tick(hold)
+            raw("up"); return "slid"
+        if w[0] == "tilt":
+            x, y = int(w[1]) / 1000, int(w[2]) / 1000
+            m = math.hypot(x, y)
+            if m > 1:
+                x, y, m = x / m, y / m, 1.0
+            return raw(f"tilt {round(x*1000)} {round(y*1000)} {round(-math.sqrt(1-m*m)*1000)}")[0]
+        if w[0] == "tick":
+            return tick(int(w[1]))
+        return raw(cmd)[0]
+
+    if os.path.exists(SOCK):
+        os.unlink(SOCK)
+    s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+    while True:
+        c, _ = s.accept()
+        data = b""
+        while not data.endswith(b"\n\0"):
+            data += c.recv(65536)
+        out = []
+        for cmd in data[:-2].decode().split(";"):
+            cmd = cmd.strip()
+            if cmd == "quit":
+                p.kill(); c.sendall(b"bye"); c.close(); return
+            out.append(f"{cmd} -> {run(cmd)}")
+        c.sendall(("\n".join(out)).encode()); c.close()
+
+
+def send(text):
+    c = socket.socket(socket.AF_UNIX); c.connect(SOCK)
+    c.sendall(text.encode() + b"\n\0")
+    buf = b""
+    while True:
+        d = c.recv(65536)
+        if not d:
+            break
+        buf += d
+    print(buf.decode())
+
+
+if sys.argv[1] == "serve":
+    serve()
+else:
+    send(" ".join(sys.argv[2:]))
