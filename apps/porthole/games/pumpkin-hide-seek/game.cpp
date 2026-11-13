@@ -59,8 +59,9 @@ void Game::sign(uint32_t dt, float roll) {
   const bool on = in_.down && inside(in_.x, in_.y, ACTION), near = cover(round_) >= 0;
   holding_ = in_.down && (holding_ || (on && (near || inside(in_.downX, in_.downY, ACTION))));
   if (refusedMs_ < REFUSE_MS) refusedMs_ += dt;
-  // "No" when a finger reaches the sign where it can't hide, unless the pumpkin really rolls into cover within 0.5 s.
-  if (on && !onSign_ && round_.hidden < 0 && !near && arriving(round_, roll, 500) < 0) refusedMs_ = 0;
+  // "No" when a finger reaches the sign where it can't hide, unless the hold is armed and the pumpkin really
+  // rolls into cover within 0.5 s (a slide-on isn't armed in the open, so it always gets the "no").
+  if (on && !onSign_ && round_.hidden < 0 && !near && !(holding_ && arriving(round_, roll, 500) >= 0)) refusedMs_ = 0;
   onSign_ = on;
 }
 void Game::play(uint32_t dt) {

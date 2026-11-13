@@ -72,7 +72,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 - All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
   the action sign hides while held (`holding_`: set on the first frame a visible finger is on it,
-  whether it pressed there or slid on from the scenery, the ghost or Home within reach of a spot, and
+  whether it pressed there or slid on from the scenery, the ghost or Home within reach of cover (never the
+  spot a Check names; still held when the Check ends or a ghost stops it, it hides there), and
   kept until that finger lifts; a 6-year-old presses 1-3 s and slides a resting thumb on, and a kid playtest on 2026-11-13
   was caught under his own finger when HIDE acted on lift). The ghost acts on the lift of a press of
   any length that began and ended on it, so a press slid from the ghost onto the sign only hides. A

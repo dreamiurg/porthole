@@ -106,6 +106,9 @@ static void checkedSpot() {
   const float x = r.x;
   CHECK(nearby(r) == 1 && r.velocity > 0);
   step(r, 0, true); CHECK(r.hidden == -1 && r.x > x && r.velocity > 0);
+  r = Round{}; r.x = SPOTS[1]; stage(r, Move::Check, 1); r.phaseLen = 600000;  // held at the named table
+  step(r, 0, true); CHECK(r.hidden == -1);
+  step(r, 0, true, true); step(r, 0, true); CHECK(r.phase == Phase::Rest && r.hidden == 1);  // named no more: it hides
 }
 // Mashing the sign during a Check of the pumpkin's own spot is caught as surely as holding there: a hide never
 // resets exposure, so a 120 ms tap every 800 ms can't outlast her.

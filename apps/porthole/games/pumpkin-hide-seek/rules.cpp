@@ -119,6 +119,8 @@ int cover(const Round& r) {
   return s == checking(r) ? -1 : s;
 }
 // Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
+// shortcut: Grandma's phase is frozen for the 0.5 s, so a Check starting or ending inside it can mispredict
+// one "no"; step advance() on the copy if a playtest ever notices.
 int arriving(const Round& r, float roll, uint32_t ms) {
   Round c = r;
   for (uint32_t t = 0; cover(c) < 0 && t < ms; t += STEP_MS) rollPumpkin(c, roll);

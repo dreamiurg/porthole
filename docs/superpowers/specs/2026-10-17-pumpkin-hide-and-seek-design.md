@@ -142,7 +142,8 @@ spot looked safe until too late (M1), and that a press on the dark sign showed n
 - **"No" you can see.** The old 2 px, 480 ms shake was in the playtest's frames but went unnoticed. A finger
   reaching the sign away from cover now shakes it 3 px and swaps the words for three cream chevrons
   marching toward cover for 1 s, visible in any single frame. No "no" if the pumpkin is already rolling into
-  reach (within 0.5 s at its speed).
+  reach (within 0.5 s at its speed). *(Superseded by the third pass below: the look-ahead rolls a copy, and only
+  an armed hold skips the "no".)*
 
 Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptance rule 5):
 
