@@ -43,10 +43,10 @@ wait 1000
 wait 80
 up
 tilt -500 866 0
-wait 2400
+wait 2600
 expect phew=1
 snap pumpkin_phew
-wait 900
+wait 700
 expect got=7
 expect door=1
 ui-check pumpkin_play-door

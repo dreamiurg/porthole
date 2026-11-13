@@ -35,12 +35,13 @@ class Game : public App {
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
-  uint32_t refusedMs_ = UINT32_MAX;  // since the sign was pressed away from cover (it shakes "no")
-  bool starting_ = false, home_ = false, holding_ = false, ghostPending_ = false;
+  uint32_t refusedMs_ = UINT32_MAX;  // since a finger reached the sign away from cover (it says "no")
+  bool starting_ = false, home_ = false, holding_ = false, onSign_ = false, ghostPending_ = false;
   void go(Page page);
   void start();
   void calibrate();
   void play(uint32_t dt);
+  void sign(uint32_t dt);
   bool ready() const;
   bool action() const;
   bool leaving();

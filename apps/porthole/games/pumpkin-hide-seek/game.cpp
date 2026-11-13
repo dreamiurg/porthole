@@ -25,7 +25,7 @@ void Game::enter(const AppEnter& e) {
 void Game::go(Page page) {
   page_ = page;
   pageMs_ = stepMs_ = 0;
-  starting_ = holding_ = ghostPending_ = false;
+  starting_ = holding_ = onSign_ = ghostPending_ = false;
   refusedMs_ = UINT32_MAX;
   hold_ = ui::Hold{};
   gate_.shown(ms_);
@@ -51,15 +51,21 @@ void Game::calibrate() {
   tilt::Grav neutral;
   if (starting_ && steady_.get(ms_, &neutral)) { neutral_ = neutral; start(); }
 }
-void Game::play(uint32_t dt) {
-  stepMs_ += dt;
+void Game::sign(uint32_t dt) {
   // Hidden while a finger that touched the sign stays down, wherever it drifts (a 6-year-old presses 1-3 s, double
   // taps when worried, and slides a resting thumb on). One resting since before the round is hidden by gate_.
+  // A slide-on arms only where it can hide at once: a finger crossing the sign in the open must not hide later.
   UiAudit::add(ACTION.x, ACTION.y, ACTION.w, ACTION.h);
-  const bool was = holding_;
-  holding_ = in_.down && (holding_ || inside(in_.x, in_.y, ACTION));
-  if (refusedMs_ < 1000) refusedMs_ += dt;
-  if (holding_ && !was && round_.hidden < 0 && nearby(round_) < 0) refusedMs_ = 0;
+  const bool on = in_.down && inside(in_.x, in_.y, ACTION), cover = nearby(round_) >= 0;
+  holding_ = in_.down && (holding_ || (on && (cover || inside(in_.downX, in_.downY, ACTION))));
+  if (refusedMs_ < REFUSE_MS) refusedMs_ += dt;
+  // "No" when a finger reaches the sign where it can't hide, unless the pumpkin is about to roll into reach.
+  if (on && !onSign_ && round_.hidden < 0 && !cover && nearby(round_, 0.5f) < 0) refusedMs_ = 0;
+  onSign_ = on;
+}
+void Game::play(uint32_t dt) {
+  stepMs_ += dt;
+  sign(dt);
   ghostPending_ = ghostPending_ || (!round_.ghostUsed && tapped(in_, GHOST));
   const tilt::Vec tilt = tilt::from({in_.gx, in_.gy, in_.gz}, neutral_);
   while (stepMs_ >= STEP_MS && !round_.caught && !round_.won) {

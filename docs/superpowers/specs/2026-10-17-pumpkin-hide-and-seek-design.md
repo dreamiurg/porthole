@@ -70,7 +70,8 @@ Phase 1 gives the pumpkin a reason to move and Grandma some surprises, still in 
 - **Grandma's moves vary every round:** full sweep, fast sweep, a sweep that turns back,
   and a spot check ("THE TABLE?") that finds a pumpkin hiding there, so the player has to
   pick a different spot. Every move is announced first; checks get the longest warning.
-- **Near misses:** the hidden pumpkin shivers while the beam passes over it, then PHEW!.
+- **Near misses:** the hidden pumpkin shivers while the beam passes over it, then PHEW!. *(Superseded: PHEW!
+  now waits for the search to end; see "Amendment: hold to hide, fix pass".)*
 
 Later phases (not built yet): more rooms with one new idea each, and optional stars and hats.
 
@@ -98,7 +99,8 @@ popped him straight back out. Hiding is now a hold, not a toggle:
 - Unchanged: tilt never ejects a hidden pumpkin, the rustle rule, no candy while hidden, a thumb resting on
   the glass when the round begins does nothing until it lifts, the ghost is a tap, Home is a 600 ms hold.
 - Sign: HOLD TO HIDE near a spot, FIND COVER away from one, HIDING while hidden; it draws pressed while held.
-  RUN AWAY! and QUICK! HIDE! now mean "press and hold".
+  RUN AWAY! and QUICK! HIDE! now mean "press and hold". *(Superseded: the sign draws pressed only while hidden,
+  and a slide-on arms only within reach of cover; see the two fix-pass amendments below.)*
 
 ## Amendment: hold to hide, fix pass (2026-11-13)
 
@@ -121,3 +123,54 @@ gold-lit FIND COVER in the open and being caught (M1), plus four minor gaps. Cha
 - Candy positions were checked, not changed: each round's seed mixes the millisecond clock and a play counter,
   and consecutive rounds do differ, but only within the three narrow lanes (15, 15 and 7 px), which reads as
   "the same spots".
+
+## Amendment: hold to hide, second fix pass (2026-11-13)
+
+The second kid playtest (`apps/porthole/docs/pumpkin-hold-playtest-2.md`) found that a Check of the kid's own
+spot looked safe until too late (M1), and that a press on the dark sign showed nothing a 6-year-old noticed
+(m2). Review added two gaps. Changes:
+
+- **A Check of your own spot never looks safe.** Hidden in the spot Grandma names, from the warning's first
+  frame, the sign turns rust and reads RUN!, and the pumpkin shivers and sweats in its spot. Seen at all
+  during a Check, mashing included, the label is RUN AWAY!, never QUICK! HIDE!: hiding can't help there.
+- **The sign never invites a hide in the named spot.** Out in the open, FIND COVER's arrow points to the
+  nearest spot she isn't naming, and within reach of the named spot the sign stays FIND COVER rather than
+  HOLD TO HIDE and the furniture's in-reach strip stays dark (pressing there still hides; the sign then says
+  RUN!).
+- **A finger crossing the sign in the open arms nothing.** A finger slid onto the sign arms only where the
+  pumpkin can hide at once. A press that began on the sign still hides on arrival, wherever it drifts.
+- **"No" you can see.** The old 2 px, 480 ms shake was in the playtest's frames but went unnoticed. A finger
+  reaching the sign away from cover now shakes it 3 px and swaps the words for three cream chevrons
+  marching toward cover for 1 s, visible in any single frame. No "no" if the pumpkin is already rolling into
+  reach (within 0.5 s at its speed).
+
+Deferred findings, one line each (`apps/porthole/docs/playtesting.md`, acceptance rule 5):
+
+- Playtest 1 m3 (named spot is a reading-only rule): fixed by this pass's RUN! sign and shiver.
+- Playtest 1 m4 (rustle explained in words): the spot jiggles with marks and "!" over Grandma; rolling in is no
+  longer heard, and a heard rustle only brings a warned Check, so it costs a visit, not the round.
+- Playtest 1 m6 / playtest 2 m5 ("YOU LOST"): out of scope for this pass; the pie captions keep it playful
+  and neither persona was upset. A wording change is game-designer's call.
+- Playtest 1 m7 (Grandma returns 0.5-1 s after leaving): out of scope; the 2.5 s minimum rest holds and it
+  cost no round in playtest 2. Tuning is game-designer's.
+- Playtest 1 n1 / playtest 2 n3 (stale bubble after she leaves): harmless; "HIDDEN!" and "PHEW!" are true
+  statements, and an all-clear beat would be a new mechanic.
+- Playtest 1 n2 (a candy under the pumpkin or her shoe): rare and self-correcting once the pumpkin moves.
+- Playtest 1 n3 (used ghost silent): it is redrawn dark and still, which reads as spent; once a round is
+  the rule.
+- Playtest 1 n4 / playtest 2 n4 (no pressed look on START / TRY AGAIN; TRY AGAIN deaf just after the pie): the
+  screen-change guard keeps a press carried from the round or a mash through the frosting from skipping the
+  pie, and START, READY and TRY AGAIN all act on lift of a 1-3 s press, which both personas managed.
+- Playtest 1 n5 / playtest 2 n2 (win card overlap, win picture): cosmetic, for pixel-artist.
+- Playtest 1 n6 / playtest 2 n1 (pumpkin slow for an 8-year-old): suits the 6-year-old; speed is tuned for
+  the youngest players and the 0.7 s-late bot.
+- Playtest 1 n7 / playtest 2 m1 (wall-picture exit, 600 ms hold): out of scope; the hold is the shared rule
+  for a way out a hand may brush, and it costs only that round's candy.
+- Playtest 1 m5 / playtest 2 m3 (same candy lanes, one room): out of scope; varying them is a design change
+  for game-designer (more rooms are the planned later phase).
+- Playtest 2 m4 (ghost's purpose invisible to a non-reader): out of scope; Grandma visibly turns to the crash
+  and leaves, which an 8-year-old decoded. A clearer cue is game-designer's.
+- Playtest 2 n5 (sign hit area has no padding): 80x24 already exceeds the 24x22 floor; padding below would
+  crowd the bezel.
+- Playtest 2 n6 (arrow flips between two spots): it always points at the nearest real cover, so a flip at the
+  midpoint is truthful.

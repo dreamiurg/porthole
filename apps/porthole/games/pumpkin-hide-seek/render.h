@@ -21,7 +21,7 @@ struct View {
   bool doorOpen = false;              // all candy collected: the door at the left wall is open
   int checking = -1;                  // spot Grandma announces (warning) or checks (searching)
   bool shiver = false, phew = false;  // beam over a hidden pumpkin / a close search just ended
-  uint32_t refusedMs = UINT32_MAX;    // since the sign was pressed away from cover: it shakes "no" for a moment
+  uint32_t refusedMs = UINT32_MAX;    // since a finger reached the sign away from cover: "no" for REFUSE_MS
   bool ghostReady = true;             // the ghost at the window can still be tapped (box {22,30,24,24})
   uint32_t distract = 0;              // ms left of the crash Grandma goes to look at ("WHAT WAS THAT?")
   bool rustling = false;              // hidden and tilting hard: the spot shakes ("SHH!")
@@ -29,6 +29,7 @@ struct View {
   uint8_t quip = 0;                   // which catch / pie / escape line, 0..QUIPS-1
 };
 constexpr int QUIPS = 4;
+constexpr uint32_t REFUSE_MS = 1000;  // five frames at 200 ms: long enough to see, short enough to retry
 namespace paint {
 void draw(const View& view);
 const gfx::Sprite& icon();

@@ -7,14 +7,22 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 - `rules.*`: allocation-free 10 ms simulation, horizontal roll between x=24..136
   on y=99, three hiding spots (36,80,124), 60 mg dead zone, friction and bounded
   acceleration. Hold to hide: the pumpkin is hidden exactly while a finger that touched the action
-  sign (pressed there or slid onto it) stays on the glass, wherever it drifts. It hides on the touch if
-  it's within 13 px of a spot, or the moment it rolls within 13 px while still held, and comes out when
-  that finger lifts. No toggle, so a double tap ends out and never pops it out mid-press. Tilt never
-  ejects a hidden pumpkin. The sign says HOLD TO HIDE (cream) near a spot and HIDING while hidden, or
-  RUN! while she sees it hidden there; it draws pressed (gold, its word 2 px lower) only while hidden.
-  Away from cover it is flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an
-  arrow that bobs toward the nearest spot; a touch there shakes it side to side for 480 ms, the non-word
-  "no" (a non-reader held a gold-lit FIND COVER in the open and was caught, kid playtest 2026-11-13).
+  sign stays on the glass, wherever it drifts. A press that began on the sign arms anywhere; a finger
+  slid onto it arms only where it can hide at once (within reach of a spot), so a finger crossing the
+  sign in the open never hides the pumpkin later. It hides on the touch if it's within 13 px of a
+  spot, or the moment it rolls within 13 px while still held, and comes out when that finger lifts. No
+  toggle, so a double tap ends out and never pops it out mid-press. Tilt never ejects a hidden pumpkin.
+  The sign says HOLD TO HIDE (cream) near a spot and HIDING while hidden; it draws pressed (gold, its
+  word 2 px lower) only while hidden. Hidden in the spot a Check names, from the warning's first frame,
+  it is pressed but RUST with CREAM RUN!, and the pumpkin shivers and sweats: a safe-looking HIDING
+  until 0.7 s before the catch left a non-reader no way out (kid playtest 2, M1). Away from cover it is
+  flat and dim (WALL face, GREY ink, no gold lip) and reads FIND COVER beside an arrow that bobs toward
+  the nearest spot a Check isn't naming; within reach of the named spot it shows FIND COVER too, never
+  HOLD TO HIDE, and that furniture's gold in-reach strip stays dark. A finger reaching it there (pressed or slid on) gets the non-word "no" for
+  `REFUSE_MS` (1 s): the sign shakes 3 px side to side and three CREAM chevrons march toward cover in
+  place of the words, plain in any single frame (a 2 px shake alone went unseen, kid playtest 2, m2). No
+  "no" while the pumpkin is already rolling into reach (within 0.5 s at its speed): it just hides on
+  arrival.
 - Goal: roll over three candy corns (within 7 px, never while hidden), then reach the
   door at x=24 out in the open. No timer: staying hidden stalls, it never wins. Candy
   sits at 52..66, 94..108 and 130..136, drawn from the round's seed.
@@ -42,7 +50,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
   sweep even after the ghost stretches the first rest. She stays drawn, looking at the crash
   (no beam), while WHAT WAS THAT? shows. The ghost glows, bobs and waves only in Play; on
   every other page it is drawn calm, since taps there do nothing.
-- Play label, most urgent first: RUN AWAY! (seen while hidden) / QUICK! HIDE!, SHE HEARD YOU!
+- Play label, most urgent first: RUN AWAY! (seen while hidden, or seen at all during a Check, where hiding
+  can't help: mashing included) / QUICK! HIDE!, SHE HEARD YOU!
   (heard, hidden and still rustling), SHH!, WHAT WAS THAT?, PHEW!, THE CHAIR?/TABLE?/PLANT?,
   GRANDMA!, HMM?, SHE HEARD YOU! (heard and hidden), HIDDEN!, TO THE DOOR!. While the ghost
   can be tapped, the row at y 49 is centred at x 92 so a 14-letter plate (x 46..136) clears its
@@ -60,8 +69,8 @@ writes no saves. No lives, score, offline simulation or progression to migrate.
 - All pages use `ui::FreshGate`. Home is always visible at {68,8,24,22}; during
   Play it requires a 600 ms hold, elsewhere a tap. Action is {40,119,80,24}. During Play
   the action sign hides while held (`holding_`: set on the first frame a visible finger is on it,
-  whether it pressed there or slid on from the scenery, the ghost or Home, and kept until that finger
-  lifts; a 6-year-old presses 1-3 s and slides a resting thumb on, and a kid playtest on 2026-11-13
+  whether it pressed there or slid on from the scenery, the ghost or Home within reach of a spot, and
+  kept until that finger lifts; a 6-year-old presses 1-3 s and slides a resting thumb on, and a kid playtest on 2026-11-13
   was caught under his own finger when HIDE acted on lift). The ghost acts on the lift of a press of
   any length that began and ended on it, so a press slid from the ghost onto the sign only hides. A
   thumb already resting on the glass when the round began (from READY or TRY AGAIN) does neither:

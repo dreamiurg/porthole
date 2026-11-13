@@ -110,8 +110,9 @@ Round newRound(uint32_t seed) {
   r.candy[2] = (float)(130 + rnd(r) % 7);   // out on Grandma's side
   return r;
 }
-int nearby(const Round& r) {
-  for (int i = 0; i < 3; i++) if (fabsf(r.x - SPOTS[i]) <= 13) return i;
+int nearby(const Round& r, float leadSec) {
+  const float x = r.x + r.velocity * leadSec;
+  for (int i = 0; i < 3; i++) if (fabsf(x - SPOTS[i]) <= 13) return i;
   return -1;
 }
 bool warning(const Round& r) { return r.phase == Phase::Warn; }

@@ -1,0 +1,39 @@
+# Grandma checks the spot the pumpkin is hiding in: from the warning the sign says RUN! (rust, never the safe gold HIDING) and the pumpkin shivers; let go, roll toward the plant: FIND COVER points away from the named table; hidden in the plant, the check passes.
+reset
+tilt 0 1000 0
+profile Leo 6
+app pumpkin
+wait 600
+tap 80 131
+wait 600
+tap 80 131
+wait 600
+expect-screen pumpkin_play
+down 80 131
+wait 11000
+expect hidden=1
+expect checking=-1
+wait 2000
+expect hidden=1
+expect checking=1
+ui-check pumpkin_play-run
+snap pumpkin_own_spot_run
+up
+tilt 400 917 0
+wait 600
+expect hidden=-1
+expect checking=1
+ui-check pumpkin_play-named-cover
+snap pumpkin_named_find_cover
+wait 1000
+down 80 131
+wait 500
+expect hidden=2
+expect checking=1
+tilt 0 1000 0
+wait 4500
+expect-screen pumpkin_play
+expect hidden=2
+expect checking=-1
+up
+sheet own-spot
