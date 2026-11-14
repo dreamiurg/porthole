@@ -42,6 +42,9 @@ ui-check sys_games_page3
 snap ag3_page3
 tap 119 130
 wait 450
+tap 80 63
+wait 450
+expect games_off=1219
 ui-check sys_games_page4
 snap ag4_page4
 tap 80 12
@@ -60,7 +63,7 @@ ui-check launcher_six_on
 snap ag5_home_six
 reboot
 wait 600
-expect games_off=195
+expect games_off=1219
 down 80 16
 wait 5000
 up
@@ -82,12 +85,12 @@ tap 119 130
 wait 450
 tap 80 86
 wait 450
-expect games_off=511
+expect games_off=1535
 tap 119 130
 wait 450
 tap 80 40
 wait 100
-expect games_off=511
+expect games_off=1535
 snap ag6_last_stays_on
 wait 1500
 tap 80 12

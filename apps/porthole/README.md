@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town and Rally.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town, Rally and Sand Jar.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -67,6 +67,17 @@ racer finishes all three laps, even in fourth. Hold the **1/3 Hold** chip to pau
 
 Art: [Codex images matched to the approved reference boards](docs/racing/art.md) ·
 Design and state contract: [game brief](games/racing/AGENTS.md)
+
+## Sand Jar: a tilt toy
+
+Open **Sand Jar** on the launcher's second page, hold the board and tilt it: what's inside moves
+like it would in a jar. No goal, nothing saved, no sounds. The button at the bottom of the glass
+switches between four jars: **Sand Jar** (warm sand that heaps and avalanches), **Rainbow Sand**
+(colored layers to stir into patterns), **Beach** (sand sinks under water, bubbles rise) and
+**Orbits** (stars circle a sun; a finger is a heavy star). A finger pushes the sand aside; a shake
+scatters it.
+
+Design and state contract: [game brief](games/sand-jar/AGENTS.md)
 
 ## Toy Town Life: a tiny town, your own stories
 

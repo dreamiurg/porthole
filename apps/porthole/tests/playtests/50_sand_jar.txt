@@ -1,0 +1,85 @@
+# Sand Jar: the tilt toy. It opens on Sand Jar held upright; the button at the bottom cycles Rainbow Sand, Beach and
+# Orbits and back; the motion sensor tilts the jar (flat is 0 g) and a jolt shakes it; a finger pushes the grains, but
+# a press that begins on a button is only that button; the home button goes back to the launcher, and the jar keeps
+# its mode for the next visit while the touch and the shake start over. Every mode's screen is audited.
+profile Sam 8
+app sand-jar
+wait 450
+expect-screen sandjar_jar
+expect mode=sand
+expect grains>6000
+expect sand=6568
+expect tilt=0,1000
+ui-check sandjar_jar-sand
+snap j01_sand
+tilt 707 707 0
+wait 3000
+expect tilt=707,707
+expect sand=6568
+snap j02_sand_45_right
+tilt 0 0 -1000
+wait 400
+expect tilt=0,0
+shake
+expect shaking=1
+wait 400
+snap j03_sand_flat_shaken
+tilt 0 1000 0
+down 60 130
+move 70 131
+move 80 132
+expect finger=1
+snap j04_sand_finger
+up
+expect finger=0
+# a press on the mode button is the button, not a finger in the jar
+down 80 143
+expect finger=0
+up
+expect mode=rainbow
+expect sand=8114
+wait 2000
+ui-check sandjar_jar-rainbow
+snap j05_rainbow
+tilt -866 500 0
+wait 3000
+snap j06_rainbow_60_left
+tap 80 143
+expect mode=beach
+expect sand=3999
+tilt 500 866 0
+wait 3000
+ui-check sandjar_jar-beach
+snap j07_beach_30_right
+down 40 110
+move 55 112
+move 70 114
+move 85 116
+snap j08_beach_finger
+up
+tap 80 143
+expect mode=orbits
+expect grains=579
+wait 2000
+ui-check sandjar_jar-orbits
+snap j09_orbits
+down 110 60
+wait 1500
+expect finger=1
+snap j10_orbits_heavy_star
+up
+tap 80 143
+expect mode=sand
+tap 80 143
+tap 80 143
+expect mode=beach
+tap 80 12
+wait 450
+expect-screen launcher
+app sand-jar
+wait 450
+expect-screen sandjar_jar
+expect mode=beach
+expect finger=0
+expect shaking=0
+sheet tour
