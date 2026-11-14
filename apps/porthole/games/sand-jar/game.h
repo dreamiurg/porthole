@@ -62,7 +62,7 @@ class Game : public App {
   // the board they land in PSRAM, which is slower for random access than internal RAM.
   Jar* jar_ = nullptr;
   Tables* t_ = nullptr;
-  bool ready() const { return jar_ && t_; }
+  bool ready() const { return jar_ && t_ && seen_[0].cells && seen_[1].cells; }
   Seen seen_[2] = {};
   int nextSeen_ = 0;
   bool started_ = false, wantsHome_ = false;

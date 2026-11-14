@@ -68,16 +68,16 @@ const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
   if (!jar_) jar_ = new (std::nothrow) Jar();   // first enter, never at static init: PSRAM joins the heap later
   if (!t_) t_ = new (std::nothrow) Tables();
+  for (Seen& s : seen_) {
+    if (!s.cells) s.cells = new (std::nothrow) uint16_t[G * G];   // two 51 KB histories, scanned in order
+    s.target = nullptr; s.valid = false;
+  }
   if (!ready()) { wantsHome_ = true; return; }   // no memory for the jar: back to the launcher
   ms_ = lastMs_ = slowUntil_ = e.ms; acc_ = 0;
   wantsHome_ = buttonTouch_ = sensed_ = false;
   moveX_ = moveY_ = 0;
   jar_->finger.on = false; jar_->shaking = 0;
   gate_.shown(ms_);
-  for (Seen& s : seen_) {
-    if (!s.cells) s.cells = new uint16_t[G * G];   // once: two 51 KB histories, the board may put them in PSRAM
-    s.target = nullptr; s.valid = false;
-  }
   if (!started_) { tables(); pour(MODE_SAND); started_ = true; }
 }
 
