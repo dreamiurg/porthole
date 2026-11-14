@@ -4,6 +4,7 @@
 #include <string.h>
 #include <initializer_list>
 #include <new>
+#include "fastmem.h"
 #include "launcher_icon.h"
 #include "gfx565.h"
 
@@ -79,6 +80,21 @@ void Game::enter(const AppEnter& e) {
   jar_->finger.on = false; jar_->shaking = 0;
   gate_.shown(ms_);
   if (!started_) { tables(); pour(MODE_SAND); started_ = true; }
+  if (!fast_ && (fast_ = (int16_t*)fastmem::take(sizeof jar_->cells))) {   // the grid in internal RAM while open
+    memcpy(fast_, jar_->cells, sizeof jar_->cells);
+    jar_->occ = fast_;
+  }
+}
+
+// The grid goes home to the Jar, so the internal RAM is free again (a wireless update needs it); the sand stays put.
+void Game::leave() {
+  if (!jar_) return;
+  jar_->finger.on = false;
+  if (!fast_) return;
+  memcpy(jar_->cells, fast_, sizeof jar_->cells);
+  jar_->occ = jar_->cells;
+  fastmem::give(fast_);
+  fast_ = nullptr;
 }
 
 void Game::pour(Mode m) {
@@ -349,9 +365,9 @@ void Game::debugPrint() {
   if (!ready()) return;
   int kinds[3] = {};
   if (jar_->mode != MODE_ORBITS) for (int i = 0; i < jar_->n; i++) kinds[kindOf(jar_->g.look[i])]++;
-  printf("[sandjar mode=%s grains=%d sand=%d water=%d bubbles=%d tilt=%d,%d finger=%d shaking=%d steps=%u]\n", MODES[jar_->mode],
+  printf("[sandjar mode=%s grains=%d sand=%d water=%d bubbles=%d tilt=%d,%d finger=%d shaking=%d steps=%u fast=%d]\n", MODES[jar_->mode],
          jar_->n, kinds[SAND], kinds[WATER], kinds[BUBBLE], (int)lroundf(jar_->tiltX * 1000), (int)lroundf(jar_->tiltY * 1000),
-         jar_->finger.on, jar_->shaking > 0.01f, (unsigned)jar_->frame);
+         jar_->finger.on, jar_->shaking > 0.01f, (unsigned)jar_->frame, fast_ != nullptr);
   printf("screen=%s\n", screenName());
 }
 void Game::debugCmd(const char* cmd) {

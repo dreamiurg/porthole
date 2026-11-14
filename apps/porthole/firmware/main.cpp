@@ -4,6 +4,7 @@
 #include "board.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
+#include "fastmem.h"
 #include "games/apps.h"
 #include "gfx565.h"
 #include "net.h"
@@ -140,8 +141,10 @@ extern "C" bool verifyRollbackLater() { return true; }
 // 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
 // good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
 static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
+static_assert(fastmem::UPDATE_RAM == board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM,
+              "fastmem.h must leave a game exactly what an update needs");
 static bool canUpdate() {
-  const size_t need = board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM;
+  const size_t need = fastmem::UPDATE_RAM;
   const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
   Serial.printf("[porthole] update ram: %u free, %u needed\n", (unsigned)have, (unsigned)need);
   return have >= need;

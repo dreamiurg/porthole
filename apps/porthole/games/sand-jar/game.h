@@ -35,7 +35,7 @@ class Game : public App {
   bool soundOn(uint32_t) override { return false; }   // a toy: no buzzer
   bool takeSave(const void**, size_t*, bool) override { return false; }
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
-  void leave() override { if (jar_) jar_->finger.on = false; }
+  void leave() override;
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;   // "sand" "rainbow" "beach" "orbits": that mode, freshly poured
@@ -62,6 +62,7 @@ class Game : public App {
   // the board they land in PSRAM, which is slower for random access than internal RAM.
   Jar* jar_ = nullptr;
   Tables* t_ = nullptr;
+  int16_t* fast_ = nullptr;       // while open: the Jar's grid in internal RAM, if fastmem could lend it (null: in the Jar)
   bool ready() const { return jar_ && t_ && seen_[0].cells && seen_[1].cells; }
   Seen seen_[2] = {};
   int nextSeen_ = 0;

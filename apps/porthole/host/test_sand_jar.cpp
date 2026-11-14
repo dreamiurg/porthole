@@ -220,7 +220,7 @@ static void replays() {
     j->shake();
     run(*j, 50);
   }
-  assert(!memcmp(a.g.x, b.g.x, sizeof a.g.x) && !memcmp(a.occ, b.occ, sizeof a.occ) && !memcmp(a.g.look, b.g.look, sizeof a.g.look));
+  assert(!memcmp(a.g.x, b.g.x, sizeof a.g.x) && !memcmp(a.occ, b.occ, sizeof a.cells) && !memcmp(a.g.look, b.g.look, sizeof a.g.look));
   puts("replay: the same inputs make the same jar");
 }
 
@@ -268,6 +268,27 @@ static void incrementalIsFull() {
   puts("render: drawing only what changed shows what a full redraw does");
 }
 
+// Leaving gives the grid's internal RAM back (fastmem.h) and the next visit borrows it again: the jar must come back
+// cell for cell, so a full redraw after leave() and enter() equals one from before.
+static uint16_t before[gfx565::W * gfx565::H];
+static void leaveKeepsTheJar() {
+  uint32_t ms = 1000;
+  AppEnter e{}; e.ms = ms;
+  game.enter(e);
+  game.debugCmd("beach");
+  InputTracker touch;
+  for (int f = 0; f < 90; f++) { ms += 34; game.update(ms / 1000, ms, frameInput(touch, f, ms)); }
+  gfx565::target(before);
+  game.render();
+  game.leave();
+  e.ms = ms;
+  game.enter(e);
+  gfx565::target(panel[2]);
+  game.render();
+  assert(!memcmp(before, panel[2], sizeof before));
+  puts("leave: the jar comes back cell for cell");
+}
+
 // A late frame (the physics cost more than a frame) takes the jar to one step a frame for SLOW_MS, then back to two:
 // two steps on a late frame would only make the next one late too.
 static void lateFramesSlowDown() {
@@ -303,6 +324,7 @@ int main() {
   orbitsStayOnGlass();
   replays();
   incrementalIsFull();
+  leaveKeepsTheJar();
   lateFramesSlowDown();
   puts("test_sand_jar: all passed");
   return 0;
