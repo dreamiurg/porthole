@@ -1,6 +1,6 @@
 // App-level regressions. The required player-led emulator tour is separate evidence.
 #include <algorithm>
-#include <assert.h>
+#include "host/check.h"
 #include <initializer_list>
 #include <stdio.h>
 #include <string.h>

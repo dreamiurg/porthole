@@ -3,7 +3,7 @@
 // finger clears its disc; Orbits' bodies stay on the glass; the same inputs replay the same jar. And its renderer
 // (game.cpp): drawing only the cells that changed shows exactly what a full redraw would.
 // Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 // Racing's pure rules: every track finishes for any driver, places are stable and locked once, and the speed,
 // inventory, jump and rocket rules from the design brief hold at their boundaries.
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
