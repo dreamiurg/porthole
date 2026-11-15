@@ -12,7 +12,8 @@ constexpr size_t UPDATE_PICTURE = 19 * 3840, UPDATE_HEADROOM = 48 * 1024, UPDATE
 constexpr size_t TLS_BLOCK = 45000;   // one contiguous block a TLS handshake needs (net.cpp's MIN_HEAP)
 
 using Recall = void (*)(void* owner);
-// n bytes of internal RAM, or null (keep the buffer where it is): dark, a loan already out, or too little room.
+// n bytes of internal RAM, not zeroed, or null (keep the buffer where it is): dark, a loan already out, or too little
+// room (then the next RETRY_CALLS calls are refused without asking the heap, so a game may simply ask every frame).
 // back(owner) is called when the block must come home: it stops using the block and calls give().
 void* take(size_t n, Recall back, void* owner);
 void give(void* p);
