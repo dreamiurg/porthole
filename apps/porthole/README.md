@@ -85,8 +85,8 @@ Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say t
 tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
 Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
 tomorrow, an easy one waits longer each time. Once every fact of a table is known (Easy on two
-separate days), the next table opens. A 6-year-old starts on 2×, an 8-year-old on 4×. No timer, no
-sounds.
+separate days), the next table opens. A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
+round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
 
 Design and state contract: [game brief](games/times-cards/AGENTS.md)
 

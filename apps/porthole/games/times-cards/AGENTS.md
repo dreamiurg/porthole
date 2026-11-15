@@ -18,8 +18,12 @@ Every page has the house at the top: from a card it goes back to the deck, from 
 - `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b". The card sinks under a finger; a tap turns it.
 - `cards_answer`: "a × b =" small and the answer big, with **Easy**, **Hard** and **Wrong**.
 - `cards_done`: "Perfect round!" (no Hard or Wrong), "Great job!", or "Next up: N ×!" when the round opened a new
-  table; the round's three tallies and
+  table; "+2 stars", the round's three tallies, the table's dots and
   **Again**, which deals the next round.
+
+Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent in
+Biscuit's doghouse), whatever the grades, so an honest Wrong costs nothing. A round left half-way pays none. The shell
+keeps and saves the balance; this game never stores it.
 
 No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only comes back sooner.
 

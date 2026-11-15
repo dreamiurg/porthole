@@ -173,6 +173,8 @@ static void pages() {
   Profile zoe = {1, "Zoe", 0, 8, 0};
   SaveSlot none = {nullptr, 0};
   AppEnter e = {&zoe, &zoe, &none, 1, NOW, ms, true};
+  uint32_t wallet = 7;
+  e.stars = &wallet;
   g.enter(e);
   settle(g);
   CHECK(on(g, "cards_home") && g.save().level == 4);   // an 8-year-old starts on 4x
@@ -189,6 +191,7 @@ static void pages() {
     settle(g);
   }
   CHECK(on(g, "cards_done") && g.save().answers == NEW_PER_ROUND);
+  CHECK(wallet == 7 + ROUND_STARS);   // a finished round pays the kid's shared stars
   CHECK(g.takeSave(&data, &len, true));
   Save saved; memcpy(&saved, data, sizeof saved);
   tapBox(g, 80, 133);   // Again

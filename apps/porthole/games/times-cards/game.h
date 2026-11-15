@@ -40,6 +40,7 @@ class Game : public App {
   ui::FreshGate gate_;
   canvas::Frames<1> frames_;
   uint32_t ms_ = 0, now_ = 0;
+  uint32_t* wallet_ = nullptr;   // the kid's stars (AppEnter::stars), shared with every game
   bool home_ = false, dirty_ = false;
   int32_t today() const { return dayOf(now_); }
   void go(Page p);

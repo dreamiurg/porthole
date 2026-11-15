@@ -37,6 +37,7 @@ constexpr uint8_t KNOWN_BOX = 5;         // the tables below where a kid starts:
 constexpr uint8_t MAX_BOX = 7;
 constexpr uint8_t INTERVAL[MAX_BOX + 1] = {0, 1, 2, 4, 7, 14, 30, 60};   // days until a card in box b is due again
 constexpr int MAX_QUEUE = ROUND + AGAIN_ROOM;
+constexpr uint32_t ROUND_STARS = 2;   // stars (os/stars.h) for every round finished, however it went: trying is the work
 
 // The table a kid starts on, from the age on their profile: 6 starts on 2x, 8 on 4x (lower tables count as known).
 inline int startTable(int age) { const int t = age - 4; return t < 1 ? 1 : t > 4 ? 4 : t; }

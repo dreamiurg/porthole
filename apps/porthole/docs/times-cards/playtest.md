@@ -38,9 +38,9 @@ honest and repeat counts mean something) and a private working directory.
 
 ## Deferred, with the player impact
 
-- **Honest grading has no reward of its own** (run 3's Major). After the change above, Wrong costs one extra card,
-  shown as a second look rather than a longer round. A reward (for example Biscuit stars for finished rounds, which do
-  not depend on the grades) is the next step and is planned with the shared star balance.
+- **Honest grading** (run 3's Major): resolved after the runs. Wrong costs one extra card, shown as a second look,
+  and every finished round now pays 2 of the kid's shared stars whatever the grades, so pressing Easy earns nothing
+  extra. Not playtested yet.
 - **No "done for today"**: Again always deals; once everything due is done, a round is extra practice of the facts
   being learned, then of everything. A kid can stop at any round's end; nothing is lost by stopping.
 - **Leaving mid-round restarts the count** at "1 of n"; grades already given are kept.

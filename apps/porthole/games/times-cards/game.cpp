@@ -7,6 +7,7 @@
 #include "generated/fonts.h"
 #include "launcher_icon.h"
 #include "palette.h"
+#include "stars.h"
 
 namespace cards {
 namespace {
@@ -62,7 +63,7 @@ const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
   in_ = Input{};
   home_ = dirty_ = false;
-  ms_ = e.ms; now_ = e.nowSec;
+  ms_ = e.ms; now_ = e.nowSec; wallet_ = e.stars;
   save_ = Save{};
   bool loaded = false;
   for (int i = 0; i < e.n; i++)   // only this kid's deck; a bad one starts fresh
@@ -110,6 +111,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
         if (ui::clicked(in_, GRADE[g])) {
           answer(round_, save_, (Grade)g, today());
           dirty_ = true;
+          if (round_.done()) stars::award(wallet_, ROUND_STARS);
           go(round_.done() ? P_DONE : P_ASK);
           break;
         }
@@ -151,13 +153,15 @@ void Game::draw() const {
                         : round_.wrong * 2 > round_.base ? "Nice try!" : "Great job!";
     centered(FONT40, title, 240, 100, INK);
     indexCard({80, 140, 400, 304});
+    snprintf(s, sizeof s, "+%u stars", (unsigned)ROUND_STARS);
+    centered(FONT28, s, 240, 154, GRADE_C[HARD]);   // above the margin line, like a card's heading
     const int counts[3] = {round_.easy, round_.hard, round_.wrong};
     for (int g = 0; g < 3; g++) {
       const int x = 152 + g * 88;
-      canvas::disc(x, 214, 34, GRADE_C[g]);
+      canvas::disc(x, 218, 32, GRADE_C[g]);
       snprintf(s, sizeof s, "%d", counts[g]);
-      centered(FONT40, s, x, 214, WHITE);
-      centered(FONT28, GRADE_WORD[g], x, 270, SOFT);
+      centered(FONT40, s, x, 218, WHITE);
+      centered(FONT28, GRADE_WORD[g], x, 272, SOFT);
     }
     snprintf(s, sizeof s, "%d \xC3\x97", save_.level);   // where the table stands now
     centered(FONT28, s, 108, 336, INK);
@@ -212,10 +216,11 @@ void Game::debugPrint() {
   const bool onCard = page_ == P_ASK || page_ == P_ANSWER;
   const int c = onCard ? round_.current() : 0;
   printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d card=%dx%d box=%d due=%d easy=%d hard=%d "
-         "wrong=%d leveled=%d]\n",
+         "wrong=%d leveled=%d stars=%lu]\n",
          screenName(), save_.level, save_.start, known(save_, save_.level), (unsigned long)save_.answers, round_.at,
          round_.n, onCard ? tableOf(c) : 0, onCard ? factorOf(c) : 0, onCard ? save_.box[c] : 0,
-         onCard ? (int)save_.due[c] - today() : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp);
+         onCard ? (int)save_.due[c] - today() : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
+         (unsigned long)stars::balance(wallet_));
   printf("screen=%s\n", screenName());
 }
 
