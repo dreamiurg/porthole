@@ -1,7 +1,7 @@
 # Porthole: the device firmware, with Pets Club as its first game. Host simulator, pet self-test,
 # checks and coverage; firmware through PlatformIO.
 # The monorepo's root Makefile and CI call these as `make -C apps/porthole <target>`:
-#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
+#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu web clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 # os/ is the shared runtime (renderer, input, palette, widgets, the App contract); shell/ is the profile picker and
 # launcher; games/<name>/ compile against os/ only. Every directory under games/ is built in: a game includes its own
@@ -205,6 +205,16 @@ art:
 webemu: snap
 	python3 tools/webemu.py
 
+# The sim for a browser (site/play/, published by .github/workflows/pages.yml): every source through Emscripten into
+# build/web/porthole.js + .wasm. Needs em++ on PATH (emsdk). Rebuilds whole every time; it is only CI's and a test's.
+EMXX ?= em++
+WEB_ZLIB ?= -sUSE_ZLIB=1
+web:
+	mkdir -p build/web
+	$(EMXX) -std=c++17 -O2 $(HOST_FLAGS) $(SRC) host/sim.cpp $(WEB_ZLIB) -o build/web/porthole.js \
+	  -sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web -sEXPORTED_FUNCTIONS=_main,_web_cmd,_web_frame \
+	  -sEXPORTED_RUNTIME_METHODS=ccall,HEAPU8
+
 # PlatformIO exits 0 on its own "Warning!" lines (an unknown platformio.ini option, say); the wrapper fails on them.
 firmware:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware
@@ -224,5 +234,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean flash-report
+.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu web firmware factory flash monitor clean flash-report
 -include $(shell find build -name '*.d' 2>/dev/null)
