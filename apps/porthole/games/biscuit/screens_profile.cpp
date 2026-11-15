@@ -63,12 +63,12 @@ void Game::drawProfile() {
   gfx565::clear(PAPER);
   top(in_, "Our scrapbook", stars(save_));
   char s[96];
-  const bool bookworm = save_.stories & (save_.stories - 1);   // two stories or more
+  const bool bookworm = stars(save_) >= 6;   // two stories or more
   snprintf(s, sizeof s, "%s - %s", STAGES[(int)stage(save_)], bookworm ? "Bookworm" : "Cuddlebug");
   text(BOOK_BADGE, s, INK);
   char lines[128];   // the numbers first: personalize() then fills the names (letters only, never a %)
-  snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d story stars", (unsigned)save_.daysTogether,
-           (unsigned)save_.friendship, stars(save_));
+  snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d stars, %u puzzles", (unsigned)save_.daysTogether,
+           (unsigned)save_.friendship, stars(save_), (unsigned)save_.puzzles);
   personalize(s, who_.name, save_.petName, lines, sizeof lines);
   text(BOOK_LINES, lines, INK);
   button(in_, ALBUM);

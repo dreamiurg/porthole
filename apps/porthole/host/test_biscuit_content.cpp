@@ -8,12 +8,14 @@
 #include "crc32.h"
 #include "games/biscuit/content_daily.h"
 #include "games/biscuit/content_discoveries.h"
+#include "games/biscuit/content_puzzles.h"
 #include "games/biscuit/content_stories.h"
 #include "games/biscuit/generated/discovery_art.h"
 #include "games/biscuit/generated/scenes.h"
 #include "games/biscuit/layout.h"
 #include "games/biscuit/personalize.h"
 #include "games/biscuit/pet.h"
+#include "games/biscuit/puzzles.h"
 #include "gfx565.h"
 #include "packed_image.h"
 
@@ -249,8 +251,10 @@ static void stream(const char* where, const char* const* pages, int count) {
 }
 static void storyGate() {
   char where[64], text[128];
+  Save late{};   // the latest a book can open: the newer books started arriving on the last countable day
+  late.booksDay = late.daysTogether = MAX_COUNT;
   for (const Story& st : STORIES) {
-    snprintf(text, sizeof text, "Day %d: %s", st.unlockDay, st.title);
+    snprintf(text, sizeof text, "Day %u: %s", (unsigned)storyDay(late, (int)(&st - STORIES), st.unlockDay), st.title);
     fits(STORY_BUTTON, st.id, text);
     snprintf(text, sizeof text, "%s *", st.title);
     fits(STORY_BUTTON, st.id, text);
@@ -322,7 +326,7 @@ static void homeGate() {
   for (int i = 0; i < 4; i++)
     for (const char* s : ACTION_LABELS[i]) if (s) fits(actionLabel(ACTIONS[i], &FONT20), "action", s);
   fits(WORLD_NAMES, "pet alone", PET);   // World shows "{pet} & {name}" only when it fits, else the pup's name
-  snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u story stars", big, big, stars);
+  snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u stars, %u puzzles", big, big, stars, big);
   fits(BOOK_LINES, "scrapbook", filled(text));
 }
 // The words the new screens compose around the content: titles, button labels, counters, World's tiles.
@@ -364,6 +368,45 @@ static void screensGate() {
       if (tileDetails[i][j]) fits(inTile(TILE_DETAIL, tiles[i]), "tile", tileDetails[i][j]);
     }
 }
+// Puzzles: the kinds and tables, every clue, the widest questions, answers and what the pup does after one.
+static void puzzleGate() {
+  for (int i = 0; i < 6; i++) {
+    fits(GRID_LABEL, "grid", KIND_LABELS[i]);
+    fits(GRID_LABEL, "grid", TABLE_LABELS[i]);
+  }
+  static const char* const TITLES[] = {"Puzzles", "Times tables", "All done!", "Puzzle 5 of 5"};
+  for (const char* t : TITLES) fits(HEADER, "puzzle title", t);
+  static const char* const WIDES[] = {"Puzzles", "Next", "More puzzles"};
+  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "puzzle wide", t);
+  static const char* const ANSWERS[] = {"999", "88", "w", "m"};
+  for (int i = 0; i < 3; i++) for (const char* t : ANSWERS) fits(buttonLabel(ANSWER[i], &FONT28), "answer", t);
+  static const char* const ASKS[] = {"88 + 88 = ?", "88 - 88 = ?", "8 x 10 = ?"};
+  for (const char* t : ASKS) fits(ASK, "ask", t);
+  char ask[24], line[160];
+  const SpellWord* lists[2] = {SHORT_WORDS, LONG_WORDS};
+  const int counts[2] = {SHORT_WORD_COUNT, LONG_WORD_COUNT};
+  for (int l = 0; l < 2; l++)
+    for (int i = 0; i < counts[l]; i++) {
+      const SpellWord& w = lists[l][i];
+      fits(CLUE, w.word, w.clue);
+      for (int gap = 0; w.word[gap]; gap++) {   // "f r _ e n d", the gap anywhere
+        puzzles::detail::spaced(w.word, gap, ask);
+        fits(ASK, w.word, ask);
+      }
+      static const char* const VERDICTS[] = {"Yes!", "It's"};
+      for (const char* t : VERDICTS) {
+        snprintf(line, sizeof line, "%s %s\n{pet} thinks that one was tricky.", t, w.word);
+        fits(FEEDBACK, w.word, filled(line));
+      }
+    }
+  const char* const* const AFTER[] = {CHEERS, NUDGES};
+  for (const char* const* after : AFTER)
+    for (int i = 0; i < 5; i++) {
+      snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", after[i]);
+      fits(FEEDBACK, "feedback", filled(line));
+    }
+  fits(PUZZLE_DONE, "done", filled("Five puzzles with {pet}!\n5 right this time.\n{pet} is so proud of you."));
+}
 static void pixelGate() {
   const font::Font* F[4] = {&FONT16, &FONT20, &FONT24, &FONT28};
   for (const font::Font* f : F)
@@ -378,6 +421,7 @@ static void pixelGate() {
   dailyGate();
   homeGate();
   screensGate();
+  puzzleGate();
   if (failures) printf("content gate: %d strings do not fit (widest names: {name} %s, {pet} %s)\n", failures, NAME, PET);
   assert(failures == 0);
 }
@@ -391,7 +435,7 @@ int main() {
   // The rules and the content count the same things (and share one namespace without clashing).
   static_assert(NUM_STORIES == STORY_COUNT && NUM_DISCOVERIES == DISCOVERY_COUNT && NUM_TRICKS == TRICK_COUNT &&
                 NUM_STICKERS == STICKER_COUNT, "pet.h and the content agree");
-  assert(STORY_COUNT == 7 && TOPIC_COUNT == 12 && ADVENTURE_COUNT == 7 && TRICK_COUNT == 6 && STICKER_COUNT == 12);
+  assert(STORY_COUNT == 15 && TOPIC_COUNT == 12 && ADVENTURE_COUNT == 7 && TRICK_COUNT == 6 && STICKER_COUNT == 12);
   printf("biscuit content: all checks passed\n");
   return 0;
 }

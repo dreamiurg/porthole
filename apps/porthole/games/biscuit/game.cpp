@@ -24,6 +24,7 @@ void Game::enter(const AppEnter& e) {
   lastTickSec_ = lastCheckpointSec_ = now_; lastSurpriseMs_ = ms_;
   fetch_ = -1; quiet(); homeFrames_.reset();   // the buffers hold the launcher
   claimed_ = save_.dailyClaimed; stickerNews_ = false;
+  rng_ = now_ ^ (ms_ << 7);   // the puzzles' dice (next() turns a 0 into a seed)
   if (save_.named) go(SC_HOME);
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
@@ -70,7 +71,8 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateSetupPet, &Game::updateHome, &Game::updateWorld, &Game::updateTricks, &Game::updateTraining,
     &Game::updateProfile, &Game::updateRenamePet, &Game::updateLibrary, &Game::updateStory, &Game::updateChoice,
     &Game::updateStory, &Game::updateDiscoveries, &Game::updateTopics, &Game::updateDiscovery, &Game::updateSource,
-    &Game::updateToday, &Game::updateWord, &Game::updateStickers};
+    &Game::updateToday, &Game::updateWord, &Game::updateStickers, &Game::updatePuzzles, &Game::updateTables,
+    &Game::updatePuzzle};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -103,7 +105,7 @@ void Game::render() {
     &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
     &Game::drawRenamePet, &Game::drawLibrary, &Game::drawStory, &Game::drawChoice, &Game::drawStory,
     &Game::drawDiscoveries, &Game::drawTopics, &Game::drawDiscovery, &Game::drawSource, &Game::drawToday,
-    &Game::drawWord, &Game::drawStickers};
+    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawTables, &Game::drawPuzzle};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   if (screen_ != SC_HOME) homeFrames_.reset();   // another screen draws over what the buffers held of Home
@@ -131,7 +133,8 @@ const char* Game::screenName() const {
   static const char* N[] = {"biscuit_setup_pet", "biscuit_home", "biscuit_world", "biscuit_tricks", "biscuit_training",
                             "biscuit_profile", "biscuit_rename_pet", "biscuit_library", "biscuit_story",
                             "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
-                            "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers"};
+                            "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers",
+                            "biscuit_puzzles", "biscuit_tables", "biscuit_puzzle"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per screen");
   return N[screen_];
 }
@@ -145,6 +148,8 @@ void Game::debugPrint() {
          p.dailyCompleted, p.tricks[0], p.tricks[1], p.tricks[2], p.tricks[3], p.tricks[4], p.tricks[5], trick_, step_, watching_, page_);
   int kept = 0;
   for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
+  printf("puzzles=%u kind=%d table=%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n", (unsigned)p.puzzles,
+         (int)kind_, table_, asked_, right_, answered_, puzzle_.right, (unsigned)p.booksDay, (unsigned)p.moreStories);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }
@@ -156,8 +161,13 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "grown")) { save_.daysTogether = 7; save_.friendship = 60; }
   else if (!strcmp(cmd, "tricks")) memset(save_.tricks, 3, sizeof save_.tricks);
   else if (!strcmp(cmd, "practiced")) memset(save_.tricks, 2, sizeof save_.tricks);   // every trick on its last lesson
-  else if (!strcmp(cmd, "read")) { save_.stories = (uint8_t)((1u << NUM_STORIES) - 1); for (int i = 0; i < NUM_DISCOVERIES; i++) save_.discoveries[i / 32] |= 1u << (i % 32); }
+  else if (!strcmp(cmd, "books")) { save_.booksDay = 1; if (save_.daysTogether < 30) save_.daysTogether = 30; }
+  else if (!strcmp(cmd, "read")) {
+    for (int id = 0; id < NUM_STORIES; id++) markStoryRead(save_, id);
+    for (int i = 0; i < NUM_DISCOVERIES; i++) save_.discoveries[i / 32] |= 1u << (i % 32);
+  }
   else return;
+  if (save_.booksDay > save_.daysTogether) save_.booksDay = save_.daysTogether;   // a younger pup stays valid
   markDirty();
 }
 }  // namespace biscuit

@@ -10,6 +10,7 @@
 #include "layout.h"
 #include "packed_image.h"
 #include "pet.h"
+#include "puzzles.h"
 #include "ui.h"
 
 namespace biscuit {
@@ -31,12 +32,14 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   // test states: "hungry" "unlock" "young" "grown" "tricks" "practiced" "read" (every story and discovery done)
+  // "books" (every story open)
   void debugCmd(const char* cmd) override;
 
   // shared by the screens (screens_*.cpp)
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
-    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_COUNT
+    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES, SC_TABLES,
+    SC_PUZZLE, SC_COUNT
   };
 
  private:
@@ -69,6 +72,10 @@ class Game : public App {
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
   FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
+  // Puzzles: the kind (and times table) picked, the question shown, how far the round is (puzzles::ROUND = done),
+  // the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits).
+  puzzles::Kind kind_ = puzzles::ADD; uint8_t table_ = 0;
+  puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
@@ -112,5 +119,10 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void openLibrary(Screen back); void openTricks(Screen back);
   void stickerNews();
+  void updatePuzzles(); void drawPuzzles();
+  void updateTables(); void drawTables();
+  void startPuzzles(puzzles::Kind kind, uint8_t table);
+  void nextPuzzle();
+  void updatePuzzle(); void drawPuzzle();
 };
 }  // namespace biscuit

@@ -1,0 +1,64 @@
+# Puzzles from World: the six kinds, the times tables, a round of five with three answers each, what the pup does
+# after an answer, the round's end and back to the kinds. Every answer counts as today's training; a right one is
+# kept for the scrapbook. A spelling round shows its clue over the word with a gap. Back leaves a round any time.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 121 129
+wait 450
+expect-screen biscuit_world
+ui-check biscuit_world-puzzles
+tap 80 132
+wait 450
+expect-screen biscuit_puzzles
+ui-check biscuit_puzzles
+snap z01_puzzles
+# times tables: the fours
+tap 106 84
+wait 450
+expect-screen biscuit_tables
+ui-check biscuit_tables
+snap z02_tables
+tap 53 84
+wait 450
+expect-screen biscuit_puzzle
+expect kind=3
+expect table=4
+expect asked=0
+expect answered=-1
+ui-check biscuit_puzzle
+snap z03_question
+repeat 5
+tap 80 97
+wait 450
+expect answered=1
+tap 80 132
+wait 450
+end
+expect asked=5
+expect daily=16
+ui-check biscuit_puzzle-done
+snap z05_done
+tap 80 132
+wait 450
+expect-screen biscuit_puzzles
+# long words: the clue over the gap
+tap 106 108
+wait 450
+expect kind=5
+ui-check biscuit_puzzle-spelling
+snap z06_spelling
+tap 44 97
+wait 450
+expect answered=0
+ui-check biscuit_puzzle-answered
+snap z07_answered
+tap 50 25
+wait 450
+expect-screen biscuit_puzzles
+tap 50 25
+wait 450
+expect-screen biscuit_world
+sheet puzzles

@@ -81,7 +81,7 @@ class Gate:
 
 def stories(g):
     rows = table("content_stories.h", "STORIES")
-    g.count("STORIES", rows, 7)
+    g.count("STORIES", rows, 15)
     g.unique("STORIES", [r[0] for r in rows])
     for r in rows:
         sid, title, subtitle, day, pages, prompt, choices = r
@@ -157,6 +157,16 @@ def daily(g):
         g.text(s, "activity", s)
 
 
+def spelling(g):  # puzzles.h's spell(): lowercase letters for vowel(), and "w o r d" with its gap fits Puzzle::ask[24]
+    for name in ("SHORT_WORDS", "LONG_WORDS"):
+        rows = table("content_puzzles.h", name)
+        g.unique(name, [r[0] for r in rows])
+        for word, clue in rows:
+            if not re.fullmatch(r"[a-z]{2,11}", word):
+                g.errors.append(f"{name} {word!r}: 2 to 11 lowercase letters only")
+            g.text(word, "clue", clue)
+
+
 def main():
     g = Gate()
     for path in sorted(GAME.glob("content_*.h")):
@@ -166,11 +176,12 @@ def main():
     stories(g)
     discoveries(g)
     daily(g)
+    spelling(g)
     for e in g.errors:
         print(f"check_content: {e}")
     if g.errors:
         sys.exit(1)
-    print("check_content: biscuit content OK (7 stories, 96 discoveries, 7 adventures, 6 tricks, 12 stickers)")
+    print("check_content: biscuit content OK (15 stories, 96 discoveries, 7 adventures, 6 tricks, 12 stickers, spelling words)")
 
 
 if __name__ == "__main__":

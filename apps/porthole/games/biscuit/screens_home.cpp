@@ -131,6 +131,7 @@ void Game::drawHomeWhole() {
 
 // ---------------------------------------------------------------- World
 constexpr int WORLD_TILES = 4;
+static Button puzzlesButton(const Save& p) { return {WIDE, "Puzzles", &FONT20, SAGE, awake(p)}; }   // not while he naps
 static Tile worldTile(int i, const Save& p) {
   static char tricks[24];
   snprintf(tricks, sizeof tricks, "%d of 6 mastered", mastered(p));
@@ -142,6 +143,7 @@ static Tile worldTile(int i, const Save& p) {
 void Game::updateWorld() {
   const Box& back = WORLD_BACK;
   if (in_.tapIn(back.x, back.y, back.w, back.h)) { go(SC_HOME); return; }
+  if (tapped(in_, puzzlesButton(save_))) { go(SC_PUZZLES); return; }
   for (int i = 0; i < WORLD_TILES; i++) {
     const Box& b = worldTile(i, save_).box;
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
@@ -160,5 +162,6 @@ void Game::drawWorld() {
   snprintf(s, sizeof s, "Day %u%s%s%s%d stars", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, stars(save_));
   text(WORLD_LINE, s, INK);
   for (int i = 0; i < WORLD_TILES; i++) tile(in_, worldTile(i, save_));
+  button(in_, puzzlesButton(save_));
 }
 }  // namespace biscuit
