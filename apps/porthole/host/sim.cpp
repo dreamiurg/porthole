@@ -660,13 +660,17 @@ static void runWindow() {
 static void runWindow() { fprintf(stderr, "built without SDL; use --script\n"); }
 #endif
 
-int main(int argc, char** argv) {
+static void initPanel() {
   for (int t = 0; t < TINT_COUNT; t++) {
     palette_build((Tint)t, g_pal[t]);
     for (int i = 0; i < C_COUNT; i++) g_pal565[t][i] = rgb888_to_565(g_pal[t][i]);
   }
   for (auto& b : g_fb565) for (uint16_t& p : b) p = 0xF81F;
   gfx565::target(g_fb565[0]);
+}
+
+int main(int argc, char** argv) {
+  initPanel();
   // Default clock: a fixed Tuesday 16:00 local so snapshots are deterministic; --now overrides.
   g_epoch = 1790000000u - (1790000000u % 86400u) + 16 * 3600;
   const char* script = nullptr; bool serve = false;
