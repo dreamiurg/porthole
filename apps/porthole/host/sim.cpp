@@ -36,6 +36,10 @@
 #ifdef HAVE_SDL
 #include <SDL.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <sys/stat.h>
+#endif
 
 // Stands in for the board's NVS (namespace, key) blobs as build/host/<ns>-<key>.sav.
 struct FileStore : shell::Store {
@@ -466,26 +470,43 @@ static void dbg(const char* a, const char* b) {
 
 // --serve mode: newline-delimited commands on stdin, one response on stdout per command (flushed).
 // down/move/up/tick/skip/reset all print "ok"; frame prints a binary PPM (P6) preceded by "PPM <bytes>".
-static void runServe() {
-  bool down = false; int cx = 0, cy = 0;
-  char line[256];
-  while (fgets(line, sizeof line, stdin)) {
-    char cmd[32] = {0}; char a[64] = {0}, b[64] = {0};
-    if (sscanf(line, "%31s %63s %63s", cmd, a, b) < 1) continue;
-    if (!strcmp(cmd, "down")) { down = true; cx = atoi(a); cy = atoi(b); frame(true, cx, cy); g_ms += 33; puts("ok"); }
-    else if (!strcmp(cmd, "move")) { cx = atoi(a); cy = atoi(b); frame(down, cx, cy); g_ms += 33; puts("ok"); }
-    else if (!strcmp(cmd, "up")) { down = false; frame(false, cx, cy); g_ms += 33; puts("ok"); }
-    else if (!strcmp(cmd, "tick")) { int ms = atoi(a); for (int t = 0; t < ms; t += 33) { frame(down, cx, cy); g_ms += 33; } puts("ok"); }
-    else if (!strcmp(cmd, "skip")) { g_epoch += (uint32_t)atol(a); frame(down, cx, cy); g_ms += 33; puts("ok"); }
-    else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
-    else if (!strcmp(cmd, "frame")) writePPM();
-    else if (!strcmp(cmd, "dbg")) { dbg(a, b); puts("ok"); }
-    else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
-    else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
-    else if (serveExtra(cmd, a, b)) { frame(down, cx, cy); g_ms += 33; }
-    fflush(stdout);
-  }
+// serveLine runs one command; the browser build (web_cmd below) calls it directly, with no stdin.
+static void serveLine(const char* line) {
+  static bool down = false; static int cx = 0, cy = 0;
+  char cmd[32] = {0}; char a[64] = {0}, b[64] = {0};
+  if (sscanf(line, "%31s %63s %63s", cmd, a, b) < 1) return;
+  if (!strcmp(cmd, "down")) { down = true; cx = atoi(a); cy = atoi(b); frame(true, cx, cy); g_ms += 33; puts("ok"); }
+  else if (!strcmp(cmd, "move")) { cx = atoi(a); cy = atoi(b); frame(down, cx, cy); g_ms += 33; puts("ok"); }
+  else if (!strcmp(cmd, "up")) { down = false; frame(false, cx, cy); g_ms += 33; puts("ok"); }
+  else if (!strcmp(cmd, "tick")) { int ms = atoi(a); for (int t = 0; t < ms; t += 33) { frame(down, cx, cy); g_ms += 33; } puts("ok"); }
+  else if (!strcmp(cmd, "skip")) { g_epoch += (uint32_t)atol(a); frame(down, cx, cy); g_ms += 33; puts("ok"); }
+  else if (!strcmp(cmd, "reset")) { reset(); down = false; puts("ok"); }
+  else if (!strcmp(cmd, "frame")) writePPM();
+  else if (!strcmp(cmd, "dbg")) { dbg(a, b); puts("ok"); }
+  else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
+  else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
+  else if (serveExtra(cmd, a, b)) { frame(down, cx, cy); g_ms += 33; }
 }
+static void runServe() {
+  char line[256];
+  while (fgets(line, sizeof line, stdin)) { serveLine(line); fflush(stdout); }
+}
+
+#ifdef __EMSCRIPTEN__
+// The browser build (make web, site/play): the page sends --serve commands through web_cmd and paints web_frame, the
+// panel as RGBA, every animation frame.
+extern "C" EMSCRIPTEN_KEEPALIVE void web_cmd(const char* line) { serveLine(line); }
+extern "C" EMSCRIPTEN_KEEPALIVE const uint8_t* web_frame() {
+  static uint8_t rgba[gfx565::W * gfx565::H * 4];
+  uint8_t* p = rgba;
+  for (int y = 0; y < gfx565::H; y++)
+    for (int x = 0; x < gfx565::W; x++, p += 4) {
+      const uint32_t c = framePixel(x, y);
+      p[0] = (c >> 16) & 255; p[1] = (c >> 8) & 255; p[2] = c & 255; p[3] = 255;
+    }
+  return rgba;
+}
+#endif
 
 // ---- script mode. step() advances one 40 ms frame exactly like `wait`, so playtest runs replay identically.
 struct Finger { bool down = false; int x = 0, y = 0; };
@@ -655,9 +676,15 @@ int main(int argc, char** argv) {
     else if (!strcmp(argv[i], "--now") && i + 1 < argc) g_epoch = (uint32_t)atol(argv[++i]);
     else if (!strcmp(argv[i], "--fresh")) wipe();
   }
+#ifdef __EMSCRIPTEN__
+  mkdir("build", 0755); mkdir("build/host", 0755);   // FileStore's saves, in the page's memory: gone on reload
+#endif
   boot(false);
   g_epoch = timezones::toUtc(g_epoch);   // --now and the deterministic default remain local-wall inputs
   g_shell.update(now(), g_ms, Input{});   // initial programmatic profile/newgame hooks run before the first rendered frame
+#ifdef __EMSCRIPTEN__
+  return 0;   // the runtime stays up; the page drives it through web_cmd
+#endif
   if (script) runScript(script);
   else if (serve) runServe();
   else runWindow();
