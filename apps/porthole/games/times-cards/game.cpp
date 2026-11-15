@@ -219,7 +219,7 @@ void Game::debugPrint() {
          "wrong=%d leveled=%d stars=%lu]\n",
          screenName(), save_.level, save_.start, known(save_, save_.level), (unsigned long)save_.answers, round_.at,
          round_.n, onCard ? tableOf(c) : 0, onCard ? factorOf(c) : 0, onCard ? save_.box[c] : 0,
-         onCard ? (int)save_.due[c] - today() : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
+         onCard ? (int)(save_.due[c] - today()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
          (unsigned long)stars::balance(wallet_));
   printf("screen=%s\n", screenName());
 }
