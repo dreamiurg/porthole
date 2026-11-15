@@ -249,6 +249,16 @@ static void corruptFieldsLoadSafe() {
   assert(m.hat == 0 && m.stage == STAGE_GROWN);   // SPR_HATS and the stats card's stage names
 }
 
+// The clock is set back to before the dog grew: it stays grown, with no second "grew up" card.
+static void clockSetBackKeepsStage() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  assert((pet::simulate(s, day0 + 5 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  pet::simulate(s, day0 + 86400, false);   // the first tick after the correction only moves lastSeen back
+  assert(!(pet::simulate(s, day0 + 86400 + 60, true) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  assert(!(pet::simulate(s, day0 + 5 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  assert((pet::simulate(s, day0 + 10 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_GROWN);
+}
+
 static void levels(const Save& s) {
   // reading levels by age
   { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
@@ -453,6 +463,7 @@ int main() {
   simulateEmptyRoom();
   breedSurvivesRoundTrip();
   corruptFieldsLoadSafe();
+  clockSetBackKeepsStage();
   levels(s);
   dayOnPickedLight();
   breedDraws();
