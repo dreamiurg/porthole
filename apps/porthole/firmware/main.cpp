@@ -8,6 +8,7 @@
 #include "games/apps.h"
 #include "gfx565.h"
 #include "net.h"
+#include "nvs.h"
 #include "shell.h"
 #include "timezone.h"
 #include "update_picture.h"
@@ -322,6 +323,9 @@ static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCom
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();
   const shell::ClockStatus clock = g_sys.clockStatus();
+  nvs_stats_t nvs = {};
+  nvs_get_stats(nullptr, &nvs);   // saves share the 5-page nvs partition with wifi and the clock; when it fills, saves fail
+  Serial.printf("nvs_used=%u nvs_free=%u ", (unsigned)nvs.used_entries, (unsigned)nvs.available_entries);
   Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
                 "sys_time=%d sys_sync=%lu sys_off=%d\n",
                 (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
