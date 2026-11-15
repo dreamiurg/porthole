@@ -90,6 +90,7 @@ inline constexpr const char* TABLE_LABELS[6] = {"Twos", "Threes", "Fours", "Five
 inline constexpr const char* CHEERS[5] = {"{pet} wags his tail.", "{pet} does a happy spin.",
                                           "{pet} gives you a high paw.", "{pet} barks, just once.",
                                           "{pet} leans on your knee."};
+inline constexpr const char* STAR_CHEER = "+1 star for you and {pet}!";   // instead of a cheer, when a star comes
 inline constexpr const char* NUDGES[5] = {"{pet} nudges your hand.", "{pet} thinks that one was tricky.",
                                           "{pet} tilts his head.", "{pet} wags anyway.", "{pet} sniffs the next one."};
 }  // namespace biscuit

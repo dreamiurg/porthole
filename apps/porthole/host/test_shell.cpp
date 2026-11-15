@@ -468,6 +468,13 @@ static void recordV1() {
   uint8_t wrong[sizeof r]; memcpy(wrong, &r, sizeof r); memcpy(wrong + 4, &ver, 2);
   crc = os::crc32(wrong, sizeof wrong - 4); memcpy(wrong + sizeof wrong - 4, &crc, 4);
   assert(!shell::loadRecord(wrong, sizeof wrong, out));   // a v1 header on a v2-sized blob is not a record
+  // a v2 record (before the stars): it loads with none
+  r.stars = 9; shell::seal(r);
+  uint8_t v2[shell::REC_V2_SIZE]; memcpy(v2, &r, sizeof v2 - 4);
+  ver = 2; size = (uint16_t)shell::REC_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
+  crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
+  assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
+  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
@@ -676,8 +683,8 @@ struct StubApp : App {
   const char* name() const override { return label; }
   const gfx::Sprite& icon() const override { static const uint8_t px[1] = {C_T}; static const gfx::Sprite s = {1, 1, px}; return s; }
   const char* store() const override { return "stub"; }
-  bool daylight = false;
-  void enter(const AppEnter& e) override { entered++; daylight = e.daylight; }
+  bool daylight = false; uint32_t* stars = nullptr;
+  void enter(const AppEnter& e) override { entered++; daylight = e.daylight; stars = e.stars; }
   void update(uint32_t, uint32_t, const Input&) override { updated++; }
   void render() override {}
   Tint tint() const override { return TINT_DAY; }
@@ -1655,6 +1662,21 @@ static void monotonicPlayDuration() {
   app.home = true; sh.update(NOW - 3600, ms += 20, Input{});
   shell::loadAll(st, p); assert(p.rec[0].dayPlaySec == 1 && p.rec[0].playSec == 1);
 }
+// A kid's stars (os/stars.h): a game gets the playing kid's balance, the shell saves it as soon as it changes (not
+// a minute later), and the next kid has their own.
+static void starBalance() {
+  MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app}; uint32_t ms = 0;
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, ""); sh.createProfile("Kai", 6, "");
+  assert(sh.openApp("One") && app.stars && stars::balance(app.stars) == 0);
+  stars::award(app.stars, 5);
+  ms += 1000; sh.update(NOW, ms, Input{});
+  shell::Profiles p; shell::loadAll(st, p);
+  assert(!strcmp(p.rec[1].name, "Kai") && p.rec[1].stars == 5 && p.rec[0].stars == 0);   // the newest kid plays
+  assert(stars::spend(app.stars, 2) && !stars::spend(app.stars, 4));
+  ms += 1000; sh.update(NOW, ms, Input{});
+  shell::loadAll(st, p); assert(p.rec[1].stars == 3);
+}
 // The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
 // picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
@@ -1725,6 +1747,7 @@ int main() {
   biscuitCrash();
   restBudget();
   recordV1();
+  starBalance();
   dailyCap();
   idleNotCounted();
   tiltIsActivity();

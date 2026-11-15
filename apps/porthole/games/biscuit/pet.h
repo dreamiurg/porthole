@@ -10,12 +10,13 @@
 #include <stdint.h>
 #include <string.h>
 #include "crc32.h"
+#include "stars.h"
 
 namespace biscuit {
 constexpr const char* STORE = "biscuit";   // NVS namespace, keys s<profile id>. Never rename it once it ships.
 constexpr size_t NAME_LIMIT = 12;
 constexpr uint32_t MAX_COUNT = 1000000;
-constexpr int NUM_TRICKS = 6, NUM_STORIES = 15, NUM_DISCOVERIES = 96, NUM_STICKERS = 12;
+constexpr int NUM_TRICKS = 6, NUM_STORIES = 15, NUM_DISCOVERIES = 96, NUM_STICKERS = 12, NUM_DECOR = 9;
 // The first seven stories came from the old firmware (their bits are Save::stories); the rest are Save::moreStories.
 // A newer book opens NEW_BOOK_GAP days after the one before it, counted from the day this pup first saw them
 // (Save::booksDay), so a pup already past its content days still gets them one at a time.
@@ -29,6 +30,9 @@ constexpr float FULLNESS_AWAKE = 4, FULLNESS_ASLEEP = 2, HAPPINESS_AWAKE = 2, EN
 constexpr float FEED_FULLNESS = 18, PLAY_HAPPINESS = 14, PLAY_ENERGY = 8, PET_HAPPINESS = 6, STORY_HAPPINESS = 10;
 constexpr uint32_t FIRST_TODAY_FRIENDSHIP = 2, ADVENTURE_FRIENDSHIP = 4;
 constexpr uint8_t TRICK_UNLOCK_DAY[NUM_TRICKS] = {1, 1, 2, 3, 5, 7};   // days together before a trick can be trained
+// Thinking hard is training too: every PUZZLES_PER_LESSON right answers teach the pup a lesson of the first trick it
+// hasn't mastered, whatever day that trick opens on (puzzles open tricks early).
+constexpr uint32_t PUZZLES_PER_LESSON = 4;
 // The daily adventure: which activities (Action bits) today asks for, a 7-day cycle. Completing it earns the sticker
 // of a 12-day cycle.
 constexpr uint8_t DAILY_MASKS[7] = {1 | 8 | 2, 16 | 4 | 32, 8 | 1 | 4, 2 | 16 | 8, 4 | 1 | 32, 16 | 8 | 32, 2 | 4 | 16};
@@ -42,8 +46,8 @@ enum class Cue : uint8_t { Left, Up, Right, Down, Paw };
 // loadBlob sets from daysTogether for a v1 blob), bump SAVE_VERSION, never
 // reorder or resize a field. The kid's name and the daily play budget live in the shell's profile, not here.
 constexpr uint32_t SAVE_MAGIC = 0x54435342;   // "BSCT"
-constexpr uint16_t SAVE_VERSION = 2;
-constexpr size_t SAVE_V1_SIZE = 96, SAVE_V2_SIZE = 108;
+constexpr uint16_t SAVE_VERSION = 3;
+constexpr size_t SAVE_V1_SIZE = 96, SAVE_V2_SIZE = 108, SAVE_V3_SIZE = 116;
 struct Save {
   uint32_t magic;
   uint16_t version, size;
@@ -63,9 +67,13 @@ struct Save {
   uint32_t moreStories;                // v2: stories FIRST_STORIES.. finished at least once
   uint32_t booksDay;                   // v2: daysTogether when the newer books started arriving (1 for a new pup)
   uint32_t puzzles;                    // v2: puzzles answered right
+  // v3: how many of earnedStars() went into the kid's balance (os/stars.h), which the shell keeps; a v2 pup's are
+  // paid in at the first visit. The doghouse's things bought with stars (NUM_DECOR bits).
+  uint32_t starsPaid;
+  uint16_t decor, reserved3;
   uint32_t crc;
 };
-static_assert(sizeof(Save) == SAVE_V2_SIZE, "Save is persisted: append before crc, never resize");
+static_assert(sizeof(Save) == SAVE_V3_SIZE, "Save is persisted: append before crc, never resize");
 
 inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
 inline float clampNeed(float v) { return v < NEED_FLOOR ? NEED_FLOOR : v > NEED_MAX ? NEED_MAX : v; }
@@ -217,8 +225,25 @@ constexpr uint32_t PUZZLES_PER_STAR = 5;
 inline int storyStars(const Save& p) {   // 3 per story finished
   return (__builtin_popcount(p.stories) + __builtin_popcount(p.moreStories)) * 3;
 }
-inline int stars(const Save& p) {   // the stories', and one for every PUZZLES_PER_STAR right answers
+inline int earnedStars(const Save& p) {   // the stories', and one for every PUZZLES_PER_STAR right answers
   return storyStars(p) + (int)(p.puzzles / PUZZLES_PER_STAR);
+}
+// Stars earned here and not yet paid into the kid's balance go there now. True when there were any.
+// shortcut: the balance (the shell's record) and starsPaid (this save) are two writes, so a power cut between them
+// can pay a few stars twice or lose a purchase; one store for both if that ever matters.
+inline bool payStars(Save& p, uint32_t* wallet) {
+  const uint32_t earned = (uint32_t)earnedStars(p);
+  if (earned <= p.starsPaid) return false;
+  stars::award(wallet, earned - p.starsPaid);
+  p.starsPaid = earned;
+  return true;
+}
+inline bool owns(const Save& p, int item) { return item >= 0 && item < NUM_DECOR && ((p.decor >> item) & 1); }
+// The doghouse: a thing bought with the kid's stars. False (nothing spent) when it is owned already or they are short.
+inline bool buyDecor(Save& p, uint32_t* wallet, int item, uint32_t price) {
+  if (item < 0 || item >= NUM_DECOR || owns(p, item) || !stars::spend(wallet, price)) return false;
+  p.decor |= (uint16_t)(1u << item);
+  return true;
 }
 // The day a story opens: its content day, and for a newer book also NEW_BOOK_GAP days after the newer one before it.
 inline uint32_t storyDay(const Save& p, int id, uint8_t unlockDay) {
@@ -236,12 +261,16 @@ inline void finishStory(Save& p, uint8_t id, uint32_t now) {
 }
 
 // A puzzle answered: a right one is kept, and any answer counts as today's training (a pup's mind gets practice
-// too). Nothing here is ever a failure.
-inline void answerPuzzle(Save& p, bool right, uint32_t now) {
+// too). Nothing here is ever a failure. Every PUZZLES_PER_LESSON right ones pass a lesson of the first trick not yet
+// mastered: that trick's id, else -1.
+inline int answerPuzzle(Save& p, bool right, uint32_t now) {
   tick(p, now);
-  if (!awake(p)) return;
-  if (right) p.puzzles = addCount(p.puzzles, 1);
+  if (!awake(p)) return -1;
   recordActivity(p, Action::Train);
+  if (!right || p.puzzles >= MAX_COUNT) return -1;
+  if (++p.puzzles % PUZZLES_PER_LESSON) return -1;
+  for (int id = 0; id < NUM_TRICKS; id++) if (p.tricks[id] < 3) { p.tricks[id]++; return id; }
+  return -1;
 }
 
 inline bool discovered(const Save& p, uint8_t id) {
@@ -253,9 +282,13 @@ inline void discover(Save& p, uint8_t id, uint32_t now) {
   if (awake(p)) p.discoveries[id / 32] |= 1u << (id % 32);
 }
 
+// A trick can be trained once its day comes, or once puzzles taught it a lesson.
+inline bool trickOpen(const Save& p, int id) {
+  return id >= 0 && id < NUM_TRICKS && (p.daysTogether >= trickUnlockDay((uint8_t)id) || p.tricks[id]);
+}
 inline void practice(Save& p, uint8_t id, uint32_t now) {   // one lesson passed
   tick(p, now);
-  if (id >= NUM_TRICKS || !awake(p) || p.daysTogether < trickUnlockDay(id)) return;
+  if (!trickOpen(p, id) || !awake(p)) return;
   if (p.tricks[id] < 3) p.tricks[id]++;
   recordActivity(p, Action::Train);
 }
@@ -271,12 +304,13 @@ inline bool validNeed(float v) { return isfinite(v) && v >= NEED_FLOOR && v <= N
 inline bool validCounts(const Save& p) {
   if (p.friendship > MAX_COUNT || p.daysTogether < 1 || p.daysTogether > MAX_COUNT || p.puzzles > MAX_COUNT) return false;
   if (p.booksDay < 1 || p.booksDay > p.daysTogether) return false;
+  if (p.starsPaid > (uint32_t)earnedStars(p)) return false;
   for (uint32_t c : p.careCounts) if (c > MAX_COUNT) return false;
   for (uint8_t t : p.tricks) if (t > 3) return false;
   return true;
 }
 inline bool validFlags(const Save& p) {
-  return !(p.stories >> FIRST_STORIES) && !(p.moreStories >> (NUM_STORIES - FIRST_STORIES)) && !(p.stickers & ~0xfffu) && !(p.dailyCompleted & ~0x3fu) && p.dailyClaimed <= 1
+  return !(p.stories >> FIRST_STORIES) && !(p.moreStories >> (NUM_STORIES - FIRST_STORIES)) && !(p.stickers & ~0xfffu) && !(p.decor >> NUM_DECOR) && !(p.dailyCompleted & ~0x3fu) && p.dailyClaimed <= 1
       && p.sleeping <= 1 && p.named <= 1 && (bool)p.named == (p.petName[0] != 0);
 }
 // Today's adventure is claimed exactly when it is complete, and a claim always carries its sticker.
@@ -293,7 +327,7 @@ inline bool valid(const Save& p) {
 }
 
 inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); s.reserved[0] = s.reserved[1] = 0;
+  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); s.reserved[0] = s.reserved[1] = 0; s.reserved3 = 0;
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
 // Any version up to this one: a blob is its own size (a prefix of today's layout) with its crc in the last four

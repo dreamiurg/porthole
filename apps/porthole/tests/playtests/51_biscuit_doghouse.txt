@@ -1,0 +1,185 @@
+# The doghouse from World: the room (the pup at the stage he's at, nothing bought yet), the shop's three pages, a
+# thing's page with its price, Buy on only with enough stars, buying it (the stars go down, the thing is at home),
+# See it once it's bought. Then puzzles teaching tricks: every fourth right answer is a lesson of the first trick
+# not yet mastered, the round's end says which, and Show me has the pup do it at home.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 121 129
+wait 450
+expect-screen biscuit_world
+expect stars=0
+tap 108 132
+wait 450
+expect-screen biscuit_doghouse
+expect decor=0
+ui-check biscuit_doghouse-empty
+snap h01_empty
+tap 80 132
+wait 450
+expect-screen biscuit_shop
+ui-check biscuit_shop
+snap h02_shop
+# the ball, three stars, with none yet: Buy stays off
+tap 80 60
+wait 450
+expect-screen biscuit_item
+ui-check biscuit_item-short
+snap h03_short
+tap 80 132
+wait 450
+expect-screen biscuit_item
+expect decor=0
+tap 51 25
+wait 450
+expect-screen biscuit_shop
+# every story read: 45 stars
+dbg read
+wait 100
+expect stars=45
+tap 80 60
+wait 450
+ui-check biscuit_item-buy
+snap h04_buy
+tap 80 132
+wait 450
+expect-screen biscuit_doghouse
+expect stars=42
+expect decor=1
+snap h05_ball
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+expect-screen biscuit_shop
+tap 80 60
+wait 450
+ui-check biscuit_item-owned
+snap h06_owned
+tap 80 132
+wait 450
+expect-screen biscuit_doghouse
+expect stars=42
+# the rest of the shop, with every star a kid can hold
+dbg rich
+wait 100
+expect stars=99999
+tap 80 132
+wait 450
+tap 80 84
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 80 108
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+ui-check biscuit_shop-page2
+snap h07_shop2
+tap 80 60
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+tap 80 84
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+ui-check biscuit_shop-page3
+snap h08_shop3
+tap 80 60
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 80 84
+wait 450
+tap 80 132
+wait 450
+tap 80 132
+wait 450
+tap 108 132
+wait 450
+tap 108 132
+wait 450
+tap 80 108
+wait 450
+tap 80 132
+wait 450
+expect-screen biscuit_doghouse
+expect decor=511
+ui-check biscuit_doghouse-full
+snap h09_full
+dbg grown
+wait 100
+snap h10_full_grown
+tap 43 29
+wait 450
+expect-screen biscuit_world
+# puzzles teach a trick: Adding, four right answers of five (the fourth is a lesson of Sit, the first trick not mastered)
+tap 52 132
+wait 450
+tap 53 60
+wait 450
+expect-screen biscuit_puzzle
+tap 44 97
+wait 450
+tap 80 132
+wait 450
+tap 115 97
+wait 450
+tap 80 132
+wait 450
+tap 44 97
+wait 450
+tap 80 132
+wait 450
+tap 115 97
+wait 450
+tap 80 132
+wait 450
+tap 115 97
+wait 450
+tap 80 132
+wait 450
+expect right=4
+expect tricks=100000
+ui-check biscuit_puzzle-taught
+snap h11_taught
+wait 600
+tap 108 132
+wait 450
+expect-screen biscuit_home
+expect said=9
+snap h12_show_me
+sheet doghouse

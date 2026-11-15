@@ -113,6 +113,7 @@ class Shell {
   char pin_[5] = {0}; int pinLen_ = 0; uint16_t firstPin_ = 0; uint32_t pinWrongUntil_ = 0, pinMs_ = 0;   // pinMs_: the last digit
   uint32_t pinCalmUntil_ = 0, pinNudgeUntil_ = 0;   // the kids' wait: keys hidden until the finger rests; a tap wiggles it
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
+  uint32_t savedStars_ = 0;   // the open game's kid's stars as last saved: a change is saved at the next tick
   uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;

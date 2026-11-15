@@ -61,13 +61,13 @@ void Game::updateProfile() {
 }
 void Game::drawProfile() {
   gfx565::clear(PAPER);
-  top(in_, "Our scrapbook", stars(save_));
+  top(in_, "Our scrapbook", starCount());
   char s[96];
   const bool bookworm = storyStars(save_) >= 6;   // two stories or more
   snprintf(s, sizeof s, "%s - %s", STAGES[(int)stage(save_)], bookworm ? "Bookworm" : "Cuddlebug");
   text(BOOK_BADGE, s, INK);
   char lines[128];   // the numbers first: personalize() then fills the names (letters only, never a %)
-  const int got = stars(save_);
+  const int got = earnedStars(save_);   // every star ever earned, spent or not
   snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d star%s, %u puzzle%s",
            (unsigned)save_.daysTogether, (unsigned)save_.friendship, got, got == 1 ? "" : "s", (unsigned)save_.puzzles,
            save_.puzzles == 1 ? "" : "s");
@@ -85,7 +85,7 @@ void Game::updateStickers() {
 }
 void Game::drawStickers() {
   gfx565::clear(PAPER);
-  top(in_, "Our sticker album", stars(save_));
+  top(in_, "Our sticker album", starCount());
   for (int row = 0; row < STICKER_ROWS; row++) {
     const int i = page_ * STICKER_ROWS + row;
     Label l = STICKER;

@@ -57,13 +57,14 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the shell's migration can use it without a second `.o` colliding with Pets Club's in the
   coverage build. `namespace biscuit` throughout -- Pets Club owns the global `Save` and
   `namespace pet`.
-  - Save: 108 bytes (`SAVE_VERSION = 2`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
-    puzzles` and a v1 blob loads with `booksDay = daysTogether`), NVS namespace
+  - Save: 116 bytes (`SAVE_VERSION = 3`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
+    puzzles` and a v1 blob loads with `booksDay = daysTogether`; v3 appended `starsPaid, decor, reserved3` and a v2
+    blob loads with nothing paid in or bought), NVS namespace
     `"biscuit"` (`STORE`, never renamed once it ships), key `s<profile id>`. Fields:
     `magic, version, size` header; `createdAt, updatedAt, lastVisitDay,
     fullness/happiness/energy, friendship, daysTogether, careCounts[3], discoveries[3],
     stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping, petName[13],
-    named, reserved[2], moreStories, booksDay, puzzles`; `crc` last -- append-only like every other game (shared app brief
+    named, reserved[2], moreStories, booksDay, puzzles, starsPaid, decor, reserved3`; `crc` last -- append-only like every other game (shared app brief
     constraint 4). The child's name and the daily play budget live in the shell's profile,
     not here. `named` gates everything: nothing decays, no visit counts, no progress until
     the pup has a name.
@@ -97,7 +98,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   contract above) into a caller-supplied buffer.
 - Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
   [frame]`, lossless zlib RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
-  `packed565::Image`, losslessly encoded), byte arrays in `generated/art_data_*.inc`
+  `packed565::Image`, losslessly encoded), `generated/doghouse_art.h` (the doghouse's three rooms and its
+  things), byte arrays in `generated/art_data_*.inc`
   indexed by `art_data.inc`, and
   `generated/manifest.json` (a SHA-256 per scene/picture, all matching the legacy
   firmware's). Shared `os/packed_image.*` streams rows through one fixed decoder
@@ -124,14 +126,19 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00, or always day when
   `AppEnter::daylight` (a kid picked a sun on the launcher). Screen
   names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
-  `debugCmd`: `hungry unlock young grown tricks practiced read books` (`read`: every story finished and every
-  discovery kept; `books`: day 30 with the newer books' clock from day 1, so all of them are open).
+  `debugCmd`: `hungry unlock young grown tricks practiced read books rich` (`read`: every story finished and every
+  discovery kept; `books`: day 30 with the newer books' clock from day 1, so all of them are open; `rich`: the kid's
+  balance to `stars::MAX`).
 - Screens, split by file to stay under the complexity gate: `screens_home.cpp` (Home:
   scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the shelf
   (the pup pulls out a book, and 800 ms later the Library opens; any other tap first
   cancels it), window (nap), fern and the pup (a tap pets it), Feed/Play/Read/More, fetch,
   and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
-  scrapbook, Today's adventure, Puzzles), `screens_train.cpp` (Tricks, Training watch/do),
+  scrapbook, Today's adventure, then Puzzles and Doghouse along the bottom), `screens_train.cpp` (Tricks, Training
+  watch/do), `screens_puzzles.cpp` (Puzzles: the kinds, the times tables, a round of five; the round's end says
+  the stars it earned (or how many right answers the next one needs) and the trick it taught, and Show me has the pup
+  do it at home and name it), `screens_doghouse.cpp` (the Doghouse room, its Shop and a
+  thing's page),
   `screens_read.cpp` (Library: Discoveries, Notebook and the fifteen stories, two a page,
   "Tomorrow: <title>" (the next one) or "Soon: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
   page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
@@ -152,6 +159,18 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     page, then Keep (`discover`: today's reading, and the notebook) opens the notebook on
     its page; Source shows the name and address as text. Every reader turn waits for the
     fresh-screen pause, since Next's meaning changes at the ends.
+  - Stars: the kid's balance is the shell's (`os/stars.h`, `AppEnter::stars`, kept in the profile record), so other
+    games can award stars and Biscuit spends them. Biscuit still counts what the pup earned (`earnedStars`: 3 a
+    story, 1 per `PUZZLES_PER_STAR` right puzzles) and `payStars` moves what is new into the balance, keeping
+    `starsPaid` (a v2 pup's stars arrive on its first visit). Every header shows the balance; the scrapbook shows
+    `earnedStars`. `shortcut:` the balance and `starsPaid` are saved in two stores, so a power cut between the two
+    can pay a few stars twice or lose a purchase; fine for a kid's game, one store would fix it.
+  - Doghouse: the room is `DOGHOUSE_ROOMS[stage]` on the whole glass, each thing bought (`Save::decor` bits,
+    `buyDecor`) drawn over it from `DECOR_ART`; names and prices in `content_doghouse.h` (append only, in
+    `DecorId` order). The art is `tools/art/doghouse-art.js`: each thing is its box of the room with the thing in
+    it, and export-assets fails if a thing draws outside its box, two boxes overlap or the pup reaches one.
+  - Tricks from puzzles: every `PUZZLES_PER_LESSON` (4) right answers are a lesson of the first trick not
+    mastered (`answerPuzzle` returns it), and a trick with a lesson is open before its day (`trickOpen`).
   - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
     `dailyMask`) as buttons that go and do them (a snack, fetch, a cuddle, the Library,
     the tricks, a nap), marked `* ` once done, and A lovely word. The third earns the

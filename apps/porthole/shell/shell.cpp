@@ -183,7 +183,8 @@ void Shell::openIdx(int k) {
     if (id == active_) who = n;
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
-  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars});
+  savedStars_ = rec().stars;
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
   go(SH_APP);   // first: from star mode (the sim's `app`), the unconfirmed stars are dropped before the save below
   if (unseen(k)) { favs_.seen |= shell::gameBit(ids_[k]); saveFavs(); }   // no longer new
@@ -211,7 +212,9 @@ void Shell::budgetTick() {   // per profile, across every game
   const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
   if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
   else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
-  if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
+  if (now_ - lastRecordSave_ >= 60 || rec().stars != savedStars_) {   // checkpoint; stars a game changed go right away
+    shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; savedStars_ = rec().stars;
+  }
 }
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)

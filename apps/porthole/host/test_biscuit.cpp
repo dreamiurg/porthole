@@ -135,15 +135,15 @@ static void permanentReadingProgress() {
   biscuit::finishStory(p, 0, Now);
   const float happiness = p.happiness;
   biscuit::finishStory(p, 0, Now);
-  assert(biscuit::stars(p) == 3 && p.happiness == happiness && p.friendship == 2);   // stars are idempotent
+  assert(biscuit::earnedStars(p) == 3 && p.happiness == happiness && p.friendship == 2);   // stars are idempotent
   for (uint8_t id = 1; id < biscuit::NUM_STORIES; id++) biscuit::finishStory(p, id, Now);
-  assert(biscuit::stars(p) == 45 && p.stories == 0x7f && p.moreStories == 0xff);
+  assert(biscuit::earnedStars(p) == 45 && p.stories == 0x7f && p.moreStories == 0xff);
   for (uint8_t id = 0; id < biscuit::NUM_DISCOVERIES; id++) biscuit::discover(p, id, Now);
   for (uint32_t bits : p.discoveries) assert(bits == 0xffffffffu);
   biscuit::discover(p, 95, Now);
   biscuit::discover(p, 96, Now);                      // out of range: no-op
   biscuit::finishStory(p, 15, Now);
-  assert(p.friendship == 2 && biscuit::stars(p) == 45 && !biscuit::discovered(p, 96) && p.moreStories == 0xff);
+  assert(p.friendship == 2 && biscuit::earnedStars(p) == 45 && !biscuit::discovered(p, 96) && p.moreStories == 0xff);
 
   const Save saved = p;
   biscuit::tick(p, Now + D);
@@ -208,6 +208,8 @@ static void rejectsBrokenSnapshots() {
   p = good; p.booksDay = 0; assert(!biscuit::valid(p));
   p = good; p.booksDay = p.daysTogether + 1; assert(!biscuit::valid(p));
   p = good; p.puzzles = biscuit::MAX_COUNT + 1; assert(!biscuit::valid(p));
+  p = good; p.starsPaid = 1; assert(!biscuit::valid(p));                // more paid in than ever earned
+  p = good; p.decor = 1u << biscuit::NUM_DECOR; assert(!biscuit::valid(p));
 }
 
 // The newer books open one at a time: on their own days for a young pup, every NEW_BOOK_GAP days from the update for
@@ -230,7 +232,7 @@ static void newerBooksArrive() {
   memcpy(v1 + sizeof v1 - 4, &crc, 4);
   Save out;
   assert(biscuit::loadBlob(v1, sizeof v1, out) && out.version == biscuit::SAVE_VERSION && out.size == sizeof(Save));
-  assert(out.booksDay == 12 && out.moreStories == 0 && out.puzzles == 0 && out.stories == 0x15 && biscuit::stars(out) == 9);
+  assert(out.booksDay == 12 && out.moreStories == 0 && out.puzzles == 0 && out.stories == 0x15 && biscuit::earnedStars(out) == 9);
 }
 
 // Every answer counts as today's training; only a right one is kept. A napping pup does no puzzles.
@@ -241,12 +243,86 @@ static void puzzleAnswers() {
   biscuit::answerPuzzle(p, true, Now);
   biscuit::answerPuzzle(p, true, Now);
   assert(p.puzzles == 2 && p.friendship == 2 && biscuit::valid(p));   // training counts once a day
-  assert(biscuit::stars(p) == 0);
+  assert(biscuit::earnedStars(p) == 0);
   for (int i = 0; i < 3; i++) biscuit::answerPuzzle(p, true, Now);
-  assert(p.puzzles == 5 && biscuit::stars(p) == 1);   // a star for every five right
+  assert(p.puzzles == 5 && biscuit::earnedStars(p) == 1);   // a star for every five right
   biscuit::toggleSleep(p, Now);
   biscuit::answerPuzzle(p, true, Now);
   assert(p.puzzles == 5);
+}
+
+static void puzzleLessonsOpenTricks(Save& p);
+// Every PUZZLES_PER_LESSON right answers are a lesson of the first trick not yet mastered, which opens it early.
+static void puzzlesTeachTricks() {
+  Save p = namedPet(Now);
+  assert(biscuit::trickOpen(p, 0) && !biscuit::trickOpen(p, 2) && !biscuit::trickOpen(p, -1) && !biscuit::trickOpen(p, 6));
+  int taught[16], n = 0;
+  for (int i = 0; i < 16 * (int)biscuit::PUZZLES_PER_LESSON; i++) {
+    const int t = biscuit::answerPuzzle(p, true, Now);
+    assert((t >= 0) == ((i + 1) % (int)biscuit::PUZZLES_PER_LESSON == 0));
+    if (t >= 0) taught[n++] = t;
+    assert(biscuit::answerPuzzle(p, false, Now) == -1);   // a wrong one never teaches
+  }
+  assert(n == 16 && taught[0] == 0 && taught[2] == 0 && taught[3] == 1 && taught[6] == 2 && taught[15] == 5);
+  assert(p.tricks[0] == 3 && p.tricks[2] == 3 && p.tricks[5] == 1 && biscuit::valid(p));
+  puzzleLessonsOpenTricks(p);
+}
+static void puzzleLessonsOpenTricks(Save& p) {
+  assert(p.daysTogether < biscuit::trickUnlockDay(5) && biscuit::trickOpen(p, 5));   // open before its day
+  biscuit::practice(p, 5, Now);
+  assert(p.tricks[5] == 2);                           // and trainable
+  memset(p.tricks, 3, sizeof p.tricks);
+  for (int i = 0; i < (int)biscuit::PUZZLES_PER_LESSON - 1; i++) biscuit::answerPuzzle(p, true, Now);
+  assert(biscuit::answerPuzzle(p, true, Now) == -1);   // all mastered: nothing left to teach
+}
+
+static void starsWithoutABalance(const Save& p);
+static void doghouseBuys(Save& p, uint32_t& wallet);
+// The kid's stars: earned here, paid into the shell's balance once, spent in the doghouse.
+static void starsAndDoghouse() {
+  Save p = namedPet(Now);
+  uint32_t wallet = 7;
+  assert(!biscuit::payStars(p, &wallet) && wallet == 7);
+  biscuit::markStoryRead(p, 0);
+  for (int i = 0; i < 10; i++) biscuit::answerPuzzle(p, true, Now);
+  assert(biscuit::earnedStars(p) == 5 && biscuit::payStars(p, &wallet) && wallet == 12 && p.starsPaid == 5);
+  assert(!biscuit::payStars(p, &wallet) && wallet == 12);   // paid once
+  doghouseBuys(p, wallet);
+}
+static void doghouseBuys(Save& p, uint32_t& wallet) {
+  assert(!biscuit::buyDecor(p, &wallet, 0, 13) && wallet == 12 && !biscuit::owns(p, 0));   // short
+  assert(biscuit::buyDecor(p, &wallet, 0, 12) && wallet == 0 && biscuit::owns(p, 0) && biscuit::valid(p));
+  wallet = 50;
+  assert(!biscuit::buyDecor(p, &wallet, 0, 1) && wallet == 50);   // owned already
+  assert(!biscuit::buyDecor(p, &wallet, biscuit::NUM_DECOR, 1) && !biscuit::buyDecor(p, &wallet, -1, 1) && wallet == 50);
+  assert(!biscuit::owns(p, -1) && !biscuit::owns(p, biscuit::NUM_DECOR));
+  assert(biscuit::buyDecor(p, &wallet, biscuit::NUM_DECOR - 1, 50) && p.decor == (1u | 1u << (biscuit::NUM_DECOR - 1)));
+  starsWithoutABalance(p);
+}
+static void starsWithoutABalance(const Save& p) {
+  // no balance (a test, a shell that keeps none): nothing is paid in or bought, and nothing breaks
+  Save q = p; q.starsPaid = 0;
+  assert(biscuit::payStars(q, nullptr) && q.starsPaid == 5 && !biscuit::buyDecor(q, nullptr, 1, 0));
+  // os/stars.h: the balance stops at MAX
+  uint32_t full = stars::MAX - 2;
+  stars::award(&full, 5); assert(full == stars::MAX);
+  stars::award(&full, 1); assert(full == stars::MAX);
+  assert(stars::balance(nullptr) == 0 && !stars::spend(nullptr, 0) && stars::spend(&full, stars::MAX) && full == 0);
+}
+static void starsFromAV2Save() {
+  // a v2 save (before the doghouse): nothing paid in yet, nothing bought; the first visit pays its stars in
+  Save old = namedPet(Now);
+  biscuit::markStoryRead(old, 1);
+  biscuit::seal(old);
+  uint8_t v2[biscuit::SAVE_V2_SIZE];
+  old.version = 2; old.size = biscuit::SAVE_V2_SIZE;
+  memcpy(v2, &old, sizeof v2 - 4);
+  const uint32_t crc = os::crc32(v2, sizeof v2 - 4);
+  memcpy(v2 + sizeof v2 - 4, &crc, 4);
+  Save out;
+  assert(biscuit::loadBlob(v2, sizeof v2, out) && out.version == biscuit::SAVE_VERSION && out.starsPaid == 0 && out.decor == 0);
+  uint32_t kid = 0;
+  assert(biscuit::payStars(out, &kid) && kid == 3);
 }
 
 // A spelling question: the right letter fills its one gap and spells the word.
@@ -399,6 +475,9 @@ int main() {
   blobRoundTrip();
   newerBooksArrive();
   puzzleAnswers();
+  puzzlesTeachTricks();
+  starsAndDoghouse();
+  starsFromAV2Save();
   puzzleQuestions();
   legacyV1();
   legacyV2V3();

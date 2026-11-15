@@ -71,7 +71,7 @@ void Game::updateDiscoveries() {
 }
 void Game::drawDiscoveries() {
   gfx565::clear(PAPER);
-  top(in_, facts_ == NOTEBOOK ? "Our little notebook" : facts_ == TOPIC ? TOPICS[topic_].name : "Little discoveries", stars(save_));
+  top(in_, facts_ == NOTEBOOK ? "Our little notebook" : facts_ == TOPIC ? TOPICS[topic_].name : "Little discoveries", starCount());
   button(in_, TOPICS_BUTTON);
   button(in_, THREE);
   uint8_t ids[NUM_DISCOVERIES];
@@ -94,7 +94,7 @@ void Game::updateTopics() {
 }
 void Game::drawTopics() {
   gfx565::clear(PAPER);
-  top(in_, "So much to explore", stars(save_));
+  top(in_, "So much to explore", starCount());
   for (int row = 0; row < ROWS; row++) {
     const int t = page_ * ROWS + row;
     if (t < TOPIC_COUNT) pictureRow(in_, ROW[row], nth(t, 0), TOPICS[t].name);
@@ -132,7 +132,7 @@ void Game::updateDiscovery() {
 void Game::drawDiscovery() {
   const Discovery& d = DISCOVERIES[fact_];
   gfx565::clear(PAPER);
-  top(in_, TOPICS[d.topic].name, stars(save_));
+  top(in_, TOPICS[d.topic].name, starCount());
   if (at_ < 0) {
     text(coverTitle(d.title), d.title, INK);
     picture(fact_, COVER_X, COVER_Y, 3);
@@ -156,7 +156,7 @@ void Game::updateSource() {
 void Game::drawSource() {
   const Discovery& d = DISCOVERIES[fact_];
   gfx565::clear(PAPER);
-  top(in_, "Where we found it", stars(save_));
+  top(in_, "Where we found it", starCount());
   text(SOURCE_NAME, d.sourceName, INK);
   text(SOURCE_URL, d.sourceUrl, INK);
   button(in_, BACK_TO_BOOK);
@@ -189,7 +189,7 @@ void Game::todayActivity(int bit) {
 void Game::drawToday() {
   const Adventure& a = today(save_);
   gfx565::clear(PAPER);
-  top(in_, a.title, stars(save_));
+  top(in_, a.title, starCount());
   char s[256];
   personalize(a.description, who_.name, save_.petName, s, sizeof s);
   text(ADVENTURE, s, INK);
@@ -208,7 +208,7 @@ void Game::updateWord() {
 void Game::drawWord() {
   const Adventure& a = today(save_);
   gfx565::clear(PAPER);
-  top(in_, a.word, stars(save_));
+  top(in_, a.word, starCount());
   char s[256];
   personalize(a.meaning, who_.name, save_.petName, s, sizeof s);
   text(MEANING, s, INK);
