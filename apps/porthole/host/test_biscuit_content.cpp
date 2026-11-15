@@ -335,6 +335,9 @@ static void homeGate() {
 static Label inTile(const Label& l, const Box& tile) {
   return {l.box, (int16_t)(tile.x * 3 + l.x), (int16_t)(tile.y * 3 + l.y), l.middle};
 }
+// Not inlined: with the loop's small bounds in view and UBSan's overflow check on pageNumber's `page + 1`, gcc sizes
+// its snprintf for any int and -Wformat-truncation fires in the sanitizer build only.
+[[gnu::noinline]] static void number(char (&s)[16], int page, int count) { pageNumber(s, page, count); }
 static void screensGate() {
   static const char* const TITLES[] = {"Our bookshelf", "Story time", "The story continues", "What shall we do?",
                                        "Little discoveries", "Our little notebook", "So much to explore",
@@ -354,7 +357,7 @@ static void screensGate() {
   char s[16];
   for (int count = 1; count <= MAX_PAGES; count++)
     for (int page = 0; page < count; page++) {
-      pageNumber(s, page, count);
+      number(s, page, count);
       if (font::textWidth(*PAGE_NUMBER.box.font, s) > PAGE_NUMBER.box.w) { printf("content gate: counter \"%s\" is too wide\n", s); failures++; }
     }
   pageNumber(s, MAX_PAGES - 1, MAX_PAGES);

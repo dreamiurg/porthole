@@ -126,6 +126,18 @@ run-%: $(BUILD)/%
 	$<
 test: $(TESTS:%=run-%)
 
+# The same tests under AddressSanitizer + UBSan (ci): snap-asan's objects plus each test's own. The monkeys only reach
+# what a finger can; the tests feed the save loaders, parsers and time math their edge cases directly. UBSan only
+# prints by default, so halt_on_error makes its report fail the run. test_racing_rules stays out: thousands of
+# simulated races take 85 s under ASan, and test_racing drives the same race.cpp and track.cpp here in 5.
+ASAN_TESTS := $(filter-out test_racing_rules,$(TESTS))
+$(foreach t,$(TESTS),$(eval $(BUILD)/asan/$(t): $(call objs,$(BUILD)/asan,$($(t)_SRC) host/$(t).cpp)))
+$(BUILD)/asan/test_%:
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+asan-run-%: $(BUILD)/asan/%
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 $<
+test-asan: $(ASAN_TESTS:%=asan-run-%)
+
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
@@ -158,8 +170,8 @@ lint: snap
 check: lint test
 
 # Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
-# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22).
-ci: lint test coverage playtest-monkey run-test_saves-asan
+# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22), and under the sanitizers.
+ci: lint test test-asan coverage playtest-monkey
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.52% measured
@@ -246,5 +258,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu web firmware factory flash monitor clean flash-report
+.PHONY: all sim snap snap-asan playtest playtest-monkey test test-asan lint check ci coverage cov-reset cov-playtest art webemu web firmware factory flash monitor clean flash-report
 -include $(shell find build -name '*.d' 2>/dev/null)

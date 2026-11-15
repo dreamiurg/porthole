@@ -1194,7 +1194,7 @@ static void scanList() {
   assert(n == 2 && !strcmp(l[0].ssid, "Cafe") && !strcmp(l[1].ssid, "Home") && l[1].rssi == -70);
   n = shell::addNetwork(l, n, "Home", -50, true);                   // a stronger copy moves it up
   assert(n == 2 && !strcmp(l[0].ssid, "Home") && l[0].rssi == -50 && !strcmp(l[1].ssid, "Cafe") && !l[1].secured);
-  char name[8];
+  char name[16];   // room for any int: under UBSan gcc no longer sees that i stays below 10 (-Wformat-truncation)
   for (int i = 0; i < 10; i++) { snprintf(name, sizeof name, "Far%d", i); n = shell::addNetwork(l, n, name, -80 - i, true); }
   assert(n == shell::MAX_NETWORKS && !strcmp(l[11].ssid, "Far9"));
   n = shell::addNetwork(l, n, "Farthest", -99, true);               // full and weakest: not listed
