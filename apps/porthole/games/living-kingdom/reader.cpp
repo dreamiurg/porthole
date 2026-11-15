@@ -42,7 +42,10 @@ bool Reader::open(const char* text, const font::Box& box, const font::Box* first
   do {
     if (count_ == MAX_PAGES) return false;
     const int end = fit(start, !count_ && firstBox ? *firstBox : box);
-    if (end == start && text_[start]) return false;
+    if (end == start && text_[start]) {   // a word no page can hold: stop, but never with no page at all
+      if (!count_) { starts_[0] = ends_[0] = (uint16_t)start; count_ = 1; }
+      return false;
+    }
     starts_[count_] = (uint16_t)start; ends_[count_++] = (uint16_t)end;
     start = skipSpace(text_, end);
   } while (text_[start]);
