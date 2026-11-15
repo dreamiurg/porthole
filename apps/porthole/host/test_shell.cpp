@@ -1714,6 +1714,11 @@ static void starBalance() {
   assert(stars::spend(app.stars, 2) && !stars::spend(app.stars, 4));
   ms += 1000; sh.update(NOW, ms, Input{});
   shell::loadAll(st, p); assert(p.rec[1].stars == 3);
+  // What the stars paid for is in the game's save: it goes out in the same tick, first, not up to 5 s later.
+  app.saving = true; const int before = st.writes;
+  assert(stars::spend(app.stars, 1));
+  ms += 1000; sh.update(NOW, ms, Input{});
+  assert(st.has("stub", "s1") && st.writes == before + 2 && !strcmp(st.last, "porthole/p1"));
 }
 // The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
 // picker's title, and only on a device with a System.

@@ -212,6 +212,7 @@ void Shell::budgetTick() {   // per profile, across every game
   const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
   if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
   else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
+  if (rec().stars != savedStars_) flushApp(true);   // what they bought or earned them is in the game's save: it goes first
   if (now_ - lastRecordSave_ >= 60 || rec().stars != savedStars_) {   // checkpoint; stars a game changed go right away
     shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; savedStars_ = rec().stars;
   }
