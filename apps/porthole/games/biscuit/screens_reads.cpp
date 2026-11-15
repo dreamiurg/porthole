@@ -22,19 +22,21 @@ Nav reader(int at, int total) { return {"Previous", at + 1 >= total ? "Question"
 }  // namespace
 
 void Game::startReads() {
-  readsAsked_ = readsRight_ = 0; readsSeen_ = 0;
+  readsAsked_ = readsRight_ = 0;
   readStars_ = earnedStars(save_); readLevelWas_ = readLevel(save_, who_.age);
   nextRead();
 }
-// One of the level's passages this round hasn't had, any of them when it had them all (a level has eight).
+// One of the level's passages not had since Biscuit opened; when the level had them all, its cycle starts again.
 void Game::nextRead() {
   const uint8_t level = readLevel(save_, who_.age);
   int pick = -1, seen = 0;
-  for (int pass = 0; pass < 2 && pick < 0; pass++)
+  for (int pass = 0; pass < 2 && pick < 0; pass++) {
+    if (pass) readsSeen_ = 0;
     for (int i = 0; i < READ_COUNT; i++) {
-      if (READS[i].level != level || (!pass && (readsSeen_ >> i) & 1)) continue;
+      if (READS[i].level != level || (readsSeen_ >> i) & 1) continue;
       if (puzzles::below(rng_, ++seen) == 0) pick = i;   // one at random, in one pass
     }
+  }
   little_ = pick < 0 ? 0 : pick;
   readsSeen_ |= 1ull << little_;
   readAnswer_ = -1;
@@ -81,8 +83,7 @@ void Game::updateReadAsk() {
   // Back reads the passage again, from its last screen, as the choice's Back does a story's.
   if (tapped(in_, BACK_BUTTON)) { openPages(&READS[little_].text, 1, -1); go(SC_READ); return; }
   for (int i = 0; i < READ_ANSWERS; i++) {
-    char label[96];
-    if (!tapped(in_, answerButton(READS[little_], i, who_, save_, label))) continue;
+    if (!tapped(in_, Button{READ_ANSWER[i], "", &FONT20, FILLS[i], true})) continue;   // the hit test needs only the box
     readAnswer_ = i;
     const bool right = i == READS[little_].right;
     readsRight_ += right;
@@ -120,7 +121,7 @@ void Game::drawReadAsk() {
   personalize(r.answers[r.right], who_.name, save_.petName, answer, sizeof answer);
   const bool star = right && save_.readsRight % READS_PER_STAR == 0;   // this answer earned a star
   if (right) snprintf(line, sizeof line, "Yes! %s.\n%s", answer, star ? STAR_CHEER : CHEERS[readsAsked_]);
-  else snprintf(line, sizeof line, "It's: %s.\n%s", answer, r.why);
+  else snprintf(line, sizeof line, "Oops! The answer: %s.\n%s", answer, r.why);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(READ_AFTER, s, INK);
   button(in_, NEXT_READ);

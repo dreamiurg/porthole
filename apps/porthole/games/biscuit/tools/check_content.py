@@ -186,9 +186,10 @@ SIGHT_2 = SIGHT_1 | set(
     "call small walk talk out about our now how who why when water little come down day away".split()
 )
 C = "bcdfghjklmnpqrstvwxyz"
-WORD_1 = re.compile(rf"[{C}]?[aeiou]([{C}]|ll|ss|ff)?('?s)?")
+CODA = "bcdfghjklmnpqrstvxz"   # w and y after a vowel make a vowel team (now, day), not a short vowel
+WORD_1 = re.compile(rf"[{C}]?[aeiou]([{CODA}]|ll|ss|ff)?('?s)?")
 ONSET_2 = r"(sch|scr|shr|spl|spr|str|thr|squ|qu|sh|ch|th|wh|bl|br|cl|cr|dr|fl|fr|gl|gr|pl|pr|sc|sk|sl|sm|sn|sp|st|sw|tr|tw|[{c}])?".format(c=C)
-CODA_2 = r"(tch|nch|lch|ck|sh|ch|th|ng|nk|ll|ss|ff|zz|st|sk|sp|nd|nt|mp|lt|lk|lp|ld|lf|ft|pt|ct|xt|[{c}])?".format(c=C)
+CODA_2 = r"(tch|nch|lch|ck|sh|ch|th|ng|nk|ll|ss|ff|zz|st|sk|sp|nd|nt|mp|lt|lk|lp|ld|lf|ft|pt|ct|xt|[{c}])?".format(c=CODA)
 WORD_2 = re.compile(rf"{ONSET_2}[aeiou]{CODA_2}(e?s|'s)?")
 READ_WORDS = {1: (12, 30), 2: (25, 45), 3: (40, 65), 4: (60, 90), 5: (75, 120)}
 
@@ -196,7 +197,7 @@ READ_WORDS = {1: (12, 30), 2: (25, 45), 3: (40, 65), 4: (60, 90), 5: (75, 120)}
 def decodable(level, text):
     """The words of a level 1 or 2 text that are neither sight words nor of its letter patterns."""
     sight, pattern = (SIGHT_1, WORD_1) if level == 1 else (SIGHT_2, WORD_2)
-    words = re.findall(r"[a-z']+", TOKEN.sub("", text).lower())
+    words = re.findall(r"[a-z']+", TOKEN.sub("Pip", text).lower())   # a name reads as a known word, {pet}'s too
     return sorted({w for w in words if w.strip("'") not in sight and not pattern.fullmatch(w.strip("'"))})
 
 
@@ -220,7 +221,7 @@ def read_entry(g, row):
     low, high = READ_WORDS[level]
     if not low <= n <= high:
         g.errors.append(f"{rid}: {n} words, level {level} takes {low} to {high}")
-    off = decodable(level, " ".join([text, question, *answers])) if level <= 2 else []
+    off = decodable(level, " ".join([title, text, question, *answers])) if level <= 2 else []
     if off:
         g.errors.append(f"{rid}: level {level} words outside its patterns and sight words: {off}")
 

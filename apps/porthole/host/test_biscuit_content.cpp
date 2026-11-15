@@ -484,7 +484,7 @@ static void readsGate() {
       fits(READ_ANSWER_LABEL, where, answer);
     }
     snprintf(answer, sizeof answer, "%s", filled(r.answers[r.right]));
-    snprintf(line, sizeof line, "It's: %s.\n%s", answer, r.why);
+    snprintf(line, sizeof line, "Oops! The answer: %s.\n%s", answer, r.why);
     fits(READ_AFTER, r.id, filled(line));
     for (const char* cheer : CHEERS) { snprintf(line, sizeof line, "Yes! %s.\n%s", answer, cheer); fits(READ_AFTER, r.id, filled(line)); }
     snprintf(line, sizeof line, "Yes! %s.\n%s", answer, STAR_CHEER);

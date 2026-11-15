@@ -1,0 +1,191 @@
+reset
+wait 1000
+tap 41 124
+wait 500
+tap 41 99
+wait 500
+tap 41 52
+wait 500
+snap a02
+tap 119 124
+wait 1000
+snap a03
+tap 92 56
+wait 1000
+snap a04
+tap 79 69
+wait 1000
+snap a05
+tap 80 145
+wait 1500
+snap a06
+tap 34 72
+wait 2500
+snap a07
+tap 80 12
+wait 1500
+snap a08
+tap 79 72
+wait 2500
+snap a09
+tap 119 125
+wait 2500
+snap a10
+wait 3000
+snap a11
+tap 94 130
+wait 1500
+snap a12
+tap 80 84
+wait 800
+snap a13
+wait 3000
+snap a14
+tap 108 132
+wait 800
+snap a16
+tap 100 73
+wait 200
+snap a17
+wait 800
+snap a18
+tap 80 132
+wait 100
+tap 82 130
+wait 800
+snap a19
+tap 51 25
+wait 1000
+snap a21
+tap 80 84
+wait 1000
+snap a22
+tap 108 132
+wait 800
+snap a23
+tap 60 82
+wait 200
+snap a24
+wait 1200
+snap a25
+tap 80 132
+wait 800
+snap a26
+tap 108 132
+wait 800
+snap a27
+tap 51 25
+wait 800
+snap a28
+tap 108 132
+wait 800
+tap 80 109
+wait 500
+snap a29
+tap 30 121
+wait 500
+snap a30
+tap 80 132
+wait 800
+snap a31
+tap 108 132
+wait 800
+snap a32
+tap 80 73
+wait 800
+snap a33
+tap 80 132
+wait 350
+tap 80 132
+wait 600
+snap a34
+wait 600
+tap 80 132
+wait 800
+snap a36
+down 108 132
+wait 700
+move 108 140
+move 110 148
+move 112 152
+up
+wait 600
+snap a37
+tap 108 132
+wait 800
+down 80 73
+wait 500
+move 80 60
+move 80 50
+move 80 45
+up
+wait 600
+snap a38
+down 80 73
+wait 80
+snap a39
+up
+wait 800
+tap 80 132
+wait 800
+snap a40
+tap 108 132
+wait 800
+snap a41
+tap 80 97
+wait 800
+snap a42
+tap 80 132
+wait 800
+snap a43
+tap 108 132
+wait 800
+snap a44
+tap 80 121
+wait 800
+snap a45
+tap 80 132
+wait 800
+snap a46
+wait 600
+tap 51 25
+wait 800
+snap a47
+wait 600
+tap 80 84
+wait 800
+snap a48
+tap 108 132
+wait 800
+snap a49
+tap 80 97
+wait 800
+snap a50
+tap 80 132
+wait 800
+snap a51
+tap 108 132
+wait 800
+snap a52
+tap 80 73
+wait 800
+snap a53
+tap 80 132
+wait 800
+snap a54
+tap 108 132
+wait 800
+snap a55
+tap 80 121
+wait 800
+snap a56
+tap 80 132
+wait 800
+snap a57
+wait 600
+tap 51 25
+wait 800
+snap a58
+tap 51 25
+wait 1500
+snap a59
