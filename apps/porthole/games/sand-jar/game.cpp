@@ -140,8 +140,10 @@ void Game::tables() {
   t_->shines = 0;
   for (int c = 0; c < G * G && t_->shines < (int)(sizeof t_->shine / sizeof t_->shine[0]); c++) {
     const float dx = (c % G) * 3 + 1.5f - 240, dy = (c / G) * 3 + 1.5f - 240, d = sqrtf(dx * dx + dy * dy) / 240;
+    const float radial = fmaxf(0, 1 - fabsf(d - 0.885f) / 0.045f);
+    if (radial == 0) continue;   // off the rim's band (7 cells in 8): no shine at any angle, so no atan2f for it
     const float da = fabsf(fmodf(atan2f(dy, dx) + 0.75f * PI + 3 * PI, 2 * PI) - PI);
-    const float radial = fmaxf(0, 1 - fabsf(d - 0.885f) / 0.045f), along = fmaxf(0, 1 - da / 0.42f), a = 34 * radial * along * along;
+    const float along = fmaxf(0, 1 - da / 0.42f), a = 34 * radial * along * along;
     if (a > 1) t_->shine[t_->shines++] = {(uint16_t)c, (uint8_t)a};
   }
 }
