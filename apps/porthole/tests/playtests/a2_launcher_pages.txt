@@ -1,5 +1,5 @@
 # Home and the Library. Home is the kid's five favorites (by default the first five games) and "All games"; the
-# Library is every game, six a page, eleven on two pages. A finger on a tile names its game (or "All games"); sliding
+# Library is every game, six a page, twelve on two pages. A finger on a tile names its game (or "All games"); sliding
 # off opens nothing; a game opened in the Library comes back to its page, and the home button goes back to Home.
 reset
 tilt 0 1000 0
@@ -34,7 +34,7 @@ wait 600
 expect-screen library
 ui-check library_page2
 snap lp4_library2
-tap 58 104
+tap 36 104
 wait 600
 expect-screen race_tracks
 tap 54 130

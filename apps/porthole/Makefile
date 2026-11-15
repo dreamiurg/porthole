@@ -62,6 +62,7 @@ test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
 test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 test_sand_jar_SRC := $(wildcard os/*.cpp) $(wildcard games/sand-jar/*.cpp)
+test_times_cards_SRC := $(wildcard os/*.cpp) $(wildcard games/times-cards/*.cpp)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 # Native firmware uses ROM miniz; host builds use the system zlib decoder.
