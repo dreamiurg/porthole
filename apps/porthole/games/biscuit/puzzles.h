@@ -256,22 +256,38 @@ inline Puzzle build(const Item& q, uint32_t& s) {
 
 namespace detail {
 // "a op first = mid, then rest more." (or less), the two steps of adding or taking away through a ten.
-inline void twoSteps(char (&out)[48], int a, char op, int first, int rest) {
-  const int mid = op == '+' ? a + first : a - first;
-  if (rest) snprintf(out, sizeof out, "%d %c %d = %d, then %d %s.", a, op, first, mid, rest, op == '+' ? "more" : "less");
-  else snprintf(out, sizeof out, "%d %c %d = %d.", a, op, first, mid);
+// Two steps through a ten: "47 + 3 = 50, then 5 more." When the second step is nothing, the first already is the
+// answer and repeating it helps no one, so callers send those to tens() or ones() instead.
+inline void twoSteps(char (&out)[48], uint8_t a, char op, uint8_t first, uint8_t rest) {   // numbers under 100
+  const uint8_t mid = (uint8_t)(op == '+' ? a + first : a - first);
+  snprintf(out, sizeof out, "%d %c %d = %d, then %d %s.", a, op, first, mid, rest, op == '+' ? "more" : "less");
+}
+inline void tens(char (&out)[48], uint8_t a, char op, uint8_t b) {
+  snprintf(out, sizeof out, "Count %s %d tens from %d.", op == '+' ? "on" : "back", b / 10, a);
+}
+// Work the ones, keep the tens: "3 + 5 = 8, plus the 40 is 48."
+inline void ones(char (&out)[48], uint8_t a, char op, uint8_t b) {   // two-digit a and one-digit b: small numbers
+  const uint8_t o = (uint8_t)(op == '+' ? a % 10 + b : a % 10 - b);
+  snprintf(out, sizeof out, "%d %c %d = %d, plus the %d is %d.", a % 10, op, b, o, (uint8_t)(a / 10 * 10), (uint8_t)(a / 10 * 10 + o));
 }
 inline void howPlus(int a, int b, char (&out)[48]) {
-  if (a + b <= 10) snprintf(out, sizeof out, "Start at %d, count on %d.", a > b ? a : b, a > b ? b : a);
+  const int big = a > b ? a : b, small = a > b ? b : a;
+  if (!small) snprintf(out, sizeof out, "%d + 0 is still %d.", big, big);
+  else if (a + b <= 10) snprintf(out, sizeof out, "Start at %d, count on %d.", big, small);
+  else if (b >= 10 && b % 10 == 0) tens(out, a, '+', b);
   else if (b >= 10) twoSteps(out, a, '+', b / 10 * 10, b % 10);
-  else if (a % 10 + b >= 10) twoSteps(out, a, '+', 10 - a % 10, b - (10 - a % 10));
-  else snprintf(out, sizeof out, "%d + %d = %d, so %d.", a % 10, b, a % 10 + b, a + b);
+  else if (a % 10 == 0) snprintf(out, sizeof out, "%d and %d make %d.", a, b, a + b);
+  else if (a % 10 + b > 10) twoSteps(out, a, '+', 10 - a % 10, b - (10 - a % 10));
+  else ones(out, (uint8_t)a, '+', (uint8_t)b);
 }
 inline void howMinus(int a, int b, char (&out)[48]) {
-  if (a <= 10 || a % 10 == 0) snprintf(out, sizeof out, "Count back %d from %d.", b, a);
+  if (!b) snprintf(out, sizeof out, "%d - 0 is still %d.", a, a);
+  else if (a == b) snprintf(out, sizeof out, "Take all %d away, and 0 is left.", a);
+  else if (b >= 10 && b % 10 == 0) tens(out, a, '-', b);
   else if (b >= 10) twoSteps(out, a, '-', b / 10 * 10, b % 10);
+  else if (a <= 10 || a % 10 == 0) snprintf(out, sizeof out, "Count back %d from %d.", b, a);
   else if (a % 10 < b) twoSteps(out, a, '-', a % 10, b - a % 10);
-  else snprintf(out, sizeof out, "%d - %d = %d, so %d.", a % 10, b, a % 10 - b, a - b);
+  else ones(out, (uint8_t)a, '-', (uint8_t)b);
 }
 inline void howGroups(const Item& q, char (&out)[48]) {
   if (q.c & 16) { snprintf(out, sizeof out, "%d x %d = %d, so %d each.", q.a, q.b, q.a * q.b, q.b); return; }

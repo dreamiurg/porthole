@@ -595,10 +595,13 @@ static void puzzleHow() {
   struct Case { Item q; const char* want; };
   static const Case CASES[] = {
     {{NUMBERS, 0, 3, 5, 0}, "Start at 5, count on 3."}, {{NUMBERS, 2, 8, 5, 0}, "8 + 2 = 10, then 3 more."},
-    {{NUMBERS, 3, 43, 5, 0}, "3 + 5 = 8, so 48."}, {{NUMBERS, 4, 47, 3, 0}, "47 + 3 = 50."},
+    {{NUMBERS, 3, 43, 5, 0}, "3 + 5 = 8, plus the 40 is 48."}, {{NUMBERS, 4, 41, 9, 0}, "1 + 9 = 10, plus the 40 is 50."},
     {{NUMBERS, 5, 36, 47, 0}, "36 + 40 = 76, then 7 more."}, {{NUMBERS, 1, 9, 3, 1}, "Count back 3 from 9."},
-    {{NUMBERS, 2, 13, 5, 1}, "13 - 3 = 10, then 2 less."}, {{NUMBERS, 3, 47, 3, 1}, "7 - 3 = 4, so 44."},
-    {{NUMBERS, 4, 30, 7, 1}, "Count back 7 from 30."}, {{NUMBERS, 5, 72, 30, 1}, "72 - 30 = 42."},
+    {{NUMBERS, 2, 13, 5, 1}, "13 - 3 = 10, then 2 less."}, {{NUMBERS, 3, 47, 3, 1}, "7 - 3 = 4, plus the 40 is 44."},
+    {{NUMBERS, 4, 30, 7, 1}, "Count back 7 from 30."}, {{NUMBERS, 5, 72, 30, 1}, "Count back 3 tens from 72."}, {{NUMBERS, 5, 50, 28, 1}, "50 - 20 = 30, then 8 less."},
+    {{NUMBERS, 5, 10, 50, 0}, "Count on 5 tens from 10."}, {{NUMBERS, 4, 47, 5, 0}, "47 + 3 = 50, then 2 more."},
+    {{NUMBERS, 4, 40, 3, 0}, "40 and 3 make 43."}, {{NUMBERS, 0, 0, 10, 0}, "10 + 0 is still 10."},
+    {{NUMBERS, 1, 3, 3, 1}, "Take all 3 away, and 0 is left."},
     {{GROUPS, 1, 3, 4, 0}, "4 + 4 + 4 = 12"}, {{GROUPS, 4, 3, 4, 16}, "3 x 4 = 12, so 4 each."},
     {{WORDS, 0, 0, 1, 0}, ""},
   };
@@ -608,8 +611,12 @@ static void puzzleHow() {
     for (uint8_t level = 0; level < LEVELS[strand]; level++)
       for (int n = 0; n < 500; n++) {
         char out[48];
-        how(pick((Strand)strand, level, rng), out);
+        const Item q = pick((Strand)strand, level, rng);
+        how(q, out);
         assert(out[0] && strlen(out) < sizeof out - 1);
+        char sum[16];   // never just the sum again
+        snprintf(sum, sizeof sum, "= %d.", q.c ? q.a - q.b : q.a + q.b);
+        assert(strand != NUMBERS || !strstr(out, sum));
       }
 }
 
