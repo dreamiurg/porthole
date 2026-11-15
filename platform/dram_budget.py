@@ -10,12 +10,18 @@ import subprocess
 Import("env")
 
 
-def biggest(nm, elf, count=25):
+def biggest(objdump, elf, count=25):
     """Print the largest symbols in static internal RAM, so a pull request shows where the bytes went."""
-    out = subprocess.run([nm, "-S", "-C", "--size-sort", "-r", elf], capture_output=True, text=True, check=False).stdout
-    rows = [f for f in (line.split(None, 3) for line in out.splitlines()) if len(f) == 4 and f[2] in "bBdD"]
-    for f in rows[:count]:
-        print(f"  {int(f[1], 16):7d}  {f[3]}")
+    out = subprocess.run([objdump, "-t", "-C", elf], capture_output=True, text=True, check=False).stdout
+    rows = []
+    for line in out.splitlines():
+        head, _, name = line.partition("\t")
+        fields = head.split()
+        if fields and fields[-1] in (".dram0.data", ".dram0.bss") and name:
+            size, _, sym = name.partition(" ")
+            rows.append((int(size, 16), fields[-1][7:], sym.strip()))
+    for size, section, sym in sorted(rows, reverse=True)[:count]:
+        print(f"  {size:7d}  {section:4}  {sym}")
 
 
 def check(source, target, env):
@@ -26,7 +32,7 @@ def check(source, target, env):
     out = subprocess.run([size, "-A", str(target[0])], capture_output=True, text=True, check=True).stdout
     used = sum(int(f[1]) for f in (line.split() for line in out.splitlines()) if f and f[0] in (".dram0.data", ".dram0.bss"))
     print(f"Static internal RAM: {used} of {limit} bytes")
-    biggest(size.replace("size", "nm"), str(target[0]))
+    biggest(size.replace("size", "objdump"), str(target[0]))
     if used > limit:
         print("Error: static internal RAM over custom_dram_static_max. Put big buffers on the heap (PSRAM on the board).")
         os.remove(str(target[0]))  # or the next incremental build skips this check and passes
@@ -36,15 +42,3 @@ def check(source, target, env):
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.elf", check)
 
-
-def _probe(source, target, env):  # TEMP diagnostic, remove before merge
-    for root, _, files in os.walk(env.subst("$PROJECT_PACKAGES_DIR")):
-        for name in files:
-            if name == "sdkconfig.h" and "esp32s3" in root:
-                p = os.path.join(root, name)
-                for line in open(p, errors="ignore"):
-                    if "SPIRAM" in line or "BSS" in line:
-                        print("PROBE", p[-60:], line.strip())
-
-
-env.AddPostAction("$BUILD_DIR/${PROGNAME}.elf", _probe)
