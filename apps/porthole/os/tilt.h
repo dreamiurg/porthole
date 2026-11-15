@@ -13,7 +13,9 @@ struct Vec { float x, y; };     // a tilt in the screen's plane, milli-g: +x tow
 // (0, 0, -1000)), then its x/y. So every grip gets the same range both ways: from upright, leaning back tilts up and
 // leaning forward tilts down, as far as from lying flat.
 inline Vec from(Grav g, Grav neutral) {
-  const float n = sqrtf((float)(neutral.x * neutral.x + neutral.y * neutral.y + neutral.z * neutral.z));
+  // 64-bit: an axis can be a full int16 (the sim's `tilt`, the serial `G`), and three squares of that overflow an int.
+  const int64_t nx = neutral.x, ny = neutral.y, nz = neutral.z;
+  const float n = sqrtf((float)(nx * nx + ny * ny + nz * nz));
   if (n < 1) return {(float)g.x, (float)g.y};   // no reading to be level with: lying flat
   const float ax = neutral.x / n, ay = neutral.y / n, az = neutral.z / n, x = (float)g.x, y = (float)g.y, z = (float)g.z;
   if (az > 0.9999f) return {x, -y};   // face down: half a turn about x (the rotation below is undefined there)
