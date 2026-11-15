@@ -16,6 +16,11 @@
 // gets none until the set clears. So each kid moves through all the tables at their own speed. The deck's level is
 // the first table not yet fully known: it is what the home page shows, and finishing it is the "Next up" moment.
 //
+// Division (3.OA.7): once the kid is on DIV_FROM_LEVEL, each known multiplication fact opens its division partners
+// (6 x 7 known: 42 / 6 and 42 / 7) as new cards on the same boxes, schedule and pace. Division and multiplication take
+// turns for the working set's places, a fact family's two divisions together, so the tables keep moving while the
+// divisions of the facts already known come in. Division by 1 is left out: it says nothing a kid doesn't know.
+//
 // Time is Porthole's local wall-clock seconds, so a day is now / 86400. Nothing punishes being away: a card that waited
 // longer than planned is simply due, oldest first.
 //
@@ -30,10 +35,13 @@
 namespace cards {
 constexpr const char* STORE = "timescards";   // NVS namespace: never renamed once shipped
 constexpr uint32_t SAVE_MAGIC = 0x53445243;   // "CRDS"
-constexpr uint16_t SAVE_VERSION = 1;
+constexpr uint16_t SAVE_VERSION = 2;   // 1: multiplication only (520 bytes); 2: division appended
 
 // ---- tuning knobs
-constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10
+constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10: cards 0..CARDS-1
+constexpr int DIVS = (TABLES - 1) * FACTS;   // n / d for divisors 2..10 and quotients 1..10: cards CARDS..ALL-1
+constexpr int ALL = CARDS + DIVS;
+constexpr int DIV_FROM_LEVEL = 4;        // division joins once 1x to 3x are known (a third-grade standard)
 constexpr int ROUND = 10;                // cards in a round (before Wrong ones come back)
 constexpr int NEW_PER_ROUND = 4;         // at most this many never-seen cards in one round
 constexpr int WORKING_SET = 6;           // at most this many facts being learned (shown, below MASTER_BOX) at once
@@ -56,7 +64,12 @@ inline int startTable(int age) { const int t = age - 4; return t < 1 ? 1 : t > 4
 inline int tableOf(int card) { return card / FACTS + 1; }
 inline int factorOf(int card) { return card % FACTS + 1; }
 inline int cardOf(int table, int n) { return (table - 1) * FACTS + n - 1; }
-inline int answerOf(int card) { return tableOf(card) * factorOf(card); }
+inline bool isDiv(int card) { return card >= CARDS; }
+inline int divOf(int divisor, int quotient) { return CARDS + (divisor - 2) * FACTS + quotient - 1; }
+inline int divisorOf(int card) { return (card - CARDS) / FACTS + 2; }
+inline int quotientOf(int card) { return (card - CARDS) % FACTS + 1; }
+inline int dividendOf(int card) { return divisorOf(card) * quotientOf(card); }
+inline int answerOf(int card) { return isDiv(card) ? quotientOf(card) : tableOf(card) * factorOf(card); }
 inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
 
 struct Save {
@@ -69,22 +82,41 @@ struct Save {
   uint8_t box[CARDS];       // by card: 0 never shown, 1..MAX_BOX
   uint16_t due[CARDS];      // by card: the day (dayOf) it is due again; meaningless while box is 0
   uint16_t seen[CARDS];     // by card: the day it was last answered; 0 never (or set up as known)
+  uint8_t divBox[DIVS];     // v2: the same three for the division cards (card - CARDS)
+  uint16_t divDue[DIVS];
+  uint16_t divSeen[DIVS];
+  uint16_t spare;           // 0; keeps crc aligned
   uint32_t crc;
+  // Any card, multiplication or division.
+  uint8_t& boxOf(int c) { return c < CARDS ? box[c] : divBox[c - CARDS]; }
+  uint16_t& dueOf(int c) { return c < CARDS ? due[c] : divDue[c - CARDS]; }
+  uint16_t& seenOf(int c) { return c < CARDS ? seen[c] : divSeen[c - CARDS]; }
+  uint8_t boxOf(int c) const { return c < CARDS ? box[c] : divBox[c - CARDS]; }
+  uint16_t dueOf(int c) const { return c < CARDS ? due[c] : divDue[c - CARDS]; }
+  uint16_t seenOf(int c) const { return c < CARDS ? seen[c] : divSeen[c - CARDS]; }
 };
-static_assert(sizeof(Save) == 520, "Save is persisted: append before crc, never resize");
+constexpr size_t SAVE_V1_SIZE = 520;   // version 1: everything before divBox, then its crc
+static_assert(offsetof(Save, divBox) == SAVE_V1_SIZE - 4, "version 1's fields are kept where they were");
+static_assert(sizeof(Save) == 972, "Save is persisted: append before crc, never resize");
 
 inline void seal(Save& s) {
   s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
-// A blob is valid at exactly this version's size; anything else (damaged, a newer firmware's) starts a fresh deck.
+// A blob is valid at exactly this version's size, or version 1's (kept, with no division facts met yet); anything
+// else (damaged, a newer firmware's) starts a fresh deck.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
-  if (n != sizeof(Save)) return false;
-  Save s;
-  memcpy(&s, data, n);
-  if (s.magic != SAVE_MAGIC || s.version != SAVE_VERSION || s.size != n || s.level > TABLES ||
-      s.crc != os::crc32(&s, sizeof s - sizeof s.crc)) return false;
-  for (uint8_t& b : s.box) if (b > MAX_BOX) b = MAX_BOX;
+  Save s{};
+  const bool v1 = n == SAVE_V1_SIZE;
+  if (!v1 && n != sizeof(Save)) return false;
+  const size_t body = n - sizeof s.crc;
+  uint32_t crc;
+  memcpy(&s, data, body);
+  memcpy(&crc, (const uint8_t*)data + body, sizeof crc);
+  if (s.magic != SAVE_MAGIC || s.version != (v1 ? 1 : SAVE_VERSION) || s.size != n || s.level > TABLES ||
+      crc != os::crc32(data, body)) return false;
+  s.crc = crc;   // resealed at the next save, as version 2
+  for (int c = 0; c < ALL; c++) if (s.boxOf(c) > MAX_BOX) s.boxOf(c) = MAX_BOX;
   out = s;
   return true;
 }
@@ -95,26 +127,26 @@ inline void setUp(Save& s, int table, int32_t today) {
   s = Save{};
   s.level = s.start = (uint8_t)table;
   for (int c = 0; c < cardOf(table, 1); c++) {
-    s.box[c] = KNOWN_BOX;
-    s.due[c] = (uint16_t)(today + 1 + c % INTERVAL[KNOWN_BOX]);
+    s.boxOf(c) = KNOWN_BOX;
+    s.dueOf(c) = (uint16_t)(today + 1 + c % INTERVAL[KNOWN_BOX]);
   }
 }
 // A clock set back (or a save from the future) leaves due days far ahead: none waits longer than its box says.
 inline void clampDue(Save& s, int32_t today) {
-  for (int c = 0; c < CARDS; c++)
-    if (s.box[c] && (int32_t)s.due[c] > today + INTERVAL[s.box[c]]) s.due[c] = (uint16_t)(today + INTERVAL[s.box[c]]);
+  for (int c = 0; c < ALL; c++)
+    if (s.boxOf(c) && (int32_t)s.dueOf(c) > today + INTERVAL[s.boxOf(c)]) s.dueOf(c) = (uint16_t)(today + INTERVAL[s.boxOf(c)]);
 }
-inline bool isDue(const Save& s, int card, int32_t today) { return s.box[card] && (int32_t)s.due[card] <= today; }
+inline bool isDue(const Save& s, int card, int32_t today) { return s.boxOf(card) && (int32_t)s.dueOf(card) <= today; }
 inline int known(const Save& s, int table) {   // facts of `table` in MASTER_BOX or higher
   int k = 0;
-  for (int n = 1; n <= FACTS; n++) k += s.box[cardOf(table, n)] >= MASTER_BOX;
+  for (int n = 1; n <= FACTS; n++) k += s.boxOf(cardOf(table, n)) >= MASTER_BOX;
   return k;
 }
 inline bool allKnown(const Save& s) { return s.level == TABLES && known(s, TABLES) == FACTS; }
 enum Grade : uint8_t { EASY, HARD, WRONG };
 inline int learning(const Save& s) {   // facts shown and not yet known
   int k = 0;
-  for (uint8_t b : s.box) k += b && b < MASTER_BOX;
+  for (int c = 0; c < ALL; c++) k += s.boxOf(c) && s.boxOf(c) < MASTER_BOX;
   return k;
 }
 inline int paceOf(const Save& s) { return s.pace ? s.pace - 1 : PACE_START; }
@@ -137,7 +169,7 @@ inline int newAllowed(const Save& s) {
 // Grades one card. Returns true when this answer finished the level's table (the level moves to the next unfinished one).
 // A real recall, which may move a card up: new, due, or still being learned and last seen on another day.
 inline bool recalls(const Save& s, int card, int32_t today) {
-  return !s.box[card] || isDue(s, card, today) || (s.box[card] < MASTER_BOX && s.seen[card] != (uint16_t)today);
+  return !s.boxOf(card) || isDue(s, card, today) || (s.boxOf(card) < MASTER_BOX && s.seenOf(card) != (uint16_t)today);
 }
 inline uint8_t nextBox(uint8_t b, Grade g, bool counts) {
   if (g == WRONG) return 1;
@@ -146,10 +178,10 @@ inline uint8_t nextBox(uint8_t b, Grade g, bool counts) {
 }
 inline bool grade(Save& s, int card, Grade g, int32_t today) {
   const bool counts = recalls(s, card, today);
-  s.box[card] = nextBox(s.box[card], g, counts);
-  if (counts || g == WRONG) s.due[card] = (uint16_t)(today + (g == EASY ? INTERVAL[s.box[card]] : 1));
-  else if (g == HARD && (int32_t)s.due[card] > today + 1) s.due[card] = (uint16_t)(today + 1);   // practice: sooner, never later
-  s.seen[card] = (uint16_t)today;
+  s.boxOf(card) = nextBox(s.boxOf(card), g, counts);
+  if (counts || g == WRONG) s.dueOf(card) = (uint16_t)(today + (g == EASY ? INTERVAL[s.boxOf(card)] : 1));
+  else if (g == HARD && (int32_t)s.dueOf(card) > today + 1) s.dueOf(card) = (uint16_t)(today + 1);   // practice: sooner, never later
+  s.seenOf(card) = (uint16_t)today;
   s.answers++;
   bool up = false;
   while (s.level < TABLES && known(s, s.level) == FACTS) { s.level++; up = true; }
@@ -159,7 +191,7 @@ inline bool grade(Save& s, int card, Grade g, int32_t today) {
 // One round's cards, in the order shown. A Wrong card is put back AGAIN_AFTER cards on (or last).
 struct Round {
   uint8_t card[MAX_QUEUE];
-  uint8_t again[CARDS];   // times each card was put back this round
+  uint8_t again[ALL];     // times each card was put back this round
   bool redo[MAX_QUEUE];   // by place: a Wrong card put back, shown as "One more try", not counted in "k of base"
   int n = 0, at = 0, base = 0;   // base: the round's cards before any was put back
   int easy = 0, hard = 0, wrong = 0;
@@ -176,46 +208,78 @@ template <class Better>
 inline void pick(Round& r, bool* used, const Save& s, Better better, int upTo) {
   while (r.n < upTo) {
     int best = -1;
-    for (int c = 0; c < CARDS; c++)
-      if (!used[c] && s.box[c] && better(c, best)) best = c;
+    for (int c = 0; c < ALL; c++)
+      if (!used[c] && s.boxOf(c) && better(c, best)) best = c;
     if (best < 0) return;
     used[best] = true; r.card[r.n++] = (uint8_t)best;
   }
 }
-inline int newCards(const Save& s, int* fresh) {   // the next never-shown facts in table order, as many as the pace allows
+inline int nextTimes(const Save& s, const bool* taken) {   // the next never-shown multiplication fact, in table order
+  for (int c = 0; c < CARDS; c++) if (!s.box[c] && !taken[c]) return c;
+  return -1;
+}
+// The next never-shown division fact that is open: by the known multiplications in table order (1x last, its
+// families being n / n and n / 1), each family's two divisions together: 2 x 3 known gives 6 / 2, then 6 / 3.
+inline int nextDivision(const Save& s, const bool* taken) {
+  if (s.level < DIV_FROM_LEVEL) return -1;
+  for (int i = FACTS; i < CARDS + FACTS; i++) {
+    const int m = i % CARDS, t = tableOf(m), n = factorOf(m);
+    if (s.box[m] < MASTER_BOX) continue;
+    const int pair[2][2] = {{t, n}, {n, t}};   // divisor, quotient
+    for (const auto& p : pair)
+      if (p[0] >= 2 && !s.boxOf(divOf(p[0], p[1])) && !taken[divOf(p[0], p[1])]) return divOf(p[0], p[1]);
+  }
+  return -1;
+}
+inline int learningOf(const Save& s, bool division) {   // facts of one kind shown and not yet known
+  int k = 0;
+  for (int c = division ? CARDS : 0; c < (division ? ALL : CARDS); c++) k += s.boxOf(c) && s.boxOf(c) < MASTER_BOX;
+  return k;
+}
+// The never-shown facts this round brings, as many as the pace allows: a division whenever fewer divisions than
+// multiplications are being learned, else the next multiplication (either, when the other kind has none left).
+inline int newCards(const Save& s, int* fresh) {
   const int most = newAllowed(s);
-  int nf = 0;
-  for (int c = 0; c < CARDS && nf < most; c++)
-    if (!s.box[c]) fresh[nf++] = c;
+  bool taken[ALL] = {};
+  int times = learningOf(s, false), divs = learningOf(s, true), nf = 0;
+  while (nf < most) {
+    int c = divs < times ? nextDivision(s, taken) : -1;
+    if (c < 0) c = nextTimes(s, taken);
+    if (c < 0) c = nextDivision(s, taken);
+    if (c < 0) break;
+    taken[c] = true;
+    fresh[nf++] = c;
+    (isDiv(c) ? divs : times)++;
+  }
   return nf;
 }
 inline void shuffle(Round& r, uint32_t seed) {
   uint32_t x = seed | 1;
   for (int i = r.n - 1; i > 0; i--) { const int j = (int)(nextRand(x) % (uint32_t)(i + 1)); const uint8_t t = r.card[i]; r.card[i] = r.card[j]; r.card[j] = t; }
 }
+// Easy wins between the hard ones: known facts not seen today, the soonest due first (early, so they never move up).
+inline void mixKnown(Round& r, bool* used, const Save& s, int32_t today) {
+  pick(r, used, s, [&](int a, int b) { return s.boxOf(a) >= MASTER_BOX && s.seenOf(a) != (uint16_t)today && (b < 0 || s.dueOf(a) < s.dueOf(b)); },
+       ROUND);
+}
 // Which cards come first: the due ones, oldest due first (a lower box breaks a tie), up to the round less the room kept
-// for new cards; then the new facts the pace allows (newAllowed), in table order; then practice: facts still being
+// for new cards; then the new facts the pace allows (newCards); then practice: facts still being
 // learned and not yet seen today (a missed one gets its second look in its own round), least-known first. While the
 // kid is struggling (pace below the third step) practice leaves KNOWN_MIX places for known facts, so a hard round still
 // has easy wins in it (interspersal, as in incremental rehearsal). Otherwise a known fact comes only when due, so a
 // round can be short. Only when nothing at all qualifies is the round practice from every
 // fact met so far, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
-// Easy wins between the hard ones: known facts not seen today, the soonest due first (early, so they never move up).
-inline void mixKnown(Round& r, bool* used, const Save& s, int32_t today) {
-  pick(r, used, s, [&](int a, int b) { return s.box[a] >= MASTER_BOX && s.seen[a] != (uint16_t)today && (b < 0 || s.due[a] < s.due[b]); },
-       ROUND);
-}
 inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
   r = Round{};
-  bool used[CARDS] = {};
+  bool used[ALL] = {};
   int fresh[NEW_PER_ROUND];
   const int nf = newCards(s, fresh);
-  pick(r, used, s, [&](int a, int b) { return isDue(s, a, today) && (b < 0 || s.due[a] < s.due[b] || (s.due[a] == s.due[b] && s.box[a] < s.box[b])); },
+  pick(r, used, s, [&](int a, int b) { return isDue(s, a, today) && (b < 0 || s.dueOf(a) < s.dueOf(b) || (s.dueOf(a) == s.dueOf(b) && s.boxOf(a) < s.boxOf(b))); },
        ROUND - nf);
   for (int i = 0; i < nf; i++) { used[fresh[i]] = true; r.card[r.n++] = (uint8_t)fresh[i]; }
-  auto least = [&](int a, int b) { return b < 0 || s.box[a] < s.box[b] || (s.box[a] == s.box[b] && s.due[a] < s.due[b]); };
+  auto least = [&](int a, int b) { return b < 0 || s.boxOf(a) < s.boxOf(b) || (s.boxOf(a) == s.boxOf(b) && s.dueOf(a) < s.dueOf(b)); };
   const bool struggling = paceOf(s) < PACE_STEPS[2];
-  pick(r, used, s, [&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); },
+  pick(r, used, s, [&](int a, int b) { return s.boxOf(a) < MASTER_BOX && s.seenOf(a) != (uint16_t)today && least(a, b); },
        struggling ? ROUND - KNOWN_MIX : ROUND);
   if (struggling) mixKnown(r, used, s, today);
   if (!r.n) pick(r, used, s, least, ROUND);
@@ -226,7 +290,7 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
 // The kid's answer to the round's current card: graded, counted, put back if Wrong, and the round moves on.
 inline void answer(Round& r, Save& s, Grade g, int32_t today) {
   const int c = r.current();
-  if (s.box[c] && !r.redo[r.at]) notePace(s, g);   // a first sight, or a second look a moment later, says little
+  if (s.boxOf(c) && !r.redo[r.at]) notePace(s, g);   // a first sight, or a second look a moment later, says little
   if (grade(s, c, g, today)) r.leveledUp = true;
   (g == EASY ? r.easy : g == HARD ? r.hard : r.wrong)++;
   if (g == WRONG && r.again[c] < AGAIN_MAX && r.n < MAX_QUEUE) {

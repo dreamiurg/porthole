@@ -55,7 +55,8 @@ wait 600
 end
 tap 80 12
 wait 600
-# six facts are learned at once, so the last ones start on days three and four and settle a day later
+# six facts are learned at once, and divisions of the known tables take turns with 10x for the places, so 10x
+# takes a week of two rounds a day
 skip 86400
 tap 80 133
 wait 600
@@ -78,6 +79,79 @@ end
 tap 80 12
 wait 600
 skip 86400
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+skip 86400
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+skip 86400
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
+skip 86400
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
 tap 80 133
 wait 600
 repeat 12
