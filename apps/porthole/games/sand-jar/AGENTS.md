@@ -35,8 +35,13 @@ reserved all the same), no clock, no personal data.
   tone. Orbits' bodies are floats in panel px. The grains and (Orbits) the bodies plus the renderer's trail light share
   one union: the whole Jar is ~153 KB. It was first a member of the static game object, in internal RAM (random
   access in PSRAM is ~14x slower), but static internal RAM is capped (`custom_dram_static_max`), so the game
-  allocates it on its first `enter()` and on the board it lands in PSRAM. The frame rates below were measured with
-  the Jar in internal RAM; re-measure on the board.
+  allocates it on its first `enter()` and on the board it lands in PSRAM. Its hottest part, the grid (`occ`, 51 KB,
+  read a dozen times per grain per step), is borrowed back into internal RAM while the game is open and the screen
+  lit: `update()` copies `cells` into a block from `fastmem::take()` (`os/fastmem.h`) and points `occ` at it;
+  `leave()`, or fastmem's recall when the screen goes dark, copies it home and gives the block back. `take()` lends
+  only when the wireless update's share of internal RAM (`UPDATE_RAM`) stays free; otherwise `occ` stays on `cells` in
+  PSRAM. `debug` shows which: `fast=1`. The frame rates below were measured
+  with the Jar in internal RAM; re-measure on the board.
 - `game.h` / `game.cpp` (`class Game`, `namespace sandjar`): App plumbing, the motion sensor (`Input::gx/gy/gz`), the
   touch, the physics clock, and the renderer.
 - In `games/apps.h` (id 11). The game object itself is small: the Jar, the renderer tables (`Tables`) and the two
@@ -137,5 +142,5 @@ draws no strings at all), computed per cell, not per pixel.
   upside down, in every mode, the buffer on the glass equals a full redraw of the same state, pixel for pixel; a late
   frame drops the jar to one step a frame for `SLOW_MS`, then back to two.
 - The sim: `tilt X Y Z` (milli-g), `shake`, `perf`, `dbg sand|rainbow|beach|orbits`; `debug` prints `mode`, `grains`,
-  `sand`, `water`, `bubbles`, `tilt`, `finger`, `shaking`, `steps`. The SDL window's arrow keys turn gravity, space
+  `sand`, `water`, `bubbles`, `tilt`, `finger`, `shaking`, `steps`, `fast` (the grid in internal RAM). The SDL window's arrow keys turn gravity, space
   shakes; the web emulator has a tilt pad, Upright/Flat and Shake.

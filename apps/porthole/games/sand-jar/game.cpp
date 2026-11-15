@@ -4,6 +4,7 @@
 #include <string.h>
 #include <initializer_list>
 #include <new>
+#include "fastmem.h"
 #include "launcher_icon.h"
 #include "gfx565.h"
 
@@ -81,6 +82,28 @@ void Game::enter(const AppEnter& e) {
   if (!started_) { tables(); pour(MODE_SAND); started_ = true; }
 }
 
+void Game::leave() {
+  if (!jar_) return;
+  jar_->finger.on = false;
+  giveBack();
+}
+
+// The grid, read a dozen times per grain per step, in internal RAM while fastmem lends it (not in the dark, not when
+// a wireless update would be short); it goes home to the Jar on leave() or when fastmem recalls it. The sand stays put.
+void Game::borrow() {
+  fast_ = (int16_t*)fastmem::take(sizeof jar_->cells, [](void* g) { static_cast<Game*>(g)->giveBack(); }, this);
+  if (!fast_) return;
+  memcpy(fast_, jar_->cells, sizeof jar_->cells);
+  jar_->occ = fast_;
+}
+void Game::giveBack() {
+  if (!fast_) return;
+  memcpy(jar_->cells, fast_, sizeof jar_->cells);
+  jar_->occ = jar_->cells;
+  fastmem::give(fast_);
+  fast_ = nullptr;
+}
+
 void Game::pour(Mode m) {
   jar_->reset(m, 0x9E3779B9u * ++pours_);
   for (Seen& s : seen_) s.valid = false;   // a new background, also outside the glass, where a frame never looks again
@@ -125,6 +148,7 @@ void Game::tables() {
 
 void Game::update(uint32_t, uint32_t ms, const Input& in) {
   if (!ready()) return;
+  if (!fast_) borrow();
   ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   sense(in);
@@ -349,9 +373,9 @@ void Game::debugPrint() {
   if (!ready()) return;
   int kinds[3] = {};
   if (jar_->mode != MODE_ORBITS) for (int i = 0; i < jar_->n; i++) kinds[kindOf(jar_->g.look[i])]++;
-  printf("[sandjar mode=%s grains=%d sand=%d water=%d bubbles=%d tilt=%d,%d finger=%d shaking=%d steps=%u]\n", MODES[jar_->mode],
+  printf("[sandjar mode=%s grains=%d sand=%d water=%d bubbles=%d tilt=%d,%d finger=%d shaking=%d steps=%u fast=%d]\n", MODES[jar_->mode],
          jar_->n, kinds[SAND], kinds[WATER], kinds[BUBBLE], (int)lroundf(jar_->tiltX * 1000), (int)lroundf(jar_->tiltY * 1000),
-         jar_->finger.on, jar_->shaking > 0.01f, (unsigned)jar_->frame);
+         jar_->finger.on, jar_->shaking > 0.01f, (unsigned)jar_->frame, fast_ != nullptr);
   printf("screen=%s\n", screenName());
 }
 void Game::debugCmd(const char* cmd) {

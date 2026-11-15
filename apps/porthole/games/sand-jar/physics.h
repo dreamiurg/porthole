@@ -1,8 +1,8 @@
 // Sand Jar's physics: sand, water and bubbles as grains on a 160x160 cell grid inside the round glass (a cell is 3
 // physical px, one logical px, so a touch is a cell as is), and Orbits' free bodies. No drawing here: game.cpp renders
 // what the Jar holds. Deterministic (its own xorshift RNG) and allocation-free: every buffer is sized at compile time
-// and lives in the Jar, a member of a static object (never heap: it must stay in internal RAM). Ported from the
-// approved browser prototype; the rules it keeps are listed in games/sand-jar/CLAUDE.md.
+// and lives in the Jar (the game allocates it once; on the board it lands in PSRAM). Ported from the approved browser
+// prototype; the rules it keeps are listed in games/sand-jar/CLAUDE.md.
 #pragma once
 #include <stdint.h>
 
@@ -34,6 +34,9 @@ inline int toneOf(uint8_t look) { return (look >> 3) & 7; }
 inline uint8_t makeLook(Kind k, int shade, int tone) { return (uint8_t)(k << 6 | (tone & 7) << 3 | (shade & 7)); }
 
 struct Jar {
+  Jar() = default;
+  Jar(const Jar&) = delete;              // occ may point into the Jar itself
+  Jar& operator=(const Jar&) = delete;
   void reset(Mode m, uint32_t seed);   // the mode's grains (or bodies), heaped on the bottom edge of the current tilt
   void step();                         // one tick (the prototype's 60 Hz frame)
   void shake() { shaking = SHAKE; }
@@ -53,9 +56,11 @@ struct Jar {
   float shaking = 0;
   float gxn = 0, gyn = 1;       // gravity's direction, kept while the jar lies flat
   uint8_t upDir = 6;            // the grid direction (0 = +x, clockwise on screen) closest to straight up
-  int16_t occ[G * G];
-  // The grains, or (Orbits has none) the bodies and their trail light. The two share memory: the board's internal RAM
-  // holds the whole Jar (random access in PSRAM is 14x slower), and it is tight.
+  // The grid, read a dozen times per grain per step: the hottest memory here. It lives in cells (inside the Jar, so in
+  // PSRAM on the board); while the game is open, occ may point at a copy in internal RAM instead (os/fastmem.h).
+  int16_t cells[G * G];
+  int16_t* occ = cells;
+  // The grains, or (Orbits has none) the bodies and their trail light. The two share memory: the Jar is ~153 KB.
   struct Grains {
     uint16_t x[MAX_GRAINS], y[MAX_GRAINS];
     int16_t vx[MAX_GRAINS], vy[MAX_GRAINS];
