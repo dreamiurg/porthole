@@ -318,3 +318,72 @@ got `n=3`, in Times Cards, which is unrelated to Biscuit.
 **Judgment after iteration 2: needs another pass.** Both original Majors are resolved, but new Major #13 (adaptation
 drops an 8-year-old two levels after one round) is open. Once it is fixed, replay persona B with misses at level 3 or
 above, and reach level 5 to read the shortened "why" lines.
+
+## Iteration 3 (retest after the adaptation fix)
+
+| Item | Value |
+| --- | --- |
+| Revision | `1beb64b`, clean working tree |
+| Executable | `build/host/snap`, sha256 `e2de148fd7293a61bc21b52c4a5cd32675d50fb8f46babc810ac7f0fa8852d1b` (not rebuilt; played from a private copy with the same hash) |
+| Agent | The same agent again, so this is a replay. The rules were unchanged: no source, no `dbg`, taps chosen from frames |
+
+**Coordinator brief for this pass (summary).** Changes on this build: for #13, a miss moves the level down at most one,
+and never more than one below the age start. For #15, "Up the hill" now asks "Where is Mia?". The coordinator asked
+for three checks:
+1. Persona B misses twice in the first level-3 round, checks the level stays at 2, then climbs back up.
+2. B keeps going with mostly right answers to level 5, checking page breaks and "Oops" with a miss at L4 or L5.
+3. Persona A plays one quick round as a regression check.
+
+**Paths played** (`i3-trace-B.txt`, `i3-trace-A.txt`; fresh profiles through the shell)
+
+| Round | Library level before | Passages and results | Result |
+| --- | --- | --- | --- |
+| B1 | 3 | Snow bone ✗, Stuck stick ✗, A thin track ✗ (the third passage is now a level-2 text, no longer level 1) | 0/3 |
+| B2 | **2** (`i3-01`) | The next sock ✓, The flag ✓, Bun or plum ✓ | 3/3, "Next time: longer reads!" |
+| B3 | 3 | At the library ✓, Fence cat ✓, The garden row ✓ | 3/3 |
+| B4 | 4 | The orange cat ✗ (an L4 miss), Three cups ✓ (an L3 text after the miss), Bath time ✓ | 2/3 |
+| B5 | 3 | The lost kite ✓, The blanket tent ✓, Park crackers ✓ | 3/3 |
+| B6 | 4 (`i3-02`) | The blue sock ✓, The fridge picture ✓, One shoe ✗ (an L5 text) | 2/3, stays at 4 |
+| B7 | 4 | The present ✓, Waiting at the window ✓, Deep snow ✓ | 3/3 |
+| B8 | **5** | The vacuum ✗ (an L5 vocabulary miss, `i3-03`), then "Thunder at supper" read; stopped | n/a |
+
+Persona A replayed the iteration-2 trace: 2 rounds at level 1 with 4 misses. The "Oops" lines, the 8-passage pool
+order and the summaries are unchanged. "Up the hill" asks "Where is Mia?" (On top / On a log / In a pit), and the
+right answer reads "Yes! On a log." (`i3-04`).
+
+**Results against open findings**
+
+| # | Finding | Status |
+| --- | --- | --- |
+| 13 | One bad round drops an 8-year-old to level 1 (Major) | **Resolved.** Even a 0/3 first round only went to level 2 (floor), and a perfect level-2 round climbed straight back to 3. Within a round, a miss now steps down one level (L4 → an L3 text). |
+| 15 | "Yes! No, on a log." | **Resolved** (`i3-04`) |
+| 1 | The miss is shown in words only | Open, Minor. "Oops!" is clear in words for every level. At L5 it adds a good one-line reason ("He crept, backed up, and dashed past: he did not want to go."). There is still no colour, no mark and no Biscuit. |
+| 14 | The answer wraps mid-phrase in "Oops" | Open, Nit. Examples: "By the / tree.", "He / missed Sam." |
+| 7 | Mid-sentence page breaks and one-line last pages | Open (deferred), Minor. Still at L4-5 in 6 of the 7 multi-page passages seen: "One shoe", "Deep snow", "The present", "The blanket tent", "Park crackers" ("the last / cracker, crumbs and all."), "Thunder at supper". Two-line questions also orphan a word ("What made the dog step / in?"). |
+| 3, 5, 6, 8, 9 | No pictures; Back discards the round and there is no progress; inert Previous; generic "the kid" / "the dog" and the negation question; text-only stars | Open (deferred or follow-up), Minor. Unchanged. |
+| 10, 12 | Leading spaces; no Library icons | Open (deferred), Nit. Unchanged (" Rex wags, because he", " Sam grumbled"). |
+
+**Pacing note.** Level 2 for an 8-year-old is easy ("Sam has a bun and a plum") but brief: one round. The climb from a
+bad start back to 5 took six rounds of mostly right answers. That is fine for play over several days, but long in
+one sitting. The level 4-5 content stays engaging. The stopping point is unchanged from iteration 1: around round 4
+in one sitting.
+
+**Not covered in this pass.** I did not identify which two level-5 "why" lines were shortened. The level-5 Oops lines
+I saw fit in four lines without clipping. Process restart, leaving to the launcher mid-round, and the night tint
+remain gaps.
+
+**Automated suite on this build** (`tools/playtest.py`, no rebuild): 102 of 102 pass, including `49_biscuit_read_tour`
+and `52_biscuit_reads`, with 0 UI FAIL and 0 WARN. `build/host/snap-asan` still has the iteration-1 hash (`5d4df20…`),
+so the monkey scenarios ran against an older sanitizer build than `snap`.
+
+**Judgment after iteration 3: no Blocker or Major open.** The remaining findings are Minor or Nit, deferred as
+shared reader/UI follow-ups. The coordinator and reviewer need to accept them explicitly. For persona A, Minors #1
+(word-only miss) and #3 (no pictures) carry the most player impact.
+
+## Accepted limitations (owner)
+
+No Blocker or Major is open after iteration 3. The Minors and Nits left are accepted for this PR and kept as follow-ups:
+#1 and #9 (a miss and a star shown in words only), #3 (no pictures or pup on reading screens), #5 (round progress, Back
+ends the round), #8 (questions say "the kid"/"the dog" so 12-letter names fit), #12 (no Library icons). #6, #7, #10 and
+#14 are the shared reader and text layout (disabled Previous, page breaks, leading spaces, wrap points) and affect
+every Biscuit story, so they belong to a separate change.

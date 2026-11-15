@@ -1,0 +1,375 @@
+reset
+wait 1000
+tap 67 124
+wait 500
+tap 67 76
+wait 500
+tap 67 124
+wait 500
+tap 41 52
+wait 500
+tap 41 124
+wait 500
+snap b01
+tap 119 124
+wait 1000
+tap 124 56
+wait 1000
+tap 34 101
+wait 1000
+snap b02
+tap 80 145
+wait 1500
+tap 79 72
+wait 2500
+snap b03
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 67 124
+wait 400
+tap 41 76
+wait 400
+tap 67 124
+wait 400
+tap 41 76
+wait 400
+tap 67 124
+wait 400
+tap 93 101
+wait 400
+snap b04
+tap 119 124
+wait 2500
+snap b05
+tap 94 130
+wait 1500
+snap b06
+snap d00
+tap 80 84
+wait 800
+snap d01
+tap 108 132
+wait 800
+snap d02
+tap 108 132
+wait 800
+snap d03
+tap 80 97
+wait 800
+snap d04
+tap 80 132
+wait 800
+tap 108 132
+wait 800
+snap d05
+tap 108 132
+wait 800
+snap d06
+tap 51 25
+wait 800
+snap d07
+tap 108 132
+wait 800
+tap 80 73
+wait 800
+snap d08
+tap 80 132
+wait 800
+snap d09
+tap 108 132
+wait 800
+snap d10
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap d11
+wait 600
+tap 51 25
+wait 800
+snap d12
+tap 80 84
+wait 800
+snap e01
+tap 108 132
+wait 800
+snap e02
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e03
+tap 108 132
+wait 800
+snap e04
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e05
+tap 108 132
+wait 800
+snap e06
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e07
+wait 600
+tap 80 132
+wait 800
+snap e08
+tap 108 132
+wait 800
+snap e09
+tap 108 132
+wait 800
+snap e10
+tap 80 121
+wait 800
+snap e11
+tap 80 132
+wait 800
+snap e12
+tap 108 132
+wait 800
+snap e13
+tap 108 132
+wait 800
+snap e14
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e15
+tap 108 132
+wait 800
+snap e16
+tap 108 132
+wait 800
+snap e17
+tap 80 73
+wait 800
+tap 80 132
+wait 800
+snap e18
+wait 600
+tap 80 132
+wait 800
+snap e19
+tap 108 132
+wait 800
+snap e20
+tap 108 132
+wait 800
+snap e21
+tap 108 132
+wait 800
+snap e22
+tap 80 121
+wait 800
+snap e23
+tap 80 132
+wait 800
+snap e24
+tap 108 132
+wait 800
+snap e25
+tap 108 132
+wait 800
+snap e26
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e27
+tap 108 132
+wait 800
+snap e28
+tap 108 132
+wait 800
+snap e29
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e30
+wait 600
+tap 80 132
+wait 800
+snap e31
+tap 108 132
+wait 800
+snap e32
+tap 108 132
+wait 800
+snap e33
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e34
+tap 108 132
+wait 800
+snap e35
+tap 108 132
+wait 800
+snap e36
+tap 108 132
+wait 800
+snap e37
+tap 80 73
+wait 800
+tap 80 132
+wait 800
+snap e38
+tap 108 132
+wait 800
+snap e39
+tap 108 132
+wait 800
+snap e40
+tap 108 132
+wait 800
+snap e41
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e42
+wait 600
+tap 51 25
+wait 800
+snap e43
+tap 80 84
+wait 800
+snap e44
+tap 108 132
+wait 800
+snap e45
+tap 108 132
+wait 800
+snap e46
+tap 108 132
+wait 800
+snap e47
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e48
+tap 108 132
+wait 800
+snap e49
+tap 108 132
+wait 800
+snap e50
+tap 108 132
+wait 800
+snap e51
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e52
+tap 108 132
+wait 800
+snap e53
+tap 108 132
+wait 800
+snap e54
+tap 108 132
+wait 800
+snap e55
+tap 80 73
+wait 800
+snap e56
+tap 80 132
+wait 800
+snap e57
+wait 600
+tap 51 25
+wait 800
+snap e58
+tap 80 84
+wait 800
+snap e59
+tap 108 132
+wait 800
+snap e60
+tap 108 132
+wait 800
+snap e61
+tap 108 132
+wait 800
+snap e62
+tap 80 97
+wait 800
+tap 80 132
+wait 800
+snap e63
+tap 108 132
+wait 800
+snap e64
+tap 108 132
+wait 800
+snap e65
+tap 108 132
+wait 800
+snap e66
+tap 80 121
+wait 800
+tap 80 132
+wait 800
+snap e67
+tap 108 132
+wait 800
+snap e68
+tap 108 132
+wait 800
+snap e69
+tap 108 132
+wait 800
+snap e70
+tap 80 73
+wait 800
+tap 80 132
+wait 800
+snap e71
+wait 600
+tap 80 132
+wait 800
+snap e72
+tap 108 132
+wait 800
+snap e73
+tap 108 132
+wait 800
+snap e74
+tap 108 132
+wait 800
+snap e75
+tap 80 97
+wait 800
+snap e76
+tap 80 132
+wait 800
+snap e77
+tap 108 132
+wait 800
+snap e78
+tap 108 132
+wait 800
+snap e79
