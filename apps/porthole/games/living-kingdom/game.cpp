@@ -27,9 +27,12 @@ const ui::Box TOOLS[] = {layout::TOOL0, layout::TOOL1, layout::TOOL2, layout::TO
 void Game::enter(const AppEnter& e) {
   const uint8_t profile = e.who ? e.who->id : 0;
   newCampaign(save_, e.nowSec ^ ((uint32_t)profile + 1) * 0x9e3779b9u, profile);
-  fresh_ = true;
-  for (int i = 0; i < e.n; i++)
-    if (e.all[i].id == profile && e.saves[i].len && loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
+  fresh_ = true; keep_ = false;
+  for (int i = 0; i < e.n; i++) {
+    if (e.all[i].id != profile || !e.saves[i].len) continue;
+    if (loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
+    else keep_ = true;  // stored but unreadable here (a newer build wrote it): leave it be until the kid starts over
+  }
   ms_ = e.ms; in_ = {}; title_ = true; home_ = false;
   changed();
 }
@@ -79,7 +82,7 @@ void Game::closeInfo() { save_.cursor = save_.returnCursor; changed(); }
 
 void Game::updateTitle() {
   if (clicked(layout::HOME)) { home_ = true; return; }
-  if (clicked(layout::START)) { title_ = fresh_ = false; changed(); }
+  if (clicked(layout::START)) { title_ = fresh_ = keep_ = false; changed(); }
 }
 void Game::updateMap() {
   for (int i = 0; i < LOCATION_COUNT; i++) {
@@ -204,7 +207,7 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   }
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
-  if (!allowed || !dirty_) return false;
+  if (!allowed || !dirty_ || keep_) return false;
   sealSave(save_); *data = &save_; *len = sizeof save_; dirty_ = false; return true;
 }
 const char* Game::screenName() const {
