@@ -6,8 +6,15 @@
 // A card still being learned (below MASTER_BOX) also moves up on Easy any day after the one it was last seen, so a fact
 // is known after Easy on two separate days. Hard keeps its box and brings it back tomorrow; Wrong puts it back in box 1
 // and shows it again later in the same round. A known card answered before it was due never moves up: only a
-// remembered card earns a longer wait. The deck's level is the newest table: once every fact of it is in MASTER_BOX or
-// higher, the next table's facts start coming in as new cards, and the old ones keep coming back for review.
+// remembered card earns a longer wait.
+//
+// Pace: new facts come in table order (2x1, 2x2, ... 2x10, 3x1, ...), a few at a time, never all of a table at once. At
+// most WORKING_SET facts are being learned (shown, not yet known) at once, so the next table's first facts arrive while
+// the last ones of the table before are still settling: with six in the set, the next table starts once half of the
+// one before is known. How many come in a round follows the kid's pace: a running score of their answers on cards
+// already met, aimed at about 85% right; a kid who remembers well gets up to NEW_PER_ROUND, one who is missing a lot
+// gets none until the set clears. So each kid moves through all the tables at their own speed. The deck's level is
+// the first table not yet fully known: it is what the home page shows, and finishing it is the "Next up" moment.
 //
 // Time is Porthole's local wall-clock seconds, so a day is now / 86400. Nothing punishes being away: a card that waited
 // longer than planned is simply due, oldest first.
@@ -29,6 +36,11 @@ constexpr uint16_t SAVE_VERSION = 1;
 constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10
 constexpr int ROUND = 10;                // cards in a round (before Wrong ones come back)
 constexpr int NEW_PER_ROUND = 4;         // at most this many never-seen cards in one round
+constexpr int WORKING_SET = 6;           // at most this many facts being learned (shown, below MASTER_BOX) at once
+constexpr int PACE_START = 850;          // the pace (thousandths right) assumed before a kid has answered anything
+constexpr int PACE_STEPS[NEW_PER_ROUND] = {600, 700, 800, 900};   // a pace this high lets 1, 2, 3, 4 new cards in
+constexpr int KNOWN_MIX = 4;             // below the third pace step, this many known facts mixed into a round
+constexpr int PACE_WEIGHT = 8;           // the pace moves 1/8 of the way toward each answer: about the last two rounds
 constexpr int AGAIN_AFTER = 3;           // a Wrong card comes back after this many others...
 constexpr int AGAIN_MAX = 1;             // ...at most this many times a round
 constexpr int AGAIN_ROOM = 5;            // and a round grows by at most this many put-back cards
@@ -50,9 +62,9 @@ inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
 struct Save {
   uint32_t magic;
   uint16_t version, size;
-  uint8_t level;            // the newest table (1..TABLES); 0: a fresh deck, set up from the kid's age on the first visit
+  uint8_t level;            // the first table not fully known (1..TABLES); 0: a fresh deck, set up from the kid's age
   uint8_t start;            // the table the kid started on
-  uint8_t reserved[2];      // zero; explicit so the layout has no hidden padding
+  uint16_t pace;            // thousandths right on cards already met, plus one; 0: none yet (PACE_START)
   uint32_t answers;         // cards answered, ever
   uint8_t box[CARDS];       // by card: 0 never shown, 1..MAX_BOX
   uint16_t due[CARDS];      // by card: the day (dayOf) it is due again; meaningless while box is 0
@@ -62,7 +74,7 @@ struct Save {
 static_assert(sizeof(Save) == 520, "Save is persisted: append before crc, never resize");
 
 inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); memset(s.reserved, 0, sizeof s.reserved);
+  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
 // A blob is valid at exactly this version's size; anything else (damaged, a newer firmware's) starts a fresh deck.
@@ -99,9 +111,30 @@ inline int known(const Save& s, int table) {   // facts of `table` in MASTER_BOX
   return k;
 }
 inline bool allKnown(const Save& s) { return s.level == TABLES && known(s, TABLES) == FACTS; }
-
 enum Grade : uint8_t { EASY, HARD, WRONG };
-// Grades one card. Returns true when this answer finished the level's table and opened the next one.
+inline int learning(const Save& s) {   // facts shown and not yet known
+  int k = 0;
+  for (uint8_t b : s.box) k += b && b < MASTER_BOX;
+  return k;
+}
+inline int paceOf(const Save& s) { return s.pace ? s.pace - 1 : PACE_START; }
+// One answer on a card already met: Easy counts as right, Hard as half, Wrong as nothing.
+inline void notePace(Save& s, Grade g) {
+  const int got = g == EASY ? 1000 : g == HARD ? 500 : 0;
+  const int p = paceOf(s);
+  s.pace = (uint16_t)(p + (got - p) / PACE_WEIGHT + 1);
+}
+// New cards this round may bring: by the kid's pace, never past the working set, and at least one when nothing is
+// being learned (so a kid who knows everything met so far always moves on).
+inline int newAllowed(const Save& s) {
+  int n = 0;
+  while (n < NEW_PER_ROUND && paceOf(s) >= PACE_STEPS[n]) n++;
+  const int room = WORKING_SET - learning(s), floor = room == WORKING_SET ? 1 : 0;
+  const int k = n > floor ? n : floor;
+  return k < room ? k : room;
+}
+
+// Grades one card. Returns true when this answer finished the level's table (the level moves to the next unfinished one).
 // A real recall, which may move a card up: new, due, or still being learned and last seen on another day.
 inline bool recalls(const Save& s, int card, int32_t today) {
   return !s.box[card] || isDue(s, card, today) || (s.box[card] < MASTER_BOX && s.seen[card] != (uint16_t)today);
@@ -118,8 +151,9 @@ inline bool grade(Save& s, int card, Grade g, int32_t today) {
   else if (g == HARD && (int32_t)s.due[card] > today + 1) s.due[card] = (uint16_t)(today + 1);   // practice: sooner, never later
   s.seen[card] = (uint16_t)today;
   s.answers++;
-  if (s.level < TABLES && known(s, s.level) == FACTS) { s.level++; return true; }
-  return false;
+  bool up = false;
+  while (s.level < TABLES && known(s, s.level) == FACTS) { s.level++; up = true; }
+  return up;
 }
 
 // One round's cards, in the order shown. A Wrong card is put back AGAIN_AFTER cards on (or last).
@@ -137,31 +171,39 @@ struct Round {
 
 inline uint32_t nextRand(uint32_t& r) { r ^= r << 13; r ^= r >> 17; r ^= r << 5; return r; }
 
-// Which cards come first: the due ones, oldest due first (a lower box breaks a tie), up to the round less the room kept
-// for new cards; then up to NEW_PER_ROUND of the level's new facts, in order; then practice: facts still being learned
-// and not yet seen today (a missed one gets its second look in its own round), least-known first. A known
-// fact comes only when due, so a round can be short. Only when nothing at all qualifies is the round practice from every
-// unlocked table, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
-// Adds the best unused shown card of the unlocked tables by `better` (better(c, -1): c qualifies) while r.n < upTo.
+// Adds the best unused card already met by `better` (better(c, -1): c qualifies) while r.n < upTo.
 template <class Better>
 inline void pick(Round& r, bool* used, const Save& s, Better better, int upTo) {
   while (r.n < upTo) {
     int best = -1;
-    for (int c = 0; c < s.level * FACTS; c++)
+    for (int c = 0; c < CARDS; c++)
       if (!used[c] && s.box[c] && better(c, best)) best = c;
     if (best < 0) return;
     used[best] = true; r.card[r.n++] = (uint8_t)best;
   }
 }
-inline int newCards(const Save& s, int* fresh) {   // up to NEW_PER_ROUND never-shown facts, lowest table first
+inline int newCards(const Save& s, int* fresh) {   // the next never-shown facts in table order, as many as the pace allows
+  const int most = newAllowed(s);
   int nf = 0;
-  for (int c = 0; c < s.level * FACTS && nf < NEW_PER_ROUND; c++)
+  for (int c = 0; c < CARDS && nf < most; c++)
     if (!s.box[c]) fresh[nf++] = c;
   return nf;
 }
 inline void shuffle(Round& r, uint32_t seed) {
   uint32_t x = seed | 1;
   for (int i = r.n - 1; i > 0; i--) { const int j = (int)(nextRand(x) % (uint32_t)(i + 1)); const uint8_t t = r.card[i]; r.card[i] = r.card[j]; r.card[j] = t; }
+}
+// Which cards come first: the due ones, oldest due first (a lower box breaks a tie), up to the round less the room kept
+// for new cards; then the new facts the pace allows (newAllowed), in table order; then practice: facts still being
+// learned and not yet seen today (a missed one gets its second look in its own round), least-known first. While the
+// kid is struggling (pace below the third step) practice leaves KNOWN_MIX places for known facts, so a hard round still
+// has easy wins in it (interspersal, as in incremental rehearsal). Otherwise a known fact comes only when due, so a
+// round can be short. Only when nothing at all qualifies is the round practice from every
+// fact met so far, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
+// Easy wins between the hard ones: known facts not seen today, the soonest due first (early, so they never move up).
+inline void mixKnown(Round& r, bool* used, const Save& s, int32_t today) {
+  pick(r, used, s, [&](int a, int b) { return s.box[a] >= MASTER_BOX && s.seen[a] != (uint16_t)today && (b < 0 || s.due[a] < s.due[b]); },
+       ROUND);
 }
 inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
   r = Round{};
@@ -172,7 +214,10 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
        ROUND - nf);
   for (int i = 0; i < nf; i++) { used[fresh[i]] = true; r.card[r.n++] = (uint8_t)fresh[i]; }
   auto least = [&](int a, int b) { return b < 0 || s.box[a] < s.box[b] || (s.box[a] == s.box[b] && s.due[a] < s.due[b]); };
-  pick(r, used, s, [&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); }, ROUND);
+  const bool struggling = paceOf(s) < PACE_STEPS[2];
+  pick(r, used, s, [&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); },
+       struggling ? ROUND - KNOWN_MIX : ROUND);
+  if (struggling) mixKnown(r, used, s, today);
   if (!r.n) pick(r, used, s, least, ROUND);
   r.base = r.n;
   shuffle(r, seed);
@@ -181,6 +226,7 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
 // The kid's answer to the round's current card: graded, counted, put back if Wrong, and the round moves on.
 inline void answer(Round& r, Save& s, Grade g, int32_t today) {
   const int c = r.current();
+  if (s.box[c] && !r.redo[r.at]) notePace(s, g);   // a first sight, or a second look a moment later, says little
   if (grade(s, c, g, today)) r.leveledUp = true;
   (g == EASY ? r.easy : g == HARD ? r.hard : r.wrong)++;
   if (g == WRONG && r.again[c] < AGAIN_MAX && r.n < MAX_QUEUE) {
