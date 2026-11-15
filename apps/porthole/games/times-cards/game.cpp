@@ -215,11 +215,11 @@ void Game::debugPrint() {
   const bool onCard = page_ == P_ASK || page_ == P_ANSWER;
   const int c = onCard ? round_.current() : 0;
   printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d card=%dx%d box=%d due=%d easy=%d hard=%d "
-         "wrong=%d leveled=%d stars=%lu]\n",
+         "wrong=%d leveled=%d stars=%lu pace=%d learning=%d]\n",
          screenName(), save_.level, save_.start, known(save_, save_.level), (unsigned long)save_.answers, round_.at,
          round_.n, onCard ? tableOf(c) : 0, onCard ? factorOf(c) : 0, onCard ? save_.box[c] : 0,
          onCard ? (int)(save_.due[c] - today()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
-         (unsigned long)stars::balance(wallet_));
+         (unsigned long)stars::balance(wallet_), paceOf(save_), learning(save_));
   printf("screen=%s\n", screenName());
 }
 

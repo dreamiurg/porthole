@@ -84,8 +84,10 @@ Design and state contract: [game brief](games/sand-jar/AGENTS.md)
 Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say the answer out loud,
 tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
 Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
-tomorrow, an easy one waits longer each time. Once every fact of a table is known (Easy on two
-separate days), the next table opens. A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
+tomorrow, an easy one waits longer each time. New facts come in a few at a time, at each kid's own
+pace: the next table starts once about half of the current one is known (Easy on two separate days),
+and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
+A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
 round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
 
 Design and state contract: [game brief](games/times-cards/AGENTS.md)

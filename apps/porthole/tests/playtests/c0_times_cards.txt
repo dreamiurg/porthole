@@ -1,7 +1,8 @@
 # Times Cards: multiplication flash cards with spaced repetition, one deck per kid. A 6-year-old starts on 2x and an
-# 8-year-old on 4x. Go! (or a tap on the deck's card) deals a round: a first day is the table's first four facts. Tapping
-# the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card comes back a few cards later). A fact counts as
-# known after Easy on two separate days, and once all ten facts of the table are known the next table opens. The house
+# 8-year-old on 4x. Go! (or a tap on the deck's card) deals a round: a first round is the table's first three facts at the
+# starting pace. Tapping the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card comes back a few cards
+# later). A fact counts as known after Easy on two separate days; at most six facts are learned at once, so the next
+# table's facts start while the last of this one settle, and the level moves on once all ten are known. The house
 # goes from a card back to the deck, and from the deck to the launcher. Every page is audited.
 profile Zach 6
 app timescards
@@ -18,7 +19,7 @@ expect-screen cards_home
 tap 80 70
 wait 600
 expect-screen cards_ask
-expect n=4
+expect n=3
 expect at=0
 ui-check cards_ask
 snap t02_ask
@@ -40,7 +41,7 @@ tap 119 122
 wait 600
 expect-screen cards_ask
 expect wrong=1
-expect n=5
+expect n=4
 expect at=1
 tap 80 70
 wait 100
@@ -51,15 +52,15 @@ wait 50
 expect hard=1
 expect at=2
 wait 600
-repeat 3
+repeat 2
 tap 80 70
 wait 600
 tap 41 122
 wait 600
 end
 expect-screen cards_done
-expect easy=3
-expect answers=5
+expect easy=2
+expect answers=4
 ui-check cards_done
 snap t04_done
 # Again, then the house mid-round: back to the deck, nothing lost
@@ -70,11 +71,11 @@ tap 80 70
 wait 600
 tap 41 122
 wait 600
-expect answers=6
+expect answers=5
 tap 80 12
 wait 600
 expect-screen cards_home
-expect answers=6
+expect answers=5
 snap t05_home_started
 # out to the launcher and back in: the same deck
 tap 80 12
@@ -83,7 +84,7 @@ expect-screen launcher|home
 app timescards
 wait 600
 expect-screen cards_home
-expect answers=6
+expect answers=5
 expect level=2
 # The rest of day one: every new fact started.
 tap 80 133
