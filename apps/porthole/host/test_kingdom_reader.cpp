@@ -56,6 +56,8 @@ int main() {
   assert(reader.open("One.\n\nTwo.\n\nThree.", box));
   assert(strstr(reader.page(0), "\n\n")); // paragraph breaks survive
   assert(!reader.open(nullptr, box));
+  const font::Box tooSmall = {&face, 120, 10, 0, font::Align::LEFT};   // shorter than one line: no word fits
+  assert(!reader.open("Unfittable words.", tooSmall) && reader.count() == 1 && !*reader.page(0));
   illustratedFirstPage();
   puts("kingdom reader: stable, complete, paragraph-aware pagination passed");
 }
