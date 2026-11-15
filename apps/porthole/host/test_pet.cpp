@@ -235,9 +235,10 @@ static void breedSurvivesRoundTrip() {
 // A crc-valid v3 blob with bytes past the art and the wall loads safe: every reader indexes with them unchecked.
 static void corruptFieldsLoadSafe() {
   Save s; pet::adopt(s, day0, "Sam", "Rex");
-  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; pet::seal(s);
+  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; s.hat = NUM_HATS; s.stage = 9; pet::seal(s);
   Save m; assert(pet::loadBlob(&s, sizeof s, m) && pet::valid(m));
   assert(m.breed == 0 && m.wallBreeds[2] == 0 && m.wallCount == WALL_SLOTS && m.hasDog == 1);
+  assert(m.hat == 0 && m.stage == STAGE_GROWN);   // SPR_HATS and the stats card's stage names
 }
 
 static void levels(const Save& s) {

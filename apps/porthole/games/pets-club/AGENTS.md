@@ -66,8 +66,9 @@ anchors), plus the wall's pictures cut from each breed's sitting pup: `DOG_PORTR
 in `game.cpp`), and so must the two name tables in `content.h`: `SHELTER_NAMES` (the
 suggested names, at most `ui::NAME_LEN` letters) and `BREED_NAMES`. `pet::loadBlob`
 makes the v3 bytes safe once, for every save it loads: a `breed` or `wallBreeds` byte past
-the table becomes 0 (the Golden pup), `wallCount` is capped at `WALL_SLOTS` and `hasDog`
-is 0 or 1, so every draw indexes the art with them directly. A new profile's first dog is still the
+the table becomes 0 (the Golden pup), `wallCount` is capped at `WALL_SLOTS`, `hasDog`
+is 0 or 1, a `hat` past `NUM_HATS` is no hat and a `stage` past `STAGE_GROWN` is grown, so every
+draw indexes the art with them directly. A new profile's first dog is still the
 parcel intro's Golden pup.
 
 ## The farm, the shelter and the wall
