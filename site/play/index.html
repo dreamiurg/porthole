@@ -35,6 +35,11 @@
   button { font: inherit; font-size: 15px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
   button:hover { border-color: var(--accent); }
   button[aria-pressed="true"] { background: var(--soft); border-color: var(--accent); }
+  .phone { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; text-align: center; }
+  .phone[hidden] { display: none; }
+  .phone p { flex-basis: 100%; margin: 0; }
+  button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  button.primary[aria-pressed="true"] { background: var(--soft); color: var(--ink); }
   .small { font-size: 14px; color: var(--muted); }
   .help { max-width: 560px; margin-top: 22px; }
   .help li { margin: 4px 0; }
@@ -53,6 +58,11 @@
     <canvas id="screen" width="480" height="480" aria-label="Porthole screen"></canvas>
     <div id="status">Loading&hellip;</div>
   </div>
+  <div class="phone" id="phone" hidden>
+    <button id="motion" class="primary" aria-pressed="false">Tilt with this phone</button>
+    <button id="center" hidden>Center</button>
+    <p class="small" id="motionNote" aria-live="polite"></p>
+  </div>
   <div class="controls">
     <canvas id="pad" width="180" height="180" aria-label="Tilt pad"
             title="Where gravity points: drag the ball. The middle is lying flat."></canvas>
@@ -60,7 +70,6 @@
       <button data-tilt="0,1">Hold upright</button>
       <button data-tilt="0,0">Lay flat</button>
       <button id="shake">Shake</button>
-      <button id="motion" hidden aria-pressed="false">Use phone tilt</button>
     </div>
     <div class="col">
       <button id="hour">Skip an hour</button>
@@ -72,7 +81,7 @@
     <ul>
       <li>Click or tap the round screen. Drag works too.</li>
       <li>The tilt games (Marble Kick, Tilt FC, Rally, Sand Jar) read the motion sensor. Drag the ball on the pad, use the
-        <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> keys, or on a phone press <b>Use phone tilt</b> and tilt the phone. <kbd>Space</kbd> shakes.</li>
+        <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> keys, or on a phone tap <b>Tilt with this phone</b> and steer with the phone itself. A hard shake shakes. <kbd>Space</kbd> shakes.</li>
       <li>You start as Guest, on Home. Progress lasts until you reload the page or press <b>Start over</b>. Nothing leaves your browser.</li>
     </ul>
     <p id="build"></p>
@@ -172,27 +181,85 @@ window.addEventListener('keydown', (e) => {
   setTilt(Math.sin(a) * m, Math.cos(a) * m, true);
 });
 
-// A phone's own sensor. accelerationIncludingGravity is the push against gravity in the phone's axes (y up), so where
-// gravity points on the screen (y down) is (-ax, ay), and face up is -az. iOS has long reported it with the opposite sign.
-// shortcut: the iOS flip is not yet tried on a real phone; drop it if tilt runs backwards on an iPhone.
+// A phone's own sensor. accelerationIncludingGravity is the push against gravity in the phone's own axes (x right,
+// y up, z out of the glass), so gravity is its negative. The page turns with the phone in landscape, so the reading is
+// turned back by the screen's angle onto the glass as shown. iOS has long reported it with the opposite sign, and the
+// first readings settle that: whoever just turned it on is looking at the glass, so it does not face the floor.
+const G = 9.81;
+function deviceGravity(a, s) { return { x: -s * a.x / G, y: -s * a.y / G, z: -s * a.z / G }; }   // y up
+function onGlass(d, angle) {   // phone axes (y up) to the glass as the page shows it (y down)
+  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t);
+  return { x: d.x * c - d.y * n, y: -(d.x * n + d.y * c), z: d.z };
+}
+function fromGlass(v, angle) {   // the way back, for Center
+  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t), up = -v.y;
+  return { x: v.x * c + up * n, y: -v.x * n + up * c, z: v.z };
+}
+function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as a function
+  const unit = (v) => { const m = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / m, y: v.y / m, z: v.z / m }; };
+  a = unit(a); b = unit(b);
+  const k = { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }, c = a.x * b.x + a.y * b.y + a.z * b.z;
+  if (c < -0.99) return (v) => v;   // upside down from the middle: leave it be
+  return (v) => {
+    const kv = k.x * v.x + k.y * v.y + k.z * v.z, f = kv / (1 + c);
+    return { x: v.x * c + (k.y * v.z - k.z * v.y) + k.x * f, y: v.y * c + (k.z * v.x - k.x * v.z) + k.y * f,
+             z: v.z * c + (k.x * v.y - k.y * v.x) + k.z * f };
+  };
+}
+// shortcut: the iOS sign guess and the landscape angle are worked out from the specs, not tried on every phone; Center
+// and the first-readings check cover a wrong guess.
+
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const motion = document.getElementById('motion');
-let useMotion = false;
-if ('DeviceMotionEvent' in window && matchMedia('(pointer: coarse)').matches) motion.hidden = false;
+const ASKS = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+const phone = document.getElementById('phone'), motion = document.getElementById('motion');
+const centerBtn = document.getElementById('center'), motionNote = document.getElementById('motionNote');
+let useMotion = false, sign = IOS ? -1 : 1, settled = false, onSince = 0, heard = false, turn = (v) => v, lastShake = 0, raw = null;
+const screenAngle = () => (screen.orientation ? screen.orientation.angle : (window.orientation || 0));
 function onMotion(e) {
   const a = e.accelerationIncludingGravity;
   if (!a || a.x == null) return;
-  const g = IOS ? -9.81 : 9.81;
-  tilt = { x: -a.x / g, y: a.y / g, z: -a.z / g };
+  heard = true;
+  let d = deviceGravity(a, sign);
+  if (!settled && performance.now() - onSince < 1500 && Math.abs(d.z) > 0.5) { if (d.z > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
+  if (!settled && performance.now() - onSince < 1500 && screenAngle() % 360 === 0 && Math.abs(d.y) > 0.5) { if (d.y > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
+  raw = d;
+  tilt = onGlass(turn(d), screenAngle());
   drawPad(); sendTilt(false);
+  const j = e.acceleration, now = performance.now();
+  if (j && j.x != null && Math.hypot(j.x, j.y, j.z) > 18 && now - lastShake > 600) { lastShake = now; cmd('shake'); }
+}
+function setMotion(on, note) {
+  useMotion = on;
+  motion.setAttribute('aria-pressed', String(on));
+  motion.textContent = on ? 'Phone tilt: on' : 'Tilt with this phone';
+  centerBtn.hidden = !on;
+  motionNote.textContent = note || (on ? 'Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.' : '');
+  if (on) {
+    onSince = performance.now(); heard = false; settled = false;
+    window.addEventListener('devicemotion', onMotion);
+    setTimeout(() => { if (useMotion && !heard) setMotion(false, 'This phone sent no motion readings, so the tilt pad steers instead.'); }, 2000);
+  } else {
+    window.removeEventListener('devicemotion', onMotion);
+  }
+}
+if ('DeviceMotionEvent' in window && matchMedia('(pointer: coarse)').matches) {
+  phone.hidden = false;
+  if (!ASKS) setMotion(true);   // Android lets a page read it without asking
 }
 motion.addEventListener('click', async () => {
-  if (!useMotion && typeof DeviceMotionEvent.requestPermission === 'function') {   // iOS asks first
-    try { if (await DeviceMotionEvent.requestPermission() !== 'granted') return; } catch { return; }
+  if (useMotion) { setMotion(false); return; }
+  if (ASKS) {   // iOS asks first, and only from a tap
+    let answer = 'denied';
+    try { answer = await DeviceMotionEvent.requestPermission(); } catch { /* treated as a no */ }
+    if (answer !== 'granted') { setMotion(false, 'Motion access was not allowed, so the tilt pad steers instead. Close and reopen Safari to be asked again.'); return; }
   }
-  useMotion = !useMotion;
-  motion.setAttribute('aria-pressed', String(useMotion));
-  if (useMotion) window.addEventListener('devicemotion', onMotion); else window.removeEventListener('devicemotion', onMotion);
+  setMotion(true);
+});
+centerBtn.addEventListener('click', () => {   // the way it is held now becomes upright or flat, whichever is nearer
+  if (!raw) return;
+  const angle = screenAngle(), now = onGlass(raw, angle);
+  const target = Math.abs(now.y) >= Math.abs(now.z) ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: -1 };
+  turn = turnTo(raw, fromGlass(target, angle));
 });
 
 document.getElementById('shake').addEventListener('click', () => cmd('shake'));
