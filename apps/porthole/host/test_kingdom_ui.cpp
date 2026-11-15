@@ -399,6 +399,17 @@ void saveCadence() {
   q.enter(); q.tap(layout::START);  // starting over is the kid's own act, and from then on the game saves as usual
   assert(q.game.saveUrgent() && q.game.takeSave(&data, &len, true) && len == sizeof(Save));
 }
+void savingDoesNotRepaint() {
+  Player p; p.start(); p.tap(layout::NEXT);
+  std::vector<uint16_t> a(gfx565::W * gfx565::H), b(a.size());
+  const bool logging = gfx::textLogEnabled; gfx::textLogEnabled = false;
+  gfx565::target(a.data()); p.game.render(); gfx565::target(b.data()); p.game.render();
+  const void* data = nullptr; size_t len = 0; assert(p.game.takeSave(&data, &len, true));
+  const size_t middle = a.size() / 2 + gfx565::W / 2; a[middle] ^= 0xffff; const uint16_t mark = a[middle];
+  gfx565::target(a.data()); p.game.render(); assert(a[middle] == mark);  // sealing the save changed nothing to draw
+  p.tap(layout::NEXT); gfx565::target(a.data()); p.game.render(); assert(a[middle] != mark);  // a page turn does
+  gfx::textLogEnabled = logging;
+}
 } // namespace
 int main() {
   static_assert(art::SCENE_W == 480 && art::SCENE_H == 240, "scene viewport keeps the approved physical dimensions");
@@ -407,7 +418,7 @@ int main() {
   static_assert(PARTY == 6 && INVENTORY == 7 && REST == 11, "existing saved mode meanings must remain stable");
   static_assert(PARTY_OVERVIEW == 12 && INVENTORY_OVERVIEW == 13, "new saved modes append after existing meanings");
   readerLoop(); menuPreservesCursor(); overviewNavigation(); profilesAndCorruption();
-  heldAndNoopInput(); travelAndRest(); overviewSaveValidation(); modeRenderings(); saveCadence();
+  heldAndNoopInput(); travelAndRest(); overviewSaveValidation(); modeRenderings(); saveCadence(); savingDoesNotRepaint();
   informationEntries(); lockedChoice(); resultNavigation(); choiceRereadPages(); worldArt(); originalBackgrounds(); artBoundaries(); itemArt();
   assert(!layoutErrors);
   puts("kingdom UI: reader, reread, single commitment, exact resume, profiles, input and circular rendering passed");

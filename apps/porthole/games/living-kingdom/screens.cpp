@@ -1,5 +1,6 @@
 #include "game.h"
 #include <math.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "crc32.h"
@@ -82,7 +83,8 @@ void diamond(int x, int y, uint16_t color) {
 } // namespace
 
 void Game::render() {
-  const uint32_t look = os::crc32(&save_, sizeof save_) ^ (title_ ? 0x77777777u : 0);
+  // Not the crc field: takeSave() reseals it, and a save that changed nothing on screen must not repaint the page.
+  const uint32_t look = os::crc32(&save_, offsetof(Save, crc)) ^ (title_ ? 0x77777777u : 0);
   frames_.render(nullptr, 0, look, [&] { draw(); });
 }
 void Game::draw() {
