@@ -104,7 +104,8 @@ void Game::summary(char* line, size_t cap) const {
   snprintf(line, cap, "%d right this time!\n%s\n%s%s%s", right_, stars, pup, levelUp_ ? "\n" : "", levelUp_ ? LEVEL_UP : "");
 }
 void Game::drawPuzzle() {
-  gfx565::clear(PAPER);
+  const bool right = answered_ >= 0 && answered_ == puzzle_.right && asked_ < puzzles::ROUND;
+  gfx565::clear(right ? SAGE : PAPER);   // green behind a right answer, so it looks different from a miss
   char s[192], line[144];
   if (asked_ >= puzzles::ROUND) {
     top(in_, "All done!", starCount());
@@ -124,7 +125,6 @@ void Game::drawPuzzle() {
     for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(puzzle_, i));
     return;
   }
-  const bool right = answered_ == puzzle_.right;
   const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
   const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : NUDGES[asked_ % puzzles::ROUND];
   snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", puzzle_.solved, after);

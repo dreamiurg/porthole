@@ -80,9 +80,44 @@ inline constexpr SpellWord LONG_WORDS[] = {
   {"dinosaur", "A huge animal from long ago."},
   {"umbrella", "It keeps you dry in the rain."},
   {"snowman", "You build it in the winter."},
+  {"rainbow", "Colors in the sky after rain."},
+  {"blanket", "It keeps you warm in bed."},
+  {"chicken", "A farm bird that clucks."},
+  {"kitchen", "Where we cook dinner."},
+  {"giraffe", "The animal with the longest neck."},
+  {"penguin", "A bird that swims but can't fly."},
+  {"teacher", "Who helps you learn at school."},
+  {"picture", "You draw or paint it."},
+  {"pumpkin", "A big orange fruit in the fall."},
+  {"dolphin", "A smart sea animal that jumps."},
+  {"octopus", "A sea animal with eight arms."},
+  {"sandwich", "Bread with a filling inside."},
+  {"mountain", "A very tall hill."},
+  {"airplane", "It flies people far away."},
 };
 inline constexpr int SHORT_WORD_COUNT = sizeof SHORT_WORDS / sizeof SHORT_WORDS[0];
 inline constexpr int LONG_WORD_COUNT = sizeof LONG_WORDS / sizeof LONG_WORDS[0];
+// Words a wrong letter must not spell, so no wrong answer is also right (b_g: bag, big, bug) or rude. A gap is asked
+// only where at least two wrong letters spell none of these and none of the words above.
+inline constexpr const char* REAL_WORDS[] = {
+  "bag", "bog", "cog", "fog", "hog", "log", "dig", "dug", "doc", "don", "dot", "bat", "fat", "mat", "pat", "rat", "sat",
+  "cot", "cut", "cab", "cad", "cam", "can", "cap", "car", "bun", "fun", "gun", "nun", "pun", "run", "sin", "son",
+  "sub", "sum", "sup", "fed", "led", "red", "wed", "bad", "bid", "bud", "beg", "bet", "had", "hag", "ham", "has",
+  "hit", "hot", "hut", "pup", "cop", "cub", "cum", "big", "fig", "gig", "rig", "wig", "peg", "pug", "pit", "pin",
+  "pip", "pic", "nig", "bug", "bum", "but", "pox", "fax", "fix", "for", "ben", "den", "men", "pen", "ten", "her",
+  "hem", "hum", "dam", "ram", "jab", "jag", "jar", "jaw", "gap", "lap", "nap", "rap", "sap", "tap", "mop", "mad",
+  "man", "bob", "bow", "keg", "lag", "lug", "let", "fag", "cone", "done", "gone", "lone", "none", "tone", "bane",
+  "bore", "bode", "call", "fall", "hall", "mall", "tall", "wall", "bell", "bill", "bull", "bald", "balm", "dish",
+  "wish", "fist", "from", "buck", "luck", "muck", "puck", "suck", "tuck", "fuck", "deck", "dick", "dock", "dusk",
+  "dunk", "bake", "fake", "lake", "make", "rake", "sake", "take", "wake", "coke", "cafe", "cage", "came", "cane",
+  "cape", "care", "case", "bite", "site", "mite", "free", "thee", "true", "boon", "noon", "soon", "moan", "mood",
+  "moor", "scar", "spar", "stir", "stab", "stag", "coat", "goat", "moat", "beat", "boot", "bout", "boar", "silk",
+  "mink", "mild", "mill", "cook", "hook", "look", "took", "boom", "best", "pest", "rest", "test", "west", "newt",
+  "band", "land", "sand", "wand", "hind", "hard", "hang", "lock", "mock", "rock", "sack", "sick", "cock", "gain",
+  "main", "pain", "ruin", "rail", "raid", "fail", "hail", "mail", "nail", "pail", "sail", "toil", "dose", "hose",
+  "lose", "pose", "rose", "node", "nope", "note", "mitten", "socket", "locket", "mutton", "simmer", "dimmer",
+};
+inline constexpr int REAL_WORD_COUNT = sizeof REAL_WORDS / sizeof REAL_WORDS[0];
 
 // The times stories: "3 bowls, 4 biscuits in each." and "12 bones shared by 3 pups." (puzzles::build).
 struct GroupThing { const char* groups; const char* things; };

@@ -33,11 +33,13 @@ Replace the six fixed kinds with three strands, each a ladder of levels tied to 
   6. the same with regrouping (47 + 8);
   7. two-digit plus or minus two-digit.
 - **Times in a story** (3.OA.3): "3 bowls with 4 biscuits each" and "12 biscuits shared by 3 pups". The plain fact
-  drill moves to Times Cards (below), so Biscuit stops duplicating it and practises using the facts instead.
-- **Spelling**: today's short and long missing-letter word lists, as levels 1 and 2.
+  drill moves to Times Cards (below), so Biscuit stops duplicating it and practises using the facts instead. Levels:
+  groups small enough to count (2 or 3 of 2 to 4), groups of 2, 5 and 10, of 3 and 4, of 6 to 9, then small and big
+  sharing.
+- **Spelling**: missing-letter words of 3 letters, 4, 5 or 6, then 7 and more. No wrong letter spells another word.
 
 Each strand keeps a level per kid in their Biscuit save. A new save starts each strand from the profile's age, as Times Cards
-does: age 6 starts Add at level 1, age 8 at level 4. After every round of five:
+does: age 6 starts Add at level 1, age 8 at level 5 (two-digit with carrying). After every round of five:
 
 - **5 of 5 right:** the level goes up one;
 - **3 or 4 right:** it stays;

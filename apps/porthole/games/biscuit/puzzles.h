@@ -11,7 +11,7 @@
 
 namespace biscuit::puzzles {
 enum Strand : uint8_t { NUMBERS, GROUPS, WORDS, STRAND_COUNT };
-constexpr uint8_t LEVELS[STRAND_COUNT] = {6, 5, 3};
+constexpr uint8_t LEVELS[STRAND_COUNT] = {6, 6, 4};
 constexpr int ANSWERS = 3, ROUND = 5;
 
 // One question, exactly: rebuilt the same from these five bytes (the review queue keeps them).
@@ -41,9 +41,9 @@ inline int between(uint32_t& s, int lo, int hi) { return lo + below(s, hi - lo +
 inline uint8_t startLevel(Strand strand, int age) {
   if (age <= 0) age = 6;
   switch (strand) {
-    case NUMBERS: return age <= 6 ? 0 : age == 7 ? 2 : 3;
-    case GROUPS: return age <= 8 ? 0 : 1;
-    default: return age <= 6 ? 0 : age == 7 ? 1 : 2;
+    case NUMBERS: return age <= 6 ? 0 : age == 7 ? 2 : 4;
+    case GROUPS: return age <= 7 ? 0 : age == 8 ? 1 : 2;
+    default: return age <= 6 ? 0 : age == 7 ? 1 : age == 8 ? 2 : 3;
   }
 }
 // A round of five moves the level: all right, one up; two or fewer, one down. That keeps a kid near 70-90% right.
@@ -79,24 +79,51 @@ template <class Pick> inline void fill(Puzzle& p, uint32_t& s, const char* answe
     } while (taken);
   }
 }
-// A number answer; the wrong ones are a step or two either way, or one off, never below zero.
+// A number answer; the wrong ones are a step or two either way, or one off, never below one (a wrong 0 is too easy
+// to rule out).
 inline void numberAnswers(Puzzle& p, uint32_t& s, int result, int step) {
   char right[12];
   snprintf(right, sizeof right, "%d", result);
   fill(p, s, right, [&](char (&out)[12]) {
     static constexpr int OFFSETS[] = {-2, -1, 1, 2};
     int v = below(s, 3) ? result + step * OFFSETS[below(s, 4)] : result + (below(s, 2) ? 1 : -1);
-    if (v < 0) v = result + step * 3 + below(s, 3);
+    if (v < 1) v = result + step * 3 + below(s, 3);
     snprintf(out, sizeof out, "%d", v > 999 ? 999 : v);
   });
 }
-// The words of a WORDS level: three letters, four, or the long ones.
+// The words of a WORDS level: three letters, four, five or six, then seven and more.
 inline const SpellWord* words(uint8_t level, int& count) {
   if (level >= 2) { count = LONG_WORD_COUNT; return LONG_WORDS; }
   count = SHORT_WORD_COUNT;
   return SHORT_WORDS;
 }
-inline bool fits(uint8_t level, const char* word) { return level >= 2 || strlen(word) == 3u + level; }
+inline bool fits(uint8_t level, const char* word) {
+  const size_t n = strlen(word);
+  return level == 3 ? n >= 7 : level == 2 ? n >= 5 && n <= 6 : n == 3u + level;
+}
+inline bool listed(const char* w) {
+  for (const SpellWord& x : SHORT_WORDS) if (!strcmp(x.word, w)) return true;
+  for (const SpellWord& x : LONG_WORDS) if (!strcmp(x.word, w)) return true;
+  for (const char* x : REAL_WORDS) if (!strcmp(x, w)) return true;
+  return false;
+}
+// The wrong letters for a word's gap: a vowel for a vowel, a consonant for a consonant, none that spells a word.
+inline int wrongLetters(const char* word, int gap, char (&out)[16]) {
+  static constexpr const char* CONSONANTS = "bcdfghklmnprstw";
+  const char* from = vowel(word[gap]) ? VOWELS : CONSONANTS;
+  char w[12];
+  snprintf(w, sizeof w, "%s", word);
+  int n = 0;
+  for (const char* c = from; *c; c++) {
+    w[gap] = *c;
+    if (*c != word[gap] && !listed(w)) out[n++] = *c;
+  }
+  return n;
+}
+inline bool askable(const char* word, int gap) {
+  char letters[16];
+  return wrongLetters(word, gap, letters) >= 2;
+}
 }  // namespace detail
 
 namespace detail {
@@ -132,17 +159,23 @@ inline Item number(uint8_t level, uint32_t& s) {
   const Pair q = c ? minus(level, s) : plus(level, s);
   return {NUMBERS, level, (uint8_t)q.a, (uint8_t)q.b, (uint8_t)c};
 }
-inline Item groups(uint8_t level, uint32_t& s) {   // groups of 2, 5 and 10, of 3 and 4, of 6 to 9; then sharing
+// Groups small enough to count (2 or 3 of 2 to 4), of 2, 5 and 10, of 3 and 4, of 6 to 9; then sharing.
+inline Item groups(uint8_t level, uint32_t& s) {
   static constexpr uint8_t SIZES[3][4] = {{2, 5, 10, 2}, {3, 4, 3, 4}, {6, 7, 8, 9}};
-  const int most = level == 3 ? 5 : 9, thing = below(s, GROUP_THING_COUNT);
-  if (level >= 3) return {GROUPS, level, (uint8_t)between(s, 2, most), (uint8_t)between(s, 2, most), (uint8_t)(16 | thing)};
-  return {GROUPS, level, (uint8_t)between(s, 2, 5), SIZES[level][below(s, 4)], (uint8_t)thing};
+  const int most = level == 4 ? 5 : 9, thing = below(s, GROUP_THING_COUNT);
+  if (level >= 4) return {GROUPS, level, (uint8_t)between(s, 2, most), (uint8_t)between(s, 2, most), (uint8_t)(16 | thing)};
+  if (level == 0) return {GROUPS, 0, (uint8_t)between(s, 2, 3), (uint8_t)between(s, 2, 4), (uint8_t)thing};
+  return {GROUPS, level, (uint8_t)between(s, 2, 5), SIZES[level - 1][below(s, 4)], (uint8_t)thing};
 }
 inline Item word(uint8_t level, uint32_t& s) {
   int count, a;
   const SpellWord* list = words(level, count);
-  do a = below(s, count); while (!fits(level, list[a].word));
-  return {WORDS, level, (uint8_t)a, (uint8_t)below(s, (int)strlen(list[a].word)), 0};
+  int gap;
+  do {   // every word has a gap that can be asked (host test), so this ends
+    a = below(s, count);
+    gap = below(s, (int)strlen(list[a].word));
+  } while (!fits(level, list[a].word) || !askable(list[a].word, gap));
+  return {WORDS, level, (uint8_t)a, (uint8_t)gap, 0};
 }
 }  // namespace detail
 
@@ -150,7 +183,8 @@ namespace detail {
 inline bool playableWord(const Item& q) {
   int count;
   const SpellWord* list = words(q.level, count);
-  return !q.c && q.a < count && fits(q.level, list[q.a].word) && q.b < strlen(list[q.a].word);
+  return !q.c && q.a < count && fits(q.level, list[q.a].word) && q.b < strlen(list[q.a].word) &&
+         askable(list[q.a].word, q.b);
 }
 }  // namespace detail
 
@@ -158,7 +192,12 @@ inline bool playableWord(const Item& q) {
 inline Item pick(Strand strand, uint8_t level, uint32_t& s) {
   return strand == NUMBERS ? detail::number(level, s) : strand == GROUPS ? detail::groups(level, s) : detail::word(level, s);
 }
-inline uint8_t keyOf(const Item& q) { return (uint8_t)((q.a * 11 + q.b + q.c * 7) % 32); }
+// Which question an item is, for not asking it twice in a round: a word whatever its gap, a story whatever its things.
+inline uint8_t keyOf(const Item& q) {
+  if (q.strand == WORDS) return (uint8_t)(q.a % 32);
+  const int c = q.strand == GROUPS ? q.c >> 4 : q.c;
+  return (uint8_t)((q.a * 11 + q.b + c * 7) % 32);
+}
 
 // A question that will play: its strand and level exist and its numbers or word make sense. The review queue keeps
 // only items this passes, so a damaged save never shows a broken question.
@@ -206,11 +245,9 @@ inline Puzzle build(const Item& q, uint32_t& s) {
       detail::spaced(w.word, q.b, p.ask);
       snprintf(p.solved, sizeof p.solved, "%s", w.word);
       const char right[2] = {missing, 0};
-      detail::fill(p, s, right, [&](char (&out)[12]) {   // a vowel for a vowel, a consonant for a consonant
-        static constexpr const char* CONSONANTS = "bcdfghklmnprstw";
-        const char* from = detail::vowel(missing) ? detail::VOWELS : CONSONANTS;
-        out[0] = from[below(s, (int)strlen(from))]; out[1] = 0;
-      });
+      char letters[16];
+      const int n = detail::wrongLetters(w.word, q.b, letters);
+      detail::fill(p, s, right, [&](char (&out)[12]) { out[0] = letters[below(s, n)]; out[1] = 0; });
       break;
     }
   }
