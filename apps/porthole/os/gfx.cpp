@@ -10,21 +10,22 @@
 namespace gfx {
 uint8_t fb[W * H];
 
-static uint8_t g_left[128], g_right[128];  // glyph ink bounds (inclusive), computed once
-static bool g_fontReady = false;
-static void fontInit() {
-  if (g_fontReady) return;
+// Each glyph's ink bounds (inclusive columns), worked out of the font table at compile time: flash, not internal RAM.
+struct Ink { uint8_t left[128], right[128]; };
+static constexpr Ink inkBounds() {
+  Ink k{};
   for (int ch = 0; ch < 128; ch++) {
     int l = 8, r = -1;
     for (int row = 0; row < 8; row++) {
-      uint8_t bits = (uint8_t)font8x8_basic[ch][row];
+      const uint8_t bits = font8x8_basic[ch][row];
       for (int x = 0; x < 8; x++) if (bits & (1 << x)) { if (x < l) l = x; if (x > r) r = x; }
     }
     if (r < 0) { l = 0; r = 2; }  // space & blanks: 3px wide
-    g_left[ch] = (uint8_t)l; g_right[ch] = (uint8_t)r;
+    k.left[ch] = (uint8_t)l; k.right[ch] = (uint8_t)r;
   }
-  g_fontReady = true;
+  return k;
 }
+static constexpr Ink INK = inkBounds();
 
 void clear(uint8_t c) { memset(fb, c, sizeof fb); }
 
@@ -97,9 +98,8 @@ void blitScaled(const Sprite& s, int x, int y, int scale, bool flipx) {
 }
 
 int glyphWidth(char ch) {
-  fontInit();
   unsigned char u = (unsigned char)ch; if (u >= 128) u = '?';
-  return g_right[u] - g_left[u] + 1;
+  return INK.right[u] - INK.left[u] + 1;
 }
 int textWidth(const char* s, int scale) {
   int w = 0;
@@ -116,11 +116,10 @@ void logText(int x, int y, int w, int h, uint8_t c) {
   textLog[textLogCount++] = {(int16_t)x, (int16_t)y, (int16_t)w, (int16_t)h, c, (uint32_t)bg, false};
 }
 int text(int x, int y, const char* s, uint8_t c, int scale) {
-  fontInit();
   if (*s) logText(x, y, textWidth(s, scale), 8 * scale, c);
   for (; *s; s++) {
     unsigned char u = (unsigned char)*s; if (u >= 128) u = '?';
-    int l = g_left[u], r = g_right[u];
+    int l = INK.left[u], r = INK.right[u];
     for (int row = 0; row < 8; row++) {
       uint8_t bits = (uint8_t)font8x8_basic[u][row];
       for (int gx = l; gx <= r; gx++) if (bits & (1 << gx)) {
