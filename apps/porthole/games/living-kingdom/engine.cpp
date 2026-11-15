@@ -126,6 +126,12 @@ bool effect(Save& save, Effect rule) {
   advanceDays(save, rule.value);
   return true;
 }
+// In place: on false the save is left half-changed, so every caller hands in a scratch copy it then drops.
+// (One 935-byte Save per transaction on the loop task's stack, not two.)
+bool applyAll(Save& save, Effects effects) {
+  for (int i = 0; i < effects.count; ++i) if (!effect(save, effects.rules[i])) return false;
+  return true;
+}
 uint32_t crc32(const void* data, size_t bytes) {
   const uint8_t* p = static_cast<const uint8_t*>(data);
   uint32_t crc = 0xffffffffU;
@@ -202,14 +208,14 @@ bool meets(const Save& save, Requirements requirements) {
 }
 bool applyEffects(Save& save, Effects effects) {
   Save changed = save;
-  for (int i = 0; i < effects.count; ++i) if (!effect(changed, effects.rules[i])) return false;
+  if (!applyAll(changed, effects)) return false;
   save = changed;
   return true;
 }
 bool allowed(const Save& save, const Choice& choice) {
   if (!meets(save, choice.requirements)) return false;
   Save changed = save;
-  return applyEffects(changed, choice.effects);
+  return applyAll(changed, choice.effects);
 }
 const char* requirementReason(const Save& save, const Choice& choice) {
   for (int i = 0; i < choice.requirements.count; ++i) {
@@ -244,7 +250,7 @@ void advanceDays(Save& save, uint16_t days) {
     Save changed = save;
     changed.eventDone |= uint8_t(1U << i);
     changed.eventDue[i] = 0;
-    if (!applyEffects(changed, content().events[i].effects)) continue;
+    if (!applyAll(changed, content().events[i].effects)) continue;
     record(changed, uint16_t(0x8000U | i));
     save = changed;
   }
@@ -266,9 +272,9 @@ bool commit(Save& save, uint8_t choiceIndex) {
   if (!scene || (save.cursor.mode != CHOICE && save.cursor.mode != CONFIRM) || choiceIndex >= scene->choiceCount) return false;
   const Choice& choice = scene->choices[choiceIndex];
   if (scene->once && hasSeen(save, scene->id)) return false;
-  if (!allowed(save, choice)) return false;
+  if (!meets(save, choice.requirements)) return false;
   Save changed = save;
-  if (!applyEffects(changed, choice.effects)) return false;
+  if (!applyAll(changed, choice.effects)) return false;   // with the line above, exactly allowed(), without its second copy
   setBit(changed.seen, scene->id);
   setBit(changed.decisions, choice.id);
   changed.lastVisit[scene->id] = changed.day;
