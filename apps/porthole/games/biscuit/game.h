@@ -77,6 +77,7 @@ class Game : public App {
   // done), the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits). One
   // question of the round, at easyAt_, is from the level below; levelUp_ says the round's end moved the level up.
   puzzles::Strand strand_ = puzzles::NUMBERS; uint8_t level_ = 0; int easyAt_ = 0; bool levelUp_ = false;
+  int reviewAt_ = -1; puzzles::Item review_{};   // the round's one missed item due again (review.h), at reviewAt_
   puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped

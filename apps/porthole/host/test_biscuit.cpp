@@ -9,6 +9,7 @@
 #include <string.h>
 #include "games/biscuit/pet.h"
 #include "games/biscuit/puzzles.h"
+#include "games/biscuit/review.h"
 
 using biscuit::Action;
 using biscuit::Save;
@@ -561,6 +562,57 @@ static void legacyRejects() {
   b = b3; b.magic = biscuit::legacy::MAGIC_V2; b.hash = biscuit::legacy::fnv1a(&b.pet, sizeof b.pet); check(&b, sizeof b);   // v3 bytes, v2 magic
 }
 
+// The review queue: a miss is due tomorrow, asked in its strand from then on, off the queue when answered right
+// while due, a day later when missed again; a full queue drops its oldest; a damaged count or item never plays.
+static void puzzleReviews() {
+  using namespace biscuit::puzzles;
+  namespace rv = biscuit::review;
+  Save p = namedPet(Now);
+  const int32_t today = 20000;
+  const Item sum = {NUMBERS, 2, 8, 5, 0}, story = {GROUPS, 1, 3, 4, 0};
+  rv::answered(p, sum, true, today);
+  assert(p.puzzleReviewCount == 0);
+  rv::answered(p, sum, false, today);
+  rv::answered(p, story, false, today);
+  assert(p.puzzleReviewCount == 2 && p.puzzleReviews[0].due == today + 1 && p.puzzleReviews[0].misses == 1);
+  assert(rv::due(p, NUMBERS, today) < 0 && rv::due(p, NUMBERS, today + 1) == 0 && rv::due(p, GROUPS, today + 5) == 1);
+  rv::answered(p, sum, true, today);   // not due yet: right today keeps it for tomorrow
+  assert(p.puzzleReviewCount == 2);
+  rv::answered(p, sum, false, today + 1);
+  assert(p.puzzleReviewCount == 2 && p.puzzleReviews[0].misses == 2 && p.puzzleReviews[0].due == today + 2);
+  rv::answered(p, sum, true, today + 3);
+  assert(p.puzzleReviewCount == 1 && rv::same(p.puzzleReviews[0], story) && !p.puzzleReviews[1].due);
+  for (uint8_t a = 1; a <= biscuit::PUZZLE_REVIEWS; a++) rv::answered(p, {NUMBERS, 0, a, 1, 0}, false, today);
+  assert(p.puzzleReviewCount == biscuit::PUZZLE_REVIEWS && rv::find(p, story) < 0 && p.puzzleReviews[0].a == 1);
+  p.puzzleReviewCount = 200;   // damaged: read as full, never past the queue
+  assert(rv::count(p) == biscuit::PUZZLE_REVIEWS && rv::due(p, NUMBERS, today + 1) == 0);
+  p.puzzleReviews[0].a = 200;   // an item that no longer plays is skipped
+  assert(rv::due(p, NUMBERS, today + 1) == 1 && rv::due(p, WORDS, today + 1) < 0);
+}
+// After a miss, one line on how to solve it, for every kind of question; none for words.
+static void puzzleHow() {
+  using namespace biscuit::puzzles;
+  struct Case { Item q; const char* want; };
+  static const Case CASES[] = {
+    {{NUMBERS, 0, 3, 5, 0}, "Start at 5, count on 3."}, {{NUMBERS, 2, 8, 5, 0}, "8 + 2 = 10, then 3 more."},
+    {{NUMBERS, 3, 43, 5, 0}, "3 + 5 = 8, so 48."}, {{NUMBERS, 4, 47, 3, 0}, "47 + 3 = 50."},
+    {{NUMBERS, 5, 36, 47, 0}, "36 + 40 = 76, then 7 more."}, {{NUMBERS, 1, 9, 3, 1}, "Count back 3 from 9."},
+    {{NUMBERS, 2, 13, 5, 1}, "13 - 3 = 10, then 2 less."}, {{NUMBERS, 3, 47, 3, 1}, "7 - 3 = 4, so 44."},
+    {{NUMBERS, 4, 30, 7, 1}, "Count back 7 from 30."}, {{NUMBERS, 5, 72, 30, 1}, "72 - 30 = 42."},
+    {{GROUPS, 1, 3, 4, 0}, "4 + 4 + 4 = 12"}, {{GROUPS, 4, 3, 4, 16}, "3 x 4 = 12, so 4 each."},
+    {{WORDS, 0, 0, 1, 0}, ""},
+  };
+  for (const Case& c : CASES) { char out[48]; how(c.q, out); if (strcmp(out, c.want)) printf("how: got \"%s\" want \"%s\"\n", out, c.want); assert(!strcmp(out, c.want)); }
+  uint32_t rng = 3;   // every question at every level has a line that fits its buffer
+  for (int strand = 0; strand < WORDS; strand++)
+    for (uint8_t level = 0; level < LEVELS[strand]; level++)
+      for (int n = 0; n < 500; n++) {
+        char out[48];
+        how(pick((Strand)strand, level, rng), out);
+        assert(out[0] && strlen(out) < sizeof out - 1);
+      }
+}
+
 int main() {
   nothingBeforeNaming();
   nameRules();
@@ -583,6 +635,8 @@ int main() {
   puzzleLevels();
   puzzleWords();
   puzzlesFromAV3Save();
+  puzzleReviews();
+  puzzleHow();
   legacyV1();
   legacyV2V3();
   legacyRejects();

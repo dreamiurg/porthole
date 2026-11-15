@@ -10,6 +10,7 @@
 #include "generated/scenes.h"
 #include "gfx565.h"
 #include "personalize.h"
+#include "review.h"
 #include "ui565.h"
 
 namespace biscuit {
@@ -46,11 +47,15 @@ uint8_t Game::puzzleLevel(Strand strand) const {
 void Game::startPuzzles(Strand strand) {
   strand_ = strand; level_ = puzzleLevel(strand); easyAt_ = puzzles::below(rng_, puzzles::ROUND); levelUp_ = false;
   asked_ = right_ = 0; seen_ = 0; taught_ = -1; roundStars_ = earnedStars(save_);
+  const int due = review::due(save_, strand, dayOf(now_));   // a missed item due again takes one place of the five
+  reviewAt_ = due < 0 ? -1 : (easyAt_ + 1 + puzzles::below(rng_, puzzles::ROUND - 1)) % puzzles::ROUND;
+  if (due >= 0) { review_ = review::itemOf(save_.puzzleReviews[due]); seen_ = 1u << puzzles::keyOf(review_); }
   nextPuzzle();
   go(SC_PUZZLE);
 }
 void Game::nextPuzzle() {
-  puzzle_ = puzzles::make(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
+  puzzle_ = asked_ == reviewAt_ ? puzzles::build(review_, rng_)
+                                : puzzles::make(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
   seen_ |= 1u << puzzle_.key;
   answered_ = -1;
 }
@@ -78,6 +83,7 @@ void Game::updatePuzzle() {
     answered_ = i;
     const bool right = i == puzzle_.right;
     right_ += right;
+    review::answered(save_, puzzle_.item, right, dayOf(now_));
     const int taught = answerPuzzle(save_, right, now_); markDirty();
     if (taught >= 0) taught_ = taught;
     fresh();
@@ -136,7 +142,9 @@ void Game::drawPuzzle() {
     return;
   }
   const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
-  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : NUDGES[asked_ % puzzles::ROUND];
+  char how[48];
+  puzzles::how(puzzle_.item, how);   // after a miss, how to solve it, in place of the pup's nudge
+  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : NUDGES[asked_ % puzzles::ROUND];
   snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", puzzle_.solved, after);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(FEEDBACK, s, INK);

@@ -408,6 +408,16 @@ static void puzzleGate() {
     snprintf(line, sizeof line, "81 %s shared by 9 pups.", t.things); fits(CLUE, t.things, line);
   }
   fits(FEEDBACK, "groups", filled("It's 5 x 10 = 50\n{pet} thinks that one was tricky."));
+  uint32_t rng = 5;   // after a miss, the answer and how to solve it, for questions of every level
+  for (int strand = 0; strand < puzzles::WORDS; strand++)
+    for (uint8_t level = 0; level < puzzles::LEVELS[strand]; level++)
+      for (int n = 0; n < 300; n++) {
+        const puzzles::Puzzle q = puzzles::build(puzzles::pick((puzzles::Strand)strand, level, rng), rng);
+        char how[48];
+        puzzles::how(q.item, how);
+        snprintf(line, sizeof line, "It's %s\n%s", q.solved, how);
+        fits(FEEDBACK, "how", line);
+      }
   snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", STAR_CHEER);
   fits(FEEDBACK, "star", filled(line));
   fits(PUZZLE_DONE, "done", filled("5 right this time!\n5 more right for a star.\n{pet} is so proud of you."));

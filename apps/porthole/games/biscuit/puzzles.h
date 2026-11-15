@@ -254,6 +254,41 @@ inline Puzzle build(const Item& q, uint32_t& s) {
   return p;
 }
 
+namespace detail {
+// "a op first = mid, then rest more." (or less), the two steps of adding or taking away through a ten.
+inline void twoSteps(char (&out)[48], int a, char op, int first, int rest) {
+  const int mid = op == '+' ? a + first : a - first;
+  if (rest) snprintf(out, sizeof out, "%d %c %d = %d, then %d %s.", a, op, first, mid, rest, op == '+' ? "more" : "less");
+  else snprintf(out, sizeof out, "%d %c %d = %d.", a, op, first, mid);
+}
+inline void howPlus(int a, int b, char (&out)[48]) {
+  if (a + b <= 10) snprintf(out, sizeof out, "Start at %d, count on %d.", a > b ? a : b, a > b ? b : a);
+  else if (b >= 10) twoSteps(out, a, '+', b / 10 * 10, b % 10);
+  else if (a % 10 + b >= 10) twoSteps(out, a, '+', 10 - a % 10, b - (10 - a % 10));
+  else snprintf(out, sizeof out, "%d + %d = %d, so %d.", a % 10, b, a % 10 + b, a + b);
+}
+inline void howMinus(int a, int b, char (&out)[48]) {
+  if (a <= 10 || a % 10 == 0) snprintf(out, sizeof out, "Count back %d from %d.", b, a);
+  else if (b >= 10) twoSteps(out, a, '-', b / 10 * 10, b % 10);
+  else if (a % 10 < b) twoSteps(out, a, '-', a % 10, b - a % 10);
+  else snprintf(out, sizeof out, "%d - %d = %d, so %d.", a % 10, b, a % 10 - b, a - b);
+}
+inline void howGroups(const Item& q, char (&out)[48]) {
+  if (q.c & 16) { snprintf(out, sizeof out, "%d x %d = %d, so %d each.", q.a, q.b, q.a * q.b, q.b); return; }
+  int at = 0;
+  for (int i = 0; i < q.a; i++) at += snprintf(out + at, sizeof out - at, i ? " + %d" : "%d", q.b);
+  snprintf(out + at, sizeof out - at, " = %d", q.a * q.b);
+}
+}  // namespace detail
+
+// One line on how to solve a question, shown after a miss (principle 9): through ten, by tens, groups as repeated
+// adding. Empty for words, where the right word itself is the help.
+inline void how(const Item& q, char (&out)[48]) {
+  out[0] = 0;
+  if (q.strand == NUMBERS) q.c ? detail::howMinus(q.a, q.b, out) : detail::howPlus(q.a, q.b, out);
+  else if (q.strand == GROUPS) detail::howGroups(q, out);
+}
+
 // A new question at this level, not one whose key is in seen.
 inline Puzzle make(Strand strand, uint8_t level, uint32_t& s, uint32_t seen) {
   Item q{};

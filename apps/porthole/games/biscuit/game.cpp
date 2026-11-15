@@ -162,6 +162,7 @@ void Game::debugPrint() {
   printf("puzzles=%u strand=%d level=%d levels=%d%d%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n",
          (unsigned)p.puzzles, (int)strand_, level_, p.puzzleLevels[0], p.puzzleLevels[1], p.puzzleLevels[2], asked_, right_,
          answered_, puzzle_.right, (unsigned)p.booksDay, (unsigned)p.moreStories);
+  printf("reviews=%d review_at=%d reviewing=%d\n", p.puzzleReviewCount, reviewAt_, asked_ == reviewAt_);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }
