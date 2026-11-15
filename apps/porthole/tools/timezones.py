@@ -42,6 +42,11 @@ def tzif(raw):
     at += times * 8
     kinds = raw[at : at + times]
     at += times
+    # glibc 2.39's zic (Ubuntu 24.04: CI and the cloud sessions) ends a "fat" zone whose rules stop before 2038 with a
+    # transition at 2^31-1 that changes nothing; the zic this catalog was first written with does not. Drop it, so
+    # both write the same file and `--check` (make lint) means something on either.
+    if stamps and stamps[-1] == 2**31 - 1:
+        stamps, kinds = stamps[:-1], kinds[:-1]
     offsets = [struct.unpack(">lBB", raw[at + i * 6 : at + i * 6 + 6])[0] for i in range(types)]
     current = offsets[0]
     for stamp, kind in zip(stamps, kinds, strict=True):
