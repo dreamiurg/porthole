@@ -80,7 +80,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateSetupPet, &Game::updateHome, &Game::updateWorld, &Game::updateTricks, &Game::updateTraining,
     &Game::updateProfile, &Game::updateRenamePet, &Game::updateLibrary, &Game::updateStory, &Game::updateChoice,
     &Game::updateStory, &Game::updateDiscoveries, &Game::updateTopics, &Game::updateDiscovery, &Game::updateSource,
-    &Game::updateToday, &Game::updateWord, &Game::updateStickers, &Game::updatePuzzles, &Game::updateTables,
+    &Game::updateToday, &Game::updateWord, &Game::updateStickers, &Game::updatePuzzles,
     &Game::updatePuzzle, &Game::updateDoghouse, &Game::updateShop, &Game::updateItem};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
@@ -115,7 +115,7 @@ void Game::render() {
     &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
     &Game::drawRenamePet, &Game::drawLibrary, &Game::drawStory, &Game::drawChoice, &Game::drawStory,
     &Game::drawDiscoveries, &Game::drawTopics, &Game::drawDiscovery, &Game::drawSource, &Game::drawToday,
-    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawTables, &Game::drawPuzzle, &Game::drawDoghouse, &Game::drawShop, &Game::drawItem};
+    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawDoghouse, &Game::drawShop, &Game::drawItem};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   if (screen_ != SC_HOME) homeFrames_.reset();   // another screen draws over what the buffers held of Home
@@ -133,8 +133,8 @@ Tint Game::tint() const {
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || !save_.named) return false;   // an unnamed pup has nothing worth keeping
-  seal(save_); out_ = save_;
-  *data = &out_; *len = sizeof out_;
+  seal(save_);
+  *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update (static RAM is tight)
   dirty_ = false;
   return true;
 }
@@ -144,7 +144,7 @@ const char* Game::screenName() const {
                             "biscuit_profile", "biscuit_rename_pet", "biscuit_library", "biscuit_story",
                             "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
                             "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers",
-                            "biscuit_puzzles", "biscuit_tables", "biscuit_puzzle", "biscuit_doghouse", "biscuit_shop",
+                            "biscuit_puzzles", "biscuit_puzzle", "biscuit_doghouse", "biscuit_shop",
                             "biscuit_item"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per screen");
   return N[screen_];
@@ -159,8 +159,9 @@ void Game::debugPrint() {
          p.dailyCompleted, p.tricks[0], p.tricks[1], p.tricks[2], p.tricks[3], p.tricks[4], p.tricks[5], trick_, step_, watching_, page_);
   int kept = 0;
   for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
-  printf("puzzles=%u kind=%d table=%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n", (unsigned)p.puzzles,
-         (int)kind_, table_, asked_, right_, answered_, puzzle_.right, (unsigned)p.booksDay, (unsigned)p.moreStories);
+  printf("puzzles=%u strand=%d level=%d levels=%d%d%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n",
+         (unsigned)p.puzzles, (int)strand_, level_, p.puzzleLevels[0], p.puzzleLevels[1], p.puzzleLevels[2], asked_, right_,
+         answered_, puzzle().right, (unsigned)p.booksDay, (unsigned)p.moreStories);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }

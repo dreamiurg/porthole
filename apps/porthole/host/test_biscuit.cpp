@@ -330,40 +330,141 @@ static void checkSpelling(const biscuit::puzzles::Puzzle& q) {
   char word[24]; int w = 0;
   for (const char* c = q.ask; *c; c++) if (*c != ' ') word[w++] = *c == '_' ? q.answers[q.right][0] : *c;
   word[w] = 0;
-  assert(!strcmp(word, q.solved) && q.clue && strchr(q.ask, '_') == strrchr(q.ask, '_'));
+  assert(!strcmp(word, q.solved) && q.clue[0] && strchr(q.ask, '_') == strrchr(q.ask, '_'));
+  const size_t n = strlen(word);
+  assert(q.item.level == 3 ? n >= 7 : q.item.level == 2 ? n >= 5 && n <= 6 : n == 3u + q.item.level);
+  for (int i = 0; i < biscuit::puzzles::ANSWERS; i++) {   // no wrong letter spells another word
+    if (i == q.right) continue;
+    char other[24];
+    snprintf(other, sizeof other, "%s", q.solved);
+    other[q.item.b] = q.answers[i][0];
+    assert(!biscuit::puzzles::detail::listed(other));
+  }
 }
 static bool between(int v, int lo, int hi) { return lo <= v && v <= hi; }
-// A number question: the right answer is the sum, nothing negative, the numbers in the kind's range.
-static void checkNumber(const biscuit::puzzles::Puzzle& q, int kind, int table) {
-  using namespace biscuit::puzzles;
-  int a, b; char op;
-  assert(sscanf(q.ask, "%d %c %d", &a, &op, &b) == 3 && !q.clue);
-  const int want = op == '+' ? a + b : op == '-' ? a - b : a * b;
-  assert(atoi(q.answers[q.right]) == want);
-  for (int i = 0; i < ANSWERS; i++) assert(atoi(q.answers[i]) >= 0);
-  struct Range { int aLo, aHi, bLo, bHi, most; };   // ADD, TAKE, BIG, TIMES
-  static constexpr Range RANGES[] = {{0, 10, 1, 10, 20}, {2, 20, 1, 10, 19}, {10, 89, 10, 89, 99},
-                                     {FIRST_TABLE, LAST_TABLE, 1, 10, 60}};
-  const Range& r = RANGES[kind];
-  assert(between(a, r.aLo, r.aHi) && between(b, r.bLo, r.bHi) && between(want, 0, r.most));
-  assert(!table || a == table);
+// The kind of numbers each level asks: within ten, across ten, two-digit and one-digit without and with carrying,
+// then two two-digit numbers.
+static bool plusShape(int level, int a, int b) {
+  switch (level) {
+    case 0: return a + b <= 10;
+    case 2: return a <= 9 && b <= 9 && a + b > 10;
+    case 3: return a >= 10 && b <= 9 && a % 10 + b < 10;
+    case 4: return a >= 10 && b <= 9 && a % 10 + b >= 10;
+    case 5: return a >= 10 && b >= 10;
+    default: return false;
+  }
 }
-// Made-up questions: three different answers, the right one right, a spelling gap the missing letter fills.
+static bool minusShape(int level, int a, int b) {
+  switch (level) {
+    case 1: return a <= 10;
+    case 2: return a > 10 && a <= 18 && b <= 9 && a - b < 10;
+    case 3: return a >= 10 && b <= 9 && a % 10 >= b;
+    case 4: return a >= 10 && b <= 9 && a % 10 < b;
+    case 5: return a >= 10 && b >= 10;
+    default: return false;
+  }
+}
+// A plus or minus question: the right answer is the result, nothing negative, and the level's own kind of numbers.
+static void checkNumber(const biscuit::puzzles::Puzzle& q) {
+  int a, b; char op;
+  assert(sscanf(q.ask, "%d %c %d", &a, &op, &b) == 3 && !q.clue[0]);
+  const int want = op == '+' ? a + b : a - b;
+  assert(atoi(q.answers[q.right]) == want && between(want, 0, 99));
+  assert(op == '+' ? plusShape(q.item.level, a, b) : minusShape(q.item.level, a, b));
+}
+// A times story: groups ask the product, sharing the size of a share.
+static void checkGroups(const biscuit::puzzles::Puzzle& q) {
+  using namespace biscuit::puzzles;
+  const Item& i = q.item;
+  assert(q.clue[0] && strchr(q.clue, '.'));
+  const int want = i.c & 16 ? i.b : i.a * i.b;
+  assert(atoi(q.answers[q.right]) == want);
+  if (i.level == 0) assert(!(i.c & 16) && between(i.a, 2, 3) && between(i.b, 2, 4));
+  else if (i.level <= 3) {
+    static constexpr int SIZES[3][2] = {{2, 10}, {3, 4}, {6, 9}};
+    const int* size = SIZES[i.level - 1];
+    assert(!(i.c & 16) && between(i.b, size[0], size[1]) && (i.level > 1 || i.b == 2 || i.b == 5 || i.b == 10));
+  } else assert(i.c & 16);
+}
+// One made-up question: three different answers, none negative, the right one right; the item it came from plays,
+// and rebuilds as the same question.
+static void checkQuestion(const biscuit::puzzles::Puzzle& q, int strand, int level) {
+  using namespace biscuit::puzzles;
+  assert(q.right < ANSWERS && q.item.strand == strand && q.item.level == level && playable(q.item));
+  for (int i = 0; i < ANSWERS; i++) {
+    assert(atoi(q.answers[i]) >= (i == q.right || strand == WORDS ? 0 : 1));   // a wrong 0 is too easy
+    for (int j = i + 1; j < ANSWERS; j++) assert(strcmp(q.answers[i], q.answers[j]));
+  }
+  if (strand == WORDS) checkSpelling(q);
+  else if (strand == GROUPS) checkGroups(q);
+  else checkNumber(q);
+  uint32_t other = 99;
+  const Puzzle again = build(q.item, other);
+  assert(!strcmp(again.ask, q.ask) && !strcmp(again.solved, q.solved) && !strcmp(again.clue, q.clue) && again.key == q.key);
+}
+// Made-up questions at every level of every strand; a round never asks one twice; a damaged item never plays.
 static void puzzleQuestions() {
   using namespace biscuit::puzzles;
   uint32_t rng = 7;
-  for (int kind = 0; kind < KIND_COUNT; kind++)
-    for (int n = 0; n < 2000; n++) {
-      const uint8_t table = kind == TIMES && n % 6 ? (uint8_t)(n % 6 + 1) : 0;
-      const Puzzle q = make((Kind)kind, table, rng, 0);
-      assert(q.right < ANSWERS);
-      for (int i = 0; i < ANSWERS; i++)
-        for (int j = i + 1; j < ANSWERS; j++) assert(strcmp(q.answers[i], q.answers[j]));
-      if (kind >= SHORT) checkSpelling(q);
-      else checkNumber(q, kind, table);
-    }
-  uint32_t seen = 0;   // a round doesn't ask the same times-table question twice
-  for (int n = 0; n < ROUND; n++) { const Puzzle q = make(TIMES, 3, rng, seen); assert(!(seen & (1u << q.key))); seen |= 1u << q.key; }
+  for (int strand = 0; strand < STRAND_COUNT; strand++)
+    for (uint8_t level = 0; level < LEVELS[strand]; level++)
+      for (int n = 0; n < 2000; n++) checkQuestion(make((Strand)strand, level, rng, 0), strand, level);
+  uint32_t seen = 0;
+  for (int n = 0; n < ROUND; n++) { const Puzzle q = make(GROUPS, 1, rng, seen); assert(!(seen & (1u << q.key))); seen |= 1u << q.key; }
+  assert(!playable({STRAND_COUNT, 0, 1, 1, 0}) && !playable({NUMBERS, LEVELS[NUMBERS], 1, 1, 0}));
+  assert(!playable({NUMBERS, 1, 3, 5, 1}) && !playable({NUMBERS, 0, 60, 50, 0}) && !playable({NUMBERS, 0, 3, 0, 0}));
+  assert(!playable({GROUPS, 0, 1, 5, 0}) && !playable({GROUPS, 0, 3, 5, (uint8_t)biscuit::GROUP_THING_COUNT}));
+  assert(!playable({WORDS, 2, (uint8_t)biscuit::LONG_WORD_COUNT, 0, 0}) && !playable({WORDS, 0, 0, 9, 0}));
+  assert(keyOf({WORDS, 0, 3, 0, 0}) == keyOf({WORDS, 0, 3, 2, 0}) && keyOf({GROUPS, 1, 3, 5, 0}) == keyOf({GROUPS, 1, 3, 5, 2}));
+}
+// Every word is asked at some level, at a gap whose wrong letters spell no word.
+static void puzzleWords() {
+  using namespace biscuit::puzzles;
+  for (const biscuit::SpellWord& w : biscuit::SHORT_WORDS) {
+    bool asked = false;
+    for (int gap = 0; w.word[gap]; gap++) asked |= detail::askable(w.word, gap);
+    assert(asked);
+  }
+  for (const biscuit::SpellWord& w : biscuit::LONG_WORDS) {
+    bool asked = false;
+    for (int gap = 0; w.word[gap]; gap++) asked |= detail::askable(w.word, gap);
+    assert(asked && (detail::fits(2, w.word) || detail::fits(3, w.word)));
+  }
+  assert(!detail::askable("bug", 1));   // bag, beg, big, bog: no wrong vowel is left
+}
+// Levels: the age a kid starts at, and a round's five answers moving it (up on five, down on two or fewer, never off
+// the ladder).
+static void startLevels() {
+  using namespace biscuit::puzzles;
+  assert(startLevel(NUMBERS, 6) == 0 && startLevel(NUMBERS, 0) == 0 && startLevel(NUMBERS, 7) == 2 && startLevel(NUMBERS, 8) == 4);
+  assert(startLevel(GROUPS, 7) == 0 && startLevel(GROUPS, 8) == 1 && startLevel(GROUPS, 9) == 2);
+  assert(startLevel(WORDS, 6) == 0 && startLevel(WORDS, 8) == 2 && startLevel(WORDS, 9) == 3);
+}
+static void puzzleLevels() {
+  using namespace biscuit::puzzles;
+  startLevels();
+  for (int strand = 0; strand < STRAND_COUNT; strand++) {
+    const Strand st = (Strand)strand;
+    assert(startLevel(st, 10) < LEVELS[st] && startLevel(st, 99) < LEVELS[st]);
+    assert(nextLevel(st, 0, 5) == 1 && nextLevel(st, 1, 4) == 1 && nextLevel(st, 1, 3) == 1 && nextLevel(st, 1, 2) == 0);
+    assert(nextLevel(st, 0, 0) == 0 && nextLevel(st, LEVELS[st] - 1, 5) == LEVELS[st] - 1);
+  }
+  // one question of a round comes from the level below; at the bottom, all five are at the level
+  for (int n = 0; n < ROUND; n++) { assert(roundLevel(3, n, 2) == (n == 2 ? 2 : 3)); assert(roundLevel(0, n, 2) == 0); }
+}
+// A v3 save (before levels): every strand never played, nothing to review.
+static void puzzlesFromAV3Save() {
+  Save old = namedPet(Now);
+  biscuit::seal(old);
+  uint8_t v3[biscuit::SAVE_V3_SIZE];
+  old.version = 3; old.size = biscuit::SAVE_V3_SIZE;
+  memcpy(v3, &old, sizeof v3 - 4);
+  const uint32_t crc = os::crc32(v3, sizeof v3 - 4);
+  memcpy(v3 + sizeof v3 - 4, &crc, 4);
+  Save out;
+  assert(biscuit::loadBlob(v3, sizeof v3, out) && out.version == biscuit::SAVE_VERSION && out.size == sizeof(Save));
+  for (uint8_t l : out.puzzleLevels) assert(!l);
+  assert(!out.puzzleReviewCount && !out.puzzleReviews[0].due);
 }
 
 static void blobRoundTrip() {
@@ -479,6 +580,9 @@ int main() {
   starsAndDoghouse();
   starsFromAV2Save();
   puzzleQuestions();
+  puzzleLevels();
+  puzzleWords();
+  puzzlesFromAV3Save();
   legacyV1();
   legacyV2V3();
   legacyRejects();

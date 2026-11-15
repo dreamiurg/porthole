@@ -1,0 +1,266 @@
+reset
+wait 1500
+tap 120 104
+wait 500
+tap 42 78
+wait 500
+tap 66 128
+wait 600
+tap 67 53
+wait 500
+tap 119 128
+wait 1200
+tap 93 85
+wait 1200
+tap 79 69
+wait 1500
+tap 80 145
+wait 1500
+tap 79 72
+wait 3000
+tap 121 126
+wait 150
+tap 121 126
+wait 3000
+snap s07
+wait 3000
+tap 67 129
+wait 1200
+tap 80 135
+wait 1500
+tap 121 129
+wait 1200
+tap 52 132
+wait 1200
+tap 62 62
+wait 1200
+snap p01
+tap 113 98
+wait 150
+tap 113 98
+wait 300
+snap p02
+wait 1200
+tap 80 132
+wait 1200
+tap 81 99
+wait 500
+tap 78 134
+wait 1200
+tap 84 93
+wait 500
+snap p06b
+tap 80 132
+wait 1200
+tap 78 100
+wait 500
+snap p07b
+tap 80 132
+wait 1200
+tap 47 95
+wait 500
+snap p08b
+tap 80 132
+wait 1200
+tap 52 132
+wait 1200
+tap 80 84
+wait 1200
+tap 44 97
+wait 500
+snap t01b
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+snap t02b
+tap 80 132
+wait 1200
+tap 117 99
+wait 500
+snap t03b
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+snap t04b
+tap 80 132
+wait 1200
+tap 44 97
+wait 500
+snap t05b
+tap 80 132
+wait 1200
+tap 80 132
+wait 1200
+tap 80 84
+wait 1200
+tap 44 97
+wait 500
+snap t07b
+tap 80 132
+wait 1200
+snap t08
+tap 80 97
+wait 500
+snap t08b
+tap 80 132
+wait 1200
+snap t09
+tap 115 97
+wait 500
+snap t09b
+tap 80 132
+wait 1200
+snap t10
+tap 44 97
+wait 500
+snap t10b
+tap 80 132
+wait 1200
+snap t11
+tap 80 97
+wait 500
+snap t11b
+tap 80 132
+wait 1200
+tap 52 132
+wait 1200
+tap 80 108
+wait 1200
+tap 46 99
+wait 500
+snap w01b
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+snap w02b
+tap 80 132
+wait 1200
+tap 113 95
+wait 500
+snap w03b
+tap 80 132
+wait 1200
+tap 115 97
+wait 500
+snap w04b
+tap 80 132
+wait 1200
+tap 115 97
+wait 500
+snap w05b
+tap 80 132
+wait 1200
+tap 108 132
+wait 1500
+snap sm0
+wait 3000
+tap 121 129
+wait 1200
+tap 52 132
+wait 1200
+tap 80 60
+wait 1200
+tap 44 97
+wait 500
+tap 80 132
+wait 1200
+tap 44 97
+wait 500
+tap 80 132
+wait 1200
+tap 44 97
+wait 500
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+tap 80 132
+wait 1200
+tap 52 132
+wait 1200
+tap 80 60
+wait 1200
+tap 80 97
+wait 500
+tap 80 132
+wait 1200
+tap 115 97
+wait 500
+tap 80 132
+wait 1200
+tap 80 97
+wait 500
+tap 80 132
+wait 1200
+tap 44 97
+wait 500
+tap 80 132
+wait 1200
+tap 44 97
+wait 500
+tap 80 132
+wait 1200
+snap b6
+tap 52 132
+wait 1200
+tap 80 60
+wait 1200
+tap 82 99
+wait 120
+tap 82 99
+wait 500
+snap c1b
+tap 80 132
+wait 1200
+snap c2
+tap 52 27
+wait 1200
+snap c3
+tap 80 60
+wait 1200
+tap 115 97
+wait 500
+tap 80 132
+wait 1200
+snap d2
+tap 44 97
+wait 500
+snap d2b
+tap 80 132
+wait 1200
+snap d3
+tap 44 97
+wait 500
+snap d3b
+tap 80 132
+wait 1200
+snap d4
+tap 44 97
+wait 500
+snap d4b
+tap 80 132
+wait 1200
+snap d5
+tap 44 97
+wait 500
+snap d5b
+tap 80 132
+wait 1200
+tap 80 132
+wait 1200
+tap 80 60
+wait 1200
+tap 80 97
+wait 500
+tap 80 132
+wait 1200
+snap e2
+wait 10
+snap e6
