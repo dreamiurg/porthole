@@ -112,52 +112,73 @@ int hearts(const Save& s) { int h = s.bond / 100; return h > 10 ? 10 : h; }
 
 static void schedulePoop(Save& s, uint32_t now) { s.nextPoopAt = now + (uint32_t)rndRange(s, (int)POOP_MIN_SEC, (int)POOP_MAX_SEC); }
 
-uint32_t simulate(Save& s, uint32_t now, bool online) {
+namespace {
+// Fractional decay in 1/3600ths, so short online ticks still add up.
+uint32_t accFood = 0, accFun = 0, accEnergy = 0, accClean = 0, accSleep = 0;
+
+// Unattended, the dog keeps its own hours: asleep at night, up again once rested.
+uint32_t sleepByTheClock(Save& s, uint32_t t) {
+  const int h = hourOf(t);
   uint32_t ev = EV_NONE;
-  if (!s.hasDog) { s.lastSeen = now; return ev; }   // empty room: nothing to grow, decay or poop
-  if (now <= s.lastSeen) { s.lastSeen = now; return ev; }
-  uint32_t elapsed = now - s.lastSeen;
-  if (elapsed > 300) online = false;  // a jump this big means the device was off (or the clock was set)
-  if (!online && elapsed > 3600) ev |= EV_LONG_AWAY;
-  // Only the first OFFLINE_CAP_SEC of an absence count for decay; beyond that the pet just waits.
-  uint32_t budget = online ? elapsed : (elapsed > OFFLINE_CAP_SEC ? OFFLINE_CAP_SEC : elapsed);
-  uint32_t t = s.lastSeen;
-  // accumulate fractional decay in 1/3600ths so short online ticks still add up
-  static uint32_t accFood = 0, accFun = 0, accEnergy = 0, accClean = 0, accSleep = 0;
-  while (t < now) {
+  if (isNightHour(h) && !s.asleep) { s.asleep = 1; ev |= EV_FELL_ASLEEP; }
+  if (!isNightHour(h) && s.asleep && s.energy >= 90) { s.asleep = 0; ev |= EV_WOKE; }
+  return ev;
+}
+void decay(const Save& s, uint32_t t, uint32_t step, bool online) {
+  if (s.asleep) {
+    accFood += step * 1; accFun += step * 1;
+    accSleep += step * (uint32_t)(online ? SLEEP_ENERGY_ONLINE * 60 : SLEEP_ENERGY_OFFLINE);
+    return;
+  }
+  accFood += step * DECAY_FOOD; accFun += step * DECAY_FUN; accEnergy += step * DECAY_ENERGY; accClean += step * DECAY_CLEAN;
+  if (s.poop && t - s.poopSince > 2 * 3600) accFun += step * 3;
+}
+// From lastSeen to now in steps of at most ten minutes. Only `budget` seconds count for decay.
+uint32_t walk(Save& s, uint32_t now, bool online, uint32_t budget) {
+  uint32_t ev = EV_NONE;
+  for (uint32_t t = s.lastSeen; t < now;) {
     uint32_t step = now - t; if (step > 600) step = 600;
-    bool counted = budget > 0; if (counted) budget = budget > step ? budget - step : 0;
-    int h = hourOf(t);
-    // schedule-driven sleep when unattended
-    if (!online) {
-      if (isNightHour(h) && !s.asleep) { s.asleep = 1; ev |= EV_FELL_ASLEEP; }
-      if (!isNightHour(h) && s.asleep && s.energy >= 90) { s.asleep = 0; ev |= EV_WOKE; }
-    }
-    if (counted) {
-      if (s.asleep) {
-        accFood += step * 1; accFun += step * 1;
-        accSleep += step * (uint32_t)(online ? SLEEP_ENERGY_ONLINE * 60 : SLEEP_ENERGY_OFFLINE);
-      } else {
-        accFood += step * DECAY_FOOD; accFun += step * DECAY_FUN; accEnergy += step * DECAY_ENERGY; accClean += step * DECAY_CLEAN;
-        if (s.poop && t - s.poopSince > 2 * 3600) accFun += step * 3;
-      }
-    }
+    const bool counted = budget > 0; if (counted) budget = budget > step ? budget - step : 0;
+    if (!online) ev |= sleepByTheClock(s, t);   // schedule-driven sleep when unattended
+    if (counted) decay(s, t, step, online);
     if (!s.asleep && !s.poop && t >= s.nextPoopAt) { s.poop = 1; s.poopSince = t; s.clean = clamp100(s.clean - 15); ev |= EV_POOPED; }
     t += step;
   }
+  return ev;
+}
+// Whole points out of the accumulators; then up, if fully rested by day.
+uint32_t settle(Save& s, uint32_t now) {
   while (accFood >= 3600) { decayTo(s.food, 1, FLOOR_FOOD); accFood -= 3600; }
   while (accFun >= 3600) { decayTo(s.fun, 1, FLOOR_FUN); accFun -= 3600; }
   while (accEnergy >= 3600) { decayTo(s.energy, 1, FLOOR_ENERGY); accEnergy -= 3600; }
   while (accClean >= 3600) { decayTo(s.clean, 1, FLOOR_CLEAN); accClean -= 3600; }
   while (accSleep >= 3600) { s.energy = clamp100(s.energy + 1); accSleep -= 3600; }
-  if (s.asleep && s.energy >= 100 && !isNightHour(hourOf(now))) { s.asleep = 0; ev |= EV_WOKE; }
-  Stage st = stageFor(s, now);
-  if (st > s.stage) {   // only ever grows: a clock set back must not shrink the dog and call it growing up
-    s.stage = st; ev |= EV_STAGE_UP;
-    int reading = s.booksRead * 2 + s.wordsSpelled / 5, playing = s.gamesPlayed * 2 + s.bonesCaught / 10;
-    s.variant = reading > playing + 2 ? VAR_BOOKWORM : playing > reading + 2 ? VAR_SPORTY : VAR_CLASSIC;
-    if (st == STAGE_GROWN) earnSticker(s, ST_GROWN);
-  }
+  if (!s.asleep || s.energy < 100 || isNightHour(hourOf(now))) return EV_NONE;
+  s.asleep = 0;
+  return EV_WOKE;
+}
+uint32_t grow(Save& s, uint32_t now) {
+  const Stage st = stageFor(s, now);
+  if (st <= s.stage) return EV_NONE;   // only ever grows: a clock set back must not shrink the dog and call it growing up
+  s.stage = st;
+  int reading = s.booksRead * 2 + s.wordsSpelled / 5, playing = s.gamesPlayed * 2 + s.bonesCaught / 10;
+  s.variant = reading > playing + 2 ? VAR_BOOKWORM : playing > reading + 2 ? VAR_SPORTY : VAR_CLASSIC;
+  if (st == STAGE_GROWN) earnSticker(s, ST_GROWN);
+  return EV_STAGE_UP;
+}
+}  // namespace
+
+uint32_t simulate(Save& s, uint32_t now, bool online) {
+  // An empty room has nothing to grow, decay or poop; a clock that did not move forward only resets the mark.
+  if (!s.hasDog || now <= s.lastSeen) { s.lastSeen = now; return EV_NONE; }
+  uint32_t ev = EV_NONE;
+  const uint32_t elapsed = now - s.lastSeen;
+  if (elapsed > 300) online = false;  // a jump this big means the device was off (or the clock was set)
+  if (!online && elapsed > 3600) ev |= EV_LONG_AWAY;
+  // Only the first OFFLINE_CAP_SEC of an absence count for decay; beyond that the pet just waits.
+  ev |= walk(s, now, online, online ? elapsed : (elapsed > OFFLINE_CAP_SEC ? OFFLINE_CAP_SEC : elapsed));
+  ev |= settle(s, now);
+  ev |= grow(s, now);
   if (dayIndex(now) != s.lastPlayDay) ev |= EV_NEW_DAY;
   s.lastSeen = now;
   return ev;
