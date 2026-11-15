@@ -106,6 +106,12 @@ void invalidAppSave() {
   Player p; p.saves[0]={&broken,sizeof broken}; p.saves[1]={&other,sizeof other}; p.start();
   assert(p.on(HUB) && p.game.state().doll == 0 && !p.game.state().active);
   State saved = p.snapshot(); assert(saved.seed == fresh().seed);
+  // Only opening the game, or leaving from its title, never replaces the unreadable save with a blank one.
+  const void* data=nullptr; size_t bytes=0;
+  Player q; q.saves[0]={&broken,sizeof broken}; q.enter();
+  assert(!q.game.saveUrgent() && !q.game.takeSave(&data,&bytes,true));
+  q.action(2); assert(q.game.wantsHome()); q.game.leave();
+  assert(!q.game.saveUrgent() && !q.game.takeSave(&data,&bytes,true));
 }
 void wardrobeAndBag() {
   Player p; p.start(); p.action(1); p.action(1); assert(p.on(STYLE));

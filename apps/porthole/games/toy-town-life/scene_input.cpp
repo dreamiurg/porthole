@@ -26,7 +26,7 @@ void Game::tickWalk() {
  dirty_=true;
 }
 bool Game::overlayInput(int action) {
- if(title_) { title_=false; if(action==1) go(DOLL); else if(action==2) { home_=true; changed(); } else changed(); return true; }
+ if(title_) { title_=false; keep_=keep_ && action==2; if(action==1) go(DOLL); else if(action==2) { home_=true; changed(); } else changed(); return true; }
  if(pause_) { pause_=false; if(action==1) go(HUB); else { home_=action==2; changed(); } return true; }
  return false;
 }
