@@ -27,10 +27,10 @@ class Game : public App {
   void leave() override {}
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;   // "level<N>": a fresh deck starting on table N (1..10)
+  void debugCmd(const char* cmd) override;   // "level<N>": a fresh deck on table N (1..10); "card<N>": one card's round
   const Save& save() const { return save_; }
 
-  enum Page : uint8_t { P_HOME, P_ASK, P_ANSWER, P_DONE, P_COUNT };
+  enum Page : uint8_t { P_HOME, P_ASK, P_ANSWER, P_DONE, P_STATS, P_COUNT };   // P_STATS: the grown-ups' page
 
  private:
   Save save_{};
@@ -38,14 +38,18 @@ class Game : public App {
   Page page_ = P_HOME;
   Input in_{};
   ui::FreshGate gate_;
+  ui::Hold title_;   // a long hold on the home page's title opens the grown-ups' page
   canvas::Frames<1> frames_;
-  uint32_t ms_ = 0, now_ = 0;
+  uint32_t ms_ = 0, now_ = 0, askedMs_ = 0;   // askedMs_: when the current card showed
   uint32_t* wallet_ = nullptr;   // the kid's stars (AppEnter::stars), shared with every game
-  bool home_ = false, dirty_ = false;
+  bool home_ = false, dirty_ = false, quick_ = false;   // quick_: the current card was turned within QUICK_MS
   int32_t today() const { return dayOf(now_); }
   void go(Page p);
   void deal();
   void grade(Grade g);   // the kid's answer to the current card
   void draw() const;
+  void drawDone() const;
+  bool heldTitle();
+  void turn();
 };
 }  // namespace cards
