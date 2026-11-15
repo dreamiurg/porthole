@@ -77,7 +77,10 @@ class Game : public App {
   // done), the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits). One
   // question of the round, at easyAt_, is from the level below; levelUp_ says the round's end moved the level up.
   puzzles::Strand strand_ = puzzles::NUMBERS; uint8_t level_ = 0; int easyAt_ = 0; bool levelUp_ = false;
-  puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
+  // The question shown is kept as its item and the seed that orders its answers, and rebuilt where it is needed: a
+  // whole Puzzle is 140 bytes of static RAM the firmware doesn't have.
+  puzzles::Item question_{}; uint32_t questionSeed_ = 1;
+  int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
   int item_ = 0;                              // Doghouse: the thing the shop opened
@@ -129,6 +132,7 @@ class Game : public App {
   void updatePuzzles(); void drawPuzzles();
   void startPuzzles(puzzles::Strand strand); uint8_t puzzleLevel(puzzles::Strand strand) const;
   void nextPuzzle(); void endRound();
+  puzzles::Puzzle puzzle() const { uint32_t s = questionSeed_; return puzzles::build(question_, s); }
   void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
   void updateDoghouse(); void drawDoghouse();
   void updateShop(); void drawShop();
