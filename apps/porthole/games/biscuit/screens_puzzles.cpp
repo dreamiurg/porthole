@@ -10,6 +10,7 @@
 #include "generated/scenes.h"
 #include "gfx565.h"
 #include "personalize.h"
+#include "review.h"
 #include "ui565.h"
 
 namespace biscuit {
@@ -46,11 +47,14 @@ uint8_t Game::puzzleLevel(Strand strand) const {
 void Game::startPuzzles(Strand strand) {
   strand_ = strand; level_ = puzzleLevel(strand); easyAt_ = puzzles::below(rng_, puzzles::ROUND); levelUp_ = false;
   asked_ = right_ = 0; seen_ = 0; taught_ = -1; roundStars_ = earnedStars(save_);
+  const int due = review::due(save_, strand, dayOf(now_));   // a missed item due again takes one place of the five
+  reviewAt_ = due < 0 ? -1 : (easyAt_ + 1 + puzzles::below(rng_, puzzles::ROUND - 1)) % puzzles::ROUND;
+  if (due >= 0) { review_ = review::itemOf(save_.puzzleReviews[due]); seen_ = 1u << puzzles::keyOf(review_); }
   nextPuzzle();
   go(SC_PUZZLE);
 }
 void Game::nextPuzzle() {
-  question_ = puzzles::fresh(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
+  question_ = asked_ == reviewAt_ ? review_ : puzzles::fresh(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
   questionSeed_ = puzzles::next(rng_);
   seen_ |= 1u << puzzles::keyOf(question_);
   answered_ = -1;
@@ -80,6 +84,7 @@ void Game::updatePuzzle() {
     answered_ = i;
     const bool right = i == p.right;
     right_ += right;
+    review::answered(save_, p.item, right, dayOf(now_));
     const int taught = answerPuzzle(save_, right, now_); markDirty();
     if (taught >= 0) taught_ = taught;
     fresh();
@@ -114,6 +119,15 @@ static void drawGroups(const puzzles::Item& q) {
     for (int i = 0; i < q.b; i++) gfx565::circle(x + SPOT[i][0], y + SPOT[i][1], 8, PEACH);
   }
 }
+// After an answer: the solved question, then a cheer, the star it earned, or after a miss how to solve it (the pup's
+// nudge when there is no how, as for words).
+void Game::feedback(const puzzles::Puzzle& p, bool right, char* line, size_t cap) const {
+  const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
+  char how[48];
+  puzzles::how(p.item, how);
+  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : NUDGES[asked_ % puzzles::ROUND];
+  snprintf(line, cap, "%s %s\n%s", right ? "Yes!" : "It's", p.solved, after);
+}
 void Game::drawPuzzle() {
   const puzzles::Puzzle p = puzzle();
   const bool right = answered_ >= 0 && answered_ == p.right && asked_ < puzzles::ROUND;
@@ -138,9 +152,7 @@ void Game::drawPuzzle() {
     for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(p, i));
     return;
   }
-  const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
-  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : NUDGES[asked_ % puzzles::ROUND];
-  snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", p.solved, after);
+  feedback(p, right, line, sizeof line);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(FEEDBACK, s, INK);
   button(in_, NEXT_PUZZLE);

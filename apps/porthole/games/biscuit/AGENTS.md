@@ -141,7 +141,10 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   watch/do), `screens_puzzles.cpp` (Puzzles: three strands, plus and minus, times and words, each at the kid's own level
   (`puzzles.h`, design `docs/design/adaptive-practice.md`): a strand never played starts from the profile's age, a
   round of five right moves it up a level and two or fewer down, one question of every round is from the level
-  below, and the level is saved as level + 1 in `puzzleLevels`; a round of five; the round's end says
+  below, and the level is saved as level + 1 in `puzzleLevels`; a miss goes on the review queue (`review.h`,
+  `puzzleReviews`), due the next day, and a round in its strand on or after that day asks one due item in place of a
+  question, right taking it off; after a miss the feedback shows how to solve it (`puzzles::how`) in place of the
+  pup's nudge; a round of five; the round's end says
   the stars it earned (or how many right answers the next one needs) and the trick it taught, and Show me has the pup
   do it at home and name it), `screens_doghouse.cpp` (the Doghouse room, its Shop and a
   thing's page),
