@@ -133,8 +133,8 @@ Tint Game::tint() const {
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || !save_.named) return false;   // an unnamed pup has nothing worth keeping
-  seal(save_); out_ = save_;
-  *data = &out_; *len = sizeof out_;
+  seal(save_);
+  *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update (static RAM is tight)
   dirty_ = false;
   return true;
 }
@@ -161,7 +161,7 @@ void Game::debugPrint() {
   for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
   printf("puzzles=%u strand=%d level=%d levels=%d%d%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n",
          (unsigned)p.puzzles, (int)strand_, level_, p.puzzleLevels[0], p.puzzleLevels[1], p.puzzleLevels[2], asked_, right_,
-         answered_, puzzle_.right, (unsigned)p.booksDay, (unsigned)p.moreStories);
+         answered_, puzzle().right, (unsigned)p.booksDay, (unsigned)p.moreStories);
   printf("reviews=%d review_at=%d reviewing=%d\n", p.puzzleReviewCount, reviewAt_, asked_ == reviewAt_);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);

@@ -41,15 +41,15 @@ skip 86400
 wait 450
 tap 80 60
 wait 450
-expect review_at=2
+expect review_at=3
 expect reviews=5
-repeat 2
+repeat 3
 answer-puzzle right
 wait 450
 tap 80 132
 wait 450
 end
-expect asked=2
+expect asked=3
 expect reviewing=1
 snap z02_review
 answer-puzzle right

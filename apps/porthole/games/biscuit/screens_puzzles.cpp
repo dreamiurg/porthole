@@ -54,9 +54,9 @@ void Game::startPuzzles(Strand strand) {
   go(SC_PUZZLE);
 }
 void Game::nextPuzzle() {
-  puzzle_ = asked_ == reviewAt_ ? puzzles::build(review_, rng_)
-                                : puzzles::make(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
-  seen_ |= 1u << puzzle_.key;
+  question_ = asked_ == reviewAt_ ? review_ : puzzles::fresh(strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
+  questionSeed_ = puzzles::next(rng_);
+  seen_ |= 1u << puzzles::keyOf(question_);
   answered_ = -1;
 }
 // Back always goes to the strands: the answers given so far are already kept, and only a whole round moves the level.
@@ -78,12 +78,13 @@ void Game::updatePuzzle() {
     fresh();
     return;
   }
+  const puzzles::Puzzle p = puzzle();
   for (int i = 0; i < puzzles::ANSWERS; i++) {
-    if (!tapped(in_, answerButton(puzzle_, i))) continue;
+    if (!tapped(in_, answerButton(p, i))) continue;
     answered_ = i;
-    const bool right = i == puzzle_.right;
+    const bool right = i == p.right;
     right_ += right;
-    review::answered(save_, puzzle_.item, right, dayOf(now_));
+    review::answered(save_, p.item, right, dayOf(now_));
     const int taught = answerPuzzle(save_, right, now_); markDirty();
     if (taught >= 0) taught_ = taught;
     fresh();
@@ -119,7 +120,8 @@ static void drawGroups(const puzzles::Item& q) {
   }
 }
 void Game::drawPuzzle() {
-  const bool right = answered_ >= 0 && answered_ == puzzle_.right && asked_ < puzzles::ROUND;
+  const puzzles::Puzzle p = puzzle();
+  const bool right = answered_ >= 0 && answered_ == p.right && asked_ < puzzles::ROUND;
   gfx565::clear(right ? SAGE : PAPER);   // green behind a right answer, so it looks different from a miss
   char s[192], line[144];
   if (asked_ >= puzzles::ROUND) {
@@ -134,18 +136,18 @@ void Game::drawPuzzle() {
   }
   snprintf(line, sizeof line, "Puzzle %d of %d", asked_ + 1, puzzles::ROUND);
   top(in_, line, starCount());
-  if (puzzle_.item.strand == puzzles::GROUPS && puzzle_.item.level == 0) drawGroups(puzzle_.item);
-  else if (puzzle_.clue[0]) text(CLUE, puzzle_.clue, INK);
-  text(ASK, puzzle_.ask, INK);
+  if (p.item.strand == puzzles::GROUPS && p.item.level == 0) drawGroups(p.item);
+  else if (p.clue[0]) text(CLUE, p.clue, INK);
+  text(ASK, p.ask, INK);
   if (answered_ < 0) {
-    for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(puzzle_, i));
+    for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(p, i));
     return;
   }
   const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
   char how[48];
-  puzzles::how(puzzle_.item, how);   // after a miss, how to solve it, in place of the pup's nudge
+  puzzles::how(p.item, how);   // after a miss, how to solve it, in place of the pup's nudge
   const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : NUDGES[asked_ % puzzles::ROUND];
-  snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", puzzle_.solved, after);
+  snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", p.solved, after);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(FEEDBACK, s, INK);
   button(in_, NEXT_PUZZLE);

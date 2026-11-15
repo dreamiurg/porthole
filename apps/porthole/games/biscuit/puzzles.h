@@ -290,14 +290,15 @@ inline void how(const Item& q, char (&out)[48]) {
 }
 
 // A new question at this level, not one whose key is in seen.
-inline Puzzle make(Strand strand, uint8_t level, uint32_t& s, uint32_t seen) {
+inline Item fresh(Strand strand, uint8_t level, uint32_t& s, uint32_t seen) {
   Item q{};
   for (int tries = 0; tries < 16; tries++) {
     q = pick(strand, level, s);
     if (!(seen & (1u << keyOf(q)))) break;
   }
-  return build(q, s);
+  return q;
 }
+inline Puzzle make(Strand strand, uint8_t level, uint32_t& s, uint32_t seen) { return build(fresh(strand, level, s, seen), s); }
 // The level a round's n-th question is at: one of the five, at a place picked when the round starts (easyAt), comes
 // from the level below, so every round mixes a little of what the kid already knows back in.
 inline uint8_t roundLevel(uint8_t level, int n, int easyAt) { return n == easyAt && level ? (uint8_t)(level - 1) : level; }
