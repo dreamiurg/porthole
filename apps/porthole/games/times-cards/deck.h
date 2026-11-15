@@ -17,9 +17,9 @@
 // the first table not yet fully known: it is what the home page shows, and finishing it is the "Next up" moment.
 //
 // Division (3.OA.7): once the kid is on DIV_FROM_LEVEL, each known multiplication fact opens its division partners
-// (6 x 7 known: 42 / 6 and 42 / 7) as new cards on the same boxes, schedule and pace. Division and multiplication take
-// turns for the working set's places, a fact family's two divisions together, so the tables keep moving while the
-// divisions of the facts already known come in. Division by 1 is left out: it says nothing a kid doesn't know.
+// (6 x 7 known: 42 / 6 and 42 / 7) as new cards on the same boxes, schedule and pace. Divisions take about a third of
+// the working set's places (a fact family's two together), so the tables keep moving while the divisions of the
+// facts already known come in. Division by 1 is left out: it says nothing a kid doesn't know.
 //
 // Time is Porthole's local wall-clock seconds, so a day is now / 86400. Nothing punishes being away: a card that waited
 // longer than planned is simply due, oldest first.
@@ -236,14 +236,15 @@ inline int learningOf(const Save& s, bool division) {   // facts of one kind sho
   for (int c = division ? CARDS : 0; c < (division ? ALL : CARDS); c++) k += s.boxOf(c) && s.boxOf(c) < MASTER_BOX;
   return k;
 }
-// The never-shown facts this round brings, as many as the pace allows: a division whenever fewer divisions than
-// multiplications are being learned, else the next multiplication (either, when the other kind has none left).
+// The never-shown facts this round brings, as many as the pace allows: a division whenever the divisions being learned
+// are fewer than half the multiplications (about a third of the set), else the next multiplication; either, when the
+// other kind has none left. A half share slowed the tables by half in simulation; a third keeps most of their pace.
 inline int newCards(const Save& s, int* fresh) {
   const int most = newAllowed(s);
   bool taken[ALL] = {};
   int times = learningOf(s, false), divs = learningOf(s, true), nf = 0;
   while (nf < most) {
-    int c = divs < times ? nextDivision(s, taken) : -1;
+    int c = divs * 2 < times ? nextDivision(s, taken) : -1;
     if (c < 0) c = nextTimes(s, taken);
     if (c < 0) c = nextDivision(s, taken);
     if (c < 0) break;

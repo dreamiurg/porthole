@@ -182,13 +182,13 @@ static void division() {
   grade(s, c, EASY, DAY + 1);
   grade(s, c, EASY, DAY + 2);
   CHECK(s.boxOf(c) == MASTER_BOX && s.level == 4 && learningOf(s, true) == 0);
-  // The kinds take turns: with two multiplications being learned and no division, a new division comes first.
+  // Divisions take about a third of the set: two multiplications being learned and no division, so a division first.
   setUp(s, 4, DAY);
   grade(s, cardOf(4, 1), HARD, DAY);
   grade(s, cardOf(4, 2), HARD, DAY);
   int fresh[NEW_PER_ROUND];
   const int nf = newCards(s, fresh);
-  CHECK(nf == 3 && isDiv(fresh[0]) && isDiv(fresh[1]) && !isDiv(fresh[2]));   // division to two, then 4x3
+  CHECK(nf == 3 && isDiv(fresh[0]) && !isDiv(fresh[1]) && isDiv(fresh[2]));   // 2 / 2, 4x3, then 4 / 2
 }
 
 static void practice() {   // a fact still being learned and not yet seen today; a known fact comes only when due

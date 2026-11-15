@@ -47,8 +47,8 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
   easy wins between the hard ones.
 - **Division (3.OA.7):** from level 4 (1× to 3× known), each known multiplication fact opens its two divisions as new
   cards: 6 × 7 known opens 42 ÷ 6 and 42 ÷ 7. They are scheduled like any card and share the working set: a new
-  division comes whenever fewer divisions than multiplications are being learned, so the two kinds take turns and
-  the tables keep moving. Divisions come by fact family in table order (2× first, 1× last, its families being n ÷ n),
+  division comes whenever the divisions being learned are fewer than half the multiplications, so divisions hold
+  about a third of the places and the tables keep most of their pace (a half share halved it in simulation). Divisions come by fact family in table order (2× first, 1× last, its families being n ÷ n),
   so a family's two divisions arrive together. They never move the level. A 6-year-old meets division once 3× is
   known. Why: interleaving multiplication with its division facts (`docs/design/learning-principles.md`, principle 5).
 - **Level:** the first table not fully known. It moves on (and the done page says "Next up") once all ten of its facts
