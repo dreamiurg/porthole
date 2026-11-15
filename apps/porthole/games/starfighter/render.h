@@ -16,5 +16,6 @@ struct View {
   bool gripReady = false, gripUpright = false;
 };
 void draw(const View& view);
+void release();   // the scene's internal-RAM loan goes back (leave())
 const gfx::Sprite& icon();
 }  // namespace starfighter::paint

@@ -19,6 +19,7 @@ void Game::enter(const AppEnter& e) {
   restart(run_, seed_);
   go(Screen::Title);
 }
+void Game::leave() { paint::release(); }
 void Game::go(Screen screen) {
   screen_ = screen;
   if (screen == Screen::Calibrate) calibration_ = {};

@@ -5,8 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fastmem.h"
 #include "games/starfighter/controls.h"
 #include "games/starfighter/game.h"
+#include "gfx565.h"
 
 using namespace starfighter;
 static int checks = 0;
@@ -203,8 +205,35 @@ static void stageTransitions() {
   s.wait(EXPLOSION_MS + 20);
   CHECK(s.on("sf_victory"));
 }
+// The scene is drawn in an internal-RAM loan (fastmem.h) while open and lit; leave() and the dark give it back, and a
+// frame drawn in either buffer is the same picture.
+static uint16_t panel[2][gfx565::W * gfx565::H];
+static void sceneLoan() {
+  const char* pages[] = {"title", "calibrate", "brief", "squadron", "waveclear", "entry", "trench", "target", "torpedo",
+                         "explosion", "victory", "defeat"};
+  for (const char* page : pages) {
+    Game g;
+    AppEnter e{}; e.ms = 1000;
+    g.enter(e);
+    g.debugCmd(page);
+    gfx565::target(panel[0]); g.render();          // in the loan (poisoned on the host: every page repaints it whole)
+    CHECK(!fastmem::take(1, nullptr, nullptr));   // the scene holds the one loan
+    fastmem::setDark(true);                        // recalled
+    gfx565::target(panel[1]); g.render();          // at home
+    CHECK(!memcmp(panel[0], panel[1], sizeof panel[0]));
+    fastmem::setDark(false);
+    void* p = fastmem::take(1, nullptr, nullptr);  // the recall gave the block back
+    CHECK(p);
+    fastmem::give(p);
+    g.render();
+    g.leave();
+    p = fastmem::take(1, nullptr, nullptr);
+    CHECK(p);
+    fastmem::give(p);
+  }
+}
 int main() {
   banking(); calibration(); naturalFlow(); invalidGrip(); queuedTaps(); steeringAndClocks();
-  backEverywhere(); heldExitGuard(); replay(); stageTransitions();
+  backEverywhere(); heldExitGuard(); replay(); stageTransitions(); sceneLoan();
   printf("Starfighter controls: %d checks\n", checks);
 }
