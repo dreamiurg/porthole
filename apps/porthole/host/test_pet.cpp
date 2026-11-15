@@ -302,6 +302,22 @@ static int celebrateDogInk(bool retired) {
   return ink;
 }
 static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 && celebrateDogInk(true) == 0); }
+// A buzzer pattern ends at its last pair: the firmware asks soundOn() every frame, and one read past its end plays
+// whatever lies after it in memory. The streak card's fanfare is 25 ms three times, 40 ms apart, then 70: 145 ms of
+// sound, all of it in the first 265 ms.
+static void fanfareEnds() {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 7 * 86400;
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.streak = 6; s.lastPlayDay = (uint16_t)(pet::dayIndex(t) - 1); pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+  Input press; press.down = press.pressed = true; press.x = 80; press.y = 150;
+  g.update(t, 3000, press);   // the day's first touch: the card, and its fanfare from ms 3000
+  assert(!strcmp(g.screenName(), "celebrate"));
+  int on = 0, late = 0;
+  for (uint32_t ms = 3000; ms < 13000; ms++) { const bool beep = g.soundOn(ms); on += beep; late += beep && ms >= 3265; }
+  assert(on == 145 && late == 0);
+}
 
 // A long habit's press on the farm's Yes: Go home, then Bring back in the empty room (after a restart too) puts the
 // same dog home (its age, tricks and stats, and the wall as it was) and asks for the one-second checkpoint.
@@ -432,6 +448,7 @@ int main() {
   breedDraws();
   retiredSleeperLeavesDay();
   emptyRoomCelebratesWithoutDog();
+  fanfareEnds();
   petting(day0);
   bringBackRestores();
   adoptionEndsBringBack();
