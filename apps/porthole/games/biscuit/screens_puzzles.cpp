@@ -1,6 +1,6 @@
 // Puzzles with the pup: pick a kind (or a times table), then a round of five questions with three answers each. A
-// right answer is kept (the scrapbook counts them); a wrong one shows the right one and moves on. Any answer counts
-// as today's training. No timer, no score to beat.
+// right answer is kept (the scrapbook counts them, and every PUZZLES_PER_STAR of them is a star); a wrong one shows
+// the right one and moves on. Any answer counts as today's training. No timer, no score to beat.
 #include <stdio.h>
 #include "game.h"
 #include "gfx565.h"
@@ -24,7 +24,7 @@ int tappedGrid(const Input& in, const char* const* labels) {
     if (tapped(in, gridButton(i, labels))) return i;
   return -1;
 }
-void drawGrid(const Input& in, const char* title, uint8_t stars, const char* const* labels) {
+void drawGrid(const Input& in, const char* title, int stars, const char* const* labels) {
   gfx565::clear(PAPER);
   top(in, title, stars);
   for (int i = 0; i < GRID_COUNT; i++) button(in, gridButton(i, labels));

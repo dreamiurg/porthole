@@ -251,10 +251,8 @@ static void stream(const char* where, const char* const* pages, int count) {
 }
 static void storyGate() {
   char where[64], text[128];
-  Save late{};   // the latest a book can open: the newer books started arriving on the last countable day
-  late.booksDay = late.daysTogether = MAX_COUNT;
   for (const Story& st : STORIES) {
-    snprintf(text, sizeof text, "Day %u: %s", (unsigned)storyDay(late, (int)(&st - STORIES), st.unlockDay), st.title);
+    snprintf(text, sizeof text, "Tomorrow: %s", st.title);   // a closed book: "Tomorrow" or "Soon"
     fits(STORY_BUTTON, st.id, text);
     snprintf(text, sizeof text, "%s *", st.title);
     fits(STORY_BUTTON, st.id, text);

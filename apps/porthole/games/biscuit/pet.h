@@ -213,8 +213,12 @@ inline void markStoryRead(Save& p, int id) {
   if (id < FIRST_STORIES) p.stories |= (uint8_t)(1u << id);
   else p.moreStories |= 1u << (id - FIRST_STORIES);
 }
-inline uint8_t stars(const Save& p) {   // 3 per story finished
-  return (uint8_t)((__builtin_popcount(p.stories) + __builtin_popcount(p.moreStories)) * 3);
+constexpr uint32_t PUZZLES_PER_STAR = 5;
+inline int storyStars(const Save& p) {   // 3 per story finished
+  return (__builtin_popcount(p.stories) + __builtin_popcount(p.moreStories)) * 3;
+}
+inline int stars(const Save& p) {   // the stories', and one for every PUZZLES_PER_STAR right answers
+  return storyStars(p) + (int)(p.puzzles / PUZZLES_PER_STAR);
 }
 // The day a story opens: its content day, and for a newer book also NEW_BOOK_GAP days after the newer one before it.
 inline uint32_t storyDay(const Save& p, int id, uint8_t unlockDay) {

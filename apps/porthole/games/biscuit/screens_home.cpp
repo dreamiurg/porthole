@@ -159,7 +159,8 @@ void Game::drawWorld() {
   char s[80];
   personalize("{pet} & {name}", who_.name, save_.petName, s, sizeof s);
   text(WORLD_NAMES, font::textWidth(*WORLD_NAMES.box.font, s) > WORLD_NAMES.box.w ? save_.petName : s, INK);
-  snprintf(s, sizeof s, "Day %u%s%s%s%d stars", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, stars(save_));
+  snprintf(s, sizeof s, "Day %u%s%s%s%d star%s", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, stars(save_),
+           stars(save_) == 1 ? "" : "s");
   text(WORLD_LINE, s, INK);
   for (int i = 0; i < WORLD_TILES; i++) tile(in_, worldTile(i, save_));
   button(in_, puzzlesButton(save_));

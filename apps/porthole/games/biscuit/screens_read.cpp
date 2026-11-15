@@ -24,7 +24,7 @@ bool storyRow(const Save& p, int row, int page, Button& b, char (&label)[64]) {
   const Story& st = STORIES[id];
   const uint32_t day = opensOn(p, id);
   const bool open = p.daysTogether >= day;
-  if (!open) snprintf(label, sizeof label, "Day %u: %s", (unsigned)day, st.title);
+  if (!open) snprintf(label, sizeof label, "%s: %s", day == p.daysTogether + 1 ? "Tomorrow" : "Soon", st.title);
   else snprintf(label, sizeof label, "%s%s", st.title, storyRead(p, id) ? " *" : "");
   b = {ROW[row + 1], label, &FONT20, PURPLE, open};
   return true;

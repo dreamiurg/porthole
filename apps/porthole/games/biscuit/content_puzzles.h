@@ -71,7 +71,7 @@ inline constexpr SpellWord LONG_WORDS[] = {
   {"ladder", "You climb it to reach up high."},
   {"orange", "A fruit, and a color too."},
   {"banana", "A long yellow fruit."},
-  {"number", "One, two and three are these."},
+  {"number", "1, 2 and 3 are each one of these."},
   {"animal", "A dog, a cow or a bird."},
   {"birthday", "The day you turn a year older."},
   {"elephant", "A big gray animal with a trunk."},

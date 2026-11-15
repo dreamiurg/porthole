@@ -241,9 +241,12 @@ static void puzzleAnswers() {
   biscuit::answerPuzzle(p, true, Now);
   biscuit::answerPuzzle(p, true, Now);
   assert(p.puzzles == 2 && p.friendship == 2 && biscuit::valid(p));   // training counts once a day
+  assert(biscuit::stars(p) == 0);
+  for (int i = 0; i < 3; i++) biscuit::answerPuzzle(p, true, Now);
+  assert(p.puzzles == 5 && biscuit::stars(p) == 1);   // a star for every five right
   biscuit::toggleSleep(p, Now);
   biscuit::answerPuzzle(p, true, Now);
-  assert(p.puzzles == 2);
+  assert(p.puzzles == 5);
 }
 
 // A spelling question: the right letter fills its one gap and spells the word.

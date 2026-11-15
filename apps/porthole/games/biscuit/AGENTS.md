@@ -133,7 +133,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
   scrapbook, Today's adventure, Puzzles), `screens_train.cpp` (Tricks, Training watch/do),
   `screens_read.cpp` (Library: Discoveries, Notebook and the fifteen stories, two a page,
-  "Day N: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
+  "Tomorrow: <title>" (the next one) or "Soon: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
   page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
   a topic's eight or the notebook of kept ones; Topics; a discovery's cover, pages and
   wonder page, Source; Today and its Word), `screens_profile.cpp` (the scrapbook with Our
