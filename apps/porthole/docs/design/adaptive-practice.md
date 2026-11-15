@@ -81,7 +81,8 @@ count, before the crc. Saves stay append-only; a v3 save gets its levels from th
 2. **Self-grading at age 6 (open question).** A 6-year-old may not judge their own recall honestly, and the research
    reviewed does not cover self-grading. Proposal: watch how the 6-year-old grades for a week before changing
    anything. If the grades look unreliable, ask the kid to say the answer and then tap which of three numbers they
-   said, which keeps recall first and makes the grade checkable.
+   said, which keeps recall first and makes the grade checkable. The watching is built in: Times Cards counts first-sight
+   Easy, Easy held the next day, quick turns and think time on a grown-up page (hold the title 2 s; see its brief).
 
 ## Work split
 
@@ -92,7 +93,7 @@ Each piece lists the files it owns. Pieces with no shared files can run at the s
 | A | Biscuit strands and levels (1), mixed rounds (3), save v4 | `games/biscuit/puzzles.h`, `content_puzzles.h`, `pet.h`, `screens_puzzles.cpp`, `game.h`, Biscuit tests | none |
 | B | Biscuit review queue (2) and "how" lines (4) | the same files as A | A |
 | C | Times Cards division facts | `games/times-cards/*`, `host/test_times_cards.cpp` | none |
-| D | Times Cards self-grading check at age 6 | none yet: a week of watching first | none |
+| D | Times Cards self-grading check at age 6: counters now, the decision after a week | `games/times-cards/*`, `host/test_times_cards.cpp` | C |
 | E | Short decodable stories for the 6-year-old, with one question each (`learning-principles.md`, principle 11) | `games/biscuit/content_stories.h` and its content tests | none; coordinate with A only on `game.h` if a screen is needed |
 
 A and B go to the same session, one after the other. C and E can each go to a separate session in parallel with

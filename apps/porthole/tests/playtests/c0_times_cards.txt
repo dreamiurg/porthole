@@ -156,6 +156,17 @@ tap 80 12
 wait 600
 expect level=3
 snap t06_home_3x
+# a grown-up holds the title for two seconds: the grading check, how this kid has been grading
+down 80 30
+wait 2200
+up
+wait 600
+expect-screen cards_stats
+ui-check cards_stats
+snap t07_grading_check
+tap 80 12
+wait 600
+expect-screen cards_home
 # an 8-year-old starts on 4x, with a separate deck
 profile Zoe 8
 app timescards

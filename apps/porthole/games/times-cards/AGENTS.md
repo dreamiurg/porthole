@@ -20,6 +20,11 @@ Every page has the house at the top: from a card it goes back to the deck, from 
 - `cards_done`: "Perfect round!" (no Hard or Wrong), "Great job!", or "Next up: N ×!" when the round opened a new
   table; "+2 stars", the round's three tallies, the table's dots and
   **Again**, which deals the next round.
+- `cards_stats`, for a grown-up: hold the "Times Cards" title on the deck for 2 s (not a kid target, not in the
+  audit). "Grading check", how many days since the check started and how many cards turned, then four rows on a
+  cream card: new cards graded Easy / Hard / Wrong the first time they were seen (in the grade colours), "Easy, next
+  day" (a card graded Easy and seen again on a later day, how often it was still Easy), "Turned in 1 s" (cards turned
+  less than a second after they showed) and the average think time. The house goes back to the deck.
 
 Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent in
 Biscuit's doghouse), whatever the grades, so an honest Wrong costs nothing. A round left half-way pays none. The shell
@@ -65,12 +70,25 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
 - Days are Porthole's local wall clock (`now / 86400`). Being away punishes nothing: an overdue card is simply due.
   A clock set back is clamped so no card waits longer than its box says.
 
+## Grading check (`noteTurn`, `noteGrade`)
+
+Self-rating at this age is not covered by the research we read (`docs/design/adaptive-practice.md`), so the deck
+counts what would show a kid rating without looking: a new fact called Easy at first sight (a kid who already knows
+it says so honestly, so this alone proves nothing), an Easy that does not hold the next day, and a card turned before
+the kid could have said the answer (`QUICK_MS`, 1 s). Think time is capped at 10 s a card. A second look at a missed
+card in the same round counts nothing. Nothing here changes the schedule; it only counts.
+
+Read it after about a week of real play. Rough lines to act on, not settled: "Easy, next day" under about 70%, or
+"Turned in 1 s" over about 20% of cards, means the grades are not honest enough to schedule by. The next step then
+is a check the kid does instead of grading (tap the number you said), decided with Dmytro.
+
 ## Save
 
-One 972-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
+One 1020-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
 start table, answers ever, pace (thousandths + 1, 0 = never set), box, due day and last-seen day per multiplication
-card, then (version 2) the same three per division card, a spare zero, crc. A version 1 blob (520 bytes, no division)
-still loads, with no division met. Append-only: a new field goes right before `crc` with a
+card, then (version 2) the same three per division card, a spare zero, then (version 3) the grading check's counters and
+one Easy bit per card, a spare zero, crc. A version 1 blob (520 bytes, no division) and a version 2 blob (972 bytes)
+still load; the check starts empty. Append-only: a new field goes right before `crc` with a
 zero that is a sensible default, `SAVE_VERSION` goes up, nothing is reordered or resized. A blob of the wrong size or
 crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
 
