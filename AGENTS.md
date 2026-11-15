@@ -40,7 +40,8 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
    The one exception, a user decision of 2026-11-15: Rally's race together sends the kid's profile name
    and avatar to the other Porthole on the same home wifi (UDP on the local network only, never off it),
-   so the kids see who is joining; nothing else about the kid goes with it.
+   so the kids see who is joining; nothing else about the kid goes with it (the invite, a broadcast, carries only
+   the name and avatar; once paired, the race itself, such as the levels and the car's place, goes to that device alone).
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box

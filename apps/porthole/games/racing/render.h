@@ -12,7 +12,7 @@ constexpr ui::Box CARD[TRACKS] = {{27, 33, 52, 38}, {81, 33, 52, 38}, {27, 75, 5
 constexpr ui::Box HOME{32, 117, 28, 24};                          // Tracks: back to the launcher
 constexpr ui::Box TIMES{62, 117, 32, 24};                         // Tracks: every kid's best times, no race needed
 constexpr ui::Box MODE_CHIP{96, 117, 32, 24};                     // Tracks: tap to cycle the difficulty setting
-constexpr ui::Box TOGETHER{54, 10, 52, 22};                       // Tracks: race a kid on another Porthole
+constexpr ui::Box TOGETHER{54, 9, 52, 22};                        // Tracks: race a kid on another Porthole
 constexpr ui::Box JOIN{40, 84, 80, 24}, NOT_NOW{50, 112, 60, 24};  // Tracks: an invite from another Porthole
 constexpr ui::Box LOBBY_PREV{22, 64, 26, 24}, LOBBY_NEXT{112, 64, 26, 24};   // Lobby: the host picks the track
 constexpr ui::Box PREV_TRACK{22, 32, 26, 24}, NEXT_TRACK{112, 32, 26, 24}, BOARD_BACK{56, 120, 48, 24};   // Times

@@ -43,7 +43,8 @@ void Game::fillWire() {
   w.stage = (uint8_t)stageNow();
   w.paused = screen_ == Screen::Pause || screen_ == Screen::Confirm || (screen_ == Screen::Calibrate && recenter_);
   w.track = (uint8_t)track_; w.session = session_; w.raceId = raceId_;
-  for (int t = 0; t < TRACKS; t++) w.level[t] = (int8_t)levelOn(t);
+  // The levels go only to the paired device (the invite is a broadcast: name and avatar only).
+  for (int t = 0; t < TRACKS; t++) w.level[t] = link_.paired() ? (int8_t)levelOn(t) : 0;
   w.raceLevel = race_.level;
   const Car& me = race_.car[PLAYER];
   w.finished = me.finished; w.dist = me.dist; w.x = me.x; w.speed = me.speed; w.finishMs = me.finishMs;
@@ -64,15 +65,24 @@ void Game::togetherTick(uint32_t dt) {
   if (link_.gen() != lastGen_) { lastGen_ = link_.gen(); peer_ = link_.peer(); onPeer(); }
   if (link_.lost(ms_) || (link_.heard() && (Stage)peer_.stage == Stage::Idle)) { peerGone(); return; }
   // The host's rivals keep driving after its kid is home, while the other kid is still out there.
-  if (!host_ || !raced_ || race_.phase != Phase::Finished || peer_.finished || peer_.paused) return;
+  if (!host_ || !raced_ || race_.phase != Phase::Finished || (sameRace() && peer_.finished) || peer_.paused) return;
   stepMs_ += dt;
   while (stepMs_ >= STEP_MS) { stepMs_ -= STEP_MS; step(race_, Controls{}); }
 }
 
+// Any device on the network can send anything: numbers that would not draw are held to the track (the grid starts behind 0).
+static float sane(float v, float lo, float hi) { return isfinite(v) ? (v < lo ? lo : v > hi ? hi : v) : 0; }
+bool Game::sameRace() const { return raced_ && peer_.raceId == raceId_; }
+
 // A datagram from the other kid, this race: the guest takes the host's rivals; the host takes the guest's rocket hits.
 void Game::onPeer() {
+  const float far = (LAPS + 1) * (race_.track ? race_.track->length : 4000.0f);
+  peer_.dist = sane(peer_.dist, -far, far); peer_.x = sane(peer_.x, -2, 2); peer_.speed = sane(peer_.speed, 0, 2);
+  for (together::Bot& b : peer_.bot) {
+    b.dist = sane(b.dist, -far, far); b.x = sane(b.x, -2, 2); b.vx = sane(b.vx, -4, 4); b.speed = sane(b.speed, 0, 2);
+  }
   face(1, peer_.avatar);
-  if (!raced_ || peer_.raceId != raceId_) return;
+  if (!sameRace()) return;
   for (int i = 1; i < CARS; i++) {
     if (host_) {
       for (; applied_[i] < peer_.hits[i - 1]; applied_[i]++) strike(race_, i);
@@ -96,7 +106,7 @@ void Game::peerGone() {
   const bool left = (Stage)peer_.stage == Stage::Idle;
   link_.unpair();
   gone_ = true;
-  if (raced_) { if (!peer_.finished) say("Lost %s, keep racing!", peer_.name); return; }
+  if (raced_) { if (!(sameRace() && peer_.finished)) say("Lost %s, keep racing!", peer_.name); return; }
   if (left) say("%s went home", peer_.name);
   else say("Race is off", "");
   endTogether();
@@ -112,6 +122,7 @@ void Game::startLooking() {
 
 void Game::joinInvite() {
   link_.join(ms_);
+  raceId_ = 0;   // the host's races count from 1: a race id left from an earlier session never matches
   duo_ = true; host_ = raced_ = gone_ = false;
   peer_ = link_.invite();
   lastGen_ = link_.gen();
@@ -157,7 +168,7 @@ void Game::awaitStart() {
 void Game::startJointRace() {
   const int mine = levelOn(track_), theirs = peer_.level[track_ % TRACKS];
   if (host_) {
-    raceId_ = (uint8_t)(raceId_ + 1 ? raceId_ + 1 : 1);
+    raceId_ = raceId_ == 255 ? 1 : raceId_ + 1;
     wire_.seed = seed_ + ++runs_;
     start(race_, TRACK[track_], wire_.seed, mine < theirs ? mine : theirs);
   } else {
@@ -176,6 +187,7 @@ void Game::startJointRace() {
 }
 
 void Game::jointFinish() {
+  if (gone_ && !(sameRace() && peer_.finished)) return;   // stars are for a race finished together
   const uint32_t day = now_ / 86400;   // shortcut: a UTC day, and a reboot forgets the count; fine for a daily cap
   if (day != starDay_) { starDay_ = day; jointToday_ = 0; }
   if (jointToday_ < 255) jointToday_++;
@@ -185,19 +197,20 @@ void Game::jointFinish() {
 }
 
 bool Game::peerHold() {
-  if (duo_ && raced_ && link_.paired() && peer_.paused) { peerPaused_ = true; boost_ = rocket_ = false; return true; }
+  if (duo_ && sameRace() && link_.paired() && peer_.paused) { peerPaused_ = true; boost_ = rocket_ = false; return true; }
   if (peerPaused_) { peerPaused_ = false; resumeMs_ = RESUME_MS; }   // they're back: a Ready beat for both
   return false;
 }
 
 float Game::peerDist() const {
+  if (!sameRace()) return 0;
   if (peer_.finished || peer_.paused || !link_.paired()) return peer_.dist;
   const uint32_t age = link_.peerAge(ms_);
   return peer_.dist + peer_.speed * V_MAX * (float)(age < together::GUESS_MS ? age : together::GUESS_MS) / 1000;
 }
 
 float Game::windTop() const {
-  if (!duo_ || !raced_ || !link_.paired() || peer_.finished) return 1;
+  if (!duo_ || !sameRace() || !link_.paired() || peer_.finished) return 1;
   const float behind = (peerDist() - race_.car[PLAYER].dist) / V_MAX;   // seconds
   using namespace together;
   return 1 + TAILWIND * clamp01((behind - WIND_FROM_S) / (WIND_FULL_S - WIND_FROM_S));
@@ -210,7 +223,7 @@ void Game::places(uint8_t* mine, uint8_t* theirs) const {
   int n = 0;
   const Car& me = race_.car[PLAYER];
   e[n++] = {me.finished, me.finishMs, me.dist, host_ ? 0 : 1};
-  const bool counted = raced_ && (!gone_ || peer_.finished);
+  const bool counted = sameRace() && (!gone_ || peer_.finished);
   if (counted) e[n++] = {peer_.finished != 0, peer_.finishMs, peerDist(), host_ ? 1 : 0};
   for (int i = 1; i < CARS; i++) e[n++] = {race_.car[i].finished, race_.car[i].finishMs, race_.car[i].dist, 1 + i};
   *mine = rank(e, n, 0);
@@ -230,10 +243,11 @@ const pic::Pic* Game::face(int slot, int avatar) {
 void Game::peerView(paint::Duo& d) {
   d.peerFace = faces_[1].px ? &faces_[1] : nullptr;
   d.peerName = peer_.name;
-  d.peerOnRoad = d.paired && raced_ && !peer_.finished;
+  const bool same = sameRace();
+  d.peerOnRoad = d.paired && same && !peer_.finished;
   d.peerDist = peerDist(); d.peerX = peer_.x;
-  d.peerPaused = d.paired && raced_ && peer_.paused;
-  d.peerFinished = peer_.finished; d.peerFinishMs = peer_.finishMs;
+  d.peerPaused = d.paired && same && peer_.paused;
+  d.peerFinished = same && peer_.finished; d.peerFinishMs = peer_.finishMs;
   const Stage ps = (Stage)peer_.stage;
   d.peerAgain = d.paired && screen_ == Screen::Results && (ps == Stage::Lobby || ps == Stage::Grip || ps == Stage::Ready);
 }
@@ -242,7 +256,7 @@ void Game::duoView(paint::Duo& d) {
   d.paired = link_.paired() && link_.heard(); d.waiting = gripDone_;
   d.face = face(0, wire_.avatar);
   peerView(d);
-  d.gone = gone_; d.noWinner = raced_ && gone_ && !peer_.finished; d.holdOff = duo_ && raced_ && !pausesLeft_;
+  d.gone = gone_; d.noWinner = raced_ && gone_ && !d.peerFinished; d.holdOff = duo_ && raced_ && !pausesLeft_;
   d.wind = clamp01((race_.car[PLAYER].top - 1) / together::TAILWIND);
   places(&d.place, &d.peerPlace);
   d.races = jointToday_; d.stars = starsGot_;

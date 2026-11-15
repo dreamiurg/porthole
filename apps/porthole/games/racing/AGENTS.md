@@ -137,7 +137,9 @@ names are the player names, the name and avatar go over the home network only, n
 - Not built: cheering, titles, alternate track picking, more than two kids, picking among several devices, rejoining.
 - Protocol (`together.h`): one 144-byte `Wire`, the device's whole state, every `SEND_MS` and at once on a change;
   magic "RLY2", version 1. A device on its Looking page broadcasts (`to` 0); the guest answers addressed to it;
-  once paired each takes datagrams only from its peer addressed to itself. `lan::Radio` (`os/lan.h`) is the
+  once paired each sends only to its peer and takes datagrams only from its peer addressed to itself (the levels go
+  only once paired). Numbers from the network are held to the track (`onPeer`); the peer's race fields count only when
+  its `raceId` is this race's (`sameRace`), and a guest's race id resets when it joins. `lan::Radio` (`os/lan.h`) is the
   transport: `net::Lan` on the board (UDP port 47800 on the saved wifi, a radio job like Radar's), `SimLan` in the sim
   (127.0.0.1, ports 47800..47803, so two sims on one computer pair: `python3 tools/together.py OUTDIR`).
 

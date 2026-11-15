@@ -15,7 +15,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 SNAP = os.path.join(HERE, "..", "build", "host", "snap")
 # Rally's targets (games/racing/render.h), at their centers in logical pixels.
-TOGETHER, JOIN, LOBBY_NEXT, GO = (80, 21), (80, 96), (125, 76), (106, 124)
+TOGETHER, JOIN, LOBBY_NEXT, GO = (80, 20), (80, 96), (125, 76), (106, 124)
 
 
 class Sim:

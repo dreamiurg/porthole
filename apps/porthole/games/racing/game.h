@@ -115,5 +115,6 @@ class Game : public App {
   const pic::Pic* face(int slot, int avatar);
   void duoView(paint::Duo& d);
   void peerView(paint::Duo& d);
+  bool sameRace() const;   // the other kid's datagrams are about this race (not the last one, or none yet)
 };
 }  // namespace racing

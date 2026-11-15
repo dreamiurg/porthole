@@ -229,7 +229,8 @@ void Game::finishLine(uint32_t dt) {   // a moment on the line to see "Finish!" 
 void Game::updateRace(uint32_t dt) {
   if (race_.phase == Phase::Finished) { finishLine(dt); return; }
   if (!gripOk(dt)) return;
-  hold_.step(holding(in_, paint::LAP) && (!duo_ || pausesLeft_), ms_);   // together: a few pauses a race
+  // Together: a few pauses a race, and always one while the other kid is paused (a way to the menu).
+  hold_.step(holding(in_, paint::LAP) && (!duo_ || pausesLeft_ || peerPaused_), ms_);
   if (hold_.progress() >= 1) { gripLost_ = false; if (duo_ && pausesLeft_) pausesLeft_--; go(Screen::Pause); return; }
   boost_ = boost_ || press(in_, paint::BOOST_BTN);
   rocket_ = rocket_ || press(in_, paint::ROCKET_BTN);
@@ -295,7 +296,7 @@ void Game::render() {
   paint::Row rows[MAX_PROFILES];
   v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_; v.mode = save_.mode % MODES;
   duoView(v.duo);
-  if (notice_[0] && ms_ < noticeMs_) v.notice = notice_;
+  if (notice_[0] && (int32_t)(noticeMs_ - ms_) > 0) v.notice = notice_;
   paint::draw(v);
 }
 

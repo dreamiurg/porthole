@@ -23,6 +23,7 @@
 #include <math.h>
 #include <memory>
 #include "board.h"
+#include "psram.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
 
@@ -742,7 +743,10 @@ std::atomic<uint8_t> g_lanState{lan::S_OFF};
 std::atomic<uint32_t> g_lanSelf{0};
 uint32_t g_lanTry = 0;
 portMUX_TYPE g_lanMux = portMUX_INITIALIZER_UNLOCKED;
-LanPkt g_lanIn[LAN_RING], g_lanOut;
+struct LanBufs { LanPkt in[LAN_RING], out; };
+LanBufs& g_lanBuf = psram::make<LanBufs>();   // ~1.2 KB kept off static internal RAM
+LanPkt* const g_lanIn = g_lanBuf.in;
+LanPkt& g_lanOut = g_lanBuf.out;
 int g_lanHead = 0, g_lanCount = 0;
 bool g_lanOutFull = false;
 
@@ -780,10 +784,11 @@ void lanPump(WiFiUDP& udp) {
   uint32_t sentMs = 0;
   bool asleep = true;
   for (; g_lanWant && !g_dark; vTaskDelay(pdMS_TO_TICKS(5))) {
-    if ((int32_t)(millis() - g_nextClock) >= 0) syncConnected();   // the feed holds the radio for a long time
     lanReceive(udp);
     if (lanSend(udp)) sentMs = millis();
     const bool idle = millis() - sentMs > LAN_AWAKE_MS;
+    // The clock sync can block for seconds (no internet, NTP blocked): only while no race is sending.
+    if (idle && (int32_t)(millis() - g_nextClock) >= 0) syncConnected();
     if (idle != asleep) { WiFi.setSleep(idle); asleep = idle; }   // awake while racing: no 100 ms beacon waits
   }
 }
@@ -1128,7 +1133,7 @@ void Radar::read(air::Snapshot& out) {
   if (s != air::S_LIVE) out.n = 0;
 }
 void Lan::start() {
-  g_lanState = lan::S_JOINING;   // also a retry after "no wifi"
+  if (!g_lanRun) g_lanState = lan::S_JOINING;   // a retry after "no wifi"; a task still running keeps its state
   portENTER_CRITICAL(&g_lanMux); g_lanCount = 0; g_lanOutFull = false; portEXIT_CRITICAL(&g_lanMux);
   g_lanWant = true;
   pokeLan();
@@ -1153,11 +1158,10 @@ size_t Lan::recv(void* buf, size_t cap, uint32_t* from) {
   const bool any = g_lanCount > 0;
   if (any) { p = g_lanIn[g_lanHead]; g_lanHead = (g_lanHead + 1) % LAN_RING; g_lanCount--; }
   portEXIT_CRITICAL(&g_lanMux);
-  if (!any) return 0;
-  const size_t n = p.len < cap ? p.len : cap;
-  memcpy(buf, p.data, n);
+  if (!any || p.len > cap) return 0;   // a datagram bigger than the caller's is not one of its own: dropped
+  memcpy(buf, p.data, p.len);
   *from = p.addr;
-  return n;
+  return p.len;
 }
 
 bool Radar::spot(double* lat, double* lon) {

@@ -35,7 +35,8 @@ void Link::tick(uint32_t ms, Wire& mine) {
     take(w, from, ms, (Stage)mine.stage);
   }
   mine.magic = MAGIC; mine.version = VERSION; mine.to = peer_.addr;
-  if ((Stage)mine.stage == Stage::Idle && (Stage)last_.stage == Stage::Idle) return;   // quiet on the track cards
+  // Only an invite goes to everyone; otherwise only to the paired device (and quiet on the track cards).
+  if (!peer_.addr && (Stage)mine.stage != Stage::Looking) { last_ = mine; return; }
   if (!fresh(mine, last_) && ms - sentMs_ < SEND_MS) return;
   radio_->send(&mine, sizeof mine, mine.to);
   last_ = mine; sentMs_ = ms;
