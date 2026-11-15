@@ -89,13 +89,26 @@ static void rounds() {
   setUp(s, 1, DAY);
   build(r, s, DAY, 3);   // a first-timer on 1x: only its new cards exist, and only four of them come at once
   CHECK(r.n == NEW_PER_ROUND);
-  // Practice is a fact still being learned, unless it went well today; a known fact comes only when due.
-  setUp(s, 4, DAY);
-  for (int n = 1; n <= 6; n++) grade(s, cardOf(4, n), EASY, DAY);
-  grade(s, cardOf(4, 1), WRONG, DAY);
+  {
+    bool before[CARDS] = {};
+    for (int i = 0; i < r.n; i++) before[r.card[i]] = true;
+    answer(r, s, WRONG, DAY);   // a miss, then Easy: the next round that day brings new facts, not the missed one alone
+    while (!r.done()) answer(r, s, EASY, DAY);
+    build(r, s, DAY, 4);
+    CHECK(r.n == NEW_PER_ROUND);
+    for (int i = 0; i < r.n; i++) CHECK(!before[r.card[i]]);
+  }
+  // Practice is a fact still being learned and not yet seen today; a known fact comes only when due.
+  setUp(s, 4, DAY - 1);
+  for (int n = 1; n <= 6; n++) grade(s, cardOf(4, n), EASY, DAY - 1);
+  grade(s, cardOf(4, 1), WRONG, DAY - 1);   // due today
   build(r, s, DAY, 5);
-  CHECK(r.n == 1 + NEW_PER_ROUND);
-  for (int i = 0; i < r.n; i++) CHECK(tableOf(r.card[i]) == 4 && (!s.box[r.card[i]] || r.card[i] == cardOf(4, 1)));
+  CHECK(r.n == ROUND);   // 4x1 and some known older facts due, four new, then 4x2..4x6 as practice
+  for (int i = 0; i < r.n; i++) CHECK(tableOf(r.card[i]) == 4 || isDue(s, r.card[i], DAY));
+  grade(s, cardOf(4, 3), HARD, DAY);   // seen today: not practised again today
+  build(r, s, DAY, 5);
+  CHECK(r.n == ROUND);   // 4x4..4x6 fill in
+  for (int i = 0; i < r.n; i++) CHECK(r.card[i] != cardOf(4, 3));
   setUp(s, TABLES, DAY);   // every table known and nothing due: practice from all of them
   for (int n = 1; n <= FACTS; n++) { grade(s, cardOf(TABLES, n), EASY, DAY); grade(s, cardOf(TABLES, n), EASY, DAY + 1); }
   for (int c = 0; c < CARDS; c++) s.due[c] = (uint16_t)(DAY + 3);

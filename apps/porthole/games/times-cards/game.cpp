@@ -6,12 +6,13 @@
 #include "generated/big.h"
 #include "generated/fonts.h"
 #include "launcher_icon.h"
+#include "palette.h"
 
 namespace cards {
 namespace {
 using canvas::Box;
 // Times Cards' own look: an index card (cream, a red margin line, blue rules) on a periwinkle desk.
-constexpr uint16_t rgb(uint32_t c) { return (uint16_t)(((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x001F)); }
+constexpr uint16_t rgb(uint32_t c) { return rgb888_to_565(c); }
 constexpr uint16_t DESK = rgb(0xaebdf2), SHADOW = rgb(0x8796d6), CARD = rgb(0xfffaf0), RULE = rgb(0xcfdff5),
                    MARGIN = rgb(0xf09090), INK = rgb(0x2a2d4f), SOFT = rgb(0x3f4370), WHITE = rgb(0xffffff);
 constexpr uint16_t GRADE_C[3] = {rgb(0x23804a), rgb(0xa65a00), rgb(0xc43c34)};   // Easy, Hard, Wrong: white text reads on each
@@ -70,15 +71,15 @@ void Game::enter(const AppEnter& e) {
   clampDue(save_, today());
   round_ = Round{};
   go(P_HOME);
-  gate_.shown(ms_);   // the launcher's tap is not this page's
 }
 
-// A new page ignores the finger that turned it, by place, so a double tap acts once but a grade right after the answer
-// shows still counts.
+// A new page ignores touches for a moment. The answer page ignores only the finger that turned the card, by place, so
+// a double tap on the card acts once but a grade right after the answer shows still counts.
 void Game::go(Page p) {
   page_ = p;
   frames_.reset();
-  gate_.shownAt(ms_, in_.x, in_.y);
+  if (p == P_ANSWER) gate_.shownAt(ms_, in_.x, in_.y);
+  else gate_.shown(ms_);
 }
 
 void Game::deal() {
@@ -147,7 +148,7 @@ void Game::draw() const {
     char t[32];
     if (round_.leveledUp) snprintf(t, sizeof t, "Next up: %d \xC3\x97!", save_.level);
     const char* title = round_.leveledUp ? t : !round_.hard && !round_.wrong ? "Perfect round!"
-                        : round_.wrong * 2 > round_.n ? "Nice try!" : "Great job!";
+                        : round_.wrong * 2 > round_.base ? "Nice try!" : "Great job!";
     centered(FONT40, title, 240, 100, INK);
     indexCard({80, 140, 400, 304});
     const int counts[3] = {round_.easy, round_.hard, round_.wrong};
@@ -187,8 +188,9 @@ void Game::render() {
   struct Look { uint8_t page, card, level, at, n, held; } look = {page_, 0, save_.level, (uint8_t)round_.at,
                                                                    (uint8_t)round_.n, 0};
   if (page_ == P_ASK || page_ == P_ANSWER) look.card = (uint8_t)round_.current();
-  const ui::Box* hot[] = {&HOME, &GO, &GRADE[0], &GRADE[1], &GRADE[2], &BIG_CARD};
-  for (int i = 0; i < 6; i++) if (in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
+  const ui::Box* hot[] = {&HOME, &GO, &GRADE[0], &GRADE[1], &GRADE[2], &BIG_CARD};   // what each page draws pressed
+  const bool on[P_COUNT][6] = {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 1}, {1, 0, 1, 1, 1, 0}, {1, 1, 0, 0, 0, 0}};
+  for (int i = 0; i < 6; i++) if (on[page_][i] && in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
   frames_.render(nullptr, 0, os::crc32(&look, sizeof look), [&] { draw(); });
 }
 

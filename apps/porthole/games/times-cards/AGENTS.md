@@ -46,7 +46,7 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
 
 ## Save
 
-One 520-byte blob per kid (`timescards/s<id>`, written by the shell after each answer): magic, version, size, level,
+One 520-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
 start table, answers ever, box, due day and last-seen day per card, crc. Append-only: a new field goes right before `crc` with a
 zero that is a sensible default, `SAVE_VERSION` goes up, nothing is reordered or resized. A blob of the wrong size or
 crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.

@@ -132,8 +132,8 @@ struct Round {
 inline uint32_t nextRand(uint32_t& r) { r ^= r << 13; r ^= r >> 17; r ^= r << 5; return r; }
 
 // Which cards come first: the due ones, oldest due first (a lower box breaks a tie), up to the round less the room kept
-// for new cards; then up to NEW_PER_ROUND of the level's new facts, in order; then practice: facts still being learned,
-// unless one already went well today (a box-1 fact, missed or hard, is practised again), least-known first. A known
+// for new cards; then up to NEW_PER_ROUND of the level's new facts, in order; then practice: facts still being learned
+// and not yet seen today (a missed one gets its second look in its own round), least-known first. A known
 // fact comes only when due, so a round can be short. Only when nothing at all qualifies is the round practice from every
 // unlocked table, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
 inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
@@ -156,8 +156,7 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
        ROUND - nf);
   for (int i = 0; i < nf; i++) { used[fresh[i]] = true; r.card[r.n++] = (uint8_t)fresh[i]; }
   auto least = [&](int a, int b) { return b < 0 || s.box[a] < s.box[b] || (s.box[a] == s.box[b] && s.due[a] < s.due[b]); };
-  pick([&](int a, int b) { return (s.box[a] == 1 || (s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today)) && least(a, b); },
-       ROUND);
+  pick([&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); }, ROUND);
   if (!r.n) pick(least, ROUND);
   r.base = r.n;
   uint32_t x = seed | 1;

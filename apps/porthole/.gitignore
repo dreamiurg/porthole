@@ -17,3 +17,4 @@ build/
 !docs/racing/pro-playtest/*.png
 !games/*/art/launcher.png
 !docs/launcher/*.png
+!docs/times-cards/*.png
