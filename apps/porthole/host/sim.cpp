@@ -359,7 +359,13 @@ static void boot(bool seedClock = true) {
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
-static void reset() { wipe(); boot(); }
+// The browser demo (make web) starts on a guest's Home, not on making a profile; a board always asks.
+static void demoProfile() {
+#ifdef __EMSCRIPTEN__
+  g_shell.createProfile("Guest", 8, "");
+#endif
+}
+static void reset() { wipe(); boot(); demoProfile(); }
 
 // Physical pixel (x, y) of the panel as RGB888: the indexed frame upscaled 3x through the tint's palette, or the RGB565
 // surface as is, with the round glass masked, under the active backlight (Shell::backlight(); the firmware's idle
@@ -687,6 +693,7 @@ int main(int argc, char** argv) {
   g_epoch = timezones::toUtc(g_epoch);   // --now and the deterministic default remain local-wall inputs
   g_shell.update(now(), g_ms, Input{});   // initial programmatic profile/newgame hooks run before the first rendered frame
 #ifdef __EMSCRIPTEN__
+  demoProfile();
   return 0;   // the runtime stays up; the page drives it through web_cmd
 #endif
   if (script) runScript(script);
