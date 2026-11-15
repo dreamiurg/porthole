@@ -1,6 +1,7 @@
-# Puzzles from World: the six kinds, the times tables, a round of five with three answers each, what the pup does
-# after an answer, the round's end and back to the kinds. Every answer counts as today's training; a right one is
-# kept for the scrapbook. A spelling round shows its clue over the word with a gap. Back leaves a round any time.
+# Puzzles from World: the three strands, each at the kid's own level (an 8-year-old starts plus and minus on
+# two-digit numbers with carrying, times on groups of 2, 5 and 10, words of five or six letters); a round of five with three answers each,
+# what the pup does after an answer, the round's end and back to the strands. Five right moves the strand's level up
+# and the round's end says so; two or fewer moves it back down, quietly. Every answer counts as today's training.
 profile Sam 8
 app biscuit
 wait 450
@@ -15,51 +16,72 @@ wait 450
 expect-screen biscuit_puzzles
 ui-check biscuit_puzzles
 snap z01_puzzles
-# times tables: the fours
-tap 106 84
-wait 450
-expect-screen biscuit_tables
-ui-check biscuit_tables
-snap z02_tables
-tap 53 84
+# times: a story about groups, all five right, and the level goes up
+tap 80 84
 wait 450
 expect-screen biscuit_puzzle
-expect kind=3
-expect table=4
+expect strand=1
+expect level=1
 expect asked=0
 expect answered=-1
 ui-check biscuit_puzzle
-snap z03_question
+snap z02_story
 repeat 5
-tap 80 97
+answer-puzzle right
 wait 450
-expect answered=1
 tap 80 132
 wait 450
 end
 expect asked=5
+expect right=5
 expect daily=16
+expect levels=030
 ui-check biscuit_puzzle-done
-snap z05_done
-# a slow double-tap on the last Next: the second tap lands on More, and the round's end stays up
-tap 80 132
+snap z03_level_up
+expect tricks=100000
+# a slow double-tap on the last Next: the second tap lands on More (the fourth right answer taught Sit, so More
+# shares the row with Show me), and the round's end stays up
+tap 52 132
 wait 450
 expect-screen biscuit_puzzle
 wait 600
-tap 80 132
+tap 52 132
 wait 450
 expect-screen biscuit_puzzles
-# long words: the clue over the gap
-tap 106 108
+# times again, one level up: groups of 3 and 4; all wrong, and it goes back down
+tap 80 84
 wait 450
-expect kind=5
+expect level=2
+repeat 5
+answer-puzzle wrong
+wait 450
+tap 80 132
+wait 450
+end
+expect right=0
+expect levels=020
+wait 600
+tap 80 132
+wait 450
+# plus and minus starts at two-digit numbers with carrying for an 8-year-old
+tap 80 60
+wait 450
+expect strand=0
+expect level=4
+snap z04_numbers
+tap 50 25
+wait 450
+# words: the clue over the gap
+tap 80 108
+wait 450
+expect strand=2
+expect level=2
 ui-check biscuit_puzzle-spelling
-snap z06_spelling
-tap 44 97
+snap z05_spelling
+answer-puzzle wrong
 wait 450
-expect answered=0
 ui-check biscuit_puzzle-answered
-snap z07_answered
+snap z06_answered
 tap 50 25
 wait 450
 expect-screen biscuit_puzzles

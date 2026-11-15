@@ -57,15 +57,17 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the shell's migration can use it without a second `.o` colliding with Pets Club's in the
   coverage build. `namespace biscuit` throughout -- Pets Club owns the global `Save` and
   `namespace pet`.
-  - Save: 116 bytes (`SAVE_VERSION = 3`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
+  - Save: 184 bytes (`SAVE_VERSION = 4`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
     puzzles` and a v1 blob loads with `booksDay = daysTogether`; v3 appended `starsPaid, decor, reserved3` and a v2
-    blob loads with nothing paid in or bought), NVS namespace
+    blob loads with nothing paid in or bought; v4 appended `puzzleLevels[3], puzzleReviewCount, puzzleReviews[8]` and
+    a v3 blob loads with every strand never played and nothing to review), NVS namespace
     `"biscuit"` (`STORE`, never renamed once it ships), key `s<profile id>`. Fields:
     `magic, version, size` header; `createdAt, updatedAt, lastVisitDay,
     fullness/happiness/energy, friendship, daysTogether, careCounts[3], discoveries[3],
     stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping, petName[13],
-    named, readLevel, readStreak, moreStories, booksDay, puzzles, starsPaid, decor, readsRight`
-    (`readLevel, readStreak, readsRight` were reserved bytes, so zero in every older blob; no version bump); `crc` last -- append-only like every other game (shared app brief
+    named, readLevel, readStreak, moreStories, booksDay, puzzles, starsPaid, decor, readsRight, puzzleLevels[3],
+    puzzleReviewCount, puzzleReviews[8]{strand, level, a, b, c, misses, due}` (`readLevel, readStreak, readsRight`
+    were v3's reserved bytes, so zero in every older blob); `crc` last -- append-only like every other game (shared app brief
     constraint 4). The child's name and the daily play budget live in the shell's profile,
     not here. `named` gates everything: nothing decays, no visit counts, no progress until
     the pup has a name.
@@ -89,7 +91,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`; the first 7 keep their bits in `stories`, the
   rest in `moreStories`, and those open at `storyDay`: their content day, but no sooner than `NEW_BOOK_GAP` (2) days
   apart from `booksDay`, so a pup already past day 22 gets them one at a time), `content_puzzles.h` (the spelling
-  words and their clues, short and long; not persisted by index), `content_discoveries.h`
+  words and their clues, short and long, the times stories' things, the strands' labels; the review queue keeps a
+  word or a story by its place in its list, so append), `content_discoveries.h`
   (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12
   topics), `content_daily.h` (7 daily adventures, 6 trick names, 12 sticker names; which
   activities a day asks for, the trick lessons and unlock days are rules, in `pet.h`) -- `namespace biscuit`, `inline constexpr`, converted once from
@@ -141,7 +144,13 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   cancels it), window (nap), fern and the pup (a tap pets it), Feed/Play/Read/More, fetch,
   and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
   scrapbook, Today's adventure, then Puzzles and Doghouse along the bottom), `screens_train.cpp` (Tricks, Training
-  watch/do), `screens_puzzles.cpp` (Puzzles: the kinds, the times tables, a round of five; the round's end says
+  watch/do), `screens_puzzles.cpp` (Puzzles: three strands, plus and minus, times and words, each at the kid's own level
+  (`puzzles.h`, design `docs/design/adaptive-practice.md`): a strand never played starts from the profile's age, a
+  round of five right moves it up a level and two or fewer down, one question of every round is from the level
+  below, and the level is saved as level + 1 in `puzzleLevels`; a miss goes on the review queue (`review.h`,
+  `puzzleReviews`), due the next day, and a round in its strand on or after that day asks one due item in place of a
+  question, right taking it off; after a miss the feedback shows how to solve it (`puzzles::how`) in place of the
+  pup's nudge; a round of five; the round's end says
   the stars it earned (or how many right answers the next one needs) and the trick it taught, and Show me has the pup
   do it at home and name it), `screens_doghouse.cpp` (the Doghouse room, its Shop and a
   thing's page), `screens_reads.cpp` (Little reads: a round of three passages in the reader, each with its question,

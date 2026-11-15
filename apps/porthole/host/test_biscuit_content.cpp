@@ -370,19 +370,30 @@ static void screensGate() {
       if (tileDetails[i][j]) fits(inTile(TILE_DETAIL, tiles[i]), "tile", tileDetails[i][j]);
     }
 }
-// Puzzles: the kinds and tables, every clue, the widest questions, answers and what the pup does after one.
+// After a miss, the answer and how to solve it, for questions of every level.
+static void howGate() {
+  char line[160];
+  uint32_t rng = 5;
+  for (int strand = 0; strand < puzzles::WORDS; strand++)
+    for (uint8_t level = 0; level < puzzles::LEVELS[strand]; level++)
+      for (int n = 0; n < 300; n++) {
+        const puzzles::Puzzle q = puzzles::build(puzzles::pick((puzzles::Strand)strand, level, rng), rng);
+        char how[48];
+        puzzles::how(q.item, how);
+        snprintf(line, sizeof line, "It's %s\n%s", q.solved, how);
+        fits(FEEDBACK, "how", line);
+      }
+}
+// Puzzles: the strands, every clue and times story, the widest questions, answers and what the pup does after one.
 static void puzzleGate() {
-  for (int i = 0; i < 6; i++) {
-    fits(GRID_LABEL, "grid", KIND_LABELS[i]);
-    fits(GRID_LABEL, "grid", TABLE_LABELS[i]);
-  }
-  static const char* const TITLES[] = {"Puzzles", "Times tables", "All done!", "Puzzle 5 of 5"};
+  for (const char* t : STRAND_LABELS) fits(STRAND_LABEL, "strand", t);
+  static const char* const TITLES[] = {"Puzzles", "All done!", "Puzzle 5 of 5"};
   for (const char* t : TITLES) fits(HEADER, "puzzle title", t);
   static const char* const WIDES[] = {"Puzzles", "Next", "More puzzles"};
   for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "puzzle wide", t);
   static const char* const ANSWERS[] = {"999", "88", "w", "m"};
   for (int i = 0; i < 3; i++) for (const char* t : ANSWERS) fits(buttonLabel(ANSWER[i], &FONT28), "answer", t);
-  static const char* const ASKS[] = {"88 + 88 = ?", "88 - 88 = ?", "8 x 10 = ?"};
+  static const char* const ASKS[] = {"88 + 11 = ?", "99 - 88 = ?", GROUP_ASK, SHARE_ASK};
   for (const char* t : ASKS) fits(ASK, "ask", t);
   char ask[24], line[160];
   const SpellWord* lists[2] = {SHORT_WORDS, LONG_WORDS};
@@ -407,9 +418,17 @@ static void puzzleGate() {
       snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", after[i]);
       fits(FEEDBACK, "feedback", filled(line));
     }
+  for (const GroupThing& t : GROUP_THINGS) {   // the widest stories: two-digit numbers where they can be
+    snprintf(line, sizeof line, "5 %s, 10 %s in each.", t.groups, t.things); fits(CLUE, t.things, line);
+    snprintf(line, sizeof line, "81 %s shared by 9 pups.", t.things); fits(CLUE, t.things, line);
+  }
+  fits(FEEDBACK, "groups", filled("It's 5 x 10 = 50\n{pet} thinks that one was tricky."));
+  howGate();
   snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", STAR_CHEER);
   fits(FEEDBACK, "star", filled(line));
   fits(PUZZLE_DONE, "done", filled("5 right this time!\n5 more right for a star.\n{pet} is so proud of you."));
+  snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} is so proud of you.\n%s", LEVEL_UP);
+  fits(PUZZLE_DONE, "level up", filled(line));
 }
 // The doghouse: World's two buttons, the balance at its widest, the shop's rows, a thing's page, and a round's end
 // that taught a trick. Every thing's picture decodes, fills at least 2x on its page, and sits in the room.
@@ -443,6 +462,8 @@ static void doghouseGate() {
     snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} learned %s: 2 of 3.", t.name);
     fits(PUZZLE_DONE, t.id, filled(line));
     snprintf(line, sizeof line, "5 right this time!\n+2 stars!\n{pet} can do %s now!", t.name); fits(PUZZLE_DONE, t.id, filled(line));
+    snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} learned %s: 2 of 3.\n%s", t.name, LEVEL_UP);
+    fits(PUZZLE_DONE, t.id, filled(line));
     snprintf(line, sizeof line, "Watch me try %s! Lesson 2 of 3 done.", t.name); fits(BUBBLE, t.id, filled(line));
     snprintf(line, sizeof line, "Watch me! I can do %s now!", t.name); fits(BUBBLE, t.id, filled(line));
   }

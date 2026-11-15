@@ -38,12 +38,12 @@ class Game : public App {
   // shared by the screens (screens_*.cpp)
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
-    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES, SC_TABLES,
+    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES,
     SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_READ, SC_READ_ASK, SC_COUNT
   };
 
  private:
-  Save save_{}, out_{};                       // the working pup, and the sealed copy takeSave hands out
+  Save save_{};                               // the working pup; takeSave seals it and hands it out
   Profile who_{};                             // the kid playing: {name} in every line
   bool dirty_ = false, wantsHome_ = false;
   bool daylight_ = false;                     // AppEnter::daylight: day scenes whatever the clock says
@@ -73,10 +73,15 @@ class Game : public App {
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
   FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
-  // Puzzles: the kind (and times table) picked, the question shown, how far the round is (puzzles::ROUND = done),
-  // the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits).
-  puzzles::Kind kind_ = puzzles::ADD; uint8_t table_ = 0;
-  puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
+  // Puzzles: the strand picked and the round's level, the question shown, how far the round is (puzzles::ROUND =
+  // done), the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits). One
+  // question of the round, at easyAt_, is from the level below; levelUp_ says the round's end moved the level up.
+  puzzles::Strand strand_ = puzzles::NUMBERS; uint8_t level_ = 0; int easyAt_ = 0; bool levelUp_ = false;
+  int reviewAt_ = -1; puzzles::Item review_{};   // the round's one missed item due again (review.h), at reviewAt_
+  // The question shown is kept as its item and the seed that orders its answers, and rebuilt where it is needed: a
+  // whole Puzzle is 140 bytes of static RAM the firmware doesn't have.
+  puzzles::Item question_{}; uint32_t questionSeed_ = 1;
+  int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
   int item_ = 0;                              // Doghouse: the thing the shop opened
@@ -130,10 +135,11 @@ class Game : public App {
   void openLibrary(Screen back); void openTricks(Screen back);
   void stickerNews();
   void updatePuzzles(); void drawPuzzles();
-  void updateTables(); void drawTables();
-  void startPuzzles(puzzles::Kind kind, uint8_t table);
-  void nextPuzzle();
+  void startPuzzles(puzzles::Strand strand); uint8_t puzzleLevel(puzzles::Strand strand) const;
+  void nextPuzzle(); void endRound();
+  puzzles::Puzzle puzzle() const { uint32_t s = questionSeed_; return puzzles::build(question_, s); }
   void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
+  void feedback(const puzzles::Puzzle& p, bool right, char* line, size_t cap) const;
   void updateDoghouse(); void drawDoghouse();
   void updateShop(); void drawShop();
   void updateItem(); void drawItem();

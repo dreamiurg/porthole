@@ -49,8 +49,11 @@ enum class Cue : uint8_t { Left, Up, Right, Down, Paw };
 // loadBlob sets from daysTogether for a v1 blob), bump SAVE_VERSION, never
 // reorder or resize a field. The kid's name and the daily play budget live in the shell's profile, not here.
 constexpr uint32_t SAVE_MAGIC = 0x54435342;   // "BSCT"
-constexpr uint16_t SAVE_VERSION = 3;
-constexpr size_t SAVE_V1_SIZE = 96, SAVE_V2_SIZE = 108, SAVE_V3_SIZE = 116;
+constexpr uint16_t SAVE_VERSION = 4;
+constexpr size_t SAVE_V1_SIZE = 96, SAVE_V2_SIZE = 108, SAVE_V3_SIZE = 116, SAVE_V4_SIZE = 184;
+// A puzzle missed, to ask again on a later day (puzzles::Item's bytes, so this header needs no puzzle content).
+struct PuzzleReview { uint8_t strand, level, a, b, c, misses; uint16_t due; };   // due: dayOf(), 0 = empty
+constexpr int PUZZLE_STRANDS = 3, PUZZLE_REVIEWS = 8;
 struct Save {
   uint32_t magic;
   uint16_t version, size;
@@ -74,9 +77,14 @@ struct Save {
   // paid in at the first visit. The doghouse's things bought with stars (NUM_DECOR bits).
   uint32_t starsPaid;
   uint16_t decor, readsRight;          // readsRight was reserved too
+  // v4: each puzzle strand's level + 1 (0: never played, it starts from the kid's age), and the puzzles missed that
+  // come back on a later day. Both are checked where they are used (screens_puzzles.cpp), never here: a bad byte
+  // there must not cost a kid their pup.
+  uint8_t puzzleLevels[PUZZLE_STRANDS], puzzleReviewCount;
+  PuzzleReview puzzleReviews[PUZZLE_REVIEWS];
   uint32_t crc;
 };
-static_assert(sizeof(Save) == SAVE_V3_SIZE, "Save is persisted: append before crc, never resize");
+static_assert(sizeof(Save) == SAVE_V4_SIZE, "Save is persisted: append before crc, never resize");
 
 inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
 inline float clampNeed(float v) { return v < NEED_FLOOR ? NEED_FLOOR : v > NEED_MAX ? NEED_MAX : v; }
