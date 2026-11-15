@@ -10,6 +10,10 @@
 #include <miniz.h>
 #endif
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace packed565 {
 namespace {
 constexpr size_t WINDOW = 32768;

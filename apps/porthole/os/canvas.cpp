@@ -2,6 +2,10 @@
 #include <math.h>
 #include "font.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace canvas {
 namespace {
 Box clip_ = FULL;
