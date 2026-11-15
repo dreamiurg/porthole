@@ -287,8 +287,22 @@ static void tooManyMovers() {
   assert(calls == 1);   // back within N: one whole frame, then nothing changed
 }
 
+// The indexed surface's 8x8 font (os/gfx.h): glyphs trimmed to their ink, a 3 px space, '?' for a byte past ASCII.
+static void indexedFont() {
+  uint8_t widths[256];
+  for (int c = 0; c < 256; c++) widths[c] = (uint8_t)gfx::glyphWidth((char)c);
+  assert(os::crc32(widths, sizeof widths) == 0x386df87au);   // every glyph's width
+  assert(widths[' '] == 3 && widths['i'] == 4 && widths['W'] == 7 && widths['.'] == 2 && widths[0x80] == widths['?']);
+  assert(gfx::textWidth("Hello, world!") == 79 && gfx::textWidth("Hello, world!", 2) == 158 && gfx::textWidth("") == 0);
+  memset(gfx::fb, 0, sizeof gfx::fb);
+  assert(gfx::text(3, 5, "Wag it! (9)", 7) == 68);   // the end x
+  gfx::text(2, 40, "Big", 9, 2);
+  assert(os::crc32(gfx::fb, sizeof gfx::fb) == 0x686e30ebu);
+}
+
 int main() {
   widths();
+  indexedFont();
   pages();
   drawing();
   clipped();
