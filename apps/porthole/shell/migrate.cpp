@@ -30,12 +30,16 @@ void migrate(Store& st, Profiles& p) {
   uint8_t blob[BLOB_MAX]; Save h; int n = 0;
   for (int slot = 0; slot < MAX_HOUSES; slot++) {
     size_t got = st.load(PETS_NS, key('s', slot), blob, sizeof blob);
-    if (got && pet::loadBlob(blob, got, h)) { adoptHouse(st, p, slot, h); n++; }
+    if (!got || !pet::loadBlob(blob, got, h)) continue;
+    n++;
+    // A record already there is this house from a run cut short, or (the marker never landed) a profile made since:
+    // its stars, face and code are not in the pup's save, so it is never rebuilt from it.
+    if (!p.used[slot]) adoptHouse(st, p, slot, h);
   }
   size_t got = n ? 0 : st.load(PETS_NS, "save", blob, sizeof blob);   // the pre-house key, only on a device without houses
   if (got && pet::loadBlob(blob, got, h)) {
     st.save(PETS_NS, key('s', 0), blob, got);   // the save first: a crash after it re-migrates from s0
-    adoptHouse(st, p, 0, h);
+    if (!p.used[0]) adoptHouse(st, p, 0, h);
   }
   uint8_t mark = 1;
   st.save(NS, MIGRATED, &mark, sizeof mark);
