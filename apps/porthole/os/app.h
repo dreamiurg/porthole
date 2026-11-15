@@ -17,9 +17,13 @@ struct SaveSlot { const void* data; size_t len; };                             /
 // daylight: the kid picked a brightness on the launcher, so the game draws day whatever the clock says (tint() returns
 // TINT_DAY, no night scenes); false is Auto, the light follows the clock. A game's own night (a pet asleep) still holds.
 // stars: who's star balance (os/stars.h), kept and saved by the shell; nullptr when there is none (tests).
+// avatars: the shell's avatar pictures, Profile::avatar indexing them (modulo avatarCount), for a game that shows who
+// is playing (Rally's race together); nullptr in tests.
 struct AppEnter {
   const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight;
   uint32_t* stars;
+  const gfx::Sprite* avatars = nullptr;
+  int avatarCount = 0;
 };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the

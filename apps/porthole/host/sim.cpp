@@ -7,7 +7,7 @@
 //                            | echo WORD | watch MS | monkey N SEED | tilt X Y Z | shake | perf | reboot | sys WHAT [ARG]
 //                            | feed WHAT [ARG]
 //   sim --serve              headless; stdin commands: down X Y | move X Y | up | tick MS | skip SEC | reset | frame | dbg CMD [ARG]
-//                            | tilt X Y Z | shake | perf
+//                            | tilt X Y Z | shake | perf | do SCRIPT-COMMAND
 // tilt sets the motion sensor's gravity (milli-g, Input::gx/gy/gz; upright (0 1000 0) until set), shake jolts it for a
 // few frames, perf prints the average update and render time per frame since the last perf. reboot is a power cycle
 // (saves kept). sys sets the stub wireless updates (SimSystem below): version V (the running firmware; the shell reads
@@ -18,6 +18,7 @@
 // feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
 // nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
 // `debug` adds feed_state/feed_on/feed_km/feed_starts and sys_home/sys_lat/sys_lon/sys_lookups/sys_addr.
+// Rally's Together finds other sims on this computer over UDP (SimLan below); not in the browser build.
 #include <assert.h>
 #include <dirent.h>
 #include <math.h>
@@ -33,6 +34,14 @@
 #include "shell.h"
 #include "netclock.h"
 #include "timezone.h"
+#include "lan.h"
+#ifndef __EMSCRIPTEN__
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
 #ifdef HAVE_SDL
 #include <SDL.h>
 #endif
@@ -291,6 +300,52 @@ struct SimFeed : air::Feed {
 };
 static SimFeed g_feed;
 
+#ifndef __EMSCRIPTEN__
+// Rally's race together between sims on one computer: UDP on 127.0.0.1, each sim on the first free port of LAN_PORT..
+// +3, a "broadcast" sent to the other three. Run each sim from its own directory (the saves are build/host/*.sav).
+class SimLan final : public lan::Radio {
+ public:
+  static constexpr int LAN_PORT = 47800, LAN_PORTS = 4;
+  void start() override {
+    if (fd_ >= 0) return;
+    fd_ = socket(AF_INET, SOCK_DGRAM, 0);
+    for (int p = LAN_PORT; fd_ >= 0 && p < LAN_PORT + LAN_PORTS; p++) {
+      sockaddr_in a = to(p);
+      if (bind(fd_, (sockaddr*)&a, sizeof a) == 0) { port_ = p; fcntl(fd_, F_SETFL, O_NONBLOCK); return; }
+    }
+    stop();   // no free port: like a board with no wifi saved
+    failed_ = true;
+  }
+  void stop() override { if (fd_ >= 0) close(fd_); fd_ = -1; port_ = 0; }
+  lan::State state() override { return port_ ? lan::S_READY : failed_ ? lan::S_NO_WIFI : lan::S_OFF; }
+  uint32_t self() override { return (uint32_t)port_; }
+  void send(const void* data, size_t len, uint32_t to) override {
+    for (int p = LAN_PORT; port_ && p < LAN_PORT + LAN_PORTS; p++) {
+      if (p == port_ || (to && (uint32_t)p != to)) continue;
+      sockaddr_in a = this->to(p);
+      sendto(fd_, data, len, 0, (sockaddr*)&a, sizeof a);
+    }
+  }
+  size_t recv(void* buf, size_t cap, uint32_t* from) override {
+    if (!port_) return 0;
+    sockaddr_in a{}; socklen_t n = sizeof a;
+    const ssize_t got = recvfrom(fd_, buf, cap, 0, (sockaddr*)&a, &n);
+    if (got <= 0) return 0;
+    *from = ntohs(a.sin_port);
+    return (size_t)got;
+  }
+ private:
+  int fd_ = -1, port_ = 0;
+  bool failed_ = false;
+  static sockaddr_in to(int port) {
+    sockaddr_in a{};
+    a.sin_family = AF_INET; a.sin_port = htons((uint16_t)port); a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    return a;
+  }
+};
+static SimLan g_lan;
+#endif
+
 static FileStore g_store;
 static SimSystem g_sys;
 static Shell& g_shell = psram::make<Shell>();   // as the firmware builds it
@@ -359,6 +414,9 @@ static void boot(bool seedClock = true) {
   }
   g_sys.powerOn();
   air::setFeed(&g_feed);
+#ifndef __EMSCRIPTEN__
+  lan::setRadio(&g_lan);
+#endif
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
@@ -477,6 +535,7 @@ static void dbg(const char* a, const char* b) {
   g_shell.debugCmd(cmd);
 }
 
+static void scriptLine(const char* line);   // one --script command, below
 // --serve mode: newline-delimited commands on stdin, one response on stdout per command (flushed).
 // down/move/up/tick/skip/reset all print "ok"; frame prints a binary PPM (P6) preceded by "PPM <bytes>".
 // serveLine runs one command; the browser build (web_cmd below) calls it directly, with no stdin.
@@ -494,6 +553,7 @@ static void serveLine(const char* line) {
   else if (!strcmp(cmd, "dbg")) { dbg(a, b); puts("ok"); }
   else if (!strcmp(cmd, "tilt")) { char c[64] = {0}; sscanf(line, "%*s %*s %*s %63s", c); setTilt(a, b, c); puts("ok"); }
   else if (!strcmp(cmd, "shake")) { g_shakeFrames = 6; puts("ok"); }
+  else if (!strcmp(cmd, "do")) { scriptLine(line + 3); puts("ok"); }   // any --script command (two sims in step)
   else if (serveExtra(cmd, a, b)) { frame(down, cx, cy); g_ms += 33; }
 }
 static void runServe() {
@@ -607,17 +667,19 @@ static const Named COMMANDS[] = {
   {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
   {"feed", [](Finger&, const char* a, const char* b, const char*) { g_feed.set(a, b); }},
 };
+static void scriptLine(const char* line) {
+  static Finger finger;
+  char cmd[32] = {0}, a[64] = {0}, b[64] = {0}, c[64] = {0};
+  if (sscanf(line, "%31s %63s %63s %63s", cmd, a, b, c) < 1 || cmd[0] == '#') return;
+  const Named* hit = nullptr;
+  for (const Named& n : COMMANDS) if (!strcmp(cmd, n.name)) hit = &n;
+  if (hit) hit->fn(finger, a, b, c); else fprintf(stderr, "unknown command: %s\n", cmd);
+}
 static void runScript(const char* path) {
   FILE* f = fopen(path, "r"); if (!f) { perror(path); exit(1); }
   setvbuf(stdout, nullptr, _IOLBF, 0);  // keep every line written before a sanitizer abort
-  char line[256]; Finger finger;
-  while (fgets(line, sizeof line, f)) {
-    char cmd[32] = {0}, a[64] = {0}, b[64] = {0}, c[64] = {0};
-    if (sscanf(line, "%31s %63s %63s %63s", cmd, a, b, c) < 1 || cmd[0] == '#') continue;
-    const Named* hit = nullptr;
-    for (const Named& n : COMMANDS) if (!strcmp(cmd, n.name)) hit = &n;
-    if (hit) hit->fn(finger, a, b, c); else fprintf(stderr, "unknown command: %s\n", cmd);
-  }
+  char line[256];
+  while (fgets(line, sizeof line, f)) scriptLine(line);
   fclose(f);
 }
 

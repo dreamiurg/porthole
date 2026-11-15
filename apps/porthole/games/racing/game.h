@@ -5,9 +5,11 @@
 #include "race.h"
 #include "render.h"
 #include "save.h"
+#include "together.h"
 #include "ui.h"
 
 namespace racing {
+constexpr uint32_t RESUME_MS = 1000;   // the Ready beat before a paused race moves again
 class Game : public App {
  public:
   const char* name() const override { return "Rally"; }
@@ -23,7 +25,7 @@ class Game : public App {
   bool takeSave(const void** data, size_t* len, bool allowed) override;
   bool saveUrgent() const override { return urgent_; }
   bool wantsHome() override { const bool w = home_; home_ = false; return w; }
-  void leave() override {}
+  void leave() override;
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;
@@ -31,6 +33,7 @@ class Game : public App {
   float steering() const { return steer_; }
   using Screen = paint::Page;   // one page per screen
   Screen screen() const { return screen_; }
+  paint::Duo duo() { paint::Duo d; duoView(d); return d; }   // the race together as the pages show it
 
  private:
   Screen screen_ = Screen::Tracks;
@@ -75,5 +78,42 @@ class Game : public App {
   void seedLevels();
   int raceLevel() const;   // the level this kid's next race on this track runs at
   int board(paint::Row out[MAX_PROFILES]) const;
+  int levelOn(int track) const;   // the level this kid's next race on `track` runs at
+  void fresh();                   // a new run's timers and flags, then the race page
+
+  // Together: a race with a kid on another Porthole on the same wifi (together.h). game_together.cpp.
+  together::Link link_;
+  together::Wire wire_{}, peer_{};   // what this device says; the other kid's last word (kept after they go)
+  bool duo_ = false, host_ = false, gripDone_ = false, raced_ = false, gone_ = false, peerPaused_ = false;
+  uint8_t session_ = 0, raceId_ = 0, applied_[CARS] = {}, pausesLeft_ = 0, starsGot_ = 0, jointToday_ = 0;
+  uint32_t lastGen_ = 0, noticeMs_ = 0, starDay_ = 0;
+  uint32_t* wallet_ = nullptr;
+  char notice_[32] = {};
+  const gfx::Sprite* avatars_ = nullptr;
+  int nAvatars_ = 0;
+  uint16_t facePx_[3][20 * 20] = {};   // this kid, the other kid, an invite: the avatars in RGB565
+  pic::Pic faces_[3] = {};
+  void togetherTick(uint32_t dt);
+  void fillWire();
+  together::Stage stageNow() const;
+  void onPeer();
+  void peerGone();
+  void startLooking();
+  void joinInvite();
+  void endTogether();
+  void say(const char* fmt, const char* name);
+  void updateLooking();
+  void updateLobby();
+  void awaitStart();
+  void startJointRace();
+  void finishLine(uint32_t dt);
+  void jointFinish();
+  bool peerHold();                // the other kid paused: this race waits, then a Ready beat
+  float peerDist() const;
+  float windTop() const;
+  void places(uint8_t* mine, uint8_t* theirs) const;
+  const pic::Pic* face(int slot, int avatar);
+  void duoView(paint::Duo& d);
+  void peerView(paint::Duo& d);
 };
 }  // namespace racing

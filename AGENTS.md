@@ -38,6 +38,9 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    about the kid. The only traffic is the daily firmware update check, its download, a clock sync, and an optional public-IP time-zone guess to ipapi.co;
    while Radar is open, home rounded to ~1 km goes to adsb.fi every 5 s and the callsigns it sees to
    adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
+   The one exception, a user decision of 2026-11-15: Rally's race together sends the kid's profile name
+   and avatar to the other Porthole on the same home wifi (UDP on the local network only, never off it),
+   so the kids see who is joining; nothing else about the kid goes with it.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box
