@@ -88,6 +88,7 @@ let cmd = () => {};
 var Module = {
   print() {},   // the --serve protocol's "ok" replies
   printErr: (t) => console.warn(t),
+  locateFile: (path) => `${path}?v=${BUILD}`,
   postRun: [() => {
     cmd = (line) => Module.ccall('web_cmd', null, ['string'], [line]);
     statusEl.hidden = true;
@@ -199,10 +200,13 @@ document.getElementById('hour').addEventListener('click', () => cmd('skip 3600')
 document.getElementById('reset').addEventListener('click', () => cmd('reset'));
 drawPad();
 
-fetch('build.txt').then((r) => r.ok ? r.text() : '').then((t) => {
-  if (t.trim()) document.getElementById('build').textContent = 'Built from ' + t.trim() + '.';
-}).catch(() => {});
+// The deploy writes the commit in for __BUILD__. Pages caches files for 10 minutes, so the build files are asked for
+// by commit: a fresh page never runs the last deploy's firmware.
+const BUILD = '__BUILD__';
+if (!BUILD.startsWith('__')) document.getElementById('build').textContent = `Built from main @ ${BUILD}.`;
+const loader = document.createElement('script');
+loader.src = `porthole.js?v=${BUILD}`;
+document.body.append(loader);
 </script>
-<script src="porthole.js" async></script>
 </body>
 </html>
