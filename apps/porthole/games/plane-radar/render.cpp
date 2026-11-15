@@ -103,22 +103,14 @@ void plane(const air::Plane& p, Placed at, int up) {
   poly(tri, 3, c);
 }
 
-// Each plane's label side last repaint, by callsign, so a label stays put while its plane moves: sides[cur] is being
-// written, sides[!cur] read. A plane with no flight number has no side to keep.
-struct Side { uint32_t key; int8_t side; };
-Side g_sides[2][air::MAX_PLANES];
-int g_cur = 0, g_count[2] = {0, 0};
-int lastSide(uint32_t key) {
-  const int prev = !g_cur;
-  for (int i = 0; i < g_count[prev]; i++) if (g_sides[prev][i].key == key) return g_sides[prev][i].side;
+int lastSide(const Memory& m, uint32_t key) {
+  const int prev = !m.cur;
+  for (int i = 0; i < m.count[prev]; i++) if (m.sides[prev][i].key == key) return m.sides[prev][i].side;
   return -1;
 }
-// Taken: what a tag must not cover. Each tag placed joins it.
-struct Taken { Box r[air::MAX_PLANES * 2 + 8];   // 3 fixed, 4 letters, a symbol and a label per plane
-  int n = 0; void add(Box b) { if (n < (int)(sizeof r / sizeof r[0])) r[n++] = b; } };
 
 // A plane's label: the lines picked in the menu that it has (flight, route, altitude), one under the other.
-void tag(const air::Plane& p, Placed at, const bool* show, Taken& taken) {
+void tag(const air::Plane& p, Placed at, const bool* show, Memory& m) {
   char alt[12];
   altText(p.altFt, alt, sizeof alt);
   const char* line[SHOWS] = {p.call, p.route, alt};
@@ -129,10 +121,10 @@ void tag(const air::Plane& p, Placed at, const bool* show, Taken& taken) {
     if (show[i] && line[i][0]) { n++; const int lw = font::textWidth(f, line[i]); w = lw > w ? lw : w; }
   if (!n) return;
   const uint32_t key = p.call[0] ? os::crc32(p.call, strlen(p.call)) : 0;
-  const Tag t = tagFor({at.x, at.y, w, n * f.lineHeight, key ? lastSide(key) : -1}, {taken.r, taken.n});
+  const Tag t = tagFor({at.x, at.y, w, n * f.lineHeight, key ? lastSide(m, key) : -1}, {m.taken, m.nTaken});
   if (!t.ok) return;
-  if (key && g_count[g_cur] < air::MAX_PLANES) g_sides[g_cur][g_count[g_cur]++] = {key, (int8_t)t.side};
-  taken.add({t.x - 3, t.y - 2, t.x + w + 3, t.y + n * f.lineHeight + 2});
+  if (key && m.count[m.cur] < air::MAX_PLANES) m.sides[m.cur][m.count[m.cur]++] = {key, (int8_t)t.side};
+  m.avoid({t.x - 3, t.y - 2, t.x + w + 3, t.y + n * f.lineHeight + 2});
   roundBox({t.x - 3, t.y - 1, t.x + w + 3, t.y + n * f.lineHeight + 1}, 4, BG);   // a backing: no ring or line through it
   for (int i = 0, y = t.y; i < SHOWS; i++)
     if (show[i] && line[i][0]) { font::text(f, line[i], t.x, y, ink[i]); y += f.lineHeight; }
@@ -140,7 +132,8 @@ void tag(const air::Plane& p, Placed at, const bool* show, Taken& taken) {
 
 void live(const View& v) {
   const air::Snapshot& s = *v.snap;
-  static Placed at[air::MAX_PLANES];
+  Memory& m = *v.mem;
+  Placed* at = m.at;
   for (int i = 0; i < s.n; i++) {   // each plane flown on from its last fetch, so they glide instead of jumping
     const air::Plane& p = s.planes[i];
     const float km = p.knots * 1.852f / 3600 * (float)v.ageSec;
@@ -150,22 +143,21 @@ void live(const View& v) {
   for (int i = 0; i < s.n; i++) plane(s.planes[i], at[i], v.up);
   if (!s.n) { note("No planes nearby right now."); return; }
   if (!v.show[SHOW_CALL] && !v.show[SHOW_ROUTE] && !v.show[SHOW_ALT]) return;
-  static Taken taken;
-  taken.n = 0;
+  m.nTaken = 0;
   const int mb = MENU_R * 3 + 4, hx = HOME.x * 3, hy = HOME.y * 3;
-  taken.add({CX - mb, CY - mb, CX + mb, CY + mb});
-  taken.add({hx, hy, hx + HOME.w * 3, hy + HOME.h * 3});
+  m.avoid({CX - mb, CY - mb, CX + mb, CY + mb});
+  m.avoid({hx, hy, hx + HOME.w * 3, hy + HOME.h * 3});
   char buf[12];
   rangeText(v.range, buf, sizeof buf);
-  taken.add({RANGE_X, RANGE_Y, RANGE_X + font::textWidth(radar::FONT24, buf), RANGE_Y + radar::FONT24.lineHeight});
+  m.avoid({RANGE_X, RANGE_Y, RANGE_X + font::textWidth(radar::FONT24, buf), RANGE_Y + radar::FONT24.lineHeight});
   for (int i = 0; i < 4; i++) {   // N, E, S, W
     const Pt p = cardinal(i, v.up);
-    taken.add({p.x - 16, p.y - 18, p.x + 16, p.y + 18});
+    m.avoid({p.x - 16, p.y - 18, p.x + 16, p.y + 18});
   }
-  for (int i = 0; i < s.n; i++) if (at[i].inside) taken.add({at[i].x - 12, at[i].y - 12, at[i].x + 12, at[i].y + 12});
-  g_cur = !g_cur;
-  g_count[g_cur] = 0;
-  for (int i = 0; i < s.n; i++) if (at[i].inside) tag(s.planes[i], at[i], v.show, taken);
+  for (int i = 0; i < s.n; i++) if (at[i].inside) m.avoid({at[i].x - 12, at[i].y - 12, at[i].x + 12, at[i].y + 12});
+  m.cur = !m.cur;
+  m.count[m.cur] = 0;
+  for (int i = 0; i < s.n; i++) if (at[i].inside) tag(s.planes[i], at[i], v.show, m);
 }
 
 // A logical box as a button: amber when picked, night panel otherwise, its word in the middle.
