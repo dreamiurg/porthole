@@ -202,6 +202,14 @@ static void bringBackOntoFullWall() {
   for (int i = 0; i < WALL_SLOTS - 1; i++) assert(f.wallBreeds[i] == i + 1);
   assert(!strcmp(f.wallNames[0], "B") && !strcmp(f.wallNames[2], "D") && f.wallNames[3][0] == 0 && !strcmp(f.petName, "Rex"));
 }
+// The clock ran ahead (a wrong date) when a gift was opened, then was put right: today's gift still comes.
+static void giftAfterClockSetBack() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  pet::openGift(s, day0 + 400 * 86400);
+  assert(!pet::giftReady(s, day0 + 400 * 86400) && pet::giftReady(s, day0 + 86400));
+  pet::openGift(s, day0 + 86400); assert(!pet::giftReady(s, day0 + 86400) && pet::giftReady(s, day0 + 2 * 86400));
+}
+
 // The wall keeps the last four dogs, oldest first; dogsRaised counts them all.
 static void wallRollsAtFour() {
   Save s; pet::adopt(s, day0, "Sam", "A");
@@ -440,6 +448,7 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   retireKeepsKidProgress();
+  giftAfterClockSetBack();
   wallRollsAtFour();
   simulateEmptyRoom();
   breedSurvivesRoundTrip();
