@@ -64,7 +64,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     `magic, version, size` header; `createdAt, updatedAt, lastVisitDay,
     fullness/happiness/energy, friendship, daysTogether, careCounts[3], discoveries[3],
     stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping, petName[13],
-    named, reserved[2], moreStories, booksDay, puzzles, starsPaid, decor, reserved3`; `crc` last -- append-only like every other game (shared app brief
+    named, readLevel, readStreak, moreStories, booksDay, puzzles, starsPaid, decor, readsRight`
+    (`readLevel, readStreak, readsRight` were reserved bytes, so zero in every older blob; no version bump); `crc` last -- append-only like every other game (shared app brief
     constraint 4). The child's name and the daily play budget live in the shell's profile,
     not here. `named` gates everything: nothing decays, no visit counts, no progress until
     the pup has a name.
@@ -94,6 +95,11 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   activities a day asks for, the trick lessons and unlock days are rules, in `pet.h`) -- `namespace biscuit`, `inline constexpr`, converted once from
   the legacy JS with ids and array order unchanged. See the `content` skill for the full
   authoring workflow and its gate.
+- `content_reads.h`: Little reads, `Read{id, level, title, text, question, answers[3], right, why}`, at least 8 per
+  level 1 to 5 (first grade's short-vowel words up to third grade's inference; the header says what each level
+  allows). Not persisted by index. `check_content.py` holds levels 1 and 2 to their letter patterns and sight words,
+  every level to its word count and each right index to at least two per level; the pixel gate holds a passage to
+  no more screens than its level at short names.
 - `personalize.h` / `personalize.cpp`: fills the `{name}`/`{pet}` tokens (see Product
   contract above) into a caller-supplied buffer.
 - Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
@@ -138,7 +144,8 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   watch/do), `screens_puzzles.cpp` (Puzzles: the kinds, the times tables, a round of five; the round's end says
   the stars it earned (or how many right answers the next one needs) and the trick it taught, and Show me has the pup
   do it at home and name it), `screens_doghouse.cpp` (the Doghouse room, its Shop and a
-  thing's page),
+  thing's page), `screens_reads.cpp` (Little reads: a round of three passages in the reader, each with its question,
+  three answers and, after a miss, the right one with the line that holds it (`why`)),
   `screens_read.cpp` (Library: Discoveries, Notebook and the fifteen stories, two a page,
   "Tomorrow: <title>" (the next one) or "Soon: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
   page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
@@ -169,6 +176,11 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     `buyDecor`) drawn over it from `DECOR_ART`; names and prices in `content_doghouse.h` (append only, in
     `DecorId` order). The art is `tools/art/doghouse-art.js`: each thing is its box of the room with the thing in
     it, and export-assets fails if a thing draws outside its box, two boxes overlap or the pup reaches one.
+  - Little reads: the Library's first row ("Little reads: level N"). `answerRead` keeps a level per pup, from the
+    profile's age the first time (6: 1, 8: 3), then three right in a row up one and a miss down one (a 3-up/1-down
+    staircase: about 79% right, `docs/design/learning-principles.md` principle 2); the next passage comes from the
+    level as it stands, so it moves within a round. Any answer is today's reading; every `READS_PER_STAR` (3) right
+    ones are a star (`earnedStars`); a miss costs nothing.
   - Tricks from puzzles: every `PUZZLES_PER_LESSON` (4) right answers are a lesson of the first trick not
     mastered (`answerPuzzle` returns it), and a trick with a lesson is open before its day (`trickOpen`).
   - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
