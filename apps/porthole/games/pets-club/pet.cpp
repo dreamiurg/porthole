@@ -248,7 +248,8 @@ void trickLessonPassed(Save& s, uint32_t now, int i) {
 }
 int learnedTrickCount(const Save& s) { int n = 0; for (int i = 0; i < NUM_TRICKS; i++) if (trickLearned(s, i)) n++; return n; }
 
-bool giftReady(const Save& s, uint32_t now) { return dayIndex(now) > s.lastGiftDay; }
+// A different day, not a later one: a clock that ran ahead and was then put right must not hold the mail back.
+bool giftReady(const Save& s, uint32_t now) { return (uint16_t)dayIndex(now) != s.lastGiftDay; }
 Gift openGift(Save& s, uint32_t now) {
   Gift g = {GIFT_TREATS, 0};
   s.lastGiftDay = (uint16_t)dayIndex(now);
