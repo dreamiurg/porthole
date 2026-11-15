@@ -135,6 +135,7 @@ class Game : public App {
   void nextPuzzle(); void endRound();
   puzzles::Puzzle puzzle() const { uint32_t s = questionSeed_; return puzzles::build(question_, s); }
   void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
+  void feedback(const puzzles::Puzzle& p, bool right, char* line, size_t cap) const;
   void updateDoghouse(); void drawDoghouse();
   void updateShop(); void drawShop();
   void updateItem(); void drawItem();

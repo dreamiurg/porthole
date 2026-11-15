@@ -119,6 +119,15 @@ static void drawGroups(const puzzles::Item& q) {
     for (int i = 0; i < q.b; i++) gfx565::circle(x + SPOT[i][0], y + SPOT[i][1], 8, PEACH);
   }
 }
+// After an answer: the solved question, then a cheer, the star it earned, or after a miss how to solve it (the pup's
+// nudge when there is no how, as for words).
+void Game::feedback(const puzzles::Puzzle& p, bool right, char* line, size_t cap) const {
+  const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
+  char how[48];
+  puzzles::how(p.item, how);
+  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : NUDGES[asked_ % puzzles::ROUND];
+  snprintf(line, cap, "%s %s\n%s", right ? "Yes!" : "It's", p.solved, after);
+}
 void Game::drawPuzzle() {
   const puzzles::Puzzle p = puzzle();
   const bool right = answered_ >= 0 && answered_ == p.right && asked_ < puzzles::ROUND;
@@ -143,11 +152,7 @@ void Game::drawPuzzle() {
     for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(p, i));
     return;
   }
-  const bool star = right && save_.puzzles % PUZZLES_PER_STAR == 0;   // this answer earned a star
-  char how[48];
-  puzzles::how(p.item, how);   // after a miss, how to solve it, in place of the pup's nudge
-  const char* after = star ? STAR_CHEER : right ? CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : NUDGES[asked_ % puzzles::ROUND];
-  snprintf(line, sizeof line, "%s %s\n%s", right ? "Yes!" : "It's", p.solved, after);
+  feedback(p, right, line, sizeof line);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(FEEDBACK, s, INK);
   button(in_, NEXT_PUZZLE);
