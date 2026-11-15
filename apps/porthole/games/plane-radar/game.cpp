@@ -95,7 +95,7 @@ void Game::render() {
     look.age = snap_.state == air::S_LIVE && snap_.n ? (uint8_t)ageSec() : 0;
   }
   const View v = {page_, &snap_, save_.range, save_.up, {!save_.hideCall, !save_.hideRoute, !save_.hideAlt}, homeDown,
-                  ageSec(), spot_};
+                  ageSec(), spot_, &mem_};
   frames_.render(nullptr, 0, os::crc32(&look, sizeof look), [&] { paint::draw(v); });
 }
 

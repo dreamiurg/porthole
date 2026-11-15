@@ -806,10 +806,11 @@ void Game::drawFetchHud() {   // score and seconds left, either side of the home
 // ---------------------------------------------------------------- word fetch
 void Game::startWords() {
   int lo, hi; pet::wordLenRange(save_.kidAge ? save_.kidAge : 7, lo, hi);
-  static int cand[NUM_WORDS]; int nc = 0;
+  static_assert(NUM_WORDS <= 255, "cand holds word indexes in a byte");
+  uint8_t cand[NUM_WORDS]; int nc = 0;   // on the stack for this call: not 424 bytes of static RAM for good
   for (;;) {
     nc = 0;
-    for (int i = 0; i < NUM_WORDS; i++) { int L = (int)strlen(WORDS[i].word); if (L >= lo && L <= hi) cand[nc++] = i; }
+    for (int i = 0; i < NUM_WORDS; i++) { int L = (int)strlen(WORDS[i].word); if (L >= lo && L <= hi) cand[nc++] = (uint8_t)i; }
     if (nc >= 8 || lo <= 3) break;
     lo--;
   }
