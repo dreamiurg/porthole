@@ -12,6 +12,10 @@
 #include "pictures.h"
 #include "save.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 // The look follows the approved reference boards (docs/superpowers/specs/porthole-racing/assets/reference/): Style 2
 // panels 2A-2D and the four-track showcase. Pictures come from tools/pictures.py, the font and road colors from
 // tools/art.py; everything is a flat fill or a pre-made picture, no runtime blending.

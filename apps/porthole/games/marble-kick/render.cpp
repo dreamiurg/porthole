@@ -4,6 +4,10 @@
 #include "gfx565.h"
 #include "physics.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace marble::paint {
 using namespace canvas;   // the painter: span, disc, poly, roundBox, isqrt, rows, clipBox
 namespace {

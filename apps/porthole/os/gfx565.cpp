@@ -1,6 +1,10 @@
 #include "gfx565.h"
 #include <string.h>
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace gfx565 {
 uint16_t* fb = nullptr;
 void target(uint16_t* pixels) { fb = pixels; }

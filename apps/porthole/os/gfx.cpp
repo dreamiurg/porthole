@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include "font8x8_basic.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace gfx {
 uint8_t fb[W * H];
 
