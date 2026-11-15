@@ -133,8 +133,8 @@ Tint Game::tint() const {
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || !save_.named) return false;   // an unnamed pup has nothing worth keeping
-  seal(save_); out_ = save_;
-  *data = &out_; *len = sizeof out_;
+  seal(save_);
+  *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update (static RAM is tight)
   dirty_ = false;
   return true;
 }

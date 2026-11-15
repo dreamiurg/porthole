@@ -43,7 +43,7 @@ class Game : public App {
   };
 
  private:
-  Save save_{}, out_{};                       // the working pup, and the sealed copy takeSave hands out
+  Save save_{};                               // the working pup; takeSave seals it and hands it out
   Profile who_{};                             // the kid playing: {name} in every line
   bool dirty_ = false, wantsHome_ = false;
   bool daylight_ = false;                     // AppEnter::daylight: day scenes whatever the clock says
