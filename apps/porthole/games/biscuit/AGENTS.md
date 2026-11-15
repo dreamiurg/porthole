@@ -177,7 +177,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     `DecorId` order). The art is `tools/art/doghouse-art.js`: each thing is its box of the room with the thing in
     it, and export-assets fails if a thing draws outside its box, two boxes overlap or the pup reaches one.
   - Little reads: the Library's first row ("Little reads: level N"). `answerRead` keeps a level per pup, from the
-    profile's age the first time (6: 1, 8: 3), then three right in a row up one and a miss down one (a 3-up/1-down
+    profile's age the first time (6: 1, 8: 3), then three right in a row up one and a miss down one, never more than one below the age's start (a 3-up/1-down
     staircase: about 79% right, `docs/design/learning-principles.md` principle 2); the next passage comes from the
     level as it stands, so it moves within a round. Any answer is today's reading; every `READS_PER_STAR` (3) right
     ones are a star (`earnedStars`); a miss costs nothing.

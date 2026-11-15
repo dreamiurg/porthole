@@ -1,6 +1,7 @@
 // Biscuit's little reads: a short passage the kid reads alone, then one question with three answers to pick from
 // (learning-principles.md, principle 11; the plan is adaptive-practice.md, piece E). Five levels, picked for each kid
-// by pet.h's answerRead (three right in a row: up one, a miss: down one, which settles near 80% right):
+// by pet.h's answerRead (three right in a row: up one, a miss: down one, never more than one below the age's start;
+// it settles near 80% right):
 //   1  first-grade start: short-vowel words of one syllable with single consonants (cat, sit, hop, bed; -ll -ss -ff
 //      allowed) and a few sight words; 12 to 30 words. The answer is said in the text.
 //   2  digraphs and blends (ship, chin, that, duck, ring, frog, stop, hand); 25 to 45 words. Said in the text, or
@@ -67,7 +68,7 @@ inline constexpr Read READS[] = {
   {"up-hill", 1, "Up the hill",
    "{pet} runs up the hill. {name} runs up the hill. {pet} gets to the top. {name} is hot. {name} sits on a log. "
    "{pet} wags at the top.",
-   "Is {name} on top?", {"Yes, on top", "No, on a log", "No, in a pit"}, 1,
+   "Where is {name}?", {"On top", "On a log", "In a pit"}, 1,
    "It says: {name} sits on a log."},
   // ---- level 2
   {"hot-fish", 2, "Hot fish",

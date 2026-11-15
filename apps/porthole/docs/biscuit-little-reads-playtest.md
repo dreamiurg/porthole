@@ -239,5 +239,82 @@ Emulator roleplay only: no real children and no physical board. Audio was not ob
 to the launcher mid-round, process restart, and the evening and night tints were not tested. B never answered wrong,
 so wrong feedback and adapt-down were checked only at levels 1-2. There was a single iteration with no game fixes yet.
 
-**Needs another pass.** Two Majors are open: wrong-answer feedback for non-readers, and the contradictory "Up the
+**Iteration 1 judgment: needs another pass.** Two Majors are open: wrong-answer feedback for non-readers, and the contradictory "Up the
 hill" question (plus the negation question). Fix them and replay Persona A's flow on the new build.
+
+## Iteration 2 (retest after fixes)
+
+| Item | Value |
+| --- | --- |
+| Revision | `ae9cb14`, clean working tree |
+| Executable | `build/host/snap`, sha256 `96e7a371ca89fd7efd79443f8492efd5db0bc68bf841de1058793017e7624cc4` (not rebuilt; played from a private copy with the same hash) |
+| Same agent | Yes. This is the same agent as iteration 1, so it is a replay and cannot support claims about first-time comprehension. The rules were unchanged: no source, no `dbg`, taps chosen from frames |
+
+**Coordinator brief for this pass (summary).** Persona A, a fresh age-6 profile, plays 3-4 rounds with some wrong
+answers, checks that a miss is unmistakable and that passages don't repeat early, and reads "Up the hill" if it
+comes up. Persona B does a quick wrong-answer check at level 3 or above. The coordinator listed the changes: the
+"Oops! The answer: X." feedback; a rewritten "Up the hill"; no repeats until the level's pool of 8 has been shown;
+two shorter level-5 "why" lines; the "A hot day" title is now "So hot". Findings #3, #5, #6, #7, #9, #10 and #12 were
+deferred as shared reader/UI follow-ups.
+
+**Paths played.** The profiles were created through the shell as before (`i2-trace-A.txt`, `i2-trace-B.txt`).
+- **A (Mia, 6), level 1.**
+  - R1: The hat ✗, Box, bag, tub ✓, Mud off ✗. Result: 1/3.
+  - R2: The ham ✓, The red cap ✗, Up the hill ✓. Result: 2/3, +1 star.
+  - R3: So hot ✓, Two buns ✗, Mud off ✓. Result: 2/3.
+  - R4: The red cap ✗, then a fast double tap on Next (acted once), landing on "So hot".
+  - The first eight passages were all different, and the first repeat ("Mud off") came as the ninth.
+- **B (Sam, 8), level 3.** Snow bone ✗, Stuck stick ✗ (B skipped the passage with one tap too many, then used Back
+  on the question to read it), Up the hill ✓. Result: 1/3. The Library then showed **level 1**, and the next round
+  opened with "Two buns".
+
+**Results against the iteration 1 findings**
+
+| # | Finding | Status |
+| --- | --- | --- |
+| 1 | Wrong feedback never says wrong (Major) | **Resolved as a Major; a Minor remains.** "Oops! The answer: The tan cap. It says: ..." (`i2-01`) is unmistakable in words, and "Oops!" is within a first grader's reach. The miss is still words only: same colours and layout as a hit, the chosen answer is not marked, and Biscuit is not shown. Answers now wrap awkwardly ("The tan / cap.", "By the / tree."). |
+| 2 | "Up the hill" contradicts its passage (Major) | **Resolved.** The passage now says "Mia sits on a log", and the question is "Is Mia on top?" with "No, on a log" as the key (`i2-02`). The right-answer feedback reads "Yes! No, on a log." (`i2-03`), which is confusing for a 6-year-old (new Nit 15). "What did the kid not have?" still stands and is tracked under #8. |
+| 3 | No pictures or Biscuit | Open (deferred), Minor |
+| 4 | Level-1 pool repeats | **Resolved.** 8 distinct passages in a row, then the first repeat |
+| 5 | Back discards the round; no round progress | Open (deferred), Minor |
+| 6 | Inert Previous on the first page | Open (deferred), Minor |
+| 7 | Mid-sentence page breaks and orphan pages | Open (deferred), Minor. Not replayed at L4-5 |
+| 8 | Generic "the kid" / "the dog" in questions, plus the negation question | Open (follow-up), Minor |
+| 9 | Star reward is text only | Open (deferred), Minor |
+| 10 | Leading space on wrapped lines | Open (deferred), Nit. Still in "Mud off" |
+| 11 | "It's:" wording | Resolved: replaced by "Oops! The answer:" |
+| 12 | Library rows have no icons | Open (deferred), Nit |
+
+**New findings**
+
+13. **Major: one bad round drops an 8-year-old from level 3 to level 1 (babyish content)**
+    - Screen: Library / `biscuit_read`
+    - Concern: challenge / boredom
+    - After two misses in the first level-3 round, the third passage was already the level-1 "Up the hill" (`i2-04`).
+      The summary then sent Sam to "Little reads: level 1" (`i2-05`), where the next round opened with CVC text ("Rex
+      has a bun. Sam has a bun."). A third grader who misreads twice is pushed two levels down into first-grade text
+      and needs two perfect rounds to climb back. This is exactly the babyish content persona B quits over. In
+      iteration 1, persona A's drop was one level (2 to 1). This path was untested in iteration 1 (B never missed), so
+      it may predate the fixes.
+    - Repro: `i2-trace-B.txt`. Fresh age-8 profile, then Read, then Little reads (level 3). Answer "Under the rock",
+      then "Rex", then the right answer. Back: the Library shows level 1.
+    - Screenshots: `docs/biscuit-little-reads-playtest/i2-04-B-level1-passage-in-level3-round.png`,
+      `i2-05-B-library-dropped-to-level1.png`
+14. **Nit: answers in the "Oops!" line wrap mid-phrase**
+    - Examples: "The answer: The tan / cap.", "By the / tree.", "A bun not / big." Putting the answer on its own line
+      would keep it whole.
+    - Screenshot: `i2-01-A-oops-feedback.png`
+15. **Nit: right-answer feedback for a "No, ..." answer reads "Yes! No, on a log."**
+    - Screenshot: `i2-03-A-yes-no-on-a-log.png`
+
+**Not verified in this pass.** I did not reach level 5, so the two shortened level-5 "why" lines were not seen. A
+level-1 "So hot" passage did show its new title. Pagination at L4-5, process restart and leaving to the launcher
+are still gaps.
+
+**Automated suite on this build** (`tools/playtest.py`, no rebuild): 101 of 102 pass. `49_biscuit_read_tour` and
+`52_biscuit_reads` pass, and there are 0 UI FAIL and 0 WARN. The one failure is `c0_times_cards` line 22, `expect n=5`
+got `n=3`, in Times Cards, which is unrelated to Biscuit.
+
+**Judgment after iteration 2: needs another pass.** Both original Majors are resolved, but new Major #13 (adaptation
+drops an 8-year-old two levels after one round) is open. Once it is fixed, replay persona B with misses at level 3 or
+above, and reach level 5 to read the shortened "why" lines.

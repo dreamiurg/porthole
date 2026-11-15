@@ -254,7 +254,7 @@ static void puzzleAnswers() {
 static void littleReadsKept(Save& p);
 static void littleReadsDown(Save& p);
 // Little reads: the level starts from the kid's age, three right in a row move it up one, a miss down one (never past
-// 1..READ_LEVELS); every answer is today's reading, three right ones a star. Kept in the save, through a seal.
+// 1..READ_LEVELS, nor more than one below the age's start); every answer is today's reading, three right ones a star. Kept in the save, through a seal.
 static void littleReads() {
   Save p = namedPet(Now);
   assert(biscuit::readLevel(p, 0) == 1 && biscuit::readLevel(p, 6) == 1 && biscuit::readLevel(p, 8) == 3
@@ -272,6 +272,9 @@ static void littleReadsDown(Save& p) {
   assert(p.readLevel == biscuit::READ_LEVELS && biscuit::valid(p));
   Save low = namedPet(Now);
   assert(biscuit::answerRead(low, false, 6, Now) == 0 && low.readLevel == 1);
+  Save older = namedPet(Now);   // a bad round at 8 drops to level 2, never to a first grader's level 1
+  assert(biscuit::answerRead(older, false, 8, Now) == -1 && biscuit::answerRead(older, false, 8, Now) == 0);
+  assert(older.readLevel == 2);
   littleReadsKept(p);
 }
 static void littleReadsKept(Save& p) {

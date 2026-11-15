@@ -306,10 +306,8 @@ inline Stage stage(const Save& p) {
 // (6: 1, 8: 3), then READ_STREAK_UP right in a row move it up one and a miss down one. That 3-up/1-down staircase
 // settles where three right in a row is an even bet, about 79% right (learning-principles.md, principle 2). Any
 // answer is today's reading; every READS_PER_STAR right ones are a star. Returns how the level moved: -1, 0 or +1.
-inline uint8_t readLevel(const Save& p, uint8_t age) {
-  if (p.readLevel) return p.readLevel;
-  return age <= 6 ? 1 : age - 5 > READ_LEVELS ? READ_LEVELS : (uint8_t)(age - 5);
-}
+inline uint8_t ageReadLevel(uint8_t age) { return age <= 6 ? 1 : age - 5 > READ_LEVELS ? READ_LEVELS : (uint8_t)(age - 5); }
+inline uint8_t readLevel(const Save& p, uint8_t age) { return p.readLevel ? p.readLevel : ageReadLevel(age); }
 inline int answerRead(Save& p, bool right, uint8_t age, uint32_t now) {
   recordReading(p, now);
   if (!awake(p)) return 0;
@@ -317,7 +315,7 @@ inline int answerRead(Save& p, bool right, uint8_t age, uint32_t now) {
   p.readLevel = was;
   if (!right) {
     p.readStreak = 0;
-    if (p.readLevel > 1) p.readLevel--;
+    if (p.readLevel > 1 && p.readLevel >= ageReadLevel(age)) p.readLevel--;   // never more than one below the age's start
   } else {
     if (p.readsRight < UINT16_MAX) p.readsRight++;
     if (++p.readStreak >= READ_STREAK_UP) { p.readStreak = 0; if (p.readLevel < READ_LEVELS) p.readLevel++; }
