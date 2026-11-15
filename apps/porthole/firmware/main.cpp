@@ -22,7 +22,7 @@ struct NvsStore : shell::Store {
 static NvsStore g_store;
 static net::Updater g_sys;
 static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
-static Shell g_shell;
+static Shell& g_shell = psram::make<Shell>();   // ~12 KB kept off static internal RAM
 static InputTracker g_input;
 static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
@@ -187,6 +187,8 @@ void setup() {
   beginClock();
   Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
                 (unsigned long)utcNow(), (unsigned long)board::freeHeap());
+  if (psram::fallbacks)   // the games and the shell belong in PSRAM; in internal RAM they eat an update's share
+    Serial.printf("[porthole] WARNING: %d app objects in internal RAM, not PSRAM\n", psram::fallbacks);
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 

@@ -13,20 +13,22 @@
 #include "games/racing/game.h"
 #include "games/sand-jar/game.h"
 #include "games/times-cards/game.h"
+#include "psram.h"
 #include "shell.h"
 
-static Game g_pets;
-static biscuit::Game g_biscuit;
-static marble::Game g_marble;
-static fc::Game g_tiltfc;
-static pumpkin::Game g_pumpkin;
-static radar::Game g_radar;
-static starfighter::Game g_starfighter;
-static kingdom::Game g_kingdom;
-static toytown::Game g_toytown;
-static racing::Game g_racing;
-static sandjar::Game g_sandjar;
-static cards::Game g_cards;
+// Each game is built in PSRAM at start-up (os/psram.h), so none of them takes static internal RAM.
+static Game& g_pets = psram::make<Game>();
+static biscuit::Game& g_biscuit = psram::make<biscuit::Game>();
+static marble::Game& g_marble = psram::make<marble::Game>();
+static fc::Game& g_tiltfc = psram::make<fc::Game>();
+static pumpkin::Game& g_pumpkin = psram::make<pumpkin::Game>();
+static radar::Game& g_radar = psram::make<radar::Game>();
+static starfighter::Game& g_starfighter = psram::make<starfighter::Game>();
+static kingdom::Game& g_kingdom = psram::make<kingdom::Game>();
+static toytown::Game& g_toytown = psram::make<toytown::Game>();
+static racing::Game& g_racing = psram::make<racing::Game>();
+static sandjar::Game& g_sandjar = psram::make<sandjar::Game>();
+static cards::Game& g_cards = psram::make<cards::Game>();
 static App* const APPS[] = {&g_pets, &g_biscuit, &g_marble, &g_tiltfc, &g_pumpkin, &g_radar, &g_starfighter, &g_kingdom, &g_toytown, &g_racing, &g_sandjar, &g_cards};
 static constexpr int N_APPS = sizeof APPS / sizeof APPS[0];
 static_assert(N_APPS <= MAX_APPS, "the launcher and Shell hold at most MAX_APPS games: raise it and its layouts first");
