@@ -16,7 +16,7 @@ class Game : public App {
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
   bool takeSave(const void** data, size_t* len, bool allowed) override;
-  bool saveUrgent() const override { return dirty_; }
+  bool saveUrgent() const override { return dirty_ && !keep_; }
   bool wantsHome() override { bool h = home_; home_ = false; return h; }
   void leave() override { stopWalk(); dirty_ = true; }
   const char* screenName() const override;
@@ -30,7 +30,7 @@ class Game : public App {
   uint32_t ms_ = 0, look_ = 0;
   const uint16_t* buffers_[2]{};
   uint32_t painted_[2]{};
-  bool dirty_ = false, home_ = false, title_ = true, pause_ = false;
+  bool dirty_ = false, home_ = false, title_ = true, pause_ = false, keep_ = false;
   char heading_[96]{}, words_[384]{}, labels_[5][80]{};
   uint8_t destination_ = SCHOOL;
   bool walking_=false, displayTried_=false;

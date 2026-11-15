@@ -391,6 +391,13 @@ void saveCadence() {
   assert(!p.game.takeSave(&data, &len, false)); assert(p.game.saveUrgent());
   assert(p.game.takeSave(&data, &len, true)); assert(len == sizeof(Save) && !p.game.saveUrgent());
   assert(!p.game.takeSave(&data, &len, true)); p.game.leave(); assert(p.game.saveUrgent());
+  // A stored save this build cannot read is not replaced by a blank campaign just because the game was opened.
+  Save unreadable = fixture(READ); sealSave(unreadable); unreadable.seed ^= 1;
+  Player q; q.slots[0] = {&unreadable, sizeof unreadable}; q.enter();
+  assert(!q.game.saveUrgent() && !q.game.takeSave(&data, &len, true));
+  q.game.leave(); assert(!q.game.saveUrgent() && !q.game.takeSave(&data, &len, true));
+  q.enter(); q.tap(layout::START);  // starting over is the kid's own act, and from then on the game saves as usual
+  assert(q.game.saveUrgent() && q.game.takeSave(&data, &len, true) && len == sizeof(Save));
 }
 } // namespace
 int main() {
