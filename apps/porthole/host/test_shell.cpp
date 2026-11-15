@@ -18,11 +18,12 @@
 #include "shell.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
-// (saves and erases) every further write is dropped. `last` is the most recent write that landed.
+// (saves and erases) every further write is dropped. `last` is the most recent write that landed. `refuse` ("ns/key")
+// is a flash write that does not land while the board keeps running: saves of that one key fail, the rest go on.
 struct MemStore : shell::Store {
   struct Entry { char ns[16], key[16]; uint8_t data[shell::BLOB_MAX]; size_t len; bool used; };
   Entry e[32] = {};
-  int budget = -1, writes = 0; char last[32] = "";
+  int budget = -1, writes = 0; char last[32] = ""; const char* refuse = nullptr;
   bool land(const char* ns, const char* key) {
     if (budget >= 0 && writes >= budget) return false;
     writes++; snprintf(last, sizeof last, "%s/%s", ns, key); return true;
@@ -37,7 +38,8 @@ struct MemStore : shell::Store {
     memcpy(buf, x->data, x->len); return x->len;
   }
   bool save(const char* ns, const char* key, const void* data, size_t len) override {
-    if (!land(ns, key)) return false;
+    char name[32]; snprintf(name, sizeof name, "%s/%s", ns, key);
+    if ((refuse && !strcmp(refuse, name)) || !land(ns, key)) return false;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
     assert(x && len <= shell::BLOB_MAX);
@@ -426,6 +428,42 @@ static void biscuitCrash() {
     assert(again.count() == 1 && !strcmp(again.rec[0].name, "Sam") && biscuitIn(st, 0, "Pip", 30));
     assert(st.has(shell::NS, "mb") && (n == 8 || oldGone(st)));   // cut right after the marker: pet3 lingers, unread
   }
+}
+
+// A write that fails while the board keeps running (a full or worn flash; power loss stops them all, see the crash
+// tests) must not cost the save it was moving: no marker, the old copy kept, and the next boot does it again.
+static void migrateFailedWrites() {
+  shell::Profiles p, boot;
+  MemStore st; setupLegacy(st); st.refuse = "crago/s0";                // the copy of the pre-house save
+  shell::loadAll(st, p);
+  assert(st.has("crago", "save") && !st.has(shell::NS, "m"));
+  st.refuse = nullptr; shell::loadAll(st, boot);
+  assert(boot.count() == 1 && !strcmp(petIn(st, "s0"), "Biscuit") && st.has(shell::NS, "m") && !st.has("crago", "save"));
+  MemStore rec; setupHouses(rec); rec.refuse = "porthole/p1";          // one house's record
+  shell::loadAll(rec, p);
+  assert(!rec.has(shell::NS, "m"));                                     // or Kai's pup waits for whoever takes id 1 next
+  rec.refuse = nullptr; shell::loadAll(rec, boot);
+  assert(boot.count() == 3 && !strcmp(boot.rec[1].name, "Kai") && rec.has(shell::NS, "m"));
+  MemStore pup; putOld(pup, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3)); pup.refuse = "biscuit/s0";
+  shell::loadAll(pup, p);                                               // Biscuit's old pup, its copy
+  assert(pup.has(OLD_NS, "pet3") && !pup.has(shell::NS, "mb"));
+  pup.refuse = nullptr; shell::loadAll(pup, boot);
+  assert(biscuitIn(pup, 0, "Pip", 30) && oldGone(pup) && pup.has(shell::NS, "mb"));
+}
+// The marker's own write failed on a device that never had houses, so the migration runs again next boot: a profile
+// made since is not a house. Its face, code, stars and day's play are the profile's alone: never rebuilt from the pup.
+static void remigrateKeepsProfiles() {
+  MemStore st; st.refuse = "porthole/m";
+  shell::Profiles p, boot; shell::loadAll(st, p);
+  shell::Record kai = draft("Kai", 6, 1235); kai.avatar = 5;
+  assert(shell::create(st, p, kai, STORES, 2) == 0);
+  p.rec[0].stars = 40; p.rec[0].dayPlaySec = 600; assert(shell::saveRecord(st, p, 0));
+  Save rex = house("Kai", "Rex", 6, 0); st.save("crago", "s0", &rex, sizeof rex);   // Kai's pup: Pets Club keeps no code
+  shell::loadAll(st, boot);
+  assert(!st.has(shell::NS, "m") && boot.count() == 1 && same(boot.rec[0], "Kai", 6, 5, 1235));
+  assert(boot.rec[0].stars == 40 && boot.rec[0].dayPlaySec == 600);
+  st.refuse = nullptr; shell::loadAll(st, boot);
+  assert(st.has(shell::NS, "m") && same(boot.rec[0], "Kai", 6, 5, 1235) && boot.rec[0].stars == 40);
 }
 
 static void restBudget() {
@@ -1745,6 +1783,8 @@ int main() {
   biscuitLongName();
   biscuitCorruptIgnored();
   biscuitCrash();
+  migrateFailedWrites();
+  remigrateKeepsProfiles();
   restBudget();
   recordV1();
   starBalance();
