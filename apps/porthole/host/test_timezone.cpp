@@ -80,6 +80,8 @@ static void persistence() {
   settings.zone[2] ^= 1; assert(!timezones::validSettings(settings));
   settings = timezones::settings("Europe/London", false);
   assert(timezones::validSettings(settings) && !settings.automatic);
+  settings.automatic = 1; assert(!timezones::validSettings(settings));   // every field still legal: only the checksum can tell
+  settings.automatic = 0;
   memset(settings.zone, 'X', sizeof settings.zone); assert(!timezones::validSettings(settings));
   const uint32_t wall = epoch(2026, 7, 2, 4), utc = epoch(2026, 7, 2, 11);
   assert(timezones::select(timezones::DEFAULT_ZONE));
@@ -99,6 +101,8 @@ static void persistence() {
   auto committed = timezones::journal(wall, utc, true);
   assert(timezones::recoverRtc(utc + 86400, committed, recovered) && recovered == utc + 86400);
   prepared.target ^= 1; assert(!timezones::recoverRtc(utc, prepared, recovered));
+  prepared = timezones::journal(wall, utc, false); prepared.committed = 1;   // one flipped bit must not turn "prepared" into "done"
+  assert(!timezones::validJournal(prepared) && !timezones::recoverRtc(wall + 10, prepared, recovered));
 }
 int main() {
   catalog(); dst(); providerReplies(); persistence();
