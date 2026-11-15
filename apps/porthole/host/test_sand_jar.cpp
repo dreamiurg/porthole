@@ -123,6 +123,28 @@ static void neverClimbs() {
   puts("climb: a small tilt never lifts a grain");
 }
 
+// A grain sleeps only while it has nowhere to go: one asleep with room beside it hangs there until a neighbor happens
+// to move. The case that broke it: sand rolling over a neighbor into water two cells away left that water asleep in the
+// sand's old cell, beside the room the sand had just rolled across.
+static void sleepersHaveNoRoom() {
+  static const int AROUND[8] = {-G - 1, -G, -G + 1, -1, 1, G - 1, G, G + 1};
+  tilt(a, 0);
+  a.reset(MODE_BEACH, 7);
+  for (int s = 0; s < 2400; s++) {
+    if (s % 300 == 0) tilt(a, (float)(s / 300 * 67 % 360));
+    a.step();
+    for (int i = 0; i < a.n; i++) {
+      if (a.awake[i >> 5] >> (i & 31) & 1) continue;
+      const int most = i < a.sand ? a.sand : INT16_MAX;   // sand may sink into water: the grains above this
+      for (int off : AROUND) {
+        const int o = a.occ[cellOf(a, i) + off];
+        assert(o != EMPTY && o <= most);
+      }
+    }
+  }
+  puts("sleep: in Beach no grain sleeps beside room to move");
+}
+
 // Roll-over: a level heap tipped 45 degrees flows (the prototype's heap held any tilt under ~65); buried grains that
 // fell asleep while the heap was level wake as the surface above them moves.
 static const float ROLL_MIN_DROP = 3;   // ~10.7 with roll-over, ~0.1 without
@@ -339,6 +361,7 @@ int main() {
   restsAtZeroG();
   waterLevels();
   neverClimbs();
+  sleepersHaveNoRoom();
   rollsAt45();
   fingerClears();
   sandSinks();

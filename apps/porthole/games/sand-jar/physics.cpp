@@ -208,6 +208,7 @@ void take(Jar& j, Mover& m, int c) {
   j.g.x[o - 1] = pos16(center(m.c % G)); j.g.y[o - 1] = pos16(center(m.c / G));
   j.occ[c] = (int16_t)(m.i + 1);
   changed(j, m.c); changed(j, c); m.c = c;
+  wake(j, o - 1);   // a roll-over lands two cells away, so the water put in the old cell is beside neither change
 }
 // Sand sinks through water (now and then), a bubble rises through it: the two trade places.
 bool swapped(Jar& j, Mover& m, const Try& t, int o) {
