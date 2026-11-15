@@ -36,10 +36,11 @@ reserved all the same), no clock, no personal data.
   one union: the whole Jar is ~153 KB. It was first a member of the static game object, in internal RAM (random
   access in PSRAM is ~14x slower), but static internal RAM is capped (`custom_dram_static_max`), so the game
   allocates it on its first `enter()` and on the board it lands in PSRAM. Its hottest part, the grid (`occ`, 51 KB,
-  read a dozen times per grain per step), is borrowed back into internal RAM while the game is open: `enter()` copies
-  `cells` into a block from `fastmem::take()` (`os/fastmem.h`) and points `occ` at it, `leave()` copies it home and
-  gives the block back. `take()` lends only when the wireless update's share of internal RAM (`UPDATE_RAM`) stays
-  free; otherwise `occ` stays on `cells` in PSRAM. `debug` shows which: `fast=1`. The frame rates below were measured
+  read a dozen times per grain per step), is borrowed back into internal RAM while the game is open and the screen
+  lit: `update()` copies `cells` into a block from `fastmem::take()` (`os/fastmem.h`) and points `occ` at it;
+  `leave()`, or fastmem's recall when the screen goes dark, copies it home and gives the block back. `take()` lends
+  only when the wireless update's share of internal RAM (`UPDATE_RAM`) stays free; otherwise `occ` stays on `cells` in
+  PSRAM. `debug` shows which: `fast=1`. The frame rates below were measured
   with the Jar in internal RAM; re-measure on the board.
 - `game.h` / `game.cpp` (`class Game`, `namespace sandjar`): App plumbing, the motion sensor (`Input::gx/gy/gz`), the
   touch, the physics clock, and the renderer.

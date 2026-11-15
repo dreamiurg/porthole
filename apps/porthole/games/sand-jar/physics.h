@@ -60,8 +60,7 @@ struct Jar {
   // PSRAM on the board); while the game is open, occ may point at a copy in internal RAM instead (os/fastmem.h).
   int16_t cells[G * G];
   int16_t* occ = cells;
-  // The grains, or (Orbits has none) the bodies and their trail light. The two share memory: the board's internal RAM
-  // holds the whole Jar (random access in PSRAM is 14x slower), and it is tight.
+  // The grains, or (Orbits has none) the bodies and their trail light. The two share memory: the Jar is ~153 KB.
   struct Grains {
     uint16_t x[MAX_GRAINS], y[MAX_GRAINS];
     int16_t vx[MAX_GRAINS], vy[MAX_GRAINS];

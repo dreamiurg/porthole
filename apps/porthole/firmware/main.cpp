@@ -137,12 +137,11 @@ static void beginClock() {
 // does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
 extern "C" bool verifyRollbackLater() { return true; }
 
-// Every update needs internal RAM: its SRAM screen, then wifi and TLS (on the board those took about 28 KB more, with
-// 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
-// good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
-static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
-static_assert(fastmem::UPDATE_RAM == board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM,
-              "fastmem.h must leave a game exactly what an update needs");
+// Every update needs internal RAM (fastmem::UPDATE_RAM). A firmware short of it can never install the next one, so it
+// locks the board out of updates for good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a
+// firmware is never marked valid.
+static_assert(fastmem::UPDATE_PICTURE == board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES,
+              "fastmem.h must count the update screen's real size");
 static bool canUpdate() {
   const size_t need = fastmem::UPDATE_RAM;
   const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
@@ -193,6 +192,7 @@ void setup() {
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor, tested on the host.
 static void dimWhenIdle(uint8_t want, bool progress) {
+  fastmem::setDark(want == 0 || progress);   // a game's internal-RAM loan comes home before an update starts
   g_sys.setDark(want == 0);
   if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {

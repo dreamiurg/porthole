@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <initializer_list>
+#include "fastmem.h"
 #include "games/sand-jar/game.h"
 #include "games/sand-jar/physics.h"
 #include "gfx565.h"
@@ -268,25 +269,46 @@ static void incrementalIsFull() {
   puts("render: drawing only what changed shows what a full redraw does");
 }
 
-// Leaving gives the grid's internal RAM back (fastmem.h) and the next visit borrows it again: the jar must come back
-// cell for cell, so a full redraw after leave() and enter() equals one from before.
+// The grid's internal RAM (fastmem.h) goes back on leave() and when the screen goes dark (a wireless update may need
+// it), and is borrowed again once lit: the jar must come back cell for cell each time, so a full redraw equals one from
+// before, and the jar keeps flowing while its grid is home in the Jar.
 static uint16_t before[gfx565::W * gfx565::H];
-static void leaveKeepsTheJar() {
+static void sameAsBefore() {
+  gfx565::target(panel[2]);
+  game.render();
+  assert(!memcmp(before, panel[2], sizeof before));
+}
+static void loansComeHome() {
   uint32_t ms = 1000;
   AppEnter e{}; e.ms = ms;
   game.enter(e);
   game.debugCmd("beach");
   InputTracker touch;
-  for (int f = 0; f < 90; f++) { ms += 34; game.update(ms / 1000, ms, frameInput(touch, f, ms)); }
+  auto play = [&](int frames) { for (int f = 0; f < frames; f++) { ms += 34; game.update(ms / 1000, ms, frameInput(touch, f, ms)); } };
+  play(90);
+  assert(game.fast());
   gfx565::target(before);
   game.render();
   game.leave();
+  assert(!game.fast());
   e.ms = ms;
   game.enter(e);
-  gfx565::target(panel[2]);
+  sameAsBefore();
+  play(1);
+  assert(game.fast());
+  gfx565::target(before);
   game.render();
-  assert(!memcmp(before, panel[2], sizeof before));
-  puts("leave: the jar comes back cell for cell");
+  fastmem::setDark(true);   // recalled: home, and nothing lent while dark
+  assert(!game.fast());
+  sameAsBefore();
+  const uint32_t steps = game.steps();
+  play(30);
+  assert(!game.fast() && game.steps() > steps);
+  fastmem::setDark(false);
+  play(1);
+  assert(game.fast());
+  game.leave();
+  puts("loans: the jar comes back cell for cell after leave() and the dark");
 }
 
 // A late frame (the physics cost more than a frame) takes the jar to one step a frame for SLOW_MS, then back to two:
@@ -324,7 +346,7 @@ int main() {
   orbitsStayOnGlass();
   replays();
   incrementalIsFull();
-  leaveKeepsTheJar();
+  loansComeHome();
   lateFramesSlowDown();
   puts("test_sand_jar: all passed");
   return 0;

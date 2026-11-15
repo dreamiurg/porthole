@@ -80,16 +80,23 @@ void Game::enter(const AppEnter& e) {
   jar_->finger.on = false; jar_->shaking = 0;
   gate_.shown(ms_);
   if (!started_) { tables(); pour(MODE_SAND); started_ = true; }
-  if (!fast_ && (fast_ = (int16_t*)fastmem::take(sizeof jar_->cells))) {   // the grid in internal RAM while open
-    memcpy(fast_, jar_->cells, sizeof jar_->cells);
-    jar_->occ = fast_;
-  }
 }
 
-// The grid goes home to the Jar, so the internal RAM is free again (a wireless update needs it); the sand stays put.
 void Game::leave() {
   if (!jar_) return;
   jar_->finger.on = false;
+  giveBack();
+}
+
+// The grid, read a dozen times per grain per step, in internal RAM while fastmem lends it (not in the dark, not when
+// a wireless update would be short); it goes home to the Jar on leave() or when fastmem recalls it. The sand stays put.
+void Game::borrow() {
+  fast_ = (int16_t*)fastmem::take(sizeof jar_->cells, [](void* g) { static_cast<Game*>(g)->giveBack(); }, this);
+  if (!fast_) return;
+  memcpy(fast_, jar_->cells, sizeof jar_->cells);
+  jar_->occ = fast_;
+}
+void Game::giveBack() {
   if (!fast_) return;
   memcpy(jar_->cells, fast_, sizeof jar_->cells);
   jar_->occ = jar_->cells;
@@ -141,6 +148,7 @@ void Game::tables() {
 
 void Game::update(uint32_t, uint32_t ms, const Input& in) {
   if (!ready()) return;
+  if (!fast_) borrow();
   ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   sense(in);

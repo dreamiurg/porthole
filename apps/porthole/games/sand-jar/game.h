@@ -40,6 +40,7 @@ class Game : public App {
   void debugPrint() override;
   void debugCmd(const char* cmd) override;   // "sand" "rainbow" "beach" "orbits": that mode, freshly poured
   uint32_t steps() const { return jar_->frame; }   // physics steps since the last pour (a pour resets it)
+  bool fast() const { return fast_; }               // the grid is in internal RAM (fastmem.h)
 
  private:
   // What one of the panel's buffers holds, per cell: render() writes a cell's 3x3 block only when it changed since it
@@ -62,7 +63,7 @@ class Game : public App {
   // the board they land in PSRAM, which is slower for random access than internal RAM.
   Jar* jar_ = nullptr;
   Tables* t_ = nullptr;
-  int16_t* fast_ = nullptr;       // while open: the Jar's grid in internal RAM, if fastmem could lend it (null: in the Jar)
+  int16_t* fast_ = nullptr;       // while open and lit: the Jar's grid in internal RAM, if fastmem lends it (null: in the Jar)
   bool ready() const { return jar_ && t_ && seen_[0].cells && seen_[1].cells; }
   Seen seen_[2] = {};
   int nextSeen_ = 0;
@@ -79,6 +80,8 @@ class Game : public App {
   int upStep_ = 0;                // cell offset of "up" this frame
   bool under_ = false;            // this render changed a cell under a button
 
+  void borrow();                  // the grid into internal RAM, if fastmem lends it
+  void giveBack();                // the grid home to the Jar
   void pour(Mode m);
   void tables();
   void sense(const Input& in);
