@@ -155,6 +155,37 @@ static void drawing() {
   assert(!memcmp(whole, g_fb, sizeof whole));
 }
 
+// font::clip, any box, for labels that hang off the panel's corners too: inside it the label's own pixels, outside it
+// nothing.
+static void clipped() {
+  static uint16_t whole[W * H];
+  target(g_fb);
+  const font::Font& f = biscuit::FONT20;
+  const int at[2][2] = {{-9, -7}, {452, 466}};   // ink in 0..34 x 0..10 and in 453..478 x 469..479
+  const int cut[][4] = {{0, 0, 12, 9}, {5, 3, 6, 4}, {0, 6, W, 7}, {3, 0, 4, H}, {461, 470, W, H}, {0, 474, W, 475}, {470, 0, 471, H},
+                        {-50, -50, 900, 900}, {10, 10, 10, 20}, {20, 9, 10, 8}};
+  for (const auto& a : at) {
+    clear(0);
+    font::text(f, "Goal", a[0], a[1], 0xFFFF);
+    memcpy(whole, g_fb, sizeof whole);
+    int crossed = 0;
+    for (const auto& c : cut) {
+      clear(0);
+      font::clip(c[0], c[1], c[2], c[3]);
+      assert(font::text(f, "Goal", a[0], a[1], 0xFFFF) == a[0] + font::textWidth(f, "Goal"));
+      font::clip(0, 0, W, H);
+      int inked = 0;
+      for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) {
+        const bool in = x >= c[0] && x < c[2] && y >= c[1] && y < c[3];
+        assert(fb[y * W + x] == (in ? whole[y * W + x] : 0));
+        inked += fb[y * W + x] != 0;
+      }
+      crossed += inked > 0;
+    }
+    assert(crossed >= 4);   // the cuts do cross each label: a corner of it, one row, one column, all of it
+  }
+}
+
 static void audit() {   // the text log: the logical box and RGB colors the playtest audit reads
   target(g_fb); clear(PAPER);
   const font::Font& f = biscuit::FONT20;
@@ -260,6 +291,7 @@ int main() {
   widths();
   pages();
   drawing();
+  clipped();
   audit();
   roundRects();
   shapes();

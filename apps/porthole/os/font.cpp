@@ -111,18 +111,18 @@ void drawGlyph(const Font& f, uint32_t cp, const Pen& p) {   // lv_draw_sw_lette
     return;
   }
   const Glyph& g = f.glyphs[gi];
+  const int gx = p.x + g.ofsX, gy = p.y + f.lineHeight - f.baseLine - g.boxH - g.ofsY;
+  // The glyph's rows and columns inside the clip, found once: the loop below tests nothing per pixel but its coverage.
+  const int c0 = gx < p.x0 ? p.x0 - gx : 0, c1 = gx + g.boxW > p.x1 ? p.x1 - gx : g.boxW;
+  const int r0 = gy < p.y0 ? p.y0 - gy : 0, r1 = gy + g.boxH > p.y1 ? p.y1 - gy : g.boxH;
+  if (c1 <= c0) return;
   const uint8_t* bm = f.bitmap + g.bitmapIndex;
-  int gx = p.x + g.ofsX, gy = p.y + f.lineHeight - f.baseLine - g.boxH - g.ofsY;
-  for (int row = 0; row < g.boxH; row++) {
-    int py = gy + row;
-    if (py < p.y0 || py >= p.y1) continue;
-    for (int col = 0; col < g.boxW; col++) {
-      uint32_t bit = (uint32_t)(row * g.boxW + col) * 4;
-      uint8_t v = (bm[bit >> 3] >> ((bit & 4) ? 0 : 4)) & 15;
-      int px = gx + col;
-      if (!v || px < p.x0 || px >= p.x1) continue;
-      uint16_t& d = gfx565::fb[py * gfx565::W + px];
-      d = v == 15 ? p.fg : mix(p.fg, d, (uint8_t)(v * 17));   // _lv_bpp4_opa_table: coverage * 17
+  for (int row = r0; row < r1; row++) {
+    uint16_t* d = gfx565::fb + (gy + row) * gfx565::W + gx + c0;
+    uint32_t at = (uint32_t)(row * g.boxW + c0);   // in nibbles: 4 bpp, the high nibble first
+    for (int n = c1 - c0; n > 0; n--, at++, d++) {
+      const uint8_t v = (bm[at >> 1] >> ((at & 1) ? 0 : 4)) & 15;
+      if (v) *d = v == 15 ? p.fg : mix(p.fg, *d, (uint8_t)(v * 17));   // _lv_bpp4_opa_table: coverage * 17
     }
   }
 }
