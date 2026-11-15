@@ -10,7 +10,7 @@ tap 124 104
 wait 700
 tap 96 135
 wait 700
-tap 58 104
+tap 36 104
 wait 2500
 expect-screen race_tracks
 tap 53 55
@@ -52,7 +52,7 @@ wait 700
 tap 53 103
 wait 1500
 expect-screen library
-tap 58 104
+tap 36 104
 wait 2500
 tap 53 55
 wait 900
@@ -78,7 +78,7 @@ tap 124 104
 wait 900
 tap 96 135
 wait 900
-tap 58 104
+tap 36 104
 wait 2500
 tap 53 55
 wait 900

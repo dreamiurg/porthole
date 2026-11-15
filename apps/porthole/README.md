@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town, Rally and Sand Jar.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town, Rally, Sand Jar and Times Cards.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -78,6 +78,17 @@ switches between four jars: **Sand Jar** (warm sand that heaps and avalanches), 
 scatters it.
 
 Design and state contract: [game brief](games/sand-jar/AGENTS.md)
+
+## Times Cards: the times tables, a few minutes a day
+
+Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say the answer out loud,
+tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
+Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
+tomorrow, an easy one waits longer each time. Once every fact of a table is known (Easy on two
+separate days), the next table opens. A 6-year-old starts on 2×, an 8-year-old on 4×. No timer, no
+sounds.
+
+Design and state contract: [game brief](games/times-cards/AGENTS.md)
 
 ## Toy Town Life: a tiny town, your own stories
 

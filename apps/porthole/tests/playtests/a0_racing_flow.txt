@@ -11,7 +11,7 @@ wait 600
 expect-screen library
 ui-check rally_launcher
 snap ra00_launcher
-tap 58 104
+tap 36 104
 wait 600
 expect-screen race_tracks
 ui-check
