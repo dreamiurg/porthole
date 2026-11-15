@@ -50,12 +50,13 @@ const char* key(char prefix, int id) { static char k[4]; snprintf(k, sizeof k, "
 
 static uint32_t recCrc(const Record& r) { return os::crc32(&r, sizeof r - sizeof r.crc); }
 void seal(Record& r) { r.magic = REC_MAGIC; r.version = REC_VERSION; r.size = sizeof(Record); r.crc = recCrc(r); }
-bool loadRecord(const void* data, size_t n, Record& out) {   // this version's size, or v1's (the new fields stay 0)
-  if (n != sizeof(Record) && n != REC_V1_SIZE) return false;
+bool loadRecord(const void* data, size_t n, Record& out) {   // this version's size, or an older one's (the new fields stay 0)
+  const uint16_t version = n == REC_V1_SIZE ? 1 : n == REC_V2_SIZE ? 2 : n == sizeof(Record) ? REC_VERSION : 0;
+  if (!version) return false;
   memset(&out, 0, sizeof out);
   memcpy(&out, data, n - sizeof out.crc);
   uint32_t crc; memcpy(&crc, (const uint8_t*)data + n - sizeof crc, sizeof crc);
-  bool ok = out.magic == REC_MAGIC && out.version == (n == REC_V1_SIZE ? 1 : REC_VERSION) && out.size == n &&
+  bool ok = out.magic == REC_MAGIC && out.version == version && out.size == n &&
             crc == os::crc32(data, n - sizeof crc);
   out.name[sizeof out.name - 1] = 0;   // a CRC proves the bytes, not that the name ends
   if (ok) seal(out);                   // in memory it is a current record

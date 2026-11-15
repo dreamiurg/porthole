@@ -32,14 +32,14 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   // test states: "hungry" "unlock" "young" "grown" "tricks" "practiced" "read" (every story and discovery done)
-  // "books" (every story open)
+  // "books" (every story open) "rich" (the most stars a kid can hold)
   void debugCmd(const char* cmd) override;
 
   // shared by the screens (screens_*.cpp)
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
     SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES, SC_TABLES,
-    SC_PUZZLE, SC_COUNT
+    SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_COUNT
   };
 
  private:
@@ -47,6 +47,7 @@ class Game : public App {
   Profile who_{};                             // the kid playing: {name} in every line
   bool dirty_ = false, wantsHome_ = false;
   bool daylight_ = false;                     // AppEnter::daylight: day scenes whatever the clock says
+  uint32_t* wallet_ = nullptr;                // AppEnter::stars: the kid's balance (os/stars.h), the shell's to keep
   uint32_t now_ = 0, ms_ = 0, lastTickSec_ = 0, lastCheckpointSec_ = 0;
   Input in_{};
   ui::FreshGate gate_;                        // every screen change ignores touches for a moment (os/ui.h)
@@ -76,11 +77,16 @@ class Game : public App {
   // the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits).
   puzzles::Kind kind_ = puzzles::ADD; uint8_t table_ = 0;
   puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
+  int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
+  int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
+  int item_ = 0;                              // Doghouse: the thing the shop opened
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
   void markDirty() { dirty_ = true; }
+  int starCount() const { return (int)::stars::balance(wallet_); }   // what every screen's header shows
   void say(Say line, uint8_t activity);   // personalized, with what the pup does meanwhile
+  void sayTrick(int id);                  // the pup does a trick at home and names it, with its lessons so far
   void animate(uint8_t activity);             // SCENE_IDLE: nothing
   void quiet();                               // the idle line, idling
   void tick();
@@ -123,6 +129,9 @@ class Game : public App {
   void updateTables(); void drawTables();
   void startPuzzles(puzzles::Kind kind, uint8_t table);
   void nextPuzzle();
-  void updatePuzzle(); void drawPuzzle();
+  void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
+  void updateDoghouse(); void drawDoghouse();
+  void updateShop(); void drawShop();
+  void updateItem(); void drawItem();
 };
 }  // namespace biscuit

@@ -65,7 +65,7 @@ void Game::updateLibrary() {
 }
 void Game::drawLibrary() {
   gfx565::clear(PAPER);
-  top(in_, "Our bookshelf", stars(save_));
+  top(in_, "Our bookshelf", starCount());
   button(in_, DISCOVER);
   button(in_, NOTEBOOK_BUTTON);
   for (int row = 0; row < SHELF_ROWS; row++) {
@@ -101,7 +101,7 @@ void Game::updateStory() {
 void Game::drawStory() {
   const bool ending = screen_ == SC_ENDING;
   gfx565::clear(PAPER);
-  top(in_, ending ? "The story continues" : "Story time", stars(save_));
+  top(in_, ending ? "The story continues" : "Story time", starCount());
   text(PAGE, pageText(), INK);
   nav(in_, reader(ending, at_, total_), at_, total_);
 }
@@ -117,7 +117,7 @@ void Game::updateChoice() {
 }
 void Game::drawChoice() {
   gfx565::clear(PAPER);
-  top(in_, "What shall we do?", stars(save_));
+  top(in_, "What shall we do?", starCount());
   char s[256];
   personalize(STORIES[story_].prompt, who_.name, save_.petName, s, sizeof s);
   text(PROMPT, s, INK);

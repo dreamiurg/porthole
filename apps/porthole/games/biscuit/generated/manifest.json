@@ -3640,5 +3640,32 @@
       "frame": 3,
       "sha256": "eacbd0b1767c7695e1c6db40d9a5f3b01f45e4c3f1dea75c2ece24f5375faf94"
     }
-  ]
+  ],
+  "doghouse": {
+    "rooms": [
+      {
+        "stage": 0,
+        "sha256": "c26d5a29c5bc8571e31e586cdb7ba93280210c933c6c18d1bc06b2981e796112"
+      },
+      {
+        "stage": 1,
+        "sha256": "79037e6ff739120e32b73f3d3bf217d3c1ad2bbe0854e16ea1aa3c2e19e00a1a"
+      },
+      {
+        "stage": 2,
+        "sha256": "d17149cd1a787b2f557ab30eb17ce9e8cf757a52fa28cb9f7c04f9faf2d05cf2"
+      }
+    ],
+    "decor": {
+      "ball": "c1524e6920e6615759293f3a2d7aff8d2f3f9b3a3a23a25b4b08c2bd49a52f64",
+      "bowl": "111b813142f99c39fc02f673619b747f6fed9e6bfa5a785234b3a7a613344a3c",
+      "flags": "73879013ade162f8309eac04027311c2661bb5a5581a9809604edf6a39e14207",
+      "photo": "69055cc3f08515e1142d2eeb6cf45c9bb2f0ea6a6b6d32c1ba6354d7562c2a05",
+      "plant": "2a199e0c1fb0d5eb65077ce1e36814e96b2c6d88f794b3c3a8ccf0c3d388a350",
+      "clock": "03ada2eab851681bd89fffecd61c056a3f590ea9a6fc7a313be0ccf169cc15f0",
+      "poster": "f436c59cd44ff967b2c3561f1e7eae456b2d7b1b281396a3f63bc53487491bd9",
+      "shelf": "2d7ce4f9d3fff859a83d94abeee76689acc2e9af5b35b77102d0bd4e2cc10632",
+      "bed": "c0b3276ec8417eb18fcfa3b9d826f460fec994625c7abe32867fbfa2e72c518d"
+    }
+  }
 }

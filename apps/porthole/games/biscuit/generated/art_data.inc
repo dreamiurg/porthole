@@ -244,4 +244,18 @@ const packed565::Image SCENES[SCENE_STAGES][SCENE_TIMES][SCENE_ACTIVITIES][SCENE
 {{160,160,scene_329,1165},{160,160,scene_358,1160},{160,160,scene_359,1186},{160,160,scene_360,1159}},
 {{160,160,scene_361,1192},{160,160,scene_362,1193},{160,160,scene_363,1190},{160,160,scene_364,1200}},
 {{160,160,scene_365,1184},{160,160,scene_366,1172},{160,160,scene_367,1172},{160,160,scene_368,1180}}}}};
+const packed565::Image DOGHOUSE_ROOMS[3] = {
+{160,160,doghouse_room_0,659},
+{160,160,doghouse_room_1,680},
+{160,160,doghouse_room_2,704}};
+const DecorArt DECOR_ART[DECOR_COUNT] = {
+{136,100,{14,14,decor_0,93}},
+{110,100,{24,12,decor_1,74}},
+{50,32,{60,14,decor_2,138}},
+{18,40,{28,22,decor_3,110}},
+{140,72,{16,26,decor_4,115}},
+{116,34,{24,24,decor_5,115}},
+{112,60,{26,30,decor_6,133}},
+{10,66,{38,26,decor_7,140}},
+{10,98,{46,22,decor_8,113}}};
 }  // namespace biscuit

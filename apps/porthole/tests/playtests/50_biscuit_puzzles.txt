@@ -10,7 +10,7 @@ tap 121 129
 wait 450
 expect-screen biscuit_world
 ui-check biscuit_world-puzzles
-tap 80 132
+tap 52 132
 wait 450
 expect-screen biscuit_puzzles
 ui-check biscuit_puzzles
@@ -41,6 +41,11 @@ expect asked=5
 expect daily=16
 ui-check biscuit_puzzle-done
 snap z05_done
+# a slow double-tap on the last Next: the second tap lands on More, and the round's end stays up
+tap 80 132
+wait 450
+expect-screen biscuit_puzzle
+wait 600
 tap 80 132
 wait 450
 expect-screen biscuit_puzzles
