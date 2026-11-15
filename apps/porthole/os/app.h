@@ -56,5 +56,5 @@ class App {
   virtual void debugCmd(const char* cmd) = 0;
 
  protected:
-  ~App() = default;   // apps are static objects, never deleted through the interface
+  ~App() = default;   // apps are built once by psram::make (games/apps.h) and never deleted
 };

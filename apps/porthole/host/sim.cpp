@@ -286,7 +286,7 @@ static SimFeed g_feed;
 
 static FileStore g_store;
 static SimSystem g_sys;
-static Shell g_shell;
+static Shell& g_shell = psram::make<Shell>();   // as the firmware builds it
 static InputTracker g_tracker;
 bool SimFeed::spot(double* la, double* lo) {
   shell::Home h;

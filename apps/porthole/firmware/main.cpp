@@ -3,7 +3,6 @@
 #include <Preferences.h>
 #include "board.h"
 #include "esp_heap_caps.h"
-#include "esp_memory_utils.h"
 #include "esp_ota_ops.h"
 #include "fastmem.h"
 #include "games/apps.h"
@@ -186,9 +185,10 @@ void setup() {
   air::setFeed(&g_feed);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys, APP_IDS);   // first boot after Pets Club: its houses become profiles here
   beginClock();
-  Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu psram_apps=%d\n", g_shell.profileCount(),
-                (unsigned long)nowSec(), (unsigned long)utcNow(), (unsigned long)board::freeHeap(),
-                esp_ptr_external_ram(&g_shell) && esp_ptr_external_ram(APPS[0]));
+  Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
+                (unsigned long)utcNow(), (unsigned long)board::freeHeap());
+  if (psram::fallbacks)   // the games and the shell belong in PSRAM; in internal RAM they eat an update's share
+    Serial.printf("[porthole] WARNING: %d app objects in internal RAM, not PSRAM\n", psram::fallbacks);
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
