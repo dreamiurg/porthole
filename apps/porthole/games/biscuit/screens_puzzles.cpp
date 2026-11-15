@@ -22,7 +22,7 @@ constexpr uint16_t FILLS[3] = {SAGE, PEACH, PURPLE};
 Button strandButton(int i) { return {STRAND_BUTTON[i], STRAND_LABELS[i], &FONT20, FILLS[i], true}; }
 Button answerButton(const puzzles::Puzzle& p, int i) { return {ANSWER[i], p.answers[i], &FONT28, FILLS[i], true}; }
 constexpr uint32_t SUMMARY_MS = 1000;
-constexpr Button NEXT_PUZZLE = {WIDE, "Next", &FONT20, SAGE, true}, MORE = {WIDE, "More puzzles", &FONT20, SAGE, true};
+constexpr Button NEXT_PUZZLE = {WIDE, "Next", &FONT20, PURPLE, true}, MORE = {WIDE, "More puzzles", &FONT20, SAGE, true};
 constexpr Button MORE_SHORT = {PUZZLE_MORE, "More", &FONT20, SAGE, true}, SHOW_ME = {PUZZLE_SHOW, "Show me", &FONT20, PURPLE, true};
 }  // namespace
 
@@ -103,6 +103,15 @@ void Game::summary(char* line, size_t cap) const {
   else snprintf(pup, sizeof pup, "{pet} learned %s: %d of 3.", TRICKS[taught_].name, save_.tricks[taught_]);
   snprintf(line, cap, "%d right this time!\n%s\n%s%s%s", right_, stars, pup, levelUp_ ? "\n" : "", levelUp_ ? LEVEL_UP : "");
 }
+// The first times level, drawn so a kid who can't read the story yet can count it: a bowls of b biscuits each.
+static void drawGroups(const puzzles::Item& q) {
+  static constexpr int8_t SPOT[4][2] = {{-11, -11}, {11, -11}, {-11, 11}, {11, 11}};
+  for (int g = 0; g < q.a; g++) {
+    const int x = gfx565::CX + (2 * g - (q.a - 1)) * 40, y = 178;
+    gfx565::circle(x, y, 32, BOWL);
+    for (int i = 0; i < q.b; i++) gfx565::circle(x + SPOT[i][0], y + SPOT[i][1], 8, PEACH);
+  }
+}
 void Game::drawPuzzle() {
   const bool right = answered_ >= 0 && answered_ == puzzle_.right && asked_ < puzzles::ROUND;
   gfx565::clear(right ? SAGE : PAPER);   // green behind a right answer, so it looks different from a miss
@@ -119,7 +128,8 @@ void Game::drawPuzzle() {
   }
   snprintf(line, sizeof line, "Puzzle %d of %d", asked_ + 1, puzzles::ROUND);
   top(in_, line, starCount());
-  if (puzzle_.clue[0]) text(CLUE, puzzle_.clue, INK);
+  if (puzzle_.item.strand == puzzles::GROUPS && puzzle_.item.level == 0) drawGroups(puzzle_.item);
+  else if (puzzle_.clue[0]) text(CLUE, puzzle_.clue, INK);
   text(ASK, puzzle_.ask, INK);
   if (answered_ < 0) {
     for (int i = 0; i < puzzles::ANSWERS; i++) button(in_, answerButton(puzzle_, i));

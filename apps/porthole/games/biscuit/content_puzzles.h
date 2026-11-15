@@ -115,7 +115,7 @@ inline constexpr const char* REAL_WORDS[] = {
   "mink", "mild", "mill", "cook", "hook", "look", "took", "boom", "best", "pest", "rest", "test", "west", "newt",
   "band", "land", "sand", "wand", "hind", "hard", "hang", "lock", "mock", "rock", "sack", "sick", "cock", "gain",
   "main", "pain", "ruin", "rail", "raid", "fail", "hail", "mail", "nail", "pail", "sail", "toil", "dose", "hose",
-  "lose", "pose", "rose", "node", "nope", "note", "mitten", "socket", "locket", "mutton", "simmer", "dimmer",
+  "lose", "pose", "rose", "node", "nope", "note", "mitten", "socket", "locket", "mutton", "simmer", "dimmer", "lumber",
 };
 inline constexpr int REAL_WORD_COUNT = sizeof REAL_WORDS / sizeof REAL_WORDS[0];
 
