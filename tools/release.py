@@ -18,7 +18,8 @@ Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
 - A commit belongs to an app when it touches apps/<app>/ or the shared platform/.
 - Every beta is a patch: any feat, fix, perf or breaking commit since the app's last tag bumps
-  the patch. Other types (docs, chore, ci, test, refactor, style, build) never cause a release
+  the patch, and so does a revert of one (`Revert "feat: ..."`, or the type `revert`). The type is
+  matched whatever its case. Other types (docs, chore, ci, test, refactor, style, build) never cause a release
   on their own, but are listed in the notes of a release that happens anyway. Notes still group
   breaking changes, features and fixes from the conventional commit titles.
 - A stable release is the next minor above every tag the app has: beta 0.38.7 becomes 0.39.0,
@@ -41,6 +42,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 TITLE = re.compile(r"^(?P<type>\w+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?:\s*(?P<desc>.+)$")
+REVERT = re.compile(r'^Revert "(?P<title>.+)"')  # GitHub's Revert button; a squash merge adds " (#N)" after it
 BREAKING = re.compile(r"^BREAKING[ -]CHANGE:", re.M)  # a footer starts its line; a mention in prose is not one
 SECTIONS = [("breaking", "Breaking changes"), ("feat", "Features"), ("fix", "Fixes"), ("other", "Other changes")]
 RELEASABLE = {"breaking", "feat", "fix"}
@@ -79,14 +81,19 @@ def commits(app: str, since: str | None, ref: str) -> list[tuple[str, str, str]]
 
 def classify(subject: str, body: str) -> tuple[str, str]:
     """(kind, text) where kind is breaking | feat | fix | other."""
+    if m := REVERT.match(subject):
+        # Taking a shipped change back out changes what boards run: without a release the reverted beta stays the
+        # newest one and promote.yml would make it stable. Taking a docs or chore commit back out ships nothing.
+        return ("fix" if classify(m["title"], "")[0] in RELEASABLE else "other"), subject
     m = TITLE.match(subject)
     if not m:
         return "other", subject
+    kind = m["type"].lower()  # "Fix(porthole): ..." is a fix: nothing lints a squash merge's title
     if m["bang"] or BREAKING.search(body):
         return "breaking", subject
-    if m["type"] == "feat":
+    if kind == "feat":
         return "feat", subject
-    if m["type"] in ("fix", "perf"):
+    if kind in ("fix", "perf", "revert"):
         return "fix", subject
     return "other", subject
 
