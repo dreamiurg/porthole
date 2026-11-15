@@ -20,7 +20,7 @@ class Game : public App {
   bool soundOn(uint32_t) override { return false; }
   bool takeSave(const void**, size_t*, bool) override { return false; }
   bool wantsHome() override { const bool wanted = home_; home_ = false; return wanted; }
-  void leave() override {}
+  void leave() override;
   const char* screenName() const override;
   void debugPrint() override;
   void debugCmd(const char* cmd) override;
