@@ -31,22 +31,24 @@ static void grades() {
   const int c = cardOf(2, 3);
   grade(s, c, EASY, DAY);   // new and known at once: box 2, back in 2 days
   CHECK(s.box[c] == 2 && s.due[c] == DAY + 2);
-  grade(s, c, EASY, DAY + 1);   // early (practice): no move
+  grade(s, c, EASY, DAY);   // the same day again (practice): no move
   CHECK(s.box[c] == 2 && s.due[c] == DAY + 2);
-  grade(s, c, HARD, DAY + 1);   // early Hard: no later than tomorrow, box kept
-  CHECK(s.box[c] == 2 && s.due[c] == DAY + 2);
-  grade(s, c, EASY, DAY + 2);   // due: up to the mastery box
-  CHECK(s.box[c] == MASTER_BOX && s.due[c] == DAY + 2 + INTERVAL[MASTER_BOX]);
-  grade(s, c, HARD, DAY + 6);   // due Hard: kept, tomorrow
-  CHECK(s.box[c] == MASTER_BOX && s.due[c] == DAY + 7);
-  grade(s, c, WRONG, DAY + 6);   // Wrong: back to learning, tomorrow
-  CHECK(s.box[c] == 1 && s.due[c] == DAY + 7);
+  grade(s, c, HARD, DAY);   // early Hard: no later than tomorrow, box kept
+  CHECK(s.box[c] == 2 && s.due[c] == DAY + 1);
+  grade(s, c, EASY, DAY + 1);   // still learning, another day: up to the mastery box
+  CHECK(s.box[c] == MASTER_BOX && s.due[c] == DAY + 1 + INTERVAL[MASTER_BOX]);
+  grade(s, c, EASY, DAY + 2);   // known and not due: no move
+  CHECK(s.box[c] == MASTER_BOX && s.due[c] == DAY + 5);
+  grade(s, c, HARD, DAY + 5);   // due Hard: kept, tomorrow
+  CHECK(s.box[c] == MASTER_BOX && s.due[c] == DAY + 6);
+  grade(s, c, WRONG, DAY + 5);   // Wrong: back to learning, tomorrow
+  CHECK(s.box[c] == 1 && s.due[c] == DAY + 6);
   const int d = cardOf(2, 4);
   grade(s, d, HARD, DAY);
   CHECK(s.box[d] == 1 && s.due[d] == DAY + 1);
   for (int i = 0; i < 20; i++) grade(s, d, EASY, DAY + 1000 * (i + 1));   // never past the top box
   CHECK(s.box[d] == MAX_BOX);
-  CHECK(s.answers == 27);
+  CHECK(s.answers == 28);
 }
 
 static void levelUp() {
@@ -55,7 +57,9 @@ static void levelUp() {
   int32_t day = DAY;
   for (int n = 1; n <= FACTS; n++) CHECK(!grade(s, cardOf(2, n), EASY, day));   // box 2: not known yet
   CHECK(s.level == 2 && known(s, 2) == 0);
-  day += 2;
+  for (int n = 1; n <= FACTS; n++) CHECK(!grade(s, cardOf(2, n), EASY, day));   // the same day twice: still not known
+  CHECK(known(s, 2) == 0);
+  day += 1;   // Easy on a second day makes each fact known
   for (int n = 1; n < FACTS; n++) CHECK(!grade(s, cardOf(2, n), EASY, day));
   CHECK(grade(s, cardOf(2, FACTS), EASY, day));   // the last fact known: the 3x table opens
   CHECK(s.level == 3 && known(s, 2) == FACTS);
@@ -76,8 +80,8 @@ static void rounds() {
   Save s;
   setUp(s, 4, DAY);
   Round r;
-  build(r, s, DAY, 7);   // day one: nothing due yet, four new 4x facts, and practice from the known tables
-  CHECK(r.n == ROUND && count(r, isNew, s, DAY) == NEW_PER_ROUND);
+  build(r, s, DAY, 7);   // day one: nothing due yet and nothing to practise: only four new 4x facts
+  CHECK(r.n == NEW_PER_ROUND && count(r, isNew, s, DAY) == NEW_PER_ROUND);
   bool seen[CARDS] = {};
   for (int i = 0; i < r.n; i++) { CHECK(!seen[r.card[i]] && tableOf(r.card[i]) <= 4); seen[r.card[i]] = true; }
   build(r, s, DAY + 30, 7);   // a month away: everything known is due; room is still kept for new cards
@@ -85,20 +89,36 @@ static void rounds() {
   setUp(s, 1, DAY);
   build(r, s, DAY, 3);   // a first-timer on 1x: only its new cards exist, and only four of them come at once
   CHECK(r.n == NEW_PER_ROUND);
+  // Practice is a fact still being learned, unless it went well today; a known fact comes only when due.
+  setUp(s, 4, DAY);
+  for (int n = 1; n <= 6; n++) grade(s, cardOf(4, n), EASY, DAY);
+  grade(s, cardOf(4, 1), WRONG, DAY);
+  build(r, s, DAY, 5);
+  CHECK(r.n == 1 + NEW_PER_ROUND);
+  for (int i = 0; i < r.n; i++) CHECK(tableOf(r.card[i]) == 4 && (!s.box[r.card[i]] || r.card[i] == cardOf(4, 1)));
+  setUp(s, TABLES, DAY);   // every table known and nothing due: practice from all of them
+  for (int n = 1; n <= FACTS; n++) { grade(s, cardOf(TABLES, n), EASY, DAY); grade(s, cardOf(TABLES, n), EASY, DAY + 1); }
+  for (int c = 0; c < CARDS; c++) s.due[c] = (uint16_t)(DAY + 3);
+  build(r, s, DAY + 1, 5);
+  CHECK(allKnown(s) && r.n == ROUND);
   // A Wrong card comes back AGAIN_AFTER cards later, at most AGAIN_MAX times.
   setUp(s, 4, DAY);
-  build(r, s, DAY, 9);
+  build(r, s, DAY + 30, 9);
   const int first = r.current();
-  answer(r, s, WRONG, DAY);
+  answer(r, s, WRONG, DAY + 30);
   CHECK(r.n == ROUND + 1 && r.card[1 + AGAIN_AFTER] == first && r.wrong == 1);
+  CHECK(r.base == ROUND && r.redo[1 + AGAIN_AFTER] && !r.redo[AGAIN_AFTER] && r.number() == 2);   // "2 of 10" after one card
   int shown = 1;
   while (!r.done()) {
     const bool again = r.current() == first;
     shown += again;
-    answer(r, s, again ? WRONG : EASY, DAY);
+    answer(r, s, again ? WRONG : EASY, DAY + 30);
   }
   CHECK(shown == 1 + AGAIN_MAX && r.n == ROUND + AGAIN_MAX && r.easy == ROUND - 1 && r.wrong == 1 + AGAIN_MAX);
-  CHECK(s.box[first] == 1 && s.due[first] == DAY + 1);
+  CHECK(s.box[first] == 1 && s.due[first] == DAY + 31);
+  build(r, s, DAY + 30, 4);   // an all-Wrong round grows by AGAIN_ROOM cards at most
+  while (!r.done()) answer(r, s, WRONG, DAY + 30);
+  CHECK(r.n == MAX_QUEUE && r.wrong == MAX_QUEUE);
 }
 
 static void saves() {
@@ -148,14 +168,14 @@ static void pages() {
   tapBox(g, 80, 133);   // Go!
   CHECK(on(g, "cards_ask"));
   settle(g);
-  for (int i = 0; i < ROUND; i++) {
+  for (int i = 0; i < NEW_PER_ROUND; i++) {   // day one: the four new facts
     tapBox(g, 80, 70);   // the card: the answer shows
     CHECK(on(g, "cards_answer"));
     settle(g);
     tapBox(g, 41, 122);   // Easy
     settle(g);
   }
-  CHECK(on(g, "cards_done") && g.save().answers == ROUND);
+  CHECK(on(g, "cards_done") && g.save().answers == NEW_PER_ROUND);
   CHECK(g.takeSave(&data, &len, true));
   Save saved; memcpy(&saved, data, sizeof saved);
   tapBox(g, 80, 133);   // Again
@@ -163,6 +183,11 @@ static void pages() {
   settle(g);
   tapBox(g, 80, 12);   // home: back to the deck, then out
   CHECK(on(g, "cards_home"));
+  settle(g);
+  tapBox(g, 80, 70);   // the deck's card deals too
+  CHECK(on(g, "cards_ask"));
+  settle(g);
+  tapBox(g, 80, 12);
   settle(g);
   tapBox(g, 80, 12);
   CHECK(g.wantsHome() && !g.wantsHome());
@@ -172,7 +197,7 @@ static void pages() {
   SaveSlot slot = {&saved, sizeof saved};
   e.saves = &slot;
   g.enter(e);
-  CHECK(g.save().answers == ROUND && g.save().level == 4);
+  CHECK(g.save().answers == NEW_PER_ROUND && g.save().level == 4);
   g.debugPrint();
 }
 

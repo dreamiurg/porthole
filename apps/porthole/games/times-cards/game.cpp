@@ -14,13 +14,14 @@ using canvas::Box;
 constexpr uint16_t rgb(uint32_t c) { return (uint16_t)(((c >> 8) & 0xF800) | ((c >> 5) & 0x07E0) | ((c >> 3) & 0x001F)); }
 constexpr uint16_t DESK = rgb(0xaebdf2), SHADOW = rgb(0x8796d6), CARD = rgb(0xfffaf0), RULE = rgb(0xcfdff5),
                    MARGIN = rgb(0xf09090), INK = rgb(0x2a2d4f), SOFT = rgb(0x3f4370), WHITE = rgb(0xffffff);
-constexpr uint16_t GRADE_C[3] = {rgb(0x23804a), rgb(0xb0610a), rgb(0xc43c34)};   // Easy, Hard, Wrong: white text reads on each
+constexpr uint16_t GRADE_C[3] = {rgb(0x23804a), rgb(0xa65a00), rgb(0xc43c34)};   // Easy, Hard, Wrong: white text reads on each
 const char* const GRADE_WORD[3] = {"Easy", "Hard", "Wrong"};
 
 // Hit boxes are logical (160 px across, like every game); everything is drawn at 3x.
 constexpr ui::Box HOME = {68, 0, 25, 25};            // ui::back's place, the way back on every page
 constexpr ui::Box GO = {47, 122, 66, 22};            // Go! (home page) and Again (done page)
 constexpr ui::Box BIG_CARD = {20, 34, 120, 73};      // the card a kid taps to see the answer
+constexpr ui::Box DECK = {33, 41, 94, 60};           // the deck's card on the home page: a tap deals, like Go!
 constexpr ui::Box GRADE[3] = {{24, 110, 34, 22}, {63, 110, 34, 22}, {102, 110, 34, 22}};
 constexpr Box px(const ui::Box& b) { return {b.x * 3, b.y * 3, (b.x + b.w) * 3, (b.y + b.h) * 3}; }
 
@@ -36,8 +37,9 @@ void house(bool pressed) {
   canvas::roundBox({cx - 10, cy - 2, cx + 10, cy + 13}, 0, WHITE);
   canvas::roundBox({cx - 3, cy + 5, cx + 3, cy + 13}, 0, pressed ? SHADOW : INK);
 }
-void indexCard(const Box& b) {   // a shadow, the card, its margin line and rules
+void indexCard(Box b, int sink = 0) {   // a shadow, the card (pressed `sink` px toward it), its margin line and rules
   canvas::roundBox({b.x0 + 6, b.y0 + 8, b.x1 + 6, b.y1 + 8}, 20, SHADOW);
+  b.y0 += sink; b.y1 += sink;
   canvas::roundBox(b, 20, CARD);
   for (int y = b.y0 + 72; y < b.y1 - 16; y += 40) canvas::roundBox({b.x0 + 14, y, b.x1 - 14, y + 2}, 0, RULE);
   canvas::roundBox({b.x0 + 14, b.y0 + 28, b.x1 - 14, b.y0 + 31}, 0, MARGIN);
@@ -68,12 +70,15 @@ void Game::enter(const AppEnter& e) {
   clampDue(save_, today());
   round_ = Round{};
   go(P_HOME);
+  gate_.shown(ms_);   // the launcher's tap is not this page's
 }
 
+// A new page ignores the finger that turned it, by place, so a double tap acts once but a grade right after the answer
+// shows still counts.
 void Game::go(Page p) {
   page_ = p;
   frames_.reset();
-  gate_.shown(ms_);
+  gate_.shownAt(ms_, in_.x, in_.y);
 }
 
 void Game::deal() {
@@ -90,7 +95,10 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     return;
   }
   switch (page_) {
-    case P_HOME: case P_DONE:
+    case P_HOME:
+      if (ui::clicked(in_, GO) || ui::clicked(in_, DECK)) deal();
+      break;
+    case P_DONE:
       if (ui::clicked(in_, GO)) deal();
       break;
     case P_ASK:
@@ -109,7 +117,15 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   }
 }
 
-// The home page: the table the kid is on, big on its card, and a dot per fact of it (green known, amber learning).
+// A dot per fact of the kid's table: green known, amber learning, pale new.
+static void dots(const Save& s, int cx, int y) {
+  for (int n = 1; n <= FACTS; n++) {
+    const uint8_t b = s.box[cardOf(s.level, n)];
+    canvas::disc(cx + (n * 2 - FACTS - 1) * 12, y, 9, b >= MASTER_BOX ? GRADE_C[EASY] : b ? GRADE_C[HARD] : RULE);
+  }
+}
+
+// The home page: the table the kid is on, big on its card, and its dots.
 static void drawHome(const Save& s, bool goDown) {
   centered(FONT40, "Times Cards", 240, 92, INK);
   const Box card = {100, 124, 380, 304};
@@ -117,11 +133,7 @@ static void drawHome(const Save& s, bool goDown) {
   char t[16];
   snprintf(t, sizeof t, "%d \xC3\x97", s.level);
   centered(cardsbig::FONT110, t, 240, 214, INK);
-  for (int n = 1; n <= FACTS; n++) {
-    const uint8_t b = s.box[cardOf(s.level, n)];
-    const int x = 240 + (n * 2 - FACTS - 1) * 12;
-    canvas::disc(x, 280, 9, b >= MASTER_BOX ? GRADE_C[EASY] : b ? GRADE_C[HARD] : RULE);
-  }
+  dots(s, 240, 280);
   centered(FONT28, allKnown(s) ? "Every table known!" : "Say it, then tap the card", 240, 336, SOFT);
   button(GO, "Go!", GRADE_C[EASY], goDown, FONT40);
 }
@@ -134,7 +146,9 @@ void Game::draw() const {
   if (page_ == P_DONE) {
     char t[32];
     if (round_.leveledUp) snprintf(t, sizeof t, "Next up: %d \xC3\x97!", save_.level);
-    centered(FONT40, round_.leveledUp ? t : "Great job!", 240, 100, INK);
+    const char* title = round_.leveledUp ? t : !round_.hard && !round_.wrong ? "Perfect round!"
+                        : round_.wrong * 2 > round_.n ? "Nice try!" : "Great job!";
+    centered(FONT40, title, 240, 100, INK);
     indexCard({80, 140, 400, 304});
     const int counts[3] = {round_.easy, round_.hard, round_.wrong};
     for (int g = 0; g < 3; g++) {
@@ -144,16 +158,20 @@ void Game::draw() const {
       centered(FONT40, s, x, 214, WHITE);
       centered(FONT28, GRADE_WORD[g], x, 270, SOFT);
     }
+    snprintf(s, sizeof s, "%d \xC3\x97", save_.level);   // where the table stands now
+    centered(FONT28, s, 108, 336, INK);
+    dots(save_, 264, 336);
     button(GO, "Again", GRADE_C[EASY], down(in_, GO), FONT40);
     return;
   }
-  snprintf(s, sizeof s, "%d of %d", round_.at + 1, round_.n);
-  centered(FONT28, s, 240, 84, SOFT);
-  indexCard(px(BIG_CARD));
+  snprintf(s, sizeof s, "%d of %d", round_.number(), round_.base);   // a missed card's second look adds nothing to count
+  centered(FONT28, round_.redo[round_.at] ? "One more try" : s, 240, 84, SOFT);
+  const int dy = page_ == P_ASK && down(in_, BIG_CARD) ? 6 : 0;   // the card sinks under a finger
+  indexCard(px(BIG_CARD), dy);
   const int c = round_.current();
   if (page_ == P_ASK) {
     fact(s, sizeof s, c, false);
-    centered(cardsbig::FONT110, s, 240, 232, INK);
+    centered(cardsbig::FONT110, s, 240, 232 + dy, INK);
     centered(FONT28, "Say it out loud, then tap!", 240, 352, SOFT);
     return;
   }
@@ -169,8 +187,8 @@ void Game::render() {
   struct Look { uint8_t page, card, level, at, n, held; } look = {page_, 0, save_.level, (uint8_t)round_.at,
                                                                    (uint8_t)round_.n, 0};
   if (page_ == P_ASK || page_ == P_ANSWER) look.card = (uint8_t)round_.current();
-  const ui::Box* hot[] = {&HOME, &GO, &GRADE[0], &GRADE[1], &GRADE[2]};
-  for (int i = 0; i < 5; i++) if (in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
+  const ui::Box* hot[] = {&HOME, &GO, &GRADE[0], &GRADE[1], &GRADE[2], &BIG_CARD};
+  for (int i = 0; i < 6; i++) if (in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
   frames_.render(nullptr, 0, os::crc32(&look, sizeof look), [&] { draw(); });
 }
 

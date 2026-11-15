@@ -13,10 +13,12 @@ rules and its save.
 Every page has the house at the top: from a card it goes back to the deck, from the deck out to the launcher.
 
 - `cards_home`, the deck: the table the kid is on, big on an index card, a dot for each of its ten facts (green known,
-  amber learning, pale new), "Say it, then tap the card" (or "Every table known!") and **Go!**.
-- `cards_ask`: "k of n" and the card, "a × b". A tap on the card turns it.
+  amber learning, pale new), "Say it, then tap the card" (or "Every table known!") and **Go!**; a tap on the card deals
+  too.
+- `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b". The card sinks under a finger; a tap turns it.
 - `cards_answer`: "a × b =" small and the answer big, with **Easy**, **Hard** and **Wrong**.
-- `cards_done`: "Great job!" (or "Next up: N ×!" when the round opened a new table), the round's three tallies and
+- `cards_done`: "Perfect round!" (no Hard or Wrong), "Great job!", or "Next up: N ×!" when the round opened a new
+  table; the round's three tallies and
   **Again**, which deals the next round.
 
 No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only comes back sooner.
@@ -27,21 +29,25 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
   never shown, 1 learning, up to 7. A box waits `INTERVAL` days before the card is due again (1, 2, 4, 7, 14, 30, 60).
 - **Easy** on a card that is new or due moves it one box up (a new card known at once goes to box 2). **Hard** keeps
   its box and brings it back tomorrow. **Wrong** puts it back in box 1, due tomorrow, and shows it again three cards
-  later in the same round (at most twice). A card answered before it was due (practice) never moves up.
+  later in the same round, once (headed "One more try", not counted in "k of n"; a round grows by five such cards
+  at most). A fact still being learned (box 1 or 2) also moves up on Easy any day after
+  the one it was last seen; a known card answered before it was due never moves up.
 - **Mastery:** a fact is known once it reaches `MASTER_BOX` (3): Easy on two separate days. **Level-up:** when all ten
   facts of the newest table are known, the next table opens and its facts start coming in as new cards; the older ones
   keep coming back for review.
 - **Start:** from the profile's age, `startTable(age) = clamp(age - 4, 1, 4)`. The tables below start in box 5, spread
   over the next two weeks, so a few come back for review each day.
-- **A round** is ten cards: due cards first (oldest first), leaving room for up to four new ones from the newest table,
-  then practice (the least-known unlocked cards) to fill it, shuffled.
+- **A round** is up to ten cards: due cards first (oldest first), leaving room for up to four new ones from the newest
+  table, then practice from the newest table and any fact still being learned. A known older fact comes only when due,
+  so a round can be short (a first day is four new cards). With every table known and nothing due, a round is practice
+  from all of them. Shuffled.
 - Days are Porthole's local wall clock (`now / 86400`). Being away punishes nothing: an overdue card is simply due.
   A clock set back is clamped so no card waits longer than its box says.
 
 ## Save
 
-One 320-byte blob per kid (`timescards/s<id>`, written by the shell after each answer): magic, version, size, level,
-start table, answers ever, box and due day per card, crc. Append-only: a new field goes right before `crc` with a
+One 520-byte blob per kid (`timescards/s<id>`, written by the shell after each answer): magic, version, size, level,
+start table, answers ever, box, due day and last-seen day per card, crc. Append-only: a new field goes right before `crc` with a
 zero that is a sensible default, `SAVE_VERSION` goes up, nothing is reordered or resized. A blob of the wrong size or
 crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
 

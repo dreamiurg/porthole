@@ -1,8 +1,8 @@
 # Times Cards: multiplication flash cards with spaced repetition, one deck per kid. A 6-year-old starts on 2x and an
-# 8-year-old on 4x. Go! deals ten cards; tapping the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card
-# comes back a few cards later). A fact counts as known after Easy on two separate days, and once all ten facts of the
-# table are known the next table opens. The house goes from a card back to the deck, and from the deck to the launcher.
-# Every page is audited.
+# 8-year-old on 4x. Go! (or a tap on the deck's card) deals a round: a first day is the table's first four facts. Tapping
+# the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card comes back a few cards later). A fact counts as
+# known after Easy on two separate days, and once all ten facts of the table are known the next table opens. The house
+# goes from a card back to the deck, and from the deck to the launcher. Every page is audited.
 profile Zach 6
 app timescards
 wait 600
@@ -12,14 +12,13 @@ expect start=2
 expect answers=0
 ui-check cards_home
 snap t01_home
-# taps beside Go! and on the deck's card do nothing
-tap 80 100
+# a tap beside Go! does nothing; the deck's card deals
 tap 30 133
 expect-screen cards_home
-tap 80 133
+tap 80 70
 wait 600
 expect-screen cards_ask
-expect n=10
+expect n=4
 expect at=0
 ui-check cards_ask
 snap t02_ask
@@ -41,41 +40,42 @@ tap 119 122
 wait 600
 expect-screen cards_ask
 expect wrong=1
-expect n=11
+expect n=5
 expect at=1
 tap 80 70
-wait 600
+wait 100
+# a grade right after the answer shows still counts; a double tap grades once
 tap 80 122
-wait 600
+tap 80 122
+wait 50
 expect hard=1
-repeat 9
+expect at=2
+wait 600
+repeat 3
 tap 80 70
 wait 600
 tap 41 122
 wait 600
 end
 expect-screen cards_done
-expect easy=9
-expect answers=11
+expect easy=3
+expect answers=5
 ui-check cards_done
 snap t04_done
-# the house: from the round's end back to the deck, which shows the facts started
-tap 80 12
-wait 600
-expect-screen cards_home
-snap t05_home_started
-# Again and the house mid-round: back to the deck, nothing lost
+# Again, then the house mid-round: back to the deck, nothing lost
 tap 80 133
 wait 600
+expect-screen cards_ask
 tap 80 70
 wait 600
 tap 41 122
 wait 600
-expect answers=12
+expect answers=6
 tap 80 12
 wait 600
 expect-screen cards_home
-expect answers=12
+expect answers=6
+snap t05_home_started
 # out to the launcher and back in: the same deck
 tap 80 12
 wait 600
@@ -83,9 +83,9 @@ expect-screen launcher|home
 app timescards
 wait 600
 expect-screen cards_home
-expect answers=12
+expect answers=6
 expect level=2
-# Day one: two more rounds, every card Easy, so all ten 2x facts are started.
+# The rest of day one: every new fact started.
 tap 80 133
 wait 600
 repeat 12
@@ -107,8 +107,8 @@ end
 tap 80 12
 wait 600
 expect level=2
-# Two days on, the 2x facts are due: Easy again makes them known, and the 3x table opens.
-skip 172800
+# The next day, Easy makes most facts known; the two missed ones need one more day, then the 3x table opens.
+skip 86400
 tap 80 133
 wait 600
 repeat 12
@@ -129,6 +129,8 @@ wait 600
 end
 tap 80 12
 wait 600
+expect level=2
+skip 86400
 tap 80 133
 wait 600
 repeat 12
