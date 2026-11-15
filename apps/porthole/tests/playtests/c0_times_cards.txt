@@ -1,6 +1,6 @@
 # Times Cards: multiplication flash cards with spaced repetition, one deck per kid. A 6-year-old starts on 2x and an
 # 8-year-old on 4x. Go! (or a tap on the deck's card) deals a round: a first round is the table's first three facts at the
-# starting pace. Tapping the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card comes back a few cards
+# starting pace, topped up to five with known 1x facts. Tapping the card shows the answer; Easy, Hard or Wrong grades it (a Wrong card comes back a few cards
 # later). A fact counts as known after Easy on two separate days; at most six facts are learned at once, so the next
 # table's facts start while the last of this one settle, and the level moves on once all ten are known. The house
 # goes from a card back to the deck, and from the deck to the launcher. Every page is audited.
@@ -19,7 +19,7 @@ expect-screen cards_home
 tap 80 70
 wait 600
 expect-screen cards_ask
-expect n=3
+expect n=5
 expect at=0
 ui-check cards_ask
 snap t02_ask
@@ -41,7 +41,7 @@ tap 119 122
 wait 600
 expect-screen cards_ask
 expect wrong=1
-expect n=4
+expect n=6
 expect at=1
 tap 80 70
 wait 100
@@ -52,15 +52,15 @@ wait 50
 expect hard=1
 expect at=2
 wait 600
-repeat 2
+repeat 4
 tap 80 70
 wait 600
 tap 41 122
 wait 600
 end
 expect-screen cards_done
-expect easy=2
-expect answers=4
+expect easy=4
+expect answers=6
 ui-check cards_done
 snap t04_done
 # Again, then the house mid-round: back to the deck, nothing lost
@@ -71,11 +71,11 @@ tap 80 70
 wait 600
 tap 41 122
 wait 600
-expect answers=5
+expect answers=7
 tap 80 12
 wait 600
 expect-screen cards_home
-expect answers=5
+expect answers=7
 snap t05_home_started
 # out to the launcher and back in: the same deck
 tap 80 12
@@ -84,7 +84,7 @@ expect-screen launcher|home
 app timescards
 wait 600
 expect-screen cards_home
-expect answers=5
+expect answers=7
 expect level=2
 # The rest of day one: every new fact started.
 tap 80 133
@@ -108,7 +108,8 @@ end
 tap 80 12
 wait 600
 expect level=2
-# The next day, Easy makes most facts known; the two missed ones need one more day, then the 3x table opens.
+# The next day, Easy makes most facts known; the missed ones and the last fact need two more days, then the 3x table
+# opens.
 skip 86400
 tap 80 133
 wait 600
@@ -131,6 +132,17 @@ end
 tap 80 12
 wait 600
 expect level=2
+skip 86400
+tap 80 133
+wait 600
+repeat 12
+tap 80 70
+wait 600
+tap 41 122
+wait 600
+end
+tap 80 12
+wait 600
 skip 86400
 tap 80 133
 wait 600

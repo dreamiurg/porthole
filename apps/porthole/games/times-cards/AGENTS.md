@@ -57,7 +57,7 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
   over the next two weeks, so a few come back for review each day.
 - **A round** is up to ten cards: due cards first (oldest first), leaving room for the new facts the pace allows, then
   practice from any fact still being learned and not yet seen today, then (when struggling) known facts. A known fact
-  otherwise comes only when due, so a round can be short (a first round is three new facts at the starting pace). With
+  otherwise comes only when due, but a round shorter than five (`MIN_ROUND`) is topped up with known facts not seen today (a first round is three new facts at the starting pace and two known ones). With
   nothing at all to show, a round is practice from every fact met. Shuffled.
 - Why this shape: incremental rehearsal (new facts mixed among known ones, new ones held back when known ones slip),
   about 2 to 4 new facts per session for this age (Burns 2016), and a target success rate near 85% (Wilson et al. 2019,

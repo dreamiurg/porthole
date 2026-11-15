@@ -87,11 +87,12 @@ static void rounds() {
   Round r;
   const int first = newAllowed(s);   // a fresh deck at the starting pace: three new facts
   CHECK(first == 3);
-  build(r, s, DAY, 7);   // day one: nothing due yet and nothing to practise: only new facts, 4x and (taking turns) division
-  CHECK(r.n == first && count(r, isNew, s, DAY) == first);
+  build(r, s, DAY, 7);   // day one: nothing due yet: the new facts, 4x and (taking turns) division, topped up with known ones
+  CHECK(r.n == MIN_ROUND && count(r, isNew, s, DAY) == first);
   for (int i = 0; i < r.n; i++) {
     const int c = r.card[i];
-    CHECK(isDiv(c) ? c == divOf(2, 1) : tableOf(c) == 4 && factorOf(c) <= 2);   // 4x1, 4x2 in order; 2 / 2 from the 2x family
+    if (!isNew(s, c, DAY)) CHECK(s.boxOf(c) >= MASTER_BOX);
+    else CHECK(isDiv(c) ? c == divOf(2, 1) : tableOf(c) == 4 && factorOf(c) <= 2);   // 4x1, 4x2 in order; 2 / 2 from the 2x family
   }
   build(r, s, DAY + 30, 7);   // a month away: everything known is due; room is still kept for new cards
   CHECK(r.n == ROUND && count(r, isNew, s, DAY + 30) == first && count(r, due, s, DAY + 30) == ROUND - first);
@@ -300,8 +301,8 @@ static void pages() {
   tapBox(g, 80, 133);   // Go!
   CHECK(on(g, "cards_ask"));
   settle(g);
-  const int first = newAllowed(g.save());
-  for (int i = 0; i < first; i++) {   // day one: the first new facts
+  const int first = MIN_ROUND;   // day one: the first new facts, topped up with known ones
+  for (int i = 0; i < first; i++) {
     tapBox(g, 80, 70);   // the card: the answer shows
     CHECK(on(g, "cards_answer"));
     settle(g);

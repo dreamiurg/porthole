@@ -43,6 +43,7 @@ constexpr int DIVS = (TABLES - 1) * FACTS;   // n / d for divisors 2..10 and quo
 constexpr int ALL = CARDS + DIVS;
 constexpr int DIV_FROM_LEVEL = 4;        // division joins once 1x to 3x are known (a third-grade standard)
 constexpr int ROUND = 10;                // cards in a round (before Wrong ones come back)
+constexpr int MIN_ROUND = 5;             // a shorter round is topped up with known facts: a one-card round feels broken
 constexpr int NEW_PER_ROUND = 4;         // at most this many never-seen cards in one round
 constexpr int WORKING_SET = 6;           // at most this many facts being learned (shown, below MASTER_BOX) at once
 constexpr int PACE_START = 850;          // the pace (thousandths right) assumed before a kid has answered anything
@@ -259,16 +260,16 @@ inline void shuffle(Round& r, uint32_t seed) {
   for (int i = r.n - 1; i > 0; i--) { const int j = (int)(nextRand(x) % (uint32_t)(i + 1)); const uint8_t t = r.card[i]; r.card[i] = r.card[j]; r.card[j] = t; }
 }
 // Easy wins between the hard ones: known facts not seen today, the soonest due first (early, so they never move up).
-inline void mixKnown(Round& r, bool* used, const Save& s, int32_t today) {
+inline void mixKnown(Round& r, bool* used, const Save& s, int32_t today, int upTo) {
   pick(r, used, s, [&](int a, int b) { return s.boxOf(a) >= MASTER_BOX && s.seenOf(a) != (uint16_t)today && (b < 0 || s.dueOf(a) < s.dueOf(b)); },
-       ROUND);
+       upTo);
 }
 // Which cards come first: the due ones, oldest due first (a lower box breaks a tie), up to the round less the room kept
 // for new cards; then the new facts the pace allows (newCards); then practice: facts still being
 // learned and not yet seen today (a missed one gets its second look in its own round), least-known first. While the
 // kid is struggling (pace below the third step) practice leaves KNOWN_MIX places for known facts, so a hard round still
-// has easy wins in it (interspersal, as in incremental rehearsal). Otherwise a known fact comes only when due, so a
-// round can be short. Only when nothing at all qualifies is the round practice from every
+// has easy wins in it (interspersal, as in incremental rehearsal). Otherwise a known fact comes only when due, but a
+// round shorter than MIN_ROUND is topped up with known facts not seen today. Only when nothing at all qualifies is the round practice from every
 // fact met so far, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
 inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
   r = Round{};
@@ -282,8 +283,9 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
   const bool struggling = paceOf(s) < PACE_STEPS[2];
   pick(r, used, s, [&](int a, int b) { return s.boxOf(a) < MASTER_BOX && s.seenOf(a) != (uint16_t)today && least(a, b); },
        struggling ? ROUND - KNOWN_MIX : ROUND);
-  if (struggling) mixKnown(r, used, s, today);
+  if (struggling) mixKnown(r, used, s, today, ROUND);
   if (!r.n) pick(r, used, s, least, ROUND);
+  else if (r.n < MIN_ROUND) mixKnown(r, used, s, today, MIN_ROUND);
   r.base = r.n;
   shuffle(r, seed);
 }
