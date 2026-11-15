@@ -22,8 +22,8 @@ Nav reader(int at, int total) { return {"Previous", at + 1 >= total ? "Question"
 }  // namespace
 
 void Game::startReads() {
-  readsAsked_ = readsRight_ = 0;
-  readStars_ = earnedStars(save_); readLevelWas_ = readLevel(save_, who_.age);
+  asked_ = right_ = 0;
+  roundStars_ = earnedStars(save_); readLevelWas_ = readLevel(save_, who_.age);
   nextRead();
 }
 // One of the level's passages not had since Biscuit opened; when the level had them all, its cycle starts again.
@@ -39,7 +39,7 @@ void Game::nextRead() {
   }
   little_ = pick < 0 ? 0 : pick;
   readsSeen_ |= 1ull << little_;
-  readAnswer_ = -1;
+  answered_ = -1;
   openPages(&READS[little_].text, 1, 0);
   go(SC_READ);
 }
@@ -67,16 +67,16 @@ Button answerButton(const Read& r, int i, const Profile& who, const Save& p, cha
 }
 }  // namespace
 void Game::updateReadAsk() {
-  if (readsAsked_ >= READ_ROUND) {
+  if (asked_ >= READ_ROUND) {
     if (tapped(in_, BACK_BUTTON)) { go(SC_LIBRARY); return; }
-    if (ms_ - readEndMs_ >= SUMMARY_MS && tapped(in_, MORE_READS)) startReads();
+    if (ms_ - roundEndMs_ >= SUMMARY_MS && tapped(in_, MORE_READS)) startReads();
     return;
   }
-  if (readAnswer_ >= 0) {
+  if (answered_ >= 0) {
     if (tapped(in_, BACK_BUTTON)) { go(SC_LIBRARY); return; }
     if (!tapped(in_, NEXT_READ)) return;
-    readEndMs_ = ms_;
-    if (++readsAsked_ < READ_ROUND) nextRead();
+    roundEndMs_ = ms_;
+    if (++asked_ < READ_ROUND) nextRead();
     else fresh();
     return;
   }
@@ -84,9 +84,9 @@ void Game::updateReadAsk() {
   if (tapped(in_, BACK_BUTTON)) { openPages(&READS[little_].text, 1, -1); go(SC_READ); return; }
   for (int i = 0; i < READ_ANSWERS; i++) {
     if (!tapped(in_, Button{READ_ANSWER[i], "", &FONT20, FILLS[i], true})) continue;   // the hit test needs only the box
-    readAnswer_ = i;
+    answered_ = i;
     const bool right = i == READS[little_].right;
-    readsRight_ += right;
+    right_ += right;
     answerRead(save_, right, who_.age, now_); markDirty();
     fresh();
     return;
@@ -96,20 +96,20 @@ void Game::drawReadAsk() {
   gfx565::clear(PAPER);
   const Read& r = READS[little_];
   char line[320], s[320], answer[96];
-  if (readsAsked_ >= READ_ROUND) {
+  if (asked_ >= READ_ROUND) {
     top(in_, "All done!", starCount());
-    const int got = earnedStars(save_) - readStars_, level = readLevel(save_, who_.age);
+    const int got = earnedStars(save_) - roundStars_, level = readLevel(save_, who_.age);
     char stars[48];
     if (got > 0) snprintf(stars, sizeof stars, "+%d star%s!", got, got > 1 ? "s" : "");
     else snprintf(stars, sizeof stars, "%d more right for a star.", (int)(READS_PER_STAR - save_.readsRight % READS_PER_STAR));
-    snprintf(line, sizeof line, "%d of %d right!\n%s\n%s", readsRight_, READ_ROUND, stars,
+    snprintf(line, sizeof line, "%d of %d right!\n%s\n%s", right_, READ_ROUND, stars,
              level > readLevelWas_ ? "Next time: longer reads!" : "{pet} loves reading with you.");
     personalize(line, who_.name, save_.petName, s, sizeof s);
     text(READ_AFTER, s, INK);
     button(in_, MORE_READS);
     return;
   }
-  if (readAnswer_ < 0) {   // the question takes the title's place
+  if (answered_ < 0) {   // the question takes the title's place
     top(in_, "", starCount());
     personalize(r.question, who_.name, save_.petName, s, sizeof s);
     text(READ_QUESTION, s, INK);
@@ -117,10 +117,10 @@ void Game::drawReadAsk() {
     return;
   }
   top(in_, r.title, starCount());
-  const bool right = readAnswer_ == r.right;
+  const bool right = answered_ == r.right;
   personalize(r.answers[r.right], who_.name, save_.petName, answer, sizeof answer);
   const bool star = right && save_.readsRight % READS_PER_STAR == 0;   // this answer earned a star
-  if (right) snprintf(line, sizeof line, "Yes! %s.\n%s", answer, star ? STAR_CHEER : CHEERS[readsAsked_]);
+  if (right) snprintf(line, sizeof line, "Yes! %s.\n%s", answer, star ? STAR_CHEER : CHEERS[asked_]);
   else snprintf(line, sizeof line, "Oops! The answer: %s.\n%s", answer, r.why);
   personalize(line, who_.name, save_.petName, s, sizeof s);
   text(READ_AFTER, s, INK);

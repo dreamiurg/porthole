@@ -80,10 +80,10 @@ class Game : public App {
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
   int item_ = 0;                              // Doghouse: the thing the shop opened
-  // Little reads: the passage (READS index), how far the round is (READ_ROUND = done), the answer tapped (-1 = none
-  // yet), the passages this round already had (READS bits), the stars and level before the round.
-  int little_ = 0, readsAsked_ = 0, readsRight_ = 0, readAnswer_ = -1, readStars_ = 0, readLevelWas_ = 0;
-  uint64_t readsSeen_ = 0; uint32_t readEndMs_ = 0;
+  // Little reads: the passage (READS index), the level before the round, the passages had since Biscuit opened (READS
+  // bits). A round is never open beside a puzzle round, so it keeps its count, answer, stars and end in the puzzles'
+  // asked_, right_, answered_, roundStars_ and roundEndMs_ (static RAM is at its limit).
+  int little_ = 0, readLevelWas_ = 0; uint64_t readsSeen_ = 0;
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
