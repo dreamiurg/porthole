@@ -15,7 +15,9 @@ FP := -ffp-contract=off
 CXXFLAGS ?= -std=c++17 -O1 -g
 # -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so an NDEBUG in the
 # environment's CXXFLAGS does not turn them off. HOST_FLAGS goes into the coverage build too.
-HOST_FLAGS := $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+# -funsigned-char: plain char is unsigned on the board (Xtensa) and signed on x86 and on a Mac, so a `c < 0`, a char
+# used as an index or a char widened to int would behave one way here and another on the board.
+HOST_FLAGS := $(FP) -funsigned-char $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
 CXXFLAGS += $(HOST_FLAGS)
 ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
