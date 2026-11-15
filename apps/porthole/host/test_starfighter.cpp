@@ -209,20 +209,28 @@ static void stageTransitions() {
 // frame drawn in either buffer is the same picture.
 static uint16_t panel[2][gfx565::W * gfx565::H];
 static void sceneLoan() {
-  Game g;
-  AppEnter e{}; e.ms = 1000;
-  g.enter(e);
-  gfx565::target(panel[0]); g.render();
-  CHECK(!fastmem::take(1, nullptr, nullptr));   // the scene holds the one loan
-  fastmem::setDark(true);
-  gfx565::target(panel[1]); g.render();
-  CHECK(!memcmp(panel[0], panel[1], sizeof panel[0]));
-  fastmem::setDark(false);
-  g.render();
-  g.leave();
-  void* p = fastmem::take(1, nullptr, nullptr);
-  CHECK(p);
-  fastmem::give(p);
+  const char* pages[] = {"title", "calibrate", "brief", "squadron", "waveclear", "entry", "trench", "target", "torpedo",
+                         "explosion", "victory", "defeat"};
+  for (const char* page : pages) {
+    Game g;
+    AppEnter e{}; e.ms = 1000;
+    g.enter(e);
+    g.debugCmd(page);
+    gfx565::target(panel[0]); g.render();          // in the loan (poisoned on the host: every page repaints it whole)
+    CHECK(!fastmem::take(1, nullptr, nullptr));   // the scene holds the one loan
+    fastmem::setDark(true);                        // recalled
+    gfx565::target(panel[1]); g.render();          // at home
+    CHECK(!memcmp(panel[0], panel[1], sizeof panel[0]));
+    fastmem::setDark(false);
+    void* p = fastmem::take(1, nullptr, nullptr);  // the recall gave the block back
+    CHECK(p);
+    fastmem::give(p);
+    g.render();
+    g.leave();
+    p = fastmem::take(1, nullptr, nullptr);
+    CHECK(p);
+    fastmem::give(p);
+  }
 }
 int main() {
   banking(); calibration(); naturalFlow(); invalidGrip(); queuedTaps(); steeringAndClocks();
