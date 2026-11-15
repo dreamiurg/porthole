@@ -1,6 +1,7 @@
 #include "launcher_icon.h"
 #include "game.h"
 #include "content_daily.h"
+#include "content_reads.h"
 #include <stdio.h>
 #include <string.h>
 #include "generated/scenes.h"
@@ -81,7 +82,8 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateProfile, &Game::updateRenamePet, &Game::updateLibrary, &Game::updateStory, &Game::updateChoice,
     &Game::updateStory, &Game::updateDiscoveries, &Game::updateTopics, &Game::updateDiscovery, &Game::updateSource,
     &Game::updateToday, &Game::updateWord, &Game::updateStickers, &Game::updatePuzzles,
-    &Game::updatePuzzle, &Game::updateDoghouse, &Game::updateShop, &Game::updateItem};
+    &Game::updatePuzzle, &Game::updateDoghouse, &Game::updateShop, &Game::updateItem,
+    &Game::updateRead, &Game::updateReadAsk};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -115,7 +117,8 @@ void Game::render() {
     &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
     &Game::drawRenamePet, &Game::drawLibrary, &Game::drawStory, &Game::drawChoice, &Game::drawStory,
     &Game::drawDiscoveries, &Game::drawTopics, &Game::drawDiscovery, &Game::drawSource, &Game::drawToday,
-    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawDoghouse, &Game::drawShop, &Game::drawItem};
+    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawDoghouse, &Game::drawShop, &Game::drawItem,
+    &Game::drawRead, &Game::drawReadAsk};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   if (screen_ != SC_HOME) homeFrames_.reset();   // another screen draws over what the buffers held of Home
@@ -145,7 +148,7 @@ const char* Game::screenName() const {
                             "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
                             "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers",
                             "biscuit_puzzles", "biscuit_puzzle", "biscuit_doghouse", "biscuit_shop",
-                            "biscuit_item"};
+                            "biscuit_item", "biscuit_read", "biscuit_read_ask"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per screen");
   return N[screen_];
 }
@@ -163,6 +166,8 @@ void Game::debugPrint() {
          (unsigned)p.puzzles, (int)strand_, level_, p.puzzleLevels[0], p.puzzleLevels[1], p.puzzleLevels[2], asked_, right_,
          answered_, puzzle().right, (unsigned)p.booksDay, (unsigned)p.moreStories);
   printf("reviews=%d review_at=%d reviewing=%d\n", p.puzzleReviewCount, reviewAt_, asked_ == reviewAt_);
+  printf("reads=%u read_level=%u read_streak=%u little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d\n",
+         (unsigned)p.readsRight, p.readLevel, p.readStreak, little_, asked_, right_, answered_, READS[little_].right);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }

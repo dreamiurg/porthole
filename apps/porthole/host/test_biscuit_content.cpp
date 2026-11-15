@@ -10,6 +10,7 @@
 #include "games/biscuit/content_discoveries.h"
 #include "games/biscuit/content_doghouse.h"
 #include "games/biscuit/content_puzzles.h"
+#include "games/biscuit/content_reads.h"
 #include "games/biscuit/content_stories.h"
 #include "games/biscuit/generated/discovery_art.h"
 #include "games/biscuit/generated/doghouse_art.h"
@@ -342,7 +343,7 @@ static void screensGate() {
   for (const char* t : TITLES) fits(HEADER, "title", t);
   static const char* const PAIRS[] = {"Discoveries", "Notebook", "Topics", "Today's three"};
   for (const char* t : PAIRS) fits(PAIR_LABEL, "pair", t);
-  static const char* const NAVS[] = {"Previous", "Next", "Choose", "The end", "Source", "Keep", "Our stickers", "Rename pup"};
+  static const char* const NAVS[] = {"Previous", "Next", "Choose", "The end", "Question", "Source", "Keep", "Our stickers", "Rename pup"};
   for (const char* t : NAVS) { fits(buttonLabel(PREV, &FONT20), "prev", t); fits(buttonLabel(NEXT, &FONT20), "next", t); }
   static const char* const WIDES[] = {"Let's find out", "Back to our book", "Back to today", "My turn", "Peek again"};
   for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "wide", t);
@@ -467,6 +468,51 @@ static void doghouseGate() {
     snprintf(line, sizeof line, "Watch me! I can do %s now!", t.name); fits(BUBBLE, t.id, filled(line));
   }
 }
+// Little reads: the Library's row, every passage (no more screens than its level at short names, so a first grader's
+// is one screen, and within the reader at the widest), its question, answers and what the pup says after one, and a
+// round's end.
+static int screensAt(const char* text, const char* name, const char* pet) {
+  static char buf[4 * READ_BYTES];
+  personalize(text, name, pet, buf, sizeof buf);
+  const char* screens[READ_SCREENS];
+  return font::pageBreaks(PAGE.box, buf, screens, READ_SCREENS, MIN_LAST_WORDS);
+}
+static void readsGate() {
+  char line[320], answer[128], where[64];
+  snprintf(line, sizeof line, "Little reads: level %d", READ_LEVELS);
+  fits(STORY_BUTTON, "little reads", line);
+  static const char* const WIDES[] = {"Next", "More reads"};
+  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "reads wide", t);
+  fits(HEADER, "reads end", "All done!");
+  static const char* const LAST[] = {"Next time: longer reads!", "{pet} loves reading with you."};
+  for (const char* t : LAST) {
+    snprintf(line, sizeof line, "3 of 3 right!\n3 more right for a star.\n%s", t);
+    fits(READ_AFTER, "reads end", filled(line));
+  }
+  int levels[READ_LEVELS + 1] = {0};
+  for (const Read& r : READS) {
+    assert(r.level >= 1 && r.level <= READ_LEVELS && r.right < READ_ANSWERS);
+    levels[r.level]++;
+    fits(HEADER, r.id, r.title);
+    stream(r.id, &r.text, 1);
+    const int n = screensAt(r.text, "Sam", "Pip");
+    if (n > r.level) { printf("content gate: %s takes %d screens at short names, level %d takes %d\n", r.id, n, r.level, r.level); failures++; }
+    snprintf(where, sizeof where, "%s question", r.id);
+    fits(READ_QUESTION, where, filled(r.question));
+    for (int i = 0; i < READ_ANSWERS; i++) {
+      snprintf(where, sizeof where, "%s answer %d", r.id, i);
+      snprintf(answer, sizeof answer, "%s", filled(r.answers[i]));
+      fits(READ_ANSWER_LABEL, where, answer);
+    }
+    snprintf(answer, sizeof answer, "%s", filled(r.answers[r.right]));
+    snprintf(line, sizeof line, "Oops! The answer: %s.\n%s", answer, r.why);
+    fits(READ_AFTER, r.id, filled(line));
+    for (const char* cheer : CHEERS) { snprintf(line, sizeof line, "Yes! %s.\n%s", answer, cheer); fits(READ_AFTER, r.id, filled(line)); }
+    snprintf(line, sizeof line, "Yes! %s.\n%s", answer, STAR_CHEER);
+    fits(READ_AFTER, r.id, filled(line));
+  }
+  for (int l = 1; l <= READ_LEVELS; l++) assert(levels[l] >= 3);   // a round of three never repeats a passage
+}
 static void pixelGate() {
   const font::Font* F[4] = {&FONT16, &FONT20, &FONT24, &FONT28};
   for (const font::Font* f : F)
@@ -483,6 +529,7 @@ static void pixelGate() {
   screensGate();
   puzzleGate();
   doghouseGate();
+  readsGate();
   if (failures) printf("content gate: %d strings do not fit (widest names: {name} %s, {pet} %s)\n", failures, NAME, PET);
   assert(failures == 0);
 }

@@ -165,6 +165,13 @@ inline constexpr Label FEEDBACK = {{&FONT24, 352, 100, 4, Align::CENTER}, 64, 25
 inline constexpr Label PUZZLE_DONE = {{&FONT24, 352, 200, 4, Align::CENTER}, 64, 156, false};
 constexpr Box PUZZLE_MORE = PREV, PUZZLE_SHOW = NEXT;
 
+// ---- Little reads: the passage in the story reader (PAGE), then the question over three answer rows, low like the
+// choice rows so the question has two lines; after an answer, what it was (and the how) above Next.
+inline constexpr Label READ_QUESTION = {{&FONT24, 340, 66, 4, Align::CENTER}, 70, 112, false};
+constexpr Box READ_ANSWER[3] = {{28, 62, 104, 22}, CHOICE[0], CHOICE[1]};
+inline constexpr Label READ_ANSWER_LABEL = buttonLabel(READ_ANSWER[2], &FONT20);
+inline constexpr Label READ_AFTER = PUZZLE_DONE;
+
 // ---- Scrapbook (the profile page): Our stickers and Rename pup where Previous and Next are
 inline constexpr Label BOOK_BADGE = {{&FONT24, 330, 30, 4, Align::CENTER}, 75, 150, false};
 inline constexpr Label BOOK_LINES = {{&FONT20, 340, 130, 4, Align::CENTER}, 70, 196, false};   // 5 lines: long names wrap

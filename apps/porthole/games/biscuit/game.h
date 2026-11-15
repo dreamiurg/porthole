@@ -39,7 +39,7 @@ class Game : public App {
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
     SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES,
-    SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_COUNT
+    SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_READ, SC_READ_ASK, SC_COUNT
   };
 
  private:
@@ -85,6 +85,10 @@ class Game : public App {
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
   int item_ = 0;                              // Doghouse: the thing the shop opened
+  // Little reads: the passage (READS index), the level before the round, the passages had since Biscuit opened (READS
+  // bits). A round is never open beside a puzzle round, so it keeps its count, answer, stars and end in the puzzles'
+  // asked_, right_, answered_, roundStars_ and roundEndMs_ (static RAM is at its limit).
+  int little_ = 0, readLevelWas_ = 0; uint64_t readsSeen_ = 0;
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
@@ -139,5 +143,8 @@ class Game : public App {
   void updateDoghouse(); void drawDoghouse();
   void updateShop(); void drawShop();
   void updateItem(); void drawItem();
+  void startReads(); void nextRead();
+  void updateRead(); void drawRead();          // the passage, in the story reader
+  void updateReadAsk(); void drawReadAsk();    // its question, what the answer was, and the round's end
 };
 }  // namespace biscuit

@@ -96,7 +96,7 @@ Each piece lists the files it owns. Pieces with no shared files can run at the s
 | B | Biscuit review queue (2) and "how" lines (4) | the same files as A | A |
 | C | Times Cards division facts | `games/times-cards/*`, `host/test_times_cards.cpp` | none |
 | D | Times Cards self-grading check at age 6: counters now, the decision after a week | `games/times-cards/*`, `host/test_times_cards.cpp` | C |
-| E | Short decodable stories for the 6-year-old, with one question each (`learning-principles.md`, principle 11) | `games/biscuit/content_stories.h` and its content tests | none; coordinate with A only on `game.h` if a screen is needed |
+| E | Short decodable stories for the 6-year-old, with one question each (`learning-principles.md`, principle 11). Built as Little reads: `content_reads.h`, `screens_reads.cpp`, `answerRead` in `pet.h` (it uses the save's reserved bytes, not v4) | `games/biscuit/content_reads.h`, `screens_reads.cpp` and their tests | none; coordinate with A only on `game.h` if a screen is needed |
 
 A and B go to the same session, one after the other. C and E can each go to a separate session in parallel with
 A. Every piece ships as its own PR with green CI, an independent kid playtest where it is visible, and screenshots
