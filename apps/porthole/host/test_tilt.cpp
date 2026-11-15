@@ -24,6 +24,10 @@ static void everyGrip() {
   }
   const tilt::Vec raw = tilt::from({120, -80, -990}, {0, 0, 0});   // no neutral at all: read as lying flat
   CHECK(raw.x == 120 && raw.y == -80);
+  // The sim's `tilt` and the serial `G` can hand over a full int16 per axis: its squares must not overflow an int.
+  const Grav big = {32767, 32767, -32768};
+  const tilt::Vec held = tilt::from(big, big), tipped = tilt::from({32767, -32768, -32768}, big);
+  CHECK(fabsf(held.x) < 1 && fabsf(held.y) < 1 && isfinite(tipped.x) && tipped.y < -30000);
 }
 // Leaned back 45 degrees, checked with plain rotations rather than gravityFor (which is tilt::from's own inverse):
 // gravity in the device's frame is (0, cos a, -sin a) leaned back by a from upright, so tipping the top edge 20 degrees
