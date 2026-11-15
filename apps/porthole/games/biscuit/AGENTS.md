@@ -57,12 +57,13 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the shell's migration can use it without a second `.o` colliding with Pets Club's in the
   coverage build. `namespace biscuit` throughout -- Pets Club owns the global `Save` and
   `namespace pet`.
-  - Save: 96 bytes (`SAVE_VERSION = 1`, magic `0x54435342` "BSCT"), NVS namespace
+  - Save: 108 bytes (`SAVE_VERSION = 2`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
+    puzzles` and a v1 blob loads with `booksDay = daysTogether`), NVS namespace
     `"biscuit"` (`STORE`, never renamed once it ships), key `s<profile id>`. Fields:
     `magic, version, size` header; `createdAt, updatedAt, lastVisitDay,
     fullness/happiness/energy, friendship, daysTogether, careCounts[3], discoveries[3],
     stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping, petName[13],
-    named, reserved[2]`; `crc` last -- append-only like every other game (shared app brief
+    named, reserved[2], moreStories, booksDay, puzzles`; `crc` last -- append-only like every other game (shared app brief
     constraint 4). The child's name and the daily play budget live in the shell's profile,
     not here. `named` gates everything: nothing decays, no visit counts, no progress until
     the pup has a name.
@@ -82,8 +83,11 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   delete and create, and serial `R`, erase `biscuit/s<id>` like every game's store in `APPS`.
 - `host/test_biscuit.cpp` (shared `host/` directory, #35): `pet.h`'s rules self-check --
   distinct from `host/test_biscuit_content.cpp` (content/art plumbing, #33).
-- Content: `content_stories.h` (7 branching stories, `Story{id, title, subtitle,
-  unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`), `content_discoveries.h`
+- Content: `content_stories.h` (15 branching stories, `Story{id, title, subtitle,
+  unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`; the first 7 keep their bits in `stories`, the
+  rest in `moreStories`, and those open at `storyDay`: their content day, but no sooner than `NEW_BOOK_GAP` (2) days
+  apart from `booksDay`, so a pup already past day 22 gets them one at a time), `content_puzzles.h` (the spelling
+  words and their clues, short and long; not persisted by index), `content_discoveries.h`
   (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12
   topics), `content_daily.h` (7 daily adventures, 6 trick names, 12 sticker names; which
   activities a day asks for, the trick lessons and unlock days are rules, in `pet.h`) -- `namespace biscuit`, `inline constexpr`, converted once from
@@ -120,16 +124,16 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00, or always day when
   `AppEnter::daylight` (a kid picked a sun on the launcher). Screen
   names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
-  `debugCmd`: `hungry unlock young grown tricks practiced read` (`read`: every story finished and every
-  discovery kept).
+  `debugCmd`: `hungry unlock young grown tricks practiced read books` (`read`: every story finished and every
+  discovery kept; `books`: day 30 with the newer books' clock from day 1, so all of them are open).
 - Screens, split by file to stay under the complexity gate: `screens_home.cpp` (Home:
   scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the shelf
   (the pup pulls out a book, and 800 ms later the Library opens; any other tap first
   cancels it), window (nap), fern and the pup (a tap pets it), Feed/Play/Read/More, fetch,
   and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
-  scrapbook, Today's adventure), `screens_train.cpp` (Tricks, Training watch/do),
-  `screens_read.cpp` (Library: Discoveries, Notebook and the seven stories, two a page,
-  "Day N: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
+  scrapbook, Today's adventure, Puzzles), `screens_train.cpp` (Tricks, Training watch/do),
+  `screens_read.cpp` (Library: Discoveries, Notebook and the fifteen stories, two a page,
+  "Tomorrow: <title>" (the next one) or "Soon: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
   page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
   a topic's eight or the notebook of kept ones; Topics; a discovery's cover, pages and
   wonder page, Source; Today and its Word), `screens_profile.cpp` (the scrapbook with Our
@@ -169,7 +173,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
 
 ## Content limits (first release)
 
-Full parity with the standalone firmware's content: 7 branching stories, 96 illustrated
+Full parity with the standalone firmware's content, plus 8 newer books (15 branching stories), 96 illustrated
 sourced discoveries across 12 topics, 6 tricks (three lessons each to mastery), 12
 stickers, 7 daily adventures with a pocket word each -- all landed with #33. The limit is
 the box each string is drawn in (`layout.h`), measured in pixels by `os/font.cpp` with the

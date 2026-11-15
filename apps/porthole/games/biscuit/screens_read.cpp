@@ -15,15 +15,18 @@ namespace {
 constexpr int SHELF_ROWS = 2, SHELF_PAGES = (NUM_STORIES + SHELF_ROWS - 1) / SHELF_ROWS;
 constexpr Button DISCOVER = {PAIR[0], "Discoveries", &FONT20, PURPLE, true};
 constexpr Button NOTEBOOK_BUTTON = {PAIR[1], "Notebook", &FONT20, PEACH, true};
-bool opened(const Save& p, int id) { return p.daysTogether >= STORIES[id].unlockDay; }
+uint32_t opensOn(const Save& p, int id) { return storyDay(p, id, STORIES[id].unlockDay); }
+bool opened(const Save& p, int id) { return p.daysTogether >= opensOn(p, id); }
 // The story in a row under the pair, false for the empty row on the last page.
 bool storyRow(const Save& p, int row, int page, Button& b, char (&label)[64]) {
   const int id = page * SHELF_ROWS + row;
   if (id >= NUM_STORIES) return false;
   const Story& st = STORIES[id];
-  if (!opened(p, id)) snprintf(label, sizeof label, "Day %d: %s", st.unlockDay, st.title);
-  else snprintf(label, sizeof label, "%s%s", st.title, p.stories & (1u << id) ? " *" : "");
-  b = {ROW[row + 1], label, &FONT20, PURPLE, opened(p, id)};
+  const uint32_t day = opensOn(p, id);
+  const bool open = p.daysTogether >= day;
+  if (!open) snprintf(label, sizeof label, "%s: %s", day == p.daysTogether + 1 ? "Tomorrow" : "Soon", st.title);
+  else snprintf(label, sizeof label, "%s%s", st.title, storyRead(p, id) ? " *" : "");
+  b = {ROW[row + 1], label, &FONT20, PURPLE, open};
   return true;
 }
 // Next turns into Choose on a story's last screen and into The end on an ending's; an ending's first Previous goes

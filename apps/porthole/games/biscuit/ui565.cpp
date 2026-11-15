@@ -106,7 +106,7 @@ void home(const Input& in) {   // ui::drawBack at 3x: a dark rim, the orange dis
 
 void top(const Input& in, const char* title, int stars) {
   button(in, BACK_BUTTON);
-  char s[24]; snprintf(s, sizeof s, "%d stars", stars);
+  char s[24]; snprintf(s, sizeof s, "%d star%s", stars, stars == 1 ? "" : "s");
   text(STARS, s, INK);
   text(HEADER, title, INK);
 }

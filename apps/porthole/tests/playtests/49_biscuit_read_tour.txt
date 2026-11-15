@@ -22,10 +22,11 @@ expect-screen biscuit_home
 expect pet=Wwwwwwww
 dbg unlock
 dbg read
+dbg books
 # six days on: the adventure with the longest pocket-word meaning (Ingenuity)
 skip 518400
 wait 100
-expect stars=21
+expect stars=45
 ui-check biscuit_home-day
 snap b01_home
 tap 94 129
@@ -33,12 +34,10 @@ wait 450
 expect-screen biscuit_library
 ui-check biscuit_library-day
 snap b02_library
+repeat 7
 tap 108 132
 wait 450
-tap 108 132
-wait 450
-tap 108 132
-wait 450
+end
 ui-check biscuit_library-last-day
 snap b03_library_last
 tap 80 84
@@ -176,12 +175,10 @@ tap 94 129
 wait 450
 expect-screen biscuit_library
 ui-check biscuit_library-evening
+repeat 7
 tap 108 132
 wait 450
-tap 108 132
-wait 450
-tap 108 132
-wait 450
+end
 ui-check biscuit_library-last-evening
 tap 80 84
 wait 450
@@ -304,12 +301,10 @@ tap 94 129
 wait 450
 expect-screen biscuit_library
 ui-check biscuit_library-night
+repeat 7
 tap 108 132
 wait 450
-tap 108 132
-wait 450
-tap 108 132
-wait 450
+end
 ui-check biscuit_library-last-night
 tap 80 84
 wait 450

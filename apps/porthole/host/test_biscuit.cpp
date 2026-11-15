@@ -5,8 +5,10 @@
 #include "host/check.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "games/biscuit/pet.h"
+#include "games/biscuit/puzzles.h"
 
 using biscuit::Action;
 using biscuit::Save;
@@ -135,17 +137,17 @@ static void permanentReadingProgress() {
   biscuit::finishStory(p, 0, Now);
   assert(biscuit::stars(p) == 3 && p.happiness == happiness && p.friendship == 2);   // stars are idempotent
   for (uint8_t id = 1; id < biscuit::NUM_STORIES; id++) biscuit::finishStory(p, id, Now);
-  assert(biscuit::stars(p) == 21);
+  assert(biscuit::stars(p) == 45 && p.stories == 0x7f && p.moreStories == 0xff);
   for (uint8_t id = 0; id < biscuit::NUM_DISCOVERIES; id++) biscuit::discover(p, id, Now);
   for (uint32_t bits : p.discoveries) assert(bits == 0xffffffffu);
   biscuit::discover(p, 95, Now);
   biscuit::discover(p, 96, Now);                      // out of range: no-op
-  biscuit::finishStory(p, 7, Now);
-  assert(p.friendship == 2 && biscuit::stars(p) == 21 && !biscuit::discovered(p, 96));
+  biscuit::finishStory(p, 15, Now);
+  assert(p.friendship == 2 && biscuit::stars(p) == 45 && !biscuit::discovered(p, 96) && p.moreStories == 0xff);
 
   const Save saved = p;
   biscuit::tick(p, Now + D);
-  assert(!memcmp(p.discoveries, saved.discoveries, sizeof p.discoveries) && p.stories == saved.stories);
+  assert(!memcmp(p.discoveries, saved.discoveries, sizeof p.discoveries) && p.stories == saved.stories && p.moreStories == saved.moreStories);
   assert(p.dailyCompleted == 0);
   biscuit::discover(p, 95, Now + D);
   assert(p.friendship == 4);                          // re-reading counts toward today's reading, once
@@ -202,6 +204,90 @@ static void rejectsBrokenSnapshots() {
   p = good; p.sleeping = 2; assert(!biscuit::valid(p));
   p = good; p.stickers = 0x1000; assert(!biscuit::valid(p));
   p = good; p.careCounts[1] = biscuit::MAX_COUNT + 1; assert(!biscuit::valid(p));
+  p = good; p.moreStories = 0x100; assert(!biscuit::valid(p));          // only eight newer books
+  p = good; p.booksDay = 0; assert(!biscuit::valid(p));
+  p = good; p.booksDay = p.daysTogether + 1; assert(!biscuit::valid(p));
+  p = good; p.puzzles = biscuit::MAX_COUNT + 1; assert(!biscuit::valid(p));
+}
+
+// The newer books open one at a time: on their own days for a young pup, every NEW_BOOK_GAP days from the update for
+// a pup that is already past those days. The first seven keep their days.
+static void newerBooksArrive() {
+  Save p = namedPet(Now);
+  assert(p.booksDay == 1 && biscuit::storyDay(p, 0, 1) == 1 && biscuit::storyDay(p, 6, 7) == 7);
+  assert(biscuit::storyDay(p, 7, 8) == 8 && biscuit::storyDay(p, 14, 22) == 22);
+  p.daysTogether = p.booksDay = 30;
+  assert(biscuit::storyDay(p, 6, 7) == 7 && biscuit::storyDay(p, 7, 8) == 30 && biscuit::storyDay(p, 8, 10) == 32);
+  assert(biscuit::storyDay(p, 14, 22) == 44);
+  // A v1 blob (from before the newer books): they start arriving on the day it is loaded, nothing else changes.
+  Save old = namedPet(Now);
+  old.daysTogether = 12; old.booksDay = 1; old.stories = 0x15;
+  biscuit::seal(old);
+  uint8_t v1[biscuit::SAVE_V1_SIZE];
+  old.version = 1; old.size = biscuit::SAVE_V1_SIZE;
+  memcpy(v1, &old, sizeof v1 - 4);
+  const uint32_t crc = os::crc32(v1, sizeof v1 - 4);
+  memcpy(v1 + sizeof v1 - 4, &crc, 4);
+  Save out;
+  assert(biscuit::loadBlob(v1, sizeof v1, out) && out.version == biscuit::SAVE_VERSION && out.size == sizeof(Save));
+  assert(out.booksDay == 12 && out.moreStories == 0 && out.puzzles == 0 && out.stories == 0x15 && biscuit::stars(out) == 9);
+}
+
+// Every answer counts as today's training; only a right one is kept. A napping pup does no puzzles.
+static void puzzleAnswers() {
+  Save p = namedPet(Now);
+  biscuit::answerPuzzle(p, false, Now);
+  assert(p.puzzles == 0 && (p.dailyCompleted & (uint8_t)Action::Train) && p.friendship == 2);
+  biscuit::answerPuzzle(p, true, Now);
+  biscuit::answerPuzzle(p, true, Now);
+  assert(p.puzzles == 2 && p.friendship == 2 && biscuit::valid(p));   // training counts once a day
+  assert(biscuit::stars(p) == 0);
+  for (int i = 0; i < 3; i++) biscuit::answerPuzzle(p, true, Now);
+  assert(p.puzzles == 5 && biscuit::stars(p) == 1);   // a star for every five right
+  biscuit::toggleSleep(p, Now);
+  biscuit::answerPuzzle(p, true, Now);
+  assert(p.puzzles == 5);
+}
+
+// A spelling question: the right letter fills its one gap and spells the word.
+static void checkSpelling(const biscuit::puzzles::Puzzle& q) {
+  char word[24]; int w = 0;
+  for (const char* c = q.ask; *c; c++) if (*c != ' ') word[w++] = *c == '_' ? q.answers[q.right][0] : *c;
+  word[w] = 0;
+  assert(!strcmp(word, q.solved) && q.clue && strchr(q.ask, '_') == strrchr(q.ask, '_'));
+}
+static bool between(int v, int lo, int hi) { return lo <= v && v <= hi; }
+// A number question: the right answer is the sum, nothing negative, the numbers in the kind's range.
+static void checkNumber(const biscuit::puzzles::Puzzle& q, int kind, int table) {
+  using namespace biscuit::puzzles;
+  int a, b; char op;
+  assert(sscanf(q.ask, "%d %c %d", &a, &op, &b) == 3 && !q.clue);
+  const int want = op == '+' ? a + b : op == '-' ? a - b : a * b;
+  assert(atoi(q.answers[q.right]) == want);
+  for (int i = 0; i < ANSWERS; i++) assert(atoi(q.answers[i]) >= 0);
+  struct Range { int aLo, aHi, bLo, bHi, most; };   // ADD, TAKE, BIG, TIMES
+  static constexpr Range RANGES[] = {{0, 10, 1, 10, 20}, {2, 20, 1, 10, 19}, {10, 89, 10, 89, 99},
+                                     {FIRST_TABLE, LAST_TABLE, 1, 10, 60}};
+  const Range& r = RANGES[kind];
+  assert(between(a, r.aLo, r.aHi) && between(b, r.bLo, r.bHi) && between(want, 0, r.most));
+  assert(!table || a == table);
+}
+// Made-up questions: three different answers, the right one right, a spelling gap the missing letter fills.
+static void puzzleQuestions() {
+  using namespace biscuit::puzzles;
+  uint32_t rng = 7;
+  for (int kind = 0; kind < KIND_COUNT; kind++)
+    for (int n = 0; n < 2000; n++) {
+      const uint8_t table = kind == TIMES && n % 6 ? (uint8_t)(n % 6 + 1) : 0;
+      const Puzzle q = make((Kind)kind, table, rng, 0);
+      assert(q.right < ANSWERS);
+      for (int i = 0; i < ANSWERS; i++)
+        for (int j = i + 1; j < ANSWERS; j++) assert(strcmp(q.answers[i], q.answers[j]));
+      if (kind >= SHORT) checkSpelling(q);
+      else checkNumber(q, kind, table);
+    }
+  uint32_t seen = 0;   // a round doesn't ask the same times-table question twice
+  for (int n = 0; n < ROUND; n++) { const Puzzle q = make(TIMES, 3, rng, seen); assert(!(seen & (1u << q.key))); seen |= 1u << q.key; }
 }
 
 static void blobRoundTrip() {
@@ -311,6 +397,9 @@ int main() {
   adventuresTricksAndGrowth();
   rejectsBrokenSnapshots();
   blobRoundTrip();
+  newerBooksArrive();
+  puzzleAnswers();
+  puzzleQuestions();
   legacyV1();
   legacyV2V3();
   legacyRejects();
