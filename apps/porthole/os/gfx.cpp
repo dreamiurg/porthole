@@ -106,9 +106,9 @@ int textWidth(const char* s, int scale) {
   for (; *s; s++) w += (glyphWidth(*s) + 1) * scale;
   return w > 0 ? w - scale : 0;
 }
-TextBox textLog[64]; int textLogCount = 0; bool textLogEnabled = false;
+TextBox textLog[TEXT_LOG_MAX]; int textLogCount = 0; bool textLogEnabled = false;
 void logText(int x, int y, int w, int h, uint8_t c) {
-  if (!textLogEnabled || textLogCount >= 64 || w <= 0) return;
+  if (!textLogEnabled || textLogCount >= TEXT_LOG_MAX || w <= 0) return;
   // dominant background color under the text box, sampled before the glyphs are drawn
   int hist[256] = {0};
   for (int yy = y; yy < y + h; yy++) for (int xx = x; xx < x + w; xx++) if ((unsigned)xx < W && (unsigned)yy < H) hist[fb[yy * W + xx]]++;

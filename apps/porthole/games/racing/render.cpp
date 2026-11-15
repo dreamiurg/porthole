@@ -55,7 +55,7 @@ void outlined(int x, int y, const char* s, int scale, uint32_t color) {
   ink(x, y, s, scale, rgb888_to_565(color));
   gfx::textLogEnabled = logging;
   const font::Font& f = face(scale);
-  if (logging && gfx::textLogCount < 64)
+  if (logging && gfx::textLogCount < gfx::TEXT_LOG_MAX)
     gfx::textLog[gfx::textLogCount++] = {(int16_t)((x - t) / 3), (int16_t)((y - t) / 3), (int16_t)((textWidth(s, scale) + 2 * t + 2) / 3),
                                          (int16_t)((f.lineHeight - f.baseLine - capTop(f) + 2 * t + 2) / 3), color, RIM, true};
 }
