@@ -87,6 +87,7 @@ Spaced repetition decides when each card comes back: a Wrong card returns a few 
 tomorrow, an easy one waits longer each time. New facts come in a few at a time, at each kid's own
 pace: the next table starts once about half of the current one is known (Easy on two separate days),
 and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
+From 4× on, each known fact also brings its two divisions (6 × 7 known: 42 ÷ 6 and 42 ÷ 7).
 A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
 round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
 

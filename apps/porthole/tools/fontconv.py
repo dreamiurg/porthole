@@ -36,7 +36,7 @@ ofl/fredoka's variable font, cut with fontTools.varLib.instancer). Text at 28 an
 only the glyphs a card draws (KEEP).
 
     for n in 28 40 110; do npx lv_font_conv@1.5.3 --font games/times-cards/art/fonts/Fredoka-SemiBold.ttf
-        --range 0x20-0x7e,0xd7 --size $n --bpp 4 --format lvgl --no-compress --force-fast-kern-format
+        --range 0x20-0x7e,0xd7,0xf7 --size $n --bpp 4 --format lvgl --no-compress --force-fast-kern-format
         --lv-include lvgl.h --lv-font-name cards_font_$n --output build/cards$n.c; done
     python3 tools/fontconv.py --game cards build/cards{28,40}.c
     python3 tools/fontconv.py --game cardsbig build/cards110.c
@@ -107,7 +107,7 @@ GAMES = {
         "Fredoka SemiBold",
         "Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One).",
         "see games/times-cards/art/fonts/OFL.txt",
-        " 0123456789=?\u00d7",  # a card's numbers, its sign and its answer
+        " 0123456789=?\u00d7\u00f7",  # a card's numbers, its signs and its answer
     ),
     "radar": Game(
         "games/plane-radar/generated/fonts.h",

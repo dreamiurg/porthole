@@ -15,8 +15,8 @@ Every page has the house at the top: from a card it goes back to the deck, from 
 - `cards_home`, the deck: the table the kid is on, big on an index card, a dot for each of its ten facts (green known,
   amber learning, pale new), "Say it, then tap the card" (or "Every table known!") and **Go!**; a tap on the card deals
   too.
-- `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b". The card sinks under a finger; a tap turns it.
-- `cards_answer`: "a × b =" small and the answer big, with **Easy**, **Hard** and **Wrong**.
+- `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b" or "n ÷ d". The card sinks under a finger; a tap turns it.
+- `cards_answer`: "a × b =" (or "n ÷ d =") small and the answer big, with **Easy**, **Hard** and **Wrong**.
 - `cards_done`: "Perfect round!" (no Hard or Wrong), "Great job!", or "Next up: N ×!" when the round opened a new
   table; "+2 stars", the round's three tallies, the table's dots and
   **Again**, which deals the next round.
@@ -29,7 +29,8 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
 
 ## Rules (`deck.h`, header-only, checked by `host/test_times_cards.cpp`)
 
-- A card is one fact, table × n, tables 1..10, n 1..10: 100 cards. Its Leitner box says how well the kid knows it: 0
+- A card is one fact: table × n, tables 1..10, n 1..10 (100 cards), or a division, n ÷ d for divisors 2..10 and
+  quotients 1..10 (90 more; ÷ 1 is left out). Its Leitner box says how well the kid knows it: 0
   never shown, 1 learning, up to 7. A box waits `INTERVAL` days before the card is due again (1, 2, 4, 7, 14, 30, 60).
 - **Easy** on a card that is new or due moves it one box up (a new card known at once goes to box 2). **Hard** keeps
   its box and brings it back tomorrow. **Wrong** puts it back in box 1, due tomorrow, and shows it again three cards
@@ -44,13 +45,19 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
   a first sight and a missed card's second look do not count. Steps: 0.6, 0.7, 0.8, 0.9. Below 0.6 a round brings a new
   fact only when nothing is being learned. Below 0.8 (struggling) a round keeps `KNOWN_MIX` (4) places for known facts,
   easy wins between the hard ones.
+- **Division (3.OA.7):** from level 4 (1× to 3× known), each known multiplication fact opens its two divisions as new
+  cards: 6 × 7 known opens 42 ÷ 6 and 42 ÷ 7. They are scheduled like any card and share the working set: a new
+  division comes whenever the divisions being learned are fewer than half the multiplications, so divisions hold
+  about a third of the places and the tables keep most of their pace (a half share halved it in simulation). Divisions come by fact family in table order (2× first, 1× last, its families being n ÷ n),
+  so a family's two divisions arrive together. They never move the level. A 6-year-old meets division once 3× is
+  known. Why: interleaving multiplication with its division facts (`docs/design/learning-principles.md`, principle 5).
 - **Level:** the first table not fully known. It moves on (and the done page says "Next up") once all ten of its facts
   are known; the older tables keep coming back for review.
 - **Start:** from the profile's age, `startTable(age) = clamp(age - 4, 1, 4)`. The tables below start in box 5, spread
   over the next two weeks, so a few come back for review each day.
 - **A round** is up to ten cards: due cards first (oldest first), leaving room for the new facts the pace allows, then
   practice from any fact still being learned and not yet seen today, then (when struggling) known facts. A known fact
-  otherwise comes only when due, so a round can be short (a first round is three new facts at the starting pace). With
+  otherwise comes only when due, but a round shorter than five (`MIN_ROUND`) is topped up with known facts not seen today (a first round is three new facts at the starting pace and two known ones). With
   nothing at all to show, a round is practice from every fact met. Shuffled.
 - Why this shape: incremental rehearsal (new facts mixed among known ones, new ones held back when known ones slip),
   about 2 to 4 new facts per session for this age (Burns 2016), and a target success rate near 85% (Wilson et al. 2019,
@@ -60,8 +67,10 @@ No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only 
 
 ## Save
 
-One 520-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
-start table, answers ever, pace (thousandths + 1, 0 = never set), box, due day and last-seen day per card, crc. Append-only: a new field goes right before `crc` with a
+One 972-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
+start table, answers ever, pace (thousandths + 1, 0 = never set), box, due day and last-seen day per multiplication
+card, then (version 2) the same three per division card, a spare zero, crc. A version 1 blob (520 bytes, no division)
+still loads, with no division met. Append-only: a new field goes right before `crc` with a
 zero that is a sensible default, `SAVE_VERSION` goes up, nothing is reordered or resized. A blob of the wrong size or
 crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
 
@@ -69,10 +78,12 @@ crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
 
 - Its own look (rule 7): a cream index card with a red margin line and blue rules on a periwinkle desk; Fredoka
   SemiBold (OFL, `art/fonts/`) at 28 and 40 px (`generated/fonts.h`) and a digits-and-× cut at 110 px
-  (`generated/big.h`), both from `tools/fontconv.py` (`--game cards`, `--game cardsbig`). Button fills are dark enough
+  (`generated/big.h`), both with × and ÷, from `tools/fontconv.py` (`--game cards`, `--game cardsbig`). Button fills are dark enough
   for white text at the audit's contrast.
 - `game.h` / `game.cpp` (`class Game`, `namespace cards`): pages, input and drawing on the RGB565 surface. Repaints
-  only when what the page shows changes. `debugCmd("level<N>")` starts a fresh deck on table N.
+  only when what the page shows changes. `debugCmd("level<N>")` starts a fresh deck on table N;
+  `debugCmd("card<N>")` deals a round of card N alone (screenshots). A card too wide for the index card (100 ÷ 10)
+  drops the spaces round its sign.
 - `art/launcher.png` -> `launcher_icon.h` (`tools/launcher_icons.py`).
 - In `games/apps.h` (id 12). That fills `MAX_APPS` (12): the next game needs it raised.
 - Playtests: `tests/playtests/c0_times_cards.txt` (a natural first week: Wrong and Hard, the house mid-round, leaving

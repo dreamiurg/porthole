@@ -53,8 +53,11 @@ void button(const ui::Box& lb, const char* word, uint16_t c, bool pressed, const
   canvas::roundBox({b.x0, b.y0 + dy, b.x1, b.y1 + dy}, 18, c);
   centered(f, word, (b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2 + dy, WHITE);
 }
-void fact(char* s, size_t n, int card, bool withAnswer) {   // "7 × 8", or "7 × 8 ="
-  snprintf(s, n, withAnswer ? "%d \xC3\x97 %d =" : "%d \xC3\x97 %d", tableOf(card), factorOf(card));
+// "7 × 8" or "56 ÷ 8", with " =" after it on the answer; `tight` drops the spaces round the sign.
+void fact(char* s, size_t n, int card, bool withAnswer, bool tight = false) {
+  const bool d = isDiv(card);
+  snprintf(s, n, tight ? "%d%s%d%s" : "%d %s %d%s", d ? dividendOf(card) : tableOf(card), d ? "\xC3\xB7" : "\xC3\x97",
+           d ? divisorOf(card) : factorOf(card), withAnswer ? " =" : "");
 }
 }  // namespace
 
@@ -122,7 +125,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 // A dot per fact of the kid's table: green known, amber learning, pale new.
 static void dots(const Save& s, int cx, int y) {
   for (int n = 1; n <= FACTS; n++) {
-    const uint8_t b = s.box[cardOf(s.level, n)];
+    const uint8_t b = s.boxOf(cardOf(s.level, n));
     canvas::disc(cx + (n * 2 - FACTS - 1) * 12, y, 9, b >= MASTER_BOX ? GRADE_C[EASY] : b ? GRADE_C[HARD] : RULE);
   }
 }
@@ -175,6 +178,7 @@ void Game::draw() const {
   const int c = round_.current();
   if (page_ == P_ASK) {
     fact(s, sizeof s, c, false);
+    if (font::textWidth(cardsbig::FONT110, s) > 330) fact(s, sizeof s, c, false, true);   // 100 ÷ 10: fits the card
     centered(cardsbig::FONT110, s, 240, 232 + dy, INK);
     centered(FONT28, "Say it out loud, then tap!", 240, 352, SOFT);
     return;
@@ -214,16 +218,26 @@ const char* Game::screenName() const {
 void Game::debugPrint() {
   const bool onCard = page_ == P_ASK || page_ == P_ANSWER;
   const int c = onCard ? round_.current() : 0;
-  printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d card=%dx%d box=%d due=%d easy=%d hard=%d "
+  printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d card=%d%c%d box=%d due=%d easy=%d hard=%d "
          "wrong=%d leveled=%d stars=%lu pace=%d learning=%d]\n",
          screenName(), save_.level, save_.start, known(save_, save_.level), (unsigned long)save_.answers, round_.at,
-         round_.n, onCard ? tableOf(c) : 0, onCard ? factorOf(c) : 0, onCard ? save_.box[c] : 0,
-         onCard ? (int)(save_.due[c] - today()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
+         round_.n, onCard ? (isDiv(c) ? dividendOf(c) : tableOf(c)) : 0, isDiv(c) ? '/' : 'x',
+         onCard ? (isDiv(c) ? divisorOf(c) : factorOf(c)) : 0, onCard ? save_.boxOf(c) : 0,
+         onCard ? (int)(save_.dueOf(c) - today()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
          (unsigned long)stars::balance(wallet_), paceOf(save_), learning(save_));
   printf("screen=%s\n", screenName());
 }
 
 void Game::debugCmd(const char* cmd) {
+  if (!strncmp(cmd, "card", 4)) {   // a round of one card, for screenshots: card<N>, N as in deck.h (0..ALL-1)
+    const int c = atoi(cmd + 4);
+    if (c < 0 || c >= ALL) return;
+    round_ = Round{};
+    round_.card[0] = (uint8_t)c;
+    round_.n = round_.base = 1;
+    go(P_ASK);
+    return;
+  }
   if (strncmp(cmd, "level", 5)) return;
   const int t = atoi(cmd + 5);
   if (t < 1 || t > TABLES) return;

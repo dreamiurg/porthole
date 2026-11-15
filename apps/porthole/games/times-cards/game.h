@@ -27,7 +27,7 @@ class Game : public App {
   void leave() override {}
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;   // "level<N>": a fresh deck starting on table N (1..10)
+  void debugCmd(const char* cmd) override;   // "level<N>": a fresh deck on table N (1..10); "card<N>": one card's round
   const Save& save() const { return save_; }
 
   enum Page : uint8_t { P_HOME, P_ASK, P_ANSWER, P_DONE, P_COUNT };
