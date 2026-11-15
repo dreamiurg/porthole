@@ -53,6 +53,7 @@ jobs:
           ~/emsdk/emsdk activate "$EMSDK_VERSION"
       - name: Build the browser emulator into site/play
         run: |
+          # shellcheck source=/dev/null  # emsdk_env.sh lives outside the repo
           source ~/emsdk/emsdk_env.sh
           make -C apps/porthole web
           cp apps/porthole/build/web/porthole.js apps/porthole/build/web/porthole.wasm site/play/
