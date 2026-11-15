@@ -152,7 +152,7 @@ uint32_t simulate(Save& s, uint32_t now, bool online) {
   while (accSleep >= 3600) { s.energy = clamp100(s.energy + 1); accSleep -= 3600; }
   if (s.asleep && s.energy >= 100 && !isNightHour(hourOf(now))) { s.asleep = 0; ev |= EV_WOKE; }
   Stage st = stageFor(s, now);
-  if (st != s.stage) {
+  if (st > s.stage) {   // only ever grows: a clock set back must not shrink the dog and call it growing up
     s.stage = st; ev |= EV_STAGE_UP;
     int reading = s.booksRead * 2 + s.wordsSpelled / 5, playing = s.gamesPlayed * 2 + s.bonesCaught / 10;
     s.variant = reading > playing + 2 ? VAR_BOOKWORM : playing > reading + 2 ? VAR_SPORTY : VAR_CLASSIC;
