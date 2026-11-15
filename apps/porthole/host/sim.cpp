@@ -43,7 +43,10 @@
 
 // Stands in for the board's NVS (namespace, key) blobs as build/host/<ns>-<key>.sav.
 struct FileStore : shell::Store {
-  static const char* path(const char* ns, const char* key) { static char p[64]; snprintf(p, sizeof p, "build/host/%s-%s.sav", ns, key); return p; }
+  static const char* path(const char* ns, const char* key) {
+    assert(strlen(ns) <= 15 && strlen(key) <= 15);   // NVS takes no longer name: on the board that save would never land
+    static char p[64]; snprintf(p, sizeof p, "build/host/%s-%s.sav", ns, key); return p;
+  }
   size_t load(const char* ns, const char* key, void* buf, size_t max) override {
     FILE* f = fopen(path(ns, key), "rb"); if (!f) return 0;
     size_t got = fread(buf, 1, max, f); bool more = fgetc(f) != EOF; fclose(f);
