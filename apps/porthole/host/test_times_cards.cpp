@@ -192,6 +192,35 @@ static void division() {
   CHECK(nf == 3 && isDiv(fresh[0]) && !isDiv(fresh[1]) && isDiv(fresh[2]));   // 2 / 2, 4x3, then 4 / 2
 }
 
+// The grading check counts first showings, the next later day after an Easy, and how fast cards are turned; a missed
+// card's second look in the same round is left out.
+static void gradingCheck() {
+  Save s;
+  Round r;
+  setUp(s, 1, DAY);
+  build(r, s, DAY, 7);   // a first-timer on 1x: first showings only
+  const int n = r.n;
+  noteTurn(s, 400, false);   // a quick turn...
+  answer(r, s, EASY, DAY, true);   // ...graded Easy
+  noteTurn(s, 3000, false);
+  answer(r, s, WRONG, DAY);
+  while (!r.done()) { noteTurn(s, 20000, r.redo[r.at]); answer(r, s, HARD, DAY); }   // the missed card's second look: not counted
+  CHECK(s.checkFrom == DAY && s.firstSight[EASY] == 1 && s.firstSight[WRONG] == 1 && s.firstSight[HARD] == n - 2);
+  CHECK(s.turns == n && s.quick == 1 && s.quickEasy == 1 && s.thinkMs == 400 + 3000 + (uint32_t)(n - 2) * THINK_CAP_MS);
+  CHECK(s.nextDay[0] + s.nextDay[1] == 0);
+  const int easy = cardOf(4, 1), hard = cardOf(4, 2);
+  s.boxOf(easy) = 2; s.seenOf(easy) = (uint16_t)DAY; s.easyLast[easy / 8] |= (uint8_t)(1u << (easy % 8));
+  s.boxOf(hard) = 1; s.seenOf(hard) = (uint16_t)DAY; s.easyLast[hard / 8] &= (uint8_t)~(1u << (hard % 8));
+  noteGrade(s, easy, EASY, DAY, false);   // the same day: not a next day
+  CHECK(s.nextDay[0] == 0 && easyLast(s, easy));
+  noteGrade(s, easy, WRONG, DAY + 1, false);   // Easy, then missed the next day
+  noteGrade(s, hard, EASY, DAY + 1, false);   // last grade Hard: not counted
+  CHECK(s.nextDay[0] == 0 && s.nextDay[1] == 1 && !easyLast(s, easy) && easyLast(s, hard));
+  s.seenOf(hard) = (uint16_t)(DAY + 1);
+  noteGrade(s, hard, EASY, DAY + 3, false);
+  CHECK(s.nextDay[0] == 1 && s.checkFrom == DAY);
+}
+
 static void practice() {   // a fact still being learned and not yet seen today; a known fact comes only when due
   Save s;
   Round r;
@@ -263,6 +292,21 @@ static void saves() {
     v1[20] ^= 1;
     CHECK(!loadBlob(v1, sizeof v1, back));
   }
+  {   // version 2, from before the grading check: loads with nothing counted yet
+    uint8_t v2[SAVE_V2_SIZE];
+    Save old = s;
+    old.version = 2; old.size = SAVE_V2_SIZE;
+    memcpy(v2, &old, SAVE_V2_SIZE - 4);
+    const uint32_t crc = os::crc32(v2, SAVE_V2_SIZE - 4);
+    memcpy(v2 + SAVE_V2_SIZE - 4, &crc, 4);
+    CHECK(loadBlob(v2, sizeof v2, back) && back.boxOf(cardOf(3, 5)) == s.boxOf(cardOf(3, 5)) && !back.checkFrom &&
+          !back.turns);
+    old.version = 1;   // a size that says one version and a field that says another: refused
+    memcpy(v2, &old, SAVE_V2_SIZE - 4);
+    const uint32_t crc1 = os::crc32(v2, SAVE_V2_SIZE - 4);
+    memcpy(v2 + SAVE_V2_SIZE - 4, &crc1, 4);
+    CHECK(!loadBlob(v2, sizeof v2, back));
+  }
   s.dueOf(cardOf(3, 5)) = (uint16_t)(DAY + 900);   // a clock set back: no card waits past its box's interval
   clampDue(s, DAY);
   CHECK(s.dueOf(cardOf(3, 5)) == DAY + INTERVAL[2]);
@@ -285,6 +329,20 @@ static void tapBox(Game& g, int x, int y) {
 }
 static void settle(Game& g) { for (int i = 0; i < 15; i++) frame(g); }
 static bool on(const Game& g, const char* s) { return !strcmp(g.screenName(), s); }
+
+// A grown-up holds the title for two seconds: the grading check; a short press does nothing.
+static void holdTitle(Game& g) {
+  Input in; in.down = in.pressed = true; in.x = in.downX = 80; in.y = in.downY = 30;
+  for (int i = 0; i < 10; i++) { frame(g, in); in.pressed = false; }
+  CHECK(on(g, "cards_home"));
+  for (int i = 0; i < 50; i++) frame(g, in);
+  CHECK(on(g, "cards_stats"));
+  in.down = false; in.released = true;
+  frame(g, in);
+  settle(g);
+  tapBox(g, 80, 12);   // the house: back to the deck
+  CHECK(on(g, "cards_home"));
+}
 
 static void pages() {
   Game g;
@@ -310,6 +368,7 @@ static void pages() {
     settle(g);
   }
   CHECK(on(g, "cards_done") && g.save().answers == (uint32_t)first);
+  CHECK(g.save().turns == first && g.save().firstSight[EASY] == 3 && g.save().checkFrom == NOW / 86400);   // three new facts; the top-up was known
   CHECK(wallet == 7 + ROUND_STARS);   // a finished round pays the kid's shared stars
   CHECK(g.takeSave(&data, &len, true));
   Save saved; memcpy(&saved, data, sizeof saved);
@@ -326,6 +385,7 @@ static void pages() {
   settle(g);
   tapBox(g, 80, 12);
   CHECK(g.wantsHome() && !g.wantsHome());
+  holdTitle(g);
   g.debugCmd("level7");
   CHECK(g.save().level == 7 && g.save().answers == 0);
   // Back again: the saved deck, not a new one.
@@ -342,6 +402,7 @@ int main() {
   levelUp();
   rounds();
   division();
+  gradingCheck();
   pace();
   overlap();
   score();

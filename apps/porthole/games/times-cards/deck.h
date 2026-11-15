@@ -35,7 +35,7 @@
 namespace cards {
 constexpr const char* STORE = "timescards";   // NVS namespace: never renamed once shipped
 constexpr uint32_t SAVE_MAGIC = 0x53445243;   // "CRDS"
-constexpr uint16_t SAVE_VERSION = 2;   // 1: multiplication only (520 bytes); 2: division appended
+constexpr uint16_t SAVE_VERSION = 3;   // 1: multiplication only (520 bytes); 2: division appended (972); 3: grading check
 
 // ---- tuning knobs
 constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10: cards 0..CARDS-1
@@ -58,6 +58,8 @@ constexpr uint8_t KNOWN_BOX = 5;         // the tables below where a kid starts:
 constexpr uint8_t MAX_BOX = 7;
 constexpr uint8_t INTERVAL[MAX_BOX + 1] = {0, 1, 2, 4, 7, 14, 30, 60};   // days until a card in box b is due again
 constexpr int MAX_QUEUE = ROUND + AGAIN_ROOM;
+constexpr uint32_t QUICK_MS = 1000;      // a card turned this soon after it showed was hardly recalled first
+constexpr uint32_t THINK_CAP_MS = 10000; // one card's think time counts at most this much toward the average
 constexpr uint32_t ROUND_STARS = 2;   // stars (os/stars.h) for every round finished, however it went: trying is the work
 
 // The table a kid starts on, from the age on their profile: 6 starts on 2x, 8 on 4x (lower tables count as known).
@@ -87,6 +89,16 @@ struct Save {
   uint16_t divDue[DIVS];
   uint16_t divSeen[DIVS];
   uint16_t spare;           // 0; keeps crc aligned
+  // v3, the grading check: does a young kid grade themselves honestly? (docs/design/adaptive-practice.md) Counted
+  // from checkFrom on, read on the grown-ups' page; a second look at a missed card in the same round never counts.
+  uint32_t thinkMs;         // time from a card showing to its turn, summed, each at most THINK_CAP_MS
+  uint16_t checkFrom;       // the day counting started; 0 not yet
+  uint16_t firstSight[3];   // grades on a card's very first showing: Easy, Hard, Wrong
+  uint16_t nextDay[2];      // a card last graded Easy, at its next showing on a later day: Easy again, or not
+  uint16_t turns, quick;    // cards turned, and turned within QUICK_MS of showing
+  uint16_t quickEasy;       // of those quick turns, graded Easy
+  uint8_t easyLast[(ALL + 7) / 8];   // by card, one bit: its last grade was Easy
+  uint16_t spare3;          // 0; keeps crc aligned
   uint32_t crc;
   // Any card, multiplication or division.
   uint8_t& boxOf(int c) { return c < CARDS ? box[c] : divBox[c - CARDS]; }
@@ -96,27 +108,28 @@ struct Save {
   uint16_t dueOf(int c) const { return c < CARDS ? due[c] : divDue[c - CARDS]; }
   uint16_t seenOf(int c) const { return c < CARDS ? seen[c] : divSeen[c - CARDS]; }
 };
-constexpr size_t SAVE_V1_SIZE = 520;   // version 1: everything before divBox, then its crc
+constexpr size_t SAVE_V1_SIZE = 520, SAVE_V2_SIZE = 972;   // older versions: their fields, then their crc
 static_assert(offsetof(Save, divBox) == SAVE_V1_SIZE - 4, "version 1's fields are kept where they were");
-static_assert(sizeof(Save) == 972, "Save is persisted: append before crc, never resize");
+static_assert(offsetof(Save, thinkMs) == SAVE_V2_SIZE - 4, "version 2's fields are kept where they were");
+static_assert(sizeof(Save) == 1020, "Save is persisted: append before crc, never resize");
 
 inline void seal(Save& s) {
   s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
-// A blob is valid at exactly this version's size, or version 1's (kept, with no division facts met yet); anything
-// else (damaged, a newer firmware's) starts a fresh deck.
+// A blob is valid at exactly this version's size, or an older version's at its own (kept, the newer fields zero: no
+// division met, no grading counted yet); anything else (damaged, a newer firmware's) starts a fresh deck.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
   Save s{};
-  const bool v1 = n == SAVE_V1_SIZE;
-  if (!v1 && n != sizeof(Save)) return false;
+  const uint16_t version = n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : n == sizeof(Save) ? SAVE_VERSION : 0;
+  if (!version) return false;
   const size_t body = n - sizeof s.crc;
   uint32_t crc;
   memcpy(&s, data, body);
   memcpy(&crc, (const uint8_t*)data + body, sizeof crc);
-  if (s.magic != SAVE_MAGIC || s.version != (v1 ? 1 : SAVE_VERSION) || s.size != n || s.level > TABLES ||
+  if (s.magic != SAVE_MAGIC || s.version != version || s.size != n || s.level > TABLES ||
       crc != os::crc32(data, body)) return false;
-  s.crc = crc;   // resealed at the next save, as version 2
+  s.crc = crc;   // resealed at the next save, as this version
   for (int c = 0; c < ALL; c++) if (s.boxOf(c) > MAX_BOX) s.boxOf(c) = MAX_BOX;
   out = s;
   return true;
@@ -187,6 +200,24 @@ inline bool grade(Save& s, int card, Grade g, int32_t today) {
   bool up = false;
   while (s.level < TABLES && known(s, s.level) == FACTS) { s.level++; up = true; }
   return up;
+}
+
+// The grading check. A card turned `ms` after it showed (a missed card's second look is left out).
+inline void noteTurn(Save& s, uint32_t ms, bool redo) {
+  if (redo) return;
+  s.turns++;
+  s.quick += ms < QUICK_MS;
+  s.thinkMs += ms < THINK_CAP_MS ? ms : THINK_CAP_MS;
+}
+inline bool easyLast(const Save& s, int card) { return s.easyLast[card / 8] >> (card % 8) & 1; }
+// A grade (not a missed card's second look), before the card's box moves: on a first showing, or (last graded Easy) on its next later day.
+inline void noteGrade(Save& s, int card, Grade g, int32_t today, bool quick) {
+  if (!s.checkFrom) s.checkFrom = (uint16_t)today;
+  if (!s.boxOf(card)) s.firstSight[g]++;
+  else if (easyLast(s, card) && s.seenOf(card) != (uint16_t)today) s.nextDay[g == EASY ? 0 : 1]++;
+  s.quickEasy += quick && g == EASY;
+  const uint8_t bit = (uint8_t)(1u << (card % 8));
+  s.easyLast[card / 8] = (uint8_t)(g == EASY ? s.easyLast[card / 8] | bit : s.easyLast[card / 8] & ~bit);
 }
 
 // One round's cards, in the order shown. A Wrong card is put back AGAIN_AFTER cards on (or last).
@@ -291,8 +322,9 @@ inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
 }
 
 // The kid's answer to the round's current card: graded, counted, put back if Wrong, and the round moves on.
-inline void answer(Round& r, Save& s, Grade g, int32_t today) {
+inline void answer(Round& r, Save& s, Grade g, int32_t today, bool quick = false) {   // quick: turned within QUICK_MS
   const int c = r.current();
+  if (!r.redo[r.at]) noteGrade(s, c, g, today, quick);
   if (s.boxOf(c) && !r.redo[r.at]) notePace(s, g);   // a first sight, or a second look a moment later, says little
   if (grade(s, c, g, today)) r.leveledUp = true;
   (g == EASY ? r.easy : g == HARD ? r.hard : r.wrong)++;
