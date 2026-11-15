@@ -602,7 +602,7 @@ void lookupRoute(const Seen& s) {
   JsonObject a = filter["response"]["flightroute"]["origin"].to<JsonObject>();
   for (const char* k : {"iata_code", "latitude", "longitude"}) a[k] = true;
   filter["response"]["flightroute"]["destination"] = a;
-  if (deserializeJson(doc, c.http.getStream(), DeserializationOption::Filter(filter))) return;
+  if (deserializeJson(doc, c.http.getStream(), DeserializationOption::Filter(filter))) { remember(call, ""); return; }
   JsonObject o = doc["response"]["flightroute"]["origin"], d = doc["response"]["flightroute"]["destination"];
   const char* oc = o["iata_code"] | "";
   const char* dc = d["iata_code"] | "";
@@ -620,8 +620,8 @@ void describe(JsonObject a, air::Plane& p) {
   memcpy(p.call, fl, n);
   p.call[n] = 0;
   JsonVariant baro = a["alt_baro"], geom = a["alt_geom"];
-  p.altFt = baro.is<double>() ? (int32_t)lround(baro.as<double>())
-            : geom.is<double>() ? (int32_t)lround(geom.as<double>()) : air::NO_ALT;
+  auto ft = [](double v) { return v > -2000 && v < 100000 ? (int32_t)lround(v) : air::NO_ALT; };   // NaN/inf: none
+  p.altFt = baro.is<double>() ? ft(baro.as<double>()) : geom.is<double>() ? ft(geom.as<double>()) : air::NO_ALT;
   const char* cat = a["category"] | "";
   p.kind = ((a["dbFlags"] | 0) & 1) ? air::K_MILITARY
            : (!strcmp(cat, "A1") || !strcmp(cat, "A2")) ? air::K_SMALL : air::K_AIRLINER;
@@ -634,6 +634,7 @@ bool toPlane(JsonObject a, Seen& s) {
   s = Seen{};
   s.lat = a["lat"].as<double>();
   s.lon = a["lon"].as<double>();
+  if (!(fabs(s.lat) <= 90 && fabs(s.lon) <= 180)) return false;   // network data: also refuses NaN and infinity
   double dlon = s.lon - g_airLon;
   if (dlon > 180) dlon -= 360; else if (dlon < -180) dlon += 360;   // across the antimeridian
   s.p.eastKm = (float)(dlon * KM_PER_DEG * cos(g_airLat * DEG));   // flat earth: fine for a few hundred km
