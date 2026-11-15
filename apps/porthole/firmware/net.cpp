@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include "esp_random.h"
 #include "netclock.h"
+#include "psram.h"
 #include "timezone.h"
 #include <algorithm>
 #include <atomic>
@@ -542,12 +543,15 @@ air::Snapshot g_snap[2];
 int g_front = 0;
 
 // The radar task's: this fetch's nearest planes (nearest first) with their positions, and the routes seen.
+// Both tables live in PSRAM (psram.h): 3.6 KB only this task reads, off the static internal RAM an update needs.
 struct Seen { air::Plane p; float d2; double lat, lon; };
-Seen g_seen[air::MAX_PLANES];
+struct SeenTable { Seen at[air::MAX_PLANES]; };
+Seen (&g_seen)[air::MAX_PLANES] = psram::make<SeenTable>().at;
 int g_nSeen = 0;
 // ponytail: a 32-callsign round-robin cache; grow it if a busy hub's sky keeps evicting routes it still shows.
 struct Route { char call[9]; char route[8]; };
-Route g_routes[32];
+struct RouteTable { Route at[32]; };
+Route (&g_routes)[32] = psram::make<RouteTable>().at;
 int g_routeNext = 0;
 
 const Route* cachedRoute(const char* call) {
