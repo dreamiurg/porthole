@@ -88,6 +88,13 @@ void Game::deal() {
   go(P_ASK);
 }
 
+void Game::grade(Grade g) {
+  answer(round_, save_, g, today());
+  dirty_ = true;
+  if (round_.done()) stars::award(wallet_, ROUND_STARS);
+  go(round_.done() ? P_DONE : P_ASK);
+}
+
 void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   ms_ = ms; now_ = nowSec;
   in_ = in;
@@ -98,23 +105,15 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   }
   switch (page_) {
     case P_HOME:
-      if (ui::clicked(in_, GO) || ui::clicked(in_, DECK)) deal();
-      break;
-    case P_DONE:
-      if (ui::clicked(in_, GO)) deal();
+    case P_DONE:   // Go!, Again, or (home) the deck's card
+      if (ui::clicked(in_, GO) || (page_ == P_HOME && ui::clicked(in_, DECK))) deal();
       break;
     case P_ASK:
       if (ui::clicked(in_, BIG_CARD)) go(P_ANSWER);
       break;
     case P_ANSWER:
       for (int g = 0; g < 3; g++)
-        if (ui::clicked(in_, GRADE[g])) {
-          answer(round_, save_, (Grade)g, today());
-          dirty_ = true;
-          if (round_.done()) stars::award(wallet_, ROUND_STARS);
-          go(round_.done() ? P_DONE : P_ASK);
-          break;
-        }
+        if (ui::clicked(in_, GRADE[g])) { grade((Grade)g); break; }
       break;
     case P_COUNT: break;
   }

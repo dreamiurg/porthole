@@ -98,6 +98,11 @@ static void rounds() {
     CHECK(r.n == NEW_PER_ROUND);
     for (int i = 0; i < r.n; i++) CHECK(!before[r.card[i]]);
   }
+}
+
+static void practice() {   // a fact still being learned and not yet seen today; a known fact comes only when due
+  Save s;
+  Round r;
   // Practice is a fact still being learned and not yet seen today; a known fact comes only when due.
   setUp(s, 4, DAY - 1);
   for (int n = 1; n <= 6; n++) grade(s, cardOf(4, n), EASY, DAY - 1);
@@ -114,6 +119,11 @@ static void rounds() {
   for (int c = 0; c < CARDS; c++) s.due[c] = (uint16_t)(DAY + 3);
   build(r, s, DAY + 1, 5);
   CHECK(allKnown(s) && r.n == ROUND);
+}
+
+static void putBack() {
+  Save s;
+  Round r;
   // A Wrong card comes back AGAIN_AFTER cards later, at most AGAIN_MAX times.
   setUp(s, 4, DAY);
   build(r, s, DAY + 30, 9);
@@ -222,6 +232,8 @@ int main() {
   grades();
   levelUp();
   rounds();
+  practice();
+  putBack();
   saves();
   pages();
   printf("test_times_cards: %d checks ok\n", checks);

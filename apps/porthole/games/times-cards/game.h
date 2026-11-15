@@ -45,6 +45,7 @@ class Game : public App {
   int32_t today() const { return dayOf(now_); }
   void go(Page p);
   void deal();
+  void grade(Grade g);   // the kid's answer to the current card
   void draw() const;
 };
 }  // namespace cards

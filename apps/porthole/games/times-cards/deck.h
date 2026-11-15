@@ -102,14 +102,19 @@ inline bool allKnown(const Save& s) { return s.level == TABLES && known(s, TABLE
 
 enum Grade : uint8_t { EASY, HARD, WRONG };
 // Grades one card. Returns true when this answer finished the level's table and opened the next one.
+// A real recall, which may move a card up: new, due, or still being learned and last seen on another day.
+inline bool recalls(const Save& s, int card, int32_t today) {
+  return !s.box[card] || isDue(s, card, today) || (s.box[card] < MASTER_BOX && s.seen[card] != (uint16_t)today);
+}
+inline uint8_t nextBox(uint8_t b, Grade g, bool counts) {
+  if (g == WRONG) return 1;
+  if (g == EASY && counts) return (uint8_t)(b < 1 ? 2 : b < MAX_BOX ? b + 1 : MAX_BOX);   // a new card known at once: box 2
+  return b ? b : 1;
+}
 inline bool grade(Save& s, int card, Grade g, int32_t today) {
-  // A real recall, which may move it up: new, due, or still being learned and last seen on another day.
-  const bool counts = !s.box[card] || isDue(s, card, today) || (s.box[card] < MASTER_BOX && s.seen[card] != (uint16_t)today);
-  uint8_t& b = s.box[card];
-  if (g == WRONG) b = 1;
-  else if (g == EASY && counts) b = (uint8_t)(b < 1 ? 2 : b < MAX_BOX ? b + 1 : MAX_BOX);   // a new card known at once: box 2
-  else if (!b) b = 1;
-  if (counts || g == WRONG) s.due[card] = (uint16_t)(today + (g == EASY ? INTERVAL[b] : 1));
+  const bool counts = recalls(s, card, today);
+  s.box[card] = nextBox(s.box[card], g, counts);
+  if (counts || g == WRONG) s.due[card] = (uint16_t)(today + (g == EASY ? INTERVAL[s.box[card]] : 1));
   else if (g == HARD && (int32_t)s.due[card] > today + 1) s.due[card] = (uint16_t)(today + 1);   // practice: sooner, never later
   s.seen[card] = (uint16_t)today;
   s.answers++;
@@ -137,31 +142,40 @@ inline uint32_t nextRand(uint32_t& r) { r ^= r << 13; r ^= r >> 17; r ^= r << 5;
 // and not yet seen today (a missed one gets its second look in its own round), least-known first. A known
 // fact comes only when due, so a round can be short. Only when nothing at all qualifies is the round practice from every
 // unlocked table, the least-known and longest-waiting first. Shuffled, so the order never gives the answer away.
+// Adds the best unused shown card of the unlocked tables by `better` (better(c, -1): c qualifies) while r.n < upTo.
+template <class Better>
+inline void pick(Round& r, bool* used, const Save& s, Better better, int upTo) {
+  while (r.n < upTo) {
+    int best = -1;
+    for (int c = 0; c < s.level * FACTS; c++)
+      if (!used[c] && s.box[c] && better(c, best)) best = c;
+    if (best < 0) return;
+    used[best] = true; r.card[r.n++] = (uint8_t)best;
+  }
+}
+inline int newCards(const Save& s, int* fresh) {   // up to NEW_PER_ROUND never-shown facts, lowest table first
+  int nf = 0;
+  for (int c = 0; c < s.level * FACTS && nf < NEW_PER_ROUND; c++)
+    if (!s.box[c]) fresh[nf++] = c;
+  return nf;
+}
+inline void shuffle(Round& r, uint32_t seed) {
+  uint32_t x = seed | 1;
+  for (int i = r.n - 1; i > 0; i--) { const int j = (int)(nextRand(x) % (uint32_t)(i + 1)); const uint8_t t = r.card[i]; r.card[i] = r.card[j]; r.card[j] = t; }
+}
 inline void build(Round& r, const Save& s, int32_t today, uint32_t seed) {
   r = Round{};
   bool used[CARDS] = {};
-  int fresh[NEW_PER_ROUND], nf = 0;
-  for (int t = 1; t <= s.level && nf < NEW_PER_ROUND; t++)
-    for (int n = 1; n <= FACTS && nf < NEW_PER_ROUND; n++)
-      if (!s.box[cardOf(t, n)]) fresh[nf++] = cardOf(t, n);
-  auto pick = [&](auto better, int upTo) {   // the best unused card by `better` (better(c, -1): c qualifies), while r.n < upTo
-    while (r.n < upTo) {
-      int best = -1;
-      for (int c = 0; c < s.level * FACTS; c++)   // the unlocked tables' cards
-        if (!used[c] && s.box[c] && better(c, best)) best = c;
-      if (best < 0) return;
-      used[best] = true; r.card[r.n++] = (uint8_t)best;
-    }
-  };
-  pick([&](int a, int b) { return isDue(s, a, today) && (b < 0 || s.due[a] < s.due[b] || (s.due[a] == s.due[b] && s.box[a] < s.box[b])); },
+  int fresh[NEW_PER_ROUND];
+  const int nf = newCards(s, fresh);
+  pick(r, used, s, [&](int a, int b) { return isDue(s, a, today) && (b < 0 || s.due[a] < s.due[b] || (s.due[a] == s.due[b] && s.box[a] < s.box[b])); },
        ROUND - nf);
   for (int i = 0; i < nf; i++) { used[fresh[i]] = true; r.card[r.n++] = (uint8_t)fresh[i]; }
   auto least = [&](int a, int b) { return b < 0 || s.box[a] < s.box[b] || (s.box[a] == s.box[b] && s.due[a] < s.due[b]); };
-  pick([&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); }, ROUND);
-  if (!r.n) pick(least, ROUND);
+  pick(r, used, s, [&](int a, int b) { return s.box[a] < MASTER_BOX && s.seen[a] != (uint16_t)today && least(a, b); }, ROUND);
+  if (!r.n) pick(r, used, s, least, ROUND);
   r.base = r.n;
-  uint32_t x = seed | 1;
-  for (int i = r.n - 1; i > 0; i--) { const int j = (int)(nextRand(x) % (uint32_t)(i + 1)); const uint8_t t = r.card[i]; r.card[i] = r.card[j]; r.card[j] = t; }
+  shuffle(r, seed);
 }
 
 // The kid's answer to the round's current card: graded, counted, put back if Wrong, and the round moves on.
