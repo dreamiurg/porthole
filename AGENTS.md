@@ -106,6 +106,15 @@ Per-app targets are listed in `docs/new-app.md`.
   evidence. Follow `apps/porthole/docs/playtesting.md` for scope and acceptance.
   An implementer's own run is useful but does not replace the independent pass.
   Documentation-only and non-player-visible changes do not require a new run.
+- Done means shown. A PR that adds a game mechanic or a new screen, or visibly
+  changes one, carries screenshots in its description under `## Screenshots`
+  (`.github/pull_request_template.md`). Shoot them with the sim (`tour` skill:
+  `snap NAME` writes `apps/porthole/build/host/NAME.bmp`), compose them with
+  `python3 tools/gallery.py --cols 3 apps/porthole/docs/<feature>/pr.png a.bmp b.bmp c.bmp`
+  (`--pixel` for pixel-art games), commit the PNG, and embed it by commit SHA so it
+  renders: `![what it shows](https://raw.githubusercontent.com/dreamiurg/porthole/<sha>/apps/porthole/docs/<feature>/pr.png)`.
+  A repo-relative path or a link alone does not render in a PR body. Re-shoot after
+  changing the screen; no screenshots, no merge.
 
 ## Delegation
 

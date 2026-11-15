@@ -37,6 +37,9 @@ make check                                 # lint + fast tests for every app
   `feat(porthole): add a digging trick`. Releases are automatic: after a merge,
   any app with a new `feat:` (minor) or `fix:` (patch) gets a new version, release
   notes built from these titles, and a flashable image.
+- A PR with a new game mechanic or new screen, or a visible change to one, shows
+  it: screenshots embedded in the description under `## Screenshots`. How to shoot
+  and embed them is in `AGENTS.md` ("Done means shown").
 
 ## Where to start
 
