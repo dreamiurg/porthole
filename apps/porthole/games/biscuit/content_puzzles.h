@@ -1,7 +1,9 @@
-// Biscuit's puzzles content: spelling words (one letter goes missing) with a clue each, the Puzzles buttons and what
-// the pup does after an answer. Shown as written, except CHEERS and NUDGES, which take {pet}. Short words are for
-// early readers (start of first grade), long ones for older kids (up to third grade). Nothing is persisted by index
-// here, so the lists may grow or change freely; words are 2 to 11 lowercase letters (check_content.py).
+// Biscuit's puzzles content: spelling words (one letter goes missing) with a clue each, the things in the times
+// stories, the Puzzles buttons and what the pup does after an answer. Shown as written, except CHEERS and NUDGES, which
+// take {pet}. Three-letter and four-letter short words are for early readers (start of first grade), long ones for
+// older kids (up to third grade); words are 2 to 11 lowercase letters (check_content.py). The review queue keeps a
+// missed word by its place in its list and a story by its place in GROUP_THINGS, so append to the lists: a word moved
+// or removed only changes which one comes back (puzzles::playable drops a place past the end).
 #pragma once
 
 namespace biscuit {
@@ -82,10 +84,19 @@ inline constexpr SpellWord LONG_WORDS[] = {
 inline constexpr int SHORT_WORD_COUNT = sizeof SHORT_WORDS / sizeof SHORT_WORDS[0];
 inline constexpr int LONG_WORD_COUNT = sizeof LONG_WORDS / sizeof LONG_WORDS[0];
 
-// The Puzzles screens' buttons (puzzles::Kind order; then the times tables 2 to 6 and all of them), shown as written.
-inline constexpr const char* KIND_LABELS[6] = {"Adding", "Taking away", "Big numbers", "Times tables", "Short words",
-                                               "Long words"};
-inline constexpr const char* TABLE_LABELS[6] = {"Twos", "Threes", "Fours", "Fives", "Sixes", "All mixed"};
+// The times stories: "3 bowls, 4 biscuits in each." and "12 bones shared by 3 pups." (puzzles::build).
+struct GroupThing { const char* groups; const char* things; };
+inline constexpr GroupThing GROUP_THINGS[] = {
+  {"bowls", "biscuits"}, {"bags", "bones"}, {"boxes", "balls"}, {"plates", "treats"},
+};
+inline constexpr int GROUP_THING_COUNT = sizeof GROUP_THINGS / sizeof GROUP_THINGS[0];
+inline constexpr const char* GROUP_ASK = "How many?";
+inline constexpr const char* SHARE_ASK = "How many each?";
+
+// The Puzzles screen's buttons (puzzles::Strand order), shown as written.
+inline constexpr const char* STRAND_LABELS[3] = {"Plus and minus", "Times", "Words"};
+// The round's end, when the round moved the kid's level up.
+inline constexpr const char* LEVEL_UP = "Next time: harder ones!";
 // What the pup does after an answer, a different one each question of a round. {pet} is filled in.
 inline constexpr const char* CHEERS[5] = {"{pet} wags his tail.", "{pet} does a happy spin.",
                                           "{pet} gives you a high paw.", "{pet} barks, just once.",

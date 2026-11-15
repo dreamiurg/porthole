@@ -146,29 +146,30 @@ snap h10_full_grown
 tap 43 29
 wait 450
 expect-screen biscuit_world
-# puzzles teach a trick: Adding, four right answers of five (the fourth is a lesson of Sit, the first trick not mastered)
+# puzzles teach a trick: plus and minus, four right answers of five (the fourth is a lesson of Sit, the first trick
+# not mastered)
 tap 52 132
 wait 450
-tap 53 60
+tap 80 60
 wait 450
 expect-screen biscuit_puzzle
-tap 44 97
+answer-puzzle right
 wait 450
 tap 80 132
 wait 450
-tap 115 97
+answer-puzzle wrong
 wait 450
 tap 80 132
 wait 450
-tap 44 97
+answer-puzzle right
 wait 450
 tap 80 132
 wait 450
-tap 115 97
+answer-puzzle right
 wait 450
 tap 80 132
 wait 450
-tap 115 97
+answer-puzzle right
 wait 450
 tap 80 132
 wait 450

@@ -38,7 +38,7 @@ class Game : public App {
   // shared by the screens (screens_*.cpp)
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
-    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES, SC_TABLES,
+    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES,
     SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_COUNT
   };
 
@@ -73,9 +73,10 @@ class Game : public App {
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
   FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
-  // Puzzles: the kind (and times table) picked, the question shown, how far the round is (puzzles::ROUND = done),
-  // the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits).
-  puzzles::Kind kind_ = puzzles::ADD; uint8_t table_ = 0;
+  // Puzzles: the strand picked and the round's level, the question shown, how far the round is (puzzles::ROUND =
+  // done), the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits). One
+  // question of the round, at easyAt_, is from the level below; levelUp_ says the round's end moved the level up.
+  puzzles::Strand strand_ = puzzles::NUMBERS; uint8_t level_ = 0; int easyAt_ = 0; bool levelUp_ = false;
   puzzles::Puzzle puzzle_{}; int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
   int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
   int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
@@ -126,9 +127,8 @@ class Game : public App {
   void openLibrary(Screen back); void openTricks(Screen back);
   void stickerNews();
   void updatePuzzles(); void drawPuzzles();
-  void updateTables(); void drawTables();
-  void startPuzzles(puzzles::Kind kind, uint8_t table);
-  void nextPuzzle();
+  void startPuzzles(puzzles::Strand strand); uint8_t puzzleLevel(puzzles::Strand strand) const;
+  void nextPuzzle(); void endRound();
   void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
   void updateDoghouse(); void drawDoghouse();
   void updateShop(); void drawShop();

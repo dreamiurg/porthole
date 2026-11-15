@@ -153,10 +153,10 @@ inline constexpr Label TRAIN_CUES = {{&FONT28, 348, 100, 4, Align::CENTER}, 66, 
 constexpr Box CUE_KEY[5] = {   // indexed by Cue: Left, Up, Right, Down, Paw
   {31, 73, 30, 22}, {65, 49, 30, 22}, {99, 73, 30, 22}, {65, 97, 30, 22}, {65, 73, 30, 22}};
 
-// ---- Puzzles: World's Puzzles button, the kinds and the tables two by two, then a question and its three answers
-constexpr Box GRID[6] = {PAIR[0], PAIR[1], {28, 73, 51, 22}, {81, 73, 51, 22}, {28, 97, 51, 22}, {81, 97, 51, 22}};
-inline constexpr Label GRID_LABEL = buttonLabel(GRID[5], &FONT20);
-inline constexpr Label CLUE = {{&FONT20, 352, 56, 4, Align::CENTER}, 64, 150, false};   // a spelling word's clue
+// ---- Puzzles: World's Puzzles button, the three strands one under another, then a question and its three answers
+constexpr Box STRAND_BUTTON[3] = {{37, 49, 86, 22}, {37, 73, 86, 22}, {37, 97, 86, 22}};
+inline constexpr Label STRAND_LABEL = buttonLabel(STRAND_BUTTON[0], &FONT20);
+inline constexpr Label CLUE = {{&FONT20, 352, 56, 4, Align::CENTER}, 64, 150, false};   // a word's clue, a times story
 inline constexpr Label ASK = {{&FONT28, 340, 34, 4, Align::CENTER}, 70, 212, false};     // "4 x 6 = ?"
 constexpr Box ANSWER[3] = {{28, 86, 33, 22}, {63, 86, 34, 22}, {99, 86, 33, 22}};
 // After an answer, where the answers were: the solved question and what the pup does, above Next.
