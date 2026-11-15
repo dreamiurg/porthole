@@ -10,6 +10,10 @@
 #include <cstring>
 #include <new>
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace starfighter::paint {
 namespace {
 constexpr uint16_t rgb(uint32_t c) { return ((c>>8)&0xf800)|((c>>5)&0x7e0)|((c>>3)&31); }

@@ -9,6 +9,10 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
 namespace pumpkin { namespace paint { namespace {
 // The runtime's logical framebuffer is scratch while this RGB565 game owns the screen. Its palette stays ours.
 // Compose all overdraw here before expanding once, rather than repeatedly writing the panel's PSRAM buffer.

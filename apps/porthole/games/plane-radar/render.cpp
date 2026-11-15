@@ -10,6 +10,10 @@
 #include "palette.h"
 #include "scope.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace radar::paint {
 using namespace canvas;
 namespace {
