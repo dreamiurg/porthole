@@ -64,6 +64,7 @@ test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 test_sand_jar_SRC := $(wildcard os/*.cpp) $(wildcard games/sand-jar/*.cpp)
 test_times_cards_SRC := $(wildcard os/*.cpp) $(wildcard games/times-cards/*.cpp)
+test_saves_SRC := $(SRC)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 # Native firmware uses ROM miniz; host builds use the system zlib decoder.
@@ -99,6 +100,12 @@ $(BUILD)/snap: $(call objs,$(BUILD)/obj,$(SRC) host/sim.cpp)
 $(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
 	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
 sim snap snap-asan: %: $(BUILD)/%
+
+# The saves test once more under the sanitizers: a save's bad byte that reads past a table passes the plain build.
+$(BUILD)/test_saves-asan: $(call objs,$(BUILD)/asan,$(SRC) host/test_saves.cpp)
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+run-test_saves-asan: $(BUILD)/test_saves-asan
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 $<
 
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
@@ -148,7 +155,7 @@ check: lint test
 
 # Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
 # run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22).
-ci: lint test coverage playtest-monkey
+ci: lint test coverage playtest-monkey run-test_saves-asan
 
 # Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.52% measured
