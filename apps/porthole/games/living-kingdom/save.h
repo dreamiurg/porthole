@@ -47,6 +47,7 @@ struct Save {
   uint32_t crc;
 };
 #pragma pack(pop)
+static_assert(sizeof(Save) == 935, "version 1 is immutable: a new field needs a new version");
 void sealSave(Save& save);
 bool loadSave(Save& out, const void* data, size_t bytes, uint8_t profile);
 constexpr size_t saveSize() { return sizeof(Save); }
