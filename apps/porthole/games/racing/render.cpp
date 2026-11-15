@@ -556,7 +556,7 @@ void lobbyPage(const View& v) {
   char line[40];
   if (d.paired) snprintf(line, sizeof line, "%s picks the track", d.peerName);
   else snprintf(line, sizeof line, "Joining...");
-  centered(240, 306, line, 2, DIM);
+  centered(240, 322, line, 2, DIM);
 }
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
@@ -671,7 +671,7 @@ void jointResults(const View& v) {
   else snprintf(line, sizeof line, "Races together today: %d", d.races);
   heading(206, line, 2, GREEN);
   if (d.peerAgain) { snprintf(line, sizeof line, "%s wants again!", d.peerName); heading(250, line, 2, GOLD); }
-  else if (d.gone && !d.noWinner) { snprintf(line, sizeof line, "%s went home", d.peerName); heading(250, line, 2, DIM); }
+  else if (d.gone && !d.noWinner) { snprintf(line, sizeof line, "%s left", d.peerName); heading(250, line, 2, DIM); }
   button(REPLAY, d.gone ? "Replay" : "Again", true);
   button(RESULT_TRACKS, "Tracks", true);
   button(RESULT_HOME, "Home", true);

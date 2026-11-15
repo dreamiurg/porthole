@@ -118,7 +118,9 @@ names are the player names, the name and avatar go over the home network only, n
 
 - Tap Together (on the track cards, only on a build with a radio, `lan::radio()`): the Looking page joins the wifi
   and invites. The other device shows "<Name> wants to race together!" with Join / Not now over its track cards.
-  Join pairs both into the Lobby: two faces, the host (who tapped Together) picks the track with the arrows and Go.
+  Join (or Together itself, tapped under the invite) pairs both into the Lobby; Not now sends the inviting kid back to
+  the cards with "<Name> said not now"; when both tapped Together, the device with the higher address joins the other.
+  The Lobby: two faces, the host (who tapped Together) picks the track with the arrows and Go.
   Both set their grip; Go waits for the other ("Waiting for <Name>..."), then both count down into the same race.
 - The race: the host's device runs the three rivals and sends them; the guest shows them (and carries them on between
   datagrams). The other kid is a car with their avatar on a flag, never touched: no contact between the kids, and a
@@ -133,7 +135,8 @@ names are the player names, the name and avatar go over the home network only, n
   `STARS` stars each for the first `STAR_RACES` races finished together a day; Again goes back to the Lobby for both.
   Together times never enter Best times, and the adaptive level does not move.
 - A drop (`LOST_MS` silent, or the other kid leaves): mid-race the kid finishes alone ("Lost <Name>, keep racing!")
-  and the results say "Connection lost: no winner"; before the race it says "<Name> went home" and returns to the cards.
+  and the results say "Connection lost: no winner" ("<Name> left. Keep racing!" when they quit); before the race it says
+  "<Name> left" and returns to the cards.
 - Not built: cheering, titles, alternate track picking, more than two kids, picking among several devices, rejoining.
 - Protocol (`together.h`): one 144-byte `Wire`, the device's whole state, every `SEND_MS` and at once on a change;
   magic "RLY2", version 1. A device on its Looking page broadcasts (`to` 0); the guest answers addressed to it;

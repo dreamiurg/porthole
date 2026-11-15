@@ -1,6 +1,6 @@
 // Rally's race together: two Games on an in-memory network, from the invite to the results and the ways a race
 // together ends early. The wire protocol on its own first.
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -112,8 +112,11 @@ void link() {
   lb.tick(10, wb); lc.tick(10, wc);
   assert(lb.invited(10) && lc.invited(10) && !strcmp(lb.invite().name, "Sam"));
   assert(!lb.invited(10 + together::INVITE_MS));   // a host that stopped looking is no invite
-  lc.decline();
+  lc.decline(wc);
   assert(!lc.invited(10));
+  la.tick(15, wa);   // the Not now reaches the host
+  assert(la.refused() && !strcmp(la.refusal().name, wc.name) && !la.paired());
+  wc.stage = (uint8_t)Stage::Idle;
   lb.join(10);
   wb.stage = (uint8_t)Stage::Lobby;
   lb.tick(20, wb);   // addressed to the host
@@ -149,8 +152,9 @@ void inviteAndLobby(Pair& p) {
   p.wait(200);
   p.tap(p.zoe, paint::NOT_NOW);
   assert(p.zoe.g.screen() == Game::Screen::Tracks && !p.zoe.g.duo().inviteName);
-  p.tap(p.sam, paint::BOARD_BACK);   // back, and looking again: a new invite
-  p.tap(p.sam, paint::TOGETHER);
+  p.wait(300);   // Sam hears the Not now: back to the cards, told so
+  assert(p.sam.g.screen() == Game::Screen::Tracks);
+  p.tap(p.sam, paint::TOGETHER);   // looking again: a new invite
   p.wait(200);
   assert(p.zoe.g.duo().inviteName);
   p.tap(p.zoe, paint::JOIN);
@@ -271,6 +275,16 @@ void leftEarly() {
   (void)air;
 }
 
+// Both kids tap Together at once: one joins the other (the higher address), and they are in one lobby.
+void bothLooking() {
+  Pair p;
+  p.tap(p.sam, paint::TOGETHER);
+  p.tap(p.zoe, paint::TOGETHER);
+  p.wait(800);
+  assert(p.sam.g.screen() == Game::Screen::Lobby && p.zoe.g.screen() == Game::Screen::Lobby);
+  assert(p.sam.g.duo().host != p.zoe.g.duo().host && p.sam.g.duo().paired && p.zoe.g.duo().paired);
+}
+
 // The Together targets keep the house rules: whole targets on the glass, apart from their neighbors.
 void geometry() {
   using namespace paint;
@@ -290,6 +304,7 @@ int main() {
   raceTogether();
   dropped();
   leftEarly();
+  bothLooking();
   puts("test_racing_together: ok");
   return 0;
 }

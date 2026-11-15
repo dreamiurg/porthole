@@ -20,6 +20,7 @@ void Link::take(const Wire& w, uint32_t from, uint32_t ms, Stage mine) {
     peer_ = {from, ms, w}; heard_ = true; gen_++;
     return;
   }
+  if (mine == Stage::Looking && (Stage)w.stage == Stage::Idle && w.to == self) refused_ = {from, ms, w};
   if ((Stage)w.stage == Stage::Looking && !w.to) invite_ = {from, ms, w};
 }
 
@@ -40,6 +41,11 @@ void Link::tick(uint32_t ms, Wire& mine) {
   if (!fresh(mine, last_) && ms - sentMs_ < SEND_MS) return;
   radio_->send(&mine, sizeof mine, mine.to);
   last_ = mine; sentMs_ = ms;
+}
+void Link::decline(Wire& mine) {
+  declined_ = invite_.addr; declinedSession_ = invite_.w.session;
+  mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = invite_.addr;
+  if (radio_ && invite_.addr) for (int i = 0; i < 3; i++) radio_->send(&mine, sizeof mine, invite_.addr);
 }
 void Link::leave(Wire& mine) {
   mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = peer_.addr;

@@ -106,8 +106,11 @@ void Game::peerGone() {
   const bool left = (Stage)peer_.stage == Stage::Idle;
   link_.unpair();
   gone_ = true;
-  if (raced_) { if (!(sameRace() && peer_.finished)) say("Lost %s, keep racing!", peer_.name); return; }
-  if (left) say("%s went home", peer_.name);
+  if (raced_) {
+    if (!(sameRace() && peer_.finished)) say(left ? "%s left. Keep racing!" : "Lost %s, keep racing!", peer_.name);
+    return;
+  }
+  if (left) say("%s left", peer_.name);
   else say("Race is off", "");
   endTogether();
   go(Screen::Tracks);
@@ -140,6 +143,9 @@ void Game::endTogether() {
 void Game::updateLooking() {
   if (ui::clicked(in_, paint::BOARD_BACK)) { endTogether(); go(Screen::Tracks); }
   else if (link_.paired()) go(Screen::Lobby);
+  else if (link_.refused()) { say("%s said not now", link_.refusal().name); endTogether(); go(Screen::Tracks); }
+  // Both kids tapped Together: the device with the higher address joins the other, which hosts.
+  else if (link_.lookingToo(ms_) && link_.self() > link_.inviter()) joinInvite();
 }
 
 void Game::updateLobby() {

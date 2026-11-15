@@ -156,9 +156,9 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 }
 
 void Game::updateTracks() {
-  if (link_.invited(ms_)) {   // the invite covers the cards: only its two buttons
-    if (ui::clicked(in_, paint::JOIN)) joinInvite();
-    else if (ui::clicked(in_, paint::NOT_NOW)) link_.decline();
+  if (link_.invited(ms_)) {   // the invite covers the cards: its two buttons, and Together means yes too
+    if (ui::clicked(in_, paint::JOIN) || ui::clicked(in_, paint::TOGETHER)) joinInvite();
+    else if (ui::clicked(in_, paint::NOT_NOW)) link_.decline(wire_);
     return;
   }
   if (link_.on() && ui::clicked(in_, paint::TOGETHER)) { startLooking(); return; }

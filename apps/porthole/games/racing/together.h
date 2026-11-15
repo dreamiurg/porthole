@@ -43,7 +43,7 @@ static_assert(sizeof(Wire) <= lan::MAX_PACKET, "one datagram");
 // One device's end: listens for invites while idle, pairs with one peer, and sends this device's Wire.
 class Link {
  public:
-  void begin(lan::Radio* r) { radio_ = r; peer_ = invite_ = {}; }
+  void begin(lan::Radio* r) { radio_ = r; peer_ = invite_ = refused_ = {}; }
   // Drains the radio, then sends `mine` when it changed or SEND_MS passed. mine.to is filled in here.
   void tick(uint32_t ms, Wire& mine);
   lan::State state() const { return radio_ ? radio_->state() : lan::S_OFF; }
@@ -52,11 +52,18 @@ class Link {
   // Invites: a device on its Looking page, heard within INVITE_MS. Not now hides that one until it looks again.
   bool invited(uint32_t ms) const { return invite_.addr && !ignored(invite_) && ms - invite_.heardMs < INVITE_MS; }
   const Wire& invite() const { return invite_.w; }
-  void decline() { declined_ = invite_.addr; declinedSession_ = invite_.w.session; }
+  // Not now: hides that invite, and tells the inviting device (an Idle addressed to it), which then stops looking.
+  void decline(Wire& mine);
+  bool refused() const { return refused_.addr != 0; }   // a kid this device invited said Not now
+  const Wire& refusal() const { return refused_.w; }
+  // Another device looking too, heard within INVITE_MS, Not now or not: two kids who both tapped Together.
+  bool lookingToo(uint32_t ms) const { return invite_.addr && ms - invite_.heardMs < INVITE_MS; }
+  uint32_t inviter() const { return invite_.addr; }
+  uint32_t self() const { return radio_ ? radio_->self() : 0; }
 
   // Pairing: the guest pairs when it joins; the host when a Lobby addressed to it comes in while Looking.
   void join(uint32_t ms) { peer_ = invite_; peer_.heardMs = ms; heard_ = false; }
-  void unpair() { peer_ = {}; heard_ = false; }
+  void unpair() { peer_ = refused_ = {}; heard_ = false; }
   void leave(Wire& mine);   // tells the peer this device left (Stage::Idle, a few times: datagrams get lost), unpairs
   bool paired() const { return peer_.addr != 0; }
   bool heard() const { return heard_; }   // the peer has answered since pairing (addressed to this device)
@@ -68,7 +75,7 @@ class Link {
  private:
   struct End { uint32_t addr = 0, heardMs = 0; Wire w{}; };
   lan::Radio* radio_ = nullptr;
-  End peer_, invite_;
+  End peer_, invite_, refused_;
   uint32_t declined_ = 0, gen_ = 0, sentMs_ = 0;
   uint8_t declinedSession_ = 0;
   bool heard_ = false;
