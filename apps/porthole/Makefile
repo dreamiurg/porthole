@@ -126,6 +126,7 @@ test: $(TESTS:%=run-%)
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	@bad=$$(grep -L '"host/check\.h"' host/test_*.cpp); [ -z "$$bad" ] || { echo "include \"host/check.h\", not <assert.h> (it refuses a build that turns the asserts off): $$bad"; exit 1; }
 	$(PY) tools/test_flash_report.py
 	$(PY) tools/compression_oracle.py
 	$(PY) games/toy-town-life/tools/toytown_art.py --check

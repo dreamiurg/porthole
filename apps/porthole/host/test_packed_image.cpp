@@ -1,6 +1,6 @@
 // Decoder contracts: exact RGB565 bytes, clipping/scaling, independent panel targets and bounded inputs.
 // Fixtures come from the system zlib encoder, independently of the generated Biscuit payloads.
-#include <assert.h>
+#include "host/check.h"
 #include <limits.h>
 #include <initializer_list>
 #include <stdio.h>

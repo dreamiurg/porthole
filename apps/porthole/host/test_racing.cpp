@@ -1,6 +1,6 @@
 // Rally's app layer: the wheel, every page reachable and drawn, touch rules, pause/resume/replay, and the HUD held
 // inside the round glass. The pure race rules are test_racing_rules.cpp.
-#include <assert.h>
+#include "host/check.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
