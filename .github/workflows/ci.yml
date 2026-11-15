@@ -22,8 +22,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # On main, a newer push cancels the older run; its release then ships with the newer commit's.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # On main, a newer push cancels the older run; its release then ships with the newer commit's. The weekly and manual
+  # runs get groups of their own: in the push's group they would cancel a merge's run, and release.yml only releases
+  # after a push's run that passed, so that merge's beta would wait, unnoticed, for the next merge.
+  group: ${{ github.workflow }}-${{ github.head_ref || format('{0}-{1}', github.ref, github.event_name) }}
   cancel-in-progress: true
 
 permissions:
