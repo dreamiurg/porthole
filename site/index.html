@@ -77,15 +77,29 @@
     .hero .shot { flex: 1 1 300px; display: flex; justify-content: center; }
     .hero .shot { flex-direction: column; align-items: center; }
     /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB) in a frame. */
-    .live { width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%;
+    .player { display: flex; flex-direction: column; align-items: center; gap: 14px; outline: none; }
+    .live { position: relative; width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%;
       background: radial-gradient(circle at 35% 30%, #4a4350, #24202a 60%, #16131a); box-shadow: 0 18px 40px rgba(20, 14, 26, 0.35); }
     .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
     .live .poster img { display: block; width: 100%; height: 100%; }
     .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
       background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
-    .live.on { padding: 0; background: none; box-shadow: none; aspect-ratio: auto; border-radius: 0; }
-    .live iframe { display: block; width: 100%; aspect-ratio: 1; border: 0; background: transparent; }
-    @media (pointer: coarse) { .live iframe { aspect-ratio: auto; height: calc(min(420px, 90vw) + 120px); } }
+    #screen { display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; touch-action: none; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
+    #screen[hidden], .live .status[hidden], .pcontrols[hidden], .player [hidden] { display: none; }
+    .live .status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #d8cfe0; font-size: 18px; pointer-events: none; }
+    .pcontrols { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 440px; }
+    .pcontrols .col { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 280px; }
+    .pcontrols button, .player .close { font: inherit; font-size: 15px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+    .pcontrols button:hover { border-color: var(--accent); }
+    .pcontrols button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+    .pcontrols button[aria-pressed="true"] { background: var(--soft); color: var(--ink); }
+    #pad { width: 120px; height: 120px; cursor: grab; touch-action: none; }
+    #motion-note { flex-basis: 100%; margin: 0; text-align: center; font-size: 14px; color: var(--muted); }
+    /* Full screen: the player covers the page; on a phone that is how it starts. */
+    .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; overflow: auto; }
+    .player.full .live { width: min(94vw, calc(100vh - 210px)); width: min(94vw, calc(100dvh - 210px)); }
+    .player .close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 22px; line-height: 1; }
+    html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
     .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
     .now { margin-top: 24px; }
@@ -253,16 +267,32 @@
     <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
     <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
     <p><span lang="en">I am sharing it as it is. If you have the same board, this page shows how to put the games on it, and the code is on GitHub if you want to change them.</span><span lang="uk">Ділюся ним як є. Якщо у вас така сама плата, ця сторінка показує, як записати на неї ігри, а код лежить на GitHub, якщо захочете щось змінити.</span></p>
-    <p><span lang="en">You can play it right here, no board needed: the screen next to this is the same firmware, built for the web from the newest code. It also has </span><span lang="uk">Можна грати просто тут, без плати: екран поруч &mdash; та сама прошивка, зібрана для вебу з найновішого коду. Є й </span><a href="play/"><span lang="en">a page of its own</span><span lang="uk">окрема сторінка</span></a><span lang="en"> with a tilt pad.</span><span lang="uk"> з панеллю нахилу.</span></p>
+    <p><span lang="en">You can play it right here, no board needed: the screen on this page is the same firmware, built for the web from the newest code.</span><span lang="uk">Можна грати просто тут, без плати: екран на цій сторінці &mdash; та сама прошивка, зібрана для вебу з найновішого коду.</span></p>
   </div>
   <div class="shot">
-    <div class="live" id="live">
-      <button type="button" class="poster" id="play-here">
-        <img src="images/play-home.webp" alt="The Porthole menu on the round screen" width="480" height="480">
-        <span class="go">&#9654; <span lang="en">Play here</span><span lang="uk">Грати тут</span></span>
-      </button>
+    <div class="player" id="play" tabindex="-1">
+      <button type="button" class="close" id="p-close" hidden aria-label="Close full screen">&times;</button>
+      <div class="live">
+        <button type="button" class="poster" id="play-here">
+          <img src="images/play-home.webp" alt="The Porthole menu on the round screen" width="480" height="480">
+          <span class="go">&#9654; <span lang="en">Play here</span><span lang="uk">Грати тут</span></span>
+        </button>
+        <canvas id="screen" width="480" height="480" aria-label="Porthole screen" hidden></canvas>
+        <div class="status" id="p-status" hidden></div>
+      </div>
+      <div class="pcontrols" id="p-controls" hidden>
+        <canvas id="pad" width="180" height="180" aria-label="Tilt pad" title="Where gravity points: drag the ball. The middle is lying flat."></canvas>
+        <div class="col">
+          <button type="button" id="motion" class="primary" hidden aria-pressed="false"></button>
+          <button type="button" id="center" hidden><span lang="en">Center</span><span lang="uk">Центр</span></button>
+          <button type="button" id="shake"><span lang="en">Shake</span><span lang="uk">Струсити</span></button>
+          <button type="button" id="full"><span lang="en">Full screen</span><span lang="uk">На весь екран</span></button>
+          <button type="button" id="reset"><span lang="en">Start over</span><span lang="uk">Спочатку</span></button>
+        </div>
+        <p id="motion-note" aria-live="polite"></p>
+      </div>
     </div>
-    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass; arrow keys or the phone itself tilt.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла; нахил стрілками або самим телефоном.</span></p>
+    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass. The tilt games read the pad, the arrow keys or, on a phone, the phone itself.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла. Ігри з нахилом слухають панель, стрілки або, на телефоні, сам телефон.</span></p>
   </div>
 </div>
 
@@ -559,11 +589,224 @@
   }
 </script>
 <script>
-  document.getElementById("play-here").addEventListener("click", () => {
-    const live = document.getElementById("live"), frame = document.createElement("iframe");
-    frame.src = "play/?embed"; frame.title = "Porthole"; frame.allow = "accelerometer; gyroscope";
-    live.classList.add("on"); live.replaceChildren(frame);
+// The player: the firmware (play/porthole.{js,wasm}, about 4 MB) loads only on a tap. On a phone that tap also opens
+// it full screen and asks for the motion sensor, so one tap is all it takes.
+(() => {
+  const W = 480, H = 480, STEP = 33;   // the sim steps in whole 33 ms frames, as tools/webemu.py drives it
+  // The deploy writes the commit in for __BUILD__. Pages caches files for 10 minutes, so the firmware is asked for
+  // by commit: a fresh page never runs the last deploy's.
+  const BUILD = "__BUILD__";
+  const t = (en, uk) => [["en", en], ["uk", uk]].map(([lang, text]) => Object.assign(document.createElement("span"), { lang, textContent: text }));
+  const say = (el, words) => el.replaceChildren(...(words || []));
+  const $ = (id) => document.getElementById(id);
+  const player = $("play"), canvas = $("screen"), statusEl = $("p-status"), controls = $("p-controls");
+  const TOUCH = matchMedia("(pointer: coarse)").matches;
+  let cmd = () => {}, started = false;
+
+  function start(gesture) {
+    if (started) return;
+    started = true;
+    $("play-here").remove();
+    canvas.hidden = false; controls.hidden = false;
+    statusEl.hidden = false; say(statusEl, t("Loading…", "Завантаження…"));
+    if (TOUCH) { setFull(true); if (gesture && "DeviceMotionEvent" in window) motionOn(); }
+    const ctx = canvas.getContext("2d"), image = ctx.createImageData(W, H);
+    let last = performance.now(), pending = 0;
+    const loop = (now) => {
+      pending += Math.min(now - last, 100);   // a background tab does not fast-forward
+      last = now;
+      const n = Math.floor(pending / STEP);
+      if (n > 0) {
+        pending -= n * STEP; cmd(`tick ${n * STEP}`);
+        const p = Module._web_frame();
+        image.data.set(Module.HEAPU8.subarray(p, p + W * H * 4));
+        ctx.putImageData(image, 0, 0);
+      }
+      requestAnimationFrame(loop);
+    };
+    const broke = () => { statusEl.hidden = false; say(statusEl, t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку.")); };
+    window.Module = {
+      print() {},   // the --serve protocol's "ok" replies
+      printErr: (m) => console.warn(m),
+      onAbort: broke,
+      locateFile: (path) => `play/${path}?v=${BUILD}`,
+      postRun: [() => {
+        cmd = (line) => Module.ccall("web_cmd", null, ["string"], [line]);
+        statusEl.hidden = true;
+        sendTilt(true);
+        requestAnimationFrame(loop);
+      }],
+    };
+    const script = document.createElement("script");
+    script.src = `play/porthole.js?v=${BUILD}`;
+    script.onerror = broke;
+    document.body.append(script);
+  }
+  $("play-here").addEventListener("click", () => start(true));
+
+  // Full screen: the player covers the page (the browser's own full screen too, where it has one; an iPhone does not).
+  let apiFull = false;
+  function setFull(on) {
+    player.classList.toggle("full", on);
+    document.documentElement.classList.toggle("locked", on);
+    $("p-close").hidden = !on;
+    $("full").hidden = on;
+    if (on && player.requestFullscreen && !TOUCH) { player.requestFullscreen().then(() => { apiFull = true; }, () => {}); }
+    if (!on && apiFull && document.fullscreenElement) document.exitFullscreen();
+    if (!on) apiFull = false;
+  }
+  document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && apiFull) setFull(false); });
+  $("full").addEventListener("click", () => setFull(true));
+  $("p-close").addEventListener("click", () => setFull(false));
+
+  // The finger: the panel is 480 px, the shell reads 160x160 logical points.
+  let pressed = false;
+  function point(e) {
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / r.width * 160), y = Math.floor((e.clientY - r.top) / r.height * 160);
+    return `${Math.max(0, Math.min(159, x))} ${Math.max(0, Math.min(159, y))}`;
+  }
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); player.focus({ preventScroll: true });
+    canvas.setPointerCapture(e.pointerId); pressed = true; cmd("down " + point(e));
   });
+  canvas.addEventListener("pointermove", (e) => { if (pressed) cmd("move " + point(e)); });
+  for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, () => { if (pressed) { pressed = false; cmd("up"); } });
+
+  // The motion sensor: gravity in the glass's plane (x right, y down, in g); the rest of 1 g points into the glass.
+  const pad = $("pad"), pctx = pad.getContext("2d");
+  const C = 90, R = 72;
+  let tilt = { x: 0, y: 1, z: 0 }, lastTilt = 0;
+  function drawPad() {
+    pctx.clearRect(0, 0, 180, 180);
+    pctx.fillStyle = "#2a2430"; pctx.beginPath(); pctx.arc(C, C, 88, 0, 7); pctx.fill();
+    pctx.strokeStyle = "#4a4252"; pctx.lineWidth = 2;
+    for (const r of [R, R / 2]) { pctx.beginPath(); pctx.arc(C, C, r, 0, 7); pctx.stroke(); }
+    const bx = C + tilt.x * R, by = C + tilt.y * R;
+    pctx.strokeStyle = "rgba(240,183,94,.5)"; pctx.lineWidth = 4;
+    pctx.beginPath(); pctx.moveTo(C, C); pctx.lineTo(bx, by); pctx.stroke();
+    pctx.fillStyle = "#e9b86a"; pctx.beginPath(); pctx.arc(bx, by, 13, 0, 7); pctx.fill();
+  }
+  function sendTilt(force) {
+    const now = performance.now();
+    if (!force && now - lastTilt < STEP) return;
+    lastTilt = now;
+    const k = (v) => Math.round(v * 1000);
+    cmd(`tilt ${k(tilt.x)} ${k(tilt.y)} ${k(tilt.z)}`);
+  }
+  function setTilt(x, y, force) {   // from the pad and the keys: face up, so z is what is left of 1 g
+    const m = Math.hypot(x, y);
+    if (m > 1) { x /= m; y /= m; }
+    tilt = { x, y, z: -Math.sqrt(Math.max(0, 1 - x * x - y * y)) };
+    drawPad(); sendTilt(force);
+  }
+  function padTilt(e) {
+    const r = pad.getBoundingClientRect();
+    setTilt(((e.clientX - r.left) * 180 / r.width - C) / R, ((e.clientY - r.top) * 180 / r.height - C) / R, false);
+  }
+  pad.addEventListener("pointerdown", (e) => { pad.setPointerCapture(e.pointerId); player.focus({ preventScroll: true }); padTilt(e); });
+  pad.addEventListener("pointermove", (e) => { if (pad.hasPointerCapture(e.pointerId)) padTilt(e); });
+  pad.addEventListener("pointerup", () => sendTilt(true));
+  player.addEventListener("keydown", (e) => {   // only while the player has focus, so the page still scrolls
+    if (e.key === "Escape" && player.classList.contains("full")) { setFull(false); return; }
+    if (e.key === " " && e.target.matches("button")) return;   // Space clicks a focused button
+    let a = Math.atan2(tilt.x, tilt.y), m = Math.hypot(tilt.x, tilt.y);
+    if (e.key === "ArrowLeft") a -= 0.15; else if (e.key === "ArrowRight") a += 0.15;
+    else if (e.key === "ArrowUp") m = Math.max(0, m - 0.1); else if (e.key === "ArrowDown") m = Math.min(1, m + 0.1);
+    else if (e.key === " ") { cmd("shake"); e.preventDefault(); return; } else return;
+    e.preventDefault();
+    setTilt(Math.sin(a) * m, Math.cos(a) * m, true);
+  });
+
+  // A phone's own sensor. accelerationIncludingGravity is the push against gravity in the phone's own axes (x right,
+  // y up, z out of the glass), so gravity is its negative. The page turns with the phone in landscape, so the reading
+  // is turned back by the screen's angle onto the glass as shown. iOS has long reported it with the opposite sign, and
+  // the first readings settle that: whoever just turned it on is looking at the glass, so it does not face the floor.
+  const G = 9.81;
+function deviceGravity(a, s) { return { x: -s * a.x / G, y: -s * a.y / G, z: -s * a.z / G }; }   // y up
+function onGlass(d, angle) {   // phone axes (y up) to the glass as the page shows it (y down)
+  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t);
+  return { x: d.x * c - d.y * n, y: -(d.x * n + d.y * c), z: d.z };
+}
+function fromGlass(v, angle) {   // the way back, for Center
+  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t), up = -v.y;
+  return { x: v.x * c + up * n, y: -v.x * n + up * c, z: v.z };
+}
+function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as a function
+  const unit = (v) => { const m = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / m, y: v.y / m, z: v.z / m }; };
+  a = unit(a); b = unit(b);
+  const k = { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }, c = a.x * b.x + a.y * b.y + a.z * b.z;
+  if (c < -0.99) return (v) => v;   // upside down from the middle: leave it be
+  return (v) => {
+    const kv = k.x * v.x + k.y * v.y + k.z * v.z, f = kv / (1 + c);
+    return { x: v.x * c + (k.y * v.z - k.z * v.y) + k.x * f, y: v.y * c + (k.z * v.x - k.x * v.z) + k.y * f,
+             z: v.z * c + (k.x * v.y - k.y * v.x) + k.z * f };
+  };
+}
+
+  // shortcut: the iOS sign guess and the landscape angle are worked out from the specs, not tried on every phone; Center
+  // and the first-readings check cover a wrong guess.
+  const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const ASKS = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
+  const motion = $("motion"), centerBtn = $("center"), note = $("motion-note");
+  let useMotion = false, sign = IOS ? -1 : 1, settled = false, onSince = 0, heard = false, turn = (v) => v, lastShake = 0, raw = null;
+  const screenAngle = () => (screen.orientation ? screen.orientation.angle : (window.orientation || 0));
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    heard = true;
+    let d = deviceGravity(a, sign);
+    const early = !settled && performance.now() - onSince < 1500;
+    if (early && Math.abs(d.z) > 0.5) { if (d.z > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
+    else if (early && screenAngle() % 360 === 0 && Math.abs(d.y) > 0.5) { if (d.y > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
+    raw = d;
+    tilt = onGlass(turn(d), screenAngle());
+    drawPad(); sendTilt(false);
+    const j = e.acceleration, now = performance.now();
+    if (j && j.x != null && Math.hypot(j.x, j.y, j.z) > 18 && now - lastShake > 600) { lastShake = now; cmd("shake"); }
+  }
+  function setMotion(on, msg) {
+    useMotion = on;
+    motion.setAttribute("aria-pressed", String(on));
+    say(motion, on ? t("Phone tilt: on", "Нахил телефоном: увімк.") : t("Tilt with this phone", "Нахиляти телефоном"));
+    centerBtn.hidden = !on;
+    pad.hidden = on;
+    say(note, msg || (on ? t("Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.",
+      "Тримайте як кермо або покладіть рівно. Центр робить серединою те, як ви тримаєте зараз.") : null));
+    if (on) {
+      onSince = performance.now(); heard = false; settled = false;
+      window.addEventListener("devicemotion", onMotion);
+      setTimeout(() => { if (useMotion && !heard) setMotion(false, t("This phone sent no motion readings, so the tilt pad steers instead.", "Телефон не надіслав даних руху, тож кермує панель нахилу.")); }, 2000);
+    } else {
+      window.removeEventListener("devicemotion", onMotion);
+    }
+  }
+  async function motionOn() {
+    if (ASKS) {   // iOS asks first, and only from a tap
+      let answer = "denied";
+      try { answer = await DeviceMotionEvent.requestPermission(); } catch { /* treated as a no */ }
+      if (answer !== "granted") {
+        setMotion(false, t("Motion access was not allowed, so the tilt pad steers instead. Close and reopen Safari to be asked again.",
+          "Доступ до руху не дозволено, тож кермує панель нахилу. Закрийте й знову відкрийте Safari, щоб вас спитали ще раз."));
+        return;
+      }
+    }
+    setMotion(true);
+  }
+  if (TOUCH && "DeviceMotionEvent" in window) { motion.hidden = false; setMotion(false); }
+  motion.addEventListener("click", () => { if (useMotion) setMotion(false); else motionOn(); });
+  centerBtn.addEventListener("click", () => {   // the way it is held now becomes upright or flat, whichever is nearer
+    if (!raw) return;
+    const angle = screenAngle(), now = onGlass(raw, angle);
+    const target = Math.abs(now.y) >= Math.abs(now.z) ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: -1 };
+    turn = turnTo(raw, fromGlass(target, angle));
+  });
+
+  $("shake").addEventListener("click", () => cmd("shake"));
+  $("reset").addEventListener("click", () => cmd("reset"));
+  drawPad();
+  if (location.hash === "#play") { player.scrollIntoView(); start(false); }   // the old /play page sends people here
+})();
 </script>
 </body>
 </html>
