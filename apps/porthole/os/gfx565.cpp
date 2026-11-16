@@ -76,8 +76,9 @@ void roundRect(const Rect& b, int r, uint16_t c) {
   }
 }
 void circle(int cx, int cy, int r, uint16_t c) {   // same disc as gfx::circle, at panel resolution
-  for (int dy = -r; dy <= r; dy++) {
-    int dx = 0; while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+  for (int dy = -r, dx = 0; dy <= r; dy++) {   // the half-width only grows down to the middle row, then only shrinks
+    if (dy <= 0) while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+    else while (dx * dx + dy * dy > r * r + r) dx--;
     rect(cx - dx, cy + dy, 2 * dx + 1, 1, c);
   }
 }

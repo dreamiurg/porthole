@@ -42,8 +42,9 @@ void roundRect(int x, int y, int w, int h, uint8_t c) {
   rect(x + 1, y, w - 2, h, c); rect(x, y + 1, 1, h - 2, c); rect(x + w - 1, y + 1, 1, h - 2, c);
 }
 void circle(int cx, int cy, int r, uint8_t c) {
-  for (int dy = -r; dy <= r; dy++) {
-    int dx = 0; while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+  for (int dy = -r, dx = 0; dy <= r; dy++) {   // the half-width only grows down to the middle row, then only shrinks
+    if (dy <= 0) while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+    else while (dx * dx + dy * dy > r * r + r) dx--;
     rect(cx - dx, cy + dy, 2 * dx + 1, 1, c);
   }
 }
