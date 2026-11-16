@@ -52,6 +52,14 @@ struct SysInfo {
   char ssid[33] = {0};          // saved network, "" if none
 };
 
+// Opt-in telemetry (os/telemetry.h), as the menu shows it. level: telemetry::Level, 0 = off.
+struct TelemetryStatus {
+  uint8_t level = 0;
+  char host[40] = {0};    // where events go, "" when off
+  uint32_t lastSent = 0;  // local epoch seconds of the last accepted batch, 0 = none since boot
+  int queued = 0;         // events waiting for the next send
+};
+
 struct Network {   // one a scan found
   char ssid[33] = {0};
   int8_t rssi = 0;              // dBm, strongest near 0
@@ -124,6 +132,10 @@ class System {
   virtual bool setUtcOffset(int16_t minutes) { return false; }   // legacy only; named-zone UI never calls this
   virtual bool setTimeZone(const char* iana, bool automatic) { (void)iana; (void)automatic; return false; }
   virtual bool detectTimeZone() { return false; }
+
+  // Telemetry is set up by the owner off the screen (SD card or serial); the menu shows it and can only turn it off.
+  virtual TelemetryStatus telemetryStatus() { return {}; }
+  virtual bool telemetryOff() { return false; }   // persisted; false if it could not be saved
 
  protected:
   ~System() = default;

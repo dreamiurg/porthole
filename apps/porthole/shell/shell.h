@@ -105,6 +105,7 @@ class Shell {
   uint32_t pinCalmUntil_ = 0, pinNudgeUntil_ = 0;   // the kids' wait: keys hidden until the finger rests; a tap wiggles it
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   uint32_t savedStars_ = 0;   // the open game's kid's stars as last saved: a change is saved at the next tick
+  uint32_t openedMs_ = 0, openedStars_ = 0;        // telemetry's game_closed: how long, and the stars earned
   uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;
@@ -143,7 +144,10 @@ class Shell {
   int appStores(const char** out) const;   // every app's save namespace, for delete and create
   void finishCreate(uint16_t pin);
   void openIdx(int k);
-  void closeApp();
+  void closeApp(const char* why);   // why: telemetry's exit, "home", "rest" or "time_up"
+  void tellPlayer();   // telemetry: who plays now, by the kid's player id
+  void telemetryTap();
+  void drawTelemetry();                // telemetry: the kid's random player id, made the first time it is needed
   void flushApp(bool allowed);
   void budgetTick();
   void submitPin();

@@ -5,6 +5,7 @@
 #include "launcher.h"
 #include "save.h"
 #include "shell_sprites.h"
+#include "telemetry.h"
 
 using namespace gfx;
 using shell::Record;
@@ -36,7 +37,7 @@ void Shell::go(Screen s) {
   screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = ms_; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
   if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
-  if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
+  if (s == SH_PICK && active_ >= 0) { active_ = -1; telemetry::player(""); }   // nobody is playing while the picker shows
   if (s == SH_SYS_INFO || s == SH_SYS_UPD) { sys_->info(info_); upd_ = sys_->status(); }   // drawn before their first update
 }
 void Shell::toast(const char* s) { snprintf(toast_, sizeof toast_, "%s", s); toastUntil_ = ms_ + 1500; }
@@ -118,14 +119,24 @@ bool Shell::guardScreenTime() {
   if (active_ < 0 || (screen_ != SH_APP && screen_ != SH_LAUNCHER && screen_ != SH_LIGHT)) return false;
   enforceCurrentBudget();
   if (!restingNow()) return false;
-  if (screen_ == SH_APP) closeApp();
+  if (screen_ == SH_APP) closeApp("rest");
   go(SH_REST); return true;
 }
 void Shell::select(int id) {
   active_ = id; page_ = 0;
+  tellPlayer();
   shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
   go(restingNow() ? SH_REST : SH_LAUNCHER);
+}
+// The kid's player id (os/telemetry.h): from the profile and the device's secret, never stored and never the name; the
+// owner labels the ids in their own dashboard.
+void Shell::tellPlayer() {
+  if (!telemetry::active()) return;
+  char id[telemetry::ID];
+  telemetry::slot()->playerId(active_, rec().name, id);
+  telemetry::player(id);
+  telemetry::emit("player_selected", {telemetry::P("avatar", (long)rec().avatar), telemetry::P("age", (long)rec().age)});
 }
 void Shell::finishCreate(uint16_t pin) {
   draft_.pin = pin;
@@ -180,7 +191,8 @@ void Shell::openIdx(int k) {
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
   app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS});
-  savedStars_ = rec().stars;
+  savedStars_ = openedStars_ = rec().stars; openedMs_ = ms_;
+  telemetry::emit("game_opened", {telemetry::P("game", app_->name())});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_; saveFails_ = 0;
   go(SH_APP);
 }
@@ -204,7 +216,9 @@ void Shell::flushApp(bool allowed) {
   saveFails_ = writtenOk_ ? 0 : (uint8_t)(saveFails_ + (saveFails_ < 6));
   lastSaveMs_ = ms_;
 }
-void Shell::closeApp() {
+void Shell::closeApp(const char* why) {
+  telemetry::emit("game_closed", {telemetry::P("game", app_->name()), telemetry::P("seconds", (long)((ms_ - openedMs_) / 1000)),
+                                  telemetry::P("stars", (long)(rec().stars - openedStars_)), telemetry::P("exit", why)});
   app_->leave();
   flushApp(true);
   shell::saveRecord(*st_, prof_, active_);
@@ -213,7 +227,7 @@ void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = (ms_ - playTickMs_) / 1000; playTickMs_ += dt * 1000; lastTick_ = now_;
   const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
   if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
-  else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
+  else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp("time_up"); go(SH_REST); return; }
   if (rec().stars != savedStars_) flushApp(true);   // what they bought or earned them is in the game's save: it goes first
   if (now_ - lastRecordSave_ >= 60 || rec().stars != savedStars_) {   // checkpoint; stars a game changed go right away
     shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; savedStars_ = rec().stars;
@@ -602,7 +616,7 @@ void Shell::drawRest() {
 // ---------------------------------------------------------------- a game is open
 void Shell::updateApp() {
   app_->update(now_, ms_, in_);
-  if (app_->wantsHome()) { closeApp(); go(SH_LAUNCHER); return; }
+  if (app_->wantsHome()) { closeApp("home"); go(SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
   const uint32_t sinceSave = ms_ - lastSaveMs_;   // an urgent checkpoint still waits a second: one flash write per tap at most
   // A write that keeps failing (storage full, or worn out) is tried ever less often, from 5 s up to about 5 minutes:

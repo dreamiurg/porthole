@@ -16,7 +16,9 @@
 #include <sys/time.h>
 #include "esp_random.h"
 #include "netclock.h"
+#include "crc32.h"
 #include "psram.h"
+#include "telemetry.h"
 #include "timezone.h"
 #include <algorithm>
 #include <atomic>
@@ -83,7 +85,7 @@ shell::UpdStatus g_st;             // written by the task, read by the main loop
 // test join from the menu's Wifi screens. g_scanCount and g_tested are -1 while theirs runs; g_found belongs to the scan
 // task until it sets g_scanCount, and g_try (the network to test) to the test task while it runs. The Home lookup and
 // Radar's feed (below) are the other two.
-enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK, J_ZONE, J_LAN };
+enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK, J_ZONE, J_LAN, J_TELEM };
 shell::Channel g_checkChan = shell::CH_STABLE;
 shell::Network g_found[shell::MAX_NETWORKS];
 std::atomic<int> g_scanCount{0}, g_tested{0};
@@ -429,6 +431,7 @@ void zoneJob() {
 void lookup();
 void radar();
 void lanJob();
+void telemJob();
 bool waitForProgress() {
   for (uint32_t start = millis(); !g_screen.ready(); vTaskDelay(1)) {
     if (g_screen.cancelled()) { setState(shell::UP_IDLE); return false; }
@@ -449,6 +452,7 @@ void task(void* arg) {
   else if (job == J_LAN) lanJob();
   else if (job == J_CLOCK) clockJob();
   else if (job == J_ZONE) zoneJob();
+  else if (job == J_TELEM) telemJob();
   else if (waitForProgress()) run(g_checkChan);
   g_screen.release();
   g_forced = false;
@@ -875,6 +879,110 @@ void wifiFromSd() {
   }
 }
 
+// Opt-in telemetry (os/telemetry.h). Off until the owner sets it up: "sys"/telem (telemetry::Config) from the SD card's
+// /porthole/telemetry.txt or serial Y. Its device id and salt are random, made when it is turned on and wiped when it is
+// turned off; its fileCrc is the card file last taken, so the menu's Off holds until the file changes. Events wait in
+// PSRAM (lost at power-off) and go out as one radio job while the screen is dark.
+const char* resetName(esp_reset_reason_t r);
+const uint32_t TELEM_MS = 15 * 60000u, TELEM_MORE_MS = 5000;   // between sends; sooner while a send left some behind
+const size_t TELEM_BODY = 32 * 1024;
+telemetry::Queue& g_tq = psram::make<telemetry::Queue>();
+char* g_tbody = nullptr;            // the request body: the main loop's until spawn, then the job's until g_tresult
+size_t g_tlen = 0;
+int g_ttaken = 0;
+uint32_t g_tgen = 0, g_tsentGen = 0;   // a new setting since the send started: its result drops nothing
+char g_turl[160], g_tauth[112];
+std::atomic<int> g_tresult{0};      // the job's answer: 1 taken, 2 try again later, 3 refused for good (dropped)
+uint32_t g_nextTelem = FIRST_MS;
+bool g_toldBoot = false;
+
+void loadTelemetry(telemetry::Config& c) {
+  if (board::loadBlob(NS, "telem", &c, sizeof c) != sizeof c || c.version != 1 || c.level > telemetry::PERSONAL) c = telemetry::Config{};
+  c.url[sizeof c.url - 1] = c.token[sizeof c.token - 1] = 0;
+}
+// The owner's settings (level, format, url, token) over what is stored, saved and read back before they take effect:
+// a failed flash write must not report a change that did not land. Ids stay while it stays on.
+bool storeTelemetry(const telemetry::Config& owner, uint32_t fileCrc) {
+  telemetry::Config was, c = owner, back;
+  loadTelemetry(was);
+  c.fileCrc = fileCrc;
+  if (!c.level) memset(c.device, 0, sizeof c.device + sizeof c.salt);
+  else if (was.level) { memcpy(c.device, was.device, sizeof c.device); memcpy(c.salt, was.salt, sizeof c.salt); }
+  else { esp_fill_random(c.device, sizeof c.device); esp_fill_random(c.salt, sizeof c.salt); }
+  if (!board::saveBlob(NS, "telem", &c, sizeof c)) return false;
+  loadTelemetry(back);
+  if (memcmp(&back, &c, sizeof c)) return false;
+  g_tq.configure(c); g_tgen++;
+  return true;
+}
+void telemetryFromSd() {
+  File f = SD_MMC.open("/porthole/telemetry.txt");
+  if (!f) return;
+  char text[512] = {0};
+  const size_t n = f.read((uint8_t*)text, sizeof text - 1);
+  f.close();
+  const uint32_t crc = os::crc32(text, n);
+  if (g_tq.config().fileCrc == crc) return;   // taken before: a grown-up's Off in the menu stays off
+  telemetry::Config c;
+  if (!telemetry::parseConfig(text, c)) { Serial.println("[net] telemetry.txt not understood: telemetry unchanged"); return; }
+  if (!storeTelemetry(c, crc)) return;
+  char h[40];
+  Serial.printf("[net] telemetry from SD card: %s\n", c.level ? telemetry::host(c, h, sizeof h) : "off");
+}
+// One POST of the queue's body. The token never reaches the log: only the host and the status do.
+int telemPost() {
+  NetworkClientSecure tls; HTTPClient http;
+  tls.setCACertBundle(CA_BUNDLE, (size_t)(CA_BUNDLE_END - CA_BUNDLE));
+  tls.setHandshakeTimeout(TLS_S);
+  if (!http.begin(tls, g_turl)) return -1;
+  http.setConnectTimeout(HTTP_MS); http.setTimeout(HTTP_MS);
+  http.setUserAgent("porthole/" PORTHOLE_VERSION);
+  http.addHeader("Content-Type", "application/json");
+  if (g_tauth[0]) http.addHeader("Authorization", g_tauth);
+  const int code = http.POST((uint8_t*)g_tbody, g_tlen);
+  http.end();
+  return code;
+}
+void telemJob() {
+  Wifi w; int code = -1;
+  if (loadWifi(w) && joinWifi(w)) { syncConnected(); code = telemPost(); }
+  wifiOff();
+  if (code < 200 || code > 299) Serial.printf("[net] telemetry send -> %d\n", code);
+  // 400, 413, 422: this body will never be taken; anything else (no wifi, a 5xx, a bad key) is tried again later.
+  g_tresult = code >= 200 && code <= 299 ? 1 : code == 400 || code == 413 || code == 422 ? 3 : 2;
+}
+// The first tick: after the clock came from the RTC, so the boot has a real time.
+void tellBoot() {
+  g_toldBoot = true;
+  const esp_reset_reason_t r = esp_reset_reason();
+  telemetry::emit("device_started", {telemetry::P("reset", resetName(r)), telemetry::P("channel", g_chan == shell::CH_BETA ? "beta" : "stable")});
+  if (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT || r == ESP_RST_BROWNOUT)
+    telemetry::emit("crashed", {telemetry::P("reset", resetName(r))});
+}
+// A finished send: drop what was taken (unless the settings changed under it), and when to send next.
+void takeTelemetryResult(uint32_t ms) {
+  const int r = g_tresult.exchange(0);
+  if (!r) return;
+  if (r != 2 && g_tsentGen == g_tgen) g_tq.drop(g_ttaken);
+  if (r == 1) g_tq.lastSent = g_now();
+  g_nextTelem = ms + (r == 1 && g_tq.size() ? TELEM_MORE_MS : TELEM_MS);
+}
+bool telemetryDue(uint32_t ms) {
+  return g_tbody && g_tq.on() && g_tq.size() && g_ssid[0] && g_dark && (int32_t)(ms - g_nextTelem) >= 0;
+}
+// Main loop: a finished send's result, then the next send when one is due, the radio is free and nobody is looking.
+void telemetryTick(uint32_t ms) {
+  if (!g_toldBoot) tellBoot();
+  takeTelemetryResult(ms);
+  if (!telemetryDue(ms) || g_busy.exchange(true)) return;
+  g_nextTelem = ms + TELEM_MS;
+  g_tlen = g_tq.batch(g_tbody, TELEM_BODY, &g_ttaken);
+  if (!g_tlen) { g_tq.drop(1); g_busy = false; return; }   // an event too big for any body: never sendable
+  g_tq.endpoint(g_turl, sizeof g_turl); g_tq.auth(g_tauth, sizeof g_tauth);
+  g_tsentGen = g_tgen;
+  spawn(J_TELEM);
+}
+
 const char* resetName(esp_reset_reason_t r) {
   static const char* const NAMES[] = {"unknown", "power-on", "external", "restart", "panic", "int-wdt", "task-wdt",
                                       "wdt", "deep-sleep", "brownout", "sdio", "usb", "jtag", "efuse", "power-glitch",
@@ -908,11 +1016,17 @@ void Updater::begin(uint32_t (*utcNow)()) {
   }
   g_sd = board::mountSd();
   Serial.printf("[net] version %s, SD card %s\n", PORTHOLE_VERSION, g_sd ? "mounted" : "not found");
-  if (g_sd) { wifiFromSd(); SD_MMC.end(); }   // read once: the FAT and driver state go back to the heap
+  g_tq.begin(g_now, PORTHOLE_VERSION);
+  g_tbody = (char*)heap_caps_malloc(TELEM_BODY, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  telemetry::Config tc;
+  loadTelemetry(tc); g_tq.configure(tc);
+  if (g_sd) { wifiFromSd(); telemetryFromSd(); SD_MMC.end(); }   // read once: the FAT and driver state go back to the heap
+  telemetry::install(&g_tq);
 }
 
 void Updater::tick(uint32_t ms) {
   applyZoneResult();
+  telemetryTick(ms);
   if (g_zoneRetry.afterSync(g_clockSequence.load(), ms, g_clock.automaticZone && g_clock.zoneState == shell::ZONE_FAILED))
     g_zoneNeeded = true;
   if ((int32_t)(ms - g_nextClock) >= 0 && !g_busy) {
@@ -1025,6 +1139,19 @@ void Updater::applyZoneResult() {
   g_zoneRetry.completed(g_clockSequence.load());   // a lookup cannot retry itself using its own earlier NTP sample
   g_zoneNeeded = false;   // success is cached; failures retry on later NTP connections with a six-hour cooldown
   portENTER_CRITICAL(&g_mux); g_clock.zoneState = applied ? shell::ZONE_OK : shell::ZONE_FAILED; portEXIT_CRITICAL(&g_mux);
+}
+
+shell::TelemetryStatus Updater::telemetryStatus() {
+  shell::TelemetryStatus s;
+  s.level = g_tq.config().level; s.queued = g_tq.size();
+  if (s.level) telemetry::host(g_tq.config(), s.host, sizeof s.host);
+  if (g_tq.lastSent) s.lastSent = timezones::local(g_tq.lastSent);
+  return s;
+}
+bool Updater::telemetryOff() { return storeTelemetry(telemetry::Config{}, g_tq.config().fileCrc); }
+bool Updater::setTelemetry(const char* text) {
+  telemetry::Config c;
+  return telemetry::parseConfig(text, c) && storeTelemetry(c, g_tq.config().fileCrc);
 }
 
 void Updater::info(shell::SysInfo& out) {

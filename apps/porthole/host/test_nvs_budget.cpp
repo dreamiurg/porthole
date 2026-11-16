@@ -28,6 +28,7 @@
 #include "shell/pinlock.h"
 #include "shell/profiles.h"
 #include "shell/system.h"
+#include "os/telemetry.h"
 #include "os/timezone.h"
 
 constexpr int blob(size_t bytes) { return (int)((bytes + 31) / 32) + 2; }
@@ -99,7 +100,8 @@ constexpr Kept DEVICE[] = {
   {"admin", 2}, {"games", sizeof(shell::GamesOff)}, {"limits", sizeof(shell::Limits)}, {"lite", 1},
   {"pinlock", sizeof(shell::PinLocks)}, {"ran", 15}, {"rtc_clock", sizeof(timezones::RtcJournal)}, {"sound", 1},
   {"utc_off", 2}, {"window", sizeof(shell::PlayWindow)}, {"chan", 1}, {"home", sizeof(shell::Home)}, {"last", 4},
-  {"pass", 64}, {"ssid", 32}, {"tried", 15}, {"tz", sizeof(timezones::Settings)}, {"m", 1}, {"mb", 1},
+  {"pass", 64}, {"ssid", 32}, {"tried", 15}, {"tz", sizeof(timezones::Settings)}, {"telem", sizeof(telemetry::Config)},
+  {"m", 1}, {"mb", 1},
 };
 constexpr int NAMESPACES = 14 + 1;   // "sys", "porthole", one per game in the image (a load creates it), the radio's "phy"
 constexpr int RADIO = blob(1904) + blob(6) + 1;   // ESP-IDF's wifi calibration, written to "phy" on the first join

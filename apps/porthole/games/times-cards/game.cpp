@@ -8,6 +8,7 @@
 #include "launcher_icon.h"
 #include "palette.h"
 #include "stars.h"
+#include "telemetry.h"
 
 namespace cards {
 namespace {
@@ -113,11 +114,27 @@ void Game::turn() {
   go(P_ANSWER);
 }
 
+// Opt-in telemetry (os/telemetry.h): every answer, and each finished round. Nothing leaves a board where it is off.
+void Game::tell(int card, Grade g, bool retry, uint32_t ms) const {
+  static const char* const GRADES[] = {"easy", "hard", "wrong"};
+  char fact[24];
+  if (isDiv(card)) snprintf(fact, sizeof fact, "%d:%d", dividendOf(card), divisorOf(card));
+  else snprintf(fact, sizeof fact, "%dx%d", tableOf(card), factorOf(card));
+  using telemetry::P;
+  telemetry::emit("times_cards_answer", {P("fact", fact), P("grade", GRADES[g]), P("correct", (long)(g != WRONG)),
+                                         P("ms", (long)ms), P("box", (long)save_.boxOf(card)), P("retry", (long)retry)});
+  if (!round_.done()) return;
+  telemetry::emit("level_finished", {P("game", name()), P("what", "round"), P("easy", (long)round_.easy),
+                                     P("hard", (long)round_.hard), P("wrong", (long)round_.wrong),
+                                     P("level_up", (long)round_.leveledUp)});
+}
+
 // The kid picks: graded and stored at once (the time counts from the card showing), the next card waits for the
 // green, or for the right answer to be seen.
 void Game::pick(int i) {
   picked_ = i; pickedMs_ = ms_;
-  answer(round_, save_, i == right_, ms_ - askedMs_, half());
+  const Grade g = answer(round_, save_, i == right_, ms_ - askedMs_, half());
+  tell(face_, g, faceRedo_, ms_ - askedMs_);
   dirty_ = true; keep_ = false;
   if (round_.done()) stars::award(wallet_, ROUND_STARS);
 }
