@@ -438,6 +438,21 @@ static void wordPauseTypesNothing() {
   w = wordRound(g); assert(w.typed == 1);
 }
 
+// Ten minutes with one kid's dog leave two thirds of a food point and most of an energy point uncounted. They are
+// that visit's: five minutes with the next kid's dog must not turn them into a point off each.
+static void decayCarryStaysWithTheVisit() {
+  static Game g;
+  Save a; pet::adopt(a, day0, "Sam", "Rex"); a.lastPlayDay = (uint16_t)pet::dayIndex(day0); pet::seal(a);
+  enterAt(g, a, day0);
+  g.update(day0 + 300, 2020, Input{}); g.update(day0 + 600, 2040, Input{});
+  g.debugCmd("hearts"); Save got = taken(g); assert(got.food == a.food && got.energy == a.energy);
+  g.leave();
+  Save b; pet::adopt(b, day0 + 600, "Kai", "Dot"); b.lastPlayDay = a.lastPlayDay; pet::seal(b);
+  enterAt(g, b, day0 + 600);
+  g.update(day0 + 900, 2020, Input{});
+  g.debugCmd("hearts"); got = taken(g); assert(got.food == b.food && got.energy == b.energy);
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -480,6 +495,7 @@ static void homeOverTheUptimeWrap() {
 
 int main() {
   Save s;
+  decayCarryStaysWithTheVisit();
   homeOverTheUptimeWrap();
   decayAndGrowth(s);
   uint32_t t = day0 + 3 * 86400;

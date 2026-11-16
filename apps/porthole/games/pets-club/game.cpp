@@ -19,6 +19,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
   now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
+  pet::dropCarry();
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
   for (int i = 0; i < nKids_; i++) {
     kids_[i] = e.all[i];

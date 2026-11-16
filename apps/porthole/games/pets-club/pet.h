@@ -101,6 +101,9 @@ inline int rndRange(Save& s, int lo, int hi) { return lo + (int)(rnd(s) % (uint3
 // Returns bitmask of notable things that happened (see EV_*).
 enum Event : uint32_t { EV_NONE = 0, EV_POOPED = 1, EV_FELL_ASLEEP = 2, EV_WOKE = 4, EV_STAGE_UP = 8, EV_NEW_DAY = 16, EV_LONG_AWAY = 32 };
 uint32_t simulate(Save& s, uint32_t now, bool online);
+// Decay is counted in fractions of a point; the fraction left over belongs to the visit that made it. Game::enter
+// drops it, so one kid's never lands on the next kid's dog and a visit does not depend on who played before.
+void dropCarry();
 
 // actions (all return true if the action was accepted)
 bool feed(Save& s, uint32_t now, Food f, int* outDelta);

@@ -168,6 +168,10 @@ uint32_t grow(Save& s, uint32_t now) {
 }
 }  // namespace
 
+// shortcut: the part of a point not yet taken (under one a stat) is dropped at each visit instead of saved; give it
+// fields in Save at the next version bump if exact decay across visits ever matters.
+void dropCarry() { accFood = accFun = accEnergy = accClean = accSleep = 0; }
+
 uint32_t simulate(Save& s, uint32_t now, bool online) {
   // An empty room has nothing to grow, decay or poop; a clock that did not move forward only resets the mark.
   if (!s.hasDog || now <= s.lastSeen) { s.lastSeen = now; return EV_NONE; }
