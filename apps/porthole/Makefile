@@ -255,7 +255,7 @@ flash-report: firmware
 	$(PY) tools/flash_report.py
 
 factory:
-	pio run -e firmware -t factory
+	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware -t factory
 
 flash:
 	pio run -e firmware -t upload $(if $(PORT),--upload-port $(PORT))

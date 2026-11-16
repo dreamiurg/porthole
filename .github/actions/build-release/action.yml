@@ -14,6 +14,9 @@ inputs:
   root:
     description: Tree to build (promote.yml builds a beta's commit in a worktree beside its own checkout)
     default: "."
+  cache:
+    description: Restore and save ~/.platformio here ("false" for ci.yml, which restores it on every run but saves only on main)
+    default: "true"
 
 runs:
   using: composite
@@ -21,7 +24,8 @@ runs:
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
       with:
         python-version: "3.11"
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+    - if: inputs.cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
         path: ~/.platformio
         key: pio-${{ runner.os }}-${{ hashFiles(format('{0}/platform/*.ini', inputs.root)) }}  # same key as ci.yml
@@ -52,5 +56,10 @@ runs:
         mkdir -p "$dist"
         cp "$image" "$dist/$APP-$VERSION-factory.bin"
         cp "$(dirname "$image")/firmware.bin" "$dist/$APP-$VERSION-ota.bin"
+        # The image must say its version: one that lost the flag above says "dev", and a board that installs a "dev"
+        # image never checks for updates again. The text is the update check's user agent (firmware/net.cpp).
+        if ! grep -aFq "$APP/$VERSION (+https" "$dist/$APP-$VERSION-ota.bin"; then
+          echo "::error::$APP-$VERSION-ota.bin does not carry version $VERSION: nothing is published"; exit 1
+        fi
         printf '%s' "$VERSION" > "$dist/$APP-version.txt"  # no newline: the board compares it as-is
         (cd "$(dirname "$image")/web" && zip -q "$dist/$APP-$VERSION-web.zip" ./*)

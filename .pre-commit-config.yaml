@@ -130,7 +130,7 @@ repos:
       # Firmware builds are incremental locally (seconds). CI builds them, so a missing PlatformIO fails the push.
       - id: porthole-firmware
         name: porthole firmware build
-        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO is missing, install it with pip install -r platform/requirements.txt (CI builds the firmware)"; exit 1; }; make -C apps/porthole firmware'
+        entry: bash -c 'command -v pio >/dev/null || { echo "PlatformIO is missing, install it with pip install -r platform/requirements.txt (CI builds the firmware)"; exit 1; }; make -C apps/porthole factory'
         language: system
         pass_filenames: false
         files: ^(apps/porthole/(firmware/|os/|shell/|games/|platformio\.ini$|partitions\.csv$|Makefile$)|\.github/|platform/|tools/fail-on-warning\.sh$|Makefile$|\.pre-commit-config\.yaml$|pyproject\.toml$)
