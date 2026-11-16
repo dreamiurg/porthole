@@ -175,7 +175,9 @@ check: lint test
 # run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22), and under the sanitizers.
 ci: lint test test-asan coverage playtest-monkey
 
-# Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
+# Line coverage of os/, shell/ and games/*/ (sources and headers) and of the firmware headers the host can build, from
+# the host tests plus the non-monkey playtests, as Cobertura XML. firmware/*.cpp builds only for the board, so the
+# number says nothing about it: the recipe prints how many lines that is.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.52% measured
 # (gcc) on 2026-11-09 after the Pets Club farm and shelter landed; raise it as coverage grows, never lower it.
 COV := build/coverage
@@ -188,6 +190,9 @@ GCOVR ?= $(shell gcovr --version 2>/dev/null | awk 'NR==1 { split($$2, v, "."); 
 # gcovr rejects a line hit more than 2^32 times as gcc bug 68080 (whose counts are garbage near 2^64). The RGB565 fill
 # loop in os/gfx565.cpp really runs that often: the render checks paint billions of pixels. 2^40 still catches the bug.
 GCOVR_HITS := --gcov-suspicious-hits-threshold 1099511627776
+# A header's template or inline function is compiled once for each user. A line counts as run when any copy ran it:
+# gcovr 8.3 always counted that way, later ones count every copy apart unless told to merge.
+GCOVR_MERGE = $(shell $(GCOVR) --help | grep -q -- --merge-lines && echo --merge-lines)
 # ponytail: keyed on the OS, so it assumes Apple clang on macOS and gcc elsewhere; pass GCOV=... for other mixes.
 ifeq ($(shell uname -s),Darwin)
 GCOV ?= xcrun llvm-cov gcov
@@ -212,8 +217,9 @@ cov-run-%: $(COV)/% cov-reset
 cov-playtest: $(COV)/snap cov-reset
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 coverage: $(TESTS:%=cov-run-%) cov-playtest
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) $(GCOVR_MERGE) -j $(NPROC) --root . --filter '(os|shell|games|firmware)/.*\.(cpp|h)$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
+	@echo "not measured (builds only for the board): firmware/*.cpp, $$(cat firmware/*.cpp | wc -l | tr -d ' ') lines"
 
 art:
 	python3 games/toy-town-life/tools/toytown_art.py
