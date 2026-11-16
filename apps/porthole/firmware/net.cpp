@@ -908,7 +908,7 @@ void Updater::begin(uint32_t (*utcNow)()) {
   }
   g_sd = board::mountSd();
   Serial.printf("[net] version %s, SD card %s\n", PORTHOLE_VERSION, g_sd ? "mounted" : "not found");
-  if (g_sd) wifiFromSd();
+  if (g_sd) { wifiFromSd(); SD_MMC.end(); }   // read once: the FAT and driver state go back to the heap
 }
 
 void Updater::tick(uint32_t ms) {
