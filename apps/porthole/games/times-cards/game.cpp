@@ -72,7 +72,10 @@ void Game::enter(const AppEnter& e) {
   save_ = Save{};
   bool loaded = false;
   for (int i = 0; i < e.n; i++)   // only this kid's deck; a bad one starts fresh
-    if (e.all[i].id == e.who->id && e.saves[i].len) loaded = loadBlob(e.saves[i].data, e.saves[i].len, save_);
+    if (e.all[i].id == e.who->id && e.saves[i].len) {
+      loaded = loadBlob(e.saves[i].data, e.saves[i].len, save_);
+      dirty_ = loaded && storedVersion(e.saves[i].data, e.saves[i].len) != SAVE_VERSION;   // an older version: stored anew, packed
+    }
   if (!loaded || !save_.level) { setUp(save_, startTable(e.who->age), today()); dirty_ = true; }
   clampDue(save_, today());
   round_ = Round{};
@@ -258,7 +261,10 @@ void Game::render() {
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_) return false;
   seal(save_);
-  *data = &save_; *len = sizeof save_;   // the shell copies it out before the next update
+  // Packed, unless the blob does not read back as exactly this deck (no deck the game makes: then whole, as version
+  // 3, as before). The shell copies it out before the next update.
+  *data = packed_; *len = pack(save_, packed_, sizeof packed_);
+  if (!*len || !loadBlob(packed_, *len, check_) || memcmp(&check_, &save_, sizeof save_)) { *data = &save_; *len = sizeof save_; }
   dirty_ = false;
   return true;
 }

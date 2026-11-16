@@ -6,6 +6,7 @@
 #include <string.h>
 #include "games/times-cards/deck.h"
 #include "games/times-cards/game.h"
+#include "host/fixtures/times_cards_save_v3.h"
 #include "gfx565.h"
 
 using namespace cards;
@@ -344,6 +345,111 @@ static void holdTitle(Game& g) {
   CHECK(on(g, "cards_home"));
 }
 
+// ---- version 4: the deck stored bit-packed
+static size_t g_most = 0;   // the largest packed deck seen
+// Packs s and reads it back: true if that is byte for byte the deck that went in, and packing left it alone.
+static bool packsExactly(Save& s, size_t* bytes = nullptr) {
+  seal(s);
+  const Save before = s;
+  uint8_t blob[sizeof(Save)]; Save back{};
+  const size_t n = pack(s, blob, sizeof blob);
+  if (bytes) *bytes = n;
+  if (n > g_most) g_most = n;
+  return n && storedVersion(blob, n) == SAVE_VERSION && !memcmp(&s, &before, sizeof s) && loadBlob(blob, n, back) &&
+         !memcmp(&back, &s, sizeof s);
+}
+// A real version 3 save: every byte of it survives version 4, and the game stores it packed as soon as it is opened.
+static void versionThreeMigrates() {
+  const size_t old = sizeof TIMES_CARDS_SAVE_V3;
+  Save deck;
+  CHECK(storedVersion(TIMES_CARDS_SAVE_V3, old) == SAVE_V3 && loadBlob(TIMES_CARDS_SAVE_V3, old, deck));
+  CHECK(!memcmp(&deck, TIMES_CARDS_SAVE_V3, old) && deck.level == 10 && deck.answers == 1995 && deck.turns == 1819);
+  size_t n = 0;
+  CHECK(packsExactly(deck, &n) && !memcmp(&deck, TIMES_CARDS_SAVE_V3, old) && n < 420);
+  Save fresh; setUp(fresh, 4, DAY); size_t small = 0;
+  CHECK(packsExactly(fresh, &small) && small < 200);
+  printf("times cards save: version 3 1020 bytes; version 4 %u new, %u four months in\n", (unsigned)small, (unsigned)n);
+
+  Game g;
+  Profile zoe = {1, "Zoe", 0, 8, 0};
+  SaveSlot slot = {TIMES_CARDS_SAVE_V3, old};
+  AppEnter e = {&zoe, &zoe, &slot, 1, 20830u * 86400u, ms, true};   // the day after the deck's last round
+  uint32_t wallet = 0;
+  e.stars = &wallet;
+  g.enter(e);
+  const void* data; size_t len;
+  CHECK(g.takeSave(&data, &len, true) && len == n && storedVersion(data, len) == SAVE_VERSION);
+  CHECK(!memcmp(&g.save(), TIMES_CARDS_SAVE_V3, old));   // opening moved nothing
+  uint8_t stored[sizeof(Save)]; Save back;
+  memcpy(stored, data, len);
+  CHECK(loadBlob(stored, len, back) && !memcmp(&back, TIMES_CARDS_SAVE_V3, old));
+  slot = {stored, len};   // opened again on the packed deck: the same deck, and nothing to write
+  g.enter(e);
+  CHECK(!g.takeSave(&data, &len, true) && g.save().answers == 1995 && !memcmp(g.save().box, back.box, sizeof back.box));
+}
+// One bit wrong anywhere, or a byte short or long: not read.
+static void damagedPacked() {
+  Save deck, back;
+  CHECK(loadBlob(TIMES_CARDS_SAVE_V3, sizeof TIMES_CARDS_SAVE_V3, deck));
+  uint8_t blob[sizeof(Save) + 1] = {};
+  const size_t n = pack(deck, blob, sizeof(Save));
+  bool read = false;
+  for (size_t bit = 0; bit < n * 8; bit++) {
+    blob[bit / 8] ^= (uint8_t)(1u << bit % 8);
+    read |= loadBlob(blob, n, back);
+    blob[bit / 8] ^= (uint8_t)(1u << bit % 8);
+  }
+  for (size_t cut = 0; cut < n; cut++) read |= loadBlob(blob, cut, back);
+  CHECK(!read && !loadBlob(blob, n + 1, back) && loadBlob(blob, n, back));
+  CHECK(!pack(deck, blob, 11) && !pack(deck, blob, n - 1) && pack(deck, blob, n) == n);   // too little room: nothing kept
+  deck.boxOf(7) = MAX_BOX + 1;   // no loaded deck has one; it would not survive three bits, so it is stored whole
+  CHECK(!pack(deck, blob, sizeof(Save)));
+}
+// Any deck at all, not only one play can make: every field at random, days close together or all over the calendar.
+static void anyDeckPacks() {
+  uint32_t r = 2026;
+  for (int t = 0; t < 600; t++) {
+    Save s{};
+    const uint32_t span = 1u << (t % 17), from = nextRand(r);
+    s.level = (uint8_t)(nextRand(r) % (TABLES + 1)); s.start = (uint8_t)nextRand(r);
+    s.pace = (uint16_t)nextRand(r); s.answers = nextRand(r);
+    for (int c = 0; c < ALL; c++) {
+      if (nextRand(r) % 4) s.boxOf(c) = (uint8_t)(nextRand(r) % (MAX_BOX + 1));
+      if (nextRand(r) % 3) s.seenOf(c) = (uint16_t)(from + nextRand(r) % span);
+      if (nextRand(r) % 5) s.dueOf(c) = (uint16_t)(t % 2 ? s.seenOf(c) + nextRand(r) % 70 : from + nextRand(r) % span);
+    }
+    for (uint8_t* p = (uint8_t*)&s.thinkMs; p < (uint8_t*)&s.crc; p++) *p = (uint8_t)nextRand(r);
+    if (t % 3) s.spare = s.spare3 = 0;
+    else s.spare = (uint16_t)nextRand(r);
+    CHECK(packsExactly(s));
+  }
+}
+// Decks as kids make them: every day of half a year of play, for each starting table and a few kinds of kid.
+static void playedDecksPack() {
+  size_t most = 0;
+  for (int kid = 0; kid < 12; kid++) {
+    Save s; int32_t day = DAY + kid * 400; uint32_t r = 7 + (uint32_t)kid;
+    setUp(s, 1 + kid % 4, day);
+    for (int d = 0; d < 180; d++, day++) {
+      if (d % 7 == kid % 7 || (d > 50 && d < 50 + kid * 3)) continue;   // days off, and weeks away
+      clampDue(s, day);
+      for (int round = 0; round < 1 + (d + kid) % 3; round++) {
+        Round q; build(q, s, day, nextRand(r));
+        while (!q.done()) {
+          const uint32_t think = 300 + nextRand(r) % 9000, roll = nextRand(r) % 100;
+          noteTurn(s, think, q.redo[q.at]);
+          answer(q, s, roll < (uint32_t)(50 + kid * 4) ? EASY : roll < 92 ? HARD : WRONG, day, think < QUICK_MS);
+        }
+      }
+      size_t n = 0;
+      CHECK(packsExactly(s, &n));
+      if (n > most) most = n;
+    }
+  }
+  CHECK(most < 480);   // 17 NVS entries; host/test_nvs_budget.cpp holds the household's budget
+  printf("times cards save: at most %u bytes in half a year of play, %u for any deck at all\n", (unsigned)most, (unsigned)g_most);
+}
+
 static void pages() {
   Game g;
   Profile zoe = {1, "Zoe", 0, 8, 0};
@@ -355,7 +461,7 @@ static void pages() {
   settle(g);
   CHECK(on(g, "cards_home") && g.save().level == 4);   // an 8-year-old starts on 4x
   const void* data; size_t len;
-  CHECK(g.takeSave(&data, &len, true) && len == sizeof(Save));   // the fresh deck is kept at once
+  CHECK(g.takeSave(&data, &len, true) && len < 200 && storedVersion(data, len) == SAVE_VERSION);   // the fresh deck is kept at once, packed
   tapBox(g, 80, 133);   // Go!
   CHECK(on(g, "cards_ask"));
   settle(g);
@@ -371,7 +477,7 @@ static void pages() {
   CHECK(g.save().turns == first && g.save().firstSight[EASY] == 3 && g.save().checkFrom == NOW / 86400);   // three new facts; the top-up was known
   CHECK(wallet == 7 + ROUND_STARS);   // a finished round pays the kid's shared stars
   CHECK(g.takeSave(&data, &len, true));
-  Save saved; memcpy(&saved, data, sizeof saved);
+  uint8_t saved[sizeof(Save)]; const size_t savedLen = len; memcpy(saved, data, len);
   tapBox(g, 80, 133);   // Again
   CHECK(on(g, "cards_ask"));
   settle(g);
@@ -389,7 +495,7 @@ static void pages() {
   g.debugCmd("level7");
   CHECK(g.save().level == 7 && g.save().answers == 0);
   // Back again: the saved deck, not a new one.
-  SaveSlot slot = {&saved, sizeof saved};
+  SaveSlot slot = {saved, savedLen};
   e.saves = &slot;
   g.enter(e);
   CHECK(g.save().answers == (uint32_t)first && g.save().level == 4);
@@ -409,6 +515,10 @@ int main() {
   practice();
   putBack();
   saves();
+  versionThreeMigrates();
+  damagedPacked();
+  anyDeckPacks();
+  playedDecksPack();
   pages();
   printf("test_times_cards: %d checks ok\n", checks);
   return 0;

@@ -24,18 +24,23 @@
 // Time is Porthole's local wall-clock seconds, so a day is now / 86400. Nothing punishes being away: a card that waited
 // longer than planned is simply due, oldest first.
 //
-// Save: one blob per kid (timescards/s<id>, written by the shell). Append-only from this first version: a new field goes
-// right before crc (its zero must be a sensible default), SAVE_VERSION goes up, nothing is reordered or resized.
+// Save: one blob per kid (timescards/s<id>, written by the shell). The Save struct below is how the game holds a deck
+// and was what versions 1 to 3 stored, whole (1020 bytes by version 3). Version 4 stores the same deck bit-packed
+// (pack, a few hundred bytes): the board's NVS holds 20 KB for the whole household, and four kids' decks did not fit.
+// Every older version still loads. The struct stays append-only: a new field goes right before crc (its zero must be
+// a sensible default), joins packDeck, and SAVE_VERSION goes up; nothing is reordered or resized.
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "bits.h"
 #include "crc32.h"
 
 namespace cards {
 constexpr const char* STORE = "timescards";   // NVS namespace: never renamed once shipped
 constexpr uint32_t SAVE_MAGIC = 0x53445243;   // "CRDS"
-constexpr uint16_t SAVE_VERSION = 3;   // 1: multiplication only (520 bytes); 2: division appended (972); 3: grading check
+constexpr uint16_t SAVE_V3 = 3;   // the struct, whole. 1: multiplication only (520 bytes); 2: division appended (972); 3: grading check
+constexpr uint16_t SAVE_VERSION = 4;   // what is stored now: the version 3 struct, bit-packed
 
 // ---- tuning knobs
 constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10: cards 0..CARDS-1
@@ -113,15 +118,89 @@ static_assert(offsetof(Save, divBox) == SAVE_V1_SIZE - 4, "version 1's fields ar
 static_assert(offsetof(Save, thinkMs) == SAVE_V2_SIZE - 4, "version 2's fields are kept where they were");
 static_assert(sizeof(Save) == 1020, "Save is persisted: append before crc, never resize");
 
+// Seals the struct as version 3: what pack() stores packed, and what is stored whole if a deck ever cannot be packed.
 inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
+  s.magic = SAVE_MAGIC; s.version = SAVE_V3; s.size = sizeof(Save);
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
-// A blob is valid at exactly this version's size, or an older version's at its own (kept, the newer fields zero: no
-// division met, no grading counted yet); anything else (damaged, a newer firmware's) starts a fresh deck.
+
+// ---- version 4: the deck, bit-packed. Stored: magic, version, total bytes (the struct's first eight bytes, so the
+// version reads the same way in every version), the fields below, crc of all before it. One description writes and
+// reads (os::Bits::io), so the two cannot drift apart; writing leaves the deck as it was.
+// A day, or 0: one bit, then its distance from the deck's earliest day in `w` bits.
+inline uint16_t packDay(os::Bits& b, uint16_t day, uint16_t base, int w) {
+  return b.io(day != 0, 1) ? (uint16_t)(base + b.io((uint16_t)(day - base), w)) : 0;
+}
+// One card: its box; nothing more if it was never shown; the day it was last seen; and how its due day follows from
+// those (the box's wait, tomorrow, another day within nine weeks) or, failing all three, the due day itself.
+inline void packCard(os::Bits& b, Save& s, int c, uint16_t base, int w) {
+  const uint8_t box = s.boxOf(c) = (uint8_t)b.io(s.boxOf(c), 3);
+  if (!box && !b.io(s.dueOf(c) || s.seenOf(c), 1)) return;
+  const uint16_t seen = s.seenOf(c) = packDay(b, s.seenOf(c), base, w);
+  const uint16_t from = seen ? seen : base, gap = (uint16_t)(s.dueOf(c) - from), wait = INTERVAL[box & MAX_BOX];
+  const uint32_t how = b.io(gap == wait ? 0 : gap == 1 ? 1 : gap < 64 ? 2 : 3, 2);
+  s.dueOf(c) = how == 3 ? packDay(b, s.dueOf(c), base, w) : (uint16_t)(from + (how == 0 ? wait : how == 1 ? 1 : b.io(gap, 6)));
+}
+inline void packDeck(os::Bits& b, Save& s) {
+  uint16_t first = 0xFFFF, last = 0;   // the deck's earliest and latest day; read back from the blob when unpacking
+  auto span = [&](uint16_t day) { if (day) { first = day < first ? day : first; last = day > last ? day : last; } };
+  for (int c = 0; c < ALL; c++) { span(s.dueOf(c)); span(s.seenOf(c)); }
+  const uint16_t base = (uint16_t)b.io(last ? first : 0, 16);
+  const int w = (int)b.io(last ? os::bitsFor((uint32_t)(last - first)) : 0, 5);
+  if (w > 16) { b.bad = true; return; }
+  s.level = (uint8_t)b.io(s.level, 4); s.start = (uint8_t)b.io(s.start, 8);
+  s.pace = (uint16_t)b.io(s.pace, 16); s.answers = b.io(s.answers, 32);
+  for (int c = 0; c < ALL; c++) packCard(b, s, c, base, w);
+  s.spare = (uint16_t)b.sparse(s.spare, 16);
+  s.thinkMs = b.io(s.thinkMs, 32); s.checkFrom = (uint16_t)b.io(s.checkFrom, 16);
+  for (int i = 0; i < 3; i++) s.firstSight[i] = (uint16_t)b.io(s.firstSight[i], 16);
+  for (int i = 0; i < 2; i++) s.nextDay[i] = (uint16_t)b.io(s.nextDay[i], 16);
+  s.turns = (uint16_t)b.io(s.turns, 16); s.quick = (uint16_t)b.io(s.quick, 16); s.quickEasy = (uint16_t)b.io(s.quickEasy, 16);
+  for (size_t i = 0; i < sizeof s.easyLast; i++) s.easyLast[i] = (uint8_t)b.io(s.easyLast[i], 8);
+  s.spare3 = (uint16_t)b.sparse(s.spare3, 16);
+}
+// The deck as a version 4 blob in out (at most cap bytes). 0 if it cannot be packed (a box past MAX_BOX, or days so
+// scattered it would not fit): the caller then stores the struct whole, as version 3.
+inline size_t pack(Save& s, uint8_t* out, size_t cap) {
+  if (cap < 12) return 0;
+  memset(out, 0, cap);
+  os::Bits b = os::Bits::writer(out, cap - 4);
+  b.io(SAVE_MAGIC, 32); b.io(SAVE_VERSION, 16); b.io(0, 16);
+  packDeck(b, s);
+  if (!b.ok()) return 0;
+  const uint16_t bytes = (uint16_t)(b.bytes() + 4);
+  memcpy(out + 6, &bytes, sizeof bytes);
+  const uint32_t crc = os::crc32(out, bytes - sizeof crc);
+  memcpy(out + bytes - sizeof crc, &crc, sizeof crc);
+  return bytes;
+}
+inline bool unpack(const uint8_t* data, size_t n, Save& zeroed) {
+  uint32_t crc;
+  memcpy(&crc, data + n - sizeof crc, sizeof crc);
+  os::Bits b = os::Bits::reader(data, n - sizeof crc);
+  if (b.io(0, 32) != SAVE_MAGIC || b.io(0, 16) != SAVE_VERSION || b.io(0, 16) != n) return false;
+  if (crc != os::crc32(data, n - sizeof crc)) return false;
+  packDeck(b, zeroed);
+  if (!b.ok() || b.bytes() != n - sizeof crc || zeroed.level > TABLES) return false;
+  seal(zeroed);
+  return true;
+}
+// The version a stored blob says it is (in the same place in every version); 0 if it is too short to be a deck.
+inline uint16_t storedVersion(const void* data, size_t n) {
+  uint16_t version = 0;
+  if (data && n >= 12) memcpy(&version, (const uint8_t*)data + offsetof(Save, version), sizeof version);
+  return version;
+}
+// A blob is valid as version 4, or as an older version at exactly that version's size (kept, the newer fields zero: no
+// division met, no grading counted yet); anything else (damaged, a newer firmware's) is not a deck this build reads.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
   Save s{};
-  const uint16_t version = n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : n == sizeof(Save) ? SAVE_VERSION : 0;
+  if (storedVersion(data, n) == SAVE_VERSION) {
+    if (!unpack((const uint8_t*)data, n, s)) return false;
+    out = s;
+    return true;
+  }
+  const uint16_t version = n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : n == sizeof(Save) ? SAVE_V3 : 0;
   if (!version) return false;
   const size_t body = n - sizeof s.crc;
   uint32_t crc;
@@ -129,7 +208,7 @@ inline bool loadBlob(const void* data, size_t n, Save& out) {
   memcpy(&crc, (const uint8_t*)data + body, sizeof crc);
   if (s.magic != SAVE_MAGIC || s.version != version || s.size != n || s.level > TABLES ||
       crc != os::crc32(data, body)) return false;
-  s.crc = crc;   // resealed at the next save, as this version
+  s.crc = crc;   // resealed at the next save
   for (int c = 0; c < ALL; c++) if (s.boxOf(c) > MAX_BOX) s.boxOf(c) = MAX_BOX;
   out = s;
   return true;

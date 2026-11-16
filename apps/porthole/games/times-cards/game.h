@@ -34,6 +34,8 @@ class Game : public App {
 
  private:
   Save save_{};
+  uint8_t packed_[sizeof(Save)] = {};   // what takeSave hands the shell: the deck as stored (version 4)
+  Save check_{};                        // that blob read back, before it may replace the stored deck
   Round round_{};
   Page page_ = P_HOME;
   Input in_{};
