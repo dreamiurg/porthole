@@ -277,6 +277,15 @@ static void awayMessKeepsTheFloor() {
   assert(here.fun == fun);
 }
 
+// Word Fetch draws with `rnd % nc`: every age's word lengths, once widened down to three letters, must hold a word.
+static void wordsForEveryAge() {
+  for (int age = 5; age <= 10; age++) {
+    int lo, hi, n = 0; pet::wordLenRange(age, lo, hi);
+    for (int i = 0; i < NUM_WORDS; i++) { const int len = (int)strlen(WORDS[i].word); n += len >= 3 && len <= hi; }
+    assert(lo >= 3 && n > 0);
+  }
+}
+
 static void levels(const Save& s) {
   // reading levels by age
   { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
@@ -530,6 +539,7 @@ int main() {
   corruptFieldsLoadSafe();
   clockSetBackKeepsStage();
   awayMessKeepsTheFloor();
+  wordsForEveryAge();
   levels(s);
   dayOnPickedLight();
   breedDraws();
