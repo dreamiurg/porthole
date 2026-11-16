@@ -160,7 +160,8 @@ void Queue::endpoint(char* out, size_t cap) const {
   snprintf(out, cap, "%.*s/batch/", (int)(n && cfg_.url[n - 1] == '/' ? n - 1 : n), cfg_.url);
 }
 void Queue::auth(char* out, size_t cap) const {
-  snprintf(out, cap, cfg_.format == OTLP && cfg_.token[0] ? "Bearer %s" : "", cfg_.token);
+  if (cfg_.format == OTLP && cfg_.token[0]) snprintf(out, cap, "Bearer %s", cfg_.token);
+  else if (cap) out[0] = 0;
 }
 size_t Queue::batch(char* out, size_t cap, int* taken) const {
   *taken = 0;
