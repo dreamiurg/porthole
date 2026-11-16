@@ -52,5 +52,10 @@ runs:
         mkdir -p "$dist"
         cp "$image" "$dist/$APP-$VERSION-factory.bin"
         cp "$(dirname "$image")/firmware.bin" "$dist/$APP-$VERSION-ota.bin"
+        # The image must say its version: one that lost the flag above says "dev", and a board that installs a "dev"
+        # image never checks for updates again. The text is the update check's user agent (firmware/net.cpp).
+        if ! grep -aFq "$APP/$VERSION (+https" "$dist/$APP-$VERSION-ota.bin"; then
+          echo "::error::$APP-$VERSION-ota.bin does not carry version $VERSION: nothing is published"; exit 1
+        fi
         printf '%s' "$VERSION" > "$dist/$APP-version.txt"  # no newline: the board compares it as-is
         (cd "$(dirname "$image")/web" && zip -q "$dist/$APP-$VERSION-web.zip" ./*)
