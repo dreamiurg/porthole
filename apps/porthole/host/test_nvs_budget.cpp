@@ -75,11 +75,11 @@ static size_t kingdomFull() {
 static size_t cardsFull() {
   using namespace cards;
   cards::Save s{};
-  s.level = TABLES; s.start = 4; s.pace = 1000; s.answers = 100000;
+  s.level = TABLES; s.start = 4; s.answers = 100000;
   for (int c = 0; c < ALL; c++) {
     s.boxOf(c) = MAX_BOX; s.seenOf(c) = (uint16_t)(20000 + c * 4000 / (ALL - 1)); s.dueOf(c) = (uint16_t)(s.seenOf(c) + 2);
   }
-  s.thinkMs = 0xFFFFFFFFu; s.checkFrom = 20000;
+  s.logMu = -1; s.logVar = 0xFFFF; s.step = STEP_MAX; s.streak = 0xFF; s.jumps = s.tries = s.rights = s.probeMiss = 0xFFFF;
   uint8_t blob[sizeof(cards::Save)], shipped[sizeof(cards::Save)];
   const size_t full = pack(s, blob, sizeof blob);
   cards::Save real;   // the same sanity check: the real four-month deck in the fixture is well inside the bound

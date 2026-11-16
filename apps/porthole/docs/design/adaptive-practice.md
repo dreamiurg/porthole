@@ -89,6 +89,29 @@ count, before the crc. Saves stay append-only; a v3 save gets its levels from th
    said, which keeps recall first and makes the grade checkable. The watching is built in: Times Cards counts first-sight
    Easy, Easy held the next day, quick turns and think time on a grown-up page (hold the title 2 s; see its brief).
 
+   2026-11-16: decided without waiting for the week, from the kids' own feedback. The grade is no longer the kid's: see
+   the next section.
+
+## Times Cards: chosen answers, timed grades (2026-11-16)
+
+Built after Dmytro's feedback on the kids' play: the self-grade was easy to tap through, and difficulty moved only
+between sessions. What changed, and why (the rules in full are in `games/times-cards/AGENTS.md`):
+
+| Rule | Why | Source |
+|---|---|---|
+| Recall first, then pick one of four (the answers appear only after the tap) | Retrieval beats recognition; a pick makes the grade checkable | Karpicke, Blunt, Smith 2016 |
+| A pick is graded by right or wrong and the time, against the kid's own usual time | Fast and right means retrieved, slow and right means counted | Mettler, Massey, Kellman 2016 (ARTS); Maris, van der Maas 2012 (Math Garden) |
+| The usual time is a weighted mean and spread of log time (weight 0.1), each answer clipped to 2.5 spreads; Easy under mean + one spread, 3 to 8 s | Response times are lognormal; one distracted answer must not move the norm; kids get quicker | van der Linden 2006 |
+| Larger facts get more time (× 1, × 2, × 5, × 10, squares 0.8; 6..9 × 6..9 and divisions 1.25) | The problem-size effect | Zbrodoff, Logan 2005 |
+| No countdown shown, nothing taken for being slow | Time pressure changes children's strategy choice | Caviola et al. 2017 |
+| Half-day steps: box 1 waits a half, box 2 a day; known only after a later day | Kids play once or twice a day; consolidation needs sleep (principle 6) | Leitner; Dunlosky et al. 2013 |
+| A miss comes back 3 cards later, a slow answer 5 later | Harder items return sooner | ARTS |
+| A step −2..+2 moves card by card: two fast right up, a miss down | About 85% right, inside the session | Levitt 1971; Wilson et al. 2019 |
+| At +2, three fast right first answers on a new table's × 6, × 7, × 8 skip the table (rechecked over the next days) | A kid who knows a table should not drill it fact by fact | Math Garden's adaptive start |
+| A fact-level threshold was not used | Too few answers per fact, and a slow fact would become its own norm | |
+
+The level only moves up: a known fact missed again is learned again, but the home page does not drop back a table.
+
 ## Work split
 
 Each piece lists the files it owns. Pieces with no shared files can run at the same time.
@@ -98,7 +121,7 @@ Each piece lists the files it owns. Pieces with no shared files can run at the s
 | A | Biscuit strands and levels (1), mixed rounds (3), save v4 | `games/biscuit/puzzles.h`, `content_puzzles.h`, `pet.h`, `screens_puzzles.cpp`, `game.h`, Biscuit tests | none |
 | B | Biscuit review queue (2) and "how" lines (4) | the same files as A | A |
 | C | Times Cards division facts | `games/times-cards/*`, `host/test_times_cards.cpp` | none |
-| D | Times Cards self-grading check at age 6: counters now, the decision after a week | `games/times-cards/*`, `host/test_times_cards.cpp` | C |
+| D | Times Cards self-grading check at age 6: counters now, the decision after a week (replaced 2026-11-16 by chosen answers and timed grades) | `games/times-cards/*`, `host/test_times_cards.cpp` | C |
 | E | Short decodable stories for the 6-year-old, with one question each (`learning-principles.md`, principle 11). Built as Little reads: `content_reads.h`, `screens_reads.cpp`, `answerRead` in `pet.h` (it uses the save's reserved bytes, not v4) | `games/biscuit/content_reads.h`, `screens_reads.cpp` and their tests | none; coordinate with A only on `game.h` if a screen is needed |
 
 A and B go to the same session, one after the other. C and E can each go to a separate session in parallel with

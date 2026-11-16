@@ -82,15 +82,16 @@ Design and state contract: [game brief](games/sand-jar/AGENTS.md)
 ## Times Cards: the times tables, a few minutes a day
 
 Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say the answer out loud,
-tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
-Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
-tomorrow, an easy one waits longer each time. New facts come in a few at a time, at each kid's own
-pace: the next table starts once about half of the current one is known (Easy on two separate days),
-and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
+tap the card, then tap the answer among four. Each kid has their own deck. The game grades each
+answer itself, from right or wrong and how fast it came compared with that kid's usual time, which
+follows the kid as they get quicker. Spaced repetition decides when each card comes back: a missed
+card returns a few cards later and again soon, a fast one waits longer each time. Within a round the
+difficulty moves card by card: fast right answers bring new facts sooner, then a quick test of the
+next table (three fast right answers on its hardest facts and the kid skips it); a miss brings easy wins.
 From 4× on, each known fact also brings its two divisions (6 × 7 known: 42 ÷ 6 and 42 ÷ 7).
-A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
-round earns 2 stars, however it went, to spend on hats in Pets Club. No timer, no sounds.
-For a grown-up: hold the Times Cards title for 2 seconds to see how honestly the kid grades.
+A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished round earns 2 stars, however it
+went, to spend on hats in Pets Club. No countdown, no sounds.
+For a grown-up: hold the Times Cards title for 2 seconds to see how it's going.
 
 Design and state contract: [game brief](games/times-cards/AGENTS.md)
 

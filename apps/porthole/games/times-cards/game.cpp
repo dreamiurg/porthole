@@ -16,17 +16,19 @@ using canvas::Box;
 constexpr uint16_t rgb(uint32_t c) { return rgb888_to_565(c); }
 constexpr uint16_t DESK = rgb(0xaebdf2), SHADOW = rgb(0x8796d6), CARD = rgb(0xfffaf0), RULE = rgb(0xcfdff5),
                    MARGIN = rgb(0xf09090), INK = rgb(0x2a2d4f), SOFT = rgb(0x3f4370), WHITE = rgb(0xffffff);
-constexpr uint16_t GRADE_C[3] = {rgb(0x23804a), rgb(0xa65a00), rgb(0xc43c34)};   // Easy, Hard, Wrong: white text reads on each
-const char* const GRADE_WORD[3] = {"Easy", "Hard", "Wrong"};
+constexpr uint16_t GREEN = rgb(0x23804a), AMBER = rgb(0xa65a00), RED = rgb(0xc43c34);   // white text reads on each
+constexpr uint32_t RIGHT_MS = 600, WRONG_MS = 2000;   // how long a pick shows before the next card: a miss shows the right answer
 
 // Hit boxes are logical (160 px across, like every game); everything is drawn at 3x.
 constexpr ui::Box HOME = {68, 0, 25, 25};            // ui::back's place, the way back on every page
 constexpr ui::Box GO = {47, 122, 66, 22};            // Go! (home page) and Again (done page)
-constexpr ui::Box BIG_CARD = {20, 34, 120, 73};      // the card a kid taps to see the answer
+constexpr ui::Box BIG_CARD = {20, 34, 120, 73};      // the card a kid taps to see the answers
+constexpr ui::Box ANSWER_CARD = {20, 34, 120, 88};   // the card turned: the fact on top, the four answers under it
 constexpr ui::Box DECK = {33, 41, 94, 60};           // the deck's card on the home page: a tap deals, like Go!
-constexpr ui::Box TITLE = {30, 22, 100, 18};       // "Times Cards": a grown-up holds it to see the grading check
+constexpr ui::Box TITLE = {30, 22, 100, 18};       // "Times Cards": a grown-up holds it to see how it's going
 constexpr uint32_t TITLE_HOLD_MS = 2000;
-constexpr ui::Box GRADE[3] = {{24, 110, 34, 22}, {63, 110, 34, 22}, {102, 110, 34, 22}};
+// Two by two; the gap between the columns is where the finger that turned the card was (80, 70 hits none).
+constexpr ui::Box CHOICE[OPTIONS] = {{26, 62, 52, 24}, {82, 62, 52, 24}, {26, 92, 52, 24}, {82, 92, 52, 24}};
 constexpr Box px(const ui::Box& b) { return {b.x * 3, b.y * 3, (b.x + b.w) * 3, (b.y + b.h) * 3}; }
 
 bool down(const Input& in, const ui::Box& b) { return in.down && ui::pressing(in, b); }
@@ -80,14 +82,16 @@ void Game::enter(const AppEnter& e) {
       dirty_ = loaded && storedVersion(e.saves[i].data, e.saves[i].len) != SAVE_VERSION;   // an older version: stored anew, packed
       keep_ = !loaded;
     }
-  if (!loaded || !save_.level) { setUp(save_, startTable(e.who->age), today()); dirty_ = true; }
-  clampDue(save_, today());
+  if (!loaded || !save_.level) { setUp(save_, startTable(e.who->age), half()); dirty_ = true; }
+  clampDue(save_, half());
+  startSession(save_);
   round_ = Round{};
+  picked_ = -1;
   go(P_HOME);
 }
 
 // A new page ignores touches for a moment. The answer page ignores only the finger that turned the card, by place, so
-// a double tap on the card acts once but a grade right after the answer shows still counts.
+// a double tap on the card acts once but a pick right after the answers show still counts.
 void Game::go(Page p) {
   page_ = p;
   frames_.reset();
@@ -97,15 +101,35 @@ void Game::go(Page p) {
 }
 
 void Game::deal() {
-  build(round_, save_, today(), ms_ * 2654435761u ^ save_.answers);
-  go(P_ASK);
+  build(round_, save_, half());
+  go(round_.done() ? P_DONE : P_ASK);
 }
 
-void Game::grade(Grade g) {
-  answer(round_, save_, g, today(), quick_);
+// The card turns: four answers, in an order the kid can't learn.
+void Game::turn() {
+  face_ = round_.current(); faceNumber_ = round_.number(); faceRedo_ = round_.redo[round_.at];
+  right_ = choices(face_, ms_ * 2654435761u ^ save_.answers, options_);
+  picked_ = -1;
+  go(P_ANSWER);
+}
+
+// The kid picks: graded and stored at once (the time counts from the card showing), the next card waits for the
+// green, or for the right answer to be seen.
+void Game::pick(int i) {
+  picked_ = i; pickedMs_ = ms_;
+  answer(round_, save_, i == right_, ms_ - askedMs_, half());
   dirty_ = true; keep_ = false;
   if (round_.done()) stars::award(wallet_, ROUND_STARS);
-  go(round_.done() ? P_DONE : P_ASK);
+}
+
+// The answer page: a tap picks; once picked, the next card after the green (or, after a miss, the right answer seen).
+void Game::updateAnswer() {
+  if (picked_ < 0) {
+    for (int i = 0; i < OPTIONS; i++)
+      if (ui::clicked(in_, CHOICE[i])) { pick(i); return; }
+  } else if (ms_ - pickedMs_ >= (picked_ == right_ ? RIGHT_MS : WRONG_MS)) {
+    go(round_.done() ? P_DONE : P_ASK);
+  }
 }
 
 // A grown-up holds the deck's title for TITLE_HOLD_MS: the grading check. No tap target: not for kids.
@@ -116,15 +140,6 @@ bool Game::heldTitle() {
   if (title_.progress(TITLE_HOLD_MS) < 1) return false;
   title_ = ui::Hold{};
   return true;
-}
-
-// The card turns: the grading check times the think.
-void Game::turn() {
-  const uint32_t think = ms_ - askedMs_;
-  quick_ = think < QUICK_MS;
-  noteTurn(save_, think, round_.redo[round_.at]);
-  dirty_ = true;
-  go(P_ANSWER);
 }
 
 void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
@@ -145,8 +160,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
       if (ui::clicked(in_, BIG_CARD)) turn();
       break;
     case P_ANSWER:
-      for (int g = 0; g < 3; g++)
-        if (ui::clicked(in_, GRADE[g])) { grade((Grade)g); break; }
+      updateAnswer();
       break;
     default: break;   // P_STATS: only the house, back to the deck
   }
@@ -156,7 +170,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 static void dots(const Save& s, int cx, int y) {
   for (int n = 1; n <= FACTS; n++) {
     const uint8_t b = s.boxOf(cardOf(s.level, n));
-    canvas::disc(cx + (n * 2 - FACTS - 1) * 12, y, 9, b >= MASTER_BOX ? GRADE_C[EASY] : b ? GRADE_C[HARD] : RULE);
+    canvas::disc(cx + (n * 2 - FACTS - 1) * 12, y, 9, b >= MASTER_BOX ? GREEN : b ? AMBER : RULE);
   }
 }
 
@@ -170,58 +184,55 @@ static void drawHome(const Save& s, bool goDown) {
   centered(cardsbig::FONT110, t, 240, 214, INK);
   dots(s, 240, 280);
   centered(FONT28, allKnown(s) ? "Every table known!" : "Say it, then tap the card", 240, 336, SOFT);
-  button(GO, "Go!", GRADE_C[EASY], goDown, FONT40);
+  button(GO, "Go!", GREEN, goDown, FONT40);
 }
 
-// The grown-ups' page: how the kid has been grading since the check started (games/times-cards/AGENTS.md says how to
-// read it). Plain numbers, nothing to press but the house.
+// The grown-ups' page: how the deck reads the kid (games/times-cards/AGENTS.md says how to read it). Plain numbers,
+// nothing to press but the house.
 static void statRow(const char* label, const char* value, int y, uint16_t c) {
   font::text(FONT28, label, 64, y - FONT28.lineHeight / 2, SOFT);
   font::text(FONT28, value, 416 - font::textWidth(FONT28, value), y - FONT28.lineHeight / 2, c);
 }
-static void drawStats(const Save& s, int32_t today) {
+static void tenths(char* t, size_t n, uint32_t ms) { snprintf(t, n, "%u.%u s", (unsigned)(ms / 1000), (unsigned)(ms / 100 % 10)); }
+static void drawStats(const Save& s) {
   char t[40];
-  centered(FONT40, "Grading check", 240, 100, INK);
-  const int days = s.checkFrom ? today - s.checkFrom + 1 : 0;
-  snprintf(t, sizeof t, "%d day%s, %u cards", days, days == 1 ? "" : "s", (unsigned)s.turns);
+  centered(FONT40, "How it's going", 240, 100, INK);
+  snprintf(t, sizeof t, "Step %+d, %u jump%s", s.step, (unsigned)s.jumps, s.jumps == 1 ? "" : "s");
   centered(FONT28, t, 240, 146, SOFT);
   canvas::roundBox({48, 172, 432, 366}, 20, CARD);   // the numbers on a plain card, where every color reads
-  font::text(FONT28, "New cards", 64, 196 - FONT28.lineHeight / 2, SOFT);
-  for (int g = 0; g < 3; g++) {   // Easy, Hard, Wrong, in their colors
-    snprintf(t, sizeof t, "%u", (unsigned)s.firstSight[g]);
-    centered(FONT28, t, 296 + g * 52, 196, GRADE_C[g]);
-  }
-  snprintf(t, sizeof t, "%u of %u", (unsigned)s.nextDay[0], (unsigned)(s.nextDay[0] + s.nextDay[1]));
-  statRow("Easy, next day", t, 244, INK);
-  snprintf(t, sizeof t, "%u of %u", (unsigned)s.quick, (unsigned)s.turns);
-  statRow("Turned in 1 s", t, 292, INK);
-  const unsigned tenths = s.turns ? (unsigned)(s.thinkMs / 100 / s.turns) : 0;
-  snprintf(t, sizeof t, "%u.%u s", tenths / 10, tenths % 10);
-  statRow("Think time", t, 340, INK);
+  snprintf(t, sizeof t, "%u of %u", (unsigned)s.rights, (unsigned)s.tries);
+  statRow("Right", t, 196, INK);
+  tenths(t, sizeof t, usualMs(s));
+  statRow("Usual time", t, 244, INK);
+  tenths(t, sizeof t, fastMs(s, cardOf(3, 4)));
+  statRow("Fast under", t, 292, INK);
+  snprintf(t, sizeof t, "%d", learning(s));
+  statRow("Learning now", t, 340, INK);
 }
 
 void Game::drawDone() const {
   char s[24];
   char t[32];
   if (round_.leveledUp) snprintf(t, sizeof t, "Next up: %d \xC3\x97!", save_.level);
-  const char* title = round_.leveledUp ? t : !round_.hard && !round_.wrong ? "Perfect round!"
+  const char* title = round_.leveledUp ? t : !round_.wrong ? "Perfect round!"
                       : round_.wrong * 2 > round_.base ? "Nice try!" : "Great job!";
   centered(FONT40, title, 240, 100, INK);
   indexCard({80, 140, 400, 304});
   snprintf(s, sizeof s, "+%u stars", (unsigned)ROUND_STARS);
-  centered(FONT28, s, 240, 154, GRADE_C[HARD]);   // above the margin line, like a card's heading
-  const int counts[3] = {round_.easy, round_.hard, round_.wrong};
-  for (int g = 0; g < 3; g++) {
-    const int x = 152 + g * 88;
-    canvas::disc(x, 218, 32, GRADE_C[g]);
+  centered(FONT28, s, 240, 154, AMBER);   // above the margin line, like a card's heading
+  const int counts[2] = {round_.easy + round_.hard, round_.wrong};   // right, fast or slow; and missed
+  const char* const word[2] = {"Right", "Missed"};
+  for (int g = 0; g < 2; g++) {
+    const int x = 184 + g * 112;
+    canvas::disc(x, 218, 32, g ? RED : GREEN);
     snprintf(s, sizeof s, "%d", counts[g]);
     centered(FONT40, s, x, 218, WHITE);
-    centered(FONT28, GRADE_WORD[g], x, 272, SOFT);
+    centered(FONT28, word[g], x, 272, SOFT);
   }
   snprintf(s, sizeof s, "%d \xC3\x97", save_.level);   // where the table stands now
   centered(FONT28, s, 108, 336, INK);
   dots(save_, 264, 336);
-  button(GO, "Again", GRADE_C[EASY], down(in_, GO), FONT40);
+  button(GO, "Again", GREEN, down(in_, GO), FONT40);
 }
 
 void Game::draw() const {
@@ -229,36 +240,45 @@ void Game::draw() const {
   house(down(in_, HOME));
   char s[24];
   if (page_ == P_HOME) { drawHome(save_, down(in_, GO)); return; }
-  if (page_ == P_STATS) { drawStats(save_, today()); return; }
+  if (page_ == P_STATS) { drawStats(save_); return; }
   if (page_ == P_DONE) { drawDone(); return; }
-  snprintf(s, sizeof s, "%d of %d", round_.number(), round_.base);   // a missed card's second look adds nothing to count
+  if (page_ == P_ANSWER) { drawAnswer(); return; }
+  snprintf(s, sizeof s, "%d of %d", round_.number(), round_.base);   // a card come back adds nothing to count
   centered(FONT28, round_.redo[round_.at] ? "One more try" : s, 240, 84, SOFT);
-  const int dy = page_ == P_ASK && down(in_, BIG_CARD) ? 6 : 0;   // the card sinks under a finger
+  const int dy = down(in_, BIG_CARD) ? 6 : 0;   // the card sinks under a finger
   indexCard(px(BIG_CARD), dy);
   const int c = round_.current();
-  if (page_ == P_ASK) {
-    fact(s, sizeof s, c, false);
-    if (font::textWidth(cardsbig::FONT110, s) > 330) fact(s, sizeof s, c, false, true);   // 100 ÷ 10: fits the card
-    centered(cardsbig::FONT110, s, 240, 232 + dy, INK);
-    centered(FONT28, "Say it out loud, then tap!", 240, 352, SOFT);
-    return;
+  fact(s, sizeof s, c, false);
+  if (font::textWidth(cardsbig::FONT110, s) > 330) fact(s, sizeof s, c, false, true);   // 100 ÷ 10: fits the card
+  centered(cardsbig::FONT110, s, 240, 232 + dy, INK);
+  centered(FONT28, "Say it out loud, then tap!", 240, 352, SOFT);
+}
+
+// The card turned: the fact, and four answers to pick from. Once picked, the right one turns green, and a wrong pick red.
+void Game::drawAnswer() const {
+  char s[24];
+  snprintf(s, sizeof s, "%d of %d", faceNumber_, round_.base);
+  centered(FONT28, faceRedo_ ? "One more try" : s, 240, 84, SOFT);
+  indexCard(px(ANSWER_CARD));
+  fact(s, sizeof s, face_, true);
+  centered(FONT40, s, 240, 146, INK);
+  for (int i = 0; i < OPTIONS; i++) {
+    snprintf(s, sizeof s, "%d", options_[i]);
+    const uint16_t c = picked_ < 0 ? INK : i == right_ ? GREEN : i == picked_ ? RED : SHADOW;
+    button(CHOICE[i], s, c, picked_ < 0 && down(in_, CHOICE[i]), FONT40);
   }
-  fact(s, sizeof s, c, true);
-  centered(FONT40, s, 240, 166, SOFT);
-  snprintf(s, sizeof s, "%d", answerOf(c));
-  centered(cardsbig::FONT110, s, 240, 248, INK);
-  for (int g = 0; g < 3; g++) button(GRADE[g], GRADE_WORD[g], GRADE_C[g], down(in_, GRADE[g]), FONT28);
 }
 
 void Game::render() {
   // Repaint only when what the page shows changed: the page, its card, the round's place and a button under the finger.
-  struct Look { uint8_t page, card, level, at, n, held; } look = {page_, 0, save_.level, (uint8_t)round_.at,
-                                                                   (uint8_t)round_.n, 0};
-  if (page_ == P_ASK || page_ == P_ANSWER) look.card = (uint8_t)round_.current();
-  const ui::Box* hot[] = {&HOME, &GO, &GRADE[0], &GRADE[1], &GRADE[2], &BIG_CARD};   // what each page draws pressed
-  const bool on[P_COUNT][6] = {{1, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 1}, {1, 0, 1, 1, 1, 0}, {1, 1, 0, 0, 0, 0},
-                               {1, 0, 0, 0, 0, 0}};
-  for (int i = 0; i < 6; i++) if (on[page_][i] && in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
+  struct Look { uint8_t page, card, level, at, n, held; int8_t picked; } look = {page_, 0, save_.level, (uint8_t)round_.at,
+                                                                                (uint8_t)round_.n, 0, (int8_t)picked_};
+  if (page_ == P_ASK) look.card = (uint8_t)round_.current();
+  if (page_ == P_ANSWER) look.card = (uint8_t)face_;
+  const ui::Box* hot[] = {&HOME, &GO, &CHOICE[0], &CHOICE[1], &CHOICE[2], &CHOICE[3], &BIG_CARD};   // what each page draws pressed
+  const bool on[P_COUNT][7] = {{1, 1, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 1}, {1, 0, 1, 1, 1, 1, 0}, {1, 1, 0, 0, 0, 0, 0},
+                               {1, 0, 0, 0, 0, 0, 0}};
+  for (int i = 0; i < 7; i++) if (on[page_][i] && in_.down && ui::pressing(in_, *hot[i])) look.held = (uint8_t)(i + 1);
   frames_.render(nullptr, 0, os::crc32(&look, sizeof look), [&] { draw(); });
 }
 
@@ -266,7 +286,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || keep_) return false;
   seal(save_);
   // Packed, unless the blob does not read back as exactly this deck (no deck the game makes: then whole, as version
-  // 3, as before). The shell copies it out before the next update.
+  // 5). The shell copies it out before the next update.
   *data = packed_; *len = pack(save_, packed_, sizeof packed_);
   if (!*len || !loadBlob(packed_, *len, check_) || memcmp(&check_, &save_, sizeof save_)) { *data = &save_; *len = sizeof save_; }
   dirty_ = false;
@@ -281,17 +301,17 @@ const char* Game::screenName() const {
 
 void Game::debugPrint() {
   const bool onCard = page_ == P_ASK || page_ == P_ANSWER;
-  const int c = onCard ? round_.current() : 0;
-  printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d card=%d%c%d box=%d due=%d easy=%d hard=%d "
-         "wrong=%d leveled=%d stars=%lu pace=%d learning=%d first=%u/%u/%u nextday=%u/%u turns=%u quick=%u "
-         "quickeasy=%u]\n",
+  const int c = page_ == P_ANSWER ? face_ : onCard ? round_.current() : 0;
+  printf("[cards page=%s level=%d start=%d known=%d answers=%lu at=%d n=%d base=%d card=%d%c%d box=%d due=%d easy=%d "
+         "hard=%d wrong=%d leveled=%d jumped=%d stars=%lu learning=%d step=%d streak=%u jumps=%u usual=%lu fast=%lu "
+         "right=%d picked=%d tries=%u rights=%u]\n",
          screenName(), save_.level, save_.start, known(save_, save_.level), (unsigned long)save_.answers, round_.at,
-         round_.n, onCard ? (isDiv(c) ? dividendOf(c) : tableOf(c)) : 0, isDiv(c) ? '/' : 'x',
+         round_.n, round_.base, onCard ? (isDiv(c) ? dividendOf(c) : tableOf(c)) : 0, isDiv(c) ? '/' : 'x',
          onCard ? (isDiv(c) ? divisorOf(c) : factorOf(c)) : 0, onCard ? save_.boxOf(c) : 0,
-         onCard ? (int)(save_.dueOf(c) - today()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
-         (unsigned long)stars::balance(wallet_), paceOf(save_), learning(save_), save_.firstSight[0],
-         save_.firstSight[1], save_.firstSight[2], save_.nextDay[0], save_.nextDay[1], save_.turns, save_.quick,
-         save_.quickEasy);
+         onCard ? (int)(save_.dueOf(c) - half()) : 0, round_.easy, round_.hard, round_.wrong, round_.leveledUp,
+         round_.jumped, (unsigned long)stars::balance(wallet_), learning(save_), save_.step, save_.streak, save_.jumps,
+         (unsigned long)usualMs(save_), (unsigned long)fastMs(save_, c), page_ == P_ANSWER ? right_ : -1, picked_,
+         save_.tries, save_.rights);
   printf("screen=%s\n", screenName());
 }
 
@@ -301,14 +321,17 @@ void Game::debugCmd(const char* cmd) {
     if (c < 0 || c >= ALL) return;
     round_ = Round{};
     round_.card[0] = (uint8_t)c;
-    round_.n = round_.base = 1;
+    round_.n = round_.base = round_.dealt = 1;
+    round_.used[c] = true;
     go(P_ASK);
     return;
   }
+  const bool right = !strcmp(cmd, "right");   // the right answer (or, "wrong", the next one), as if tapped
+  if ((right || !strcmp(cmd, "wrong")) && page_ == P_ANSWER && picked_ < 0) { pick(right ? right_ : (right_ + 1) % OPTIONS); return; }
   if (strncmp(cmd, "level", 5)) return;
   const int t = atoi(cmd + 5);
   if (t < 1 || t > TABLES) return;
-  setUp(save_, t, today());
+  setUp(save_, t, half());
   dirty_ = true; keep_ = false;
   round_ = Round{};
   go(P_HOME);

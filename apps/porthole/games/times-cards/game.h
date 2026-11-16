@@ -1,7 +1,8 @@
-// Times Cards: the times tables as flash cards, one deck per kid. A card shows "7 x 8"; the kid says the answer out
-// loud and taps the card; the answer shows, and the kid says how it went: Easy, Hard or Wrong. Spaced repetition
-// (deck.h) decides when each card comes back and when the next table opens. A round is ten cards; Again deals the next.
-// No sound, no timer, nothing lost: a Wrong card only comes back sooner. All on the RGB565 surface.
+// Times Cards: the times tables as flash cards, one deck per kid. A card shows "7 x 8"; the kid says the answer and
+// taps the card; four answers show, and the kid picks one: green if right, and if not, the right one shows a moment.
+// The deck grades the pick from right or wrong and how long it took (deck.h), and decides when each card comes back,
+// what the next card is and when the next table opens. A round is ten cards; Again deals the next. No sound, no
+// timer on screen, nothing lost: a missed card only comes back sooner. All on the RGB565 surface.
 #pragma once
 #include <stdint.h>
 #include "app.h"
@@ -27,7 +28,8 @@ class Game : public App {
   void leave() override {}
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;   // "level<N>": a fresh deck on table N (1..10); "card<N>": one card's round
+  // "level<N>": a fresh deck on table N (1..10); "card<N>": one card's round; "right" / "wrong": pick that answer
+  void debugCmd(const char* cmd) override;
   const Save& save() const { return save_; }
 
   enum Page : uint8_t { P_HOME, P_ASK, P_ANSWER, P_DONE, P_STATS, P_COUNT };   // P_STATS: the grown-ups' page
@@ -44,15 +46,22 @@ class Game : public App {
   canvas::Frames<1> frames_;
   uint32_t ms_ = 0, now_ = 0, askedMs_ = 0;   // askedMs_: when the current card showed
   uint32_t* wallet_ = nullptr;   // the kid's stars (AppEnter::stars), shared with every game
-  bool home_ = false, dirty_ = false, quick_ = false;   // quick_: the current card was turned within QUICK_MS
+  bool home_ = false, dirty_ = false;
   bool keep_ = false;   // a deck is stored that this build cannot read: it is left as it is until the kid answers a card
-  int32_t today() const { return dayOf(now_); }
+  // The answer page: its card (the round moves on as soon as the kid picks), its "k of 10", the four answers, the right
+  // one's place, the kid's pick (-1 none yet) and when the page gives way to the next card.
+  int face_ = 0, faceNumber_ = 0, options_[OPTIONS] = {}, right_ = 0, picked_ = -1;
+  bool faceRedo_ = false;
+  uint32_t pickedMs_ = 0;
+  int32_t half() const { return halfOf(now_); }
   void go(Page p);
   void deal();
-  void grade(Grade g);   // the kid's answer to the current card
+  void turn();
+  void pick(int i);   // the kid's answer: options_[i]
+  void updateAnswer();   // the answer page: the pick, then the next card
   void draw() const;
+  void drawAnswer() const;
   void drawDone() const;
   bool heldTitle();
-  void turn();
 };
 }  // namespace cards
