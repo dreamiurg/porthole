@@ -4,7 +4,7 @@ Every app targets one board, and only this board is supported: the flat
 **Waveshare ESP32-S3-Touch-LCD-2.1**
 ([product page](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm),
 [wiki](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-2.1)). Porting to
-other hardware is welcome; see "Other boards" in the [README](../README.md).
+other hardware is welcome; see [Other boards](#other-boards) below.
 
 | Part | Detail |
 | --- | --- |
@@ -25,6 +25,18 @@ Buy the flat version, `ESP32-S3-Touch-LCD-2.1`
 [Waveshare](https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm)). The
 `ESP32-S3-Touch-LCD-2.1B` has curved 2.5D glass over the same size screen; no
 app here has been tested on it. Round boards in other sizes won't run these apps.
+
+Why this board works well for toys: the round screen feels like a toy, not a small phone; touch is the only
+input, so it fits a case with no buttons; it has enough memory to double-buffer the full screen; a real-time
+clock keeps time while it is off; and one USB-C cable gives power, flashing and the serial console.
+
+## Other boards
+
+The apps support one board only, and there is no plan to port them. To use another board, fork the repo and
+ask Claude Code or Codex to adapt the code, starting from this page. Most board-specific code is in
+`apps/porthole/firmware/board.cpp` and `platform/waveshare-round.ini`. A screen of a different size or shape
+also needs new layouts, because the games are drawn for a 480x480 circle. If you make another board work,
+send a pull request. If you are stuck, open an issue.
 
 ## Not used yet
 
