@@ -84,7 +84,14 @@ static int biscuitOwner(Store& st, Profiles& p, const Kid& kid) {
   if (p.count()) return p.nth(0);
   Record draft = {};
   snprintf(draft.name, sizeof draft.name, "%s", *want ? want : NO_NAME);
-  return create(st, p, draft, GAME_STORES, 2);   // age 0: the shell asks once, like a migrated v1 house
+  const int id = create(st, p, draft, GAME_STORES, 2);   // age 0: the shell asks once, like a migrated v1 house
+  // create opens a profile whose record did not land (the shell writes it again as the kid plays). Nothing would here:
+  // the pup would move to a profile the next boot does not have, so without the record there is no owner yet.
+  Record back; uint8_t blob[sizeof back];
+  const size_t n = id < 0 ? 0 : st.load(NS, key('p', id), blob, sizeof blob);
+  if (n && loadRecord(blob, n, back)) return id;
+  if (id >= 0) p.used[id] = false;
+  return -1;
 }
 
 void migrateBiscuit(Store& st, Profiles& p) {

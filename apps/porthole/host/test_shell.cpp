@@ -472,6 +472,15 @@ static void migrateFailedWrites() {
   pup.refuse = nullptr; shell::loadAll(pup, boot);
   assert(biscuitIn(pup, 0, "Pip", 30) && oldGone(pup) && pup.has(shell::NS, "mb"));
 }
+// The same for the record of the profile made for Biscuit's old pup: without it the pup has no owner yet.
+static void biscuitWaitsForItsProfile() {
+  shell::Profiles p, boot;
+  MemStore kid; putOld(kid, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3)); kid.refuse = "porthole/p0";
+  shell::loadAll(kid, p);
+  assert(p.count() == 0 && kid.has(OLD_NS, "pet3") && !kid.has(shell::NS, "mb") && !kid.has(biscuit::STORE, "s0"));
+  kid.refuse = nullptr; shell::loadAll(kid, boot);
+  assert(boot.count() == 1 && !strcmp(boot.rec[0].name, "Sam") && biscuitIn(kid, 0, "Pip", 30) && oldGone(kid));
+}
 // The marker's own write failed on a device that never had houses, so the migration runs again next boot: a profile
 // made since is not a house. Its face, code, stars and day's play are the profile's alone: never rebuilt from the pup.
 static void remigrateKeepsProfiles() {
@@ -1930,7 +1939,7 @@ int main() {
   biscuitLongName();
   biscuitCorruptIgnored();
   biscuitCrash();
-  migrateFailedWrites();
+  migrateFailedWrites(); biscuitWaitsForItsProfile();
   remigrateKeepsProfiles();
   restBudget();
   recordV1();
