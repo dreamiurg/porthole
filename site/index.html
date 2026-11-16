@@ -79,11 +79,11 @@
     /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB). It takes only the
        round screen's square: the buttons sit in its corners and the tilt is the dark rim, so playing moves nothing. */
     .player { display: flex; flex-direction: column; align-items: center; outline: none; }
-    .live { position: relative; width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%; touch-action: none;
+    .live { --s: min(420px, 90vw); position: relative; width: var(--s); height: var(--s); border-radius: 50%; padding: calc(var(--s) * 0.07); touch-action: none;
       background: radial-gradient(circle at 35% 30%, #4a4350, #24202a 60%, #16131a); box-shadow: 0 18px 40px rgba(20, 14, 26, 0.35); }
     .live.on { cursor: grab; }
-    .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
-    .live .poster img { display: block; width: 100%; height: 100%; }
+    .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+    .live .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
       background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
     #screen { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
@@ -102,7 +102,7 @@
     /* Full screen: the player covers the page; on a phone that is how it starts. */
     .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; }
     /* A percentage padding follows the parent's width, which full screen makes the whole window: keep the rim at 7% of the screen. */
-    .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); width: var(--s); padding: calc(var(--s) * 0.07); }
+    .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
     .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
