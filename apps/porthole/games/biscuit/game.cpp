@@ -59,7 +59,7 @@ void Game::quiet() { personalize(SAY[SAY_IDLE], who_.name, save_.petName, speech
 // Needs and the day move on every TICK_SEC. The shell writes a dirty save within 5 s, so a quiet pup only marks one
 // at a new day or a checkpoint; every care action marks its own.
 void Game::tick() {
-  if (!save_.named || now_ - lastTickSec_ < TICK_SEC) return;   // a clock set back wraps: it ticks now (a no-op)
+  if (!save_.named || now_ - lastTickSec_ < TICK_SEC) return;   // a clock set back wraps: it ticks now
   const int32_t day = save_.lastVisitDay;
   biscuit::tick(save_, now_);
   lastTickSec_ = now_;
