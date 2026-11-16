@@ -97,8 +97,8 @@ with tempfile.TemporaryDirectory() as tmp:
     three_days = timedelta(hours=72)
 
     def rel(tag: str, days_old: float, pre: bool = True, name: str = "") -> dict[str, object]:
-        created = (now - timedelta(days=days_old)).isoformat().replace("+00:00", "Z")
-        return {"tagName": tag, "name": name or tag, "isPrerelease": pre, "createdAt": created}
+        published = (now - timedelta(days=days_old)).isoformat().replace("+00:00", "Z")
+        return {"tagName": tag, "name": name or tag, "isPrerelease": pre, "publishedAt": published}
 
     def promote(releases: list[dict[str, object]], tag: str | None = None, min_age: timedelta = three_days) -> dict[str, str] | None:
         return release.promotion("alpha", releases, tag, min_age, now)
@@ -130,5 +130,6 @@ with tempfile.TemporaryDirectory() as tmp:
     p = promote(releases, tag="alpha-v0.1.1")
     assert p and p["tag"] == "alpha-v0.3.0" and "rolls stable back" in p["notes"], "a rollback is a higher version"
     assert release.promotion("alpha", [rel("alpha-v0.1.3", 1)], None, three_days, now) is None, "nothing old enough"
+    assert release.promotion("alpha", [{**rel("alpha-v0.1.3", 9), "publishedAt": None}], None, three_days, now) is None, "a draft was never published"
 
 print("release.py: all checks passed")

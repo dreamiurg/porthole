@@ -38,6 +38,8 @@ env:
 
 jobs:
   promote:
+    # The daily run is this repository's: a fork has no betas to promote, and its run would fail at the stable sync.
+    if: github.event_name != 'schedule' || github.repository == 'dreamiurg/porthole'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -52,7 +54,7 @@ jobs:
           # By hand with no tag: the newest beta now. On schedule: only one old enough.
           MIN_AGE: ${{ github.event_name == 'schedule' && env.MIN_AGE_HOURS || '0' }}
         run: |
-          gh release list --limit 1000 --json tagName,name,isPrerelease,createdAt \
+          gh release list --limit 1000 --json tagName,name,isPrerelease,publishedAt \
             | python3 tools/release.py promote --app "$APP" --tag "$TAG" --min-age-hours "$MIN_AGE" --notes notes.md > plan.txt
           if [ ! -s plan.txt ]; then
             echo "nothing to promote: ${TAG:-no beta newer than stable, ${MIN_AGE}h old and not yanked}${TAG:+ is already stable}"
