@@ -296,6 +296,6 @@ void init() {
   expSet(EX_TP_RST, false); delay(10); expSet(EX_TP_RST, true); delay(60);
   uint8_t noSleep = 0xFF; i2cWrite(TP_ADDR, 0xFE, &noSleep, 1);
   imuInit();
-  setBacklight(100);
+  // The backlight stays off: the loop lights it at the saved brightness once a frame is on the glass (main.cpp).
 }
 }  // namespace board
