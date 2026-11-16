@@ -74,6 +74,14 @@ template <size_t N> bool listed(const char* const (&list)[N], const char* s) {
 }
 }  // namespace
 
+// The URL and the optional token: w[1] and, when last is 3, w[2].
+static bool takeUrl(const char (*w)[128], int last, Config& c) {
+  const size_t url = strlen(w[1]), token = last == 3 ? strlen(w[2]) : 0;
+  if (last > 3 || strncmp(w[1], "https://", 8) || url <= 8 || url >= sizeof c.url || token >= sizeof c.token) return false;
+  memcpy(c.url, w[1], url + 1);
+  if (token) memcpy(c.token, w[2], token + 1);
+  return true;
+}
 bool parseConfig(const char* text, Config& out) {
   char w[4][128];
   const int n = text ? words(text, w, 4) : -1;
@@ -83,15 +91,9 @@ bool parseConfig(const char* text, Config& out) {
   if (!strcmp(w[0], "posthog")) c.format = POSTHOG;
   else if (!strcmp(w[0], "otlp")) c.format = OTLP;
   else return false;
-  int last = n;
   c.level = PERSONAL;
-  if (n > 2 && lastIsLevel(w[n - 1], &c.level)) last = n - 1;
-  if (last > 3 || strncmp(w[1], "https://", 8) || strlen(w[1]) <= 8 || strlen(w[1]) >= sizeof c.url) return false;
-  memcpy(c.url, w[1], strlen(w[1]) + 1);
-  if (last == 3) {
-    if (strlen(w[2]) >= sizeof c.token) return false;
-    memcpy(c.token, w[2], strlen(w[2]) + 1);
-  }
+  const int last = n > 2 && lastIsLevel(w[n - 1], &c.level) ? n - 1 : n;
+  if (!takeUrl(w, last, c)) return false;
   if (c.format == POSTHOG && !c.token[0]) return false;   // PostHog takes no event without the project's key
   out = c;
   return true;

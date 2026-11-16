@@ -951,22 +951,30 @@ void telemJob() {
   // 400, 413, 422: this body will never be taken; anything else (no wifi, a 5xx, a bad key) is tried again later.
   g_tresult = code >= 200 && code <= 299 ? 1 : code == 400 || code == 413 || code == 422 ? 3 : 2;
 }
+// The first tick: after the clock came from the RTC, so the boot has a real time.
+void tellBoot() {
+  g_toldBoot = true;
+  const esp_reset_reason_t r = esp_reset_reason();
+  telemetry::emit("device_started", {telemetry::P("reset", resetName(r)), telemetry::P("channel", g_chan == shell::CH_BETA ? "beta" : "stable")});
+  if (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT || r == ESP_RST_BROWNOUT)
+    telemetry::emit("crashed", {telemetry::P("reset", resetName(r))});
+}
+// A finished send: drop what was taken (unless the settings changed under it), and when to send next.
+void takeTelemetryResult(uint32_t ms) {
+  const int r = g_tresult.exchange(0);
+  if (!r) return;
+  if (r != 2 && g_tsentGen == g_tgen) g_tq.drop(g_ttaken);
+  if (r == 1) g_tq.lastSent = g_now();
+  g_nextTelem = ms + (r == 1 && g_tq.size() ? TELEM_MORE_MS : TELEM_MS);
+}
+bool telemetryDue(uint32_t ms) {
+  return g_tbody && g_tq.on() && g_tq.size() && g_ssid[0] && g_dark && (int32_t)(ms - g_nextTelem) >= 0;
+}
 // Main loop: a finished send's result, then the next send when one is due, the radio is free and nobody is looking.
 void telemetryTick(uint32_t ms) {
-  if (!g_toldBoot) {   // the first tick: after the clock came from the RTC, so the boot has a real time
-    g_toldBoot = true;
-    const esp_reset_reason_t r = esp_reset_reason();
-    telemetry::emit("device_started", {telemetry::P("reset", resetName(r)), telemetry::P("channel", g_chan == shell::CH_BETA ? "beta" : "stable")});
-    if (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT || r == ESP_RST_BROWNOUT)
-      telemetry::emit("crashed", {telemetry::P("reset", resetName(r))});
-  }
-  if (const int r = g_tresult.exchange(0)) {
-    if (r != 2 && g_tsentGen == g_tgen) g_tq.drop(g_ttaken);
-    if (r == 1) g_tq.lastSent = g_now();
-    g_nextTelem = ms + (r == 1 && g_tq.size() ? TELEM_MORE_MS : TELEM_MS);
-  }
-  if (!g_tbody || !g_tq.on() || !g_tq.size() || !g_ssid[0] || !g_dark || (int32_t)(ms - g_nextTelem) < 0) return;
-  if (g_busy.exchange(true)) return;
+  if (!g_toldBoot) tellBoot();
+  takeTelemetryResult(ms);
+  if (!telemetryDue(ms) || g_busy.exchange(true)) return;
   g_nextTelem = ms + TELEM_MS;
   g_tlen = g_tq.batch(g_tbody, TELEM_BODY, &g_ttaken);
   if (!g_tlen) { g_tq.drop(1); g_busy = false; return; }   // an event too big for any body: never sendable

@@ -1628,8 +1628,7 @@ static void failingSavesToldToGrownUp() {
 }
 
 int main() {
-  gfx565::target(nativePixels);
-  telemetryEvents();
+  gfx565::target(nativePixels); telemetryEvents();
   systemDefaults();
   failingSavesToldToGrownUp();
   scheduleClosesGame();
