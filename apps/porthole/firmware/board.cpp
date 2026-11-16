@@ -156,8 +156,15 @@ void presentHires() {
   ESP_ERROR_CHECK(g_frames.submit() ? ESP_OK : ESP_ERR_INVALID_STATE);
   ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[g_frames.back()]));
   portEXIT_CRITICAL(&g_frameMux);
-  // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
-  ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
+  // A late ack is not a dead panel: the LCD interrupts are not IRAM-safe, so a flash sector erase (a save's garbage
+  // collection, the radio's own NVS writes on core 0) masks them for its whole length, up to 400 ms on a slow part.
+  // Ask the driver to restart the scan and wait once more.
+  if (xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) != pdTRUE) {
+    Serial.println("[board] frame ack late: panel restarted");
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_restart(g_panel));
+    // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
+    ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(1000)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
+  }
   portENTER_CRITICAL(&g_frameMux);
   ESP_ERROR_CHECK(g_frames.finish() ? ESP_OK : ESP_ERR_INVALID_STATE);
   portEXIT_CRITICAL(&g_frameMux);

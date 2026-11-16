@@ -41,10 +41,10 @@ static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 static int16_t g_grav[3] = {0, 0, -1000};
 static bool g_gravFake = false;
 // Frame metrics for "M": per frame, in us, the loop period and the time spent in shell update, render and present, over
-// the last MT_N frames.
+// the last MT_N frames; and the longest present since boot (the wait for the driver's frame ack: board::presentHires).
 enum { MT_FRAME, MT_UPDATE, MT_RENDER, MT_PRESENT, MT_COUNT };
 static const int MT_N = 64;
-struct Metrics { uint32_t frame[MT_N][MT_COUNT]; };
+struct Metrics { uint32_t frame[MT_N][MT_COUNT]; uint32_t presentMax; };
 static Metrics& g_mt = psram::make<Metrics>();   // 1 KB of debug counters: not worth static internal RAM
 static int g_mtAt = 0;
 
@@ -265,9 +265,9 @@ static void printMetrics() {
   for (auto& f : g_mt.frame) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
   auto ms = [&](int k) { return sum[k] / 1000.0 / MT_N; };
   Serial.printf("[metrics] frames=%d frame=%.2fms fps=%.1f max=%.2fms update=%.2fms render=%.2fms present=%.2fms "
-                "heap=%lu psram=%lu largest_internal=%lu\n",
+                "present_max=%.2fms heap=%lu psram=%lu largest_internal=%lu\n",
                 MT_N, ms(MT_FRAME), ms(MT_FRAME) > 0 ? 1000.0 / ms(MT_FRAME) : 0.0, worst / 1000.0, ms(MT_UPDATE),
-                ms(MT_RENDER), ms(MT_PRESENT), (unsigned long)board::freeHeap(),
+                ms(MT_RENDER), ms(MT_PRESENT), g_mt.presentMax / 1000.0, (unsigned long)board::freeHeap(),
                 (unsigned long)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
@@ -386,6 +386,13 @@ static void renderFrame() {
   if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
 }
 
+static void present() {   // and, for "M", the longest wait for the driver's frame ack since boot
+  const uint32_t t0 = micros();
+  board::presentHires();
+  const uint32_t waited = micros() - t0;
+  if (waited > g_mt.presentMax) g_mt.presentMax = waited;
+}
+
 void loop() {
   static uint32_t prevUs = micros();
   uint32_t* mt = g_mt.frame[g_mtAt];
@@ -415,7 +422,7 @@ void loop() {
   if (!progress && !dark) renderFrame();
   uint32_t t3 = micros();
   if (progress || dark) delay(20);
-  else board::presentHires();
+  else present();
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));

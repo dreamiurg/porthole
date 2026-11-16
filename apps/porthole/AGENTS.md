@@ -154,7 +154,7 @@ They work on either USB-C port: `firmware/console.h` (included by `board.h`) red
 | `D` | Toggle touch-position logging |
 | `A` | Print the accelerometer: raw chip axes (LSB, 8192 = 1 g) and the mapped gravity `gx,gy,gz` (milli-g, screen frame, what `Input` gets) |
 | `G<x>,<y>,<z>` / `G` | Hold `Input`'s gravity at that vector (milli-g, screen frame, each axis clamped to the sensor's +-4000) for testing; a bare `G` returns to the sensor (`devctl.py tilt X Y Z` / `untilt`; `devctl.py run` always ends with one) |
-| `M` | Frame metrics over the last 64 frames: loop period and fps (plus the worst frame), time in shell update, render (an indexed frame's 3x expansion included) and present (the wait for the driver to take the frame), free heap, free PSRAM, largest free internal block (`devctl.py metrics`) |
+| `M` | Frame metrics over the last 64 frames: loop period and fps (plus the worst frame), time in shell update, render (an indexed frame's 3x expansion included) and present (the wait for the driver to take the frame; `present_max=` is the longest since boot, and over 250 ms means a late frame ack restarted the panel), free heap, free PSRAM, largest free internal block (`devctl.py metrics`) |
 | `W<ssid>\t<password>` | Save the wifi network to NVS `"sys"` (the tab is required; nothing after it = an open network) |
 | `L<lat>,<lon>` | Save Radar's home (decimal degrees) to NVS `"sys"/home` without the menu's address lookup |
 | `U` | Check for an update now and download it (any build; a "dev" build checks but never downloads); says "dropped" when a run or a wifi scan/test holds the radio or an update is ready |
