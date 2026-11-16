@@ -1168,6 +1168,11 @@ static void versions() {
   assert(!shell::newer("v0.15.0", "0.15.0") && !shell::newer("0.15.0", "v0.15.0"));   // equal: no update
   assert(shell::newer("1.0.0", "0.99.99"));
   assert(!shell::newer("0.16.0", "dev") && !shell::newer("dev", "0.15.0") && !shell::newer("0.16", "0.15.0"));
+  // A release that started and rolled back is not downloaded again; anything else is, older or newer.
+  assert(shell::rolledBack("0.30.0", "0.30.0", true));
+  assert(!shell::rolledBack("0.30.1", "0.30.0", true) && !shell::rolledBack("0.29.5", "0.30.0", true));
+  assert(!shell::rolledBack("0.30.0", "0.30.0", false));   // it started fine, or a USB flash cleared the mark
+  assert(!shell::rolledBack("0.30.0", "", true) && !shell::rolledBack("0.30.0", nullptr, true));   // nothing on record
 }
 
 // The card shows once per new version, never for a dev build, and a boot with nothing new writes nothing.

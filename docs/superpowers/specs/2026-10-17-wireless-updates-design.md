@@ -41,6 +41,11 @@ The board is not powered overnight, so nothing depends on a night-time window.
     checks.
 - **The SD card is optional, with one job:** `/porthole/wifi.txt`. Serial `W` is the other way to set wifi.
 - **No downgrades over the air, and dev builds never update.** A local build reports version `"dev"`.
+- **A release that rolled back is not downloaded again** (added 2026-11-16). A finished download records its version
+  in `"sys"/tried`. While the bootloader's mark says the spare slot's image was rejected and the channel still offers
+  that same version, the check ends as "Check failed" without a download (`shell::rolledBack`); any other version is
+  tried as usual. A USB flash clears the mark. The cost: a board that lost power during a new version's first second
+  of boot also waits for the next release.
 
 ## Hard rules this must keep
 
