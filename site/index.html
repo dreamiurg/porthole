@@ -433,6 +433,7 @@
         <button type="button" data-view="bezel" aria-pressed="false"><span lang="en">Bezel</span><span lang="uk">Обідок</span></button>
         <button type="button" data-view="plate" aria-pressed="false"><span lang="en">Plate</span><span lang="uk">Пластина</span></button>
         <button type="button" data-view="lid" aria-pressed="false"><span lang="en">Lid</span><span lang="uk">Кришка</span></button>
+        <button type="button" data-view="wheel" aria-pressed="false"><span lang="en">Wheel</span><span lang="uk">Кермо</span></button>
       </div>
       <div class="cards3">
         <div class="card"><strong><span lang="en">What you print</span><span lang="uk">Що друкувати</span></strong><span lang="en">Bezel and plate (v1.1) and lid (v1.2). 84 mm across. PETG.</span><span lang="uk">Обідок і пластина (v1.1) та кришка (v1.2). 84 мм у діаметрі. PETG.</span></div>
@@ -441,8 +442,8 @@
       </div>
       <div class="now">
         <h3 style="margin: 0; font-size: 21px; font-weight: 800"><span lang="en">What I&rsquo;m working on now</span><span lang="uk">Над чим працюю зараз</span></h3>
-        <p style="margin: 6px 0 0"><span lang="en">A two-handed grip the puck snaps into, so the tilt games and Rally feel like holding a steering wheel. These are renders; it is not printed yet.</span><span lang="uk">Тримач на дві руки, у який вставляється шайба, щоб ігри з нахилом і Rally відчувалися як кермо. Це рендери, надрукованого ще немає.</span></p>
-        <img src="images/grip.webp" alt="Renders of the steering-wheel grip holding the puck" width="1200" height="800" loading="lazy">
+        <p style="margin: 6px 0 0"><span lang="en">A two-handed grip the puck snaps into, so the tilt games and Rally feel like holding a steering wheel. These are renders; turn it around in the viewer above under Wheel.</span><span lang="uk">Тримач на дві руки, у який вставляється шайба, щоб ігри з нахилом і Rally відчувалися як кермо. Це рендери; покрутіть його у переглядачі вище, кнопка «Кермо».</span></p>
+        <img src="images/grip.webp" alt="Renders of the black steering-wheel grip holding the puck" width="1200" height="600" loading="lazy">
       </div>
     </section>
 
@@ -578,17 +579,27 @@
     }));
     parts.board = { lift: 12, mesh: await board(THREE) };
     scene.add(parts.board.mesh);
+    // The steering-wheel grip (site/grip/, made by hardware/grip/render_grip_blender.py), its two halves
+    // assembled, set below the puck so the lid sits in its pocket. It shows only in the Wheel view.
+    const wheel = new THREE.Group();
+    for (const half of ["front", "back"]) {
+      const geometry = await loader.loadAsync(`grip/${half}.stl`);
+      geometry.computeVertexNormals();
+      wheel.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x1c1c20, roughness: 0.5 })));
+    }
+    wheel.position.z = -26.45; wheel.visible = false; scene.add(wheel);
     msg.remove();
 
     apply = () => {
       // Back the camera off for the taller exploded stack, keeping the angle the viewer chose.
-      const dist = view === "exploded" ? 260 : 170, dir = camera.position.clone().sub(controls.target).normalize();
+      const dist = view === "exploded" ? 260 : view === "wheel" ? 300 : 170, dir = camera.position.clone().sub(controls.target).normalize();
       controls.target.set(0, 0, view === "exploded" ? -4 : -8);
       camera.position.copy(controls.target).addScaledVector(dir, dist);
       for (const [name, p] of Object.entries(parts)) {
-        p.mesh.visible = view === "assembled" || view === "exploded" || view === name;   // the board shows only in the two whole views
+        p.mesh.visible = ["assembled", "exploded", "wheel"].includes(view) || view === name;   // the board shows only in the whole views
         p.mesh.position.z = view === "exploded" ? p.lift : 0;
       }
+      wheel.visible = view === "wheel";
     };
     apply();
 
