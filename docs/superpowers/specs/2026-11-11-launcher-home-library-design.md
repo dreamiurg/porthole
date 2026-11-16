@@ -1,5 +1,9 @@
 # Porthole launcher: Home, Library and per-device games
 
+Superseded 2026-11-16: the parent removed Home, the Library and star mode after the family tried them ("I don't want the
+customization or ability to choose which games are favorites"). The launcher is every game switched on, six a page;
+Info -> Games and the stable game ids stay.
+
 Status: approved by the parent on 2026-11-11 ("follow your recommendations"). Proposal page with mockups:
 https://claude.ai/artifact/V4MSJvsG7mLS2NqL4Hr441
 

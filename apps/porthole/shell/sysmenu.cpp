@@ -347,7 +347,7 @@ void Shell::drawSysPlayerPin() {
 }
 
 // ---------------------------------------------------------------- Games (from Info): the games on this device, 3 a page
-// Off hides a game from every kid's Home and Library (shell::GamesOff); its saves and stars stay for when it is back
+// Off hides a game from every kid's launcher (shell::GamesOff); its saves and stars stay for when it is back
 // on, and a line under the rows says so. The last game on cannot go off. Each change saves at once and is read back.
 static const int GAME_ROWS = 3;
 static ui::Box gameRow(int i) { return {22, 30 + i * 23, 116, 21}; }   // the picture's 56 physical rows fit inside
