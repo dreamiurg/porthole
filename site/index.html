@@ -101,7 +101,8 @@
     .live .tl { left: -4px; top: -4px; } .live .tr { right: -4px; top: -4px; } .live .bl { left: -4px; bottom: -4px; } .live .br { right: -4px; bottom: -4px; }
     /* Full screen: the player covers the page; on a phone that is how it starts. */
     .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; }
-    .player.full .live { width: min(92vw, 92vh); width: min(92vw, 92dvh); }
+    /* A percentage padding follows the parent's width, which full screen makes the whole window: keep the rim at 7% of the screen. */
+    .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); width: var(--s); padding: calc(var(--s) * 0.07); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
     .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
