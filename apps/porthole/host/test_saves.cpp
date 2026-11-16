@@ -8,6 +8,7 @@
 #include "games/apps.h"
 #include "crc32.h"
 #include "gfx565.h"
+#include "host/fixtures/kingdom_save_v1.h"
 #include "host/fixtures/times_cards_save_v3.h"
 
 static int checks = 0;
@@ -95,10 +96,10 @@ static void mutated(App* a, const Blob& b0, int trials) {
 
 // A game that packs its save now still reads the whole struct it stored before: the same treatment for that version.
 static void older(App* a) {
-  Blob b;
-  if (strcmp(a->store(), cards::STORE)) return;
-  b.n = sizeof TIMES_CARDS_SAVE_V3; memcpy(b.d, TIMES_CARDS_SAVE_V3, b.n);
-  mutated(a, b, 40);
+  Blob b; b.n = 0;
+  if (!strcmp(a->store(), cards::STORE)) { b.n = sizeof TIMES_CARDS_SAVE_V3; memcpy(b.d, TIMES_CARDS_SAVE_V3, b.n); }
+  if (!strcmp(a->store(), "kingdom")) { b.n = sizeof KINGDOM_SAVE_V1; memcpy(b.d, KINGDOM_SAVE_V1, b.n); }
+  if (b.n) mutated(a, b, 40);
 }
 
 int main() {
