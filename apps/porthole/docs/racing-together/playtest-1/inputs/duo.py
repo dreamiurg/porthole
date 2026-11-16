@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # ruff: noqa: F403, F405, E402
 """Two-sim driver for black-box Rally Together play. Each scenario script imports this and runs from a fresh start."""
 

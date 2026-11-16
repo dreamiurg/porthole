@@ -489,8 +489,13 @@ void invite(const Duo& d) {
   snprintf(line, sizeof line, "%s wants", d.inviteName);
   heading(186, line, 2, CREAM);
   heading(210, "to race together!", 2, CREAM);
-  button(JOIN, "Join", true);
-  button(NOT_NOW, "Not now", true);
+  // Yes stands out for a kid who can't read yet: green and big, with the friend's face on it; Not now is quiet.
+  UiAudit::add(JOIN.x, JOIN.y, JOIN.w, JOIN.h);
+  plate(JOIN, PLATE_HI, GREEN);
+  centered(JOIN.x * 3 + JOIN.w * 3 / 2, JOIN.y * 3 + JOIN.h * 3 / 2 - 10, "Join", 2, GREEN);
+  UiAudit::add(NOT_NOW.x, NOT_NOW.y, NOT_NOW.w, NOT_NOW.h);
+  plate(NOT_NOW, INK, PLATE);
+  centered(NOT_NOW.x * 3 + NOT_NOW.w * 3 / 2, NOT_NOW.y * 3 + NOT_NOW.h * 3 / 2 - 10, "Not now", 2, DIM);
 }
 void tracksPage(const View& v) {
   const int mode = v.mode;
@@ -540,7 +545,11 @@ void face(const pic::Pic* f, const char* name, int cx, bool gold) {
 void lobbyPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   const Duo& d = v.duo;
-  heading(46, "Race together", 2, ORANGE);
+  char line[40];   // the guest is told who picks, up top, clear of the track and Back
+  if (d.host) snprintf(line, sizeof line, "Race together");
+  else if (d.paired) snprintf(line, sizeof line, "%.8s picks the track", d.peerName);
+  else snprintf(line, sizeof line, "Joining...");
+  heading(46, line, 2, ORANGE);
   face(d.face, "You", 180, true);
   face(d.paired ? d.peerFace : nullptr, d.paired ? d.peerName : "...", 300, false);
   track(v.track, 156, 196, 168, 54);
@@ -551,12 +560,7 @@ void lobbyPage(const View& v) {
     button(LOBBY_PREV, "<", true);
     button(LOBBY_NEXT, ">", true);
     button(NEXT, "Go", d.paired);
-    return;
   }
-  char line[40];
-  if (d.paired) snprintf(line, sizeof line, "%s picks the track", d.peerName);
-  else snprintf(line, sizeof line, "Joining...");
-  centered(240, 322, line, 2, DIM);
 }
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));

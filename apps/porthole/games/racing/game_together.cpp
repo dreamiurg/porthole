@@ -145,7 +145,7 @@ void Game::updateLooking() {
   else if (link_.paired()) go(Screen::Lobby);
   else if (link_.refused()) { say("%s said not now", link_.refusal().name); endTogether(); go(Screen::Tracks); }
   // Both kids tapped Together: the device with the higher address joins the other, which hosts.
-  else if (link_.lookingToo(ms_) && link_.self() > link_.inviter()) joinInvite();
+  else if (link_.invited(ms_) && link_.self() > link_.inviter()) joinInvite();
 }
 
 void Game::updateLobby() {

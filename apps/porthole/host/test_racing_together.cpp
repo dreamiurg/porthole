@@ -285,6 +285,21 @@ void bothLooking() {
   assert(p.sam.g.duo().host != p.zoe.g.duo().host && p.sam.g.duo().paired && p.zoe.g.duo().paired);
 }
 
+// Not now, then the same kid taps Together right away: their friend gets the invite (no stale pairing).
+void notNowThenTogether() {
+  Pair p;
+  p.tap(p.sam, paint::TOGETHER);
+  p.wait(200);
+  p.tap(p.zoe, paint::NOT_NOW);
+  p.tap(p.zoe, paint::TOGETHER);
+  p.wait(400);
+  assert(p.zoe.g.screen() == Game::Screen::Looking && p.sam.g.screen() == Game::Screen::Tracks);
+  assert(p.sam.g.duo().inviteName);
+  p.tap(p.sam, paint::JOIN);
+  p.wait(400);
+  assert(p.sam.g.screen() == Game::Screen::Lobby && p.zoe.g.screen() == Game::Screen::Lobby && p.zoe.g.duo().host);
+}
+
 // The Together targets keep the house rules: whole targets on the glass, apart from their neighbors.
 void geometry() {
   using namespace paint;
@@ -305,6 +320,7 @@ int main() {
   dropped();
   leftEarly();
   bothLooking();
+  notNowThenTogether();
   puts("test_racing_together: ok");
   return 0;
 }

@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 # ruff: noqa: F403, F405, E402
 from duo import *
 

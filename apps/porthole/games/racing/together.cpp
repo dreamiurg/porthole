@@ -46,6 +46,7 @@ void Link::decline(Wire& mine) {
   declined_ = invite_.addr; declinedSession_ = invite_.w.session;
   mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = invite_.addr;
   if (radio_ && invite_.addr) for (int i = 0; i < 3; i++) radio_->send(&mine, sizeof mine, invite_.addr);
+  invite_ = {};
 }
 void Link::leave(Wire& mine) {
   mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = peer_.addr;

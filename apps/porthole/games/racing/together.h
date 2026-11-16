@@ -53,11 +53,9 @@ class Link {
   bool invited(uint32_t ms) const { return invite_.addr && !ignored(invite_) && ms - invite_.heardMs < INVITE_MS; }
   const Wire& invite() const { return invite_.w; }
   // Not now: hides that invite, and tells the inviting device (an Idle addressed to it), which then stops looking.
-  void decline(Wire& mine);
+  void decline(Wire& mine);   // also forgets that invite: it may still be fresh when this kid taps Together
   bool refused() const { return refused_.addr != 0; }   // a kid this device invited said Not now
   const Wire& refusal() const { return refused_.w; }
-  // Another device looking too, heard within INVITE_MS, Not now or not: two kids who both tapped Together.
-  bool lookingToo(uint32_t ms) const { return invite_.addr && ms - invite_.heardMs < INVITE_MS; }
   uint32_t inviter() const { return invite_.addr; }
   uint32_t self() const { return radio_ ? radio_->self() : 0; }
 
