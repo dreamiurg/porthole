@@ -84,13 +84,25 @@ is a check the kid does instead of grading (tap the number you said), decided wi
 
 ## Save
 
-One 1020-byte blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s): magic, version, size, level,
-start table, answers ever, pace (thousandths + 1, 0 = never set), box, due day and last-seen day per multiplication
-card, then (version 2) the same three per division card, a spare zero, then (version 3) the grading check's counters and
-one Easy bit per card, a spare zero, crc. A version 1 blob (520 bytes, no division) and a version 2 blob (972 bytes)
-still load; the check starts empty. Append-only: a new field goes right before `crc` with a
-zero that is a sensible default, `SAVE_VERSION` goes up, nothing is reordered or resized. A blob of the wrong size or
-crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
+One blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s). In memory the deck is the `Save` struct
+(1020 bytes): magic, version, size, level, start table, answers ever, pace (thousandths + 1, 0 = never set), box, due
+day and last-seen day per multiplication card, then (version 2) the same three per division card, a spare zero, then
+(version 3) the grading check's counters and one Easy bit per card, a spare zero, crc. Versions 1 to 3 stored that
+struct whole (520, 972 and 1020 bytes); four kids' decks did not fit the board's 20 KB of NVS next to the other games.
+
+Version 4 stores the same deck bit-packed (`pack` / `packDeck` in `deck.h`, on `os/bits.h`): about 190 bytes for a new
+deck, 300 to 400 in play. Days are kept as the distance from the deck's earliest day; a due day mostly as how it follows
+from the card's box and the day it was last seen. It is lossless: `takeSave` hands the packed blob only after reading it
+back as byte for byte the deck in memory, and otherwise stores the struct whole as version 3 (no deck the game makes
+needs that). Every older version still loads, and a deck loaded from one is stored anew, packed, when the game is
+opened (the old blob stays until that write succeeds). `host/fixtures/times_cards_save_v3.h` is a real version 3
+save; `host/test_times_cards.cpp` holds its migration byte for byte.
+
+The struct stays append-only: a new field goes right before `crc` with a zero that is a sensible default, joins
+`packDeck`, and `SAVE_VERSION` goes up; nothing is reordered or resized. A stored blob this build cannot read (wrong
+size or crc, or a newer build's after a rollback) starts a fresh deck on screen but is left in storage as it is: the
+fresh deck replaces it only once the kid answers a card on it, never just because the game was opened.
+`store()` is `"timescards"` and is never renamed.
 
 ## Look and files
 

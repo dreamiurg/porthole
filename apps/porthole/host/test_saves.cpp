@@ -8,6 +8,8 @@
 #include "games/apps.h"
 #include "crc32.h"
 #include "gfx565.h"
+#include "host/fixtures/kingdom_save_v1.h"
+#include "host/fixtures/times_cards_save_v3.h"
 
 static int checks = 0;
 static uint32_t rngState = 4242, g_ms = 1000;
@@ -92,6 +94,14 @@ static void mutated(App* a, const Blob& b0, int trials) {
   }
 }
 
+// A game that packs its save now still reads the whole struct it stored before: the same treatment for that version.
+static void older(App* a) {
+  Blob b; b.n = 0;
+  if (!strcmp(a->store(), cards::STORE)) { b.n = sizeof TIMES_CARDS_SAVE_V3; memcpy(b.d, TIMES_CARDS_SAVE_V3, b.n); }
+  if (!strcmp(a->store(), "kingdom")) { b.n = sizeof KINGDOM_SAVE_V1; memcpy(b.d, KINGDOM_SAVE_V1, b.n); }
+  if (b.n) mutated(a, b, 40);
+}
+
 int main() {
   gfx565::target(g_fb);
   int saving = 0;
@@ -102,6 +112,7 @@ int main() {
     if (b0.n < 12) continue;
     saving++;
     mutated(APPS[k], b0, 40);
+    older(APPS[k]);
   }
   CHECK(saving == 9);   // a game that starts to save gets a base() here, or proof that random play writes one
   printf("test_saves: %d checks passed\n", checks);

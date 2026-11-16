@@ -1,4 +1,4 @@
-// Shared-shell integration: immediate story checkpoints and the unchanged ordinary-game cadence.
+// Shared-shell integration: Kingdom's pages at the save cadence, its decisions at once, and an ordinary game's cadence.
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 #include <vector>
 #include "games/living-kingdom/game.h"
 #include "games/living-kingdom/layout.h"
+#include "host/fixtures/kingdom_save_v1.h"
 #include "shell.h"
 
 namespace {
@@ -76,14 +77,17 @@ struct Session {
     assert(shell.openApp("Kingdom")); step();
   }
   void settle() { step(false, 0, 0, 1000); }   // past the urgent checkpoint's one-second gap
-  void start() { begin(); tap(kingdom::layout::START); settle(); }   // the new campaign lands first
+  void cadence() { step(false, 0, 0, 5100); }   // past the five-second cadence: what changed is written
+  void start() { begin(); tap(kingdom::layout::START); cadence(); }   // the new campaign lands first
 };
 void sameCursor(const kingdom::UiCursor& a, const kingdom::UiCursor& b) { assert(!memcmp(&a, &b, sizeof a)); }
-void urgentPageCheckpoint() {
+// Pages turned are one write at the cadence, not one a page; what was written resumes after an abrupt restart.
+void pageCheckpoint() {
   Session s; s.start(); const int writes = s.store.gameWrites;
-  const uint32_t before = s.ms; s.tap(kingdom::layout::NEXT); s.settle();
-  assert(s.ms - before < 5000 && s.store.gameWrites == writes + 1);
-  const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor); assert(saved.cursor.page == 1);
+  s.tap(kingdom::layout::NEXT); s.settle(); s.tap(kingdom::layout::NEXT); s.settle();
+  assert(s.store.gameWrites == writes && s.store.campaign().cursor.page == 0);   // not a flash write a page
+  s.cadence(); assert(s.store.gameWrites == writes + 1);
+  const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor); assert(saved.cursor.page == 2);
   // A new shell represents an abrupt restart: leave() is deliberately never called on the old shell.
   Shell rebooted; kingdom::Game resumed; App* apps[] = {&resumed};
   rebooted.begin(s.store, apps, 1); rebooted.update(NOW, 10, {});
@@ -100,7 +104,8 @@ void urgentAtomicDecision() {
   s.tap(kingdom::layout::CARD0);
   for (int n = 0; s.game.save().cursor.mode == kingdom::CONFIRM && n < 64; n++) s.tap(kingdom::layout::NEXT);
   assert(s.game.save().cursor.mode == kingdom::RESULT);
-  s.settle(); const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor);
+  s.settle(); const Save saved = s.store.campaign();   // within a second of the decision, well inside the cadence
+  sameCursor(saved.cursor, s.game.save().cursor);
   assert(saved.journalCount == 1);
   const kingdom::Scene* scene = kingdom::currentScene(saved); assert(scene);
   assert(kingdom::hasDecision(saved, scene->choices[saved.cursor.selectedChoice].id));
@@ -108,7 +113,7 @@ void urgentAtomicDecision() {
 }
 void sessionBreakCursor() {
   Session s; const shell::Limits limits{1, 25}; s.store.save("sys", "limits", &limits, sizeof limits); s.start();
-  s.tap(kingdom::layout::NEXT); s.settle(); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
+  s.tap(kingdom::layout::NEXT); s.cadence(); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
   for (int n = 0; n < 65 && strcmp(s.shell.screenName(), "rest"); n++) s.step(true, 0, 0, 1000);
   assert(!strcmp(s.shell.screenName(), "rest")); const Save paused = s.store.campaign();
   sameCursor(paused.cursor, before.cursor); assert(paused.day == before.day && paused.journalCount == before.journalCount);
@@ -117,7 +122,7 @@ void sessionBreakCursor() {
   sameCursor(resumed.save().cursor, before.cursor); assert(resumed.save().seed == before.seed);
 }
 void quitFromDetails() {
-  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle(); const Save original = s.store.campaign();
+  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.cadence(); const Save original = s.store.campaign();
   s.tap(kingdom::layout::MENU); s.tap(kingdom::layout::TOOL0);
   assert(s.game.save().cursor.mode == kingdom::PARTY_OVERVIEW); s.tap(kingdom::layout::PARTY1);
   assert(s.game.save().cursor.mode == kingdom::PARTY); s.tap(kingdom::layout::MENU);
@@ -150,20 +155,46 @@ void urgentThrottled() {
   assert(s.shell.openApp("Kingdom")); s.tap(kingdom::layout::START); s.settle(); s.step(false, 0, 0, 6000);
   assert(!strcmp(s.game.screenName(), "lk_read") && s.store.gameWrites == writes);
 }
-// A refused write stays pending in the shell: it lands at the next cadence once the store works again, though the
-// game has nothing new to hand out.
+// A refused write stays pending in the shell: it lands at the next try once the store works again, though the game
+// has nothing new to hand out. After one failure the next try is ten seconds on, not five (host/test_shell.cpp holds
+// the whole back-off).
 void failedSaveRetried() {
   Memory store; Shell shell; Ordinary ordinary; App* apps[] = {&ordinary};
   shell.begin(store, apps, 1); shell.update(NOW, 10, {});
   assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
   store.fail = true; shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 0 && !ordinary.dirty);
   store.fail = false; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 0);   // the cadence, not every frame
-  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
+  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 0 && shell.savesFailing());
+  shell.update(NOW + 15, 15012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
+  assert(!shell.savesFailing());
+}
+// A board updated from version 1 (host/fixtures: a real stored save): the campaign opens exactly as it was left and the
+// next save writes it as version 2. A write refused on the way leaves the version 1 blob whole, and it lands later.
+void versionOneMigrates() {
+  Session s; s.shell.begin(s.store, s.apps, 1); s.step();
+  assert(s.shell.createProfile("Ann", 9, "") == 0 && s.shell.createProfile("Ben", 9, "") == 1 && s.shell.createProfile("Cy", 9, "") == 2);
+  s.store.save("kingdom", "s2", KINGDOM_SAVE_V1, sizeof KINGDOM_SAVE_V1);
+  const std::vector<uint8_t>& stored = s.store.entries["kingdom/s2"];
+  s.store.fail = true; assert(s.shell.openApp("Kingdom")); s.step();
+  assert(!memcmp(&s.game.save(), KINGDOM_SAVE_V1, sizeof(Save)));
+  s.step(false, 0, 0, 6000); s.step();
+  assert(stored.size() == sizeof(Save) && !memcmp(stored.data(), KINGDOM_SAVE_V1, sizeof(Save)));   // the only copy, untouched
+  s.store.fail = false;
+  for (int n = 0; n < 400 && stored.size() == sizeof(Save); n++) s.step(false, 0, 0, 1000);
+  assert(stored.size() < 300 && stored[4] == kingdom::SAVE_VERSION);
+  const Save migrated = s.store.campaign(2); assert(!memcmp(&migrated, KINGDOM_SAVE_V1, sizeof migrated));   // every field
+  s.tap(kingdom::layout::START); assert(!strcmp(s.game.screenName(), "lk_journal"));   // where the kid left it
+  // After a restart it loads from version 2, the same campaign.
+  Shell rebooted; kingdom::Game resumed; App* apps[] = {&resumed};
+  rebooted.begin(s.store, apps, 1); rebooted.update(NOW, 10, {});
+  Input pick{}; pick.x = pick.downX = 80; pick.y = pick.downY = 93; pick.tap = true;   // the third name on the picker
+  rebooted.update(NOW, 600, pick); assert(rebooted.openApp("Kingdom"));
+  assert(!memcmp(&resumed.save(), KINGDOM_SAVE_V1, sizeof(Save)));
 }
 } // namespace
 int main() {
   static_assert(sizeof(Save) <= shell::BLOB_MAX, "the shell must hold a complete campaign checkpoint");
-  urgentPageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
-  urgentThrottled(); failedSaveRetried();
-  puts("kingdom shell: immediate pages/decisions, abrupt restart, exact break resume and ordinary save cadence passed");
+  pageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
+  urgentThrottled(); failedSaveRetried(); versionOneMigrates();
+  puts("kingdom shell: pages at the cadence, immediate decisions, abrupt restart, exact break resume and ordinary save cadence passed");
 }

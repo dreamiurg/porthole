@@ -1,6 +1,8 @@
 #include "engine.h"
 #include <limits.h>
 #include <string.h>
+#include "bits.h"
+#include "crc32.h"
 
 namespace kingdom {
 namespace {
@@ -131,15 +133,6 @@ bool effect(Save& save, Effect rule) {
 bool applyAll(Save& save, Effects effects) {
   for (int i = 0; i < effects.count; ++i) if (!effect(save, effects.rules[i])) return false;
   return true;
-}
-uint32_t crc32(const void* data, size_t bytes) {
-  const uint8_t* p = static_cast<const uint8_t*>(data);
-  uint32_t crc = 0xffffffffU;
-  for (size_t i = 0; i < bytes; ++i) {
-    crc ^= p[i];
-    for (int bit = 0; bit < 8; ++bit) crc = (crc >> 1) ^ (0xedb88320U & (0U - (crc & 1U)));
-  }
-  return ~crc;
 }
 bool validCursor(const UiCursor& cursor) {
   if (cursor.mode > INVENTORY_OVERVIEW) return false;
@@ -295,7 +288,6 @@ void finishResult(Save& save) {
 }
 void newCampaign(Save& save, uint32_t seed, uint8_t profile) {
   save = {};
-  save.magic = SAVE_MAGIC; save.version = SAVE_VERSION; save.bytes = sizeof(Save);
   save.seed = seed; save.rng = mix(seed); save.profile = profile; save.day = 1;
   for (int i = 0; i < 4; ++i) { save.rng = mix(save.rng + uint32_t(i) + 1); save.variants[i] = save.rng % (i == 3 ? 3 : 2); }
   save.skills[0] = 3; save.skills[1] = 2; save.skills[2] = 2;
@@ -304,15 +296,103 @@ void newCampaign(Save& save, uint32_t seed, uint8_t profile) {
   sealSave(save);
 }
 void sealSave(Save& save) {
-  save.magic = SAVE_MAGIC; save.version = SAVE_VERSION; save.bytes = sizeof(Save);
-  save.crc = crc32(&save, offsetof(Save, crc));
+  save.magic = SAVE_MAGIC; save.version = SAVE_V1; save.bytes = sizeof(Save);
+  save.crc = os::crc32(&save, offsetof(Save, crc));
+}
+
+// ---- version 2: Save's fields, bit-packed (os/bits.h: one description both writes and reads)
+namespace {
+// seen and decisions repeat what lastVisit and the journal say (commit() sets them together): XORed with that they
+// are all zeros in a real campaign, which pack to a bit a byte, and still exact in any other. Its own inverse.
+void fold(Save& s) {
+  for (int i = 0; i < MAX_SCENES; ++i) if (s.lastVisit[i]) s.seen[i / 8] ^= uint8_t(1U << (i % 8));
+  for (int i = 0; i < s.journalCount && i < MAX_JOURNAL; ++i) {
+    const uint16_t id = s.journal[i].id;
+    if (id < MAX_DECISIONS) s.decisions[id / 8] ^= uint8_t(1U << (id % 8));
+  }
+}
+void packCursor(os::Bits& b, UiCursor& c) {
+  c.scene = b.io(c.scene, 16); c.page = b.io(c.page, 16); c.mode = b.io(c.mode, 4);
+  c.choicePage = b.io(c.choicePage, 8); c.selectedChoice = b.io(c.selectedChoice, 8); c.infoPage = b.io(c.infoPage, 8);
+}
+// A field validState bounds gets the bits its range needs (a wider value fails the pack, and reads back as invalid);
+// one it does not bound is kept whole.
+void packWorld(os::Bits& b, Save& s) {
+  s.seed = b.io(s.seed, 32); s.rng = b.io(s.rng, 32); s.day = b.io(s.day, 16);
+  s.profile = b.io(s.profile, 2); s.location = b.io(s.location, 3); s.outcome = b.io(s.outcome, 3); s.deeds = b.io(s.deeds, 4);
+  packCursor(b, s.cursor); packCursor(b, s.returnCursor);
+  const uint32_t low = b.io(uint32_t(s.facts), 32), high = b.io(uint32_t(s.facts >> 32), 32);
+  s.facts = uint64_t(high) << 32 | low;
+  for (int i = 0; i < 4; ++i) s.variants[i] = b.io(s.variants[i], 2);
+  for (int i = 0; i < SKILL_COUNT; ++i) s.skills[i] = b.io(s.skills[i], 3);
+  for (int i = 0; i < QUEST_COUNT; ++i) s.quests[i] = b.io(s.quests[i], 3);
+  for (int i = 0; i < MAX_NPCS; ++i) s.relations[i] = int8_t(int(b.io(uint32_t(s.relations[i] + 5), 4)) - 5);
+  for (int i = 0; i < MAX_PROMISES; ++i) s.promises[i] = b.io(s.promises[i], 2);
+  for (ItemSlot& slot : s.inventory) { slot.id = b.io(slot.id, 5); slot.quantity = b.io(slot.quantity, 7); }
+  for (int i = 0; i < MAX_EVENTS; ++i) s.eventDue[i] = b.sparse(s.eventDue[i], 32);
+  s.eventDone = b.io(s.eventDone, 8);
+}
+// What grows with the story. Days and journal ids take the bits the widest one needs (a chapter's fit in half of
+// their 16); only the journal's used entries are kept (the rest carry nothing: record() writes each before it counts).
+void packStory(os::Bits& b, Save& s) {
+  uint16_t days = 0, ids = 0;
+  for (int i = 0; i < MAX_SCENES; ++i) days |= s.lastVisit[i];
+  for (int i = 0; i < MAX_PROMISES; ++i) days |= s.promiseDays[i];
+  for (int i = 0; i < s.journalCount && i < MAX_JOURNAL; ++i) { days |= s.journal[i].day; ids |= s.journal[i].id & 0x7fff; }
+  const int dayBits = int(b.io(os::bitsFor(days), 5)), idBits = int(b.io(os::bitsFor(ids), 4));
+  s.journalCount = b.io(s.journalCount, 7);
+  if (dayBits > 16 || s.journalCount > MAX_JOURNAL) { b.bad = true; return; }
+  for (int i = 0; i < MAX_PROMISES; ++i) s.promiseDays[i] = b.sparse(s.promiseDays[i], dayBits);
+  for (int i = 0; i < MAX_SCENES / 8; ++i) s.seen[i] = b.sparse(s.seen[i], 8);
+  for (int i = 0; i < MAX_DECISIONS / 8; ++i) s.decisions[i] = b.sparse(s.decisions[i], 8);
+  for (int i = 0; i < MAX_SCENES; ++i) s.lastVisit[i] = b.sparse(s.lastVisit[i], dayBits);
+  for (int i = 0; i < s.journalCount; ++i) {
+    const uint32_t event = b.io(s.journal[i].id >> 15, 1);
+    s.journal[i].id = uint16_t(event << 15 | b.io(s.journal[i].id & 0x7fff, idBits));
+    s.journal[i].day = b.io(s.journal[i].day, dayBits);
+  }
+}
+bool unpackSave(Save& out, const uint8_t* data, size_t bytes) {
+  uint32_t crc;
+  memcpy(&crc, data + bytes - sizeof crc, sizeof crc);
+  os::Bits b = os::Bits::reader(data, bytes - sizeof crc);
+  if (b.io(0, 32) != SAVE_MAGIC || b.io(0, 16) != SAVE_VERSION || b.io(0, 16) != bytes) return false;
+  if (crc != os::crc32(data, bytes - sizeof crc)) return false;
+  out = {};
+  packWorld(b, out); packStory(b, out);
+  if (!b.ok() || b.bytes() != bytes - sizeof crc) return false;
+  fold(out); sealSave(out);
+  return true;
+}
+}  // namespace
+
+size_t packSave(const Save& save, uint8_t* out, size_t cap) {
+  if (cap < 12) return 0;
+  memset(out, 0, cap);
+  Save s = save;
+  fold(s);
+  os::Bits b = os::Bits::writer(out, cap - 4);
+  b.io(SAVE_MAGIC, 32); b.io(SAVE_VERSION, 16); b.io(0, 16);
+  packWorld(b, s); packStory(b, s);
+  if (!b.ok()) return 0;
+  const uint16_t bytes = uint16_t(b.bytes() + 4);
+  memcpy(out + 6, &bytes, sizeof bytes);
+  const uint32_t crc = os::crc32(out, bytes - sizeof crc);
+  memcpy(out + bytes - sizeof crc, &crc, sizeof crc);
+  return bytes;
 }
 bool loadSave(Save& out, const void* data, size_t bytes, uint8_t profile) {
-  if (!data || bytes != sizeof(Save)) return false;
+  if (!data || bytes < 12) return false;
   Save loaded;
-  memcpy(&loaded, data, sizeof(loaded));
-  if (loaded.magic != SAVE_MAGIC || loaded.version != SAVE_VERSION || loaded.bytes != sizeof(Save)) return false;
-  if (loaded.crc != crc32(&loaded, offsetof(Save, crc)) || !validState(loaded, profile)) return false;
+  uint16_t version;
+  memcpy(&version, static_cast<const uint8_t*>(data) + offsetof(Save, version), sizeof version);
+  if (version == SAVE_V1) {   // the struct itself
+    if (bytes != sizeof(Save)) return false;
+    memcpy(&loaded, data, sizeof(loaded));
+    if (loaded.magic != SAVE_MAGIC || loaded.bytes != sizeof(Save)) return false;
+    if (loaded.crc != os::crc32(&loaded, offsetof(Save, crc))) return false;
+  } else if (!unpackSave(loaded, static_cast<const uint8_t*>(data), bytes)) return false;
+  if (!validState(loaded, profile)) return false;
   out = loaded;
   return true;
 }

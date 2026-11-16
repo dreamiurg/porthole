@@ -12,7 +12,10 @@ enum Mode : uint8_t {
 enum QuestState : uint8_t { UNDISCOVERED, AVAILABLE, ACTIVE, BLOCKED, DEFERRED, RESOLVED };
 enum PromiseState : uint8_t { NO_PROMISE, OPEN, KEPT, BROKEN };
 constexpr uint32_t SAVE_MAGIC = 0x4c4b3031;
-constexpr uint16_t SAVE_VERSION = 1;
+// What is stored. 1: the Save struct below, byte for byte (935 bytes, mostly zeros). 2: the same fields bit-packed
+// (engine.cpp, packSave): about 110 bytes for a new campaign, under 300 for a finished chapter. Four kids' saves of every
+// game share one 20 KB partition; version 1 alone took a third of a kid's share of it.
+constexpr uint16_t SAVE_V1 = 1, SAVE_VERSION = 2;
 constexpr int MAX_SCENES = 128, MAX_DECISIONS = 512, MAX_FACTS = 64;
 constexpr int MAX_ITEMS = 16, MAX_EVENTS = 8, MAX_JOURNAL = 96;
 constexpr int SKILL_COUNT = 3, QUEST_COUNT = 16, MAX_PROMISES = 16, MAX_NPCS = 16;
@@ -25,7 +28,8 @@ struct UiCursor {
 struct ItemSlot { uint8_t id, quantity; };  // id zero means empty; metadata ids start at one.
 struct JournalEntry { uint16_t id, day; };  // high bit identifies an event; others are decisions.
 struct Save {
-  // Version 1 is immutable. Future versions append fields and migrate this full prefix.
+  // The campaign as the game holds it, and version 1 exactly as stored: immutable. A future field is appended before
+  // crc in a new struct version and at the end of the packed layout; a version 2 blob then reads it as zero.
   uint32_t magic;
   uint16_t version, bytes;
   uint32_t seed, rng;
@@ -48,7 +52,10 @@ struct Save {
 };
 #pragma pack(pop)
 static_assert(sizeof(Save) == 935, "version 1 is immutable: a new field needs a new version");
-void sealSave(Save& save);
-bool loadSave(Save& out, const void* data, size_t bytes, uint8_t profile);
+void sealSave(Save& save);   // the struct's own header and crc: a version 1 blob
+// Version 2 of `save` into out (cap bytes): its length, or 0 when it does not fit or a field is out of the range
+// validState allows (never, for a state that loaded or that the engine made). No stored version is larger than Save.
+size_t packSave(const Save& save, uint8_t* out, size_t cap);
+bool loadSave(Save& out, const void* data, size_t bytes, uint8_t profile);   // either version; every field as it was saved
 constexpr size_t saveSize() { return sizeof(Save); }
 }  // namespace kingdom

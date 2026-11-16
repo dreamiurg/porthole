@@ -387,17 +387,24 @@ void overviewSaveValidation() {
   assert(!loadSave(restored, &invalid, sizeof invalid, 0));
 }
 void saveCadence() {
-  Player p; p.enter(); assert(p.game.saveUrgent()); const void* data = nullptr; size_t len = 0;
-  assert(!p.game.takeSave(&data, &len, false)); assert(p.game.saveUrgent());
-  assert(p.game.takeSave(&data, &len, true)); assert(len == sizeof(Save) && !p.game.saveUrgent());
-  assert(!p.game.takeSave(&data, &len, true)); p.game.leave(); assert(p.game.saveUrgent());
+  Player p; p.enter(); assert(!p.game.saveUrgent()); const void* data = nullptr; size_t len = 0;
+  assert(!p.game.takeSave(&data, &len, false));
+  assert(p.game.takeSave(&data, &len, true)); assert(len < 120);   // version 2: a new campaign is a tenth of the struct
+  assert(!p.game.takeSave(&data, &len, true)); p.game.leave(); assert(p.game.takeSave(&data, &len, true));
+  // A page turned is saved at the shell's cadence; only a decision asks for a write of its own, until it is taken.
+  p.tap(layout::START); p.tap(layout::NEXT); assert(p.game.save().cursor.page == 1 && !p.game.saveUrgent());
+  assert(p.game.takeSave(&data, &len, true));
+  p.toChoice(); assert(!p.game.saveUrgent()); p.tap(CARDS[0]);
+  for (int n = 0; p.game.save().cursor.mode == CONFIRM && n < 64; n++) p.tap(layout::NEXT);
+  assert(p.game.save().cursor.mode == RESULT && p.game.saveUrgent() && !p.game.takeSave(&data, &len, false));
+  assert(p.game.saveUrgent() && p.game.takeSave(&data, &len, true) && !p.game.saveUrgent());
   // A stored save this build cannot read is not replaced by a blank campaign just because the game was opened.
   Save unreadable = fixture(READ); sealSave(unreadable); unreadable.seed ^= 1;
   Player q; q.slots[0] = {&unreadable, sizeof unreadable}; q.enter();
   assert(!q.game.saveUrgent() && !q.game.takeSave(&data, &len, true));
   q.game.leave(); assert(!q.game.saveUrgent() && !q.game.takeSave(&data, &len, true));
   q.enter(); q.tap(layout::START);  // starting over is the kid's own act, and from then on the game saves as usual
-  assert(q.game.saveUrgent() && q.game.takeSave(&data, &len, true) && len == sizeof(Save));
+  assert(q.game.takeSave(&data, &len, true) && len < 120);
 }
 void savingDoesNotRepaint() {
   Player p; p.start(); p.tap(layout::NEXT);
