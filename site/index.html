@@ -85,7 +85,9 @@
     .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
       background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
     #screen { display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; touch-action: none; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
-    #screen[hidden], .live .status[hidden], .pcontrols[hidden], .player [hidden] { display: none; }
+    #screen[hidden], .live .status[hidden], .player [hidden] { display: none; }
+    /* Before Play the controls already take their space, just unseen, so starting moves nothing on the page. */
+    .pcontrols.idle, .pcontrols .gone { visibility: hidden; }
     .live .status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #d8cfe0; font-size: 18px; pointer-events: none; }
     .pcontrols { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 440px; }
     .pcontrols .col { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 280px; }
@@ -94,7 +96,7 @@
     .pcontrols button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
     .pcontrols button[aria-pressed="true"] { background: var(--soft); color: var(--ink); }
     #pad { width: 120px; height: 120px; cursor: grab; touch-action: none; }
-    #motion-note { flex-basis: 100%; margin: 0; text-align: center; font-size: 14px; color: var(--muted); }
+    #motion-note { flex-basis: 100%; min-height: 2.8em; margin: 0; text-align: center; font-size: 14px; color: var(--muted); }
     /* Full screen: the player covers the page; on a phone that is how it starts. */
     .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; overflow: auto; }
     .player.full .live { width: min(94vw, calc(100vh - 210px)); width: min(94vw, calc(100dvh - 210px)); }
@@ -280,11 +282,11 @@
         <canvas id="screen" width="480" height="480" aria-label="Porthole screen" hidden></canvas>
         <div class="status" id="p-status" hidden></div>
       </div>
-      <div class="pcontrols" id="p-controls" hidden>
+      <div class="pcontrols idle" id="p-controls">
         <canvas id="pad" width="180" height="180" aria-label="Tilt pad" title="Where gravity points: drag the ball. The middle is lying flat."></canvas>
         <div class="col">
           <button type="button" id="motion" class="primary" hidden aria-pressed="false"></button>
-          <button type="button" id="center" hidden><span lang="en">Center</span><span lang="uk">Центр</span></button>
+          <button type="button" id="center" class="gone"><span lang="en">Center</span><span lang="uk">Центр</span></button>
           <button type="button" id="shake"><span lang="en">Shake</span><span lang="uk">Струсити</span></button>
           <button type="button" id="full"><span lang="en">Full screen</span><span lang="uk">На весь екран</span></button>
           <button type="button" id="reset"><span lang="en">Start over</span><span lang="uk">Спочатку</span></button>
@@ -607,7 +609,7 @@
     if (started) return;
     started = true;
     $("play-here").remove();
-    canvas.hidden = false; controls.hidden = false;
+    canvas.hidden = false; controls.classList.remove("idle");
     statusEl.hidden = false; say(statusEl, t("Loading…", "Завантаження…"));
     if (TOUCH) { setFull(true); if (gesture && "DeviceMotionEvent" in window) motionOn(); }
     const ctx = canvas.getContext("2d"), image = ctx.createImageData(W, H);
@@ -646,7 +648,10 @@
 
   // Full screen: the player covers the page (the browser's own full screen too, where it has one; an iPhone does not).
   let apiFull = false;
+  const standIn = document.createElement("div");
   function setFull(on) {
+    if (on === player.classList.contains("full")) return;
+    if (on) { standIn.style.height = `${player.offsetHeight}px`; player.before(standIn); } else standIn.remove();
     player.classList.toggle("full", on);
     document.documentElement.classList.toggle("locked", on);
     $("p-close").hidden = !on;
@@ -769,8 +774,8 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
     useMotion = on;
     motion.setAttribute("aria-pressed", String(on));
     say(motion, on ? t("Phone tilt: on", "Нахил телефоном: увімк.") : t("Tilt with this phone", "Нахиляти телефоном"));
-    centerBtn.hidden = !on;
-    pad.hidden = on;
+    centerBtn.classList.toggle("gone", !on);
+    pad.classList.toggle("gone", on);
     say(note, msg || (on ? t("Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.",
       "Тримайте як кермо або покладіть рівно. Центр робить серединою те, як ви тримаєте зараз.") : null));
     if (on) {
