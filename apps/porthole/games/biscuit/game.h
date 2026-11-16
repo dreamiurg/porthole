@@ -10,7 +10,6 @@
 #include "layout.h"
 #include "packed_image.h"
 #include "pet.h"
-#include "puzzles.h"
 #include "ui.h"
 
 namespace biscuit {
@@ -32,14 +31,13 @@ class Game : public App {
   const char* screenName() const override;
   void debugPrint() override;
   // test states: "hungry" "unlock" "young" "grown" "tricks" "practiced" "read" (every story and discovery done)
-  // "books" (every story open) "rich" (the most stars a kid can hold)
+  // "books" (every story open)
   void debugCmd(const char* cmd) override;
 
   // shared by the screens (screens_*.cpp)
   enum Screen : uint8_t {
     SC_SETUP_PET, SC_HOME, SC_WORLD, SC_TRICKS, SC_TRAINING, SC_PROFILE, SC_RENAME_PET, SC_LIBRARY, SC_STORY, SC_CHOICE,
-    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_PUZZLES,
-    SC_PUZZLE, SC_DOGHOUSE, SC_SHOP, SC_ITEM, SC_READ, SC_READ_ASK, SC_COUNT
+    SC_ENDING, SC_DISCOVERIES, SC_TOPICS, SC_DISCOVERY, SC_SOURCE, SC_TODAY, SC_WORD, SC_STICKERS, SC_COUNT
   };
 
  private:
@@ -47,7 +45,6 @@ class Game : public App {
   Profile who_{};                             // the kid playing: {name} in every line
   bool dirty_ = false, wantsHome_ = false;
   bool daylight_ = false;                     // AppEnter::daylight: day scenes whatever the clock says
-  uint32_t* wallet_ = nullptr;                // AppEnter::stars: the kid's balance (os/stars.h), the shell's to keep
   uint32_t now_ = 0, ms_ = 0, lastTickSec_ = 0, lastCheckpointSec_ = 0;
   Input in_{};
   ui::FreshGate gate_;                        // every screen change ignores touches for a moment (os/ui.h)
@@ -73,27 +70,10 @@ class Game : public App {
   int story_ = 0, choice_ = 0;
   enum FactList : uint8_t { TODAYS_THREE, TOPIC, NOTEBOOK };
   FactList facts_ = TODAYS_THREE, topicsFrom_ = TODAYS_THREE; int topic_ = 0, fact_ = 0;   // topicsFrom_: Topics' Back
-  // Puzzles: the strand picked and the round's level, the question shown, how far the round is (puzzles::ROUND =
-  // done), the answer tapped (-1 = none yet), and the questions this round already asked (Puzzle::key bits). One
-  // question of the round, at easyAt_, is from the level below; levelUp_ says the round's end moved the level up.
-  puzzles::Strand strand_ = puzzles::NUMBERS; uint8_t level_ = 0; int easyAt_ = 0; bool levelUp_ = false;
-  int reviewAt_ = -1; puzzles::Item review_{};   // the round's one missed item due again (review.h), at reviewAt_
-  // The question shown is kept as its item and the seed that orders its answers, and rebuilt where it is needed: a
-  // whole Puzzle is 140 bytes of static RAM the firmware doesn't have.
-  puzzles::Item question_{}; uint32_t questionSeed_ = 1;
-  int asked_ = 0, right_ = 0, answered_ = -1; uint32_t seen_ = 0, rng_ = 1;
-  int taught_ = -1;                           // the trick this round's last lesson was of (-1 = none yet)
-  int roundStars_ = 0; uint32_t roundEndMs_ = 0;   // stars earned before this round; when its last Next was tapped
-  int item_ = 0;                              // Doghouse: the thing the shop opened
-  // Little reads: the passage (READS index), the level before the round, the passages had since Biscuit opened (READS
-  // bits). A round is never open beside a puzzle round, so it keeps its count, answer, stars and end in the puzzles'
-  // asked_, right_, answered_, roundStars_ and roundEndMs_ (static RAM is at its limit).
-  int little_ = 0, readLevelWas_ = 0; uint64_t readsSeen_ = 0;
 
   void go(Screen s);
   void fresh();                               // the layout under the finger changed
   void markDirty() { dirty_ = true; }
-  int starCount() const { return (int)::stars::balance(wallet_); }   // what every screen's header shows
   void say(Say line, uint8_t activity);   // personalized, with what the pup does meanwhile
   void sayTrick(int id);                  // the pup does a trick at home and names it, with its lessons so far
   void animate(uint8_t activity);             // SCENE_IDLE: nothing
@@ -134,17 +114,5 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void openLibrary(Screen back); void openTricks(Screen back);
   void stickerNews();
-  void updatePuzzles(); void drawPuzzles();
-  void startPuzzles(puzzles::Strand strand); uint8_t puzzleLevel(puzzles::Strand strand) const;
-  void nextPuzzle(); void endRound();
-  puzzles::Puzzle puzzle() const { uint32_t s = questionSeed_; return puzzles::build(question_, s); }
-  void updatePuzzle(); void drawPuzzle(); void summary(char* line, size_t cap) const;
-  void feedback(const puzzles::Puzzle& p, bool right, char* line, size_t cap) const;
-  void updateDoghouse(); void drawDoghouse();
-  void updateShop(); void drawShop();
-  void updateItem(); void drawItem();
-  void startReads(); void nextRead();
-  void updateRead(); void drawRead();          // the passage, in the story reader
-  void updateReadAsk(); void drawReadAsk();    // its question, what the answer was, and the round's end
 };
 }  // namespace biscuit

@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "content.h"
+#include "content_reads.h"
 #include "sprites.h"
+#include "stars.h"
 #include "ticks.h"
 
 using namespace gfx;
@@ -18,8 +20,9 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
+  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; wallet_ = e.stars;
   pet::dropCarry();
+  rng_ = 0; readsSeen_ = 0;   // the puzzles' dice start from the dog's seed; a visit's reads start over
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
   for (int i = 0; i < nKids_; i++) {
     kids_[i] = e.all[i];
@@ -130,6 +133,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "books")) { save_.booksUnlocked = NUM_BOOKS; save_.booksDoneMask = 0x3F; save_.booksRead = 6; }
   else if (!strcmp(cmd, "tricks")) { for (int i = 0; i < 4; i++) save_.trickProgress[i] = 3; }
   else if (!strcmp(cmd, "hats")) save_.hatsMask = 0xFE;
+  else if (!strcmp(cmd, "rich")) stars::award(wallet_, 50);
   else if (!strcmp(cmd, "sleepy")) save_.energy = 15;
   else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
   else debugAge(cmd);
@@ -153,7 +157,8 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
 const char* Game::screenName() const {
   static const char* const N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "pets_library", "read",
                             "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "hats", "street", "theme",
-                            "confirm_farm", "farm", "shelter", "wall"};
+                            "confirm_farm", "farm", "shelter", "wall", "puzzles", "puzzle", "little", "little_ask"};
+  static_assert(sizeof N / sizeof *N == SC_COUNT, "one name per screen");
   return N[screen_];
 }
 void Game::debugPrint() {
@@ -166,6 +171,12 @@ void Game::debugPrint() {
          save_.trickProgress[4], save_.trickProgress[5], save_.trickProgress[6], save_.trickProgress[7], save_.hat, (unsigned)save_.stickersMask);
   if (screen_ == SC_WORDS && !wordsDone_) printf("word=%s cols=%d typed=%d tiles=%.*s\n", WORDS[wordIdx_[wordRound_]].word, wordCols_, wordTyped_, wordCols_ * 3, tiles_);
   if (screen_ == SC_LIBRARY || screen_ == SC_READ) { const Book& bk = curBook(); int np = 0; while (bk.pages[np]) np++; printf("book=%d title=\"%s\" pages=%d page=%d correct=%d\n", bookList_[bookSel_], bk.title, np, page_, bk.correct); }
+  printf("stars=%lu puzzles_right=%u levels=%d%d%d reviews=%d reads_right=%u read_level=%u read_streak=%u hats=%u\n",
+         (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
+         save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask);
+  if (screen_ == SC_PUZZLE) printf("strand=%d level=%d asked=%d right=%d answered=%d answer=%d reviewing=%d\n", strand_, level_, asked_, right_, answered_, puzzle().right, asked_ == reviewAt_);
+  if (screen_ == SC_LITTLE || screen_ == SC_LITTLE_ASK)
+    printf("little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d read_ay=%d page=%d pages=%d\n", little_, asked_, right_, answered_, learn::READS[little_].right, readAnswerTop(), page_, readPages());
   if (screen_ == SC_FETCH) printf("fetch score=%d left=%d\n", fetchScore_, fetchDone_ ? 0 : (int)((fetchEndMs_ - ms_) / 1000));
   if (screen_ == SC_BATH) printf("bath spots=%d\n", spotsLeft_);
   if (screen_ == SC_WALL) printf("oldest=%.11s newest=%.11s\n", save_.wallNames[0], save_.wallNames[save_.wallCount - 1]);
@@ -273,8 +284,9 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updatePlayMenu, &Game::updateFetch, &Game::updateWords, &Game::updateLibrary, &Game::updateRead, &Game::updateTricks,
     &Game::updateTrain, &Game::updateBath, &Game::updateStats, &Game::updateStickers, &Game::updateGift, &Game::updateCelebrate,
     &Game::updateHats, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
-    &Game::updateFarm, &Game::updateShelter, &Game::updateWall};
-  static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_WALL + 1, "one update per screen, in Screen order");
+    &Game::updateFarm, &Game::updateShelter, &Game::updateWall,
+    &Game::updatePuzzles, &Game::updatePuzzle, &Game::updateLittle, &Game::updateLittleAsk};
+  static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   if (in_.pressed) pressMs_ = ms_;
@@ -306,8 +318,8 @@ void Game::render() {
     &Game::drawPlayMenu, &Game::drawFetch, &Game::drawWords, &Game::drawLibrary, &Game::drawRead, &Game::drawTricks,
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
     &Game::drawHats, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
-    &Game::drawShelter, &Game::drawWall};
-  static_assert(sizeof DRAW / sizeof DRAW[0] == SC_WALL + 1, "one draw per screen, in Screen order");
+    &Game::drawShelter, &Game::drawWall, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawLittle, &Game::drawLittleAsk};
+  static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   drawParticles();
@@ -725,18 +737,22 @@ void Game::drawFeed() {
 }
 
 // ---------------------------------------------------------------- play menu
+// Fetch!, Word Fetch, Puzzles and Little reads (learn.cpp), one row each.
+static ui::Box playBox(int i) { return {34, 40 + i * 24, 92, 22}; }
 void Game::updatePlayMenu() {
   if (backButton()) go(SC_HOME);
   if (save_.asleep) { if (in_.tap) toast("Shh... sleeping"); return; }
-  if (in_.tapIn(30, 40, 100, 40)) { if (save_.energy < 20) { toast("Too sleepy to play"); } else startFetch(); }
-  if (in_.tapIn(30, 88, 100, 40)) startWords();
+  if (tapBox(in_, playBox(0))) { if (save_.energy < 20) { toast("Too sleepy to play"); } else startFetch(); }
+  if (tapBox(in_, playBox(1))) startWords();
+  if (tapBox(in_, playBox(2))) go(SC_PUZZLES);
+  if (tapBox(in_, playBox(3))) startReads();
 }
 void Game::drawPlayMenu() {
   drawRoom();
-  ui::panel({24, 34, 112, 100}, C_CREAM, C_DKBROWN);
-  bool p1 = ui::pressing(in_, {30, 40, 100, 40}), p2 = ui::pressing(in_, {30, 88, 100, 40});
-  ui::drawButton({{34, 42, 92, 36}, "Fetch!", nullptr, C_GREEN}, p1); blitScaled(SPR_BALL, 40, 52, 2); blitScaled(SPR_BONE, 96, 55, 2);
-  ui::drawButton({{34, 90, 92, 36}, "Word Fetch", nullptr, C_BLUE}, p2); blitScaled(SPR_BOOK, 40, 96, 1); text(106, 96, "A", C_DKBROWN, 2);
+  ui::panel({26, 34, 108, 106}, C_CREAM, C_DKBROWN);
+  static const char* const LABELS[4] = {"Fetch!", "Word Fetch", "Puzzles", "Little reads"};
+  static const uint8_t COLS[4] = {C_GREEN, C_BLUE, C_ORANGE, C_PLUM};
+  for (int i = 0; i < 4; i++) ui::button(in_, {playBox(i), LABELS[i], nullptr, COLS[i]});
   drawBackButton();
 }
 
@@ -1245,10 +1261,17 @@ void Game::drawStickers() {
   char b[24]; snprintf(b, sizeof b, "%d / 16", n); textCentered(80, 138, b, C_DKBROWN);
   drawBackButton();
 }
+// Hats: the ones found (gifts) or bought are worn with a tap; the rest are for sale for stars (puzzles and little
+// reads earn them, learn.cpp), at HAT_PRICES.
+static const ui::Box HAT_BTN = {40, 122, 80, 24};
 void Game::updateHats() {
   if (backButton()) { go(SC_STATS); return; }
-  if (const int d = arrowTap(in_, 80)) do { hatSel_ = (hatSel_ + 8 + d) % 8; } while (hatSel_ && !(save_.hatsMask & (1u << hatSel_)));
-  if (in_.tapIn(50, 122, 60, 24)) { save_.hat = (uint8_t)hatSel_; markDirty(); toast("Looking good!"); }   // the button drawn below
+  if (const int d = arrowTap(in_, 80)) hatSel_ = (hatSel_ + NUM_HATS + d) % NUM_HATS;
+  if (!tapBox(in_, HAT_BTN)) return;
+  const bool owned = !hatSel_ || (save_.hatsMask & (1u << hatSel_));
+  if (!owned && !stars::spend(wallet_, HAT_PRICES[hatSel_])) { toast("Puzzles earn stars"); return; }
+  if (!owned) { pet::gotHat(save_, hatSel_); sound(SND_FANFARE); spawn(80, 70, 4, 10); }
+  save_.hat = (uint8_t)hatSel_; markDirty(); toast(owned ? "Looking good!" : "A new hat!");
 }
 void Game::drawHats() {
   clear(C_WALL);
@@ -1257,9 +1280,14 @@ void Game::drawHats() {
   drawDog(80 - dogFrame(P_SIT).w, 112, P_SIT, false, 2);
   save_.hat = keep;
   drawArrows(in_, 80);
-  ui::button(in_, {{50, 122, 60, 24}, save_.hat == hatSel_ ? "Wearing" : "Wear it", nullptr, save_.hat == hatSel_ ? C_DKGRAY : C_GREEN});
-  int owned = 0; for (int i = 1; i < 8; i++) if (save_.hatsMask & (1u << i)) owned++;
-  char b[24]; snprintf(b, sizeof b, "%d hat%s found", owned, owned == 1 ? "" : "s"); textCentered(80, 40, b, C_DKGRAY);
+  const bool owned = !hatSel_ || (save_.hatsMask & (1u << hatSel_));
+  char b[24];
+  if (owned) ui::button(in_, {HAT_BTN, save_.hat == hatSel_ ? "Wearing" : "Wear it", nullptr, save_.hat == hatSel_ ? C_DKGRAY : C_GREEN});
+  else {
+    snprintf(b, sizeof b, "Buy: %d stars", HAT_PRICES[hatSel_]);
+    ui::button(in_, {HAT_BTN, b, nullptr, stars::balance(wallet_) >= HAT_PRICES[hatSel_] ? (uint8_t)C_ORANGE : (uint8_t)C_LTGRAY});
+  }
+  drawStarCount(40);
   drawBackButton();
 }
 // The farm asks No / Yes. No! acts on release, however long it was held. Yes sends the dog away, so it takes a

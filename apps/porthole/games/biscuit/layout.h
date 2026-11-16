@@ -137,14 +137,6 @@ constexpr Box WORLD_TRICKS = {22, 48, 57, 32}, WORLD_NAP = {81, 48, 57, 32}, WOR
               WORLD_TODAY = {81, 83, 57, 32};
 inline constexpr Label TILE_TITLE = {{&FONT20, 118, 44, 0, Align::LEFT}, 42, 10, false};   // inside the tile
 inline constexpr Label TILE_DETAIL = {{&FONT16, 150, 34, 0, Align::LEFT}, 10, 58, false};
-constexpr Box WORLD_PUZZLES = PREV, WORLD_HOUSE = NEXT;   // along the bottom chord
-
-// ---- Doghouse: the room on the whole glass (World's Back, the balance where World has the names, Shop at the
-// bottom), the shop's rows, and a thing's page: its picture at 3x, its price, Buy
-inline constexpr Label HOUSE_STARS = WORLD_NAMES;
-inline constexpr Label ITEM_PRICE = {{&FONT24, 352, 66, 4, Align::CENTER}, 64, 290, false};   // two lines
-// physical: the picture is centered on (240, ITEM_PICTURE_CY), scaled up to fill at most W x H
-constexpr int ITEM_PICTURE_CY = 216, ITEM_PICTURE_W = 300, ITEM_PICTURE_H = 120;
 
 
 // ---- Training: watch the cues, then tap them on the pad
@@ -152,25 +144,6 @@ inline constexpr Label TRAIN_HINT = {{&FONT24, 352, 60, 4, Align::CENTER}, 64, 1
 inline constexpr Label TRAIN_CUES = {{&FONT28, 348, 100, 4, Align::CENTER}, 66, 250, false};
 constexpr Box CUE_KEY[5] = {   // indexed by Cue: Left, Up, Right, Down, Paw
   {31, 73, 30, 22}, {65, 49, 30, 22}, {99, 73, 30, 22}, {65, 97, 30, 22}, {65, 73, 30, 22}};
-
-// ---- Puzzles: World's Puzzles button, the three strands one under another, then a question and its three answers
-constexpr Box STRAND_BUTTON[3] = {{37, 49, 86, 22}, {37, 73, 86, 22}, {37, 97, 86, 22}};
-inline constexpr Label STRAND_LABEL = buttonLabel(STRAND_BUTTON[0], &FONT20);
-inline constexpr Label CLUE = {{&FONT20, 352, 56, 4, Align::CENTER}, 64, 150, false};   // a word's clue, a times story
-inline constexpr Label ASK = {{&FONT28, 340, 34, 4, Align::CENTER}, 70, 212, false};     // "4 x 6 = ?"
-constexpr Box ANSWER[3] = {{28, 86, 33, 22}, {63, 86, 34, 22}, {99, 86, 33, 22}};
-// After an answer, where the answers were: the solved question and what the pup does, above Next.
-inline constexpr Label FEEDBACK = {{&FONT24, 352, 100, 4, Align::CENTER}, 64, 256, false};
-// A round's end: how it went (and what the pup learned), above More puzzles, or More and Show me.
-inline constexpr Label PUZZLE_DONE = {{&FONT24, 352, 200, 4, Align::CENTER}, 64, 156, false};
-constexpr Box PUZZLE_MORE = PREV, PUZZLE_SHOW = NEXT;
-
-// ---- Little reads: the passage in the story reader (PAGE), then the question over three answer rows, low like the
-// choice rows so the question has two lines; after an answer, what it was (and the how) above Next.
-inline constexpr Label READ_QUESTION = {{&FONT24, 340, 66, 4, Align::CENTER}, 70, 112, false};
-constexpr Box READ_ANSWER[3] = {{28, 62, 104, 22}, CHOICE[0], CHOICE[1]};
-inline constexpr Label READ_ANSWER_LABEL = buttonLabel(READ_ANSWER[2], &FONT20);
-inline constexpr Label READ_AFTER = PUZZLE_DONE;
 
 // ---- Scrapbook (the profile page): Our stickers and Rename pup where Previous and Next are
 inline constexpr Label BOOK_BADGE = {{&FONT24, 330, 30, 4, Align::CENTER}, 75, 150, false};

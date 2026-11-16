@@ -1,12 +1,12 @@
-// Biscuit's puzzles content: spelling words (one letter goes missing) with a clue each, the things in the times
+// Pets Club's puzzles content: spelling words (one letter goes missing) with a clue each, the things in the times
 // stories, the Puzzles buttons and what the pup does after an answer. Shown as written, except CHEERS and NUDGES, which
 // take {pet}. Three-letter and four-letter short words are for early readers (start of first grade), long ones for
-// older kids (up to third grade); words are 2 to 11 lowercase letters (check_content.py). The review queue keeps a
+// older kids (up to third grade); words are 2 to 11 lowercase letters (tools/check_learn.py). The review queue keeps a
 // missed word by its place in its list and a story by its place in GROUP_THINGS, so append to the lists: a word moved
 // or removed only changes which one comes back (puzzles::playable drops a place past the end).
 #pragma once
 
-namespace biscuit {
+namespace learn {
 struct SpellWord { const char* word; const char* clue; };
 
 inline constexpr SpellWord SHORT_WORDS[] = {
@@ -49,7 +49,7 @@ inline constexpr SpellWord LONG_WORDS[] = {
   {"puppy", "A baby dog."},
   {"friend", "Someone you love to play with."},
   {"school", "Where you learn every day."},
-  {"garden", "Flowers and carrots grow there."},
+  {"garden", "Flowers and beans grow there."},
   {"rabbit", "A hopper with long ears."},
   {"pocket", "A little bag sewn in your coat."},
   {"basket", "You carry apples in it."},
@@ -137,6 +137,6 @@ inline constexpr const char* CHEERS[5] = {"{pet} wags his tail.", "{pet} does a 
                                           "{pet} gives you a high paw.", "{pet} barks, just once.",
                                           "{pet} leans on your knee."};
 inline constexpr const char* STAR_CHEER = "+1 star for you and {pet}!";   // instead of a cheer, when a star comes
-inline constexpr const char* NUDGES[5] = {"{pet} nudges your hand.", "{pet} thinks that one was tricky.",
+inline constexpr const char* NUDGES[5] = {"{pet} nudges your hand.", "{pet} found it tricky too.",
                                           "{pet} tilts his head.", "{pet} wags anyway.", "{pet} sniffs the next one."};
-}  // namespace biscuit
+}  // namespace learn

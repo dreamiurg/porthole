@@ -10,24 +10,34 @@ bool valid(const Save& s) {
   return s.magic == SAVE_MAGIC && s.version == SAVE_VERSION && s.size == sizeof(Save) &&
          s.crc == crc32(&s, sizeof(Save) - sizeof(uint32_t));
 }
-bool loadBlob(const void* d, size_t n, Save& out) {
-  if (n == sizeof(Save)) { memcpy(&out, d, n); if (!valid(out)) return false; }
-  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE) {
-    const uint8_t* p = (const uint8_t*)d;
-    uint32_t crc; memcpy(&crc, p + n - 4, 4);
-    uint16_t ver; memcpy(&ver, p + 4, 2);
-    if (ver != (n == SAVE_V1_SIZE ? 1 : 2) || crc != crc32(p, n - 4)) return false;
-    memset(&out, 0, sizeof out);
-    memcpy(&out, p, n - 4);   // every old field keeps its offset; new fields stay zero (age unknown, Golden pup, empty wall)
-    out.hasDog = 1;           // every save before the farm has its dog
-  } else return false;
-  // Made safe once, here, so every reader can index the art and the wall with them: a bad byte is the Golden pup.
+// An older layout: its own version and CRC must hold; every old field keeps its offset and new fields stay zero (age
+// unknown, Golden pup, empty wall, no puzzles or reads played yet).
+static bool loadOld(const uint8_t* p, size_t n, Save& out) {
+  uint32_t crc; memcpy(&crc, p + n - 4, 4);
+  uint16_t ver; memcpy(&ver, p + 4, 2);
+  if (ver != (n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : 3) || crc != crc32(p, n - 4)) return false;
+  memset(&out, 0, sizeof out);
+  memcpy(&out, p, n - 4);
+  if (n != SAVE_V3_SIZE) out.hasDog = 1;   // every save before the farm has its dog
+  return true;
+}
+// Made safe once, here, so every reader can index the art and the wall with them: a bad byte is the Golden pup.
+static void makeSafe(Save& out) {
   if (out.breed >= NUM_BREEDS) out.breed = 0;
   if (out.hat >= NUM_HATS) out.hat = 0;
   if (out.stage > STAGE_GROWN) out.stage = STAGE_GROWN;
   for (uint8_t& b : out.wallBreeds) if (b >= NUM_BREEDS) b = 0;
   if (out.wallCount > WALL_SLOTS) out.wallCount = WALL_SLOTS;
   out.hasDog = out.hasDog != 0;
+  if (out.readLevel > READ_LEVELS) out.readLevel = READ_LEVELS;
+  if (out.readStreak >= READ_STREAK_UP) out.readStreak = 0;
+  if (out.puzzleReviewCount > PUZZLE_REVIEWS) out.puzzleReviewCount = PUZZLE_REVIEWS;
+}
+bool loadBlob(const void* d, size_t n, Save& out) {
+  if (n == sizeof(Save)) { memcpy(&out, d, n); if (!valid(out)) return false; }
+  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE || n == SAVE_V3_SIZE) { if (!loadOld((const uint8_t*)d, n, out)) return false; }
+  else return false;
+  makeSafe(out);
   seal(out);
   return true;
 }
@@ -280,6 +290,30 @@ void trickLessonPassed(Save& s, uint32_t now, int i) {
 }
 int learnedTrickCount(const Save& s) { int n = 0; for (int i = 0; i < NUM_TRICKS; i++) if (trickLearned(s, i)) n++; return n; }
 
+bool puzzleAnswered(Save& s, uint32_t now, bool right) {
+  if (!right) return false;
+  addBond(s, now, LEARN_BOND);
+  return s.puzzlesRight < UINT16_MAX && ++s.puzzlesRight % PUZZLES_PER_STAR == 0;
+}
+uint8_t ageReadLevel(int age) { return age <= 6 ? 1 : age - 5 > READ_LEVELS ? READ_LEVELS : (uint8_t)(age - 5); }
+bool readAnswered(Save& s, uint32_t now, bool right) {
+  s.readLevel = readLevel(s);
+  if (!right) {
+    s.readStreak = 0;
+    if (s.readLevel > 1 && s.readLevel >= ageReadLevel(s.kidAge)) s.readLevel--;   // never more than one below the age's start
+    return false;
+  }
+  if (++s.readStreak >= READ_STREAK_UP) { s.readStreak = 0; if (s.readLevel < READ_LEVELS) s.readLevel++; }
+  addBond(s, now, LEARN_BOND);
+  return s.readsRight < UINT16_MAX && ++s.readsRight % READS_PER_STAR == 0;
+}
+void learnRoundDone(Save& s) { s.fun = clamp100(s.fun + 10); }
+void gotHat(Save& s, int h) {
+  s.hatsMask |= (uint16_t)(1u << h);
+  int hats = 0; for (int k = 1; k < NUM_HATS; k++) if (s.hatsMask & (1u << k)) hats++;
+  if (hats >= 5) earnSticker(s, ST_HATS);
+}
+
 // A different day, not a later one: a clock that ran ahead and was then put right must not hold the mail back.
 bool giftReady(const Save& s, uint32_t now) { return os::newDay((uint16_t)dayIndex(now), s.lastGiftDay); }
 Gift openGift(Save& s, uint32_t now) {
@@ -292,9 +326,7 @@ Gift openGift(Save& s, uint32_t now) {
   }
   if ((n % 3) == 2) {  // every third gift: a hat, if any remain
     for (int h = 1; h < NUM_HATS; h++) if (!(s.hatsMask & (1u << h))) {
-      s.hatsMask |= (1u << h); g.kind = GIFT_HAT; g.index = (uint8_t)h;
-      int hats = 0; for (int k = 1; k < NUM_HATS; k++) if (s.hatsMask & (1u << k)) hats++;
-      if (hats >= 5) earnSticker(s, ST_HATS);
+      gotHat(s, h); g.kind = GIFT_HAT; g.index = (uint8_t)h;
       addBond(s, now, 10); return g;
     }
   }

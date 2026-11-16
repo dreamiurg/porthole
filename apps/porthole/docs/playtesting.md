@@ -204,7 +204,7 @@ never touch your `build/host/`, and scenarios run in parallel) and reads stdout.
 `echo @@<id>` / `echo @@` markers so its output can be found.
 
 Five directives need the live game state to decide what to tap or how long to wait (`follow-glow`, `solve-word`,
-`answer-book`, `answer-puzzle`, `wait-until`). For those the runner runs the script so far, reads the answer, appends the taps or
+`answer-book`, `answer-puzzle`, `answer-read`, `wait-until`). For those the runner runs the script so far, reads the answer, appends the taps or
 waits and carries on. Because every run
 replays the same game, the final run sees exactly what the earlier ones saw. Scenarios whose name contains
 `monkey` use `build/host/snap-asan`; the rest use `build/host/snap`.
@@ -228,7 +228,7 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `app NAME` | open a game from the launcher (`app pets-club`) |
 | `newgame KID PET` | `reset`, then profile KID (age 8) with pup PET already adopted, opened in Pets Club (its splash) |
 | `snap NAME` | write a snapshot (for `sheet`) |
-| `dbg CMD` | test hook: `tired bedtime rested younger older` (the profile's rest budget and age; `tired` rests at the next second, `bedtime` uses up today's play so the next second shows "Back tomorrow"), then to the open game: Pets Club `dirty poop hungry hearts books tricks hats grown dog old wall5 sleepy younger older butterfly`, `breed N` (`butterfly` sends one across the room from the left; `old` ages the dog by `RETIRE_DAYS`, so the farm button shows; `wall5` puts five shelter pups, Romeo to Charcoal, through the farm onto the wall and keeps the kid's own dog; `breed N` sets the breed; one past the table is the Golden pup, as `pet::loadBlob` makes a corrupt byte), Biscuit `hungry` (needs to their floor) `unlock` (7 days: every trick) `young` `grown` (the stages) `tricks` (all mastered) `practiced` (all on their last lesson) |
+| `dbg CMD` | test hook: `tired bedtime rested younger older` (the profile's rest budget and age; `tired` rests at the next second, `bedtime` uses up today's play so the next second shows "Back tomorrow"), then to the open game: Pets Club `dirty poop hungry hearts books tricks hats grown dog old wall5 sleepy younger older butterfly rich`, `breed N` (`rich` adds 50 stars to the kid's balance; `butterfly` sends one across the room from the left; `old` ages the dog by `RETIRE_DAYS`, so the farm button shows; `wall5` puts five shelter pups, Romeo to Charcoal, through the farm onto the wall and keeps the kid's own dog; `breed N` sets the breed; one past the table is the Golden pup, as `pet::loadBlob` makes a corrupt byte), Biscuit `hungry` (needs to their floor) `unlock` (7 days: every trick) `young` `grown` (the stages) `tricks` (all mastered) `practiced` (all on their last lesson) |
 | `debug` / `screen` / `ui` | print the state / the screen name / one audited frame (used by the directives) |
 | `watch MS` | step like `wait`, printing `glow X Y` whenever a trick-lesson glow appears |
 | `monkey N SEED` | N random gestures, see below |
@@ -245,7 +245,8 @@ the glass is the circle of radius 80 around (80,80)); times are milliseconds of 
 | `follow-glow` | `watch 6000`, then taps every reported glow with 250 ms gaps (one lesson round) |
 | `solve-word` | reads `word`, `cols`, `tiles` from `debug` and taps the tiles that spell the word (call it at the start of a word) |
 | `answer-book` | reads `correct=` from `debug` and taps that answer button |
-| `answer-puzzle right` / `wrong` | Biscuit: reads `answer=` from `debug` and taps the right answer of the puzzle shown, or a wrong one |
+| `answer-puzzle right` / `wrong` | Pets Club: reads `answer=` from `debug` and taps the right answer of the puzzle shown, or a wrong one |
+| `answer-read right` / `wrong` | Pets Club: reads `read_answer=` and `read_ay=` from `debug` and taps the right answer of the little read's question, or a wrong one |
 | `wait-until KEY OP VALUE MS` | waits in 40 ms steps up to the first frame whose `debug` value for KEY compares as `expect` would, at most MS; fails if it never does. For a check that must not hang on exact timing (Pumpkin's `checking=1`) |
 | `repeat N` … `end` | unrolls the lines in between N times (no nesting) |
 

@@ -8,7 +8,7 @@ PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report
 multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
-Directives that need live state (follow-glow, solve-word, answer-book, answer-puzzle, wait-until) run the script so far, read the
+Directives that need live state (follow-glow, solve-word, answer-book, answer-puzzle, answer-read, wait-until) run the script so far, read the
 answer and append the taps or waits: the sim is deterministic, so every run replays the same game. Report: build/playtest/report.md.
 """
 
@@ -240,11 +240,16 @@ def plan(d, seg, where, arg=""):
         if "correct" not in kv:
             raise Fail(f"{where}: no book open", seg)
         return [f"tap 80 {74 + int(kv['correct']) * 22 + 9}"]
-    if d == "answer-puzzle":  # Biscuit: `answer-puzzle right` or `wrong` taps that answer of the question shown
+    if d == "answer-puzzle":  # Pets Club: `answer-puzzle right` or `wrong` taps that answer of the question shown
         if kv.get("answered") != "-1" or "answer" not in kv:
             raise Fail(f"{where}: no puzzle waiting for an answer", seg)
         pick = int(kv["answer"]) if arg == "right" else (int(kv["answer"]) + 1) % 3
-        return [f"tap {(44, 80, 115)[pick]} 97"]
+        return [f"tap {(41, 80, 119)[pick]} 105"]
+    if d == "answer-read":  # Pets Club's little reads: `answer-read right` or `wrong`, the answer rows under the question
+        if kv.get("read_answered") != "-1" or "read_answer" not in kv:
+            raise Fail(f"{where}: no little read waiting for an answer", seg)
+        pick = int(kv["read_answer"]) if arg == "right" else (int(kv["read_answer"]) + 1) % 3
+        return [f"tap 80 {int(kv['read_ay']) + pick * 24 + 11}"]
     if "word" not in kv:
         raise Fail(f"{where}: no word on screen", seg)
     word, cols, tiles = kv["word"], int(kv["cols"]), kv["tiles"]
@@ -460,7 +465,7 @@ def play(path, cwd, res, start):
             query("debug", where, d, m.groups())
         elif d in ("expect-screen", "ui-check", "sheet"):
             query({"expect-screen": "screen", "ui-check": "ui", "sheet": None}[d], where, d, arg)
-        elif d in ("follow-glow", "solve-word", "answer-book", "answer-puzzle"):
+        elif d in ("follow-glow", "solve-word", "answer-book", "answer-puzzle", "answer-read"):
             qid = query("watch 6000" if d == "follow-glow" else "debug", where, "info")
             lines.extend(plan(d, segments(run()).get(qid, []), where, arg))
         elif d == "wait-until":

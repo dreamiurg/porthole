@@ -1,4 +1,4 @@
-// Tricks (six, each unlocking on a day together, or sooner once puzzles taught it a lesson) and Training: watch the lesson's cues, then tap them on the pad.
+// Tricks (six, each unlocking on a day together, or sooner if it already has a lesson) and Training: watch the lesson's cues, then tap them on the pad.
 // Three lessons master a trick; a wrong cue just shows the lesson again.
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +34,7 @@ void Game::updateTricks() {
 }
 void Game::drawTricks() {
   gfx565::clear(PAPER);
-  top(in_, "Little paws, big ideas", starCount());
+  top(in_, "Little paws, big ideas", storyStars(save_));
   for (int row = 0; row < ROWS; row++) {
     char label[48];
     button(in_, trickRow(save_, row, page_, label, sizeof label));
@@ -70,7 +70,7 @@ void Game::drawTraining() {
   gfx565::clear(PAPER);
   const Lesson l = current(save_, trick_);
   if (watching_) {
-    top(in_, TRICKS[trick_].name, starCount());
+    top(in_, TRICKS[trick_].name, storyStars(save_));
     text(TRAIN_HINT, "Have a look, then try with me.", INK);
     char cues[64] = "";
     for (int i = 0; i < l.length; i++) {
@@ -81,7 +81,7 @@ void Game::drawTraining() {
     return;
   }
   char title[40]; snprintf(title, sizeof title, "Your turn!  %d / %d", step_, l.length);
-  top(in_, title, starCount());
+  top(in_, title, storyStars(save_));
   for (int c = 0; c < 5; c++) button(in_, {CUE_KEY[c], CUE_NAME[c], &FONT20, PURPLE, true});
   button(in_, PEEK);
 }

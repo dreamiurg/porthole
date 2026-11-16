@@ -111,7 +111,7 @@ wait 450
 expect-screen playmenu
 ui-check playmenu
 snap b03_playmenu
-tap 80 60
+tap 80 51
 wait 450
 expect-screen fetch
 ui-check fetch
@@ -125,7 +125,7 @@ expect-screen home
 # word fetch (age 8), all five words
 tap 66 129
 wait 450
-tap 80 108
+tap 80 75
 wait 450
 expect-screen words
 ui-check words
