@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "app.h"
+#include "day.h"
 
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
@@ -14,8 +15,8 @@ constexpr const char* MIGRATED_BISCUIT = "mb";   // porthole/mb: present once Bi
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
 constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
 // The daily cap: 30 min per profile per local day, across every game, even alone on the device. The clock is local
-// wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
-constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 30 * 60;
+// wall-clock seconds, so a day is os::dayOf(now) and it ends at local midnight; a clock that jumps: os/day.h.
+constexpr uint32_t DAY_SEC = os::DAY_SEC, DAILY_SEC = 30 * 60;
 // Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
 // Independent of profile/game records: changing a limit never resets usage or moves a save.
 struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };
@@ -94,6 +95,12 @@ void seal(Record& r);
 bool loadRecord(const void* data, size_t n, Record& out);
 // The stored form of a typed code ("0000".."9999"): value + 1, so 0000 is a real code; nullptr or "" = none.
 inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16_t)(atoi(digits) + 1) : 0; }
+// The kids' pad has keys 1 to 9, and Pets Club's own pad had a 0: a kid's stored code with a 0 in it cannot be typed,
+// so it is no code (the profile opens; a grown-up could only have cleared it in Admin anyway).
+inline uint16_t kidPin(uint16_t pin) {
+  for (int v = pin - 1, i = 0; i < 4; i++, v /= 10) if (v % 10 <= 0) return 0;
+  return pin;
+}
 // porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
 void loadAll(Store& st, Profiles& p);
 bool saveRecord(Store& st, Profiles& p, int id);   // false = the write failed

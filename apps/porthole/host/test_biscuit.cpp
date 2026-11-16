@@ -103,14 +103,34 @@ static void careOncePerDay() {
 
 static void timeAway() {
   Save absent = namedPet(Now);
-  biscuit::tick(absent, Now + 30 * D);                // 30 days away decay like 8 hours
+  biscuit::tick(absent, Now + 30 * D + 3600);         // 30 days away decay like 8 hours
   assert(absent.fullness == 46 && absent.happiness == 70 && absent.energy == 56);
   assert(absent.daysTogether == 2);                   // visits, not missed calendar days
-  biscuit::tick(absent, Now);                         // a clock set back changes nothing
+  biscuit::tick(absent, Now + 30 * D);                // a clock set back within the day counts no time
   assert(absent.fullness == 46 && absent.updatedAt == Now + 30 * D && absent.daysTogether == 2);
   for (uint32_t i = 1; i <= 10; i++) biscuit::tick(absent, Now + (30 + i) * D);
   assert(absent.fullness == 20 && absent.happiness == 20 && absent.energy == 20);   // floors, never below
   assert(biscuit::valid(absent));
+}
+
+// The clock ran a year ahead for one visit and was then put right. The pup is not held at that date: needs decay
+// again, the next day is a new visit, and today's adventure starts over instead of staying done for a year.
+static void clockPutRight() {
+  Save p = namedPet(Now);
+  biscuit::tick(p, Now + 365 * D);
+  biscuit::act(p, Action::Feed, Now + 365 * D);
+  assert(p.daysTogether == 2 && p.dailyCompleted && p.lastVisitDay == biscuit::dayOf(Now + 365 * D));
+  biscuit::tick(p, Now + 3600);                       // put right: a new visit, the adventure fresh, no time counted
+  const float full = p.fullness;
+  assert(p.daysTogether == 3 && !p.dailyCompleted && p.lastVisitDay == biscuit::dayOf(Now) && p.updatedAt == Now + 3600);
+  assert(biscuit::valid(p) && p.createdAt <= p.updatedAt);
+  biscuit::tick(p, Now + 3600 + 4 * 3600);            // four hours on: hungrier
+  assert(p.fullness < full && p.daysTogether == 3);
+  biscuit::tick(p, Now + D);                          // and tomorrow is a day
+  assert(p.daysTogether == 4);
+  Save young = namedPet(Now);                         // made, then the clock put back to before that
+  biscuit::tick(young, Now - 2 * D);
+  assert(young.createdAt == Now - 2 * D && biscuit::valid(young));
 }
 
 static void sleeping() {
@@ -665,7 +685,7 @@ int main() {
   nameValidity();
   renamePreservesCompanion();
   careOncePerDay();
-  timeAway();
+  timeAway(); clockPutRight();
   sleeping();
   permanentReadingProgress();
   adventuresTricksAndGrowth();

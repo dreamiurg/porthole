@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
 #include "track.h"
 
 namespace racing {
@@ -30,21 +30,14 @@ struct Save {
 static_assert(sizeof(Save) == SAVE_V2_SIZE, "Save is persisted: append before crc, never resize");
 static_assert(sizeof SAVE_SIZES / sizeof SAVE_SIZES[0] == SAVE_VERSION + 1, "one size per version");
 
-inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
-  s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
-}
+inline void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 // Any version up to this one: a blob is its own size with its crc in the last four bytes. Anything else is ignored:
 // the kid simply has no times yet, never a half-loaded record.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
-  if (n < SAVE_V1_SIZE || n > sizeof(Save) || n % 4) return false;
-  const uint8_t* b = (const uint8_t*)data;
-  uint32_t crc;
-  memcpy(&crc, b + n - 4, 4);
+  os::save::Head h;
+  if (n > sizeof(Save) || !os::save::mine(data, n, SAVE_MAGIC, SAVE_VERSION, &h) || n != SAVE_SIZES[h.version]) return false;
   Save s{};
-  memcpy(&s, b, n - 4);
-  if (s.magic != SAVE_MAGIC || !s.version || s.version > SAVE_VERSION || s.size != n || n != SAVE_SIZES[s.version] ||
-      crc != os::crc32(b, n - 4)) return false;
+  memcpy(&s, data, n - sizeof s.crc);
   if (s.mode >= MODES) s.mode = AUTO;   // a value from a later firmware: the default
   seal(s);
   out = s;

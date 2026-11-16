@@ -19,8 +19,8 @@ static bool adoptHouse(Store& st, Profiles& p, int slot, const Save& h) {
   Record& r = p.rec[slot];
   memset(&r, 0, sizeof r);
   memcpy(r.name, h.kidName, sizeof r.name); r.name[sizeof r.name - 1] = 0;
-  // Pets Club stored 0000 as 1, so a legacy 1 becomes code 0001: that one kid types 0001 instead of 0000.
-  r.avatar = (uint8_t)slot; r.age = h.kidAge; r.muted = h.muted; r.pin = h.pin ? (uint16_t)(h.pin + 1) : 0;
+  // Pets Club stored the code's value (0000 as 1); here it is value + 1. One with a 0 in it is dropped: see kidPin.
+  r.avatar = (uint8_t)slot; r.age = h.kidAge; r.muted = h.muted; r.pin = kidPin(h.pin ? (uint16_t)(h.pin + 1) : 0);
   r.restUntil = h.restUntil; r.playSec = h.playSec; r.lastPlayed = h.lastSeen;
   p.used[slot] = true; p.blocked[slot] = false;
   return saveRecord(st, p, slot);
@@ -84,7 +84,14 @@ static int biscuitOwner(Store& st, Profiles& p, const Kid& kid) {
   if (p.count()) return p.nth(0);
   Record draft = {};
   snprintf(draft.name, sizeof draft.name, "%s", *want ? want : NO_NAME);
-  return create(st, p, draft, GAME_STORES, 2);   // age 0: the shell asks once, like a migrated v1 house
+  const int id = create(st, p, draft, GAME_STORES, 2);   // age 0: the shell asks once, like a migrated v1 house
+  // create opens a profile whose record did not land (the shell writes it again as the kid plays). Nothing would here:
+  // the pup would move to a profile the next boot does not have, so without the record there is no owner yet.
+  Record back; uint8_t blob[sizeof back];
+  const size_t n = id < 0 ? 0 : st.load(NS, key('p', id), blob, sizeof blob);
+  if (n && loadRecord(blob, n, back)) return id;
+  if (id >= 0) p.used[id] = false;
+  return -1;
 }
 
 void migrateBiscuit(Store& st, Profiles& p) {
@@ -94,7 +101,13 @@ void migrateBiscuit(Store& st, Profiles& p) {
   OldBiscuit from = findOldBiscuit(st, s, kid);
   if (from) {   // before the marker; with no profile to take it, or a copy that did not land, the old save stays for the next boot
     const int owner = biscuitOwner(st, p, kid);
-    if (owner < 0 || !st.save(biscuit::STORE, key('s', owner), &s, sizeof s)) return;
+    if (owner < 0) return;
+    // A pup already at the owner's key is never replaced: it is this copy from a boot cut short (the same bytes), or
+    // one played since a marker that did not land, and then the old place is left as it is, unread.
+    biscuit::Save there{}; uint8_t blob[sizeof there];
+    const size_t n = st.load(biscuit::STORE, key('s', owner), blob, sizeof blob);
+    if (n && biscuit::loadBlob(blob, n, there)) { if (memcmp(&there, &s, sizeof s)) from = OLD_NONE; }
+    else if (!st.save(biscuit::STORE, key('s', owner), &s, sizeof s)) return;
   }
   st.save(NS, MIGRATED_BISCUIT, &mark, sizeof mark);
   // Only after the marker, and only the place the pup came from: anything else stays put, unread, never lost.

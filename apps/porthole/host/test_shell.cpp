@@ -15,6 +15,7 @@
 #include "timezone.h"
 #include "launcher.h"
 #include "profiles.h"
+#include "save.h"
 #include "shell.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
@@ -79,6 +80,19 @@ static void records() {
 static void pinCodes() {
   assert(shell::pinCode("") == 0 && shell::pinCode(nullptr) == 0);
   assert(shell::pinCode("0000") != 0 && shell::pinCode("0000") != shell::pinCode("0001"));
+  // A kid's code the nine keys cannot type is no code, wherever it comes from: Pets Club's pad had a 0.
+  assert(shell::kidPin(0) == 0 && shell::kidPin(shell::pinCode("1234")) == shell::pinCode("1234"));
+  assert(shell::kidPin(shell::pinCode("9999")) && !shell::kidPin(shell::pinCode("1203")) && !shell::kidPin(shell::pinCode("0001")));
+  assert(!shell::kidPin(shell::pinCode("0000")) && !shell::kidPin(shell::pinCode("1110")) && !shell::kidPin(10001));
+  MemStore st; shell::Profiles p;
+  Save old0 = house("Kai", "Rex", 6, 1203), old9 = house("Sam", "Dot", 8, 1299);   // Pets Club stored the value itself
+  st.save("crago", "s0", &old0, sizeof old0); st.save("crago", "s1", &old9, sizeof old9);
+  shell::loadAll(st, p);
+  assert(p.count() == 2 && p.rec[0].pin == 0 && p.rec[1].pin == shell::pinCode("1299"));
+  shell::Record made = {}; made.pin = shell::pinCode("1203"); snprintf(made.name, sizeof made.name, "Ava");
+  p.rec[2] = made; p.used[2] = true; assert(shell::saveRecord(st, p, 2));   // migrated by a firmware before this rule
+  shell::loadAll(st, p);
+  assert(p.count() == 3 && p.rec[2].pin == 0 && p.rec[1].pin == shell::pinCode("1299"));
   assert(shell::pinCode("1234") == 1235 && shell::pinCode("9999") == 10000);
 }
 
@@ -401,6 +415,26 @@ static void biscuitNewestToFirstProfile() {
   assert(!other.has(OLD_NS, "pet3") && other.has("biscuit", "pet1"));
 }
 
+// The marker's write failed after the newer pup moved in and its old place was cleared: the next boot finds the older
+// place, and must not put that pup over the one played since. The older place stays, unread.
+static void biscuitPlayedSinceKept() {
+  MemStore st;
+  Save a = house("Ava", "Rex", 7, 0);
+  st.save("crago", "s2", &a, sizeof a);
+  putOld(st, OLD_NS, "pet1", old::MAGIC_V1, oldPet(10, 3600));
+  putOld(st, "biscuit", "pet1", old::MAGIC_V1, oldPet(20, 60));
+  st.refuse = "porthole/mb";
+  shell::Profiles p; boot(st, p);
+  assert(biscuitIn(st, 2, "Biscuit", 20) && !st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
+  uint8_t blob[shell::BLOB_MAX]; biscuit::Save s;                     // a day's play on the moved pup
+  size_t n = st.load(biscuit::STORE, "s2", blob, sizeof blob);
+  assert(biscuit::loadBlob(blob, n, s));
+  s.friendship = 45; biscuit::seal(s); st.save(biscuit::STORE, "s2", &s, sizeof s);
+  st.refuse = nullptr;
+  shell::Profiles again; boot(st, again);
+  assert(biscuitIn(st, 2, "Biscuit", 45) && st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
+}
+
 // A save that does not convert is left where it is and nothing is made from it. In the first firmware the newest key
 // decides: a damaged pet3 hides an older pet2, as it did on that firmware.
 static void biscuitCorruptIgnored() {
@@ -450,6 +484,15 @@ static void migrateFailedWrites() {
   assert(pup.has(OLD_NS, "pet3") && !pup.has(shell::NS, "mb"));
   pup.refuse = nullptr; shell::loadAll(pup, boot);
   assert(biscuitIn(pup, 0, "Pip", 30) && oldGone(pup) && pup.has(shell::NS, "mb"));
+}
+// The same for the record of the profile made for Biscuit's old pup: without it the pup has no owner yet.
+static void biscuitWaitsForItsProfile() {
+  shell::Profiles p, boot;
+  MemStore kid; putOld(kid, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3)); kid.refuse = "porthole/p0";
+  shell::loadAll(kid, p);
+  assert(p.count() == 0 && kid.has(OLD_NS, "pet3") && !kid.has(shell::NS, "mb") && !kid.has(biscuit::STORE, "s0"));
+  kid.refuse = nullptr; shell::loadAll(kid, boot);
+  assert(boot.count() == 1 && !strcmp(boot.rec[0].name, "Sam") && biscuitIn(kid, 0, "Pip", 30) && oldGone(kid));
 }
 // The marker's own write failed on a device that never had houses, so the migration runs again next boot: a profile
 // made since is not a house. Its face, code, stars and day's play are the profile's alone: never rebuilt from the pup.
@@ -729,7 +772,11 @@ struct StubApp : App {
   Tint tint() const override { return TINT_DAY; }
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
-  bool takeSave(const void** data, size_t* len, bool allowed) override { if (!saving || !allowed) return false; *data = &payload; *len = sizeof payload; return true; }
+  const void* blob = nullptr; size_t blobLen = 0;   // what takeSave hands over instead of payload, when set
+  bool takeSave(const void** data, size_t* len, bool allowed) override {
+    if (!saving || !allowed) return false;
+    *data = blob ? blob : &payload; *len = blob ? blobLen : sizeof payload; return true;
+  }
   bool wantsHome() override { const bool h = home; home = false; return h; }
   void leave() override { left++; }
   const char* screenName() const override { return "stub"; }
@@ -1341,6 +1388,13 @@ static void pinWaits() {
   for (int i = 0; i < 255 + 5; i++) shell::pinWrong(l, NOW, c);
   assert(l.strikes == 255 && shell::pinWaitLeft(l, NOW, c) == 60);   // never wraps back to free tries
 }
+// "sys"/"admin" of any other size is not a code: half of one would lock Admin behind a code nobody chose.
+static void adminStrayBlob() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  const uint8_t half = 5; st.save("sys", "admin", &half, sizeof half);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "");
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
+}
 // Guessing a kid's code: the fourth wrong try hides the keys for 5 s. Back and a reboot do not skip the wait, the
 // keys come back when it ends, the right code then clears the strikes, and the admin code keeps its own count.
 static void kidCodeLockout() {
@@ -1386,6 +1440,27 @@ static void padQuickAndSlowKeys() {
   at(key(1), 700, true, false, false); at(key(1), 40, false, false, true);
   at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
   frame(sh, ms, Input{}); assert(on(sh, "launcher"));
+}
+// The board stays up for weeks and millis() wraps every 49.7 days: a deadline is told from the clock across the wrap
+// (os/ticks.h), and one nobody set again is not "still ahead" 24.8 days later, which hid the kids' code pad's keys
+// behind the hourglass for the 25 days after it.
+static void uptimeWraps() {
+  assert(os::before(10, 20) && !os::before(20, 20) && !os::before(21, 20));
+  assert(os::before(0xFFFFFFF0u, 5) && !os::before(5, 0xFFFFFFF0u));               // set before the wrap, due after it
+  uint32_t t = 0; os::settle(0x80000001u, t, 60000); assert(t == 0x80000001u);     // an old one: no longer ahead
+  t = 0xFFFFFF00u; os::settle(0x10, t, 60000); assert(t == 0x10);                  // stranded just under the wrap
+  t = 0x80000001u + 500; os::settle(0x80000001u, t, 60000); assert(t == 0x80000001u + 500);   // a running one stays
+  t = 100; os::settle(0xFFFFFFF0u, t, 60000); assert(t == 100);                    // across the wrap too
+  for (uint32_t up : {0x80000000u + 5000u, 0xFFFFFFFFu - 9000u}) {   // 24.8 days up, and a session over the wrap
+    MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+    bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1234"); sh.createProfile("Kai", 6, "");
+    const ui::Box SAM = {24, 42, 112, 24};
+    bootWithoutHours(sh, st, nullptr, 0, &sys); frame(sh, ms, Input{});
+    ms = up; frame(sh, ms, Input{});   // the picker, left alone all that time
+    tapAt(sh, ms, SAM); assert(on(sh, "pin"));
+    typeKidCode(sh, ms, "1235"); assert(on(sh, "pin"));   // a wrong try, its "Hmm" and shake
+    typeKidCode(sh, ms, "1234"); assert(on(sh, "launcher"));
+  }
 }
 // A grown-up typing the repeat straight away: the key pressed while the fourth dot still shows is the repeat's first.
 static void adminRepeatRightAway() {
@@ -1740,6 +1815,51 @@ static void starBalance() {
   ms += 1000; sh.update(NOW, ms, Input{});
   assert(st.has("stub", "s1") && st.writes == before + 2 && !strcmp(st.last, "porthole/p1"));
 }
+// An older build flashed over a newer one meets saves it cannot read. The game starts over, but what it then hands
+// the shell never replaces its own save from the newer firmware, a game cannot erase a save at all, and the kid's
+// stars stay what the kept save accounts for. Anything else stored (a damaged blob, another game's, an older or
+// equal version) is replaced as before.
+struct Sealed { os::save::Head h; uint32_t body, crc; };
+static Sealed sealedSave(uint16_t version, uint32_t body, uint32_t magic = 0x42555453) {
+  Sealed s = {{magic, version, sizeof(Sealed)}, body, 0};
+  s.crc = os::crc32(&s, sizeof s - 4);
+  return s;
+}
+static bool stored(MemStore& st, const Sealed& want) {
+  Sealed got;
+  return st.load("stub", "s0", &got, sizeof got) == sizeof got && !memcmp(&got, &want, sizeof got);
+}
+static void newerSaveKept() {
+  MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app}; uint32_t ms = 0;
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, "");
+  const Sealed v3 = sealedSave(3, 7), mine = sealedSave(2, 1);
+  assert(os::save::sealed(&v3, sizeof v3) && os::save::newer(&v3, sizeof v3, &mine, sizeof mine));
+  assert(!os::save::newer(&mine, sizeof mine, &v3, sizeof v3) && !os::save::newer(&v3, sizeof v3, &v3, sizeof v3));
+  assert(!os::save::sealed(&v3, sizeof v3 - 1) && !os::save::sealed(&v3, 8) && !os::save::sealed(nullptr, 0));
+  assert(st.save("stub", "s0", &v3, sizeof v3));
+  assert(sh.openApp("One")); app.saving = true; app.blob = &mine; app.blobLen = sizeof mine;
+  ms += 6000; sh.update(NOW, ms, Input{}); assert(stored(st, v3));            // the older build's save is dropped
+  stars::award(app.stars, 5);
+  ms += 1000; sh.update(NOW, ms, Input{});
+  shell::Profiles p; shell::loadAll(st, p);
+  assert(stored(st, v3) && p.rec[0].stars == 0 && stars::balance(app.stars) == 0);   // and what it earned or spent
+  app.blobLen = 0; ms += 6000; sh.update(NOW, ms, Input{}); assert(stored(st, v3));   // an erase is not a game's to ask
+  app.blobLen = sizeof mine; home(sh, ms, app); assert(stored(st, v3));       // nor does leaving write it
+  // Once this build is the newer one again (same version or above), its saves are written.
+  const Sealed same = sealedSave(3, 8), next = sealedSave(4, 9);
+  assert(sh.openApp("One")); app.blob = &same;
+  ms += 6000; sh.update(NOW, ms, Input{}); assert(stored(st, same));
+  app.blob = &next; ms += 6000; sh.update(NOW, ms, Input{}); assert(stored(st, next));
+  home(sh, ms, app);
+  // A newer version that is not a whole save (a flipped bit), or another game's, is nobody's to keep.
+  Sealed broken = sealedSave(9, 7); broken.body ^= 1;
+  for (const Sealed& junk : {broken, sealedSave(9, 7, 0x4B524D4D)}) {
+    assert(st.save("stub", "s0", &junk, sizeof junk) && sh.openApp("One")); app.blob = &mine;
+    ms += 6000; sh.update(NOW, ms, Input{}); assert(stored(st, mine));
+    home(sh, ms, app);
+  }
+}
 // The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
 // picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
@@ -1757,8 +1877,9 @@ static void systemMenuWayIn() {
 
 static void codesAndPresses() {   // the code pads, their waits, what they gate, and how long a press may be
   pinWaits();
-  kidCodeLockout();
+  kidCodeLockout(); adminStrayBlob();
   padQuickAndSlowKeys();
+  uptimeWraps();
   adminRepeatRightAway();
   adminCodeLockout();
   adminGatesProfiles();
@@ -1834,15 +1955,16 @@ int main() {
   migrateLegacyKey();
   biscuitToNamedProfile();
   biscuitNewProfile();
-  biscuitNewestToFirstProfile();
+  biscuitNewestToFirstProfile(); biscuitPlayedSinceKept();
   biscuitLongName();
   biscuitCorruptIgnored();
   biscuitCrash();
-  migrateFailedWrites();
+  migrateFailedWrites(); biscuitWaitsForItsProfile();
   remigrateKeepsProfiles();
   restBudget();
   recordV1();
   starBalance();
+  newerSaveKept();
   dailyCap();
   idleNotCounted();
   tiltIsActivity();

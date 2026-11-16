@@ -119,7 +119,6 @@ class Game : public App {
   void startTrickShow(int trick);
   void checkStickers();
   void celebrate(const char* title, const char* text, int icon, Screen next);
-  void newDayCheck();
 
   // ---- screens
   void updateSplash(); void drawSplash();

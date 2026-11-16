@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
 
 namespace toytown {
 // Persisted ids: append only. No clock-driven state or reward economy.
@@ -92,9 +92,8 @@ inline void complete(State& s) {
   s.recorded = 1; s.active = 0; s.completed |= 1 << s.destination;
 }
 inline void seal(State& s) {
-  s.magic = MAGIC; s.version = VERSION; s.size = sizeof s;
   memset(s.reserved, 0, sizeof s.reserved);
-  s.crc = os::crc32(&s, sizeof s - 4);
+  os::save::seal(&s, sizeof s, MAGIC, VERSION);
 }
 inline bool validLook(const State& s) {
   return s.doll <= 3 && s.category <= 8 && s.skin <= 3 && s.hair <= 2 && s.outfit <= 2 &&
@@ -132,13 +131,11 @@ inline bool validHistorical(const State& s, size_t n) {
 }
 inline bool load(const void* data, size_t n, State& out) {
   if (!data || (n != V1_SIZE && n != V2_SIZE && n != V3_SIZE)) return false;
-  const uint8_t* bytes = static_cast<const uint8_t*>(data);
-  State s = fresh(); memcpy(&s, bytes, offsetof(State, page));
-  uint32_t crc; memcpy(&crc, bytes + n - 4, 4);
   const uint16_t version = n == V1_SIZE ? 1 : n == V2_SIZE ? 2 : VERSION;
-  if (s.magic != MAGIC || s.version != version || s.size != n || crc != os::crc32(bytes, n - 4)) return false;
+  os::save::Head h;
+  if (!os::save::mine(data, n, MAGIC, VERSION, &h) || h.version != version) return false;
   // Only verified records may supply the old prefix; new fields keep their fresh defaults.
-  memcpy(&s, bytes, n - 4);
+  State s = fresh(); memcpy(&s, data, n - 4);
   if (!validHistorical(s, n) || !valid(s)) return false;
   seal(s);
   out = s; return true;

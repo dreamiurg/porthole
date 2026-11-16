@@ -6,6 +6,7 @@
 #include "pinlock.h"
 #include "profiles.h"
 #include "system.h"
+#include "ticks.h"
 #include "ui.h"
 
 constexpr int MAX_APPS = 12;
@@ -186,8 +187,8 @@ class Shell {
   bool drawLibraryTile(int i, int m, int k, uint32_t home, int hop);   // tile i of m: game k and its star
   void saveFavs() { if (!favsKept_) shell::saveFavorites(*st_, active_, favs_); }
   void leaveStars(bool keep);   // ends star mode: the check (keep) saves the visit's stars, anything else puts Home back
-  bool homeFull() const { return starMode_ && (int32_t)(fullUntil_ - ms_) > 0; }
-  bool keepCue() const { return starMode_ && (int32_t)(keepUntil_ - ms_) > 0; }
+  bool homeFull() const { return starMode_ && os::before(ms_, fullUntil_); }
+  bool keepCue() const { return starMode_ && os::before(ms_, keepUntil_); }
   bool tilesWait() const;   // a Library tile press now is Home's "All games" tapped again: it opens nothing
   void libraryBack();       // the house on the Library
   void setLight(shell::Light l);

@@ -70,6 +70,7 @@ __attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
+    p.rec[id].pin = kidPin(p.rec[id].pin);
     p.blocked[id] = n && !p.used[id];
   }
 }
@@ -202,11 +203,11 @@ bool resetLimits(Store& st, Profiles& p) {
   return ok;
 }
 void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
-  if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
+  if (!resting(r, now) && os::elapsed(now, r.lastPlayed) >= REST_SEC) r.playSec = 0;
 }
 void playUnrestricted(Record& r, uint32_t now, uint32_t dt, bool idle) {
   r.lastPlayed = now;
-  if (r.playDay != now / DAY_SEC) { r.playDay = now / DAY_SEC; r.dayPlaySec = 0; }
+  if (os::newDay(os::dayOf(now), r.playDay)) { r.playDay = os::dayOf(now); r.dayPlaySec = 0; }
   const uint32_t add = idle ? 0 : dt > 5 ? 5 : dt;
   r.dayPlaySec += add; r.playSec += add;
 }
