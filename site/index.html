@@ -596,7 +596,8 @@
   // The deploy writes the commit in for __BUILD__. Pages caches files for 10 minutes, so the firmware is asked for
   // by commit: a fresh page never runs the last deploy's.
   const BUILD = "__BUILD__";
-  const t = (en, uk) => `<span lang="en">${en}</span><span lang="uk">${uk}</span>`;
+  const t = (en, uk) => [["en", en], ["uk", uk]].map(([lang, text]) => Object.assign(document.createElement("span"), { lang, textContent: text }));
+  const say = (el, words) => el.replaceChildren(...(words || []));
   const $ = (id) => document.getElementById(id);
   const player = $("play"), canvas = $("screen"), statusEl = $("p-status"), controls = $("p-controls");
   const TOUCH = matchMedia("(pointer: coarse)").matches;
@@ -607,7 +608,7 @@
     started = true;
     $("play-here").remove();
     canvas.hidden = false; controls.hidden = false;
-    statusEl.hidden = false; statusEl.innerHTML = t("Loading&hellip;", "Завантаження&hellip;");
+    statusEl.hidden = false; say(statusEl, t("Loading…", "Завантаження…"));
     if (TOUCH) { setFull(true); if (gesture && "DeviceMotionEvent" in window) motionOn(); }
     const ctx = canvas.getContext("2d"), image = ctx.createImageData(W, H);
     let last = performance.now(), pending = 0;
@@ -623,7 +624,7 @@
       }
       requestAnimationFrame(loop);
     };
-    const broke = () => { statusEl.hidden = false; statusEl.innerHTML = t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку."); };
+    const broke = () => { statusEl.hidden = false; say(statusEl, t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку.")); };
     window.Module = {
       print() {},   // the --serve protocol's "ok" replies
       printErr: (m) => console.warn(m),
@@ -767,11 +768,11 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
   function setMotion(on, msg) {
     useMotion = on;
     motion.setAttribute("aria-pressed", String(on));
-    motion.innerHTML = on ? t("Phone tilt: on", "Нахил телефоном: увімк.") : t("Tilt with this phone", "Нахиляти телефоном");
+    say(motion, on ? t("Phone tilt: on", "Нахил телефоном: увімк.") : t("Tilt with this phone", "Нахиляти телефоном"));
     centerBtn.hidden = !on;
     pad.hidden = on;
-    note.innerHTML = msg || (on ? t("Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.",
-      "Тримайте як кермо або покладіть рівно. Центр робить серединою те, як ви тримаєте зараз.") : "");
+    say(note, msg || (on ? t("Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.",
+      "Тримайте як кермо або покладіть рівно. Центр робить серединою те, як ви тримаєте зараз.") : null));
     if (on) {
       onSince = performance.now(); heard = false; settled = false;
       window.addEventListener("devicemotion", onMotion);
