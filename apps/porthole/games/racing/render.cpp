@@ -481,26 +481,25 @@ void wheelPreview(float steer, int trackId, int y) {   // a strip of road and th
   const pic::Pic& s = *pic::CAR[0];
   pic(s, 240 + (int)(steer * 90) - s.w, y + 6, 2);
 }
-// Another kid's invite, over the track cards.
-void invite(const Duo& d) {
-  plate({22, 34, 116, 106}, INK, ORANGE);
-  if (d.inviteFace) pic(*d.inviteFace, 210, 116, 3);
-  char line[40];
-  snprintf(line, sizeof line, "%s wants", d.inviteName);
-  heading(186, line, 2, CREAM);
-  heading(210, "to race together!", 2, CREAM);
-  // Yes stands out for a kid who can't read yet: green and big, with the friend's face on it; Not now is quiet.
-  UiAudit::add(JOIN.x, JOIN.y, JOIN.w, JOIN.h);
-  plate(JOIN, PLATE_HI, GREEN);
-  centered(JOIN.x * 3 + JOIN.w * 3 / 2, JOIN.y * 3 + JOIN.h * 3 / 2 - 10, "Join", 2, GREEN);
-  UiAudit::add(NOT_NOW.x, NOT_NOW.y, NOT_NOW.w, NOT_NOW.h);
-  plate(NOT_NOW, INK, PLATE);
-  centered(NOT_NOW.x * 3 + NOT_NOW.w * 3 / 2, NOT_NOW.y * 3 + NOT_NOW.h * 3 / 2 - 10, "Not now", 2, DIM);
+// The arcade's second player, in place of the title: the other kid's face and Race!; gold once this kid tapped it and
+// waits; flashing once the other kid tapped it first.
+void raceButton(const View& v) {
+  const Duo& d = v.duo;
+  const ui::Box& b = TOGETHER;
+  UiAudit::add(b.x, b.y, b.w, b.h);
+  const bool flash = d.peerReady && !d.ready && (v.ms / 250) % 2;
+  plate(b, flash ? GREEN : PLATE_HI, d.ready ? GOLD : GREEN);
+  if (d.inviteFace) pic(*d.inviteFace, b.x * 3 + 10, b.y * 3 + 13, 2);
+  const int x = b.x * 3 + 58;
+  char name[9];
+  snprintf(name, sizeof name, "%s", d.inviteName);
+  text(x, b.y * 3 + 9, name, 2, flash ? INK : CREAM);
+  text(x, b.y * 3 + 35, d.ready ? "Waiting" : "Race!", 2, flash ? INK : d.ready ? GOLD : GREEN);
 }
 void tracksPage(const View& v) {
   const int mode = v.mode;
   gfx565::clear(rgb888_to_565(INK));
-  if (v.duo.radio) button(TOGETHER, "Together", true);   // in place of the title: race a kid on another Porthole
+  if (v.duo.inviteName) raceButton(v);
   else {
     banner(38, "RALLY", 4, ORANGE);
     heading(78, "Pick a track", 2, CREAM);
@@ -521,33 +520,18 @@ void tracksPage(const View& v) {
   const int cx = MODE_CHIP.x * 3 + MODE_CHIP.w * 3 / 2;
   centered(cx, MODE_CHIP.y * 3 + 12, "Rivals", 2, DIM);
   centered(cx, MODE_CHIP.y * 3 + 40, MODE_NAME[mode], 2, GOLD);
-  if (v.duo.inviteName) invite(v.duo);
-  else if (v.notice) { fill(130, 432, 220, 30, INK); centered(240, 436, v.notice, 2, GOLD); }
-}
-// Together, waiting for another Porthole on the same wifi to join.
-void lookingPage(const View& v) {
-  gfx565::clear(rgb888_to_565(INK));
-  heading(60, "Race together", 3, ORANGE);
-  if (v.duo.face) pic(*v.duo.face, 210, 112 + (int)(sinf(v.ms / 250.0f) * 6), 3);
-  static const char* NET[] = {"Starting wifi...", "Set up wifi first", "Joining wifi...", "Looking for a friend..."};
-  heading(206, NET[v.duo.net % 4], 2, v.duo.net == 1 ? GOLD : CREAM);   // lan::State
-  if (v.duo.net == 3) {
-    centered(240, 240, "Ask them to open Rally", 2, DIM);
-    centered(240, 264, "on their Porthole", 2, DIM);
-  } else if (v.duo.net == 1) centered(240, 240, "in Settings, then try again", 2, DIM);
-  button(BOARD_BACK, "Back", true);
+  if (v.notice) { fill(130, 432, 220, 30, INK); centered(240, 436, v.notice, 2, GOLD); }
 }
 void face(const pic::Pic* f, const char* name, int cx, bool gold) {
   if (f) pic(*f, cx - 30, 84, 3);
   centered(cx, 156, name, 2, gold ? GOLD : CREAM);
 }
-// Two kids, one track: the host picks it, then both go to the grip page.
+// The guest, until the host is on its grip page: two faces and the host's track.
 void lobbyPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   const Duo& d = v.duo;
-  char line[40];   // the guest is told who picks, up top, clear of the track and Back
-  if (d.host) snprintf(line, sizeof line, "Race together");
-  else if (d.paired) snprintf(line, sizeof line, "%.8s picks the track", d.peerName);
+  char line[40];
+  if (d.paired) snprintf(line, sizeof line, "Waiting for %.8s...", d.peerName);
   else snprintf(line, sizeof line, "Joining...");
   heading(46, line, 2, ORANGE);
   face(d.face, "You", 180, true);
@@ -556,11 +540,6 @@ void lobbyPage(const View& v) {
   centered(240, 262, TRACK[v.track].line1, 2, CREAM);
   centered(240, 286, TRACK[v.track].line2, 2, CREAM);
   button(BACK, "Back", true);
-  if (d.host) {
-    button(LOBBY_PREV, "<", true);
-    button(LOBBY_NEXT, ">", true);
-    button(NEXT, "Go", d.paired);
-  }
 }
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
@@ -718,7 +697,6 @@ void draw(const View& v) {
     case Page::Confirm: confirmPage(v); break;
     case Page::Results: resultsPage(v); break;
     case Page::Board: boardPage(v); break;
-    case Page::Looking: lookingPage(v); break;
     case Page::Lobby: lobbyPage(v); break;
   }
 }

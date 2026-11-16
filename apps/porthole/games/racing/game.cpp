@@ -24,10 +24,10 @@ void Game::enter(const AppEnter& e) {
   track_ = 0;
   loadKids(e);
   start(race_, TRACK[track_], seed_, raceLevel());
-  duo_ = host_ = raced_ = gone_ = false; wire_ = {}; peer_ = {}; notice_[0] = 0; wallet_ = e.stars;
+  duo_ = host_ = raced_ = gone_ = ready_ = false; wire_ = {}; peer_ = {}; notice_[0] = 0; wallet_ = e.stars;
   avatars_ = e.avatars; nAvatars_ = e.avatarCount;
   if (e.who) { snprintf(wire_.name, sizeof wire_.name, "%s", e.who->name); wire_.avatar = e.who->avatar; }
-  link_.begin(lan::radio());   // listens for an invite the whole visit; sends nothing until Together
+  link_.begin(lan::radio());   // on the track cards, says this kid is here (Together)
   if (lan::radio()) lan::radio()->start();
   go(Screen::Tracks);
 }
@@ -123,6 +123,7 @@ void Game::go(Screen s) {
   else if (s != Screen::Race) recenter_ = false;   // a recenter only ever returns to the race it paused
   gate_.shown(ms_); hold_ = {};
   boost_ = rocket_ = gripDone_ = false;
+  if (s != Screen::Tracks) ready_ = false;   // Race! is only ever asked on the cards
   badGripMs_ = 0;
 }
 
@@ -150,18 +151,12 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     case Screen::Confirm: updateConfirm(); break;
     case Screen::Results: updateResults(); break;
     case Screen::Board: updateBoard(); break;
-    case Screen::Looking: updateLooking(); break;
     case Screen::Lobby: updateLobby(); break;
   }
 }
 
 void Game::updateTracks() {
-  if (link_.invited(ms_)) {   // the invite covers the cards: its two buttons, and Together means yes too
-    if (ui::clicked(in_, paint::JOIN) || ui::clicked(in_, paint::TOGETHER)) joinInvite();
-    else if (ui::clicked(in_, paint::NOT_NOW)) link_.decline(wire_);
-    return;
-  }
-  if (link_.on() && ui::clicked(in_, paint::TOGETHER)) { startLooking(); return; }
+  if (tracksTogether()) return;
   if (ui::clicked(in_, paint::MODE_CHIP)) {   // saved at once: a power cut right after still keeps the kid's pick
     save_.mode = (uint8_t)((save_.mode + 1) % MODES);
     dirty_ = urgent_ = true;
@@ -279,7 +274,7 @@ void Game::updateConfirm() {
 
 void Game::updateResults() {
   if (ui::clicked(in_, paint::REPLAY)) {
-    if (duo_ && link_.paired()) { raced_ = false; go(Screen::Lobby); return; }   // Again: the same two kids
+    if (duo_ && link_.paired()) { raced_ = false; go(host_ ? Screen::Calibrate : Screen::Lobby); return; }   // Again
     endTogether();
     startRace();
   } else if (ui::clicked(in_, paint::RESULT_TRACKS)) { endTogether(); go(Screen::Tracks); }
@@ -302,7 +297,7 @@ void Game::render() {
 
 const char* Game::screenName() const {
   static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm",
-                            "race_results", "race_board", "race_looking", "race_lobby"};
+                            "race_results", "race_board", "race_lobby"};
   if (screen_ == Screen::Race && race_.phase == Phase::Countdown) return "race_countdown";
   return N[(int)screen_];
 }

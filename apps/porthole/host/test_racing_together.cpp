@@ -1,5 +1,5 @@
-// Rally's race together: two Games on an in-memory network, from the invite to the results and the ways a race
-// together ends early. The wire protocol on its own first.
+// Rally's race together: two Games on an in-memory network, from Race! on the track cards to the results and the
+// ways a race together ends early. The wire protocol on its own first.
 #include "host/check.h"
 #include <math.h>
 #include <stdio.h>
@@ -76,20 +76,21 @@ struct Pair {
     for (int i = 0; i < 2; i++) { k.frame(true, b.x + b.w / 2, b.y + b.h / 2); other.frame(); }
     k.frame(); other.frame();
   }
-  void toLobby() {
+  // Both on the cards: each sees the other's Race!; Sam taps it, then Zoe; both on the grip page, Sam hosting.
+  void join() {
+    wait(600);
+    assert(sam.g.duo().inviteName && !strcmp(sam.g.duo().inviteName, "Zoe") && !strcmp(zoe.g.duo().inviteName, "Sam"));
     tap(sam, paint::TOGETHER);
-    assert(sam.g.screen() == Game::Screen::Looking);
+    assert(sam.g.duo().ready && sam.g.screen() == Game::Screen::Tracks);
     wait(200);
-    assert(zoe.g.duo().inviteName && !strcmp(zoe.g.duo().inviteName, "Sam"));
-    tap(zoe, paint::JOIN);
+    assert(zoe.g.duo().peerReady && !zoe.g.duo().ready);
+    tap(zoe, paint::TOGETHER);
     wait(300);
-    assert(sam.g.screen() == Game::Screen::Lobby && zoe.g.screen() == Game::Screen::Lobby);
+    assert(sam.g.screen() == Game::Screen::Calibrate && zoe.g.screen() == Game::Screen::Calibrate);
+    assert(sam.g.duo().host && !zoe.g.duo().host && zoe.g.duo().paired);
   }
   void toRace() {
-    toLobby();
-    tap(sam, paint::NEXT);   // Go: both to the grip page
-    wait(200);
-    assert(sam.g.screen() == Game::Screen::Calibrate && zoe.g.screen() == Game::Screen::Calibrate);
+    join();
     wait(600);
     tap(sam, paint::NEXT);
     assert(sam.g.screen() == Game::Screen::Calibrate && sam.g.duo().waiting);   // waits for Zoe's grip
@@ -99,7 +100,7 @@ struct Pair {
   }
 };
 
-// The wire on its own: an invite, a join, the pair talking only to each other, a Not now, a goodbye.
+// The wire on its own: a device on its cards heard by everyone, a join, the pair talking only to each other, a goodbye.
 void link() {
   Air air;
   MemRadio a{&air, 1}, b{&air, 2}, c{&air, 3};
@@ -107,74 +108,61 @@ void link() {
   together::Link la, lb, lc;
   la.begin(&a); lb.begin(&b); lc.begin(&c);
   together::Wire wa{}, wb{}, wc{};
-  wa.stage = (uint8_t)Stage::Looking; wa.session = 7; snprintf(wa.name, sizeof wa.name, "Sam");
+  wa.stage = (uint8_t)Stage::Looking; snprintf(wa.name, sizeof wa.name, "Sam");
   la.tick(0, wa);
   lb.tick(10, wb); lc.tick(10, wc);
-  assert(lb.invited(10) && lc.invited(10) && !strcmp(lb.invite().name, "Sam"));
-  assert(!lb.invited(10 + together::INVITE_MS));   // a host that stopped looking is no invite
-  lc.decline(wc);
-  assert(!lc.invited(10));
-  la.tick(15, wa);   // the Not now reaches the host
-  assert(la.refused() && !strcmp(la.refusal().name, wc.name) && !la.paired());
-  wc.stage = (uint8_t)Stage::Idle;
-  lb.join(10);
+  assert(lb.invited(10) && lc.invited(10) && !strcmp(lb.invite().name, "Sam") && !lb.invite().in);
+  assert(!lb.invited(10 + together::INVITE_MS));   // a kid who left the cards is not there
+  la.tick(20, wa);
+  assert(b.inbox.empty());   // on the cards, a few times a second only
+  wa.in = 1;
+  la.tick(30, wa);   // Race!: at once
+  lb.tick(40, wb);
+  assert(lb.invite().in);
+  lb.join(40);
   wb.stage = (uint8_t)Stage::Lobby;
-  lb.tick(20, wb);   // addressed to the host
-  assert(b.inbox.empty() && c.inbox.empty() && a.inbox.size() == 1);
-  la.tick(30, wa);
+  lb.tick(50, wb);   // addressed to the host
+  assert(b.inbox.empty() && c.inbox.size() == 1 && a.inbox.size() == 1);
+  c.inbox.clear();
+  la.tick(60, wa);
   assert(la.paired() && la.heard() && la.gen() == 1);
-  wa.stage = (uint8_t)Stage::Lobby;
-  la.tick(40, wa);
+  wa.stage = (uint8_t)Stage::Grip;
+  la.tick(70, wa);
   assert(c.inbox.empty());   // paired: only the guest hears the host
-  lb.tick(50, wb);
-  assert(lb.heard() && lb.peer().stage == (uint8_t)Stage::Lobby && !lb.lost(50));
-  la.tick(60, wa);   // nothing new, inside SEND_MS: quiet
+  lb.tick(80, wb);
+  assert(lb.heard() && lb.peer().stage == (uint8_t)Stage::Grip && !lb.lost(80));
+  la.tick(90, wa);   // nothing new, inside SEND_MS: quiet
   assert(b.inbox.empty());
-  assert(lb.lost(50 + together::LOST_MS + 1));
-  wa.stage = (uint8_t)Stage::Looking; wa.session = 8;   // a new invite: shown again to the kid who said Not now
-  together::Link la2;
-  la2.begin(&a);
-  la2.tick(70, wa);
-  lc.tick(80, wc);
-  assert(lc.invited(80));
+  assert(lb.lost(80 + together::LOST_MS + 1));
   la.leave(wa);
-  assert(!la.paired() && b.inbox.size() == 4);   // the new invite, then three goodbyes
+  assert(!la.paired() && b.inbox.size() == 3);   // three goodbyes
   uint8_t junk[8] = {1};
   a.send(junk, sizeof junk, 0);   // the wrong size: dropped
-  lb.tick(90, wb);
+  lb.tick(100, wb);
   assert(lb.peer().stage == (uint8_t)Stage::Idle);
 }
 
-// Invite, Not now, invite again, join, and only the host picks the track.
-void inviteAndLobby(Pair& p) {
+// Race! on both cards; Sam taps it and takes it back, then both tap it.
+void joinTogether(Pair& p) {
   assert(p.sam.g.duo().radio && !p.sam.g.duo().on);
+  p.wait(600);
   p.tap(p.sam, paint::TOGETHER);
   p.wait(200);
-  p.tap(p.zoe, paint::NOT_NOW);
-  assert(p.zoe.g.screen() == Game::Screen::Tracks && !p.zoe.g.duo().inviteName);
-  p.wait(300);   // Sam hears the Not now: back to the cards, told so
-  assert(p.sam.g.screen() == Game::Screen::Tracks);
-  p.tap(p.sam, paint::TOGETHER);   // looking again: a new invite
+  assert(p.zoe.g.duo().peerReady);
+  p.tap(p.sam, paint::TOGETHER);   // changed their mind
   p.wait(200);
-  assert(p.zoe.g.duo().inviteName);
-  p.tap(p.zoe, paint::JOIN);
-  p.wait(300);
-  assert(p.zoe.g.screen() == Game::Screen::Lobby && p.zoe.g.duo().paired && !p.zoe.g.duo().host);
-  p.tap(p.sam, paint::LOBBY_NEXT);
-  p.tap(p.zoe, paint::LOBBY_NEXT);   // only the host picks
-  p.wait(200);
-  assert(p.zoe.g.screen() == Game::Screen::Lobby);
+  assert(!p.sam.g.duo().ready && !p.zoe.g.duo().peerReady && p.sam.g.screen() == Game::Screen::Tracks);
+  p.join();
 }
 
 // Both grips, then the same race: the host's track and rivals on both, side by side, five places.
 void sameRace(Pair& p) {
-  p.tap(p.sam, paint::NEXT);
-  p.wait(800);
+  p.wait(600);
   p.tap(p.sam, paint::NEXT);
   p.tap(p.zoe, paint::NEXT);
   p.wait(200);
   const Race &a = p.sam.g.race(), &b = p.zoe.g.race();
-  assert(a.track == &TRACK[1] && b.track == &TRACK[1] && a.level == b.level);
+  assert(a.track == &TRACK[0] && b.track == &TRACK[0] && a.level == b.level);   // the host's last track
   assert(a.car[PLAYER].x > 0 && b.car[PLAYER].x < 0);   // side by side
   p.wait(4000);   // through the countdown, racing
   assert(a.phase == Phase::Racing && b.phase == Phase::Racing);
@@ -215,19 +203,22 @@ void finishTogether(Pair& p) {
   p.zoe.frame();
   gfx::textLogEnabled = false;
   for (int i = 0; i < gfx::textLogCount; i++) assert(gfx::inCircle(gfx::textLog[i].x, gfx::textLog[i].y, 1));
-  // Again: Zoe asks, Sam sees it; then Sam goes home and Zoe is told.
+  // Again: Zoe asks, Sam sees it and agrees: both on the grip page. Then Sam backs out and Zoe is told.
   p.tap(p.zoe, paint::REPLAY);
   p.wait(200);
   assert(p.zoe.g.screen() == Game::Screen::Lobby && p.sam.g.duo().peerAgain);
-  p.tap(p.sam, paint::RESULT_HOME);
+  p.tap(p.sam, paint::REPLAY);
+  p.wait(300);
+  assert(p.sam.g.screen() == Game::Screen::Calibrate && p.zoe.g.screen() == Game::Screen::Calibrate);
+  p.tap(p.sam, paint::BACK);
   p.wait(200);
-  assert(p.sam.g.wantsHome() && p.zoe.g.screen() == Game::Screen::Tracks);
+  assert(p.sam.g.screen() == Game::Screen::Tracks && p.zoe.g.screen() == Game::Screen::Tracks);
 }
 
 // The whole thing on two devices.
 void raceTogether() {
   Pair p;
-  inviteAndLobby(p);
+  joinTogether(p);
   sameRace(p);
   pauseTogether(p);
   finishTogether(p);
@@ -249,20 +240,24 @@ void dropped() {
   assert(p.zoe.g.screen() == Game::Screen::Race && !p.zoe.g.duo().on);
 }
 
-// Leaving before the race: the other kid is back at the cards, told why.
+// Leaving before the race: the other kid is back at the cards.
 void leftEarly() {
   Pair p;
-  p.toLobby();
+  p.join();
   p.tap(p.zoe, paint::BACK);
   p.wait(200);
   assert(p.sam.g.screen() == Game::Screen::Tracks && p.zoe.g.screen() == Game::Screen::Tracks);
-  p.toLobby();
-  p.air.cut = true;   // gone quiet in the lobby: the race is off
+  p.join();
+  p.air.cut = true;   // gone quiet on the grip page: the race is off
   p.wait(together::LOST_MS + 400);
   assert(p.sam.g.screen() == Game::Screen::Tracks && p.zoe.g.screen() == Game::Screen::Tracks);
   p.air.cut = false;
-  // Together without wifi set up: the page says so, Back returns.
-  Air air;
+  // A solo race: that kid leaves the cards, so the other's Race! goes.
+  p.wait(600);
+  p.tap(p.sam, paint::CARD[2]);
+  p.wait(together::INVITE_MS + 200);
+  assert(p.sam.g.screen() != Game::Screen::Tracks && !p.zoe.g.duo().inviteName);
+  // No wifi: no Race!, and the top of the cards does nothing.
   struct NoWifi final : lan::Radio {
     void start() override {} void stop() override {}
     lan::State state() override { return lan::S_NO_WIFI; } uint32_t self() override { return 0; }
@@ -271,39 +266,36 @@ void leftEarly() {
   Kid k("Kai", 0, &none);
   for (int i = 0; i < 15; i++) k.frame();
   k.frame(true, paint::TOGETHER.x + 20, paint::TOGETHER.y + 10); k.frame(true, paint::TOGETHER.x + 20, paint::TOGETHER.y + 10); k.frame();
-  assert(k.g.screen() == Game::Screen::Looking && k.g.duo().net == lan::S_NO_WIFI);
-  (void)air;
+  assert(k.g.screen() == Game::Screen::Tracks && !k.g.duo().inviteName && !k.g.duo().on);
 }
 
-// Both kids tap Together at once: one joins the other (the higher address), and they are in one lobby.
-void bothLooking() {
+// Both kids tap Race! at once: one joins the other (the higher address), and both are on the grip page.
+void bothAtOnce() {
   Pair p;
-  p.tap(p.sam, paint::TOGETHER);
-  p.tap(p.zoe, paint::TOGETHER);
+  p.wait(600);
+  const ui::Box& b = paint::TOGETHER;
+  for (int i = 0; i < 2; i++) { p.sam.frame(true, b.x + b.w / 2, b.y + 10); p.zoe.frame(true, b.x + b.w / 2, b.y + 10); }
   p.wait(800);
-  assert(p.sam.g.screen() == Game::Screen::Lobby && p.zoe.g.screen() == Game::Screen::Lobby);
-  assert(p.sam.g.duo().host != p.zoe.g.duo().host && p.sam.g.duo().paired && p.zoe.g.duo().paired);
+  assert(p.sam.g.screen() == Game::Screen::Calibrate && p.zoe.g.screen() == Game::Screen::Calibrate);
+  assert(p.sam.g.duo().host && !p.zoe.g.duo().host && p.sam.g.duo().paired && p.zoe.g.duo().paired);
 }
 
-// Not now, then the same kid taps Together right away: their friend gets the invite (no stale pairing).
-void notNowThenTogether() {
+// Sam takes Race! back in the same moment Zoe taps it: Zoe joins a kid who is no longer in, and both end on the cards.
+void changedMind() {
   Pair p;
+  p.wait(600);
   p.tap(p.sam, paint::TOGETHER);
   p.wait(200);
-  p.tap(p.zoe, paint::NOT_NOW);
-  p.tap(p.zoe, paint::TOGETHER);
-  p.wait(400);
-  assert(p.zoe.g.screen() == Game::Screen::Looking && p.sam.g.screen() == Game::Screen::Tracks);
-  assert(p.sam.g.duo().inviteName);
-  p.tap(p.sam, paint::JOIN);
-  p.wait(400);
-  assert(p.sam.g.screen() == Game::Screen::Lobby && p.zoe.g.screen() == Game::Screen::Lobby && p.zoe.g.duo().host);
+  const ui::Box& b = paint::TOGETHER;
+  for (int i = 0; i < 2; i++) { p.sam.frame(true, b.x + b.w / 2, b.y + 10); p.zoe.frame(true, b.x + b.w / 2, b.y + 10); }
+  p.wait(600);
+  assert(p.sam.g.screen() == Game::Screen::Tracks && p.zoe.g.screen() == Game::Screen::Tracks && !p.zoe.g.duo().on);
 }
 
 // The Together targets keep the house rules: whole targets on the glass, apart from their neighbors.
 void geometry() {
   using namespace paint;
-  const ui::Box boxes[] = {TOGETHER, JOIN, NOT_NOW, LOBBY_PREV, LOBBY_NEXT};
+  const ui::Box boxes[] = {TOGETHER};
   for (const ui::Box& b : boxes) {
     assert(b.w >= 24 && b.h >= 22);
     for (int k = 0; k < 4; k++) assert(gfx::inCircle(b.x + (k & 1) * b.w, b.y + (k >> 1) * b.h, 2));
@@ -319,8 +311,8 @@ int main() {
   raceTogether();
   dropped();
   leftEarly();
-  bothLooking();
-  notNowThenTogether();
+  bothAtOnce();
+  changedMind();
   puts("test_racing_together: ok");
   return 0;
 }
