@@ -89,7 +89,7 @@ pace: the next table starts once about half of the current one is known (Easy on
 and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
 From 4× on, each known fact also brings its two divisions (6 × 7 known: 42 ÷ 6 and 42 ÷ 7).
 A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
-round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
+round earns 2 stars, however it went, to spend on hats in Pets Club. No timer, no sounds.
 For a grown-up: hold the Times Cards title for 2 seconds to see how honestly the kid grades.
 
 Design and state contract: [game brief](games/times-cards/AGENTS.md)

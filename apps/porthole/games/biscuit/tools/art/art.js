@@ -1,7 +1,7 @@
 // Palette expanded from RGB565 levels; art remains a 160px grid enlarged exactly 3×.
 const INK = '#5a3d42';
 
-export function rect(ctx, color, x, y, w, h) {
+function rect(ctx, color, x, y, w, h) {
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x), Math.round(y), w, h);
 }
@@ -141,7 +141,7 @@ function meadow(ctx, timeOfDay) {
   }
 }
 
-export function puppy(ctx, x, y, { sleeping, blink, wag, activity, stage, pose, phase }) {
+function puppy(ctx, x, y, { sleeping, blink, wag, activity, stage, pose, phase }) {
   let headX = 0;
   let headY = 0;
   const r = (color, a, b, w, h) => {

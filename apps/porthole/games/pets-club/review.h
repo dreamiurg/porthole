@@ -1,12 +1,12 @@
 // Missed puzzles come back on a later day (docs/design/adaptive-practice.md, piece B). The queue lives in the save
 // (puzzleReviews, oldest first): a miss is due the next day, a round in its strand on or after that day asks it once,
 // right then takes it off and wrong pushes it a day. Being away punishes nothing: an overdue item is simply due.
-// Pure logic on the save; host/test_biscuit.cpp exercises it.
+// Pure logic on the save; host/test_pets_learn.cpp exercises it.
 #pragma once
 #include "pet.h"
 #include "puzzles.h"
 
-namespace biscuit::review {
+namespace learn::review {
 inline puzzles::Item itemOf(const PuzzleReview& r) { return {r.strand, r.level, r.a, r.b, r.c}; }
 inline bool same(const PuzzleReview& r, const puzzles::Item& q) {
   return r.strand == q.strand && r.level == q.level && r.a == q.a && r.b == q.b && r.c == q.c;
@@ -49,4 +49,4 @@ inline void answered(Save& p, const puzzles::Item& q, bool right, int32_t today)
   if (r.misses < 255) r.misses++;
   r.due = (uint16_t)(today + 1);
 }
-}  // namespace biscuit::review
+}  // namespace learn::review

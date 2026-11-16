@@ -7,7 +7,7 @@ tap 66 129
 wait 450
 expect-screen playmenu
 # Word Fetch button
-tap 80 108
+tap 80 75
 wait 450
 expect-screen words
 expect typed=0

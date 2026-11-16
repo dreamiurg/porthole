@@ -104,7 +104,7 @@ void migrateBiscuit(Store& st, Profiles& p) {
     if (owner < 0) return;
     // A pup already at the owner's key is never replaced: it is this copy from a boot cut short (the same bytes), or
     // one played since a marker that did not land, and then the old place is left as it is, unread.
-    biscuit::Save there{}; uint8_t blob[sizeof there];
+    biscuit::Save there{}; uint8_t blob[biscuit::SAVE_V4_SIZE];   // the longest Biscuit ever wrote: a load into less fails
     const size_t n = st.load(biscuit::STORE, key('s', owner), blob, sizeof blob);
     if (n && biscuit::loadBlob(blob, n, there)) { if (memcmp(&there, &s, sizeof s)) from = OLD_NONE; }
     else if (!st.save(biscuit::STORE, key('s', owner), &s, sizeof s)) return;

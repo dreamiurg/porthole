@@ -1,5 +1,5 @@
-// Biscuit's puzzles: one question with three answers to pick from, made up on the spot. Pure logic, no rendering;
-// host/test_biscuit.cpp exercises it. Three strands, each a ladder of levels tied to a grade standard
+// Pets Club's puzzles: one question with three answers to pick from, made up on the spot. Pure logic, no rendering;
+// host/test_pets_learn.cpp exercises it. Three strands, each a ladder of levels tied to a grade standard
 // (docs/design/adaptive-practice.md): plus and minus from sums within ten (1.OA.6) to two-digit numbers (2.NBT.5),
 // times as groups and sharing in a story (3.OA.3), and words with a missing letter from three letters to eight. The
 // kid picks the strand; the level is the kid's own and moves after every round (nextLevel).
@@ -9,7 +9,7 @@
 #include <string.h>
 #include "content_puzzles.h"
 
-namespace biscuit::puzzles {
+namespace learn::puzzles {
 enum Strand : uint8_t { NUMBERS, GROUPS, WORDS, STRAND_COUNT };
 constexpr uint8_t LEVELS[STRAND_COUNT] = {6, 6, 4};
 constexpr int ANSWERS = 3, ROUND = 5;
@@ -56,7 +56,7 @@ inline uint8_t nextLevel(Strand strand, uint8_t level, int right) {
 namespace detail {
 constexpr const char* VOWELS = "aeiou";
 inline bool vowel(char c) { return strchr(VOWELS, c) != nullptr; }
-// "f r _ e n d": the word's letters spaced out, '_' at gap. out holds a word of up to 11 letters (check_content.py).
+// "f r _ e n d": the word's letters spaced out, '_' at gap. out holds a word of up to 11 letters (tools/check_learn.py).
 inline void spaced(const char* word, int gap, char (&out)[24]) {
   int at = 0;
   for (int i = 0; word[i] && at + 3 < (int)sizeof out; i++) {
@@ -318,4 +318,4 @@ inline Puzzle make(Strand strand, uint8_t level, uint32_t& s, uint32_t seen) { r
 // The level a round's n-th question is at: one of the five, at a place picked when the round starts (easyAt), comes
 // from the level below, so every round mixes a little of what the kid already knows back in.
 inline uint8_t roundLevel(uint8_t level, int n, int easyAt) { return n == easyAt && level ? (uint8_t)(level - 1) : level; }
-}  // namespace biscuit::puzzles
+}  // namespace learn::puzzles

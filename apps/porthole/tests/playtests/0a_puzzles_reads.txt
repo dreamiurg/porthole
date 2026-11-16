@@ -1,0 +1,133 @@
+# Puzzles and Little reads, from the Play menu: every right answer adds bond, 5 right puzzles or 3 right reads earn
+# the kid a star, and a wrong answer shows the answer and costs nothing. Stars buy hats; short of stars, the hat page
+# says where they come from.
+newgame Sam Biscuit
+wait 2400
+expect stars=0
+tap 66 129
+wait 450
+expect-screen playmenu
+ui-check playmenu
+snap 01_play
+# Puzzles: the three strands, then Plus and minus
+tap 80 99
+wait 450
+expect-screen puzzles
+ui-check puzzles
+snap 02_strands
+tap 80 68
+wait 450
+expect-screen puzzle
+ui-check puzzle
+snap 03_question
+answer-puzzle wrong
+wait 450
+expect right=0
+ui-check puzzle-wrong
+snap 04_wrong
+tap 80 133
+wait 450
+answer-puzzle right
+wait 450
+ui-check puzzle-right
+snap 05_right
+tap 80 133
+wait 450
+repeat 3
+answer-puzzle right
+wait 450
+tap 80 133
+wait 450
+end
+# the round's end: 4 right, one short of a star
+expect puzzles_right=4
+expect stars=0
+ui-check puzzle-done
+snap 06_round_done
+wait 1000
+tap 80 129
+wait 450
+expect-screen puzzles
+tap 80 68
+wait 450
+answer-puzzle right
+wait 450
+expect puzzles_right=5
+expect stars=1
+snap 07_star
+tap 80 12
+wait 450
+expect-screen puzzles
+tap 80 12
+wait 450
+expect-screen playmenu
+# Little reads: three passages, a question after each
+tap 80 123
+wait 450
+expect-screen little
+ui-check little
+snap 08_passage
+repeat 6
+tap 110 140
+wait 450
+end
+expect-screen little_ask
+answer-read right
+wait 450
+ui-check little_ask-right
+snap 09_read_right
+tap 80 133
+wait 450
+repeat 6
+tap 110 140
+wait 450
+end
+expect-screen little_ask
+answer-read right
+wait 450
+tap 80 133
+wait 450
+repeat 6
+tap 110 140
+wait 450
+end
+expect-screen little_ask
+answer-read right
+wait 450
+tap 80 133
+wait 450
+expect reads_right=3
+expect stars=2
+expect-screen little_ask
+ui-check little_ask-done
+snap 10_reads_done
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen home
+sheet learn
+# Hats: two stars buy nothing yet; with more, the first hat for sale is bought and worn
+tap 40 27
+wait 450
+expect-screen stats
+tap 114 123
+wait 450
+tap 134 80
+wait 450
+ui-check hats-for_sale
+snap 11_hat_for_sale
+tap 80 134
+wait 450
+expect hats=0
+expect stars=2
+snap 12_short
+dbg rich
+tap 80 134
+wait 450
+expect hats=2
+expect hat=1
+expect stars=49
+ui-check hats-bought
+snap 13_bought
+sheet hats

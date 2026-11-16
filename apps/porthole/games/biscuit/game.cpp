@@ -1,7 +1,6 @@
 #include "launcher_icon.h"
 #include "game.h"
 #include "content_daily.h"
-#include "content_reads.h"
 #include <stdio.h>
 #include <string.h>
 #include "generated/scenes.h"
@@ -16,17 +15,15 @@ constexpr uint32_t SAY_MS = 4000, ONE_SHOT_MS = 800, SURPRISE_MS = 90000;
 const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 void Game::enter(const AppEnter& e) {
-  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; wallet_ = e.stars;
+  who_ = *e.who; now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight;
   save_ = create(now_);
   for (int i = 0; i < e.n; i++)   // only this kid's pup: other profiles' saves are theirs
     if (e.all[i].id == who_.id && e.saves[i].len) loadBlob(e.saves[i].data, e.saves[i].len, save_);   // bad: a new pup
   biscuit::tick(save_, now_);
-  payStars(save_, wallet_);   // a pup from before the shared stars pays its earned ones in at its first visit
   dirty_ = save_.named; wantsHome_ = false;   // the visit (and its new day, if any) is saved right away
   lastTickSec_ = lastCheckpointSec_ = now_; lastSurpriseMs_ = ms_;
   fetch_ = -1; quiet(); homeFrames_.reset();   // the buffers hold the launcher
   claimed_ = save_.dailyClaimed; stickerNews_ = false;
-  rng_ = now_ ^ (ms_ << 7);   // the puzzles' dice (next() turns a 0 into a seed)
   if (save_.named) go(SC_HOME);
   else { startNaming("Biscuit"); go(SC_SETUP_PET); }
 }
@@ -81,9 +78,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateSetupPet, &Game::updateHome, &Game::updateWorld, &Game::updateTricks, &Game::updateTraining,
     &Game::updateProfile, &Game::updateRenamePet, &Game::updateLibrary, &Game::updateStory, &Game::updateChoice,
     &Game::updateStory, &Game::updateDiscoveries, &Game::updateTopics, &Game::updateDiscovery, &Game::updateSource,
-    &Game::updateToday, &Game::updateWord, &Game::updateStickers, &Game::updatePuzzles,
-    &Game::updatePuzzle, &Game::updateDoghouse, &Game::updateShop, &Game::updateItem,
-    &Game::updateRead, &Game::updateReadAsk};
+    &Game::updateToday, &Game::updateWord, &Game::updateStickers};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -98,7 +93,6 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   }
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
-  if (payStars(save_, wallet_)) markDirty();   // stars earned on this screen go into the kid's balance
   stickerNews();
 }
 // Today's adventure done: its sticker is earned, wherever the last activity happened. The pup says so the next time
@@ -117,8 +111,7 @@ void Game::render() {
     &Game::drawSetupPet, &Game::drawHome, &Game::drawWorld, &Game::drawTricks, &Game::drawTraining, &Game::drawProfile,
     &Game::drawRenamePet, &Game::drawLibrary, &Game::drawStory, &Game::drawChoice, &Game::drawStory,
     &Game::drawDiscoveries, &Game::drawTopics, &Game::drawDiscovery, &Game::drawSource, &Game::drawToday,
-    &Game::drawWord, &Game::drawStickers, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawDoghouse, &Game::drawShop, &Game::drawItem,
-    &Game::drawRead, &Game::drawReadAsk};
+    &Game::drawWord, &Game::drawStickers};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   if (screen_ != SC_HOME) homeFrames_.reset();   // another screen draws over what the buffers held of Home
@@ -146,28 +139,21 @@ const char* Game::screenName() const {
   static const char* const N[] = {"biscuit_setup_pet", "biscuit_home", "biscuit_world", "biscuit_tricks", "biscuit_training",
                             "biscuit_profile", "biscuit_rename_pet", "biscuit_library", "biscuit_story",
                             "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
-                            "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers",
-                            "biscuit_puzzles", "biscuit_puzzle", "biscuit_doghouse", "biscuit_shop",
-                            "biscuit_item", "biscuit_read", "biscuit_read_ask"};
+                            "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per screen");
   return N[screen_];
 }
 void Game::debugPrint() {
   const Save& p = save_;
-  printf("[biscuit pet=%s named=%d days=%u stage=%d fullness=%d happiness=%d energy=%d friendship=%u sleeping=%d stars=%d earned=%d decor=%u]\n",
+  printf("[biscuit pet=%s named=%d days=%u stage=%d fullness=%d happiness=%d energy=%d friendship=%u sleeping=%d stars=%d]\n",
          p.petName, p.named, (unsigned)p.daysTogether, (int)stage(p), (int)(p.fullness + 0.5f), (int)(p.happiness + 0.5f),
-         (int)(p.energy + 0.5f), (unsigned)p.friendship, p.sleeping, starCount(), earnedStars(p), (unsigned)p.decor);
+         (int)(p.energy + 0.5f), (unsigned)p.friendship, p.sleeping, storyStars(p));
   printf("screen=%s fetch=%d activity=%d feeds=%u plays=%u pets=%u daily=%u tricks=%d%d%d%d%d%d trick=%d step=%d watching=%d page=%d\n",
          screenName(), fetch_, activity_, (unsigned)p.careCounts[0], (unsigned)p.careCounts[1], (unsigned)p.careCounts[2],
          p.dailyCompleted, p.tricks[0], p.tricks[1], p.tricks[2], p.tricks[3], p.tricks[4], p.tricks[5], trick_, step_, watching_, page_);
   int kept = 0;
   for (uint32_t w : p.discoveries) for (; w; w &= w - 1) kept++;
-  printf("puzzles=%u strand=%d level=%d levels=%d%d%d asked=%d right=%d answered=%d answer=%d books=%u more=%u\n",
-         (unsigned)p.puzzles, (int)strand_, level_, p.puzzleLevels[0], p.puzzleLevels[1], p.puzzleLevels[2], asked_, right_,
-         answered_, puzzle().right, (unsigned)p.booksDay, (unsigned)p.moreStories);
-  printf("reviews=%d review_at=%d reviewing=%d\n", p.puzzleReviewCount, reviewAt_, asked_ == reviewAt_);
-  printf("reads=%u read_level=%u read_streak=%u little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d\n",
-         (unsigned)p.readsRight, p.readLevel, p.readStreak, little_, asked_, right_, answered_, READS[little_].right);
+  printf("books=%u more=%u\n", (unsigned)p.booksDay, (unsigned)p.moreStories);
   printf("stories=%u story=%d choice=%d at=%d of=%d facts=%d topic=%d fact=%d kept=%d stickers=%u claimed=%u said=%d\n",
          p.stories, story_, choice_, at_, total_, (int)facts_, topic_, fact_, kept, p.stickers, p.dailyClaimed, said_);
 }
@@ -190,8 +176,6 @@ static bool debugState(Save& p, const char* cmd) {
 }
 void Game::debugCmd(const char* cmd) {
   if (!save_.named) return;
-  if (!strcmp(cmd, "rich")) ::stars::award(wallet_, ::stars::MAX);   // the most stars a kid can hold
-  else if (!debugState(save_, cmd)) return;
-  payStars(save_, wallet_);
+  if (!debugState(save_, cmd)) return;
   markDirty();
 }}  // namespace biscuit

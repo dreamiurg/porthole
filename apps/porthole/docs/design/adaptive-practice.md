@@ -1,5 +1,8 @@
 # Adaptive practice and spaced review: Biscuit and Times Cards
 
+> 2026-11-16: the puzzles and Little reads described here as Biscuit's moved to Pets Club (`games/pets-club/learn.cpp`,
+> its Play menu); Biscuit keeps its stories and discoveries. The plan below is unchanged.
+
 This is the plan for applying `learning-principles.md` (principles 2 to 6 and 9) to the two games that teach
 maths: Biscuit's puzzles and Times Cards. It says what each game does today, what changes, and how the work splits
 into pieces that separate sessions can build at the same time without touching the same files.

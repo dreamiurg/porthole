@@ -26,8 +26,8 @@ Every page has the house at the top: from a card it goes back to the deck, from 
   day" (a card graded Easy and seen again on a later day, how often it was still Easy), "Turned in 1 s" (cards turned
   less than a second after they showed) and the average think time. The house goes back to the deck.
 
-Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent in
-Biscuit's doghouse), whatever the grades, so an honest Wrong costs nothing. A round left half-way pays none. The shell
+Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent on
+Pets Club's hats), whatever the grades, so an honest Wrong costs nothing. A round left half-way pays none. The shell
 keeps and saves the balance; this game never stores it.
 
 No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only comes back sooner.

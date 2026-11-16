@@ -191,6 +191,8 @@ static const int NUM_WORDS = (int)(sizeof(WORDS) / sizeof(WORDS[0]));
 
 static const char* const TRICK_NAMES[8] = {"Sit", "Shake", "Speak", "Spin", "Roll Over", "Play Dead", "Beg", "Dance"};
 static const char* const HAT_NAMES[8] = {"None", "Red Bow", "Party Hat", "Glasses", "Bandana", "Crown", "Wizard Hat", "Flower"};
+// Stars for a hat not found yet (Hats sells them; os/stars.h). Gifts still bring them free, every third gift.
+static const uint8_t HAT_PRICES[8] = {0, 3, 4, 5, 6, 8, 10, 12};
 static const char* const STICKER_NAMES[16] = {
   "First Meal", "First Story", "Bookworm", "Library Card", "Bone Catcher", "Super Speller", "One Week", "Two Weeks",
   "Trick Star", "Show Dog", "Squeaky Clean", "Best Friends", "Early Bird", "Party Time", "All Grown Up", "Hat Collector"};

@@ -2,10 +2,12 @@
 // One pup's life, in order: each step starts from the state the previous one left.
 #include "host/check.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"
 #include "games/pets-club/game.h"
+#include "games/pets-club/puzzles.h"
 
 static const uint32_t day0 = 1790000000u - (1790000000u % 86400u) + 10 * 3600;  // 10:00
 
@@ -115,6 +117,22 @@ static void saveV2Migrates(const Save& s) {
   assert(!strcmp(m.petName, s.petName) && m.kidAge == s.kidAge && m.playSec == s.playSec);
   v2[20] ^= 1; assert(!pet::loadBlob(v2, sizeof v2, m));          // corrupted v2 rejected
   oldBlob(v2, s, sizeof v2, 3); assert(!pet::loadBlob(v2, sizeof v2, m));   // a v2 size must say v2, even with a good CRC
+}
+
+// v3 blob (212 bytes, before puzzles and little reads) migrates: the farm's own fields stay as they were (an empty
+// room stays empty), puzzles and reads start from the kid's age with nothing to review.
+static void saveV3Migrates(Save s) {
+  s.hasDog = 0; s.wallCount = 2; s.breed = 4;
+  uint8_t v3[SAVE_V3_SIZE]; oldBlob(v3, s, sizeof v3, 3);
+  Save m; assert(pet::loadBlob(v3, sizeof v3, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(m.hasDog == 0 && m.wallCount == 2 && m.breed == 4 && !strcmp(m.petName, s.petName) && m.hatsMask == s.hatsMask);
+  assert(!m.puzzleLevels[0] && !m.puzzleReviewCount && !m.readLevel && !m.readsRight && !m.puzzlesRight && !m.puzzleReviews[0].due);
+  v3[30] ^= 1; assert(!pet::loadBlob(v3, sizeof v3, m));          // corrupted v3 rejected
+  oldBlob(v3, s, sizeof v3, 2); assert(!pet::loadBlob(v3, sizeof v3, m));   // a v3 size must say v3
+  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v4 bytes are made safe once, on load
+  bad.readLevel = 77; bad.readStreak = 9; bad.puzzleReviewCount = 200; pet::seal(bad);
+  assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
 }
 
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
@@ -442,7 +460,7 @@ static void tileCenter(const WordRound& w, char ch, int& x, int& y) {
 }
 static void wordsUpToSecond(Game& g, Finger& f, const Save& s, uint32_t t) {   // the first word spelled, its pause begun
   enterAt(g, s, t); f.draw = true;
-  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
+  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 75); assert(!strcmp(g.screenName(), "words"));
   WordRound w = wordRound(g);
   for (const char* c = w.word; *c; c++) {   // a used tile is blanked so a repeated letter takes its next tile
     int x, y; tileCenter(w, *c, x, y); w.tiles[strchr(w.tiles, *c) - w.tiles] = '.';
@@ -520,6 +538,68 @@ static void homeOverTheUptimeWrap() {
   }
 }
 
+// A number the live `debug` line prints (key=value), or -1: the test reads what the kid sees.
+static int dbg(Game& g, const char* key) {
+  fflush(stdout); FILE* tmp = tmpfile(); const int out = dup(1); dup2(fileno(tmp), 1);
+  g.debugPrint(); fflush(stdout); dup2(out, 1); close(out); rewind(tmp);
+  char line[512], pat[40]; snprintf(pat, sizeof pat, " %s=", key); int v = -1;
+  while (fgets(line, sizeof line, tmp)) {
+    char padded[520]; snprintf(padded, sizeof padded, " %s", line);
+    if (const char* at = strstr(padded, pat)) v = atoi(at + strlen(pat));
+  }
+  fclose(tmp);
+  return v;
+}
+// Answers every question of the round on screen right: puzzles tap the answer button, reads page to the question first.
+static void rightPuzzles(Finger& f, Game& g) {
+  for (int n = 0; n < learn::puzzles::ROUND; n++) {
+    assert(dbg(g, "asked") == n && dbg(g, "answered") == -1);
+    f.tap(41 + 39 * dbg(g, "answer"), 105); assert(dbg(g, "answered") >= 0);
+    f.tap(80, 133);
+  }
+}
+static void rightReads(Finger& f, Game& g) {
+  for (int n = 0; n < 3; n++) {
+    while (!strcmp(g.screenName(), "little")) f.tap(120, 80);
+    assert(!strcmp(g.screenName(), "little_ask") && dbg(g, "read_asked") == n);
+    f.tap(80, dbg(g, "read_ay") + dbg(g, "read_answer") * 24 + 11); assert(dbg(g, "read_answered") >= 0);
+    f.tap(80, 133);
+  }
+}
+// Puzzles and little reads from the Play menu: a round of five right puzzles moves the strand's level up and puts a
+// star in the kid's wallet; three right reads put another; the Hats page sells a hat not found yet for stars.
+static void learningPaysStars() {
+  static Game g;
+  const uint32_t t = day0 + 5 * 86400;
+  Save s; pet::adopt(s, t, "Sam", "Rex"); s.kidAge = 8; s.energy = 90; s.hatsMask = 0; pet::seal(s);
+  static const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot slot = {&s, sizeof s};
+  uint32_t wallet = 0;
+  g.enter({&kid, &kid, &slot, 1, t, 0, false, &wallet}); g.update(t, 2000, Input{});
+  Finger f{g, t}; f.draw = true;
+  f.hold(false, 0, 0, 2500); f.tap(66, 129); assert(!strcmp(g.screenName(), "playmenu"));
+  f.tap(80, 99); assert(!strcmp(g.screenName(), "puzzles"));
+  f.tap(80, 68); assert(!strcmp(g.screenName(), "puzzle") && dbg(g, "strand") == 0);
+  const int start = learn::puzzles::startLevel(learn::puzzles::NUMBERS, 8);
+  rightPuzzles(f, g);
+  Save got = taken(g);
+  assert(dbg(g, "right") == 5 && wallet == 1 && got.puzzlesRight == 5 && got.puzzleLevels[0] == start + 2 && !got.puzzleReviewCount);
+  f.hold(false, 0, 0, 1000); f.tap(80, 129); assert(!strcmp(g.screenName(), "puzzles"));
+  f.tap(80, 12); assert(!strcmp(g.screenName(), "playmenu"));
+  f.tap(80, 123); assert(!strcmp(g.screenName(), "little") && dbg(g, "pages") >= 1);
+  rightReads(f, g);
+  got = taken(g);
+  assert(wallet == 2 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8) + 1);
+  // the hats: Red Bow (3 stars) is not found yet; two stars buy nothing, five do
+  f.tap(80, 12); f.tap(80, 12); assert(!strcmp(g.screenName(), "home"));
+  f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
+  f.tap(114, 123); assert(!strcmp(g.screenName(), "hats"));
+  f.tap(134, 80); f.tap(80, 134);
+  g.leave(); assert(wallet == 2 && !(taken(g).hatsMask & 2));   // leave() marks the save to hand over
+  wallet = 5; f.tap(80, 134);
+  got = taken(g);
+  assert(wallet == 2 && (got.hatsMask & 2) && got.hat == 1);
+}
+
 int main() {
   Save s;
   decayCarryStaysWithTheVisit();
@@ -531,6 +611,8 @@ int main() {
   giftsStreakReading(s, t);
   saveV1(s);
   saveV2Migrates(s);
+  saveV3Migrates(s);
+  learningPaysStars();
   retireKeepsKidProgress();
   giftAfterClockSetBack();
   wallRollsAtFour();

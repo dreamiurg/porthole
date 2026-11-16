@@ -1,6 +1,6 @@
-// Biscuit's little reads: a short passage the kid reads alone, then one question with three answers to pick from
+// Pets Club's little reads: a short passage the kid reads alone, then one question with three answers to pick from
 // (learning-principles.md, principle 11; the plan is adaptive-practice.md, piece E). Five levels, picked for each kid
-// by pet.h's answerRead (three right in a row: up one, a miss: down one, never more than one below the age's start;
+// by pet.cpp's readAnswered (three right in a row: up one, a miss: down one, never more than one below the age's start;
 // it settles near 80% right):
 //   1  first-grade start: short-vowel words of one syllable with single consonants (cat, sit, hop, bed; -ll -ss -ff
 //      allowed) and a few sight words; 12 to 30 words. The answer is said in the text.
@@ -11,8 +11,8 @@
 //   4  two syllables, -ed and -ing, ar/or/er (garden, jumped, running, storm, under); 60 to 90 words. Why something
 //      happened, or how someone felt, worked out from what they did.
 //   5  third-grade start: any words; 75 to 120 words. Inference, what a word means here, the big idea.
-// tools/check_content.py holds levels 1 and 2 to their letter patterns (a short list of sight words aside), every
-// level to its word count, and checks the fields; host/test_biscuit_content.cpp measures every string in its box.
+// tools/check_learn.py holds levels 1 and 2 to their letter patterns (a short list of sight words aside), every
+// level to its word count, and checks the fields; host/test_pets_learn.cpp measures every string in its box.
 // Nothing is persisted by index here (a save keeps only the level and the count of right answers), so entries may be
 // added, reordered or changed freely. text, question, answers and why take {name} and {pet}; the title is drawn
 // as written. why is the "how" shown after a miss (principle 9): the sentence that holds the answer, or the two clues
@@ -20,8 +20,9 @@
 #pragma once
 #include <stdint.h>
 
-namespace biscuit {
+namespace learn {
 constexpr int READ_ANSWERS = 3;   // the levels are pet.h's READ_LEVELS
+constexpr int READ_LINES = 48;    // a passage wraps to at most this many lines (host/test_pets_learn.cpp)
 struct Read {
   const char* id;                       // unique, lowercase with hyphens
   uint8_t level;                        // 1..READ_LEVELS
@@ -221,4 +222,4 @@ inline constexpr Read READS[] = {
    "A smaller dog waits at the edge: {name} is leaving room for one."},
 };
 constexpr int READ_COUNT = sizeof READS / sizeof *READS;
-}  // namespace biscuit
+}  // namespace learn

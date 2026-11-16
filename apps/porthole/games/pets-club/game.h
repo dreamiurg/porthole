@@ -6,6 +6,8 @@
 #include "gfx.h"
 #include "input.h"
 #include "pet.h"
+#include "content_reads.h"
+#include "puzzles.h"
 #include "ui.h"
 
 enum Sound : uint8_t { SND_NONE = 0, SND_TAP, SND_YIP, SND_HAPPY, SND_SAD, SND_CHIME, SND_BARK, SND_FANFARE };
@@ -27,13 +29,14 @@ class Game : public App {
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N"
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich"
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
                           SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
-                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL };
+                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL,
+                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_COUNT };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -82,6 +85,14 @@ class Game : public App {
   ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
   uint32_t bounceUntil_ = 0;  // a screen's short reaction: a confirm's hint wiggles, the farm dog jumps (go() ends it)
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
+  // puzzles and little reads (learn.cpp)
+  uint32_t* wallet_ = nullptr;            // the kid's stars (os/stars.h), kept and saved by the shell
+  uint32_t rng_ = 0, questionSeed_ = 0, seen_ = 0, roundEndMs_ = 0;
+  learn::puzzles::Item question_{}, review_{};
+  uint8_t strand_ = 0, level_ = 0, little_ = 0, readLevelWas_ = 0, pageLines_ = 8; int8_t easyAt_ = 0, reviewAt_ = -1;
+  bool levelUp_ = false; int asked_ = 0, right_ = 0, answered_ = -1, roundStars_ = 0;
+  uint64_t readsSeen_ = 0;
+  char readLines_[learn::READ_LINES][40] = {}; int readLineCount_ = 0;
 
   // ---- helpers
   void go(Screen s);
@@ -152,6 +163,17 @@ class Game : public App {
   void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);
   void updateShelter(); void drawShelter(); void adoptShelterPup();
   void updateWall(); void drawWall();
+  void fillNames(const char* src, char* out, size_t cap) const;
+  void earnStar(bool earned);
+  void drawStarCount(int y) const;
+  void updatePuzzles(); void drawPuzzles();
+  uint8_t puzzleLevel(int strand) const; void startPuzzles(int strand); void nextPuzzle();
+  learn::puzzles::Puzzle puzzle() const;
+  void updatePuzzle(); void drawPuzzle(); void drawPuzzleDone();
+  void drawPuzzleAnswers(const learn::puzzles::Puzzle& p); void drawPuzzleFeedback(const learn::puzzles::Puzzle& p, bool right);
+  void startReads(); void nextRead(); int readPages() const; int readAnswerTop() const;
+  void updateLittle(); void drawLittle();
+  void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

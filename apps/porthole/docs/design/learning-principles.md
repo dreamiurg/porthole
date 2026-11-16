@@ -1,5 +1,8 @@
 # Learning principles for Porthole's games
 
+> 2026-11-16: the puzzles and Little reads described here as Biscuit's moved to Pets Club (`games/pets-club/learn.cpp`,
+> its Play menu); Biscuit keeps its stories and discoveries. The plan below is unchanged.
+
 Porthole is built for two kids: one at the start of US first grade (about 6) and one at the start of third grade
 (about 8). Several games teach on purpose (Biscuit's puzzles and stories, Times Cards). This page is the guidance for
 choosing and shaping a learning mechanic: what the research supports, how strongly, and what that means on a round

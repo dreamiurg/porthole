@@ -17,6 +17,7 @@
 #include "profiles.h"
 #include "save.h"
 #include "shell.h"
+#include "stars.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
 // (saves and erases) every further write is dropped. `last` is the most recent write that landed. `refuse` ("ns/key")
@@ -429,7 +430,9 @@ static void biscuitPlayedSinceKept() {
   uint8_t blob[shell::BLOB_MAX]; biscuit::Save s;                     // a day's play on the moved pup
   size_t n = st.load(biscuit::STORE, "s2", blob, sizeof blob);
   assert(biscuit::loadBlob(blob, n, s));
-  s.friendship = 45; biscuit::seal(s); st.save(biscuit::STORE, "s2", &s, sizeof s);
+  // played on a firmware whose Biscuit saved v4, the longest it ever wrote: the migration reads that one too
+  s.friendship = 45; uint8_t v4[biscuit::SAVE_V4_SIZE] = {}; memcpy(v4, &s, sizeof s - 4);
+  os::save::seal(v4, sizeof v4, biscuit::SAVE_MAGIC, 4); st.save(biscuit::STORE, "s2", v4, sizeof v4);
   st.refuse = nullptr;
   shell::Profiles again; boot(st, again);
   assert(biscuitIn(st, 2, "Biscuit", 45) && st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
@@ -1487,6 +1490,11 @@ static void starBalance() {
   assert(stars::spend(app.stars, 1));
   ms += 1000; sh.update(NOW, ms, Input{});
   assert(st.has("stub", "s1") && st.writes == before + 2 && !strcmp(st.last, "porthole/p1"));
+  // the balance stops at MAX, and no balance (nullptr) changes nothing
+  uint32_t full = stars::MAX - 2;
+  stars::award(&full, 5); assert(full == stars::MAX);
+  stars::award(&full, 1); assert(full == stars::MAX);
+  assert(stars::balance(nullptr) == 0 && !stars::spend(nullptr, 0) && stars::spend(&full, stars::MAX) && full == 0);
 }
 // An older build flashed over a newer one meets saves it cannot read. The game starts over, but what it then hands
 // the shell never replaces its own save from the newer firmware, a game cannot erase a save at all, and the kid's
