@@ -1392,6 +1392,27 @@ static void padQuickAndSlowKeys() {
   at(key(2), 300, false, true, true); at(key(3), 300, false, true, true); at(key(4), 300, false, true, true);
   frame(sh, ms, Input{}); assert(on(sh, "launcher"));
 }
+// The board stays up for weeks and millis() wraps every 49.7 days: a deadline is told from the clock across the wrap
+// (os/ticks.h), and one nobody set again is not "still ahead" 24.8 days later, which hid the kids' code pad's keys
+// behind the hourglass for the 25 days after it.
+static void uptimeWraps() {
+  assert(os::before(10, 20) && !os::before(20, 20) && !os::before(21, 20));
+  assert(os::before(0xFFFFFFF0u, 5) && !os::before(5, 0xFFFFFFF0u));               // set before the wrap, due after it
+  uint32_t t = 0; os::settle(0x80000001u, t, 60000); assert(t == 0x80000001u);     // an old one: no longer ahead
+  t = 0xFFFFFF00u; os::settle(0x10, t, 60000); assert(t == 0x10);                  // stranded just under the wrap
+  t = 0x80000001u + 500; os::settle(0x80000001u, t, 60000); assert(t == 0x80000001u + 500);   // a running one stays
+  t = 100; os::settle(0xFFFFFFF0u, t, 60000); assert(t == 100);                    // across the wrap too
+  for (uint32_t up : {0x80000000u + 5000u, 0xFFFFFFFFu - 9000u}) {   // 24.8 days up, and a session over the wrap
+    MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+    bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "1234"); sh.createProfile("Kai", 6, "");
+    const ui::Box SAM = {24, 42, 112, 24};
+    bootWithoutHours(sh, st, nullptr, 0, &sys); frame(sh, ms, Input{});
+    ms = up; frame(sh, ms, Input{});   // the picker, left alone all that time
+    tapAt(sh, ms, SAM); assert(on(sh, "pin"));
+    typeKidCode(sh, ms, "1235"); assert(on(sh, "pin"));   // a wrong try, its "Hmm" and shake
+    typeKidCode(sh, ms, "1234"); assert(on(sh, "launcher"));
+  }
+}
 // A grown-up typing the repeat straight away: the key pressed while the fourth dot still shows is the repeat's first.
 static void adminRepeatRightAway() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
@@ -1809,6 +1830,7 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
   pinWaits();
   kidCodeLockout();
   padQuickAndSlowKeys();
+  uptimeWraps();
   adminRepeatRightAway();
   adminCodeLockout();
   adminGatesProfiles();

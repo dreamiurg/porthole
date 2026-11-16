@@ -34,7 +34,7 @@ uint32_t Shell::lastSeen() const {
 }
 void Shell::go(Screen s) {
   if (screen_ == SH_LIBRARY && s != SH_LIBRARY) leaveStars(false);   // star mode ends with the Library: only the check keeps it
-  screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
+  screen_ = s; screenMs_ = ms_; toastUntil_ = pinWrongUntil_ = pinCalmUntil_ = pinNudgeUntil_ = ms_; in_.tap = in_.pressed = in_.longPress = false;   // a tap acts on one screen only
   const bool pad = (s >= SH_PIN_SET && s <= SH_PIN) || (s >= SH_SYS_PIN && s <= SH_SYS_PIN_AGAIN);
   if (pad) gate_.shownAt(ms_, in_.x, in_.y); else gate_.shown(ms_);   // a keypad takes a quick first key (os/ui.h)
   if (s == SH_PICK) active_ = -1;   // nobody is playing while the picker shows
@@ -53,6 +53,9 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateSysGames, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
+  // None is ever set more than 2 s ahead. Without this a screen left alone for 24.8 days shows its old ones again.
+  uint32_t* const timers[] = {&toastUntil_, &pinWrongUntil_, &pinCalmUntil_, &pinNudgeUntil_, &keepUntil_, &fullUntil_};
+  for (uint32_t* t : timers) os::settle(ms_, *t, 60000);
   if (in.pressed) pressMs_ = ms;   // a tap's own press start (Input::heldMs is 0 on its release)
   activity_.step(in, in.down, ms);
   gate_.filter(in_, ms_);   // the game's screens count as one: it gates its own
@@ -72,8 +75,8 @@ void Shell::render() {
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   bool pinScreen = (screen_ >= SH_PIN_SET && screen_ <= SH_PIN) || (screen_ >= SH_SYS_PIN && screen_ <= SH_SYS_PIN_AGAIN);
-  if (ms_ < toastUntil_ && !pinScreen && adultScreen()) drawSysToast();
-  else if (ms_ < toastUntil_ && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
+  if (os::before(ms_, toastUntil_) && !pinScreen && adultScreen()) drawSysToast();
+  else if (os::before(ms_, toastUntil_) && !pinScreen && surface() == SURFACE_INDEXED) ui::toast(toast_);   // gfx::fb is not on the glass under an RGB565 game
 }
 Tint Shell::tint() const {   // the game's light, or the clock's: a night game never hands back to a daylight launcher
   if (screen_ == SH_APP) return app_->tint();
@@ -361,7 +364,7 @@ void Shell::pinClear(int lock) {
   locks_.lock[lock] = shell::PinLock{};
   shell::savePinLocks(*st_, locks_);
 }
-bool Shell::kidKeysHidden() { return screen_ == SH_PIN && (pinWait(target_) || (int32_t)(pinCalmUntil_ - ms_) > 0); }
+bool Shell::kidKeysHidden() { return screen_ == SH_PIN && (pinWait(target_) || os::before(ms_, pinCalmUntil_)); }
 void Shell::submitPin() {
   uint16_t code = shell::pinCode(pin_);
   resetPin();
@@ -388,7 +391,7 @@ void Shell::drawPin() {
 }
 void Shell::drawPinPrompt(bool hidden, bool del) {
   char prompt[sizeof toast_];   // holds a whole toast: the message takes the prompt's place
-  const bool msg = ms_ < toastUntil_;
+  const bool msg = os::before(ms_, toastUntil_);
   if (msg) snprintf(prompt, sizeof prompt, "%s", toast_);
   else if (hidden) snprintf(prompt, sizeof prompt, "Wait a little");
   else if (del) snprintf(prompt, sizeof prompt, "Delete %s?", prof_.rec[target_].name);
@@ -403,7 +406,7 @@ void Shell::drawPinPrompt(bool hidden, bool del) {
 void Shell::drawPinWait(uint32_t wait, bool del) {
   const uint32_t of = shell::pinWaitFor(locks_.lock[target_].strikes);
   const int top = of ? (int)(24 * wait / of) : 0;   // rows of sand still in the top bulb, of 24
-  const int dx = (int32_t)(pinNudgeUntil_ - ms_) > 0 ? ((ms_ / 50) % 2 ? 2 : -2) : 0, cx = 80 + dx;
+  const int dx = os::before(ms_, pinNudgeUntil_) ? ((ms_ / 50) % 2 ? 2 : -2) : 0, cx = 80 + dx;
   const uint8_t edge = del ? (uint8_t)C_WHITE : (uint8_t)C_DKBROWN;
   rect(cx - 18, 50, 37, 4, edge); rect(cx - 18, 103, 37, 4, edge);   // the caps
   for (int r = 0; r < 24; r++) {   // r = 0 at a cap, 23 at the waist; the top bulb above y 78, the bottom below
@@ -420,7 +423,7 @@ void Shell::drawPinWait(uint32_t wait, bool del) {
   rect(40, 128, 80, 6, edge); rect(41, 129, w > 2 ? w - 2 : 0, 4, C_SKY);
 }
 void Shell::drawPinDigits() {   // four boxes: the digits while choosing a code, dots while asked for one
-  bool wrong = ms_ < pinWrongUntil_; int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
+  bool wrong = os::before(ms_, pinWrongUntil_); int shake = wrong ? ((ms_ / 50) % 2 ? 1 : -1) : 0;
   for (int i = 0; i < 4; i++) {
     int x = 58 + i * 12 + shake; rect(x, 36, 10, 11, C_WHITE); frame(x, 36, 10, 11, wrong ? C_RED : C_DKBROWN);
     if (i >= pinLen_) continue;
