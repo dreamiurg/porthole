@@ -143,7 +143,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"biscuit_setup_pet", "biscuit_home", "biscuit_world", "biscuit_tricks", "biscuit_training",
+  static const char* const N[] = {"biscuit_setup_pet", "biscuit_home", "biscuit_world", "biscuit_tricks", "biscuit_training",
                             "biscuit_profile", "biscuit_rename_pet", "biscuit_library", "biscuit_story",
                             "biscuit_choice", "biscuit_ending", "biscuit_discoveries", "biscuit_topics",
                             "biscuit_discovery", "biscuit_source", "biscuit_today", "biscuit_word", "biscuit_stickers",

@@ -121,7 +121,7 @@ void Game::render() {
   paint::draw(v);
 }
 const char* Game::screenName() const {
-  static const char* N[] = {"pumpkin_intro", "pumpkin_calibrate", "pumpkin_play", "pumpkin_catch",
+  static const char* const N[] = {"pumpkin_intro", "pumpkin_calibrate", "pumpkin_play", "pumpkin_catch",
                                 "pumpkin_icing", "pumpkin_lost", "pumpkin_won"};
   return N[(unsigned)page_];
 }

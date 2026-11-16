@@ -342,7 +342,7 @@ void scene(const Race& r, const Duo& duo, int track, float steer, uint32_t ms) {
 }
 
 // ---- the race HUD, after the reference: lap and place numerals on the scene, two round action buttons
-const char* ordinal(int n) { static const char* O[] = {"1st", "2nd", "3rd", "4th", "5th"}; return O[(n < 1 ? 1 : n > 5 ? 5 : n) - 1]; }
+const char* ordinal(int n) { static const char* const O[] = {"1st", "2nd", "3rd", "4th", "5th"}; return O[(n < 1 ? 1 : n > 5 ? 5 : n) - 1]; }
 void action(const ui::Box& b, int item, int count, bool lit, bool full) {
   UiAudit::add(b.x, b.y, b.w, b.h);
   const int cx = b.x * 3 + b.w * 3 / 2, cy = b.y * 3 + b.h * 3 / 2, inward = item == ROCKET ? 1 : -1;
@@ -447,7 +447,7 @@ bool toBeat(const View& v, char* line, size_t n) {
 void callouts(const View& v) {
   const Race& r = *v.race;
   if (r.phase == Phase::Countdown) {
-    static const char* C[] = {"3", "2", "1"};
+    static const char* const C[] = {"3", "2", "1"};
     const uint32_t i = r.ms / 1000;
     banner(150, C[i < 3 ? i : 2], 8, GOLD);
     char line[48];   // the time to beat again on a Replay, which skips the grip page
@@ -582,7 +582,7 @@ void pausePage(const View& v) {
 }
 void confirmPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
-  static const char* Q[] = {"Start over?", "Pick a new track?", "Go home?"};
+  static const char* const Q[] = {"Start over?", "Pick a new track?", "Go home?"};
   heading(150, Q[(int)v.leave], 2, ORANGE);
   heading(188, "This race ends.", 2, CREAM);
   button(YES, "Yes", true);

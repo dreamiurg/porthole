@@ -23,7 +23,6 @@ void frame(const ui::Box& b,bool down,bool selected=false) {
  gfx565::roundRect({b.x*3+3,b.y*3+3,b.w*3-6,b.h*3-9},10,EDGE);
  gfx565::roundRect({b.x*3+6,b.y*3+6,b.w*3-12,b.h*3-15},8,down || selected ? MINT : PAPER);
 }
-bool held(const Input& in,const ui::Box& b) { return in.down && in.x>=b.x && in.x<b.x+b.w && in.y>=b.y && in.y<b.y+b.h; }
 void schoolProps(const State& s) {
  art::prop(art::PICTURES,{366,164,59,83});
  if(s.schoolOutcome==4 || (s.repaired&1)) {
@@ -110,7 +109,7 @@ void speech(const char* words) {
 void Game::drawSceneCard(int i,int n) {
   const auto b=sceneui::card(i,n);
   const bool packed=!title_ && !pause_ && s_.page==PACK && (s_.bag&(1<<i));
-  frame(b,held(in_,b),packed || (!title_ && !pause_ && s_.page==SCHOOL_INTRO && i==0));
+  frame(b,touching(b),packed || (!title_ && !pause_ && s_.page==SCHOOL_INTRO && i==0));
   const int w=b.w*3-14;
   const int h=font::textHeight(art::ACTION,labels_[i],w,0);
   const int pictureH=b.h*3-h-14;
@@ -126,9 +125,9 @@ void Game::drawSceneCard(int i,int n) {
 void Game::drawSceneCards() {
  const int n=title_ || pause_ ? 3 : sceneui::count(s_);
  for(int i=0;i<n;++i) drawSceneCard(i,n);
- frame(sceneui::BACK,held(in_,sceneui::BACK)); text("<",sceneui::BACK.x*3+3,sceneui::BACK.y*3+12,66,40);
+ frame(sceneui::BACK,touching(sceneui::BACK)); text("<",sceneui::BACK.x*3+3,sceneui::BACK.y*3+12,66,40);
  if(!title_ && !pause_ && (s_.page==PACK || s_.page==CAFE_MENU)) {
-  frame(sceneui::DEPART,held(in_,sceneui::DEPART));
+  frame(sceneui::DEPART,touching(sceneui::DEPART));
   text(s_.page==PACK ? "Go" : "Tray",sceneui::DEPART.x*3+6,sceneui::DEPART.y*3+17,60,30);
  }
 }

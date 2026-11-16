@@ -9,8 +9,9 @@ namespace gfx565 {
 uint16_t* fb = nullptr;
 void target(uint16_t* pixels) { fb = pixels; }
 
-// ponytail: a 32-bit hash per row, so a changed row that collides with the old one stays stale for that frame
-// (about 1 in 4 billion); keep a copy of the logical rows instead if that ever shows.
+// ponytail: a 32-bit hash per row, so a changed row whose hash equals the old one (about 1 in 4 billion; never when
+// the change sits inside one 4-byte word) keeps its old pixels in that panel buffer until the row changes again;
+// keep a copy of the logical rows instead if that ever shows.
 static uint32_t rowHash(const uint8_t* row) {
   uint32_t h = 0x811C9DC5u, w;
   for (int i = 0; i < W / 3; i += 4) { memcpy(&w, row + i, 4); h = (h ^ w) * 0x9E3779B1u; h ^= h >> 15; }
@@ -34,17 +35,34 @@ void expandIndexed3(const uint8_t* logical160, const uint16_t* palette, Expanded
   }
 }
 
+// A row of n pixels of one color. From PAIRS up it stores two pixels at a time (once the address is a multiple of
+// four): the same bytes in the same order, half the stores. Below that, lining up costs more than it saves.
+using Pair = uint32_t __attribute__((__may_alias__));
+constexpr int PAIRS = 16;
+static inline void fill(uint16_t* p, int n, uint16_t c) {
+  if (n >= PAIRS) {
+    if ((uintptr_t)p & 2) { *p++ = c; n--; }
+    const uint32_t cc = (uint32_t)c << 16 | c;
+    Pair* q = (Pair*)p;
+    for (int k = n >> 1; k > 0; k--) *q++ = cc;
+    p = (uint16_t*)q; n &= 1;
+  }
+  for (int i = 0; i < n; i++) p[i] = c;
+}
+
 void rect(int x, int y, int w, int h, uint16_t c) {
+  if (w <= 0 || h <= 0) return;
   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
-  int x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;
+  int x1 = x > W - w ? W : x + w, y1 = y > H - h ? H : y + h;   // x + w, without overflowing for a huge size
   if (x1 <= x0 || y1 <= y0) return;
   uint16_t* first = fb + y0 * W + x0;
-  for (int xx = 0; xx < x1 - x0; xx++) first[xx] = c;
+  fill(first, x1 - x0, c);
   for (int yy = y0 + 1; yy < y1; yy++) memcpy(fb + yy * W + x0, first, (size_t)(x1 - x0) * 2);
 }
 void clear(uint16_t c) { rect(0, 0, W, H, c); }
 void hline(int x, int y, int w, uint16_t c) { rect(x, y, w, 1, c); }
 void frame(int x, int y, int w, int h, uint16_t c) {
+  if (w <= 0 || h <= 0) return;   // an empty box has no outline (the side lines below would still draw)
   rect(x, y, w, 1, c); rect(x, y + h - 1, w, 1, c); rect(x, y, 1, h, c); rect(x + w - 1, y, 1, h, c);
 }
 void roundRect(const Rect& b, int r, uint16_t c) {
@@ -61,8 +79,9 @@ void roundRect(const Rect& b, int r, uint16_t c) {
   }
 }
 void circle(int cx, int cy, int r, uint16_t c) {   // same disc as gfx::circle, at panel resolution
-  for (int dy = -r; dy <= r; dy++) {
-    int dx = 0; while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+  for (int dy = -r, dx = 0; dy <= r; dy++) {   // the half-width only grows down to the middle row, then only shrinks
+    if (dy <= 0) while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+    else while (dx * dx + dy * dy > r * r + r) dx--;
     rect(cx - dx, cy + dy, 2 * dx + 1, 1, c);
   }
 }

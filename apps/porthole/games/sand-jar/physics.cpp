@@ -76,13 +76,13 @@ void field(Jar& j, Field& f) {
 // Bucketed by height along gravity, O(awake grains): each height (a quarter cell, in integers, gravity's direction to
 // 1/1024) has a list, and the step moves the bottom grains first so the ones above fall into the room they leave.
 int keyOf(const Jar& j, int i) {
-  const int h = ((j.g.x[i] - G / 2 * 256) * j.keyX + (j.g.y[i] - G / 2 * 256) * j.keyY + G / 2 * 262144) >> 16;
+  const int h = ((j.g.at[i].x - G / 2 * 256) * j.keyX + (j.g.at[i].y - G / 2 * 256) * j.keyY + G / 2 * 262144) >> 16;
   return h < 0 ? 0 : h >= Jar::KEYS ? Jar::KEYS - 1 : h;
 }
 [[gnu::always_inline]] inline bool has(const uint32_t* b, int i) { return b[i >> 5] >> (i & 31) & 1; }
 [[gnu::always_inline]] inline void put(uint32_t* b, int i) { b[i >> 5] |= 1u << (i & 31); }
 void queue(Jar& j, int i, int key) {   // onto the front of its height's list: a list runs from the highest index down
-  j.g.order[i] = j.count[key]; j.count[key] = (uint16_t)(i + 1); put(j.queued, i);
+  j.g.at[i].order = j.count[key]; j.count[key] = (uint16_t)(i + 1); put(j.queued, i);
 }
 // Grain i's neighborhood changed. Asleep, and its height is still to come this step: it moves this step, as it would
 // have with every grain in the lists; otherwise it moves next step.
@@ -116,7 +116,7 @@ void sortDownhill(Jar& j) {
 // finger moves) to the first free cell outside: a pressed finger shoves sand aside and heaps it up around the rim.
 bool pushAlong(Jar& j, int i, float ex, float ey) {
   const Finger& fg = j.finger;
-  float x = Jar::pos(j.g.x[i]), y = Jar::pos(j.g.y[i]);
+  float x = Jar::pos(j.g.at[i].x), y = Jar::pos(j.g.at[i].y);
   const int from = (int)y * G + (int)x;
   for (int t = 0; t < G; t++) {   // the prototype stopped at 70: too short under a full Beach's water
     x += ex; y += ey;
@@ -127,9 +127,9 @@ bool pushAlong(Jar& j, int i, float ex, float ey) {
     if (o != EMPTY || (x - fg.x) * (x - fg.x) + (y - fg.y) * (y - fg.y) <= FINGER_R * FINGER_R) continue;
     j.occ[from] = EMPTY; j.occ[c] = (int16_t)(i + 1);
     changed(j, from); changed(j, c); put(j.awake, i);
-    j.g.x[i] = pos16(center(cx)); j.g.y[i] = pos16(center(cy));
+    j.g.at[i].x = pos16(center(cx)); j.g.at[i].y = pos16(center(cy));
     const float kick = kindAt(j, i) == SAND ? 0.35f : 0.8f;
-    j.g.vx[i] = vel16(fg.vx * kick + ex * 0.3f); j.g.vy[i] = vel16(fg.vy * kick + ey * 0.3f);
+    j.g.v[i].vx = vel16(fg.vx * kick + ex * 0.3f); j.g.v[i].vy = vel16(fg.vy * kick + ey * 0.3f);
     return true;
   }
   return false;
@@ -205,7 +205,7 @@ void take(Jar& j, Mover& m, int c) {
   const int o = j.occ[c];
   if (o <= 0) { moveTo(j, m, c); return; }
   j.occ[m.c] = (int16_t)o;
-  j.g.x[o - 1] = pos16(center(m.c % G)); j.g.y[o - 1] = pos16(center(m.c / G));
+  j.g.at[o - 1].x = pos16(center(m.c % G)); j.g.at[o - 1].y = pos16(center(m.c / G));
   j.occ[c] = (int16_t)(m.i + 1);
   changed(j, m.c); changed(j, c); m.c = c;
   wake(j, o - 1);   // a roll-over lands two cells away, so the water put in the old cell is beside neither change
@@ -216,8 +216,8 @@ bool swapped(Jar& j, Mover& m, const Try& t, int o) {
   const Kind ko = kindAt(j, other);
   if (!((m.k == SAND && ko != SAND && rnd(j) < 0.3f) || (m.k == BUBBLE && ko == WATER))) return false;
   j.occ[m.c] = (int16_t)o;
-  j.g.x[other] = pos16(center(m.c % G)); j.g.y[other] = pos16(center(m.c / G));
-  j.g.vx[other] = vel16(Jar::vel(j.g.vx[other]) * 0.3f); j.g.vy[other] = vel16(Jar::vel(j.g.vy[other]) * 0.3f);
+  j.g.at[other].x = pos16(center(m.c % G)); j.g.at[other].y = pos16(center(m.c / G));
+  j.g.v[other].vx = vel16(Jar::vel(j.g.v[other].vx) * 0.3f); j.g.v[other].vy = vel16(Jar::vel(j.g.v[other].vy) * 0.3f);
   const int nc = t.cy * G + t.cx;
   j.occ[nc] = (int16_t)(m.i + 1);
   changed(j, m.c); changed(j, nc); m.c = nc; m.x = t.tx; m.y = t.ty;
@@ -327,18 +327,18 @@ bool buried(const Jar& j, int c, bool wet) {
 // Buried grains fall asleep (still, as a hit would stop them); the rest stay awake for the next step.
 void moveGrain(Jar& j, const Field& f, int i) {
   const Kind k = kindAt(j, i);
-  const int c = (j.g.y[i] >> 8) * G + (j.g.x[i] >> 8);
+  const int c = (j.g.at[i].y >> 8) * G + (j.g.at[i].x >> 8);
   if (k != BUBBLE && buried(j, c, k == SAND && j.mode == MODE_BEACH)) {
-    j.g.vx[i] = j.g.vy[i] = 0;
+    j.g.v[i].vx = j.g.v[i].vy = 0;
     return;
   }
   put(j.awake, i);
-  Mover m = {i, c, k, Jar::pos(j.g.x[i]), Jar::pos(j.g.y[i]), Jar::vel(j.g.vx[i]), Jar::vel(j.g.vy[i])};
+  Mover m = {i, c, k, Jar::pos(j.g.at[i].x), Jar::pos(j.g.at[i].y), Jar::vel(j.g.v[i].vx), Jar::vel(j.g.v[i].vy)};
   const int start = m.c;
   accelerate(j, f, m);
   const bool blocked = travel(j, m) || m.c == start;
   if (blocked && f.geff > 0.02f && m.k != BUBBLE && rnd(j) < f.settle) settle(j, f, m);
-  j.g.x[i] = pos16(m.x); j.g.y[i] = pos16(m.y); j.g.vx[i] = vel16(m.ux); j.g.vy[i] = vel16(m.uy);
+  j.g.at[i].x = pos16(m.x); j.g.at[i].y = pos16(m.y); j.g.v[i].vx = vel16(m.ux); j.g.v[i].vy = vel16(m.uy);
 }
 
 // Orbits: free bodies in panel px, pulled by a dim sun at the center and, while touched, a heavy star under the finger.
@@ -401,7 +401,7 @@ void fill(Jar& j) {
     for (int q = m - 1; q > 0; q--) { const int s = (int)(rnd(j) * (q + 1)); const uint16_t t = cells[q]; cells[q] = cells[s]; cells[s] = t; }
     for (int q = 0; q < m && placed < j.n; q++, placed++) {
       const int c = cells[q];
-      j.g.x[placed] = pos16(center(c % G)); j.g.y[placed] = pos16(center(c / G)); j.g.vx[placed] = j.g.vy[placed] = 0;
+      j.g.at[placed].x = pos16(center(c % G)); j.g.at[placed].y = pos16(center(c / G)); j.g.v[placed].vx = j.g.v[placed].vy = 0;
       j.g.look[placed] = lookFor(j, placed); j.occ[c] = (int16_t)(placed + 1);
     }
   }
@@ -444,7 +444,7 @@ void Jar::step() {
     for (curKey = KEYS - 1; curKey >= 0; curKey--)
       while (const int h = count[curKey]) {
         const int i = h - 1;
-        count[curKey] = g.order[i];
+        count[curKey] = g.at[i].order;
         queued[i >> 5] &= ~(1u << (i & 31)); put(done, i);
         moveGrain(*this, f, i);
       }

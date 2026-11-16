@@ -30,20 +30,23 @@ static constexpr Ink INK = inkBounds();
 void clear(uint8_t c) { memset(fb, c, sizeof fb); }
 
 void rect(int x, int y, int w, int h, uint8_t c) {
+  if (w <= 0 || h <= 0) return;
   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
-  int x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;
+  int x1 = x > W - w ? W : x + w, y1 = y > H - h ? H : y + h;   // x + w, without overflowing for a huge size
   for (int yy = y0; yy < y1; yy++) if (x1 > x0) memset(&fb[yy * W + x0], c, (size_t)(x1 - x0));
 }
 void hline(int x, int y, int w, uint8_t c) { rect(x, y, w, 1, c); }
 void frame(int x, int y, int w, int h, uint8_t c) {
+  if (w <= 0 || h <= 0) return;   // an empty box has no outline (the side lines below would still draw)
   rect(x, y, w, 1, c); rect(x, y + h - 1, w, 1, c); rect(x, y, 1, h, c); rect(x + w - 1, y, 1, h, c);
 }
 void roundRect(int x, int y, int w, int h, uint8_t c) {
   rect(x + 1, y, w - 2, h, c); rect(x, y + 1, 1, h - 2, c); rect(x + w - 1, y + 1, 1, h - 2, c);
 }
 void circle(int cx, int cy, int r, uint8_t c) {
-  for (int dy = -r; dy <= r; dy++) {
-    int dx = 0; while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+  for (int dy = -r, dx = 0; dy <= r; dy++) {   // the half-width only grows down to the middle row, then only shrinks
+    if (dy <= 0) while ((dx + 1) * (dx + 1) + dy * dy <= r * r + r) dx++;
+    else while (dx * dx + dy * dy > r * r + r) dx--;
     rect(cx - dx, cy + dy, 2 * dx + 1, 1, c);
   }
 }
@@ -137,6 +140,8 @@ void textCenteredShadow(int cx, int y, const char* s, uint8_t c, uint8_t shadow,
   int x = cx - textWidth(s, scale) / 2; textShadow(x, y, s, c, shadow, scale);
 }
 
+// A line holds 39 characters: a longer one wraps like a too-wide one, so no word is dropped.
+static bool fitsLine(const char* trial, int maxw, int scale) { return strlen(trial) <= 39 && textWidth(trial, scale) <= maxw; }
 int wrap(const char* s, int maxw, char lines[][40], int maxLines, int scale) {
   int n = 0; char cur[40]; int curLen = 0; cur[0] = 0;
   const char* p = s;
@@ -145,7 +150,7 @@ int wrap(const char* s, int maxw, char lines[][40], int maxLines, int scale) {
     const char* e = p; while (*e && *e != ' ' && *e != '\n') e++;
     char word[40]; int wl = (int)(e - p); if (wl > 39) wl = 39; memcpy(word, p, (size_t)wl); word[wl] = 0;
     char trial[80]; if (curLen) snprintf(trial, sizeof trial, "%s %s", cur, word); else snprintf(trial, sizeof trial, "%s", word);
-    if (textWidth(trial, scale) <= maxw || curLen == 0) { strncpy(cur, trial, 39); cur[39] = 0; curLen = (int)strlen(cur); }
+    if (fitsLine(trial, maxw, scale) || curLen == 0) { strncpy(cur, trial, 39); cur[39] = 0; curLen = (int)strlen(cur); }
     else { strcpy(lines[n++], cur); strncpy(cur, word, 39); cur[39] = 0; curLen = (int)strlen(cur); }
     p = e; while (*p == ' ') p++;
   }

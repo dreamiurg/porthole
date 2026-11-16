@@ -10,7 +10,7 @@ namespace toytown {
 namespace {
 
 constexpr ui::Box BACK = {68,8,24,22};
-const char* PAGES[] = {"hub","doll","style","map","pack","school_intro","school_listen","school_plan",
+const char* const PAGES[] = {"hub","doll","style","map","pack","school_intro","school_listen","school_plan",
  "school_other","school_paper","school_result","school_repair","cafe_intro","cafe_menu","cafe_cart",
  "cafe_compare","cafe_result","park_intro","park_search","park_clue","park_guess","park_wrong","park_found",
  "memory","stop","book","memory_edit","cafe_quantity","school_hang"};
