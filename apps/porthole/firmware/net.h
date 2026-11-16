@@ -57,6 +57,10 @@ class Updater final : public shell::System {
   bool saveHome(const shell::Home& h) override;   // also serial L
   bool startLookup(const char* address) override;
   int lookupResult(shell::Home& out) override;
+  // Opt-in telemetry (os/telemetry.h): set from serial Y with the SD file's text ("off" turns it off).
+  shell::TelemetryStatus telemetryStatus() override;
+  bool telemetryOff() override;
+  bool setTelemetry(const char* text);
  private:
   void applyZoneResult();
   bool storeTimeZone(const char* iana, bool automatic, bool detected);

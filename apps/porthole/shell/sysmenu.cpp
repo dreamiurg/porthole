@@ -176,6 +176,7 @@ void Shell::updateSysAdmin() {
   if (adminPage_) {
     if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
     if (tapped(in_, ADMIN_RESET)) saveSound(!sound_);   // a failed write leaves the switch as it was
+    if (tapped(in_, ADMIN_REMOVE)) telemetryTap();
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
@@ -192,6 +193,7 @@ void Shell::drawSysAdmin() {
     stextC(80, 46, "Device settings", C_LTGRAY);
     sbutton(ADMIN_CODE, "Clock", C_SKY, down(in_, ADMIN_CODE));
     sbutton(ADMIN_RESET, sound_ ? "Sound: on" : "Sound: off", sound_ ? C_SKY : C_LTGRAY, down(in_, ADMIN_RESET));
+    drawTelemetry();
     sback(); return;
   }
   stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
@@ -200,6 +202,21 @@ void Shell::drawSysAdmin() {
   if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
+}
+// Telemetry: on only where the owner set it up (telemetry.txt on the card, or serial). Here it shows where events go
+// and when they last went, and a tap turns it off; turning it on again takes the file or the serial line.
+void Shell::telemetryTap() {
+  if (!sys_->telemetryStatus().level) { toast("Set up by telemetry.txt"); return; }
+  toast(sys_->telemetryOff() ? "Telemetry off" : "Could not turn off");
+}
+void Shell::drawTelemetry() {
+  const TelemetryStatus t = sys_->telemetryStatus();
+  sbutton(ADMIN_REMOVE, t.level ? "Telemetry: on" : "Telemetry: off", t.level ? C_SKY : C_LTGRAY, down(in_, ADMIN_REMOVE));
+  if (!t.level) return;
+  char sent[24], line[40]; ago(sent, sizeof sent, now_, t.lastSent);
+  stextC(80, 132, t.host, C_LTGRAY);
+  snprintf(line, sizeof line, "sent %s", sent);
+  stextC(80, 141, line, C_LTGRAY);
 }
 // Read back, like the code below: a failed flash write must not claim the sound changed.
 bool Shell::saveSound(bool on) {

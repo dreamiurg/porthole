@@ -88,6 +88,10 @@ time is measured, never displayed: a slow right answer is still right.
 - Days are Porthole's local wall clock (`now / 43200` halves). Being away punishes nothing: an overdue card is simply
   due. A clock set back is clamped so no card waits longer than its box says.
 
+## Telemetry
+
+When the owner turned telemetry on (`os/telemetry.h`), each pick sends `times_cards_answer` (`fact` "7x8" or "56:7", `grade`, `correct`, `ms` from the card showing to the pick, `box`, `retry`) and a finished round sends `level_finished` (`easy`, `hard`, `wrong`, `level_up`). Nothing changes in play or in the save.
+
 ## Save
 
 One blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s). In memory the deck is the `Save` struct

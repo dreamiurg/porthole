@@ -1,0 +1,33 @@
+# Telemetry on Admin 2/2: off until the owner sets it up (an SD file or the serial line), and then one tap turns it off
+# for good. Shows where events go and when they last went; never a way to turn it on from the menu.
+profile Sam 8
+expect-screen launcher
+tap 80 32
+wait 450
+expect-screen picker
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-telemetry-off
+snap 01_telemetry_off
+tap 80 118
+wait 300
+snap 02_telemetry_how
+wait 3000
+sys telemetry
+wait 450
+ui-check sys_admin-telemetry-on
+snap 03_telemetry_on
+tap 80 118
+wait 300
+snap 04_telemetry_turned_off
+wait 3000
+ui-check sys_admin-telemetry-off-again
+snap 05_telemetry_off_again

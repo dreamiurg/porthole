@@ -3,6 +3,7 @@
 // as activity for the idle rule, the launcher's layout for every number of games, version order for wireless updates,
 // the "something new" card and the hidden system menu's way in.
 // Run: make test
+#include "telemetry.h"
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
@@ -796,6 +797,34 @@ static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenNa
 static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
 // Paging through a Shell with eight stub games (6 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
 static const ui::Box FIRST_ROW = {24, 55, 112, 24};   // the picker's first row
+// Opt-in telemetry from the shell: a kid's player id comes from their name and the device's secret, so it is the same on
+// every pick and nothing is stored for it; then the game's open and close with how long, the stars and the way out.
+static uint32_t telemetryClock() { return testNow; }
+static void telemetryEvents() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp app("One"); App* const apps[1] = {&app};
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, "");
+  static telemetry::Queue q; q.begin(telemetryClock, "1.0.0");
+  telemetry::Config c; assert(telemetry::parseConfig("posthog https://h.example phc_k", c));
+  c.salt[0] = 9;
+  q.configure(c); telemetry::install(&q);
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
+  assert(q.size() == 1);   // player_selected
+  assert(sh.openApp("One")); stars::award(app.stars, 3); frame(sh, ms, Input{}); home(sh, ms, app);
+  assert(q.size() == 3);
+  static char body[8192]; int taken = 0;
+  q.batch(body, sizeof body, &taken);
+  char sam[17]; q.playerId(0, "Sam", sam);
+  assert(taken == 3 && strstr(body, "\"event\":\"player_selected\"") && strstr(body, sam) && strstr(body, "\"age\":8"));
+  assert(strstr(body, "\"event\":\"game_opened\"") && strstr(body, "\"game\":\"One\",\"seconds\":1,\"stars\":3,\"exit\":\"home\""));
+  assert(!strstr(body, "Sam"));   // the name stays on the board
+  char kai[17], again[17]; q.playerId(1, "Kai", kai); q.playerId(0, "Sam", again);
+  assert(strcmp(sam, kai) && !strcmp(sam, again));
+  c.salt[0] = 10; q.configure(c); q.playerId(0, "Sam", again);
+  assert(strcmp(sam, again));     // turned off and on: a new secret, new ids
+  telemetry::install(nullptr);
+}
 static void launcherPaging() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
@@ -1600,6 +1629,7 @@ static void failingSavesToldToGrownUp() {
 
 int main() {
   gfx565::target(nativePixels);
+  telemetryEvents();
   systemDefaults();
   failingSavesToldToGrownUp();
   scheduleClosesGame();

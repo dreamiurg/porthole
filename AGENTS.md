@@ -43,6 +43,10 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    so the kids see who is joining; nothing else about the kid goes with it (while Rally's track cards are open, a
    broadcast says who is there with only the name and avatar; once paired, the race itself, such as the levels and the
    car's place, goes to that device alone).
+   The second exception, a user decision of 2026-11-16: opt-in telemetry (`apps/porthole/os/telemetry.h`). Off on
+   every board, and the firmware carries no endpoint or key: only the owner turns it on, with an SD file or the serial
+   line, and picks the backend (PostHog or any OpenTelemetry collector). It sends what was played, never a name: a kid
+   is a random player id; an anonymous level sends no player and no details. The Admin menu turns it off.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box
