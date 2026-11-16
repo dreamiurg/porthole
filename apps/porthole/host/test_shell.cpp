@@ -1169,6 +1169,15 @@ static void favoritesKept() {
     assert(e->len == len && !memcmp(e->data, len == sizeof f ? (const void*)&f : newer, len));
   }
 }
+// The web demo's guest: setHome puts the given games on Home in that order, as if starred, and saves them.
+static void demoHome() {
+  static Shell sh; EightGames g(sh); uint32_t& ms = g.ms;
+  const uint8_t ids[] = {7, 3};
+  assert(sh.setHome(ids, 2));
+  tapAt(sh, ms, launcher::tile(0, 3)); assert(g.a[6].entered); g.a[6].entered = 0; home(sh, ms, g.a[6]);
+  bootWithoutHours(sh, g.st, g.list, 8); frame(sh, ms, Input{});
+  tapAt(sh, ms, FIRST_ROW); tapAt(sh, ms, launcher::tile(1, 3)); assert(g.a[2].entered);   // kept across a restart
+}
 // The launcher's sun at 22:00. Auto keeps the clock's night at a full backlight; a picked level is daylight on the
 // shell's screens and in the games (AppEnter::daylight) at its own backlight, kept in "sys"/"lite" across a reboot;
 // picking the level already on writes nothing, and a stray byte is Auto.
@@ -1365,7 +1374,7 @@ static void adminGames() {
   tapAt(sh, ms, launcher::tile(2, 3)); assert(on(sh, "library"));
 }
 static void homeAndLibrary() {
-  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); libraryMashing(); houseAsksToKeep(); allGamesAgain(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); adminGames();
+  launcherPaging(); favoritesBlob(); homeRules(); starRules(); oldestHiddenGoes(); swapAndHidden(); homeFavorites(); starMode(); libraryMashing(); houseAsksToKeep(); allGamesAgain(); emptyHomeIsDefault(); hiddenFavorites(); newGames(); favoritesKept(); demoHome(); adminGames();
 }
 // The waits: three wrong tries are free, then 5 s doubling to a 60 s cap. An hour quiet forgets them, a clock set
 // back never makes a wait longer than the cap, and strikes against one code never slow a new one.

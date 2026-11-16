@@ -61,6 +61,7 @@ class Shell {
   bool clearPin(int id);              // parent escape hatch (serial "P<n>" and Admin); false if save fails
   int createProfile(const char* name, uint8_t age, const char* code);   // code "1234", "" = none; lands on the launcher
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
+  bool setHome(const uint8_t* ids, int n);   // the active kid's Home, as if starred (the web demo's guest); false if not saved
   const char* screenName() const;
   bool savesFailing() const { return saveFailing_; }   // the last game save did not land (Info says so)
   void debugPrint();

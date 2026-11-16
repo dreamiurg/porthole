@@ -157,6 +157,12 @@ int Shell::createProfile(const char* name, uint8_t age, const char* code) {
   gate_.closed = false;   // a hook, not a touch
   return screen_ == SH_PICK ? -1 : active_;
 }
+bool Shell::setHome(const uint8_t* ids, int n) {
+  if (active_ < 0 || n > shell::MAX_FAVS) return false;
+  favs_.picked = 1; favs_.count = (uint8_t)n;
+  memset(favs_.ids, 0, sizeof favs_.ids); memcpy(favs_.ids, ids, n);
+  return !favsKept_ && shell::saveFavorites(*st_, active_, favs_);
+}
 static bool sameName(const char* a, const char* b) {   // "pets-club" matches "Pets Club"
   for (;; a++, b++) {
     while (*a == ' ' || *a == '-') a++;
