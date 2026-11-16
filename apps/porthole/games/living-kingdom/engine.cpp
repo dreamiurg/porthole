@@ -1,6 +1,7 @@
 #include "engine.h"
 #include <limits.h>
 #include <string.h>
+#include "crc32.h"
 
 namespace kingdom {
 namespace {
@@ -131,15 +132,6 @@ bool effect(Save& save, Effect rule) {
 bool applyAll(Save& save, Effects effects) {
   for (int i = 0; i < effects.count; ++i) if (!effect(save, effects.rules[i])) return false;
   return true;
-}
-uint32_t crc32(const void* data, size_t bytes) {
-  const uint8_t* p = static_cast<const uint8_t*>(data);
-  uint32_t crc = 0xffffffffU;
-  for (size_t i = 0; i < bytes; ++i) {
-    crc ^= p[i];
-    for (int bit = 0; bit < 8; ++bit) crc = (crc >> 1) ^ (0xedb88320U & (0U - (crc & 1U)));
-  }
-  return ~crc;
 }
 bool validCursor(const UiCursor& cursor) {
   if (cursor.mode > INVENTORY_OVERVIEW) return false;
@@ -305,14 +297,14 @@ void newCampaign(Save& save, uint32_t seed, uint8_t profile) {
 }
 void sealSave(Save& save) {
   save.magic = SAVE_MAGIC; save.version = SAVE_VERSION; save.bytes = sizeof(Save);
-  save.crc = crc32(&save, offsetof(Save, crc));
+  save.crc = os::crc32(&save, offsetof(Save, crc));
 }
 bool loadSave(Save& out, const void* data, size_t bytes, uint8_t profile) {
   if (!data || bytes != sizeof(Save)) return false;
   Save loaded;
   memcpy(&loaded, data, sizeof(loaded));
   if (loaded.magic != SAVE_MAGIC || loaded.version != SAVE_VERSION || loaded.bytes != sizeof(Save)) return false;
-  if (loaded.crc != crc32(&loaded, offsetof(Save, crc)) || !validState(loaded, profile)) return false;
+  if (loaded.crc != os::crc32(&loaded, offsetof(Save, crc)) || !validState(loaded, profile)) return false;
   out = loaded;
   return true;
 }

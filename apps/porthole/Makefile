@@ -58,6 +58,7 @@ test_timezone_SRC := os/timezone.cpp
 test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
 test_nvs_budget_SRC :=
+test_crc32_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
