@@ -51,8 +51,9 @@ static inline void fill(uint16_t* p, int n, uint16_t c) {
 }
 
 void rect(int x, int y, int w, int h, uint16_t c) {
+  if (w <= 0 || h <= 0) return;
   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
-  int x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;
+  int x1 = x > W - w ? W : x + w, y1 = y > H - h ? H : y + h;   // x + w, without overflowing for a huge size
   if (x1 <= x0 || y1 <= y0) return;
   uint16_t* first = fb + y0 * W + x0;
   fill(first, x1 - x0, c);
@@ -61,6 +62,7 @@ void rect(int x, int y, int w, int h, uint16_t c) {
 void clear(uint16_t c) { rect(0, 0, W, H, c); }
 void hline(int x, int y, int w, uint16_t c) { rect(x, y, w, 1, c); }
 void frame(int x, int y, int w, int h, uint16_t c) {
+  if (w <= 0 || h <= 0) return;   // an empty box has no outline (the side lines below would still draw)
   rect(x, y, w, 1, c); rect(x, y + h - 1, w, 1, c); rect(x, y, 1, h, c); rect(x + w - 1, y, 1, h, c);
 }
 void roundRect(const Rect& b, int r, uint16_t c) {

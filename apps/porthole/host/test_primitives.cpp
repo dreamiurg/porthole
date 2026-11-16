@@ -2,6 +2,8 @@
 // model of the pixels it must set, with clips, off-screen and degenerate arguments. A game's golden only says that
 // something moved; this says which painter. Run: make test
 #include "host/check.h"
+#include <initializer_list>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,9 +60,10 @@ void rects() {
 
 void frames() {
   for (int i = 0; i < 1000; i++) {
-    const int x = rnd(-30, 500), y = rnd(-30, 500), w = rnd(1, 90), h = rnd(1, 90);
+    const int x = rnd(-30, 500), y = rnd(-30, 500), w = rnd(-2, 90), h = rnd(-2, 90);
     const uint16_t c = ink();
     gfx565::frame(x, y, w, h, c);
+    if (w <= 0 || h <= 0) { same(); continue; }   // an empty box has no outline
     modelRect(x, y, w, 1, c); modelRect(x, y + h - 1, w, 1, c); modelRect(x, y, 1, h, c); modelRect(x + w - 1, y, 1, h, c);
     same();
   }
@@ -167,7 +170,10 @@ void triangles() {
 // ---- os/gfx: the 160x160 indexed surface
 uint8_t ref[gfx::W * gfx::H];
 void set(int x, int y, uint8_t c) { if (x >= 0 && x < gfx::W && y >= 0 && y < gfx::H) ref[y * gfx::W + x] = c; }
-void box(int x, int y, int w, int h, uint8_t c) { for (int yy = y; yy < y + h; yy++) for (int xx = x; xx < x + w; xx++) set(xx, yy, c); }
+void box(long long x, long long y, long long w, long long h, uint8_t c) {
+  for (long long yy = y < 0 ? 0 : y; yy < y + h && yy < gfx::H; yy++)
+    for (long long xx = x < 0 ? 0 : x; xx < x + w && xx < gfx::W; xx++) ref[yy * gfx::W + xx] = c;
+}
 void sameIndexed() { CHECK(!memcmp(gfx::fb, ref, sizeof ref)); }
 void indexedShapes() {
   gfx::clear(3); memset(ref, 3, sizeof ref);
@@ -177,7 +183,10 @@ void indexedShapes() {
     switch (i % 6) {
       case 0: gfx::rect(x, y, w - 3, h - 3, c); box(x, y, w - 3, h - 3, c); break;   // empty and negative sizes too
       case 1: gfx::hline(x, y, w, c); box(x, y, w, 1, c); break;
-      case 2: gfx::frame(x, y, w, h, c); box(x, y, w, 1, c); box(x, y + h - 1, w, 1, c); box(x, y, 1, h, c); box(x + w - 1, y, 1, h, c); break;
+      case 2:
+        gfx::frame(x, y, w - 2, h, c);   // the empty ones draw nothing
+        if (w > 2) { box(x, y, w - 2, 1, c); box(x, y + h - 1, w - 2, 1, c); box(x, y, 1, h, c); box(x + w - 3, y, 1, h, c); }
+        break;
       case 3: gfx::roundRect(x, y, w, h, c); box(x + 1, y, w - 2, h, c); box(x, y + 1, w, h - 2, c); break;   // the box less its corners
       case 4:
         gfx::circle(x, y, r, c);
@@ -245,6 +254,18 @@ void blits() {
   }
 }
 
+// Corners and sizes at the ends of int are clipped like any others, never wrapped round to the far side.
+void extremes() {
+  const int ends[] = {INT_MIN, INT_MIN + 1, -1, 0, 1, 100, INT_MAX - 1, INT_MAX};
+  gfx::clear(3); memset(ref, 3, sizeof ref);
+  for (int x : ends) for (int w : ends) for (int y : {x, 5}) for (int h : {w, 2}) {
+    const uint16_t c = ink();
+    gfx565::rect(x, y, w, h, c); modelRect(x, y, w, h, c);
+    gfx::rect(x, y, w, h, (uint8_t)(c & 31)); box(x, y, w, h, (uint8_t)(c & 31));
+    same(); sameIndexed();
+  }
+}
+
 void textAndWrap() {
   static uint8_t small[gfx::W * gfx::H];
   gfx::clear(0);
@@ -262,6 +283,9 @@ void textAndWrap() {
   CHECK(gfx::wrap("one\ntwo  three\n\nfour", 200, l, 4) == 4 && !strcmp(l[1], "two three") && !l[2][0] && !strcmp(l[3], "four"));
   CHECK(gfx::wrap("a b c d e f", 5, l, 3) == 3 && !strcmp(l[2], "c"));          // no more than maxLines
   CHECK(gfx::wrap("Supercalifragilistic day", 30, l, 4) == 2 && !strcmp(l[0], "Supercalifragilistic"));   // a wide word keeps its line
+  // more than a line's 39 characters wraps even when the pixels would fit; nothing is dropped
+  CHECK(gfx::wrap("aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj", 10000, l, 4) == 2);
+  CHECK(!strcmp(l[0], "aaaa bbbb cccc dddd eeee ffff gggg hhhh") && !strcmp(l[1], "iiii jjjj"));
   CHECK(gfx::wrap("", 100, l, 4) == 0 && gfx::wrap("big words", 60, l, 4, 2) == 2);
 }
 }  // namespace
@@ -280,6 +304,7 @@ int main() {
   lines();
   rings();
   blits();
+  extremes();
   textAndWrap();
   printf("primitives OK: %d checks\n", checks);
   return 0;
