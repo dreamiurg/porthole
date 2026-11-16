@@ -72,7 +72,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
-      - run: pip install pre-commit
+      - run: pip install pre-commit==4.7.0  # pinned like the tools below: a required check should not change by itself
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/pre-commit
@@ -98,7 +98,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: sudo apt-get update && sudo apt-get install --yes zlib1g-dev
-      - run: pip install pillow fonttools==4.61.1 'gcovr>=8.3'
+      - run: pip install pillow==13.0.0 fonttools==4.61.1 gcovr==8.8  # the versions the local hooks install (.pre-commit-config.yaml)
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: .tool-versions  # the same Node (and bundled zlib) as local hooks via mise
