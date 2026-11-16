@@ -174,7 +174,9 @@ check: lint test
 
 # Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
 # run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22), and under the sanitizers.
-ci: lint test test-asan coverage playtest-monkey
+# The windowed sim is built wherever SDL is installed (only host/sim.cpp's HAVE_SDL half is new work), so a change that
+# breaks it fails here and not on the next person's `make sim`. REQUIRE_SDL=1 (CI): a missing SDL fails, not skips.
+ci: lint test test-asan coverage playtest-monkey $(if $(SDL_CFLAGS)$(REQUIRE_SDL),sim)
 
 # Line coverage of os/, shell/ and games/*/ (sources and headers) and of the firmware headers the host can build, from
 # the host tests plus the non-monkey playtests, as Cobertura XML. firmware/*.cpp builds only for the board, so the
