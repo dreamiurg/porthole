@@ -5,11 +5,16 @@ name: Pages
 # Pages settings, not by a CNAME file: an Actions-deployed site ignores that file.
 # The home page's player is the firmware itself in the browser: apps/porthole's sim built with Emscripten (make web)
 # from this commit into site/play/, so every merge that touches the app republishes it.
+# The install button (ESP Web Tools, copied into site/flash/ewt/) writes the newest stable release's factory.bin,
+# copied into site/flash/ on every deploy. Stable changes only when Promote runs, so its every run redeploys too.
 
 on:
   push:
     branches: [main]
     paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, apps/porthole/**, .github/workflows/pages.yml]
+  workflow_run:
+    workflows: [Promote]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
+      contents: read  # the stable release's image
       pages: write
       id-token: write
     env:
@@ -39,6 +45,34 @@ jobs:
           cp docs/updates.png site/images/updates.png
           mkdir -p site/case
           cp hardware/case/stl/v1.1/puck_bezel.stl hardware/case/stl/v1.1/puck_plate.stl hardware/case/stl/v1.2/puck_lid.stl site/case/
+      - name: Copy the newest stable firmware for the install button
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/flash
+          # No tag: GitHub's Latest, which is the stable channel.
+          gh release download -R "$GITHUB_REPOSITORY" --pattern 'porthole-*-factory.bin' --dir site/flash
+          image=$(basename site/flash/porthole-*-factory.bin)
+          version=${image#porthole-}
+          version=${version%-factory.bin}
+          # An ESP image starts with 0xE9: catch a wrong or broken download before the page offers it.
+          if [ "$(head -c1 "site/flash/$image" | od -An -tx1 | tr -d ' ')" != e9 ]; then
+            echo "::error::$image is not an ESP32 image"; exit 1
+          fi
+          # Offset 0: factory.bin is bootloader, partition table, otadata and app merged, the same image as a manual
+          # install. ESP Web Tools erases the flash first; Porthole has no Improv, so it skips the wait for it.
+          jq -n --arg v "$version" --arg f "$image" '{name: "Porthole", version: $v, new_install_improv_wait_time: 0,
+            builds: [{chipFamily: "ESP32-S3", parts: [{path: $f, offset: 0}]}]}' > site/flash/manifest.json
+      - name: Copy ESP Web Tools, the install button, next to the page
+        # Served from this site, not a CDN: the button writes firmware, so the code behind it is pinned by checksum.
+        env:
+          EWT_VERSION: 10.4.0
+          EWT_SHA256: f18da75335d2f0dca044c4bb052848c0696e7b03cc23d61d8530dd6eba0a9008
+        run: |
+          curl -fsSL "https://registry.npmjs.org/esp-web-tools/-/esp-web-tools-$EWT_VERSION.tgz" -o "$RUNNER_TEMP/ewt.tgz"
+          echo "$EWT_SHA256  $RUNNER_TEMP/ewt.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/ewt.tgz" -C "$RUNNER_TEMP"
+          cp -r "$RUNNER_TEMP/package/dist/web" site/flash/ewt
       - name: Restore emsdk
         id: emsdk
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
