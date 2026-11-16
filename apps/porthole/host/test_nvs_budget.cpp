@@ -91,8 +91,9 @@ static size_t cardsFull() {
   return full;
 }
 
-// One per profile, kept by the shell: porthole/p<id> and porthole/f<id>.
-constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}, {"f", sizeof(shell::Favorites)}};
+// One per profile, kept by the shell: porthole/p<id>, and porthole/f<id> (24 B), the favorites an older firmware
+// wrote: nothing reads it now, but an updated device keeps it until the profile is deleted.
+constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}, {"f", 24}};
 // One per device. "sys": the shell's and firmware/net.cpp's keys at their largest; "porthole": the migration marks.
 constexpr Kept DEVICE[] = {
   {"admin", 2}, {"games", sizeof(shell::GamesOff)}, {"limits", sizeof(shell::Limits)}, {"lite", 1},
