@@ -259,6 +259,23 @@ static void clockSetBackKeepsStage() {
   assert((pet::simulate(s, day0 + 10 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_GROWN);
 }
 
+// No game punishes absence: the mess made while away takes the dog's coat down to the floor, never under it; with the
+// kid there it costs the full 15. And after a clock set back the mess is as old as now, not days old.
+static void awayMessKeepsTheFloor() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  s.clean = 25; s.nextPoopAt = day0 + 3600;
+  pet::simulate(s, day0 + 7 * 86400, false);
+  assert(s.poop == 1 && s.clean == pet::FLOOR_CLEAN);
+  Save here; pet::adopt(here, day0, "Sam", "Rex");
+  here.clean = 25; here.nextPoopAt = day0;
+  assert((pet::simulate(here, day0 + 120, true) & pet::EV_POOPED) && here.clean == 10);
+  pet::simulate(here, day0 - 86400, true);   // the clock is put back a day
+  assert(here.poopSince == day0 - 86400 && pet::computeWant(here, day0 - 86400 + 60) != WANT_POOP);
+  const uint8_t fun = here.fun;
+  pet::dropCarry(); pet::simulate(here, day0 - 86400 + 300, true);   // five minutes: a quarter point of fun, not a whole one
+  assert(here.fun == fun);
+}
+
 static void levels(const Save& s) {
   // reading levels by age
   { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
@@ -511,6 +528,7 @@ int main() {
   breedSurvivesRoundTrip();
   corruptFieldsLoadSafe();
   clockSetBackKeepsStage();
+  awayMessKeepsTheFloor();
   levels(s);
   dayOnPickedLight();
   breedDraws();

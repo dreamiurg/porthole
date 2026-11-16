@@ -141,7 +141,10 @@ uint32_t walk(Save& s, uint32_t now, bool online, uint32_t budget) {
     const bool counted = budget > 0; if (counted) budget = budget > step ? budget - step : 0;
     if (!online) ev |= sleepByTheClock(s, t);   // schedule-driven sleep when unattended
     if (counted) decay(s, t, step, online);
-    if (!s.asleep && !s.poop && t >= s.nextPoopAt) { s.poop = 1; s.poopSince = t; s.clean = clamp100(s.clean - 15); ev |= EV_POOPED; }
+    if (!s.asleep && !s.poop && t >= s.nextPoopAt) {
+      s.poop = 1; s.poopSince = t; ev |= EV_POOPED;
+      if (online) s.clean = clamp100(s.clean - 15); else decayTo(s.clean, 15, FLOOR_CLEAN);   // away: never under the floor
+    }
     t += step;
   }
   return ev;
@@ -174,7 +177,11 @@ void dropCarry() { accFood = accFun = accEnergy = accClean = accSleep = 0; }
 
 uint32_t simulate(Save& s, uint32_t now, bool online) {
   // An empty room has nothing to grow, decay or poop; a clock that did not move forward only resets the mark.
-  if (!s.hasDog || now <= s.lastSeen) { s.lastSeen = now; return EV_NONE; }
+  if (!s.hasDog || now <= s.lastSeen) {
+    s.lastSeen = now;
+    if (s.poopSince > now) s.poopSince = now;   // a clock set back: or the time since wraps and the mess reads as days old
+    return EV_NONE;
+  }
   uint32_t ev = EV_NONE;
   const uint32_t elapsed = now - s.lastSeen;
   if (elapsed > 300) online = false;  // a jump this big means the device was off (or the clock was set)
