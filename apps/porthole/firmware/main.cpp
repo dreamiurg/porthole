@@ -253,7 +253,7 @@ static void dumpFrame() {
   Serial.flush();
 }
 
-// Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
+// Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "RESET" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
 // "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
@@ -334,13 +334,17 @@ static void printSystem() {   // the tail of "S": version, slot and where the up
                 esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck,
                 (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
+// The whole word, never the one letter: line noise, a paste or a script aimed at the wrong port must not wipe a family.
+static void resetCommand() {
+  String arg = Serial.readStringUntil('\n'); arg.trim();   // without a newline this stalls the loop up to 1 s
+  if (!arg.equals("ESET")) { Serial.println("[porthole] usage: RESET (erases every profile and every save)"); return; }
+  board::eraseNamespace(shell::NS);
+  for (App* a : APPS) board::eraseNamespace(a->store());
+  Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
+}
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { const uint32_t utc = timezones::toUtc(e); writeUtcRtc(utc); g_bootUtcEpoch = utc; g_bootMillis = millis(); Serial.println("[porthole] local clock set; RTC stores UTC"); } }
-  else if (c == 'R') {
-    board::eraseNamespace(shell::NS);
-    for (App* a : APPS) board::eraseNamespace(a->store());
-    Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
-  }
+  else if (c == 'R') resetCommand();
   else if (c == 'P') {  // a digit is required: parseInt reads a bare "P" as 0 and would clear profile 0's code
     String arg = Serial.readStringUntil('\n'); arg.trim();
     if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }

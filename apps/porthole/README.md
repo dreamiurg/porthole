@@ -318,7 +318,7 @@ For normal use, prefer Wi-Fi time sync in Clock.
 | --- | --- |
 | `S` | print the active profile, the open game's stats, free heap and the current epoch |
 | `T<epoch>` | set the clock (local wall-clock seconds) |
-| `R` | erase every profile and every game's saves, then reboot |
+| `RESET` | erase every profile and every game's saves, then reboot (the whole word on its own line; a lone `R` does nothing) |
 | `P<n>` | clear the secret code of profile `n` (the parent escape hatch) |
 | `D` | toggle touch-position logging |
 
