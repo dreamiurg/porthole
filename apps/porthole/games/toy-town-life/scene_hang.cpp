@@ -11,25 +11,22 @@ void label(const char* text,const gfx565::Rect& r) {
  const font::Box box={&art::ACTION,(int16_t)r.w,(int16_t)r.h,0,font::Align::CENTER};
  font::textBox(box,text,r.x,r.y,INK);
 }
-bool held(const Input& in,const ui::Box& b) {
- return in.down && in.x>=b.x && in.x<b.x+b.w && in.y>=b.y && in.y<b.y+b.h;
-}
 void frame(const ui::Box& b,bool selected,bool down) {
  gfx565::roundRect({b.x*3,b.y*3,b.w*3,b.h*3},12,INK);
  gfx565::roundRect({b.x*3+3,b.y*3+3,b.w*3-6,b.h*3-9},9,EDGE);
  gfx565::roundRect({b.x*3+6,b.y*3+6,b.w*3-12,b.h*3-15},7,selected || down ? MINT : PAPER);
 }
-void displayFrame(const State& s,int i,const Input& in) {
+void displayFrame(const State& s,int i,bool down) {
  const auto& b=sceneui::FRAMES[i];
- frame(b,false,held(in,b));
+ frame(b,false,down);
  if(s.schoolHangMask&(1<<i)) {
   const int picture=(s.schoolPictures>>(i*2))&3;
   art::prop(art::FLOWER_PICTURE+picture,{b.x*3+6,b.y*3+5,b.w*3-12,b.h*3-14});
  } else label("Tap",{b.x*3+6,b.y*3+22,b.w*3-12,26});
 }
-void displayCard(const State& s,int i,const Input& in) {
+void displayCard(const State& s,int i,bool down) {
  const auto b=sceneui::card(i,4);
- frame(b,i<3 && s.schoolPicture==i,held(in,b));
+ frame(b,i<3 && s.schoolPicture==i,down);
  art::prop(i<3 ? art::FLOWER_PICTURE+i : art::HUNG_PICTURES,{b.x*3+9,b.y*3+7,b.w*3-18,b.h*3-43});
  const char* names[]={"Flowers","Rocket","Rabbit","Done"};
  label(names[i],{b.x*3+7,(b.y+b.h)*3-32,b.w*3-14,26});
@@ -76,9 +73,9 @@ void Game::drawDisplay() {
  gfx565::roundRect({129,175,228,78},6,0xd5b2);
  art::walkingDoll(s_,{65,174,48,80},0);
  art::npc(art::THEO,{364,166,48,84},2);
- for(int i=0;i<3;++i) displayFrame(s_,i,in_);
- for(int i=0;i<4;++i) displayCard(s_,i,in_);
- frame(sceneui::BACK,false,held(in_,sceneui::BACK));
+ for(int i=0;i<3;++i) displayFrame(s_,i,touching(sceneui::FRAMES[i]));
+ for(int i=0;i<4;++i) displayCard(s_,i,touching(sceneui::card(i,4)));
+ frame(sceneui::BACK,false,touching(sceneui::BACK));
  label("<",{sceneui::BACK.x*3+3,sceneui::BACK.y*3+12,66,40});
 }
 }

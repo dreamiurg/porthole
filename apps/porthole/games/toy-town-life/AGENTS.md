@@ -117,6 +117,14 @@ schema changes. Initialize appended fields, bump version and retain the frozen
 V1 and V2 fixture migration tests in `host/test_toytown.cpp`; never invent a V0 record.
 Unknown future versions must not be misread as V1 or V2.
 
+`render()` repaints a panel buffer only when `look_` (bumped by `changed()`) or the
+finger's effect on the picture differs from what that buffer holds. A finger changes
+the picture in one way: a control drawn pressed. Drawing code never reads `in_`; it
+asks `touching(box)`, which also notes the box, and the next frame's key is which of
+the noted boxes the finger is on. A control drawn pressed any other way would stay
+stale; `fingerDriftRepaintsAtControlsOnly` in `host/test_toytown_ui.cpp` compares
+every kept frame with a whole redraw.
+
 ## Verification
 
 `host/test_toytown.cpp` proves cart arithmetic/eligibility, consequences,

@@ -201,8 +201,8 @@ void Game::drawHero() {
 }
 void Game::drawButtons() {
  for (int i=0;i<3;i++) {
-  const ui::Box& b=BUTTONS[i]; const bool pressed=in_.down && in_.x>=b.x && in_.x<b.x+b.w && in_.y>=b.y && in_.y<b.y+b.h;
-  button(b,labels_[i],pressed,(title_ || s_.page==HUB) && i==0);
+  const ui::Box& b=BUTTONS[i];
+  button(b,labels_[i],touching(b),(title_ || s_.page==HUB) && i==0);
  }
  button(BACK,"<",false);
 }
@@ -212,17 +212,17 @@ void Game::drawDress() {
   gfx565::roundRect({92,94,296,31},13,PAPER); caption("Choose your doll",95,96,290);
   for (int i=0;i<4;++i) {
    const auto& b=choices::DOLLS[i]; State look=s_; look.doll=i;
-   pictureFrame(b,s_.doll==i,pressed(in_,b));
+   pictureFrame(b,s_.doll==i,touching(b));
    art::detail(look,{b.x*3+8,b.y*3+7,b.w*3-16,95},0);
    caption(choices::label(7,i),b.x*3+5,(b.y+b.h)*3-32,b.w*3-10);
    if (s_.doll==i) selectedMark(b);
   }
-  button(BACK,"<",pressed(in_,BACK));
-  button(choices::WARDROBE,"Dress up",pressed(in_,choices::WARDROBE),true);
+  button(BACK,"<",touching(BACK));
+  button(choices::WARDROBE,"Dress up",touching(choices::WARDROBE),true);
   return;
  }
- button(choices::EXIT,"<",pressed(in_,choices::EXIT));
- button(choices::DONE,"Done",pressed(in_,choices::DONE),true);
+ button(choices::EXIT,"<",touching(choices::EXIT));
+ button(choices::DONE,"Done",touching(choices::DONE),true);
  gfx565::roundRect({120,116,240,31},13,PAPER);
  char title[48]; snprintf(title,sizeof title,"%s %u/9",choices::category(s_.category),s_.category+1);
  caption(title,125,119,230);
@@ -232,7 +232,7 @@ void Game::drawDress() {
  for (int i=0;i<2;++i) {
   const auto& b=tabs[i]; const int c=(s_.category+(i ? 1 : choices::CATEGORIES-1))%choices::CATEGORIES;
   State icon=s_; if (c==4) icon.accessory=1;
-  pictureFrame(b,false,pressed(in_,b)); optionPicture(icon,c,b,true);
+  pictureFrame(b,false,touching(b)); optionPicture(icon,c,b,true);
   const char* tabNames[]={"Hair","Skin","Fabric","Shoes","Extras","Color","Name","Doll","Dye"};
   caption(tabNames[c],b.x*3+4,(b.y+b.h)*3-32,b.w*3-8);
   const int ax=(b.x+(i ? b.w-5 : 5))*3,ay=b.y*3+15;
@@ -240,7 +240,7 @@ void Game::drawDress() {
  }
  for (int i=0;i<choices::count(s_.category);++i) {
   const auto& b=choices::LOOKS[i]; State look=s_; choices::value(look,s_.category)=i;
-  pictureFrame(b,choices::value(s_,s_.category)==i,pressed(in_,b));
+  pictureFrame(b,choices::value(s_,s_.category)==i,touching(b));
   optionPicture(look,s_.category,b);
   if (s_.category!=6) caption(choices::label(s_.category,i),b.x*3+4,(b.y+b.h)*3-32,b.w*3-8);
   if (choices::value(s_,s_.category)==i) selectedMark(b);
@@ -252,11 +252,25 @@ void Game::draw() {
  drawScene();
 }
 
+bool Game::touching(const ui::Box& b) {
+ if (touchedCount_<TOUCH_MAX) touched_[touchedCount_]=b;
+ ++touchedCount_;   // past TOUCH_MAX the key below is the finger's position, as it always was
+ return pressed(in_,b);
+}
+// What the finger does to the picture: which of the boxes the last draw() asked about it is on.
+uint32_t Game::touchKey() const {
+ if (!in_.down) return 0;
+ if (touchedCount_>TOUCH_MAX) return 0x10000u|((uint32_t)in_.x<<8)|(uint32_t)in_.y;
+ uint32_t key=0x10000u;
+ for (int i=0;i<touchedCount_;++i) key|=(uint32_t)pressed(in_,touched_[i])<<i;
+ return key;
+}
 void Game::render() {
  int slot=buffers_[0]==gfx565::fb ? 0 : buffers_[1]==gfx565::fb ? 1 : buffers_[0] ? 1 : 0;
- const uint32_t revision=(look_<<17) ^ (in_.down ? 0x10000u|((uint32_t)in_.x<<8)|(uint32_t)in_.y : 0);
- if (buffers_[slot]!=gfx565::fb || painted_[slot]!=revision || UiAudit::enabled) {
-  draw(); buffers_[slot]=gfx565::fb; painted_[slot]=revision;
+ // A changed look_ never matches, whatever the boxes: they are the last draw()'s, and it was drawn under another look_.
+ if (buffers_[slot]!=gfx565::fb || painted_[slot]!=((look_<<17) ^ touchKey()) || UiAudit::enabled) {
+  touchedCount_=0; draw();
+  buffers_[slot]=gfx565::fb; painted_[slot]=(look_<<17) ^ touchKey();   // by the boxes this draw() asked about
  }
 }
 } // namespace toytown
