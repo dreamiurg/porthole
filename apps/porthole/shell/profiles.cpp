@@ -63,14 +63,19 @@ bool loadRecord(const void* data, size_t n, Record& out) {   // this version's s
   return ok;
 }
 
-void loadAll(Store& st, Profiles& p) {
-  memset(&p, 0, sizeof p);
+// Its own frame, never inlined: this 2 KB buffer is off the stack again before the migrations put theirs on. Stacked, they
+// took 5 KB of the board's 8 KB loop stack at boot.
+__attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
   for (int id = 0; id < MAX_PROFILES; id++) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
     p.blocked[id] = n && !p.used[id];
   }
+}
+void loadAll(Store& st, Profiles& p) {
+  memset(&p, 0, sizeof p);
+  loadRecords(st, p);
   uint8_t mark;
   if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
   migrateBiscuit(st, p);   // after migrate: it matches the migrated names; a no-op once porthole/mb exists
