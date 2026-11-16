@@ -278,7 +278,7 @@ way, tap anywhere to pass or shoot. First to three goals, or three minutes.
 
 ## Play it without the board
 
-You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
+You need a C++23 compiler (GCC 11 or Clang 12 and newer, for `-std=c++2b`) and Python 3. From this directory (`apps/porthole/`):
 
 ```bash
 make snap && python3 tools/webemu.py   # or: make webemu

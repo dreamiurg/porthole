@@ -12,7 +12,9 @@ WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initi
 # -ffp-contract=off: Apple clang fuses a*b+c into one FMA by default, gcc on x86 does not, so the same seeded match
 # came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
 FP := -ffp-contract=off
-CXXFLAGS ?= -std=c++17 -O1 -g
+# -std=c++2b: the language the firmware is built in (the Arduino core passes -std=gnu++2b), so the host tests vouch for
+# the same C++ the board runs. Strict, without the GNU extensions only the IDF's own headers need.
+CXXFLAGS ?= -std=c++2b -O1 -g
 # -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so an NDEBUG in the
 # environment's CXXFLAGS does not turn them off. HOST_FLAGS goes into the coverage build too.
 # -funsigned-char: plain char is unsigned on the board (Xtensa) and signed on x86 and on a Mac, so a `c < 0`, a char
@@ -183,7 +185,7 @@ ci: lint test test-asan coverage playtest-monkey
 # (gcc) on 2026-11-09 after the Pets Club farm and shelter landed; raise it as coverage grows, never lower it.
 COV := build/coverage
 COV_MIN := 98.45
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(HOST_FLAGS)
+COV_CXXFLAGS := -std=c++2b -O0 -g --coverage $(HOST_FLAGS)
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 # GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.

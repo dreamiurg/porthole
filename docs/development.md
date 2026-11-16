@@ -2,7 +2,7 @@
 
 ## Setup
 
-You need Python 3.11+, Node 22, a C++17 compiler, and PlatformIO for firmware. Host builds also need zlib
+You need Python 3.11+, Node 22, a C++23 compiler (GCC 11 or Clang 12 and newer, for `-std=c++2b`), and PlatformIO for firmware. Host builds also need zlib
 (`zlib1g-dev` on Debian/Ubuntu, included in the macOS SDK).
 
 ```sh
