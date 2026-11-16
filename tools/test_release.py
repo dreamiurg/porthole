@@ -82,6 +82,12 @@ with tempfile.TemporaryDirectory() as tmp:
     assert release.classify('Revert "Revert "feat: x""', "")[0] == "fix", "a revert of a revert puts the feature back"
     assert release.classify("Fix(alpha): crash", "")[0] == "fix" and release.classify("FEAT: x", "")[0] == "feat", "the type's case is not checked"
 
+    # A pull request title becomes the squash merge's commit title: the ones the planner cannot read are refused.
+    for good in ("fix(alpha): crash", "feat!: x", "Fix: x", "ci(deps): Bump a from 1 to 2", "docs: typo", 'Revert "feat: x" (#3)'):
+        assert release.title_problem(good) is None, good
+    for bad in ("fix(alpha) crash", "fix (alpha): crash", "fixed: crash", "Fix the crash", "fix:", ""):
+        assert release.title_problem(bad), bad
+
     # Promotion. Betas 0.1.1 .. 0.1.3, stable 0.1.0; "now" is 2026-11-10 12:00 UTC.
     run(repo, "git", "tag", "alpha-v0.1.1")
     for n in (2, 3):

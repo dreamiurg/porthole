@@ -1,0 +1,24 @@
+name: PR title
+
+# A squash merge makes the PR title the commit title, and tools/release.py decides from that title whether the merge
+# ships: "fix(porthole) crash" (no colon) is not a fix to it, and the change would wait, unnoticed, for the next
+# release. This says so on the PR. It is not a required check (ci.yml's Required Checks is the only one): a red mark
+# here is the warning. Its own workflow, so that editing the title runs it again without running CI again.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: PR title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: python3 tools/release.py title "$TITLE"
