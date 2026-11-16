@@ -2,6 +2,7 @@
 #pragma once
 #include <stdint.h>
 #include <string.h>
+#include "day.h"
 
 constexpr int NUM_TRICKS = 8;
 constexpr int NUM_HATS = 8;
@@ -87,7 +88,7 @@ bool bringBack(Save& s, uint32_t now);        // undoes retire, until adoptFromS
 void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name);  // next pup into the empty room
 
 // time helpers (local wall-clock seconds since 1970)
-inline uint32_t dayIndex(uint32_t t) { return t / 86400u; }
+inline uint32_t dayIndex(uint32_t t) { return os::dayOf(t); }
 inline int hourOf(uint32_t t) { return (int)((t / 3600u) % 24u); }
 inline int minuteOf(uint32_t t) { return (int)((t / 60u) % 60u); }
 inline bool isNightHour(int h) { return h >= BEDTIME_HOUR || h < WAKE_HOUR; }

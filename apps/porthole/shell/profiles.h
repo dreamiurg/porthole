@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "app.h"
+#include "day.h"
 
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
@@ -14,8 +15,8 @@ constexpr const char* MIGRATED_BISCUIT = "mb";   // porthole/mb: present once Bi
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
 constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
 // The daily cap: 30 min per profile per local day, across every game, even alone on the device. The clock is local
-// wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
-constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 30 * 60;
+// wall-clock seconds, so a day is os::dayOf(now) and it ends at local midnight; a clock that jumps: os/day.h.
+constexpr uint32_t DAY_SEC = os::DAY_SEC, DAILY_SEC = 30 * 60;
 // Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
 // Independent of profile/game records: changing a limit never resets usage or moves a save.
 struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };

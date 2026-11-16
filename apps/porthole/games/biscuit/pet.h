@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "crc32.h"
+#include "day.h"
 #include "stars.h"
 
 namespace biscuit {
@@ -86,7 +87,7 @@ struct Save {
 };
 static_assert(sizeof(Save) == SAVE_V4_SIZE, "Save is persisted: append before crc, never resize");
 
-inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
+inline int32_t dayOf(uint32_t now) { return (int32_t)os::dayOf(now); }
 inline float clampNeed(float v) { return v < NEED_FLOOR ? NEED_FLOOR : v > NEED_MAX ? NEED_MAX : v; }
 inline uint32_t addCount(uint32_t v, uint32_t n) { return v + n > MAX_COUNT ? MAX_COUNT : v + n; }
 
@@ -171,7 +172,7 @@ inline bool setPetName(Save& p, const char* dog, uint32_t now) {
 // clock ran ahead to, nothing would decay and no new day would start until that date came.
 inline void tick(Save& p, uint32_t now) {
   const int32_t day = dayOf(now);
-  const uint32_t elapsed = now > p.updatedAt ? now - p.updatedAt : 0;
+  const uint32_t elapsed = os::elapsed(now, p.updatedAt);
   p.updatedAt = now;
   if (now < p.createdAt) p.createdAt = now;   // valid(): never made after it was last seen
   if (!p.named) { p.lastVisitDay = day; return; }
@@ -179,7 +180,7 @@ inline void tick(Save& p, uint32_t now) {
   p.fullness = clampNeed(p.fullness - hours * (p.sleeping ? FULLNESS_ASLEEP : FULLNESS_AWAKE));
   p.happiness = clampNeed(p.happiness - hours * (p.sleeping ? 0 : HAPPINESS_AWAKE));
   p.energy = clampNeed(p.energy + hours * (p.sleeping ? ENERGY_ASLEEP : -ENERGY_AWAKE));
-  if (day != p.lastVisitDay) {
+  if (os::newDay((uint32_t)day, (uint32_t)p.lastVisitDay)) {
     p.daysTogether = addCount(p.daysTogether, 1);
     p.lastVisitDay = day;
     p.dailyCompleted = p.dailyClaimed = 0;
