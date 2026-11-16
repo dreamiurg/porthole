@@ -40,6 +40,7 @@ test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/p
 test_biscuit_SRC :=
 test_update_gate_SRC :=
 test_display_frames_SRC :=
+test_touch_hold_SRC :=
 test_update_picture_SRC :=
 test_biscuit_home_SRC := $(wildcard os/*.cpp) $(wildcard games/biscuit/*.cpp)
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp

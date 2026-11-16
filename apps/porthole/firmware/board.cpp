@@ -171,17 +171,19 @@ void presentHires() {
 }
 
 // ---- touch (CST820) ----
+static TouchHold g_touch;
 Touch readTouch() {
   uint8_t b[6];
   Touch t = {false, 0, 0};
-  if (!i2cRead(TP_ADDR, 0x01, b, 6)) return t;
+  if (!i2cRead(TP_ADDR, 0x01, b, 6)) return g_touch.step(false, t);
   uint8_t points = b[1] & 0x0F;
   if (points) {
     int x = ((b[2] & 0x0F) << 8) | b[3], y = ((b[4] & 0x0F) << 8) | b[5];
     if (x < LCD_W && y < LCD_H) { t.down = true; t.x = x; t.y = y; }
   }
-  return t;
+  return g_touch.step(true, t);
 }
+uint32_t touchMisses() { return g_touch.misses(); }
 
 // ---- RTC (PCF85063) ----
 static uint8_t bcd2(uint8_t v) { return (uint8_t)((v >> 4) * 10 + (v & 15)); }

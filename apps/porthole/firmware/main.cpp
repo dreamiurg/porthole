@@ -265,9 +265,10 @@ static void printMetrics() {
   for (auto& f : g_mt.frame) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
   auto ms = [&](int k) { return sum[k] / 1000.0 / MT_N; };
   Serial.printf("[metrics] frames=%d frame=%.2fms fps=%.1f max=%.2fms update=%.2fms render=%.2fms present=%.2fms "
-                "present_max=%.2fms heap=%lu psram=%lu largest_internal=%lu\n",
+                "present_max=%.2fms touch_miss=%lu heap=%lu psram=%lu largest_internal=%lu\n",
                 MT_N, ms(MT_FRAME), ms(MT_FRAME) > 0 ? 1000.0 / ms(MT_FRAME) : 0.0, worst / 1000.0, ms(MT_UPDATE),
-                ms(MT_RENDER), ms(MT_PRESENT), g_mt.presentMax / 1000.0, (unsigned long)board::freeHeap(),
+                ms(MT_RENDER), ms(MT_PRESENT), g_mt.presentMax / 1000.0, (unsigned long)board::touchMisses(),
+                (unsigned long)board::freeHeap(),
                 (unsigned long)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
