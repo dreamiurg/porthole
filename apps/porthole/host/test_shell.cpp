@@ -1162,7 +1162,10 @@ static void versions() {
   int v[3];
   assert(shell::parseVersion("0.15.0", v) && v[0] == 0 && v[1] == 15 && v[2] == 0);
   assert(shell::parseVersion("v0.15.0", v) && v[1] == 15);
-  static const char* const BAD[] = {"dev", "", "1.2", "1.2.3x", "1..2", "v", "-1.2.3", nullptr};
+  // The huge parts: strtol saturates at 2^31-1 on the board and wraps through a 64-bit long here; both must refuse.
+  static const char* const BAD[] = {"dev", "", "1.2", "1.2.3x", "1..2", "v", "-1.2.3", nullptr, "100000.0.0",
+                                    "0.4294967297.0", "0.0.99999999999999999999"};
+  assert(shell::parseVersion("99999.99999.99999", v) && v[2] == 99999);
   for (const char* bad : BAD) assert(!shell::parseVersion(bad, v));
   assert(shell::newer("0.10.0", "0.9.0") && !shell::newer("0.9.0", "0.10.0"));   // 10 > 9, not "1" < "9"
   assert(!shell::newer("v0.15.0", "0.15.0") && !shell::newer("0.15.0", "v0.15.0"));   // equal: no update
