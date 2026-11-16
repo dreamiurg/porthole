@@ -86,8 +86,9 @@ A new learning mechanic should pass these checks. Say in its PR which principles
   miss, and the times tables stop at 6. The plan in `adaptive-practice.md` fixes this.
 - **Times Cards** already follows principles 2 to 4 and 10 (Leitner boxes, a pace that adapts toward about 85%, a
   missed card shown again in the round and the next day, two stars per finished round whatever the grades). Open
-  points: division facts (3.OA.7), and self-grading (Easy, Hard, Wrong) relies on a 6-year-old judging their own
-  recall honestly, which this research does not cover.
+  points: division facts (3.OA.7, since built), and self-grading (Easy, Hard, Wrong), which relied on a 6-year-old
+  judging their own recall honestly (replaced 2026-11-16 by picking among four answers, graded by time; see
+  `adaptive-practice.md`).
 - **Stories** are long for a first grader (kid playtest, 2026-11-15). **Little reads** (Biscuit's Library, first row)
   add short passages with one question, five levels from decodable first-grade text to third-grade inference, a
   3-up/1-down level per kid and the line that holds the answer after a miss (principles 2, 3, 9, 11). Open: a missed

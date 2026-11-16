@@ -1,6 +1,6 @@
 # Times Cards' last table and random play. A deck set to start on 10x (`dbg level10`, every lower table known) is
-# played to the end: the done page that opens nothing new, and the deck with every table known, both audited. Then
-# seeded random taps, drags and holds on every page under AddressSanitizer + UBSan.
+# played to the end with fast right answers: the done page that opens nothing new, and the deck with every table known,
+# both audited. Then seeded random taps, drags and holds on every page under AddressSanitizer + UBSan.
 profile Zoe 8
 app timescards
 wait 600
@@ -10,114 +10,92 @@ expect level=10
 expect start=10
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
-end
-tap 80 133
-wait 600
-repeat 12
-tap 80 70
-wait 600
-tap 41 122
-wait 600
-end
-tap 80 133
-wait 600
-repeat 12
-tap 80 70
-wait 600
-tap 41 122
-wait 600
-end
-tap 80 12
-wait 600
-skip 172800
-tap 80 133
-wait 600
-repeat 12
-tap 80 70
-wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
-# six facts are learned at once, and divisions of the known tables hold about a third of the places, so 10x
-# settles by the fifth day of two rounds a day
+expect known=0
 skip 86400
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
+expect known=4
 skip 86400
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
+# fast right answers on a new table: known after right answers on two days, four facts a day
+expect known=8
 skip 86400
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
 tap 80 12
 wait 600
 tap 80 133
 wait 600
-repeat 12
+repeat 16
 tap 80 70
 wait 600
-tap 41 122
-wait 600
+dbg right
+wait 1100
 end
+expect-screen cards_done
+expect known=10
+ui-check cards_done-all-known
 tap 80 12
 wait 600
 expect known=10
