@@ -63,6 +63,7 @@ test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
 test_starfighter_rules_SRC := games/starfighter/rules.cpp
 test_racing_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
 test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
+test_racing_together_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
 test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 test_sand_jar_SRC := $(wildcard os/*.cpp) $(wildcard games/sand-jar/*.cpp)

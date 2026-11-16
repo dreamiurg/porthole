@@ -7,7 +7,7 @@
 namespace racing {
 namespace {
 using paint::Leave;
-constexpr uint32_t GRIP_LOST_MS = 300, RESUME_MS = 1000, FINISH_MS = 1500;
+constexpr uint32_t GRIP_LOST_MS = 300, FINISH_MS = 1500;
 bool inside(const ui::Box& b, int x, int y) { return x >= b.x && y >= b.y && x < b.x + b.w && y < b.y + b.h; }
 // A fresh press that began on the button: holding, sliding in from elsewhere or a carried touch never fires.
 bool press(const Input& in, const ui::Box& b) { return in.hit(b.x, b.y, b.w, b.h) && in.pressed && inside(b, in.downX, in.downY); }
@@ -24,7 +24,17 @@ void Game::enter(const AppEnter& e) {
   track_ = 0;
   loadKids(e);
   start(race_, TRACK[track_], seed_, raceLevel());
+  duo_ = host_ = raced_ = gone_ = false; wire_ = {}; peer_ = {}; notice_[0] = 0; wallet_ = e.stars;
+  avatars_ = e.avatars; nAvatars_ = e.avatarCount;
+  if (e.who) { snprintf(wire_.name, sizeof wire_.name, "%s", e.who->name); wire_.avatar = e.who->avatar; }
+  link_.begin(lan::radio());   // listens for an invite the whole visit; sends nothing until Together
+  if (lan::radio()) lan::radio()->start();
   go(Screen::Tracks);
+}
+
+void Game::leave() {
+  endTogether();
+  if (lan::radio()) lan::radio()->stop();
 }
 
 void Game::loadKids(const AppEnter& e) {
@@ -58,13 +68,14 @@ void Game::seedLevels() {
   for (int t = 0; t < TRACKS; t++) if (!save_.best[t].raceMs) save_.level[t] = (int8_t)clampLevel(seed, t);
 }
 
-int Game::raceLevel() const {
+int Game::raceLevel() const { return levelOn(track_); }
+int Game::levelOn(int track) const {
   static_assert(sizeof HARD_LEVEL == TRACKS, "one per track");
   switch (save_.mode) {
     case EASY: return EASY_LEVEL;
     case NORMAL: return 0;
-    case HARD: return HARD_LEVEL[track_];
-    default: return save_.level[track_];
+    case HARD: return HARD_LEVEL[track];
+    default: return save_.level[track];
   }
 }
 
@@ -111,12 +122,15 @@ void Game::go(Screen s) {
   if (s == Screen::Calibrate) { calibration_ = {}; gripSet_ = false; }
   else if (s != Screen::Race) recenter_ = false;   // a recenter only ever returns to the race it paused
   gate_.shown(ms_); hold_ = {};
-  boost_ = rocket_ = false;
+  boost_ = rocket_ = gripDone_ = false;
   badGripMs_ = 0;
 }
 
 void Game::startRace() {
   start(race_, TRACK[track_], seed_ + ++runs_, raceLevel());   // every run is fresh: inventory, timers and rivals reset
+  fresh();
+}
+void Game::fresh() {
   steer_ = 0; resumeMs_ = stepMs_ = finishMs_ = 0; gripLost_ = recenter_ = recorded_ = false; newBest_ = 0;
   go(Screen::Race);
 }
@@ -126,6 +140,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   const uint32_t dt = elapsed <= 0 ? 0 : (uint32_t)elapsed > MAX_FRAME_MS ? MAX_FRAME_MS : (uint32_t)elapsed;
   rawMs_ = ms; now_ = nowSec; ms_ += dt; in_ = in;
   gate_.filter(in_, ms_);
+  togetherTick(dt);
   switch (screen_) {
     case Screen::Tracks: updateTracks(); break;
     case Screen::HowTo: updateHowTo(); break;
@@ -135,10 +150,18 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     case Screen::Confirm: updateConfirm(); break;
     case Screen::Results: updateResults(); break;
     case Screen::Board: updateBoard(); break;
+    case Screen::Looking: updateLooking(); break;
+    case Screen::Lobby: updateLobby(); break;
   }
 }
 
 void Game::updateTracks() {
+  if (link_.invited(ms_)) {   // the invite covers the cards: its two buttons, and Together means yes too
+    if (ui::clicked(in_, paint::JOIN) || ui::clicked(in_, paint::TOGETHER)) joinInvite();
+    else if (ui::clicked(in_, paint::NOT_NOW)) link_.decline(wire_);
+    return;
+  }
+  if (link_.on() && ui::clicked(in_, paint::TOGETHER)) { startLooking(); return; }
   if (ui::clicked(in_, paint::MODE_CHIP)) {   // saved at once: a power cut right after still keeps the kid's pick
     save_.mode = (uint8_t)((save_.mode + 1) % MODES);
     dirty_ = urgent_ = true;
@@ -171,9 +194,16 @@ void Game::updateCalibrate() {
   if (!controls::upright(gravity())) gripSet_ = false;
   else if (!gripSet_ && calibration_.get(&n)) { grip_ = n; gripSet_ = true; }
   steer_ = controls::steer(gravity(), gripSet_ ? grip_ : neutral_);
-  if (ui::clicked(in_, paint::BACK)) { go(recenter_ ? Screen::Pause : Screen::Tracks); return; }   // clears recenter_
+  if (ui::clicked(in_, paint::BACK)) {   // clears recenter_
+    if (recenter_) { go(Screen::Pause); return; }
+    endTogether();
+    go(Screen::Tracks);
+    return;
+  }
+  if (gripDone_) { awaitStart(); return; }
   if (!ui::clicked(in_, paint::NEXT) || !gripReady()) return;
   neutral_ = grip_;
+  if (!recenter_ && duo_) { gripDone_ = true; awaitStart(); return; }   // set: now the other kid's grip
   if (!recenter_) { startRace(); return; }
   recenter_ = false; gripLost_ = false; resumeMs_ = RESUME_MS; steer_ = 0;   // the race waits a beat, then goes on
   go(Screen::Race);
@@ -190,18 +220,21 @@ bool Game::gripOk(uint32_t dt) {
   return false;
 }
 
+void Game::finishLine(uint32_t dt) {   // a moment on the line to see "Finish!" before the results
+  if (!recorded_) { recorded_ = true; if (duo_) jointFinish(); else recordFinish(); }
+  finishMs_ += dt;
+  if (finishMs_ >= FINISH_MS) go(Screen::Results);
+}
+
 void Game::updateRace(uint32_t dt) {
-  if (race_.phase == Phase::Finished) {   // a moment on the line to see "Finish!" before the results
-    if (!recorded_) { recorded_ = true; recordFinish(); }
-    finishMs_ += dt;
-    if (finishMs_ >= FINISH_MS) go(Screen::Results);
-    return;
-  }
+  if (race_.phase == Phase::Finished) { finishLine(dt); return; }
   if (!gripOk(dt)) return;
-  hold_.step(holding(in_, paint::LAP), ms_);
-  if (hold_.progress() >= 1) { gripLost_ = false; go(Screen::Pause); return; }
+  // Together: a few pauses a race, and always one while the other kid is paused (a way to the menu).
+  hold_.step(holding(in_, paint::LAP) && (!duo_ || pausesLeft_ || peerPaused_), ms_);
+  if (hold_.progress() >= 1) { gripLost_ = false; if (duo_ && pausesLeft_) pausesLeft_--; go(Screen::Pause); return; }
   boost_ = boost_ || press(in_, paint::BOOST_BTN);
   rocket_ = rocket_ || press(in_, paint::ROCKET_BTN);
+  if (peerHold()) return;
   if (resumeMs_) { resumeMs_ = resumeMs_ > dt ? resumeMs_ - dt : 0; boost_ = rocket_ = false; return; }
   simulate(dt);
 }
@@ -218,6 +251,7 @@ void Game::simulate(uint32_t dt) {
     c.boost = racing && boost_;
     c.rocket = racing && rocket_;
     boost_ = rocket_ = false;   // spent or not, a press is used once; one before GO is simply dropped
+    race_.car[PLAYER].top = windTop();
     step(race_, c);
   }
 }
@@ -230,22 +264,26 @@ void Game::updatePause() {
   }
   if (ui::clicked(in_, paint::RECENTER)) { recenter_ = true; go(Screen::Calibrate); return; }
   const ui::Box* boxes[] = {&paint::RESTART, &paint::TRACKS_BTN, &paint::HOME_BTN};
-  for (int i = 0; i < 3; i++)
+  for (int i = duo_ ? 1 : 0; i < 3; i++)   // together, one kid can't restart both
     if (ui::clicked(in_, *boxes[i])) { leave_ = (Leave)i; go(Screen::Confirm); return; }
 }
 
 void Game::updateConfirm() {
   if (ui::clicked(in_, paint::NO)) { go(Screen::Pause); return; }
   if (!ui::clicked(in_, paint::YES)) return;
-  if (leave_ == Leave::Restart) startRace();
-  else if (leave_ == Leave::Tracks) go(Screen::Tracks);
+  if (leave_ == Leave::Restart) { startRace(); return; }
+  endTogether();
+  if (leave_ == Leave::Tracks) go(Screen::Tracks);
   else home_ = true;
 }
 
 void Game::updateResults() {
-  if (ui::clicked(in_, paint::REPLAY)) startRace();
-  else if (ui::clicked(in_, paint::RESULT_TRACKS)) go(Screen::Tracks);
-  else if (ui::clicked(in_, paint::RESULT_HOME)) home_ = true;
+  if (ui::clicked(in_, paint::REPLAY)) {
+    if (duo_ && link_.paired()) { raced_ = false; go(Screen::Lobby); return; }   // Again: the same two kids
+    endTogether();
+    startRace();
+  } else if (ui::clicked(in_, paint::RESULT_TRACKS)) { endTogether(); go(Screen::Tracks); }
+  else if (ui::clicked(in_, paint::RESULT_HOME)) { endTogether(); home_ = true; }
 }
 
 void Game::render() {
@@ -257,11 +295,14 @@ void Game::render() {
   v.gripLost = gripLost_; v.leave = leave_;
   paint::Row rows[MAX_PROFILES];
   v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_; v.mode = save_.mode % MODES;
+  duoView(v.duo);
+  if (notice_[0] && (int32_t)(noticeMs_ - ms_) > 0) v.notice = notice_;
   paint::draw(v);
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm", "race_results", "race_board"};
+  static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm",
+                            "race_results", "race_board", "race_looking", "race_lobby"};
   if (screen_ == Screen::Race && race_.phase == Phase::Countdown) return "race_countdown";
   return N[(int)screen_];
 }
@@ -285,7 +326,7 @@ void Game::debugPrint() {
 // Test fixtures only (reachability, not natural play): they start from the current upright grip.
 void Game::debugFixture(const char* cmd) {
   if (controls::upright(gravity())) neutral_ = gravity();
-  startRace();
+  if (!duo_ || !raced_) startRace();   // together: this race, both devices' own fixture
   race_.phase = Phase::Racing;
   race_.ms = COUNTDOWN_MS;
   const float line = LAPS * race_.track->length;

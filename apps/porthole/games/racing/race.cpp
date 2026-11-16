@@ -220,6 +220,7 @@ void flyRocket(Race& r, Rocket& k) {
     if (fabsf(c.x - k.x) > CAR_HALF_W + 0.06f) continue;
     impact(r, i, ROCKET_LOSS);
     r.rocketHits++;
+    if (r.struck[i] < 255) r.struck[i]++;
     r.hitMs = 900;
     puff(r, c.dist, c.x);
     k.live = false;
@@ -366,10 +367,11 @@ void step(Race& r, const Controls& in) {
     if (r.ms >= COUNTDOWN_MS) r.phase = Phase::Racing;
     return;
   }
-  if (r.phase == Phase::Finished) return;
+  const bool home = r.phase == Phase::Finished;
+  if (home && !r.keepField) return;
   r.raceMs += STEP_MS;
   tick(r);
-  actions(r, in);
+  if (!home) actions(r, in);
   rivalBoosts(r);
   for (int i = 0; i < CARS; i++) {
     if (r.car[i].finished) continue;   // finished rivals keep their order and leave the road
@@ -378,6 +380,11 @@ void step(Race& r, const Controls& in) {
   contacts(r);
   for (Rocket& k : r.rocket) if (k.live) flyRocket(r, k);
   laps(r);
+}
+
+void strike(Race& r, int car) {
+  if (car <= PLAYER || car >= CARS || r.car[car].finished) return;
+  impact(r, car, ROCKET_LOSS);
 }
 
 int lapOf(const Race& r, int car) {

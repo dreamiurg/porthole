@@ -281,7 +281,7 @@ void rockets() {
   assert(r.rocketsFired == 1 && r.inventory[ROCKET] == 0);
   float slowest = 1;
   for (int i = 0; i < 60; i++) { step(r, Controls{}); slowest = fminf(slowest, target.speed); }
-  assert(r.rocketHits == 1 && slowest < 0.7f && !target.finished);
+  assert(r.rocketHits == 1 && r.struck[2] == 1 && slowest < 0.7f && !target.finished);
   for (int i = 0; i < 200; i++) step(r, Controls{});
   assert(target.speed > 0.9f);   // recovers by itself: no destruction
   // A miss despawns at the end of its life; an empty rack fires nothing.
@@ -291,6 +291,27 @@ void rockets() {
   assert(m.rocketsFired == 1 && m.rocketHits == 0 && !m.rocket[0].live);
   step(m, fire);
   assert(m.rocketsFired == 1);
+}
+
+// A race together: the other kid's rocket slows a rival like the player's own; the rivals drive on after the player's
+// finish only when asked to.
+void together() {
+  Race r = racingAt(0, 100, 0);
+  r.car[1].speed = 1; r.car[1].protectMs = 0;
+  strike(r, 1);
+  assert(r.car[1].speed < 0.7f && r.rocketHits == 0);
+  strike(r, PLAYER); strike(r, CARS);   // never the player, never off the end
+  Race f = racingAt(0, 3 * r.track->length - 1, 0);
+  f.car[PLAYER].speed = 1;
+  for (int i = 0; i < 10; i++) step(f, Controls{});
+  assert(f.phase == Phase::Finished);
+  const float rival = f.car[1].dist;
+  step(f, Controls{});
+  assert(f.car[1].dist == rival);
+  f.keepField = true;
+  const float home = f.car[PLAYER].dist;
+  for (int i = 0; i < 10; i++) step(f, Controls{0, true, true});
+  assert(f.car[1].dist > rival && f.car[PLAYER].dist == home && f.rocketsFired == 0);
 }
 
 void contactOnce() {
@@ -524,6 +545,7 @@ int main() {
   proHazards();
   rockets();
   contactOnce();
+  together();
   finishOrder();
   levels();
   ladder();

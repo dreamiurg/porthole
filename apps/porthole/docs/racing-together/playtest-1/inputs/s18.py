@@ -1,0 +1,23 @@
+# mypy: ignore-errors
+# ruff: noqa: F403, F405, E402
+from duo import *
+
+a, b = start()
+to_race(a, b)
+both(a, b, 12000)
+a.do("hold 42 40")
+both(a, b, 600)
+a.tap(52, 108)
+both(a, b, 700)
+a.tap(54, 96)
+both(a, b, 1500)
+a.snap("28_a_quit_yes")
+b.snap("28_a_quit_yes")
+both(a, b, 4000)
+a.snap("28_a_quit_4s")
+b.snap("28_a_quit_4s")
+b.do("hold 42 40")
+both(a, b, 600)
+b.snap("28_b_tries_pause")
+a.close()
+b.close()

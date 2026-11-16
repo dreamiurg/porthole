@@ -23,6 +23,7 @@ struct NvsStore : shell::Store {
 static NvsStore g_store;
 static net::Updater g_sys;
 static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
+static net::Lan g_lan;      // Rally's race together; shares the radio too
 static Shell& g_shell = psram::make<Shell>();   // ~12 KB kept off static internal RAM
 static InputTracker g_input;
 static ui::FreshGate g_updateInputGate;
@@ -184,6 +185,7 @@ void setup() {
   g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   feedLoopWDT();
   air::setFeed(&g_feed);
+  lan::setRadio(&g_lan);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys, APP_IDS);   // first boot after Pets Club: its houses become profiles here
   beginClock();
   Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),

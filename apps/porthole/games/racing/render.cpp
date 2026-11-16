@@ -130,6 +130,7 @@ void skyline(int track, int bottom, int offset) {
 // at the first race frame, never at static init: internal RAM stays free for the wireless update's screen and TLS.
 struct Thing {   // size: drawn bigger than life; copies: the picture repeated side by side
   float z; const pic::Pic* p; float x, lift = 0; bool shadow = false; float size = 1; bool flames = false; int copies = 1;
+  const pic::Pic* flag = nullptr;   // the other kid's avatar over their car (a race together)
 };
 constexpr int MAX_THINGS = 48;
 // The speed arc hugs the top rim: SEGMENTS slots across ARC_DEG either side of 12 o'clock, between ARC_IN and ARC_OUT.
@@ -146,7 +147,7 @@ struct Scratch {
 };
 Scratch* sc = nullptr;
 void buildArc();   // with the HUD, below
-struct Camera { const Race* r; int track; float dist, x; };
+struct Camera { const Race* r; int track; float dist, x; const Duo* duo; };
 // An obstacle is drawn exactly as wide as it hits (2 * w, race.cpp obstacles), its picture scaled up to that; a narrow
 // picture (Industrial's crate stack) is repeated side by side rather than stretched past 1.5 times the car's scale.
 float obstaclePx(const Feature& o) { return 2 * o.w / 100.0f * ROAD_SLOPE * CAR_DEPTH; }   // at the car's depth
@@ -263,6 +264,8 @@ void placeCars(const Camera& cam) {
     const float lift = hop(c) * 0.9f;
     add({c.dist - cam.dist, pic::CAR[c.paint], c.x, lift, true, 1, c.boostMs > 0});
   }
+  const Duo& d = *cam.duo;   // the other kid: the player's car with their avatar over it, never in the way
+  if (d.peerOnRoad) add({d.peerDist - cam.dist, pic::CAR[0], d.peerX, 0, true, 1, false, 1, d.peerFace});
   for (const Rocket& k : r.rocket) if (k.live) add({k.dist - cam.dist, &pic::MISSILE, k.x, 0.15f, false, 2.6f});   // easy to follow
   for (const Puff& p : r.puff) if (p.ms) add({p.dist - cam.dist + 0.5f, &pic::PUFF, p.x, 0.2f, false, 1.8f});
 }
@@ -288,6 +291,7 @@ void drawThing(const Thing& t, uint32_t ms) {
   if (t.flames) flames(x, y - lift, scale / PIC_SCALE, ms, true);
   const float w = t.p->w * scale;
   for (int k = 0; k < t.copies; k++) scaled(*t.p, x + (int)lroundf((k - (t.copies - 1) / 2.0f) * w), y - lift, scale);
+  if (t.flag) scaled(*t.flag, x, y - lift - (int)(t.p->h * scale) - 4, scale * 1.3f);
 }
 void drawThings(uint32_t ms) {
   for (int i = 1; i < sc->n; i++)   // far first
@@ -305,11 +309,21 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   if (p.boostMs) flames(x, CAR_ROW - lift, 1, ms, false);
   pic(s, x - s.w, CAR_ROW - lift - 2 * s.h, PIC_SCALE);
 }
-void scene(const Race& r, int track, float steer, uint32_t ms) {
+// The tailwind, when it helps: a few streaks either side of the car, longer the stronger it blows.
+void wind(float k, uint32_t ms) {
+  if (k <= 0.05f) return;
+  const int len = 20 + (int)(k * 50);
+  for (int i = 0; i < 4; i++) {
+    const int y = 300 + i * 26, off = (int)((ms / 4 + i * 37) % 60);
+    fill(110 - off, y, len, 3, CREAM);
+    fill(370 + off - len, y + 13, len, 3, CREAM);
+  }
+}
+void scene(const Race& r, const Duo& duo, int track, float steer, uint32_t ms) {
   if (!sc) { sc = new (std::nothrow) Scratch(); if (sc) buildArc(); }
   if (!sc) return;
   const Car& p = r.car[PLAYER];
-  Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f};
+  Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f, &duo};
   if (fabsf(p.dist - scrollDist) < 50) scroll = fmodf(scroll + curve(*r.track, p.dist) * (p.dist - scrollDist) * 0.9f, 3600);
   else scroll = 0;   // a new race starts the skyline afresh
   scrollDist = p.dist;
@@ -323,11 +337,12 @@ void scene(const Race& r, int track, float steer, uint32_t ms) {
   placeTrack(cam);
   placeCars(cam);
   drawThings(ms);
+  wind(duo.wind, ms);
   player(cam, steer, ms);
 }
 
 // ---- the race HUD, after the reference: lap and place numerals on the scene, two round action buttons
-const char* ordinal(int n) { static const char* O[] = {"1st", "2nd", "3rd", "4th"}; return O[(n < 1 ? 1 : n > 4 ? 4 : n) - 1]; }
+const char* ordinal(int n) { static const char* O[] = {"1st", "2nd", "3rd", "4th", "5th"}; return O[(n < 1 ? 1 : n > 5 ? 5 : n) - 1]; }
 void action(const ui::Box& b, int item, int count, bool lit, bool full) {
   UiAudit::add(b.x, b.y, b.w, b.h);
   const int cx = b.x * 3 + b.w * 3 / 2, cy = b.y * 3 + b.h * 3 / 2, inward = item == ROCKET ? 1 : -1;
@@ -382,6 +397,16 @@ void speedo(const Race& r) {
   outlined(262 - textWidth(n, 5), 40, n, 5, color);
   outlined(268, 62, "mph", 2, color);
 }
+// Where the other kid is, under the place: their avatar and an arrow, up when they're ahead, down when behind.
+void gap(const Duo& d, float myDist) {
+  const int x = PLACE.x * 3 + 6, y = PLACE.y * 3 + 60;
+  if (d.peerFace) pic(*d.peerFace, x, y, 2);
+  const bool up = d.peerDist > myDist;
+  for (int i = 0; i < 12; i++) {   // a 24 px triangle
+    const int w = up ? 2 + i * 2 : 24 - i * 2;
+    fill(x + 64 - w / 2, y + 8 + i * 2, w, 2, up ? ORANGE : GREEN);
+  }
+}
 void hud(const View& v) {
   const Race& r = *v.race;
   speedo(r);
@@ -393,13 +418,14 @@ void hud(const View& v) {
   const int hw = textWidth("Hold", 2), mx = lx + (lw - hw - 16) / 2;
   fill(mx - 2, ly + 46, 8, 18, RIM); fill(mx + 5, ly + 46, 8, 18, RIM);
   fill(mx, ly + 48, 4, 14, CREAM); fill(mx + 7, ly + 48, 4, 14, CREAM);   // a pause mark, then the word
-  outlined(mx + 16, ly + 46, "Hold", 2, CREAM);
+  outlined(mx + 16, ly + 46, "Hold", 2, v.duo.holdOff ? DIM : CREAM);   // together: no pauses left this race
   if (v.hold) { fill(lx + 6, ly + 70, lw - 12, 6, RIM); fill(lx + 8, ly + 72, (lw - 16) * v.hold / 1000, 2, GOLD); }
-  const char* place = ordinal(r.place);
+  const char* place = ordinal(v.duo.on && v.duo.place ? v.duo.place : r.place);
   const char num[2] = {place[0], 0};
   const int px = PLACE.x * 3 + 4, py = PLACE.y * 3 + 2;
   outlined(px, py, num, 6, GOLD);   // the reference's big place digit and its small suffix
   outlined(px + textWidth(num, 6) + 6, py + 4, place + 1, 3, GOLD);
+  if (v.duo.on && v.duo.peerOnRoad) gap(v.duo, r.car[PLAYER].dist);
   action(ROCKET_BTN, ROCKET, r.inventory[ROCKET], r.cooldownMs > 0, r.fullMs[ROCKET] > 0);
   action(BOOST_BTN, BOOST, r.inventory[BOOST], r.car[PLAYER].boostMs > 0, r.fullMs[BOOST] > 0);
 }
@@ -431,6 +457,9 @@ void callouts(const View& v) {
   if (v.resumeMs) banner(160, "Ready", 5, GOLD);
   if (r.hitMs) banner(196, "Hit!", 4, ORANGE);
   if (r.phase == Phase::Finished) banner(186, "Finish!", 6, GOLD);   // under the lap chip
+  char line[48];
+  if (v.duo.peerPaused) { snprintf(line, sizeof line, "%s paused", v.duo.peerName); banner(150, line, 4, GOLD); }
+  if (v.notice) banner(260, v.notice, 2, CREAM);
 }
 
 // ---- pages
@@ -452,10 +481,30 @@ void wheelPreview(float steer, int trackId, int y) {   // a strip of road and th
   const pic::Pic& s = *pic::CAR[0];
   pic(s, 240 + (int)(steer * 90) - s.w, y + 6, 2);
 }
-void tracksPage(int mode) {
+// Another kid's invite, over the track cards.
+void invite(const Duo& d) {
+  plate({22, 34, 116, 106}, INK, ORANGE);
+  if (d.inviteFace) pic(*d.inviteFace, 210, 116, 3);
+  char line[40];
+  snprintf(line, sizeof line, "%s wants", d.inviteName);
+  heading(186, line, 2, CREAM);
+  heading(210, "to race together!", 2, CREAM);
+  // Yes stands out for a kid who can't read yet: green and big, with the friend's face on it; Not now is quiet.
+  UiAudit::add(JOIN.x, JOIN.y, JOIN.w, JOIN.h);
+  plate(JOIN, PLATE_HI, GREEN);
+  centered(JOIN.x * 3 + JOIN.w * 3 / 2, JOIN.y * 3 + JOIN.h * 3 / 2 - 10, "Join", 2, GREEN);
+  UiAudit::add(NOT_NOW.x, NOT_NOW.y, NOT_NOW.w, NOT_NOW.h);
+  plate(NOT_NOW, INK, PLATE);
+  centered(NOT_NOW.x * 3 + NOT_NOW.w * 3 / 2, NOT_NOW.y * 3 + NOT_NOW.h * 3 / 2 - 10, "Not now", 2, DIM);
+}
+void tracksPage(const View& v) {
+  const int mode = v.mode;
   gfx565::clear(rgb888_to_565(INK));
-  banner(38, "RALLY", 4, ORANGE);
-  heading(78, "Pick a track", 2, CREAM);
+  if (v.duo.radio) button(TOGETHER, "Together", true);   // in place of the title: race a kid on another Porthole
+  else {
+    banner(38, "RALLY", 4, ORANGE);
+    heading(78, "Pick a track", 2, CREAM);
+  }
   for (int i = 0; i < TRACKS; i++) {
     const ui::Box& b = CARD[i];
     UiAudit::add(b.x, b.y, b.w, b.h);
@@ -472,6 +521,46 @@ void tracksPage(int mode) {
   const int cx = MODE_CHIP.x * 3 + MODE_CHIP.w * 3 / 2;
   centered(cx, MODE_CHIP.y * 3 + 12, "Rivals", 2, DIM);
   centered(cx, MODE_CHIP.y * 3 + 40, MODE_NAME[mode], 2, GOLD);
+  if (v.duo.inviteName) invite(v.duo);
+  else if (v.notice) { fill(130, 432, 220, 30, INK); centered(240, 436, v.notice, 2, GOLD); }
+}
+// Together, waiting for another Porthole on the same wifi to join.
+void lookingPage(const View& v) {
+  gfx565::clear(rgb888_to_565(INK));
+  heading(60, "Race together", 3, ORANGE);
+  if (v.duo.face) pic(*v.duo.face, 210, 112 + (int)(sinf(v.ms / 250.0f) * 6), 3);
+  static const char* NET[] = {"Starting wifi...", "Set up wifi first", "Joining wifi...", "Looking for a friend..."};
+  heading(206, NET[v.duo.net % 4], 2, v.duo.net == 1 ? GOLD : CREAM);   // lan::State
+  if (v.duo.net == 3) {
+    centered(240, 240, "Ask them to open Rally", 2, DIM);
+    centered(240, 264, "on their Porthole", 2, DIM);
+  } else if (v.duo.net == 1) centered(240, 240, "in Settings, then try again", 2, DIM);
+  button(BOARD_BACK, "Back", true);
+}
+void face(const pic::Pic* f, const char* name, int cx, bool gold) {
+  if (f) pic(*f, cx - 30, 84, 3);
+  centered(cx, 156, name, 2, gold ? GOLD : CREAM);
+}
+// Two kids, one track: the host picks it, then both go to the grip page.
+void lobbyPage(const View& v) {
+  gfx565::clear(rgb888_to_565(INK));
+  const Duo& d = v.duo;
+  char line[40];   // the guest is told who picks, up top, clear of the track and Back
+  if (d.host) snprintf(line, sizeof line, "Race together");
+  else if (d.paired) snprintf(line, sizeof line, "%.8s picks the track", d.peerName);
+  else snprintf(line, sizeof line, "Joining...");
+  heading(46, line, 2, ORANGE);
+  face(d.face, "You", 180, true);
+  face(d.paired ? d.peerFace : nullptr, d.paired ? d.peerName : "...", 300, false);
+  track(v.track, 156, 196, 168, 54);
+  centered(240, 262, TRACK[v.track].line1, 2, CREAM);
+  centered(240, 286, TRACK[v.track].line2, 2, CREAM);
+  button(BACK, "Back", true);
+  if (d.host) {
+    button(LOBBY_PREV, "<", true);
+    button(LOBBY_NEXT, ">", true);
+    button(NEXT, "Go", d.paired);
+  }
 }
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
@@ -489,8 +578,10 @@ void howToPage(const View& v) {
 void calibratePage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   heading(60, "Hold like a wheel", 2, ORANGE);
-  const char* status = v.gripReady ? "Ready! Turn to test" : v.gripUpright ? "Hold it steady" : "Lift it up";
-  heading(96, status, 2, v.gripReady ? GREEN : CREAM);
+  char wait[40];
+  snprintf(wait, sizeof wait, "Waiting for %s...", v.duo.peerName);
+  const char* status = v.duo.waiting ? wait : v.gripReady ? "Ready! Turn to test" : v.gripUpright ? "Hold it steady" : "Lift it up";
+  heading(96, status, 2, v.gripReady || v.duo.waiting ? GREEN : CREAM);
   fill(150, 134, 180, 8, PLATE);
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
   wheelPreview(v.steer, v.track, 162);
@@ -498,7 +589,7 @@ void calibratePage(const View& v) {
   char line[48];   // the time to beat on this track, before the kid starts
   if (toBeat(v, line, sizeof line)) centered(240, 288, line, 2, GOLD);
   button(BACK, "Back", true);
-  button(NEXT, "Go", v.gripReady);
+  button(NEXT, "Go", v.gripReady && !v.duo.waiting);
 }
 void pausePage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
@@ -506,7 +597,7 @@ void pausePage(const View& v) {
   else heading(48, "Paused", 3, ORANGE);
   button(RESUME, "Resume", v.gripHeld);
   button(RECENTER, "New grip", true);
-  button(RESTART, "Restart", true);
+  button(RESTART, "Restart", !v.duo.on);   // together, one kid can't restart both
   button(TRACKS_BTN, "Tracks", true);
   button(HOME_BTN, "Home", true);
 }
@@ -559,8 +650,39 @@ void boardPage(const View& v) {
   boardRows(v, 236);
   button(BOARD_BACK, "Back", true);
 }
+// A race together: both kids' places and times (the other kid's "racing..." until they're home), no Best times.
+struct Kid { const pic::Pic* face; const char* name; int place; bool home; uint32_t ms; };
+void kidRow(const Kid& k, int y, bool gold) {
+  if (k.face) pic(*k.face, 100, y - 8, 2);
+  char t[16], line[48];
+  if (k.home) clock(t, sizeof t, k.ms);
+  if (k.place && k.home) snprintf(line, sizeof line, "%s %.8s %s", ordinal(k.place), k.name, t);
+  else snprintf(line, sizeof line, "%.8s %s", k.name, k.home ? t : "racing...");
+  text(152, y, line, 2, gold ? GOLD : CREAM);
+}
+void jointResults(const View& v) {
+  const Race& r = *v.race;
+  const Duo& d = v.duo;
+  gfx565::clear(rgb888_to_565(INK));
+  heading(40, "Finished!", 3, ORANGE);
+  const int peer = d.noWinner ? 0 : d.peerPlace;
+  const bool peerFirst = peer && d.peerFinished && peer < d.place;   // the rows read in finishing order
+  kidRow({d.face, "You", d.noWinner ? 0 : d.place, true, r.car[PLAYER].finishMs}, peerFirst ? 150 : 104, true);
+  if (peer || !d.noWinner) kidRow({d.peerFace, d.peerName, peer, d.peerFinished, d.peerFinishMs}, peerFirst ? 104 : 150, false);
+  else heading(150, "Connection lost: no winner", 2, DIM);
+  char line[48];
+  if (d.stars) snprintf(line, sizeof line, "+%d stars  Races together today: %d", d.stars, d.races);
+  else snprintf(line, sizeof line, "Races together today: %d", d.races);
+  heading(206, line, 2, GREEN);
+  if (d.peerAgain) { snprintf(line, sizeof line, "%s wants again!", d.peerName); heading(250, line, 2, GOLD); }
+  else if (d.gone && !d.noWinner) { snprintf(line, sizeof line, "%s left", d.peerName); heading(250, line, 2, DIM); }
+  button(REPLAY, d.gone ? "Replay" : "Again", true);
+  button(RESULT_TRACKS, "Tracks", true);
+  button(RESULT_HOME, "Home", true);
+}
 // The finish, then this track's leaderboard: every kid's best race and best lap, fastest first, this kid in gold.
 void resultsPage(const View& v) {
+  if (v.duo.on) { jointResults(v); return; }
   const Race& r = *v.race;
   gfx565::clear(rgb888_to_565(INK));
   heading(40, "Finished!", 3, ORANGE);
@@ -588,14 +710,16 @@ void resultsPage(const View& v) {
 void draw(const View& v) {
   if (!gfx565::fb) return;
   switch (v.page) {
-    case Page::Tracks: tracksPage(v.mode); break;
+    case Page::Tracks: tracksPage(v); break;
     case Page::HowTo: howToPage(v); break;
     case Page::Calibrate: calibratePage(v); break;
-    case Page::Race: scene(*v.race, v.track, v.steer, v.ms); hud(v); callouts(v); break;
+    case Page::Race: scene(*v.race, v.duo, v.track, v.steer, v.ms); hud(v); callouts(v); break;
     case Page::Pause: pausePage(v); break;
     case Page::Confirm: confirmPage(v); break;
     case Page::Results: resultsPage(v); break;
     case Page::Board: boardPage(v); break;
+    case Page::Looking: lookingPage(v); break;
+    case Page::Lobby: lobbyPage(v); break;
   }
 }
 

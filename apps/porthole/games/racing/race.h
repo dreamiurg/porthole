@@ -43,6 +43,8 @@ struct Race {
   int8_t rung = 0;                  // the ladder rung it puts the rivals on (tune.h LEVEL_SHIFT); past LADDER_RUNGS
                                     // it switches the track's Pro hazards on instead (Feature::rung)
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
+  uint8_t struck[CARS] = {};        // the player's rocket hits on each rival (a race together sends them to the host)
+  bool keepField = false;           // a race together: the rivals keep driving after the player's finish
 };
 
 // level: how hard the rivals push (tune.h; clampLevel'd; 0 = Normal, the track's LEVEL_SHIFT rungs up). The race is
@@ -56,6 +58,7 @@ int rungOf(int level, int track);       // the ladder rung a level puts the riva
 int nextLevel(int level, int track, int place, bool runaway);
 bool runaway(const Race& r);   // the player led for at least RUNAWAY_LED / RUNAWAY_OF of the race
 void step(Race& r, const Controls& in);
+void strike(Race& r, int car);   // a rival hit by the other kid's rocket (a race together), as if by the player's
 int lapOf(const Race& r, int car);       // 1..LAPS, the lap being driven (LAPS once finished)
 int placeOf(const Race& r, int car);     // 1..CARS
 void order(const Race& r, uint8_t out[CARS]);   // car ids, first place first
