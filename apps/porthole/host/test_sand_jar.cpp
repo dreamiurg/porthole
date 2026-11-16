@@ -247,6 +247,34 @@ static void replays() {
   puts("replay: the same inputs make the same jar");
 }
 
+// The jar after a fixed script, as one number per mode. A change that is meant to keep the physics (how the grains are
+// laid out in memory, a faster loop) must keep these; a change to the rules changes them on purpose: put the printed
+// values here and say why in the commit. Only exact float steps are in it: the tilt is set without sin or cos.
+static void sameAsEver() {
+  const uint32_t want[] = {0x4a6d2f4eu, 0x6de8263du, 0x5d268289u};   // sand, rainbow, beach
+  int k = 0, bad = 0;
+  for (Mode m : {MODE_SAND, MODE_RAINBOW, MODE_BEACH}) {
+    a.tiltX = 0.5f; a.tiltY = 0.8f; a.finger.on = false;
+    a.reset(m, 21);
+    for (int s = 0; s < 300; s++) {
+      const int t = s % 120;
+      a.tiltX = ((t < 60 ? t : 120 - t) - 30.5f) * (1.0f / 64); a.tiltY = 0.8f;   // to and fro, never level
+      a.finger = {s % 100 > 60, 40.0f + s % 70, 110, 1, 0.5f};
+      if (s % 90 == 45) a.shake();
+      a.step();
+    }
+    uint32_t h = 2166136261u;
+    auto mix = [&h](uint32_t v) { h = (h ^ v) * 16777619u; };
+    for (int i = 0; i < a.n; i++) { mix(a.g.x[i]); mix(a.g.y[i]); mix((uint16_t)a.g.vx[i]); mix((uint16_t)a.g.vy[i]); mix(a.g.look[i]); }
+    for (int c = 0; c < G * G; c++) mix((uint16_t)a.occ[c]);
+    if (h != want[k]) fprintf(stderr, "sameAsEver: mode %d is 0x%08x\n", m, (unsigned)h);
+    bad += h != want[k++];
+  }
+  assert(!bad);
+  a.finger.on = false;
+  puts("pinned: a fixed script leaves the same jar as ever");
+}
+
 // The renderer writes a cell only when it differs from what that panel buffer already holds (the buffers alternate,
 // each two frames behind). After frames of flowing sand and water, a moving finger, a shake and a button held down,
 // the buffer on the glass must equal a full redraw of the same state into a fresh buffer, pixel for pixel.
@@ -368,6 +396,7 @@ int main() {
   shakeScatters();
   orbitsStayOnGlass();
   replays();
+  sameAsEver();
   incrementalIsFull();
   loansComeHome();
   lateFramesSlowDown();
