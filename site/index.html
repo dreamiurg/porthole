@@ -76,31 +76,32 @@
     .hero p { margin: 0 0 14px; font-size: 19px; color: var(--body); }
     .hero .shot { flex: 1 1 300px; display: flex; justify-content: center; }
     .hero .shot { flex-direction: column; align-items: center; }
-    /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB) in a frame. */
-    .player { display: flex; flex-direction: column; align-items: center; gap: 14px; outline: none; }
-    .live { position: relative; width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%;
+    /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB). It takes only the
+       round screen's square: the buttons sit in its corners and the tilt is the dark rim, so playing moves nothing. */
+    .player { display: flex; flex-direction: column; align-items: center; outline: none; }
+    .live { position: relative; width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%; touch-action: none;
       background: radial-gradient(circle at 35% 30%, #4a4350, #24202a 60%, #16131a); box-shadow: 0 18px 40px rgba(20, 14, 26, 0.35); }
+    .live.on { cursor: grab; }
     .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
     .live .poster img { display: block; width: 100%; height: 100%; }
     .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
       background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
-    #screen { display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; touch-action: none; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
-    #screen[hidden], .live .status[hidden], .player [hidden] { display: none; }
-    /* Before Play the controls already take their space, just unseen, so starting moves nothing on the page. */
-    .pcontrols.idle, .pcontrols .gone { visibility: hidden; }
+    #screen { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
+    .player [hidden] { display: none !important; }
     .live .status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #d8cfe0; font-size: 18px; pointer-events: none; }
-    .pcontrols { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 440px; }
-    .pcontrols .col { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 280px; }
-    .pcontrols button, .player .close { font: inherit; font-size: 15px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
-    .pcontrols button:hover { border-color: var(--accent); }
-    .pcontrols button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
-    .pcontrols button[aria-pressed="true"] { background: var(--soft); color: var(--ink); }
-    #pad { width: 120px; height: 120px; cursor: grab; touch-action: none; }
-    #motion-note { flex-basis: 100%; min-height: 2.8em; margin: 0; text-align: center; font-size: 14px; color: var(--muted); }
+    .live .toast { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); width: max-content; max-width: 70%; padding: 6px 12px; border-radius: 10px;
+      background: rgba(12, 10, 14, 0.85); color: #f3ecf6; font-size: 14px; line-height: 1.35; text-align: center; pointer-events: none; }
+    /* Where gravity points, drawn on the rim. */
+    .live .dot { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #f0b75e;
+      box-shadow: 0 0 10px 3px rgba(240, 183, 94, 0.6); pointer-events: none; opacity: 0; }
+    .live .corner { position: absolute; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border-radius: 50%;
+      background: var(--card); color: var(--ink); border: 1px solid var(--line); cursor: pointer; box-shadow: 0 4px 12px rgba(20, 14, 26, 0.18); }
+    .live .corner:hover { border-color: var(--accent); }
+    .live .corner svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .live .tl { left: -4px; top: -4px; } .live .tr { right: -4px; top: -4px; } .live .bl { left: -4px; bottom: -4px; } .live .br { right: -4px; bottom: -4px; }
     /* Full screen: the player covers the page; on a phone that is how it starts. */
-    .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; overflow: auto; }
-    .player.full .live { width: min(94vw, calc(100vh - 210px)); width: min(94vw, calc(100dvh - 210px)); }
-    .player .close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 22px; line-height: 1; }
+    .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; }
+    .player.full .live { width: min(92vw, 92vh); width: min(92vw, 92dvh); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
     .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
@@ -273,28 +274,22 @@
   </div>
   <div class="shot">
     <div class="player" id="play" tabindex="-1">
-      <button type="button" class="close" id="p-close" hidden aria-label="Close full screen">&times;</button>
-      <div class="live">
+      <div class="live" id="live">
         <button type="button" class="poster" id="play-here">
           <img src="images/play-home.webp" alt="The Porthole menu on the round screen" width="480" height="480">
           <span class="go">&#9654; <span lang="en">Play here</span><span lang="uk">Грати тут</span></span>
         </button>
         <canvas id="screen" width="480" height="480" aria-label="Porthole screen" hidden></canvas>
+        <span class="dot" id="dot" hidden></span>
         <div class="status" id="p-status" hidden></div>
-      </div>
-      <div class="pcontrols idle" id="p-controls">
-        <canvas id="pad" width="180" height="180" aria-label="Tilt pad" title="Where gravity points: drag the ball. The middle is lying flat."></canvas>
-        <div class="col">
-          <button type="button" id="motion" class="primary" hidden aria-pressed="false"></button>
-          <button type="button" id="center" class="gone"><span lang="en">Center</span><span lang="uk">Центр</span></button>
-          <button type="button" id="shake"><span lang="en">Shake</span><span lang="uk">Струсити</span></button>
-          <button type="button" id="full"><span lang="en">Full screen</span><span lang="uk">На весь екран</span></button>
-          <button type="button" id="reset"><span lang="en">Start over</span><span lang="uk">Спочатку</span></button>
-        </div>
-        <p id="motion-note" aria-live="polite"></p>
+        <div class="toast" id="toast" role="status" hidden></div>
+        <button type="button" class="corner tl" id="shake" hidden aria-label="Shake" title="Shake"><svg viewBox="0 0 24 24"><path d="M3 8c3-3 5 3 9 0s6 3 9 0M3 16c3-3 5 3 9 0s6 3 9 0"/></svg></button>
+        <button type="button" class="corner tr" id="full" hidden aria-label="Full screen" title="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button type="button" class="corner bl" id="reset" hidden aria-label="Start over" title="Start over"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v5h5"/></svg></button>
+        <button type="button" class="corner br" id="motion" hidden aria-label="Tilt with this phone" title="Tilt with this phone"></button>
       </div>
     </div>
-    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass. The tilt games read the pad, the arrow keys or, on a phone, the phone itself.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла. Ігри з нахилом слухають панель, стрілки або, на телефоні, сам телефон.</span></p>
+    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass. To tilt, press the dark rim, use the arrow keys or, on a phone, tilt the phone.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла. Щоб нахилити, натискайте на темний обідок, стрілки або, на телефоні, нахиляйте сам телефон.</span></p>
   </div>
 </div>
 
@@ -599,19 +594,34 @@
   // by commit: a fresh page never runs the last deploy's.
   const BUILD = "__BUILD__";
   const t = (en, uk) => [["en", en], ["uk", uk]].map(([lang, text]) => Object.assign(document.createElement("span"), { lang, textContent: text }));
-  const say = (el, words) => el.replaceChildren(...(words || []));
   const $ = (id) => document.getElementById(id);
-  const player = $("play"), canvas = $("screen"), statusEl = $("p-status"), controls = $("p-controls");
+  const player = $("play"), live = $("live"), canvas = $("screen"), statusEl = $("p-status"), toastEl = $("toast"), dot = $("dot");
   const TOUCH = matchMedia("(pointer: coarse)").matches;
-  let cmd = () => {}, started = false;
+  let cmd = () => {}, started = false, toastTimer = 0;
+  const SVG = "http://www.w3.org/2000/svg";
+  function icon(d) {
+    const svg = document.createElementNS(SVG, "svg"), path = document.createElementNS(SVG, "path");
+    svg.setAttribute("viewBox", "0 0 24 24"); path.setAttribute("d", d); svg.append(path);
+    return svg;
+  }
+  const ICON = { full: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5", exit: "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5",
+    phone: "M8 3h8v18H8zM11 18h2", center: "M12 3v4M12 17v4M3 12h4M17 12h4M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6" };
+  function toast(words) {
+    toastEl.replaceChildren(...words); toastEl.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.hidden = true; }, 5000);
+  }
 
   function start(gesture) {
     if (started) return;
     started = true;
     $("play-here").remove();
-    canvas.hidden = false; controls.classList.remove("idle");
-    statusEl.hidden = false; say(statusEl, t("Loading…", "Завантаження…"));
-    if (TOUCH) { setFull(true); if (gesture && "DeviceMotionEvent" in window) motionOn(); }
+    canvas.hidden = false; dot.hidden = false; live.classList.add("on");
+    for (const id of ["shake", "full", "reset"]) $(id).hidden = false;
+    statusEl.hidden = false; statusEl.replaceChildren(...t("Loading…", "Завантаження…"));
+    if (TOUCH) {
+      setFull(true);
+      if ("DeviceMotionEvent" in window) { motion.hidden = false; if (gesture) motionOn(); }
+    }
     const ctx = canvas.getContext("2d"), image = ctx.createImageData(W, H);
     let last = performance.now(), pending = 0;
     const loop = (now) => {
@@ -626,7 +636,7 @@
       }
       requestAnimationFrame(loop);
     };
-    const broke = () => { statusEl.hidden = false; say(statusEl, t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку.")); };
+    const broke = () => { statusEl.hidden = false; statusEl.replaceChildren(...t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку.")); };
     window.Module = {
       print() {},   // the --serve protocol's "ok" replies
       printErr: (m) => console.warn(m),
@@ -637,6 +647,7 @@
         statusEl.hidden = true;
         sendTilt(true);
         requestAnimationFrame(loop);
+        if (!TOUCH) toast(t("Tap the screen. To tilt, press the dark rim or use the arrow keys.", "Торкайтеся екрана. Щоб нахилити, натисніть на темний обідок або стрілки."));
       }],
     };
     const script = document.createElement("script");
@@ -647,6 +658,7 @@
   $("play-here").addEventListener("click", () => start(true));
 
   // Full screen: the player covers the page (the browser's own full screen too, where it has one; an iPhone does not).
+  // A stand-in of the same height keeps its place, so the page behind does not move.
   let apiFull = false;
   const standIn = document.createElement("div");
   function setFull(on) {
@@ -654,17 +666,18 @@
     if (on) { standIn.style.height = `${player.offsetHeight}px`; player.before(standIn); } else standIn.remove();
     player.classList.toggle("full", on);
     document.documentElement.classList.toggle("locked", on);
-    $("p-close").hidden = !on;
-    $("full").hidden = on;
+    const full = $("full");
+    full.replaceChildren(icon(on ? ICON.exit : ICON.full));
+    full.setAttribute("aria-label", on ? "Close full screen" : "Full screen"); full.title = full.getAttribute("aria-label");
     if (on && player.requestFullscreen && !TOUCH) { player.requestFullscreen().then(() => { apiFull = true; }, () => {}); }
     if (!on && apiFull && document.fullscreenElement) document.exitFullscreen();
     if (!on) apiFull = false;
+    showDot();
   }
   document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && apiFull) setFull(false); });
-  $("full").addEventListener("click", () => setFull(true));
-  $("p-close").addEventListener("click", () => setFull(false));
+  $("full").addEventListener("click", () => setFull(!player.classList.contains("full")));
 
-  // The finger: the panel is 480 px, the shell reads 160x160 logical points.
+  // The finger on the glass: the panel is 480 px, the shell reads 160x160 logical points.
   let pressed = false;
   function point(e) {
     const r = canvas.getBoundingClientRect();
@@ -672,25 +685,22 @@
     return `${Math.max(0, Math.min(159, x))} ${Math.max(0, Math.min(159, y))}`;
   }
   canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault(); player.focus({ preventScroll: true });
+    e.preventDefault(); e.stopPropagation(); player.focus({ preventScroll: true });
     canvas.setPointerCapture(e.pointerId); pressed = true; cmd("down " + point(e));
   });
   canvas.addEventListener("pointermove", (e) => { if (pressed) cmd("move " + point(e)); });
   for (const ev of ["pointerup", "pointercancel"]) canvas.addEventListener(ev, () => { if (pressed) { pressed = false; cmd("up"); } });
 
-  // The motion sensor: gravity in the glass's plane (x right, y down, in g); the rest of 1 g points into the glass.
-  const pad = $("pad"), pctx = pad.getContext("2d");
-  const C = 90, R = 72;
-  let tilt = { x: 0, y: 1, z: 0 }, lastTilt = 0;
-  function drawPad() {
-    pctx.clearRect(0, 0, 180, 180);
-    pctx.fillStyle = "#2a2430"; pctx.beginPath(); pctx.arc(C, C, 88, 0, 7); pctx.fill();
-    pctx.strokeStyle = "#4a4252"; pctx.lineWidth = 2;
-    for (const r of [R, R / 2]) { pctx.beginPath(); pctx.arc(C, C, r, 0, 7); pctx.stroke(); }
-    const bx = C + tilt.x * R, by = C + tilt.y * R;
-    pctx.strokeStyle = "rgba(240,183,94,.5)"; pctx.lineWidth = 4;
-    pctx.beginPath(); pctx.moveTo(C, C); pctx.lineTo(bx, by); pctx.stroke();
-    pctx.fillStyle = "#e9b86a"; pctx.beginPath(); pctx.arc(bx, by, 13, 0, 7); pctx.fill();
+  // The tilt: gravity in the glass's plane (x right, y down, in g); the rest of 1 g points into the glass.
+  // At rest the board lies flat. Pressing the rim tips it toward the finger, as far as the finger is from the middle;
+  // letting go lays it flat again.
+  const REST = { x: 0, y: 0, z: -1 };
+  let tilt = REST, lastTilt = 0;
+  function showDot() {
+    const r = live.offsetWidth / 2, ring = r * 0.93;   // the middle of the rim
+    const m = Math.hypot(tilt.x, tilt.y);
+    dot.style.transform = `translate(${tilt.x * ring}px, ${tilt.y * ring}px)`;
+    dot.style.opacity = String(Math.min(1, m * 1.5));
   }
   function sendTilt(force) {
     const now = performance.now();
@@ -699,29 +709,38 @@
     const k = (v) => Math.round(v * 1000);
     cmd(`tilt ${k(tilt.x)} ${k(tilt.y)} ${k(tilt.z)}`);
   }
-  function setTilt(x, y, force) {   // from the pad and the keys: face up, so z is what is left of 1 g
+  function setTilt(x, y, force) {   // face up, so z is what is left of 1 g
     const m = Math.hypot(x, y);
     if (m > 1) { x /= m; y /= m; }
     tilt = { x, y, z: -Math.sqrt(Math.max(0, 1 - x * x - y * y)) };
-    drawPad(); sendTilt(force);
+    showDot(); sendTilt(force);
   }
-  function padTilt(e) {
-    const r = pad.getBoundingClientRect();
-    setTilt(((e.clientX - r.left) * 180 / r.width - C) / R, ((e.clientY - r.top) * 180 / r.height - C) / R, false);
+  let rim = false;
+  function rimTilt(e) {
+    const r = live.getBoundingClientRect();
+    setTilt((e.clientX - r.left - r.width / 2) / (r.width / 2), (e.clientY - r.top - r.height / 2) / (r.height / 2), false);
   }
-  pad.addEventListener("pointerdown", (e) => { pad.setPointerCapture(e.pointerId); player.focus({ preventScroll: true }); padTilt(e); });
-  pad.addEventListener("pointermove", (e) => { if (pad.hasPointerCapture(e.pointerId)) padTilt(e); });
-  pad.addEventListener("pointerup", () => sendTilt(true));
-  player.addEventListener("keydown", (e) => {   // only while the player has focus, so the page still scrolls
-    if (e.key === "Escape" && player.classList.contains("full")) { setFull(false); return; }
-    if (e.key === " " && e.target.matches("button")) return;   // Space clicks a focused button
-    let a = Math.atan2(tilt.x, tilt.y), m = Math.hypot(tilt.x, tilt.y);
-    if (e.key === "ArrowLeft") a -= 0.15; else if (e.key === "ArrowRight") a += 0.15;
-    else if (e.key === "ArrowUp") m = Math.max(0, m - 0.1); else if (e.key === "ArrowDown") m = Math.min(1, m + 0.1);
-    else if (e.key === " ") { cmd("shake"); e.preventDefault(); return; } else return;
-    e.preventDefault();
-    setTilt(Math.sin(a) * m, Math.cos(a) * m, true);
+  live.addEventListener("pointerdown", (e) => {
+    if (!started || e.target !== live) return;   // the glass and the buttons have their own
+    e.preventDefault(); player.focus({ preventScroll: true });
+    live.setPointerCapture(e.pointerId); rim = true; rimTilt(e);
   });
+  live.addEventListener("pointermove", (e) => { if (rim) rimTilt(e); });
+  for (const ev of ["pointerup", "pointercancel"]) live.addEventListener(ev, () => { if (rim) { rim = false; setTilt(0, 0, true); } });
+  // The arrow keys tip it the same way while held, only while the player has focus, so the page still scrolls.
+  const held = new Set(), KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+  function keyTilt() {
+    const k = (a) => (held.has(a) ? 1 : 0);
+    setTilt((k("ArrowRight") - k("ArrowLeft")) * 0.7, (k("ArrowDown") - k("ArrowUp")) * 0.7, true);
+  }
+  player.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && player.classList.contains("full")) { setFull(false); return; }
+    if (e.key === " " && !e.target.matches("button")) { cmd("shake"); e.preventDefault(); return; }
+    if (!KEYS.includes(e.key) || e.repeat) { if (KEYS.includes(e.key)) e.preventDefault(); return; }
+    e.preventDefault(); held.add(e.key); keyTilt();
+  });
+  player.addEventListener("keyup", (e) => { if (held.delete(e.key)) keyTilt(); });
+  player.addEventListener("blur", () => { if (held.size) { held.clear(); keyTilt(); } });
 
   // A phone's own sensor. accelerationIncludingGravity is the push against gravity in the phone's own axes (x right,
   // y up, z out of the glass), so gravity is its negative. The page turns with the phone in landscape, so the reading
@@ -753,7 +772,7 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
   // and the first-readings check cover a wrong guess.
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const ASKS = typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function";
-  const motion = $("motion"), centerBtn = $("center"), note = $("motion-note");
+  const motion = $("motion");
   let useMotion = false, sign = IOS ? -1 : 1, settled = false, onSince = 0, heard = false, turn = (v) => v, lastShake = 0, raw = null;
   const screenAngle = () => (screen.orientation ? screen.orientation.angle : (window.orientation || 0));
   function onMotion(e) {
@@ -765,23 +784,24 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
     if (early && Math.abs(d.z) > 0.5) { if (d.z > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
     else if (early && screenAngle() % 360 === 0 && Math.abs(d.y) > 0.5) { if (d.y > 0) { sign = -sign; d = deviceGravity(a, sign); } settled = true; }
     raw = d;
+    if (rim) return;   // a finger on the rim wins while it is there
     tilt = onGlass(turn(d), screenAngle());
-    drawPad(); sendTilt(false);
+    showDot(); sendTilt(false);
     const j = e.acceleration, now = performance.now();
     if (j && j.x != null && Math.hypot(j.x, j.y, j.z) > 18 && now - lastShake > 600) { lastShake = now; cmd("shake"); }
   }
-  function setMotion(on, msg) {
+  // The corner button turns the phone's tilt on; once on, it makes the way the phone is held now the middle.
+  function setMotion(on, words) {
     useMotion = on;
-    motion.setAttribute("aria-pressed", String(on));
-    say(motion, on ? t("Phone tilt: on", "Нахил телефоном: увімк.") : t("Tilt with this phone", "Нахиляти телефоном"));
-    centerBtn.classList.toggle("gone", !on);
-    pad.classList.toggle("gone", on);
-    say(note, msg || (on ? t("Hold it like the steering wheel, or lay it flat. Center makes the way you hold it the middle.",
-      "Тримайте як кермо або покладіть рівно. Центр робить серединою те, як ви тримаєте зараз.") : null));
+    motion.replaceChildren(icon(on ? ICON.center : ICON.phone));
+    const label = on ? "Center: the way you hold it now is the middle" : "Tilt with this phone";
+    motion.setAttribute("aria-label", label); motion.title = label;
+    if (words) toast(words);
+    else if (on) toast(t("Tilt the phone. The corner button makes the way you hold it the middle.", "Нахиляйте телефон. Кнопка в куті робить серединою те, як ви тримаєте зараз."));
     if (on) {
       onSince = performance.now(); heard = false; settled = false;
       window.addEventListener("devicemotion", onMotion);
-      setTimeout(() => { if (useMotion && !heard) setMotion(false, t("This phone sent no motion readings, so the tilt pad steers instead.", "Телефон не надіслав даних руху, тож кермує панель нахилу.")); }, 2000);
+      setTimeout(() => { if (useMotion && !heard) setMotion(false, t("This phone sent no motion readings. Press the dark rim to tilt instead.", "Телефон не надіслав даних руху. Натискайте на темний обідок, щоб нахиляти.")); }, 2000);
     } else {
       window.removeEventListener("devicemotion", onMotion);
     }
@@ -791,25 +811,24 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
       let answer = "denied";
       try { answer = await DeviceMotionEvent.requestPermission(); } catch { /* treated as a no */ }
       if (answer !== "granted") {
-        setMotion(false, t("Motion access was not allowed, so the tilt pad steers instead. Close and reopen Safari to be asked again.",
-          "Доступ до руху не дозволено, тож кермує панель нахилу. Закрийте й знову відкрийте Safari, щоб вас спитали ще раз."));
+        setMotion(false, t("Motion access was not allowed. Press the dark rim to tilt, or close and reopen Safari to be asked again.",
+          "Доступ до руху не дозволено. Натискайте на темний обідок, щоб нахиляти, або закрийте й знову відкрийте Safari."));
         return;
       }
     }
     setMotion(true);
   }
-  if (TOUCH && "DeviceMotionEvent" in window) { motion.hidden = false; setMotion(false); }
-  motion.addEventListener("click", () => { if (useMotion) setMotion(false); else motionOn(); });
-  centerBtn.addEventListener("click", () => {   // the way it is held now becomes upright or flat, whichever is nearer
-    if (!raw) return;
+  motion.addEventListener("click", () => {
+    if (!useMotion) { motionOn(); return; }
+    if (!raw) return;   // Center: the way it is held now becomes upright or flat, whichever is nearer
     const angle = screenAngle(), now = onGlass(raw, angle);
     const target = Math.abs(now.y) >= Math.abs(now.z) ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: -1 };
     turn = turnTo(raw, fromGlass(target, angle));
   });
+  if (TOUCH && "DeviceMotionEvent" in window) setMotion(false);
 
   $("shake").addEventListener("click", () => cmd("shake"));
   $("reset").addEventListener("click", () => cmd("reset"));
-  drawPad();
   if (location.hash === "#play") { player.scrollIntoView(); start(false); }   // the old /play page sends people here
 })();
 </script>
