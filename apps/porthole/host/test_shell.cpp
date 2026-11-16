@@ -1241,6 +1241,17 @@ struct StubSys : shell::System {
   }
   bool detectTimeZone() override { detections++; clock.zoneState = shell::ZONE_LOOKING; return true; }
 };
+// What a System that implements neither Home nor a clock gets from the interface: every such call refuses or reports
+// nothing, so the menu hides Home and such a build cannot claim a lookup, a sync or a saved zone.
+static void systemDefaults() {
+  StubSys stub; shell::System& sys = stub; shell::Home home{};
+  assert(!sys.hasHome() && !sys.home(home) && !sys.saveHome(home) && !sys.startLookup("1 Main St"));
+  assert(sys.lookupResult(home) == 0 && home.name[0] == 0);
+  assert(!sys.syncClock() && !sys.setUtcOffset(60));
+  const shell::ClockStatus clock = stub.System::clockStatus();
+  assert(clock.state == shell::TIME_IDLE && clock.zoneState == shell::ZONE_IDLE && clock.lastSync == 0);
+  assert(!stub.System::setTimeZone("Europe/Kyiv", true) && !stub.System::detectTimeZone() && stub.detections == 0);
+}
 static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
   Input in{}; in.pressed = in.down = true; in.x = in.downX = 80; in.y = in.downY = 16; in.heldMs = heldMs; frame(sh, ms, in);
 }
@@ -1750,6 +1761,7 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
 int main() {
   static uint16_t nativePixels[gfx565::W * gfx565::H];
   gfx565::target(nativePixels);
+  systemDefaults();
   scheduleClosesGame();
   familyAllowanceFlow();
   zoneSelectionFlow();
