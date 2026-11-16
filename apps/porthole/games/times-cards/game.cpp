@@ -67,14 +67,18 @@ const gfx::Sprite& Game::icon() const { return LAUNCHER_ICON; }
 
 void Game::enter(const AppEnter& e) {
   in_ = Input{};
-  home_ = dirty_ = false;
+  home_ = dirty_ = keep_ = false;
   ms_ = e.ms; now_ = e.nowSec; wallet_ = e.stars;
   save_ = Save{};
   bool loaded = false;
-  for (int i = 0; i < e.n; i++)   // only this kid's deck; a bad one starts fresh
+  // Only this kid's deck. One this build cannot read (a newer build's after a rollback, or damaged) starts a fresh
+  // deck on screen, but opening the game must not be what wipes it from storage: nothing is written until the kid
+  // answers a card on the fresh one.
+  for (int i = 0; i < e.n; i++)
     if (e.all[i].id == e.who->id && e.saves[i].len) {
       loaded = loadBlob(e.saves[i].data, e.saves[i].len, save_);
       dirty_ = loaded && storedVersion(e.saves[i].data, e.saves[i].len) != SAVE_VERSION;   // an older version: stored anew, packed
+      keep_ = !loaded;
     }
   if (!loaded || !save_.level) { setUp(save_, startTable(e.who->age), today()); dirty_ = true; }
   clampDue(save_, today());
@@ -99,7 +103,7 @@ void Game::deal() {
 
 void Game::grade(Grade g) {
   answer(round_, save_, g, today(), quick_);
-  dirty_ = true;
+  dirty_ = true; keep_ = false;
   if (round_.done()) stars::award(wallet_, ROUND_STARS);
   go(round_.done() ? P_DONE : P_ASK);
 }
@@ -259,7 +263,7 @@ void Game::render() {
 }
 
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
-  if (!allowed || !dirty_) return false;
+  if (!allowed || !dirty_ || keep_) return false;
   seal(save_);
   // Packed, unless the blob does not read back as exactly this deck (no deck the game makes: then whole, as version
   // 3, as before). The shell copies it out before the next update.
@@ -305,7 +309,7 @@ void Game::debugCmd(const char* cmd) {
   const int t = atoi(cmd + 5);
   if (t < 1 || t > TABLES) return;
   setUp(save_, t, today());
-  dirty_ = true;
+  dirty_ = true; keep_ = false;
   round_ = Round{};
   go(P_HOME);
 }

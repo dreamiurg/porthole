@@ -45,6 +45,7 @@ class Game : public App {
   uint32_t ms_ = 0, now_ = 0, askedMs_ = 0;   // askedMs_: when the current card showed
   uint32_t* wallet_ = nullptr;   // the kid's stars (AppEnter::stars), shared with every game
   bool home_ = false, dirty_ = false, quick_ = false;   // quick_: the current card was turned within QUICK_MS
+  bool keep_ = false;   // a deck is stored that this build cannot read: it is left as it is until the kid answers a card
   int32_t today() const { return dayOf(now_); }
   void go(Page p);
   void deal();

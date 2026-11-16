@@ -99,8 +99,10 @@ opened (the old blob stays until that write succeeds). `host/fixtures/times_card
 save; `host/test_times_cards.cpp` holds its migration byte for byte.
 
 The struct stays append-only: a new field goes right before `crc` with a zero that is a sensible default, joins
-`packDeck`, and `SAVE_VERSION` goes up; nothing is reordered or resized. A blob of the wrong size or
-crc starts a fresh deck. `store()` is `"timescards"` and is never renamed.
+`packDeck`, and `SAVE_VERSION` goes up; nothing is reordered or resized. A stored blob this build cannot read (wrong
+size or crc, or a newer build's after a rollback) starts a fresh deck on screen but is left in storage as it is: the
+fresh deck replaces it only once the kid answers a card on it, never just because the game was opened.
+`store()` is `"timescards"` and is never renamed.
 
 ## Look and files
 

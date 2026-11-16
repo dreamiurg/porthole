@@ -450,6 +450,39 @@ static void playedDecksPack() {
   printf("times cards save: at most %u bytes in half a year of play, %u for any deck at all\n", (unsigned)most, (unsigned)g_most);
 }
 
+// A stored deck this build cannot read (a newer build's after a rollback, or damaged) is not replaced by a fresh one
+// just because the game was opened, looked at and left; only once the kid answers a card on the fresh deck.
+static void unreadableDeckKept() {
+  uint8_t newer[sizeof TIMES_CARDS_SAVE_V3];
+  memcpy(newer, TIMES_CARDS_SAVE_V3, sizeof newer);
+  newer[4] = 9;   // a version this build does not know
+  Game g;
+  Profile zoe = {1, "Zoe", 0, 8, 0};
+  SaveSlot slot = {newer, sizeof newer};
+  AppEnter e = {&zoe, &zoe, &slot, 1, NOW, ms, true};
+  uint32_t wallet = 0;
+  e.stars = &wallet;
+  g.enter(e);
+  settle(g);
+  const void* data; size_t len;
+  CHECK(on(g, "cards_home") && g.save().level == 4 && !g.takeSave(&data, &len, true));   // a fresh deck to play, not stored
+  tapBox(g, 80, 133);   // Go!
+  settle(g);
+  tapBox(g, 80, 70);    // the card turned: still nothing of the kid's to keep
+  CHECK(on(g, "cards_answer") && !g.takeSave(&data, &len, true));
+  g.leave();
+  CHECK(!g.takeSave(&data, &len, true));
+  g.enter(e);           // opened again: the same, however often
+  settle(g);
+  CHECK(!g.takeSave(&data, &len, true));
+  tapBox(g, 80, 133);
+  settle(g);
+  tapBox(g, 80, 70);
+  settle(g);
+  tapBox(g, 30, 115);   // Easy: the kid's first answer on the new deck, which is now theirs
+  CHECK(g.save().answers == 1 && g.takeSave(&data, &len, true) && storedVersion(data, len) == SAVE_VERSION);
+}
+
 static void pages() {
   Game g;
   Profile zoe = {1, "Zoe", 0, 8, 0};
@@ -519,6 +552,7 @@ int main() {
   damagedPacked();
   anyDeckPacks();
   playedDecksPack();
+  unreadableDeckKept();
   pages();
   printf("test_times_cards: %d checks ok\n", checks);
   return 0;
