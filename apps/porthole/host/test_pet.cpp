@@ -26,6 +26,7 @@ static void decayAndGrowth(Save& s) {
   assert(pet::ageDays(s, day0 + 3 * 86400) == 3 && pet::stageFor(s, day0 + 3 * 86400) == STAGE_PUPPY);
   assert(pet::stageFor(s, day0 + 4 * 86400) == STAGE_DOG);
   assert(pet::stageFor(s, day0 + 10 * 86400) == STAGE_GROWN);
+  assert(pet::ageDays(s, day0 - 3 * 86400) == 0);   // a clock set to before the adoption: day 1, not "day -2"
 }
 
 static void feeding(Save& s, uint32_t t) {

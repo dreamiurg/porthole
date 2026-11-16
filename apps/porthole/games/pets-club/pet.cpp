@@ -106,7 +106,8 @@ void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name) {
   seal(s);
 }
 
-int ageDays(const Save& s, uint32_t now) { return (int)(dayIndex(now) - dayIndex(s.adoptedAt)); }
+// Never negative: with the clock set to before the adoption day the cards would read "day -3".
+int ageDays(const Save& s, uint32_t now) { const int d = (int)(dayIndex(now) - dayIndex(s.adoptedAt)); return d < 0 ? 0 : d; }
 Stage stageFor(const Save& s, uint32_t now) { int d = ageDays(s, now); return d >= STAGE_GROWN_DAYS ? STAGE_GROWN : d >= STAGE_DOG_DAYS ? STAGE_DOG : STAGE_PUPPY; }
 int hearts(const Save& s) { int h = s.bond / 100; return h > 10 ? 10 : h; }
 
