@@ -1375,6 +1375,13 @@ static void pinWaits() {
   for (int i = 0; i < 255 + 5; i++) shell::pinWrong(l, NOW, c);
   assert(l.strikes == 255 && shell::pinWaitLeft(l, NOW, c) == 60);   // never wraps back to free tries
 }
+// "sys"/"admin" of any other size is not a code: half of one would lock Admin behind a code nobody chose.
+static void adminStrayBlob() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  const uint8_t half = 5; st.save("sys", "admin", &half, sizeof half);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "");
+  bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); assert(on(sh, "sys_info"));
+}
 // Guessing a kid's code: the fourth wrong try hides the keys for 5 s. Back and a reboot do not skip the wait, the
 // keys come back when it ends, the right code then clears the strikes, and the admin code keeps its own count.
 static void kidCodeLockout() {
@@ -1857,7 +1864,7 @@ static void systemMenuWayIn() {
 
 static void codesAndPresses() {   // the code pads, their waits, what they gate, and how long a press may be
   pinWaits();
-  kidCodeLockout();
+  kidCodeLockout(); adminStrayBlob();
   padQuickAndSlowKeys();
   uptimeWraps();
   adminRepeatRightAway();

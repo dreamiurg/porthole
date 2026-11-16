@@ -18,7 +18,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   limits_ = shell::loadLimits(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
   uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
   light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
-  adminPin_ = 0; st.load("sys", "admin", &adminPin_, sizeof adminPin_);
+  if (st.load("sys", "admin", &adminPin_, sizeof adminPin_) != sizeof adminPin_) adminPin_ = 0;   // a stray size is no code
   uint8_t sound = 1; sound_ = st.load("sys", "sound", &sound, 1) != 1 || sound != 0;
   if (adminPin_ > 10000) adminPin_ = 0;
   locks_ = shell::loadPinLocks(st);
