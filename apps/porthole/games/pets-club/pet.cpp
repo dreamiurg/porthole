@@ -190,7 +190,6 @@ uint32_t simulate(Save& s, uint32_t now, bool online) {
   ev |= walk(s, now, online, online ? elapsed : (elapsed > OFFLINE_CAP_SEC ? OFFLINE_CAP_SEC : elapsed));
   ev |= settle(s, now);
   ev |= grow(s, now);
-  if (dayIndex(now) != s.lastPlayDay) ev |= EV_NEW_DAY;
   s.lastSeen = now;
   return ev;
 }
