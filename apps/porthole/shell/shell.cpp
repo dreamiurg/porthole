@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "launcher.h"
+#include "save.h"
 #include "shell_sprites.h"
 
 using namespace gfx;
@@ -195,6 +196,11 @@ void Shell::flushApp(bool allowed) {
   const void* data; size_t len;
   if (app_->takeSave(&data, &len, allowed) && len <= shell::BLOB_MAX) {
     if (writtenOk_ && len == writtenLen_ && !memcmp(data, written_, len)) return;   // keeps the cadence: a page turn next is still prompt
+    // A newer firmware's save (an older build was flashed over it) is not this build's to replace: the game plays on
+    // from nothing, and that save and the stars it accounts for are there again after the next update. Nor is any
+    // save a game's to erase (an erase has no version to compare): a game starts over by writing a fresh one.
+    if (!len) return;
+    if (os::save::newer(written_, writtenLen_, data, len)) { rec().stars = savedStars_; return; }
     memcpy(written_, data, len); writtenLen_ = len;
   } else if (writtenOk_ || !allowed) return;
   const char* k = shell::key('s', active_);

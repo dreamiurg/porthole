@@ -47,7 +47,9 @@ class App {
   virtual Tint tint() const = 0;
   virtual bool asleep() const = 0;               // backlight dimming policy
   virtual bool soundOn(uint32_t ms) = 0;         // the shell gates this with the profile's mute
-  // true when there is something to write for `who`; *len 0 means erase `who`'s save.
+  // true when there is something to write for `who`. The shell keeps what is stored instead when that is this game's
+  // save from a newer firmware (os/save.h: the first eight bytes are magic, version, size; a crc32 of all before it
+  // ends the blob), and never erases a save: *len 0 writes nothing.
   virtual bool takeSave(const void** data, size_t* len, bool allowed) = 0;
   // A moment that must survive a power cut (a story's decision, Pets Club's farm and adoption) asks for a checkpoint
   // within a second. Otherwise the five-second cadence holds: flash space is small, so not for every tap or page.
