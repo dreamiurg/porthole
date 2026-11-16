@@ -2,7 +2,7 @@
 """Decide which apps need a release, and what a promotion to stable becomes, from git history alone.
 
     python3 tools/release.py plan [--ref HEAD]
-    gh release list --limit 200 --json tagName,name,isPrerelease,createdAt \\
+    gh release list --limit 200 --json tagName,name,isPrerelease,publishedAt \\
       | python3 tools/release.py promote [--app porthole] [--tag TAG] [--min-age-hours 72]
 
 `plan` prints a JSON list, one entry per app that has releasable commits since its last
@@ -25,8 +25,8 @@ Rules
 - A stable release is the next minor above every tag the app has: beta 0.38.7 becomes 0.39.0,
   and the next beta is 0.39.1. A board never installs an older version, so a rollback is a
   promotion too: the old code goes out under a new, higher version.
-- Unattended promotion picks the newest beta that is newer than the current stable, is at least
-  --min-age-hours old, and is not yanked (its release title says "(yanked)"). With --tag, that
+- Unattended promotion picks the newest beta that is newer than the current stable, was published at
+  least --min-age-hours ago, and is not yanked (its release title says "(yanked)"). With --tag, that
   published release is promoted whatever its age; with --min-age-hours 0, the newest beta is.
 - An app's first release is 0.1.0.
 """
@@ -141,7 +141,14 @@ def is_yanked(release: dict[str, Any]) -> bool:
 def pick_source(app: str, releases: list[dict[str, Any]], stable: tuple[str, Version] | None, min_age: timedelta, now: datetime) -> str | None:
     def eligible(r: dict[str, Any]) -> bool:
         v = parse(app, r["tagName"])  # None for the rolling <app>-beta pointer
-        return r["isPrerelease"] and v is not None and (stable is None or v > stable[1]) and not is_yanked(r) and now - datetime.fromisoformat(r["createdAt"]) >= min_age
+        return (
+            r["isPrerelease"]
+            and v is not None
+            and (stable is None or v > stable[1])
+            and not is_yanked(r)
+            and r["publishedAt"]  # a draft has none
+            and now - datetime.fromisoformat(r["publishedAt"]) >= min_age
+        )
 
     best = newest(app, [r["tagName"] for r in releases if eligible(r)])
     return best[0] if best else None
