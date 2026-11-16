@@ -1,6 +1,6 @@
 # Info -> Games (beside Wifi and Updates): a row per game with its picture, name and switch, three a page, and a line
-# saying off only hides a game and its saves stay. Off hides a game from every kid's Home and Library; with six or
-# fewer on, Home shows them all and "All games" goes away. The last game on cannot go off. Each switch saves at once;
+# saying off only hides a game and its saves stay. Off hides a game from every kid's launcher; with six or fewer on,
+# the launcher is one page. The last game on cannot go off. Each switch saves at once;
 # a reboot keeps it.
 reset
 tilt 0 1000 0
@@ -59,7 +59,7 @@ tap 80 68
 wait 600
 expect-screen launcher
 expect home_tiles=6
-expect home_library=0
+expect home_pages=1
 expect home_first=marblekick
 ui-check launcher_six_on
 snap ag5_home_six

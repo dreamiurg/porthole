@@ -420,13 +420,10 @@ static void boot(bool seedClock = true) {
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
-// The browser demo (make web) starts on a guest's Home, not on making a profile; a board always asks. Its Home shows
-// the games a visitor should meet first: Biscuit, Starfighter, Rally, Sand Jar and Tilt FC (ids in games/apps.h).
+// The browser demo (make web) starts on a guest's launcher, not on making a profile; a board always asks.
 static void demoProfile() {
 #ifdef __EMSCRIPTEN__
-  static const uint8_t SHOWCASE[] = {2, 7, 10, 11, 4};
   g_shell.createProfile("Guest", 8, "");
-  g_shell.setHome(SHOWCASE, sizeof SHOWCASE);
 #endif
 }
 static void reset() { wipe(); boot(); demoProfile(); }
