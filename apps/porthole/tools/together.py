@@ -4,7 +4,8 @@ directory (its own saves), talking over UDP on 127.0.0.1 (host/sim.cpp SimLan), 
 
   python3 tools/together.py OUTDIR      # after `make build/host/snap`; writes OUTDIR/{sam,zoe}_*.bmp
 
-Sam taps Together, Zoe joins, Sam picks the second track, both set their grip and race; Zoe finishes first.
+Both on the track cards: each sees the other's Race!. Sam taps it, then Zoe; both set their grip and race on Sam's
+last track; Zoe finishes first.
 Exits non-zero when a screen is not the one expected."""
 
 import os
@@ -15,7 +16,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 SNAP = os.path.join(HERE, "..", "build", "host", "snap")
 # Rally's targets (games/racing/render.h), at their centers in logical pixels.
-TOGETHER, JOIN, LOBBY_NEXT, GO = (80, 20), (80, 96), (125, 76), (106, 124)
+RACE, GO = (80, 20), (106, 124)
 
 
 class Sim:
@@ -67,18 +68,14 @@ def main():
     try:
         both(sam, zoe, 1000)
         sam.snap("tracks")
-        sam.do(f"tap {TOGETHER[0]} {TOGETHER[1]}")
+        sam.do(f"tap {RACE[0]} {RACE[1]}")
+        both(sam, zoe, 300)
+        sam.snap("waiting_tracks")
+        zoe.snap("ready_tracks")
+        zoe.do(f"tap {RACE[0]} {RACE[1]}")
         both(sam, zoe, 600)
-        sam.expect("race_looking")
-        zoe.snap("invite")
-        zoe.do(f"tap {JOIN[0]} {JOIN[1]}")
-        both(sam, zoe, 600)
-        sam.do(f"tap {LOBBY_NEXT[0]} {LOBBY_NEXT[1]}")
-        both(sam, zoe, 600)
-        sam.expect("race_lobby")
-        zoe.expect("race_lobby")
-        sam.snap("lobby")
-        zoe.snap("lobby")
+        sam.expect("race_calibrate")
+        zoe.expect("race_calibrate")
         sam.do(f"tap {GO[0]} {GO[1]}")
         both(sam, zoe, 1200)
         sam.do(f"tap {GO[0]} {GO[1]}")

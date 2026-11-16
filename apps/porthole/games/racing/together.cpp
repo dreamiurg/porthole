@@ -5,7 +5,7 @@ namespace racing::together {
 namespace {
 bool fresh(const Wire& a, const Wire& b) {   // a change the other device should see now, not in SEND_MS
   return a.stage != b.stage || a.paused != b.paused || a.raceId != b.raceId || a.track != b.track || a.to != b.to ||
-         a.finished != b.finished;
+         a.finished != b.finished || a.in != b.in;
 }
 }  // namespace
 
@@ -20,7 +20,6 @@ void Link::take(const Wire& w, uint32_t from, uint32_t ms, Stage mine) {
     peer_ = {from, ms, w}; heard_ = true; gen_++;
     return;
   }
-  if (mine == Stage::Looking && (Stage)w.stage == Stage::Idle && w.to == self) refused_ = {from, ms, w};
   if ((Stage)w.stage == Stage::Looking && !w.to) invite_ = {from, ms, w};
 }
 
@@ -36,17 +35,11 @@ void Link::tick(uint32_t ms, Wire& mine) {
     take(w, from, ms, (Stage)mine.stage);
   }
   mine.magic = MAGIC; mine.version = VERSION; mine.to = peer_.addr;
-  // Only an invite goes to everyone; otherwise only to the paired device (and quiet on the track cards).
+  // Unpaired, only the track cards say so, to everyone; paired, only to the peer.
   if (!peer_.addr && (Stage)mine.stage != Stage::Looking) { last_ = mine; return; }
-  if (!fresh(mine, last_) && ms - sentMs_ < SEND_MS) return;
+  if (!fresh(mine, last_) && ms - sentMs_ < (peer_.addr ? SEND_MS : HERE_MS)) return;
   radio_->send(&mine, sizeof mine, mine.to);
   last_ = mine; sentMs_ = ms;
-}
-void Link::decline(Wire& mine) {
-  declined_ = invite_.addr; declinedSession_ = invite_.w.session;
-  mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = invite_.addr;
-  if (radio_ && invite_.addr) for (int i = 0; i < 3; i++) radio_->send(&mine, sizeof mine, invite_.addr);
-  invite_ = {};
 }
 void Link::leave(Wire& mine) {
   mine.stage = (uint8_t)Stage::Idle; mine.magic = MAGIC; mine.version = VERSION; mine.to = peer_.addr;

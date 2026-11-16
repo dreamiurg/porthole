@@ -1,4 +1,4 @@
-// Rally's race together (together.h): the Game's side of it. The host (the kid who tapped Together) picks the track,
+// Rally's race together (together.h): the Game's side of it. The host (the lower address) races its last track,
 // starts the race and runs the rivals; the guest drives its own car among the host's rivals. Joint races never touch
 // Best times or the adaptive level: two kids racing each other is not a time trial.
 #include <math.h>
@@ -27,9 +27,8 @@ uint8_t rank(const Entry* e, int n, int who) {
 }  // namespace
 
 Stage Game::stageNow() const {
-  if (!duo_) return Stage::Idle;
+  if (!duo_) return screen_ == Screen::Tracks ? Stage::Looking : Stage::Idle;
   switch (screen_) {
-    case Screen::Looking: return Stage::Looking;
     case Screen::Lobby: return Stage::Lobby;
     case Screen::Calibrate: return recenter_ ? Stage::Race : gripDone_ ? Stage::Ready : Stage::Grip;
     case Screen::Race: case Screen::Pause: case Screen::Confirm: return Stage::Race;
@@ -42,8 +41,8 @@ void Game::fillWire() {
   together::Wire& w = wire_;
   w.stage = (uint8_t)stageNow();
   w.paused = screen_ == Screen::Pause || screen_ == Screen::Confirm || (screen_ == Screen::Calibrate && recenter_);
-  w.track = (uint8_t)track_; w.session = session_; w.raceId = raceId_;
-  // The levels go only to the paired device (the invite is a broadcast: name and avatar only).
+  w.track = (uint8_t)track_; w.in = ready_; w.raceId = raceId_;
+  // The levels go only to the paired device (the track cards' broadcast: name and avatar only).
   for (int t = 0; t < TRACKS; t++) w.level[t] = link_.paired() ? (int8_t)levelOn(t) : 0;
   w.raceLevel = race_.level;
   const Car& me = race_.car[PLAYER];
@@ -116,17 +115,10 @@ void Game::peerGone() {
   go(Screen::Tracks);
 }
 
-void Game::startLooking() {
-  duo_ = host_ = true; raced_ = gone_ = false;
-  session_ = (uint8_t)(session_ + 1 + (ms_ & 7));   // a new invite: a kid who said Not now sees it again
-  link_.unpair();
-  go(Screen::Looking);
-}
-
 void Game::joinInvite() {
   link_.join(ms_);
   raceId_ = 0;   // the host's races count from 1: a race id left from an earlier session never matches
-  duo_ = true; host_ = raced_ = gone_ = false;
+  duo_ = true; host_ = raced_ = gone_ = ready_ = false;
   peer_ = link_.invite();
   lastGen_ = link_.gen();
   face(1, peer_.avatar);
@@ -136,30 +128,37 @@ void Game::joinInvite() {
 
 void Game::endTogether() {
   if (link_.paired()) link_.leave(wire_);
-  duo_ = host_ = raced_ = false;
+  duo_ = host_ = raced_ = ready_ = false;
   wire_.stage = (uint8_t)Stage::Idle;
 }
 
-void Game::updateLooking() {
-  if (ui::clicked(in_, paint::BOARD_BACK)) { endTogether(); go(Screen::Tracks); }
-  else if (link_.paired()) go(Screen::Lobby);
-  else if (link_.refused()) { say("%s said not now", link_.refusal().name); endTogether(); go(Screen::Tracks); }
-  // Both kids tapped Together: the device with the higher address joins the other, which hosts.
-  else if (link_.invited(ms_) && link_.self() > link_.inviter()) joinInvite();
+// The arcade's second player, on the track cards: another Porthole there lights up Race! with its kid's face; a tap
+// says this kid is in (another tap takes it back). Once both are in, the higher address joins the other, which hosts,
+// and both go to the grip page. True when it took the frame.
+bool Game::tracksTogether() {
+  if (!link_.on()) return false;
+  const bool there = link_.invited(ms_);
+  if (!there) ready_ = false;   // they went: nobody to wait for
+  if (link_.paired()) {         // the other kid joined this one
+    if (!ready_) { link_.leave(wire_); return false; }   // this kid took it back meanwhile
+    duo_ = host_ = true; raced_ = gone_ = ready_ = false;
+    peer_ = link_.peer(); lastGen_ = link_.gen();
+    face(1, peer_.avatar);
+    go(Screen::Calibrate);
+    return true;
+  }
+  if (there && ui::clicked(in_, paint::TOGETHER)) { ready_ = !ready_; return true; }
+  if (ready_ && link_.invite().in && link_.self() > link_.inviter()) { joinInvite(); return true; }
+  return false;
 }
 
+// The guest waits here until the host is on its grip page (just joined, or Again first).
 void Game::updateLobby() {
   if (ui::clicked(in_, paint::BACK)) { endTogether(); go(Screen::Tracks); return; }
-  if (!host_) {   // the host picks; the guest follows it to the grip page
-    if (!link_.heard()) return;
-    track_ = peer_.track % TRACKS;
-    const Stage s = (Stage)peer_.stage;
-    if (s == Stage::Grip || s == Stage::Ready) go(Screen::Calibrate);
-    return;
-  }
-  if (ui::clicked(in_, paint::LOBBY_PREV)) track_ = (track_ + TRACKS - 1) % TRACKS;
-  else if (ui::clicked(in_, paint::LOBBY_NEXT)) track_ = (track_ + 1) % TRACKS;
-  else if (ui::clicked(in_, paint::NEXT)) go(Screen::Calibrate);
+  if (!link_.heard()) return;
+  track_ = peer_.track % TRACKS;
+  const Stage s = (Stage)peer_.stage;
+  if (s == Stage::Grip || s == Stage::Ready) go(Screen::Calibrate);
 }
 
 // Both grips set: the host starts the race; the guest starts the host's, as soon as it hears of it.
@@ -269,6 +268,7 @@ void Game::duoView(paint::Duo& d) {
   if (screen_ == Screen::Tracks && link_.invited(ms_)) {
     d.inviteName = link_.invite().name;
     d.inviteFace = face(2, link_.invite().avatar);
+    d.ready = ready_; d.peerReady = link_.invite().in;
   }
 }
 }  // namespace racing

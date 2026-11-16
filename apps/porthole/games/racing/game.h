@@ -85,24 +85,24 @@ class Game : public App {
   together::Link link_;
   together::Wire wire_{}, peer_{};   // what this device says; the other kid's last word (kept after they go)
   bool duo_ = false, host_ = false, gripDone_ = false, raced_ = false, gone_ = false, peerPaused_ = false;
-  uint8_t session_ = 0, raceId_ = 0, applied_[CARS] = {}, pausesLeft_ = 0, starsGot_ = 0, jointToday_ = 0;
+  bool ready_ = false;   // this kid tapped Race! on the track cards
+  uint8_t raceId_ = 0, applied_[CARS] = {}, pausesLeft_ = 0, starsGot_ = 0, jointToday_ = 0;
   uint32_t lastGen_ = 0, noticeMs_ = 0, starDay_ = 0;
   uint32_t* wallet_ = nullptr;
   char notice_[32] = {};
   const gfx::Sprite* avatars_ = nullptr;
   int nAvatars_ = 0;
-  uint16_t facePx_[3][20 * 20] = {};   // this kid, the other kid, an invite: the avatars in RGB565
+  uint16_t facePx_[3][20 * 20] = {};   // this kid, the other kid, a kid on the cards: the avatars in RGB565
   pic::Pic faces_[3] = {};
   void togetherTick(uint32_t dt);
   void fillWire();
   together::Stage stageNow() const;
   void onPeer();
   void peerGone();
-  void startLooking();
   void joinInvite();
   void endTogether();
   void say(const char* fmt, const char* name);
-  void updateLooking();
+  bool tracksTogether();
   void updateLobby();
   void awaitStart();
   void startJointRace();
