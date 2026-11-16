@@ -35,8 +35,8 @@ namespace net {
 namespace {
 // NVS namespace "sys" (new with wireless updates; never reuse a shipped one). Keys: "ssid", "pass" (raw bytes, no
 // NUL; no "pass" = open network), "chan" (one byte, shell::Channel), "last" (uint32 local epoch of the last attempt:
-// its day is the once-a-day gate), "home" (Radar's center: shell::Home's 112 bytes as they are). "ran" and "lite" are
-// the shell's.
+// its day is the once-a-day gate), "home" (Radar's center: shell::Home's 112 bytes as they are), "tried" (the version
+// the last finished download put in the spare slot, as text: shell::rolledBack). "ran" and "lite" are the shell's.
 const char* const NS = "sys";
 #define RELEASES "https://github.com/dreamiurg/porthole/releases/"
 // Each channel's newest version as plain "X.Y.Z". Stable: GitHub's Latest release (pre-releases never are). Beta: the
@@ -327,6 +327,13 @@ void clockJob() {
   WiFi.mode(WIFI_OFF);
 }
 
+// True when this very release was already installed here and the bootloader went back to the running firmware.
+bool alreadyRolledBack(const char* avail) {
+  char tried[16];
+  loadStr("tried", tried, sizeof tried);
+  return shell::rolledBack(avail, tried, esp_ota_get_last_invalid_partition() != nullptr);
+}
+
 void checkAndDownload(shell::Channel ch) {
   char avail[16] = {0};
   Found f = fetchAvailable(ch, avail);
@@ -336,8 +343,16 @@ void checkAndDownload(shell::Channel ch) {
   Serial.printf("[net] %s channel: %s, running %s\n", ch == shell::CH_BETA ? "beta" : "stable", f == F_VERSION ? avail : "none",
                 PORTHOLE_VERSION);
   if (!shell::newer(avail, PORTHOLE_VERSION)) { setState(shell::UP_CURRENT); return; }
+  if (alreadyRolledBack(avail)) {   // not again every day: only another release is tried
+    Serial.printf("[net] %s started here and rolled back: waiting for another release\n", avail);
+    setState(shell::UP_FAILED);
+    return;
+  }
   if (checkStopped()) return;
   bool ok = download(avail);
+  // After the slot is set to boot, never before: a download that failed was not tried. A write that does not land
+  // only loses the protection for this release.
+  if (ok) board::saveBlob(NS, "tried", avail, strlen(avail));
   if (ok) setState(shell::UP_READY, 100); else setState(shell::UP_FAILED);   // a ready image is all there
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
 }

@@ -151,4 +151,12 @@ inline bool newer(const char* a, const char* b) {
   return false;
 }
 
+// A release that was downloaded and started but did not stay: the bootloader went back to the running firmware and
+// marked the spare slot invalid. `tried` is the version the last finished download put there ("" = none). That one
+// release is not downloaded again, so a release that cannot start on a board costs it one download, not one a day;
+// any other version is tried as usual.
+inline bool rolledBack(const char* available, const char* tried, bool spareSlotInvalid) {
+  return spareSlotInvalid && available && tried && *tried && !strcmp(available, tried);
+}
+
 }  // namespace shell
