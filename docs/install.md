@@ -5,15 +5,26 @@ This page has the same steps and the details behind them.
 
 ## Install from the browser
 
-This way needs no tools:
+1. Connect the board to a computer over USB-C. Either port works.
+2. Open [porthole.dreamiurg.net](https://porthole.dreamiurg.net/#install) in Chrome or Edge and press **Install**.
+3. Pick the board in the list Chrome shows and wait about a minute.
+
+The button writes the newest stable release, or the newest beta if you pick **Beta** above it, with [ESP Web Tools](https://esphome.github.io/esp-web-tools/). The
+Pages workflow copies both releases' `factory.bin` next to the page (`site/flash/`) each time it deploys, and
+again after every release and promotion, so Stable installs what boards on Stable get and Beta what boards on Beta
+get. A board installed from Beta still updates over Wi-Fi by its own Stable or Beta setting (below).
+
+If Chrome does not find the board, try another cable (some only charge) or the other USB-C port. If your board
+has a BOOT button, hold it while you plug in the cable, then press **Install** again.
+
+### By hand
 
 1. Download `<app>-<version>-factory.bin` from the [releases](https://github.com/dreamiurg/porthole/releases).
-2. Connect the board over USB-C.
-3. Open [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge.
-4. Write the file at address `0x0`.
+2. Open [esptool-js](https://espressif.github.io/esptool-js/) in Chrome or Edge and connect the board.
+3. Write the file at address `0x0`.
 
 This erases the board, saved progress included. To keep saves, write the separate parts from
-`<app>-<version>-web.zip` at the offsets in its `parts.json`. The web installer does this. You can also
+`<app>-<version>-web.zip` at the offsets in its `parts.json`. You can also
 build from source and run `make flash` (see [development.md](development.md)). With esptool, from the unzipped parts:
 
 ```sh

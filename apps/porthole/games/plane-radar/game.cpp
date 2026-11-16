@@ -87,8 +87,9 @@ void Game::render() {
   const bool homeDown = page_ == P_SCOPE && in_.down && on(HOME, in_.x, in_.y);
   // Repaint only when what a page shows changed: the settings on the menu; on the scope the state, new planes and,
   // while there are planes to glide, each second.
-  struct Look { uint8_t page, range, up, call, route, alt, homeDown, state, age; uint32_t gen; } look = {};
-  look = {page_, save_.range, save_.up, save_.hideCall, save_.hideRoute, save_.hideAlt, homeDown, 0, 0, 0};
+  struct Look { uint8_t page, range, up, call, route, alt, homeDown, state, age, pad[3]; uint32_t gen; };
+  static_assert(sizeof(Look) == 16, "hashed as bytes: no padding the compiler may leave unset");
+  Look look = {page_, save_.range, save_.up, save_.hideCall, save_.hideRoute, save_.hideAlt, homeDown, 0, 0, {}, 0};
   if (page_ == P_SCOPE) {
     look.state = snap_.state;
     look.gen = snap_.gen;
@@ -114,7 +115,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"radar_off", "radar_nospot", "radar_nowifi", "radar_joining", "radar_live", "radar_lost",
+  static const char* const N[] = {"radar_off", "radar_nospot", "radar_nowifi", "radar_joining", "radar_live", "radar_lost",
                             "radar_menu"};   // a name per air::State, then the menu
   static_assert(sizeof N / sizeof N[0] == air::S_COUNT + 1, "a name per state, then the menu");
   if (page_ == P_MENU) return N[air::S_COUNT];

@@ -79,11 +79,11 @@
     /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB). It takes only the
        round screen's square: the buttons sit in its corners and the tilt is the dark rim, so playing moves nothing. */
     .player { display: flex; flex-direction: column; align-items: center; outline: none; }
-    .live { position: relative; width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%; touch-action: none;
+    .live { --s: min(420px, 90vw); position: relative; width: var(--s); height: var(--s); border-radius: 50%; padding: calc(var(--s) * 0.07); touch-action: none;
       background: radial-gradient(circle at 35% 30%, #4a4350, #24202a 60%, #16131a); box-shadow: 0 18px 40px rgba(20, 14, 26, 0.35); }
     .live.on { cursor: grab; }
-    .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
-    .live .poster img { display: block; width: 100%; height: 100%; }
+    .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+    .live .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
       background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
     #screen { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: #202020; cursor: pointer; box-shadow: 0 0 0 3px #0c0a0e; }
@@ -102,7 +102,7 @@
     /* Full screen: the player covers the page; on a phone that is how it starts. */
     .player.full { position: fixed; inset: 0; z-index: 50; background: var(--bg); justify-content: center; padding: 12px; }
     /* A percentage padding follows the parent's width, which full screen makes the whole window: keep the rim at 7% of the screen. */
-    .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); width: var(--s); padding: calc(var(--s) * 0.07); }
+    .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
     .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
@@ -143,10 +143,11 @@
     .game details { margin-top: 8px; font-size: 14px; text-align: left; color: var(--body); }
     .game summary { cursor: pointer; color: var(--accent); font-weight: 700; text-align: center; }
 
-    ol.steps { margin: 0 0 16px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-    ol.steps b { display: block; font-size: 13px; color: var(--accent); }
-    ol.steps strong { display: block; }
-    ol.steps span { font-size: 15px; color: var(--body); }
+    /* ESP Web Tools' install button: hidden until the element upgrades, so no unstyled flash of both slots. */
+    esp-web-install-button.flash:not(:defined) { display: none; }
+    esp-web-install-button.flash { display: block; margin: 0 0 16px; }
+    .flash button { font: inherit; font-size: 20px; font-weight: 800; padding: 10px 28px; border: 0; border-radius: 999px;
+      background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.25); }
     details.help { margin-top: 12px; }
     details.help summary { cursor: pointer; font-weight: 700; }
     .updates-img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); background: #000; margin-top: 16px; }
@@ -166,6 +167,9 @@
     .parts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .parts button { font: inherit; font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
     .parts button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .parts button:disabled { opacity: 0.45; cursor: default; }
+    .channel { margin: 0 0 12px; }
+    .play-channel { justify-content: center; margin: 10px 0 0; }
     .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
     .cards3 strong { display: block; margin-bottom: 4px; }
     .cards3 div { font-size: 15px; color: var(--body); }
@@ -177,7 +181,6 @@
       .wide-only { display: none; }
       .hero { gap: 20px; padding-top: 24px; padding-bottom: 28px; }
       .hero p { font-size: 17px; }
-      .hero .shot img { width: min(260px, 70vw); }
       .layout { gap: 24px; }
       main { gap: 40px; }
       h2 { font-size: 25px; }
@@ -270,8 +273,8 @@
   <div class="text">
     <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
     <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
-    <p><span lang="en">I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case">puck case</a> and the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip">steering wheel</a>. If you have the same board, this page shows how to put the games on it.</span><span lang="uk">Ділюся ним як є. У <a href="https://github.com/dreamiurg/porthole">репозиторії на GitHub</a> є вихідний код і 3D-моделі <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case">корпусу-шайби</a> та <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip">керма</a>. Якщо у вас така сама плата, ця сторінка показує, як записати на неї ігри.</span></p>
-    <p><span lang="en">You can play it right here, no board needed: the screen on this page is the same firmware, built for the web from the newest code.</span><span lang="uk">Можна грати просто тут, без плати: екран на цій сторінці &mdash; та сама прошивка, зібрана для вебу з найновішого коду.</span></p>
+    <p><span lang="en">I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case">puck case</a> and the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip">steering wheel</a>. If you have the same board, this page shows how to <a href="#install">put the games on it</a>.</span><span lang="uk">Ділюся ним як є. У <a href="https://github.com/dreamiurg/porthole">репозиторії на GitHub</a> є вихідний код і 3D-моделі <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case">корпусу-шайби</a> та <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip">керма</a>. Якщо у вас така сама плата, ця сторінка показує, як <a href="#install">записати на неї ігри</a>.</span></p>
+    <p><span lang="en">You can play it right here, no board needed: the screen on this page is the same firmware, built for the web. Pick Stable or Beta under it.</span><span lang="uk">Можна грати просто тут, без плати: екран на цій сторінці &mdash; та сама прошивка, зібрана для вебу. Під ним можна вибрати Stable або Beta.</span></p>
   </div>
   <div class="shot">
     <div class="player" id="play" tabindex="-1">
@@ -291,6 +294,10 @@
       </div>
     </div>
     <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass. To tilt, press the dark rim, use the arrow keys or, on a phone, tilt the phone.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла. Щоб нахилити, натискайте на темний обідок, стрілки або, на телефоні, нахиляйте сам телефон.</span></p>
+    <div class="parts channel play-channel" role="group" aria-label="Version to play">
+      <button type="button" data-play="stable" aria-pressed="false">Stable</button>
+      <button type="button" data-play="beta" aria-pressed="false">Beta</button>
+    </div>
   </div>
 </div>
 
@@ -358,17 +365,24 @@
 
     <section id="install">
       <h2><span lang="en">Put it on a board</span><span lang="uk">Як записати на плату</span></h2>
-      <p><span lang="en">You need the board, a USB-C cable and Chrome or Edge on a computer. About five minutes.</span><span lang="uk">Потрібні плата, кабель USB-C і Chrome або Edge на комп&rsquo;ютері. Близько п&rsquo;яти хвилин.</span></p>
-      <ol class="steps">
-        <li class="card"><b><span lang="en">STEP 1</span><span lang="uk">КРОК 1</span></b><strong><span lang="en">Download</span><span lang="uk">Завантажте</span></strong><span><span lang="en"><code>porthole-&lt;version&gt;-factory.bin</code> from the newest <a href="https://github.com/dreamiurg/porthole/releases">release</a>.</span><span lang="uk"><code>porthole-&lt;version&gt;-factory.bin</code> із найновішого <a href="https://github.com/dreamiurg/porthole/releases">релізу</a>.</span></span></li>
-        <li class="card"><b><span lang="en">STEP 2</span><span lang="uk">КРОК 2</span></b><strong><span lang="en">Connect</span><span lang="uk">Під&rsquo;єднайте</span></strong><span><span lang="en">Plug in the board and open <a href="https://espressif.github.io/esptool-js/">esptool-js</a> in Chrome or Edge. Press Connect and pick the board.</span><span lang="uk">Під&rsquo;єднайте плату й відкрийте <a href="https://espressif.github.io/esptool-js/">esptool-js</a> у Chrome чи Edge. Натисніть Connect і виберіть плату.</span></span></li>
-        <li class="card"><b><span lang="en">STEP 3</span><span lang="uk">КРОК 3</span></b><strong><span lang="en">Write</span><span lang="uk">Запишіть</span></strong><span><span lang="en">Address <code>0x0</code>, choose the file, press Program, wait about a minute. Then unplug and plug back in.</span><span lang="uk">Адреса <code>0x0</code>, виберіть файл, натисніть Program, зачекайте близько хвилини. Потім перепід&rsquo;єднайте плату.</span></span></li>
-      </ol>
+      <p><span lang="en">You need the board, a USB-C cable and Chrome or Edge on a computer. Plug the board in, press Install and pick the board in the list. It takes about a minute, and the board restarts with the games.</span><span lang="uk">Потрібні плата, кабель USB-C і Chrome або Edge на комп&rsquo;ютері. Під&rsquo;єднайте плату, натисніть Install і виберіть її у списку. Це займає близько хвилини, і плата перезапуститься вже з іграми.</span></p>
+      <div class="parts channel" role="group" aria-label="Version to install">
+        <button type="button" data-flash="stable" aria-pressed="true">Stable __STABLE__</button>
+        <button type="button" data-flash="beta" aria-pressed="false">Beta __BETA__</button>
+      </div>
+      <p class="note" id="beta-note" hidden><span lang="en">Beta gets new games and fixes a few days before stable, and may still have bugs. Updates over Wi-Fi follow the board&rsquo;s own setting, Stable unless you pick Beta in the settings menu.</span><span lang="uk">Бета отримує нові ігри й виправлення на кілька днів раніше за стабільну, але в ній ще можуть бути помилки. Оновлення через Wi-Fi йдуть за налаштуванням самої плати: Stable, якщо не вибрати Beta в меню налаштувань.</span></p>
+      <esp-web-install-button class="flash" manifest="flash/stable.json">
+        <button slot="activate" type="button">Install</button>
+        <p slot="unsupported" class="note"><span lang="en">This browser can&rsquo;t talk to the board over USB. Open this page in Chrome or Edge on a computer.</span><span lang="uk">Цей браузер не вміє працювати з платою через USB. Відкрийте цю сторінку в Chrome або Edge на комп&rsquo;ютері.</span></p>
+        <p slot="not-allowed" class="note"><span lang="en">Installing works only on the live page, <a href="https://porthole.dreamiurg.net/#install">porthole.dreamiurg.net</a>.</span><span lang="uk">Записати можна лише зі справжньої сторінки, <a href="https://porthole.dreamiurg.net/#install">porthole.dreamiurg.net</a>.</span></p>
+      </esp-web-install-button>
       <div class="note"><span lang="en">This erases saved progress on the board. You only do it once: after that, updates arrive over Wi-Fi and keep the saves.</span><span lang="uk">Такий запис стирає збережений прогрес. Робити це треба лише раз: далі оновлення приходять через Wi-Fi і прогрес зберігається.</span></div>
       <details class="help">
         <summary><span lang="en">If something goes wrong</span><span lang="uk">Якщо щось пішло не так</span></summary>
-        <p><span lang="en"><strong>The board is not in the list:</strong> try another USB-C cable, some only charge. Close any other program or tab that might use the board, then reload esptool-js.</span><span lang="uk"><strong>Плати немає у списку:</strong> спробуйте інший кабель USB-C, деякі лише заряджають. Закрийте інші програми чи вкладки, що можуть використовувати плату, і перезавантажте esptool-js.</span></p>
-        <p><span lang="en"><strong>The install stopped halfway:</strong> press Program again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Запис зупинився на півдорозі:</strong> натисніть Program ще раз. Зламати плату неможливо, просто запишеться знову.</span></p>
+        <p><span lang="en"><strong>The board is not in the list:</strong> try another USB-C cable, some only charge, or the board&rsquo;s other USB-C port. Close any other program or tab that might use the board.</span><span lang="uk"><strong>Плати немає у списку:</strong> спробуйте інший кабель USB-C, деякі лише заряджають, або інший порт USB-C на платі. Закрийте інші програми чи вкладки, що можуть використовувати плату.</span></p>
+        <p><span lang="en"><strong>It can&rsquo;t connect:</strong> if your board has a BOOT button, hold it while you plug in the cable, then press Install again.</span><span lang="uk"><strong>Не вдається під&rsquo;єднатися:</strong> якщо на платі є кнопка BOOT, утримуйте її, поки вставляєте кабель, і знову натисніть Install.</span></p>
+        <p><span lang="en"><strong>The install stopped halfway, or the screen stays dark:</strong> unplug the board, plug it back in and press Install again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Запис зупинився на півдорозі або екран темний:</strong> перепід&rsquo;єднайте плату й знову натисніть Install. Зламати плату неможливо, просто запишеться знову.</span></p>
+        <p><span lang="en"><strong>By hand:</strong> download <code>porthole-&lt;version&gt;-factory.bin</code> from the newest <a href="https://github.com/dreamiurg/porthole/releases">release</a> and write it at address <code>0x0</code> with <a href="https://espressif.github.io/esptool-js/">esptool-js</a>.</span><span lang="uk"><strong>Вручну:</strong> завантажте <code>porthole-&lt;version&gt;-factory.bin</code> із найновішого <a href="https://github.com/dreamiurg/porthole/releases">релізу</a> й запишіть його за адресою <code>0x0</code> через <a href="https://espressif.github.io/esptool-js/">esptool-js</a>.</span></p>
       </details>
     </section>
 
@@ -591,9 +605,10 @@
 // it full screen and asks for the motion sensor, so one tap is all it takes.
 (() => {
   const W = 480, H = 480, STEP = 33;   // the sim steps in whole 33 ms frames, as tools/webemu.py drives it
-  // The deploy writes the commit in for __BUILD__. Pages caches files for 10 minutes, so the firmware is asked for
-  // by commit: a fresh page never runs the last deploy's.
-  const BUILD = "__BUILD__";
+  // The deploy writes in the commit (beta is built from it) and the stable version, or nothing while the stable
+  // release has no web build. Pages caches files for 10 minutes, so each build is asked for by its version: a fresh
+  // page never runs the last deploy's.
+  const BUILD = "__BUILD__", STABLE_PLAY = "__STABLE_PLAY__";
   const t = (en, uk) => [["en", en], ["uk", uk]].map(([lang, text]) => Object.assign(document.createElement("span"), { lang, textContent: text }));
   const $ = (id) => document.getElementById(id);
   const player = $("play"), live = $("live"), canvas = $("screen"), statusEl = $("p-status"), toastEl = $("toast"), dot = $("dot");
@@ -642,7 +657,7 @@
       print() {},   // the --serve protocol's "ok" replies
       printErr: (m) => console.warn(m),
       onAbort: broke,
-      locateFile: (path) => `play/${path}?v=${BUILD}`,
+      locateFile: (path) => `play/${channel}/${path}?v=${channel === "stable" ? STABLE_PLAY : BUILD}`,
       postRun: [() => {
         cmd = (line) => Module.ccall("web_cmd", null, ["string"], [line]);
         statusEl.hidden = true;
@@ -652,11 +667,30 @@
       }],
     };
     const script = document.createElement("script");
-    script.src = `play/porthole.js?v=${BUILD}`;
+    script.src = Module.locateFile("porthole.js");
     script.onerror = broke;
     document.body.append(script);
   }
   $("play-here").addEventListener("click", () => start(true));
+
+  // Stable or Beta: ?play=beta picks one. Before the start a pick just changes what loads; once a build runs, it
+  // reloads the page into the other one (two builds cannot share the page's Module).
+  const asked = new URLSearchParams(location.search).get("play");
+  let channel = STABLE_PLAY && asked !== "beta" ? "stable" : "beta";
+  const playButtons = document.querySelectorAll("[data-play]");
+  function showChannel() { for (const b of playButtons) b.setAttribute("aria-pressed", String(b.dataset.play === channel)); }
+  for (const b of playButtons) {
+    if (b.dataset.play === "stable" && !STABLE_PLAY) {
+      b.disabled = true;
+      b.title = "Stable plays here from the next stable release";
+    }
+    b.addEventListener("click", () => {
+      if (b.dataset.play === channel) return;
+      if (started) { location.href = `?play=${b.dataset.play}#play`; return; }
+      channel = b.dataset.play; showChannel();
+    });
+  }
+  showChannel();
 
   // Full screen: the player covers the page (the browser's own full screen too, where it has one; an iPhone does not).
   // A stand-in of the same height keeps its place, so the page behind does not move.
@@ -831,6 +865,20 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
   $("shake").addEventListener("click", () => cmd("shake"));
   $("reset").addEventListener("click", () => cmd("reset"));
   if (location.hash === "#play") { player.scrollIntoView(); start(false); }   // the old /play page sends people here
+})();
+</script>
+<script type="module" src="flash/ewt/install-button.js"></script>
+<script>
+// Stable or Beta for the install button: it reads its manifest attribute when pressed, so a pick just swaps the file.
+(() => {
+  const flash = document.querySelector("esp-web-install-button.flash"), note = document.getElementById("beta-note");
+  const buttons = document.querySelectorAll("[data-flash]");
+  if (!("serial" in navigator)) { buttons[0].parentElement.hidden = true; return; }   // the button says why instead
+  for (const b of buttons) b.addEventListener("click", () => {
+    for (const other of buttons) other.setAttribute("aria-pressed", String(other === b));
+    flash.setAttribute("manifest", `flash/${b.dataset.flash}.json`);
+    note.hidden = b.dataset.flash !== "beta";
+  });
 })();
 </script>
 </body>

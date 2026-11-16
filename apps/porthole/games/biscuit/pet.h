@@ -9,7 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
+#include "day.h"
 #include "stars.h"
 
 namespace biscuit {
@@ -57,8 +58,8 @@ constexpr int PUZZLE_STRANDS = 3, PUZZLE_REVIEWS = 8;
 struct Save {
   uint32_t magic;
   uint16_t version, size;
-  uint32_t createdAt, updatedAt;       // local seconds; updatedAt only moves backwards at the first naming
-  int32_t lastVisitDay;                // the day the daily fields below belong to (also across a clock set back)
+  uint32_t createdAt, updatedAt;       // local seconds; both follow a clock set back (tick)
+  int32_t lastVisitDay;                // the day the daily fields below belong to
   float fullness, happiness, energy;   // NEED_FLOOR..NEED_MAX
   uint32_t friendship, daysTogether;   // daysTogether counts visits (days played), not calendar days
   uint32_t careCounts[3];              // Feed, Play, Petting
@@ -86,7 +87,7 @@ struct Save {
 };
 static_assert(sizeof(Save) == SAVE_V4_SIZE, "Save is persisted: append before crc, never resize");
 
-inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
+inline int32_t dayOf(uint32_t now) { return (int32_t)os::dayOf(now); }
 inline float clampNeed(float v) { return v < NEED_FLOOR ? NEED_FLOOR : v > NEED_MAX ? NEED_MAX : v; }
 inline uint32_t addCount(uint32_t v, uint32_t n) { return v + n > MAX_COUNT ? MAX_COUNT : v + n; }
 
@@ -158,7 +159,7 @@ inline bool setPetName(Save& p, const char* dog, uint32_t now) {
     const int32_t day = dayOf(now);
     if (now < p.createdAt) p.createdAt = now;
     p.updatedAt = now;
-    if (day > p.lastVisitDay) p.lastVisitDay = day;
+    p.lastVisitDay = day;
     p.dailyCompleted = p.dailyClaimed = 0;
   }
   memcpy(p.petName, name, sizeof name);
@@ -166,18 +167,20 @@ inline bool setPetName(Save& p, const char* dog, uint32_t now) {
   return true;
 }
 
-// Advances needs to now (at most ELAPSED_CAP_SEC of it) and starts a new visit on a new day. A clock set backwards
-// changes nothing: updatedAt and lastVisitDay only move forward.
+// Advances needs to now (at most ELAPSED_CAP_SEC of it) and starts a new visit on a new day: any day that differs, an
+// earlier one too. A clock set back counts no time, and updatedAt and lastVisitDay follow it: held at a date the
+// clock ran ahead to, nothing would decay and no new day would start until that date came.
 inline void tick(Save& p, uint32_t now) {
   const int32_t day = dayOf(now);
-  const uint32_t elapsed = now > p.updatedAt ? now - p.updatedAt : 0;
-  if (now > p.updatedAt) p.updatedAt = now;
-  if (!p.named) { if (day > p.lastVisitDay) p.lastVisitDay = day; return; }
+  const uint32_t elapsed = os::elapsed(now, p.updatedAt);
+  p.updatedAt = now;
+  if (now < p.createdAt) p.createdAt = now;   // valid(): never made after it was last seen
+  if (!p.named) { p.lastVisitDay = day; return; }
   const float hours = (float)(elapsed < ELAPSED_CAP_SEC ? elapsed : ELAPSED_CAP_SEC) / 3600.0f;
   p.fullness = clampNeed(p.fullness - hours * (p.sleeping ? FULLNESS_ASLEEP : FULLNESS_AWAKE));
   p.happiness = clampNeed(p.happiness - hours * (p.sleeping ? 0 : HAPPINESS_AWAKE));
   p.energy = clampNeed(p.energy + hours * (p.sleeping ? ENERGY_ASLEEP : -ENERGY_AWAKE));
-  if (day > p.lastVisitDay) {
+  if (os::newDay((uint32_t)day, (uint32_t)p.lastVisitDay)) {
     p.daysTogether = addCount(p.daysTogether, 1);
     p.lastVisitDay = day;
     p.dailyCompleted = p.dailyClaimed = 0;
@@ -359,20 +362,13 @@ inline bool valid(const Save& p) {
       && validCounts(p) && validFlags(p) && validName(p.petName) && validDaily(p);
 }
 
-inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
-  s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
-}
+inline void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 // Any version up to this one: a blob is its own size (a prefix of today's layout) with its crc in the last four
 // bytes, so fields appended after it was written load as zero.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
-  if (n < SAVE_V1_SIZE || n > sizeof(Save) || n % 4) return false;
-  const uint8_t* b = (const uint8_t*)data;
-  uint32_t crc;
-  memcpy(&crc, b + n - 4, 4);
+  if (n < SAVE_V1_SIZE || n > sizeof(Save) || n % 4 || !os::save::mine(data, n, SAVE_MAGIC, SAVE_VERSION)) return false;
   Save s{};
-  memcpy(&s, b, n - 4);
-  if (s.magic != SAVE_MAGIC || s.size != n || !s.version || s.version > SAVE_VERSION || crc != os::crc32(b, n - 4)) return false;
+  memcpy(&s, data, n - sizeof s.crc);
   if (s.version < 2) s.booksDay = s.daysTogether;   // the newer books start arriving at the first visit after the update
   if (!valid(s)) return false;
   seal(s);

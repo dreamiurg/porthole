@@ -70,6 +70,7 @@ __attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
+    p.rec[id].pin = kidPin(p.rec[id].pin);
     p.blocked[id] = n && !p.used[id];
   }
 }
@@ -101,18 +102,6 @@ void removeProfile(Store& st, Profiles& p, int id, const char* const* stores, in
   st.erase(NS, key('p', id));
   p.used[id] = false;
 }
-static uint32_t favCrc(const Favorites& f) { return os::crc32(&f, sizeof f - sizeof f.crc); }
-bool loadFavorites(Store& st, int profileId, Favorites& out) {
-  const bool ok = st.load(NS, key('f', profileId), &out, sizeof out) == sizeof out && out.magic == FAV_MAGIC &&
-                  out.version == FAV_VERSION && out.size == sizeof out && out.count <= MAX_FAVS && out.crc == favCrc(out);
-  if (!ok) memset(&out, 0, sizeof out);
-  return ok;
-}
-bool saveFavorites(Store& st, int profileId, Favorites& f) {
-  f.magic = FAV_MAGIC; f.version = FAV_VERSION; f.size = sizeof f; f.crc = favCrc(f);
-  Favorites back;
-  return st.save(NS, key('f', profileId), &f, sizeof f) && loadFavorites(st, profileId, back) && !memcmp(&back, &f, sizeof f);
-}
 static uint32_t gamesCrc(const GamesOff& g) { return os::crc32(&g, sizeof g - sizeof g.crc); }
 uint32_t loadGamesOff(Store& st) {
   GamesOff g{};
@@ -128,52 +117,6 @@ int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out) {
   int m = 0;
   for (int k = 0; k < n; k++) if (none || !(off & gameBit(ids[k]))) out[m++] = k;
   return m;
-}
-static int indexOf(uint8_t id, const uint8_t* ids, int n) {
-  for (int k = 0; k < n; k++) if (ids[k] == id) return k;
-  return -1;
-}
-static bool listed(int k, const int* list, int m) {
-  for (int j = 0; j < m; j++) if (list[j] == k) return true;
-  return false;
-}
-int ownGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
-  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on);
-  if (m <= MAX_FAVS + 1) { memcpy(out, on, m * sizeof *out); return m; }
-  if (!f.picked) { memcpy(out, on, MAX_FAVS * sizeof *out); return MAX_FAVS; }
-  int h = 0;
-  for (int i = 0; i < f.count && i < MAX_FAVS; i++) {
-    const int k = indexOf(f.ids[i], ids, n);
-    if (k >= 0 && listed(k, on, m)) out[h++] = k;
-  }
-  return h;
-}
-int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out) {
-  const int h = ownGames(f, ids, n, off, out);
-  if (h) return h;
-  // h is 0 here with the Library on (every star hidden, or none left in star mode: the default, the list kept) or
-  // with no game at all (d is 0)
-  int on[MAX_GAME_ID]; const int m = enabledGames(ids, n, off, on), d = m < MAX_FAVS ? m : MAX_FAVS;
-  memcpy(out, on, d * sizeof *out); return d;
-}
-bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off) {
-  int home[MAX_GAME_ID]; const int h = ownGames(f, ids, n, off, home);   // even with none showing
-  Favorites g = f;   // f changes only on success: a refused star leaves even the default untouched
-  if (!g.picked) {   // the default becomes the kid's own list
-    g.count = (uint8_t)(h < MAX_FAVS ? h : MAX_FAVS); g.picked = 1;
-    for (int i = 0; i < g.count; i++) g.ids[i] = ids[home[i]];
-  }
-  int i = 0;
-  while (i < g.count && g.ids[i] != id) i++;
-  if (i < g.count) { memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.ids[--g.count] = 0; f = g; return true; }   // 0: no stale byte for a memcmp
-  if (h >= MAX_FAVS) return false;
-  if (g.count == MAX_FAVS) {   // a hidden favorite (switched off, or gone) gives up its place: the oldest, the last
-    i = MAX_FAVS - 1;
-    while (i > 0 && listed(indexOf(g.ids[i], ids, n), home, h)) i--;
-    memmove(g.ids + i, g.ids + i + 1, g.count - i - 1); g.ids[--g.count] = 0;
-  }
-  memmove(g.ids + 1, g.ids, g.count); g.ids[0] = id; g.count++;   // what was just picked shows first
-  f = g; return true;
 }
 Profile toProfile(const Profiles& p, int id) {
   const Record& r = p.rec[id];
@@ -202,11 +145,11 @@ bool resetLimits(Store& st, Profiles& p) {
   return ok;
 }
 void recharge(Record& r, uint32_t now) {   // lastPlayed ahead of now is a clock set back, not a break
-  if (!resting(r, now) && now >= r.lastPlayed && now - r.lastPlayed >= REST_SEC) r.playSec = 0;
+  if (!resting(r, now) && os::elapsed(now, r.lastPlayed) >= REST_SEC) r.playSec = 0;
 }
 void playUnrestricted(Record& r, uint32_t now, uint32_t dt, bool idle) {
   r.lastPlayed = now;
-  if (r.playDay != now / DAY_SEC) { r.playDay = now / DAY_SEC; r.dayPlaySec = 0; }
+  if (os::newDay(os::dayOf(now), r.playDay)) { r.playDay = os::dayOf(now); r.dayPlaySec = 0; }
   const uint32_t add = idle ? 0 : dt > 5 ? 5 : dt;
   r.dayPlaySec += add; r.playSec += add;
 }

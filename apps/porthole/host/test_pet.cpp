@@ -26,6 +26,7 @@ static void decayAndGrowth(Save& s) {
   assert(pet::ageDays(s, day0 + 3 * 86400) == 3 && pet::stageFor(s, day0 + 3 * 86400) == STAGE_PUPPY);
   assert(pet::stageFor(s, day0 + 4 * 86400) == STAGE_DOG);
   assert(pet::stageFor(s, day0 + 10 * 86400) == STAGE_GROWN);
+  assert(pet::ageDays(s, day0 - 3 * 86400) == 0);   // a clock set to before the adoption: day 1, not "day -2"
 }
 
 static void feeding(Save& s, uint32_t t) {
@@ -259,6 +260,32 @@ static void clockSetBackKeepsStage() {
   assert((pet::simulate(s, day0 + 10 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_GROWN);
 }
 
+// No game punishes absence: the mess made while away takes the dog's coat down to the floor, never under it; with the
+// kid there it costs the full 15. And after a clock set back the mess is as old as now, not days old.
+static void awayMessKeepsTheFloor() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  s.clean = 25; s.nextPoopAt = day0 + 3600;
+  pet::simulate(s, day0 + 7 * 86400, false);
+  assert(s.poop == 1 && s.clean == pet::FLOOR_CLEAN);
+  Save here; pet::adopt(here, day0, "Sam", "Rex");
+  here.clean = 25; here.nextPoopAt = day0;
+  assert((pet::simulate(here, day0 + 120, true) & pet::EV_POOPED) && here.clean == 10);
+  pet::simulate(here, day0 - 86400, true);   // the clock is put back a day
+  assert(here.poopSince == day0 - 86400 && pet::computeWant(here, day0 - 86400 + 60) != WANT_POOP);
+  const uint8_t fun = here.fun;
+  pet::dropCarry(); pet::simulate(here, day0 - 86400 + 300, true);   // five minutes: a quarter point of fun, not a whole one
+  assert(here.fun == fun);
+}
+
+// Word Fetch draws with `rnd % nc`: every age's word lengths, once widened down to three letters, must hold a word.
+static void wordsForEveryAge() {
+  for (int age = 5; age <= 10; age++) {
+    int lo, hi, n = 0; pet::wordLenRange(age, lo, hi);
+    for (int i = 0; i < NUM_WORDS; i++) { const int len = (int)strlen(WORDS[i].word); n += len >= 3 && len <= hi; }
+    assert(lo >= 3 && n > 0);
+  }
+}
+
 static void levels(const Save& s) {
   // reading levels by age
   { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
@@ -438,6 +465,21 @@ static void wordPauseTypesNothing() {
   w = wordRound(g); assert(w.typed == 1);
 }
 
+// Ten minutes with one kid's dog leave two thirds of a food point and most of an energy point uncounted. They are
+// that visit's: five minutes with the next kid's dog must not turn them into a point off each.
+static void decayCarryStaysWithTheVisit() {
+  static Game g;
+  Save a; pet::adopt(a, day0, "Sam", "Rex"); a.lastPlayDay = (uint16_t)pet::dayIndex(day0); pet::seal(a);
+  enterAt(g, a, day0);
+  g.update(day0 + 300, 2020, Input{}); g.update(day0 + 600, 2040, Input{});
+  g.debugCmd("hearts"); Save got = taken(g); assert(got.food == a.food && got.energy == a.energy);
+  g.leave();
+  Save b; pet::adopt(b, day0 + 600, "Kai", "Dot"); b.lastPlayDay = a.lastPlayDay; pet::seal(b);
+  enterAt(g, b, day0 + 600);
+  g.update(day0 + 900, 2020, Input{});
+  g.debugCmd("hearts"); got = taken(g); assert(got.food == b.food && got.energy == b.energy);
+}
+
 static void petting(uint32_t t) {
   // Petting: always a little fun, but bond only from the first 20 pets a day; never while asleep
   Save s; pet::adopt(s, t, "Sam", "Biscuit");
@@ -448,8 +490,40 @@ static void petting(uint32_t t) {
   assert(pet::petDog(s, t + 86400) && s.petsToday == 1 && s.bondToday == 1);   // a new day starts over
 }
 
+// millis() wraps every 49.7 days. Home's deadlines (the dog's next idle move, the window's next visitor) outlive a
+// visit: a visit that runs over the wrap neither rolls them every frame on the way there (they read as already
+// passed) nor waits 49.7 days on one left just under it. The save's seed counts the rolls: every one draws from it.
+static uint32_t seedNow(Game& g) { g.debugCmd("hearts"); return taken(g).seed; }
+static int draws(uint32_t from, uint32_t to) {   // xorshift steps from one seed to the other (pet::rnd)
+  Save s{}; s.seed = from;
+  for (int n = 0; n < 5000; n++) { if (s.seed == to) return n; pet::rnd(s); }
+  return 5000;
+}
+static void homeOverTheUptimeWrap() {
+  static Game games[6];   // a fresh one each: a deadline from the visit before would be 49.7 days old here
+  static const Profile kid = {0, "Sam", 0, 8, 0};
+  static const uint32_t LEADS[6] = {3000, 5000, 8000, 12000, 20000, 70000};   // ms before the wrap when the visit starts
+  for (int i = 0; i < 6; i++) {
+    Game& g = games[i];
+    Save s; pet::adopt(s, day0, "Sam", "Rex"); s.lastPlayDay = (uint16_t)pet::dayIndex(day0); pet::seal(s);
+    const SaveSlot slot = {&s, sizeof s};
+    uint32_t ms = 0u - LEADS[i];
+    g.enter({&kid, &kid, &slot, 1, day0, ms});
+    auto run = [&](uint32_t dur) { for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(day0, ms, Input{}); } };
+    run(2000); assert(!strcmp(g.screenName(), "home"));
+    const uint32_t before = seedNow(g);
+    run(LEADS[i] - 1000);   // to 1 s past the wrap
+    const uint32_t at = seedNow(g);
+    assert(draws(before, at) < 60);   // a few moves and at most three visitors, not one roll a frame
+    run(150000);
+    assert(draws(at, seedNow(g)) > 20);   // and the dog and the window go on after it
+  }
+}
+
 int main() {
   Save s;
+  decayCarryStaysWithTheVisit();
+  homeOverTheUptimeWrap();
   decayAndGrowth(s);
   uint32_t t = day0 + 3 * 86400;
   feeding(s, t);
@@ -464,6 +538,8 @@ int main() {
   breedSurvivesRoundTrip();
   corruptFieldsLoadSafe();
   clockSetBackKeepsStage();
+  awayMessKeepsTheFloor();
+  wordsForEveryAge();
   levels(s);
   dayOnPickedLight();
   breedDraws();

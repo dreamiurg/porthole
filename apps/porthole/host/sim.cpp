@@ -420,7 +420,7 @@ static void boot(bool seedClock = true) {
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
-// The browser demo (make web) starts on a guest's Home, not on making a profile; a board always asks.
+// The browser demo (make web) starts on a guest's launcher, not on making a profile; a board always asks.
 static void demoProfile() {
 #ifdef __EMSCRIPTEN__
   g_shell.createProfile("Guest", 8, "");
@@ -495,6 +495,7 @@ static void frame(bool down, int x, int y) {   // the shell writes saves itself,
   g_shell.render();
   g_renderMs += since(t); g_perfFrames++;
   if (!g_hires) upscale(g_fb565[g_shown], g_pal565[g_shell.tint()]);
+  g_shell.soundOn(g_ms);   // the firmware asks every frame (board::buzzer): the playtests and the monkey run that path too
   if (g_sys.rebootDue) { g_sys.rebootDue = false; boot(); }   // restart(): the board reboots between frames
 }
 // Clamped to the sensor's +-4 g full scale: nothing past it ever reaches Input on the device.

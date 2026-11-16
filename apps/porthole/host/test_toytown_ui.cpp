@@ -62,6 +62,50 @@ State fixture(uint8_t page, uint8_t place = SCHOOL) {
   s.schoolOutcome = page==SCHOOL_RESULT || page==SCHOOL_REPAIR ? 2 : 0; s.variant = 1; s.cart[1] = s.cart[2] = 1;
   return s;
 }
+// A finger drifting over the glass repaints only when it comes onto or off a control (a kid's finger never holds
+// still), and what the game kept in each of the panel's two buffers always equals a whole redraw of that moment.
+struct Drift {
+  Player kept, whole;   // the same inputs: one keeps two buffers as the board does, the other redraws every frame
+  std::vector<uint16_t> buffers[2] = {std::vector<uint16_t>(gfx565::W*gfx565::H), std::vector<uint16_t>(gfx565::W*gfx565::H)};
+  std::vector<uint16_t> redrawn = std::vector<uint16_t>(gfx565::W*gfx565::H);
+  int frames = 0, repaints = 0;
+  explicit Drift(State s) { State copy = s; kept.enter(&s); whole.enter(&copy); }
+  void frame(bool down, int x, int y, uint32_t delta = 20) {
+    kept.frame(down,x,y,delta); whole.frame(down,x,y,delta);
+    auto& buffer = buffers[frames++&1];
+    uint16_t& mark = buffer[240*gfx565::W+240]; const uint16_t was = mark, spoiled = was^0x0821;
+    mark = spoiled; gfx565::target(buffer.data()); kept.game.render();
+    if (mark != spoiled) ++repaints; else mark = was;   // a whole draw paints the middle of the glass again
+    UiAudit::enabled = true; gfx565::target(redrawn.data()); whole.game.render(); UiAudit::enabled = false;
+    assert(buffer == redrawn);
+  }
+  void sweep() {   // both diagonals, the rows the controls sit on and a column, a pixel a frame
+    frame(false,0,0,500);
+    for (int i=0;i<160;++i) frame(true,i,i);
+    frame(false,0,0); frame(false,0,0,500);
+    for (int i=0;i<160;++i) frame(true,159-i,i);
+    frame(false,0,0);
+    for (int y : {19,117,142}) { frame(false,0,0,500); for (int x=0;x<160;++x) frame(true,x,y); frame(false,0,0); }
+    frame(false,0,0,500); for (int y=0;y<160;++y) frame(true,80,y);
+    frame(false,0,0);
+  }
+};
+void fingerDriftRepaintsAtControlsOnly() {
+  for (uint8_t page : {HUB,DOLL,STYLE,PACK,SCHOOL_INTRO,SCHOOL_HANG}) {   // every layout of controls, the title first
+    Drift d(fixture(page));
+    if (page==HUB) { d.sweep(); assert(d.repaints*8 < d.frames); }
+    d.kept.action(0); d.whole.action(0);
+    d.frames = d.repaints = 0; d.sweep();
+    assert(d.kept.on(page) && d.repaints*8 < d.frames);   // it repainted every one of these frames before
+  }
+  Drift d(fixture(HUB)); d.frame(false,0,0,500);
+  d.frame(false,0,0); d.frame(false,0,0);   // both buffers hold the title
+  d.repaints = 0;
+  for (int i=0;i<40;++i) d.frame(true,30+i%20,110+i%10);   // wandering inside the first card: each buffer once, pressed
+  assert(d.repaints == 2);
+  for (int i=0;i<40;++i) d.frame(true,100+i%20,60+i%30);   // off it, over the picture: once more each, released
+  assert(d.repaints == 4);
+}
 void identityAndSave() {
   Player p; p.enter();
   assert(!strcmp(p.game.name(),"Toy Town") && !strcmp(p.game.store(),"toytown"));
@@ -808,7 +852,7 @@ void cosmeticPixels() {
 int main() {
   orderedCafeActor(); changeParkIdeaImmediately(); matchingEvidenceSurvivesApproach(); inspectedParkIdea(); scrapbookWorldUsesEntry(); schoolDisplayActivity(); arrangePicturesPreservesCreation(); displayPicturesAreVisible(); schoolRepairsBothOrders(); literalPracticeWithMina(); repairedPropsKeepBoth();
   explicitSchoolScene(); cafeTrayTouchAndWalking(); cafeResumeAfterHomeWalk(); explicitQuantityEditor(); sceneMovement(); movementInterruptionAndRetarget();
-  identityAndSave(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
+  identityAndSave(); fingerDriftRepaintsAtControlsOnly(); inputLifecycle(); invalidAppSave(); wardrobeAndBag(); school(); schoolOtherPlans();
   cafeOrders(); cafeCompareAndFinish(); discoverParkInScene(); park(); interruptedPages(); personalizeDuringOuting();
   optionalMemory(); memoryEditResume();
   picturedSelections(); visibleScenePeopleAndWorld(); visibleStoryProps(); illustratedActionCards(); renderedPages(); renderedVariants(); content(); cosmeticPixels(); previewMatchesDoll();

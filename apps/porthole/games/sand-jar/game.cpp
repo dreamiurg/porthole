@@ -282,7 +282,7 @@ void Game::drawCells(Seen& s) {
 uint16_t Game::grain(int i, int c, int ring) const {
   const uint8_t look = jar_->g.look[i];
   if (kindOf(look) != SAND) return water(i, c, ring);
-  const int vx = jar_->g.vx[i], vy = jar_->g.vy[i];
+  const int vx = jar_->g.v[i].vx, vy = jar_->g.v[i].vy;
   const float v2 = (float)(vx * vx + vy * vy), sp = vx | vy ? v2 * invSqrt(v2) * (1 / (256 * F)) : 0;   // most sand is still
   if (sp > 0.5f && (i * 7 + jar_->frame) % 19 == 0) return rgb(0xfff6dc);
   const Rgb* palette = jar_->mode == MODE_RAINBOW ? STRATA : SANDS;
@@ -304,7 +304,7 @@ uint16_t Game::water(int i, int c, int ring) const {
   if (d == 0) w = mix(w, FOAM, 0.65f + 0.35f * t_->sin[(cx * 9 + f * 5) & 255]);
   const float s = d ? t_->sin[(cx * 5 + f * 3) & 255] + t_->sin[(cy * 4 - f * 2 + (cx >> 1)) & 255] : 0;
   const float glint = s > 1.25f ? (s - 1.25f) * 70 : 0;
-  const int vx = jar_->g.vx[i], vy = jar_->g.vy[i];
+  const int vx = jar_->g.v[i].vx, vy = jar_->g.v[i].vy;
   const float v2 = (float)(vx * vx + vy * vy), sp = vx | vy ? v2 * invSqrt(v2) * (22 / (256 * F)) : 0, lift = sp < 40 ? sp : 40;
   w = {w.r + glint + lift, w.g + glint + lift, w.b + glint * 0.8f + lift};
   if (kindOf(jar_->g.look[i]) == BUBBLE) w = {w.r * 0.35f + 180, w.g * 0.35f + 235, w.b * 0.35f + 245};
@@ -368,7 +368,7 @@ void Game::drawModes(bool modeDown) const {
 
 // One name, but in a table all the same: tools/playtest.py learns every game's screen names from these N[] tables.
 const char* Game::screenName() const {
-  static const char* N[] = {"sandjar_jar"};
+  static const char* const N[] = {"sandjar_jar"};
   return N[0];
 }
 void Game::debugPrint() {

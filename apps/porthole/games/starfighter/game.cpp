@@ -84,7 +84,7 @@ void Game::render() {
   paint::draw(view);
 }
 const char* Game::screenName() const {
-  static const char* N[] = {"sf_title", "sf_calibrate", "sf_brief", "sf_squadron", "sf_waveclear", "sf_entry",
+  static const char* const N[] = {"sf_title", "sf_calibrate", "sf_brief", "sf_squadron", "sf_waveclear", "sf_entry",
                             "sf_trench", "sf_target", "sf_torpedo", "sf_explosion", "sf_victory", "sf_defeat"};
   return N[screen_ == Screen::Flight ? 3 + (int)run_.stage : (int)screen_];
 }

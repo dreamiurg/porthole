@@ -240,7 +240,7 @@ void Shell::sysPinBack() {
   go(kidPad ? SH_PIN : screen_ == SH_SYS_PIN ? SH_PICK : SH_SYS_ADMIN);
 }
 // A wrong code's shake, or too many wrong tries (pinlock.h), holds the keys.
-bool Shell::adminKeysHeld() { return ms_ < pinWrongUntil_ || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
+bool Shell::adminKeysHeld() { return os::before(ms_, pinWrongUntil_) || (screen_ == SH_SYS_PIN && pinWait(shell::ADMIN_LOCK)); }
 char Shell::adminDigit() const {   // on release, however long the press
   for (int k = 0; k < 10; k++) if (ui::clicked(in_, adminKey(k))) return k == 9 ? '0' : (char)('1' + k);
   return 0;
@@ -260,10 +260,10 @@ void Shell::drawSysPin() {
   sclear(C_NAVY);
   const char* prompt = screen_ == SH_SYS_PIN ? "Admin code?" : screen_ == SH_SYS_PIN_SET ? "Choose 4 digits" : "Repeat admin code";
   const uint32_t wait = screen_ == SH_SYS_PIN ? pinWait(shell::ADMIN_LOCK) : 0;
-  shead(80, 32, ms_ < toastUntil_ ? toast_ : wait ? "Too many tries" : prompt, C_WHITE);
+  shead(80, 32, os::before(ms_, toastUntil_) ? toast_ : wait ? "Too many tries" : prompt, C_WHITE);
   for (int i = 0; i < 4; i++) {
     const int x = 58 + i * 12;
-    sframe(x, 43, 10, 9, ms_ < pinWrongUntil_ ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE);
+    sframe(x, 43, 10, 9, os::before(ms_, pinWrongUntil_) ? (uint8_t)C_YELLOW : (uint8_t)C_WHITE);
     if (i < pinLen_) scircle(x + 5, 47, 2, C_WHITE);
   }
   if (wait) {   // the keys come back when the wait is over
@@ -347,7 +347,7 @@ void Shell::drawSysPlayerPin() {
 }
 
 // ---------------------------------------------------------------- Games (from Info): the games on this device, 3 a page
-// Off hides a game from every kid's Home and Library (shell::GamesOff); its saves and stars stay for when it is back
+// Off hides a game from every kid's launcher (shell::GamesOff); its saves and stars stay for when it is back
 // on, and a line under the rows says so. The last game on cannot go off. Each change saves at once and is read back.
 static const int GAME_ROWS = 3;
 static ui::Box gameRow(int i) { return {22, 30 + i * 23, 116, 21}; }   // the picture's 56 physical rows fit inside

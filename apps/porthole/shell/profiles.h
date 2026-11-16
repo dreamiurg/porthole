@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "app.h"
+#include "day.h"
 
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
@@ -14,8 +15,8 @@ constexpr const char* MIGRATED_BISCUIT = "mb";   // porthole/mb: present once Bi
 // Accepted: a rest that begins mid-minigame closes the game there (its save is flushed, the round is lost).
 constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
 // The daily cap: 30 min per profile per local day, across every game, even alone on the device. The clock is local
-// wall-clock seconds, so a day is now / DAY_SEC and it ends at local midnight.
-constexpr uint32_t DAY_SEC = 86400, DAILY_SEC = 30 * 60;
+// wall-clock seconds, so a day is os::dayOf(now) and it ends at local midnight; a clock that jumps: os/day.h.
+constexpr uint32_t DAY_SEC = os::DAY_SEC, DAILY_SEC = 30 * 60;
 // Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
 // Independent of profile/game records: changing a limit never resets usage or moves a save.
 struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };
@@ -94,6 +95,12 @@ void seal(Record& r);
 bool loadRecord(const void* data, size_t n, Record& out);
 // The stored form of a typed code ("0000".."9999"): value + 1, so 0000 is a real code; nullptr or "" = none.
 inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16_t)(atoi(digits) + 1) : 0; }
+// The kids' pad has keys 1 to 9, and Pets Club's own pad had a 0: a kid's stored code with a 0 in it cannot be typed,
+// so it is no code (the profile opens; a grown-up could only have cleared it in Admin anyway).
+inline uint16_t kidPin(uint16_t pin) {
+  for (int v = pin - 1, i = 0; i < 4; i++, v /= 10) if (v % 10 <= 0) return 0;
+  return pin;
+}
 // porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
 void loadAll(Store& st, Profiles& p);
 bool saveRecord(Store& st, Profiles& p, int id);   // false = the write failed
@@ -107,11 +114,11 @@ void migrate(Store& st, Profiles& p);   // migrate.cpp: Pets Club houses -> prof
 // migrate.cpp: Biscuit's pre-Porthole save -> biscuit/s<id>, once (porthole/mb); safe to re-run after power loss.
 void migrateBiscuit(Store& st, Profiles& p);
 
-// Home and the Library. Every game has a stable id, 1..32 (APP_IDS in games/apps.h): a bit in a mask is bit id - 1.
-// A kid's favorites are porthole/f<profile id>, append-only like Record; missing or invalid is the default (the first
-// MAX_FAVS enabled games, in launcher order). A grown-up's games switched off are "sys"/"games"; missing is all on.
-// An id this image does not know (a game that left the firmware) is skipped, never an error.
-constexpr int MAX_FAVS = 5, MAX_GAME_ID = 32;
+// The launcher's games. Every game has a stable id, 1..32 (APP_IDS in games/apps.h): a bit in a mask is bit id - 1.
+// A grown-up's games switched off are "sys"/"games"; missing is all on. An id this image does not know (a game that
+// left the firmware) is skipped, never an error. porthole/f<profile id> held a kid's favorites until they were
+// removed (the parent's ruling of 2026-11-16): nothing reads it now, a profile's create and delete still erase it.
+constexpr int MAX_GAME_ID = 32;
 constexpr uint32_t gameBit(uint8_t id) { return id >= 1 && id <= MAX_GAME_ID ? 1u << (id - 1) : 0; }
 constexpr bool validIds(const uint8_t* ids, int n) {   // unique, 1..MAX_GAME_ID: apps.h asserts it at compile time
   uint32_t seen = 0;
@@ -121,19 +128,6 @@ constexpr bool validIds(const uint8_t* ids, int n) {   // unique, 1..MAX_GAME_ID
   }
   return true;
 }
-constexpr uint32_t FAV_MAGIC = 0x56414650;   // "PFAV"
-constexpr uint16_t FAV_VERSION = 1;
-struct Favorites {
-  uint32_t magic;
-  uint16_t version, size;
-  uint8_t count, picked;      // picked 0: the kid never starred anything, Home shows the default
-  uint8_t ids[MAX_FAVS], reserved;   // Home's order: the newest star first
-  uint32_t seen;              // games known when this was first written or opened since; the rest wear a "new" dot
-  uint32_t crc;
-};
-static_assert(sizeof(Favorites) == 24, "porthole/f<id> is persisted: append before crc, never resize");
-bool loadFavorites(Store& st, int profileId, Favorites& out);       // false: missing or invalid (out is the default)
-bool saveFavorites(Store& st, int profileId, Favorites& f);         // seals; false unless it reads back
 struct GamesOff { uint16_t version, size; uint32_t off, crc; };    // "sys"/"games"
 static_assert(sizeof(GamesOff) == 12, "sys/games is persisted: append before crc, never resize");
 uint32_t loadGamesOff(Store& st);                                    // 0 (all on) when missing or invalid
@@ -145,18 +139,6 @@ inline bool allOff(const uint8_t* ids, int n, uint32_t off) {   // every game in
 // The image's games a kid sees (indexes into the app table, launcher order): never none, so a mask that switches
 // off every game in the image (they all left but the switched-off ones) counts as all on.
 int enabledGames(const uint8_t* ids, int n, uint32_t off, int* out);
-// Star mode's list: every enabled game while they fit one page (no Library then), else the kid's favorites that are
-// enabled, the newest star first (the default when none were ever picked); it may show none.
-int ownGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
-// Home: ownGames, or the default when none of the kid's favorites shows (switched off, gone, or every star taken
-// off), so Home is never empty and hidden favorites come back with their games. The Library has the rest; true from
-// libraryOn().
-int homeGames(const Favorites& f, const uint8_t* ids, int n, uint32_t off, int* out);
-inline bool libraryOn(const uint8_t* ids, int n, uint32_t off) { int all[MAX_GAME_ID]; return enabledGames(ids, n, off, all) > MAX_FAVS + 1; }
-// Star mode's tap on game id: unstars it, or stars it first on Home. False (and nothing changes) for a sixth
-// star. A switched-off or unknown favorite is kept hidden until its place is needed for a new star (the oldest such
-// first). Never starred: the default becomes the kid's list first.
-bool toggleStar(Favorites& f, uint8_t id, const uint8_t* ids, int n, uint32_t off);
 
 // Rest budget.
 // Never more than REST_SEC from now: a clock set backwards must not strand a kid on the rest screen for hours.

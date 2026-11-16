@@ -30,10 +30,10 @@ More about each game: [apps/porthole/README.md](apps/porthole/README.md).
 The firmware is C++ on Arduino and PlatformIO. A host simulator and a browser emulator run the same code on a
 computer, so you can build and test a game without the board.
 
-- **Put it on a board:** download `porthole-<version>-factory.bin` from the
-  [releases](https://github.com/dreamiurg/porthole/releases) and write it at address `0x0` with
-  [esptool-js](https://espressif.github.io/esptool-js/) in Chrome. You do this once: after that the board
-  updates itself over Wi-Fi. Details: [docs/install.md](docs/install.md).
+- **Put it on a board:** plug the board into a computer over USB-C, open
+  [porthole.dreamiurg.net](https://porthole.dreamiurg.net/#install) in Chrome or Edge and press **Install**.
+  You do this once: after that the board updates itself over Wi-Fi. Details and the manual way:
+  [docs/install.md](docs/install.md).
 - **Build from source:** `make check`, then `make flash APP=porthole`. Setup:
   [docs/development.md](docs/development.md).
 - **Make your own game:** point Claude Code or Codex at the repo and describe what you want.

@@ -3,13 +3,19 @@ name: Pages
 # Publishes site/ (the project page) to https://porthole.dreamiurg.net. The game pictures, updates
 # strip and case STLs are copied from where the README and the CAD keep them. The custom domain is set in the repo's
 # Pages settings, not by a CNAME file: an Actions-deployed site ignores that file.
-# The home page's player is the firmware itself in the browser: apps/porthole's sim built with Emscripten (make web)
-# from this commit into site/play/, so every merge that touches the app republishes it.
+# The home page's player is the firmware itself in the browser: apps/porthole's sim built with Emscripten (make web),
+# twice. Beta is this commit, the newest code, into site/play/beta/; stable is the stable release's own code, into
+# site/play/stable/, once that release has the web build (0.40.0 does not; the page then offers only beta).
+# The install button (ESP Web Tools, copied into site/flash/ewt/) writes the stable or the beta release's factory.bin,
+# both copied into site/flash/ on every deploy. Release makes a beta and Promote a stable, so their runs redeploy too.
 
 on:
   push:
     branches: [main]
     paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, apps/porthole/**, .github/workflows/pages.yml]
+  workflow_run:
+    workflows: [Release, Promote, Yank]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +30,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
+      contents: read  # the stable and beta release images
       pages: write
       id-token: write
     env:
@@ -39,6 +46,41 @@ jobs:
           cp docs/updates.png site/images/updates.png
           mkdir -p site/case
           cp hardware/case/stl/v1.1/puck_bezel.stl hardware/case/stl/v1.1/puck_plate.stl hardware/case/stl/v1.2/puck_lid.stl site/case/
+      - name: Copy the stable and the beta firmware for the install button
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/flash
+          # Stable is GitHub's Latest; the beta is the version the rolling porthole-beta release names.
+          stable=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)
+          stable=${stable#porthole-v}
+          gh release download porthole-beta -R "$GITHUB_REPOSITORY" --pattern porthole-version.txt --output "$RUNNER_TEMP/beta.txt"
+          beta=$(tr -d '[:space:]' < "$RUNNER_TEMP/beta.txt")
+          for channel in stable beta; do
+            version=${!channel}
+            image=porthole-$version-factory.bin
+            gh release download "porthole-v$version" -R "$GITHUB_REPOSITORY" --pattern "$image" --dir site/flash --clobber
+            # An ESP image starts with 0xE9: catch a wrong or broken download before the page offers it.
+            if [ "$(head -c1 "site/flash/$image" | od -An -tx1 | tr -d ' ')" != e9 ]; then
+              echo "::error::$image is not an ESP32 image"; exit 1
+            fi
+            # Offset 0: factory.bin is bootloader, partition table, otadata and app merged, the same image as a manual
+            # install. ESP Web Tools erases the flash first; Porthole has no Improv, so it skips the wait for it.
+            jq -n --arg v "$version" --arg f "$image" '{name: "Porthole", version: $v, new_install_improv_wait_time: 0,
+              builds: [{chipFamily: "ESP32-S3", parts: [{path: $f, offset: 0}]}]}' > "site/flash/$channel.json"
+          done
+          echo "STABLE=$stable" >> "$GITHUB_ENV"
+          echo "BETA=$beta" >> "$GITHUB_ENV"
+      - name: Copy ESP Web Tools, the install button, next to the page
+        # Served from this site, not a CDN: the button writes firmware, so the code behind it is pinned by checksum.
+        env:
+          EWT_VERSION: 10.4.0
+          EWT_SHA256: f18da75335d2f0dca044c4bb052848c0696e7b03cc23d61d8530dd6eba0a9008
+        run: |
+          curl -fsSL "https://registry.npmjs.org/esp-web-tools/-/esp-web-tools-$EWT_VERSION.tgz" -o "$RUNNER_TEMP/ewt.tgz"
+          echo "$EWT_SHA256  $RUNNER_TEMP/ewt.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/ewt.tgz" -C "$RUNNER_TEMP"
+          cp -r "$RUNNER_TEMP/package/dist/web" site/flash/ewt
       - name: Restore emsdk
         id: emsdk
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -51,13 +93,24 @@ jobs:
           git clone --depth 1 https://github.com/emscripten-core/emsdk ~/emsdk
           ~/emsdk/emsdk install "$EMSDK_VERSION"
           ~/emsdk/emsdk activate "$EMSDK_VERSION"
-      - name: Build the browser emulator into site/play
+      - name: Build the browser emulators into site/play
         run: |
           # shellcheck source=/dev/null  # emsdk_env.sh lives outside the repo
           source ~/emsdk/emsdk_env.sh
           make -C apps/porthole web
-          cp apps/porthole/build/web/porthole.js apps/porthole/build/web/porthole.wasm site/play/
-          sed -i "s/__BUILD__/${GITHUB_SHA::7}/" site/index.html
+          mkdir -p site/play/beta site/play/stable
+          cp apps/porthole/build/web/porthole.js apps/porthole/build/web/porthole.wasm site/play/beta/
+          # The page asks for stable's files only when this names its version.
+          stable_play=
+          git fetch --depth 1 origin tag "porthole-v$STABLE"
+          git worktree add "$RUNNER_TEMP/stable" "porthole-v$STABLE"
+          if grep -q '^web:' "$RUNNER_TEMP/stable/apps/porthole/Makefile"; then
+            make -C "$RUNNER_TEMP/stable/apps/porthole" web
+            cp "$RUNNER_TEMP"/stable/apps/porthole/build/web/porthole.{js,wasm} site/play/stable/
+            stable_play=$STABLE
+          fi
+          sed -i -e "s/__BUILD__/${GITHUB_SHA::7}/" -e "s/__STABLE_PLAY__/$stable_play/" \
+            -e "s/__STABLE__/$STABLE/" -e "s/__BETA__/$BETA/" site/index.html
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:

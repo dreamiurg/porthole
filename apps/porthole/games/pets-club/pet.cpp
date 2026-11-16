@@ -1,6 +1,6 @@
 #include "pet.h"
 #include "content.h"
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
 
 static_assert(NUM_BOOKS <= 32, "booksDoneMask is 32 bits: split or widen before adding more stories");
 
@@ -46,7 +46,7 @@ int bookListFor(const Save& s, uint8_t* out) {
     lo--;  // not enough stories at this level yet: offer the tier below as well
   }
 }
-void seal(Save& s) { s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); s.crc = crc32(&s, sizeof(Save) - sizeof(uint32_t)); }
+void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 
 uint32_t rnd(Save& s) { uint32_t x = s.seed ? s.seed : 0x9E3779B9u; x ^= x << 13; x ^= x >> 17; x ^= x << 5; s.seed = x; return x; }
 
@@ -106,7 +106,8 @@ void adoptFromShelter(Save& s, uint32_t now, uint8_t breed, const char* name) {
   seal(s);
 }
 
-int ageDays(const Save& s, uint32_t now) { return (int)(dayIndex(now) - dayIndex(s.adoptedAt)); }
+// Never negative: with the clock set to before the adoption day the cards would read "day -3".
+int ageDays(const Save& s, uint32_t now) { const int d = (int)(dayIndex(now) - dayIndex(s.adoptedAt)); return d < 0 ? 0 : d; }
 Stage stageFor(const Save& s, uint32_t now) { int d = ageDays(s, now); return d >= STAGE_GROWN_DAYS ? STAGE_GROWN : d >= STAGE_DOG_DAYS ? STAGE_DOG : STAGE_PUPPY; }
 int hearts(const Save& s) { int h = s.bond / 100; return h > 10 ? 10 : h; }
 
@@ -141,7 +142,10 @@ uint32_t walk(Save& s, uint32_t now, bool online, uint32_t budget) {
     const bool counted = budget > 0; if (counted) budget = budget > step ? budget - step : 0;
     if (!online) ev |= sleepByTheClock(s, t);   // schedule-driven sleep when unattended
     if (counted) decay(s, t, step, online);
-    if (!s.asleep && !s.poop && t >= s.nextPoopAt) { s.poop = 1; s.poopSince = t; s.clean = clamp100(s.clean - 15); ev |= EV_POOPED; }
+    if (!s.asleep && !s.poop && t >= s.nextPoopAt) {
+      s.poop = 1; s.poopSince = t; ev |= EV_POOPED;
+      if (online) s.clean = clamp100(s.clean - 15); else decayTo(s.clean, 15, FLOOR_CLEAN);   // away: never under the floor
+    }
     t += step;
   }
   return ev;
@@ -168,25 +172,32 @@ uint32_t grow(Save& s, uint32_t now) {
 }
 }  // namespace
 
+// shortcut: the part of a point not yet taken (under one a stat) is dropped at each visit instead of saved; give it
+// fields in Save at the next version bump if exact decay across visits ever matters.
+void dropCarry() { accFood = accFun = accEnergy = accClean = accSleep = 0; }
+
 uint32_t simulate(Save& s, uint32_t now, bool online) {
   // An empty room has nothing to grow, decay or poop; a clock that did not move forward only resets the mark.
-  if (!s.hasDog || now <= s.lastSeen) { s.lastSeen = now; return EV_NONE; }
+  const uint32_t elapsed = os::elapsed(now, s.lastSeen);
+  if (!s.hasDog || !elapsed) {
+    s.lastSeen = now;
+    if (s.poopSince > now) s.poopSince = now;   // a clock set back: or the time since wraps and the mess reads as days old
+    return EV_NONE;
+  }
   uint32_t ev = EV_NONE;
-  const uint32_t elapsed = now - s.lastSeen;
   if (elapsed > 300) online = false;  // a jump this big means the device was off (or the clock was set)
   if (!online && elapsed > 3600) ev |= EV_LONG_AWAY;
   // Only the first OFFLINE_CAP_SEC of an absence count for decay; beyond that the pet just waits.
   ev |= walk(s, now, online, online ? elapsed : (elapsed > OFFLINE_CAP_SEC ? OFFLINE_CAP_SEC : elapsed));
   ev |= settle(s, now);
   ev |= grow(s, now);
-  if (dayIndex(now) != s.lastPlayDay) ev |= EV_NEW_DAY;
   s.lastSeen = now;
   return ev;
 }
 
 void addBond(Save& s, uint32_t now, int n) {
   uint16_t d = (uint16_t)dayIndex(now);
-  if (s.bondDay != d) { s.bondDay = d; s.bondToday = 0; }
+  if (os::newDay(d, s.bondDay)) { s.bondDay = d; s.bondToday = 0; }
   int room = BOND_DAILY_CAP - s.bondToday; if (n > room) n = room; if (n <= 0) return;
   s.bondToday = (uint16_t)(s.bondToday + n);
   int nb = s.bond + n; if (nb > 1000) nb = 1000; s.bond = (uint16_t)nb;
@@ -196,7 +207,7 @@ void addBond(Save& s, uint32_t now, int n) {
 bool feed(Save& s, uint32_t now, Food f, int* outDelta) {
   if (s.asleep) return false;
   uint16_t d = (uint16_t)dayIndex(now);
-  if (s.treatsDay != d) { s.treatsDay = d; s.treatsToday = 0; }
+  if (os::newDay(d, s.treatsDay)) { s.treatsDay = d; s.treatsToday = 0; }
   int dFood = 0, dFun = 0;
   switch (f) {
     case FOOD_KIBBLE: dFood = 35; break;
@@ -224,7 +235,7 @@ bool bathe(Save& s, uint32_t now) {
 bool petDog(Save& s, uint32_t now) {
   if (s.asleep) return false;
   uint16_t d = (uint16_t)dayIndex(now);
-  if (s.treatsDay != d) { s.treatsDay = d; s.treatsToday = 0; s.petsToday = 0; }
+  if (os::newDay(d, s.treatsDay)) { s.treatsDay = d; s.treatsToday = 0; s.petsToday = 0; }
   s.petsGiven++;
   s.fun = clamp100(s.fun + 2);
   if (s.petsToday < 20) { s.petsToday++; addBond(s, now, 1); }
@@ -270,7 +281,7 @@ void trickLessonPassed(Save& s, uint32_t now, int i) {
 int learnedTrickCount(const Save& s) { int n = 0; for (int i = 0; i < NUM_TRICKS; i++) if (trickLearned(s, i)) n++; return n; }
 
 // A different day, not a later one: a clock that ran ahead and was then put right must not hold the mail back.
-bool giftReady(const Save& s, uint32_t now) { return (uint16_t)dayIndex(now) != s.lastGiftDay; }
+bool giftReady(const Save& s, uint32_t now) { return os::newDay((uint16_t)dayIndex(now), s.lastGiftDay); }
 Gift openGift(Save& s, uint32_t now) {
   Gift g = {GIFT_TREATS, 0};
   s.lastGiftDay = (uint16_t)dayIndex(now);
@@ -294,7 +305,7 @@ Gift openGift(Save& s, uint32_t now) {
 }
 void touchDay(Save& s, uint32_t now) {
   uint16_t d = (uint16_t)dayIndex(now);
-  if (d == s.lastPlayDay) return;
+  if (!os::newDay(d, s.lastPlayDay)) return;
   s.streak = (uint16_t)(d == s.lastPlayDay + 1 ? s.streak + 1 : 1);
   s.lastPlayDay = d; s.treatsToday = 0; s.petsToday = 0; s.treatsDay = d;
   if (s.streak >= 7) earnSticker(s, ST_WEEK);

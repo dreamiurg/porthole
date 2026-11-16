@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "day.h"
 #include "game.h"
 #include "palette.h"
 #include "stars.h"
@@ -193,8 +194,8 @@ void Game::startJointRace() {
 
 void Game::jointFinish() {
   if (gone_ && !(sameRace() && peer_.finished)) return;   // stars are for a race finished together
-  const uint32_t day = now_ / 86400;   // shortcut: a UTC day, and a reboot forgets the count; fine for a daily cap
-  if (day != starDay_) { starDay_ = day; jointToday_ = 0; }
+  const uint32_t day = os::dayOf(now_);   // shortcut: a UTC day, and a reboot forgets the count; fine for a daily cap
+  if (os::newDay(day, starDay_)) { starDay_ = day; jointToday_ = 0; }
   if (jointToday_ < 255) jointToday_++;
   if (jointToday_ > together::STAR_RACES) return;
   stars::award(wallet_, together::STARS);

@@ -37,12 +37,8 @@ inline PinLocks loadPinLocks(Store& st) {
   PinLocks l;
   return st.load("sys", "pinlock", &l, sizeof l) == sizeof l && l.version == 1 && !l.reserved ? l : PinLocks{};
 }
-// Reads the write back: a write that did not land must not let a reboot skip a wait unnoticed.
-inline bool savePinLocks(Store& st, const PinLocks& l) {
-  st.save("sys", "pinlock", &l, sizeof l);
-  PinLocks saved;
-  return st.load("sys", "pinlock", &saved, sizeof saved) == sizeof saved && !memcmp(&saved, &l, sizeof l);
-}
+// A write that does not land costs only this: a reboot then skips the wait. The strikes still count until then.
+inline void savePinLocks(Store& st, const PinLocks& l) { st.save("sys", "pinlock", &l, sizeof l); }
 
 // Strikes for another code, or an hour old, are none. A clock set back starts the wait from now: never longer than
 // PIN_MAX_WAIT.

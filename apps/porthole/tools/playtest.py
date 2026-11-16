@@ -54,11 +54,11 @@ def _bodies(text: str, opener: str) -> list:
 
 
 def _screens() -> set:
-    """The shell's screen names and every game's (each lists its names in a `static const char* N[]`, in any of the
+    """The shell's screen names and every game's (each lists its names in a `static const char* const N[]`, in any of the
     game's .cpp files: a game split into screen files keeps its table wherever screenName() lives).
 
     expect-screen matches by name alone, so a name two sources share is ambiguous: fail and ask for a game prefix."""
-    table = r"static const char\* N\[\] = \{(.*?)\};"
+    table = r"static const char\* (?:const )?N\[\] = \{(.*?)\};"
     tables = [("shell/shell.cpp", _block(table, (ROOT / "shell/shell.cpp").read_text()))]
     for path in sorted(ROOT.glob("games/*/*.cpp")):
         text = path.read_text()

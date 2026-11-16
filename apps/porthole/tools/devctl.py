@@ -6,6 +6,8 @@
     python3 tools/devctl.py hold 80 120
     python3 tools/devctl.py stats                 # the firmware's "S" output
     python3 tools/devctl.py metrics               # "M": frame timings (last 64 frames) and free memory
+    python3 tools/devctl.py fps [SECONDS]         # the screen's name and "M" every SECONDS (4) until Ctrl-C: play each game
+                                                  # by hand and read its frame rate off the lines
     python3 tools/devctl.py tilt 0 1000 0         # hold gravity (milli-g, screen frame: +x right, +y down, +z out)
     python3 tools/devctl.py untilt                # back to the motion sensor
     python3 tools/devctl.py run tests/device/smoke.txt
@@ -120,6 +122,21 @@ def stats(p: serial.Serial) -> str:
     return ask(p, "S")
 
 
+def screen(text: str) -> str:
+    """The "screen=NAME" word of an "S" answer. Every game opened since boot prints one, the one on the glass last."""
+    return next((ln.split()[0] for ln in reversed(text.splitlines()) if ln.startswith("screen=")), "screen=?")
+
+
+def fps(p: serial.Serial, gap: float) -> None:
+    """A line per sample until Ctrl-C. "M" averages the last 64 frames (2 to 4 s), so a shorter gap repeats frames."""
+    try:
+        while True:
+            print(screen(stats(p)), ask(p, "M").strip().removeprefix("[metrics] "), flush=True)
+            time.sleep(gap)
+    except KeyboardInterrupt:
+        pass
+
+
 def tilt(args: list[str]) -> str:
     """The firmware's gravity override: "tilt X Y Z" -> "G<x>,<y>,<z>". A bare "G" (untilt) clears it, so never send one here."""
     if len(args) != 3:
@@ -147,8 +164,7 @@ def run_lines(p: serial.Serial, script: Path) -> None:
         elif cmd == "snap":
             shot(p, OUT / f"{args[0]}.png")
         elif cmd == "screen":
-            line = next((ln for ln in stats(p).splitlines() if ln.startswith("screen=")), "screen=?")
-            print(line)
+            print(screen(stats(p)))
         elif cmd == "echo":
             print(" ".join(args))
         elif cmd in ("tilt", "untilt"):
@@ -177,6 +193,8 @@ def main() -> None:
         print(ask(p, tilt(args) if cmd == "tilt" else "G").strip())
     elif cmd == "metrics":
         print(ask(p, "M").strip())
+    elif cmd == "fps":
+        fps(p, float(args[0]) if args else 4)
     elif cmd == "run":
         run(p, Path(args[0]))
     else:

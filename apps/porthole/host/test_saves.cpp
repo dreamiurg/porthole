@@ -10,6 +10,7 @@
 #include "gfx565.h"
 #include "host/fixtures/kingdom_save_v1.h"
 #include "host/fixtures/times_cards_save_v3.h"
+#include "save.h"
 
 static int checks = 0;
 static uint32_t rngState = 4242, g_ms = 1000;
@@ -102,9 +103,22 @@ static void older(App* a) {
   if (b.n) mutated(a, b, 40);
 }
 
+// What an older build meets after a newer one was flashed over: this game's own save, one version on. Every saving
+// game's save is a whole one to os/save.h, so the shell keeps the newer one against whatever the game hands it next.
+static int fromNewer(App* a, const Blob& b0) {
+  CHECK(os::save::sealed(b0.d, b0.n));
+  Blob b = b0, mine; mine.n = 0;
+  uint16_t version; memcpy(&version, b.d + 4, 2); version++; memcpy(b.d + 4, &version, 2);
+  const uint32_t crc = os::crc32(b.d, b.n - 4); memcpy(b.d + b.n - 4, &crc, 4);
+  visit(a, b, 300, &mine);
+  if (!mine.n) return 0;   // it held its fire: nothing to keep the newer save from
+  CHECK(os::save::newer(b.d, b.n, mine.d, mine.n) && !os::save::newer(b0.d, b0.n, mine.d, mine.n));
+  return 1;
+}
+
 int main() {
   gfx565::target(g_fb);
-  int saving = 0;
+  int saving = 0, startedOver = 0;
   for (int k = 0; k < N_APPS; k++) {
     Blob b0;
     base(APPS[k], b0);
@@ -113,7 +127,9 @@ int main() {
     saving++;
     mutated(APPS[k], b0, 40);
     older(APPS[k]);
+    startedOver += fromNewer(APPS[k], b0);
   }
+  CHECK(startedOver >= 2);   // Biscuit, Radar and Times Cards write a fresh save within seconds of random play
   CHECK(saving == 9);   // a game that starts to save gets a base() here, or proof that random play writes one
   printf("test_saves: %d checks passed\n", checks);
   return 0;

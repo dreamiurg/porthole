@@ -45,7 +45,7 @@ def wrap_lines(t, maxw):
     for word in t.split():
         widest = max(widest, text_width(word))
         trial = f"{cur} {word}" if cur else word
-        if text_width(trial) <= maxw or not cur:
+        if (text_width(trial) <= maxw and len(trial) <= 39) or not cur:
             cur = trial
         else:
             lines += 1

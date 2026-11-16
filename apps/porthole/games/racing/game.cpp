@@ -296,7 +296,7 @@ void Game::render() {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm",
+  static const char* const N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm",
                             "race_results", "race_board", "race_lobby"};
   if (screen_ == Screen::Race && race_.phase == Phase::Countdown) return "race_countdown";
   return N[(int)screen_];

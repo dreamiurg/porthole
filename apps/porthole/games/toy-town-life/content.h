@@ -33,34 +33,34 @@ inline const Scene SCENES[PAGE_COUNT] = {
  {"Quantity", "", {"Remove", "Add", "Done"}},
  {"Art display", "Theo: Choose a picture.\nThen tap a frame.", {"Flowers", "Rocket", "Rabbit"}},
 };
-inline const char* PLACES[] = {"Home", "School", "Cafe", "Park"};
-inline const char* DOLLS[] = {"Fashion doll", "Plush rabbit", "Clay doll", "Keychain doll"};
-inline const char* NAMES[] = {"Emi", "Pip", "Kai", "Lulu"};
-inline const char* ITEMS[] = {"Notebook", "Pencil", "Water bottle", "Picnic cloth", "Magnifier"};
-inline const char* FOOD[] = {"Sandwich", "Fruit bowl", "Water", "Cookie"};
+inline const char* const PLACES[] = {"Home", "School", "Cafe", "Park"};
+inline const char* const DOLLS[] = {"Fashion doll", "Plush rabbit", "Clay doll", "Keychain doll"};
+inline const char* const NAMES[] = {"Emi", "Pip", "Kai", "Lulu"};
+inline const char* const ITEMS[] = {"Notebook", "Pencil", "Water bottle", "Picnic cloth", "Magnifier"};
+inline const char* const FOOD[] = {"Sandwich", "Fruit bowl", "Water", "Cookie"};
 inline const int PRICES[] = {5, 3, 1, 2};
-inline const char* SPOTS[] = {"Bench", "Fountain", "Path"};
-inline const char* LAST_SEEN[] = {
+inline const char* const SPOTS[] = {"Bench", "Fountain", "Path"};
+inline const char* const LAST_SEEN[] = {
  "I drew at the bench. Then I ran to the swings. It has a pink ribbon.",
  "I drew by the fountain. Then I went to the swings. It has a pink ribbon.",
  "I drew on the path by the tree. Then I ran to the swings. Pink ribbon!"
 };
-inline const char* CLUES[] = {
+inline const char* const CLUES[] = {
  "A pink ribbon peeks under the bench. The wind slid something below it.",
  "A pink ribbon is behind the fountain pot. A dry ledge sheltered it.",
  "A pink ribbon is beside the tree roots. Something slipped off the path."
 };
-inline const char* EMPTY_CLUES[] = {
+inline const char* const EMPTY_CLUES[] = {
  "Only crumbs under this bench. No pink ribbon. Let's look elsewhere.",
  "Just a blue leaf by the fountain. No pink ribbon. Another place?",
  "Only pebbles on the path. No pink ribbon. We can change our idea."
 };
-inline const char* SCHOOL_ENDINGS[] = {
+inline const char* const SCHOOL_ENDINGS[] = {
  "", "Mina feels less alone beside you. She pauses at her first words. Theo's display waits.",
  "Your cue cards help Mina start. Theo hangs fewer pictures while you rehearse.",
  "You make picture cards. Mina still forgets her first words. Ask what would help.",
  "Theo helps after hanging pictures. Mina waits, then practices her first words with him."
 };
-inline const char* CAPTIONS[] = {"We tried an idea.", "We changed our plan.", "We worked together."};
-inline const char* STICKERS[] = {"Flower", "Star", "Leaf"};
+inline const char* const CAPTIONS[] = {"We tried an idea.", "We changed our plan.", "We worked together."};
+inline const char* const STICKERS[] = {"Flower", "Star", "Leaf"};
 } // namespace toytown

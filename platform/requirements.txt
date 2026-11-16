@@ -11,4 +11,4 @@ intelhex==2.3.0
 rich==15.0.0
 pyserial==3.5
 wheel==0.48.0
-esp-idf-size==1.7.1
+esp-idf-size==1.8.0

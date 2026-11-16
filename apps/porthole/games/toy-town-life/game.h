@@ -30,6 +30,14 @@ class Game : public App {
   uint32_t ms_ = 0, look_ = 0;
   const uint16_t* buffers_[2]{};
   uint32_t painted_[2]{};
+  // A finger changes the picture in one way only: draw() asks touching(box) for each control it can show pressed.
+  // The boxes it asked about are kept, so the next frame is repainted when the finger's answers for them change,
+  // not for every pixel it drifts (a kid's finger never holds still).
+  static constexpr int TOUCH_MAX = 16;
+  ui::Box touched_[TOUCH_MAX]{};
+  int touchedCount_ = 0;
+  bool touching(const ui::Box& b);
+  uint32_t touchKey() const;
   bool dirty_ = false, home_ = false, title_ = true, pause_ = false, keep_ = false;
   char heading_[96]{}, words_[384]{}, labels_[5][80]{};
   uint8_t destination_ = SCHOOL;
