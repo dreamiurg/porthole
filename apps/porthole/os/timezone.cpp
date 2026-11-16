@@ -1,5 +1,6 @@
 #include "timezone.h"
 #include <ctype.h>
+#include <initializer_list>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +23,72 @@ bool contains(const char* text, const char* query) {
     if (!*b) return true;
   }
   return false;
+}
+
+// A zone's recurring rule (the POSIX TZ text after its last listed transition) is evaluated here, not by the C library.
+// The board's newlib and the host's glibc are two parsers, and the tests could only ever ask glibc: newlib reads a
+// rule's time as unsigned hours, so a negative one (America/Nuuk's "M3.5.0/-1") cannot mean the same there. This reads
+// exactly what tools/timezones.py emits: std offset [dst [offset] ,Mm.w.d[/time] ,Mm.w.d[/time]], names plain or <quoted>.
+struct Edge { int month, week, day, time; };            // week 5 = the last; day 0 = Sunday; time: seconds, local
+struct Rule { int standard, daylight; bool changes; Edge start, end; };   // offsets: seconds east of UTC
+const char* skipName(const char* s) {
+  if (*s == '<') { while (*s && *s != '>') s++; return *s ? s + 1 : s; }
+  while (isalpha((unsigned char)*s)) s++;
+  return s;
+}
+const char* clockTime(const char* s, int& seconds) {   // [+-]h[:mm[:ss]]
+  const int sign = *s == '-' ? -1 : 1;
+  if (*s == '-' || *s == '+') s++;
+  int part[3] = {0, 0, 0};
+  for (int i = 0; i < 3; i++) {
+    while (isdigit((unsigned char)*s)) part[i] = part[i] * 10 + (*s++ - '0');
+    if (*s != ':') break;
+    s++;
+  }
+  seconds = sign * (part[0] * 3600 + part[1] * 60 + part[2]);
+  return s;
+}
+bool parseRule(const char* s, Rule& rule) {
+  int west = 0;
+  s = clockTime(skipName(s), west);
+  rule.standard = rule.daylight = -west; rule.changes = *s != 0;
+  if (!rule.changes) return true;
+  s = skipName(s); rule.daylight = rule.standard + 3600;
+  if (*s != ',') { s = clockTime(s, west); rule.daylight = -west; }
+  for (Edge* edge : {&rule.start, &rule.end}) {
+    int used = 0;
+    if (sscanf(s, ",M%d.%d.%d%n", &edge->month, &edge->week, &edge->day, &used) != 3) return false;
+    s += used; edge->time = 7200;
+    if (*s == '/') s = clockTime(s + 1, edge->time);
+    if (edge->month < 1 || edge->month > 12 || edge->week < 1 || edge->week > 5 || edge->day < 0 || edge->day > 6) return false;
+  }
+  return *s == 0;
+}
+int64_t daysFromCivil(int y, int m, int d) {   // Howard Hinnant's algorithm; y >= 0 here
+  y -= m <= 2;
+  const int era = y / 400, yoe = y - era * 400, doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+  return (int64_t)era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+}
+// The UTC second at which an edge happens in year y; its time is on the clock in force before it (offset, seconds east).
+int64_t edgeUtc(const Edge& edge, int y, int offset) {
+  const int64_t first = daysFromCivil(y, edge.month, 1);
+  const int length = (int)(daysFromCivil(edge.month == 12 ? y + 1 : y, edge.month % 12 + 1, 1) - first);
+  const int weekday = (int)((first + 4) % 7);   // 1970-01-01 was a Thursday
+  int day = (edge.day - weekday + 7) % 7 + (edge.week - 1) * 7;   // days after the 1st
+  if (day >= length) day -= 7;
+  return (first + day) * 86400 + edge.time - offset;
+}
+int ruleOffsetMinutes(const char* text, uint32_t utc) {
+  Rule rule{};
+  if (!parseRule(text, rule)) return 0;
+  if (!rule.changes) return rule.standard / 60;
+  const time_t standardWall = (time_t)((int64_t)utc + rule.standard); tm date{};
+  if (!gmtime_r(&standardWall, &date)) return rule.standard / 60;   // gmtime_r never looks at TZ
+  const int64_t start = edgeUtc(rule.start, date.tm_year + 1900, rule.standard);
+  const int64_t end = edgeUtc(rule.end, date.tm_year + 1900, rule.daylight);
+  // Northern rules start before they end within a year; southern ones (and Ireland's winter time) wrap the new year.
+  const bool daylight = start < end ? utc >= start && utc < end : utc >= start || utc < end;
+  return (daylight ? rule.daylight : rule.standard) / 60;
 }
 }  // namespace
 int count() { return (int)(sizeof ZONES / sizeof ZONES[0]); }
@@ -49,8 +116,8 @@ bool matches(int index, const char* query) {
 }
 bool select(const char* id) {
   const Zone* z = find(id);
-  if (!z || setenv("TZ", z->rule, 1)) return false;
-  tzset(); g_selected = (int)(z - ZONES);
+  if (!z) return false;
+  g_selected = (int)(z - ZONES);
   return true;
 }
 int16_t offset(uint32_t utc) {
@@ -60,26 +127,19 @@ int16_t offset(uint32_t utc) {
     while (low + 1 < high) { const int mid = (low + high) / 2; if (transitionUtc(mid) <= utc) low = mid; else high = mid; }
     return transitionOffset(low);
   }
-  const time_t seconds = (time_t)utc; tm localTime{}, utcTime{};
-  if (!localtime_r(&seconds, &localTime) || !gmtime_r(&seconds, &utcTime)) return 0;
-  const int days = localTime.tm_year > utcTime.tm_year ? 1 : localTime.tm_year < utcTime.tm_year ? -1 :
-                   localTime.tm_yday - utcTime.tm_yday;
-  return (int16_t)(days * 1440 + (localTime.tm_hour - utcTime.tm_hour) * 60 + localTime.tm_min - utcTime.tm_min);
+  return (int16_t)ruleOffsetMinutes(ZONES[g_selected].rule, utc);
 }
 uint32_t local(uint32_t utc) { return netclock::local(utc, offset(utc)); }
 uint32_t toUtc(uint32_t localEpoch) {
-  const time_t wall = (time_t)localEpoch; tm broken{};
-  if (!gmtime_r(&wall, &broken)) return localEpoch;
-  broken.tm_isdst = -1;
-  const time_t result = mktime(&broken);
-  // Validate against known transitions, including finite rules such as Ramadan which POSIX cannot express.
+  // Searched against the known transitions too, including finite rules such as Ramadan which POSIX cannot express.
   // The earliest matching UTC instant makes a repeated fall-back local hour deterministic.
   for (int minutes = 840; minutes >= -720; minutes -= 15) {
     const int64_t candidate = (int64_t)localEpoch - minutes * 60;
-    if (candidate >= netclock::MIN_UTC && candidate < netclock::MAX_UTC && local((uint32_t)candidate) == localEpoch)
-      return (uint32_t)candidate;
+    if (candidate >= 0 && candidate <= UINT32_MAX && local((uint32_t)candidate) == localEpoch) return (uint32_t)candidate;
   }
-  return result >= 0 && (uint64_t)result <= UINT32_MAX ? (uint32_t)result : localEpoch;
+  // No instant shows this wall time: it is in the hour a spring-forward skips. Read it on the clock in force before
+  // the gap (a day earlier is clear of it), so 02:30 on such a night means 03:30.
+  return netclock::local(localEpoch, -offset(localEpoch >= 86400 ? localEpoch - 86400 : 0));
 }
 Settings settings(const char* id, bool automatic, bool detected) {
   Settings value{}; const Zone* z = find(id);

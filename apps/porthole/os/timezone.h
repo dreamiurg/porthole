@@ -10,7 +10,9 @@ const Zone& at(int index);
 const Zone* find(const char* id);   // canonicalizes bundled IANA aliases; nullptr for unsupported/invalid names
 bool detectedZone(const char* body, size_t length, char (&out)[64]);   // bounded plain-text provider reply, no TZ mutation
 bool matches(int index, const char* query);   // case-insensitive ID or friendly-label search
-// The following call the C library's process TZ conversion: main core only, never a radio worker.
+// The selected zone is one choice for the whole firmware, with no lock: main core only, never a radio worker.
+// Offsets come from the bundled transitions and then from the zone's rule, read by timezone.cpp itself: the C library's
+// TZ handling (which differs between the host's glibc and the board's newlib) is never used.
 bool select(const char* id);
 uint32_t local(uint32_t utc);
 uint32_t toUtc(uint32_t localEpoch);
