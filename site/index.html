@@ -75,7 +75,19 @@
     .hero h1 { margin: 0 0 16px; font-size: clamp(30px, 5vw, 44px); line-height: 1.15; font-weight: 800; }
     .hero p { margin: 0 0 14px; font-size: 19px; color: var(--body); }
     .hero .shot { flex: 1 1 300px; display: flex; justify-content: center; }
-    .hero .shot img { width: min(420px, 90vw); height: auto; }
+    .hero .shot { flex-direction: column; align-items: center; }
+    /* The home page's player: a still of the menu until a tap loads the firmware (about 4 MB) in a frame. */
+    .live { width: min(420px, 90vw); aspect-ratio: 1; border-radius: 50%; padding: 7%;
+      background: radial-gradient(circle at 35% 30%, #4a4350, #24202a 60%, #16131a); box-shadow: 0 18px 40px rgba(20, 14, 26, 0.35); }
+    .live .poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+    .live .poster img { display: block; width: 100%; height: 100%; }
+    .live .go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 10px 22px; border-radius: 999px;
+      background: var(--accent); color: #fff; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 6px 18px rgba(20, 14, 26, 0.35); }
+    .live.on { padding: 0; background: none; box-shadow: none; aspect-ratio: auto; border-radius: 0; }
+    .live iframe { display: block; width: 100%; aspect-ratio: 1; border: 0; background: transparent; }
+    @media (pointer: coarse) { .live iframe { aspect-ratio: auto; height: calc(min(420px, 90vw) + 120px); } }
+    .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
+    .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
     .now { margin-top: 24px; }
     .now img { width: 100%; height: auto; display: block; border-radius: 14px; margin-top: 10px; }
 
@@ -241,9 +253,17 @@
     <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
     <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
     <p><span lang="en">I am sharing it as it is. If you have the same board, this page shows how to put the games on it, and the code is on GitHub if you want to change them.</span><span lang="uk">Ділюся ним як є. Якщо у вас така сама плата, ця сторінка показує, як записати на неї ігри, а код лежить на GitHub, якщо захочете щось змінити.</span></p>
-    <p><a href="play/"><span lang="en">Try it in your browser</span><span lang="uk">Спробуйте в браузері</span></a><span lang="en">: the same firmware, built for the web from the newest code. No board needed.</span><span lang="uk">: та сама прошивка, зібрана для вебу з найновішого коду. Плата не потрібна.</span></p>
+    <p><span lang="en">You can play it right here, no board needed: the screen next to this is the same firmware, built for the web from the newest code. It also has </span><span lang="uk">Можна грати просто тут, без плати: екран поруч &mdash; та сама прошивка, зібрана для вебу з найновішого коду. Є й </span><a href="play/"><span lang="en">a page of its own</span><span lang="uk">окрема сторінка</span></a><span lang="en"> with a tilt pad.</span><span lang="uk"> з панеллю нахилу.</span></p>
   </div>
-  <div class="shot"><img src="images/puck.webp" alt="The board in its 3D-printed case, showing the Porthole game menu" width="746" height="611"></div>
+  <div class="shot">
+    <div class="live" id="live">
+      <button type="button" class="poster" id="play-here">
+        <img src="images/play-home.webp" alt="The Porthole menu on the round screen" width="480" height="480">
+        <span class="go">&#9654; <span lang="en">Play here</span><span lang="uk">Грати тут</span></span>
+      </button>
+    </div>
+    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass; arrow keys or the phone itself tilt.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла; нахил стрілками або самим телефоном.</span></p>
+  </div>
 </div>
 
 <div class="wrap layout">
@@ -268,6 +288,7 @@
       <h2><span lang="en">What it is</span><span lang="uk">Що це</span></h2>
       <p><span lang="en">You plug the board into USB power and a &ldquo;Who&rsquo;s playing?&rdquo; screen comes up. Up to four people can have a profile there. Each picks theirs, then a game from the menu. Every game keeps its progress per player, and none of them punishes you for not playing for a while.</span><span lang="uk">Під&rsquo;єднуєте плату до живлення USB, і з&rsquo;являється екран &laquo;Who&rsquo;s playing?&raquo;. Там може бути до чотирьох профілів. Кожен вибирає свій, а потім гру з меню. Кожна гра зберігає прогрес окремо для кожного гравця, і жодна не карає за те, що ви якийсь час не грали.</span></p>
       <p><span lang="en">In a 3D-printed case with a small battery, the board becomes a round handheld you can carry around. Once it knows your Wi-Fi, it updates itself when I publish a new version.</span><span lang="uk">У надрукованому на 3D-принтері корпусі з невеликим акумулятором плата стає круглою кишеньковою консоллю. Коли вона знає ваш Wi-Fi, то сама оновлюється, щойно я публікую нову версію.</span></p>
+      <img class="what-img" src="images/puck.webp" alt="The board in its 3D-printed case, showing the Porthole game menu" width="746" height="611" loading="lazy">
     </section>
 
     <section id="games">
@@ -440,7 +461,7 @@
   document.querySelectorAll("main section").forEach((s) => seen.observe(s));
   // Click or Enter on a picture opens it bigger. A click anywhere, Esc or the button closes it.
   const zoom = document.getElementById("zoom"), zoomImg = zoom.querySelector("img"), zoomText = zoom.querySelector("p");
-  document.querySelectorAll(".shot img, main img").forEach((img) => {
+  document.querySelectorAll("main img").forEach((img) => {
     img.classList.add("zoomable");
     img.tabIndex = 0;
     img.setAttribute("role", "button");
@@ -536,6 +557,13 @@
     new ResizeObserver(resize).observe(stage); resize();
     renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
   }
+</script>
+<script>
+  document.getElementById("play-here").addEventListener("click", () => {
+    const live = document.getElementById("live"), frame = document.createElement("iframe");
+    frame.src = "play/?embed"; frame.title = "Porthole"; frame.allow = "accelerometer; gyroscope";
+    live.classList.add("on"); live.replaceChildren(frame);
+  });
 </script>
 </body>
 </html>

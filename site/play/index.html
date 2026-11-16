@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Play Porthole</title>
+<script>if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');   // the home page's player</script>
 <meta name="description" content="The Porthole firmware running in your browser: the same code as the board, built from main.">
 <style>
   @font-face { font-family: "Nunito"; src: url("../assets/fonts/Nunito-latin.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
@@ -43,6 +44,12 @@
   .small { font-size: 14px; color: var(--muted); }
   .help { max-width: 560px; margin-top: 22px; }
   .help li { margin: 4px 0; }
+  /* ?embed: just the device and the phone's tilt, for the home page's frame. */
+  .embed body { background: transparent; overflow: hidden; }
+  .embed header, .embed h1, .embed .lead, .embed .controls, .embed .help { display: none; }
+  .embed main { padding: 0; }
+  .embed .puck { width: 100vw; }
+  .embed .phone { margin-top: 10px; }
   kbd { font-size: 0.85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: var(--card); }
 </style>
 </head>
