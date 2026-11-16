@@ -129,13 +129,15 @@ class System {
   ~System() = default;
 };
 
-// Parses "X.Y.Z" (an optional leading 'v' is skipped). False for "dev" or anything else.
+// Parses "X.Y.Z" (an optional leading 'v' is skipped). False for "dev" or anything else, a part over 99999 included:
+// past that the host's 64-bit long and the board's 32-bit one would no longer narrow to the same int.
 inline bool parseVersion(const char* s, int v[3]) {
   if (!s) return false;
   if (*s == 'v') s++;
   for (int i = 0; i < 3; i++) {
     if (*s < '0' || *s > '9') return false;
     char* end; long n = strtol(s, &end, 10);
+    if (n > 99999) return false;
     v[i] = (int)n; s = end;
     if (i < 2) { if (*s != '.') return false; s++; }
   }
