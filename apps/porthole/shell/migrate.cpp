@@ -94,7 +94,13 @@ void migrateBiscuit(Store& st, Profiles& p) {
   OldBiscuit from = findOldBiscuit(st, s, kid);
   if (from) {   // before the marker; with no profile to take it, or a copy that did not land, the old save stays for the next boot
     const int owner = biscuitOwner(st, p, kid);
-    if (owner < 0 || !st.save(biscuit::STORE, key('s', owner), &s, sizeof s)) return;
+    if (owner < 0) return;
+    // A pup already at the owner's key is never replaced: it is this copy from a boot cut short (the same bytes), or
+    // one played since a marker that did not land, and then the old place is left as it is, unread.
+    biscuit::Save there{}; uint8_t blob[sizeof there];
+    const size_t n = st.load(biscuit::STORE, key('s', owner), blob, sizeof blob);
+    if (n && biscuit::loadBlob(blob, n, there)) { if (memcmp(&there, &s, sizeof s)) from = OLD_NONE; }
+    else if (!st.save(biscuit::STORE, key('s', owner), &s, sizeof s)) return;
   }
   st.save(NS, MIGRATED_BISCUIT, &mark, sizeof mark);
   // Only after the marker, and only the place the pup came from: anything else stays put, unread, never lost.

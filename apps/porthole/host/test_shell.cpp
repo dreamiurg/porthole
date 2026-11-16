@@ -402,6 +402,26 @@ static void biscuitNewestToFirstProfile() {
   assert(!other.has(OLD_NS, "pet3") && other.has("biscuit", "pet1"));
 }
 
+// The marker's write failed after the newer pup moved in and its old place was cleared: the next boot finds the older
+// place, and must not put that pup over the one played since. The older place stays, unread.
+static void biscuitPlayedSinceKept() {
+  MemStore st;
+  Save a = house("Ava", "Rex", 7, 0);
+  st.save("crago", "s2", &a, sizeof a);
+  putOld(st, OLD_NS, "pet1", old::MAGIC_V1, oldPet(10, 3600));
+  putOld(st, "biscuit", "pet1", old::MAGIC_V1, oldPet(20, 60));
+  st.refuse = "porthole/mb";
+  shell::Profiles p; boot(st, p);
+  assert(biscuitIn(st, 2, "Biscuit", 20) && !st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
+  uint8_t blob[shell::BLOB_MAX]; biscuit::Save s;                     // a day's play on the moved pup
+  size_t n = st.load(biscuit::STORE, "s2", blob, sizeof blob);
+  assert(biscuit::loadBlob(blob, n, s));
+  s.friendship = 45; biscuit::seal(s); st.save(biscuit::STORE, "s2", &s, sizeof s);
+  st.refuse = nullptr;
+  shell::Profiles again; boot(st, again);
+  assert(biscuitIn(st, 2, "Biscuit", 45) && st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
+}
+
 // A save that does not convert is left where it is and nothing is made from it. In the first firmware the newest key
 // decides: a damaged pet3 hides an older pet2, as it did on that firmware.
 static void biscuitCorruptIgnored() {
@@ -1906,7 +1926,7 @@ int main() {
   migrateLegacyKey();
   biscuitToNamedProfile();
   biscuitNewProfile();
-  biscuitNewestToFirstProfile();
+  biscuitNewestToFirstProfile(); biscuitPlayedSinceKept();
   biscuitLongName();
   biscuitCorruptIgnored();
   biscuitCrash();
