@@ -84,7 +84,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   letters, case-insensitive), else the first profile, else a new one; erases only the
   winning source's keys, and only after the marker `porthole/mb`. `shell::loadAll` runs it
   at every boot after the Pets Club migration (a no-op once the marker exists). Profile
-  delete and create, and serial `R`, erase `biscuit/s<id>` like every game's store in `APPS`.
+  delete and create, and serial `RESET`, erase `biscuit/s<id>` like every game's store in `APPS`.
 - `host/test_biscuit.cpp` (shared `host/` directory, #35): `pet.h`'s rules self-check --
   distinct from `host/test_biscuit_content.cpp` (content/art plumbing, #33).
 - Content: `content_stories.h` (15 branching stories, `Story{id, title, subtitle,
