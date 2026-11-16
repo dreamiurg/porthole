@@ -44,7 +44,8 @@ static bool g_gravFake = false;
 // the last MT_N frames.
 enum { MT_FRAME, MT_UPDATE, MT_RENDER, MT_PRESENT, MT_COUNT };
 static const int MT_N = 64;
-static uint32_t g_mt[MT_N][MT_COUNT];
+struct Metrics { uint32_t frame[MT_N][MT_COUNT]; };
+static Metrics& g_mt = psram::make<Metrics>();   // 1 KB of debug counters: not worth static internal RAM
 static int g_mtAt = 0;
 
 // RTC and running base are UTC. Only the main core derives local-wall seconds for shell/game day and time rules.
@@ -261,7 +262,7 @@ static void dumpFrame() {
 // "L<lat>,<lon>" sets Radar's home without the menu.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
-  for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
+  for (auto& f : g_mt.frame) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
   auto ms = [&](int k) { return sum[k] / 1000.0 / MT_N; };
   Serial.printf("[metrics] frames=%d frame=%.2fms fps=%.1f max=%.2fms update=%.2fms render=%.2fms present=%.2fms "
                 "heap=%lu psram=%lu largest_internal=%lu\n",
@@ -387,7 +388,7 @@ static void renderFrame() {
 
 void loop() {
   static uint32_t prevUs = micros();
-  uint32_t* mt = g_mt[g_mtAt];
+  uint32_t* mt = g_mt.frame[g_mtAt];
   uint32_t t0 = micros();
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
