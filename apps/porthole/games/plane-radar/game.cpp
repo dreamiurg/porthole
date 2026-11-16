@@ -115,7 +115,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"radar_off", "radar_nospot", "radar_nowifi", "radar_joining", "radar_live", "radar_lost",
+  static const char* const N[] = {"radar_off", "radar_nospot", "radar_nowifi", "radar_joining", "radar_live", "radar_lost",
                             "radar_menu"};   // a name per air::State, then the menu
   static_assert(sizeof N / sizeof N[0] == air::S_COUNT + 1, "a name per state, then the menu");
   if (page_ == P_MENU) return N[air::S_COUNT];

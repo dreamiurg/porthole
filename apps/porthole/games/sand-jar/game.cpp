@@ -368,7 +368,7 @@ void Game::drawModes(bool modeDown) const {
 
 // One name, but in a table all the same: tools/playtest.py learns every game's screen names from these N[] tables.
 const char* Game::screenName() const {
-  static const char* N[] = {"sandjar_jar"};
+  static const char* const N[] = {"sandjar_jar"};
   return N[0];
 }
 void Game::debugPrint() {

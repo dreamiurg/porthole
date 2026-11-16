@@ -288,7 +288,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 }
 
 const char* Game::screenName() const {
-  static const char* N[] = {"mk_calibrate", "mk_play", "mk_goal", "mk_done"};
+  static const char* const N[] = {"mk_calibrate", "mk_play", "mk_goal", "mk_done"};
   static_assert(sizeof N / sizeof N[0] == SC_COUNT, "one name per page");
   return N[screen_];
 }
