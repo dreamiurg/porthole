@@ -54,7 +54,7 @@ LiPo (2000 mAh or more, 1.25 mm plug; check its polarity first, many ship revers
 screws. No soldering.
 
 **The steering wheel** is a two-handed grip the puck sits in, for Rally and the tilt games: two printed halves
-that go together around a steel ring the puck sticks to. It is still a work in progress:
+put together. It is still a work in progress:
 [hardware/grip](hardware/grip). The [project page](https://porthole.dreamiurg.net/#case) shows it in 3D.
 
 <p align="center"><img src="site/images/grip.webp" width="600" alt="Renders of the steering-wheel grip holding the puck"></p>
