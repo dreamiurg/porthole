@@ -16,9 +16,9 @@
 using namespace sandjar;
 static Jar a, b;   // ~153 KB each: static, like the game's
 
-static int cellOf(const Jar& j, int i) { return (j.g.y[i] >> 8) * G + (j.g.x[i] >> 8); }
+static int cellOf(const Jar& j, int i) { return (j.g.at[i].y >> 8) * G + (j.g.at[i].x >> 8); }
 static float along(const Jar& j, int i, float gx, float gy) {   // height below the middle, along gravity (cells)
-  return (Jar::pos(j.g.x[i]) - G / 2) * gx + (Jar::pos(j.g.y[i]) - G / 2) * gy;
+  return (Jar::pos(j.g.at[i].x) - G / 2) * gx + (Jar::pos(j.g.at[i].y) - G / 2) * gy;
 }
 static void tilt(Jar& j, float degrees, float g = 1) {   // 0 = upright (down the screen), positive = toward +x
   j.tiltX = g * sinf(degrees * 3.14159265f / 180); j.tiltY = g * cosf(degrees * 3.14159265f / 180);
@@ -56,8 +56,8 @@ static void filled() {
   tilt(a, 0);
   a.reset(MODE_RAINBOW, 7);   // six strata, the first (pink) at the bottom
   int bottom = 0;
-  for (int i = 0; i < a.n; i++) if (shadeOf(a.g.look[i]) == 0) bottom = a.g.y[i] > a.g.y[bottom] ? i : bottom;
-  assert(shadeOf(a.g.look[bottom]) == 0 && (a.g.y[bottom] >> 8) >= 150);
+  for (int i = 0; i < a.n; i++) if (shadeOf(a.g.look[i]) == 0) bottom = a.g.at[i].y > a.g.at[bottom].y ? i : bottom;
+  assert(shadeOf(a.g.look[bottom]) == 0 && (a.g.at[bottom].y >> 8) >= 150);
   puts("fill: every mode's count, strata, conserved while flowing");
 }
 
@@ -243,7 +243,7 @@ static void replays() {
     j->shake();
     run(*j, 50);
   }
-  assert(!memcmp(a.g.x, b.g.x, sizeof a.g.x) && !memcmp(a.occ, b.occ, sizeof a.cells) && !memcmp(a.g.look, b.g.look, sizeof a.g.look));
+  assert(!memcmp(a.g.at, b.g.at, sizeof a.g.at) && !memcmp(a.occ, b.occ, sizeof a.cells) && !memcmp(a.g.look, b.g.look, sizeof a.g.look));
   puts("replay: the same inputs make the same jar");
 }
 
@@ -265,7 +265,7 @@ static void sameAsEver() {
     }
     uint32_t h = 2166136261u;
     auto mix = [&h](uint32_t v) { h = (h ^ v) * 16777619u; };
-    for (int i = 0; i < a.n; i++) { mix(a.g.x[i]); mix(a.g.y[i]); mix((uint16_t)a.g.vx[i]); mix((uint16_t)a.g.vy[i]); mix(a.g.look[i]); }
+    for (int i = 0; i < a.n; i++) { mix(a.g.at[i].x); mix(a.g.at[i].y); mix((uint16_t)a.g.v[i].vx); mix((uint16_t)a.g.v[i].vy); mix(a.g.look[i]); }
     for (int c = 0; c < G * G; c++) mix((uint16_t)a.occ[c]);
     if (h != want[k]) fprintf(stderr, "sameAsEver: mode %d is 0x%08x\n", m, (unsigned)h);
     bad += h != want[k++];

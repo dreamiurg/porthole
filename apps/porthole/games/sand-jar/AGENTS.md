@@ -32,7 +32,10 @@ reserved all the same), no clock, no personal data.
   160x160 cell grid (a cell is 3 physical px, one logical px: a touch is a cell as is) inside the glass (radius 78.5
   cells); `occ[]` holds each cell's grain index + 1, or `EMPTY`, `WALL` (outside the glass), `FINGER`. Grain position
   and velocity are 8.8 fixed point (`uint16_t`/`int16_t`); a look byte packs kind (sand, water, bubble), shade and
-  tone. Orbits' bodies are floats in panel px. The grains and (Orbits) the bodies plus the renderer's trail light share
+  tone. They are kept by use, not one array a field (`Jar::Grains`): place and list link in one 6-byte record, speed in
+  another, looks in a byte array. A step picks grains by height, in no order of index, so fields read together share a
+  line of the PSRAM cache; the renderer reads speed and look only. Orbits' bodies are floats in panel px. The
+  grains and (Orbits) the bodies plus the renderer's trail light share
   one union: the whole Jar is ~153 KB. It was first a member of the static game object, in internal RAM (random
   access in PSRAM is ~14x slower), but static internal RAM is capped (`custom_dram_static_max`), so the game
   allocates it on its first `enter()` and on the board it lands in PSRAM. Its hottest part, the grid (`occ`, 51 KB,

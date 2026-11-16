@@ -61,11 +61,14 @@ struct Jar {
   int16_t cells[G * G];
   int16_t* occ = cells;
   // The grains, or (Orbits has none) the bodies and their trail light. The two share memory: the Jar is ~153 KB.
+  // A step visits grains by height, in no order of index, so what it reads together sits together: a grain's place
+  // (and its link) in one record, its speed in another. Three lines of the board's PSRAM cache a grain, where an
+  // array a field took six. The renderer reads speed and look only, so those stay as dense as they were. Same 99 KB.
   struct Grains {
-    uint16_t x[MAX_GRAINS], y[MAX_GRAINS];
-    int16_t vx[MAX_GRAINS], vy[MAX_GRAINS];
+    // x, y: 8.8 fixed-point cells. order: scratch, the next grain + 1 in the same height's list this step (0: the last)
+    struct Place { uint16_t x, y, order; } at[MAX_GRAINS];
+    struct Speed { int16_t vx, vy; } v[MAX_GRAINS];
     uint8_t look[MAX_GRAINS];
-    uint16_t order[MAX_GRAINS];   // scratch: the next grain + 1 in the same height's list this step (0: the last)
   };
   struct Sky {
     Body body[MAX_BODIES];
@@ -79,7 +82,7 @@ struct Jar {
   uint32_t queued[GW], done[GW];   // this step: waiting in its height's list, and moved
   // scratch, kept here so a step never allocates
   static constexpr int KEYS = 4 * G + 4, FINGER_MAX = 720;
-  uint16_t count[KEYS];         // this step's grains by height: each height's list head (grain + 1), linked by g.order
+  uint16_t count[KEYS];         // this step's grains by height: each list's head (grain + 1), linked by g.at[].order
   int keyX = 0, keyY = 0;       // this step's gravity for the height key (to 1/1024)
   int curKey = -1;              // the height being moved, bottom first (-1: not moving grains)
   uint16_t fingerCells[FINGER_MAX]; int fingerCount = 0;
