@@ -1,0 +1,48 @@
+# Leo playtest driver (Python, saved as .txt). Keeps one `snap --serve --fresh` alive.
+# Reads batches from cmd.fifo; each line is a raw serve command, or:
+#   shot NAME   -> save the current 480x480 frame as frames/NAME.png
+#   (every other line is sent verbatim; its reply line is logged)
+# After each batch, writes "ok" to resp.fifo. Every line is appended to trace.txt with game ms.
+import os, subprocess, sys
+from PIL import Image
+P = os.path.dirname(os.path.abspath(__file__))
+proc = subprocess.Popen([P + "/run/snap", "--serve"] + sys.argv[1:], cwd=P + "/run",
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+trace = open(P + "/trace.txt", "a", buffering=1)
+t = 0
+def send(line):
+    proc.stdin.write((line + "\n").encode()); proc.stdin.flush()
+def read_exact(n):
+    b = b""
+    while len(b) < n:
+        c = proc.stdout.read(n - len(b))
+        if not c: raise SystemExit("snap died")
+        b += c
+    return b
+def frame(name):
+    send("frame")
+    hdr = proc.stdout.readline().decode().strip()
+    n = int(hdr.split()[1])
+    data = read_exact(n)
+    w = h = 480; i = 0
+    Image.frombytes("RGB", (w, h), data[i:i + w*h*3]).save(P + "/frames/" + name + ".png")
+while True:
+    with open(P + "/cmd.fifo") as f:
+        lines = f.read().splitlines()
+    out = []
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            if line: trace.write(f"{t:8d} {line}\n")
+            continue
+        if line == "quit":
+            proc.kill(); sys.exit(0)
+        if line.startswith("shot "):
+            frame(line[5:]); trace.write(f"{t:8d} shot {line[5:]}\n"); continue
+        send(line)
+        r = proc.stdout.readline().decode().strip()
+        if line.startswith("tick "): t += int(line.split()[1])
+        trace.write(f"{t:8d} {line}\n")
+        if r and r != "ok": out.append(f"{line} -> {r}")
+    with open(P + "/resp.fifo", "w") as f:
+        f.write("ok t=%d\n" % t + "\n".join(out) + "\n")

@@ -1,4 +1,4 @@
-// The Library (the stories, and the way to the discoveries), a story's pages, its choice and the chosen ending, and
+// The Library (Little reads first, the stories, and the way to the discoveries), a story's pages, its choice and the chosen ending, and
 // the page reader the discoveries share. Reading a story to its end counts as today's reading; its first finish
 // earns its stars.
 #include <stdio.h>
@@ -12,18 +12,27 @@
 namespace biscuit {
 using namespace ui565;
 namespace {
-constexpr int SHELF_ROWS = 2, SHELF_PAGES = (NUM_STORIES + SHELF_ROWS - 1) / SHELF_ROWS;
+constexpr int SHELF_ROWS = 2, SHELF_PAGES = (1 + NUM_STORIES + SHELF_ROWS - 1) / SHELF_ROWS;   // Little reads, then the stories
 constexpr Button DISCOVER = {PAIR[0], "Discoveries", &FONT20, PURPLE, true};
 constexpr Button NOTEBOOK_BUTTON = {PAIR[1], "Notebook", &FONT20, PEACH, true};
-bool opened(const Save& p, int id) { return p.daysTogether >= STORIES[id].unlockDay; }
-// The story in a row under the pair, false for the empty row on the last page.
-bool storyRow(const Save& p, int row, int page, Button& b, char (&label)[64]) {
-  const int id = page * SHELF_ROWS + row;
+uint32_t opensOn(const Save& p, int id) { return storyDay(p, id, STORIES[id].unlockDay); }
+bool opened(const Save& p, int id) { return p.daysTogether >= opensOn(p, id); }
+// The shelf's first row is Little reads (with the kid's level), then a story in each row under the pair; false for the
+// empty row on the last page.
+bool storyRow(const Save& p, uint8_t age, int row, int page, Button& b, char (&label)[64]) {
+  const int id = page * SHELF_ROWS + row - 1;
+  if (id < 0) {
+    snprintf(label, sizeof label, "Little reads: level %d", readLevel(p, age));
+    b = {ROW[row + 1], label, &FONT20, SAGE, awake(p)};
+    return true;
+  }
   if (id >= NUM_STORIES) return false;
   const Story& st = STORIES[id];
-  if (!opened(p, id)) snprintf(label, sizeof label, "Day %d: %s", st.unlockDay, st.title);
-  else snprintf(label, sizeof label, "%s%s", st.title, p.stories & (1u << id) ? " *" : "");
-  b = {ROW[row + 1], label, &FONT20, PURPLE, opened(p, id)};
+  const uint32_t day = opensOn(p, id);
+  const bool open = p.daysTogether >= day;
+  if (!open) snprintf(label, sizeof label, "%s: %s", day == p.daysTogether + 1 ? "Tomorrow" : "Soon", st.title);
+  else snprintf(label, sizeof label, "%s%s", st.title, storyRead(p, id) ? " *" : "");
+  b = {ROW[row + 1], label, &FONT20, PURPLE, open};
   return true;
 }
 // Next turns into Choose on a story's last screen and into The end on an ending's; an ending's first Previous goes
@@ -57,17 +66,20 @@ void Game::updateLibrary() {
   if (turn) { page_ += turn; return; }
   for (int row = 0; row < SHELF_ROWS; row++) {
     Button b; char label[64];
-    if (storyRow(save_, row, page_, b, label) && tapped(in_, b)) { openStory(page_ * SHELF_ROWS + row); return; }
+    if (!storyRow(save_, who_.age, row, page_, b, label) || !tapped(in_, b)) continue;
+    if (page_ * SHELF_ROWS + row == 0) startReads();
+    else openStory(page_ * SHELF_ROWS + row - 1);
+    return;
   }
 }
 void Game::drawLibrary() {
   gfx565::clear(PAPER);
-  top(in_, "Our bookshelf", stars(save_));
+  top(in_, "Our bookshelf", starCount());
   button(in_, DISCOVER);
   button(in_, NOTEBOOK_BUTTON);
   for (int row = 0; row < SHELF_ROWS; row++) {
     Button b; char label[64];
-    if (storyRow(save_, row, page_, b, label)) button(in_, b);
+    if (storyRow(save_, who_.age, row, page_, b, label)) button(in_, b);
   }
   nav(in_, page_, SHELF_PAGES);
 }
@@ -98,7 +110,7 @@ void Game::updateStory() {
 void Game::drawStory() {
   const bool ending = screen_ == SC_ENDING;
   gfx565::clear(PAPER);
-  top(in_, ending ? "The story continues" : "Story time", stars(save_));
+  top(in_, ending ? "The story continues" : "Story time", starCount());
   text(PAGE, pageText(), INK);
   nav(in_, reader(ending, at_, total_), at_, total_);
 }
@@ -114,7 +126,7 @@ void Game::updateChoice() {
 }
 void Game::drawChoice() {
   gfx565::clear(PAPER);
-  top(in_, "What shall we do?", stars(save_));
+  top(in_, "What shall we do?", starCount());
   char s[256];
   personalize(STORIES[story_].prompt, who_.name, save_.petName, s, sizeof s);
   text(PROMPT, s, INK);

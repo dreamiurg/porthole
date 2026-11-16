@@ -1,5 +1,5 @@
 // Rule/save contracts; ordinary-input play and native-size visual review are separate.
-#include <assert.h>
+#include "host/check.h"
 #include <initializer_list>
 #include <stdio.h>
 #include "games/toy-town-life/content.h"

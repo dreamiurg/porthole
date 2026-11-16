@@ -1,0 +1,44 @@
+@@title
+ui screen=pumpkin_intro regions=2 texts=5
+region 68 8 24 22
+region 40 119 80 24
+text 59 37 41 7 rgb=FFCB73 bg=211C31
+text 47 47 65 7 rgb=FFEFC6 bg=211C31
+text 44 110 71 7 rgb=FFEFC6 bg=211C31
+text 65 127 29 7 rgb=211C31 bg=FFEFC6
+text 53 146 53 7 rgb=FFEFC6 bg=211C31
+@@calibrate
+ui screen=pumpkin_calibrate regions=2 texts=4
+region 68 8 24 22
+region 40 119 80 24
+text 41 37 77 7 rgb=FFEFC6 bg=211C31
+text 53 51 53 7 rgb=FFEFC6 bg=211C31
+text 62 108 35 7 rgb=FFEFC6 bg=211C31
+text 65 127 29 7 rgb=211C31 bg=FFEFC6
+@@play
+ui screen=pumpkin_play regions=3 texts=1
+region 68 8 24 22
+region 40 119 80 24
+region 22 30 24 24
+text 44 127 71 7 rgb=211C31 bg=FFEFC6
+@@hiding
+ui screen=pumpkin_play regions=3 texts=2
+region 68 8 24 22
+region 40 119 80 24
+region 22 30 24 24
+text 71 49 41 7 rgb=FFEFC6 bg=211C31
+text 62 129 35 7 rgb=211C31 bg=FFCB73
+@@playing
+ui screen=pumpkin_play regions=3 texts=1
+region 68 8 24 22
+region 40 119 80 24
+region 22 30 24 24
+text 44 127 71 7 rgb=211C31 bg=FFEFC6
+@@later
+screen=pumpkin_lost
+ui screen=pumpkin_lost regions=2 texts=3
+region 68 8 24 22
+region 40 119 80 24
+text 33 42 94 14 rgb=FFEFC6 bg=211C31
+text 53 108 53 7 rgb=FFEFC6 bg=211C31
+text 53 127 53 7 rgb=211C31 bg=FFEFC6

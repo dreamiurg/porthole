@@ -9,7 +9,6 @@ apps/porthole/os/gfx.cpp:gfx::checker
 apps/porthole/os/gfx.cpp:gfx::textCenteredShadow
 apps/porthole/os/gfx.cpp:gfx::textShadow
 apps/porthole/games/pets-club/pet.cpp:pet::computeWant
-apps/porthole/games/pets-club/pet.cpp:pet::simulate
 apps/porthole/games/pets-club/tools/art.py:ellipse
 apps/porthole/games/pets-club/tools/art.py:line
 apps/porthole/games/pets-club/tools/art.py:rect

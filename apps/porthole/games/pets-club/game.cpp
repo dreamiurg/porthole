@@ -98,7 +98,7 @@ bool Game::takeSave(const void** data, size_t* len, bool allowed) {
 bool Game::soundOn(uint32_t ms) {
   if (sound_ == SND_NONE) return false;
   uint32_t t = ms - soundStartMs_;
-  // patterns: pairs of (on, off) ms
+  // patterns: pairs of (on, off) ms; an off of 0 ends the pattern
   // The on-board buzzer is a harsh single-tone piezo: keep every pattern short and rare.
   static const uint16_t TAP[] = {15, 0};
   static const uint16_t YIP[] = {20, 40, 20, 0};
@@ -112,9 +112,9 @@ bool Game::soundOn(uint32_t ms) {
     case SND_CHIME: p = CHIME; break; case SND_BARK: p = BARK; break; case SND_FANFARE: p = FANFARE; break; default: break; }
   uint32_t acc = 0;
   for (int i = 0; ; i += 2) {
-    if (p[i] == 0) { sound_ = SND_NONE; return false; }
     if (t < acc + p[i]) return true;
     acc += p[i];
+    if (p[i + 1] == 0) { sound_ = SND_NONE; return false; }   // checked on the off: no pattern has a 0 at an on
     if (t < acc + p[i + 1]) return false;
     acc += p[i + 1];
   }
@@ -806,10 +806,11 @@ void Game::drawFetchHud() {   // score and seconds left, either side of the home
 // ---------------------------------------------------------------- word fetch
 void Game::startWords() {
   int lo, hi; pet::wordLenRange(save_.kidAge ? save_.kidAge : 7, lo, hi);
-  static int cand[NUM_WORDS]; int nc = 0;
+  static_assert(NUM_WORDS <= 255, "cand holds word indexes in a byte");
+  uint8_t cand[NUM_WORDS]; int nc = 0;   // on the stack for this call: not 424 bytes of static RAM for good
   for (;;) {
     nc = 0;
-    for (int i = 0; i < NUM_WORDS; i++) { int L = (int)strlen(WORDS[i].word); if (L >= lo && L <= hi) cand[nc++] = i; }
+    for (int i = 0; i < NUM_WORDS; i++) { int L = (int)strlen(WORDS[i].word); if (L >= lo && L <= hi) cand[nc++] = (uint8_t)i; }
     if (nc >= 8 || lo <= 3) break;
     lo--;
   }

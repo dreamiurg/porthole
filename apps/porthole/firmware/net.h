@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include "air.h"
+#include "lan.h"
 #include "system.h"
 
 #ifndef PORTHOLE_VERSION
@@ -74,6 +75,19 @@ class Radar final : public air::Feed {
   void stop() override;
   void read(air::Snapshot& out) override;
   bool spot(double* lat, double* lon) override;
+};
+
+// Rally's race together: UDP on the home wifi, as one more radio job. While Rally is open (started) and the screen is
+// lit, a core-0 task joins the saved wifi and moves datagrams between the network and two small buffers; the game
+// reads and writes those from the main loop. Power save is off only while datagrams are going out.
+class Lan final : public lan::Radio {
+ public:
+  void start() override;
+  void stop() override;
+  lan::State state() override;
+  uint32_t self() override;
+  void send(const void* data, size_t len, uint32_t to) override;
+  size_t recv(void* buf, size_t cap, uint32_t* from) override;
 };
 
 }  // namespace net

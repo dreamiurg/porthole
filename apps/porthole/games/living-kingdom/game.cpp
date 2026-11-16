@@ -27,16 +27,23 @@ const ui::Box TOOLS[] = {layout::TOOL0, layout::TOOL1, layout::TOOL2, layout::TO
 void Game::enter(const AppEnter& e) {
   const uint8_t profile = e.who ? e.who->id : 0;
   newCampaign(save_, e.nowSec ^ ((uint32_t)profile + 1) * 0x9e3779b9u, profile);
-  fresh_ = true;
-  for (int i = 0; i < e.n; i++)
-    if (e.all[i].id == profile && e.saves[i].len && loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
-  ms_ = e.ms; in_ = {}; title_ = true; home_ = false;
+  fresh_ = true; keep_ = false;
+  for (int i = 0; i < e.n; i++) {
+    if (e.all[i].id != profile || !e.saves[i].len) continue;
+    if (loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
+    else keep_ = true;  // stored but unreadable here (a newer build wrote it): leave it be until the kid starts over
+  }
+  ms_ = e.ms; in_ = {}; title_ = true; home_ = urgent_ = false;
   changed();
 }
 
 void Game::changed() {
   dirty_ = true; gate_.shown(ms_); frames_.reset(); prepare();
 }
+// A decision is the one moment worth a flash write of its own (App::saveUrgent: within a second). Pages turned, menus
+// and the map are in the save too, but ride the shell's five-second cadence and its write on leaving: a power cut
+// costs a few seconds of reading at most, and a scene read through is one write, not one a page.
+void Game::decided() { urgent_ = true; changed(); }
 void Game::mode(uint8_t value) {
   save_.cursor.mode = value; save_.cursor.page = 0;
   changed();
@@ -79,7 +86,7 @@ void Game::closeInfo() { save_.cursor = save_.returnCursor; changed(); }
 
 void Game::updateTitle() {
   if (clicked(layout::HOME)) { home_ = true; return; }
-  if (clicked(layout::START)) { title_ = fresh_ = false; changed(); }
+  if (clicked(layout::START)) { title_ = fresh_ = keep_ = false; changed(); }
 }
 void Game::updateMap() {
   for (int i = 0; i < LOCATION_COUNT; i++) {
@@ -113,7 +120,7 @@ void Game::updateChoice() {
     if (index >= scene->choiceCount || !clicked(CARDS[i])) continue;
     save_.cursor.selectedChoice = (uint8_t)index;
     if (scene->choices[index].confirm || !allowed(save_, scene->choices[index])) mode(CONFIRM);
-    else if (commit(save_, (uint8_t)index)) changed();
+    else if (commit(save_, (uint8_t)index)) decided();
     return;
   }
 }
@@ -127,7 +134,7 @@ void Game::updateConfirm() {
   if (clicked(layout::MENU)) { mode(READ); return; }
   if (clicked(layout::NEXT) && save_.cursor.selectedChoice < scene->choiceCount) {
     if (save_.cursor.page + 1 < reader_.count()) { save_.cursor.page++; changed(); }
-    else if (commit(save_, save_.cursor.selectedChoice)) changed();
+    else if (commit(save_, save_.cursor.selectedChoice)) decided();
   }
 }
 void Game::updateResult() {
@@ -204,8 +211,13 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
   }
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
-  if (!allowed || !dirty_) return false;
-  sealSave(save_); *data = &save_; *len = sizeof save_; dirty_ = false; return true;
+  if (!allowed || !dirty_ || keep_) return false;
+  sealSave(save_); dirty_ = urgent_ = false;
+  // Packed, unless the blob does not read back as exactly this campaign (a state validState would refuse; the engine
+  // makes none): then whole, as version 1.
+  *data = packed_; *len = packSave(save_, packed_, sizeof packed_);
+  if (!*len || !loadSave(check_, packed_, *len, save_.profile) || memcmp(&check_, &save_, sizeof save_)) { *data = &save_; *len = sizeof save_; }
+  return true;
 }
 const char* Game::screenName() const {
   static const char* N[] = {"lk_title", "lk_map", "lk_read", "lk_choice", "lk_confirm", "lk_result",

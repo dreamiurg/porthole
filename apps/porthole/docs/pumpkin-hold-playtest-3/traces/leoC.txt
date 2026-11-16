@@ -1,0 +1,191 @@
+# Leo pass: launch
+tick 2000
+shot l000_boot
+tap 118 100
+tick 500
+tap 41 77
+tick 500
+tap 67 125
+tick 600
+shot l001_nz
+tap 67 53
+tick 500
+tap 118 125
+tick 800
+shot l002_afterok
+tap 93 87
+tick 800
+shot l003_age
+tap 79 69
+tick 800
+shot l004_code
+tap 80 145
+tick 1200
+shot l005_launcher
+# Leo presses the pumpkin firmly
+down 80 103
+tick 700
+shot l006_pressing
+tick 800
+up
+tick 300
+shot l007_open
+tick 1500
+shot l008_open2
+# Leo holds the board in both hands, tilted toward him
+tilt 0 500 -866
+tick 500
+# curious: presses the pumpkin
+tap 79 97 1500
+tick 400
+shot l009_pumpkinpress
+# then the ghost
+tap 32 40 1200
+tick 600
+shot l010_ghostpress
+# Leo presses the big light button firmly
+tap 78 131 1500
+film l011_start 3000 500
+tap 80 86 1500
+film l012_go 4000 500
+tap 80 137 1500
+film l013_go 4000 500
+# Leo tilts left toward the candy
+tilt -350 500 -792
+film l014_left 3000 250
+# Leo holds still (back to neutral) and presses the pumpkin itself
+tilt 0 500 -866
+down 30 98
+film l015_presspump 1500 250
+up
+tick 300
+shot l016_afterpump
+# worried: Leo presses the big sign and keeps pressing
+down 80 130
+film l017_hold 3000 250
+up
+tick 300
+shot l018_release
+tilt 350 500 -792
+film l019_right 3000 250
+film l020_right 3000 250
+tilt 0 500 -866
+film l021_caught 6000 500
+# ROUND 2: Leo presses the light button again firmly
+tap 80 140 1500
+film l022_r2 3000 500
+tilt -300 500 -812
+film l023_r2left 2000 250
+# worried, Leo presses the dark sign with no cover near, holding still
+tilt 0 500 -866
+down 80 136
+film l024_nocover 2000 250
+# still holding the sign, Leo tilts left toward the arrow
+tilt -300 500 -812
+film l025_holdleft 2000 250
+tilt 0 500 -866
+film l026_hidehold 4000 333
+film l027_hidehold 4000 333
+film l028_hidehold 3000 375
+film l029_hidehold 6000 500
+tick 1000
+up
+tilt 350 500 -792
+film l030_go 3000 250
+tilt 600 500 -624
+film l031_go 3000 250
+tilt -600 500 -624
+film l032_door 4000 333
+film l033_door 4000 333
+# ROUND 3: Leo double-taps PLAY AGAIN
+tilt 0 500 -866
+tap 82 131 150
+tick 120
+tap 83 132 150
+film l034_r3 3000 375
+# Leo sees Grandma and holds the sign right away, staying at the table
+down 79 134
+film l035_r3hide 8000 500
+film l036_r3hide 10000 625
+up
+tilt -500 500 -707
+film l037_r3left 3000 250
+tilt 0 500 -866
+down 80 134
+film l038_r3chair 10000 625
+film l039_r3chair 10000 625
+film l040_r3wait 3000 750
+up
+tilt 550 500 -669
+film l041_r3right 4000 333
+tilt 0 500 -866
+down 80 134
+film l042_r3plant 8000 500
+up
+tilt -650 500 -571
+film l043_r3door 6000 500
+# ROUND 4: firm press on PLAY AGAIN with thumb sliding a little
+tilt 0 500 -866
+down 78 132
+tick 600
+move 84 135
+tick 900
+up
+film l044_r4 4000 500
+down 80 134
+film l045_r4hide 8000 500
+up
+tilt 500 500 -707
+film l046_r4right 3000 250
+tilt 0 500 -866
+down 80 134
+film l047_r4plant 8000 500
+up
+tilt -650 500 -571
+film l048_r4left 6000 500
+# ROUND 5
+tilt 0 500 -866
+tap 80 132 1200
+film l049_r5 4000 500
+down 80 134
+film l050_r5hide 10000 625
+# BRANCH B (main): red sign + pointing; Leo lets go and tilts away from Grandma
+tick 400
+up
+tilt -600 500 -624
+film l051_r5flee 4000 250
+tilt 600 500 -624
+film l052_r5right 4000 333
+film l053_r5right 3000 250
+tilt -650 500 -571
+film l054_r5door 5000 333
+# ROUND 6: Leo presses PLAY AGAIN and keeps his finger down 3 s (carried touch)
+tilt 0 500 -866
+down 80 132
+film l055_r6carry 3000 500
+up
+film l056_r6 2000 500
+# Leo rests his left thumb on the glass near the left edge while tilting right
+down 22 112
+tilt 500 500 -707
+film l057_r6thumb 3000 375
+# thumb slides from the floor onto the sign
+tilt 0 500 -866
+move 30 118
+tick 40
+move 40 124
+tick 40
+move 50 130
+tick 40
+move 60 134
+film l058_r6slide 3000 375
+# thumb drifts off the sign upward onto the floor while still down
+move 50 118
+tick 40
+move 40 108
+film l059_r6drift 4000 500
+# Leo forgets his thumb is still on the glass and tilts left to go
+tilt -600 500 -624
+film l060_r6stuck 3000 375
+film l061C_keep 5000 333
+film l062C_keep 6000 500

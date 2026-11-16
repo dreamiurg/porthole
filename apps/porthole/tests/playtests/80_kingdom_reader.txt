@@ -155,9 +155,11 @@ expect-screen lk_read
 expect scene=4
 expect page=1
 expect journal=1
-# Power-cycle immediately after the next page, before the normal five-second save cadence.
+# Power-cycle after the next page, once the five-second save cadence has written it. A page turned is not a flash
+# write of its own; a decision is, within a second (host/test_kingdom_shell.cpp holds both).
 tap 110 133
 expect page=2
+wait 5200
 reboot
 wait 500
 tap 80 67

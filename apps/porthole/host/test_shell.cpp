@@ -18,11 +18,12 @@
 #include "shell.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
-// (saves and erases) every further write is dropped. `last` is the most recent write that landed.
+// (saves and erases) every further write is dropped. `last` is the most recent write that landed. `refuse` ("ns/key")
+// is a flash write that does not land while the board keeps running: saves of that one key fail, the rest go on.
 struct MemStore : shell::Store {
   struct Entry { char ns[16], key[16]; uint8_t data[shell::BLOB_MAX]; size_t len; bool used; };
   Entry e[32] = {};
-  int budget = -1, writes = 0; char last[32] = "";
+  int budget = -1, writes = 0, refused = 0; char last[32] = ""; const char* refuse = nullptr;   // refused: tries at `refuse`
   bool land(const char* ns, const char* key) {
     if (budget >= 0 && writes >= budget) return false;
     writes++; snprintf(last, sizeof last, "%s/%s", ns, key); return true;
@@ -37,6 +38,8 @@ struct MemStore : shell::Store {
     memcpy(buf, x->data, x->len); return x->len;
   }
   bool save(const char* ns, const char* key, const void* data, size_t len) override {
+    char name[32]; snprintf(name, sizeof name, "%s/%s", ns, key);
+    if (refuse && !strcmp(refuse, name)) { refused++; return false; }
     if (!land(ns, key)) return false;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
@@ -428,6 +431,42 @@ static void biscuitCrash() {
   }
 }
 
+// A write that fails while the board keeps running (a full or worn flash; power loss stops them all, see the crash
+// tests) must not cost the save it was moving: no marker, the old copy kept, and the next boot does it again.
+static void migrateFailedWrites() {
+  shell::Profiles p, boot;
+  MemStore st; setupLegacy(st); st.refuse = "crago/s0";                // the copy of the pre-house save
+  shell::loadAll(st, p);
+  assert(st.has("crago", "save") && !st.has(shell::NS, "m"));
+  st.refuse = nullptr; shell::loadAll(st, boot);
+  assert(boot.count() == 1 && !strcmp(petIn(st, "s0"), "Biscuit") && st.has(shell::NS, "m") && !st.has("crago", "save"));
+  MemStore rec; setupHouses(rec); rec.refuse = "porthole/p1";          // one house's record
+  shell::loadAll(rec, p);
+  assert(!rec.has(shell::NS, "m"));                                     // or Kai's pup waits for whoever takes id 1 next
+  rec.refuse = nullptr; shell::loadAll(rec, boot);
+  assert(boot.count() == 3 && !strcmp(boot.rec[1].name, "Kai") && rec.has(shell::NS, "m"));
+  MemStore pup; putOld(pup, OLD_NS, "pet3", old::MAGIC_V3, oldNamed("Sam", "Pip", 30, 3)); pup.refuse = "biscuit/s0";
+  shell::loadAll(pup, p);                                               // Biscuit's old pup, its copy
+  assert(pup.has(OLD_NS, "pet3") && !pup.has(shell::NS, "mb"));
+  pup.refuse = nullptr; shell::loadAll(pup, boot);
+  assert(biscuitIn(pup, 0, "Pip", 30) && oldGone(pup) && pup.has(shell::NS, "mb"));
+}
+// The marker's own write failed on a device that never had houses, so the migration runs again next boot: a profile
+// made since is not a house. Its face, code, stars and day's play are the profile's alone: never rebuilt from the pup.
+static void remigrateKeepsProfiles() {
+  MemStore st; st.refuse = "porthole/m";
+  shell::Profiles p, boot; shell::loadAll(st, p);
+  shell::Record kai = draft("Kai", 6, 1235); kai.avatar = 5;
+  assert(shell::create(st, p, kai, STORES, 2) == 0);
+  p.rec[0].stars = 40; p.rec[0].dayPlaySec = 600; assert(shell::saveRecord(st, p, 0));
+  Save rex = house("Kai", "Rex", 6, 0); st.save("crago", "s0", &rex, sizeof rex);   // Kai's pup: Pets Club keeps no code
+  shell::loadAll(st, boot);
+  assert(!st.has(shell::NS, "m") && boot.count() == 1 && same(boot.rec[0], "Kai", 6, 5, 1235));
+  assert(boot.rec[0].stars == 40 && boot.rec[0].dayPlaySec == 600);
+  st.refuse = nullptr; shell::loadAll(st, boot);
+  assert(st.has(shell::NS, "m") && same(boot.rec[0], "Kai", 6, 5, 1235) && boot.rec[0].stars == 40);
+}
+
 static void restBudget() {
   shell::Record r = draft("Sam", 8, 0);
   uint32_t t = NOW;
@@ -468,6 +507,13 @@ static void recordV1() {
   uint8_t wrong[sizeof r]; memcpy(wrong, &r, sizeof r); memcpy(wrong + 4, &ver, 2);
   crc = os::crc32(wrong, sizeof wrong - 4); memcpy(wrong + sizeof wrong - 4, &crc, 4);
   assert(!shell::loadRecord(wrong, sizeof wrong, out));   // a v1 header on a v2-sized blob is not a record
+  // a v2 record (before the stars): it loads with none
+  r.stars = 9; shell::seal(r);
+  uint8_t v2[shell::REC_V2_SIZE]; memcpy(v2, &r, sizeof v2 - 4);
+  ver = 2; size = (uint16_t)shell::REC_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
+  crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
+  assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
+  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
@@ -676,8 +722,8 @@ struct StubApp : App {
   const char* name() const override { return label; }
   const gfx::Sprite& icon() const override { static const uint8_t px[1] = {C_T}; static const gfx::Sprite s = {1, 1, px}; return s; }
   const char* store() const override { return "stub"; }
-  bool daylight = false;
-  void enter(const AppEnter& e) override { entered++; daylight = e.daylight; }
+  bool daylight = false; uint32_t* stars = nullptr;
+  void enter(const AppEnter& e) override { entered++; daylight = e.daylight; stars = e.stars; }
   void update(uint32_t, uint32_t, const Input&) override { updated++; }
   void render() override {}
   Tint tint() const override { return TINT_DAY; }
@@ -1123,12 +1169,20 @@ static void versions() {
   int v[3];
   assert(shell::parseVersion("0.15.0", v) && v[0] == 0 && v[1] == 15 && v[2] == 0);
   assert(shell::parseVersion("v0.15.0", v) && v[1] == 15);
-  static const char* const BAD[] = {"dev", "", "1.2", "1.2.3x", "1..2", "v", "-1.2.3", nullptr};
+  // The huge parts: strtol saturates at 2^31-1 on the board and wraps through a 64-bit long here; both must refuse.
+  static const char* const BAD[] = {"dev", "", "1.2", "1.2.3x", "1..2", "v", "-1.2.3", nullptr, "100000.0.0",
+                                    "0.4294967297.0", "0.0.99999999999999999999"};
+  assert(shell::parseVersion("99999.99999.99999", v) && v[2] == 99999);
   for (const char* bad : BAD) assert(!shell::parseVersion(bad, v));
   assert(shell::newer("0.10.0", "0.9.0") && !shell::newer("0.9.0", "0.10.0"));   // 10 > 9, not "1" < "9"
   assert(!shell::newer("v0.15.0", "0.15.0") && !shell::newer("0.15.0", "v0.15.0"));   // equal: no update
   assert(shell::newer("1.0.0", "0.99.99"));
   assert(!shell::newer("0.16.0", "dev") && !shell::newer("dev", "0.15.0") && !shell::newer("0.16", "0.15.0"));
+  // A release that started and rolled back is not downloaded again; anything else is, older or newer.
+  assert(shell::rolledBack("0.30.0", "0.30.0", true));
+  assert(!shell::rolledBack("0.30.1", "0.30.0", true) && !shell::rolledBack("0.29.5", "0.30.0", true));
+  assert(!shell::rolledBack("0.30.0", "0.30.0", false));   // it started fine, or a USB flash cleared the mark
+  assert(!shell::rolledBack("0.30.0", "", true) && !shell::rolledBack("0.30.0", nullptr, true));   // nothing on record
 }
 
 // The card shows once per new version, never for a dev build, and a boot with nothing new writes nothing.
@@ -1155,7 +1209,7 @@ static void scanList() {
   assert(n == 2 && !strcmp(l[0].ssid, "Cafe") && !strcmp(l[1].ssid, "Home") && l[1].rssi == -70);
   n = shell::addNetwork(l, n, "Home", -50, true);                   // a stronger copy moves it up
   assert(n == 2 && !strcmp(l[0].ssid, "Home") && l[0].rssi == -50 && !strcmp(l[1].ssid, "Cafe") && !l[1].secured);
-  char name[8];
+  char name[16];   // room for any int: under UBSan gcc no longer sees that i stays below 10 (-Wformat-truncation)
   for (int i = 0; i < 10; i++) { snprintf(name, sizeof name, "Far%d", i); n = shell::addNetwork(l, n, name, -80 - i, true); }
   assert(n == shell::MAX_NETWORKS && !strcmp(l[11].ssid, "Far9"));
   n = shell::addNetwork(l, n, "Farthest", -99, true);               // full and weakest: not listed
@@ -1202,6 +1256,17 @@ struct StubSys : shell::System {
   }
   bool detectTimeZone() override { detections++; clock.zoneState = shell::ZONE_LOOKING; return true; }
 };
+// What a System that implements neither Home nor a clock gets from the interface: every such call refuses or reports
+// nothing, so the menu hides Home and such a build cannot claim a lookup, a sync or a saved zone.
+static void systemDefaults() {
+  StubSys stub; shell::System& sys = stub; shell::Home home{};
+  assert(!sys.hasHome() && !sys.home(home) && !sys.saveHome(home) && !sys.startLookup("1 Main St"));
+  assert(sys.lookupResult(home) == 0 && home.name[0] == 0);
+  assert(!sys.syncClock() && !sys.setUtcOffset(60));
+  const shell::ClockStatus clock = stub.System::clockStatus();
+  assert(clock.state == shell::TIME_IDLE && clock.zoneState == shell::ZONE_IDLE && clock.lastSync == 0);
+  assert(!stub.System::setTimeZone("Europe/Kyiv", true) && !stub.System::detectTimeZone() && stub.detections == 0);
+}
 static void holdTitle(Shell& sh, uint32_t& ms, uint32_t heldMs) {
   Input in{}; in.pressed = in.down = true; in.x = in.downX = 80; in.y = in.downY = 16; in.heldMs = heldMs; frame(sh, ms, in);
 }
@@ -1661,6 +1726,26 @@ static void monotonicPlayDuration() {
   app.home = true; sh.update(NOW - 3600, ms += 20, Input{});
   shell::loadAll(st, p); assert(p.rec[0].dayPlaySec == 1 && p.rec[0].playSec == 1);
 }
+// A kid's stars (os/stars.h): a game gets the playing kid's balance, the shell saves it as soon as it changes (not
+// a minute later), and the next kid has their own.
+static void starBalance() {
+  MemStore st; static Shell sh; StubApp app("One"); App* const apps[] = {&app}; uint32_t ms = 0;
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, ""); sh.createProfile("Kai", 6, "");
+  assert(sh.openApp("One") && app.stars && stars::balance(app.stars) == 0);
+  stars::award(app.stars, 5);
+  ms += 1000; sh.update(NOW, ms, Input{});
+  shell::Profiles p; shell::loadAll(st, p);
+  assert(!strcmp(p.rec[1].name, "Kai") && p.rec[1].stars == 5 && p.rec[0].stars == 0);   // the newest kid plays
+  assert(stars::spend(app.stars, 2) && !stars::spend(app.stars, 4));
+  ms += 1000; sh.update(NOW, ms, Input{});
+  shell::loadAll(st, p); assert(p.rec[1].stars == 3);
+  // What the stars paid for is in the game's save: it goes out in the same tick, first, not up to 5 s later.
+  app.saving = true; const int before = st.writes;
+  assert(stars::spend(app.stars, 1));
+  ms += 1000; sh.update(NOW, ms, Input{});
+  assert(st.has("stub", "s1") && st.writes == before + 2 && !strcmp(st.last, "porthole/p1"));
+}
 // The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
 // picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
@@ -1688,9 +1773,39 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
   slowPresses();
 }
 
+static uint16_t nativePixels[gfx565::W * gfx565::H];
+// A game save that will not land (storage full, or worn out): the shell tries ever less often, still once on leaving,
+// and Info tells the grown-up in one line, which the next save that lands takes away. The game plays on; a kid sees
+// nothing of it.
+static int noticePixels() {   // lit pixels on Info's line between the last row and the buttons
+  int n = 0;
+  for (int y = 90 * 3; y < 96 * 3; y++)
+    for (int x = 0; x < gfx565::W; x++) n += nativePixels[y * gfx565::W + x] != nativePixels[y * gfx565::W + 30];
+  return n;
+}
+static void failingSavesToldToGrownUp() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp game("Stub"); App* apps[] = {&game};
+  game.saving = true;
+  bootWithoutHours(sh, st, apps, 1, &sys); sh.createProfile("Sam", 8, ""); assert(sh.openApp("Stub"));
+  st.refuse = "stub/s0";
+  for (int i = 0; i < 600; i++) { ms += 100; sh.update(testNow, ms, Input{}); }   // a minute of play
+  assert(st.refused == 3 && sh.savesFailing() && on(sh, "stub"));   // tried at 5, 15 and 35 s, not twelve times
+  home(sh, ms, game); assert(st.refused == 4 && !st.has("stub", "s0"));   // leaving tries once more
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker")); holdTitle(sh, ms, 5000);
+  assert(on(sh, "sys_info") && noticePixels() > 100);
+  // Storage works again: back in the game, the save lands at the first cadence, and the line is gone.
+  st.refuse = nullptr; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  sh.createProfile("Kai", 6, ""); assert(sh.openApp("Stub") && sh.savesFailing());
+  for (int i = 0; i < 52; i++) { ms += 100; sh.update(testNow, ms, Input{}); }
+  assert(st.has("stub", "s1") && !sh.savesFailing());
+  home(sh, ms, game); tapAt(sh, ms, ADMIN_HOME); holdTitle(sh, ms, 5000);
+  assert(on(sh, "sys_info") && noticePixels() == 0);
+}
+
 int main() {
-  static uint16_t nativePixels[gfx565::W * gfx565::H];
   gfx565::target(nativePixels);
+  systemDefaults();
+  failingSavesToldToGrownUp();
   scheduleClosesGame();
   familyAllowanceFlow();
   zoneSelectionFlow();
@@ -1729,8 +1844,11 @@ int main() {
   biscuitLongName();
   biscuitCorruptIgnored();
   biscuitCrash();
+  migrateFailedWrites();
+  remigrateKeepsProfiles();
   restBudget();
   recordV1();
+  starBalance();
   dailyCap();
   idleNotCounted();
   tiltIsActivity();

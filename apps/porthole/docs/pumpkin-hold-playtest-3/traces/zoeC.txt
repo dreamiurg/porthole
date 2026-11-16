@@ -1,0 +1,243 @@
+# Zoe pass: profile
+tick 2000
+tap 67 125
+tick 500
+tap 41 125
+tick 500
+tap 67 53
+tick 500
+tap 67 125
+tick 500
+tap 41 77
+tick 500
+tap 118 125
+tick 800
+# face: fox
+tap 132 55
+tick 800
+# age 8
+tap 41 101
+tick 800
+# skip code
+tap 80 145
+tick 1200
+shot z000_launcher
+tap 80 103
+tick 1200
+shot z001_title
+tilt 0 400 -917
+tap 80 131 100
+tick 700
+shot z002_calib
+# mashes READY
+tap 80 138 80
+tick 60
+tap 82 137 80
+tick 60
+tap 79 139 80
+tick 60
+tap 80 136 80
+film z003_r1 3000 500
+# Zoe mashes the sign instead of holding, through Grandma's sweep
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+shot z004_mash_01
+tap 80 134 80
+tick 40
+tap 81 132 80
+tick 40
+shot z004_mash_03
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z004_mash_05
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+shot z004_mash_07
+tap 81 134 80
+tick 40
+tap 82 132 80
+tick 40
+shot z004_mash_09
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z004_mash_11
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+shot z004_mash_13
+tap 82 134 80
+tick 40
+tap 78 132 80
+tick 40
+shot z004_mash_15
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z004_mash_17
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+shot z004_mash_19
+tap 78 134 80
+tick 40
+tap 79 132 80
+tick 40
+shot z004_mash_21
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z004_mash_23
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+shot z004_mash_25
+tap 79 134 80
+tick 40
+tap 80 132 80
+tick 40
+shot z004_mash_27
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z004_mash_29
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+shot z004_mash_31
+tap 80 134 80
+tick 40
+tap 81 132 80
+tick 40
+shot z004_mash_33
+# Zoe tilts right into the open floor and mashes the sign to try to stay safe while moving
+tilt 500 400 -768
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_02
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_05
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_08
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z005_mashmove_11
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z005_mashmove_14
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_17
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_20
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_23
+tap 82 132 80
+tick 40
+tap 78 133 80
+tick 40
+tap 79 134 80
+tick 40
+shot z005_mashmove_26
+tap 80 132 80
+tick 40
+tap 81 133 80
+tick 40
+tap 82 134 80
+tick 40
+shot z005_mashmove_29
+tap 78 132 80
+tick 40
+tap 79 133 80
+tick 40
+tap 80 134 80
+tick 40
+shot z005_mashmove_32
+tap 81 132 80
+tick 40
+tap 82 133 80
+tick 40
+tap 78 134 80
+tick 40
+shot z005_mashmove_35
+tap 79 132 80
+tick 40
+tap 80 133 80
+tick 40
+tap 81 134 80
+tick 40
+shot z005_mashmove_38
+tap 82 132 80
+tick 40
+# Zoe holds the sign properly while Grandma is here
+down 80 134
+film z006_hold 5000 625
+up
+tilt -450 400 -799
+film z007_left 3000 375
+tilt 0 400 -917
+down 80 134
+film z008_chair 6000 500
+up
+tilt 700 400 -592
+film z009_right 3000 333
+# BRANCH: Zoe levels the board in the open and taps the dark sign, then holds it
+tilt 0 400 -917
+tick 200
+shot zC_before
+tap 80 134 120
+shot zC_tap0
+tick 120
+shot zC_tap1
+down 80 134
+film zC_hold 1600 200

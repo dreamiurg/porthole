@@ -1,0 +1,37 @@
+# Repro: fast deliberate code entry right after the age choice (Zoe, 8)
+reset
+wait 600
+tap 67 124
+wait 1000
+tap 41 124
+wait 1000
+tap 119 124
+wait 1000
+tap 64 88
+wait 1000
+# age 8 (bottom-left), then code 7 7 3 1 at a 250 ms cadence
+down 37 102
+wait 80
+up
+wait 300
+down 41 117
+wait 80
+up
+wait 160
+down 41 117
+wait 80
+up
+wait 160
+down 119 62
+wait 80
+up
+wait 160
+down 41 62
+wait 80
+up
+wait 40
+snap zc_1_after_7731
+wait 1500
+snap zc_2_once_more
+# Confirm: 7 7 3 1? -- first type the remaining 7 7 to finish the first entry is not needed here; instead start a fresh case:
+screen

@@ -1,0 +1,84 @@
+# Leo pass: launch
+tick 2000
+shot l000_boot
+tap 118 100
+tick 500
+tap 41 77
+tick 500
+tap 67 125
+tick 600
+shot l001_nz
+tap 67 53
+tick 500
+tap 118 125
+tick 800
+shot l002_afterok
+tap 93 87
+tick 800
+shot l003_age
+tap 79 69
+tick 800
+shot l004_code
+tap 80 145
+tick 1200
+shot l005_launcher
+# Leo presses the pumpkin firmly
+down 80 103
+tick 700
+shot l006_pressing
+tick 800
+up
+tick 300
+shot l007_open
+tick 1500
+shot l008_open2
+# Leo holds the board in both hands, tilted toward him
+tilt 0 500 -866
+tick 500
+# curious: presses the pumpkin
+tap 79 97 1500
+tick 400
+shot l009_pumpkinpress
+# then the ghost
+tap 32 40 1200
+tick 600
+shot l010_ghostpress
+# Leo presses the big light button firmly
+tap 78 131 1500
+film l011_start 3000 500
+tap 80 86 1500
+film l012_go 4000 500
+tap 80 137 1500
+film l013_go 4000 500
+# Leo tilts left toward the candy
+tilt -350 500 -792
+film l014_left 3000 250
+# Leo holds still (back to neutral) and presses the pumpkin itself
+tilt 0 500 -866
+down 30 98
+film l015_presspump 1500 250
+up
+tick 300
+shot l016_afterpump
+# worried: Leo presses the big sign and keeps pressing
+down 80 130
+film l017_hold 3000 250
+up
+tick 300
+shot l018_release
+tilt 350 500 -792
+film l019_right 3000 250
+film l020_right 3000 250
+tilt 0 500 -866
+film l021_caught 6000 500
+# ROUND 2: Leo presses the light button again firmly
+tap 80 140 1500
+film l022_r2 3000 500
+tilt -300 500 -812
+film l023_r2left 2000 250
+# worried, Leo presses the dark sign with no cover near, holding still
+tilt 0 500 -866
+tick 1000
+shot lN2_before
+down 80 136
+film lN2_press 1200 100

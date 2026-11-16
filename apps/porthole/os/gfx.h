@@ -36,7 +36,12 @@ int  wrap(const char* s, int maxw, char lines[][40], int maxLines, int scale = 1
 // Audit log of drawn text (bounding boxes + color) so a checker can spot clipping and poor contrast. Boxes are logical
 // px. color/bg are palette indices, or RGB888 when rgb (RGB565 text, os/font.h, logs its covering box).
 struct TextBox { int16_t x, y, w, h; uint32_t color, bg; bool rgb; };
-extern TextBox textLog[64]; extern int textLogCount; extern bool textLogEnabled;
+#ifdef ESP_PLATFORM   // only the host audits text (nothing turns it on here): no 1 KB table in static internal RAM
+constexpr int TEXT_LOG_MAX = 1;
+#else
+constexpr int TEXT_LOG_MAX = 64;
+#endif
+extern TextBox textLog[TEXT_LOG_MAX]; extern int textLogCount; extern bool textLogEnabled;
 inline void textLogReset() { textLogCount = 0; }
 // Logs a box another font drew (or is about to: the background is sampled now), when textLogEnabled. Logical px.
 void logText(int x, int y, int w, int h, uint8_t c);

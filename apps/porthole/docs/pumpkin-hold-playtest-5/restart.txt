@@ -1,0 +1,14 @@
+reset
+profile Sam 8
+wait 600
+tap 80 104
+wait 1200
+tap 80 130
+wait 900
+tap 80 130
+wait 3000
+screen
+reboot
+wait 1500
+screen
+snap restart_after

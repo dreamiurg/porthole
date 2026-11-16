@@ -1,0 +1,21 @@
+# Replays a broker trace (serve protocol lines) into a fresh `snap --serve --fresh`; frames go to OUTDIR as PNG.
+import os, struct, subprocess, sys, zlib, tempfile
+D = os.path.dirname(os.path.abspath(__file__)); trace, outdir = sys.argv[1], sys.argv[2]; os.makedirs(outdir, exist_ok=True)
+cwd = tempfile.mkdtemp(dir=D)
+p = subprocess.Popen([os.path.join(D, "snap"), "--serve", "--fresh"], cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def png(rgb, w, h):
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    ch = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    return b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + ch(b"IDAT", zlib.compress(raw, 6)) + ch(b"IEND", b"")
+for line in open(trace):
+    parts = line.split(None, 1)
+    if len(parts) < 2: continue
+    c = parts[1].strip()
+    if c.startswith("frame"):
+        p.stdin.write(b"frame\n"); p.stdin.flush()
+        n = int(p.stdout.readline().split()[1]); buf = b""
+        while len(buf) < n: buf += p.stdout.read(n - len(buf))
+        open(os.path.join(outdir, c.split()[1] + ".png"), "wb").write(png(buf, 480, 480))
+    else:
+        p.stdin.write((c + "\n").encode()); p.stdin.flush(); p.stdout.readline()
+p.kill()

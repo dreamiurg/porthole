@@ -4,7 +4,7 @@ Porthole is the firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1**: a small s
 (`os/`: a 160×160 indexed framebuffer with a 32-color palette and an 8×8 font, a native 480×480
 RGB565 surface with smooth text, touch and tilt input from the board's QMI8658 motion sensor),
 the board layer (`firmware/`), a shell (`shell/`: who's playing, a profile per kid, the game
-launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town and Rally.
+launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick, Tilt FC, Pumpkin Hide & Seek, Radar, Starfighter, Kingdom, Toy Town, Rally, Sand Jar and Times Cards.
 
 ![Pets Club (row 1: home, a story, a trick lesson), Biscuit (row 2: home, a story, a discovery), Marble Kick (row 3: calibrate, a puzzle level, goal) and Tilt FC (row 4: a match, a goal, full time)](docs/screenshots.png)
 
@@ -12,7 +12,9 @@ launcher) and the games built on it (`games/`): Pets Club, Biscuit, Marble Kick,
 
 Open **Pumpkin** (the jack-o'-lantern) on the launcher's first page. Tap to start, hold the device comfortably,
 then tap **READY** to set that grip as level. Tilt left and right to roll; near the chair,
-table or plant, tap **HIDE**. Tap **COME OUT** to emerge. Roll over all three candy corns,
+table or plant, press and hold **HOLD TO HIDE**: the pumpkin stays hidden while your finger stays
+down and comes out when you let go (away from cover the sign says **FIND COVER** and points the
+way; when Grandma names the spot you're in, the pumpkin jumps out: roll to another one). Roll over all three candy corns,
 then out the door on the left. A warning announces each of Grandma's moves: full or fast
 flashlight sweeps, a sweep that turns back, and checks of one hiding spot ("THE TABLE?"),
 when it's time to slip somewhere else. Hold still while hidden: a hard wiggle rustles the
@@ -65,6 +67,32 @@ racer finishes all three laps, even in fourth. Hold the **1/3 Hold** chip to pau
 
 Art: [Codex images matched to the approved reference boards](docs/racing/art.md) ·
 Design and state contract: [game brief](games/racing/AGENTS.md)
+
+## Sand Jar: a tilt toy
+
+Open **Sand Jar** on the launcher's second page, hold the board and tilt it: what's inside moves
+like it would in a jar. No goal, nothing saved, no sounds. The button at the bottom of the glass
+switches between four jars: **Sand Jar** (warm sand that heaps and avalanches), **Rainbow Sand**
+(colored layers to stir into patterns), **Beach** (sand sinks under water, bubbles rise) and
+**Orbits** (stars circle a sun; a finger is a heavy star). A finger pushes the sand aside; a shake
+scatters it.
+
+Design and state contract: [game brief](games/sand-jar/AGENTS.md)
+
+## Times Cards: the times tables, a few minutes a day
+
+Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say the answer out loud,
+tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
+Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
+tomorrow, an easy one waits longer each time. New facts come in a few at a time, at each kid's own
+pace: the next table starts once about half of the current one is known (Easy on two separate days),
+and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
+From 4× on, each known fact also brings its two divisions (6 × 7 known: 42 ÷ 6 and 42 ÷ 7).
+A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
+round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
+For a grown-up: hold the Times Cards title for 2 seconds to see how honestly the kid grades.
+
+Design and state contract: [game brief](games/times-cards/AGENTS.md)
 
 ## Toy Town Life: a tiny town, your own stories
 
@@ -250,7 +278,7 @@ way, tap anywhere to pass or shoot. First to three goals, or three minutes.
 
 ## Play it without the board
 
-You need a C++17 compiler and Python 3. From this directory (`apps/porthole/`):
+You need a C++23 compiler (GCC 11 or Clang 12 and newer, for `-std=c++2b`) and Python 3. From this directory (`apps/porthole/`):
 
 ```bash
 make snap && python3 tools/webemu.py   # or: make webemu
@@ -290,7 +318,7 @@ For normal use, prefer Wi-Fi time sync in Clock.
 | --- | --- |
 | `S` | print the active profile, the open game's stats, free heap and the current epoch |
 | `T<epoch>` | set the clock (local wall-clock seconds) |
-| `R` | erase every profile and every game's saves, then reboot |
+| `RESET` | erase every profile and every game's saves, then reboot (the whole word on its own line; a lone `R` does nothing) |
 | `P<n>` | clear the secret code of profile `n` (the parent escape hatch) |
 | `D` | toggle touch-position logging |
 

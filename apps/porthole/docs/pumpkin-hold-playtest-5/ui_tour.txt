@@ -1,0 +1,27 @@
+reset
+profile Sam 8
+wait 600
+tap 80 104
+wait 1200
+echo @@title
+ui
+tap 80 130
+wait 900
+echo @@calibrate
+ui
+tap 80 130
+wait 1500
+echo @@play
+ui
+down 80 131
+wait 300
+echo @@hiding
+ui
+up
+wait 600
+echo @@playing
+ui
+wait 60000
+echo @@later
+screen
+ui

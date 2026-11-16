@@ -2,8 +2,9 @@
 """Decide which apps need a release, and what a promotion to stable becomes, from git history alone.
 
     python3 tools/release.py plan [--ref HEAD]
-    gh release list --limit 200 --json tagName,name,isPrerelease,createdAt \\
+    gh release list --limit 200 --json tagName,name,isPrerelease,publishedAt \\
       | python3 tools/release.py promote [--app porthole] [--tag TAG] [--min-age-hours 72]
+    python3 tools/release.py title "fix(porthole): the crash on wake"
 
 `plan` prints a JSON list, one entry per app that has releasable commits since its last
 tag: {"app", "version", "tag", "notes"}. The release workflow turns each entry into
@@ -14,18 +15,22 @@ OTA image and a version.txt; nothing is committed back to main.
 nothing: `source=`, `version=` and `tag=` lines for $GITHUB_OUTPUT, with the notes in --notes.
 promote.yml rebuilds the source tag's commit under the new version and publishes it as GitHub's Latest.
 
+`title` fails, saying why, on a pull request title that `plan` could not read: a squash merge makes it the commit
+title, and "fix(porthole) crash" (no colon) or "fixed: crash" would be merged as a change that ships nothing.
+
 Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
 - A commit belongs to an app when it touches apps/<app>/ or the shared platform/.
 - Every beta is a patch: any feat, fix, perf or breaking commit since the app's last tag bumps
-  the patch. Other types (docs, chore, ci, test, refactor, style, build) never cause a release
+  the patch, and so does a revert of one (`Revert "feat: ..."`, or the type `revert`). The type is
+  matched whatever its case. Other types (docs, chore, ci, test, refactor, style, build) never cause a release
   on their own, but are listed in the notes of a release that happens anyway. Notes still group
   breaking changes, features and fixes from the conventional commit titles.
 - A stable release is the next minor above every tag the app has: beta 0.38.7 becomes 0.39.0,
   and the next beta is 0.39.1. A board never installs an older version, so a rollback is a
   promotion too: the old code goes out under a new, higher version.
-- Unattended promotion picks the newest beta that is newer than the current stable, is at least
-  --min-age-hours old, and is not yanked (its release title says "(yanked)"). With --tag, that
+- Unattended promotion picks the newest beta that is newer than the current stable, was published at
+  least --min-age-hours ago, and is not yanked (its release title says "(yanked)"). With --tag, that
   published release is promoted whatever its age; with --min-age-hours 0, the newest beta is.
 - An app's first release is 0.1.0.
 """
@@ -41,9 +46,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 TITLE = re.compile(r"^(?P<type>\w+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?:\s*(?P<desc>.+)$")
+REVERT = re.compile(r'^Revert "(?P<title>.+)"')  # GitHub's Revert button; a squash merge adds " (#N)" after it
 BREAKING = re.compile(r"^BREAKING[ -]CHANGE:", re.M)  # a footer starts its line; a mention in prose is not one
 SECTIONS = [("breaking", "Breaking changes"), ("feat", "Features"), ("fix", "Fixes"), ("other", "Other changes")]
 RELEASABLE = {"breaking", "feat", "fix"}
+TYPES = {"feat", "fix", "perf", "revert", "docs", "chore", "ci", "test", "refactor", "style", "build"}
 FIRST = (0, 1, 0)
 YANK_MARK = "(yanked)"  # yank.yml appends it to a beta's release title
 Version = tuple[int, int, int]
@@ -79,16 +86,33 @@ def commits(app: str, since: str | None, ref: str) -> list[tuple[str, str, str]]
 
 def classify(subject: str, body: str) -> tuple[str, str]:
     """(kind, text) where kind is breaking | feat | fix | other."""
+    if m := REVERT.match(subject):
+        # Taking a shipped change back out changes what boards run: without a release the reverted beta stays the
+        # newest one and promote.yml would make it stable. Taking a docs or chore commit back out ships nothing.
+        return ("fix" if classify(m["title"], "")[0] in RELEASABLE else "other"), subject
     m = TITLE.match(subject)
     if not m:
         return "other", subject
+    kind = m["type"].lower()  # "Fix(porthole): ..." is a fix: nothing lints a squash merge's title
     if m["bang"] or BREAKING.search(body):
         return "breaking", subject
-    if m["type"] == "feat":
+    if kind == "feat":
         return "feat", subject
-    if m["type"] in ("fix", "perf"):
+    if kind in ("fix", "perf", "revert"):
         return "fix", subject
     return "other", subject
+
+
+def title_problem(title: str) -> str | None:
+    """Why `plan` would not read this as a conventional commit title, or None when it would."""
+    if REVERT.match(title):
+        return None
+    m = TITLE.match(title)
+    if not m:
+        return 'it is not "type(scope): description", e.g. "fix(porthole): the crash on wake"'
+    if m["type"].lower() not in TYPES:
+        return f'"{m["type"]}" is not one of {", ".join(sorted(TYPES))}'
+    return None
 
 
 def notes(app: str, version: str, intro: str, items: list[tuple[str, str]]) -> str:
@@ -134,7 +158,14 @@ def is_yanked(release: dict[str, Any]) -> bool:
 def pick_source(app: str, releases: list[dict[str, Any]], stable: tuple[str, Version] | None, min_age: timedelta, now: datetime) -> str | None:
     def eligible(r: dict[str, Any]) -> bool:
         v = parse(app, r["tagName"])  # None for the rolling <app>-beta pointer
-        return r["isPrerelease"] and v is not None and (stable is None or v > stable[1]) and not is_yanked(r) and now - datetime.fromisoformat(r["createdAt"]) >= min_age
+        return (
+            r["isPrerelease"]
+            and v is not None
+            and (stable is None or v > stable[1])
+            and not is_yanked(r)
+            and r["publishedAt"]  # a draft has none
+            and now - datetime.fromisoformat(r["publishedAt"]) >= min_age
+        )
 
     best = newest(app, [r["tagName"] for r in releases if eligible(r)])
     return best[0] if best else None
@@ -163,7 +194,8 @@ def promotion(app: str, releases: list[dict[str, Any]], tag: str | None, min_age
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["plan", "promote"])
+    ap.add_argument("command", choices=["plan", "promote", "title"])
+    ap.add_argument("text", nargs="?", default="", help="title: the pull request title")
     ap.add_argument("--ref", default="HEAD")
     ap.add_argument("--app", default="porthole")
     ap.add_argument("--tag", default="", help="promote: this tag, whatever its age (empty: pick a beta)")
@@ -172,6 +204,10 @@ def main() -> None:
     args = ap.parse_args()
     if args.command == "plan":
         print(json.dumps(plan(args.ref)))
+        return
+    if args.command == "title":
+        if why := title_problem(args.text):
+            sys.exit(f"::error::PR title {args.text!r}: {why}. A squash merge makes it the commit title, and the release planner would ship nothing for it.")
         return
     try:
         p = promotion(args.app, json.load(sys.stdin), args.tag or None, timedelta(hours=args.min_age_hours), datetime.now(UTC))

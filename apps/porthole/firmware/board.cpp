@@ -167,25 +167,34 @@ void presentHires() {
   ESP_ERROR_CHECK(g_frames.submit() ? ESP_OK : ESP_ERR_INVALID_STATE);
   ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(g_panel, 0, 0, LCD_W, LCD_H, g_fbs[g_frames.back()]));
   portEXIT_CRITICAL(&g_frameMux);
-  // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
-  ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
+  // A late ack is not a dead panel: the LCD interrupts are not IRAM-safe, so a flash sector erase (a save's garbage
+  // collection, the radio's own NVS writes on core 0) masks them for its whole length, up to 400 ms on a slow part.
+  // Ask the driver to restart the scan and wait once more.
+  if (xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(250)) != pdTRUE) {
+    Serial.println("[board] frame ack late: panel restarted");
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_restart(g_panel));
+    // A missing ISR must never hand out a buffer that the driver may still read. Fail closed instead of tearing it.
+    ESP_ERROR_CHECK(xSemaphoreTake(g_frameCopied, pdMS_TO_TICKS(1000)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT);
+  }
   portENTER_CRITICAL(&g_frameMux);
   ESP_ERROR_CHECK(g_frames.finish() ? ESP_OK : ESP_ERR_INVALID_STATE);
   portEXIT_CRITICAL(&g_frameMux);
 }
 
 // ---- touch (CST820) ----
+static TouchHold g_touch;
 Touch readTouch() {
   uint8_t b[6];
   Touch t = {false, 0, 0};
-  if (!i2cRead(TP_ADDR, 0x01, b, 6)) return t;
+  if (!i2cRead(TP_ADDR, 0x01, b, 6)) return g_touch.step(false, t);
   uint8_t points = b[1] & 0x0F;
   if (points) {
     int x = ((b[2] & 0x0F) << 8) | b[3], y = ((b[4] & 0x0F) << 8) | b[5];
     if (x < LCD_W && y < LCD_H) { t.down = true; t.x = x; t.y = y; }
   }
-  return t;
+  return g_touch.step(true, t);
 }
+uint32_t touchMisses() { return g_touch.misses(); }
 
 // ---- RTC (PCF85063) ----
 static uint8_t bcd2(uint8_t v) { return (uint8_t)((v >> 4) * 10 + (v & 15)); }
@@ -338,6 +347,6 @@ void init() {
   expSet(EX_TP_RST, false); delay(10); expSet(EX_TP_RST, true); delay(60);
   uint8_t noSleep = 0xFF; i2cWrite(TP_ADDR, 0xFE, &noSleep, 1);
   imuInit();
-  setBacklight(100);
+  // The backlight stays off: the loop lights it at the saved brightness once a frame is on the glass (main.cpp).
 }
 }  // namespace board

@@ -1,7 +1,7 @@
 # Porthole: the device firmware, with Pets Club as its first game. Host simulator, pet self-test,
 # checks and coverage; firmware through PlatformIO.
 # The monorepo's root Makefile and CI call these as `make -C apps/porthole <target>`:
-#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu clean)
+#   lint check test coverage ci firmware flash monitor   (plus sim snap snap-asan playtest art webemu web clean)
 # CXX is make's default (g++; Apple clang on macOS) unless you pass one.
 # os/ is the shared runtime (renderer, input, palette, widgets, the App contract); shell/ is the profile picker and
 # launcher; games/<name>/ compile against os/ only. Every directory under games/ is built in: a game includes its own
@@ -12,10 +12,14 @@ WARNINGS := -Wall -Wextra -Werror -Wno-unused-parameter -Wno-missing-field-initi
 # -ffp-contract=off: Apple clang fuses a*b+c into one FMA by default, gcc on x86 does not, so the same seeded match
 # came out differently in the hook and in CI. Every host build (the coverage objects too) computes plain IEEE floats.
 FP := -ffp-contract=off
-CXXFLAGS ?= -std=c++17 -O1 -g
+# -std=c++2b: the language the firmware is built in (the Arduino core passes -std=gnu++2b), so the host tests vouch for
+# the same C++ the board runs. Strict, without the GNU extensions only the IDF's own headers need.
+CXXFLAGS ?= -std=c++2b -O1 -g
 # -UNDEBUG: the host tests are assert()s (host/check.h refuses to compile without them), so an NDEBUG in the
 # environment's CXXFLAGS does not turn them off. HOST_FLAGS goes into the coverage build too.
-HOST_FLAGS := $(FP) $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
+# -funsigned-char: plain char is unsigned on the board (Xtensa) and signed on x86 and on a Mac, so a `c < 0`, a char
+# used as an index or a char widened to int would behave one way here and another on the board.
+HOST_FLAGS := $(FP) -funsigned-char $(WARNINGS) $(INCLUDES) -DHOST_BUILD -UNDEBUG
 CXXFLAGS += $(HOST_FLAGS)
 ASAN := -fsanitize=address,undefined -fno-omit-frame-pointer
 # snap-asan keeps -Wmaybe-uninitialized fatal too: under -fsanitize=bounds, gcc 13.3/14.2 flag `(this->*TABLE[i])()`
@@ -38,11 +42,13 @@ test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/p
 test_biscuit_SRC :=
 test_update_gate_SRC :=
 test_display_frames_SRC :=
+test_touch_hold_SRC :=
 test_update_picture_SRC :=
 test_biscuit_home_SRC := $(wildcard os/*.cpp) $(wildcard games/biscuit/*.cpp)
 test_biscuit_content_SRC := $(wildcard os/*.cpp) games/biscuit/personalize.cpp games/biscuit/art.cpp
 test_packed_image_SRC := $(wildcard os/*.cpp)
 test_gfx565_SRC := $(wildcard os/*.cpp)
+test_app_contract_SRC := $(SRC)
 test_kingdom_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
 test_kingdom_art_SRC := os/gfx565.cpp os/packed_image.cpp
 test_kingdom_content_SRC := $(wildcard os/*.cpp) $(wildcard games/living-kingdom/*.cpp)
@@ -53,14 +59,20 @@ test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 test_timezone_SRC := os/timezone.cpp
 test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
+test_nvs_budget_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
+test_crc32_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
 test_starfighter_rules_SRC := games/starfighter/rules.cpp
 test_racing_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
 test_racing_rules_SRC := games/racing/race.cpp games/racing/track.cpp
+test_racing_together_SRC := $(wildcard os/*.cpp) $(wildcard games/racing/*.cpp)
 test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
+test_sand_jar_SRC := $(wildcard os/*.cpp) $(wildcard games/sand-jar/*.cpp)
+test_times_cards_SRC := $(wildcard os/*.cpp) $(wildcard games/times-cards/*.cpp)
+test_saves_SRC := $(SRC)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
 # Native firmware uses ROM miniz; host builds use the system zlib decoder.
@@ -97,6 +109,12 @@ $(BUILD)/snap-asan: $(call objs,$(BUILD)/asan,$(SRC) host/sim.cpp)
 	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
 sim snap snap-asan: %: $(BUILD)/%
 
+# The saves test once more under the sanitizers: a save's bad byte that reads past a table passes the plain build.
+$(BUILD)/test_saves-asan: $(call objs,$(BUILD)/asan,$(SRC) host/test_saves.cpp)
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+run-test_saves-asan: $(BUILD)/test_saves-asan
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 $<
+
 # Scripted playthroughs, UI audit and monkey runs (tests/playtests/*.txt); report in build/playtest/report.md.
 playtest: snap snap-asan
 	$(PY) tools/playtest.py
@@ -113,9 +131,22 @@ run-%: $(BUILD)/%
 	$<
 test: $(TESTS:%=run-%)
 
+# The same tests under AddressSanitizer + UBSan (ci): snap-asan's objects plus each test's own. The monkeys only reach
+# what a finger can; the tests feed the save loaders, parsers and time math their edge cases directly. UBSan only
+# prints by default, so halt_on_error makes its report fail the run. test_racing_rules stays out: thousands of
+# simulated races take 85 s under ASan, and test_racing drives the same race.cpp and track.cpp here in 5.
+ASAN_TESTS := $(filter-out test_racing_rules,$(TESTS))
+$(foreach t,$(TESTS),$(eval $(BUILD)/asan/$(t): $(call objs,$(BUILD)/asan,$($(t)_SRC) host/$(t).cpp)))
+$(BUILD)/asan/test_%:
+	$(CXX) $(ASAN) $^ -o $@ $(HOST_LIBS)
+asan-run-%: $(BUILD)/asan/%
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 $<
+test-asan: $(ASAN_TESTS:%=asan-run-%)
+
 # App-specific static checks. ruff/shellcheck run from the repo-root pre-commit, not here.
 # snap is here so check compiles every source (with -Werror) in seconds.
 lint: snap
+	@bad=$$(grep -L '"host/check\.h"' host/test_*.cpp); [ -z "$$bad" ] || { echo "include \"host/check.h\", not <assert.h> (it refuses a build that turns the asserts off): $$bad"; exit 1; }
 	$(PY) tools/test_flash_report.py
 	$(PY) tools/compression_oracle.py
 	$(PY) games/toy-town-life/tools/toytown_art.py --check
@@ -125,6 +156,7 @@ lint: snap
 	$(PY) games/living-kingdom/tools/kingdom_art.py --check
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
+	$(PY) tools/timezones.py --check
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) games/racing/tools/art.py --check
 	$(PY) games/racing/tools/pictures.py --check
@@ -144,15 +176,19 @@ lint: snap
 check: lint test
 
 # Everything CI runs for this app except the firmware build. The scripted playtests run once, in coverage; the tests
-# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22).
-ci: lint test coverage playtest-monkey
+# run at -O1 too (seconds), since optimization is where miscompiles and UB show (issue #22), and under the sanitizers.
+# The windowed sim is built wherever SDL is installed (only host/sim.cpp's HAVE_SDL half is new work), so a change that
+# breaks it fails here and not on the next person's `make sim`. REQUIRE_SDL=1 (CI): a missing SDL fails, not skips.
+ci: lint test test-asan coverage playtest-monkey $(if $(SDL_CFLAGS)$(REQUIRE_SDL),sim)
 
-# Line coverage of os/, shell/ and games/*/ from the host tests plus the non-monkey playtests, as Cobertura XML.
+# Line coverage of os/, shell/ and games/*/ (sources and headers) and of the firmware headers the host can build, from
+# the host tests plus the non-monkey playtests, as Cobertura XML. firmware/*.cpp builds only for the board, so the
+# number says nothing about it: the recipe prints how many lines that is.
 # Separate objects keep the .gcno/.gcda names predictable for both gcc and clang. COV_MIN: 98.52% measured
 # (gcc) on 2026-11-09 after the Pets Club farm and shelter landed; raise it as coverage grows, never lower it.
 COV := build/coverage
 COV_MIN := 98.45
-COV_CXXFLAGS := -std=c++17 -O0 -g --coverage $(HOST_FLAGS)
+COV_CXXFLAGS := -std=c++2b -O0 -g --coverage $(HOST_FLAGS)
 COV_SCENARIOS := $(foreach f,$(wildcard tests/playtests/*.txt),$(if $(findstring monkey,$(f)),,$(basename $(notdir $(f)))))
 # gcovr has no switch to fail on its own (WARNING) lines, so tools/fail-on-warning.sh does it.
 # GCOVR_HITS below needs gcovr 8.3: an older gcovr on PATH is passed over for uvx.
@@ -160,6 +196,9 @@ GCOVR ?= $(shell gcovr --version 2>/dev/null | awk 'NR==1 { split($$2, v, "."); 
 # gcovr rejects a line hit more than 2^32 times as gcc bug 68080 (whose counts are garbage near 2^64). The RGB565 fill
 # loop in os/gfx565.cpp really runs that often: the render checks paint billions of pixels. 2^40 still catches the bug.
 GCOVR_HITS := --gcov-suspicious-hits-threshold 1099511627776
+# A header's template or inline function is compiled once for each user. A line counts as run when any copy ran it:
+# gcovr 8.3 always counted that way, later ones count every copy apart unless told to merge.
+GCOVR_MERGE = $(shell $(GCOVR) --help | grep -q -- --merge-lines && echo --merge-lines)
 # ponytail: keyed on the OS, so it assumes Apple clang on macOS and gcc elsewhere; pass GCOV=... for other mixes.
 ifeq ($(shell uname -s),Darwin)
 GCOV ?= xcrun llvm-cov gcov
@@ -184,8 +223,9 @@ cov-run-%: $(COV)/% cov-reset
 cov-playtest: $(COV)/snap cov-reset
 	PLAYTEST_SNAP=$(COV)/snap PLAYTEST_OUT=$(COV)/playtest PLAYTEST_TIMEOUT_SCALE=3 $(PY) tools/playtest.py $(COV_SCENARIOS)
 coverage: $(TESTS:%=cov-run-%) cov-playtest
-	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) -j $(NPROC) --root . --filter '(os|shell|games)/.*\.cpp$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
+	../../tools/fail-on-warning.sh '\((WARNING|ERROR)\)' $(GCOVR) $(GCOVR_HITS) $(GCOVR_MERGE) -j $(NPROC) --root . --filter '(os|shell|games|firmware)/.*\.(cpp|h)$$' --gcov-executable "$(GCOV)" --cobertura $(COV)/coverage.xml \
 	  --txt --print-summary --fail-under-line $(COV_MIN) $(COV)/obj
+	@echo "not measured (builds only for the board): firmware/*.cpp, $$(cat firmware/*.cpp | wc -l | tr -d ' ') lines"
 
 art:
 	python3 games/toy-town-life/tools/toytown_art.py
@@ -203,6 +243,16 @@ art:
 webemu: snap
 	python3 tools/webemu.py
 
+# The sim for a browser (site/play/, published by .github/workflows/pages.yml): every source through Emscripten into
+# build/web/porthole.js + .wasm. Needs em++ on PATH (emsdk). Rebuilds whole every time; it is only CI's and a test's.
+EMXX ?= em++
+WEB_ZLIB ?= -sUSE_ZLIB=1
+web:
+	mkdir -p build/web
+	$(EMXX) -std=c++17 -O2 $(HOST_FLAGS) $(SRC) host/sim.cpp $(WEB_ZLIB) -o build/web/porthole.js \
+	  -sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web -sEXPORTED_FUNCTIONS=_main,_web_cmd,_web_frame \
+	  -sEXPORTED_RUNTIME_METHODS=ccall,HEAPU8
+
 # PlatformIO exits 0 on its own "Warning!" lines (an unknown platformio.ini option, say); the wrapper fails on them.
 firmware:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware
@@ -211,7 +261,7 @@ flash-report: firmware
 	$(PY) tools/flash_report.py
 
 factory:
-	pio run -e firmware -t factory
+	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware -t factory
 
 flash:
 	pio run -e firmware -t upload $(if $(PORT),--upload-port $(PORT))
@@ -222,5 +272,5 @@ monitor:
 clean:
 	rm -rf build
 
-.PHONY: all sim snap snap-asan playtest playtest-monkey test lint check ci coverage cov-reset cov-playtest art webemu firmware factory flash monitor clean flash-report
+.PHONY: all sim snap snap-asan playtest playtest-monkey test test-asan lint check ci coverage cov-reset cov-playtest art webemu web firmware factory flash monitor clean flash-report
 -include $(shell find build -name '*.d' 2>/dev/null)

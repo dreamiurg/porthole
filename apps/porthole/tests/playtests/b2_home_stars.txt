@@ -35,7 +35,7 @@ ui-check library_star_mode
 snap hs2_star_mode
 wait 200
 snap hs2_star_mode_jiggle
-tap 80 104
+tap 36 104
 wait 300
 expect star_mode=1
 expect home_full=1
@@ -55,7 +55,7 @@ expect home_tiles=5
 snap hs4_counter
 tap 96 135
 wait 600
-tap 80 104
+tap 36 104
 wait 600
 expect home_tiles=6
 expect home_first=racing
@@ -143,16 +143,16 @@ tap 80 72
 wait 600
 tap 96 135
 wait 600
-tap 80 104
+tap 36 104
 wait 600
 expect home_full=0
 expect home_gold=0
 snap hs9_none_left
-down 80 104
+down 36 104
 wait 250
 up
 wait 200
-down 80 104
+down 36 104
 wait 250
 up
 wait 600
@@ -160,7 +160,7 @@ expect home_full=0
 expect home_gold=1
 expect home_tiles=2
 expect home_first=racing
-tap 80 104
+tap 36 104
 wait 600
 expect home_gold=0
 expect home_tiles=6

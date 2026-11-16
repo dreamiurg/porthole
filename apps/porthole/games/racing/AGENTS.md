@@ -108,7 +108,47 @@ tracks, platform contract, and the two approved reference boards the look follow
   pace-setter keeps the kid's pace: its form could only ever slow it, which made Normal easier everywhere. So the
   slower two often swap, and the middle rival beats the pace-setter in about 5-15% of races on Desert Canyon and Snow
   Track, 35-60% on Industrial Ruins and Night Run (`tune.h` `RIVAL_*`, `variety` in `host/test_racing_rules.cpp`).
-- No sounds, no network. Leaving and coming back starts at the cards.
+- No sounds. The only network is Together (below). Leaving and coming back starts at the cards.
+
+## Together
+
+Two kids race the same race on two Portholes on the same home wifi (the multiplayer concept's "One track" variant;
+user decisions of 2026-11-15: profile
+names are the player names, the name and avatar go over the home network only, no sound).
+
+- Like a second player at an arcade (Dmytro, 2026-11-15: "easy, fun, in and out"): Rally joins the saved wifi on entry
+  (only on a build with a radio, `lan::radio()`), and while its track cards are open it says the kid is there. When
+  another Porthole's cards are open too, the title gives way to that kid's face and name with "Race!" (green). A tap
+  says this kid is in ("Waiting", gold; another tap takes it back); the other device's Race! flashes. Once both are
+  in, the device with the higher address joins the other, which hosts, and both go straight to the grip page on the
+  host's last track. Nobody to race: the plain title, no button. The cards stay usable throughout.
+  Both set their grip; Go waits for the other ("Waiting for <Name>..."), then both count down into the same race.
+- The race: the host's device runs the three rivals and sends them; the guest shows them (and carries them on between
+  datagrams). The other kid is a car with their avatar on a flag, never touched: no contact between the kids, and a
+  rocket only ever hits a rival (the guest's hits go to the host, `Race::struck`, applied with `strike`). Places are
+  1st..5th among both kids and the rivals; a marker under the place shows the other kid's face and whether they are
+  ahead or behind.
+- Help for the kid behind, visible: a tailwind (streaks) of up to `TAILWIND` more top speed from 1 s behind, full at
+  5 s; the rivals race at the weaker kid's level on that track; the weaker kid starts half a grid slot ahead.
+- Pause: each kid gets `PAUSES` holds a race (losing the grip always pauses); a hold pauses both ("<Name> paused").
+  No restart mid-race.
+- The finish: no cutoff, the first home waits ("<Name> racing..."); both rows in finishing order with places and times;
+  `STARS` stars each for the first `STAR_RACES` races finished together a day; Again takes the host back to its grip
+  page and the guest to the Lobby (two faces, "Waiting for <Name>...") until the host is there.
+  Together times never enter Best times, and the adaptive level does not move.
+- A drop (`LOST_MS` silent, or the other kid leaves): mid-race the kid finishes alone ("Lost <Name>, keep racing!")
+  and the results say "Connection lost: no winner" ("<Name> left. Keep racing!" when they quit); before the race it says
+  "<Name> left" and returns to the cards.
+- Not built: cheering, titles, picking the track together, more than two kids, picking among several devices,
+  rejoining.
+- Protocol (`together.h`): one 144-byte `Wire`, the device's whole state, every `SEND_MS` and at once on a change;
+  magic "RLY2", version 2. A device on its track cards broadcasts (`to` 0, stage `Looking`, `in` once its kid tapped
+  Race!) every `HERE_MS`; the guest answers addressed to it;
+  once paired each sends only to its peer and takes datagrams only from its peer addressed to itself (the levels go
+  only once paired). Numbers from the network are held to the track (`onPeer`); the peer's race fields count only when
+  its `raceId` is this race's (`sameRace`), and a guest's race id resets when it joins. `lan::Radio` (`os/lan.h`) is the
+  transport: `net::Lan` on the board (UDP port 47800 on the saved wifi, a radio job like Radar's), `SimLan` in the sim
+  (127.0.0.1, ports 47800..47803, so two sims on one computer pair: `python3 tools/together.py OUTDIR`).
 
 ## Module map
 
@@ -119,6 +159,9 @@ tracks, platform contract, and the two approved reference boards the look follow
 - `race.h` / `race.cpp`: the pure race: cars, rockets, pickups, swept gate/ramp/finish crossing, contacts, rival
   lines, ranking. No input or drawing dependencies.
 - `controls.h`: the wheel and its calibration.
+- `together.h` / `together.cpp`: Together's datagram (`Wire`) and one device's end of it (`Link`): who is on
+  their cards, pairing, sending. `game_together.cpp`: the game's side (Race! on the cards, the guest's Lobby, the joint
+  race, results, drops).
 - `game.h` / `game.cpp`: the App and its pages, fresh-touch rules, pause/resume/recenter, grip loss.
 - `render.h` / `render.cpp`: the pseudo-3D road, things on it, the HUD and menu pages; hit boxes in logical px.
 - `pictures.h`, `skyline0-3.h`: generated by `tools/pictures.py` from `art/*.png` (Codex images made with both
@@ -142,7 +185,8 @@ field goes right before `crc` with a version bump, and `loadBlob` must keep load
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
 every profile's save for the leaderboard and writes only the current kid's.
 
-Host tests: `host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the
+Host tests: `host/test_racing_together.cpp` (Together: the protocol, Race! on the cards, a whole race on two devices, drops),
+`host/test_racing_rules.cpp` (race rules, every track finishes for idle, steady and busy drivers, the
 idle one last at every level, the level rules, rival boosts, the `competent` driver and the `kid` driver (300 ms late,
 bends at 70%, a wobbly line), the competent-driver `staircase`, `modeBands`, `proHazards` (on from their rung only)
 and `proNoEasier` (each Pro rung no easier than the one below for each driver), `neighbourLevels`, `variety`) and `host/test_racing.cpp` (wheel,
@@ -156,7 +200,7 @@ are `docs/racing/adaptive-playtest/` and `docs/racing/pro-playtest/`.
 ## Screens and test hooks
 
 Screens: `race_tracks`, `race_howto`, `race_calibrate`, `race_countdown`, `race_play`, `race_pause`, `race_confirm`,
-`race_results`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
+`race_results`, and Together's `race_lobby`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
 finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids level mode race_level` (this track; `level` the stored adaptive
 level, `race_level` the one the next race runs at), then `steer grip_lost resume ready calibration neutral`.
 `dbg level N` sets this kid's adaptive level on the current track (clamped to the track's range) and saves it; on a track the

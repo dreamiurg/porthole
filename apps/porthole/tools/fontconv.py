@@ -31,6 +31,16 @@ Adult system menu: Atkinson Hyperlegible Regular (shell/fonts/). Regenerate with
         --output build/adult$n.c; done
     python3 tools/fontconv.py --game adult build/adult{24,28,32}.c
 
+Times Cards: Fredoka SemiBold (games/times-cards/art/fonts/, the wght=600 wdth=100 instance of github.com/google/fonts
+ofl/fredoka's variable font, cut with fontTools.varLib.instancer). Text at 28 and 40 px; the cards' numbers at 110 px,
+only the glyphs a card draws (KEEP).
+
+    for n in 28 40 110; do npx lv_font_conv@1.5.3 --font games/times-cards/art/fonts/Fredoka-SemiBold.ttf
+        --range 0x20-0x7e,0xd7,0xf7 --size $n --bpp 4 --format lvgl --no-compress --force-fast-kern-format
+        --lv-include lvgl.h --lv-font-name cards_font_$n --output build/cards$n.c; done
+    python3 tools/fontconv.py --game cards build/cards{28,40}.c
+    python3 tools/fontconv.py --game cardsbig build/cards110.c
+
 Plane Radar: B612 Mono Bold (games/plane-radar/fonts/, from github.com/google/fonts ofl/b612mono), all of ASCII.
 
     for n in 18 24 32; do npx lv_font_conv@1.5.3 --font games/plane-radar/fonts/B612Mono-Bold.ttf --range 0x20-0x7e
@@ -82,6 +92,22 @@ GAMES = {
         "Copyright 2020 Braille Institute of America, Inc.",
         "see shell/fonts/OFL.txt",
         None,
+    ),
+    "cards": Game(
+        "games/times-cards/generated/fonts.h",
+        "cards",
+        "Fredoka SemiBold",
+        "Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One).",
+        "see games/times-cards/art/fonts/OFL.txt",
+        None,
+    ),
+    "cardsbig": Game(
+        "games/times-cards/generated/big.h",
+        "cardsbig",
+        "Fredoka SemiBold",
+        "Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One).",
+        "see games/times-cards/art/fonts/OFL.txt",
+        " 0123456789=?\u00d7\u00f7",  # a card's numbers, its signs and its answer
     ),
     "radar": Game(
         "games/plane-radar/generated/fonts.h",
@@ -137,11 +163,14 @@ def extra_cmap(src: str) -> list[int]:
     expect(cmaps[0] == ("32", "95", "1", "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY"), "first cmap is not ASCII 32..126 as glyphs 1..95")
     if len(cmaps) == 1:
         return []
-    expect(cmaps[1][2] == "96" and cmaps[1][3] == "LV_FONT_FMT_TXT_CMAP_SPARSE_TINY", "second cmap is not a sparse list from glyph 96")
+    expect(cmaps[1][2] == "96", "second cmap does not start at glyph 96")
+    if cmaps[1][3] == "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY":  # a run of consecutive code points (one alone comes as this)
+        return list(range(int(cmaps[1][0]), int(cmaps[1][0]) + int(cmaps[1][1])))
+    expect(cmaps[1][3] == "LV_FONT_FMT_TXT_CMAP_SPARSE_TINY", "second cmap is neither a run nor a sparse list")
     return [int(cmaps[1][0]) + o for o in array(src, "unicode_list_1")]
 
 
-def keep_only(glyphs: list[tuple], bitmap: list[int], keep: str | None) -> tuple[list[tuple], list[int]]:
+def keep_only(glyphs: list[tuple], bitmap: list[int], keep: str | None, extras: list[int]) -> tuple[list[tuple], list[int]]:
     """Every glyph not in `keep` loses its bitmap (box 0 x 0, advance kept); the kept bitmaps are packed again."""
     if keep is None:
         return glyphs, bitmap
@@ -149,8 +178,8 @@ def keep_only(glyphs: list[tuple], bitmap: list[int], keep: str | None) -> tuple
     out: list[tuple] = [glyphs[0]]
     packed: list[int] = []
     for i, g in enumerate(glyphs[1:], 1):
-        cp = 31 + i if i <= 95 else None
-        if cp is not None and chr(cp) in keep:
+        cp = 31 + i if i <= 95 else extras[i - 96]
+        if chr(cp) in keep:
             out.append((str(len(packed)), *g[1:]))
             packed += bitmap[starts[i] : starts[i + 1]]
         else:
@@ -170,7 +199,7 @@ def convert(path: Path, game: Game) -> tuple[int, str, list[int], bool]:
     glyphs = re.findall(r"\{\.bitmap_index = (\d+), \.adv_w = (\d+), \.box_w = (\d+), \.box_h = (\d+), \.ofs_x = (-?\d+), \.ofs_y = (-?\d+)\}", src)
     expect(len(glyphs) == 96 + len(extras), f"{len(glyphs)} glyph descriptions for {95 + len(extras)} glyphs")
     left, right, values, rcnt = kerning(src, len(glyphs))
-    glyphs, bitmap = keep_only(glyphs, array(src, "glyph_bitmap"), game.keep)
+    glyphs, bitmap = keep_only(glyphs, array(src, "glyph_bitmap"), game.keep, extras)
     n = f"FONT{size}"
     glyph_rows = ",\n".join("  {" + ", ".join(g) + "}" for g in glyphs)
     extras_ref = "EXTRAS" if extras else "nullptr"

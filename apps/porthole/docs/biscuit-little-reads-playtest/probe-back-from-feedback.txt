@@ -1,0 +1,76 @@
+reset
+wait 1000
+tap 41 124
+wait 500
+tap 41 99
+wait 500
+tap 41 52
+wait 500
+snap a02
+tap 119 124
+wait 1000
+snap a03
+tap 92 56
+wait 1000
+snap a04
+tap 79 69
+wait 1000
+snap a05
+tap 80 145
+wait 1500
+snap a06
+tap 34 72
+wait 2500
+snap a07
+tap 80 12
+wait 1500
+snap a08
+tap 79 72
+wait 2500
+snap a09
+tap 119 125
+wait 2500
+snap a10
+wait 3000
+snap a11
+tap 94 130
+wait 1500
+snap a12
+tap 80 84
+wait 800
+snap a13
+wait 3000
+snap a14
+tap 108 132
+wait 800
+snap a16
+tap 100 73
+wait 200
+snap a17
+wait 800
+snap a18
+tap 80 132
+wait 100
+tap 82 130
+wait 800
+snap a19
+tap 51 25
+wait 1000
+snap a21
+tap 80 84
+wait 1000
+snap a22
+tap 108 132
+wait 800
+snap a23
+tap 60 82
+wait 200
+snap a24
+wait 1200
+snap a25
+tap 51 25
+wait 800
+snap a60
+tap 51 25
+wait 800
+snap a61

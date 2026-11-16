@@ -1,0 +1,9 @@
+# python3 strip.txt OUT name... : side-by-side 240px thumbnails of frames (Python, saved as .txt)
+import sys, os
+from PIL import Image
+P = os.path.dirname(os.path.abspath(__file__))
+names = sys.argv[2:]; cols = min(4, len(names)); rows = (len(names) + 3) // 4
+s = Image.new('RGB', (240 * cols, 240 * rows))
+for i, n in enumerate(names):
+    s.paste(Image.open(f'{P}/frames/{n}.png').resize((240, 240)), ((i % 4) * 240, (i // 4) * 240))
+s.save(sys.argv[1])

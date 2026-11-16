@@ -35,12 +35,16 @@ class Game : public App {
   tilt::Steady steady_;
   tilt::Grav neutral_ = {0, 0, -1000};
   uint32_t ms_ = 0, pageMs_ = 0, animationMs_ = 0, stepMs_ = 0, plays_ = 0;
-  uint32_t pressMs_ = 0;          // when the finger last went down (Input::heldMs is 0 by the release)
-  bool starting_ = false, home_ = false, actionPending_ = false, ghostPending_ = false;
+  // The sign's "no" (away from cover) lingers REFUSE_MS once a finger stops asking: five frames at 200 ms, long enough
+  // to see, short enough to retry. refuseMs_ is what is left of it, REFUSE_MS while the finger still asks.
+  static constexpr uint32_t REFUSE_MS = 1000;
+  uint32_t refuseMs_ = 0;
+  bool starting_ = false, home_ = false, holding_ = false, ghostPending_ = false;
   void go(Page page);
   void start();
   void calibrate();
   void play(uint32_t dt);
+  void sign(uint32_t dt, float roll);
   bool ready() const;
   bool action() const;
   bool leaving();

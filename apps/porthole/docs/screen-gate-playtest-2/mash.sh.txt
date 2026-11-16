@@ -1,0 +1,4 @@
+#!/bin/bash
+# mash.sh X Y N [PRESS] [GAP] -> N firm presses on one spot
+x=$1; y=$2; n=$3; p=${4:-300}; g=${5:-200}
+for i in $(seq 1 $n); do echo "T $x $y $p"; [ $i -lt $n ] && echo "W $g"; done

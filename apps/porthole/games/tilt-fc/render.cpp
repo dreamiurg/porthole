@@ -4,6 +4,10 @@
 #include "font.h"
 #include "generated/fonts.h"
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace fc::paint {
 using namespace canvas;   // the painter: span, disc, poly, roundBox, isqrt, rows, discRun, clipBox
 namespace {

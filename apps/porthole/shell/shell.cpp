@@ -183,8 +183,9 @@ void Shell::openIdx(int k) {
     if (id == active_) who = n;
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
-  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO});
-  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_;
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS});
+  savedStars_ = rec().stars;
+  lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_; saveFails_ = 0;
   go(SH_APP);   // first: from star mode (the sim's `app`), the unconfirmed stars are dropped before the save below
   if (unseen(k)) { favs_.seen |= shell::gameBit(ids_[k]); saveFavs(); }   // no longer new
 }
@@ -199,6 +200,8 @@ void Shell::flushApp(bool allowed) {
   const char* k = shell::key('s', active_);
   if (writtenLen_) writtenOk_ = st_->save(app_->store(), k, written_, writtenLen_);
   else { st_->erase(app_->store(), k); writtenOk_ = true; }   // App contract: a 0-byte save erases; no game uses it today
+  saveFailing_ = !writtenOk_;
+  saveFails_ = writtenOk_ ? 0 : (uint8_t)(saveFails_ + (saveFails_ < 6));
   lastSaveMs_ = ms_;
 }
 void Shell::closeApp() {
@@ -211,7 +214,10 @@ void Shell::budgetTick() {   // per profile, across every game
   const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
   if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
   else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp(); go(SH_REST); return; }
-  if (now_ - lastRecordSave_ >= 60) { shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; }   // checkpoint
+  if (rec().stars != savedStars_) flushApp(true);   // what they bought or earned them is in the game's save: it goes first
+  if (now_ - lastRecordSave_ >= 60 || rec().stars != savedStars_) {   // checkpoint; stars a game changed go right away
+    shell::saveRecord(*st_, prof_, active_); lastRecordSave_ = now_; savedStars_ = rec().stars;
+  }
 }
 
 // ---------------------------------------------------------------- Who's playing? (one row per profile, "+" below)
@@ -765,7 +771,10 @@ void Shell::updateApp() {
   if (app_->wantsHome()) { closeApp(); go(fromLibrary_ ? SH_LIBRARY : SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
   const uint32_t sinceSave = ms_ - lastSaveMs_;   // an urgent checkpoint still waits a second: one flash write per tap at most
-  if (screen_ == SH_APP) flushApp(sinceSave > 5000 || (app_->saveUrgent() && sinceSave >= 1000));
+  // A write that keeps failing (storage full, or worn out) is tried ever less often, from 5 s up to about 5 minutes:
+  // each try stalls a frame and wears the flash for nothing. Leaving the game still tries once (closeApp).
+  const uint32_t cadence = 5000u << saveFails_;
+  if (screen_ == SH_APP) flushApp(sinceSave > cadence || (!saveFails_ && app_->saveUrgent() && sinceSave >= 1000));
 }
 void Shell::drawApp() { app_->render(); }
 

@@ -1,0 +1,223 @@
+tick 1500
+# Zoe types her name quickly
+tap 67 125 120
+tick 400
+tap 42 125 110
+tick 350
+tap 67 53 120
+tick 350
+tap 67 125 110
+tick 350
+tap 42 77 120
+tick 300
+shot z00_name
+tap 118 125 120
+tick 600
+shot z01_face
+tick 300
+tap 124 55 120
+tick 600
+tap 37 102 120
+tick 100
+shot z02_age_tap1
+tick 400
+tap 38 103 120
+tick 100
+shot z03_age_tap2
+tick 400
+tap 37 101 120
+tick 100
+shot z04_age_tap3
+tick 400
+tap 37 102 120
+tick 100
+shot z05_age_tap4
+tick 400
+tap 37 102 120
+tick 100
+shot z06_age_tap5
+tick 600
+tap 80 145 120
+tick 700
+shot z07_home
+tick 300
+down 36 72
+tick 80
+shot z08_press
+tick 40
+up
+strip z09_pc 3000 600
+tap 80 60 120
+strip z10_pkg 3000 500
+tap 80 60 120
+strip z11_adopt 3000 600
+tap 41 124 110
+tick 350
+tap 41 52 110
+tick 350
+tap 67 124 110
+tick 350
+tap 93 101 110
+tick 350
+shot z12_max
+tap 119 124 110
+tick 700
+tap 128 87 120
+tick 80
+shot z13_house_t1
+tick 500
+tap 128 88 120
+tick 80
+shot z13_house_t2
+tick 500
+tap 127 87 120
+tick 80
+shot z13_house_t3
+tick 500
+tap 128 87 120
+tick 80
+shot z13_house_t4
+strip z14 2500 500
+tap 80 100 120
+strip z15_pchome 2500 500
+tap 40 130 120
+strip z16_feed 1500 300
+tap 119 70 120
+strip z17_cookie 3000 500
+tick 200
+tap 80 100 120
+tick 80
+shot z18_st1
+tick 400
+tap 80 100 120
+tick 80
+shot z18_st2
+tick 400
+tap 80 100 120
+tick 80
+shot z18_st3
+tick 400
+tap 80 100 120
+tick 80
+shot z18_st4
+tick 400
+tap 80 100 120
+tick 80
+shot z18_st5
+tick 600
+tap 80 12 120
+tick 100
+shot z19_exit
+tick 600
+tap 124 105 120
+tick 80
+shot z20_ag1
+tick 500
+tap 124 105 120
+tick 80
+shot z20_ag2
+tick 500
+tap 124 105 120
+tick 80
+shot z20_ag3
+tick 500
+tap 124 105 120
+tick 80
+shot z20_ag4
+tick 900
+tap 125 42 120
+tick 100
+shot z21_star1
+tick 500
+tap 124 105 120
+tick 100
+shot z22_radar1
+tick 100
+shot z22_radar1b
+tick 400
+tap 124 105 120
+tick 100
+shot z22_radar2
+tick 400
+tap 124 105 120
+tick 100
+shot z22_radar3
+tick 400
+tap 124 105 120
+tick 100
+shot z22_radar4
+tick 1000
+shot z22_radar5
+tap 124 72 120
+tick 100
+shot z23_unstar
+tick 500
+tap 124 105 120
+tick 100
+shot z23_star
+tick 600
+tap 30 42 120
+tick 100
+shot z23_check
+tick 500
+tap 124 72 120
+tick 100
+shot z24_tilt1
+tick 500
+tap 124 72 120
+tick 100
+shot z24_tilt2
+tick 500
+tap 124 72 120
+tick 100
+shot z24_tilt3
+tick 500
+tap 124 72 120
+tick 100
+shot z24_tilt4
+tick 1000
+shot z24_tilt5
+tilt 0 500 -866
+tap 80 110 120
+strip z25_mk 3000 500
+tilt 0 0 -1000
+tap 80 80 120
+strip z26_next 2000 500
+# Zoe double-taps the home button
+tap 80 147 100
+tick 120
+tap 80 147 100
+tick 300
+shot z27_out
+tick 1000
+shot z27_out2
+down 80 147
+strip z28_hold 1500 250
+up
+tick 300
+shot z28_after
+tick 500
+tap 80 103 120
+tick 1000
+shot z29_title
+tap 80 130 120
+tick 100
+shot z30_s1
+tick 500
+shot z30_s2
+tick 500
+tap 80 130 120
+tick 100
+shot z30_s3
+tick 500
+tap 80 130 120
+tick 100
+shot z30_s4
+tick 500
+tap 80 130 120
+tick 100
+shot z30_s5
+tick 500
+tap 80 130 120
+tick 100
+shot z30_s6

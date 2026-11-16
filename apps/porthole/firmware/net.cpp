@@ -16,12 +16,14 @@
 #include <sys/time.h>
 #include "esp_random.h"
 #include "netclock.h"
+#include "psram.h"
 #include "timezone.h"
 #include <algorithm>
 #include <atomic>
 #include <math.h>
 #include <memory>
 #include "board.h"
+#include "psram.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
 
@@ -33,8 +35,8 @@ namespace net {
 namespace {
 // NVS namespace "sys" (new with wireless updates; never reuse a shipped one). Keys: "ssid", "pass" (raw bytes, no
 // NUL; no "pass" = open network), "chan" (one byte, shell::Channel), "last" (uint32 local epoch of the last attempt:
-// its day is the once-a-day gate), "home" (Radar's center: shell::Home's 112 bytes as they are). "ran" and "lite" are
-// the shell's.
+// its day is the once-a-day gate), "home" (Radar's center: shell::Home's 112 bytes as they are), "tried" (the version
+// the last finished download put in the spare slot, as text: shell::rolledBack). "ran" and "lite" are the shell's.
 const char* const NS = "sys";
 #define RELEASES "https://github.com/dreamiurg/porthole/releases/"
 // Each channel's newest version as plain "X.Y.Z". Stable: GitHub's Latest release (pre-releases never are). Beta: the
@@ -81,7 +83,7 @@ shell::UpdStatus g_st;             // written by the task, read by the main loop
 // test join from the menu's Wifi screens. g_scanCount and g_tested are -1 while theirs runs; g_found belongs to the scan
 // task until it sets g_scanCount, and g_try (the network to test) to the test task while it runs. The Home lookup and
 // Radar's feed (below) are the other two.
-enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK, J_ZONE };
+enum Job : uintptr_t { J_CHECK, J_SCAN, J_TEST, J_LOOK, J_RADAR, J_CLOCK, J_ZONE, J_LAN };
 shell::Channel g_checkChan = shell::CH_STABLE;
 shell::Network g_found[shell::MAX_NETWORKS];
 std::atomic<int> g_scanCount{0}, g_tested{0};
@@ -325,6 +327,13 @@ void clockJob() {
   WiFi.mode(WIFI_OFF);
 }
 
+// True when this very release was already installed here and the bootloader went back to the running firmware.
+bool alreadyRolledBack(const char* avail) {
+  char tried[16];
+  loadStr("tried", tried, sizeof tried);
+  return shell::rolledBack(avail, tried, esp_ota_get_last_invalid_partition() != nullptr);
+}
+
 void checkAndDownload(shell::Channel ch) {
   char avail[16] = {0};
   Found f = fetchAvailable(ch, avail);
@@ -334,8 +343,16 @@ void checkAndDownload(shell::Channel ch) {
   Serial.printf("[net] %s channel: %s, running %s\n", ch == shell::CH_BETA ? "beta" : "stable", f == F_VERSION ? avail : "none",
                 PORTHOLE_VERSION);
   if (!shell::newer(avail, PORTHOLE_VERSION)) { setState(shell::UP_CURRENT); return; }
+  if (alreadyRolledBack(avail)) {   // not again every day: only another release is tried
+    Serial.printf("[net] %s started here and rolled back: waiting for another release\n", avail);
+    setState(shell::UP_FAILED);
+    return;
+  }
   if (checkStopped()) return;
   bool ok = download(avail);
+  // After the slot is set to boot, never before: a download that failed was not tried. A write that does not land
+  // only loses the protection for this release.
+  if (ok) board::saveBlob(NS, "tried", avail, strlen(avail));
   if (ok) setState(shell::UP_READY, 100); else setState(shell::UP_FAILED);   // a ready image is all there
   if (ok) Serial.printf("[net] %s ready: it starts on the next power-on\n", avail);
 }
@@ -411,6 +428,7 @@ void zoneJob() {
 
 void lookup();
 void radar();
+void lanJob();
 bool waitForProgress() {
   for (uint32_t start = millis(); !g_screen.ready(); vTaskDelay(1)) {
     if (g_screen.cancelled()) { setState(shell::UP_IDLE); return false; }
@@ -428,6 +446,7 @@ void task(void* arg) {
   else if (job == J_TEST) test();
   else if (job == J_LOOK) lookup();
   else if (job == J_RADAR) radar();
+  else if (job == J_LAN) lanJob();
   else if (job == J_CLOCK) clockJob();
   else if (job == J_ZONE) zoneJob();
   else if (waitForProgress()) run(g_checkChan);
@@ -542,12 +561,15 @@ air::Snapshot g_snap[2];
 int g_front = 0;
 
 // The radar task's: this fetch's nearest planes (nearest first) with their positions, and the routes seen.
+// Both tables live in PSRAM (psram.h): 3.6 KB only this task reads, off the static internal RAM an update needs.
 struct Seen { air::Plane p; float d2; double lat, lon; };
-Seen g_seen[air::MAX_PLANES];
+struct SeenTable { Seen at[air::MAX_PLANES]; };
+Seen (&g_seen)[air::MAX_PLANES] = psram::make<SeenTable>().at;
 int g_nSeen = 0;
 // ponytail: a 32-callsign round-robin cache; grow it if a busy hub's sky keeps evicting routes it still shows.
 struct Route { char call[9]; char route[8]; };
-Route g_routes[32];
+struct RouteTable { Route at[32]; };
+Route (&g_routes)[32] = psram::make<RouteTable>().at;
 int g_routeNext = 0;
 
 const Route* cachedRoute(const char* call) {
@@ -598,7 +620,7 @@ void lookupRoute(const Seen& s) {
   JsonObject a = filter["response"]["flightroute"]["origin"].to<JsonObject>();
   for (const char* k : {"iata_code", "latitude", "longitude"}) a[k] = true;
   filter["response"]["flightroute"]["destination"] = a;
-  if (deserializeJson(doc, c.http.getStream(), DeserializationOption::Filter(filter))) return;
+  if (deserializeJson(doc, c.http.getStream(), DeserializationOption::Filter(filter))) { remember(call, ""); return; }
   JsonObject o = doc["response"]["flightroute"]["origin"], d = doc["response"]["flightroute"]["destination"];
   const char* oc = o["iata_code"] | "";
   const char* dc = d["iata_code"] | "";
@@ -616,8 +638,8 @@ void describe(JsonObject a, air::Plane& p) {
   memcpy(p.call, fl, n);
   p.call[n] = 0;
   JsonVariant baro = a["alt_baro"], geom = a["alt_geom"];
-  p.altFt = baro.is<double>() ? (int32_t)lround(baro.as<double>())
-            : geom.is<double>() ? (int32_t)lround(geom.as<double>()) : air::NO_ALT;
+  auto ft = [](double v) { return v > -2000 && v < 100000 ? (int32_t)lround(v) : air::NO_ALT; };   // NaN/inf: none
+  p.altFt = baro.is<double>() ? ft(baro.as<double>()) : geom.is<double>() ? ft(geom.as<double>()) : air::NO_ALT;
   const char* cat = a["category"] | "";
   p.kind = ((a["dbFlags"] | 0) & 1) ? air::K_MILITARY
            : (!strcmp(cat, "A1") || !strcmp(cat, "A2")) ? air::K_SMALL : air::K_AIRLINER;
@@ -630,6 +652,7 @@ bool toPlane(JsonObject a, Seen& s) {
   s = Seen{};
   s.lat = a["lat"].as<double>();
   s.lon = a["lon"].as<double>();
+  if (!(fabs(s.lat) <= 90 && fabs(s.lon) <= 180)) return false;   // network data: also refuses NaN and infinity
   double dlon = s.lon - g_airLon;
   if (dlon > 180) dlon -= 360; else if (dlon < -180) dlon += 360;   // across the antimeridian
   s.p.eastKm = (float)(dlon * KM_PER_DEG * cos(g_airLat * DEG));   // flat earth: fine for a few hundred km
@@ -723,6 +746,96 @@ void radar() {
 
 // Main loop: starts the radar task when the feed is wanted, the screen lit and the radio free. Covers a radio busy at
 // start (an update or a wifi job) and the screen waking after the dark sent the task away. At most a try a second.
+// ---------------------------------------------------------------------------------------------------- Rally's network
+// The datagrams: what came in (a small ring, the oldest dropped when full) and the one going out (the newest wins:
+// each is a whole state). Both under g_lanMux; only the task touches the socket.
+const uint16_t LAN_PORT = 47800;
+const uint32_t LAN_AWAKE_MS = 2000;   // power save back on this long after the last datagram out
+constexpr int LAN_RING = 6;
+struct LanPkt { uint32_t addr; uint16_t len; uint8_t data[lan::MAX_PACKET]; };
+std::atomic<bool> g_lanWant{false}, g_lanRun{false};
+std::atomic<uint8_t> g_lanState{lan::S_OFF};
+std::atomic<uint32_t> g_lanSelf{0};
+uint32_t g_lanTry = 0;
+portMUX_TYPE g_lanMux = portMUX_INITIALIZER_UNLOCKED;
+struct LanBufs { LanPkt in[LAN_RING], out; };
+LanBufs& g_lanBuf = psram::make<LanBufs>();   // ~1.2 KB kept off static internal RAM
+LanPkt* const g_lanIn = g_lanBuf.in;
+LanPkt& g_lanOut = g_lanBuf.out;
+int g_lanHead = 0, g_lanCount = 0;
+bool g_lanOutFull = false;
+
+uint32_t ipWord(const IPAddress& ip) { return (uint32_t)ip[0] | (uint32_t)ip[1] << 8 | (uint32_t)ip[2] << 16 | (uint32_t)ip[3] << 24; }
+IPAddress ipOf(uint32_t v) { return IPAddress(v & 255, v >> 8 & 255, v >> 16 & 255, v >> 24); }
+
+void lanReceive(WiFiUDP& udp) {
+  for (int n = 0; n < LAN_RING; n++) {
+    const int len = udp.parsePacket();
+    if (len <= 0) return;
+    LanPkt p;
+    p.len = (uint16_t)udp.read(p.data, sizeof p.data);
+    p.addr = ipWord(udp.remoteIP());
+    if (len > (int)sizeof p.data) continue;   // not ours: too big
+    portENTER_CRITICAL(&g_lanMux);
+    g_lanIn[(g_lanHead + g_lanCount) % LAN_RING] = p;
+    if (g_lanCount < LAN_RING) g_lanCount++;
+    else g_lanHead = (g_lanHead + 1) % LAN_RING;
+    portEXIT_CRITICAL(&g_lanMux);
+  }
+}
+bool lanSend(WiFiUDP& udp) {
+  LanPkt p;
+  portENTER_CRITICAL(&g_lanMux);
+  const bool full = g_lanOutFull;
+  if (full) { p = g_lanOut; g_lanOutFull = false; }
+  portEXIT_CRITICAL(&g_lanMux);
+  if (!full) return false;
+  udp.beginPacket(p.addr ? ipOf(p.addr) : WiFi.broadcastIP(), LAN_PORT);
+  udp.write(p.data, p.len);
+  udp.endPacket();
+  return true;
+}
+void lanPump(WiFiUDP& udp) {
+  uint32_t sentMs = 0;
+  bool asleep = true;
+  for (; g_lanWant && !g_dark; vTaskDelay(pdMS_TO_TICKS(5))) {
+    lanReceive(udp);
+    if (lanSend(udp)) sentMs = millis();
+    const bool idle = millis() - sentMs > LAN_AWAKE_MS;
+    // The clock sync can block for seconds (no internet, NTP blocked): only while no race is sending.
+    if (idle && (int32_t)(millis() - g_nextClock) >= 0) syncConnected();
+    if (idle != asleep) { WiFi.setSleep(idle); asleep = idle; }   // awake while racing: no 100 ms beacon waits
+  }
+}
+void lanJob() {
+  Wifi w;
+  g_lanState = lan::S_JOINING;
+  if (!loadWifi(w) || !joinWifi(w)) g_lanState = lan::S_NO_WIFI;   // a dead end until Rally starts again
+  else {
+    WiFiUDP udp;
+    udp.begin(LAN_PORT);
+    g_lanSelf = ipWord(WiFi.localIP());
+    g_lanState = lan::S_READY;
+    lanPump(udp);
+    udp.stop();
+    g_lanSelf = 0;
+    if (g_lanWant) g_lanState = lan::S_JOINING;   // the dark sent it away: it joins again when the screen wakes
+  }
+  wifiOff();
+  Serial.printf("[lan] radio released, stack to spare %u\n", (unsigned)uxTaskGetStackHighWaterMark(nullptr));
+  g_lanRun = false;
+}
+// Main loop: like pokeRadar, starts the task when Rally wants it, the screen is lit and the radio is free.
+void pokeLan() {
+  if (!g_lanWant || g_lanRun || g_dark || g_lanState == lan::S_NO_WIFI) return;
+  const uint32_t ms = millis();
+  if (ms - g_lanTry < 1000) return;
+  g_lanTry = ms;
+  if (g_busy.exchange(true)) return;
+  g_lanRun = true;
+  if (!spawn(J_LAN)) g_lanRun = false;
+}
+
 void pokeRadar() {
   const uint8_t ph = g_phase;
   if (!g_want || g_airRun || g_dark || ph == air::S_NO_WIFI || ph == air::S_NO_SPOT) return;
@@ -795,7 +908,7 @@ void Updater::begin(uint32_t (*utcNow)()) {
   }
   g_sd = board::mountSd();
   Serial.printf("[net] version %s, SD card %s\n", PORTHOLE_VERSION, g_sd ? "mounted" : "not found");
-  if (g_sd) wifiFromSd();
+  if (g_sd) { wifiFromSd(); SD_MMC.end(); }   // read once: the FAT and driver state go back to the heap
 }
 
 static uint32_t g_triedDay = UINT32_MAX;   // the day tick() last tried to start the daily check
@@ -1043,6 +1156,38 @@ void Radar::read(air::Snapshot& out) {
   out.state = s;
   if (s != air::S_LIVE) out.n = 0;
 }
+void Lan::start() {
+  if (!g_lanRun) g_lanState = lan::S_JOINING;   // a retry after "no wifi"; a task still running keeps its state
+  portENTER_CRITICAL(&g_lanMux); g_lanCount = 0; g_lanOutFull = false; portEXIT_CRITICAL(&g_lanMux);
+  g_lanWant = true;
+  pokeLan();
+}
+void Lan::stop() { g_lanWant = false; }   // the task sees it within 5 ms and lets the radio go
+lan::State Lan::state() {
+  pokeLan();
+  return g_lanWant ? (lan::State)g_lanState.load() : lan::S_OFF;
+}
+uint32_t Lan::self() { return g_lanSelf; }
+void Lan::send(const void* data, size_t len, uint32_t to) {
+  if (len > lan::MAX_PACKET || g_lanState != lan::S_READY) return;
+  portENTER_CRITICAL(&g_lanMux);
+  g_lanOut.addr = to; g_lanOut.len = (uint16_t)len;
+  memcpy(g_lanOut.data, data, len);
+  g_lanOutFull = true;
+  portEXIT_CRITICAL(&g_lanMux);
+}
+size_t Lan::recv(void* buf, size_t cap, uint32_t* from) {
+  LanPkt p;
+  portENTER_CRITICAL(&g_lanMux);
+  const bool any = g_lanCount > 0;
+  if (any) { p = g_lanIn[g_lanHead]; g_lanHead = (g_lanHead + 1) % LAN_RING; g_lanCount--; }
+  portEXIT_CRITICAL(&g_lanMux);
+  if (!any || p.len > cap) return 0;   // a datagram bigger than the caller's is not one of its own: dropped
+  memcpy(buf, p.data, p.len);
+  *from = p.addr;
+  return p.len;
+}
+
 bool Radar::spot(double* lat, double* lon) {
   *lat = g_home.lat;
   *lon = g_home.lon;

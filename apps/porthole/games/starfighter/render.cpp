@@ -1,6 +1,7 @@
 #include "launcher_icon.h"
 #include "render.h"
 #include "assets.h"
+#include "fastmem.h"
 #include "gfx565.h"
 #include "input.h"
 #include <algorithm>
@@ -8,6 +9,10 @@
 #include <cstdio>
 #include <cstring>
 #include <new>
+
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
 
 namespace starfighter::paint {
 namespace {
@@ -17,10 +22,13 @@ enum Color : uint8_t {
   DEEP_BLUE, BLUE, AZURE, ICE, DARK_RED, RED, ORANGE, GOLD, CREAM,
   DARK_GREEN, GREEN, LIME, SKIN_DARK, SKIN_SHADE, SKIN, VIOLET
 };
-// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM. Heap, not static: on the
-// board this lands in PSRAM, so internal RAM stays free for the wireless update's screen, wifi and TLS.
-// ponytail: PSRAM reads cost a little per frame; allocate internal RAM on enter() and free on leave() if fps drops.
-uint16_t* scene = nullptr;   // allocated by draw(), the only way in
+// One 51 KB bounded scratch surface. Expand once; sprites never repaint native PSRAM. Its home is the heap, not
+// static: on the board that is PSRAM, so internal RAM stays free for the wireless update's screen, wifi and TLS.
+// While the game is open and lit it is drawn in an internal-RAM loan instead (fastmem.h): every page repaints it whole,
+// so swapping buffers needs no copy.
+uint16_t* home = nullptr;    // allocated by draw(), the only way in
+uint16_t* scene = nullptr;   // home, or the loan
+void giveBack(void*) { if(scene!=home) { fastmem::give(scene); scene=home; } }
 constexpr uint16_t color(Color c) { return rgb(art::COLORS[c]); }
 void pixel(int x,int y,uint16_t c) {
   if(unsigned(x)<160&&unsigned(y)<160) scene[y*160+x]=c;
@@ -421,8 +429,9 @@ void flight(const View& v) {
 }
 }  // namespace
 void draw(const View& v) {
-  if(!scene) scene=new (std::nothrow) uint16_t[160*160]();   // first draw, never at static init: PSRAM joins the heap later
-  if(!scene) return;
+  if(!home) scene=home=new (std::nothrow) uint16_t[160*160]();   // first draw, never at static init: PSRAM joins the heap later
+  if(!home) return;
+  if(scene==home) if(void* p=fastmem::take(160*160*sizeof *scene,giveBack,nullptr)) scene=static_cast<uint16_t*>(p);
   switch(v.page) {
     case Page::Title: title(v); break;
     case Page::Calibrate: calibration(v); break;
@@ -431,5 +440,6 @@ void draw(const View& v) {
   }
   expand();
 }
+void release() { giveBack(nullptr); }
 const gfx::Sprite& icon() { return LAUNCHER_ICON; }
 }  // namespace starfighter::paint

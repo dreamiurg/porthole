@@ -1,0 +1,37 @@
+# Socket broker around `snap --serve`: keeps one sim process alive across shell calls, logs inputs, saves frames.
+import os, socket, struct, subprocess, sys, zlib
+D = os.path.dirname(os.path.abspath(__file__))
+SOCK = os.path.join(D, "sock")
+proc = subprocess.Popen([os.path.join(D, "snap"), "--serve", "--fresh"], cwd=D, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+trace = open(os.path.join(D, "trace.txt"), "a")
+t_ms = 0
+def cmd(line):
+    proc.stdin.write((line + "\n").encode()); proc.stdin.flush()
+    return proc.stdout.readline().decode().strip()
+def png(rgb, w, h):
+    raw = b"".join(b"\x00" + rgb[y*w*3:(y+1)*w*3] for y in range(h))
+    ch = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    return b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + ch(b"IDAT", zlib.compress(raw, 6)) + ch(b"IEND", b"")
+def frame(name):
+    proc.stdin.write(b"frame\n"); proc.stdin.flush()
+    n = int(proc.stdout.readline().decode().split()[1]); buf = b""
+    while len(buf) < n: buf += proc.stdout.read(n - len(buf))
+    open(os.path.join(D, "shots", name + ".png"), "wb").write(png(buf, 480, 480))
+    return "saved " + name
+if os.path.exists(SOCK): os.unlink(SOCK)
+s = socket.socket(socket.AF_UNIX); s.bind(SOCK); s.listen(1)
+while True:
+    c, _ = s.accept(); data = c.makefile().read(); out = []
+    for line in data.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"): continue
+        if line.startswith("frame"):
+            out.append(frame(line.split()[1])); trace.write(f"{t_ms:8d} frame {line.split()[1]}\n")
+        elif line == "quit":
+            proc.kill(); c.sendall(b"bye\n"); c.close(); sys.exit(0)
+        else:
+            r = cmd(line); trace.write(f"{t_ms:8d} {line}\n")
+            if line.startswith("tick"): t_ms += int(line.split()[1])
+            elif line in ("up",) or line.startswith(("down", "move")): t_ms += 0
+            out.append(r)
+    trace.flush(); c.sendall(("\n".join(out) + f"\nt={t_ms}\n").encode()); c.close()

@@ -143,6 +143,7 @@ void Shell::drawSysInfo() {
   row(y, "SD card", info_.sd ? "yes" : "no"); y += ROW;
   row(y, "Wifi", info_.wifiSaved ? info_.ssid : "none"); y += ROW;
   row(y, upd_.state == UP_IDLE && upd_.lastCheck ? "Checked" : "Last try", tried);   // before this boot: a time, no result
+  if (saveFailing_) stextC(80, 89, "Saves failing: storage full?", C_YELLOW);   // the last game save did not land
   sbutton(WIFI_BTN, "Wifi", C_SKY, down(in_, WIFI_BTN));
   sbutton(UPD_BTN, "Updates", C_SKY, down(in_, UPD_BTN));
   sbutton(GAMES_BTN, "Games", C_SKY, down(in_, GAMES_BTN));

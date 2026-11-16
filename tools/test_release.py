@@ -50,6 +50,11 @@ with tempfile.TemporaryDirectory() as tmp:
     run(repo, "git", "tag", "alpha-v0.1.0")
     assert versions(repo) == {}, "nothing new since the tag"
 
+    commit(repo, "apps/alpha/main.cpp", 'Revert "docs: typo"')
+    assert versions(repo) == {}, "taking a docs commit back out ships nothing"
+    commit(repo, "apps/alpha/main.cpp", 'Revert "feat(alpha): first light" (#3)')
+    assert versions(repo) == {"alpha": "0.1.1"}, "a revert of a shipped feature is released"
+
     commit(repo, "apps/alpha/main.cpp", "fix: off by one")
     commit(repo, "apps/beta/README.md", "docs: typo")
     assert versions(repo) == {"alpha": "0.1.1"}, versions(repo)
@@ -69,6 +74,19 @@ with tempfile.TemporaryDirectory() as tmp:
     assert release.classify("fix: wording", "This is not a BREAKING CHANGE: just prose.")[0] == "fix", "mid-line is prose"
     assert release.classify("fix: x", "BREAKING-CHANGE: hyphenated")[0] == "breaking", "the hyphenated footer counts"
     assert release.classify("feat!: x", "")[0] == "breaking"
+    # A revert ships too, or the beta it takes back stays the newest and is promoted to stable.
+    for undo in ('Revert "feat(alpha): a new screen"', 'Revert "fix: off by one" (#12)', 'Revert "perf(alpha)!: x"', "revert(alpha): the new screen"):
+        assert release.classify(undo, "")[0] == "fix", undo
+    for quiet in ('Revert "docs: typo"', 'Revert "chore(deps): bump x"', 'Revert "Revert "docs: typo""', "Revert the lot"):
+        assert release.classify(quiet, "")[0] == "other", quiet
+    assert release.classify('Revert "Revert "feat: x""', "")[0] == "fix", "a revert of a revert puts the feature back"
+    assert release.classify("Fix(alpha): crash", "")[0] == "fix" and release.classify("FEAT: x", "")[0] == "feat", "the type's case is not checked"
+
+    # A pull request title becomes the squash merge's commit title: the ones the planner cannot read are refused.
+    for good in ("fix(alpha): crash", "feat!: x", "Fix: x", "ci(deps): Bump a from 1 to 2", "docs: typo", 'Revert "feat: x" (#3)'):
+        assert release.title_problem(good) is None, good
+    for bad in ("fix(alpha) crash", "fix (alpha): crash", "fixed: crash", "Fix the crash", "fix:", ""):
+        assert release.title_problem(bad), bad
 
     # Promotion. Betas 0.1.1 .. 0.1.3, stable 0.1.0; "now" is 2026-11-10 12:00 UTC.
     run(repo, "git", "tag", "alpha-v0.1.1")
@@ -79,8 +97,8 @@ with tempfile.TemporaryDirectory() as tmp:
     three_days = timedelta(hours=72)
 
     def rel(tag: str, days_old: float, pre: bool = True, name: str = "") -> dict[str, object]:
-        created = (now - timedelta(days=days_old)).isoformat().replace("+00:00", "Z")
-        return {"tagName": tag, "name": name or tag, "isPrerelease": pre, "createdAt": created}
+        published = (now - timedelta(days=days_old)).isoformat().replace("+00:00", "Z")
+        return {"tagName": tag, "name": name or tag, "isPrerelease": pre, "publishedAt": published}
 
     def promote(releases: list[dict[str, object]], tag: str | None = None, min_age: timedelta = three_days) -> dict[str, str] | None:
         return release.promotion("alpha", releases, tag, min_age, now)
@@ -112,5 +130,6 @@ with tempfile.TemporaryDirectory() as tmp:
     p = promote(releases, tag="alpha-v0.1.1")
     assert p and p["tag"] == "alpha-v0.3.0" and "rolls stable back" in p["notes"], "a rollback is a higher version"
     assert release.promotion("alpha", [rel("alpha-v0.1.3", 1)], None, three_days, now) is None, "nothing old enough"
+    assert release.promotion("alpha", [{**rel("alpha-v0.1.3", 9), "publishedAt": None}], None, three_days, now) is None, "a draft was never published"
 
 print("release.py: all checks passed")

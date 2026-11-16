@@ -4,6 +4,7 @@
 #pragma once
 #include "air.h"
 #include "gfx.h"
+#include "scope.h"
 #include "ui.h"
 
 namespace radar::paint {
@@ -21,6 +22,21 @@ inline ui::Box rangeBox(int i) { return {26 + 28 * i, 72, 24, 22}; }
 enum { SHOW_CALL, SHOW_ROUTE, SHOW_ALT, SHOWS };
 inline ui::Box showBox(int i) { return {26 + 36 * i, 106, 34, 22}; }
 
+// What the scope keeps between repaints and scribbles on during one. The Game owns it, so it lives in PSRAM with the
+// game instead of in 3 KB of static internal RAM.
+struct Memory {
+  // Each plane's label side last repaint, by callsign, so a label stays put while its plane moves: sides[cur] is being
+  // written, sides[!cur] read. A plane with no flight number has no side to keep.
+  struct Side { uint32_t key; int8_t side; };
+  Side sides[2][air::MAX_PLANES];
+  int cur = 0, count[2] = {0, 0};
+  Placed at[air::MAX_PLANES];   // where this repaint put each plane
+  // What a tag must not cover; each tag placed joins it. 3 fixed, 4 letters, a symbol and a label per plane.
+  canvas::Box taken[air::MAX_PLANES * 2 + 8];
+  int nTaken = 0;
+  void avoid(canvas::Box b) { if (nTaken < (int)(sizeof taken / sizeof taken[0])) taken[nTaken++] = b; }
+};
+
 struct View {
   Page page;
   const air::Snapshot* snap;
@@ -29,6 +45,7 @@ struct View {
   bool homeDown;
   int ageSec;               // whole seconds since the planes were fetched: they are drawn flown on that far
   const char* spot;         // the menu's "Home 47.62, -122.35"
+  Memory* mem;
 };
 
 void draw(const View& v);

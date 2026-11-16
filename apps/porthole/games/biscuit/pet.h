@@ -10,12 +10,18 @@
 #include <stdint.h>
 #include <string.h>
 #include "crc32.h"
+#include "stars.h"
 
 namespace biscuit {
 constexpr const char* STORE = "biscuit";   // NVS namespace, keys s<profile id>. Never rename it once it ships.
 constexpr size_t NAME_LIMIT = 12;
 constexpr uint32_t MAX_COUNT = 1000000;
-constexpr int NUM_TRICKS = 6, NUM_STORIES = 7, NUM_DISCOVERIES = 96, NUM_STICKERS = 12;
+constexpr int NUM_TRICKS = 6, NUM_STORIES = 15, NUM_DISCOVERIES = 96, NUM_STICKERS = 12, NUM_DECOR = 9;
+// The first seven stories came from the old firmware (their bits are Save::stories); the rest are Save::moreStories.
+// A newer book opens NEW_BOOK_GAP days after the one before it, counted from the day this pup first saw them
+// (Save::booksDay), so a pup already past its content days still gets them one at a time.
+constexpr int FIRST_STORIES = 7;
+constexpr uint32_t NEW_BOOK_GAP = 2;
 
 // ---- calibration knobs (per real hour unless noted) ----
 constexpr uint32_t ELAPSED_CAP_SEC = 8 * 3600;   // time away counts this much at most: a weekend off is not neglect
@@ -24,6 +30,12 @@ constexpr float FULLNESS_AWAKE = 4, FULLNESS_ASLEEP = 2, HAPPINESS_AWAKE = 2, EN
 constexpr float FEED_FULLNESS = 18, PLAY_HAPPINESS = 14, PLAY_ENERGY = 8, PET_HAPPINESS = 6, STORY_HAPPINESS = 10;
 constexpr uint32_t FIRST_TODAY_FRIENDSHIP = 2, ADVENTURE_FRIENDSHIP = 4;
 constexpr uint8_t TRICK_UNLOCK_DAY[NUM_TRICKS] = {1, 1, 2, 3, 5, 7};   // days together before a trick can be trained
+// Thinking hard is training too: every PUZZLES_PER_LESSON right answers teach the pup a lesson of the first trick it
+// hasn't mastered, whatever day that trick opens on (puzzles open tricks early).
+constexpr uint32_t PUZZLES_PER_LESSON = 4;
+// Little reads: their levels, how many right in a row move a level up, and how many right ones are a star.
+constexpr uint8_t READ_LEVELS = 5, READ_STREAK_UP = 3;
+constexpr uint32_t READS_PER_STAR = 3;
 // The daily adventure: which activities (Action bits) today asks for, a 7-day cycle. Completing it earns the sticker
 // of a 12-day cycle.
 constexpr uint8_t DAILY_MASKS[7] = {1 | 8 | 2, 16 | 4 | 32, 8 | 1 | 4, 2 | 16 | 8, 4 | 1 | 32, 16 | 8 | 32, 2 | 4 | 16};
@@ -33,11 +45,15 @@ enum class Stage : uint8_t { Puppy, YoungPup, StoryDog };
 enum class Cue : uint8_t { Left, Up, Right, Down, Paw };
 
 // Persisted as a raw blob per profile (biscuit/s<id>, written by the shell). Append-only: new fields go right before
-// crc (their zero must be a sensible default, loadBlob zero-fills them for older blobs), bump SAVE_VERSION, never
+// crc (their zero must be a sensible default, loadBlob zero-fills them for older blobs; the one exception, booksDay,
+// loadBlob sets from daysTogether for a v1 blob), bump SAVE_VERSION, never
 // reorder or resize a field. The kid's name and the daily play budget live in the shell's profile, not here.
 constexpr uint32_t SAVE_MAGIC = 0x54435342;   // "BSCT"
-constexpr uint16_t SAVE_VERSION = 1;
-constexpr size_t SAVE_V1_SIZE = 96;
+constexpr uint16_t SAVE_VERSION = 4;
+constexpr size_t SAVE_V1_SIZE = 96, SAVE_V2_SIZE = 108, SAVE_V3_SIZE = 116, SAVE_V4_SIZE = 184;
+// A puzzle missed, to ask again on a later day (puzzles::Item's bytes, so this header needs no puzzle content).
+struct PuzzleReview { uint8_t strand, level, a, b, c, misses; uint16_t due; };   // due: dayOf(), 0 = empty
+constexpr int PUZZLE_STRANDS = 3, PUZZLE_REVIEWS = 8;
 struct Save {
   uint32_t magic;
   uint16_t version, size;
@@ -48,15 +64,27 @@ struct Save {
   uint32_t careCounts[3];              // Feed, Play, Petting
   uint32_t discoveries[3];             // NUM_DISCOVERIES bits
   uint16_t stickers;                   // NUM_STICKERS bits
-  uint8_t stories;                     // NUM_STORIES bits: finished at least once
+  uint8_t stories;                     // FIRST_STORIES bits: finished at least once
   uint8_t tricks[NUM_TRICKS];          // lessons passed, 3 = mastered
   uint8_t dailyCompleted, dailyClaimed, sleeping;
   char petName[NAME_LIMIT + 1];
   uint8_t named;                       // nothing counts (no decay, no visits, no progress) until the pup has a name
-  uint8_t reserved[2];
+  uint8_t readLevel, readStreak;       // v3 (were reserved, so 0 in older blobs): little reads, below
+  uint32_t moreStories;                // v2: stories FIRST_STORIES.. finished at least once
+  uint32_t booksDay;                   // v2: daysTogether when the newer books started arriving (1 for a new pup)
+  uint32_t puzzles;                    // v2: puzzles answered right
+  // v3: how many of earnedStars() went into the kid's balance (os/stars.h), which the shell keeps; a v2 pup's are
+  // paid in at the first visit. The doghouse's things bought with stars (NUM_DECOR bits).
+  uint32_t starsPaid;
+  uint16_t decor, readsRight;          // readsRight was reserved too
+  // v4: each puzzle strand's level + 1 (0: never played, it starts from the kid's age), and the puzzles missed that
+  // come back on a later day. Both are checked where they are used (screens_puzzles.cpp), never here: a bad byte
+  // there must not cost a kid their pup.
+  uint8_t puzzleLevels[PUZZLE_STRANDS], puzzleReviewCount;
+  PuzzleReview puzzleReviews[PUZZLE_REVIEWS];
   uint32_t crc;
 };
-static_assert(sizeof(Save) == SAVE_V1_SIZE, "Save is persisted: append before crc, never resize");
+static_assert(sizeof(Save) == SAVE_V4_SIZE, "Save is persisted: append before crc, never resize");
 
 inline int32_t dayOf(uint32_t now) { return (int32_t)(now / 86400u); }
 inline float clampNeed(float v) { return v < NEED_FLOOR ? NEED_FLOOR : v > NEED_MAX ? NEED_MAX : v; }
@@ -117,7 +145,7 @@ inline Save create(uint32_t now) {
   p.createdAt = p.updatedAt = now;
   p.lastVisitDay = dayOf(now);
   p.fullness = 78; p.happiness = 86; p.energy = 80;
-  p.daysTogether = 1;
+  p.daysTogether = p.booksDay = 1;
   return p;
 }
 
@@ -197,19 +225,63 @@ inline void recordReading(Save& p, uint32_t now) {
   if (awake(p)) recordActivity(p, Action::Read);
 }
 
-inline uint8_t stars(const Save& p) {   // 3 per story finished
-  uint8_t count = 0;
-  for (int bit = 0; bit < NUM_STORIES; bit++) count += (p.stories >> bit) & 1;
-  return (uint8_t)(count * 3);
+inline bool storyRead(const Save& p, int id) {
+  return id < FIRST_STORIES ? (p.stories >> id) & 1 : id < NUM_STORIES && ((p.moreStories >> (id - FIRST_STORIES)) & 1);
+}
+inline void markStoryRead(Save& p, int id) {
+  if (id < FIRST_STORIES) p.stories |= (uint8_t)(1u << id);
+  else p.moreStories |= 1u << (id - FIRST_STORIES);
+}
+constexpr uint32_t PUZZLES_PER_STAR = 5;
+inline int storyStars(const Save& p) {   // 3 per story finished
+  return (__builtin_popcount(p.stories) + __builtin_popcount(p.moreStories)) * 3;
+}
+inline int earnedStars(const Save& p) {   // the stories', and one per PUZZLES_PER_STAR right puzzles or READS_PER_STAR reads
+  return storyStars(p) + (int)(p.puzzles / PUZZLES_PER_STAR + p.readsRight / READS_PER_STAR);
+}
+// Stars earned here and not yet paid into the kid's balance go there now. True when there were any.
+// shortcut: the balance (the shell's record) and starsPaid (this save) are two writes, so a power cut between them
+// can pay a few stars twice or lose a purchase; one store for both if that ever matters.
+inline bool payStars(Save& p, uint32_t* wallet) {
+  const uint32_t earned = (uint32_t)earnedStars(p);
+  if (earned <= p.starsPaid) return false;
+  stars::award(wallet, earned - p.starsPaid);
+  p.starsPaid = earned;
+  return true;
+}
+inline bool owns(const Save& p, int item) { return item >= 0 && item < NUM_DECOR && ((p.decor >> item) & 1); }
+// The doghouse: a thing bought with the kid's stars. False (nothing spent) when it is owned already or they are short.
+inline bool buyDecor(Save& p, uint32_t* wallet, int item, uint32_t price) {
+  if (item < 0 || item >= NUM_DECOR || owns(p, item) || !stars::spend(wallet, price)) return false;
+  p.decor |= (uint16_t)(1u << item);
+  return true;
+}
+// The day a story opens: its content day, and for a newer book also NEW_BOOK_GAP days after the newer one before it.
+inline uint32_t storyDay(const Save& p, int id, uint8_t unlockDay) {
+  const uint32_t paced = id < FIRST_STORIES ? 0 : p.booksDay + NEW_BOOK_GAP * (uint32_t)(id - FIRST_STORIES);
+  return paced > unlockDay ? paced : unlockDay;
 }
 
 // Reading always counts toward today; only the first finish of a story adds its star and the happiness.
 inline void finishStory(Save& p, uint8_t id, uint32_t now) {
   if (id >= NUM_STORIES) return;
   recordReading(p, now);
-  if (!awake(p) || (p.stories & (1u << id))) return;
-  p.stories |= (uint8_t)(1u << id);
+  if (!awake(p) || storyRead(p, id)) return;
+  markStoryRead(p, id);
   p.happiness = clampNeed(p.happiness + STORY_HAPPINESS);
+}
+
+// A puzzle answered: a right one is kept, and any answer counts as today's training (a pup's mind gets practice
+// too). Nothing here is ever a failure. Every PUZZLES_PER_LESSON right ones pass a lesson of the first trick not yet
+// mastered: that trick's id, else -1.
+inline int answerPuzzle(Save& p, bool right, uint32_t now) {
+  tick(p, now);
+  if (!awake(p)) return -1;
+  recordActivity(p, Action::Train);
+  if (!right || p.puzzles >= MAX_COUNT) return -1;
+  if (++p.puzzles % PUZZLES_PER_LESSON) return -1;
+  for (int id = 0; id < NUM_TRICKS; id++) if (p.tricks[id] < 3) { p.tricks[id]++; return id; }
+  return -1;
 }
 
 inline bool discovered(const Save& p, uint8_t id) {
@@ -221,9 +293,13 @@ inline void discover(Save& p, uint8_t id, uint32_t now) {
   if (awake(p)) p.discoveries[id / 32] |= 1u << (id % 32);
 }
 
+// A trick can be trained once its day comes, or once puzzles taught it a lesson.
+inline bool trickOpen(const Save& p, int id) {
+  return id >= 0 && id < NUM_TRICKS && (p.daysTogether >= trickUnlockDay((uint8_t)id) || p.tricks[id]);
+}
 inline void practice(Save& p, uint8_t id, uint32_t now) {   // one lesson passed
   tick(p, now);
-  if (id >= NUM_TRICKS || !awake(p) || p.daysTogether < trickUnlockDay(id)) return;
+  if (!trickOpen(p, id) || !awake(p)) return;
   if (p.tricks[id] < 3) p.tricks[id]++;
   recordActivity(p, Action::Train);
 }
@@ -234,16 +310,40 @@ inline Stage stage(const Save& p) {
   return Stage::Puppy;
 }
 
+// Little reads (content_reads.h): a passage and one question. Each kid gets a level, from their age the first time
+// (6: 1, 8: 3), then READ_STREAK_UP right in a row move it up one and a miss down one. That 3-up/1-down staircase
+// settles where three right in a row is an even bet, about 79% right (learning-principles.md, principle 2). Any
+// answer is today's reading; every READS_PER_STAR right ones are a star. Returns how the level moved: -1, 0 or +1.
+inline uint8_t ageReadLevel(uint8_t age) { return age <= 6 ? 1 : age - 5 > READ_LEVELS ? READ_LEVELS : (uint8_t)(age - 5); }
+inline uint8_t readLevel(const Save& p, uint8_t age) { return p.readLevel ? p.readLevel : ageReadLevel(age); }
+inline int answerRead(Save& p, bool right, uint8_t age, uint32_t now) {
+  recordReading(p, now);
+  if (!awake(p)) return 0;
+  const uint8_t was = readLevel(p, age);
+  p.readLevel = was;
+  if (!right) {
+    p.readStreak = 0;
+    if (p.readLevel > 1 && p.readLevel >= ageReadLevel(age)) p.readLevel--;   // never more than one below the age's start
+  } else {
+    if (p.readsRight < UINT16_MAX) p.readsRight++;
+    if (++p.readStreak >= READ_STREAK_UP) { p.readStreak = 0; if (p.readLevel < READ_LEVELS) p.readLevel++; }
+  }
+  return p.readLevel - was;
+}
+
 // ---- validity and persistence ----
 inline bool validNeed(float v) { return isfinite(v) && v >= NEED_FLOOR && v <= NEED_MAX; }
 inline bool validCounts(const Save& p) {
-  if (p.friendship > MAX_COUNT || p.daysTogether < 1 || p.daysTogether > MAX_COUNT) return false;
+  if (p.friendship > MAX_COUNT || p.daysTogether < 1 || p.daysTogether > MAX_COUNT || p.puzzles > MAX_COUNT) return false;
+  if (p.booksDay < 1 || p.booksDay > p.daysTogether) return false;
+  if (p.starsPaid > (uint32_t)earnedStars(p)) return false;
   for (uint32_t c : p.careCounts) if (c > MAX_COUNT) return false;
   for (uint8_t t : p.tricks) if (t > 3) return false;
-  return true;
+  return p.readLevel <= READ_LEVELS && p.readStreak < READ_STREAK_UP;
+
 }
 inline bool validFlags(const Save& p) {
-  return !(p.stories & ~0x7fu) && !(p.stickers & ~0xfffu) && !(p.dailyCompleted & ~0x3fu) && p.dailyClaimed <= 1
+  return !(p.stories >> FIRST_STORIES) && !(p.moreStories >> (NUM_STORIES - FIRST_STORIES)) && !(p.stickers & ~0xfffu) && !(p.decor >> NUM_DECOR) && !(p.dailyCompleted & ~0x3fu) && p.dailyClaimed <= 1
       && p.sleeping <= 1 && p.named <= 1 && (bool)p.named == (p.petName[0] != 0);
 }
 // Today's adventure is claimed exactly when it is complete, and a claim always carries its sticker.
@@ -260,7 +360,7 @@ inline bool valid(const Save& p) {
 }
 
 inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); s.reserved[0] = s.reserved[1] = 0;
+  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
   s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
 }
 // Any version up to this one: a blob is its own size (a prefix of today's layout) with its crc in the last four
@@ -273,6 +373,7 @@ inline bool loadBlob(const void* data, size_t n, Save& out) {
   Save s{};
   memcpy(&s, b, n - 4);
   if (s.magic != SAVE_MAGIC || s.size != n || !s.version || s.version > SAVE_VERSION || crc != os::crc32(b, n - 4)) return false;
+  if (s.version < 2) s.booksDay = s.daysTogether;   // the newer books start arriving at the first visit after the update
   if (!valid(s)) return false;
   seal(s);
   out = s;
@@ -330,6 +431,7 @@ inline bool convert(const PetV1& o, uint32_t version, Save& s) {
   memcpy(s.careCounts, o.careCounts, sizeof s.careCounts); memcpy(s.discoveries, o.discoveries, sizeof s.discoveries);
   s.stickers = o.stickers; s.stories = o.stories; memcpy(s.tricks, o.tricks, sizeof s.tricks);
   s.dailyCompleted = o.dailyCompleted; s.dailyClaimed = o.dailyClaimed; s.sleeping = o.sleeping;
+  s.booksDay = o.daysTogether;
   return true;
 }
 }  // namespace legacy

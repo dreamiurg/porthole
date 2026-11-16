@@ -22,8 +22,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # On main, a newer push cancels the older run; its release then ships with the newer commit's.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # On main, a newer push cancels the older run; its release then ships with the newer commit's. The weekly and manual
+  # runs get groups of their own: in the push's group they would cancel a merge's run, and release.yml only releases
+  # after a push's run that passed, so that merge's beta would wait, unnoticed, for the next merge.
+  group: ${{ github.workflow }}-${{ github.head_ref || format('{0}-{1}', github.ref, github.event_name) }}
   cancel-in-progress: true
 
 permissions:
@@ -70,7 +72,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
-      - run: pip install pre-commit
+      - run: pip install pre-commit==4.7.0  # pinned like the tools below: a required check should not change by itself
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/pre-commit
@@ -95,12 +97,12 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.11"
-      - run: sudo apt-get update && sudo apt-get install --yes zlib1g-dev
-      - run: pip install pillow fonttools==4.61.1 'gcovr>=8.3'
+      - run: sudo apt-get update && sudo apt-get install --yes zlib1g-dev libsdl2-dev
+      - run: pip install pillow==13.0.0 fonttools==4.61.1 gcovr==8.8  # the versions the local hooks install (.pre-commit-config.yaml)
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: .tool-versions  # the same Node (and bundled zlib) as local hooks via mise
-      - run: make -C apps/porthole ci REQUIRE_NODE=1  # the Biscuit art --check must run here, not skip
+      - run: make -C apps/porthole ci REQUIRE_NODE=1 REQUIRE_SDL=1  # the Biscuit art --check and the windowed sim must run here, not skip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: failure()
         with:
@@ -127,18 +129,20 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version: "3.11"
       - id: pio
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.platformio
           key: pio-${{ runner.os }}-${{ hashFiles('platform/*.ini') }}  # shared by every app: toolchains come from the platform pin
-      - run: pip install -r platform/requirements.txt && make -C apps/porthole firmware
-      - if: github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
-        name: Prune the PlatformIO cache before saving it (main only)
-        run: rm -rf ~/.platformio/tools ~/.platformio/dist  # idf_tools install copies; builds only need packages/
+      # The build a release runs, not just the firmware: the factory image, the version baked in and found in the
+      # image, the packaging. A break in any of them fails the PR instead of release.yml on main, after the merge.
+      # 0.0.0 is never published. The action also drops ~/.platformio's tools/ and dist/ (idf_tools install copies;
+      # builds only need packages/), so what main saves below is already pruned.
+      - uses: ./.github/actions/build-release
+        with:
+          app: porthole
+          version: 0.0.0
+          cache: "false"
       - if: github.event_name != 'pull_request' && steps.pio.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:

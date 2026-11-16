@@ -1,7 +1,7 @@
 // Biscuit's Home skips drawing a frame its target buffer already holds (canvas::Frames with a look word). Drive Home
 // through presses, fetch, naps and the scene's steps over the panel's two buffers, and check every frame against a
 // whole repaint: a look that misses something Home draws shows up here as a differing frame. Run: make test
-#include <assert.h>
+#include "host/check.h"
 #include <stdio.h>
 #include <string.h>
 #include "games/biscuit/game.h"

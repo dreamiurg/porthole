@@ -1,0 +1,25 @@
+reset
+profile Zed 8 1111
+wait 1000
+tap 80 12
+wait 1000
+screen
+tap 80 55
+wait 1000
+screen
+tap 41 62
+wait 200
+tap 41 62
+wait 200
+tap 41 62
+wait 200
+down 41 62
+wait 80
+up
+wait 250
+screen
+down 124 105
+wait 80
+up
+wait 600
+screen

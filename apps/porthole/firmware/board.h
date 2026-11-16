@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "console.h"   // Serial on both USB-C ports
+#include "touch_hold.h"   // board::Touch
 
 namespace board {
 constexpr int LCD_W = 480, LCD_H = 480;
@@ -22,8 +23,9 @@ void drawUpdateProgress(const char* label, bool cancellable);
 bool hitUpdateCancel(int logicalX, int logicalY);
 void endUpdateDisplay();
 
-struct Touch { bool down; int x, y; };  // physical pixels
+// The finger (board::Touch, physical pixels). One failed read keeps the last sample; see touch_hold.h.
 Touch readTouch();
+uint32_t touchMisses();   // failed touch reads since boot
 
 // RTC: seconds since 1970-01-01 00:00 in *local* wall-clock terms (no timezone handling).
 bool rtcValid();

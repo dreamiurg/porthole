@@ -50,26 +50,32 @@ const char* key(char prefix, int id) { static char k[4]; snprintf(k, sizeof k, "
 
 static uint32_t recCrc(const Record& r) { return os::crc32(&r, sizeof r - sizeof r.crc); }
 void seal(Record& r) { r.magic = REC_MAGIC; r.version = REC_VERSION; r.size = sizeof(Record); r.crc = recCrc(r); }
-bool loadRecord(const void* data, size_t n, Record& out) {   // this version's size, or v1's (the new fields stay 0)
-  if (n != sizeof(Record) && n != REC_V1_SIZE) return false;
+bool loadRecord(const void* data, size_t n, Record& out) {   // this version's size, or an older one's (the new fields stay 0)
+  const uint16_t version = n == REC_V1_SIZE ? 1 : n == REC_V2_SIZE ? 2 : n == sizeof(Record) ? REC_VERSION : 0;
+  if (!version) return false;
   memset(&out, 0, sizeof out);
   memcpy(&out, data, n - sizeof out.crc);
   uint32_t crc; memcpy(&crc, (const uint8_t*)data + n - sizeof crc, sizeof crc);
-  bool ok = out.magic == REC_MAGIC && out.version == (n == REC_V1_SIZE ? 1 : REC_VERSION) && out.size == n &&
+  bool ok = out.magic == REC_MAGIC && out.version == version && out.size == n &&
             crc == os::crc32(data, n - sizeof crc);
   out.name[sizeof out.name - 1] = 0;   // a CRC proves the bytes, not that the name ends
   if (ok) seal(out);                   // in memory it is a current record
   return ok;
 }
 
-void loadAll(Store& st, Profiles& p) {
-  memset(&p, 0, sizeof p);
+// Its own frame, never inlined: this 2 KB buffer is off the stack again before the migrations put theirs on. Stacked, they
+// took 5 KB of the board's 8 KB loop stack at boot.
+__attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
   for (int id = 0; id < MAX_PROFILES; id++) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
     p.blocked[id] = n && !p.used[id];
   }
+}
+void loadAll(Store& st, Profiles& p) {
+  memset(&p, 0, sizeof p);
+  loadRecords(st, p);
   uint8_t mark;
   if (!st.load(NS, MIGRATED, &mark, sizeof mark)) migrate(st, p);
   migrateBiscuit(st, p);   // after migrate: it matches the migrated names; a no-op once porthole/mb exists

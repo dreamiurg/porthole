@@ -129,13 +129,15 @@ class System {
   ~System() = default;
 };
 
-// Parses "X.Y.Z" (an optional leading 'v' is skipped). False for "dev" or anything else.
+// Parses "X.Y.Z" (an optional leading 'v' is skipped). False for "dev" or anything else, a part over 99999 included:
+// past that the host's 64-bit long and the board's 32-bit one would no longer narrow to the same int.
 inline bool parseVersion(const char* s, int v[3]) {
   if (!s) return false;
   if (*s == 'v') s++;
   for (int i = 0; i < 3; i++) {
     if (*s < '0' || *s > '9') return false;
     char* end; long n = strtol(s, &end, 10);
+    if (n > 99999) return false;
     v[i] = (int)n; s = end;
     if (i < 2) { if (*s != '.') return false; s++; }
   }
@@ -149,6 +151,14 @@ inline bool newer(const char* a, const char* b) {
   if (!parseVersion(a, x) || !parseVersion(b, y)) return false;
   for (int i = 0; i < 3; i++) if (x[i] != y[i]) return x[i] > y[i];
   return false;
+}
+
+// A release that was downloaded and started but did not stay: the bootloader went back to the running firmware and
+// marked the spare slot invalid. `tried` is the version the last finished download put there ("" = none). That one
+// release is not downloaded again, so a release that cannot start on a board costs it one download, not one a day;
+// any other version is tried as usual.
+inline bool rolledBack(const char* available, const char* tried, bool spareSlotInvalid) {
+  return spareSlotInvalid && available && tried && *tried && !strcmp(available, tried);
 }
 
 }  // namespace shell

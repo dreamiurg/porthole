@@ -1,6 +1,6 @@
 // Launcher geometry for any number of games up to MAX_APPS (12), pure so host/test_shell.cpp can hold every layout to
 // the round glass. Six games share a page: two rows of three picture tiles between the header (y 56) and the page
-// arrows (from y 124), a short last row centered. Ten games are two pages. The pictures carry each game's
+// arrows (from y 124), a short last row centered. Twelve games are two full pages. The pictures carry each game's
 // identity; there is no room for a name under a tile, so pressing a tile shows its game's name over the header row.
 #pragma once
 #include "ui.h"

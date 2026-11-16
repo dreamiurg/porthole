@@ -1,0 +1,8 @@
+# usage: waitred.sh PREFIX MAXSTEPS : tick 250 ms steps until the sign turns red (what Leo sees), saving each frame
+P=$1; N=$2
+for i in $(seq -w 1 $N); do
+  python3 -I drv.txt send "tick 250; shot ${P}_$i" >/dev/null
+  c=$(python3 -c "from PIL import Image; print(Image.open('shots/${P}_$i.png').getpixel((150,395)))")
+  if [ "$c" = "(181, 77, 49)" ]; then echo "red at ${P}_$i"; exit 0; fi
+done
+echo "no red after $N"

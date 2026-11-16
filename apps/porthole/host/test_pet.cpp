@@ -202,6 +202,14 @@ static void bringBackOntoFullWall() {
   for (int i = 0; i < WALL_SLOTS - 1; i++) assert(f.wallBreeds[i] == i + 1);
   assert(!strcmp(f.wallNames[0], "B") && !strcmp(f.wallNames[2], "D") && f.wallNames[3][0] == 0 && !strcmp(f.petName, "Rex"));
 }
+// The clock ran ahead (a wrong date) when a gift was opened, then was put right: today's gift still comes.
+static void giftAfterClockSetBack() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  pet::openGift(s, day0 + 400 * 86400);
+  assert(!pet::giftReady(s, day0 + 400 * 86400) && pet::giftReady(s, day0 + 86400));
+  pet::openGift(s, day0 + 86400); assert(!pet::giftReady(s, day0 + 86400) && pet::giftReady(s, day0 + 2 * 86400));
+}
+
 // The wall keeps the last four dogs, oldest first; dogsRaised counts them all.
 static void wallRollsAtFour() {
   Save s; pet::adopt(s, day0, "Sam", "A");
@@ -235,9 +243,20 @@ static void breedSurvivesRoundTrip() {
 // A crc-valid v3 blob with bytes past the art and the wall loads safe: every reader indexes with them unchecked.
 static void corruptFieldsLoadSafe() {
   Save s; pet::adopt(s, day0, "Sam", "Rex");
-  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; pet::seal(s);
+  s.breed = 200; s.wallBreeds[2] = 99; s.wallCount = 9; s.hasDog = 7; s.hat = NUM_HATS; s.stage = 9; pet::seal(s);
   Save m; assert(pet::loadBlob(&s, sizeof s, m) && pet::valid(m));
   assert(m.breed == 0 && m.wallBreeds[2] == 0 && m.wallCount == WALL_SLOTS && m.hasDog == 1);
+  assert(m.hat == 0 && m.stage == STAGE_GROWN);   // SPR_HATS and the stats card's stage names
+}
+
+// The clock is set back to before the dog grew: it stays grown, with no second "grew up" card.
+static void clockSetBackKeepsStage() {
+  Save s; pet::adopt(s, day0, "Sam", "Rex");
+  assert((pet::simulate(s, day0 + 5 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  pet::simulate(s, day0 + 86400, false);   // the first tick after the correction only moves lastSeen back
+  assert(!(pet::simulate(s, day0 + 86400 + 60, true) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  assert(!(pet::simulate(s, day0 + 5 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_DOG);
+  assert((pet::simulate(s, day0 + 10 * 86400, false) & pet::EV_STAGE_UP) && s.stage == STAGE_GROWN);
 }
 
 static void levels(const Save& s) {
@@ -302,6 +321,22 @@ static int celebrateDogInk(bool retired) {
   return ink;
 }
 static void emptyRoomCelebratesWithoutDog() { assert(celebrateDogInk(false) > 0 && celebrateDogInk(true) == 0); }
+// A buzzer pattern ends at its last pair: the firmware asks soundOn() every frame, and one read past its end plays
+// whatever lies after it in memory. The streak card's fanfare is 25 ms three times, 40 ms apart, then 70: 145 ms of
+// sound, all of it in the first 265 ms.
+static void fanfareEnds() {
+  static Game g; const Profile kid = {0, "Sam", 0, 8, 0};
+  const uint32_t t = day0 + 7 * 86400;
+  Save s; pet::adopt(s, day0, "Sam", "Rex"); s.streak = 6; s.lastPlayDay = (uint16_t)(pet::dayIndex(t) - 1); pet::seal(s);
+  const SaveSlot slot = {&s, sizeof s};
+  g.enter({&kid, &kid, &slot, 1, t, 0}); g.update(t, 2000, Input{});
+  Input press; press.down = press.pressed = true; press.x = 80; press.y = 150;
+  g.update(t, 3000, press);   // the day's first touch: the card, and its fanfare from ms 3000
+  assert(!strcmp(g.screenName(), "celebrate"));
+  int on = 0, late = 0;
+  for (uint32_t ms = 3000; ms < 13000; ms++) { const bool beep = g.soundOn(ms); on += beep; late += beep && ms >= 3265; }
+  assert(on == 145 && late == 0);
+}
 
 // A long habit's press on the farm's Yes: Go home, then Bring back in the empty room (after a restart too) puts the
 // same dog home (its age, tricks and stats, and the wall as it was) and asks for the one-second checkpoint.
@@ -423,15 +458,18 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   retireKeepsKidProgress();
+  giftAfterClockSetBack();
   wallRollsAtFour();
   simulateEmptyRoom();
   breedSurvivesRoundTrip();
   corruptFieldsLoadSafe();
+  clockSetBackKeepsStage();
   levels(s);
   dayOnPickedLight();
   breedDraws();
   retiredSleeperLeavesDay();
   emptyRoomCelebratesWithoutDog();
+  fanfareEnds();
   petting(day0);
   bringBackRestores();
   adoptionEndsBringBack();

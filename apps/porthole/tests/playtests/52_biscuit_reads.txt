@@ -1,0 +1,74 @@
+# Little reads from the Library's first row: a short passage in the reader, its question with three answers, what
+# the pup says after an answer (a miss shows the right one and the line that holds it), a round of three and its
+# end, More reads. Back from the question reads the passage again; Back from an answer or the end leaves for the
+# Library. A first grader's passage is one screen.
+profile Sam 6
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 94 129
+wait 450
+expect-screen biscuit_library
+ui-check biscuit_library-reads
+snap r01_library
+tap 80 84
+wait 450
+expect-screen biscuit_read
+expect at=0
+expect of=1
+expect read_asked=0
+ui-check biscuit_read
+snap r02_passage
+tap 108 132
+wait 450
+expect-screen biscuit_read_ask
+expect read_answered=-1
+ui-check biscuit_read_ask
+snap r03_question
+# Back: the passage again, then its question
+tap 51 25
+wait 450
+expect-screen biscuit_read
+tap 108 132
+wait 450
+expect-screen biscuit_read_ask
+tap 80 73
+wait 450
+expect read_answered=0
+ui-check biscuit_read_ask-answered
+snap r04_answered
+tap 80 132
+wait 450
+expect-screen biscuit_read
+expect read_asked=1
+repeat 2
+tap 108 132
+wait 450
+tap 80 97
+wait 450
+expect read_answered=1
+tap 80 132
+wait 450
+end
+expect-screen biscuit_read_ask
+expect read_asked=3
+expect daily=8
+ui-check biscuit_read_ask-done
+snap r05_done
+# a slow double-tap on the last Next: the round's end stays up, then More reads starts another round
+tap 80 132
+wait 450
+expect read_asked=3
+wait 600
+tap 80 132
+wait 450
+expect-screen biscuit_read
+expect read_asked=0
+tap 51 25
+wait 450
+expect-screen biscuit_library
+tap 51 25
+wait 450
+expect-screen biscuit_home
+sheet reads

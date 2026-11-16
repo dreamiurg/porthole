@@ -1,0 +1,91 @@
+# Puzzles from World: the three strands, each at the kid's own level (an 8-year-old starts plus and minus on
+# two-digit numbers with carrying, times on groups of 2, 5 and 10, words of five or six letters); a round of five with three answers each,
+# what the pup does after an answer, the round's end and back to the strands. Five right moves the strand's level up
+# and the round's end says so; two or fewer moves it back down, quietly. Every answer counts as today's training.
+profile Sam 8
+app biscuit
+wait 450
+tap 119 125
+wait 450
+tap 121 129
+wait 450
+expect-screen biscuit_world
+ui-check biscuit_world-puzzles
+tap 52 132
+wait 450
+expect-screen biscuit_puzzles
+ui-check biscuit_puzzles
+snap z01_puzzles
+# times: a story about groups, all five right, and the level goes up
+tap 80 84
+wait 450
+expect-screen biscuit_puzzle
+expect strand=1
+expect level=1
+expect asked=0
+expect answered=-1
+ui-check biscuit_puzzle
+snap z02_story
+repeat 5
+answer-puzzle right
+wait 450
+tap 80 132
+wait 450
+end
+expect asked=5
+expect right=5
+expect daily=16
+expect levels=030
+ui-check biscuit_puzzle-done
+snap z03_level_up
+expect tricks=100000
+# a slow double-tap on the last Next: the second tap lands on More (the fourth right answer taught Sit, so More
+# shares the row with Show me), and the round's end stays up
+tap 52 132
+wait 450
+expect-screen biscuit_puzzle
+wait 600
+tap 52 132
+wait 450
+expect-screen biscuit_puzzles
+# times again, one level up: groups of 3 and 4; all wrong, and it goes back down
+tap 80 84
+wait 450
+expect level=2
+repeat 5
+answer-puzzle wrong
+wait 450
+tap 80 132
+wait 450
+end
+expect right=0
+expect levels=020
+wait 600
+tap 80 132
+wait 450
+# plus and minus starts at two-digit numbers with carrying for an 8-year-old
+tap 80 60
+wait 450
+expect strand=0
+expect level=4
+snap z04_numbers
+tap 50 25
+wait 450
+# words: the clue over the gap
+tap 80 108
+wait 450
+expect strand=2
+expect level=2
+ui-check biscuit_puzzle-spelling
+snap z05_spelling
+answer-puzzle wrong
+wait 450
+ui-check biscuit_puzzle-answered
+snap z06_answered
+tap 50 25
+wait 450
+expect-screen biscuit_puzzles
+tap 50 25
+wait 450
+expect-screen biscuit_world
+sheet puzzles

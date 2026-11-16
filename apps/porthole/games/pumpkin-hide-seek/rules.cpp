@@ -4,7 +4,7 @@
 namespace pumpkin {
 namespace {
 constexpr uint32_t WARN_MS = 2000, CHECK_WARN_MS = 3500, REST_MS = 2500, REST_SPAN_MS = 2000;
-constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, REACH = 7, TURN_BACK = 0.6f;
+constexpr float DEAD_MG = 60, MAX_MG = 500, ACCEL = 150, FRICTION = 0.94f, REACH = 7, TURN_BACK = 0.6f, BEAM = 20;
 float clamp(float n, float low, float high) { return n < low ? low : n > high ? high : n; }
 uint32_t rnd(Round& r) {  // xorshift32: a round needs variety, not quality
   r.seed ^= r.seed << 13; r.seed ^= r.seed >> 17; r.seed ^= r.seed << 5;
@@ -50,17 +50,22 @@ void rollPumpkin(Round& r, float roll) {
   if (fabsf(r.velocity) < 0.02f) r.velocity = 0;
   r.x += r.velocity * STEP_MS / 1000;
   if (r.x < 24 || r.x > 136) { r.x = clamp(r.x, 24, 136); r.velocity = 0; }
+  if (r.velocity != 0) r.heading = r.velocity < 0 ? -1 : 1;
 }
-void toggleHide(Round& r) {
-  if (r.hidden >= 0) { r.hidden = -1; return; }
-  r.hidden = nearby(r);
+void hide(Round& r, bool hold) {
+  if (!hold) { r.hidden = -1; return; }
+  if (r.hidden >= 0) return;
+  r.hidden = cover(r);
   if (r.hidden < 0) return;
   r.x = SPOTS[r.hidden];
   r.velocity = 0;
-  r.exposure = 0;
+  r.settled = false;  // it may arrive at full tilt, rolled in while held
+  r.startle = 0;      // safe again: the alarm ends
 }
 void listen(Round& r, float roll) {
-  r.rustle = r.hidden >= 0 && fabsf(roll) > RUSTLE_MG ? r.rustle + STEP_MS : 0;
+  const bool hard = fabsf(roll) > RUSTLE_MG;
+  if (!hard) r.settled = true;
+  r.rustle = r.hidden >= 0 && r.settled && hard ? r.rustle + STEP_MS : 0;
   if (r.rustle < RUSTLE_MS) return;
   r.heard = r.hidden;
   r.rustle = 0;
@@ -86,14 +91,16 @@ void collect(Round& r) {
   for (int i = 0; i < CANDIES; i++)
     if (!(r.got & (1 << i)) && fabsf(r.x - r.candy[i]) <= REACH) { r.got |= 1 << i; r.sinceCandy = 0; }
 }
-// Exposure builds only while seen. PHEW! follows any close call the pumpkin got out of.
+bool inBeam(const Round& r) { return searching(r) && fabsf(r.x - beamX(r)) <= BEAM; }
+// Exposure builds only while seen: hidden is never seen, since nothing hides in the spot a Check names. PHEW! waits
+// for the end of a search the beam came close in: shown as the beam merely passed, it told a 6-year-old to let go
+// mid-search.
 void watch(Round& r) {
-  const bool wasClose = r.covered || r.exposure > 0;
-  const bool inBeam = searching(r) && fabsf(r.x - beamX(r)) <= 20;
-  const bool seen = inBeam && (r.hidden < 0 || r.hidden == checking(r));
-  r.covered = inBeam && !seen;
+  const bool seen = inBeam(r) && r.hidden < 0;
+  const bool phew = r.close && !searching(r);
+  r.close = searching(r) && (r.close || inBeam(r));
   r.exposure = seen ? r.exposure + STEP_MS : 0;
-  r.phew = wasClose && !inBeam ? PHEW_MS : r.phew > STEP_MS ? r.phew - STEP_MS : 0;
+  r.phew = phew ? PHEW_MS : r.phew > STEP_MS ? r.phew - STEP_MS : 0;
   r.caught = r.exposure >= CATCH_MS;
 }
 }  // namespace
@@ -109,8 +116,40 @@ int nearby(const Round& r) {
   for (int i = 0; i < 3; i++) if (fabsf(r.x - SPOTS[i]) <= 13) return i;
   return -1;
 }
+int cover(const Round& r) {
+  const int s = nearby(r);
+  return s == checking(r) ? -1 : s;
+}
+// Toward the nearest spot a Check isn't naming (cover()'s exclusion), but within 6 px of the midpoint between two the
+// one it last rolled toward: coasting past, the arrow turns once, ahead of it, instead of pointing back and flipping
+// (kid playtest 4, n1), and it doesn't flip back when the pumpkin stops there. With the door open and the chair named,
+// it points out the door where that is no farther than leaving the chair's beam (kid playtest 6, M1): from farther
+// right, the run to the door crosses the beam for longer than a catch takes, and the table is the safe answer.
+int coverDir(const Round& r) {
+  if (doorOpen(r) && checking(r) == 0 && r.x - DOOR_X <= SPOTS[0] + BEAM - r.x) return -1;
+  int near = -1, next = -1;
+  auto far = [&r](int i) { return fabsf(r.x - SPOTS[i]); };
+  for (int i = 0; i < 3; i++) {
+    if (i == checking(r)) continue;
+    if (near < 0 || far(i) < far(near)) { next = near; near = i; } else if (next < 0 || far(i) < far(next)) next = i;
+  }
+  if (next >= 0 && far(next) - far(near) < 12 && (SPOTS[next] - r.x) * (float)r.heading > 0) near = next;
+  return SPOTS[near] < r.x ? -1 : 1;
+}
+// Rolls a copy, friction and tilt included: speed alone over-promised a levelled pumpkin that stops short.
+// shortcut: Grandma's phase is frozen for the 0.5 s, so a Check starting or ending inside it can mispredict
+// one "no"; step advance() on the copy if a playtest ever notices.
+int arriving(const Round& r, float roll, uint32_t ms) {
+  Round c = r;
+  for (uint32_t t = 0; cover(c) < 0 && t < ms; t += STEP_MS) rollPumpkin(c, roll);
+  return cover(c);
+}
 bool warning(const Round& r) { return r.phase == Phase::Warn; }
 bool searching(const Round& r) { return r.phase == Phase::Search; }
+bool covered(const Round& r) { return r.hidden >= 0 && inBeam(r); }
+bool named(const Round& r) {
+  return r.hidden < 0 && checking(r) >= 0 && fabsf(r.x - SPOTS[checking(r)]) <= BEAM;
+}
 int checking(const Round& r) { return r.move == Move::Check && r.phase != Phase::Rest ? r.spot : -1; }
 float beamX(const Round& r) {
   if (checking(r) >= 0) return SPOTS[r.spot];
@@ -119,16 +158,19 @@ float beamX(const Round& r) {
   return r.fromRight ? 136 - t * 112 : 24 + t * 112;
 }
 bool doorOpen(const Round& r) { return r.got == ALL_CANDY; }
-void step(Round& r, float roll, bool action, bool ghost) {
+void step(Round& r, float roll, bool hold, bool ghost) {
   if (r.caught || r.won) return;
-  if (action) toggleHide(r);
+  hide(r, hold);
   if (ghost) haunt(r);
   r.distract = r.distract > STEP_MS ? r.distract - STEP_MS : 0;
+  r.startle = r.startle > STEP_MS ? r.startle - STEP_MS : 0;
   listen(r, roll);
   rollPumpkin(r, roll);
   collect(r);
   r.elapsed += STEP_MS;
   advance(r);
+  // She names the spot it hides in: no cover now, so it jumps out. A held finger hides it at the next cover it reaches.
+  if (r.hidden >= 0 && r.hidden == checking(r)) { r.hidden = -1; r.startle = STARTLE_MS; }
   watch(r);
   r.won = !r.caught && doorOpen(r) && r.hidden < 0 && r.x <= DOOR_X;
 }

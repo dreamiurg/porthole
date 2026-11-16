@@ -19,7 +19,9 @@ const char* PAGES[] = {"hub","doll","style","map","pack","school_intro","school_
 const gfx::Sprite& Game::icon() const { return art::icon(); }
 void Game::enter(const AppEnter& e) {
  s_ = fresh(); const uint8_t id = e.who ? e.who->id : 0;
- for (int i=0;i<e.n;i++) if (e.all[i].id == id) load(e.saves[i].data,e.saves[i].len,s_);
+ keep_=false;
+ // Stored but unreadable here (a newer build wrote it): leave it be until the kid plays on.
+ for (int i=0;i<e.n;i++) if (e.all[i].id == id && e.saves[i].len && !load(e.saves[i].data,e.saves[i].len,s_)) keep_=true;
  s_.worldX=(uint8_t)sceneui::walkX(s_,s_.worldX);
  ms_ = e.ms; in_ = {}; title_ = true; pause_ = home_ = false;
  buffers_[0] = buffers_[1] = nullptr; painted_[0] = painted_[1] = 0;
@@ -200,7 +202,7 @@ void Game::actMemory(int i) {
  go(STOP);
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
- if (!dirty_ || !allowed) return false;
+ if (!dirty_ || !allowed || keep_) return false;
  seal(s_); *data=&s_; *len=sizeof s_; dirty_=false; return true;
 }
 const char* Game::screenName() const { if (title_) return "toytown_title"; if (pause_) return "toytown_pause"; static char page[48]; snprintf(page,sizeof page,"toytown_%s",PAGES[s_.page]); return page; }

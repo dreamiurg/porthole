@@ -16,7 +16,15 @@ struct SaveSlot { const void* data; size_t len; };                             /
 // saves[i] belongs to all[i]; a game may read other profiles' saves (Paw Street) but only writes who's.
 // daylight: the kid picked a brightness on the launcher, so the game draws day whatever the clock says (tint() returns
 // TINT_DAY, no night scenes); false is Auto, the light follows the clock. A game's own night (a pet asleep) still holds.
-struct AppEnter { const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight; };
+// stars: who's star balance (os/stars.h), kept and saved by the shell; nullptr when there is none (tests).
+// avatars: the shell's avatar pictures, Profile::avatar indexing them (modulo avatarCount), for a game that shows who
+// is playing (Rally's race together); nullptr in tests.
+struct AppEnter {
+  const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight;
+  uint32_t* stars;
+  const gfx::Sprite* avatars = nullptr;
+  int avatarCount = 0;
+};
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the
 // full 480x480 RGB565 panel (gfx565::fb, os/gfx565.h). An RGB565 render() must leave the whole target correct, knowing
@@ -41,8 +49,8 @@ class App {
   virtual bool soundOn(uint32_t ms) = 0;         // the shell gates this with the profile's mute
   // true when there is something to write for `who`; *len 0 means erase `who`'s save.
   virtual bool takeSave(const void** data, size_t* len, bool allowed) = 0;
-  // A moment that must survive a power cut (a story's page or decision, Pets Club's farm and adoption) asks for a
-  // checkpoint within a second. Otherwise the five-second cadence holds.
+  // A moment that must survive a power cut (a story's decision, Pets Club's farm and adoption) asks for a checkpoint
+  // within a second. Otherwise the five-second cadence holds: flash space is small, so not for every tap or page.
   virtual bool saveUrgent() const { return false; }
   virtual bool wantsHome() = 0;                  // back pressed on the game's top screen (reported once)
   virtual void leave() = 0;                      // flush state; next takeSave returns the final save
@@ -52,5 +60,5 @@ class App {
   virtual void debugCmd(const char* cmd) = 0;
 
  protected:
-  ~App() = default;   // apps are static objects, never deleted through the interface
+  ~App() = default;   // apps are built once by psram::make (games/apps.h) and never deleted
 };

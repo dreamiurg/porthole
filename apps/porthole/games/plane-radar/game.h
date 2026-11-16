@@ -38,6 +38,7 @@ class Game : public App {
   ui::FreshGate gate_;
   canvas::Frames<1> frames_;
   paint::Page page_ = paint::P_SCOPE;
+  paint::Memory mem_;
   char spot_[32] = "";   // the menu's line about home
   uint32_t ms_ = 0, fetchMs_ = 0, gen_ = 0;   // when snap_.gen last changed
   bool home_ = false, dirty_ = false;

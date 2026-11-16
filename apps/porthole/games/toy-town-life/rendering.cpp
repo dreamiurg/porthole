@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef ESP_PLATFORM
+#pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
+#endif
+
 namespace toytown {
 namespace {
 constexpr uint16_t INK=0x2928, PAPER=0xff9b, EDGE=0xc452, PINK=0xf695, MINT=0xb733, BLUE=0xbedf;

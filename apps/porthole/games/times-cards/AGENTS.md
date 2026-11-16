@@ -1,0 +1,121 @@
+# Times Cards: game brief
+
+The times tables as flash cards, one deck per kid, scheduled by spaced repetition. A card shows "7 × 8"; the kid says
+the answer out loud and taps the card; the answer shows, and the kid says how it went: **Easy**, **Hard** or
+**Wrong**. The deck decides when each card comes back and when new facts come in, at each kid's own pace. Built for two kids practising a
+few minutes a day: a 6-year-old starts on 2×, an 8-year-old on 4×.
+
+The shared app brief (`apps/porthole/AGENTS.md`) covers what every game shares. This file has Times Cards' pages, its
+rules and its save.
+
+## Pages
+
+Every page has the house at the top: from a card it goes back to the deck, from the deck out to the launcher.
+
+- `cards_home`, the deck: the table the kid is on, big on an index card, a dot for each of its ten facts (green known,
+  amber learning, pale new), "Say it, then tap the card" (or "Every table known!") and **Go!**; a tap on the card deals
+  too.
+- `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b" or "n ÷ d". The card sinks under a finger; a tap turns it.
+- `cards_answer`: "a × b =" (or "n ÷ d =") small and the answer big, with **Easy**, **Hard** and **Wrong**.
+- `cards_done`: "Perfect round!" (no Hard or Wrong), "Great job!", or "Next up: N ×!" when the round opened a new
+  table; "+2 stars", the round's three tallies, the table's dots and
+  **Again**, which deals the next round.
+- `cards_stats`, for a grown-up: hold the "Times Cards" title on the deck for 2 s (not a kid target, not in the
+  audit). "Grading check", how many days since the check started and how many cards turned, then four rows on a
+  cream card: new cards graded Easy / Hard / Wrong the first time they were seen (in the grade colours), "Easy, next
+  day" (a card graded Easy and seen again on a later day, how often it was still Easy), "Turned in 1 s" (cards turned
+  less than a second after they showed) and the average think time. The house goes back to the deck.
+
+Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent in
+Biscuit's doghouse), whatever the grades, so an honest Wrong costs nothing. A round left half-way pays none. The shell
+keeps and saves the balance; this game never stores it.
+
+No sound (`soundOn` is always false), no timer, nothing lost: a Wrong card only comes back sooner.
+
+## Rules (`deck.h`, header-only, checked by `host/test_times_cards.cpp`)
+
+- A card is one fact: table × n, tables 1..10, n 1..10 (100 cards), or a division, n ÷ d for divisors 2..10 and
+  quotients 1..10 (90 more; ÷ 1 is left out). Its Leitner box says how well the kid knows it: 0
+  never shown, 1 learning, up to 7. A box waits `INTERVAL` days before the card is due again (1, 2, 4, 7, 14, 30, 60).
+- **Easy** on a card that is new or due moves it one box up (a new card known at once goes to box 2). **Hard** keeps
+  its box and brings it back tomorrow. **Wrong** puts it back in box 1, due tomorrow, and shows it again three cards
+  later in the same round, once (headed "One more try", not counted in "k of n"; a round grows by five such cards
+  at most). A fact still being learned (box 1 or 2) also moves up on Easy any day after
+  the one it was last seen; a known card answered before it was due never moves up.
+- **Mastery:** a fact is known once it reaches `MASTER_BOX` (3): Easy on two separate days.
+- **Pace:** new facts come in table order (4×1, 4×2, … then 5×1), a few at a time, never all of a table at once. At
+  most `WORKING_SET` (6) facts are being learned at once, so the next table's first facts start once about half of the
+  current one is known, while the rest settle. How many new facts a round may bring (1 to 4) follows the kid's pace: a
+  running score (`notePace`, weight 1/8) of answers on facts already met, Easy 1, Hard ½, Wrong 0, started at 0.85;
+  a first sight and a missed card's second look do not count. Steps: 0.6, 0.7, 0.8, 0.9. Below 0.6 a round brings a new
+  fact only when nothing is being learned. Below 0.8 (struggling) a round keeps `KNOWN_MIX` (4) places for known facts,
+  easy wins between the hard ones.
+- **Division (3.OA.7):** from level 4 (1× to 3× known), each known multiplication fact opens its two divisions as new
+  cards: 6 × 7 known opens 42 ÷ 6 and 42 ÷ 7. They are scheduled like any card and share the working set: a new
+  division comes whenever the divisions being learned are fewer than half the multiplications, so divisions hold
+  about a third of the places and the tables keep most of their pace (a half share halved it in simulation). Divisions come by fact family in table order (2× first, 1× last, its families being n ÷ n),
+  so a family's two divisions arrive together. They never move the level. A 6-year-old meets division once 3× is
+  known. Why: interleaving multiplication with its division facts (`docs/design/learning-principles.md`, principle 5).
+- **Level:** the first table not fully known. It moves on (and the done page says "Next up") once all ten of its facts
+  are known; the older tables keep coming back for review.
+- **Start:** from the profile's age, `startTable(age) = clamp(age - 4, 1, 4)`. The tables below start in box 5, spread
+  over the next two weeks, so a few come back for review each day.
+- **A round** is up to ten cards: due cards first (oldest first), leaving room for the new facts the pace allows, then
+  practice from any fact still being learned and not yet seen today, then (when struggling) known facts. A known fact
+  otherwise comes only when due, but a round shorter than five (`MIN_ROUND`) is topped up with known facts not seen today (a first round is three new facts at the starting pace and two known ones). With
+  nothing at all to show, a round is practice from every fact met. Shuffled.
+- Why this shape: incremental rehearsal (new facts mixed among known ones, new ones held back when known ones slip),
+  about 2 to 4 new facts per session for this age (Burns 2016), and a target success rate near 85% (Wilson et al. 2019,
+  theory only). Table order keeps commutativity working for the kid: 5×4 comes after 4×5 is known.
+- Days are Porthole's local wall clock (`now / 86400`). Being away punishes nothing: an overdue card is simply due.
+  A clock set back is clamped so no card waits longer than its box says.
+
+## Grading check (`noteTurn`, `noteGrade`)
+
+Self-rating at this age is not covered by the research we read (`docs/design/adaptive-practice.md`), so the deck
+counts what would show a kid rating without looking: a new fact called Easy at first sight (a kid who already knows
+it says so honestly, so this alone proves nothing), an Easy that does not hold the next day, and a card turned before
+the kid could have said the answer (`QUICK_MS`, 1 s). Think time is capped at 10 s a card. A second look at a missed
+card in the same round counts nothing. Nothing here changes the schedule; it only counts.
+
+Read it after about a week of real play. Rough lines to act on, not settled: "Easy, next day" under about 70%, or
+"Turned in 1 s" over about 20% of cards, means the grades are not honest enough to schedule by. The next step then
+is a check the kid does instead of grading (tap the number you said), decided with Dmytro.
+
+## Save
+
+One blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s). In memory the deck is the `Save` struct
+(1020 bytes): magic, version, size, level, start table, answers ever, pace (thousandths + 1, 0 = never set), box, due
+day and last-seen day per multiplication card, then (version 2) the same three per division card, a spare zero, then
+(version 3) the grading check's counters and one Easy bit per card, a spare zero, crc. Versions 1 to 3 stored that
+struct whole (520, 972 and 1020 bytes); four kids' decks did not fit the board's 20 KB of NVS next to the other games.
+
+Version 4 stores the same deck bit-packed (`pack` / `packDeck` in `deck.h`, on `os/bits.h`): about 190 bytes for a new
+deck, 300 to 400 in play. Days are kept as the distance from the deck's earliest day; a due day mostly as how it follows
+from the card's box and the day it was last seen. It is lossless: `takeSave` hands the packed blob only after reading it
+back as byte for byte the deck in memory, and otherwise stores the struct whole as version 3 (no deck the game makes
+needs that). Every older version still loads, and a deck loaded from one is stored anew, packed, when the game is
+opened (the old blob stays until that write succeeds). `host/fixtures/times_cards_save_v3.h` is a real version 3
+save; `host/test_times_cards.cpp` holds its migration byte for byte.
+
+The struct stays append-only: a new field goes right before `crc` with a zero that is a sensible default, joins
+`packDeck`, and `SAVE_VERSION` goes up; nothing is reordered or resized. A stored blob this build cannot read (wrong
+size or crc, or a newer build's after a rollback) starts a fresh deck on screen but is left in storage as it is: the
+fresh deck replaces it only once the kid answers a card on it, never just because the game was opened.
+`store()` is `"timescards"` and is never renamed.
+
+## Look and files
+
+- Its own look (rule 7): a cream index card with a red margin line and blue rules on a periwinkle desk; Fredoka
+  SemiBold (OFL, `art/fonts/`) at 28 and 40 px (`generated/fonts.h`) and a digits-and-× cut at 110 px
+  (`generated/big.h`), both with × and ÷, from `tools/fontconv.py` (`--game cards`, `--game cardsbig`). Button fills are dark enough
+  for white text at the audit's contrast.
+- `game.h` / `game.cpp` (`class Game`, `namespace cards`): pages, input and drawing on the RGB565 surface. Repaints
+  only when what the page shows changes. `debugCmd("level<N>")` starts a fresh deck on table N;
+  `debugCmd("card<N>")` deals a round of card N alone (screenshots). A card too wide for the index card (100 ÷ 10)
+  drops the spaces round its sign.
+- `art/launcher.png` -> `launcher_icon.h` (`tools/launcher_icons.py`).
+- In `games/apps.h` (id 12). That fills `MAX_APPS` (12): the next game needs it raised.
+- Playtests: `tests/playtests/c0_times_cards.txt` (a natural first week: Wrong and Hard, the house mid-round, leaving
+  and coming back, two days on to the 3× table, a second kid's own deck) and `c1_times_cards_monkey.txt` (the last
+  table to "Every table known!", then random input under the sanitizers).

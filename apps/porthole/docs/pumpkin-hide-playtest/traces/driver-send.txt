@@ -1,0 +1,10 @@
+#!/bin/bash
+# usage: send.sh "cmd1" "cmd2" ... ; macros: tap X Y [HOLDMS] -> down, tick, up, tick 40
+D=/tmp/claude-0/-home-user-porthole/4e7b951a-0e4f-5eae-859d-2ab6ed697cd9/scratchpad/leo
+out=""
+for a in "$@"; do
+  set -- $a
+  if [ "$1" = tap ]; then h=${4:-120}; out+="down $2 $3"$'\n'"tick $h"$'\n'"up"$'\n'"tick 40"$'\n'
+  else out+="$a"$'\n'; fi
+done
+printf "%s" "$out" | python3 -c "import socket,sys;s=socket.socket(socket.AF_UNIX);s.connect('$D/sock');s.sendall(sys.stdin.buffer.read());s.shutdown(socket.SHUT_WR);print(s.makefile().read(),end='')"

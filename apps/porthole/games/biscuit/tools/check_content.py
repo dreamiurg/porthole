@@ -19,7 +19,7 @@ FONTS = (GAME / "generated/fonts.h").read_text(encoding="utf-8")
 EXTRAS = re.findall(r"EXTRAS\[\] = \{([^}]*)\}", FONTS)[0]  # the code points past ASCII the fonts carry
 GLYPHS = {chr(c) for c in range(32, 127)} | {chr(int(x, 16)) for x in EXTRAS.split(",")}
 TOKEN = re.compile(r"\{(\w*)\}")
-PERSONALIZED = {"page", "prompt", "fact_page", "wonder", "description", "meaning"}
+PERSONALIZED = {"page", "prompt", "fact_page", "wonder", "description", "meaning", "read", "question", "answer", "why"}
 
 LEX = re.compile(r'"((?:[^"\\]|\\.)*)"|([{},])|([\w.]+)|(\s+|//[^\n]*)', re.S)
 
@@ -30,11 +30,18 @@ def decode(s):
 
 def parse(src, pos):
     """The brace initializer starting at src[pos] == '{' as nested lists of str (literals) and bare words."""
-    stack = []
+    stack, joined = [], False  # joined: the last token was a literal, so the next one continues it (C joins them)
     for m in LEX.finditer(src, pos):
-        if m[1] is not None:
+        if m[4] is not None:
+            continue
+        if m[1] is not None and joined:
+            stack[-1][-1] += decode(m[1])
+        elif m[1] is not None:
             stack[-1].append(decode(m[1]))
-        elif m[2] == "{":
+        joined = m[1] is not None
+        if m[1] is not None:
+            continue
+        if m[2] == "{":
             stack.append([])
         elif m[2] == "}":
             done = stack.pop()
@@ -81,7 +88,7 @@ class Gate:
 
 def stories(g):
     rows = table("content_stories.h", "STORIES")
-    g.count("STORIES", rows, 7)
+    g.count("STORIES", rows, 15)
     g.unique("STORIES", [r[0] for r in rows])
     for r in rows:
         sid, title, subtitle, day, pages, prompt, choices = r
@@ -157,6 +164,86 @@ def daily(g):
         g.text(s, "activity", s)
 
 
+def spelling(g):  # puzzles.h's spell(): lowercase letters for vowel(), and "w o r d" with its gap fits Puzzle::ask[24]
+    for name in ("SHORT_WORDS", "LONG_WORDS"):
+        rows = table("content_puzzles.h", name)
+        g.unique(name, [r[0] for r in rows])
+        for word, clue in rows:
+            if not re.fullmatch(r"[a-z]{2,11}", word):
+                g.errors.append(f"{name} {word!r}: 2 to 11 lowercase letters only")
+            g.text(word, "clue", clue)
+
+
+# Little reads (content_reads.h): what levels 1 and 2 may spell. A word is a sight word, or one syllable of single
+# consonants around one short vowel (level 1; -ll -ss -ff and a plural or possessive s too), or of digraphs and
+# blends (level 2). {name} and {pet} count as known words.
+SIGHT_1 = set(
+    "a i the to is said you of was he she we me be my go no so do are for they look see here come what where put "
+    "one two like have play down all too saw there with this".split()
+)
+SIGHT_2 = SIGHT_1 | set(
+    "some from were give live again could would does push pull full any many your want new good ball tall fall "
+    "call small walk talk out about our now how who why when water little come down day away".split()
+)
+C = "bcdfghjklmnpqrstvwxyz"
+CODA = "bcdfghjklmnpqrstvxz"  # w and y after a vowel make a vowel team (now, day), not a short vowel
+WORD_1 = re.compile(rf"[{C}]?[aeiou]([{CODA}]|ll|ss|ff)?('?s)?")
+ONSET_2 = rf"(sch|scr|shr|spl|spr|str|thr|squ|qu|sh|ch|th|wh|bl|br|cl|cr|dr|fl|fr|gl|gr|pl|pr|sc|sk|sl|sm|sn|sp|st|sw|tr|tw|[{C}])?"
+CODA_2 = rf"(tch|nch|lch|ck|sh|ch|th|ng|nk|ll|ss|ff|zz|st|sk|sp|nd|nt|mp|lt|lk|lp|ld|lf|ft|pt|ct|xt|[{CODA}])?"
+WORD_2 = re.compile(rf"{ONSET_2}[aeiou]{CODA_2}(e?s|'s)?")
+READ_WORDS = {1: (12, 30), 2: (25, 45), 3: (40, 65), 4: (60, 90), 5: (75, 120)}
+
+
+def decodable(level, text):
+    """The words of a level 1 or 2 text that are neither sight words nor of its letter patterns."""
+    sight, pattern = (SIGHT_1, WORD_1) if level == 1 else (SIGHT_2, WORD_2)
+    words = re.findall(r"[a-z']+", TOKEN.sub("Pip", text).lower())  # a name reads as a known word, {pet}'s too
+    return sorted({w for w in words if w.strip("'") not in sight and not pattern.fullmatch(w.strip("'"))})
+
+
+def read_entry(g, row):
+    rid, level, title, text, question, answers, right, why = row
+    level = int(level)
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", rid):
+        g.errors.append(f"{rid}: id is not lowercase-with-hyphens")
+    for kind, s in (("read_title", title), ("read", text), ("question", question), ("why", why)):
+        g.text(rid, kind, s)
+    g.count(f"{rid} answers", answers, 3)
+    for a in answers:
+        g.text(rid, "answer", a)
+    if len(set(answers)) != len(answers):
+        g.errors.append(f"{rid}: two answers are the same")
+    if right not in ("0", "1", "2"):
+        g.errors.append(f"{rid}: right {right} is not 0, 1 or 2")
+    if not question.endswith("?"):
+        g.errors.append(f"{rid}: the question does not end with ?")
+    n = len(TOKEN.sub("Pip", text).split())
+    low, high = READ_WORDS[level]
+    if not low <= n <= high:
+        g.errors.append(f"{rid}: {n} words, level {level} takes {low} to {high}")
+    off = decodable(level, " ".join([title, text, question, *answers])) if level <= 2 else []
+    if off:
+        g.errors.append(f"{rid}: level {level} words outside its patterns and sight words: {off}")
+
+
+def reads(g):
+    rows = table("content_reads.h", "READS")
+    g.unique("READS", [r[0] for r in rows])
+    by_level = {n: [] for n in READ_WORDS}
+    for rid, level, *rest in rows:
+        if not level.isdigit() or int(level) not in READ_WORDS:
+            g.errors.append(f"{rid}: level {level} outside 1..5")
+            continue
+        by_level[int(level)].append(rest[-2])
+        read_entry(g, [rid, level, *rest])
+    for level, rights in by_level.items():
+        if len(rights) < 8:
+            g.errors.append(f"READS level {level}: {len(rights)} reads, expected at least 8")
+        for i in "012":
+            if rights.count(i) < 2:
+                g.errors.append(f"READS level {level}: the right answer is {i} only {rights.count(i)} times, vary it")
+
+
 def main():
     g = Gate()
     for path in sorted(GAME.glob("content_*.h")):
@@ -166,11 +253,13 @@ def main():
     stories(g)
     discoveries(g)
     daily(g)
+    spelling(g)
+    reads(g)
     for e in g.errors:
         print(f"check_content: {e}")
     if g.errors:
         sys.exit(1)
-    print("check_content: biscuit content OK (7 stories, 96 discoveries, 7 adventures, 6 tricks, 12 stickers)")
+    print("check_content: biscuit content OK (15 stories, 96 discoveries, 7 adventures, 6 tricks, 12 stickers, spelling words, little reads)")
 
 
 if __name__ == "__main__":

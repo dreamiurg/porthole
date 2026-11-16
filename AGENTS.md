@@ -9,7 +9,7 @@ docs. Build, test, release and flashing infrastructure is shared at the root.
 
 | Path | What it holds |
 | --- | --- |
-| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`: each kid's Home of favorites, a Library of every game, and an Admin switch per game for the device. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling; an old dog can retire to the farm and the next pup comes from a shelter of seven breeds. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. Rally (`games/racing/`; design: `docs/superpowers/specs/porthole-racing/`) is an arcade racer steered like a wheel over four tracks. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
+| `apps/porthole/` | Porthole: the device firmware (shared runtime in `os/`, board layer in `firmware/`) and its games in `games/`. Profiles (up to four kids) and a launcher in `shell/`: each kid's Home of favorites, a Library of every game, and an Admin switch per game for the device. First game: Pets Club (`games/pets-club/`): pixel dog, tricks, stories, spelling; an old dog can retire to the farm and the next pup comes from a shelter of seven breeds. C++ core + host simulator + browser emulator. A second game, Biscuit (`games/biscuit/`; design: `docs/superpowers/specs/2026-09-25-biscuit-on-porthole-design.md`), is a warm reading-and-discovery companion drawn full-color at native resolution on the same runtime. Two tilt games follow: Marble Kick (`games/marble-kick/`), a labyrinth, and Tilt FC (`games/tilt-fc/`; design: `docs/superpowers/specs/2026-09-27-tilt-fc-design.md`), top-down street football steered by tilt. Pumpkin Hide & Seek (`games/pumpkin-hide-seek/`) is a cozy Halloween hide-and-seek: grab three candies and escape while Grandma searches with a flashlight. Rally (`games/racing/`; design: `docs/superpowers/specs/porthole-racing/`) is an arcade racer steered like a wheel over four tracks. Sand Jar (`games/sand-jar/`) is a tilt toy: sand, water and stars poured by the motion sensor. Times Cards (`games/times-cards/`) is multiplication flash cards with spaced repetition, one deck per kid. App brief: `apps/porthole/AGENTS.md`; each game also has its own `AGENTS.md` under `games/<game>/`. |
 | `platform/` | Shared PlatformIO base (`waveshare-round.ini`), the factory-image script, pinned PlatformIO requirements. |
 | `tools/gallery.py` | Builds the README screenshot strips (`docs/preview.png`, `docs/screenshots.png`) every app ships. |
 | `docs/` | `hardware.md` (board, pins, round-screen rules), `new-app.md` (the app contract), `superpowers/specs/` (approved design docs). |
@@ -38,6 +38,11 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    about the kid. The only traffic is the daily firmware update check, its download, a clock sync, and an optional public-IP time-zone guess to ipapi.co;
    while Radar is open, home rounded to ~1 km goes to adsb.fi every 5 s and the callsigns it sees to
    adsbdb.com; a grown-up's typed address goes once to OpenStreetMap Nominatim when Home is set.
+   The one exception, a user decision of 2026-11-15: Rally's race together sends the kid's profile name
+   and avatar to the other Porthole on the same home wifi (UDP on the local network only, never off it),
+   so the kids see who is joining; nothing else about the kid goes with it (while Rally's track cards are open, a
+   broadcast says who is there with only the name and avatar; once paired, the race itself, such as the levels and the
+   car's place, goes to that device alone).
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box
@@ -106,6 +111,15 @@ Per-app targets are listed in `docs/new-app.md`.
   evidence. Follow `apps/porthole/docs/playtesting.md` for scope and acceptance.
   An implementer's own run is useful but does not replace the independent pass.
   Documentation-only and non-player-visible changes do not require a new run.
+- Done means shown. A PR that adds a game mechanic or a new screen, or visibly
+  changes one, carries screenshots in its description under `## Screenshots`
+  (`.github/pull_request_template.md`). Shoot them with the sim (`tour` skill:
+  `snap NAME` writes `apps/porthole/build/host/NAME.bmp`), compose them with
+  `python3 tools/gallery.py --cols 3 apps/porthole/docs/<feature>/pr.png a.bmp b.bmp c.bmp`
+  (`--pixel` for pixel-art games), commit the PNG, and embed it by commit SHA so it
+  renders: `![what it shows](https://raw.githubusercontent.com/dreamiurg/porthole/<sha>/apps/porthole/docs/<feature>/pr.png)`.
+  A repo-relative path or a link alone does not render in a PR body. Re-shoot after
+  changing the screen; no screenshots, no merge.
 
 ## Delegation
 

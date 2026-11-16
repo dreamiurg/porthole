@@ -1,0 +1,10 @@
+# bash slidedark.txt PREFIX : poll every 40 ms until the sign turns dark (pumpkin left cover), then slide a resting thumb onto it and film 40 ms frames
+P=$1
+for i in $(seq -w 1 60); do
+  python3 -I drv.txt send "tick 40; shot ${P}_p$i" >/dev/null
+  c=$(python3 -c "from PIL import Image; print(Image.open('shots/${P}_p$i.png').getpixel((240,372)))")
+  [ "$c" = "(66, 52, 82)" ] && { echo "dark at ${P}_p$i"; break; }
+done
+python3 -I drv.txt send "down 30 112; tick 40; move 50 124; tick 40; move 70 131" >/dev/null
+for j in $(seq -w 1 30); do python3 -I drv.txt send "tick 40; shot ${P}_s$j" >/dev/null; done
+echo filmed

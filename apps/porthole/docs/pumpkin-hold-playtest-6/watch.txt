@@ -1,0 +1,15 @@
+# bash watch.txt PREFIX MAXSTEPS : Leo watches the right side of the room in 200 ms looks; the first look that
+# shows Grandma's face (skin pixels where she stands), he reacts ~300 ms later by pressing the sign.
+P=$(dirname "$0"); pre=$1; max=$2
+for i in $(seq 1 $max); do
+  printf 'tick 200\nshot %s_%03d\n' "$pre" "$i" | bash "$P/go.txt" >/dev/null
+  c=$(python3 -c "
+from PIL import Image
+im=Image.open('$P/frames/${pre}_$(printf %03d $i).png').crop((390,110,460,190))
+print(sum(n for n,c in im.getcolors(10000) if c==(231,182,156)))")
+  if [ "$c" -gt 200 ]; then
+    printf '# Leo sees Grandma (look %s), reacts\ntick 300\nshot %s_react\ndown 80 130\n' "$i" "$pre" | bash "$P/go.txt" >/dev/null
+    echo "grandma at look $i"; exit 0
+  fi
+done
+echo "no grandma"

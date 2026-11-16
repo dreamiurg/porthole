@@ -66,6 +66,7 @@ jobs:
           app: ${{ matrix.app }}
           version: ${{ matrix.version }}
       - name: Tag and publish
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           APP: ${{ matrix.app }}
@@ -83,11 +84,17 @@ jobs:
             gh release create "$APP-beta" --prerelease --latest=false --target "$SHA" --title "$APP beta channel" \
               --notes "Not a release. Its $APP-version.txt names the newest beta, for boards on the beta channel."
           fi
-          gh release upload "$APP-beta" "dist/$APP-version.txt" --clobber
+          # Forward only: re-running an older release's failed job after a newer beta shipped must not point the
+          # channel back at the older one. Anything but a version in the pointer (or none yet) is overwritten.
+          current=$(gh release download "$APP-beta" --pattern "$APP-version.txt" --output - 2>/dev/null || true)
+          [[ $current =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || current=$VERSION
+          pointer=$(printf '%s\n' "$current" "$VERSION" | sort -V | tail -n1)
+          if [ "$pointer" = "$VERSION" ]; then gh release upload "$APP-beta" "dist/$APP-version.txt" --clobber; fi
+          echo "pointer=$pointer" >> "$GITHUB_OUTPUT"
       - name: Beta channel resolves to this release
         # What a board on beta does next: read the pointer, then fetch that version's image. Catches a missing or
-        # mismatched asset here instead of on a board.
+        # mismatched asset here instead of on a board. (On a re-run of an older release: to the newer one it left.)
         env:
           APP: ${{ matrix.app }}
-          VERSION: ${{ matrix.version }}
+          VERSION: ${{ steps.publish.outputs.pointer }}
         run: tools/check_channel.sh "$APP" beta "$VERSION"

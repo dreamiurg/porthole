@@ -1,0 +1,44 @@
+import os, subprocess, sys, zlib, struct
+from PIL import Image, ImageDraw
+S = sys.argv[1]
+p = subprocess.Popen([S + "/snap", "--serve", "--fresh"], cwd=S, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+t = 0
+trace = open(S + "/trace.txt", "a")
+def cmd(line):
+    p.stdin.write((line + "\n").encode()); p.stdin.flush()
+    return p.stdout.readline().decode().strip()
+def frame():
+    p.stdin.write(b"frame\n"); p.stdin.flush()
+    h = p.stdout.readline().decode().strip(); n = int(h.split()[1])
+    buf = b""
+    while len(buf) < n: buf += p.stdout.read(n - len(buf))
+    return Image.frombytes("RGB", (480, 480), buf)
+while True:
+    with open(S + "/in") as f:
+        for req in f:
+            req = req.strip()
+            if not req.startswith("batch "): continue
+            path = req[6:]; out = []
+            for line in open(path):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    if line: trace.write(line + "\n")
+                    continue
+                w = line.split()
+                if w[0] == "shot":
+                    im = frame(); im.save(f"{S}/shots/{w[1]}.png")
+                    trace.write(f"[t={t}] shot {w[1]}\n"); out.append(f"shot {w[1]} t={t}")
+                elif w[0] == "strip":
+                    names = w[2:]; sz = int(os.environ.get("SZ", "240"))
+                    cols = min(4, len(names)); rows = (len(names) + cols - 1) // cols
+                    sheet = Image.new("RGB", (cols * sz, rows * (sz + 14)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
+                    for i, nm in enumerate(names):
+                        im = Image.open(f"{S}/shots/{nm}.png").resize((sz, sz))
+                        x, y = (i % cols) * sz, (i // cols) * (sz + 14)
+                        sheet.paste(im, (x, y + 14)); d.text((x + 3, y + 1), nm, fill=(255, 255, 0))
+                    sheet.save(f"{S}/shots/{w[1]}.png"); out.append("strip " + w[1])
+                else:
+                    if w[0] == "tick": t += int(w[1])
+                    r = cmd(line); trace.write(f"[t={t}] {line}\n"); out.append(f"{line} -> {r}")
+            trace.flush()
+            open(path + ".done", "w").write(f"t={t}\n" + "\n".join(o for o in out if not o.startswith(("tick", "move"))) + "\n")

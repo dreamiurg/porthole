@@ -4,9 +4,11 @@
 #include "board.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
+#include "fastmem.h"
 #include "games/apps.h"
 #include "gfx565.h"
 #include "net.h"
+#include "nvs.h"
 #include "shell.h"
 #include "timezone.h"
 #include "update_picture.h"
@@ -21,12 +23,13 @@ struct NvsStore : shell::Store {
 static NvsStore g_store;
 static net::Updater g_sys;
 static net::Radar g_feed;   // Radar's planes; shares the radio with g_sys
-static Shell g_shell;
+static net::Lan g_lan;      // Rally's race together; shares the radio too
+static Shell& g_shell = psram::make<Shell>();   // ~12 KB kept off static internal RAM
 static InputTracker g_input;
 static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
-static uint8_t g_backlight = 100;
+static uint8_t g_backlight = 0;   // board::init() leaves it off; the first lit frame goes through dimWhenIdle, like a wake
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
 static uint32_t g_bootUtcEpoch = 0, g_bootMillis = 0;
@@ -38,10 +41,11 @@ static struct { bool on; int x, y; uint32_t until; } g_fake = {};
 static int16_t g_grav[3] = {0, 0, -1000};
 static bool g_gravFake = false;
 // Frame metrics for "M": per frame, in us, the loop period and the time spent in shell update, render and present, over
-// the last MT_N frames.
+// the last MT_N frames; and the longest present since boot (the wait for the driver's frame ack: board::presentHires).
 enum { MT_FRAME, MT_UPDATE, MT_RENDER, MT_PRESENT, MT_COUNT };
 static const int MT_N = 64;
-static uint32_t g_mt[MT_N][MT_COUNT];
+struct Metrics { uint32_t frame[MT_N][MT_COUNT]; uint32_t presentMax; };
+static Metrics& g_mt = psram::make<Metrics>();   // 1 KB of debug counters: not worth static internal RAM
 static int g_mtAt = 0;
 
 // RTC and running base are UTC. Only the main core derives local-wall seconds for shell/game day and time rules.
@@ -136,12 +140,13 @@ static void beginClock() {
 // does it once the board has drawn a frame, so a new version that crashes or hangs first boots the old slot again.
 extern "C" bool verifyRollbackLater() { return true; }
 
-// Every update needs internal RAM: its SRAM screen, then wifi and TLS (on the board those took about 28 KB more, with
-// 77 KB still free). A firmware short of it can never install the next one, so it locks the board out of updates for
-// good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a firmware is never marked valid.
-static constexpr size_t UPDATE_HEADROOM = 48 * 1024;   // wifi + TLS, with margin
+// Every update needs internal RAM (fastmem::UPDATE_RAM). A firmware short of it can never install the next one, so it
+// locks the board out of updates for good: 0.26.1 and 0.27.0 did, once games kept big buffers in internal RAM. Such a
+// firmware is never marked valid.
+static_assert(fastmem::UPDATE_PICTURE == board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES,
+              "fastmem.h must count the update screen's real size");
 static bool canUpdate() {
-  const size_t need = board::UpdatePicture::PIECES * board::UpdatePicture::CHUNK_BYTES + UPDATE_HEADROOM;
+  const size_t need = fastmem::UPDATE_RAM;
   const size_t have = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
   Serial.printf("[porthole] update ram: %u free, %u needed\n", (unsigned)have, (unsigned)need);
   return have >= need;
@@ -181,16 +186,20 @@ void setup() {
   g_sys.begin(utcNow);   // SD card's wifi.txt and the "sys" settings, before the shell can ask info(); nowSec is read later
   feedLoopWDT();
   air::setFeed(&g_feed);
+  lan::setRadio(&g_lan);
   g_shell.begin(g_store, APPS, N_APPS, &g_sys, APP_IDS);   // first boot after Pets Club: its houses become profiles here
   beginClock();
   Serial.printf("[porthole] profiles=%d now=%lu utc=%lu heap=%lu\n", g_shell.profileCount(), (unsigned long)nowSec(),
                 (unsigned long)utcNow(), (unsigned long)board::freeHeap());
+  if (psram::fallbacks)   // the games and the shell belong in PSRAM; in internal RAM they eat an update's share
+    Serial.printf("[porthole] WARNING: %d app objects in internal RAM, not PSRAM\n", psram::fallbacks);
   g_activity.step(Input{}, true, millis());   // boot counts as activity
 }
 
 // Idle dimming (no physical buttons: the screen is the only power control): shell::backlightFor and shell::sleepFor,
 // tested on the host.
 static void dimWhenIdle(uint8_t want, bool progress) {
+  fastmem::setDark(want == 0 || progress);   // a game's internal-RAM loan comes home before an update starts
   g_sys.setDark(want == 0);
   if (progress && g_sys.manualCheck()) want = g_shell.backlight();
   if (want != g_backlight) {
@@ -259,7 +268,7 @@ static void dumpFrame() {
   Serial.flush();
 }
 
-// Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "R" wipes every profile and every game's
+// Serial maintenance: "T<epoch>" sets the clock (local wall-clock seconds), "RESET" wipes every profile and every game's
 // saves, "S" prints stats, "D" toggles touch logging, "P<n>" clears profile n's secret code (a parent's escape hatch),
 // "X<x>,<y>,<ms>" presses the screen and "F" dumps the frame (both for tools/devctl.py), "A" prints the accelerometer,
 // "G<x>,<y>,<z>" holds gravity at that vector (milli-g, screen frame) until a bare "G", "M" prints frame metrics,
@@ -267,12 +276,13 @@ static void dumpFrame() {
 // "L<lat>,<lon>" sets Radar's home without the menu.
 static void printMetrics() {
   uint32_t sum[MT_COUNT] = {}, worst = 0;
-  for (auto& f : g_mt) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
+  for (auto& f : g_mt.frame) { for (int k = 0; k < MT_COUNT; k++) sum[k] += f[k]; if (f[MT_FRAME] > worst) worst = f[MT_FRAME]; }
   auto ms = [&](int k) { return sum[k] / 1000.0 / MT_N; };
   Serial.printf("[metrics] frames=%d frame=%.2fms fps=%.1f max=%.2fms update=%.2fms render=%.2fms present=%.2fms "
-                "heap=%lu psram=%lu largest_internal=%lu\n",
+                "present_max=%.2fms touch_miss=%lu heap=%lu psram=%lu largest_internal=%lu\n",
                 MT_N, ms(MT_FRAME), ms(MT_FRAME) > 0 ? 1000.0 / ms(MT_FRAME) : 0.0, worst / 1000.0, ms(MT_UPDATE),
-                ms(MT_RENDER), ms(MT_PRESENT), (unsigned long)board::freeHeap(),
+                ms(MT_RENDER), ms(MT_PRESENT), g_mt.presentMax / 1000.0, (unsigned long)board::touchMisses(),
+                (unsigned long)board::freeHeap(),
                 (unsigned long)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 }
@@ -331,19 +341,28 @@ static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCom
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();
   const shell::ClockStatus clock = g_sys.clockStatus();
+  nvs_stats_t nvs = {};
+  nvs_get_stats(nullptr, &nvs);   // saves share the 5-page nvs partition with wifi and the clock; when it fills, saves fail
+  // stack_free: the least the 8 KB loop stack ever had left, in bytes. Boot's save migrations are its deepest known path.
+  Serial.printf("nvs_used=%u nvs_free=%u stack_free=%u ", (unsigned)nvs.used_entries, (unsigned)nvs.available_entries,
+                (unsigned)uxTaskGetStackHighWaterMark(nullptr));
   Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
                 "sys_time=%d sys_sync=%lu sys_off=%d\n",
                 (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,
                 esp_ota_get_running_partition()->label, (int)u.state, u.pct, u.available, (unsigned long)u.lastCheck,
                 (int)clock.state, (unsigned long)clock.lastSync, clock.utcOffsetMin);
 }
+// The whole word, never the one letter: line noise, a paste or a script aimed at the wrong port must not wipe a family.
+static void resetCommand() {
+  String arg = Serial.readStringUntil('\n'); arg.trim();   // without a newline this stalls the loop up to 1 s
+  if (!arg.equals("ESET")) { Serial.println("[porthole] usage: RESET (erases every profile and every save)"); return; }
+  board::eraseNamespace(shell::NS);
+  for (App* a : APPS) board::eraseNamespace(a->store());
+  Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
+}
 static void serialCommand(int c) {
   if (c == 'T') { uint32_t e = (uint32_t)Serial.parseInt(); if (e > 1600000000u) { const uint32_t utc = timezones::toUtc(e); writeUtcRtc(utc); g_bootUtcEpoch = utc; g_bootMillis = millis(); Serial.println("[porthole] local clock set; RTC stores UTC"); } }
-  else if (c == 'R') {
-    board::eraseNamespace(shell::NS);
-    for (App* a : APPS) board::eraseNamespace(a->store());
-    Serial.println("[porthole] all profiles erased, rebooting"); delay(100); ESP.restart();
-  }
+  else if (c == 'R') resetCommand();
   else if (c == 'P') {  // a digit is required: parseInt reads a bare "P" as 0 and would clear profile 0's code
     String arg = Serial.readStringUntil('\n'); arg.trim();
     if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }
@@ -388,9 +407,16 @@ static void renderFrame() {
   if (!g_hires) board::expand(gfx::fb, g_pal[g_shell.tint()]);   // counted as render: present is the wait alone
 }
 
+static void present() {   // and, for "M", the longest wait for the driver's frame ack since boot
+  const uint32_t t0 = micros();
+  board::presentHires();
+  const uint32_t waited = micros() - t0;
+  if (waited > g_mt.presentMax) g_mt.presentMax = waited;
+}
+
 void loop() {
   static uint32_t prevUs = micros();
-  uint32_t* mt = g_mt[g_mtAt];
+  uint32_t* mt = g_mt.frame[g_mtAt];
   uint32_t t0 = micros();
   mt[MT_FRAME] = t0 - prevUs; prevUs = t0;
   uint32_t ms = millis();
@@ -417,7 +443,7 @@ void loop() {
   if (!progress && !dark) renderFrame();
   uint32_t t3 = micros();
   if (progress || dark) delay(20);
-  else board::presentHires();
+  else present();
   mt[MT_UPDATE] = t2 - t1; mt[MT_RENDER] = t3 - t2; mt[MT_PRESENT] = micros() - t3;
   g_mtAt = (g_mtAt + 1) % MT_N;
   board::buzzer(g_shell.soundOn(ms));

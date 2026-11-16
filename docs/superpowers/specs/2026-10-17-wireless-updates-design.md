@@ -39,8 +39,24 @@ The board is not powered overnight, so nothing depends on a night-time window.
     every new release. (Not the releases API: on the board it turned out not to list releases newest first.)
   - Integrity: HTTPS with the built-in certificate bundle, plus the image's appended SHA256, which `Update.end()`
     checks.
+  - Authenticity rests on that HTTPS connection alone (recorded 2026-11-16, audit PLAT-10; the current trade-off,
+    not yet a decision to keep it). There is no secure boot and no signature of our own, and the pinned framework's
+    mbedTLS is built without certificate date checks (`CONFIG_MBEDTLS_HAVE_TIME_DATE` is off in its sdkconfig),
+    which is also why an update works before the clock is set. So whoever can publish a release in the repository,
+    or holds any certificate ever issued for the release hosts (an expired one too) and sits on the network path,
+    can install firmware. Closing it needs a signing key that only the owner holds:
+    1. The release workflow signs the version and the image's SHA256 (ECDSA P-256: the board's mbedTLS can verify
+       it, and has no Ed25519) and publishes the signature as a release asset.
+    2. The firmware carries the public key and checks the signature before `Update.end()`.
+    3. Order matters: boards verify with the firmware they already run, so a release that checks signatures when
+       one is present ships first, and only a later one may require them.
 - **The SD card is optional, with one job:** `/porthole/wifi.txt`. Serial `W` is the other way to set wifi.
 - **No downgrades over the air, and dev builds never update.** A local build reports version `"dev"`.
+- **A release that rolled back is not downloaded again** (added 2026-11-16). A finished download records its version
+  in `"sys"/tried`. While the bootloader's mark says the spare slot's image was rejected and the channel still offers
+  that same version, the check ends as "Check failed" without a download (`shell::rolledBack`); any other version is
+  tried as usual. A USB flash clears the mark. The cost: a board that lost power during a new version's first second
+  of boot also waits for the next release.
 
 ## Hard rules this must keep
 

@@ -1,0 +1,12 @@
+reset
+profile Ivy 8
+tap 81 104
+wait 1200
+tap 80 137
+wait 800
+tap 79 130
+wait 10700
+screen
+tap 80 137
+wait 300
+screen

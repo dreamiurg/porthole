@@ -1,0 +1,219 @@
+reset
+wait 1000
+tap 67 124
+wait 500
+tap 67 76
+wait 500
+tap 67 124
+wait 500
+tap 41 52
+wait 500
+tap 41 124
+wait 500
+snap b01
+tap 119 124
+wait 1000
+tap 124 56
+wait 1000
+tap 34 101
+wait 1000
+snap b02
+tap 80 145
+wait 1500
+tap 79 72
+wait 2500
+snap b03
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 93 124
+wait 300
+tap 67 124
+wait 400
+tap 41 76
+wait 400
+tap 67 124
+wait 400
+tap 41 76
+wait 400
+tap 67 124
+wait 400
+tap 93 101
+wait 400
+snap b04
+tap 119 124
+wait 2500
+snap b05
+tap 94 130
+wait 1500
+snap b06
+tap 80 84
+wait 800
+snap b07
+tap 108 132
+wait 800
+snap b08
+tap 52 132
+wait 800
+snap b09
+tap 108 132
+wait 800
+tap 108 132
+wait 800
+snap b10
+tap 80 73
+wait 800
+snap b11
+tap 80 132
+wait 800
+snap b12
+tap 108 132
+wait 800
+snap b13
+tap 108 132
+wait 800
+snap b14
+tap 80 97
+wait 800
+snap b15
+tap 80 132
+wait 800
+snap b16
+tap 108 132
+wait 800
+snap b17
+tap 108 132
+wait 800
+snap b18
+tap 80 73
+wait 800
+snap b19
+tap 34 132
+wait 600
+snap b20
+tap 40 141
+wait 800
+snap b21
+wait 600
+tap 80 132
+wait 800
+snap b22
+tap 108 132
+wait 800
+snap b23
+tap 108 132
+wait 800
+snap b24
+tap 108 132
+wait 800
+snap b25
+tap 80 73
+wait 800
+snap b26
+tap 80 132
+wait 800
+snap b27
+tap 108 132
+wait 800
+snap b28
+tap 108 132
+wait 800
+snap b29
+tap 108 132
+wait 800
+snap b30
+tap 80 97
+wait 800
+snap b31
+tap 80 132
+wait 800
+snap b32
+tap 108 132
+wait 800
+snap b33
+tap 108 132
+wait 800
+snap b34
+tap 108 132
+wait 800
+snap b35
+tap 80 97
+wait 800
+snap b36
+tap 80 132
+wait 800
+snap b37
+wait 600
+tap 80 132
+wait 800
+snap b38
+tap 108 132
+wait 800
+snap b39
+tap 108 132
+wait 800
+snap b40
+tap 108 132
+wait 800
+snap b41
+tap 80 97
+wait 800
+snap b42
+tap 80 132
+wait 800
+snap b43
+tap 108 132
+wait 800
+snap b44
+tap 108 132
+wait 800
+snap b45
+tap 108 132
+wait 800
+snap b46
+tap 80 73
+wait 800
+snap b47
+tap 80 132
+wait 800
+snap b48
+tap 108 132
+wait 800
+snap b49
+tap 108 132
+wait 800
+snap b50
+tap 108 132
+wait 800
+snap b51
+tap 80 73
+wait 800
+snap b52
+tap 80 132
+wait 800
+snap b53
+wait 600
+tap 51 25
+wait 800
+snap b54
+tap 80 84
+wait 800
+snap b55
+tap 108 132
+wait 800
+snap b56
+tap 108 132
+wait 800
+snap b57
+tap 108 132
+wait 800
+snap b58

@@ -1,0 +1,120 @@
+tick 1500
+shot s00_boot
+tap 118 100 300
+tick 500
+tap 42 77 250
+tick 500
+tap 67 125 300
+tick 600
+shot s01_nz
+tap 67 53 300
+tick 500
+tap 118 125 300
+tick 1000
+shot s02_afterok
+# Leo mashes the frog 4 times
+tap 93 86 300
+tick 250
+shot s03_mash1
+tap 94 87 350
+tick 200
+tap 92 85 300
+tick 300
+tap 93 88 250
+tick 400
+shot s04_aftermash
+# Leo mashes 6
+tap 79 69 300
+tick 250
+tap 80 70 350
+tick 200
+tap 78 68 300
+tick 300
+tap 79 71 250
+tick 400
+shot s05_after6mash
+tick 1000
+tap 80 145 300
+tick 1000
+shot s06_afterskip
+tick 1500
+# Leo mashes the house 5 times
+tap 80 13 300
+tick 200
+tap 81 14 350
+tick 250
+tap 79 12 300
+tick 200
+tap 80 15 400
+tick 300
+tap 80 13 300
+tick 500
+shot s07_housemash
+tick 1500
+# Leo mashes his name row 5 times
+tap 80 68 300
+tick 200
+tap 82 70 350
+tick 250
+tap 79 67 300
+tick 200
+tap 80 71 400
+tick 300
+tap 81 68 300
+tick 500
+shot s08_namemash
+tick 1500
+shot s09_namemash_later
+# Leo mashes All games 4 times
+tap 124 105 300
+tick 200
+tap 125 106 350
+tick 250
+tap 123 104 300
+tick 300
+tap 124 107 250
+tick 500
+shot s10_allgames_mash
+tick 1500
+shot s11_allgames_later
+# Leo mashes the pumpkin tile 5 times
+tap 80 103 300
+tick 200
+tap 81 104 350
+tick 250
+tap 79 102 300
+tick 200
+tap 80 105 400
+tick 300
+tap 82 103 300
+tick 500
+shot s12_pumpkin_mash
+tick 1500
+shot s13_pumpkin_later
+tilt 0 600 -800
+tap 80 130 300
+tick 2500
+shot p00_calib
+tap 80 130 200
+tick 1000
+strip p01_play 1500 500
+tilt -300 600 -742
+tick 700
+tilt 0 600 -800
+strip p02_left 2000 400
+# Leo taps HIDE, then again once a second (300 ms presses)
+tap 80 130 300
+tick 700
+shot p05_t1
+tap 80 130 300
+tick 700
+shot p05_t2
+tap 80 130 300
+tick 700
+shot p05_t3
+tap 80 130 300
+tick 700
+shot p05_t4
+tap 80 130 300
+tick 700
+shot p05_t5
