@@ -38,6 +38,8 @@ env:
 
 jobs:
   promote:
+    # The daily run is this repository's: a fork has no betas to promote, and its run would fail at the stable sync.
+    if: github.event_name != 'schedule' || github.repository == 'dreamiurg/porthole'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
