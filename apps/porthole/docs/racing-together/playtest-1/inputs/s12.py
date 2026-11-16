@@ -10,7 +10,7 @@ a.tap(106, 124)
 both(a, b, 600)
 if mode == "wobble":
     for amp in (25, 12, 6):
-        wobble(a, b, b, 4000, amp, seed=amp)
+        wobble((a, b), b, 4000, amp, seed=amp)
         b.snap(f"17_wobble{amp}")
 elif mode == "waiting":
     both(a, b, 3000)

@@ -116,12 +116,13 @@ def tiltdeg(s, deg, lean=0.0):
     s.do(f"tilt {int(math.sin(a) * m * 1000)} {int(math.cos(a) * m * 1000)} {int(-math.sqrt(max(0, 1 - m * m)) * 1000)}")
 
 
-def wobble(a, b, s, ms, amp, seed=1, base=0, step=66):
+def wobble(pair, s, ms, amp, seed=1):
+    a, b = pair
     r = random.Random(seed)
-    for _ in range(0, ms, step):
-        tiltdeg(s, base + r.uniform(-amp, amp))
-        a.cmd(f"tick {step}")
-        b.cmd(f"tick {step}")
+    for _ in range(0, ms, 66):
+        tiltdeg(s, r.uniform(-amp, amp))
+        a.cmd("tick 66")
+        b.cmd("tick 66")
 
 
 def to_race(a, b, track_next=0):
