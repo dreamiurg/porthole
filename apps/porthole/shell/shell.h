@@ -61,6 +61,7 @@ class Shell {
   int createProfile(const char* name, uint8_t age, const char* code);   // code "1234", "" = none; lands on the launcher
   bool openApp(const char* name);     // from the launcher; matches App::name() ignoring case, spaces and dashes
   const char* screenName() const;
+  bool savesFailing() const { return saveFailing_; }   // the last game save did not land (Info says so)
   void debugPrint();
   void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level) "unseen" (saved with the next game opened), then the open game
 
@@ -129,6 +130,8 @@ class Shell {
   uint8_t written_[shell::BLOB_MAX];               // the open game's save as last written (or loaded)
   size_t writtenLen_ = 0;
   bool writtenOk_ = true;                          // false: the last write failed; flushApp retries written_
+  uint8_t saveFails_ = 0;                          // the open game's writes failed this many times in a row: retries back off
+  bool saveFailing_ = false;                       // the last game save did not land: Info tells the grown-up
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;

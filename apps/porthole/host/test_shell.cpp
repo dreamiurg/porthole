@@ -23,7 +23,7 @@
 struct MemStore : shell::Store {
   struct Entry { char ns[16], key[16]; uint8_t data[shell::BLOB_MAX]; size_t len; bool used; };
   Entry e[32] = {};
-  int budget = -1, writes = 0; char last[32] = ""; const char* refuse = nullptr;
+  int budget = -1, writes = 0, refused = 0; char last[32] = ""; const char* refuse = nullptr;   // refused: tries at `refuse`
   bool land(const char* ns, const char* key) {
     if (budget >= 0 && writes >= budget) return false;
     writes++; snprintf(last, sizeof last, "%s/%s", ns, key); return true;
@@ -39,7 +39,8 @@ struct MemStore : shell::Store {
   }
   bool save(const char* ns, const char* key, const void* data, size_t len) override {
     char name[32]; snprintf(name, sizeof name, "%s/%s", ns, key);
-    if ((refuse && !strcmp(refuse, name)) || !land(ns, key)) return false;
+    if (refuse && !strcmp(refuse, name)) { refused++; return false; }
+    if (!land(ns, key)) return false;
     Entry* x = find(ns, key);
     for (int i = 0; !x && i < 32; i++) if (!e[i].used) x = &e[i];
     assert(x && len <= shell::BLOB_MAX);
@@ -1766,10 +1767,39 @@ static void codesAndPresses() {   // the code pads, their waits, what they gate,
   slowPresses();
 }
 
+static uint16_t nativePixels[gfx565::W * gfx565::H];
+// A game save that will not land (storage full, or worn out): the shell tries ever less often, still once on leaving,
+// and Info tells the grown-up in one line, which the next save that lands takes away. The game plays on; a kid sees
+// nothing of it.
+static int noticePixels() {   // lit pixels on Info's line between the last row and the buttons
+  int n = 0;
+  for (int y = 90 * 3; y < 96 * 3; y++)
+    for (int x = 0; x < gfx565::W; x++) n += nativePixels[y * gfx565::W + x] != nativePixels[y * gfx565::W + 30];
+  return n;
+}
+static void failingSavesToldToGrownUp() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp game("Stub"); App* apps[] = {&game};
+  game.saving = true;
+  bootWithoutHours(sh, st, apps, 1, &sys); sh.createProfile("Sam", 8, ""); assert(sh.openApp("Stub"));
+  st.refuse = "stub/s0";
+  for (int i = 0; i < 600; i++) { ms += 100; sh.update(testNow, ms, Input{}); }   // a minute of play
+  assert(st.refused == 3 && sh.savesFailing() && on(sh, "stub"));   // tried at 5, 15 and 35 s, not twelve times
+  home(sh, ms, game); assert(st.refused == 4 && !st.has("stub", "s0"));   // leaving tries once more
+  tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker")); holdTitle(sh, ms, 5000);
+  assert(on(sh, "sys_info") && noticePixels() > 100);
+  // Storage works again: back in the game, the save lands at the first cadence, and the line is gone.
+  st.refuse = nullptr; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "picker"));
+  sh.createProfile("Kai", 6, ""); assert(sh.openApp("Stub") && sh.savesFailing());
+  for (int i = 0; i < 52; i++) { ms += 100; sh.update(testNow, ms, Input{}); }
+  assert(st.has("stub", "s1") && !sh.savesFailing());
+  home(sh, ms, game); tapAt(sh, ms, ADMIN_HOME); holdTitle(sh, ms, 5000);
+  assert(on(sh, "sys_info") && noticePixels() == 0);
+}
+
 int main() {
-  static uint16_t nativePixels[gfx565::W * gfx565::H];
   gfx565::target(nativePixels);
   systemDefaults();
+  failingSavesToldToGrownUp();
   scheduleClosesGame();
   familyAllowanceFlow();
   zoneSelectionFlow();

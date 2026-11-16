@@ -155,15 +155,18 @@ void urgentThrottled() {
   assert(s.shell.openApp("Kingdom")); s.tap(kingdom::layout::START); s.settle(); s.step(false, 0, 0, 6000);
   assert(!strcmp(s.game.screenName(), "lk_read") && s.store.gameWrites == writes);
 }
-// A refused write stays pending in the shell: it lands at the next cadence once the store works again, though the
-// game has nothing new to hand out.
+// A refused write stays pending in the shell: it lands at the next try once the store works again, though the game
+// has nothing new to hand out. After one failure the next try is ten seconds on, not five (host/test_shell.cpp holds
+// the whole back-off).
 void failedSaveRetried() {
   Memory store; Shell shell; Ordinary ordinary; App* apps[] = {&ordinary};
   shell.begin(store, apps, 1); shell.update(NOW, 10, {});
   assert(shell.createProfile("Other", 8, "") == 0 && shell.openApp("Ordinary"));
   store.fail = true; shell.update(NOW + 5, 5011, {}); assert(store.gameWrites == 0 && !ordinary.dirty);
   store.fail = false; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 0);   // the cadence, not every frame
-  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
+  shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 0 && shell.savesFailing());
+  shell.update(NOW + 15, 15012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
+  assert(!shell.savesFailing());
 }
 // A board updated from version 1 (host/fixtures: a real stored save): the campaign opens exactly as it was left and the
 // next save writes it as version 2. A write refused on the way leaves the version 1 blob whole, and it lands later.
