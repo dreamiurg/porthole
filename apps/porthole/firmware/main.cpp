@@ -328,7 +328,9 @@ static void printSystem() {   // the tail of "S": version, slot and where the up
   const shell::ClockStatus clock = g_sys.clockStatus();
   nvs_stats_t nvs = {};
   nvs_get_stats(nullptr, &nvs);   // saves share the 5-page nvs partition with wifi and the clock; when it fills, saves fail
-  Serial.printf("nvs_used=%u nvs_free=%u ", (unsigned)nvs.used_entries, (unsigned)nvs.available_entries);
+  // stack_free: the least the 8 KB loop stack ever had left, in bytes. Boot's save migrations are its deepest known path.
+  Serial.printf("nvs_used=%u nvs_free=%u stack_free=%u ", (unsigned)nvs.used_entries, (unsigned)nvs.available_entries,
+                (unsigned)uxTaskGetStackHighWaterMark(nullptr));
   Serial.printf("heap=%lu now=%lu version=%s slot=%s update=%d pct=%d available=%s last_check=%lu "
                 "sys_time=%d sys_sync=%lu sys_off=%d\n",
                 (unsigned long)board::freeHeap(), (unsigned long)nowSec(), PORTHOLE_VERSION,

@@ -147,7 +147,7 @@ They work on either USB-C port: `firmware/console.h` (included by `board.h`) red
 
 | Command | Effect |
 | --- | --- |
-| `S` | Print the active profile and the stats of every game opened since boot, the open (or last) one last (`Shell::debugPrint()`), plus NVS entries (`nvs_used= nvs_free=`: saves fail once the partition is full), free heap, current epoch, and `version= slot= update=<UpdState> pct= available= last_check=` |
+| `S` | Print the active profile and the stats of every game opened since boot, the open (or last) one last (`Shell::debugPrint()`), plus NVS entries (`nvs_used= nvs_free=`: saves fail once the partition is full), the least the 8 KB loop stack ever had left (`stack_free=`, bytes), free heap, current epoch, and `version= slot= update=<UpdState> pct= available= last_check=` |
 | `T<epoch>` | Set the RTC and running clock to `<epoch>` (local wall-clock seconds; ignored if <= 1,600,000,000) |
 | `RESET` | Erase every profile and every game's saves (namespaces `porthole` and each app's store), then reboot. The whole word on its own line: a lone `R`, or `R` followed by anything else, only prints the usage |
 | `P<n>` | Clear profile `n`'s 4-digit secret code (parent escape hatch) |
