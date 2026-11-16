@@ -1,6 +1,6 @@
 #include "pet.h"
 #include "content.h"
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
 
 static_assert(NUM_BOOKS <= 32, "booksDoneMask is 32 bits: split or widen before adding more stories");
 
@@ -46,7 +46,7 @@ int bookListFor(const Save& s, uint8_t* out) {
     lo--;  // not enough stories at this level yet: offer the tier below as well
   }
 }
-void seal(Save& s) { s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save); s.crc = crc32(&s, sizeof(Save) - sizeof(uint32_t)); }
+void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 
 uint32_t rnd(Save& s) { uint32_t x = s.seed ? s.seed : 0x9E3779B9u; x ^= x << 13; x ^= x >> 17; x ^= x << 5; s.seed = x; return x; }
 

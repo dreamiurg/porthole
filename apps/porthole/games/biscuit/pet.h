@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "crc32.h"
+#include "os/save.h"   // not "save.h": a game may have its own
 #include "day.h"
 #include "stars.h"
 
@@ -362,20 +362,13 @@ inline bool valid(const Save& p) {
       && validCounts(p) && validFlags(p) && validName(p.petName) && validDaily(p);
 }
 
-inline void seal(Save& s) {
-  s.magic = SAVE_MAGIC; s.version = SAVE_VERSION; s.size = sizeof(Save);
-  s.crc = os::crc32(&s, sizeof s - sizeof s.crc);
-}
+inline void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 // Any version up to this one: a blob is its own size (a prefix of today's layout) with its crc in the last four
 // bytes, so fields appended after it was written load as zero.
 inline bool loadBlob(const void* data, size_t n, Save& out) {
-  if (n < SAVE_V1_SIZE || n > sizeof(Save) || n % 4) return false;
-  const uint8_t* b = (const uint8_t*)data;
-  uint32_t crc;
-  memcpy(&crc, b + n - 4, 4);
+  if (n < SAVE_V1_SIZE || n > sizeof(Save) || n % 4 || !os::save::mine(data, n, SAVE_MAGIC, SAVE_VERSION)) return false;
   Save s{};
-  memcpy(&s, b, n - 4);
-  if (s.magic != SAVE_MAGIC || s.size != n || !s.version || s.version > SAVE_VERSION || crc != os::crc32(b, n - 4)) return false;
+  memcpy(&s, data, n - sizeof s.crc);
   if (s.version < 2) s.booksDay = s.daysTogether;   // the newer books start arriving at the first visit after the update
   if (!valid(s)) return false;
   seal(s);
