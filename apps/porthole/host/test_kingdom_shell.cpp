@@ -7,6 +7,7 @@
 #include <vector>
 #include "games/living-kingdom/game.h"
 #include "games/living-kingdom/layout.h"
+#include "host/fixtures/kingdom_save_v1.h"
 #include "shell.h"
 
 namespace {
@@ -160,10 +161,33 @@ void failedSaveRetried() {
   store.fail = false; shell.update(NOW + 6, 6000, {}); assert(store.gameWrites == 0);   // the cadence, not every frame
   shell.update(NOW + 10, 10012, {}); assert(store.gameWrites == 1 && store.load("ordinary", "s0", &ordinary.byte, 1) == 1);
 }
+// A board updated from version 1 (host/fixtures: a real stored save): the campaign opens exactly as it was left and the
+// next save writes it as version 2. A write refused on the way leaves the version 1 blob whole, and it lands later.
+void versionOneMigrates() {
+  Session s; s.shell.begin(s.store, s.apps, 1); s.step();
+  assert(s.shell.createProfile("Ann", 9, "") == 0 && s.shell.createProfile("Ben", 9, "") == 1 && s.shell.createProfile("Cy", 9, "") == 2);
+  s.store.save("kingdom", "s2", KINGDOM_SAVE_V1, sizeof KINGDOM_SAVE_V1);
+  const std::vector<uint8_t>& stored = s.store.entries["kingdom/s2"];
+  s.store.fail = true; assert(s.shell.openApp("Kingdom")); s.step();
+  assert(!memcmp(&s.game.save(), KINGDOM_SAVE_V1, sizeof(Save)));
+  s.step(false, 0, 0, 6000); s.step();
+  assert(stored.size() == sizeof(Save) && !memcmp(stored.data(), KINGDOM_SAVE_V1, sizeof(Save)));   // the only copy, untouched
+  s.store.fail = false;
+  for (int n = 0; n < 400 && stored.size() == sizeof(Save); n++) s.step(false, 0, 0, 1000);
+  assert(stored.size() < 300 && stored[4] == kingdom::SAVE_VERSION);
+  const Save migrated = s.store.campaign(2); assert(!memcmp(&migrated, KINGDOM_SAVE_V1, sizeof migrated));   // every field
+  s.tap(kingdom::layout::START); assert(!strcmp(s.game.screenName(), "lk_journal"));   // where the kid left it
+  // After a restart it loads from version 2, the same campaign.
+  Shell rebooted; kingdom::Game resumed; App* apps[] = {&resumed};
+  rebooted.begin(s.store, apps, 1); rebooted.update(NOW, 10, {});
+  Input pick{}; pick.x = pick.downX = 80; pick.y = pick.downY = 93; pick.tap = true;   // the third name on the picker
+  rebooted.update(NOW, 600, pick); assert(rebooted.openApp("Kingdom"));
+  assert(!memcmp(&resumed.save(), KINGDOM_SAVE_V1, sizeof(Save)));
+}
 } // namespace
 int main() {
   static_assert(sizeof(Save) <= shell::BLOB_MAX, "the shell must hold a complete campaign checkpoint");
   urgentPageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
-  urgentThrottled(); failedSaveRetried();
+  urgentThrottled(); failedSaveRetried(); versionOneMigrates();
   puts("kingdom shell: immediate pages/decisions, abrupt restart, exact break resume and ordinary save cadence passed");
 }

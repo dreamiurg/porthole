@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "games/living-kingdom/engine.h"
+#include "host/fixtures/kingdom_save_v1.h"
+#include "crc32.h"
 
 using namespace kingdom;
 static int checks = 0;
@@ -313,6 +315,19 @@ static int selectChoice(const Save& save, const Scene& scene, int route, int sty
   return 0;
 }
 
+// Version 2 of a save reads back as the very struct it was packed from: every field, byte for byte.
+static size_t largestPacked = 0;
+static size_t packsExactly(Save save) {
+  uint8_t packed[sizeof(Save)];
+  sealSave(save);
+  const size_t n = packSave(save, packed, sizeof packed);
+  Save back;
+  CHECK(n >= 12 && n < sizeof(Save) && loadSave(back, packed, n, save.profile));
+  CHECK(!memcmp(&back, &save, sizeof save));
+  if (n > largestPacked) largestPacked = n;
+  return n;
+}
+
 static uint8_t reached[128] = {};
 static void playScene(Save& save, int route, int style) {
   const Scene* scene = currentScene(save);
@@ -334,6 +349,7 @@ static void playScene(Save& save, int route, int style) {
   CHECK(commit(save, choice));
   CHECK(save.cursor.mode == RESULT && save.cursor.page == 0);
   CHECK(hasDecision(save, scene->choices[choice].id));
+  packsExactly(save);
   before = save;
   CHECK(!commit(save, choice) && !memcmp(&before, &save, sizeof(save)));
   sealSave(save);
@@ -420,7 +436,94 @@ static void seededSchedule() {
   }
 }
 
+// The saves on boards in the field are version 1. One of them, as the shipped game wrote it, must load with every
+// field intact, be written back as version 2, and load again from that with nothing changed.
+static uint8_t packedOld[sizeof(Save)];
+static size_t storedVersions() {
+  Save old, back;
+  CHECK(loadSave(old, KINGDOM_SAVE_V1, sizeof KINGDOM_SAVE_V1, 2));
+  CHECK(!memcmp(&old, KINGDOM_SAVE_V1, sizeof old));   // the struct is version 1's bytes: nothing can have moved
+  CHECK(old.seed == 20261116u && old.day == 240 && old.journalCount == 28 && old.outcome == 3 && old.deeds == 1);
+  CHECK(old.quests[0] == RESOLVED && old.cursor.mode == JOURNAL && old.cursor.infoPage == 1);
+  CHECK(old.returnCursor.mode == READ && old.returnCursor.scene == 37 && old.returnCursor.page == 2);
+  CHECK(!loadSave(back, KINGDOM_SAVE_V1, sizeof KINGDOM_SAVE_V1, 1));   // another kid's
+  const size_t n = packSave(old, packedOld, sizeof packedOld);
+  CHECK(n && n < 300 && packedOld[4] == SAVE_VERSION && packedOld[5] == 0 && packedOld[6] + packedOld[7] * 256u == n);
+  CHECK(loadSave(back, packedOld, n, 2) && !memcmp(&back, KINGDOM_SAVE_V1, sizeof back));
+  CHECK(!loadSave(back, packedOld, n, 1));
+  Save fresh;
+  newCampaign(fresh, 5, 0);
+  const size_t small = packsExactly(fresh);
+  CHECK(small <= 120);
+  printf("kingdom save: version 1 %zu bytes; version 2 %zu new, %zu for the stored finished chapter\n", sizeof(Save), small, n);
+  return n;
+}
+static uint32_t rngState = 2026;
+static uint32_t rnd(uint32_t n) { rngState ^= rngState << 13; rngState ^= rngState >> 17; rngState ^= rngState << 5; return rngState % n; }
+// Damage, a cut, a length that lies and a crafted body are refused, never read past their end.
+static void damagedVersionTwo(size_t n) {
+  Save back;
+  for (size_t i = 0; i < n; ++i) { packedOld[i] ^= 0x10; CHECK(!loadSave(back, packedOld, n, 2)); packedOld[i] ^= 0x10; }
+  for (size_t cut = 0; cut < n; ++cut) CHECK(!loadSave(back, packedOld, cut, 2));
+  uint8_t changed[sizeof(Save) + 8] = {};
+  memcpy(changed, packedOld, n);
+  CHECK(!loadSave(back, changed, n + 1, 2));
+  for (int t = 0; t < 4000; ++t) {   // bytes changed and the crc put right: whatever loads is a valid state
+    memcpy(changed, packedOld, n);
+    for (int k = 0; k <= t % 6; ++k) changed[8 + rnd(uint32_t(n - 12))] = uint8_t(rnd(256));
+    const uint32_t crc = os::crc32(changed, n - 4);
+    memcpy(changed + n - 4, &crc, 4);
+    if (loadSave(back, changed, n, 2)) packsExactly(back);
+  }
+}
+static void notPackable(size_t n) {
+  Save old, wild;
+  uint8_t packed[sizeof(Save)];
+  CHECK(loadSave(old, KINGDOM_SAVE_V1, sizeof KINGDOM_SAVE_V1, 2));
+  CHECK(!packSave(old, packed, 11) && !packSave(old, packed, n - 1));   // no room: nothing, not a cut save
+  wild = old; wild.deeds = 200;   // out of the range validState allows (the game then stores version 1, whole)
+  CHECK(!packSave(wild, packed, sizeof packed));
+  wild = old; wild.journalCount = MAX_JOURNAL + 1;
+  CHECK(!packSave(wild, packed, sizeof packed));
+}
+// Any state validState accepts, not only ones play reaches: every field at random over its whole range.
+static void randomWorld(Save& s, bool wide) {
+  s.rng = rnd(0xffffffffu); s.day = uint16_t(1 + rnd(wide ? 65535 : 200)); s.location = rnd(LOCATION_COUNT);
+  s.outcome = rnd(5); s.deeds = rnd(9); s.facts = uint64_t(rnd(0xffffffffu)) << 32 | rnd(0xffffffffu);
+  s.cursor.page = uint16_t(rnd(65536)); s.cursor.infoPage = rnd(256); s.returnCursor = s.cursor;
+  for (int i = 0; i < 4; ++i) s.variants[i] = rnd(i == 3 ? 3 : 2);
+  for (uint8_t& v : s.skills) v = rnd(7);
+  for (uint8_t& v : s.quests) v = rnd(RESOLVED + 1);
+  for (int8_t& v : s.relations) v = int8_t(int(rnd(11)) - 5);
+  for (int i = 0; i < 6; ++i) if (rnd(2)) s.inventory[i] = {uint8_t(i + 1), uint8_t(1 + rnd(99))};
+  for (int i = 0; i < MAX_EVENTS; ++i) s.eventDue[i] = rnd(3) ? 0 : rnd(0xffffffffu);
+  s.eventDone = rnd(256);
+}
+static void randomStory(Save& s, uint32_t days, uint32_t ids) {
+  for (int i = 0; i < MAX_PROMISES; ++i) { s.promises[i] = rnd(4); s.promiseDays[i] = rnd(2) ? uint16_t(rnd(days)) : 0; }
+  for (uint8_t& v : s.seen) v = rnd(4) ? 0 : rnd(256);
+  for (uint8_t& v : s.decisions) v = rnd(4) ? 0 : rnd(256);
+  for (int i = 0; i < MAX_SCENES; ++i) s.lastVisit[i] = rnd(3) ? 0 : uint16_t(rnd(days));
+  s.journalCount = rnd(MAX_JOURNAL + 1);
+  for (int i = 0; i < s.journalCount; ++i) s.journal[i] = {uint16_t(rnd(8) ? rnd(ids) : 0x8000 | rnd(8)), uint16_t(rnd(days))};
+}
+static void anyValidStatePacks() {
+  for (int t = 0; t < 3000; ++t) {
+    Save s;
+    newCampaign(s, rnd(0xffffffffu), uint8_t(rnd(4)));
+    const bool wide = t % 3 == 0;   // every 16-bit day and id, or a campaign's small ones
+    randomWorld(s, wide);
+    randomStory(s, wide ? 65536 : 200, wide ? 65536 : 512);
+    packsExactly(s);
+  }
+  printf("kingdom save: the largest version 2 of any state tried is %zu bytes\n", largestPacked);
+}
+
 int main() {
+  const size_t stored = storedVersions();
+  damagedVersionTwo(stored);
+  notPackable(stored);
+  anyValidStatePacks();
   openingIsAtomic();
   exactSnapshot();
   declarativeRules();

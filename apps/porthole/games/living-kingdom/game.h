@@ -30,6 +30,7 @@ class Game : public App {
   int pages() const { return reader_.count(); }
  private:
   Save save_{};
+  uint8_t packed_[sizeof(Save)] = {};   // save_ as stored (version 2): what takeSave hands the shell
   Input in_{};
   ui::FreshGate gate_;
   canvas::Frames<1> frames_;

@@ -11,9 +11,11 @@ prose and art are original. This remains an unofficial private prototype.
 - `engine.*`: pure requirements, deterministic encounter selection, transactional
   effects, choices, world days and delayed consequences. No renderer or shell
   dependency. Reading never changes facts, items, days or decisions.
-- `save.h`: fixed-width, pointer-free, packed version 1 campaign snapshot. UI
-  cursors belong to the snapshot: scene, measured page, pending choice page,
-  highlighted choice and overlay return cursor all survive interruption.
+- `save.h`: the fixed-width, pointer-free campaign snapshot (`Save`: how the
+  game holds it, and version 1 as stored) and the stored version 2, the same
+  fields bit-packed (`packSave`, in `engine.cpp`). UI cursors belong to the
+  snapshot: scene, measured page, pending choice page, highlighted choice and
+  overlay return cursor all survive interruption.
 - `content/chapter-01.json`: prose and declarative world rules; runtime uses
   generated compact C++ tables through `content.*`. Never put story-specific
   prerequisites or rewards in rendering code.
@@ -86,14 +88,35 @@ The CRC covers all preceding bytes. Loading verifies length, version, checksum,
 profile identity and bounded fields before replacing the current state.
 Writes serialize a complete snapshot, including committed choice identity.
 
-Version 1 is 935 bytes and has no predecessor: it is the first release. Never reorder, resize or
-change the meaning of its fields. Future schemas append fields immediately
-before CRC, retain a frozen version 1 struct, and migrate only after validating
-the old length and CRC. Test each supported predecessor, initialize newly
-appended fields explicitly, and preserve original IDs, seed and decision log.
-Unknown versions and incomplete/corrupt writes are rejected, never interpreted
-as a valid old snapshot. Do not rename the namespace. `reserved` bytes have no
-meaning in version 1 and must remain zero.
+The stored blob is version 2: magic, version, its own byte length, the fields of
+`Save` bit-packed (`os/bits.h`), CRC32 over all of it. About 110 bytes for a new
+campaign and under 300 for a finished chapter, where version 1 was always 935:
+four kids' saves of every game share one 20 KB NVS partition. `packWorld` and
+`packStory` in `engine.cpp` are the layout, one description for writing and
+reading: a field `validState` bounds takes the bits its range needs, any other
+is kept whole; days and journal ids take the width of the widest one stored;
+only the journal's used entries are kept; `seen` and `decisions` are stored
+XORed with what `lastVisit` and the journal imply (`fold`), which is all zeros
+in a real campaign and still exact in any other. Every state `validState`
+accepts packs and reads back byte for byte (`anyValidStatePacks`).
+
+Version 1 is the `Save` struct itself, 935 bytes, and is still what the game
+holds in memory. Never reorder, resize or change the meaning of its fields. A
+stored version 1 loads as before and is written back as version 2 at the next
+save, in place under the same key (NVS keeps the old blob if that write fails,
+and the shell retries). `host/fixtures/kingdom_save_v1.h` is a real one;
+`storedVersions` and `versionOneMigrates` hold every field of it through the
+migration. A state that cannot be packed (the engine makes none) is stored as
+version 1, whole.
+
+A future field is appended to the struct immediately before CRC (a new struct
+version, with the old struct frozen) and at the end of the packed layout under
+a new stored version; the loader then reads a version 2 blob with that field
+zero. Test each supported predecessor, initialize newly appended fields
+explicitly, and preserve original IDs, seed and decision log. Unknown versions
+and incomplete/corrupt writes are rejected, never interpreted as a valid old
+snapshot. Do not rename the namespace. `reserved` bytes have no meaning and
+must remain zero (version 2 does not store them).
 
 Current bounds are 64 facts, 128 scene IDs, 512 decision IDs, 16 item types,
 16 NPCs, 16 promises, 8 delayed events and 96 dated journal records. There are

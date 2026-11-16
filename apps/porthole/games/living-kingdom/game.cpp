@@ -208,7 +208,10 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || keep_) return false;
-  sealSave(save_); *data = &save_; *len = sizeof save_; dirty_ = false; return true;
+  sealSave(save_); dirty_ = false;
+  *data = packed_; *len = packSave(save_, packed_, sizeof packed_);
+  if (!*len) { *data = &save_; *len = sizeof save_; }   // a state validState would refuse (the engine makes none): whole, as version 1
+  return true;
 }
 const char* Game::screenName() const {
   static const char* N[] = {"lk_title", "lk_map", "lk_read", "lk_choice", "lk_confirm", "lk_result",
