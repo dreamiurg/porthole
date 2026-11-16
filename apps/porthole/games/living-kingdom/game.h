@@ -31,6 +31,7 @@ class Game : public App {
  private:
   Save save_{};
   uint8_t packed_[sizeof(Save)] = {};   // save_ as stored (version 2): what takeSave hands the shell
+  Save check_{};                        // that blob read back, before it may replace the stored campaign
   Input in_{};
   ui::FreshGate gate_;
   canvas::Frames<1> frames_;

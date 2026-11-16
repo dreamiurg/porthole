@@ -98,7 +98,10 @@ is kept whole; days and journal ids take the width of the widest one stored;
 only the journal's used entries are kept; `seen` and `decisions` are stored
 XORed with what `lastVisit` and the journal imply (`fold`), which is all zeros
 in a real campaign and still exact in any other. Every state `validState`
-accepts packs and reads back byte for byte (`anyValidStatePacks`).
+accepts packs and reads back byte for byte (`anyValidStatePacks`), and
+`Game::takeSave` checks exactly that on every save before the packed blob may
+replace the stored one; a blob that did not read back equal is not written,
+the whole struct (version 1) is.
 
 Version 1 is the `Save` struct itself, 935 bytes, and is still what the game
 holds in memory. Never reorder, resize or change the meaning of its fields. A

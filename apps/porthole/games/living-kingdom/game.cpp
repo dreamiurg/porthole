@@ -213,8 +213,10 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || keep_) return false;
   sealSave(save_); dirty_ = urgent_ = false;
+  // Packed, unless the blob does not read back as exactly this campaign (a state validState would refuse; the engine
+  // makes none): then whole, as version 1.
   *data = packed_; *len = packSave(save_, packed_, sizeof packed_);
-  if (!*len) { *data = &save_; *len = sizeof save_; }   // a state validState would refuse (the engine makes none): whole, as version 1
+  if (!*len || !loadSave(check_, packed_, *len, save_.profile) || memcmp(&check_, &save_, sizeof save_)) { *data = &save_; *len = sizeof save_; }
   return true;
 }
 const char* Game::screenName() const {
