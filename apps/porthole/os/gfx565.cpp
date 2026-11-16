@@ -9,8 +9,9 @@ namespace gfx565 {
 uint16_t* fb = nullptr;
 void target(uint16_t* pixels) { fb = pixels; }
 
-// ponytail: a 32-bit hash per row, so a changed row that collides with the old one stays stale for that frame
-// (about 1 in 4 billion); keep a copy of the logical rows instead if that ever shows.
+// ponytail: a 32-bit hash per row, so a changed row whose hash equals the old one (about 1 in 4 billion; never when
+// the change sits inside one 4-byte word) keeps its old pixels in that panel buffer until the row changes again;
+// keep a copy of the logical rows instead if that ever shows.
 static uint32_t rowHash(const uint8_t* row) {
   uint32_t h = 0x811C9DC5u, w;
   for (int i = 0; i < W / 3; i += 4) { memcpy(&w, row + i, 4); h = (h ^ w) * 0x9E3779B1u; h ^= h >> 15; }
