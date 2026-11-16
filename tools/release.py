@@ -4,6 +4,7 @@
     python3 tools/release.py plan [--ref HEAD]
     gh release list --limit 200 --json tagName,name,isPrerelease,createdAt \\
       | python3 tools/release.py promote [--app porthole] [--tag TAG] [--min-age-hours 72]
+    python3 tools/release.py title "fix(porthole): the crash on wake"
 
 `plan` prints a JSON list, one entry per app that has releasable commits since its last
 tag: {"app", "version", "tag", "notes"}. The release workflow turns each entry into
@@ -13,6 +14,9 @@ OTA image and a version.txt; nothing is committed back to main.
 `promote` reads the app's GitHub releases on stdin and prints the stable release to cut, or
 nothing: `source=`, `version=` and `tag=` lines for $GITHUB_OUTPUT, with the notes in --notes.
 promote.yml rebuilds the source tag's commit under the new version and publishes it as GitHub's Latest.
+
+`title` fails, saying why, on a pull request title that `plan` could not read: a squash merge makes it the commit
+title, and "fix(porthole) crash" (no colon) or "fixed: crash" would be merged as a change that ships nothing.
 
 Rules
 - Apps are the directories under apps/ that have a Makefile. Tags are <app>-v<semver>.
@@ -46,6 +50,7 @@ REVERT = re.compile(r'^Revert "(?P<title>.+)"')  # GitHub's Revert button; a squ
 BREAKING = re.compile(r"^BREAKING[ -]CHANGE:", re.M)  # a footer starts its line; a mention in prose is not one
 SECTIONS = [("breaking", "Breaking changes"), ("feat", "Features"), ("fix", "Fixes"), ("other", "Other changes")]
 RELEASABLE = {"breaking", "feat", "fix"}
+TYPES = {"feat", "fix", "perf", "revert", "docs", "chore", "ci", "test", "refactor", "style", "build"}
 FIRST = (0, 1, 0)
 YANK_MARK = "(yanked)"  # yank.yml appends it to a beta's release title
 Version = tuple[int, int, int]
@@ -96,6 +101,18 @@ def classify(subject: str, body: str) -> tuple[str, str]:
     if kind in ("fix", "perf", "revert"):
         return "fix", subject
     return "other", subject
+
+
+def title_problem(title: str) -> str | None:
+    """Why `plan` would not read this as a conventional commit title, or None when it would."""
+    if REVERT.match(title):
+        return None
+    m = TITLE.match(title)
+    if not m:
+        return 'it is not "type(scope): description", e.g. "fix(porthole): the crash on wake"'
+    if m["type"].lower() not in TYPES:
+        return f'"{m["type"]}" is not one of {", ".join(sorted(TYPES))}'
+    return None
 
 
 def notes(app: str, version: str, intro: str, items: list[tuple[str, str]]) -> str:
@@ -170,7 +187,8 @@ def promotion(app: str, releases: list[dict[str, Any]], tag: str | None, min_age
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["plan", "promote"])
+    ap.add_argument("command", choices=["plan", "promote", "title"])
+    ap.add_argument("text", nargs="?", default="", help="title: the pull request title")
     ap.add_argument("--ref", default="HEAD")
     ap.add_argument("--app", default="porthole")
     ap.add_argument("--tag", default="", help="promote: this tag, whatever its age (empty: pick a beta)")
@@ -179,6 +197,10 @@ def main() -> None:
     args = ap.parse_args()
     if args.command == "plan":
         print(json.dumps(plan(args.ref)))
+        return
+    if args.command == "title":
+        if why := title_problem(args.text):
+            sys.exit(f"::error::PR title {args.text!r}: {why}. A squash merge makes it the commit title, and the release planner would ship nothing for it.")
         return
     try:
         p = promotion(args.app, json.load(sys.stdin), args.tag or None, timedelta(hours=args.min_age_hours), datetime.now(UTC))

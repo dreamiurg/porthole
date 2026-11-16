@@ -34,7 +34,8 @@ make check                                 # lint + fast tests for every app
 - PRs are squash-merged, so the PR title becomes the commit message. Use
   [Conventional Commits](https://www.conventionalcommits.org): `feat:`, `fix:`,
   `docs:`, `chore:`, `refactor:`, `test:`, `ci:`. Scope by app when it helps:
-  `feat(porthole): add a digging trick`. Releases are automatic: after a merge,
+  `feat(porthole): add a digging trick`. The **PR title** check goes red on a
+  title the release tool cannot read. Releases are automatic: after a merge,
   any app with a new `feat:` (minor) or `fix:` (patch) gets a new version, release
   notes built from these titles, and a flashable image.
 - A PR with a new game mechanic or new screen, or a visible change to one, shows
