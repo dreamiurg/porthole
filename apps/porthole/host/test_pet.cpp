@@ -448,8 +448,39 @@ static void petting(uint32_t t) {
   assert(pet::petDog(s, t + 86400) && s.petsToday == 1 && s.bondToday == 1);   // a new day starts over
 }
 
+// millis() wraps every 49.7 days. Home's deadlines (the dog's next idle move, the window's next visitor) outlive a
+// visit: a visit that runs over the wrap neither rolls them every frame on the way there (they read as already
+// passed) nor waits 49.7 days on one left just under it. The save's seed counts the rolls: every one draws from it.
+static uint32_t seedNow(Game& g) { g.debugCmd("hearts"); return taken(g).seed; }
+static int draws(uint32_t from, uint32_t to) {   // xorshift steps from one seed to the other (pet::rnd)
+  Save s{}; s.seed = from;
+  for (int n = 0; n < 5000; n++) { if (s.seed == to) return n; pet::rnd(s); }
+  return 5000;
+}
+static void homeOverTheUptimeWrap() {
+  static Game games[6];   // a fresh one each: a deadline from the visit before would be 49.7 days old here
+  static const Profile kid = {0, "Sam", 0, 8, 0};
+  static const uint32_t LEADS[6] = {3000, 5000, 8000, 12000, 20000, 70000};   // ms before the wrap when the visit starts
+  for (int i = 0; i < 6; i++) {
+    Game& g = games[i];
+    Save s; pet::adopt(s, day0, "Sam", "Rex"); s.lastPlayDay = (uint16_t)pet::dayIndex(day0); pet::seal(s);
+    const SaveSlot slot = {&s, sizeof s};
+    uint32_t ms = 0u - LEADS[i];
+    g.enter({&kid, &kid, &slot, 1, day0, ms});
+    auto run = [&](uint32_t dur) { for (uint32_t e = 0; e < dur; e += 20) { ms += 20; g.update(day0, ms, Input{}); } };
+    run(2000); assert(!strcmp(g.screenName(), "home"));
+    const uint32_t before = seedNow(g);
+    run(LEADS[i] - 1000);   // to 1 s past the wrap
+    const uint32_t at = seedNow(g);
+    assert(draws(before, at) < 60);   // a few moves and at most three visitors, not one roll a frame
+    run(150000);
+    assert(draws(at, seedNow(g)) > 20);   // and the dog and the window go on after it
+  }
+}
+
 int main() {
   Save s;
+  homeOverTheUptimeWrap();
   decayAndGrowth(s);
   uint32_t t = day0 + 3 * 86400;
   feeding(s, t);

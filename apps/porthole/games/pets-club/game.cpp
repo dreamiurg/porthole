@@ -5,6 +5,7 @@
 #include <string.h>
 #include "content.h"
 #include "sprites.h"
+#include "ticks.h"
 
 using namespace gfx;
 
@@ -276,6 +277,10 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
   if (in_.pressed) pressMs_ = ms_;
+  // The home screen's deadlines outlive a visit, and millis() wraps every 49.7 days: one stranded just under the wrap
+  // stopped the dog's wandering and the window's visitors until a restart. None is set more than 65 s ahead.
+  uint32_t* const timers[] = {&nextIdleMs_, &nextEventMs_, &dogActUntil_, &eventUntil_};
+  for (uint32_t* t : timers) os::settle(ms_, *t, 70000);
   if (haveSave_ && now_ != lastTickSec_) tick();
   if (in_.pressed && haveSave_ && screen_ != SC_SPLASH) pet::touchDay(save_, now_);
   updateParticles();
@@ -530,11 +535,11 @@ void Game::updateHome() {
   }
 }
 void Game::homeBrain() {   // idle wandering, sitting and showing off tricks
-  if (!save_.asleep && dogAct_ != 10 && ms_ >= nextIdleMs_) pickIdle();
+  if (!save_.asleep && dogAct_ != 10 && !os::before(ms_, nextIdleMs_)) pickIdle();
   if (!save_.asleep && dogAct_ != 10) keepToRug();
   if (dogAct_ == 1) homeWalk();
-  if (dogAct_ == 10 && ms_ >= dogActUntil_) { dogAct_ = 0; trickShow_ = -1; if (!save_.asleep) { save_.tricksShown++; pet::addBond(save_, now_, 1); markDirty(); } }
-  if ((dogAct_ == 3 || dogAct_ == 4 || dogAct_ == 5) && ms_ >= dogActUntil_) dogAct_ = 0;
+  if (dogAct_ == 10 && !os::before(ms_, dogActUntil_)) { dogAct_ = 0; trickShow_ = -1; if (!save_.asleep) { save_.tricksShown++; pet::addBond(save_, now_, 1); markDirty(); } }
+  if ((dogAct_ == 3 || dogAct_ == 4 || dogAct_ == 5) && !os::before(ms_, dogActUntil_)) dogAct_ = 0;
 }
 void Game::keepToRug() {   // back onto the rug after growing, off the poop's side, never onto it
   int goal = dogAct_ == 1 ? dogTargetX_ : dogX_, want = walkClamp(goal);
@@ -554,7 +559,7 @@ void Game::homeWalk() {
   if ((ms_ / 33) % 2) { if (dogX_ < dogTargetX_) dogX_++; else if (dogX_ > dogTargetX_) dogX_--; }
 }
 void Game::homeEvents() {   // butterflies, the squirrel at the window, rain
-  if (!save_.asleep && ms_ >= nextEventMs_) {
+  if (!save_.asleep && !os::before(ms_, nextEventMs_)) {
     int r = (int)(pet::rnd(save_) % 100);
     if (event_ == 0) {
       if (r < 40) { event_ = 1; eventX_ = -10; eventY_ = 40 + (int)(pet::rnd(save_) % 30); eventUntil_ = ms_ + 9000; }
@@ -563,8 +568,8 @@ void Game::homeEvents() {   // butterflies, the squirrel at the window, rain
     }
     nextEventMs_ = ms_ + 25000 + pet::rnd(save_) % 40000;
   }
-  if (event_ == 1) { eventX_ += (ms_ / 33) % 3 ? 1 : 0; if (eventX_ > 170 || ms_ > eventUntil_) event_ = 0; }
-  if (event_ == 2 && ms_ > eventUntil_) event_ = 0;
+  if (event_ == 1) { eventX_ += (ms_ / 33) % 3 ? 1 : 0; if (eventX_ > 170 || !os::before(ms_, eventUntil_)) event_ = 0; }
+  if (event_ == 2 && !os::before(ms_, eventUntil_)) event_ = 0;
 }
 // Every hotspot is tested each frame (the UI audit relies on it); only a tap acts, and only the first one that matches.
 void Game::homeTouches() {
@@ -771,7 +776,7 @@ void Game::updateFetch() {
       else { fetchScore_ = fetchScore_ > 0 ? fetchScore_ - 1 : 0; toast("Ouch, a bee!", 900); dogAct_ = 4; dogActUntil_ = ms_ + 500; }
     } else if (f.y > 150) { f.alive = 0; if (f.kind == 0) fetchMiss_++; }
   }
-  if (dogAct_ && ms_ >= dogActUntil_) dogAct_ = 0;
+  if (dogAct_ && !os::before(ms_, dogActUntil_)) dogAct_ = 0;
   if (ms_ >= fetchEndMs_) { fetchDone_ = true; screenMs_ = ms_; sound(SND_HAPPY); spawn(80, 70, 4, 12); }
 }
 void Game::drawFetch() {
