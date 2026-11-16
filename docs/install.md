@@ -9,9 +9,10 @@ This page has the same steps and the details behind them.
 2. Open [porthole.dreamiurg.net](https://porthole.dreamiurg.net/#install) in Chrome or Edge and press **Install**.
 3. Pick the board in the list Chrome shows and wait about a minute.
 
-The button writes the newest stable release with [ESP Web Tools](https://esphome.github.io/esp-web-tools/). The
-Pages workflow copies that release's `factory.bin` next to the page (`site/flash/`) each time it deploys, and
-again after every promotion, so the page always installs what boards on Stable get.
+The button writes the newest stable release, or the newest beta if you pick **Beta** above it, with [ESP Web Tools](https://esphome.github.io/esp-web-tools/). The
+Pages workflow copies both releases' `factory.bin` next to the page (`site/flash/`) each time it deploys, and
+again after every release and promotion, so Stable installs what boards on Stable get and Beta what boards on Beta
+get. A board installed from Beta still updates over Wi-Fi by its own Stable or Beta setting (below).
 
 If Chrome does not find the board, try another cable (some only charge) or the other USB-C port. If your board
 has a BOOT button, hold it while you plug in the cable, then press **Install** again.
