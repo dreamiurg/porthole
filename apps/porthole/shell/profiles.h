@@ -94,6 +94,12 @@ void seal(Record& r);
 bool loadRecord(const void* data, size_t n, Record& out);
 // The stored form of a typed code ("0000".."9999"): value + 1, so 0000 is a real code; nullptr or "" = none.
 inline uint16_t pinCode(const char* digits) { return digits && *digits ? (uint16_t)(atoi(digits) + 1) : 0; }
+// The kids' pad has keys 1 to 9, and Pets Club's own pad had a 0: a kid's stored code with a 0 in it cannot be typed,
+// so it is no code (the profile opens; a grown-up could only have cleared it in Admin anyway).
+inline uint16_t kidPin(uint16_t pin) {
+  for (int v = pin - 1, i = 0; i < 4; i++, v /= 10) if (v % 10 <= 0) return 0;
+  return pin;
+}
 // porthole/p0..p3; migrates Pets Club houses until porthole/m exists, then Biscuit's old save until porthole/mb does.
 void loadAll(Store& st, Profiles& p);
 bool saveRecord(Store& st, Profiles& p, int id);   // false = the write failed

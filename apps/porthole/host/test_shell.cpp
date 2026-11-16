@@ -80,6 +80,19 @@ static void records() {
 static void pinCodes() {
   assert(shell::pinCode("") == 0 && shell::pinCode(nullptr) == 0);
   assert(shell::pinCode("0000") != 0 && shell::pinCode("0000") != shell::pinCode("0001"));
+  // A kid's code the nine keys cannot type is no code, wherever it comes from: Pets Club's pad had a 0.
+  assert(shell::kidPin(0) == 0 && shell::kidPin(shell::pinCode("1234")) == shell::pinCode("1234"));
+  assert(shell::kidPin(shell::pinCode("9999")) && !shell::kidPin(shell::pinCode("1203")) && !shell::kidPin(shell::pinCode("0001")));
+  assert(!shell::kidPin(shell::pinCode("0000")) && !shell::kidPin(shell::pinCode("1110")) && !shell::kidPin(10001));
+  MemStore st; shell::Profiles p;
+  Save old0 = house("Kai", "Rex", 6, 1203), old9 = house("Sam", "Dot", 8, 1299);   // Pets Club stored the value itself
+  st.save("crago", "s0", &old0, sizeof old0); st.save("crago", "s1", &old9, sizeof old9);
+  shell::loadAll(st, p);
+  assert(p.count() == 2 && p.rec[0].pin == 0 && p.rec[1].pin == shell::pinCode("1299"));
+  shell::Record made = {}; made.pin = shell::pinCode("1203"); snprintf(made.name, sizeof made.name, "Ava");
+  p.rec[2] = made; p.used[2] = true; assert(shell::saveRecord(st, p, 2));   // migrated by a firmware before this rule
+  shell::loadAll(st, p);
+  assert(p.count() == 3 && p.rec[2].pin == 0 && p.rec[1].pin == shell::pinCode("1299"));
   assert(shell::pinCode("1234") == 1235 && shell::pinCode("9999") == 10000);
 }
 

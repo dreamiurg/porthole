@@ -19,8 +19,8 @@ static bool adoptHouse(Store& st, Profiles& p, int slot, const Save& h) {
   Record& r = p.rec[slot];
   memset(&r, 0, sizeof r);
   memcpy(r.name, h.kidName, sizeof r.name); r.name[sizeof r.name - 1] = 0;
-  // Pets Club stored 0000 as 1, so a legacy 1 becomes code 0001: that one kid types 0001 instead of 0000.
-  r.avatar = (uint8_t)slot; r.age = h.kidAge; r.muted = h.muted; r.pin = h.pin ? (uint16_t)(h.pin + 1) : 0;
+  // Pets Club stored the code's value (0000 as 1); here it is value + 1. One with a 0 in it is dropped: see kidPin.
+  r.avatar = (uint8_t)slot; r.age = h.kidAge; r.muted = h.muted; r.pin = kidPin(h.pin ? (uint16_t)(h.pin + 1) : 0);
   r.restUntil = h.restUntil; r.playSec = h.playSec; r.lastPlayed = h.lastSeen;
   p.used[slot] = true; p.blocked[slot] = false;
   return saveRecord(st, p, slot);

@@ -70,6 +70,7 @@ __attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
     uint8_t blob[BLOB_MAX];
     size_t n = st.load(NS, key('p', id), blob, sizeof blob);
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
+    p.rec[id].pin = kidPin(p.rec[id].pin);
     p.blocked[id] = n && !p.used[id];
   }
 }
