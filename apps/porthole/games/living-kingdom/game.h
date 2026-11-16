@@ -20,7 +20,7 @@ class Game : public App {
   bool asleep() const override { return false; }
   bool soundOn(uint32_t) override { return false; }
   bool takeSave(const void** data, size_t* len, bool allowed) override;
-  bool saveUrgent() const override { return dirty_ && !keep_; }
+  bool saveUrgent() const override { return urgent_; }   // a decision just made; a page turned waits for the cadence
   bool wantsHome() override { const bool result = home_; home_ = false; return result; }
   void leave() override { dirty_ = true; }
   const char* screenName() const override;
@@ -36,9 +36,10 @@ class Game : public App {
   canvas::Frames<1> frames_;
   Reader reader_;
   char prose_[8192] = {}, heading_[96] = {};
-  bool title_ = true, dirty_ = false, home_ = false, fresh_ = true, keep_ = false;
+  bool title_ = true, dirty_ = false, urgent_ = false, home_ = false, fresh_ = true, keep_ = false;
   uint32_t ms_ = 0;
   void changed();
+  void decided();
   void mode(uint8_t value);
   void prepare();
   void prepareStory(const Scene& scene);

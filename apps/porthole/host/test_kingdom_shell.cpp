@@ -1,4 +1,4 @@
-// Shared-shell integration: immediate story checkpoints and the unchanged ordinary-game cadence.
+// Shared-shell integration: Kingdom's pages at the save cadence, its decisions at once, and an ordinary game's cadence.
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
@@ -77,14 +77,17 @@ struct Session {
     assert(shell.openApp("Kingdom")); step();
   }
   void settle() { step(false, 0, 0, 1000); }   // past the urgent checkpoint's one-second gap
-  void start() { begin(); tap(kingdom::layout::START); settle(); }   // the new campaign lands first
+  void cadence() { step(false, 0, 0, 5100); }   // past the five-second cadence: what changed is written
+  void start() { begin(); tap(kingdom::layout::START); cadence(); }   // the new campaign lands first
 };
 void sameCursor(const kingdom::UiCursor& a, const kingdom::UiCursor& b) { assert(!memcmp(&a, &b, sizeof a)); }
-void urgentPageCheckpoint() {
+// Pages turned are one write at the cadence, not one a page; what was written resumes after an abrupt restart.
+void pageCheckpoint() {
   Session s; s.start(); const int writes = s.store.gameWrites;
-  const uint32_t before = s.ms; s.tap(kingdom::layout::NEXT); s.settle();
-  assert(s.ms - before < 5000 && s.store.gameWrites == writes + 1);
-  const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor); assert(saved.cursor.page == 1);
+  s.tap(kingdom::layout::NEXT); s.settle(); s.tap(kingdom::layout::NEXT); s.settle();
+  assert(s.store.gameWrites == writes && s.store.campaign().cursor.page == 0);   // not a flash write a page
+  s.cadence(); assert(s.store.gameWrites == writes + 1);
+  const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor); assert(saved.cursor.page == 2);
   // A new shell represents an abrupt restart: leave() is deliberately never called on the old shell.
   Shell rebooted; kingdom::Game resumed; App* apps[] = {&resumed};
   rebooted.begin(s.store, apps, 1); rebooted.update(NOW, 10, {});
@@ -101,7 +104,8 @@ void urgentAtomicDecision() {
   s.tap(kingdom::layout::CARD0);
   for (int n = 0; s.game.save().cursor.mode == kingdom::CONFIRM && n < 64; n++) s.tap(kingdom::layout::NEXT);
   assert(s.game.save().cursor.mode == kingdom::RESULT);
-  s.settle(); const Save saved = s.store.campaign(); sameCursor(saved.cursor, s.game.save().cursor);
+  s.settle(); const Save saved = s.store.campaign();   // within a second of the decision, well inside the cadence
+  sameCursor(saved.cursor, s.game.save().cursor);
   assert(saved.journalCount == 1);
   const kingdom::Scene* scene = kingdom::currentScene(saved); assert(scene);
   assert(kingdom::hasDecision(saved, scene->choices[saved.cursor.selectedChoice].id));
@@ -109,7 +113,7 @@ void urgentAtomicDecision() {
 }
 void sessionBreakCursor() {
   Session s; const shell::Limits limits{1, 25}; s.store.save("sys", "limits", &limits, sizeof limits); s.start();
-  s.tap(kingdom::layout::NEXT); s.settle(); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
+  s.tap(kingdom::layout::NEXT); s.cadence(); const Save before = s.store.campaign(); assert(before.cursor.page == 1);
   for (int n = 0; n < 65 && strcmp(s.shell.screenName(), "rest"); n++) s.step(true, 0, 0, 1000);
   assert(!strcmp(s.shell.screenName(), "rest")); const Save paused = s.store.campaign();
   sameCursor(paused.cursor, before.cursor); assert(paused.day == before.day && paused.journalCount == before.journalCount);
@@ -118,7 +122,7 @@ void sessionBreakCursor() {
   sameCursor(resumed.save().cursor, before.cursor); assert(resumed.save().seed == before.seed);
 }
 void quitFromDetails() {
-  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.settle(); const Save original = s.store.campaign();
+  Session s; s.start(); s.tap(kingdom::layout::NEXT); s.cadence(); const Save original = s.store.campaign();
   s.tap(kingdom::layout::MENU); s.tap(kingdom::layout::TOOL0);
   assert(s.game.save().cursor.mode == kingdom::PARTY_OVERVIEW); s.tap(kingdom::layout::PARTY1);
   assert(s.game.save().cursor.mode == kingdom::PARTY); s.tap(kingdom::layout::MENU);
@@ -187,7 +191,7 @@ void versionOneMigrates() {
 } // namespace
 int main() {
   static_assert(sizeof(Save) <= shell::BLOB_MAX, "the shell must hold a complete campaign checkpoint");
-  urgentPageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
+  pageCheckpoint(); urgentAtomicDecision(); sessionBreakCursor(); quitFromDetails(); ordinaryCadence();
   urgentThrottled(); failedSaveRetried(); versionOneMigrates();
-  puts("kingdom shell: immediate pages/decisions, abrupt restart, exact break resume and ordinary save cadence passed");
+  puts("kingdom shell: pages at the cadence, immediate decisions, abrupt restart, exact break resume and ordinary save cadence passed");
 }

@@ -33,13 +33,17 @@ void Game::enter(const AppEnter& e) {
     if (loadSave(save_, e.saves[i].data, e.saves[i].len, profile)) fresh_ = false;
     else keep_ = true;  // stored but unreadable here (a newer build wrote it): leave it be until the kid starts over
   }
-  ms_ = e.ms; in_ = {}; title_ = true; home_ = false;
+  ms_ = e.ms; in_ = {}; title_ = true; home_ = urgent_ = false;
   changed();
 }
 
 void Game::changed() {
   dirty_ = true; gate_.shown(ms_); frames_.reset(); prepare();
 }
+// A decision is the one moment worth a flash write of its own (App::saveUrgent: within a second). Pages turned, menus
+// and the map are in the save too, but ride the shell's five-second cadence and its write on leaving: a power cut
+// costs a few seconds of reading at most, and a scene read through is one write, not one a page.
+void Game::decided() { urgent_ = true; changed(); }
 void Game::mode(uint8_t value) {
   save_.cursor.mode = value; save_.cursor.page = 0;
   changed();
@@ -116,7 +120,7 @@ void Game::updateChoice() {
     if (index >= scene->choiceCount || !clicked(CARDS[i])) continue;
     save_.cursor.selectedChoice = (uint8_t)index;
     if (scene->choices[index].confirm || !allowed(save_, scene->choices[index])) mode(CONFIRM);
-    else if (commit(save_, (uint8_t)index)) changed();
+    else if (commit(save_, (uint8_t)index)) decided();
     return;
   }
 }
@@ -130,7 +134,7 @@ void Game::updateConfirm() {
   if (clicked(layout::MENU)) { mode(READ); return; }
   if (clicked(layout::NEXT) && save_.cursor.selectedChoice < scene->choiceCount) {
     if (save_.cursor.page + 1 < reader_.count()) { save_.cursor.page++; changed(); }
-    else if (commit(save_, save_.cursor.selectedChoice)) changed();
+    else if (commit(save_, save_.cursor.selectedChoice)) decided();
   }
 }
 void Game::updateResult() {
@@ -208,7 +212,7 @@ void Game::update(uint32_t, uint32_t ms, const Input& in) {
 }
 bool Game::takeSave(const void** data, size_t* len, bool allowed) {
   if (!allowed || !dirty_ || keep_) return false;
-  sealSave(save_); dirty_ = false;
+  sealSave(save_); dirty_ = urgent_ = false;
   *data = packed_; *len = packSave(save_, packed_, sizeof packed_);
   if (!*len) { *data = &save_; *len = sizeof save_; }   // a state validState would refuse (the engine makes none): whole, as version 1
   return true;
