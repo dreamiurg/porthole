@@ -34,12 +34,27 @@ void expandIndexed3(const uint8_t* logical160, const uint16_t* palette, Expanded
   }
 }
 
+// A row of n pixels of one color. From PAIRS up it stores two pixels at a time (once the address is a multiple of
+// four): the same bytes in the same order, half the stores. Below that, lining up costs more than it saves.
+using Pair = uint32_t __attribute__((__may_alias__));
+constexpr int PAIRS = 16;
+static inline void fill(uint16_t* p, int n, uint16_t c) {
+  if (n >= PAIRS) {
+    if ((uintptr_t)p & 2) { *p++ = c; n--; }
+    const uint32_t cc = (uint32_t)c << 16 | c;
+    Pair* q = (Pair*)p;
+    for (int k = n >> 1; k > 0; k--) *q++ = cc;
+    p = (uint16_t*)q; n &= 1;
+  }
+  for (int i = 0; i < n; i++) p[i] = c;
+}
+
 void rect(int x, int y, int w, int h, uint16_t c) {
   int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
   int x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;
   if (x1 <= x0 || y1 <= y0) return;
   uint16_t* first = fb + y0 * W + x0;
-  for (int xx = 0; xx < x1 - x0; xx++) first[xx] = c;
+  fill(first, x1 - x0, c);
   for (int yy = y0 + 1; yy < y1; yy++) memcpy(fb + yy * W + x0, first, (size_t)(x1 - x0) * 2);
 }
 void clear(uint16_t c) { rect(0, 0, W, H, c); }
