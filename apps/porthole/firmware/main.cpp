@@ -29,7 +29,7 @@ static InputTracker g_input;
 static ui::FreshGate g_updateInputGate;
 static uint16_t g_pal[TINT_COUNT][C_COUNT];
 static ActivityTracker g_activity;   // raw touch (even a swallowed one) or a move of the board: wakes and keeps it lit
-static uint8_t g_backlight = 100;
+static uint8_t g_backlight = 0;   // board::init() leaves it off; the first lit frame goes through dimWhenIdle, like a wake
 static bool g_touchLog = false;
 static bool g_hires = false;   // the last frame was an RGB565 app's
 static uint32_t g_bootUtcEpoch = 0, g_bootMillis = 0;
