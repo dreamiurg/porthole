@@ -17,9 +17,9 @@ Run from the repository root as `make -C apps/<app> <target>`.
 | `check` | `lint` + `test`. | pre-commit, when the app's files change |
 | `coverage` | Tests with coverage. Fail below the app's threshold. Write `build/coverage/coverage.xml` (Cobertura) or `build/coverage/lcov.info`. | `ci` |
 | `ci` | Everything CI runs for the app except the firmware build. | pre-push, CI |
-| `firmware` | `pio run -e firmware`. | CI |
+| `firmware` | `pio run -e firmware`. | by hand |
 | `flash` | Build and upload; honor an optional `PORT=`. | by hand |
-| `factory` | `pio run -e firmware -t factory`: a merged image to write at `0x0`, plus the separate flash parts. | release workflow |
+| `factory` | `pio run -e firmware -t factory`: a merged image to write at `0x0`, plus the separate flash parts. It builds the firmware first. | CI, the pre-push hook, the release workflow |
 
 ## PlatformIO
 

@@ -14,6 +14,9 @@ inputs:
   root:
     description: Tree to build (promote.yml builds a beta's commit in a worktree beside its own checkout)
     default: "."
+  cache:
+    description: Restore and save ~/.platformio here ("false" for ci.yml, which restores it on every run but saves only on main)
+    default: "true"
 
 runs:
   using: composite
@@ -21,7 +24,8 @@ runs:
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
       with:
         python-version: "3.11"
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+    - if: inputs.cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
         path: ~/.platformio
         key: pio-${{ runner.os }}-${{ hashFiles(format('{0}/platform/*.ini', inputs.root)) }}  # same key as ci.yml
