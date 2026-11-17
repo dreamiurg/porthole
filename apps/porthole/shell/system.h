@@ -133,9 +133,9 @@ class System {
   virtual bool setTimeZone(const char* iana, bool automatic) { (void)iana; (void)automatic; return false; }
   virtual bool detectTimeZone() { return false; }
 
-  // Telemetry is set up by the owner off the screen (SD card or serial); the menu shows it and can only turn it off.
+  // Telemetry's two menu switches set the level (telemetry::Level); another backend is set up off the screen.
   virtual TelemetryStatus telemetryStatus() { return {}; }
-  virtual bool telemetryOff() { return false; }   // persisted; false if it could not be saved
+  virtual bool setTelemetryLevel(uint8_t level) { (void)level; return false; }   // persisted; false if not saved
 
  protected:
   ~System() = default;

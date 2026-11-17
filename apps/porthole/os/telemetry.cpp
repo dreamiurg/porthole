@@ -101,6 +101,18 @@ bool parseConfig(const char* text, Config& out) {
 bool sameConfig(const Config& a, const Config& b) {
   return a.level == b.level && a.format == b.format && !strcmp(a.url, b.url) && !strcmp(a.token, b.token);
 }
+// PostHog's public ingest key for the Porthole project: it only writes events, and the website ships it too.
+static const char BUILT_IN_URL[] = "https://us.i.posthog.com", BUILT_IN_KEY[] = "phc_pEwaRFHbZf9VxTuHZACX4gbDQESydbm2CNG6xijiXtgy";
+Config withLevel(const Config& now, uint8_t level) {
+  if (level == OFF) return Config{};
+  Config c = now;
+  if (c.level == OFF) {
+    c = Config{};
+    memcpy(c.url, BUILT_IN_URL, sizeof BUILT_IN_URL); memcpy(c.token, BUILT_IN_KEY, sizeof BUILT_IN_KEY);
+  }
+  c.level = level > PERSONAL ? (uint8_t)PERSONAL : level;
+  return c;
+}
 const char* host(const Config& c, char* out, size_t cap) {
   const char* h = strstr(c.url, "://");
   h = h ? h + 3 : c.url;
@@ -177,7 +189,9 @@ void posthogEvent(Out& o, const Event& e, const char* device, const char* versio
   o.put(",\"timestamp\":"); o.str(ts);
   o.put(",\"properties\":{\"$lib\":\"porthole\",\"app_version\":"); o.str(version);
   o.put(",\"device\":"); o.str(device);
-  if (e.player[0]) { o.put(",\"player\":"); o.str(e.player); }
+  if (e.player[0]) {   // the kid is a person in PostHog, tied to the board
+    o.put(",\"player\":"); o.str(e.player); o.put(",\"$set\":{\"device\":"); o.str(device); o.put("}");
+  }
   else o.put(",\"$process_person_profile\":false");   // a device's own events make no person in PostHog
   for (int i = 0; i < e.n; i++) {
     o.put(","); o.str(e.p[i].key); o.put(":");

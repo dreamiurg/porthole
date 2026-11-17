@@ -31,6 +31,19 @@ static void settings() {
   CHECK(!strcmp(host(kept, h, sizeof h), "h.example"));
 }
 
+static void menuSwitches() {
+  using namespace telemetry;
+  // The menu's two switches: on from off starts the built-in Porthole project; a level change keeps what is set up.
+  const Config on = withLevel(Config{}, ANONYMOUS);
+  CHECK(on.level == ANONYMOUS && on.format == POSTHOG && !strcmp(on.url, "https://us.i.posthog.com"));
+  CHECK(!strncmp(on.token, "phc_", 4) && strlen(on.token) > 20);
+  CHECK(withLevel(on, PERSONAL).level == PERSONAL && sameConfig(withLevel(withLevel(on, PERSONAL), ANONYMOUS), on));
+  Config otlpOn; CHECK(parseConfig("otlp https://otel.example/v1/logs anonymous", otlpOn));
+  const Config kids = withLevel(otlpOn, PERSONAL);
+  CHECK(kids.format == OTLP && !strcmp(kids.url, "https://otel.example/v1/logs") && kids.level == PERSONAL);
+  CHECK(withLevel(kids, OFF).level == OFF && !withLevel(kids, OFF).url[0] && withLevel(on, 9).level == PERSONAL);
+}
+
 static telemetry::Queue& fresh(const char* text) {
   static telemetry::Queue* q = nullptr;
   delete q; q = new telemetry::Queue();   // 250 KB: never on the stack
@@ -56,7 +69,7 @@ static void personal() {
   CHECK(has(body, "\"timestamp\":\"2026-11-16T08:30:00Z\""));
   CHECK(has(body, "\"$process_person_profile\":false,\"reset\":\"power-on\"}}"));   // the device's own event: no person
   CHECK(has(body, "\"distinct_id\":\"00aa11bb22cc33dd\""));                         // the kid's: their random id
-  CHECK(has(body, "\"player\":\"00aa11bb22cc33dd\",\"fact\":\"7x8\",\"correct\":1,\"ms\":2400,\"note\":\"say \\\"hi\\\"\\\\\"}}]}"));
+  CHECK(has(body, "\"player\":\"00aa11bb22cc33dd\",\"$set\":{\"device\":\"0102030405060708\"},\"fact\":\"7x8\",\"correct\":1,\"ms\":2400,\"note\":\"say \\\"hi\\\"\\\\\"}}]}"));
   CHECK(has(body, "\"app_version\":\"1.2.3\""));
   char url[160], auth[120];
   q.endpoint(url, sizeof url); q.auth(auth, sizeof auth);
@@ -140,6 +153,7 @@ static void queue() {
 
 int main() {
   settings();
+  menuSwitches();
   personal();
   anonymous();
   otlp();

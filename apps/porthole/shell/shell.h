@@ -146,7 +146,7 @@ class Shell {
   void openIdx(int k);
   void closeApp(const char* why);   // why: telemetry's exit, "home", "rest" or "time_up"
   void tellPlayer();   // telemetry: who plays now, by the kid's player id
-  void telemetryTap();
+  void telemetryTap(bool kids);
   void drawTelemetry();                // telemetry: the kid's random player id, made the first time it is needed
   void flushApp(bool allowed);
   void budgetTick();
