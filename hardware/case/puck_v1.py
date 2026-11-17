@@ -1,4 +1,4 @@
-"""Porthole puck case v1.3 as a build123d model (text-to-cad / cadgen). Port of puck_case_v1_fusion.py.
+"""Porthole puck case v1.4 as a build123d model (text-to-cad / cadgen). Port of puck_case_v1_fusion.py.
 
 Run: `cadgen +0.8.4 run hardware/case/puck_v1.py` builds Bezel, Plate, Lid, the screw test and the
 assembly with reference bodies for the board, the cell and the magnet ring, and opens them in the
@@ -21,6 +21,11 @@ floor also carries a MagSafe magnet ring (RING_OD x RING_ID x RING_T) in a groov
 so the puck sticks to the steel ring in grip v7; the cell holds it down. The buzzer holes in the
 lid move outward to clear the ring. The v1.2 snap groove and key notch are gone: the grip now
 holds the puck by the magnet.
+
+v1.4: the board's PCB has a flat at x = 33 on the switch side (from the STEP), so the power slider
+becomes a straight block that rides on that flat inside and on a flat-bottomed groove in the bezel
+wall outside, with a ledge under the switch body and a fin 3 mm proud. The groove passed over the
+350 degree screw seat, so that plate post moves to 335.
 """
 
 import math
@@ -55,7 +60,7 @@ BOT_Z = FLOOR_TOP - FLOOR_T  # -21.0
 SPLIT_Z = -12.0  # bezel / lid seam
 EDGE_FILLET_TOP = 2.5
 EDGE_FILLET_BOT = 3.0
-POST_ANGLES = (90.0, 190.0, 350.0)  # plate posts: bezel radial screws + lid axial screws
+POST_ANGLES = (90.0, 190.0, 335.0)  # plate posts: bezel radial screws + lid axial screws; 350 sat on the slider groove
 POST_W = 6.0
 POST_R0 = PLATE_R - 6.0
 POST_RC = (POST_R0 + PLATE_R) / 2  # lid screw axis radius
@@ -76,21 +81,30 @@ SW_BODY = (29.4, 32.5, 9.0, -4.1, -1.4)  # x from, x to, length along y, z from,
 LEVER = (34.8, 1.5, 0.7, -3.1)  # tip x, width (y), height (z), centre z; it slides along y
 LEVER_YC = -7.3  # lever travel centre = switch body centre
 SW_ANG = math.degrees(math.atan2(LEVER_YC, LEVER[0]))  # -11.85
-R_LEVER = math.hypot(LEVER[0], LEVER_YC)
-# Power slider: an arc that rides in the gap between the board edge and the bezel wall, held by
-# the glass above and the plate below. Two prongs under the PCB hug the lever; a fin through a
-# slot in the wall is the knob. The slot allows SLIDER_SLOT_TRAVEL each way; each test slider's
-# fin width sets its own travel, because the switch's real travel is not in the STEP.
-SLIDER_R = (35.8, R_IN - 0.2)  # radial band of the arc: 0.3 off the PCB edge, 0.2 off the wall
+# The PCB has a flat at |x| = 33 (switch side and opposite) and y = 34, per the STEP; the acrylic
+# spacer between PCB and glass sits ~0.5 inside the PCB edge (photos of the real board).
+PCB_FLAT_X = 33.0
+PCB_Y_MAX = 34.0
+SPACER_INSET = 0.5
+# Power slider: a straight block between the PCB's flat and a flat-bottomed groove in the bezel wall,
+# held by the glass above and the plate below. Its inner face rides on the PCB's flat edge, its outer
+# face on the groove bottom (parallel to the flat); the groove is open down to the seam, because the
+# slider goes in from the back after the board. The lever, which
+# sticks out past the flat, sits in a notch open to the top (the slider goes in from the back after
+# the board). A fin through a slot in the wall is the knob. The slot allows SLIDER_SLOT_TRAVEL each
+# way; each test slider's fin width sets its own travel, because the switch's real travel is not in the STEP.
+SLIDER_X0 = PCB_FLAT_X + 0.2  # inner face: 0.2 off the PCB flat
 SLIDER_Z = (STANDOFF_Z + 0.5, 1.0)  # 0.5 over the plate, 0.2 under the glass
-SLIDER_LEN = 8.0  # arc length of the body at mid band
-PRONG_X0 = 33.3  # prong inner face: 0.8 off the switch body
-PRONG_HALF = 2.8  # prong block half-width along y
-PRONG_TOP = -2.45  # stays under the PCB (-2.1)
-NOTCH_BACK = 1.4  # notch depth past the lever tip, into the arc (the lever reaches r 35.96 at the travel
-# ends); deeper than the prong-to-body gap, so a push on the knob lands on the switch body, not the lever
+SLIDER_LEN = 8.0  # along y
+POCKET_X = 38.5  # groove bottom, parallel to the PCB flat; leaves >= 1.4 of wall at the groove ends
+POCKET_FIT = 0.2  # slider outer face off the groove bottom
+OVERTRAVEL = 0.2  # the groove runs this past the travel too, so only the fin stops the slider
+NOTCH_BACK = 0.6  # notch depth past the lever tip; more than the 0.2 off the flat, so the lever never bottoms
+FIN_R0 = 36.0  # the fin starts inside the block
+LEDGE_X0 = SW_BODY[0] + 0.5  # the slider's bottom ledge reaches in under the switch body...
+LEDGE_TOP = SW_BODY[3] - 0.2  # ...and rides 0.2 under its back face
 FIN_Z = (SLIDER_Z[0], -1.6)  # the knob fin runs from the slider bottom, so it prints on the bed
-FIN_PROUD = 1.2  # how far the fin stands out of the wall
+FIN_PROUD = 3.0  # how far the fin stands out of the wall: enough to grip (1.2 was too short)
 SLIDER_SLOT_TRAVEL = 1.5
 SLIDER_SLOT_W = 6.4  # slot width at the wall surface; the fin is narrower by the travel each way
 SLOT_FIT = 0.2  # slot clearance above and below the fin
@@ -158,8 +172,9 @@ def arc_deg(length, r):
 
 
 def slider_slot():
-    half = arc_deg(SLIDER_SLOT_W / 2, R_OUT)
-    return sector(R_IN - 1, R_OUT + 1, SW_ANG - half, SW_ANG + half, FIN_Z[0] - SLOT_FIT, FIN_Z[1] + SLOT_FIT)
+    """Straight along y, like the slider's travel."""
+    z0, z1 = FIN_Z[0] - SLOT_FIT, FIN_Z[1] + SLOT_FIT
+    return box((R_IN - 2 + R_OUT + 2) / 2, LEVER_YC, (z0 + z1) / 2, R_OUT - R_IN + 4, SLIDER_SLOT_W, z1 - z0)
 
 
 def switch_ref(lever_dy=0.0):
@@ -171,26 +186,32 @@ def switch_ref(lever_dy=0.0):
 
 def slider_body(gap, travel, marks=0):
     """Power slider at the middle of its travel, lever in the notch."""
-    rm = sum(SLIDER_R) / 2
-    half = arc_deg(SLIDER_LEN / 2, rm)
-    s = sector(*SLIDER_R, SW_ANG - half, SW_ANG + half, *SLIDER_Z)
-    fin_half = arc_deg(SLIDER_SLOT_W / 2, R_OUT) - arc_deg(travel, R_LEVER)  # travel is measured at the lever
-    s += sector(SLIDER_R[1] - 0.1, R_OUT + FIN_PROUD, SW_ANG - fin_half, SW_ANG + fin_half, *FIN_Z)
-    x1 = SLIDER_R[0] + 0.3  # prong block reaches into the arc body
-    prongs = box((PRONG_X0 + x1) / 2, LEVER_YC, (SLIDER_Z[0] + PRONG_TOP) / 2, x1 - PRONG_X0, 2 * PRONG_HALF, PRONG_TOP - SLIDER_Z[0])
-    tip, w, _, _ = LEVER
-    notch_x1 = tip + NOTCH_BACK
-    prongs -= box((PRONG_X0 - 1 + notch_x1) / 2, LEVER_YC, (SLIDER_Z[0] - 1 + PRONG_TOP + 1) / 2, notch_x1 - PRONG_X0 + 1, w + 2 * gap, PRONG_TOP - SLIDER_Z[0] + 2)
-    s += prongs
-    s -= box(tip + NOTCH_BACK / 2, LEVER_YC, (SLIDER_Z[0] + PRONG_TOP) / 2, NOTCH_BACK, w + 2 * gap, PRONG_TOP - SLIDER_Z[0] + 2)  # notch runs on into the arc
-    for i in range(marks):  # dimples on the top face tell the variants apart
-        s -= cyl(0.4, SLIDER_Z[1] - 0.4, SLIDER_Z[1] + 1, *polar(rm, SW_ANG - half + 1.5 * (i + 1) * 360 / (2 * math.pi * rm)))
+    z0, z1 = SLIDER_Z
+    x1 = POCKET_X - POCKET_FIT
+    s = box((SLIDER_X0 + x1) / 2, LEVER_YC, (z0 + z1) / 2, x1 - SLIDER_X0, SLIDER_LEN, z1 - z0)
+    s += box((LEDGE_X0 + SLIDER_X0 + 0.5) / 2, LEVER_YC, (z0 + LEDGE_TOP) / 2, SLIDER_X0 + 0.5 - LEDGE_X0, SLIDER_LEN, LEDGE_TOP - z0)
+    fz0, fz1 = FIN_Z
+    fin = box((FIN_R0 + R_OUT + FIN_PROUD) / 2, LEVER_YC, (fz0 + fz1) / 2, R_OUT + FIN_PROUD - FIN_R0, SLIDER_SLOT_W - 2 * travel, fz1 - fz0)
+    s += fin & cyl(R_OUT + FIN_PROUD, fz0 - 1, fz1 + 1)
+    tip, w, h, zc = LEVER
+    nz0 = zc - h / 2 - 0.3
+    s -= box((SLIDER_X0 - 1 + tip + NOTCH_BACK) / 2, LEVER_YC, (nz0 + z1 + 1) / 2, tip + NOTCH_BACK - SLIDER_X0 + 1, w + 2 * gap, z1 + 1 - nz0)
+    for i in range(marks):  # dimples on the top face tell the variants apart, either side of the notch
+        side = 1 if i % 2 else -1
+        s -= cyl(0.4, z1 - 0.4, z1 + 1, SLIDER_X0 + 0.8, LEVER_YC + side * (SLIDER_LEN / 2 - 1.0 - (i // 2) * 1.2))
     return s
 
 
+def slider_pocket():
+    """Flat-bottomed groove for the slider, the length of its longest travel each way; open down to the seam."""
+    length = SLIDER_LEN + 2 * (max(SLIDER_TRAVELS) + OVERTRAVEL + POCKET_FIT)
+    z0, z1 = SPLIT_Z - 1, SLIDER_Z[1] + SLOT_FIT
+    return box((SLIDER_X0 + POCKET_X) / 2, LEVER_YC, (z0 + z1) / 2, POCKET_X - SLIDER_X0, length, z1 - z0)
+
+
 def at_travel(shape, off):
-    """A slider moved `off` mm along its travel (rotates about the puck axis at the lever radius)."""
-    return bd.Rot(0, 0, arc_deg(off, R_LEVER)) * shape
+    """A slider moved `off` mm along its travel (straight along y, like the lever)."""
+    return bd.Pos(0, off, 0) * shape
 
 
 def fillet_rim(body, r_edge, z_edge, radius):
@@ -209,6 +230,7 @@ def bezel_body():
     for deg in USB.values():
         b -= radial_box(R_OUT, deg, USB_Z, CUT_DEPTH, *USB_OPEN)
     b -= slider_slot()
+    b -= slider_pocket()
     for deg in BUTTONS.values():
         b -= radial_hole(deg, -2.85, 1.6, R_IN - 1, R_OUT + 1)
     for deg in LEDS.values():
@@ -262,7 +284,9 @@ def lid_body():
 
 
 def board_ref():
-    g = cyl(GLASS_R, 1.2, GLASS_TOP) + cyl(35.5, -2.1, 1.2)  # glass + PCB/LCD module envelope
+    flat = box(0, (PCB_Y_MAX - 40) / 2, 0, 2 * PCB_FLAT_X, PCB_Y_MAX + 40, 20)
+    spacer = box(0, (PCB_Y_MAX - 40) / 2, 0, 2 * (PCB_FLAT_X - SPACER_INSET), PCB_Y_MAX + 40, 20)
+    g = cyl(GLASS_R, 1.2, GLASS_TOP) + (cyl(35.5, -2.1, -0.5) & flat) + (cyl(35.5, -0.5, 1.2) & spacer)  # glass, PCB, spacer
     for x, y in STANDOFFS:
         g += cyl(1.75, STANDOFF_Z, -2.1, x, y)
     for deg in USB.values():
@@ -345,7 +369,7 @@ def slider():
 @model
 def slider_test():
     """Four test sliders, gap x travel, marked by 1-4 dimples on top, laid out to print standing."""
-    cx, cy = polar(sum(SLIDER_R) / 2, SW_ANG)
+    cx, cy = (SLIDER_X0 + R_IN) / 2, LEVER_YC
     parts = []
     for i, (gap, travel) in enumerate((g, t) for g in SLIDER_GAPS for t in SLIDER_TRAVELS):
         sl = bd.Pos(-cx, -cy + 12.0 * i, -SLIDER_Z[0]) * slider_body(gap, travel, marks=i + 1)
@@ -357,10 +381,28 @@ def slider_test():
 @model
 def switch_section():
     """The bezel around the switch, to try the test sliders on the real board; prints lip down."""
-    piece = bezel().shape & sector(0, R_OUT + 2, SW_ANG - 40, SW_ANG + 40, SPLIT_Z - 1, TOP_Z + 1)
+    piece = bezel_body() & sector(0, R_OUT + 2, SW_ANG - 40, SW_ANG + 40, SPLIT_Z - 1, TOP_Z + 1)
     piece = bd.Pos(0, 0, TOP_Z) * bd.Rot(180, 0, 0) * piece
     piece.label = "switch_section"
     return piece
+
+
+@model
+def slider_view():
+    """The slider in place with the bezel, plate and board cut to 80° around the switch, for review."""
+    cut = sector(0, R_OUT + 2, SW_ANG - 40, SW_ANG + 40, -50, 50)
+    board = board_ref() + switch_ref()
+    parts = []
+    for shape, label, color in (
+        (bezel_body(), "bezel", "#e8e4dc"),
+        (plate_body(), "plate", "#5b8fd9"),
+        (board, "board_ref", "#2b2b2b"),
+    ):
+        piece = shape & cut
+        piece.label, piece.color = label, color
+        parts.append(piece)
+    parts.append(slider().shape)
+    return bd.Compound(children=parts, label="slider_view")
 
 
 @model
