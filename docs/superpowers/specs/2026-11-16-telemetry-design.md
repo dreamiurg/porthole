@@ -5,7 +5,13 @@ play and how Times Cards works for each of them, without changing anything for o
 
 ## Rules
 
-- Off on every board. The firmware carries no endpoint and no key; a board sends nothing until its owner sets it up.
+- Off on every board; a board sends nothing until a grown-up opts in.
+- A double opt-in on Admin 2/2 (Дмитро, 2026-11-17), both switches off by default. "Telemetry" turns on the anonymous
+  level. "Kids' IDs", shown only while Telemetry is on, turns on the personal level. Turning Telemetry off turns both
+  off and wipes the device id and salt.
+- From the menu, events go to the Porthole project in PostHog (us.i.posthog.com) with its public ingest key built in.
+  The key only writes events, and the website ships the same key. A kid's events carry `$set: {device}`, so in PostHog
+  each kid is a person tied to the board.
 - The owner picks the backend: PostHog (`/batch/` events) or any OpenTelemetry collector (OTLP/HTTP JSON logs).
 - Never a name. A kid is a player id: crc32 over a random per-device salt, the profile slot and the name, 16 hex
   digits. It is derived on the board, never stored, and changes if telemetry is turned off and on, or a new kid takes a
@@ -13,12 +19,13 @@ play and how Times Cards works for each of them, without changing anything for o
 - Two levels. Personal (the default for an owner's own boards): every event, with the player id. Anonymous (what other
   families would choose): only `device_started`, `crashed`, `game_opened` and `game_closed`, only the keys `game`,
   `seconds`, `reset` and `channel`, no player, and a device id that changes every month.
-- The Admin menu (2/2) shows where events go and when they last went, and turns it off. Turning it on takes the SD file
-  or the serial line again; the menu's Off holds until the file changes.
+- The menu's Off holds until the SD file changes.
 
 ## Setup
 
-`/porthole/telemetry.txt` on the SD card, read at boot:
+For the Porthole project, nothing: hold "Who's playing?" 5 s, Admin, page 2, Telemetry on, then Kids' IDs on.
+
+For another backend, `/porthole/telemetry.txt` on the SD card, read at boot:
 
 ```
 posthog

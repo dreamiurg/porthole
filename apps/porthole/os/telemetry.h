@@ -1,6 +1,8 @@
 // Opt-in telemetry: what the kids play, kept for the family that owns the board. Off by default and off on every board
-// until an owner sets it up: the firmware carries no endpoint and no key. The owner picks where events go with
-// /porthole/telemetry.txt on the SD card or the serial command Y (firmware/main.cpp), kept in NVS "sys"/telem:
+// until a grown-up turns it on. Two switches on Admin 2/2, both off: "Telemetry" (the anonymous level) and, once that is
+// on, "Kids' IDs" (the personal level). From the menu, events go to the Porthole project in PostHog, with the public
+// ingest key built in (the same key the website ships). Another backend comes from /porthole/telemetry.txt on the SD
+// card or the serial command Y (firmware/main.cpp), kept in NVS "sys"/telem:
 //   posthog                      or   otlp
 //   https://us.i.posthog.com          https://collector.example/v1/logs
 //   phc_...                           <bearer token, or an empty line>
@@ -39,6 +41,8 @@ static_assert(sizeof(Config) == 216, "the \"sys\"/telem blob's layout");
 bool parseConfig(const char* text, Config& out);
 bool sameConfig(const Config& a, const Config& b);   // the owner's part: level, format, url, token
 const char* host(const Config& c, char* out, size_t cap);   // "us.i.posthog.com", for the menu
+// The menu's switches: OFF turns it off; on, it keeps the backend set up, or starts the built-in Porthole project.
+Config withLevel(const Config& now, uint8_t level);
 
 // One property: a key that is a string literal, and a short text or a number.
 struct Prop { const char* key; const char* str; int32_t num; };

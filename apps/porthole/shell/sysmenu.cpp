@@ -9,6 +9,7 @@
 #include "shell.h"
 #include "adult_fonts.h"
 #include "canvas.h"
+#include "telemetry.h"
 #include "timezone.h"
 
 using namespace gfx;
@@ -176,7 +177,8 @@ void Shell::updateSysAdmin() {
   if (adminPage_) {
     if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
     if (tapped(in_, ADMIN_RESET)) saveSound(!sound_);   // a failed write leaves the switch as it was
-    if (tapped(in_, ADMIN_REMOVE)) telemetryTap();
+    if (tapped(in_, ADMIN_REMOVE)) telemetryTap(false);
+    else if (tapped(in_, ADMIN_PLAYERS)) telemetryTap(true);
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
@@ -203,20 +205,21 @@ void Shell::drawSysAdmin() {
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
 }
-// Telemetry: on only where the owner set it up (telemetry.txt on the card, or serial). Here it shows where events go
-// and when they last went, and a tap turns it off; turning it on again takes the file or the serial line.
-void Shell::telemetryTap() {
-  if (!sys_->telemetryStatus().level) { toast("Set up by telemetry.txt"); return; }
-  toast(sys_->telemetryOff() ? "Telemetry off" : "Could not turn off");
+// Telemetry: a double opt-in, both off. "Telemetry" sends anonymous events; "Kids' IDs", shown once that is on, adds
+// each kid's random player id. Turning Telemetry off turns both off.
+void Shell::telemetryTap(bool kids) {
+  const uint8_t level = sys_->telemetryStatus().level;
+  if (kids && !level) return;
+  const uint8_t to = kids ? (level == telemetry::PERSONAL ? telemetry::ANONYMOUS : telemetry::PERSONAL)
+                          : (level ? telemetry::OFF : telemetry::ANONYMOUS);
+  if (!sys_->setTelemetryLevel(to)) toast("Could not save");
 }
 void Shell::drawTelemetry() {
-  const TelemetryStatus t = sys_->telemetryStatus();
-  sbutton(ADMIN_REMOVE, t.level ? "Telemetry: on" : "Telemetry: off", t.level ? C_SKY : C_LTGRAY, down(in_, ADMIN_REMOVE));
-  if (!t.level) return;
-  char sent[24], line[40]; ago(sent, sizeof sent, now_, t.lastSent);
-  stextC(80, 132, t.host, C_LTGRAY);
-  snprintf(line, sizeof line, "sent %s", sent);
-  stextC(80, 141, line, C_LTGRAY);
+  const uint8_t level = sys_->telemetryStatus().level;
+  sbutton(ADMIN_REMOVE, level ? "Telemetry: on" : "Telemetry: off", level ? C_SKY : C_LTGRAY, down(in_, ADMIN_REMOVE));
+  if (!level) return;
+  const bool kids = level == telemetry::PERSONAL;
+  sbutton(ADMIN_PLAYERS, kids ? "Kids' IDs: on" : "Kids' IDs: off", kids ? C_SKY : C_LTGRAY, down(in_, ADMIN_PLAYERS));
 }
 // Read back, like the code below: a failed flash write must not claim the sound changed.
 bool Shell::saveSound(bool on) {

@@ -165,7 +165,11 @@ struct SimSystem : shell::System {
     return true;
   }
   // Telemetry: `sys telemetry` sets it up as the SD file would (personal, PostHog); the sim keeps events and sends none.
-  bool telemetryOff() override { telem().configure(telemetry::Config{}); return true; }
+  bool setTelemetryLevel(uint8_t level) override {
+    telemetry::Config c = telemetry::withLevel(telem().config(), level);
+    if (c.level) c.device[0] = c.salt[0] = 1;
+    telem().configure(c); return true;
+  }
   shell::TelemetryStatus telemetryStatus() override {
     shell::TelemetryStatus s;
     s.level = telem().config().level; s.queued = telem().size();

@@ -1148,7 +1148,9 @@ shell::TelemetryStatus Updater::telemetryStatus() {
   if (g_tq.lastSent) s.lastSent = timezones::local(g_tq.lastSent);
   return s;
 }
-bool Updater::telemetryOff() { return storeTelemetry(telemetry::Config{}, g_tq.config().fileCrc); }
+bool Updater::setTelemetryLevel(uint8_t level) {
+  return storeTelemetry(telemetry::withLevel(g_tq.config(), level), g_tq.config().fileCrc);
+}
 bool Updater::setTelemetry(const char* text) {
   telemetry::Config c;
   return telemetry::parseConfig(text, c) && storeTelemetry(c, g_tq.config().fileCrc);
