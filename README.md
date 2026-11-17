@@ -53,8 +53,9 @@ model; the other sizes and the curved 2.1B are not supported. Specs and pins: [d
 LiPo (2000 mAh or more, 1.25 mm plug; check its polarity first, many ship reversed) and close it with M2
 screws. No soldering.
 
-**The steering wheel** is a two-handed grip the puck snaps into, for Rally and the tilt games. It is still a
-work in progress: [hardware/grip](hardware/grip).
+**The steering wheel** is a two-handed grip the puck sits in, for Rally and the tilt games: two printed halves
+put together. It is still a work in progress:
+[hardware/grip](hardware/grip). The [project page](https://porthole.dreamiurg.net/#case) shows it in 3D.
 
 <p align="center"><img src="site/images/grip.webp" width="600" alt="Renders of the steering-wheel grip holding the puck"></p>
 
