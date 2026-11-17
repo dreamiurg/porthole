@@ -57,6 +57,9 @@ static void ruleTails() {
   long samples = 0, changes = 0;
   for (int i = 0; i < timezones::count(); i++) {
     const timezones::Zone& z = timezones::at(i);
+#ifndef __GLIBC__
+    if (strstr(z.rule, "/-")) continue;   // macOS libc reads a negative change time (Nuuk's M3.5.0/-1) as UTC; glibc in CI covers it
+#endif
     assert(timezones::select(z.id) && !setenv("TZ", z.rule, 1));
     tzset();
     const uint32_t step = (strchr(z.rule, ',') ? 3u : 30u) * 86400u;
