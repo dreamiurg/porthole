@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "gfx565.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -9,6 +10,11 @@ uint8_t inkOn(uint8_t fill) {
   uint32_t c = PALETTE_RGB[fill & 31];
   int lum = (((c >> 16) & 255) * 299 + ((c >> 8) & 255) * 587 + (c & 255) * 114) / 1000;
   return lum > 120 ? C_DKBROWN : C_WHITE;
+}
+void newDot(const Box& b) { circle(b.x + b.w - 4, b.y + 4, 5, C_WHITE); circle(b.x + b.w - 4, b.y + 4, 4, C_RED); }
+void newDot565(const Box& b) {
+  const int cx = (b.x + b.w - 4) * 3 + 1, cy = (b.y + 4) * 3 + 1;
+  gfx565::circle(cx, cy, 15, rgb888_to_565(PALETTE_RGB[C_WHITE])); gfx565::circle(cx, cy, 12, rgb888_to_565(PALETTE_RGB[C_RED]));
 }
 void panel(const Box& b, uint8_t fill, uint8_t border) {
   roundRect(b.x, b.y, b.w, b.h, border); roundRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2, fill);

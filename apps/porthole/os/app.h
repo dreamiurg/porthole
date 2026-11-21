@@ -13,6 +13,18 @@ constexpr int MAX_PROFILES = 4;   // one persisted record per profile: raising t
 struct Profile { uint8_t id; char name[12]; uint8_t avatar, age, muted; };   // what games see
 struct SaveSlot { const void* data; size_t len; };                             // len 0 = none
 
+// The red "new" dot on a button inside a game (ui::newDot), for news an update brought (news.toml, "Kid news" in
+// AGENTS.md). A game asks with the spot's name from its news.toml entry, isNew("together"), and says seen() when the
+// kid taps that button; the shell keeps it per kid. tools/news.py checks the game calls isNew with that literal.
+class NewSpots {
+ public:
+  virtual bool isNew(const char* spot) const = 0;
+  virtual void seen(const char* spot) = 0;
+
+ protected:
+  ~NewSpots() = default;
+};
+
 // Everything enter() gets, bundled because the complexity gate caps functions at 5 parameters.
 // saves[i] belongs to all[i]; a game may read other profiles' saves (Paw Street) but only writes who's.
 // daylight: the kid picked a brightness on the launcher, so the game draws day whatever the clock says (tint() returns
@@ -20,12 +32,14 @@ struct SaveSlot { const void* data; size_t len; };                             /
 // stars: who's star balance (os/stars.h), kept and saved by the shell; nullptr when there is none (tests).
 // avatars: the shell's avatar pictures, Profile::avatar indexing them (modulo avatarCount), for a game that shows who
 // is playing (Rally's race together); nullptr in tests.
+// news: who's new dots inside this game (NewSpots); nullptr in tests.
 struct AppEnter {
   const Profile* who; const Profile* all; const SaveSlot* saves; int n; uint32_t nowSec, ms; bool daylight;
   uint32_t* stars;
   const gfx::Sprite* avatars = nullptr;
   int avatarCount = 0;
   skills::Book* book = nullptr;   // the kid's skill ratings (os/skills.h); null in tests that need none
+  NewSpots* news = nullptr;
 };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the

@@ -9,14 +9,9 @@ profile Ava 7
 profile Mia 9
 sys version 0.15.0
 reboot
-expect-screen sys_new
-ui-check
-snap 01_new
-tap 80 125
-wait 450
 expect-screen picker
 ui-check picker-full
-# the same version again: no card
+# an update shows no card: each kid gets their own "New for" after picking themselves
 reboot
 expect-screen picker
 # a 1 s hold on the title does nothing; 5 s opens the menu
@@ -64,10 +59,6 @@ wait 450
 expect sys_restarts=1
 expect sys_ver=0.16.0
 expect sys_chan=beta
-expect-screen sys_new
-snap 07_restarted
-tap 80 125
-wait 450
 expect-screen picker
 sheet update
 # eight minutes after the restart: the status is idle again, the last check is still on record, and both screens say so

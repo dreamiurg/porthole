@@ -51,7 +51,7 @@ const char* key(char prefix, int id) { static char k[4]; snprintf(k, sizeof k, "
 static uint32_t recCrc(const Record& r) { return os::crc32(&r, sizeof r - sizeof r.crc); }
 void seal(Record& r) { r.magic = REC_MAGIC; r.version = REC_VERSION; r.size = sizeof(Record); r.crc = recCrc(r); }
 bool loadRecord(const void* data, size_t n, Record& out) {   // this version's size, or an older one's (the new fields stay 0)
-  const uint16_t version = n == REC_V1_SIZE ? 1 : n == REC_V2_SIZE ? 2 : n == REC_V3_SIZE ? 3 : n == sizeof(Record) ? REC_VERSION : 0;
+  const uint16_t version = n == REC_V1_SIZE ? 1 : n == REC_V2_SIZE ? 2 : n == REC_V3_SIZE ? 3 : n == REC_V4_SIZE ? 4 : n == sizeof(Record) ? REC_VERSION : 0;
   if (!version) return false;
   memset(&out, 0, sizeof out);
   memcpy(&out, data, n - sizeof out.crc);
@@ -72,6 +72,7 @@ __attribute__((noinline)) static void loadRecords(Store& st, Profiles& p) {
     p.used[id] = n && loadRecord(blob, n, p.rec[id]);
     p.rec[id].pin = kidPin(p.rec[id].pin);
     p.blocked[id] = n && !p.used[id];
+    if (n && n < sizeof(Record)) st.erase(NS, key('f', id));   // an older record's favorites (porthole/f<id>) are dead: free their NVS entries
   }
 }
 void loadAll(Store& st, Profiles& p) {

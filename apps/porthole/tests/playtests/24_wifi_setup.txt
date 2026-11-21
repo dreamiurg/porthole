@@ -277,7 +277,7 @@ snap 18_ready_scanning
 tap 80 108
 wait 450
 expect sys_restarts=1
-expect-screen sys_new
+expect-screen picker
 sheet wifi
 # A tap in the 2 px gap between keys goes to the nearer one; a finger that rolls onto the next key types that one
 reset

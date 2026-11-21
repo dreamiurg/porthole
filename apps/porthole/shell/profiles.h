@@ -64,10 +64,11 @@ struct Allowance {
 // Persisted as a raw blob, append-only like Pets Club's Save: new fields go right before crc, bump the version,
 // and teach loadRecord the older size. Never reorder or resize a field.
 constexpr uint32_t REC_MAGIC = 0x50525450;   // "PTRP"
-constexpr uint16_t REC_VERSION = 4;
+constexpr uint16_t REC_VERSION = 5;
 constexpr size_t REC_V1_SIZE = 44;           // v1: no daily cap fields; loads with them zeroed
 constexpr size_t REC_V2_SIZE = 52;           // v2: no stars; loads with none
 constexpr size_t REC_V3_SIZE = 56;           // v3: no skills book; loads with every skill new (games seed them)
+constexpr size_t REC_V4_SIZE = 96;           // v4: no Kid news seen; loads as a kid from before it (all of it is news)
 struct Record {
   uint32_t magic;
   uint16_t version, size;
@@ -78,11 +79,16 @@ struct Record {
   uint32_t dayPlaySec, playDay;            // v2: play counted on local day playDay (now / DAY_SEC)
   uint32_t stars;                          // v3: the kid's star balance, earned and spent in any game (os/stars.h)
   skills::Book book;                       // v4: the kid's skill ratings and today's star counters (os/skills.h)
+  // v5: the Kid news this kid has seen (shell/news.h), in news.toml entry numbers: the newest the "New for" screen
+  // showed, and the red dots cleared, a bit each for entries newsFrom.. newsFrom + 15 (tiles opened, spots tapped);
+  // an entry before newsFrom is done. In the record, not a key of its own: 8 more bytes cost no NVS entry.
+  uint16_t newsSeen, newsFrom, newsTiles, newsSpots;
   uint32_t crc;
 };
-static_assert(sizeof(Record) == 96, "Record is persisted: append before crc, never resize");
+static_assert(sizeof(Record) == 104, "Record is persisted: append before crc, never resize");
 static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v2 fields start where v1's crc was");
 static_assert(offsetof(Record, book) == REC_V3_SIZE - sizeof(uint32_t), "v3 ends where the book starts");
+static_assert(offsetof(Record, newsSeen) == REC_V4_SIZE - sizeof(uint32_t), "v4 ends where Kid news starts");
 static_assert(offsetof(Record, stars) == REC_V2_SIZE - sizeof(uint32_t), "v3's stars start where v2's crc was");
 
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused

@@ -92,9 +92,9 @@ static size_t cardsFull() {
   return full;
 }
 
-// One per profile, kept by the shell: porthole/p<id>, and porthole/f<id> (24 B), the favorites an older firmware
-// wrote: nothing reads it now, but an updated device keeps it until the profile is deleted.
-constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}, {"f", 24}};
+// One per profile, kept by the shell: porthole/p<id>. The favorites an older firmware wrote (porthole/f<id>, 24 B) are
+// erased when a record from before Kid news loads (shell/profiles.cpp loadRecords).
+constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}};
 // One per device. "sys": the shell's and firmware/net.cpp's keys at their largest; "porthole": the migration marks.
 constexpr Kept DEVICE[] = {
   {"admin", 2}, {"games", sizeof(shell::GamesOff)}, {"limits", sizeof(shell::Limits)}, {"lite", 1},
@@ -130,6 +130,6 @@ int main() {
   // structs whole, a profile cost 110 entries and four needed 616 of the 504, so two kids fit (the audit's PLAT-1,
   // SHELL-5, BUILD-1, LIFE-11). A new save, or one that grows, has to fit in what is left to spare.
   assert(need <= USABLE);
-  assert(profile <= 80);   // a ratchet: lower it when a save shrinks, never raise it
+  assert(profile <= 78);   // a ratchet: lower it when a save shrinks, never raise it
   puts("nvs budget: ok");
 }

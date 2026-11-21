@@ -15,6 +15,7 @@
 #include "gfx565.h"
 #include "timezone.h"
 #include "launcher.h"
+#include "news_entries.h"
 #include "profiles.h"
 #include "save.h"
 #include "shell.h"
@@ -552,6 +553,7 @@ static void recordV3() {
   assert(shell::loadRecord(&r, sizeof r, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);
 }
 
+static void recordV2V3(shell::Record r);
 // Daily cap, v2 record fields: a v1 record (44 bytes) still loads, with nothing played today.
 static void recordV1() {
   shell::Record r = draft("Sam", 8, 1234); r.playSec = 42; shell::seal(r);
@@ -567,14 +569,26 @@ static void recordV1() {
   uint8_t wrong[sizeof r]; memcpy(wrong, &r, sizeof r); memcpy(wrong + 4, &ver, 2);
   crc = os::crc32(wrong, sizeof wrong - 4); memcpy(wrong + sizeof wrong - 4, &crc, 4);
   assert(!shell::loadRecord(wrong, sizeof wrong, out));   // a v1 header on a v2-sized blob is not a record
-  // a v2 record (before the stars): it loads with none
-  r.stars = 9; shell::seal(r);
-  uint8_t v2[shell::REC_V2_SIZE]; memcpy(v2, &r, sizeof v2 - 4);
-  ver = 2; size = (uint16_t)shell::REC_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
-  crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
-  assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
-  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
+  recordV2V3(r);
   recordV3();
+}
+// r as an older version would have stored it: its first `size` bytes, then a crc
+static void oldRecord(const shell::Record& r, uint16_t ver, size_t size, uint8_t* blob) {
+  const uint16_t n = (uint16_t)size; memcpy(blob, &r, size - 4); memcpy(blob + 4, &ver, 2); memcpy(blob + 6, &n, 2);
+  const uint32_t crc = os::crc32(blob, size - 4); memcpy(blob + size - 4, &crc, 4);
+}
+// a v2 record (before the stars) loads with none; a v4 one (before Kid news) keeps its book, with nothing seen
+static void recordV2V3(shell::Record r) {
+  shell::Record out; uint8_t blob[sizeof r];
+  r.stars = 9; r.newsSeen = 3; r.newsFrom = 4; skills::seed(r.book, skills::ADD_SUB, 3, true); shell::seal(r);
+  oldRecord(r, 2, shell::REC_V2_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V2_SIZE, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
+  oldRecord(r, 3, shell::REC_V3_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V3_SIZE, out) && out.stars == 9 && out.newsSeen == 0 && out.newsFrom == 0);
+  oldRecord(r, 4, shell::REC_V4_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V4_SIZE, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);
+  assert(out.newsSeen == 0 && out.newsFrom == 0 && out.version == shell::REC_VERSION);
+  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9 && out.newsSeen == 3 && out.newsFrom == 4);
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
@@ -863,7 +877,8 @@ static void launcherPaging() {
   tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);
 }
 // The device's games ("sys"/"games"): versioned, crc'd, read back; anything else loads as all on. Ids are unique and
-// 1..32. A profile's create and delete still erase porthole/f<id>, the favorites older firmware wrote.
+// 1..32. A profile's create and delete still erase porthole/f<id>, the favorites older firmware wrote, and so does
+// loading an older record.
 static void gamesOffBlob() {
   MemStore st;
   assert(shell::loadGamesOff(st) == 0 && shell::saveGamesOff(st, 0x5) && shell::loadGamesOff(st) == 0x5);
@@ -876,6 +891,10 @@ static void gamesOffBlob() {
   const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
   assert(st.save(shell::NS, "f0", old, sizeof old)); shell::removeProfile(st, p, id, STORES, 2); assert(!st.has(shell::NS, "f0"));
   assert(st.save(shell::NS, "f0", old, sizeof old)); shell::create(st, p, draft("Kai", 6, 0), STORES, 2); assert(!st.has(shell::NS, "f0"));
+  // a record from before Kid news (v4) frees its favorites as it loads; a current one leaves the key alone
+  uint8_t v4[shell::REC_V4_SIZE]; oldRecord(p.rec[0], 4, shell::REC_V4_SIZE, v4);
+  assert(st.save(shell::NS, "p0", v4, sizeof v4) && st.save(shell::NS, "f0", old, sizeof old));
+  shell::loadAll(st, p); assert(p.used[0] && !strcmp(p.rec[0].name, "Kai") && !st.has(shell::NS, "f0"));
 }
 // An older firmware's favorites (porthole/f<id>) are left alone: the launcher shows every game switched on.
 static void oldFavoritesIgnored() {
@@ -945,19 +964,6 @@ static void versions() {
   assert(!shell::rolledBack("0.30.1", "0.30.0", true) && !shell::rolledBack("0.29.5", "0.30.0", true));
   assert(!shell::rolledBack("0.30.0", "0.30.0", false));   // it started fine, or a USB flash cleared the mark
   assert(!shell::rolledBack("0.30.0", "", true) && !shell::rolledBack("0.30.0", nullptr, true));   // nothing on record
-}
-
-// The card shows once per new version, never for a dev build, and a boot with nothing new writes nothing.
-static void somethingNew() {
-  MemStore st;
-  assert(shell::newRun(st, "0.15.0"));   // no "sys"/"ran" yet: this firmware is new here
-  int w = st.writes;
-  assert(!shell::newRun(st, "0.15.0") && st.writes == w);
-  assert(shell::newRun(st, "0.16.0") && !shell::newRun(st, "0.16.0"));
-  assert(!shell::newRun(st, "dev") && !shell::newRun(st, "dev"));
-  assert(shell::newRun(st, "0.16.0"));   // a release over a dev build replaced it: news again
-  const char* longer = "0.16.0-beta.12345";   // past the 15 bytes kept: still news only once
-  assert(shell::newRun(st, longer) && !shell::newRun(st, longer));
 }
 
 // A scan list keeps one entry per name at its strongest, strongest first, no hidden ones, and drops the weakest when full.
@@ -1584,12 +1590,73 @@ static void newerSaveKept() {
     home(sh, ms, app);
   }
 }
-// The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
-// picker's title, and only on a device with a System.
+// Kid news (shell/news.h): one line per game, a new game before a new thing to do before new things to find, newest
+// first; gone, expired and unseen-game entries never show, and a clock that was never set expires nothing.
+static void newsLinesOrder() {
+  using shell::NewsEntry;
+  const uint16_t day = NOW / 86400;
+  const NewsEntry e[] = {
+    {day, shell::NEWS_NEW, false, "a", "", "a new"}, {day, shell::NEWS_BIG, false, "a", "", "a big"},
+    {day, shell::NEWS_GAME, false, "b", "", "b game"}, {day, shell::NEWS_NEW, false, "c", "", "c new"},
+    {day, shell::NEWS_BIG, true, "d", "", "d gone"}, {day, shell::NEWS_NEW, false, "", "", "launcher"},
+    {(uint16_t)(day - 61), shell::NEWS_GAME, false, "e", "", "e old"}, {day, shell::NEWS_NEW, false, "a", "", "a newer"},
+  };
+  bool ok[8]; for (bool& b : ok) b = true;
+  int out[5];
+  assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 5) == 4);
+  assert(out[0] == 2 && out[1] == 1 && out[2] == 5 && out[3] == 3);   // b, a's big (not its newer small one), launcher, c
+  assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 2) == 2 && out[0] == 2 && out[1] == 1);
+  assert(shell::newsLines(e, 8, {2, NOW, ok}, out, 5) == 4 && out[1] == 7);   // seen up to entry 2: a's newer one is a's line, newest of the small
+  ok[2] = false; assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 5) == 3 && out[0] == 1);   // b switched off or not here
+  assert(shell::newsLines(e, 8, {0, 1000, ok}, out, 5) == 4 && out[0] == 6);   // no clock: the 61-day-old game is news
+  assert(shell::newsLines(e, 8, {8, NOW, ok}, out, 5) == 0);
+}
+// What a kid has seen is theirs and on flash: a new kid has nothing new; a kid from before has all of it; a tile's dot
+// goes once its game opens, a spot's once it is tapped; nothing new to clear writes nothing.
+static void kidNewsRecord() {
+  MemStore st; shell::Profiles p; shell::loadAll(st, p); shell::KidNews k; const uint32_t now = shell::NEWS[0].day * 86400u;
+  const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2); shell::create(st, p, draft("Kai", 6, 0), STORES, 2);
+  k.load(st, p, id); k.fresh(); assert(k.seen() == shell::NEWS_COUNT);
+  for (const shell::NewsEntry& e : shell::NEWS) assert(!k.tileDot(e.store, now));
+  k.forget(); assert(k.seen() == 0 && k.tileDot("racing", now) && k.tileDot("sandjar", now));
+  assert(!k.tileDot("racing", now + 200 * 86400u));   // long past its 60 days
+  k.open("racing", now); assert(k.isNew("together") && !k.isNew("rivals"));
+  shell::Profiles again; shell::loadAll(st, again); k.load(st, again, id);   // kept on flash
+  assert(!k.tileDot("racing", now) && k.tileDot("sandjar", now));
+  k.open("racing", now); k.seen("together"); assert(!k.isNew("together"));
+  int w = st.writes; k.seen("together"); k.open("racing", now); assert(st.writes == w);
+  shell::loadAll(st, again); k.load(st, again, id); k.open("racing", now); assert(!k.isNew("together"));
+  k.showed(); assert(k.seen() == shell::NEWS_COUNT);
+  k.load(st, again, 1 - id); assert(k.seen() == 0 && k.tileDot("racing", now));   // another kid's is their own
+}
+struct NewsApp : StubApp {   // a stub with a real game's store, so its news.toml entries count
+  const char* ns; NewSpots* spots = nullptr;
+  NewsApp(const char* n, const char* store) : StubApp(n), ns(store) {}
+  const char* store() const override { return ns; }
+  void enter(const AppEnter& e) override { StubApp::enter(e); spots = e.news; }
+};
+static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 4) * 160 + b.x + b.w - 4] == C_RED; }
+// The flow: a kid from before Kid news picks themselves and sees "New for" (Rally's big news, Sand Jar's game) once;
+// the tiles keep their dots until opened; Rally gets its spot through AppEnter; a new kid sees none of it.
+static void newsFlow() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  NewsApp rally("Rally", "racing"), sand("Sand Jar", "sandjar"); App* const list[2] = {&rally, &sand};
+  bootWithoutHours(sh, st, list, 2); sh.createProfile("Sam", 8, "");
+  frame(sh, ms, Input{}); assert(on(sh, "launcher") && !dotAt(launcher::tile(0, 2)));   // new: nothing is news to Sam
+  sh.debugCmd("news");
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "news"));
+  tapAt(sh, ms, {45, 116, 70, 26}); assert(on(sh, "launcher") && dotAt(launcher::tile(0, 2)) && dotAt(launcher::tile(1, 2)));
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));   // seen: not again
+  tapAt(sh, ms, launcher::tile(0, 2)); assert(on(sh, "stub") || rally.entered == 1);
+  assert(rally.spots && rally.spots->isNew("together"));
+  rally.spots->seen("together"); assert(!rally.spots->isNew("together"));
+  home(sh, ms, rally); assert(!dotAt(launcher::tile(0, 2)) && dotAt(launcher::tile(1, 2)));
+  sh.createProfile("Ava", 7, ""); frame(sh, ms, Input{}); assert(on(sh, "launcher") && !dotAt(launcher::tile(1, 2)));
+}
+// The menu is a 5 s hold on the picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp a("One"); App* const list[1] = {&a};
-  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "sys_new"));
-  tapAt(sh, ms, {45, 112, 70, 26}); assert(on(sh, "new_name"));
+  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "new_name"));   // an update shows no card: news is each kid's
   sh.createProfile("Sam", 8, "");
   bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "picker"));
   holdTitle(sh, ms, 4900); assert(on(sh, "picker"));
@@ -1662,8 +1729,8 @@ int main() {
   adminChangesAndReset();
   resetAllLimits();
   versions();
-  somethingNew();
   systemMenuWayIn();
+  newsLinesOrder(); kidNewsRecord(); newsFlow();
   scanList();
   textEntry();
   records();

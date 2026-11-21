@@ -146,7 +146,7 @@ bool Game::tracksTogether() {
     go(Screen::Calibrate);
     return true;
   }
-  if (there && ui::clicked(in_, paint::TOGETHER)) { ready_ = !ready_; return true; }
+  if (there && ui::clicked(in_, paint::TOGETHER)) { ready_ = !ready_; if (news_) news_->seen("together"); return true; }
   if (ready_ && link_.invite().in && link_.self() > link_.inviter()) { joinInvite(); return true; }
   return false;
 }
@@ -264,6 +264,7 @@ void Game::duoView(paint::Duo& d) {
     d.inviteName = link_.invite().name;
     d.inviteFace = face(2, link_.invite().avatar);
     d.ready = ready_; d.peerReady = link_.invite().in;
+    d.isNew = news_ && news_->isNew("together");
   }
 }
 }  // namespace racing

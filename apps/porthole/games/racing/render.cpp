@@ -546,6 +546,7 @@ void raceButton(const View& v) {
   snprintf(name, sizeof name, "%s", d.inviteName);
   text(x, b.y * 3 + 9, name, 2, flash ? INK : CREAM);
   text(x, b.y * 3 + 35, d.ready ? "Waiting" : "Race!", 2, flash ? INK : d.ready ? GOLD : GREEN);
+  if (d.isNew) ui::newDot565(b);
 }
 void tracksPage(const View& v) {
   const int mode = v.mode;

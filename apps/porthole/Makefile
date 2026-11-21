@@ -39,7 +39,7 @@ test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp
 test_pet_SRC := $(wildcard os/*.cpp) $(wildcard games/pets-club/*.cpp)
 test_pets_learn_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
 test_pets_uk_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
-test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp shell/news.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
 test_update_gate_SRC :=
@@ -162,6 +162,7 @@ lint: snap
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
 	$(PY) tools/timezones.py --check
+	$(PY) tools/news.py --check
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) games/racing/tools/art.py --check
 	$(PY) games/racing/tools/pictures.py --check
