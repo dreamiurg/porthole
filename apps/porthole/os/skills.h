@@ -179,55 +179,69 @@ inline void forgetRepeats() { for (detail::Seen& x : detail::seen) x = {}; detai
 
 // Speed, when the game judges it (Times Cards' own Easy and Hard). A game that doesn't counts every right answer quick.
 enum Speed : int8_t { QUICK = 0, SLOW = 1 };
-// One answer. beta: the item's difficulty; options: answers it offered; ms: from the item showing to the pick; readMs:
-// no one reads the item and its answers faster: a right pick sooner is a guess (pays nothing, counts as wrong), a
-// wrong one sooner costs half a base in the round; key: which item, for repeats (the game's own numbering).
-inline void answer(Book& b, Round& r, Skill k, int beta, int options, bool right, uint32_t ms, uint32_t readMs,
-                   uint16_t key, Speed speed = QUICK) {
-  if (!started(b, k)) seed(b, k, 0, false);
-  State s = get(b, k);
-  const bool wasCalibrating = s.calibrating, rushed = ms < readMs;
-  const float sc = !right || rushed ? 0.f : speed == SLOW ? 0.7f : 1.f;
-  const float p = expect(s.theta, beta, options);
-  const int payTheta = s.peak - PEAK_DROP > s.theta ? s.peak - PEAK_DROP : s.theta;
-  const int times = detail::repeats(b, k, key);
-  if (right && !rushed) {
-    float w = s.calibrating ? 1.f : (1 - expect(payTheta, beta, options)) / (1 - TARGET);
-    w = w < 0.25f ? 0.25f : w > 2.5f ? 2.5f : w;
-    r.points += times >= 3 ? 0 : (int32_t)lroundf(BASE[k] * w) >> times;
-  } else if (!right && rushed) {
-    r.points -= BASE[k] / 2;
-  }
-  if (r.points < 0) r.points = 0;
-  r.ms += ms > 30000 ? 30000 : ms;
-  r.answers++;
-  if (s.calibrating) {
-    if (sc > 0) { s.theta += s.jump * LEVEL; s.jump = s.jump >= 4 ? 4 : s.jump * 2; }
-    else {
-      s.theta -= s.jump * LEVEL / 2; s.jump = s.jump > 1 ? s.jump / 2 : 1;
-      if (s.jump == 1 && s.errored) s.calibrating = false;   // two errors, and the jump is one level
-      s.errored = true;
-    }
-    if (s.n + 1 >= CALIB_ANSWERS) s.calibrating = false;
-    if (!s.calibrating) { s.n = 0; s.trend = 0; }
-  } else {
-    const float d = sc - p;
-    s.trend = d > 0 ? (s.trend > 0 ? s.trend + 1 : 1) : (s.trend < 0 ? s.trend - 1 : -1);
-    s.trend = s.trend > 3 ? 3 : s.trend < -3 ? -3 : s.trend;
-    int kk = 160 / (1 + s.n / 5);
-    kk = kk < 40 ? 40 : kk;
-    if (s.trend >= 3 || s.trend <= -3) kk = kk * 2 > 160 ? 160 : kk * 2;
-    s.theta += (int)lroundf(kk * d);
-  }
+// The item a kid answered. beta: its difficulty; options: the answers it offered; readMs: no one reads the item and its
+// answers faster, so a right pick sooner is a guess (pays nothing, counts as wrong) and a wrong one sooner costs half a
+// base in the round; key: which item, for repeats (the game's own numbering).
+struct Item { Skill skill; int beta, options; uint32_t readMs; uint16_t key; Speed speed = QUICK; };
+
+namespace detail {
+// After an answer: the rating in range, the answer counted, the peak, and a new best level (a milestone, unless it is
+// where a calibration landed).
+inline void settle(State& s, Round& r, bool wasCalibrating) {
   s.theta = s.theta < 0 ? 0 : s.theta > THETA_MAX ? THETA_MAX : s.theta;
   if (!wasCalibrating || s.calibrating) s.n++;
   if (s.theta > s.peak) s.peak = s.theta;
-  const int lvl = s.theta / LEVEL;
-  if (!s.calibrating && lvl + 1 > s.best) {
-    if (!wasCalibrating) r.newBest = true;   // the level a calibration lands on is a start, not a milestone
-    s.best = lvl + 1;
+  if (s.calibrating || s.theta / LEVEL + 1 <= s.best) return;
+  r.newBest |= !wasCalibrating;
+  s.best = s.theta / LEVEL + 1;
+}
+// What a right answer pays: base x W, halved per repeat today, nothing from the fourth; flat while calibrating.
+inline int32_t pay(const State& s, const Item& it, int times) {
+  if (times >= 3) return 0;
+  const int payTheta = s.peak - PEAK_DROP > s.theta ? s.peak - PEAK_DROP : s.theta;
+  float w = s.calibrating ? 1.f : (1 - expect(payTheta, it.beta, it.options)) / (1 - TARGET);
+  w = w < 0.25f ? 0.25f : w > 2.5f ? 2.5f : w;
+  return (int32_t)lroundf(BASE[it.skill] * w) >> times;
+}
+// Calibration: right jumps up and doubles the jump (to 4 levels); a miss steps back half and halves it. Two misses
+// with the jump at one level, or CALIB_ANSWERS answers, end it.
+inline void calibrate(State& s, bool counted) {
+  if (counted) { s.theta += s.jump * LEVEL; s.jump = s.jump >= 4 ? 4 : s.jump * 2; }
+  else {
+    s.theta -= s.jump * LEVEL / 2; s.jump = s.jump > 1 ? s.jump / 2 : 1;
+    if (s.jump == 1 && s.errored) s.calibrating = false;
+    s.errored = true;
   }
-  put(b, k, s);
+  if (s.n + 1 >= CALIB_ANSWERS) s.calibrating = false;
+  if (!s.calibrating) { s.n = 0; s.trend = 0; }
+}
+// The rating: theta += K (score - expected); K shrinks with answers, doubles while three in a row miss one way.
+inline void rate(State& s, float score, float p) {
+  const float d = score - p;
+  s.trend = d > 0 ? (s.trend > 0 ? s.trend + 1 : 1) : (s.trend < 0 ? s.trend - 1 : -1);
+  s.trend = s.trend > 3 ? 3 : s.trend < -3 ? -3 : s.trend;
+  int kk = 160 / (1 + s.n / 5);
+  kk = kk < 40 ? 40 : kk;
+  if (s.trend == 3 || s.trend == -3) kk = kk * 2 > 160 ? 160 : kk * 2;
+  s.theta += (int)lroundf(kk * d);
+}
+}  // namespace detail
+
+// One answer to an item, ms after it showed: the round's points, then the skill's rating.
+inline void answer(Book& b, Round& r, const Item& it, bool right, uint32_t ms) {
+  if (!started(b, it.skill)) seed(b, it.skill, 0, false);
+  State s = get(b, it.skill);
+  const bool wasCalibrating = s.calibrating, rushed = ms < it.readMs;
+  const float score = !right || rushed ? 0.f : it.speed == SLOW ? 0.7f : 1.f;
+  const int times = detail::repeats(b, it.skill, it.key);
+  if (right && !rushed) r.points += detail::pay(s, it, times);
+  else if (!right && rushed) r.points = r.points > BASE[it.skill] / 2 ? r.points - BASE[it.skill] / 2 : 0;
+  r.ms += ms > 30000 ? 30000 : ms;
+  r.answers++;
+  if (s.calibrating) detail::calibrate(s, score > 0);
+  else detail::rate(s, score, expect(s.theta, it.beta, it.options));
+  detail::settle(s, r, wasCalibrating);
+  put(b, it.skill, s);
 }
 
 // A round's start: the day's counters are today's (a repeat is the same item the same day).

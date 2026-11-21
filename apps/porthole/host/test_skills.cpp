@@ -27,7 +27,7 @@ static void calibration() {
   CHECK(skills::calibrating(b, skills::ADD_SUB) && skills::target(b, skills::ADD_SUB, 10, 3) == 0);
   skills::Round r = skills::start(b, NOW);
   uint16_t key = 0;
-  auto ans = [&](bool right) { skills::answer(b, r, skills::ADD_SUB, skills::target(b, skills::ADD_SUB, 10, 3) * 100, 3, right, 5000, 1000, key++); };
+  auto ans = [&](bool right) { skills::answer(b, r, {skills::ADD_SUB, skills::target(b, skills::ADD_SUB, 10, 3) * 100, 3, 1000, key++}, right, 5000); };
   ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 100);
   ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 300);
   ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 700);
@@ -46,24 +46,24 @@ static void payByDifficulty() {
   skills::Book b{}; skills::forgetRepeats();
   skills::seed(b, skills::TIMES_STORY, 5, true);
   skills::Round r = skills::start(b, NOW);
-  skills::answer(b, r, skills::TIMES_STORY, 0, 3, true, 5000, 1000, 1);   // far below
+  skills::answer(b, r, {skills::TIMES_STORY, 0, 3, 1000, 1}, true, 5000);   // far below
   CHECK(r.points == 10);
   setTheta(b, skills::TIMES_STORY, 500, 500);
   r = skills::Round{};
-  skills::answer(b, r, skills::TIMES_STORY, 900, 3, true, 5000, 1000, 2);   // far above
+  skills::answer(b, r, {skills::TIMES_STORY, 900, 3, 1000, 2}, true, 5000);   // far above
   CHECK(r.points == 100);
   setTheta(b, skills::TIMES_STORY, 500, 500);
   r = skills::Round{};
   const int at = 500 - skills::easeFor(3);   // the target: about the base
-  skills::answer(b, r, skills::TIMES_STORY, at, 3, true, 5000, 1000, 3);
+  skills::answer(b, r, {skills::TIMES_STORY, at, 3, 1000, 3}, true, 5000);
   CHECK(r.points >= 38 && r.points <= 42);
   // repeats of key 1
   setTheta(b, skills::TIMES_STORY, 500, 500);
-  r = skills::Round{}; skills::answer(b, r, skills::TIMES_STORY, 0, 3, true, 5000, 1000, 1); CHECK(r.points == 5);
-  r = skills::Round{}; skills::answer(b, r, skills::TIMES_STORY, 0, 3, true, 5000, 1000, 1); CHECK(r.points == 2);
-  r = skills::Round{}; skills::answer(b, r, skills::TIMES_STORY, 0, 3, true, 5000, 1000, 1); CHECK(r.points == 0);
+  r = skills::Round{}; skills::answer(b, r, {skills::TIMES_STORY, 0, 3, 1000, 1}, true, 5000); CHECK(r.points == 5);
+  r = skills::Round{}; skills::answer(b, r, {skills::TIMES_STORY, 0, 3, 1000, 1}, true, 5000); CHECK(r.points == 2);
+  r = skills::Round{}; skills::answer(b, r, {skills::TIMES_STORY, 0, 3, 1000, 1}, true, 5000); CHECK(r.points == 0);
   // a new day: full pay again
-  r = skills::start(b, NOW + DAY); skills::answer(b, r, skills::TIMES_STORY, 0, 3, true, 5000, 1000, 1); CHECK(r.points == 10);
+  r = skills::start(b, NOW + DAY); skills::answer(b, r, {skills::TIMES_STORY, 0, 3, 1000, 1}, true, 5000); CHECK(r.points == 10);
 }
 
 // Missing on purpose lowers the rating, but pay reads it no lower than the peak - 150; a guess faster than reading
@@ -72,19 +72,19 @@ static void noFarming() {
   skills::Book b{}; skills::forgetRepeats();
   skills::seed(b, skills::SPELL_EN, 6, true);
   skills::Round r = skills::start(b, NOW);
-  for (int i = 0; i < 30; i++) skills::answer(b, r, skills::SPELL_EN, 0, 3, false, 5000, 1000, (uint16_t)(100 + i));
+  for (int i = 0; i < 30; i++) skills::answer(b, r, {skills::SPELL_EN, 0, 3, 1000, (uint16_t)(100 + i)}, false, 5000);
   CHECK(skills::get(b, skills::SPELL_EN).theta < 300 && skills::get(b, skills::SPELL_EN).peak == 600 && r.points == 0);
   r = skills::Round{};
-  skills::answer(b, r, skills::SPELL_EN, 200, 3, true, 5000, 1000, 1);   // easy against 450, not the sunk rating
+  skills::answer(b, r, {skills::SPELL_EN, 200, 3, 1000, 1}, true, 5000);   // easy against 450, not the sunk rating
   CHECK(r.points == 10);
   r = skills::Round{};
-  skills::answer(b, r, skills::SPELL_EN, 900, 3, true, 300, 1000, 2);    // faster than anyone reads: a guess
+  skills::answer(b, r, {skills::SPELL_EN, 900, 3, 1000, 2}, true, 300);    // faster than anyone reads: a guess
   CHECK(r.points == 0);
   r.points = 50;
-  skills::answer(b, r, skills::SPELL_EN, 900, 3, false, 100, 1000, 3);   // under half the usual time, wrong
+  skills::answer(b, r, {skills::SPELL_EN, 900, 3, 1000, 3}, false, 100);   // under half the usual time, wrong
   CHECK(r.points == 30);
-  skills::answer(b, r, skills::SPELL_EN, 900, 3, false, 100, 1000, 4);
-  skills::answer(b, r, skills::SPELL_EN, 900, 3, false, 100, 1000, 5);
+  skills::answer(b, r, {skills::SPELL_EN, 900, 3, 1000, 4}, false, 100);
+  skills::answer(b, r, {skills::SPELL_EN, 900, 3, 1000, 5}, false, 100);
   CHECK(r.points == 0);
   uint32_t wallet = 9; CHECK(skills::finish(b, r, NOW, &wallet) == 0 && wallet == 9);
 }
@@ -141,7 +141,7 @@ static void converges() {
     const int beta = skills::target(b, skills::WORDS_UK, 12, 3) * 100;
     rng = rng * 1103515245u + 12345u;
     const bool right = (rng >> 8) % 1000 < (uint32_t)(skills::expect(500, beta, 3) * 1000);
-    skills::answer(b, r, skills::WORDS_UK, beta, 3, right, 4000, 1000, (uint16_t)i);
+    skills::answer(b, r, {skills::WORDS_UK, beta, 3, 1000, (uint16_t)i}, right, 4000);
   }
   CHECK(skills::get(b, skills::WORDS_UK).theta > 350 && skills::get(b, skills::WORDS_UK).theta < 650);
 }

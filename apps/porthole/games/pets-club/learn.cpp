@@ -136,8 +136,9 @@ void Game::updatePuzzle() {
     right_ += right;
     review::answered(save_, p.item, right, (int32_t)pet::dayIndex(now_));
     pet::puzzleAnswered(save_, now_, right);   // the counters and the bond; the stars are the engine's
-    skills::answer(*book_, pay_, puzzleSkill(), p.item.level * skills::LEVEL, puzzles::ANSWERS, right, ms_ - shownMs_,
-                   PUZZLE_READ_MS, (uint16_t)(p.item.strand << 12 | p.item.level << 8 | puzzles::keyOf(p.item)));
+    const uint16_t key = (uint16_t)(p.item.strand << 12 | p.item.level << 8 | puzzles::keyOf(p.item));
+    skills::answer(*book_, pay_, {puzzleSkill(), p.item.level * skills::LEVEL, puzzles::ANSWERS, PUZZLE_READ_MS, key},
+                   right, ms_ - shownMs_);
     level_ = puzzleLevel(strand_);   // the next question follows the rating at once
     markDirty();
     if (right) { sound(SND_YIP); spawn(answerBox(i).x + 17, 100, 1, 4); }
@@ -276,8 +277,8 @@ void Game::updateLittleAsk() {
     const bool right = i == READS[little_].right;
     right_ += right;
     pet::readAnswered(save_, now_, right);   // the counters and the bond; the stars are the engine's
-    skills::answer(*book_, pay_, skills::READ_EN, (READS[little_].level - 1) * skills::LEVEL, learn::READ_ANSWERS, right,
-                   ms_ - shownMs_, READ_ASK_MS, (uint16_t)little_);
+    skills::answer(*book_, pay_, {skills::READ_EN, (READS[little_].level - 1) * skills::LEVEL, learn::READ_ANSWERS,
+                                  READ_ASK_MS, (uint16_t)little_}, right, ms_ - shownMs_);
     save_.readLevel = readLevelNow();   // the next passage follows the rating
     markDirty();
     if (right) { sound(SND_YIP); spawn(80, ay + i * READ_ANSWER_STEP + 11, 1, 6); }

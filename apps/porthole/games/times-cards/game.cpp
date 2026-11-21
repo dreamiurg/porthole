@@ -144,8 +144,8 @@ void Game::pick(int i) {
   // The engine's rating and pay: a fact's difficulty is its table, give or take its size (x2, x5, squares are easier,
   // 6..9 pairs and divisions harder). The deck's own Easy and Hard say quick or slow.
   const int beta = (isDiv(face_) ? divisorOf(face_) - 1 : tableOf(face_) - 1) * skills::LEVEL + (int)lroundf((sizeOf(face_) - 1) * 200);
-  skills::answer(*book_, pay_, skills::TIMES_FACTS, beta, OPTIONS, i == right_, ms, READ_MS, (uint16_t)face_,
-                 g == HARD ? skills::SLOW : skills::QUICK);
+  skills::answer(*book_, pay_, {skills::TIMES_FACTS, beta, OPTIONS, READ_MS, (uint16_t)face_, g == HARD ? skills::SLOW : skills::QUICK},
+                 i == right_, ms);
   dirty_ = true; keep_ = false;
   if (round_.done()) paid_ = skills::finish(*book_, pay_, now_, wallet_);
 }
