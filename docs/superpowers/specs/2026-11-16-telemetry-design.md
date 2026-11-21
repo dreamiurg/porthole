@@ -6,9 +6,11 @@ play and how Times Cards works for each of them, without changing anything for o
 ## Rules
 
 - Off on every board; a board sends nothing until a grown-up opts in.
-- A double opt-in on Admin 2/2 (Дмитро, 2026-11-17), both switches off by default. "Telemetry" turns on the anonymous
-  level. "Kids' IDs", shown only while Telemetry is on, turns on the personal level. Turning Telemetry off turns both
-  off and wipes the device id and salt.
+- One switch on Admin 2/2, "Usage stats", off by default (Дмитро, 2026-11-20; it replaced the two switches of
+  2026-11-17). On is the personal level: random board and player ids, never a name, the usual meaning of "anonymous"
+  in products like Home Assistant, Firefox and VS Code. The board's id shows under the switch, so the owner finds the
+  board in PostHog and labels the kids' player ids there. Off wipes the device id and salt. The anonymous level stays,
+  for the SD file and serial only.
 - From the menu, events go to the Porthole project in PostHog (us.i.posthog.com) with its public ingest key built in.
   The key only writes events, and the website ships the same key. A kid's events carry `$set: {device}`, so in PostHog
   each kid is a person tied to the board.
@@ -23,7 +25,7 @@ play and how Times Cards works for each of them, without changing anything for o
 
 ## Setup
 
-For the Porthole project, nothing: hold "Who's playing?" 5 s, Admin, page 2, Telemetry on, then Kids' IDs on.
+For the Porthole project, nothing: hold "Who's playing?" 5 s, Admin, page 2, "Usage stats: on".
 
 For another backend, `/porthole/telemetry.txt` on the SD card, read at boot:
 

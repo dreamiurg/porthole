@@ -1,5 +1,5 @@
-# Telemetry on Admin 2/2: a double opt-in, both off. "Telemetry" turns on anonymous events to the Porthole project;
-# "Kids' IDs" shows only then and adds each kid's player id. Telemetry off turns both off.
+# Usage stats on Admin 2/2: off by default; on sends what is played to the Porthole project with random board and
+# player ids, and shows the board's id under the switch. One more tap turns it off.
 profile Sam 8
 expect-screen launcher
 tap 80 32
@@ -15,22 +15,13 @@ wait 450
 expect-screen sys_admin
 tap 124 35
 wait 450
-ui-check sys_admin-telemetry-off
-snap 01_telemetry_off
+ui-check sys_admin-usage-off
+snap 01_usage_off
 tap 80 118
 wait 450
-ui-check sys_admin-telemetry-on
-snap 02_telemetry_on
-tap 80 141
-wait 450
-ui-check sys_admin-kids-ids-on
-snap 03_kids_ids_on
-tap 80 141
-wait 450
-snap 04_kids_ids_off
-tap 80 141
-wait 450
+ui-check sys_admin-usage-on
+snap 02_usage_on
 tap 80 118
 wait 450
-ui-check sys_admin-telemetry-off-again
-snap 05_telemetry_off_again
+ui-check sys_admin-usage-off-again
+snap 03_usage_off_again

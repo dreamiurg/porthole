@@ -74,6 +74,8 @@ static void personal() {
   char url[160], auth[120];
   q.endpoint(url, sizeof url); q.auth(auth, sizeof auth);
   CHECK(!strcmp(url, "https://us.i.posthog.com/batch/") && !auth[0]);
+  char dev[telemetry::ID]; q.deviceId(dev);
+  CHECK(!strcmp(dev, "0102030405060708"));   // what the menu shows is what the events carry
   // A small buffer takes the oldest that fit; drop() lets the next batch start after them.
   const size_t one = q.batch(body, 420, &taken);
   CHECK(taken == 1 && one < 420 && has(body, "device_started") && !has(body, "times_cards") && !strcmp(body + one - 2, "]}"));

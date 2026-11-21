@@ -173,7 +173,7 @@ struct SimSystem : shell::System {
   shell::TelemetryStatus telemetryStatus() override {
     shell::TelemetryStatus s;
     s.level = telem().config().level; s.queued = telem().size();
-    if (s.level) telemetry::host(telem().config(), s.host, sizeof s.host);
+    if (s.level) { telemetry::host(telem().config(), s.host, sizeof s.host); telem().deviceId(s.device); }
     return s;
   }
   static telemetry::Queue& telem() {

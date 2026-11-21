@@ -158,6 +158,7 @@ void Queue::playerId(int profile, const char* name, char out[ID]) const {
   hex(id, 8, out);
 }
 // Personal: the device's own id. Anonymous: a hash of it and the month, so months cannot be joined up.
+void Queue::deviceId(char out[ID]) const { hex(cfg_.device, 8, out); }
 void Queue::distinctId(const Event& e, char out[ID]) const {
   if (cfg_.level == PERSONAL) { hex(cfg_.device, 8, out); return; }
   char month[32]; iso(e.utc, month);
