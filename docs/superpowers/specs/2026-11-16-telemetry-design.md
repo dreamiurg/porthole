@@ -1,13 +1,14 @@
-# Opt-in telemetry
+# Telemetry
 
 A user decision of 2026-11-16 (Дмитро): telemetry for the family that owns the board, so Claude can see what the kids
 play and how Times Cards works for each of them, without changing anything for other families.
 
 ## Rules
 
-- Off on every board; a board sends nothing until a grown-up opts in.
-- One switch on Admin 2/2, "Usage stats", off by default (Дмитро, 2026-11-20; it replaced the two switches of
-  2026-11-17). On is the personal level: random board and player ids, never a name, the usual meaning of "anonymous"
+- On by default since 2026-11-21 (Дмитро: opt-out, not opt-in; until then off on every board). A board with no
+  stored setting starts with Usage stats on and makes its random ids; an Off from the menu, the SD file or serial is
+  stored and kept, so a board whose owner turned it off on an older version stays off.
+- One switch on Admin 2/2, "Usage stats" (Дмитро, 2026-11-20; it replaced the two switches of 2026-11-17). On is the personal level: random board and player ids, never a name, the usual meaning of "anonymous"
   in products like Home Assistant, Firefox and VS Code. The board's id shows under the switch, so the owner finds the
   board in PostHog and labels the kids' player ids there. Off wipes the device id and salt. The anonymous level stays,
   for the SD file and serial only.

@@ -811,7 +811,7 @@ static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenNa
 static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
 // Paging through a Shell with eight stub games (6 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
 static const ui::Box FIRST_ROW = {24, 55, 112, 24};   // the picker's first row
-// Opt-in telemetry from the shell: a kid's player id comes from their name and the device's secret, so it is the same on
+// Telemetry from the shell: a kid's player id comes from their name and the device's secret, so it is the same on
 // every pick and nothing is stored for it; then the game's open and close with how long, the stars and the way out.
 static uint32_t telemetryClock() { return testNow; }
 static void telemetryEvents() {

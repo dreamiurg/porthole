@@ -1,5 +1,5 @@
-# Usage stats on Admin 2/2: off by default; on sends what is played to the Porthole project with random board and
-# player ids, and shows the board's id under the switch. One more tap turns it off.
+# Usage stats on Admin 2/2: on by default (opt-out); on sends what is played to the Porthole project with random board
+# and player ids, and shows the board's id under the switch. A tap turns it off, one more turns it back on.
 profile Sam 8
 expect-screen launcher
 tap 80 32
@@ -15,13 +15,13 @@ wait 450
 expect-screen sys_admin
 tap 124 35
 wait 450
-ui-check sys_admin-usage-off
-snap 01_usage_off
-tap 80 118
-wait 450
 ui-check sys_admin-usage-on
-snap 02_usage_on
+snap 01_usage_on
 tap 80 118
 wait 450
-ui-check sys_admin-usage-off-again
-snap 03_usage_off_again
+ui-check sys_admin-usage-off
+snap 02_usage_off
+tap 80 118
+wait 450
+ui-check sys_admin-usage-on-again
+snap 03_usage_on_again

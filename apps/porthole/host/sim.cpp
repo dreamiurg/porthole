@@ -178,7 +178,11 @@ struct SimSystem : shell::System {
   }
   static telemetry::Queue& telem() {
     static telemetry::Queue* q = nullptr;
-    if (!q) { q = new telemetry::Queue(); q->begin(utcNow, "dev"); telemetry::install(q); }
+    if (!q) {   // a fresh board: Usage stats on by default (opt-out, 2026-11-21)
+      q = new telemetry::Queue(); q->begin(utcNow, "dev"); telemetry::install(q);
+      telemetry::Config c = telemetry::withLevel(telemetry::Config{}, telemetry::PERSONAL);
+      c.device[0] = c.salt[0] = 1; q->configure(c);
+    }
     return *q;
   }
   bool detectTimeZone() override {

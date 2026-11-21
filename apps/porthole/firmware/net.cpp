@@ -879,9 +879,10 @@ void wifiFromSd() {
   }
 }
 
-// Opt-in telemetry (os/telemetry.h). Off until the owner sets it up: "sys"/telem (telemetry::Config) from the SD card's
-// /porthole/telemetry.txt or serial Y. Its device id and salt are random, made when it is turned on and wiped when it is
-// turned off; its fileCrc is the card file last taken, so the menu's Off holds until the file changes. Events wait in
+// Telemetry (os/telemetry.h), on by default (opt-out, 2026-11-21): a board with no "sys"/telem key yet starts with Usage
+// stats on; an Off saved from the menu, the SD card's /porthole/telemetry.txt or serial Y stays off. Its device id and
+// salt are random, made when it is turned on and wiped when it is turned off; its fileCrc is the card file last taken,
+// so the menu's Off holds until the file changes. Events wait in
 // PSRAM (lost at power-off) and go out as one radio job while the screen is dark.
 const char* resetName(esp_reset_reason_t r);
 const uint32_t TELEM_MS = 15 * 60000u, TELEM_MORE_MS = 5000;   // between sends; sooner while a send left some behind
@@ -896,9 +897,12 @@ std::atomic<int> g_tresult{0};      // the job's answer: 1 taken, 2 try again la
 uint32_t g_nextTelem = FIRST_MS;
 bool g_toldBoot = false;
 
-void loadTelemetry(telemetry::Config& c) {
-  if (board::loadBlob(NS, "telem", &c, sizeof c) != sizeof c || c.version != 1 || c.level > telemetry::PERSONAL) c = telemetry::Config{};
+// False when nothing usable is stored: the board has never had a setting.
+bool loadTelemetry(telemetry::Config& c) {
+  const bool kept = board::loadBlob(NS, "telem", &c, sizeof c) == sizeof c && c.version == 1 && c.level <= telemetry::PERSONAL;
+  if (!kept) c = telemetry::Config{};
   c.url[sizeof c.url - 1] = c.token[sizeof c.token - 1] = 0;
+  return kept;
 }
 // The owner's settings (level, format, url, token) over what is stored, saved and read back before they take effect:
 // a failed flash write must not report a change that did not land. Ids stay while it stays on.
@@ -1019,7 +1023,8 @@ void Updater::begin(uint32_t (*utcNow)()) {
   g_tq.begin(g_now, PORTHOLE_VERSION);
   g_tbody = (char*)heap_caps_malloc(TELEM_BODY, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   telemetry::Config tc;
-  loadTelemetry(tc); g_tq.configure(tc);
+  if (loadTelemetry(tc)) g_tq.configure(tc);
+  else if (!storeTelemetry(telemetry::withLevel(tc, telemetry::PERSONAL), 0)) g_tq.configure(tc);   // never set: on by default
   if (g_sd) { wifiFromSd(); telemetryFromSd(); SD_MMC.end(); }   // read once: the FAT and driver state go back to the heap
   telemetry::install(&g_tq);
 }

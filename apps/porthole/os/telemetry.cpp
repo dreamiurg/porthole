@@ -1,4 +1,4 @@
-// Opt-in telemetry's portable half: the owner's settings, the queue and the two wire formats. See telemetry.h.
+// Telemetry's portable half: the owner's settings, the queue and the two wire formats. See telemetry.h.
 #include "telemetry.h"
 #include <stdio.h>
 #include <string.h>
