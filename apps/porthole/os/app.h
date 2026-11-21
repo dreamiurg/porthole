@@ -6,6 +6,7 @@
 #include "gfx.h"
 #include "input.h"
 #include "palette.h"
+#include "skills.h"
 
 constexpr int MAX_PROFILES = 4;   // one persisted record per profile: raising this needs no migration
 
@@ -24,6 +25,7 @@ struct AppEnter {
   uint32_t* stars;
   const gfx::Sprite* avatars = nullptr;
   int avatarCount = 0;
+  skills::Book* book = nullptr;   // the kid's skill ratings (os/skills.h); null in tests that need none
 };
 
 // What render() draws on: the 160x160 indexed framebuffer (gfx::fb, upscaled 3x through the tint's palette) or the

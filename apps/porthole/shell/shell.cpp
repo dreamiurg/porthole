@@ -190,7 +190,7 @@ void Shell::openIdx(int k) {
     if (id == active_) who = n;
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
-  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS});
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS, &rec().book});
   savedStars_ = openedStars_ = rec().stars; openedMs_ = ms_;
   telemetry::emit("game_opened", {telemetry::P("game", app_->name())});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_; saveFails_ = 0;

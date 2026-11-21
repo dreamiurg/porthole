@@ -46,6 +46,10 @@ class Game : public App {
   canvas::Frames<1> frames_;
   uint32_t ms_ = 0, now_ = 0, askedMs_ = 0;   // askedMs_: when the current card showed
   uint32_t* wallet_ = nullptr;   // the kid's stars (AppEnter::stars), shared with every game
+  skills::Book* book_ = nullptr;   // the kid's skill ratings (AppEnter::book), or own_ when the shell gives none
+  skills::Book own_{};
+  skills::Round pay_{};   // this round's points toward stars (os/skills.h)
+  int paid_ = 0;          // the stars the last finished round paid, bonuses included
   bool home_ = false, dirty_ = false;
   bool keep_ = false;   // a deck is stored that this build cannot read: it is left as it is until the kid answers a card
   // The answer page: its card (the round moves on as soon as the kid picks), its "k of 10", the four answers, the right

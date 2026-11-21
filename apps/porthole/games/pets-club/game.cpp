@@ -21,6 +21,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
   now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; wallet_ = e.stars;
+  book_ = e.book ? e.book : &own_;
   pet::dropCarry();
   rng_ = 0; readsSeen_ = 0;   // the puzzles' dice start from the dog's seed; a visit's reads start over
   nKids_ = e.n > MAX_PROFILES ? MAX_PROFILES : e.n; self_ = 0;
@@ -81,6 +82,7 @@ void Game::finishAdoption() {
 const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
 
 void Game::go(Screen s) {   // a tap acts on one screen only
+  if (s == SC_LITTLE_ASK) shownMs_ = ms_;
   screen_ = s; screenMs_ = ms_; toastUntil_ = 0; in_.tap = in_.pressed = in_.longPress = false; gate_.shown(ms_);
   yesHold_ = {}; bounceUntil_ = 0;
 }

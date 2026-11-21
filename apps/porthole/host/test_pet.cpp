@@ -554,6 +554,7 @@ static int dbg(Game& g, const char* key) {
 static void rightPuzzles(Finger& f, Game& g) {
   for (int n = 0; n < learn::puzzles::ROUND; n++) {
     assert(dbg(g, "asked") == n && dbg(g, "answered") == -1);
+    f.hold(false, 0, 0, 3000);   // a kid's time to read it: an answer faster is a guess (os/skills.h)
     f.tap(41 + 39 * dbg(g, "answer"), 105); assert(dbg(g, "answered") >= 0);
     f.tap(80, 133);
   }
@@ -562,12 +563,13 @@ static void rightReads(Finger& f, Game& g) {
   for (int n = 0; n < 3; n++) {
     while (!strcmp(g.screenName(), "little")) f.tap(120, 80);
     assert(!strcmp(g.screenName(), "little_ask") && dbg(g, "read_asked") == n);
+    f.hold(false, 0, 0, 3000);
     f.tap(80, dbg(g, "read_ay") + dbg(g, "read_answer") * 24 + 11); assert(dbg(g, "read_answered") >= 0);
     f.tap(80, 133);
   }
 }
-// Puzzles and little reads from the Play menu: a round of five right puzzles moves the strand's level up and puts a
-// star in the kid's wallet; three right reads put another; the Hats page sells a hat not found yet for stars.
+// Puzzles and little reads from the Play menu: a round of five right puzzles moves the strand's level up and pays the
+// kid's wallet at its end, three right reads too (os/skills.h); the Hats page sells a hat not found yet for stars.
 static void learningPaysStars() {
   static Game g;
   const uint32_t t = day0 + 5 * 86400;
@@ -579,16 +581,20 @@ static void learningPaysStars() {
   f.hold(false, 0, 0, 2500); f.tap(66, 129); assert(!strcmp(g.screenName(), "playmenu"));
   f.tap(80, 99); assert(!strcmp(g.screenName(), "puzzles"));
   f.tap(80, 68); assert(!strcmp(g.screenName(), "puzzle") && dbg(g, "strand") == 0);
-  const int start = learn::puzzles::startLevel(learn::puzzles::NUMBERS, 8);
   rightPuzzles(f, g);
   Save got = taken(g);
-  assert(dbg(g, "right") == 5 && wallet == 1 && got.puzzlesRight == 5 && got.puzzleLevels[0] == start + 2 && !got.puzzleReviewCount);
+  // A new kid calibrates: five right jump the level up 1, 2, 4... (os/skills.h), at a flat 40 points each: 200 points,
+  // 2 stars, and the day's first stars count twice.
+  assert(dbg(g, "right") == 5 && wallet == 4 && got.puzzlesRight == 5 && got.puzzleLevels[0] == learn::puzzles::LEVELS[0] && !got.puzzleReviewCount);
   f.hold(false, 0, 0, 1000); f.tap(80, 129); assert(!strcmp(g.screenName(), "puzzles"));
   f.tap(80, 12); assert(!strcmp(g.screenName(), "playmenu"));
   f.tap(80, 123); assert(!strcmp(g.screenName(), "little") && dbg(g, "pages") >= 1);
   rightReads(f, g);
   got = taken(g);
-  assert(wallet == 2 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8) + 1);
+  // three right reads at the kid's level: about 300 points, 2 stars, both still fresh (x2); the reading rating moves up
+  // but not yet a whole level
+  assert(wallet == 8 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8));
+  wallet = 2;
   // the hats: Red Bow (3 stars) is not found yet; two stars buy nothing, five do
   f.tap(80, 12); f.tap(80, 12); assert(!strcmp(g.screenName(), "home"));
   f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));

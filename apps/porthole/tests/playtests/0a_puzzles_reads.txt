@@ -1,6 +1,5 @@
-# Puzzles and Little reads, from the Play menu: every right answer adds bond, 5 right puzzles or 3 right reads earn
-# the kid a star, and a wrong answer shows the answer and costs nothing. Stars buy hats; short of stars, the hat page
-# says where they come from.
+# Puzzles and Little reads, from the Play menu: every right answer adds bond, a round pays its stars at its end (more
+# for what is hard for this kid, os/skills.h), and a wrong answer shows the answer and costs nothing. Stars buy hats.
 newgame Sam Biscuit
 wait 2400
 expect stars=0
@@ -20,6 +19,7 @@ wait 450
 expect-screen puzzle
 ui-check puzzle
 snap 03_question
+wait 1000
 answer-puzzle wrong
 wait 450
 expect right=0
@@ -27,6 +27,7 @@ ui-check puzzle-wrong
 snap 04_wrong
 tap 80 133
 wait 450
+wait 1000
 answer-puzzle right
 wait 450
 ui-check puzzle-right
@@ -34,14 +35,16 @@ snap 05_right
 tap 80 133
 wait 450
 repeat 3
+wait 1000
 answer-puzzle right
 wait 450
 tap 80 133
 wait 450
 end
-# the round's end: 4 right, one short of a star
+# the round's end: 4 right. A new kid's level calibrates, and meanwhile a right answer pays a flat 40 points: 160 is a
+# star with 60 carried, and the day's first stars count twice
 expect puzzles_right=4
-expect stars=0
+expect stars=2
 ui-check puzzle-done
 snap 06_round_done
 wait 1000
@@ -50,10 +53,11 @@ wait 450
 expect-screen puzzles
 tap 80 68
 wait 450
+wait 1000
 answer-puzzle right
 wait 450
 expect puzzles_right=5
-expect stars=1
+expect stars=2
 snap 07_star
 tap 80 12
 wait 450
@@ -72,6 +76,7 @@ tap 110 140
 wait 450
 end
 expect-screen little_ask
+wait 1000
 answer-read right
 wait 450
 ui-check little_ask-right
@@ -83,6 +88,7 @@ tap 110 140
 wait 450
 end
 expect-screen little_ask
+wait 1000
 answer-read right
 wait 450
 tap 80 133
@@ -92,12 +98,13 @@ tap 110 140
 wait 450
 end
 expect-screen little_ask
+wait 1000
 answer-read right
 wait 450
 tap 80 133
 wait 450
 expect reads_right=3
-expect stars=2
+expect stars=8
 expect-screen little_ask
 ui-check little_ask-done
 snap 10_reads_done
@@ -107,7 +114,7 @@ tap 80 12
 wait 450
 expect-screen home
 sheet learn
-# Hats: two stars buy nothing yet; with more, the first hat for sale is bought and worn
+# Hats: the stars buy the first hat for sale (3), and it is worn
 tap 40 27
 wait 450
 expect-screen stats
@@ -119,15 +126,9 @@ ui-check hats-for_sale
 snap 11_hat_for_sale
 tap 80 134
 wait 450
-expect hats=0
-expect stars=2
-snap 12_short
-dbg rich
-tap 80 134
-wait 450
 expect hats=2
 expect hat=1
-expect stars=49
+expect stars=5
 ui-check hats-bought
 snap 13_bought
 sheet hats

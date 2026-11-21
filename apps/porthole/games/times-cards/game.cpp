@@ -7,6 +7,7 @@
 #include "generated/fonts.h"
 #include "launcher_icon.h"
 #include "palette.h"
+#include "skills.h"
 #include "stars.h"
 #include "telemetry.h"
 
@@ -72,6 +73,7 @@ void Game::enter(const AppEnter& e) {
   in_ = Input{};
   home_ = dirty_ = keep_ = false;
   ms_ = e.ms; now_ = e.nowSec; wallet_ = e.stars;
+  book_ = e.book ? e.book : &own_;
   save_ = Save{};
   bool loaded = false;
   // Only this kid's deck. One this build cannot read (a newer build's after a rollback, or damaged) starts a fresh
@@ -84,6 +86,8 @@ void Game::enter(const AppEnter& e) {
       keep_ = !loaded;
     }
   if (!loaded || !save_.level) { setUp(save_, startTable(e.who->age), half()); dirty_ = true; }
+  // The engine's times facts start where this deck stands: its level is known, so no calibration (os/skills.h).
+  skills::seed(*book_, skills::TIMES_FACTS, save_.level, true);
   clampDue(save_, half());
   startSession(save_);
   round_ = Round{};
@@ -103,6 +107,7 @@ void Game::go(Page p) {
 
 void Game::deal() {
   build(round_, save_, half());
+  pay_ = skills::start(*book_, now_);
   go(round_.done() ? P_DONE : P_ASK);
 }
 
@@ -133,10 +138,16 @@ void Game::tell(int card, Grade g, bool retry, uint32_t ms) const {
 // green, or for the right answer to be seen.
 void Game::pick(int i) {
   picked_ = i; pickedMs_ = ms_;
-  const Grade g = answer(round_, save_, i == right_, ms_ - askedMs_, half());
-  tell(face_, g, faceRedo_, ms_ - askedMs_);
+  const uint32_t ms = ms_ - askedMs_;
+  const Grade g = answer(round_, save_, i == right_, ms, half());
+  tell(face_, g, faceRedo_, ms);
+  // The engine's rating and pay: a fact's difficulty is its table, give or take its size (x2, x5, squares are easier,
+  // 6..9 pairs and divisions harder). The deck's own Easy and Hard say quick or slow.
+  const int beta = (isDiv(face_) ? divisorOf(face_) - 1 : tableOf(face_) - 1) * skills::LEVEL + (int)lroundf((sizeOf(face_) - 1) * 200);
+  skills::answer(*book_, pay_, {skills::TIMES_FACTS, beta, OPTIONS, READ_MS, (uint16_t)face_, g == HARD ? skills::SLOW : skills::QUICK},
+                 i == right_, ms);
   dirty_ = true; keep_ = false;
-  if (round_.done()) stars::award(wallet_, ROUND_STARS);
+  if (round_.done()) paid_ = skills::finish(*book_, pay_, now_, wallet_);
 }
 
 // The answer page: a tap picks; once picked, the next card after the green (or, after a miss, the right answer seen).
@@ -235,7 +246,8 @@ void Game::drawDone() const {
                       : round_.wrong * 2 > round_.base ? "Nice try!" : "Great job!";
   centered(FONT40, title, 240, 100, INK);
   indexCard({80, 140, 400, 304});
-  snprintf(s, sizeof s, "+%u stars", (unsigned)ROUND_STARS);
+  if (paid_) snprintf(s, sizeof s, paid_ == 1 ? "+1 star" : "+%d stars", paid_);
+  else snprintf(s, sizeof s, "Almost a star!");
   centered(FONT28, s, 240, 154, AMBER);   // above the margin line, like a card's heading
   const int counts[2] = {round_.easy + round_.hard, round_.wrong};   // right, fast or slow; and missed
   const char* const word[2] = {"Right", "Missed"};

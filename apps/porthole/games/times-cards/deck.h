@@ -92,7 +92,7 @@ constexpr float TIME_WEIGHT = 0.1f;      // each right answer moves the usual ti
 constexpr float TIME_SPREAD = 0.35f;     // the spread of log time assumed before the kid's own is known
 constexpr float TIME_CLIP = 2.5f;        // an answer counts at most this many spreads from the usual time
 constexpr uint16_t RECENT = 200;         // the right-answer share counts about the last 100 to 200 answers
-constexpr uint32_t ROUND_STARS = 2;   // stars (os/stars.h) for every round finished, however it went: trying is the work
+constexpr uint32_t READ_MS = 700;      // no one reads a card and its four answers faster: a right pick sooner is a guess
 
 // The table a kid starts on, from the age on their profile: 6 starts on 2x, 8 on 4x (lower tables count as known).
 inline int startTable(int age) { const int t = age - 4; return t < 1 ? 1 : t > 4 ? 4 : t; }

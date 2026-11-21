@@ -539,6 +539,19 @@ static void restBudget() {
   shell::recharge(c, t); assert(c.playSec == 100);
 }
 
+// A v3 record (before the skills book) loads with its stars and every skill new; v4 keeps the book.
+static void recordV3() {
+  shell::Record r = draft("Sam", 8, 1234); r.stars = 9;
+  skills::seed(r.book, skills::ADD_SUB, 3, true); shell::seal(r);
+  uint8_t v3[shell::REC_V3_SIZE]; memcpy(v3, &r, sizeof v3 - 4);
+  uint16_t ver = 3, size = (uint16_t)shell::REC_V3_SIZE; memcpy(v3 + 4, &ver, 2); memcpy(v3 + 6, &size, 2);
+  uint32_t crc = os::crc32(v3, sizeof v3 - 4); memcpy(v3 + sizeof v3 - 4, &crc, 4);
+  shell::Record out;
+  assert(shell::loadRecord(v3, sizeof v3, out) && out.stars == 9 && !skills::started(out.book, skills::ADD_SUB));
+  assert(out.version == shell::REC_VERSION && out.size == sizeof(shell::Record));
+  assert(shell::loadRecord(&r, sizeof r, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);
+}
+
 // Daily cap, v2 record fields: a v1 record (44 bytes) still loads, with nothing played today.
 static void recordV1() {
   shell::Record r = draft("Sam", 8, 1234); r.playSec = 42; shell::seal(r);
@@ -561,6 +574,7 @@ static void recordV1() {
   crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
   assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
   assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
+  recordV3();
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
