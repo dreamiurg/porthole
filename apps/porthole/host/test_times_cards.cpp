@@ -580,7 +580,7 @@ static void pages() {
   CHECK(on(g, "cards_ask"));
   for (int i = 1; i < ROUND + 1; i++) answerRight(g);   // the rest, and the missed card's second look
   CHECK(on(g, "cards_done") && g.save().answers == ROUND + 1 && g.save().step >= 1);
-  CHECK(wallet == 7 + ROUND_STARS);   // a finished round pays the kid's shared stars
+  CHECK(wallet > 7);   // a finished round pays the kid's shared stars (how many: os/skills.h, host/test_skills.cpp)
   CHECK(g.takeSave(&data, &len, true));
   uint8_t saved[sizeof(Save)]; const size_t savedLen = len; memcpy(saved, data, len);
   settle(g);

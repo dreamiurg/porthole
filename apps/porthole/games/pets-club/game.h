@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "skills.h"
 #include "gfx.h"
 #include "input.h"
 #include "pet.h"
@@ -91,6 +92,12 @@ class Game : public App {
   learn::puzzles::Item question_{}, review_{};
   uint8_t strand_ = 0, level_ = 0, little_ = 0, readLevelWas_ = 0, pageLines_ = 8; int8_t easyAt_ = 0, reviewAt_ = -1;
   bool levelUp_ = false; int asked_ = 0, right_ = 0, answered_ = -1, roundStars_ = 0;
+  skills::Book* book_ = nullptr;   // the kid's skill ratings (AppEnter::book), or own_ when the shell gives none
+  skills::Book own_{};
+  skills::Round pay_{};   // this round's points toward stars (os/skills.h)
+  uint32_t shownMs_ = 0;   // when the current question showed: an answer's time counts from here
+  uint8_t readLevelNow() const;   // the Little reads level (1..READ_LEVELS) the engine's reading rating serves
+  uint8_t roundLevel_ = 0;   // the strand's level when the round began: a higher one at its end is a level up
   uint64_t readsSeen_ = 0;
   char readLines_[learn::READ_LINES][40] = {}; int readLineCount_ = 0;
 
@@ -164,7 +171,8 @@ class Game : public App {
   void updateShelter(); void drawShelter(); void adoptShelterPup();
   void updateWall(); void drawWall();
   void fillNames(const char* src, char* out, size_t cap) const;
-  void earnStar(bool earned);
+  void payRound();   // the round's points into stars, at its end (os/skills.h)
+  skills::Skill puzzleSkill() const;
   void drawStarCount(int y) const;
   void updatePuzzles(); void drawPuzzles();
   uint8_t puzzleLevel(int strand) const; void startPuzzles(int strand); void nextPuzzle();

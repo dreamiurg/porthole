@@ -1,11 +1,11 @@
 // Puzzles and little reads, from the Play menu (moved here from Biscuit on 2026-11-16: they were meant for Pets Club).
 // Puzzles: pick a strand (plus and minus, times, words), then a round of five questions with three answers each, at
-// the kid's own level for that strand: all five right moves it up, two or fewer down (puzzles::nextLevel), one
-// question of the round comes from the level below, and a puzzle missed comes back on a later day (review.h).
+// the kid's own level for that strand, which the skills engine (os/skills.h) moves after every answer; one question of
+// the round comes from the level below, and a puzzle missed comes back on a later day (review.h).
 // Little reads: a round of READ_ROUND short passages at the kid's reading level, each read page by page like a book,
-// then one question with three answers. A right answer brings the dog closer (pet::LEARN_BOND); every
-// PUZZLES_PER_STAR right puzzles or READS_PER_STAR right reads is a star for the kid's wallet (os/stars.h), which Hats
-// spends. A miss shows the right answer and how to get it, and moves on. No timer, no score.
+// then one question with three answers, the level following the engine's reading rating. A right answer brings the dog
+// closer (pet::LEARN_BOND); at a round's end the engine pays its stars into the kid's wallet (os/stars.h), more for what
+// is hard for this kid, and Hats spends them. A miss shows the right answer and how to get it, and moves on. No timer, no score.
 #include <stdio.h>
 #include <string.h>
 #include "content_reads.h"
@@ -22,6 +22,7 @@ using learn::READ_COUNT;
 
 namespace {
 constexpr int READ_ROUND = 3;
+constexpr uint32_t PUZZLE_READ_MS = 800, READ_ASK_MS = 1000;   // no right answer comes sooner unless guessed
 constexpr uint32_t SUMMARY_MS = 1000;   // a slow second tap on the last Next must not skip the round's end
 static_assert(READ_COUNT <= 64, "readsSeen_ holds a bit per read");
 static_assert(sizeof learn::STRAND_LABELS / sizeof *learn::STRAND_LABELS == puzzles::STRAND_COUNT && puzzles::STRAND_COUNT == PUZZLE_STRANDS);
@@ -51,11 +52,17 @@ void Game::fillNames(const char* src, char* out, size_t cap) const {
   }
   out[at] = 0;
 }
-// A star for every PUZZLES_PER_STAR right puzzles or READS_PER_STAR right reads, into the kid's wallet.
-void Game::earnStar(bool earned) {
-  if (!earned) return;
-  stars::award(wallet_, 1); roundStars_++;
-  sound(SND_CHIME); spawn(80, 60, 4, 6);
+// The round's points into stars at its end, by the engine's rules (os/skills.h): harder for this kid pays more.
+void Game::payRound() {
+  roundStars_ = skills::finish(*book_, pay_, now_, wallet_);
+  if (roundStars_) { sound(SND_CHIME); spawn(80, 60, 4, 6); }
+}
+// The engine's skill for a strand: sums, times stories, spelling.
+uint8_t Game::readLevelNow() const {
+  return (uint8_t)(skills::target(*book_, skills::READ_EN, pet::READ_LEVELS, learn::READ_ANSWERS) + 1);
+}
+skills::Skill Game::puzzleSkill() const {
+  return strand_ == puzzles::NUMBERS ? skills::ADD_SUB : strand_ == puzzles::GROUPS ? skills::TIMES_STORY : skills::SPELL_EN;
 }
 void Game::drawStarCount(int y) const {
   char b[24]; const uint32_t n = stars::balance(wallet_);
@@ -78,16 +85,19 @@ void Game::drawPuzzles() {
   drawBackButton();
 }
 
-// The kid's level for a strand: the one saved, or where their age starts it the first time.
+// The kid's level for a strand, from the engine's rating. The first time, the rating starts from the level saved before
+// the engine (known, no calibration) or else from where the kid's age starts the strand, and calibrates from there.
 uint8_t Game::puzzleLevel(int strand) const {
-  const uint8_t saved = save_.puzzleLevels[strand];
-  if (!saved) return puzzles::startLevel((puzzles::Strand)strand, save_.kidAge);
-  return saved <= puzzles::LEVELS[strand] ? (uint8_t)(saved - 1) : (uint8_t)(puzzles::LEVELS[strand] - 1);
+  const skills::Skill k = strand == puzzles::NUMBERS ? skills::ADD_SUB : strand == puzzles::GROUPS ? skills::TIMES_STORY : skills::SPELL_EN;
+  const uint8_t saved = save_.puzzleLevels[strand], top = puzzles::LEVELS[strand];
+  if (saved) skills::seed(*book_, k, saved <= top ? saved - 1 : top - 1, true);
+  else skills::seed(*book_, k, puzzles::startLevel((puzzles::Strand)strand, save_.kidAge), false);
+  return (uint8_t)skills::target(*book_, k, top, puzzles::ANSWERS);
 }
 void Game::startPuzzles(int strand) {
   if (!rng_) rng_ = pet::rnd(save_);
   strand_ = (uint8_t)strand; level_ = puzzleLevel(strand); easyAt_ = (int8_t)puzzles::below(rng_, puzzles::ROUND);
-  levelUp_ = false; asked_ = right_ = roundStars_ = 0; seen_ = 0;
+  levelUp_ = false; asked_ = right_ = roundStars_ = 0; seen_ = 0; pay_ = skills::start(*book_, now_); roundLevel_ = level_;
   const int due = review::due(save_, (puzzles::Strand)strand, (int32_t)pet::dayIndex(now_));   // a missed one takes a place
   reviewAt_ = (int8_t)(due < 0 ? -1 : (easyAt_ + 1 + puzzles::below(rng_, puzzles::ROUND - 1)) % puzzles::ROUND);
   if (due >= 0) { review_ = review::itemOf(save_.puzzleReviews[due]); seen_ = 1u << puzzles::keyOf(review_); }
@@ -98,7 +108,7 @@ void Game::nextPuzzle() {
   question_ = asked_ == reviewAt_ ? review_ : puzzles::fresh((puzzles::Strand)strand_, puzzles::roundLevel(level_, asked_, easyAt_), rng_, seen_);
   questionSeed_ = puzzles::next(rng_);
   seen_ |= 1u << puzzles::keyOf(question_);
-  answered_ = -1; screenMs_ = ms_;   // a finger still down from Next answers nothing
+  answered_ = -1; screenMs_ = shownMs_ = ms_;   // a finger still down from Next answers nothing
 }
 learn::puzzles::Puzzle Game::puzzle() const { uint32_t s = questionSeed_; return puzzles::build(question_, s); }
 
@@ -112,9 +122,9 @@ void Game::updatePuzzle() {
   if (answered_ >= 0) {
     if (!tapBox(in_, NEXT_BTN) || !pressedAfter(0)) return;
     if (++asked_ < puzzles::ROUND) { nextPuzzle(); return; }
-    const uint8_t level = puzzles::nextLevel((puzzles::Strand)strand_, level_, right_);   // saved as level + 1
-    levelUp_ = level > level_; save_.puzzleLevels[strand_] = (uint8_t)(level + 1);
-    pet::learnRoundDone(save_); markDirty();
+    const uint8_t level = puzzleLevel(strand_);   // the engine's, saved as level + 1 (for a build before it)
+    levelUp_ = level > roundLevel_ || pay_.newBest; save_.puzzleLevels[strand_] = (uint8_t)(level + 1);
+    pet::learnRoundDone(save_); payRound(); markDirty();
     roundEndMs_ = screenMs_ = ms_; sound(SND_HAPPY); spawn(80, 60, 4, 10);
     return;
   }
@@ -125,7 +135,11 @@ void Game::updatePuzzle() {
     const bool right = i == p.right;
     right_ += right;
     review::answered(save_, p.item, right, (int32_t)pet::dayIndex(now_));
-    earnStar(pet::puzzleAnswered(save_, now_, right)); markDirty();
+    pet::puzzleAnswered(save_, now_, right);   // the counters and the bond; the stars are the engine's
+    skills::answer(*book_, pay_, puzzleSkill(), p.item.level * skills::LEVEL, puzzles::ANSWERS, right, ms_ - shownMs_,
+                   PUZZLE_READ_MS, (uint16_t)(p.item.strand << 12 | p.item.level << 8 | puzzles::keyOf(p.item)));
+    level_ = puzzleLevel(strand_);   // the next question follows the rating at once
+    markDirty();
     if (right) { sound(SND_YIP); spawn(answerBox(i).x + 17, 100, 1, 4); }
     return;
   }
@@ -166,7 +180,7 @@ void Game::drawPuzzleFeedback(const puzzles::Puzzle& p, bool right) {
   char b[96], s[96];
   snprintf(b, sizeof b, "%s %s", right ? "Yes!" : "It's", p.solved); textCentered(80, 90, b, right ? C_NAVY : C_PLUM);
   char how[48]; puzzles::how(p.item, how);
-  const bool star = right && save_.puzzlesRight % pet::PUZZLES_PER_STAR == 0;   // this answer earned a star
+  const bool star = false;   // stars come at the round's end now (os/skills.h)
   const char* after = star ? learn::STAR_CHEER : right ? learn::CHEERS[asked_ % puzzles::ROUND] : how[0] ? how : learn::NUDGES[asked_ % puzzles::ROUND];
   fillNames(after, s, sizeof s); lines(102, s, C_DKBROWN, 2);
   ui::button(in_, {NEXT_BTN, "Next", nullptr, C_GREEN});
@@ -178,7 +192,7 @@ void Game::drawPuzzleDone() {
   char b[64], s[64];
   snprintf(b, sizeof b, "%d right this time!", right_); textCentered(80, 36, b, C_PLUM);
   if (roundStars_) snprintf(b, sizeof b, "+%d star%s!", roundStars_, roundStars_ > 1 ? "s" : "");
-  else { const int left = pet::PUZZLES_PER_STAR - save_.puzzlesRight % pet::PUZZLES_PER_STAR; snprintf(b, sizeof b, "%d more right for a star.", left); }
+  else snprintf(b, sizeof b, "Almost a star!");
   int y = lines(50, b, C_NAVY, 2, 112);
   fillNames("{pet} is so proud of you.", s, sizeof s); y = lines(y + 2, s, C_DKBROWN, 2, 112);
   if (levelUp_) lines(y + 2, learn::LEVEL_UP, C_DKGREEN, 2, 112);
@@ -190,7 +204,10 @@ void Game::drawPuzzleDone() {
 // ---------------------------------------------------------------- little reads
 void Game::startReads() {
   if (!rng_) rng_ = pet::rnd(save_);
-  asked_ = right_ = roundStars_ = 0; readLevelWas_ = pet::readLevel(save_);
+  // The reading rating starts where Little reads stood (or the kid's age puts it): known, no calibration.
+  skills::seed(*book_, skills::READ_EN, pet::readLevel(save_) - 1, true);
+  save_.readLevel = readLevelNow();
+  asked_ = right_ = roundStars_ = 0; readLevelWas_ = pet::readLevel(save_); pay_ = skills::start(*book_, now_);
   nextRead();
 }
 // One of the level's passages not had since Pets Club opened; when the level had them all, its cycle starts again.
@@ -258,7 +275,11 @@ void Game::updateLittleAsk() {
     answered_ = i; screenMs_ = ms_;
     const bool right = i == READS[little_].right;
     right_ += right;
-    earnStar(pet::readAnswered(save_, now_, right)); markDirty();
+    pet::readAnswered(save_, now_, right);   // the counters and the bond; the stars are the engine's
+    skills::answer(*book_, pay_, skills::READ_EN, (READS[little_].level - 1) * skills::LEVEL, learn::READ_ANSWERS, right,
+                   ms_ - shownMs_, READ_ASK_MS, (uint16_t)little_);
+    save_.readLevel = readLevelNow();   // the next passage follows the rating
+    markDirty();
     if (right) { sound(SND_YIP); spawn(80, ay + i * READ_ANSWER_STEP + 11, 1, 6); }
     return;
   }
@@ -268,7 +289,7 @@ void Game::updateLittleNext() {
   if (backButton()) { go(SC_PLAYMENU); return; }
   if (!tapBox(in_, NEXT_BTN) || !pressedAfter(0)) return;
   if (++asked_ < READ_ROUND) { nextRead(); return; }
-  pet::learnRoundDone(save_); markDirty();
+  pet::learnRoundDone(save_); payRound(); markDirty();
   roundEndMs_ = screenMs_ = ms_; sound(SND_HAPPY); spawn(80, 60, 4, 10);
 }
 void Game::drawLittleAsk() {
@@ -295,7 +316,7 @@ void Game::drawLittleAsk() {
   fillNames(r.answers[r.right], a, sizeof a);
   char line[128]; snprintf(line, sizeof line, right ? "%s." : "The answer: %s.", a);
   int y = lines(52, line, C_NAVY, 3);
-  const bool star = right && save_.readsRight % pet::READS_PER_STAR == 0;   // this answer earned a star
+  const bool star = false;   // stars come at the round's end now (os/skills.h)
   fillNames(right ? (star ? learn::STAR_CHEER : learn::CHEERS[asked_ % puzzles::ROUND]) : r.why, s, sizeof s);
   lines(y + 2, s, C_DKBROWN, 7 - (y - 52) / 9);   // seven lines in all, above Next (host/test_pets_learn.cpp)
   ui::button(in_, {NEXT_BTN, "Next", nullptr, C_GREEN});
@@ -307,7 +328,7 @@ void Game::drawLittleDone() {
   char b[64], s[64];
   snprintf(b, sizeof b, "%d of %d right!", right_, READ_ROUND); textCentered(80, 36, b, C_PLUM);
   if (roundStars_) snprintf(b, sizeof b, "+%d star%s!", roundStars_, roundStars_ > 1 ? "s" : "");
-  else { const int left = pet::READS_PER_STAR - save_.readsRight % pet::READS_PER_STAR; snprintf(b, sizeof b, "%d more right for a star.", left); }
+  else snprintf(b, sizeof b, "Almost a star!");
   int y = lines(50, b, C_NAVY, 2, 112);
   fillNames(pet::readLevel(save_) > readLevelWas_ ? "Next time: longer reads!" : "{pet} loves reading with you.", s, sizeof s);
   lines(y + 2, s, C_DKBROWN, 2, 112);

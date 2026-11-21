@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "app.h"
 #include "day.h"
+#include "skills.h"
 
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
@@ -63,9 +64,10 @@ struct Allowance {
 // Persisted as a raw blob, append-only like Pets Club's Save: new fields go right before crc, bump the version,
 // and teach loadRecord the older size. Never reorder or resize a field.
 constexpr uint32_t REC_MAGIC = 0x50525450;   // "PTRP"
-constexpr uint16_t REC_VERSION = 3;
+constexpr uint16_t REC_VERSION = 4;
 constexpr size_t REC_V1_SIZE = 44;           // v1: no daily cap fields; loads with them zeroed
 constexpr size_t REC_V2_SIZE = 52;           // v2: no stars; loads with none
+constexpr size_t REC_V3_SIZE = 56;           // v3: no skills book; loads with every skill new (games seed them)
 struct Record {
   uint32_t magic;
   uint16_t version, size;
@@ -75,10 +77,12 @@ struct Record {
   uint32_t restUntil, playSec, lastPlayed; // rest budget; lastPlayed also restores the clock when the RTC is lost
   uint32_t dayPlaySec, playDay;            // v2: play counted on local day playDay (now / DAY_SEC)
   uint32_t stars;                          // v3: the kid's star balance, earned and spent in any game (os/stars.h)
+  skills::Book book;                       // v4: the kid's skill ratings and today's star counters (os/skills.h)
   uint32_t crc;
 };
-static_assert(sizeof(Record) == 56, "Record is persisted: append before crc, never resize");
+static_assert(sizeof(Record) == 96, "Record is persisted: append before crc, never resize");
 static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v2 fields start where v1's crc was");
+static_assert(offsetof(Record, book) == REC_V3_SIZE - sizeof(uint32_t), "v3 ends where the book starts");
 static_assert(offsetof(Record, stars) == REC_V2_SIZE - sizeof(uint32_t), "v3's stars start where v2's crc was");
 
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused

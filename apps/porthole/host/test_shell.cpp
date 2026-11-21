@@ -561,6 +561,14 @@ static void recordV1() {
   crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
   assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
   assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
+  // a v3 record (before the skills book): its stars stay, every skill is new
+  skills::seed(r.book, skills::ADD_SUB, 3, true); shell::seal(r);
+  uint8_t v3[shell::REC_V3_SIZE]; memcpy(v3, &r, sizeof v3 - 4);
+  ver = 3; size = (uint16_t)shell::REC_V3_SIZE; memcpy(v3 + 4, &ver, 2); memcpy(v3 + 6, &size, 2);
+  crc = os::crc32(v3, sizeof v3 - 4); memcpy(v3 + sizeof v3 - 4, &crc, 4);
+  assert(shell::loadRecord(v3, sizeof v3, out) && out.stars == 9 && !skills::started(out.book, skills::ADD_SUB));
+  assert(out.version == shell::REC_VERSION && out.size == sizeof(shell::Record));
+  assert(shell::loadRecord(&r, sizeof r, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);   // v4 keeps the book
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
