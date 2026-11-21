@@ -1291,18 +1291,18 @@ void Game::updateShop() {
   if (tapBox(in_, SHOP_HATS)) { hatSel_ = save_.hat; go(SC_HATS); }
   else if (tapBox(in_, SHOP_COLLARS)) { collarSel_ = save_.collar; go(SC_COLLARS); }
 }
-static void shopTile(const Input& in, const ui::Box& b, const char* label, int owned, int all, uint8_t col) {
-  ui::drawButton({b, nullptr, nullptr, col}, ui::pressing(in, b));
-  textCentered(b.x + b.w / 2, b.y + b.h - 10, label, C_WHITE);
-  char n[8]; snprintf(n, sizeof n, "%d/%d", owned, all); text(b.x + b.w - 3 - textWidth(n), b.y + 3, n, C_WHITE);
+static void shopTile(const Input& in, const ui::Button& t, int owned, int all) {
+  ui::drawButton({t.box, nullptr, nullptr, t.col}, ui::pressing(in, t.box));
+  textCentered(t.box.x + t.box.w / 2, t.box.y + t.box.h - 10, t.label, C_WHITE);
+  char n[16]; snprintf(n, sizeof n, "%d/%d", owned, all); text(t.box.x + t.box.w - 3 - textWidth(n), t.box.y + 3, n, C_WHITE);
 }
 void Game::drawShop() {
   clear(C_WALL);
   textCentered(80, 24, "Shop", C_PLUM, 2);
   drawStarCount(42);
-  shopTile(in_, SHOP_HATS, "Hats", ownedCount(save_.hatsMask, NUM_HATS), NUM_HATS, C_PLUM);
+  shopTile(in_, {SHOP_HATS, "Hats", nullptr, C_PLUM}, ownedCount(save_.hatsMask, NUM_HATS), NUM_HATS);
   blitScaled(SPR_HATS[2], SHOP_HATS.x + 8, SHOP_HATS.y + 6, 2);
-  shopTile(in_, SHOP_COLLARS, "Collars", ownedCount(save_.shopOwned, NUM_COLLARS), NUM_COLLARS, C_NAVY);
+  shopTile(in_, {SHOP_COLLARS, "Collars", nullptr, C_NAVY}, ownedCount(save_.shopOwned, NUM_COLLARS), NUM_COLLARS);
   const uint8_t keep = save_.hat; save_.hat = 0;   // the dog in the tile shows its collar, nothing on its head
   if (save_.hasDog) drawDog(SHOP_COLLARS.x + 4, SHOP_COLLARS.y + 29, P_SIT, false);
   save_.hat = keep;
@@ -1325,23 +1325,25 @@ void Game::updateWear() {
   if (backButton()) { go(SC_SHOP); return; }
   if (const int d = arrowTap(in_, 80)) { sel = (sel + n + d) % n; buyHold_ = {}; bounceUntil_ = 0; }
   const WearItem it = wearItem(save_, collars, sel);
-  if (it.owned) {
-    if (!tapBox(in_, WEAR_BTN)) return;
-    if (collars) save_.collar = (uint8_t)sel; else save_.hat = (uint8_t)sel;
-    markDirty(); toast("Looking good!"); return;
-  }
+  if (it.owned) { if (tapBox(in_, WEAR_BTN)) wearIt(collars, sel); return; }
   if (lockedFor(save_, it)) { if (tapBox(in_, WEAR_BTN)) bounceUntil_ = ms_ + 500; return; }   // wiggles what it needs
   const uint32_t have = stars::balance(wallet_);
   if (have < (uint32_t)it.price) { if (tapBox(in_, WEAR_BTN)) shortBy_ = it.price - (int)have; return; }
   buyHold_.step(ui::pressing(in_, WEAR_BTN), ms_);
-  if (buyHold_.progress(BUY_HOLD_MS) >= 1) {
-    if (!stars::spend(wallet_, it.price)) return;
-    if (collars) { save_.shopOwned |= 1u << sel; save_.collar = (uint8_t)sel; }
-    else { pet::gotHat(save_, sel); save_.hat = (uint8_t)sel; }
-    save_.lastBuyDay = (uint16_t)pet::dayIndex(now_); save_.lastBuyItem = (uint8_t)(collars ? 0x80 | sel : sel);   // for a later Give back
-    markDirty();
-    celebrate(collars ? "A new collar!" : "A new hat!", it.name, 3, screen_);
-  } else if (ui::clicked(in_, WEAR_BTN)) bounceUntil_ = ms_ + 500;   // let go early
+  if (buyHold_.progress(BUY_HOLD_MS) >= 1) buyIt(collars, sel, it.price, it.name);
+  else if (ui::clicked(in_, WEAR_BTN)) bounceUntil_ = ms_ + 500;   // let go early
+}
+void Game::wearIt(bool collars, int sel) {
+  if (collars) save_.collar = (uint8_t)sel; else save_.hat = (uint8_t)sel;
+  markDirty(); toast("Looking good!");
+}
+void Game::buyIt(bool collars, int sel, int price, const char* name) {
+  if (!stars::spend(wallet_, price)) return;
+  if (collars) { save_.shopOwned |= 1u << sel; save_.collar = (uint8_t)sel; }
+  else { pet::gotHat(save_, sel); save_.hat = (uint8_t)sel; }
+  save_.lastBuyDay = (uint16_t)pet::dayIndex(now_); save_.lastBuyItem = (uint8_t)(collars ? 0x80 | sel : sel);   // for a later Give back
+  markDirty();
+  celebrate(collars ? "A new collar!" : "A new hat!", name, 3, screen_);
 }
 void Game::drawWear() {
   const bool collars = screen_ == SC_COLLARS;
@@ -1361,30 +1363,30 @@ void Game::drawWear() {
   else if (wig) textCentered(80 + wig, 113, "Hold to buy", C_PLUM);
   if (it.owned) ui::button(in_, {WEAR_BTN, it.worn ? "Wearing" : "Wear it", nullptr, it.worn ? C_DKGRAY : C_GREEN});
   else if (locked) ui::button(in_, {WEAR_BTN, "Locked", nullptr, C_DKGRAY});
-  else {
-    const bool rich = stars::balance(wallet_) >= (uint32_t)it.price, pr = rich && ui::pressing(in_, WEAR_BTN);
-    const int dy = pr ? 1 : 0;
-    ui::drawButton({WEAR_BTN, nullptr, nullptr, rich ? (uint8_t)C_ORANGE : (uint8_t)C_LTGRAY}, pr);
-    const int fill = (int)(buyHold_.progress(BUY_HOLD_MS) * (WEAR_BTN.w - 2));
-    if (fill > 0) roundRect(WEAR_BTN.x + 1, WEAR_BTN.y + 1 + dy, fill, WEAR_BTN.h - 2, C_PLUM);
-    const int ty = WEAR_BTN.y + dy + (WEAR_BTN.h - 7) / 2;
-    if (pr) textCentered(80, ty, "Hold...", C_WHITE);
-    else {
-      char b[16]; snprintf(b, sizeof b, "Buy %d", it.price);
-      const int w = textWidth(b) + 10;
-      text(80 - w / 2, ty, b, rich ? C_WHITE : C_DKGRAY); blit(SPR_STAR, 80 - w / 2 + textWidth(b) + 2, ty - 1);
-    }
-  }
+  else drawBuyButton(it.price);
   drawStarCount(40);
-  if (shortBy_) {   // where stars come from; any tap closes it
-    ui::panel({28, 88, 104, 46}, C_CREAM, C_DKBROWN);
-    char b[16]; snprintf(b, sizeof b, "%d more", shortBy_); textCentered(80, 93, b, C_PLUM);
-    const int have = (int)stars::balance(wallet_), all = have + shortBy_;
-    roundRect(36, 104, 88, 6, C_LTGRAY);
-    if (have > 0) roundRect(36, 104, 88 * have / all, 6, C_GOLD);
-    textCentered(80, 116, "Do puzzles!", C_DKBROWN);
-  }
+  if (shortBy_) drawShortPanel();
   drawBackButton();
+}
+void Game::drawBuyButton(int price) {
+  const bool rich = stars::balance(wallet_) >= (uint32_t)price, pr = rich && ui::pressing(in_, WEAR_BTN);
+  const int dy = pr ? 1 : 0;
+  ui::drawButton({WEAR_BTN, nullptr, nullptr, rich ? (uint8_t)C_ORANGE : (uint8_t)C_LTGRAY}, pr);
+  const int fill = (int)(buyHold_.progress(BUY_HOLD_MS) * (WEAR_BTN.w - 2));
+  if (fill > 0) roundRect(WEAR_BTN.x + 1, WEAR_BTN.y + 1 + dy, fill, WEAR_BTN.h - 2, C_PLUM);
+  const int ty = WEAR_BTN.y + dy + (WEAR_BTN.h - 7) / 2;
+  if (pr) { textCentered(80, ty, "Hold...", C_WHITE); return; }
+  char b[16]; snprintf(b, sizeof b, "Buy %d", price);
+  const int w = textWidth(b) + 10;
+  text(80 - w / 2, ty, b, rich ? C_WHITE : C_DKGRAY); blit(SPR_STAR, 80 - w / 2 + textWidth(b) + 2, ty - 1);
+}
+void Game::drawShortPanel() {   // where stars come from; any tap closes it
+  ui::panel({28, 88, 104, 46}, C_CREAM, C_DKBROWN);
+  char b[24]; snprintf(b, sizeof b, "%d more", shortBy_); textCentered(80, 93, b, C_PLUM);
+  const int have = (int)stars::balance(wallet_), all = have + shortBy_;
+  roundRect(36, 104, 88, 6, C_LTGRAY);
+  if (have > 0) roundRect(36, 104, 88 * have / all, 6, C_GOLD);
+  textCentered(80, 116, "Do puzzles!", C_DKBROWN);
 }
 // The farm asks No / Yes. No! acts on release, however long it was held. Yes sends the dog away, so it takes a
 // YES_HOLD_MS hold that slowly fills the button: a sibling mashing the glass got to the farm in three taps, and a firm

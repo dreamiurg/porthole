@@ -164,6 +164,8 @@ class Game : public App {
   void updateCelebrate(); void drawCelebrate();
   void updateShop(); void drawShop();
   void updateWear(); void drawWear();   // Hats and Collars: flip, try on, wear; buy with a hold
+  void wearIt(bool collars, int sel); void buyIt(bool collars, int sel, int price, const char* name);
+  void drawBuyButton(int price); void drawShortPanel();
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();
