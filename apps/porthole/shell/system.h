@@ -52,7 +52,7 @@ struct SysInfo {
   char ssid[33] = {0};          // saved network, "" if none
 };
 
-// Opt-in telemetry (os/telemetry.h), as the menu shows it. level: telemetry::Level, 0 = off.
+// Telemetry (os/telemetry.h), as the menu shows it. level: telemetry::Level, 0 = off.
 struct TelemetryStatus {
   uint8_t level = 0;
   char host[40] = {0};    // where events go, "" when off

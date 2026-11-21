@@ -90,7 +90,7 @@ time is measured, never displayed: a slow right answer is still right.
 
 ## Telemetry
 
-When the owner turned telemetry on (`os/telemetry.h`), each pick sends `times_cards_answer` (`fact` "7x8" or "56:7", `grade`, `correct`, `ms` from the card showing to the pick, `box`, `retry`) and a finished round sends `level_finished` (`easy`, `hard`, `wrong`, `level_up`). Nothing changes in play or in the save.
+While Usage stats is on (`os/telemetry.h`, on by default), each pick sends `times_cards_answer` (`fact` "7x8" or "56:7", `grade`, `correct`, `ms` from the card showing to the pick, `box`, `retry`) and a finished round sends `level_finished` (`easy`, `hard`, `wrong`, `level_up`). Nothing changes in play or in the save.
 
 ## Save
 

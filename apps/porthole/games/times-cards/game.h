@@ -62,7 +62,7 @@ class Game : public App {
   void deal();
   void turn();
   void pick(int i);   // the kid's answer: options_[i]
-  void tell(int card, Grade g, bool retry, uint32_t ms) const;   // opt-in telemetry
+  void tell(int card, Grade g, bool retry, uint32_t ms) const;   // telemetry
   void updateAnswer();   // the answer page: the pick, then the next card
   void draw() const;
   void drawAnswer() const;

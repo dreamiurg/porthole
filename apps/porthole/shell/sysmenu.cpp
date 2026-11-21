@@ -204,7 +204,7 @@ void Shell::drawSysAdmin() {
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
 }
-// "Usage stats": off by default; on sends what is played with random board and player ids, never a name. While on, the
+// "Usage stats": on by default (opt-out); on sends what is played with random board and player ids, never a name. While on, the
 // board's id shows under it, so its owner can find this board's events.
 void Shell::telemetryTap() {
   const bool on = sys_->telemetryStatus().level;

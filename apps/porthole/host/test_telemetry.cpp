@@ -1,4 +1,4 @@
-// Opt-in telemetry (os/telemetry.h): the owner's settings text, what each level keeps, and the two request bodies.
+// Telemetry (os/telemetry.h): the owner's settings text, what each level keeps, and the two request bodies.
 // The anonymous level is the promise to other families: no player, no details, no id that lasts past a month.
 #include "host/check.h"
 #include <stdio.h>

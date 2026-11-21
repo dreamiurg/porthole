@@ -119,7 +119,7 @@ void Game::turn() {
   go(P_ANSWER);
 }
 
-// Opt-in telemetry (os/telemetry.h): every answer, and each finished round. Nothing leaves a board where it is off.
+// Telemetry (os/telemetry.h): every answer, and each finished round. Nothing leaves a board where it is off.
 void Game::tell(int card, Grade g, bool retry, uint32_t ms) const {
   static const char* const GRADES[] = {"easy", "hard", "wrong"};
   char fact[24];

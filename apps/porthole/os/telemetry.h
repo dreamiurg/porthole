@@ -1,7 +1,7 @@
-// Opt-in telemetry: what the kids play, kept for the family that owns the board. Off by default and off on every board
-// until a grown-up turns it on with "Usage stats" on Admin 2/2 (the personal level: random board and player ids, never a
-// name). From the menu, events go to the Porthole project in PostHog, with the public ingest key built in (the same key
-// the website ships); the menu shows the board's id so its owner can find it there. Another backend comes from /porthole/telemetry.txt on the SD
+// Telemetry: what the kids play, kept for the family that owns the board. On by default (opt-out, 2026-11-21): a board
+// that never had a setting starts with "Usage stats" on (the personal level: random board and player ids, never a name);
+// a grown-up turns it off on Admin 2/2, and that Off is kept. From the menu, events go to the Porthole project in
+// PostHog, with the public ingest key built in (the same key the website ships); the menu shows the board's id so its owner can find it there. Another backend comes from /porthole/telemetry.txt on the SD
 // card or the serial command Y (firmware/main.cpp), kept in NVS "sys"/telem:
 //   posthog                      or   otlp
 //   https://us.i.posthog.com          https://collector.example/v1/logs

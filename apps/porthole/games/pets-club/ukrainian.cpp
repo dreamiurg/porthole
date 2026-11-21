@@ -3,7 +3,7 @@
 // (os/skills.h, WORDS_UK), which calibrates a new kid from the easiest word up and pays the round's stars at its end. A
 // missed word comes back as a meaning on a later day. No timer on screen: the time only tells a guess and a slow read.
 // The frame, the buttons and the English are Pets Club's own 8x8 art on the indexed frame; this screen is RGB565 so
-// the Ukrainian can be Andika (os/uk_fonts.h) drawn over it at native size. Opt-in telemetry (os/telemetry.h) gets
+// the Ukrainian can be Andika (os/uk_fonts.h) drawn over it at native size. Telemetry (os/telemetry.h) gets
 // every answer, so the steps and the calibration can be tuned (docs/superpowers/specs/2026-11-21-ukrainian-telemetry.md).
 #include <stdio.h>
 #include <string.h>

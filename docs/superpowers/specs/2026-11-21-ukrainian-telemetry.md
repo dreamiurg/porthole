@@ -4,7 +4,7 @@ Date: 2026-11-21. Code: `apps/porthole/os/skills.h` (the shared engine: the rati
 `WORDS_UK`), `apps/porthole/games/pets-club/ukrainian.h` (a word's difficulty, the picking), `ukrainian.cpp` (the
 screens and the events), `content_uk.h` (written by `tools/uk_words.py`, which sets every word's step 1..7).
 
-The events go out only when a grown-up has turned on **Usage stats** (Admin, page 2; off by default), with every other
+The events go out only while **Usage stats** is on (Admin, page 2; on by default, a grown-up can turn it off), with every other
 event of the device ([telemetry design](2026-11-16-telemetry-design.md)). They carry the hashed device id and the
 hashed player id, never a name, and the word only as its English meaning.
 
