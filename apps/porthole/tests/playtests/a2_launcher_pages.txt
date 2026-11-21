@@ -26,7 +26,7 @@ snap lp2_page2
 tap 36 104
 wait 600
 expect-screen race_tracks
-tap 54 130
+tap 37 122
 wait 600
 expect-screen launcher
 expect home_page=1

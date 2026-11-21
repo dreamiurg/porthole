@@ -85,6 +85,51 @@ void scaled(const pic::Pic& p, int cx, int bottom, float scale) {
   }
 }
 
+// The kid's car (garage.h): its paint (tools/pictures.py, the rivals' recolor) and a stripe over the body, colored by
+// the stock car's shade under it, two tones; on a light paint the stripe goes dark so it shows.
+constexpr uint32_t STRIPE_TONE[STRIPES][2] = {{0, 0}, {CREAM, 0xC8CCD8}, {GOLD, ORANGE}, {GOLD, 0xE0A020}};
+constexpr uint32_t STRIPE_ON_LIGHT[STRIPES][2] = {{0, 0}, {PLATE, INK}, {HELD, 0xC8301E}, {PLATE, INK}};
+constexpr bool LIGHT_PAINT[PAINTS] = {false, false, false, false, false, true, false, true, true};   // White, Gold, Chrome
+const pic::Pic& kidCar(int paint, int stripe) {
+  paint = paint < PAINTS ? paint : 0; stripe = stripe < STRIPES ? stripe : 0;
+  if (!stripe) return *pic::PAINT[paint];
+  static uint16_t px[sizeof pic::CAR0_PX / sizeof pic::CAR0_PX[0]];
+  static pic::Pic out{pic::CAR0.w, pic::CAR0.h, px};
+  static int made = -1;
+  if (made == paint * STRIPES + stripe) return out;
+  made = paint * STRIPES + stripe;
+  const pic::Pic& base = *pic::PAINT[paint];
+  const uint8_t* mask = pic::STRIPE[stripe];
+  const uint32_t* tone = LIGHT_PAINT[paint] ? STRIPE_ON_LIGHT[stripe] : STRIPE_TONE[stripe];
+  for (int i = 0; i < base.w * base.h; i++) {
+    const bool on = mask[i / 8] >> (i % 8) & 1;
+    px[i] = on ? rgb888_to_565(tone[(pic::CAR0.px[i] >> 11) >= 20 ? 0 : 1]) : base.px[i];   // the red's light or shade
+  }
+  return out;
+}
+// A five-point star in gold, the star of the kid's balance and of a price.
+void star(int cx, int cy, int r, uint32_t color) {
+  float vx[10], vy[10];
+  for (int k = 0; k < 10; k++) {
+    const float a = k * 3.14159265f / 5, rr = k % 2 ? r * 0.45f : (float)r;
+    vx[k] = cx + rr * sinf(a); vy[k] = cy - rr * cosf(a);
+  }
+  const uint16_t c = rgb888_to_565(color);
+  for (int y = cy - r; y <= cy + r; y++)
+    for (int x = cx - r; x <= cx + r; x++) {
+      bool in = false;   // even-odd rule over the star's outline
+      for (int i = 0, j = 9; i < 10; j = i++)
+        if ((vy[i] > y) != (vy[j] > y) && x < (vx[j] - vx[i]) * (y - vy[i]) / (vy[j] - vy[i]) + vx[i]) in = !in;
+      if (in) gfx565::pixel(x, y, c);
+    }
+}
+// "<star> 124": a star and a number (or "+1"), centered on cx.
+void starText(int cx, int y, const char* t, uint32_t color, int scale = 2) {
+  const int w = textWidth(t, scale), r = scale > 2 ? 13 : 10, x = cx - (w + 2 * r + 8) / 2;
+  star(x + r, y + (scale > 2 ? 12 : 8), r, GOLD);
+  text(x + 2 * r + 8, y, t, scale, color);
+}
+
 // ---- interface pieces
 void plate(const ui::Box& b, uint32_t face, uint32_t rim) {
   const gfx565::Rect r = {b.x * 3, b.y * 3, b.w * 3, b.h * 3};
@@ -147,7 +192,7 @@ struct Scratch {
 };
 Scratch* sc = nullptr;
 void buildArc();   // with the HUD, below
-struct Camera { const Race* r; int track; float dist, x; const Duo* duo; };
+struct Camera { const Race* r; int track; float dist, x; const Duo* duo; const pic::Pic* me; int lookalike; };
 // An obstacle is drawn exactly as wide as it hits (2 * w, race.cpp obstacles), its picture scaled up to that; a narrow
 // picture (Industrial's crate stack) is repeated side by side rather than stretched past 1.5 times the car's scale.
 float obstaclePx(const Feature& o) { return 2 * o.w / 100.0f * ROAD_SLOPE * CAR_DEPTH; }   // at the car's depth
@@ -262,7 +307,8 @@ void placeCars(const Camera& cam) {
     const Car& c = r.car[i];
     if (c.finished) continue;   // home rivals leave the road
     const float lift = hop(c) * 0.9f;
-    add({c.dist - cam.dist, pic::CAR[c.paint], c.x, lift, true, 1, c.boostMs > 0});
+    const int look = c.paint == cam.lookalike ? 0 : c.paint;   // never a twin of the kid's paint: stock red instead
+    add({c.dist - cam.dist, pic::CAR[look], c.x, lift, true, 1, c.boostMs > 0});
   }
   const Duo& d = *cam.duo;   // the other kid: the player's car with their avatar over it, never in the way
   if (d.peerOnRoad) add({d.peerDist - cam.dist, pic::CAR[0], d.peerX, 0, true, 1, false, 1, d.peerFace});
@@ -303,7 +349,7 @@ void player(const Camera& cam, float steer, uint32_t ms) {
   const int i = CAR_ROW - HORIZON - 1;
   int x = sc->center[i] + (int)((p.x) * sc->half[i]) + (int)(steer * 3);
   if (p.wobbleMs) x += ((ms / 40) & 1) ? 3 : -3;
-  const pic::Pic& s = *pic::CAR[0];
+  const pic::Pic& s = *cam.me;
   const int lift = (int)(hop(p) * 44);
   fill(x - s.w + 4, CAR_ROW - 6, 2 * s.w - 8, 7, RIM);   // the shadow stays on the road
   if (p.boostMs) flames(x, CAR_ROW - lift, 1, ms, false);
@@ -319,11 +365,15 @@ void wind(float k, uint32_t ms) {
     fill(370 + off - len, y + 13, len, 3, CREAM);
   }
 }
-void scene(const Race& r, const Duo& duo, int track, float steer, uint32_t ms) {
+void scene(const View& v) {
+  const Race& r = *v.race;
+  const Duo& duo = v.duo;
+  const int track = v.track;
   if (!sc) { sc = new (std::nothrow) Scratch(); if (sc) buildArc(); }
   if (!sc) return;
   const Car& p = r.car[PLAYER];
-  Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f, &duo};
+  Camera cam{&r, track, p.dist - CAMERA_BACK, p.x * 0.7f, &duo, &kidCar(v.paint, v.stripe),
+             garage::RIVAL_LOOKALIKE[v.paint < PAINTS ? v.paint : 0]};
   if (fabsf(p.dist - scrollDist) < 50) scroll = fmodf(scroll + curve(*r.track, p.dist) * (p.dist - scrollDist) * 0.9f, 3600);
   else scroll = 0;   // a new race starts the skyline afresh
   scrollDist = p.dist;
@@ -336,9 +386,9 @@ void scene(const Race& r, const Duo& duo, int track, float steer, uint32_t ms) {
   sc->n = 0;
   placeTrack(cam);
   placeCars(cam);
-  drawThings(ms);
-  wind(duo.wind, ms);
-  player(cam, steer, ms);
+  drawThings(v.ms);
+  wind(duo.wind, v.ms);
+  player(cam, v.steer, v.ms);
 }
 
 // ---- the race HUD, after the reference: lap and place numerals on the scene, two round action buttons
@@ -474,11 +524,12 @@ void track(int i, int x, int y, int w, int h) {   // a track's own sky and skyli
       if (c != pic::CLEAR) gfx565::pixel(x + sx, top + sy, c);
     }
 }
-void wheelPreview(float steer, int trackId, int y) {   // a strip of road and the car, moving with the wheel
-  const art::Theme& th = art::THEME[trackId];
+void wheelPreview(const View& v, int y) {   // a strip of road and the kid's car, moving with the wheel
+  const art::Theme& th = art::THEME[v.track];
   fill(110, y, 260, 72, th.roadA);
   fill(110, y, 260, 6, th.rumbleA); fill(110, y + 66, 260, 6, th.rumbleA);
-  const pic::Pic& s = *pic::CAR[0];
+  const float steer = v.steer;
+  const pic::Pic& s = kidCar(v.paint, v.stripe);
   pic(s, 240 + (int)(steer * 90) - s.w, y + 6, 2);
 }
 // The arcade's second player, in place of the title: the other kid's face and Race!; gold once this kid tapped it and
@@ -501,8 +552,8 @@ void tracksPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   if (v.duo.inviteName) raceButton(v);
   else {
-    banner(38, "RALLY", 4, ORANGE);
-    heading(78, "Pick a track", 2, CREAM);
+    banner(30, "RALLY", 4, ORANGE);
+    heading(70, "Pick a track", 2, CREAM);
   }
   for (int i = 0; i < TRACKS; i++) {
     const ui::Box& b = CARD[i];
@@ -514,6 +565,8 @@ void tracksPage(const View& v) {
   }
   button(HOME, "Home", true);
   button(TIMES, "Times", true);
+  button(CAR_BTN, "Car", true);
+  if (v.shop.dot) { gfx565::circle(CAR_BTN.x * 3 + CAR_BTN.w * 3 - 6, CAR_BTN.y * 3 + 6, 9, rgb888_to_565(INK)); gfx565::circle(CAR_BTN.x * 3 + CAR_BTN.w * 3 - 6, CAR_BTN.y * 3 + 6, 6, rgb888_to_565(GOLD)); }
   // The difficulty chip: what the rivals are like, in one word under "Rivals".
   UiAudit::add(MODE_CHIP.x, MODE_CHIP.y, MODE_CHIP.w, MODE_CHIP.h);
   plate(MODE_CHIP, INK, PLATE_HI);
@@ -544,7 +597,7 @@ void lobbyPage(const View& v) {
 void howToPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   heading(54, "How to race", 3, ORANGE);
-  pic(*pic::CAR[0], 92 + (int)(sinf(v.ms / 300.0f) * 6), 100, 2);
+  pic(kidCar(v.paint, v.stripe), 92 + (int)(sinf(v.ms / 300.0f) * 6), 100, 2);
   text(176, 118, "Turn to steer", 2, CREAM);
   pic(pic::BOOST, 86, 176, 2); pic(pic::ROCKET, 126, 176, 2);
   text(176, 182, "Grab boosts", 2, CREAM);
@@ -563,10 +616,15 @@ void calibratePage(const View& v) {
   heading(96, status, 2, v.gripReady || v.duo.waiting ? GREEN : CREAM);
   fill(150, 134, 180, 8, PLATE);
   fill(150, 134, 180 * v.calibration / 1000, 8, v.gripReady ? GREEN : GOLD);
-  wheelPreview(v.steer, v.track, 162);
+  wheelPreview(v, 162);
   centered(240, 252, "Turn right: car goes right", 2, DIM);
   char line[48];   // the time to beat on this track, before the kid starts
-  if (toBeat(v, line, sizeof line)) centered(240, 288, line, 2, GOLD);
+  if (toBeat(v, line, sizeof line)) centered(240, 282, line, 2, GOLD);
+  if (v.shop.save && !v.duo.on) {   // the class this race counts in
+    const int power = garage::racePower(*v.shop.save);
+    if (power) snprintf(line, sizeof line, "Power %d", power);
+    centered(240, 308, power ? line : "Stock", 2, power ? CREAM : GREEN);
+  }
   button(BACK, "Back", true);
   button(NEXT, "Go", v.gripReady && !v.duo.waiting);
 }
@@ -592,41 +650,54 @@ void lapTime(char* out, size_t n, uint32_t ms) {   // "29.8", or "1:02.4" past a
   if (ms < 60000) snprintf(out, n, "%u.%u", (unsigned)(ms / 1000), (unsigned)(ms / 100 % 10));
   else clock(out, n, ms);
 }
-// This track's leaderboard, one row a kid from `y` down: best race and best lap, fastest race first, this kid in gold.
+// A new rank, for a moment over the bottom of the board: its parts are now in the garage.
+void rankBanner(const View& v) {
+  if (v.rankUp < 0) return;
+  char line[48];
+  snprintf(line, sizeof line, "%s! New parts in Garage", garage::RANK_NAME[v.rankUp]);
+  const int w = textWidth(line, 2) + 30;
+  gfx565::roundRect({240 - w / 2, 258, w, 34}, 14, rgb888_to_565(ORANGE));
+  centered(240, 266, line, 2, INK);
+}
+// A Times / Results board's class: Tuned (every time, with its Power) or Stock (parts off).
+void chip(const ui::Box& b, const char* label, bool on) {
+  UiAudit::add(b.x, b.y, b.w, b.h);
+  plate(b, on ? PLATE_HI : INK, on ? GREEN : PLATE);
+  centered(b.x * 3 + b.w * 3 / 2, b.y * 3 + b.h * 3 / 2 - 10, label, 2, on ? GREEN : DIM);
+}
+// This track's leaderboard, one row a kid from `y` down: best race (Tuned: and its Power), fastest first, this kid in gold.
 void boardRows(const View& v, int y) {
-  char t[16], lap[16], line[64];
+  char t[16], line[64];
   for (int i = 0; i < v.boardRows; i++) {
     clock(t, sizeof t, v.board[i].raceMs);
-    if (v.board[i].lapMs) lapTime(lap, sizeof lap, v.board[i].lapMs);
-    else snprintf(lap, sizeof lap, "-");
-    snprintf(line, sizeof line, "%d %.8s %s  lap %s", i + 1, v.board[i].name, t, lap);
-    centered(240, y + i * 26, line, 2, v.board[i].me ? GOLD : CREAM);
+    // No lap a row: with four kids and long names a lap and the Power badge do not both fit the glass, and the Stock
+    // board keeps races only (save.h); the Tuned board names the fastest lap on top.
+    if (v.board[i].power == NO_POWER) snprintf(line, sizeof line, "%d %.8s %s", i + 1, v.board[i].name, t);
+    else snprintf(line, sizeof line, "%d %.8s %s  P%u", i + 1, v.board[i].name, t, v.board[i].power);
+    centered(240, y + i * 24, line, 2, v.board[i].me ? GOLD : CREAM);
   }
 }
 // Times, from the track cards without a race: one track's board, its race and lap records across every kid on top.
 void boardPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
-  heading(46, "Best times", 3, ORANGE);
+  heading(30, "Best times", 3, ORANGE);
   button(PREV_TRACK, "<", true);
   button(NEXT_TRACK, ">", true);
-  centered(240, 104, TRACK[v.track].line1, 2, CREAM);
-  centered(240, 130, TRACK[v.track].line2, 2, CREAM);
+  centered(240, 82, TRACK[v.track].line1, 2, CREAM);
+  centered(240, 108, TRACK[v.track].line2, 2, CREAM);
+  chip(TUNED_CHIP, "Tuned", !v.boardStock);
+  chip(STOCK_CHIP, "Stock", v.boardStock);
   int fast = -1;   // the fastest lap on the board, whoever drove it
   for (int i = 0; i < v.boardRows; i++)
     if (v.board[i].lapMs && (fast < 0 || v.board[i].lapMs < v.board[fast].lapMs)) fast = i;
   char t[16], line[64];
-  if (!v.boardRows) heading(214, "No times yet", 2, DIM);
-  else {
-    clock(t, sizeof t, v.board[0].raceMs);
-    snprintf(line, sizeof line, "Fastest race %.8s %s", v.board[0].name, t);
-    heading(172, line, 2, GREEN);
-  }
-  if (fast >= 0) {
+  if (!v.boardRows) heading(270, v.boardStock ? "No Stock times yet" : "No times yet", 2, DIM);
+  if (fast >= 0) {   // row 1 is the fastest race already (times playtest, finding 3)
     lapTime(t, sizeof t, v.board[fast].lapMs);
     snprintf(line, sizeof line, "Fastest lap %.8s %s", v.board[fast].name, t);
-    heading(198, line, 2, GREEN);
+    heading(226, line, 2, GREEN);
   }
-  boardRows(v, 236);
+  boardRows(v, 254);
   button(BOARD_BACK, "Back", true);
 }
 // A race together: both kids' places and times (the other kid's "racing..." until they're home), no Best times.
@@ -658,6 +729,7 @@ void jointResults(const View& v) {
   button(REPLAY, d.gone ? "Replay" : "Again", true);
   button(RESULT_TRACKS, "Tracks", true);
   button(RESULT_HOME, "Home", true);
+  rankBanner(v);
 }
 // The finish, then this track's leaderboard: every kid's best race and best lap, fastest first, this kid in gold.
 void resultsPage(const View& v) {
@@ -677,11 +749,164 @@ void resultsPage(const View& v) {
     snprintf(line, sizeof line, "%s  (+%u.%u)", t, (unsigned)((mine - v.prevBestMs) / 1000), (unsigned)((mine - v.prevBestMs) / 100 % 10));
   else snprintf(line, sizeof line, "Your time %s", t);
   centered(240, 136, line, 2, v.newBest ? GREEN : CREAM);
-  centered(240, 166, "Best times", 2, DIM);
-  boardRows(v, 194);
+  if (v.earned) {   // beside the place: four kids' rows leave no line of its own
+    snprintf(line, sizeof line, "+%u", v.earned);
+    starText(240 + textWidth(ordinal(r.place), 5) / 2 + 62, 94, line, GOLD, 3);
+  }
+  centered(240, 166, v.boardStock ? "Best times  Stock" : "Best times  Tuned", 2, DIM);
+  boardRows(v, 192);
   button(REPLAY, "Replay", true);
   button(RESULT_TRACKS, "Tracks", true);
   button(RESULT_HOME, "Home", true);
+  rankBanner(v);
+}
+
+// ---- the garage (garage.h)
+void podium(int cx, int y, int a, int b) {   // a dark oval the car stands on
+  for (int dy = -b; dy <= b; dy++) {
+    const int half = (int)(a * sqrtf(1 - (float)(dy * dy) / (b * b)));
+    fill(cx - half, y + dy, 2 * half, 1, dy == -b || dy == b ? PLATE_HI : PLATE);
+  }
+}
+void showCar(const View& v, int paint, int stripe, int top, int scale) {   // the kid's car on its podium, bobbing
+  const pic::Pic& c = kidCar(paint, stripe);
+  const int bob = (int)(sinf(v.ms / 400.0f) * 3);
+  podium(240, top + c.h * scale - 4, c.w * scale * 3 / 4, 10);
+  pic(c, 240 - c.w * scale / 2, top + bob, scale);
+}
+void garagePage(const View& v) {
+  const Save& s = *v.shop.save;
+  gfx565::clear(rgb888_to_565(INK));
+  heading(26, "Garage", 3, ORANGE);
+  char line[32];
+  snprintf(line, sizeof line, "%u", (unsigned)v.shop.stars);
+  starText(240, 66, line, GOLD, 3);
+  showCar(v, s.paint, s.stripe, 108, 3);
+  const bool stock = s.stockOn;
+  if (stock) {
+    heading(214, "Stock", 3, GREEN);
+    heading(250, "Parts off, looks stay", 2, DIM);
+  } else {
+    snprintf(line, sizeof line, "Power %d", garage::power(s));
+    heading(214, line, 3, GOLD);
+    for (int i = 0; i < PARTS * TIERS; i++) fill(143 + i * 13, 252, 10, 10, i < garage::power(s) ? GOLD : PLATE_HI);
+  }
+  UiAudit::add(STOCK_SW.x, STOCK_SW.y, STOCK_SW.w, STOCK_SW.h);   // the Stock switch: parts off in one tap
+  plate(STOCK_SW, INK, stock ? GREEN : PLATE_HI);
+  const int sx = STOCK_SW.x * 3 + STOCK_SW.w * 3 / 2, sy = STOCK_SW.y * 3;
+  centered(sx, sy + 14, "Stock", 2, stock ? GREEN : DIM);
+  gfx565::roundRect({sx - 26, sy + 48, 52, 24}, 12, rgb888_to_565(stock ? GREEN : PLATE_HI));
+  gfx565::circle(stock ? sx + 14 : sx - 14, sy + 60, 9, rgb888_to_565(CREAM));
+  button(LOOKS_BTN, "Looks", true);
+  button(POWER_BTN, "Power", true);
+  button(GARAGE_BACK, "Back", true);
+}
+// The status under an item: its price, how far the kid's stars are from it, what opens it, or that it is theirs.
+void status(const View& v, garage::State st, int y, bool fresh) {
+  using garage::State;
+  const Save& s = *v.shop.save;
+  const garage::Item it = v.shop.item;
+  char line[48];
+  const unsigned price = garage::price(s, it);
+  switch (st) {
+    case State::Buy: snprintf(line, sizeof line, "%u", price); starText(240, y, line, GOLD); break;
+    case State::Short:   // gold, never red: a goal, not a failure
+      snprintf(line, sizeof line, "%u / %u", (unsigned)v.shop.stars, price);
+      centered(240, y, line, 2, GOLD);
+      fill(160, y + 26, 160, 6, PLATE_HI);
+      fill(160, y + 26, 160 * (int)v.shop.stars / (int)price, 6, GOLD);
+      break;
+    case State::Locked: {
+      const int need = garage::unlockAt(s, it);
+      snprintf(line, sizeof line, "%s: %u / %d races", garage::RANK_NAME[garage::rank(need)], s.finishes, need);
+      centered(240, y, line, 2, GOLD);
+      break;
+    }
+    case State::Full: centered(240, y, fresh ? "New! On your car" : "All on your car", 2, GREEN); break;
+    case State::Equip: centered(240, y, "Yours", 2, GREEN); break;
+    case State::Wearing: centered(240, y, fresh ? "New! You drive this" : "On your car", 2, fresh ? GREEN : DIM); break;
+  }
+}
+void action(const ui::Box& b, garage::State st, unsigned price) {
+  using garage::State;
+  static const char* const LABEL[] = {"Buy", "", "Locked", "Full", "Equip", "Wearing"};
+  const bool live = st == State::Buy || st == State::Equip;
+  button(b, LABEL[(int)st], live);
+  if (st != State::Short) return;
+  char t[12];
+  snprintf(t, sizeof t, "%u", price);
+  starText(b.x * 3 + b.w * 3 / 2, b.y * 3 + b.h * 3 / 2 - 10, t, DIM);
+}
+void lookView(const View& v) {
+  const Save& s = *v.shop.save;
+  const garage::Item it = v.shop.item;
+  UiAudit::add(GROUP_CHIP.x, GROUP_CHIP.y, GROUP_CHIP.w, GROUP_CHIP.h);   // Paint and Stripes: a tap turns it over
+  plate(GROUP_CHIP, PLATE, ORANGE);   // the darker face: the dim half still reads
+  const int cy = GROUP_CHIP.y * 3 + GROUP_CHIP.h * 3 / 2 - 10, cx = GROUP_CHIP.x * 3 + GROUP_CHIP.w * 3 / 2;
+  text(cx - 92, cy, "Paint", 2, it.group == garage::PAINT ? GOLD : DIM);
+  text(cx + 8, cy, "Stripes", 2, it.group == garage::STRIPE ? GOLD : DIM);
+  const int paint = it.group == garage::PAINT ? it.index : s.paint, stripe = it.group == garage::STRIPE ? it.index : s.stripe;
+  showCar(v, paint, stripe, 170, 4);   // tried on for free
+  heading(290, garage::name(it), 3, CREAM);
+}
+void partView(const View& v) {
+  const Save& s = *v.shop.save;
+  const int part = v.shop.item.index, tier = garage::tier(s, part);
+  heading(96, garage::PART_NAME[part], 3, CREAM);
+  for (int k = 0; k < TIERS; k++) {
+    gfx565::circle(190 + k * 50, 168, 18, rgb888_to_565(k < tier ? GOLD : PLATE_HI));
+    if (k >= tier) gfx565::circle(190 + k * 50, 168, 13, rgb888_to_565(INK));
+  }
+  char line[40];
+  snprintf(line, sizeof line, "%s %d/%d", garage::PART_GAIN[part], tier < TIERS ? tier + 1 : TIERS, TIERS);
+  heading(208, line, 3, tier < TIERS ? CYAN : GREEN);
+  heading(250, garage::PART_LINE[part], 2, DIM);
+}
+void shopPage(const View& v) {
+  const Shop& sh = v.shop;
+  gfx565::clear(rgb888_to_565(INK));
+  button(SHOP_BACK, "Back", true);
+  button(PREV_ITEM, "<", true);
+  button(NEXT_ITEM, ">", true);
+  const garage::State st = garage::state(*sh.save, sh.stars, sh.item);
+  const bool undo = garage::canUndo(*sh.save, sh.item, *sh.visit);
+  const unsigned price = garage::price(*sh.save, sh.item);
+  if (sh.item.group == garage::PART) { partView(v); status(v, st, 292, undo); }
+  else { lookView(v); status(v, st, 320, undo); }
+  if (undo) { button(SPLIT_UNDO, "Undo", true); action(SPLIT_MAIN, st, price); }
+  else action(MAIN, st, price);
+  if (!sh.hint) return;
+  gfx565::roundRect({48, 150, 384, 84}, 14, rgb888_to_565(GOLD));   // where stars come from, gold and quiet
+  gfx565::roundRect({52, 154, 376, 76}, 11, rgb888_to_565(PLATE));
+  heading(162, "Stars come from", 2, CREAM);
+  heading(194, "races & other games", 2, GOLD);
+}
+// The one question before stars are spent; its Buy is nowhere near the item page's.
+void buyPage(const View& v) {
+  const Shop& sh = v.shop;
+  const Save& s = *sh.save;
+  const garage::Item it = sh.item;
+  gfx565::clear(rgb888_to_565(INK));
+  char line[48];
+  if (it.group == garage::PART) {
+    heading(84, garage::PART_NAME[it.index], 3, CREAM);
+    snprintf(line, sizeof line, "Buy %s %d/%d?", garage::PART_GAIN[it.index], garage::tier(s, it.index) + 1, TIERS);
+  } else {
+    pic(kidCar(it.group == garage::PAINT ? it.index : s.paint, it.group == garage::STRIPE ? it.index : s.stripe), 189, 52, 3);
+    snprintf(line, sizeof line, "Buy %s?", garage::name(it));
+  }
+  heading(156, line, 3, CREAM);
+  heading(196, "You have", 2, DIM);
+  const unsigned price = garage::price(s, it), have = sh.stars;
+  snprintf(line, sizeof line, "%u", have);
+  starText(170, 222, line, GOLD);
+  centered(240, 222, "to", 2, DIM);
+  snprintf(line, sizeof line, "%u", have >= price ? have - price : 0);
+  starText(312, 222, line, GOLD);
+  UiAudit::add(BUY_YES.x, BUY_YES.y, BUY_YES.w, BUY_YES.h);
+  plate(BUY_YES, PLATE_HI, GREEN);
+  centered(BUY_YES.x * 3 + BUY_YES.w * 3 / 2, BUY_YES.y * 3 + BUY_YES.h * 3 / 2 - 10, "Buy", 2, CREAM);
+  button(BUY_NO, "No", true);
 }
 
 }  // namespace
@@ -692,12 +917,15 @@ void draw(const View& v) {
     case Page::Tracks: tracksPage(v); break;
     case Page::HowTo: howToPage(v); break;
     case Page::Calibrate: calibratePage(v); break;
-    case Page::Race: scene(*v.race, v.duo, v.track, v.steer, v.ms); hud(v); callouts(v); break;
+    case Page::Race: scene(v); hud(v); callouts(v); break;
     case Page::Pause: pausePage(v); break;
     case Page::Confirm: confirmPage(v); break;
     case Page::Results: resultsPage(v); break;
     case Page::Board: boardPage(v); break;
     case Page::Lobby: lobbyPage(v); break;
+    case Page::Garage: garagePage(v); break;
+    case Page::Shop: shopPage(v); break;
+    case Page::Buy: buyPage(v); break;
   }
 }
 

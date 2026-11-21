@@ -59,18 +59,26 @@ bool apart(const ui::Box& a, const ui::Box& b) {
 void geometry() {
   using namespace paint;
   assert(inside(PLACE, 2) && apart(PLACE, LAP));   // the place is shown, never tapped
-  const ui::Box pages[][7] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, TIMES, MODE_CHIP},
-                              {BACK, NEXT, BACK, NEXT, BACK, NEXT, NEXT},
-                              {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP, LAP},
-                              {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN, HOME_BTN},
-                              {YES, NO, YES, NO, YES, NO, NO},
-                              {REPLAY, RESULT_TRACKS, RESULT_HOME, REPLAY, REPLAY, REPLAY, REPLAY},
-                              {PREV_TRACK, NEXT_TRACK, BOARD_BACK, BOARD_BACK, BOARD_BACK, BOARD_BACK, BOARD_BACK}};
+  const ui::Box pages[][8] = {{CARD[0], CARD[1], CARD[2], CARD[3], HOME, TIMES, CAR_BTN, MODE_CHIP},
+                              {BACK, NEXT, BACK, NEXT, BACK, NEXT, NEXT, NEXT},
+                              {LAP, ROCKET_BTN, BOOST_BTN, LAP, LAP, LAP, LAP, LAP},
+                              {RESUME, RECENTER, RESTART, TRACKS_BTN, HOME_BTN, HOME_BTN, HOME_BTN, HOME_BTN},
+                              {YES, NO, YES, NO, YES, NO, NO, NO},
+                              {REPLAY, RESULT_TRACKS, RESULT_HOME, REPLAY, REPLAY, REPLAY, REPLAY, REPLAY},
+                              {PREV_TRACK, NEXT_TRACK, BOARD_BACK, TUNED_CHIP, STOCK_CHIP, BOARD_BACK, BOARD_BACK, BOARD_BACK},
+                              {STOCK_SW, LOOKS_BTN, POWER_BTN, GARAGE_BACK, GARAGE_BACK, GARAGE_BACK, GARAGE_BACK, GARAGE_BACK},
+                              {SHOP_BACK, GROUP_CHIP, PREV_ITEM, NEXT_ITEM, MAIN, MAIN, MAIN, MAIN},
+                              {SHOP_BACK, GROUP_CHIP, PREV_ITEM, NEXT_ITEM, SPLIT_UNDO, SPLIT_MAIN, SPLIT_MAIN, SPLIT_MAIN},
+                              {BUY_YES, BUY_NO, BUY_YES, BUY_YES, BUY_YES, BUY_YES, BUY_YES, BUY_YES}};
   for (const auto& page : pages)
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
       assert(page[i].w >= 24 && page[i].h >= 22 && inside(page[i], 2));   // whole 8 mm targets, off the bezel
       for (int j = 0; j < i; j++) if (memcmp(&page[i], &page[j], sizeof page[i])) assert(apart(page[i], page[j]));
     }
+  // A double tap never passes the item page's Buy and the question's: the question's Buy sits clear of every button
+  // the item page can show under the finger.
+  for (const ui::Box& b : {MAIN, SPLIT_UNDO, SPLIT_MAIN, PREV_ITEM, NEXT_ITEM}) assert(apart(BUY_YES, b));
+  for (const ui::Box& b : CARD) assert(apart(TOGETHER, b));   // the Race! button, shown over the cards
 }
 
 void wheel() {
@@ -293,7 +301,7 @@ void saveBlob() {
   seal(s);
   Save back{};
   assert(loadBlob(&s, sizeof s, back) && back.best[2].raceMs == 95000 && back.best[2].lapMs == 30100);
-  assert(back.version == 2 && back.level[2] == -5 && back.level[3] == 3 && back.mode == HARD);
+  assert(back.version == SAVE_VERSION && back.level[2] == -5 && back.level[3] == 3 && back.mode == HARD);
   Save bad = s; bad.best[2].raceMs = 1;
   assert(!loadBlob(&bad, sizeof bad, back));
   assert(!loadBlob(&s, sizeof s - 4, back));   // a v2 blob cut to v1's size is not a v1 blob
@@ -301,6 +309,270 @@ void saveBlob() {
   assert(record(b, 100000, 32000) == (BEST_RACE | BEST_LAP) && b.raceMs == 100000);
   assert(!record(b, 101000, 33000) && b.raceMs == 100000 && b.lapMs == 32000);   // slower: kept
   assert(record(b, 102000, 31000) == BEST_LAP && b.raceMs == 100000 && b.lapMs == 31000);   // a lap, not a race
+}
+
+// The garage's save (v3): a v2 blob from before the garage loads as a stock car, its times on the Stock board too.
+void garageSaveV2() {
+  struct V2 { uint32_t magic; uint16_t version, size; Best best[TRACKS]; int8_t level[TRACKS]; uint8_t mode, pad[3]; uint32_t crc; };
+  static_assert(sizeof(V2) == SAVE_V2_SIZE, "the shipped v2 layout");
+  V2 old{};
+  old.best[1] = {88000, 28000}; old.level[1] = 4; old.mode = NORMAL; old.pad[0] = 9;   // v3 reads pad as finishes
+  os::save::seal(&old, sizeof old, SAVE_MAGIC, 2);
+  Save s{};
+  assert(loadBlob(&old, sizeof old, s) && s.version == SAVE_VERSION && s.size == sizeof(Save));
+  assert(s.best[1].raceMs == 88000 && s.level[1] == 4 && s.mode == NORMAL);
+  assert(s.stock[1] == 880 && !s.stock[0]);   // tenths
+  assert(!s.tiers && !s.looks && !s.paint && !s.finishes);
+}
+// Out-of-range looks and stray bits load as stock; a v3 blob round-trips.
+void garageSave() {
+  garageSaveV2();
+  Save v{}, s{};
+  v.tiers = 0x3FF; v.looks = paintBit(3); v.paint = 12; v.stripe = 3; v.stockOn = 1; v.finishes = 7;   // no paint 12; no Lightning
+  seal(v);
+  assert(loadBlob(&v, sizeof v, s) && s.paint == 0 && s.stripe == 0);
+  assert(s.stockOn && s.finishes == 7 && garage::power(s) == PARTS * TIERS);
+  v.paint = 4;   // Pink, not owned
+  seal(v);
+  assert(loadBlob(&v, sizeof v, s) && s.paint == 0);
+  v.paint = 3; v.stripe = 2; v.looks = paintBit(3) | stripeBit(2); v.stockOn = 0; v.power = 0x0705;
+  v.stock[0] = 900;
+  seal(v);
+  assert(loadBlob(&v, sizeof v, s) && s.paint == 3 && s.stripe == 2);
+  assert(s.power == 0x0705 && s.stock[0] == 900 && !s.stockOn);
+}
+
+// Buying a part: tiers in order, the rank opens the second and third, too few stars take nothing, and Undo gives
+// every star back while the kid is in the garage.
+void partUndo(Save& s, garage::Visit& v);
+void partRules() {
+  using namespace garage;
+  Save s{};
+  uint32_t wallet = 34;
+  Visit v = begin(s);
+  const garage::Item tires{PART, TIRES};
+  assert(state(s, wallet, tires) == State::Buy && price(s, tires) == PART_PRICE[0]);
+  assert(buy(s, &wallet, tires, v) && tier(s, TIRES) == 1 && wallet == 24 && power(s) == 1);
+  assert(state(s, wallet, tires) == State::Locked && unlockAt(s, tires) == RANK_AT[RACER]);   // Rookie: tier 1 only
+  assert(!buy(s, &wallet, tires, v) && tier(s, TIRES) == 1 && wallet == 24);
+  s.finishes = RANK_AT[RACER];
+  assert(rank(s.finishes) == RACER && state(s, wallet, tires) == State::Short);
+  assert(!buy(s, &wallet, tires, v) && wallet == 24);
+  partUndo(s, v);
+}
+void partUndo(Save& s, garage::Visit& v) {   // a Racer, tier 1 bought this visit
+  using namespace garage;
+  const garage::Item tires{PART, TIRES};
+  uint32_t wallet = 30;
+  assert(buy(s, &wallet, tires, v) && tier(s, TIRES) == 2 && wallet == 5);
+  assert(state(s, 999, tires) == State::Locked && unlockAt(s, tires) == RANK_AT[CHAMPION]);
+  assert(canUndo(s, tires, v) && undo(s, &wallet, tires, v) && tier(s, TIRES) == 1 && wallet == 30);
+  assert(undo(s, &wallet, tires, v) && tier(s, TIRES) == 0 && wallet == 40);
+  assert(!canUndo(s, tires, v) && !undo(s, &wallet, tires, v) && wallet == 40);   // nothing left this visit bought
+}
+// Looks: bought, worn at once; Equip puts an owned one back on; Undo, while worn, puts back what the car wore coming
+// in; leaving the garage keeps a look for good.
+void lookRules() {
+  using namespace garage;
+  Save s{};
+  uint32_t wallet = 40;
+  Visit v = begin(s);
+  const garage::Item pink{PAINT, 4}, flames{STRIPE, 2}, red{PAINT, 0};
+  assert(state(s, wallet, pink) == State::Buy && buy(s, &wallet, pink, v) && s.paint == 4 && wallet == 30);
+  assert(state(s, wallet, pink) == State::Wearing && state(s, wallet, red) == State::Equip);
+  wear(s, red);
+  assert(s.paint == 0 && !canUndo(s, pink, v) && state(s, wallet, pink) == State::Equip);   // not on the car: no Undo
+  wear(s, pink);
+  assert(canUndo(s, pink, v) && undo(s, &wallet, pink, v) && s.paint == 0 && wallet == 40);
+  assert(!(s.looks & paintBit(4)));
+  assert(buy(s, &wallet, flames, v) && s.stripe == 2 && wallet == 25);
+  v = begin(s);   // left the garage: the stripe stays for good
+  assert(!canUndo(s, flames, v) && !undo(s, &wallet, flames, v) && s.stripe == 2 && wallet == 25);
+}
+// Champion: every tier of every part, Power 15; the Stock switch races with none of it and keeps it all.
+void garageRules() {
+  using namespace garage;
+  partRules();
+  lookRules();
+  Save s{};
+  Visit v = begin(s);
+  s.finishes = RANK_AT[CHAMPION];
+  uint32_t wallet = 99999;
+  for (int p = 0; p < PARTS; p++) for (int t = 0; t < TIERS; t++) assert(buy(s, &wallet, garage::Item{PART, (uint8_t)p}, v));
+  const garage::Item tires{PART, TIRES};
+  assert(power(s) == PARTS * TIERS && state(s, wallet, tires) == State::Full && !buy(s, &wallet, tires, v));
+  assert(wallet == 99999 - PARTS * (10 + 25 + 50));
+  uint8_t k[PARTS];
+  kit(s, k);
+  assert(k[ENGINE] == 3 && k[NITRO] == 3 && racePower(s) == 15);
+  s.stockOn = 1;
+  kit(s, k);
+  assert(!k[ENGINE] && !k[NITRO] && racePower(s) == 0 && power(s) == 15);
+  assert(!anyToBuy(s, 0) && anyToBuy(s, 5));   // Blue, 5 stars
+  Save z{};   // a null wallet (no shell) buys nothing
+  Visit zv = begin(z);
+  assert(!buy(z, nullptr, garage::Item{PAINT, 1}, zv) && !z.looks);
+}
+
+Save taken(Rig& r) {   // the save the game hands the shell now
+  const void* data = nullptr; size_t len = 0;
+  Save s{};
+  assert(r.g.takeSave(&data, &len, true) && loadBlob(data, len, s));
+  return s;
+}
+void onGlass(Rig& r) {   // every line of the current page inside the round glass
+  gfx::textLogEnabled = true;
+  gfx::textLogReset();
+  r.frame();
+  gfx::textLogEnabled = false;
+  for (int i = 0; i < gfx::textLogCount; i++) {
+    const gfx::TextBox& t = gfx::textLog[i];
+    if (!inside({t.x, t.y, t.w, t.h}, 1)) printf("off glass: %s %d %d %d %d\n", r.g.screenName(), t.x, t.y, t.w, t.h);
+    assert(inside({t.x, t.y, t.w, t.h}, 1));
+  }
+}
+// Looks through their pages: Car from the cards, a paint bought on its own question page (No first), Undo, a hint
+// for a price out of reach, a stripe bought.
+void shopLooks(Rig& r, const uint32_t& wallet) {
+  using S = Game::Screen;
+  r.tap(paint::CAR_BTN);
+  assert(r.g.screen() == S::Garage && !strcmp(r.g.screenName(), "race_garage"));
+  onGlass(r);
+  r.tap(paint::LOOKS_BTN);
+  assert(r.g.screen() == S::Shop);
+  onGlass(r);
+  r.tap(paint::MAIN);   // Red, on the car: nothing to do
+  assert(r.g.screen() == S::Shop && wallet == 12);
+  r.tap(paint::NEXT_ITEM);   // Blue, 5
+  r.tap(paint::MAIN);
+  assert(r.g.screen() == S::Buy && !strcmp(r.g.screenName(), "race_buy"));
+  onGlass(r);
+  r.tap(paint::BUY_NO);
+  assert(r.g.screen() == S::Shop && wallet == 12);
+  r.tap(paint::MAIN);
+  r.tap(paint::BUY_YES);
+  assert(r.g.screen() == S::Shop && wallet == 7);
+  onGlass(r);
+  Save mine = taken(r);
+  assert(mine.paint == 1 && (mine.looks & paintBit(1)) && !r.g.saveUrgent());   // checkpointed with the stars it cost
+  r.tap(paint::SPLIT_UNDO);
+  mine = taken(r);
+  assert(wallet == 12 && mine.paint == 0 && !mine.looks);
+  for (int i = 0; i < 6; i++) r.tap(paint::NEXT_ITEM);   // Gold, 20: too few
+  r.tap(paint::MAIN);
+  assert(r.g.screen() == S::Shop && wallet == 12);   // a hint, no question page
+  onGlass(r);
+  r.tap(paint::GROUP_CHIP);   // Stripes: Racing stripe 10
+  r.tap(paint::NEXT_ITEM);
+  r.tap(paint::MAIN);
+  r.tap(paint::BUY_YES);
+  assert(wallet == 2);
+  r.tap(paint::SHOP_BACK);
+}
+// A part and its locked next tier (Undo beside it), the Stock switch, and Back ending the visit.
+void shopPower(Rig& r, const uint32_t& wallet) {
+  using S = Game::Screen;
+  r.tap(paint::POWER_BTN);
+  onGlass(r);
+  r.g.debugCmd("stars 40");
+  r.tap(paint::MAIN);   // Engine tier 1
+  r.tap(paint::BUY_YES);
+  assert(wallet == 30);
+  onGlass(r);   // tier 2 waits for Racer: Locked, with Undo beside it
+  r.tap(paint::SPLIT_MAIN);
+  assert(r.g.screen() == S::Shop && wallet == 30);
+  r.tap(paint::SHOP_BACK);
+  r.tap(paint::STOCK_SW);
+  onGlass(r);
+  r.tap(paint::GARAGE_BACK);   // the visit ends: no more Undo
+  assert(r.g.screen() == S::Tracks);
+  onGlass(r);
+  const Save mine = taken(r);
+  assert(mine.stripe == 1 && garage::tier(mine, ENGINE) == 1 && mine.stockOn);
+}
+// A Stock race (Power 0) goes on both boards with a star; a tuned one, the Engine on, only on Tuned; the fifth finish
+// makes the kid a Racer, said on Results.
+void tunedRaces(Rig& r, const uint32_t& wallet) {
+  r.toRace(0);
+  assert(r.g.race().tier[ENGINE] == 0);
+  r.wait(500);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(r.g.screen() == Game::Screen::Results && wallet == 31);
+  onGlass(r);
+  Save mine = taken(r);
+  assert(mine.finishes == 1 && mine.stock[0] == tenths(r.g.race().car[PLAYER].finishMs));
+  assert(mine.best[0].raceMs == r.g.race().car[PLAYER].finishMs);
+  r.tap(paint::RESULT_TRACKS);
+  r.tap(paint::CAR_BTN);
+  r.tap(paint::STOCK_SW);
+  r.tap(paint::GARAGE_BACK);
+  r.toRace(0);
+  assert(r.g.race().tier[ENGINE] == 1 && r.g.race().kit.top > 1);
+  r.wait(500);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(wallet == 32 && taken(r).finishes == 2);
+  onGlass(r);
+  r.g.debugCmd("finishes 4");
+  r.tap(paint::REPLAY);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(r.g.screen() == Game::Screen::Results && taken(r).finishes == 5);
+  onGlass(r);
+  r.g.debugPrint();
+}
+// The garage through its pages, for a kid whose sibling already has Stock and Tuned times.
+void garageFlow() {
+  static const Profile all[2] = {{0, "Zoe", 0, 9, 0}, {1, "WWWWWWWW", 1, 7, 0}};
+  Save zoe{};
+  zoe.best[0] = {91000, 30000}; zoe.stock[0] = 930; zoe.power = 7; seal(zoe);
+  const SaveSlot slots[2] = {{&zoe, sizeof zoe}, {nullptr, 0}};
+  uint32_t wallet = 12;
+  Rig r;
+  r.g.enter(AppEnter{&all[1], all, slots, 2, 1000000, r.ms, false, &wallet});
+  shopLooks(r, wallet);
+  shopPower(r, wallet);
+  tunedRaces(r, wallet);
+}
+
+// Rally's pay goes through the skills engine: a solo finish 1 star for the first five a day, together 2 for the first
+// five, and the engine stops it at its play cap for the day (skills::PLAY_DAY, every game that teaches nothing).
+void pay() {
+  uint32_t wallet = 0;
+  purse::Day d;
+  skills::Book book{};
+  const uint32_t day = 86400 * 20000;
+  uint32_t got = 0;
+  for (int i = 0; i < 7; i++) got += purse::payFinish(&book, &wallet, d, day + 100, false);
+  assert(got == 5 && wallet == 5 && book.playStars == 5);
+  for (int i = 0; i < 5; i++) got += purse::payFinish(&book, &wallet, d, day + 200, true);
+  assert(got == skills::PLAY_DAY && wallet == 10 && d.joint == 5);   // two, two, then one: the cap
+  assert(purse::payFinish(&book, &wallet, d, day + 86400, false) == 1 && wallet == 11);   // a new day
+  book.playStars = skills::PLAY_DAY;   // another game used today's play stars up
+  assert(purse::payFinish(&book, &wallet, d, day + 86400, false) == 0 && wallet == 11);
+  assert(purse::payFinish(nullptr, &wallet, d, day + 86400, false) == 1);   // no book (a test): uncapped
+}
+// A finish in the game pays through the kid's book: one star short of the cap pays one, the next finish none, and
+// Results says only what was paid.
+void payCap() {
+  static const Profile all[1] = {{0, "Zoe", 0, 9, 0}};
+  const SaveSlot slots[1] = {{nullptr, 0}};
+  uint32_t wallet = 0;
+  skills::Book book{};
+  book.day = 1000000 / 86400; book.playStars = skills::PLAY_DAY - 1;
+  Rig r;
+  r.g.enter(AppEnter{&all[0], all, slots, 1, 1000000, r.ms, false, &wallet, nullptr, 0, &book});
+  r.toRace(0);
+  r.wait(500);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(r.g.screen() == Game::Screen::Results && wallet == 1 && book.playStars == skills::PLAY_DAY);
+  r.tap(paint::REPLAY);
+  r.g.debugCmd("lastplace");
+  r.wait(5200);
+  assert(r.g.screen() == Game::Screen::Results && wallet == 1);
+  onGlass(r);   // no "+0" line
 }
 
 // Three kids share the board: everyone's best on the track, fastest first, this kid's row marked; a slower race
@@ -336,9 +608,11 @@ void leaderboard() {
   assert(mine.level[0] == -4 && mine.level[1] == 0);
   r.g.debugCmd("level -16");
   assert(r.g.takeSave(&data, &len, true));   // the fixture's level is saved
-  r.g.debugCmd("lastplace");   // at the floor a loss changes nothing: nothing to save
+  r.g.debugCmd("lastplace");   // at the floor a loss leaves the level: only the finish is counted (the rank)
   r.wait(5200);
-  assert(r.g.race().level == LEVEL_MIN && !r.g.takeSave(&data, &len, true));
+  const uint8_t finished = mine.finishes;
+  mine = taken(r);
+  assert(r.g.race().level == LEVEL_MIN && mine.level[0] == LEVEL_MIN && mine.finishes == finished + 1);
   r.g.debugCmd("level 99");   // clamped to the top; a runaway win there stays there
   r.g.debugCmd("lastlap");
   r.wait(5200);
@@ -352,7 +626,7 @@ void leaderboard() {
 void timesPage() {
   static const Profile all[3] = {{0, "WWWWWWWW", 0, 9, 0}, {1, "Sam", 1, 7, 0}, {2, "MMMMMMMM", 2, 6, 0}};
   Save a{}, b{};
-  a.best[0] = {91200, 31800}; a.best[1] = {599900, 599900}; seal(a);
+  a.best[0] = {91200, 31800}; a.best[1] = {599900, 599900}; a.power = 0xFFFF; seal(a);   // P15 rows: the widest
   b.best[0] = {99000, 29800}; b.best[1] = {598000, 0}; seal(b);
   const SaveSlot slots[3] = {{&a, sizeof a}, {nullptr, 0}, {&b, sizeof b}};
   Rig r;
@@ -371,6 +645,9 @@ void timesPage() {
     r.tap(paint::NEXT_TRACK);
   }
   gfx::textLogEnabled = false;
+  r.tap(paint::STOCK_CHIP);   // the Stock board: a v2 kid's times were all stock
+  onGlass(r);
+  r.tap(paint::TUNED_CHIP);
   r.tap(paint::PREV_TRACK);
   r.tap(paint::PREV_TRACK);
   r.g.debugPrint();   // track 3, then: the arrows wrap both ways
@@ -607,6 +884,11 @@ int main() {
   textOnGlass();
   saveBlob();
   saveMigration();
+  garageSave();
+  garageRules();
+  pay();
+  payCap();
+  garageFlow();
   leaderboard();
   timesPage();
   modes();

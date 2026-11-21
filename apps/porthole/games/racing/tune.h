@@ -31,6 +31,28 @@ constexpr float CAR_HALF_W = 0.16f, CAR_LEN = 4.5f;
 constexpr float CAR_REACH = 2.85f, OBSTACLE_PUSH = 4;   // OBSTACLE_PUSH: half-widths a second out of one
 constexpr float PICKUP_HALF_W = 0.26f;
 constexpr int GRID_SPACING = 7;                    // m between grid slots
+// The garage's Power parts (a user decision of 2026-11-21): five parts, bought in order up to three tiers, each tier +1
+// Power. Only the kid's own car changes, never boost strength (BOOST_CAP), rocket damage or the post-hit floor, so
+// rivals that boost with the same 1.35 stay a match; a race together runs stock. By tier, stock first. Part numbers are
+// persisted (save.h tiers): never renumbered, only appended. A full kit (Power 15) gives a competent driver at most
+// 1% a race, and both a competent and a kid driver win Hard at most 24/40, the kid clearly more than stock
+// (host/test_racing_rules.cpp fairKit). The brief's figures (Engine 1.01-1.03, Turbo 2.2-1.6 s, Nitro 1800-2400 ms) won
+// every Normal and Hard race: rivals never pass the kid's top, so 0.35% of pace decides a race (LEVEL_SLOW_STEP below).
+// KIT_SCALE is the largest one factor on those three steps that keeps both drivers within 24/40 on Hard on every track
+// (a scan of 0-100% on 2026-11-21: 4.5% gives Industrial Ruins 28/40); Tires and Suspension, which barely moved a
+// race, keep the brief's figures.
+enum Part : uint8_t { ENGINE, TURBO, TIRES, SUSPENSION, NITRO, PARTS };
+constexpr int TIERS = 3;
+constexpr float KIT_SCALE = 0.0425f;   // the brief's Engine, Turbo and Nitro steps, scaled alike on every tier
+constexpr float KIT_TOP[] = {1, 1 + 0.01f * KIT_SCALE, 1 + 0.02f * KIT_SCALE, 1 + 0.03f * KIT_SCALE};   // Engine: dry top
+constexpr float KIT_ACCEL_S[] = {2.5f, 2.5f - 0.3f * KIT_SCALE, 2.5f - 0.6f * KIT_SCALE, 2.5f - 0.9f * KIT_SCALE};   // Turbo
+constexpr float KIT_STEER[] = {1.5f, 1.6f, 1.7f, 1.8f};               // Tires: STEER_RATE
+constexpr float KIT_ICE_TAU[] = {0.25f, 0.20f, 0.15f, 0.11f};         // Tires: ICE_TAU
+constexpr float KIT_ICE_RESPONSE[] = {0.75f, 0.80f, 0.85f, 0.90f};    // Tires: ICE_RESPONSE
+constexpr float KIT_OFFROAD[] = {0.55f, 0.61f, 0.67f, 0.72f};         // Suspension: OFFROAD_CAP
+constexpr float KIT_SLOW[] = {0.65f, 0.70f, 0.74f, 0.78f};            // Suspension: SLOW_CAP
+constexpr uint32_t KIT_BOOST_MS[] = {1500, 1500 + uint32_t(300 * KIT_SCALE + 0.5f), 1500 + uint32_t(600 * KIT_SCALE + 0.5f),
+                                     1500 + uint32_t(900 * KIT_SCALE + 0.5f)};   // Nitro tank: BOOST_MS
 // Adaptive rivals (a user decision of 2026-10-31): each kid has a level per track (race.h nextLevel). A win adds one,
 // two after a runaway (the kid led for RUNAWAY_LED/RUNAWAY_OF of the race). A loss at 0 or below takes two; from
 // 1..LEVEL_GENTLE it drops to 0; above that, while the rung is at most LEVEL_EASY, straight to -2 (there the rivals
