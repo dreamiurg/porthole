@@ -42,9 +42,10 @@ turns it off. Serial: `Y posthog https://us.i.posthog.com phc_<key>` (one line, 
 ## How it runs
 
 Games and the shell call `telemetry::emit()`; with no queue installed (the sim, the tests, a board left off) it does
-nothing. The firmware keeps a 1024-event queue in PSRAM, and while the screen is dark and wifi is saved it sends the
-oldest events as one request every 15 minutes (5 s between batches while more wait), as a radio job like the update
-check. 2xx drops the sent events; 400, 413 and 422 drop them as bad; anything else keeps them for the next try.
+nothing. The firmware keeps a 1024-event queue in PSRAM, and while wifi is saved it sends the oldest events as one
+request a minute after boot and then every 2 minutes, during play too (5 s between batches while more wait), as a radio
+job like the update check. Until 2026-11-21 it waited for a dark screen every 15 minutes; Дмитро asked for sooner,
+because the kids unplug a battery-powered board right after playing and the queue is lost at power-off. 2xx drops the sent events; 400, 413 and 422 drop them as bad; anything else keeps them for the next try.
 
 ## Events
 
