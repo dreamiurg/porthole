@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Convert lv_font_conv 1.5.3 C output into a game's generated/fonts.h (os/font.h tables, no LVGL).
 
-    python3 tools/fontconv.py [--game biscuit|tiltfc|radar|adult] fontN.c ...
+    python3 tools/fontconv.py [--game biscuit|tiltfc|radar|adult|cards|cardsbig|uk] fontN.c ...
 
 Run from apps/porthole. Each game's font, its output and its inputs (GAMES below):
 
@@ -48,8 +48,16 @@ Plane Radar: B612 Mono Bold (games/plane-radar/fonts/, from github.com/google/fo
         --output build/radar$n.c; done
     python3 tools/fontconv.py --game radar build/radar{18,24,32}.c
 
+Ukrainian text in any game (os/fonts/README.md): Andika Bold, ASCII plus the Ukrainian alphabet and its apostrophes.
+
+    R=0x20-0x7e,0x2bc,0x404,0x406-0x407,0x410-0x429,0x42c,0x42e-0x449,0x44c,0x44e-0x44f,0x454,0x456-0x457,0x490-0x491,0x2019
+    for n in 24 48 88; do npx lv_font_conv@1.5.3 --font os/fonts/Andika-Bold.ttf --range $R --size $n --bpp 4
+        --format lvgl --no-compress --force-fast-kern-format --lv-include lvgl.h --lv-font-name uk_font_$n
+        --output build/uk$n.c; done
+    python3 tools/fontconv.py --game uk build/uk{24,48,88}.c
+
 The converter's layout is checked, not assumed: 4 bpp plain bitmaps, class kerning at kern_scale 16 (or none, for a
-monospace font), ASCII 32..126 as glyphs 1..95 and, if any, a sparse list of extra code points after it. Anything
+monospace font), ASCII 32..126 as glyphs 1..95 and, if any, runs or sparse lists of extra code points after it, in order. Anything
 else stops the conversion.
 """
 
@@ -117,6 +125,14 @@ GAMES = {
         "see games/plane-radar/fonts/OFL.txt",
         None,  # callsigns and plane types arrive over the air: every ASCII glyph
     ),
+    "uk": Game(
+        "os/uk_fonts.h",
+        "ukfont",
+        "Andika Bold",
+        "Copyright (c) 2004-2022 SIL International (http://www.sil.org/).",
+        "see os/fonts/OFL.txt",
+        None,
+    ),
 }
 
 
@@ -157,17 +173,20 @@ def kerning(src: str, n_glyphs: int) -> tuple[list[int], list[int], list[int], i
 
 
 def extra_cmap(src: str) -> list[int]:
-    """The extra code points after ASCII (the second cmap), or none."""
+    """The extra code points after ASCII (every cmap after the first, in glyph order), or none."""
     cmaps = re.findall(r"\.range_start = (\d+), \.range_length = (\d+), \.glyph_id_start = (\d+),.*?\.type = (\w+)", src, re.S)
-    expect(len(cmaps) == field(src, "cmap_num") and len(cmaps) in (1, 2), "one or two cmaps")
+    expect(len(cmaps) == field(src, "cmap_num") and len(cmaps) >= 1, "at least one cmap")
     expect(cmaps[0] == ("32", "95", "1", "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY"), "first cmap is not ASCII 32..126 as glyphs 1..95")
-    if len(cmaps) == 1:
-        return []
-    expect(cmaps[1][2] == "96", "second cmap does not start at glyph 96")
-    if cmaps[1][3] == "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY":  # a run of consecutive code points (one alone comes as this)
-        return list(range(int(cmaps[1][0]), int(cmaps[1][0]) + int(cmaps[1][1])))
-    expect(cmaps[1][3] == "LV_FONT_FMT_TXT_CMAP_SPARSE_TINY", "second cmap is neither a run nor a sparse list")
-    return [int(cmaps[1][0]) + o for o in array(src, "unicode_list_1")]
+    extras: list[int] = []
+    for i, (start, length, glyph, kind) in enumerate(cmaps[1:], 1):
+        expect(int(glyph) == 96 + len(extras), f"cmap {i} does not start at glyph {96 + len(extras)}")
+        if kind == "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY":  # a run of consecutive code points (one alone comes as this)
+            extras += range(int(start), int(start) + int(length))
+        else:
+            expect(kind == "LV_FONT_FMT_TXT_CMAP_SPARSE_TINY", f"cmap {i} is neither a run nor a sparse list")
+            extras += [int(start) + o for o in array(src, f"unicode_list_{i}")]
+    expect(extras == sorted(set(extras)) and len(extras) <= 255, "extra code points not ascending, or more than 255")
+    return extras
 
 
 def keep_only(glyphs: list[tuple], bitmap: list[int], keep: str | None, extras: list[int]) -> tuple[list[tuple], list[int]]:

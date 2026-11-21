@@ -55,7 +55,9 @@ check. 2xx drops the sent events; 400, 413 and 422 drop them as bad; anything el
 | `game_opened` | `game` |
 | `game_closed` | `game`, `seconds`, `stars`, `exit` (`home`, `rest`, `time_up`) |
 | `times_cards_answer` | `fact`, `grade`, `correct`, `ms`, `box`, `retry` |
-| `level_finished` | `game`, `what`, `easy`, `hard`, `wrong`, `level_up` |
+| `level_finished` | `game`, `what`, `easy`, `hard`, `wrong`, `level_up`; Pets Club's Ukrainian (`what` = `ukrainian`): `right`, `asked`, `rating`, `calibrating` |
+| `uk_answer` | `kind` (`meaning`, `lookalike`, `syllables`), `word` (its English meaning), `step`, `rating` (after the answer), `correct`, `ms` |
+| `uk_calibrated` | `rating`, `answers`: the kid's step found ([tuning](2026-11-21-ukrainian-telemetry.md)) |
 
 ## Known limits
 

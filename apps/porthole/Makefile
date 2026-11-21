@@ -38,6 +38,7 @@ test_toytown_SRC :=
 test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
 test_pet_SRC := $(wildcard os/*.cpp) $(wildcard games/pets-club/*.cpp)
 test_pets_learn_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
+test_pets_uk_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
 test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
@@ -170,6 +171,7 @@ lint: snap
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
 	$(PY) games/pets-club/tools/check_learn.py
+	$(PY) games/pets-club/tools/uk_words.py --check
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py
