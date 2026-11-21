@@ -191,8 +191,20 @@ static const int NUM_WORDS = (int)(sizeof(WORDS) / sizeof(WORDS[0]));
 
 static const char* const TRICK_NAMES[8] = {"Sit", "Shake", "Speak", "Spin", "Roll Over", "Play Dead", "Beg", "Dance"};
 static const char* const HAT_NAMES[8] = {"None", "Red Bow", "Party Hat", "Glasses", "Bandana", "Crown", "Wizard Hat", "Flower"};
-// Stars for a hat not found yet (Hats sells them; os/stars.h). Gifts still bring them free, every third gift.
+// Stars for a hat not found yet (the Shop sells them, at shopPrice; os/stars.h). Gifts still bring them free, every third gift.
 static const uint8_t HAT_PRICES[8] = {0, 3, 4, 5, 6, 8, 10, 12};
+// Collars (Stats > Shop > Collars): recolors of the band and tag tools/art.py paints on every dog. Red is the one every
+// dog has, free. A locked one needs its sticker first: unlocks follow what the kid keeps, never today's hearts.
+struct Collar { const char* name; uint16_t price; uint8_t band, band2, tag; int8_t needs; };   // needs: sticker, -1 none
+static const Collar COLLARS[8] = {
+  {"Red Collar", 0, C_RED, C_RED, C_GOLD, -1},        {"Blue Collar", 15, C_BLUE, C_BLUE, C_GOLD, -1},
+  {"Green Collar", 15, C_GREEN, C_GREEN, C_GOLD, -1}, {"Pink Collar", 15, C_PINK, C_PINK, C_GOLD, -1},
+  {"Purple Collar", 20, C_PLUM, C_PLUM, C_GOLD, -1},  {"Stripes", 30, C_RED, C_WHITE, C_GOLD, -1},   // band2: every other column
+  {"Bell Collar", 45, C_NAVY, C_NAVY, C_YELLOW, 11},  {"Gold Collar", 120, C_GOLD, C_GOLD, C_WHITE, 14}};   // 11 Best Friends, 14 All Grown Up
+// One knob for every Shop price (hats and collars), in percent, so the prices follow the stars engine's daily rate
+// without touching the tables. Never under 1 star.
+static const int PRICE_PCT = 100;
+inline int shopPrice(int base) { const int p = (base * PRICE_PCT + 50) / 100; return base && p < 1 ? 1 : p; }
 static const char* const STICKER_NAMES[16] = {
   "First Meal", "First Story", "Bookworm", "Library Card", "Bone Catcher", "Super Speller", "One Week", "Two Weeks",
   "Trick Star", "Show Dog", "Squeaky Clean", "Best Friends", "Early Bird", "Party Time", "All Grown Up", "Hat Collector"};

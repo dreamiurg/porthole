@@ -12,6 +12,7 @@
 #include "content_uk.h"
 #include "pet.h"
 #include "puzzles.h"
+#include "review.h"
 #include "skills.h"
 
 namespace learn::uk {
@@ -45,24 +46,17 @@ inline skills::Item item(Kind k, int word, uint32_t ms) {
 }
 
 // ---------------------------------------------------------------- the review queue: a missed word comes back tomorrow
-// Two places in the save (pet.h ukReview), oldest first; a third miss lets the oldest go.
-constexpr int REVIEWS = 2;
-static_assert(WORD_COUNT < 255, "a review is a word index + 1 in a byte");
-inline uint16_t& reviewDue(Save& s, int i) { return i ? s.ukReviewDue1 : s.ukReviewDue0; }
-inline uint16_t reviewDue(const Save& s, int i) { return i ? s.ukReviewDue1 : s.ukReviewDue0; }
-inline void missed(Save& s, uint16_t word, uint16_t today) {
-  int at = s.ukReview[0] == word + 1 ? 0 : s.ukReview[1] == word + 1 ? 1 : !s.ukReview[0] ? 0 : !s.ukReview[1] ? 1 : -1;
-  if (at < 0) { s.ukReview[0] = s.ukReview[1]; s.ukReviewDue0 = s.ukReviewDue1; at = 1; }   // full: the oldest goes
-  s.ukReview[at] = (uint8_t)(word + 1); reviewDue(s, at) = (uint16_t)(today + 1);
-}
-inline void reviewed(Save& s, uint16_t word) {   // a review answered right leaves the queue
-  if (s.ukReview[0] == word + 1) { s.ukReview[0] = s.ukReview[1]; s.ukReviewDue0 = s.ukReviewDue1; }
-  else if (s.ukReview[1] != word + 1) return;
-  s.ukReview[1] = 0; s.ukReviewDue1 = 0;
-}
+// The puzzles' own queue (review.h, pet.h puzzleReviews: eight places, oldest first) with a strand past the puzzles'
+// (which never ask it): the word's index in a and b. A miss is due the next day; a right answer when due takes it off.
+constexpr uint8_t REVIEW_STRAND = puzzles::STRAND_COUNT;
+inline puzzles::Item reviewItem(uint16_t word) { return {REVIEW_STRAND, 0, (uint8_t)(word & 0xFF), (uint8_t)(word >> 8), 0}; }
+inline void answered(Save& s, uint16_t word, bool right, uint16_t today) { review::answered(s, reviewItem(word), right, today); }
 inline int due(const Save& s, uint16_t today) {   // the oldest word due today, or -1 (a word past the list is skipped)
-  for (int i = 0; i < REVIEWS; i++)
-    if (s.ukReview[i] && s.ukReview[i] - 1 < WORD_COUNT && reviewDue(s, i) <= today) return s.ukReview[i] - 1;
+  for (int i = 0; i < review::count(s); i++) {
+    const PuzzleReview& r = s.puzzleReviews[i];
+    const int word = r.a | r.b << 8;
+    if (r.strand == REVIEW_STRAND && r.due && r.due <= today && word < WORD_COUNT) return word;
+  }
   return -1;
 }
 

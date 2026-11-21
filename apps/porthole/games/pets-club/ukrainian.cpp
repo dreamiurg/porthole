@@ -114,8 +114,7 @@ void Game::ukAnswer(bool right) {
   const skills::State before = skills::get(*book_, skills::WORDS_UK);
   skills::answer(*book_, pay_, uk::item(ukQ_.kind, ukQ_.word, took), right, took);
   const skills::State after = skills::get(*book_, skills::WORDS_UK);
-  if (!right) uk::missed(save_, ukQ_.word, (uint16_t)pet::dayIndex(now_));
-  else if (asked_ == ukReviewAt_ && took >= uk::READ_MS[ukQ_.kind]) uk::reviewed(save_, ukQ_.word);   // not a guess
+  if (!right || took >= uk::READ_MS[ukQ_.kind]) uk::answered(save_, ukQ_.word, right, (uint16_t)pet::dayIndex(now_));   // a guess takes nothing off
   right_ += right; screenMs_ = ms_;
   pet::puzzleAnswered(save_, now_, right); markDirty();   // the counters and the bond; the stars are the engine's
   if (right) { sound(SND_YIP); spawn(80, 96, 1, 4); }

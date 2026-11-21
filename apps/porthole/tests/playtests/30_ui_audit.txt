@@ -224,10 +224,22 @@ wait 450
 dbg hats
 tap 114 123
 wait 450
+ui-check shop
+snap d03_shop
+tap 50 78
+wait 450
 tap 134 80
 wait 450
 ui-check hats
 snap d03_hats
+tap 80 12
+wait 450
+tap 110 78
+wait 450
+ui-check collars
+snap d03_collars
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12

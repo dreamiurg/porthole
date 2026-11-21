@@ -25,6 +25,7 @@ static bool loadOld(const uint8_t* p, size_t n, Save& out) {
 static void makeSafe(Save& out) {
   if (out.breed >= NUM_BREEDS) out.breed = 0;
   if (out.hat >= NUM_HATS) out.hat = 0;
+  if (out.collar >= NUM_COLLARS) out.collar = 0;
   if (out.stage > STAGE_GROWN) out.stage = STAGE_GROWN;
   for (uint8_t& b : out.wallBreeds) if (b >= NUM_BREEDS) b = 0;
   if (out.wallCount > WALL_SLOTS) out.wallCount = WALL_SLOTS;

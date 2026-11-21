@@ -464,6 +464,8 @@ tap 40 27
 wait 450
 tap 114 123
 wait 450
+tap 50 78
+wait 450
 expect-screen hats
 tap 134 80
 wait 100
@@ -471,6 +473,8 @@ tap 80 134
 wait 450
 expect hat=1
 snap 09_corgi_bow
+tap 80 12
+wait 450
 tap 80 12
 wait 450
 tap 80 12

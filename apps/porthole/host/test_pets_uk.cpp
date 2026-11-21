@@ -61,19 +61,24 @@ static void variety() {
   CHECK(lowest < STEPS);
 }
 
+// Missed words ride the puzzles' review queue (review.h) as their own strand: due the next day, off when answered
+// right while due, and never asked by a puzzle strand (nor a puzzle by this).
 static void reviews() {
   Save p{};
   CHECK(due(p, 10) < 0);
-  missed(p, 7, 10);
+  answered(p, 7, false, 10);
   CHECK(due(p, 10) < 0 && due(p, 11) == 7);
-  missed(p, 7, 12);   // missed again: one place, due again the day after
-  CHECK(due(p, 12) < 0 && due(p, 13) == 7 && !p.ukReview[1]);
-  reviewed(p, 7);
-  CHECK(due(p, 99) < 0);
-  missed(p, 1, 10); missed(p, 2, 10); missed(p, 3, 10);   // a full queue lets its oldest go
-  CHECK(due(p, 11) == 2);
-  reviewed(p, 2); CHECK(due(p, 11) == 3 && !p.ukReview[1]);
-  p.ukReview[0] = (uint8_t)(WORD_COUNT + 5);   // a word past the content (a save from a longer list) is skipped
+  answered(p, 7, false, 12);   // missed again: one place, due again the day after
+  CHECK(due(p, 12) < 0 && due(p, 13) == 7 && learn::review::count(p) == 1);
+  answered(p, 7, true, 12);    // right before it is due: it stays
+  CHECK(due(p, 13) == 7);
+  answered(p, 7, true, 13);
+  CHECK(due(p, 99) < 0 && learn::review::count(p) == 0);
+  answered(p, 200, false, 10);   // a word past 255 fits too
+  learn::review::answered(p, {learn::puzzles::NUMBERS, 1, 2, 3, 0}, false, 10);
+  CHECK(due(p, 11) == 200 && learn::review::due(p, learn::puzzles::NUMBERS, 11) == 1);
+  for (int s = 0; s < learn::puzzles::STRAND_COUNT; s++) CHECK(learn::review::due(p, (learn::puzzles::Strand)s, 11) != 0);
+  p.puzzleReviews[0].a = 0xFF; p.puzzleReviews[0].b = 0xFF;   // a word past the content (a save from a longer list) is skipped
   CHECK(due(p, 11) < 0);
 }
 
