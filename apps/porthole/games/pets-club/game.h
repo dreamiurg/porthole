@@ -37,7 +37,7 @@ class Game : public App {
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
                           SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
                           SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL,
-                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_COUNT };
+                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_SHOP, SC_COLLARS, SC_COUNT };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -80,7 +80,9 @@ class Game : public App {
   // gift / celebrate
   pet::Gift gift_{}; bool giftOpened_ = false; char celebTitle_[24] = {0}, celebText_[48] = {0}; int celebIcon_ = 0;
   uint16_t stickersSeen_ = 0;
-  int statsPage_ = 0; int hatSel_ = 0;
+  int statsPage_ = 0; int hatSel_ = 0, collarSel_ = 0;
+  ui::Hold buyHold_;          // the Shop's Buy, held BUY_HOLD_MS (go() resets it)
+  int shortBy_ = 0;           // the Shop's "N more" panel: stars still missing, 0 = closed (go() closes it)
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
   ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
@@ -160,7 +162,10 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void updateGift(); void drawGift();
   void updateCelebrate(); void drawCelebrate();
-  void updateHats(); void drawHats();
+  void updateShop(); void drawShop();
+  void updateWear(); void drawWear();   // Hats and Collars: flip, try on, wear; buy with a hold
+  void wearIt(bool collars, int sel); void buyIt(bool collars, int sel, int price, const char* name);
+  void drawBuyButton(int price); void drawShortPanel();
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();

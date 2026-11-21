@@ -135,6 +135,24 @@ static void saveV3Migrates(Save s) {
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
 }
 
+// The shop lives in bytes that were reserved in v4 and always zero: an older v4 save has nothing bought and wears the
+// Red Collar; a collar past COLLARS loads as the Red one.
+static void shopFieldsStartEmpty(Save s) {
+  assert(!s.collar && !s.collarsOwned && !s.lastBuyDay && !s.lastBuyItem);
+  Save m, bad = s; bad.collar = 200; pet::seal(bad);
+  assert(pet::loadBlob(&bad, sizeof bad, m) && m.collar == 0);
+}
+
+// Every collar is a real recolor with a name and a price; the Red one is free and the locked ones name real stickers.
+static void collarTable() {
+  assert(COLLARS[0].price == 0 && COLLARS[0].band == C_RED && COLLARS[0].tag == C_GOLD && COLLARS[0].needs < 0);
+  for (int i = 1; i < NUM_COLLARS; i++) {
+    assert(COLLARS[i].name && COLLARS[i].price > 0 && shopPrice(COLLARS[i].price) >= 1 && COLLARS[i].needs < NUM_STICKERS);
+    assert(COLLARS[i].band != C_RED || COLLARS[i].band2 != C_RED);   // each looks different from the free one
+  }
+  assert(shopPrice(0) == 0 && shopPrice(3) >= 1);
+}
+
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
   pet::adoptFromShelter(s, now, 3, "Choco");
   assert(pet::valid(s) && s.hasDog == 1 && s.breed == 3 && !strcmp(s.petName, "Choco"));
@@ -595,13 +613,19 @@ static void learningPaysStars() {
   // but not yet a whole level
   assert(wallet == 8 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8));
   wallet = 2;
-  // the hats: Red Bow (3 stars) is not found yet; two stars buy nothing, five do
+  // the hats (Stats > Shop > Hats): Red Bow (3 stars) is not found yet; two stars buy nothing and say "1 more"; with
+  // five a tap still buys nothing, a one-second hold does
   f.tap(80, 12); f.tap(80, 12); assert(!strcmp(g.screenName(), "home"));
   f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
-  f.tap(114, 123); assert(!strcmp(g.screenName(), "hats"));
-  f.tap(134, 80); f.tap(80, 134);
+  f.tap(114, 123); assert(!strcmp(g.screenName(), "shop"));
+  f.tap(50, 78); assert(!strcmp(g.screenName(), "hats"));
+  f.tap(134, 80); f.tap(80, 134); assert(dbg(g, "short") == 1);
   g.leave(); assert(wallet == 2 && !(taken(g).hatsMask & 2));   // leave() marks the save to hand over
+  f.tap(80, 80); assert(dbg(g, "short") == 0);                    // any tap closes the panel
   wallet = 5; f.tap(80, 134);
+  g.leave(); assert(wallet == 5 && !(taken(g).hatsMask & 2));
+  f.hold(true, 80, 134, 1100); f.hold(false, 80, 134, 100);
+  assert(!strcmp(g.screenName(), "celebrate"));
   got = taken(g);
   assert(wallet == 2 && (got.hatsMask & 2) && got.hat == 1);
 }
@@ -618,6 +642,8 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   saveV3Migrates(s);
+  shopFieldsStartEmpty(s);
+  collarTable();
   learningPaysStars();
   retireKeepsKidProgress();
   giftAfterClockSetBack();

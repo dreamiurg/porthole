@@ -6,6 +6,7 @@
 
 constexpr int NUM_TRICKS = 8;
 constexpr int NUM_HATS = 8;
+constexpr int NUM_COLLARS = 8;   // the Shop's collars (content.h COLLARS); collarsOwned bit i = collar i
 
 enum Stage : uint8_t { STAGE_PUPPY = 0, STAGE_DOG = 1, STAGE_GROWN = 2 };
 enum Variant : uint8_t { VAR_CLASSIC = 0, VAR_BOOKWORM = 1, VAR_SPORTY = 2 };
@@ -52,8 +53,9 @@ struct Save {
   // ---- v2: houses, reading level, turn taking. Since Porthole the profile owns the kid's name, age, code, mute and
   // rest budget: kidName/kidAge are copied in from the profile on entry; muted, pin, restUntil and playSec are only
   // read once, by the shell's migration. The fields stay: the layout is append-only.
-  uint8_t kidAge, theme, reserved0, reserved1;   // kidAge 0 = not asked yet; theme = room color scheme
-  uint16_t pin, reserved2;                       // 4-digit secret code, 0 = none
+  uint8_t kidAge, theme, collar, collarsOwned;   // kidAge 0 = not asked yet; theme = room color scheme; collar worn
+                                                 // (0 = Red) and a bit per bought collar (the Shop), once reserved0/1
+  uint16_t pin, lastBuyDay;                      // 4-digit secret code, 0 = none; the day of the last buy (once reserved2)
   uint32_t restUntil, playSec;                   // turn taking: resting until / seconds played this session
   // ---- v3: breeds, the farm and the memory wall. hasDog 0 = empty room (dog on the farm, no pup adopted yet).
   uint8_t breed, dogsRaised, wallCount, hasDog;  // dogsRaised: dogs moved to the farm, ever
@@ -63,7 +65,7 @@ struct Save {
   uint8_t puzzleLevels[PUZZLE_STRANDS], puzzleReviewCount;  // each strand's level + 1 (0: never played, starts by age)
   uint8_t readLevel, readStreak;                 // little reads level 1..READ_LEVELS (0: not yet, starts by age)
   uint16_t readsRight, puzzlesRight;             // right answers, ever: every READS_PER_STAR / PUZZLES_PER_STAR is a star
-  uint16_t reserved3;
+  uint8_t lastBuyItem, reserved3;                // the last buy: hat i, or 0x80 | collar i (for a later Give back)
   PuzzleReview puzzleReviews[PUZZLE_REVIEWS];    // missed puzzles that come back on a later day, oldest first
   uint32_t crc;
 };
