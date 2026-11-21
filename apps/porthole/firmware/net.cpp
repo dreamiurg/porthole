@@ -883,9 +883,11 @@ void wifiFromSd() {
 // stats on; an Off saved from the menu, the SD card's /porthole/telemetry.txt or serial Y stays off. Its device id and
 // salt are random, made when it is turned on and wiped when it is turned off; its fileCrc is the card file last taken,
 // so the menu's Off holds until the file changes. Events wait in
-// PSRAM (lost at power-off) and go out as one radio job while the screen is dark.
+// PSRAM (lost at power-off) and go out as one radio job a minute after boot, then every 2 minutes, during play too.
 const char* resetName(esp_reset_reason_t r);
-const uint32_t TELEM_MS = 15 * 60000u, TELEM_MORE_MS = 5000;   // between sends; sooner while a send left some behind
+// Between sends, lit or dark (kids unplug a battery-powered board right after playing, and the queue is lost at
+// power-off); sooner while a send left some behind.
+const uint32_t TELEM_MS = 2 * 60000u, TELEM_MORE_MS = 5000;
 const size_t TELEM_BODY = 32 * 1024;
 telemetry::Queue& g_tq = psram::make<telemetry::Queue>();
 char* g_tbody = nullptr;            // the request body: the main loop's until spawn, then the job's until g_tresult
@@ -972,9 +974,10 @@ void takeTelemetryResult(uint32_t ms) {
   g_nextTelem = ms + (r == 1 && g_tq.size() ? TELEM_MORE_MS : TELEM_MS);
 }
 bool telemetryDue(uint32_t ms) {
-  return g_tbody && g_tq.on() && g_tq.size() && g_ssid[0] && g_dark && (int32_t)(ms - g_nextTelem) >= 0;
+  return g_tbody && g_tq.on() && g_tq.size() && g_ssid[0] && (int32_t)(ms - g_nextTelem) >= 0 &&
+         heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) >= MIN_HEAP;   // TLS needs room
 }
-// Main loop: a finished send's result, then the next send when one is due, the radio is free and nobody is looking.
+// Main loop: a finished send's result, then the next send when one is due and the radio is free.
 void telemetryTick(uint32_t ms) {
   if (!g_toldBoot) tellBoot();
   takeTelemetryResult(ms);
