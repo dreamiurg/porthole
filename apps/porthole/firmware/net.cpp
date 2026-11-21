@@ -1144,7 +1144,7 @@ void Updater::applyZoneResult() {
 shell::TelemetryStatus Updater::telemetryStatus() {
   shell::TelemetryStatus s;
   s.level = g_tq.config().level; s.queued = g_tq.size();
-  if (s.level) telemetry::host(g_tq.config(), s.host, sizeof s.host);
+  if (s.level) { telemetry::host(g_tq.config(), s.host, sizeof s.host); g_tq.deviceId(s.device); }
   if (g_tq.lastSent) s.lastSent = timezones::local(g_tq.lastSent);
   return s;
 }

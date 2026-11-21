@@ -44,10 +44,10 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    broadcast says who is there with only the name and avatar; once paired, the race itself, such as the levels and the
    car's place, goes to that device alone).
    The second exception, a user decision of 2026-11-16: opt-in telemetry (`apps/porthole/os/telemetry.h`). Off on
-   every board until a grown-up opts in on Admin 2/2. A double opt-in (2026-11-17): "Telemetry" sends the anonymous
-   level (no player, no details) to the Porthole PostHog project, whose public ingest key is built in; "Kids' IDs", a
-   second switch, adds each kid's random player id. Never a name. An SD file or the serial line can point it at
-   another backend (PostHog or any OpenTelemetry collector).
+   every board until a grown-up turns on "Usage stats" on Admin 2/2 (one switch, 2026-11-20). It sends what was played
+   to the Porthole PostHog project, whose public ingest key is built in, with a random board id and a random player id
+   per kid. Never a name. An SD file or the serial line can point it at another backend (PostHog or any OpenTelemetry
+   collector) or pick the anonymous level.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box

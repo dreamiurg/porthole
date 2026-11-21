@@ -177,8 +177,7 @@ void Shell::updateSysAdmin() {
   if (adminPage_) {
     if (tapped(in_, ADMIN_CODE)) go(SH_SYS_CLOCK);
     if (tapped(in_, ADMIN_RESET)) saveSound(!sound_);   // a failed write leaves the switch as it was
-    if (tapped(in_, ADMIN_REMOVE)) telemetryTap(false);
-    else if (tapped(in_, ADMIN_PLAYERS)) telemetryTap(true);
+    if (tapped(in_, ADMIN_REMOVE)) telemetryTap();
     return;
   }
   if (tapped(in_, ADMIN_CODE)) { resetPin(); firstPin_ = 0; go(SH_SYS_PIN_SET); return; }
@@ -205,21 +204,18 @@ void Shell::drawSysAdmin() {
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
 }
-// Telemetry: a double opt-in, both off. "Telemetry" sends anonymous events; "Kids' IDs", shown once that is on, adds
-// each kid's random player id. Turning Telemetry off turns both off.
-void Shell::telemetryTap(bool kids) {
-  const uint8_t level = sys_->telemetryStatus().level;
-  if (kids && !level) return;
-  const uint8_t to = kids ? (level == telemetry::PERSONAL ? telemetry::ANONYMOUS : telemetry::PERSONAL)
-                          : (level ? telemetry::OFF : telemetry::ANONYMOUS);
-  if (!sys_->setTelemetryLevel(to)) toast("Could not save");
+// "Usage stats": off by default; on sends what is played with random board and player ids, never a name. While on, the
+// board's id shows under it, so its owner can find this board's events.
+void Shell::telemetryTap() {
+  const bool on = sys_->telemetryStatus().level;
+  if (!sys_->setTelemetryLevel(on ? telemetry::OFF : telemetry::PERSONAL)) toast("Could not save");
 }
 void Shell::drawTelemetry() {
-  const uint8_t level = sys_->telemetryStatus().level;
-  sbutton(ADMIN_REMOVE, level ? "Telemetry: on" : "Telemetry: off", level ? C_SKY : C_LTGRAY, down(in_, ADMIN_REMOVE));
-  if (!level) return;
-  const bool kids = level == telemetry::PERSONAL;
-  sbutton(ADMIN_PLAYERS, kids ? "Kids' IDs: on" : "Kids' IDs: off", kids ? C_SKY : C_LTGRAY, down(in_, ADMIN_PLAYERS));
+  const TelemetryStatus t = sys_->telemetryStatus();
+  sbutton(ADMIN_REMOVE, t.level ? "Usage stats: on" : "Usage stats: off", t.level ? C_SKY : C_LTGRAY, down(in_, ADMIN_REMOVE));
+  if (!t.level || !t.device[0]) return;
+  char line[32]; snprintf(line, sizeof line, "ID %s", t.device);
+  stextC(80, 132, line, C_LTGRAY);
 }
 // Read back, like the code below: a failed flash write must not claim the sound changed.
 bool Shell::saveSound(bool on) {

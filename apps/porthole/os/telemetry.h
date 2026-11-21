@@ -1,7 +1,7 @@
 // Opt-in telemetry: what the kids play, kept for the family that owns the board. Off by default and off on every board
-// until a grown-up turns it on. Two switches on Admin 2/2, both off: "Telemetry" (the anonymous level) and, once that is
-// on, "Kids' IDs" (the personal level). From the menu, events go to the Porthole project in PostHog, with the public
-// ingest key built in (the same key the website ships). Another backend comes from /porthole/telemetry.txt on the SD
+// until a grown-up turns it on with "Usage stats" on Admin 2/2 (the personal level: random board and player ids, never a
+// name). From the menu, events go to the Porthole project in PostHog, with the public ingest key built in (the same key
+// the website ships); the menu shows the board's id so its owner can find it there. Another backend comes from /porthole/telemetry.txt on the SD
 // card or the serial command Y (firmware/main.cpp), kept in NVS "sys"/telem:
 //   posthog                      or   otlp
 //   https://us.i.posthog.com          https://collector.example/v1/logs
@@ -79,6 +79,7 @@ class Queue {
   // A kid's player id, 16 hex digits: the same for the same profile and name while telemetry stays on; a new kid in a
   // deleted kid's place (another name) gets another. Never stored, and the name cannot be read back from it.
   void playerId(int profile, const char* name, char out[ID]) const;
+  void deviceId(char out[ID]) const;   // the board's id as the personal level sends it, for the menu
   uint32_t lastSent = 0;            // utc of the last accepted batch, for the menu
 
  private:

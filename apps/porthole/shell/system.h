@@ -58,6 +58,7 @@ struct TelemetryStatus {
   char host[40] = {0};    // where events go, "" when off
   uint32_t lastSent = 0;  // local epoch seconds of the last accepted batch, 0 = none since boot
   int queued = 0;         // events waiting for the next send
+  char device[17] = {0};  // the board's id as sent, "" when off
 };
 
 struct Network {   // one a scan found
@@ -133,7 +134,7 @@ class System {
   virtual bool setTimeZone(const char* iana, bool automatic) { (void)iana; (void)automatic; return false; }
   virtual bool detectTimeZone() { return false; }
 
-  // Telemetry's two menu switches set the level (telemetry::Level); another backend is set up off the screen.
+  // The menu's "Usage stats" switch sets the level (telemetry::Level); another backend is set up off the screen.
   virtual TelemetryStatus telemetryStatus() { return {}; }
   virtual bool setTelemetryLevel(uint8_t level) { (void)level; return false; }   // persisted; false if not saved
 
