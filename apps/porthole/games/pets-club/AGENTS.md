@@ -56,12 +56,12 @@ layout, and the age-based content tables.
 `s<profile id>`, written by the shell. Magic `0x4F475243` ("CRGO"), `version`, `size`,
 fields, then `crc` last -- the append-only rule in the app brief applies exactly here.
 
-`SAVE_VERSION` is currently 5 (308 bytes). v5 appended the shop, before `crc`: `shopOwned` (a bit per collar,
-later per room and toy item), `collar, rug, windowView, lamp, shelfShown, bed, toy, goalItem` (one byte each, 0 =
-the default), `lastBuyDay, lastBuyItem, reserved4` (for a same-day Give back), `stickers2Mask, reserved5` (a second
-sticker row). Only `shopOwned`, `collar` and `lastBuy*` are used so far; the rest are laid out so the next shelves
-need no new version. A v4 blob loads with nothing bought and the Red Collar. v4 appended the kid's learning, before `crc`: `puzzleLevels[3],
-puzzleReviewCount, readLevel, readStreak, readsRight, puzzlesRight, reserved3, puzzleReviews[8]` (a v3 blob loads
+`SAVE_VERSION` is currently 4 (288 bytes, 9 NVS entries: the budget in `host/test_nvs_budget.cpp` has no room for a
+10th). The Shop took v4's reserved bytes, which were always zero, so it needed no new version: `collar` and
+`collarsOwned` (once `reserved0/1`: the collar worn, 0 = Red, and a bit per bought collar), `lastBuyDay` (once
+`reserved2`) and `lastBuyItem` (half of the old `reserved3`, for a later same-day Give back: hat i, or 0x80 | collar i).
+One reserved byte is left. v4 appended the kid's learning, before `crc`: `puzzleLevels[3],
+puzzleReviewCount, readLevel, readStreak, readsRight, puzzlesRight, reserved3 (2 bytes), puzzleReviews[8]` (a v3 blob loads
 with every strand never played and nothing to review; a new pup keeps them, they are the kid's). v3 appended, before `crc`: `breed`,
 `dogsRaised`, `wallCount`, `hasDog` (one byte each), `wallNames[WALL_SLOTS][12]` (the same
 size as `petName`; a `static_assert` in `host/test_pet.cpp` holds them equal) and
@@ -77,9 +77,9 @@ field keeps its offset), zero-fills the rest and fixes up any field whose zero w
 wrong: here `hasDog = 1`, since every save before the farm has its dog. Zero then means
 "not asked yet" for `kidAge`, "none" for `pin`, a Golden pup (`breed` 0) and an empty
 wall. `host/test_pet.cpp` builds each older blob with `oldBlob()` and has a case per
-version (`saveV1` ... `saveV4Migrates`): fields kept, new fields zero, a corrupt CRC and a
+version (`saveV1` ... `saveV3Migrates`): fields kept, new fields zero, a corrupt CRC and a
 wrong version both rejected. To add a field: put it immediately before `crc`, bump
-`SAVE_VERSION`, add a `SAVE_V5_SIZE = 308` beside the others, extend `loadBlob`, and copy
+`SAVE_VERSION`, add a `SAVE_V4_SIZE = 288` beside the others, extend `loadBlob`, and copy
 those test cases. Never touch an existing size constant or reorder/resize a field.
 
 ## Breeds

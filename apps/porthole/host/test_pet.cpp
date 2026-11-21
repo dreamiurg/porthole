@@ -135,17 +135,11 @@ static void saveV3Migrates(Save s) {
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
 }
 
-// v4 blob (288 bytes, before the shop) migrates: everything kept, nothing bought, the Red Collar worn.
-static void saveV4Migrates(Save s) {
-  s.hatsMask = 0x06; s.hat = 2; s.puzzlesRight = 41; s.readLevel = 2;
-  uint8_t v4[SAVE_V4_SIZE]; oldBlob(v4, s, sizeof v4, 4);
-  Save m; assert(pet::loadBlob(v4, sizeof v4, m));
-  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
-  assert(m.hatsMask == 0x06 && m.hat == 2 && m.puzzlesRight == 41 && m.readLevel == 2 && !strcmp(m.petName, s.petName));
-  assert(!m.shopOwned && !m.collar && !m.lastBuyDay && !m.stickers2Mask);
-  v4[40] ^= 1; assert(!pet::loadBlob(v4, sizeof v4, m));          // corrupted v4 rejected
-  oldBlob(v4, s, sizeof v4, 3); assert(!pet::loadBlob(v4, sizeof v4, m));   // a v4 size must say v4
-  Save bad = s; bad.collar = 200; pet::seal(bad);                  // a collar past COLLARS is the Red one
+// The shop lives in bytes that were reserved in v4 and always zero: an older v4 save has nothing bought and wears the
+// Red Collar; a collar past COLLARS loads as the Red one.
+static void shopFieldsStartEmpty(Save s) {
+  assert(!s.collar && !s.collarsOwned && !s.lastBuyDay && !s.lastBuyItem);
+  Save m, bad = s; bad.collar = 200; pet::seal(bad);
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.collar == 0);
 }
 
@@ -648,7 +642,7 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   saveV3Migrates(s);
-  saveV4Migrates(s);
+  shopFieldsStartEmpty(s);
   collarTable();
   learningPaysStars();
   retireKeepsKidProgress();

@@ -6,7 +6,7 @@
 
 constexpr int NUM_TRICKS = 8;
 constexpr int NUM_HATS = 8;
-constexpr int NUM_COLLARS = 8;   // the Shop's collars (content.h COLLARS); shopOwned bit i = collar i
+constexpr int NUM_COLLARS = 8;   // the Shop's collars (content.h COLLARS); collarsOwned bit i = collar i
 
 enum Stage : uint8_t { STAGE_PUPPY = 0, STAGE_DOG = 1, STAGE_GROWN = 2 };
 enum Variant : uint8_t { VAR_CLASSIC = 0, VAR_BOOKWORM = 1, VAR_SPORTY = 2 };
@@ -19,11 +19,10 @@ enum Sticker : uint8_t {
 
 // Persisted state. Plain data, saved as a blob. Bump SAVE_VERSION on layout changes.
 constexpr uint32_t SAVE_MAGIC = 0x4F475243;  // "CRGO"
-constexpr uint16_t SAVE_VERSION = 5;
+constexpr uint16_t SAVE_VERSION = 4;
 constexpr size_t SAVE_V1_SIZE = 140;      // layout before the house/age fields; still accepted on load
 constexpr size_t SAVE_V2_SIZE = 156;      // layout before breed and the memory wall; still accepted on load
 constexpr size_t SAVE_V3_SIZE = 212;      // layout before puzzles and little reads; still accepted on load
-constexpr size_t SAVE_V4_SIZE = 288;      // layout before the shop; still accepted on load
 constexpr int RETIRE_DAYS = 30;           // age at which the kid may move the dog to the farm
 constexpr int WALL_SLOTS = 4;             // memory wall frames: the last four dogs
 constexpr int NUM_BREEDS = 7;             // shelter breeds; 0 = the Golden pup every older save already has
@@ -54,8 +53,9 @@ struct Save {
   // ---- v2: houses, reading level, turn taking. Since Porthole the profile owns the kid's name, age, code, mute and
   // rest budget: kidName/kidAge are copied in from the profile on entry; muted, pin, restUntil and playSec are only
   // read once, by the shell's migration. The fields stay: the layout is append-only.
-  uint8_t kidAge, theme, reserved0, reserved1;   // kidAge 0 = not asked yet; theme = room color scheme
-  uint16_t pin, reserved2;                       // 4-digit secret code, 0 = none
+  uint8_t kidAge, theme, collar, collarsOwned;   // kidAge 0 = not asked yet; theme = room color scheme; collar worn
+                                                 // (0 = Red) and a bit per bought collar (the Shop), once reserved0/1
+  uint16_t pin, lastBuyDay;                      // 4-digit secret code, 0 = none; the day of the last buy (once reserved2)
   uint32_t restUntil, playSec;                   // turn taking: resting until / seconds played this session
   // ---- v3: breeds, the farm and the memory wall. hasDog 0 = empty room (dog on the farm, no pup adopted yet).
   uint8_t breed, dogsRaised, wallCount, hasDog;  // dogsRaised: dogs moved to the farm, ever
@@ -65,18 +65,11 @@ struct Save {
   uint8_t puzzleLevels[PUZZLE_STRANDS], puzzleReviewCount;  // each strand's level + 1 (0: never played, starts by age)
   uint8_t readLevel, readStreak;                 // little reads level 1..READ_LEVELS (0: not yet, starts by age)
   uint16_t readsRight, puzzlesRight;             // right answers, ever: every READS_PER_STAR / PUZZLES_PER_STAR is a star
-  uint16_t reserved3;
+  uint8_t lastBuyItem, reserved3;                // the last buy: hat i, or 0x80 | collar i (for a later Give back)
   PuzzleReview puzzleReviews[PUZZLE_REVIEWS];    // missed puzzles that come back on a later day, oldest first
-  // ---- v5: the shop (Stats > Shop). Bought things belong to the kid, like hats: a new pup keeps them. Only collars
-  // are sold so far; the room and toy fields are laid out now so the next shelves need no new version.
-  uint32_t shopOwned;                            // bit per shop item (SHOP_* in content.h); the Red Collar is free
-  uint8_t collar, rug, windowView, lamp;         // what is worn / in the room; 0 = the default
-  uint8_t shelfShown, bed, toy, goalItem;
-  uint16_t lastBuyDay; uint8_t lastBuyItem, reserved4;
-  uint16_t stickers2Mask, reserved5;             // room for a second row of stickers
   uint32_t crc;
 };
-static_assert(sizeof(Save) == 308, "Save is append-only: v5 is 308 bytes");
+static_assert(sizeof(Save) == 288, "Save is append-only: v4 is 288 bytes");
 
 namespace pet {
 // ---- calibration knobs (per real hour unless noted) ----

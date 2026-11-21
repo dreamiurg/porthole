@@ -135,7 +135,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "books")) { save_.booksUnlocked = NUM_BOOKS; save_.booksDoneMask = 0x3F; save_.booksRead = 6; }
   else if (!strcmp(cmd, "tricks")) { for (int i = 0; i < 4; i++) save_.trickProgress[i] = 3; }
   else if (!strcmp(cmd, "hats")) save_.hatsMask = 0xFE;
-  else if (!strcmp(cmd, "collars")) save_.shopOwned |= 0xFE;
+  else if (!strcmp(cmd, "collars")) save_.collarsOwned = 0xFE;
   else if (!strcmp(cmd, "rich")) stars::award(wallet_, 50);
   else if (!strcmp(cmd, "sleepy")) save_.energy = 15;
   else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
@@ -176,7 +176,7 @@ void Game::debugPrint() {
   if (screen_ == SC_LIBRARY || screen_ == SC_READ) { const Book& bk = curBook(); int np = 0; while (bk.pages[np]) np++; printf("book=%d title=\"%s\" pages=%d page=%d correct=%d\n", bookList_[bookSel_], bk.title, np, page_, bk.correct); }
   printf("stars=%lu puzzles_right=%u levels=%d%d%d reviews=%d reads_right=%u read_level=%u read_streak=%u hats=%u collar=%u collars=%lu short=%d\n",
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
-         save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask, save_.collar, (unsigned long)save_.shopOwned, shortBy_);
+         save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask, save_.collar, (unsigned long)save_.collarsOwned, shortBy_);
   if (screen_ == SC_PUZZLE) printf("strand=%d level=%d asked=%d right=%d answered=%d answer=%d reviewing=%d\n", strand_, level_, asked_, right_, answered_, puzzle().right, asked_ == reviewAt_);
   if (screen_ == SC_LITTLE || screen_ == SC_LITTLE_ASK)
     printf("little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d read_ay=%d page=%d pages=%d\n", little_, asked_, right_, answered_, learn::READS[little_].right, readAnswerTop(), page_, readPages());
@@ -1280,8 +1280,8 @@ void Game::drawStickers() {
 // Stats > Shop opens a hub with one tile a shelf; a shelf (Hats, Collars) flips its things with the arrows while the
 // dog tries each one on. Wearing what you own is a tap. Buying is a BUY_HOLD_MS hold that fills the button (the farm's
 // Yes pattern, shorter: a sibling's tap buys nothing); letting go early wiggles "Hold to buy". A tap on a Buy the kid
-// can't afford opens the "N more" panel instead. Stars are read and spent only through stars:: on wallet_, so the
-// shop moves to the global wallet when that lands. Prices go through shopPrice (content.h PRICE_PCT).
+// can't afford opens the "N more" panel instead. Stars are the kid's one wallet (os/stars.h, earned by
+// os/skills.h across every game), read and spent only through stars:: on wallet_. Prices go through shopPrice (content.h PRICE_PCT).
 static const ui::Box SHOP_HATS = {22, 58, 56, 40}, SHOP_COLLARS = {82, 58, 56, 40};
 static const ui::Box WEAR_BTN = {40, 122, 80, 24};
 static const uint32_t BUY_HOLD_MS = 1000;
@@ -1302,7 +1302,7 @@ void Game::drawShop() {
   drawStarCount(42);
   shopTile(in_, {SHOP_HATS, "Hats", nullptr, C_PLUM}, ownedCount(save_.hatsMask, NUM_HATS), NUM_HATS);
   blitScaled(SPR_HATS[2], SHOP_HATS.x + 8, SHOP_HATS.y + 6, 2);
-  shopTile(in_, {SHOP_COLLARS, "Collars", nullptr, C_NAVY}, ownedCount(save_.shopOwned, NUM_COLLARS), NUM_COLLARS);
+  shopTile(in_, {SHOP_COLLARS, "Collars", nullptr, C_NAVY}, ownedCount(save_.collarsOwned, NUM_COLLARS), NUM_COLLARS);
   const uint8_t keep = save_.hat; save_.hat = 0;   // the dog in the tile shows its collar, nothing on its head
   if (save_.hasDog) drawDog(SHOP_COLLARS.x + 4, SHOP_COLLARS.y + 29, P_SIT, false);
   save_.hat = keep;
@@ -1312,7 +1312,7 @@ void Game::drawShop() {
 // Hats and Collars, one page: which shelf is screen_.
 struct WearItem { const char* name; int price; bool owned, worn; int needs; };
 static WearItem wearItem(const Save& s, bool collars, int i) {
-  if (collars) return {COLLARS[i].name, shopPrice(COLLARS[i].price), !i || (s.shopOwned & (1u << i)) != 0, s.collar == i, COLLARS[i].needs};
+  if (collars) return {COLLARS[i].name, shopPrice(COLLARS[i].price), !i || (s.collarsOwned & (1u << i)) != 0, s.collar == i, COLLARS[i].needs};
   return {HAT_NAMES[i], shopPrice(HAT_PRICES[i]), !i || (s.hatsMask & (1u << i)) != 0, s.hat == i, -1};
 }
 static bool lockedFor(const Save& s, const WearItem& it) { return !it.owned && it.needs >= 0 && !(s.stickersMask & (1u << it.needs)); }
@@ -1339,7 +1339,7 @@ void Game::wearIt(bool collars, int sel) {
 }
 void Game::buyIt(bool collars, int sel, int price, const char* name) {
   if (!stars::spend(wallet_, price)) return;
-  if (collars) { save_.shopOwned |= 1u << sel; save_.collar = (uint8_t)sel; }
+  if (collars) { save_.collarsOwned |= (uint8_t)(1u << sel); save_.collar = (uint8_t)sel; }
   else { pet::gotHat(save_, sel); save_.hat = (uint8_t)sel; }
   save_.lastBuyDay = (uint16_t)pet::dayIndex(now_); save_.lastBuyItem = (uint8_t)(collars ? 0x80 | sel : sel);   // for a later Give back
   markDirty();
@@ -1371,14 +1371,15 @@ void Game::drawWear() {
 void Game::drawBuyButton(int price) {
   const bool rich = stars::balance(wallet_) >= (uint32_t)price, pr = rich && ui::pressing(in_, WEAR_BTN);
   const int dy = pr ? 1 : 0;
-  ui::drawButton({WEAR_BTN, nullptr, nullptr, rich ? (uint8_t)C_ORANGE : (uint8_t)C_LTGRAY}, pr);
+  const uint8_t base = rich ? (uint8_t)C_ORANGE : (uint8_t)C_LTGRAY;
+  ui::drawButton({WEAR_BTN, nullptr, nullptr, base}, pr);
   const int fill = (int)(buyHold_.progress(BUY_HOLD_MS) * (WEAR_BTN.w - 2));
   if (fill > 0) roundRect(WEAR_BTN.x + 1, WEAR_BTN.y + 1 + dy, fill, WEAR_BTN.h - 2, C_PLUM);
   const int ty = WEAR_BTN.y + dy + (WEAR_BTN.h - 7) / 2;
-  if (pr) { textCentered(80, ty, "Hold...", C_WHITE); return; }
+  if (pr) { textCentered(80, ty, "Hold...", ui::inkOn(fill * 2 > WEAR_BTN.w ? (uint8_t)C_PLUM : base)); return; }
   char b[16]; snprintf(b, sizeof b, "Buy %d", price);
   const int w = textWidth(b) + 10;
-  text(80 - w / 2, ty, b, rich ? C_WHITE : C_DKGRAY); blit(SPR_STAR, 80 - w / 2 + textWidth(b) + 2, ty - 1);
+  text(80 - w / 2, ty, b, rich ? ui::inkOn(base) : (uint8_t)C_DKGRAY); blit(SPR_STAR, 80 - w / 2 + textWidth(b) + 2, ty - 1);
 }
 void Game::drawShortPanel() {   // where stars come from; any tap closes it
   ui::panel({28, 88, 104, 46}, C_CREAM, C_DKBROWN);

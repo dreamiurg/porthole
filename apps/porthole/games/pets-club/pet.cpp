@@ -15,10 +15,10 @@ bool valid(const Save& s) {
 static bool loadOld(const uint8_t* p, size_t n, Save& out) {
   uint32_t crc; memcpy(&crc, p + n - 4, 4);
   uint16_t ver; memcpy(&ver, p + 4, 2);
-  if (ver != (n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : n == SAVE_V3_SIZE ? 3 : 4) || crc != crc32(p, n - 4)) return false;
+  if (ver != (n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : 3) || crc != crc32(p, n - 4)) return false;
   memset(&out, 0, sizeof out);
   memcpy(&out, p, n - 4);
-  if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE) out.hasDog = 1;   // every save before the farm has its dog
+  if (n != SAVE_V3_SIZE) out.hasDog = 1;   // every save before the farm has its dog
   return true;
 }
 // Made safe once, here, so every reader can index the art and the wall with them: a bad byte is the Golden pup.
@@ -36,7 +36,7 @@ static void makeSafe(Save& out) {
 }
 bool loadBlob(const void* d, size_t n, Save& out) {
   if (n == sizeof(Save)) { memcpy(&out, d, n); if (!valid(out)) return false; }
-  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE || n == SAVE_V3_SIZE || n == SAVE_V4_SIZE) { if (!loadOld((const uint8_t*)d, n, out)) return false; }
+  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE || n == SAVE_V3_SIZE) { if (!loadOld((const uint8_t*)d, n, out)) return false; }
   else return false;
   makeSafe(out);
   seal(out);
