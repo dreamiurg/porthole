@@ -9,7 +9,8 @@
 // - Every answer moves theta by K (s - p): s 1 right, 0.7 right but slow, 0 wrong or a guess faster than reading.
 //   K = max(40, 160 / (1 + n/5)), doubled while three answers in a row miss the expectation the same way.
 // - A new skill calibrates: from a starting level it jumps up 1, 2, 4 levels on right answers and halves the jump on a
-//   miss, until the jump is one level and two answers were wrong (or 15 answers). It pays a flat rate meanwhile.
+//   miss (after a miss a right answer keeps the jump: the search only narrows), until the jump is one level and two
+//   answers were wrong (or 15 answers). It pays a flat rate meanwhile.
 // - A right answer pays base x W x repeat points, W = clamp((1 - p) / 0.2, 0.25, 2.5): what the kid would almost surely
 //   get right pays a quarter, what is hard for them up to two and a half. p for pay uses max(theta, peak - 150), so
 //   missing on purpose does not make easy items dear. The same item again the same day pays half, a quarter, then 0.
@@ -206,7 +207,10 @@ inline int32_t pay(const State& s, const Item& it, int times) {
 // Calibration: right jumps up and doubles the jump (to 4 levels); a miss steps back half and halves it. Two misses
 // with the jump at one level, or CALIB_ANSWERS answers, end it.
 inline void calibrate(State& s, bool counted) {
-  if (counted) { s.theta += s.jump * LEVEL; s.jump = s.jump >= 4 ? 4 : s.jump * 2; }
+  if (counted) {
+    s.theta += s.jump * LEVEL;
+    if (!s.errored) s.jump = s.jump >= 4 ? 4 : s.jump * 2;   // doubling again after a miss would never settle
+  }
   else {
     s.theta -= s.jump * LEVEL / 2; s.jump = s.jump > 1 ? s.jump / 2 : 1;
     if (s.jump == 1 && s.errored) s.calibrating = false;
