@@ -29,17 +29,20 @@ static_assert(sizeof learn::STRAND_LABELS / sizeof *learn::STRAND_LABELS == puzz
 static_assert(sizeof learn::CHEERS / sizeof *learn::CHEERS >= puzzles::ROUND && sizeof learn::NUDGES / sizeof *learn::NUDGES >= puzzles::ROUND);
 const uint8_t STRAND_COLS[3] = {C_GREEN, C_ORANGE, C_BLUE};
 bool tapBox(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
-ui::Box strandBox(int i) { return {26, 56 + i * 28, 108, 24}; }
+// The strands, then Ukrainian (ukrainian.cpp), narrower low down where the circle is.
+ui::Box strandBox(int i) { return i < PUZZLE_STRANDS ? ui::Box{32, 54 + i * 24, 96, 22} : ui::Box{38, 54 + i * 24, 84, 22}; }
 ui::Box answerBox(int i) { return {24 + i * 39, 90, 34, 30}; }
 const ui::Box NEXT_BTN = {56, 122, 48, 22}, MORE_BTN = {50, 118, 60, 22}, MORE_READS_BTN = {44, 118, 72, 22};
 const int READ_ANSWER_STEP = 24, READ_Q_TOP = 32, PAGE_LINES = 8;
+}  // namespace
+
 // A line of the round's end and the feedback, wrapped and centered from y down; returns the next free y.
-int lines(int y, const char* s, uint8_t col, int maxLines = 3, int width = 124) {
+int learn::lines(int y, const char* s, uint8_t col, int maxLines, int width) {
   char l[6][40]; const int n = wrap(s, width, l, maxLines > 6 ? 6 : maxLines);
   for (int i = 0; i < n; i++) textCentered(80, y + i * 9, l[i], col);
   return y + n * 9;
 }
-}  // namespace
+using learn::lines;
 
 // {pet} and {name} in a line, filled in with this dog's and this kid's names.
 void Game::fillNames(const char* src, char* out, size_t cap) const {
@@ -76,12 +79,14 @@ void Game::updatePuzzles() {
   if (backButton()) { go(SC_PLAYMENU); return; }
   for (int i = 0; i < puzzles::STRAND_COUNT; i++)
     if (tapBox(in_, strandBox(i))) { startPuzzles(i); return; }
+  if (tapBox(in_, strandBox(puzzles::STRAND_COUNT))) startUk();
 }
 void Game::drawPuzzles() {
   clear(C_WALL);
   textCentered(80, 30, "Puzzles", C_PLUM, 2);
   drawStarCount(46);
   for (int i = 0; i < puzzles::STRAND_COUNT; i++) ui::button(in_, {strandBox(i), learn::STRAND_LABELS[i], nullptr, STRAND_COLS[i]});
+  ui::button(in_, {strandBox(puzzles::STRAND_COUNT), "Ukrainian", nullptr, C_YELLOW});
   drawBackButton();
 }
 

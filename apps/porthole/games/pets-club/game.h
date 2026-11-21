@@ -9,7 +9,10 @@
 #include "pet.h"
 #include "content_reads.h"
 #include "puzzles.h"
+#include "ukrainian.h"
 #include "ui.h"
+
+namespace learn { int lines(int y, const char* s, uint8_t col, int maxLines = 3, int width = 124); }   // learn.cpp
 
 enum Sound : uint8_t { SND_NONE = 0, SND_TAP, SND_YIP, SND_HAPPY, SND_SAD, SND_CHIME, SND_BARK, SND_FANFARE };
 
@@ -29,15 +32,16 @@ class Game : public App {
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
+  Surface surface() const override { return screen_ == SC_UK ? SURFACE_RGB565 : SURFACE_INDEXED; }   // Andika over the frame
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich"
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich" "ukmeaning|uklook|uksyl MEANING"
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
                           SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
                           SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL,
-                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_SHOP, SC_COLLARS, SC_COUNT };
+                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_SHOP, SC_COLLARS, SC_UK, SC_COUNT };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -102,6 +106,10 @@ class Game : public App {
   uint8_t roundLevel_ = 0;   // the strand's level when the round began: a higher one at its end is a level up
   uint64_t readsSeen_ = 0;
   char readLines_[learn::READ_LINES][40] = {}; int readLineCount_ = 0;
+  // Ukrainian words (ukrainian.cpp); asked_, right_, answered_ and roundStars_ are the puzzles'
+  learn::uk::Question ukQ_{}; uint32_t ukSeed_ = 0; uint16_t ukAsked_[learn::uk::ROUND] = {};
+  uint16_t ukRecent_[16] = {}; uint8_t ukRecentN_ = 0;   // words asked lately (this visit), so the next rounds vary
+  int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0, ukUsed_ = 0; bool ukFound_ = false;
 
   // ---- helpers
   void go(Screen s);
@@ -187,6 +195,9 @@ class Game : public App {
   void startReads(); void nextRead(); int readPages() const; int readAnswerTop() const;
   void updateLittle(); void drawLittle();
   void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
+  void startUk(); void nextUk(); void ukAnswer(bool right); bool ukRight() const;
+  void updateUk(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w, bool done); void drawUkChoices(const learn::uk::Word& w);
+  void drawUkAnswerText(const learn::uk::Word& w, const uint16_t* pal); void drawUkMeaningText(const learn::uk::Word& w, bool right, const uint16_t* pal); void ukDebug() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

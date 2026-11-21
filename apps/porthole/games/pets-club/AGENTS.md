@@ -33,6 +33,21 @@ layout, and the age-based content tables.
   (spelling words, clues, times stories' things) and `content_reads.h` (at least 8 reads per level 1-5), both in
   `namespace learn` and gated by `tools/check_learn.py`; rules tested in `host/test_pets_learn.cpp`; playtest
   `tests/playtests/0a_puzzles_reads.txt`. `debugCmd rich` adds 50 stars.
+- `ukrainian.cpp` / `ukrainian.h`: Ukrainian words, the Puzzles screen's fourth button (design page approved
+  2026-11-21). Rounds of five; three exercises take turns: a word's meaning (three English choices), a lookalike
+  (the English, three Ukrainian words a letter apart: кіт / кит / кут, with a hint after a miss) and syllables tapped
+  in order with one decoy (со-ба-ка). The rating, the calibration and the stars are the shared engine's
+  (`os/skills.h`, skill `WORDS_UK`, through `AppEnter::book`): a word's step s (1..7) is level s - 1, plus
+  `KIND_OFFSET` per exercise; `READ_MS` tells a guess, `SLOW_MS` a slow read. Words asked lately are kept out of the
+  next picks (a RAM ring of 16), and a missed word comes back as a meaning on a later day (on the puzzles' review queue,
+  `review.h`, as strand `REVIEW_STRAND`, so the save needs no new bytes). The screen is RGB565
+  (`surface()`): the frame and English are the indexed art, expanded, then the Ukrainian is Andika Bold
+  (`os/uk_fonts.h`, OFL, 24/48/88 px, from `tools/fontconv.py --game uk`) drawn on top. Content `content_uk.h` is
+  written by `tools/uk_words.py` (the word list, each word's step, the lookalike sets; `--check` in lint). Events
+  `uk_answer`, `uk_calibrated` and `level_finished` go out behind Usage stats; what tunes what:
+  `docs/superpowers/specs/2026-11-21-ukrainian-telemetry.md`. Tested in `host/test_pets_uk.cpp`; playtest
+  `tests/playtests/b4_pets_ukrainian.txt` (`answer-uk right|wrong`); `debugCmd ukmeaning|uklook|uksyl X` shows the
+  word meaning X as that exercise.
 - The Shop (Stats > Shop, `SC_SHOP`): a hub with a tile a shelf, Hats (`SC_HATS`) and Collars (`SC_COLLARS`), one
   page for both (`updateWear`/`drawWear`): arrows flip the shelf while the sitting dog tries each thing on, a tap
   wears what the kid owns, and buying is a 1 s hold on Buy that fills it plum (the farm's Yes pattern, shorter; a

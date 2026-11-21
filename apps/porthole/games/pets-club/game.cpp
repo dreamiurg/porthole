@@ -138,6 +138,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "collars")) save_.collarsOwned = 0xFE;
   else if (!strcmp(cmd, "rich")) stars::award(wallet_, 50);
   else if (!strcmp(cmd, "sleepy")) save_.energy = 15;
+  else if (ukDebugCmd(cmd)) return;
   else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
   else debugAge(cmd);
   markDirty();
@@ -160,7 +161,7 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
 const char* Game::screenName() const {
   static const char* const N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "pets_library", "read",
                             "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "hats", "street", "theme",
-                            "confirm_farm", "farm", "shelter", "wall", "puzzles", "puzzle", "little", "little_ask", "shop", "collars"};
+                            "confirm_farm", "farm", "shelter", "wall", "puzzles", "puzzle", "little", "little_ask", "shop", "collars", "ukrainian"};
   static_assert(sizeof N / sizeof *N == SC_COUNT, "one name per screen");
   return N[screen_];
 }
@@ -178,6 +179,7 @@ void Game::debugPrint() {
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
          save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask, save_.collar, (unsigned long)save_.collarsOwned, shortBy_);
   if (screen_ == SC_PUZZLE) printf("strand=%d level=%d asked=%d right=%d answered=%d answer=%d reviewing=%d\n", strand_, level_, asked_, right_, answered_, puzzle().right, asked_ == reviewAt_);
+  ukDebug();
   if (screen_ == SC_LITTLE || screen_ == SC_LITTLE_ASK)
     printf("little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d read_ay=%d page=%d pages=%d\n", little_, asked_, right_, answered_, learn::READS[little_].right, readAnswerTop(), page_, readPages());
   if (screen_ == SC_FETCH) printf("fetch score=%d left=%d\n", fetchScore_, fetchDone_ ? 0 : (int)((fetchEndMs_ - ms_) / 1000));
@@ -299,7 +301,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateWear, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
     &Game::updateFarm, &Game::updateShelter, &Game::updateWall,
     &Game::updatePuzzles, &Game::updatePuzzle, &Game::updateLittle, &Game::updateLittleAsk,
-    &Game::updateShop, &Game::updateWear};
+    &Game::updateShop, &Game::updateWear, &Game::updateUk};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -333,12 +335,13 @@ void Game::render() {
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
     &Game::drawWear, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
     &Game::drawShelter, &Game::drawWall, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawLittle, &Game::drawLittleAsk,
-    &Game::drawShop, &Game::drawWear};
+    &Game::drawShop, &Game::drawWear, &Game::drawUk};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   drawParticles();
   drawToast();
+  if (screen_ == SC_UK) drawUkText();   // the frame goes RGB565 and the Ukrainian goes on top (ukrainian.cpp)
 }
 
 void Game::checkStickers() {

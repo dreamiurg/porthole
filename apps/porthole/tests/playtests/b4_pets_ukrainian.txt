@@ -1,0 +1,107 @@
+# Ukrainian words, the fourth Puzzles button: rounds of five, the three exercises (a meaning, a lookalike, syllables
+# tapped in order) taking turns, at the kid's level in the shared skills engine (os/skills.h, WORDS_UK): a new kid
+# calibrates, up while the answers are right and back after a miss. A miss shows the right word and what was picked;
+# the round's stars come at its end. An answer faster than a read (under 0.7 s) counts as a guess, so every answer here
+# waits first.
+# The Ukrainian is Andika over the RGB565 frame (games/pets-club/ukrainian.cpp).
+newgame Sam Biscuit
+wait 2400
+tap 66 129
+wait 450
+tap 80 99
+wait 450
+expect-screen puzzles
+ui-check puzzles-ukrainian
+snap 01_menu
+tap 80 135
+wait 450
+expect-screen ukrainian
+expect uk_rating=0
+expect uk_calibrating=1
+ui-check uk-question
+snap 02_first
+wait 1600
+answer-uk right
+wait 450
+ui-check uk-right
+snap 03_right
+tap 80 133
+wait 450
+snap 04_second
+wait 1600
+answer-uk right
+wait 450
+snap 05_second_right
+tap 80 133
+wait 450
+snap 06_third
+wait 1600
+answer-uk wrong
+wait 450
+ui-check uk-wrong
+snap 07_wrong
+sheet first-round
+tap 80 133
+wait 450
+repeat 2
+wait 1600
+answer-uk right
+wait 450
+tap 80 133
+wait 450
+end
+# the round's end: 4 right. The calibration went up a level, two, back one after the miss, then two and four (level 7);
+# meanwhile a right answer pays a flat 40 points: 160 is a star with 60 carried, and the day's first stars count twice
+debug
+expect uk_rating=700
+expect uk_calibrating=1
+expect puzzles_right=4
+expect stars=2
+ui-check uk-done
+snap 08_round_done
+wait 1000
+tap 80 129
+wait 450
+expect-screen ukrainian
+expect asked=0
+wait 1600
+answer-uk right
+wait 450
+expect puzzles_right=5
+expect stars=2
+snap 09_next_round
+tap 80 12
+wait 450
+expect-screen puzzles
+sheet stars
+# The widest each exercise gets: four syllable tiles in two rows, a long word, a long lookalike's hint, two long
+# meanings after a miss.
+dbg uksyl butterfly
+wait 1600
+ui-check uk-four-tiles
+snap 10_four_tiles
+answer-uk right
+wait 450
+ui-check uk-four-tiles-right
+snap 11_four_tiles_right
+dbg uksyl nine
+wait 1600
+answer-uk wrong
+wait 450
+ui-check uk-tiles-wrong
+snap 12_tiles_wrong
+dbg ukmeaning library
+wait 1600
+ui-check uk-long-word
+snap 13_long_word
+answer-uk wrong
+wait 450
+ui-check uk-long-word-wrong
+snap 14_long_word_wrong
+dbg uklook laziness
+wait 1600
+answer-uk wrong
+wait 450
+ui-check uk-lookalike-hint
+snap 15_lookalike_hint
+sheet widest
