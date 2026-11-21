@@ -81,7 +81,7 @@ def _screens() -> set:
 SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 # The hidden system menu is for grown-ups (a user decision of 2026-10-18): 18 px (6 mm) targets pass there without the
-# kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; "sys_new" is the kids' card and is not in it.
+# kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; the kids' "news" screen is not in it.
 GROWN_UPS = {
     "sys_info",
     "sys_updates",

@@ -64,6 +64,7 @@ struct Duo {
   const char* inviteName = nullptr;          // a kid on another Porthole's track cards
   const pic::Pic* inviteFace = nullptr;
   bool ready = false, peerReady = false;     // this kid / that kid tapped Race!
+  bool isNew = false;                        // Race! is news to this kid (Kid news): the red dot
 };
 struct View {
   Page page = Page::Tracks;

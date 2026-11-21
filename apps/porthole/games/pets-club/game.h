@@ -94,6 +94,7 @@ class Game : public App {
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
   // puzzles and little reads (learn.cpp)
   uint32_t* wallet_ = nullptr;            // the kid's stars (os/stars.h), kept and saved by the shell
+  NewSpots* news_ = nullptr;              // the red dot on Play and Puzzles (Kid news)
   uint32_t rng_ = 0, questionSeed_ = 0, seen_ = 0, roundEndMs_ = 0;
   learn::puzzles::Item question_{}, review_{};
   uint8_t strand_ = 0, level_ = 0, little_ = 0, readLevelWas_ = 0, pageLines_ = 8; int8_t easyAt_ = 0, reviewAt_ = -1;

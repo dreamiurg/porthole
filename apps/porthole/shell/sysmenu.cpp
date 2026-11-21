@@ -1,7 +1,6 @@
-// The device side the kid barely sees: the "something new" card after an update, and the grown-ups' system menu
-// behind a 5 s hold on the picker's title (Info, then Updates and Wifi). Shell palette only (root rule 7), no sound.
-// Adult screens render at native resolution with an anti-aliased reading font; logical touch coordinates stay
-// unchanged. The "something new" card keeps the children's indexed art and typography. Design: docs/superpowers/specs/2026-10-17-wireless-updates-design.md.
+// The grown-ups' system menu behind a 5 s hold on the picker's title (Info, then Updates and Wifi). Shell palette only
+// (root rule 7), no sound. Adult screens render at native resolution with an anti-aliased reading font; logical touch
+// coordinates stay unchanged. (What an update brought the kids is shell/news.h.) Design: docs/superpowers/specs/2026-10-17-wireless-updates-design.md.
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -15,15 +14,6 @@
 using namespace gfx;
 using namespace shell;
 
-bool shell::newRun(Store& st, const char* version) {
-  char ran[16] = {0}, cur[16];
-  snprintf(cur, sizeof cur, "%s", version);   // stored and compared at 15 bytes: a longer one still matches next boot
-  st.load("sys", "ran", ran, sizeof ran - 1);   // 0 (missing, or too long to be a version): never ran
-  if (!strcmp(ran, cur)) return false;
-  st.save("sys", "ran", cur, strlen(cur));   // only on a change: no flash write on every boot
-  return strcmp(cur, "dev") != 0;           // a local build is never news
-}
-
 // ---------------------------------------------------------------- the picker's title, held SYS_HOLD_MS
 // Long enough that no kid gets in by accident; the rows' long press (delete) is below it, so neither sees the other.
 static const uint32_t SYS_HOLD_MS = 5000;
@@ -31,19 +21,6 @@ static const ui::Box TITLE = {44, 5, 72, 22};   // ends 2 px above the first row
 bool Shell::titleHeld() {
   if (!sys_) return false;
   return ui::pressing(in_, TITLE) && in_.heldMs >= SYS_HOLD_MS;   // pressing logs TITLE, finger up or not: the audit sees it
-}
-
-// ---------------------------------------------------------------- "something new" (once, on the boot after an update)
-static const ui::Box NEW_OK = {45, 112, 70, 26};
-void Shell::updateSysNew() { if (in_.tapIn(NEW_OK.x, NEW_OK.y, NEW_OK.w, NEW_OK.h)) land(); }
-static void sparkle(int x, int y, uint8_t c) { hline(x - 3, y, 7, c); line(x, y - 3, x, y + 3, c); }
-void Shell::drawSysNew() {
-  clear(C_SKY);
-  sparkle(34, 34, C_YELLOW); sparkle(128, 34, C_WHITE); sparkle(30, 96, C_WHITE); sparkle(130, 94, C_YELLOW);
-  textCentered(80, 42, "Porthole has", C_NAVY);
-  textCentered(80, 56, "something", C_NAVY, 2);
-  textCentered(80, 76, "new!", C_NAVY, 2);
-  ui::drawButton({NEW_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NEW_OK));
 }
 
 // ---------------------------------------------------------------- the menu's font and widgets

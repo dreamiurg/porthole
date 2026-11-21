@@ -1,0 +1,32 @@
+# Kid news: after an update, a kid who played before it picks themselves and gets "New for <name>!": a line per game
+# that got something (news.toml), two to a screen, then OK to the launcher, where those games' tiles keep a red dot
+# until opened. Once OK'd it does not come back. A kid made after the update has nothing new. Every screen is audited.
+profile Zoe 7
+dbg news
+tap 60 42
+wait 450
+expect-screen picker
+tap 80 66
+wait 450
+expect-screen news
+ui-check news-1
+snap k01_news
+# an impatient double tap on the arrow: the second tap lands where OK appears, and must not skip screen 2 unseen
+tap 80 128
+wait 120
+tap 81 129
+wait 450
+expect-screen news
+ui-check news-2
+snap k02_news
+tap 80 128
+wait 450
+expect-screen launcher
+ui-check launcher-dots
+snap k03_dots
+# picked again: seen, so straight to the games
+tap 60 42
+wait 450
+tap 80 66
+wait 450
+expect-screen launcher

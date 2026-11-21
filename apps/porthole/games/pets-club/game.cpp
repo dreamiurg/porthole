@@ -20,7 +20,7 @@ static const int BTN_X[4] = {28, 54, 80, 106};
 
 const Sprite& Game::icon() const { return LAUNCHER_ICON; }
 void Game::enter(const AppEnter& e) {
-  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; wallet_ = e.stars;
+  now_ = e.nowSec; ms_ = e.ms; daylight_ = e.daylight; wallet_ = e.stars; news_ = e.news;
   book_ = e.book ? e.book : &own_;
   pet::dropCarry();
   rng_ = 0; readsSeen_ = 0;   // the puzzles' dice start from the dog's seed; a visit's reads start over
@@ -705,6 +705,7 @@ void Game::drawHomeButtons() {
     const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
     if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
     else blitScaled(ic, ix, iy, 2);
+    if (i == 1 && news_ && news_->isNew("puzzles")) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});   // Puzzles is in Play
     if (!in_.tapIn(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2)) continue;
     if (i == 0) { go(SC_FEED); feedAnimFood_ = -1; } else if (i == 1) go(SC_PLAYMENU); else if (i == 2) go(SC_LIBRARY); else go(SC_TRICKS);
   }
@@ -762,7 +763,7 @@ void Game::updatePlayMenu() {
   if (save_.asleep) { if (in_.tap) toast("Shh... sleeping"); return; }
   if (tapBox(in_, playBox(0))) { if (save_.energy < 20) { toast("Too sleepy to play"); } else startFetch(); }
   if (tapBox(in_, playBox(1))) startWords();
-  if (tapBox(in_, playBox(2))) go(SC_PUZZLES);
+  if (tapBox(in_, playBox(2))) { if (news_) news_->seen("puzzles"); go(SC_PUZZLES); }
   if (tapBox(in_, playBox(3))) startReads();
 }
 void Game::drawPlayMenu() {
@@ -771,6 +772,7 @@ void Game::drawPlayMenu() {
   static const char* const LABELS[4] = {"Fetch!", "Word Fetch", "Puzzles", "Little reads"};
   static const uint8_t COLS[4] = {C_GREEN, C_BLUE, C_ORANGE, C_PLUM};
   for (int i = 0; i < 4; i++) ui::button(in_, {playBox(i), LABELS[i], nullptr, COLS[i]});
+  if (news_ && news_->isNew("puzzles")) ui::newDot(playBox(2));
   drawBackButton();
 }
 

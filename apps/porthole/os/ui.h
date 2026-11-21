@@ -11,6 +11,10 @@ struct Button { Box box; const char* label; const gfx::Sprite* icon; uint8_t col
 
 uint8_t inkOn(uint8_t fill);   // readable text color for a fill: dark on bright, white on dark
 void panel(const Box& b, uint8_t fill, uint8_t border);
+// The platform's "new" mark (Kid news, AGENTS.md): a red dot in a white ring on b's top-right corner. The same on every
+// game, like the Home button, so a kid learns it once.
+void newDot(const Box& b);
+void newDot565(const Box& b);   // the same on an RGB565 screen (gfx565::fb), b in logical px
 void drawButton(const Button& b, bool pressed);
 bool button(const Input& in, const Button& b);   // draws it (sunk while a press that began on it is on it); true on a tap
 // Round button of radius 11 with a one-color icon mask drawn in white; the hit circle is 4 px wider.

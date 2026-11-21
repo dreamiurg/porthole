@@ -1,0 +1,62 @@
+# Kid news: what a kid sees after an update ("New for Sam!") and the red dots on new games and buttons.
+# The rules (what earns an entry, how to word it): "Kid news" in AGENTS.md. tools/news.py turns this file into
+# shell/news_entries.h (make news; make lint checks it is up to date).
+#
+# Append only: an entry's place in this file is its number on every device, so never delete, move or reorder one.
+# To take an entry back, add `gone = true`. A typo in `text` may be fixed.
+#
+# date: the day it merged (YYYY-MM-DD). Devices show it for 60 days from then, by their own clock.
+# game: the folder under games/, or "porthole" for the launcher itself.
+# size: "game" (a whole new game), "big" (a new thing to do inside a game) or "new" (new things to find: levels, books).
+# spot: optional. A button inside the game that gets the dot too; the game calls news->isNew("<spot>") there.
+# text: English, at most two lines on the card (about 22 letters each), for a kid of 5.
+
+[[news]]
+date = "2026-11-14"
+game = "sand-jar"
+size = "game"
+text = "Tilt sand and water!"
+
+[[news]]
+date = "2026-11-15"
+game = "times-cards"
+size = "game"
+text = "Learn times tables!"
+
+[[news]]
+date = "2026-11-15"
+game = "biscuit"
+size = "new"
+text = "8 new books!"
+
+[[news]]
+date = "2026-11-15"
+game = "racing"
+size = "big"
+spot = "together"
+text = "Race a friend!"
+
+[[news]]
+date = "2026-11-16"
+game = "pets-club"
+size = "big"
+spot = "puzzles"
+text = "Puzzles win hats!"
+
+[[news]]
+date = "2026-11-21"
+game = "pets-club"
+size = "big"
+text = "Buy collars in the Shop!"
+
+[[news]]
+date = "2026-11-21"
+game = "racing"
+size = "big"
+text = "Paint your car!"
+
+[[news]]
+date = "2026-11-21"
+game = "pets-club"
+size = "new"
+text = "Ukrainian words!"

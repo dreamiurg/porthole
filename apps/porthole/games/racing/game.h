@@ -108,6 +108,7 @@ class Game : public App {
   skills::Book* book_ = nullptr;   // the engine that caps play stars a day (purse.h)
   char notice_[32] = {};
   const gfx::Sprite* avatars_ = nullptr;
+  NewSpots* news_ = nullptr;   // the red dot on Race! (Kid news)
   int nAvatars_ = 0;
   uint16_t facePx_[3][20 * 20] = {};   // this kid, the other kid, a kid on the cards: the avatars in RGB565
   pic::Pic faces_[3] = {};

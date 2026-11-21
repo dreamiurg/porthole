@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "launcher.h"
+#include "news_entries.h"
 #include "save.h"
 #include "shell_sprites.h"
 #include "telemetry.h"
@@ -24,7 +25,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   if (adminPin_ > 10000) adminPin_ = 0;
   locks_ = shell::loadPinLocks(st);
   if (sys_) sys_->info(info_);
-  if (sys_ && shell::newRun(st, info_.version)) go(SH_SYS_NEW); else land();
+  land();
   gate_.closed = false;   // boot: no finger to guard against
 }
 void Shell::land() { if (prof_.count()) go(SH_PICK); else startNew(); }   // a fresh device goes straight to making the first profile
@@ -46,7 +47,7 @@ using ScreenFn = void (Shell::*)();
 void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   static const ScreenFn UPDATE[] = {&Shell::updatePick, &Shell::updateName, &Shell::updateAvatar, &Shell::updateAge, &Shell::updatePin,
     &Shell::updatePin, &Shell::updatePin, &Shell::updateDelete, &Shell::updateNoDelete, &Shell::updateLauncher, &Shell::updateRest,
-    &Shell::updateSysNew, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
+    &Shell::updateNews, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
     &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
@@ -65,7 +66,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
 void Shell::render() {
   static const ScreenFn DRAW[] = {&Shell::drawPick, &Shell::drawName, &Shell::drawAvatar, &Shell::drawAge, &Shell::drawPin,
     &Shell::drawPin, &Shell::drawPin, &Shell::drawDelete, &Shell::drawNoDelete, &Shell::drawLauncher, &Shell::drawRest,
-    &Shell::drawSysNew, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
+    &Shell::drawNews, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
     &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
@@ -127,7 +128,8 @@ void Shell::select(int id) {
   tellPlayer();
   shell::recharge(rec(), now_); enforceCurrentBudget();
   if (!rec().age) { creating_ = false; go(SH_AGE); return; }   // migrated from a v1 Pets Club save: ask once
-  go(restingNow() ? SH_REST : SH_LAUNCHER);
+  news_.load(*st_, prof_, id);
+  go(restingNow() ? SH_REST : newsDue() ? SH_NEWS : SH_LAUNCHER);   // news waits out a rest: the kid sees it on the way in
 }
 // The kid's player id (os/telemetry.h): from the profile and the device's secret, never stored and never the name; the
 // owner labels the ids in their own dashboard.
@@ -144,6 +146,7 @@ void Shell::finishCreate(uint16_t pin) {
   int id = shell::create(*st_, prof_, draft_, stores, n);
   if (id < 0) { go(SH_PICK); return; }   // full: the picker hides "+" at four, so only a sim script gets here
   pinClear(id);   // a new kid never inherits a deleted one's strikes, even with the same code
+  news_.load(*st_, prof_, id); news_.fresh();   // nor news from before they came: everything there is now is theirs to find
   select(id);
 }
 int Shell::appStores(const char** out) const {
@@ -181,6 +184,7 @@ void Shell::openIdx(int k) {
   enforceCurrentBudget();
   if (restingNow()) { go(SH_REST); return; }
   app_ = apps_[k]; opened_[k] = true;
+  news_.open(app_->store(), now_);
   int on[MAX_APPS]; const int m = shell::enabledGames(ids_, nApps_, gamesOff_, on);
   for (int i = 0; i < m; i++) if (on[i] == k) page_ = launcher::pageOf(m, i);   // back from a game: its page
   Profile all[MAX_PROFILES]; SaveSlot saves[MAX_PROFILES]; int n = 0, who = 0;
@@ -190,7 +194,7 @@ void Shell::openIdx(int k) {
     if (id == active_) who = n;
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
-  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS, &rec().book});
+  app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS, &rec().book, &news_});
   savedStars_ = openedStars_ = rec().stars; openedMs_ = ms_;
   telemetry::emit("game_opened", {telemetry::P("game", app_->name())});
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_; saveFails_ = 0;
@@ -518,8 +522,10 @@ void Shell::drawLauncher() {
   int games[launcher::PER_PAGE] = {}; ui::Box tiles[launcher::PER_PAGE];
   for (int i = 0; i < m; i++) { tiles[i] = launcher::tile(i, m); games[i] = on[k0 + i]; drawAppTile(games[i], tiles[i]); }
   drawCaption(tiles, games, m);
-  if (page_ > 0) drawPageArrow(false);
-  if (page_ + 1 < launcher::pages(n)) drawPageArrow(true);
+  bool before = false, after = false;   // a new game on another page: its arrow gets the dot
+  for (int i = 0; i < n; i++) if (launcher::pageOf(n, i) != page_ && tileDot(on[i])) (launcher::pageOf(n, i) < page_ ? before : after) = true;
+  if (page_ > 0) { drawPageArrow(false); if (before) ui::newDot(launcher::arrow(false)); }
+  if (page_ + 1 < launcher::pages(n)) { drawPageArrow(true); if (after) ui::newDot(launcher::arrow(true)); }
   ui::drawBack();
 }
 void Shell::drawHeader() {   // who is playing, and the sun showing the level picked now
@@ -542,6 +548,7 @@ void Shell::drawAppTile(int k, const ui::Box& b) {   // a game's picture
   const int dy = ui::pressing(in_, b) ? 1 : 0;
   ui::drawButton({b, nullptr, nullptr, C_WHITE}, dy);   // a picture fills its tile inside the border
   const Sprite& ic = apps_[k]->icon(); blit(ic, b.x + (b.w - ic.w) / 2, b.y + (b.h - ic.h) / 2 + dy);
+  if (tileDot(k)) ui::newDot({b.x, b.y + dy, b.w, b.h});   // news this kid has not opened yet (shell/news.h)
 }
 void Shell::drawPageArrow(bool right) {   // a yellow button with a brown triangle pointing the way
   const ui::Box b = launcher::arrow(right);
@@ -579,6 +586,50 @@ void Shell::drawLight() {
     text(x + sun.w + 3, b.y + (b.h - 8) / 2 + dy, "Auto", C_DKBROWN);
   }
   ui::drawBack();
+}
+
+// ---------------------------------------------------------------- "New for Sam!": what updates brought since this kid last looked
+// A line per game, the biggest news first; two lines a screen, a second screen behind a yellow arrow, and a red-dot card
+// for the rest ("Look for dots"): never more than two screens. OK counts it all as seen. No sound, no back button.
+bool Shell::newsDue() {
+  bool ok[shell::NEWS_COUNT];   // the launcher's own news, and the games in the image and switched on
+  int on[MAX_APPS]; const int n = shell::enabledGames(ids_, nApps_, gamesOff_, on);
+  for (int i = 0; i < shell::NEWS_COUNT; i++) {
+    ok[i] = !shell::NEWS[i].store[0];
+    for (int j = 0; j < n && !ok[i]; j++) ok[i] = !strcmp(apps_[on[j]]->store(), shell::NEWS[i].store);
+  }
+  newsCount_ = shell::newsLines(shell::NEWS, shell::NEWS_COUNT, {news_.seen(), now_, ok}, newsLines_, 5);
+  newsPage_ = 0;
+  if (!newsCount_) news_.showed();   // nothing for this kid in it (a hidden game's, or old): not asked again
+  return newsCount_ > 0;
+}
+static const ui::Box NEWS_OK = {45, 116, 70, 26}, NEWS_NEXT = {68, 117, 24, 22};
+static int newsCards(int count, int page) { return page ? (count > 3 ? 2 : count - 2) : (count < 2 ? count : 2); }   // the More card counts
+void Shell::updateNews() {
+  if (newsPage_ == 0 && newsCount_ > 2) { if (ui::clicked(in_, NEWS_NEXT)) { newsPage_ = 1; gate_.shown(ms_); } return; }   // a new screen: OK sits under the arrow
+  if (ui::clicked(in_, NEWS_OK)) { news_.showed(); go(SH_LAUNCHER); }
+}
+void Shell::drawNewsCard(int y, int line) {   // line -1: "More! Look for dots"
+  ui::panel({18, y, 124, 36}, C_CREAM, C_DKBROWN);
+  const char* s = line < 0 ? "More! Look for dots" : shell::NEWS[line].text;
+  int k = -1;
+  for (int j = 0; line >= 0 && j < nApps_; j++) if (!strcmp(apps_[j]->store(), shell::NEWS[line].store)) k = j;
+  if (k >= 0) { const Sprite& ic = apps_[k]->icon(); blit(ic, 22 + (38 - ic.w) / 2, y + 4 + (28 - ic.h) / 2); }
+  else { circle(41, y + 18, 9, C_WHITE); circle(41, y + 18, 8, C_RED); }   // the dot itself: the launcher's own news, and More
+  char lines[2][40]; const int nl = wrap(s, 76, lines, 2);
+  for (int i = 0; i < nl; i++) text(64, y + (nl == 1 ? 14 : 9) + i * 10, lines[i], C_DKBROWN);
+}
+void Shell::drawNews() {
+  clear(C_SKY);
+  char title[24]; snprintf(title, sizeof title, "New for %s!", rec().name);
+  textCentered(80, 19, textWidth(title) <= 100 ? title : "New stuff!", C_NAVY);
+  const int cards = newsCards(newsCount_, newsPage_), first = newsPage_ * 2;
+  for (int i = 0; i < cards; i++) drawNewsCard(34 + i * 40, newsPage_ && i == 1 && newsCount_ > 4 ? -1 : newsLines_[first + i]);
+  if (newsPage_ == 0 && newsCount_ > 2) {   // the second screen: a yellow arrow, like the launcher's pages
+    const int dy = ui::pressing(in_, NEWS_NEXT) ? 1 : 0;
+    ui::drawButton({NEWS_NEXT, nullptr, nullptr, C_YELLOW}, dy);
+    for (int i = 0; i < 6; i++) line(77 + i, 122 + i + dy, 77 + i, 134 - i + dy, C_DKBROWN);
+  } else ui::drawButton({NEWS_OK, "OK", nullptr, C_GREEN}, ui::pressing(in_, NEWS_OK));
 }
 
 // ---------------------------------------------------------------- resting: the play budget ran out (a turn, or the day)
@@ -636,7 +687,7 @@ bool Shell::clearPin(int id) {
   prof_.rec[id] = before; return false;
 }
 const char* Shell::screenName() const {
-  static const char* const N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "sys_new", "sys_info", "sys_updates",
+  static const char* const N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "news", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
                               "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search",
                               "sys_games"};
@@ -677,6 +728,7 @@ void Shell::debugCmd(const char* cmd) {
     else if (!strcmp(cmd, "rested")) { rec().restUntil = 0; rec().playSec = 0; rec().dayPlaySec = 0; }
     else if (!strcmp(cmd, "younger")) rec().age = 6;
     else if (!strcmp(cmd, "older")) rec().age = 9;
+    else if (!strcmp(cmd, "news")) news_.forget();   // as if this kid came from before Kid news: an update's news is all theirs
   }
   if (screen_ == SH_APP) app_->debugCmd(cmd);
 }
