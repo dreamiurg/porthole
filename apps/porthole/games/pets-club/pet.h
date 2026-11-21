@@ -18,11 +18,10 @@ enum Sticker : uint8_t {
 
 // Persisted state. Plain data, saved as a blob. Bump SAVE_VERSION on layout changes.
 constexpr uint32_t SAVE_MAGIC = 0x4F475243;  // "CRGO"
-constexpr uint16_t SAVE_VERSION = 5;
+constexpr uint16_t SAVE_VERSION = 4;
 constexpr size_t SAVE_V1_SIZE = 140;      // layout before the house/age fields; still accepted on load
 constexpr size_t SAVE_V2_SIZE = 156;      // layout before breed and the memory wall; still accepted on load
 constexpr size_t SAVE_V3_SIZE = 212;      // layout before puzzles and little reads; still accepted on load
-constexpr size_t SAVE_V4_SIZE = 288;      // layout before the Ukrainian words; still accepted on load
 constexpr int RETIRE_DAYS = 30;           // age at which the kid may move the dog to the farm
 constexpr int WALL_SLOTS = 4;             // memory wall frames: the last four dogs
 constexpr int NUM_BREEDS = 7;             // shelter breeds; 0 = the Golden pup every older save already has
@@ -30,17 +29,6 @@ constexpr int MAX_HOUSES = 3;             // houses (s0..s2) before Porthole: on
 constexpr int PUZZLE_STRANDS = 3, PUZZLE_REVIEWS = 8;
 // A puzzle missed, to ask again on a later day (learn::puzzles::Item's bytes, so this header needs no puzzle content).
 struct PuzzleReview { uint8_t strand, level, a, b, c, misses; uint16_t due; };   // due: a day index, 0 = empty
-// The kid's Ukrainian words (learn::uk in ukrainian.h, which reads and moves these): a rating of 100 per step, the
-// calibration that finds it, and missed words to ask again on a later day.
-constexpr int UK_REVIEWS = 5;   // five, so the save stays in ten NVS blocks (host/test_nvs_budget.cpp)
-struct UkWords {
-  int16_t rating;                   // 0: never played; step s is s * 100
-  uint8_t at, jump, misses, searching;   // calibrating while jump != 0: the step tried, the next jump, misses at one step
-  uint8_t lastRight, reserved;      // calibration: the last step answered right
-  uint16_t answers, right;          // ever
-  uint16_t reviewWord[UK_REVIEWS], reviewDue[UK_REVIEWS];   // word index + 1 (0 = empty), and the day it is due
-};
-static_assert(sizeof(UkWords) == 32, "UkWords is part of the save: append only");
 struct Save {
   uint32_t magic;
   uint16_t version, size;
@@ -64,8 +52,8 @@ struct Save {
   // ---- v2: houses, reading level, turn taking. Since Porthole the profile owns the kid's name, age, code, mute and
   // rest budget: kidName/kidAge are copied in from the profile on entry; muted, pin, restUntil and playSec are only
   // read once, by the shell's migration. The fields stay: the layout is append-only.
-  uint8_t kidAge, theme, reserved0, reserved1;   // kidAge 0 = not asked yet; theme = room color scheme
-  uint16_t pin, reserved2;                       // 4-digit secret code, 0 = none
+  uint8_t kidAge, theme, ukReview[2];           // kidAge 0 = not asked yet; theme = room color scheme; ukReview below
+  uint16_t pin, ukReviewDue0;                    // 4-digit secret code, 0 = none
   uint32_t restUntil, playSec;                   // turn taking: resting until / seconds played this session
   // ---- v3: breeds, the farm and the memory wall. hasDog 0 = empty room (dog on the farm, no pup adopted yet).
   uint8_t breed, dogsRaised, wallCount, hasDog;  // dogsRaised: dogs moved to the farm, ever
@@ -75,13 +63,14 @@ struct Save {
   uint8_t puzzleLevels[PUZZLE_STRANDS], puzzleReviewCount;  // each strand's level + 1 (0: never played, starts by age)
   uint8_t readLevel, readStreak;                 // little reads level 1..READ_LEVELS (0: not yet, starts by age)
   uint16_t readsRight, puzzlesRight;             // right answers, ever: every READS_PER_STAR / PUZZLES_PER_STAR is a star
-  uint16_t reserved3;
+  // Ukrainian words (ukrainian.h) missed, to ask again on a later day: word index + 1 (0 = empty) and the day it is
+  // due. They live in what were reserved bytes (zero in every older save), so the save stays 288 bytes: one byte more
+  // would be an NVS entry more for every kid (host/test_nvs_budget.cpp). The rating is the profile's (os/skills.h).
+  uint16_t ukReviewDue1;
   PuzzleReview puzzleReviews[PUZZLE_REVIEWS];    // missed puzzles that come back on a later day, oldest first
-  // ---- v5: Ukrainian words (ukrainian.cpp), the kid's like the puzzles.
-  UkWords uk;
   uint32_t crc;
 };
-static_assert(sizeof(Save) == 320, "Save is append-only: v5 is 320 bytes");
+static_assert(sizeof(Save) == 288, "Save is append-only: v4 is 288 bytes");
 
 namespace pet {
 // ---- calibration knobs (per real hour unless noted) ----
@@ -99,7 +88,7 @@ static const uint8_t TRICK_UNLOCK_HEARTS[NUM_TRICKS] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 uint32_t crc32(const void* d, size_t n);
 bool valid(const Save& s);
-bool loadBlob(const void* data, size_t n, Save& out);   // accepts v1 to v4 (migrates) and v5 blobs
+bool loadBlob(const void* data, size_t n, Save& out);   // accepts v1, v2 and v3 (migrates) and v4 blobs
 void levelRange(int age, int& lo, int& hi);             // story levels 1..3 offered for a kid's age
 void wordLenRange(int age, int& lo, int& hi);           // spelling word lengths for a kid's age
 int bookListFor(const Save& s, uint8_t* out);          // story indices this kid may read (by age), widened if too few

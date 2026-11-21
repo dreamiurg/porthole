@@ -1,32 +1,30 @@
-// Pets Club's Ukrainian words (the design page "Українська в Porthole", approved 2026-11-21): one kid's rating on a
-// ladder of ten steps, a quick calibration that finds it from the easiest word up, and questions picked for it. Pure
-// logic, no rendering; host/test_pets_uk.cpp exercises it. Three exercises:
+// Pets Club's Ukrainian words (the design page "Українська в Porthole", approved 2026-11-21): questions picked for the
+// kid's rating in the shared skills engine (os/skills.h, skill WORDS_UK), which also calibrates a new kid and pays the
+// stars. Pure logic, no rendering; host/test_pets_uk.cpp exercises it. Three exercises:
 //   MEANING    a Ukrainian word, three English meanings to pick from;
 //   LOOKALIKE  an English meaning, three Ukrainian words that differ by a letter or two (кіт / кит / кут);
 //   SYLLABLES  an English meaning, the word's syllables and one more to tap in order (со-ба-ка).
-// Ratings follow the shared engine's page (100 rating = one step, about 80% right once calibrated, K from 160 down
-// to 40) so they can move into it: until then they live in the kid's Pets Club save (pet.h's UkWords).
+// A word's step s (1..STEPS, tools/uk_words.py) is engine level s - 1; the exercise adds KIND_OFFSET.
 #pragma once
-#include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "content_uk.h"
 #include "pet.h"
 #include "puzzles.h"
+#include "skills.h"
 
 namespace learn::uk {
 enum Kind : uint8_t { MEANING, LOOKALIKE, SYLLABLES, KIND_COUNT };
-constexpr int ROUND = 5, OPTIONS = 3, MAX_TILES = 4, STEPS = 10;
-constexpr int16_t STEP = 100;                                  // rating per step: step s is rated s * STEP
-constexpr int16_t KIND_OFFSET[KIND_COUNT] = {0, 100, 50};      // the same word, harder to find among lookalikes or to build
-constexpr int16_t TARGET_BELOW = 85;   // with three options, 80% right is an item 85 under the kid's rating
-constexpr int16_t RATING_MIN = 50, RATING_MAX = 1100;
-constexpr int CALIBRATION_MAX = 15;    // answers: calibration ends by then whatever happens
-// Faster than this is a guess, not a read (it moves nothing up); slower is right but not yet fluent (0.7 of a point).
-constexpr uint32_t GUESS_MS[KIND_COUNT] = {700, 900, 1500};
+constexpr int ROUND = 5, OPTIONS = 3, MAX_TILES = 4, STEPS = 7;
+constexpr int KIND_OFFSET[KIND_COUNT] = {0, 100, 50};   // the same word, harder to find among lookalikes or to build
+// Faster than this is a guess, not a read (the engine counts it wrong); slower is right but not yet fluent.
+constexpr uint32_t READ_MS[KIND_COUNT] = {700, 900, 1500};
 constexpr uint32_t SLOW_MS[KIND_COUNT] = {10000, 10000, 15000};
 
-inline int16_t beta(const Word& w, Kind k) { return (int16_t)(STEP * w.step + KIND_OFFSET[k]); }
+inline int beta(const Word& w, Kind k) { return skills::LEVEL * (w.step - 1) + KIND_OFFSET[k]; }
+// The answers a guess picks from: three options; building in order is no guess.
+constexpr int choices(Kind k) { return k == SYLLABLES ? 1 : OPTIONS; }
 inline bool fits(const Word& w, Kind k) { return k == MEANING || (k == LOOKALIKE ? w.look != 0 : w.tiles != 0); }
 inline int parts(const Word& w) { int n = 1; for (const char* c = w.syl; *c; c++) n += *c == '-'; return n; }
 // Syllable `part` of w into out (NUL-terminated).
@@ -38,99 +36,33 @@ inline void syllable(const Word& w, int part, char* out, size_t cap) {
   out[n] = 0;
 }
 
-// ---------------------------------------------------------------- the rating and the calibration
-inline bool started(const UkWords& p) { return p.rating != 0; }
-inline bool calibrating(const UkWords& p) { return p.jump != 0; }
-inline int stepOf(const UkWords& p) {   // the step the kid reads at now, 1..STEPS
-  if (calibrating(p)) return p.at;
-  const int s = (p.rating + STEP / 2) / STEP;
-  return s < 1 ? 1 : s > STEPS ? STEPS : s;
-}
-// A new kid starts at the easiest step (or one a grown-up set), jumping up 1, 2, 4 steps while the answers are right.
-inline void start(UkWords& p, int fromStep = 1) {
-  if (started(p)) return;
-  p = UkWords{};
-  p.at = (uint8_t)(fromStep < 1 ? 1 : fromStep > STEPS ? STEPS : fromStep);
-  p.rating = (int16_t)(STEP * p.at); p.jump = 1;
-}
-// The difficulty the next question should have: the step being tried, then the kid's rating less TARGET_BELOW.
-inline int16_t target(const UkWords& p) { return calibrating(p) ? (int16_t)(STEP * p.at) : (int16_t)(p.rating - TARGET_BELOW); }
-// The chance of a right answer: a third by guessing, the rest by how far the kid is above the question.
-inline float expected(int16_t rating, int16_t b) { return 1.0f / 3 + (2.0f / 3) / (1.0f + expf(-(rating - b) / 100.0f)); }
-inline float score(bool right, Kind k, uint32_t ms) { return !right || ms < GUESS_MS[k] ? 0.0f : ms > SLOW_MS[k] ? 0.7f : 1.0f; }
-
-namespace detail {
-inline int clampStep(int s) { return s < 1 ? 1 : s > STEPS ? STEPS : s; }
-// One calibration answer (the page's flowchart): up the jump and double it while right; the first miss turns back by
-// half the last jump, and from then on every answer moves by a jump that halves down to one step. Done after two
-// misses at one step, at the top, or after CALIBRATION_MAX answers; the rating is the last step answered right.
-inline bool calibrate(UkWords& p, bool ok) {
-  const bool fine = p.searching ? p.jump == 1 : p.jump <= 2;   // the last move was one step or none
-  bool done = false;
-  if (ok) p.lastRight = p.at;
-  else if (fine) p.misses++;
-  if (!p.searching) {
-    if (ok) {
-      done = p.at == STEPS;
-      p.at = (uint8_t)clampStep(p.at + p.jump);
-      p.jump = (uint8_t)(p.jump < 16 ? p.jump * 2 : 16);
-    } else {
-      p.searching = 1;
-      const int back = p.jump / 4 < 1 ? 1 : p.jump / 4;
-      p.at = (uint8_t)clampStep(p.at - back);
-      p.jump = (uint8_t)(back / 2 < 1 ? 1 : back / 2);
-    }
-  } else {
-    p.at = (uint8_t)clampStep(p.at + (ok ? p.jump : -p.jump));
-    p.jump = (uint8_t)(p.jump / 2 < 1 ? 1 : p.jump / 2);
-  }
-  if (!done && p.misses < 2 && p.answers < CALIBRATION_MAX) return false;
-  p.rating = (int16_t)(STEP * (p.lastRight ? p.lastRight : 1));
-  p.jump = 0; p.at = 0;
-  return true;
-}
-}  // namespace detail
-
-// An answer to a question of difficulty b. True when it ended the calibration (the kid's step is found).
-inline bool answer(UkWords& p, int16_t b, bool right, Kind k, uint32_t ms) {
-  start(p);
-  p.answers = p.answers < 0xFFFF ? (uint16_t)(p.answers + 1) : p.answers;
-  if (right && p.right < 0xFFFF) p.right++;
-  const float s = score(right, k, ms);
-  if (calibrating(p)) return detail::calibrate(p, s > 0);
-  const float kf = 160.0f / (1.0f + p.answers / 5.0f);
-  const float delta = (kf < 40 ? 40 : kf) * (s - expected(p.rating, b));
-  const int r = p.rating + (int)lroundf(delta);
-  p.rating = (int16_t)(r < RATING_MIN ? RATING_MIN : r > RATING_MAX ? RATING_MAX : r);
-  return false;
+// The difficulty to serve for exercise k: the engine's level for this kid, as a beta.
+inline int target(const skills::Book& b, Kind k) { return skills::LEVEL * skills::target(b, skills::WORDS_UK, STEPS + 1, choices(k)); }
+// An answer, for skills::answer: the item (its key tells a repeat today) and how fast it came.
+inline skills::Item item(Kind k, int word, uint32_t ms) {
+  return {skills::WORDS_UK, beta(WORDS[word], k), choices(k), READ_MS[k], (uint16_t)(k << 12 | word),
+          ms > SLOW_MS[k] ? skills::SLOW : skills::QUICK};
 }
 
 // ---------------------------------------------------------------- the review queue: a missed word comes back tomorrow
-inline void missed(UkWords& p, uint16_t word, uint16_t today) {
-  int at = -1;
-  for (int i = 0; i < UK_REVIEWS; i++) if (p.reviewWord[i] == word + 1) at = i;
-  if (at < 0) {   // a new one goes last; a full queue lets its oldest go
-    at = 0;
-    while (at < UK_REVIEWS && p.reviewWord[at]) at++;
-    if (at == UK_REVIEWS) {
-      memmove(p.reviewWord, p.reviewWord + 1, sizeof p.reviewWord - sizeof *p.reviewWord);
-      memmove(p.reviewDue, p.reviewDue + 1, sizeof p.reviewDue - sizeof *p.reviewDue);
-      at = UK_REVIEWS - 1;
-    }
-  }
-  p.reviewWord[at] = (uint16_t)(word + 1); p.reviewDue[at] = (uint16_t)(today + 1);
+// Two places in the save (pet.h ukReview), oldest first; a third miss lets the oldest go.
+constexpr int REVIEWS = 2;
+static_assert(WORD_COUNT < 255, "a review is a word index + 1 in a byte");
+inline uint16_t& reviewDue(Save& s, int i) { return i ? s.ukReviewDue1 : s.ukReviewDue0; }
+inline uint16_t reviewDue(const Save& s, int i) { return i ? s.ukReviewDue1 : s.ukReviewDue0; }
+inline void missed(Save& s, uint16_t word, uint16_t today) {
+  int at = s.ukReview[0] == word + 1 ? 0 : s.ukReview[1] == word + 1 ? 1 : !s.ukReview[0] ? 0 : !s.ukReview[1] ? 1 : -1;
+  if (at < 0) { s.ukReview[0] = s.ukReview[1]; s.ukReviewDue0 = s.ukReviewDue1; at = 1; }   // full: the oldest goes
+  s.ukReview[at] = (uint8_t)(word + 1); reviewDue(s, at) = (uint16_t)(today + 1);
 }
-inline void reviewed(UkWords& p, uint16_t word) {   // a review answered right leaves the queue
-  for (int i = 0; i < UK_REVIEWS; i++) {
-    if (p.reviewWord[i] != word + 1) continue;
-    for (int j = i; j + 1 < UK_REVIEWS; j++) { p.reviewWord[j] = p.reviewWord[j + 1]; p.reviewDue[j] = p.reviewDue[j + 1]; }
-    p.reviewWord[UK_REVIEWS - 1] = p.reviewDue[UK_REVIEWS - 1] = 0;
-    return;
-  }
+inline void reviewed(Save& s, uint16_t word) {   // a review answered right leaves the queue
+  if (s.ukReview[0] == word + 1) { s.ukReview[0] = s.ukReview[1]; s.ukReviewDue0 = s.ukReviewDue1; }
+  else if (s.ukReview[1] != word + 1) return;
+  s.ukReview[1] = 0; s.ukReviewDue1 = 0;
 }
-inline int due(const UkWords& p, uint16_t today) {   // the oldest word due today, or -1
-  for (int i = 0; i < UK_REVIEWS; i++)
-    if (p.reviewWord[i] && p.reviewWord[i] - 1 < WORD_COUNT && p.reviewDue[i] <= today) return p.reviewWord[i] - 1;
+inline int due(const Save& s, uint16_t today) {   // the oldest word due today, or -1 (a word past the list is skipped)
+  for (int i = 0; i < REVIEWS; i++)
+    if (s.ukReview[i] && s.ukReview[i] - 1 < WORD_COUNT && reviewDue(s, i) <= today) return s.ukReview[i] - 1;
   return -1;
 }
 
@@ -148,15 +80,15 @@ struct Question {
 // The round's i-th exercise: the three take turns, from a place the round's seed picks.
 inline Kind kindAt(int i, uint32_t roundSeed) { return (Kind)((roundSeed + (uint32_t)i) % KIND_COUNT); }
 
-// A word for exercise k near difficulty t: one of those within 50 of the closest, at random, none of `avoid`.
-inline int pick(Kind k, int16_t t, uint32_t& rng, const uint16_t* avoid, int nAvoid) {
+// A word for exercise k near difficulty t: one of those within half a level of the closest, at random, none of `avoid`.
+inline int pick(Kind k, int t, uint32_t& rng, const uint16_t* avoid, int nAvoid) {
   auto avoided = [&](int i) { for (int j = 0; j < nAvoid; j++) if (avoid[j] == i) return true; return false; };
   int best = 1 << 30;
   for (int i = 0; i < WORD_COUNT; i++)
     if (fits(WORDS[i], k) && !avoided(i)) { const int d = abs(beta(WORDS[i], k) - t); best = d < best ? d : best; }
   int chosen = -1, seen = 0;
   for (int i = 0; i < WORD_COUNT; i++)
-    if (fits(WORDS[i], k) && !avoided(i) && abs(beta(WORDS[i], k) - t) <= best + 50 && puzzles::below(rng, ++seen) == 0) chosen = i;
+    if (fits(WORDS[i], k) && !avoided(i) && abs(beta(WORDS[i], k) - t) <= best + skills::LEVEL / 2 && puzzles::below(rng, ++seen) == 0) chosen = i;
   return chosen;
 }
 

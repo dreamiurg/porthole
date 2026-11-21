@@ -106,6 +106,7 @@ class Game : public App {
   char readLines_[learn::READ_LINES][40] = {}; int readLineCount_ = 0;
   // Ukrainian words (ukrainian.cpp); asked_, right_, answered_ and roundStars_ are the puzzles'
   learn::uk::Question ukQ_{}; uint32_t ukSeed_ = 0; uint16_t ukAsked_[learn::uk::ROUND] = {};
+  uint16_t ukRecent_[16] = {}; uint8_t ukRecentN_ = 0;   // words asked lately (this visit), so the next rounds vary
   int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0, ukUsed_ = 0; bool ukFound_ = false;
 
   // ---- helpers

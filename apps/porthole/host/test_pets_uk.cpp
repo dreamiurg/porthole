@@ -1,5 +1,5 @@
-// Self-check for Pets Club's Ukrainian words (games/pets-club/ukrainian.h, content_uk.h): the calibration on the design
-// page's two examples, the rating after it, the review queue, every question each word can make, every letter in the
+// Self-check for Pets Club's Ukrainian words (games/pets-club/ukrainian.h, content_uk.h): the engine's calibration
+// finding every reader's step through these words, variety at the top, the review queue, every question each word can make, every letter in the
 // font (os/uk_fonts.h), and every line measured where ukrainian.cpp draws it.
 // Run: make test
 #include "host/check.h"
@@ -13,72 +13,68 @@
 using namespace learn::uk;
 static int checks = 0;
 
-// A kid who reads every word up to `level` and none above it, answering in a reader's time.
-static int calibrate(int level, UkWords& p) {
-  p = UkWords{}; start(p);
+// A kid who reads every word up to `step` and none above it, answering meanings in a reader's time, until the engine's
+// calibration (os/skills.h) ends. Returns the answers it took; b holds the rating.
+static int calibrate(int step, skills::Book& b) {
+  b = skills::Book{}; skills::forgetRepeats();
+  skills::seed(b, skills::WORDS_UK, 0, false);
+  skills::Round r = skills::start(b, 20000 * 86400u);
+  uint32_t rng = 7;
   int answers = 0;
-  while (calibrating(p)) {
-    const bool right = p.at <= level;
-    answer(p, (int16_t)(STEP * p.at), right, MEANING, 3000);
+  while (skills::calibrating(b, skills::WORDS_UK) && answers < 40) {
+    const int w = pick(MEANING, target(b, MEANING), rng, nullptr, 0);
+    skills::answer(b, r, item(MEANING, w, 3000), WORDS[w].step <= step, 3000);
     answers++;
   }
   return answers;
 }
 
 static void calibration() {
-  UkWords p;
-  // The page's examples: Zoe (reads to step 6) is found in 8 answers, 1 2 4 8 6 7 6 7; Zach (step 3) in 7.
-  CHECK(calibrate(6, p) == 8 && p.rating == 600 && stepOf(p) == 6);
-  CHECK(calibrate(3, p) == 7 && p.rating == 300 && stepOf(p) == 3);
-  // Every level is found within CALIBRATION_MAX, at that level or one under it (two misses can come a step early).
-  for (int level = 0; level <= STEPS; level++) {
-    const int n = calibrate(level, p);
-    CHECK(n <= CALIBRATION_MAX && !calibrating(p));
-    CHECK(stepOf(p) <= (level < 1 ? 1 : level) && stepOf(p) >= (level < 2 ? 1 : level - 1));
+  skills::Book b;
+  // Every reader is found within the engine's 15 answers, at their step or one off (the top step holds all above it).
+  for (int step = 1; step <= STEPS; step++) {
+    const int n = calibrate(step, b), found = skills::level(b, skills::WORDS_UK) + 1, at = found > STEPS ? STEPS : found;
+    CHECK(n <= skills::CALIB_ANSWERS && at >= step - 1 && at <= step + 1);
   }
-  // A guess (too fast to have read) or a right answer moves the calibration like a miss and like a right answer.
-  p = UkWords{}; start(p);
-  answer(p, STEP, true, MEANING, 300);
-  CHECK(p.at == 1 && p.searching == 1);
-  p = UkWords{}; start(p);
-  answer(p, STEP, true, SYLLABLES, 2000);
-  CHECK(p.at == 2 && p.jump == 2);
-  // A grown-up's start step is kept, and a started kid is never reset.
-  p = UkWords{}; start(p, 4); CHECK(p.at == 4 && p.rating == 400);
-  start(p, 9); CHECK(p.at == 4);
+  // The next word is near the level found, and a guess (faster than reading) moves it like a miss.
+  calibrate(4, b);
+  uint32_t seed3 = 3;
+  CHECK(abs(target(b, MEANING) - beta(WORDS[pick(MEANING, target(b, MEANING), seed3, nullptr, 0)], MEANING)) <= 2 * skills::LEVEL);
+  CHECK(item(MEANING, 0, 300).readMs > 300 && item(SYLLABLES, 0, 20000).speed == skills::SLOW && item(LOOKALIKE, 0, 3000).speed == skills::QUICK);
+  CHECK(item(SYLLABLES, 0, 0).options == 1 && item(MEANING, 0, 0).options == OPTIONS);
 }
 
-static void rating() {
-  UkWords p; calibrate(5, p);
-  const int16_t r = p.rating, b = (int16_t)(r - TARGET_BELOW);
-  UkWords up = p; answer(up, b, true, MEANING, 3000); CHECK(up.rating > r);
-  // Right but slow scores 0.7, under the 80% expected at the target: it holds the kid about where they are.
-  UkWords slow = p; answer(slow, b, true, MEANING, 20000); CHECK(slow.rating < up.rating && abs(slow.rating - r) < 10);
-  UkWords guess = p; answer(guess, b, true, MEANING, 200); CHECK(guess.rating < r);
-  UkWords down = p; answer(down, b, false, MEANING, 3000); CHECK(down.rating < r && r - down.rating > up.rating - r);
-  // At the target, about 80% right keeps the rating where it is; all right climbs a step in a few rounds.
-  CHECK(fabsf(0.8f - expected(r, b)) < 0.02f);
-  UkWords climb = p;
-  for (int i = 0; i < 15; i++) answer(climb, target(climb), true, MEANING, 3000);
-  CHECK(climb.rating >= r + STEP);
-  UkWords low = p;
-  for (int i = 0; i < 200; i++) answer(low, STEP, false, MEANING, 3000);
-  CHECK(low.rating == RATING_MIN);
+// At the top of the ladder, words asked lately are kept out: 30 questions in a row (the game's ring of 16) all differ
+// over any 16, and come from more than the top step alone.
+static void variety() {
+  uint32_t rng = 99;
+  uint16_t ring[16]; int n = 0, lowest = STEPS;
+  for (int q = 0; q < 30; q++) {
+    for (int k = 0; k < KIND_COUNT; k++) {
+      const int w = pick((Kind)k, STEPS * skills::LEVEL, rng, ring, n);
+      CHECK(w >= 0);
+      lowest = WORDS[w].step < lowest ? WORDS[w].step : lowest;
+      if (n == 16) memmove(ring, ring + 1, sizeof ring - sizeof *ring); else n++;
+      ring[n - 1] = (uint16_t)w;
+    }
+  }
+  CHECK(lowest < STEPS);
 }
 
 static void reviews() {
-  UkWords p{}; start(p);
+  Save p{};
   CHECK(due(p, 10) < 0);
   missed(p, 7, 10);
   CHECK(due(p, 10) < 0 && due(p, 11) == 7);
   missed(p, 7, 12);   // missed again: one place, due again the day after
-  CHECK(due(p, 12) < 0 && due(p, 13) == 7 && p.reviewWord[1] == 0);
+  CHECK(due(p, 12) < 0 && due(p, 13) == 7 && !p.ukReview[1]);
   reviewed(p, 7);
   CHECK(due(p, 99) < 0);
-  for (int w = 0; w < UK_REVIEWS + 2; w++) missed(p, (uint16_t)w, 10);   // a full queue lets its oldest go
+  missed(p, 1, 10); missed(p, 2, 10); missed(p, 3, 10);   // a full queue lets its oldest go
   CHECK(due(p, 11) == 2);
-  p.reviewWord[0] = WORD_COUNT + 5;   // a word past the content (a save from a longer list) is skipped
-  CHECK(due(p, 11) == 3);
+  reviewed(p, 2); CHECK(due(p, 11) == 3 && !p.ukReview[1]);
+  p.ukReview[0] = (uint8_t)(WORD_COUNT + 5);   // a word past the content (a save from a longer list) is skipped
+  CHECK(due(p, 11) < 0);
 }
 
 // Every code point of s in the font.
@@ -94,7 +90,7 @@ static bool covered(const font::Font& f, const char* s) {
 
 // Every word's questions, and every line of them as ukrainian.cpp draws it (physical px: 480 wide, a logical px is 3).
 static void questions() {
-  constexpr int OPTION_W = 96 * 3 - 8, BIG_W = 400;
+  constexpr int OPTION_W = 84 * 3 - 8, BIG_W = 400;
   uint32_t rng = 12345;
   int tiles = 0, looks = 0;
   for (int i = 0; i < WORD_COUNT; i++) {
@@ -104,8 +100,10 @@ static void questions() {
     char line[64];   // the answer shown: Andika 48, or 24 when that is too wide (ukrainian.cpp lineFont)
     snprintf(line, sizeof line, "%s = %s", w.syl, w.en);
     CHECK(font::textWidth(ukfont::FONT48, line) <= 420 || font::textWidth(ukfont::FONT24, line) <= 420);
-    snprintf(line, sizeof line, "It means %s, not %s.", w.en, w.en);   // the longest meaning twice is the widest
-    CHECK(font::textHeight(ukfont::FONT24, line, 400, 0) <= 2 * ukfont::FONT24.lineHeight);
+    snprintf(line, sizeof line, "Yes! It means %s.", w.en);   // a meaning's lines, one each (ukrainian.cpp drawUkText)
+    CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
+    snprintf(line, sizeof line, "%s is %s.", w.en, w.uk);
+    CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
     for (int k = 0; k < KIND_COUNT; k++) {
       if (!fits(w, (Kind)k)) continue;
       const Question q = build((Kind)k, i, rng);
@@ -117,6 +115,10 @@ static void questions() {
           char s[16]; syllable(WORDS[q.tiles[t].word], q.tiles[t].part, s, sizeof s);
           mine += q.tiles[t].word == i;
           CHECK(covered(ukfont::FONT48, s));
+          char miss[80], first[16];   // a miss names the syllable wanted and the one tapped
+          syllable(w, 0, first, sizeof first);
+          snprintf(miss, sizeof miss, "After %s comes %s, not %s.", first, first, s);
+          CHECK(font::textWidth(ukfont::FONT24, miss) <= 420);
           tw[t] = (font::textWidth(ukfont::FONT48, s) + 2) / 3 + 8;   // ukrainian.cpp partW (at least 26)
           tw[t] = tw[t] < 26 ? 26 : tw[t];
         }
@@ -133,7 +135,7 @@ static void questions() {
       for (int a = 0; a < OPTIONS; a++)
         for (int b = a + 1; b < OPTIONS; b++) CHECK(q.options[a] != q.options[b] && strcmp(WORDS[q.options[a]].en, WORDS[q.options[b]].en));
       if (k == MEANING) {
-        for (int a = 0; a < OPTIONS; a++) CHECK(strlen(WORDS[q.options[a]].en) * 6 <= 92);   // the 8x8 font in the button
+        for (int a = 0; a < OPTIONS; a++) CHECK(strlen(WORDS[q.options[a]].en) * 6 <= 80);   // the 8x8 font in the button
         continue;
       }
       looks++;
@@ -143,14 +145,14 @@ static void questions() {
   }
   CHECK(tiles >= 60 && looks >= 60);
   // Every exercise has a word at every target a kid can have, none twice in a round.
-  for (int t = 0; t <= RATING_MAX; t += 50)
+  for (int t = 0; t <= STEPS * skills::LEVEL; t += 50)
     for (int k = 0; k < KIND_COUNT; k++) {
       uint16_t asked[ROUND];
-      for (int n = 0; n < ROUND; n++) { const int w = pick((Kind)k, (int16_t)t, rng, asked, n); CHECK(w >= 0 && fits(WORDS[w], (Kind)k)); asked[n] = (uint16_t)w; }
+      for (int n = 0; n < ROUND; n++) { const int w = pick((Kind)k, t, rng, asked, n); CHECK(w >= 0 && fits(WORDS[w], (Kind)k)); asked[n] = (uint16_t)w; }
     }
 }
 
 int main() {
-  calibration(); rating(); reviews(); questions();
+  calibration(); variety(); reviews(); questions();
   printf("test_pets_uk: all checks passed (%d checks, %d words, %d lookalike sets)\n", checks, WORD_COUNT, LOOK_COUNT);
 }

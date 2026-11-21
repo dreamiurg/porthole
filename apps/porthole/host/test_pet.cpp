@@ -130,24 +130,9 @@ static void saveV3Migrates(Save s) {
   assert(!m.puzzleLevels[0] && !m.puzzleReviewCount && !m.readLevel && !m.readsRight && !m.puzzlesRight && !m.puzzleReviews[0].due);
   v3[30] ^= 1; assert(!pet::loadBlob(v3, sizeof v3, m));          // corrupted v3 rejected
   oldBlob(v3, s, sizeof v3, 2); assert(!pet::loadBlob(v3, sizeof v3, m));   // a v3 size must say v3
-  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v4 fields are made safe once, on load
+  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v4 bytes are made safe once, on load
   bad.readLevel = 77; bad.readStreak = 9; bad.puzzleReviewCount = 200; pet::seal(bad);
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
-}
-
-// v4 blob (288 bytes, before the Ukrainian words) migrates: puzzles, reads and the farm keep their values, Ukrainian
-// starts unplayed; damaged v5 Ukrainian bytes are made safe on load.
-static void saveV4Migrates(Save s) {
-  s.hasDog = 0; s.puzzleLevels[1] = 4; s.readsRight = 33; s.puzzleReviews[2].due = 900;
-  uint8_t v4[SAVE_V4_SIZE]; oldBlob(v4, s, sizeof v4, 4);
-  Save m; assert(pet::loadBlob(v4, sizeof v4, m));
-  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
-  assert(m.hasDog == 0 && m.puzzleLevels[1] == 4 && m.readsRight == 33 && m.puzzleReviews[2].due == 900);
-  assert(!m.uk.rating && !m.uk.jump && !m.uk.answers && !m.uk.reviewWord[0]);
-  v4[30] ^= 1; assert(!pet::loadBlob(v4, sizeof v4, m));          // corrupted v4 rejected
-  oldBlob(v4, s, sizeof v4, 3); assert(!pet::loadBlob(v4, sizeof v4, m));   // a v4 size must say v4
-  Save bad = s; bad.uk.rating = -5; bad.uk.at = 0; bad.uk.jump = 99; bad.uk.lastRight = 40; pet::seal(bad);
-  assert(pet::loadBlob(&bad, sizeof bad, m) && m.uk.rating == 1100 && m.uk.at == 1 && m.uk.jump == 16 && m.uk.lastRight == 10);
 }
 
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
@@ -633,7 +618,6 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   saveV3Migrates(s);
-  saveV4Migrates(s);
   learningPaysStars();
   retireKeepsKidProgress();
   giftAfterClockSetBack();

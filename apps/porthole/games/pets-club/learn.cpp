@@ -29,7 +29,8 @@ static_assert(sizeof learn::STRAND_LABELS / sizeof *learn::STRAND_LABELS == puzz
 static_assert(sizeof learn::CHEERS / sizeof *learn::CHEERS >= puzzles::ROUND && sizeof learn::NUDGES / sizeof *learn::NUDGES >= puzzles::ROUND);
 const uint8_t STRAND_COLS[3] = {C_GREEN, C_ORANGE, C_BLUE};
 bool tapBox(const Input& in, const ui::Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
-ui::Box strandBox(int i) { return {32, 55 + i * 24, 96, 22}; }   // the strands, then Ukrainian (ukrainian.cpp)
+// The strands, then Ukrainian (ukrainian.cpp), narrower low down where the circle is.
+ui::Box strandBox(int i) { return i < PUZZLE_STRANDS ? ui::Box{32, 54 + i * 24, 96, 22} : ui::Box{38, 54 + i * 24, 84, 22}; }
 ui::Box answerBox(int i) { return {24 + i * 39, 90, 34, 30}; }
 const ui::Box NEXT_BTN = {56, 122, 48, 22}, MORE_BTN = {50, 118, 60, 22}, MORE_READS_BTN = {44, 118, 72, 22};
 const int READ_ANSWER_STEP = 24, READ_Q_TOP = 32, PAGE_LINES = 8;
