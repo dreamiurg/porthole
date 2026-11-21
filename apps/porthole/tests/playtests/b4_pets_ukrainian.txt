@@ -50,10 +50,11 @@ wait 450
 tap 80 133
 wait 450
 end
-# the round's end: 4 right. The calibration went up a level, two, back one after the miss, then two and four (level 7);
+# the round's end: 4 right. The calibration went up a level, two, back one after the miss, then two and two: after a
+# miss the jump no longer doubles (level 5);
 # meanwhile a right answer pays a flat 40 points: 160 is a star with 60 carried, and the day's first stars count twice
 debug
-expect uk_rating=700
+expect uk_rating=500
 expect uk_calibrating=1
 expect puzzles_right=4
 expect stars=2

@@ -33,11 +33,23 @@ static void calibration() {
   ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 700);
   CHECK(r.points == 3 * 40);   // a flat base each while calibrating, whatever the level
   ans(false); CHECK(skills::get(b, skills::ADD_SUB).theta == 500);   // back half of 4, the jump now 2
-  ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 700);    // +2, the jump 4 again... capped by the next miss
-  ans(false); ans(false);
-  for (int i = 0; i < 20 && skills::calibrating(b, skills::ADD_SUB); i++) ans(i % 2);
-  CHECK(!skills::calibrating(b, skills::ADD_SUB) );
+  ans(true); CHECK(skills::get(b, skills::ADD_SUB).theta == 700);    // +2, and after a miss the jump stays 2
+  ans(false); CHECK(skills::get(b, skills::ADD_SUB).theta == 600);   // back 1, the jump 1, the second miss: done
+  CHECK(!skills::calibrating(b, skills::ADD_SUB));
   CHECK(!r.newBest);   // where calibration lands is a start
+}
+
+// A kid who answers right, wrong, right, wrong... settles within 10 answers, not the 15 cap.
+static void calibrationAlternating() {
+  for (int first = 0; first < 2; first++) {
+    skills::Book b{}; skills::forgetRepeats();
+    skills::seed(b, skills::WORDS_UK, 2, false);
+    skills::Round r = skills::start(b, NOW);
+    int n = 0;
+    for (; n < 20 && skills::calibrating(b, skills::WORDS_UK); n++)
+      skills::answer(b, r, {skills::WORDS_UK, skills::target(b, skills::WORDS_UK, 12, 3) * 100, 3, 1000, (uint16_t)n}, (n + first) % 2 == 0, 5000);
+    CHECK(n <= 10);
+  }
 }
 
 // What is easy for this kid pays a quarter, what is hard up to 2.5 times; the same item again the same day half, a
@@ -147,7 +159,7 @@ static void converges() {
 }
 
 int main() {
-  curve(); calibration(); payByDifficulty(); noFarming(); dayRules(); play(); dayAndWeek(); converges();
+  curve(); calibration(); calibrationAlternating(); payByDifficulty(); noFarming(); dayRules(); play(); dayAndWeek(); converges();
   printf("test_skills: %d checks\n", checks);
   return 0;
 }
