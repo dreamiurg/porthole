@@ -114,18 +114,33 @@ tap 80 12
 wait 450
 expect-screen home
 sheet learn
-# Hats: the stars buy the first hat for sale (3), and it is worn
+# Hats (Stats > Shop > Hats): a tap on Buy buys nothing; holding Buy for a second buys the first hat for sale (3)
+# and puts it on
 tap 40 27
 wait 450
 expect-screen stats
 tap 114 123
 wait 450
+expect-screen shop
+tap 50 78
+wait 450
+expect-screen hats
 tap 134 80
 wait 450
 ui-check hats-for_sale
 snap 11_hat_for_sale
 tap 80 134
 wait 450
+expect hats=0
+expect stars=8
+down 80 134
+wait 1200
+up
+wait 800
+expect-screen celebrate
+tap 80 80
+wait 450
+expect-screen hats
 expect hats=2
 expect hat=1
 expect stars=5

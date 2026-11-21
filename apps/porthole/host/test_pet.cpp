@@ -135,6 +135,30 @@ static void saveV3Migrates(Save s) {
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
 }
 
+// v4 blob (288 bytes, before the shop) migrates: everything kept, nothing bought, the Red Collar worn.
+static void saveV4Migrates(Save s) {
+  s.hatsMask = 0x06; s.hat = 2; s.puzzlesRight = 41; s.readLevel = 2;
+  uint8_t v4[SAVE_V4_SIZE]; oldBlob(v4, s, sizeof v4, 4);
+  Save m; assert(pet::loadBlob(v4, sizeof v4, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(m.hatsMask == 0x06 && m.hat == 2 && m.puzzlesRight == 41 && m.readLevel == 2 && !strcmp(m.petName, s.petName));
+  assert(!m.shopOwned && !m.collar && !m.lastBuyDay && !m.stickers2Mask);
+  v4[40] ^= 1; assert(!pet::loadBlob(v4, sizeof v4, m));          // corrupted v4 rejected
+  oldBlob(v4, s, sizeof v4, 3); assert(!pet::loadBlob(v4, sizeof v4, m));   // a v4 size must say v4
+  Save bad = s; bad.collar = 200; pet::seal(bad);                  // a collar past COLLARS is the Red one
+  assert(pet::loadBlob(&bad, sizeof bad, m) && m.collar == 0);
+}
+
+// Every collar is a real recolor with a name and a price; the Red one is free and the locked ones name real stickers.
+static void collarTable() {
+  assert(COLLARS[0].price == 0 && COLLARS[0].band == C_RED && COLLARS[0].tag == C_GOLD && COLLARS[0].needs < 0);
+  for (int i = 1; i < NUM_COLLARS; i++) {
+    assert(COLLARS[i].name && COLLARS[i].price > 0 && shopPrice(COLLARS[i].price) >= 1 && COLLARS[i].needs < NUM_STICKERS);
+    assert(COLLARS[i].band != C_RED || COLLARS[i].band2 != C_RED);   // each looks different from the free one
+  }
+  assert(shopPrice(0) == 0 && shopPrice(3) >= 1);
+}
+
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
   pet::adoptFromShelter(s, now, 3, "Choco");
   assert(pet::valid(s) && s.hasDog == 1 && s.breed == 3 && !strcmp(s.petName, "Choco"));
@@ -595,13 +619,19 @@ static void learningPaysStars() {
   // but not yet a whole level
   assert(wallet == 8 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8));
   wallet = 2;
-  // the hats: Red Bow (3 stars) is not found yet; two stars buy nothing, five do
+  // the hats (Stats > Shop > Hats): Red Bow (3 stars) is not found yet; two stars buy nothing and say "1 more"; with
+  // five a tap still buys nothing, a one-second hold does
   f.tap(80, 12); f.tap(80, 12); assert(!strcmp(g.screenName(), "home"));
   f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
-  f.tap(114, 123); assert(!strcmp(g.screenName(), "hats"));
-  f.tap(134, 80); f.tap(80, 134);
+  f.tap(114, 123); assert(!strcmp(g.screenName(), "shop"));
+  f.tap(50, 78); assert(!strcmp(g.screenName(), "hats"));
+  f.tap(134, 80); f.tap(80, 134); assert(dbg(g, "short") == 1);
   g.leave(); assert(wallet == 2 && !(taken(g).hatsMask & 2));   // leave() marks the save to hand over
+  f.tap(80, 80); assert(dbg(g, "short") == 0);                    // any tap closes the panel
   wallet = 5; f.tap(80, 134);
+  g.leave(); assert(wallet == 5 && !(taken(g).hatsMask & 2));
+  f.hold(true, 80, 134, 1100); f.hold(false, 80, 134, 100);
+  assert(!strcmp(g.screenName(), "celebrate"));
   got = taken(g);
   assert(wallet == 2 && (got.hatsMask & 2) && got.hat == 1);
 }
@@ -618,6 +648,8 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   saveV3Migrates(s);
+  saveV4Migrates(s);
+  collarTable();
   learningPaysStars();
   retireKeepsKidProgress();
   giftAfterClockSetBack();

@@ -151,7 +151,7 @@ SIZES = {
         backX=(6, 9),
         frontX=(12, 15),
         tail=(5, 9),
-        collar=None,
+        collar=(13, 11),
         eye=(17, 5),
         nose=(22, 8),
     ),
@@ -437,15 +437,16 @@ def paint_mouth(im, NX, NY, mouth, ink):
 
 
 def paint_collar(im, p, s, pose):
-    if not p["collar"] or pose in ("BACK", "DEAD", "SLEEP0", "SLEEP1"):  # not on the puppy, nor lying down
+    if pose in ("BACK", "DEAD", "SLEEP0", "SLEEP1"):  # not lying down
         return
     cx, cy = p["collar"][0] + s["hdx"], p["collar"][1] + s["hdy"]
     if pose in ("SIT", "SIT_PAW", "LISTEN"):
         cx += 1
     if pose == "BEG":
         cx, cy = cx - 2, cy - 3
-    im.rect(cx - 1, cy, 4, 1, RED)
-    im.set(cx, cy + 1, GOLD)
+    # RED and GOLD are the collar's alone on a dog: Game::drawDog recolors them to the collar the kid picked in the Shop.
+    im.rect(cx - 1, cy, 4, 2, RED)
+    im.set(cx, cy + 2, GOLD)
 
 
 def draw_dog(size, pose, breed="GOLDEN"):

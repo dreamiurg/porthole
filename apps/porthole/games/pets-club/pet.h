@@ -6,6 +6,7 @@
 
 constexpr int NUM_TRICKS = 8;
 constexpr int NUM_HATS = 8;
+constexpr int NUM_COLLARS = 8;   // the Shop's collars (content.h COLLARS); shopOwned bit i = collar i
 
 enum Stage : uint8_t { STAGE_PUPPY = 0, STAGE_DOG = 1, STAGE_GROWN = 2 };
 enum Variant : uint8_t { VAR_CLASSIC = 0, VAR_BOOKWORM = 1, VAR_SPORTY = 2 };
@@ -18,10 +19,11 @@ enum Sticker : uint8_t {
 
 // Persisted state. Plain data, saved as a blob. Bump SAVE_VERSION on layout changes.
 constexpr uint32_t SAVE_MAGIC = 0x4F475243;  // "CRGO"
-constexpr uint16_t SAVE_VERSION = 4;
+constexpr uint16_t SAVE_VERSION = 5;
 constexpr size_t SAVE_V1_SIZE = 140;      // layout before the house/age fields; still accepted on load
 constexpr size_t SAVE_V2_SIZE = 156;      // layout before breed and the memory wall; still accepted on load
 constexpr size_t SAVE_V3_SIZE = 212;      // layout before puzzles and little reads; still accepted on load
+constexpr size_t SAVE_V4_SIZE = 288;      // layout before the shop; still accepted on load
 constexpr int RETIRE_DAYS = 30;           // age at which the kid may move the dog to the farm
 constexpr int WALL_SLOTS = 4;             // memory wall frames: the last four dogs
 constexpr int NUM_BREEDS = 7;             // shelter breeds; 0 = the Golden pup every older save already has
@@ -65,9 +67,16 @@ struct Save {
   uint16_t readsRight, puzzlesRight;             // right answers, ever: every READS_PER_STAR / PUZZLES_PER_STAR is a star
   uint16_t reserved3;
   PuzzleReview puzzleReviews[PUZZLE_REVIEWS];    // missed puzzles that come back on a later day, oldest first
+  // ---- v5: the shop (Stats > Shop). Bought things belong to the kid, like hats: a new pup keeps them. Only collars
+  // are sold so far; the room and toy fields are laid out now so the next shelves need no new version.
+  uint32_t shopOwned;                            // bit per shop item (SHOP_* in content.h); the Red Collar is free
+  uint8_t collar, rug, windowView, lamp;         // what is worn / in the room; 0 = the default
+  uint8_t shelfShown, bed, toy, goalItem;
+  uint16_t lastBuyDay; uint8_t lastBuyItem, reserved4;
+  uint16_t stickers2Mask, reserved5;             // room for a second row of stickers
   uint32_t crc;
 };
-static_assert(sizeof(Save) == 288, "Save is append-only: v4 is 288 bytes");
+static_assert(sizeof(Save) == 308, "Save is append-only: v5 is 308 bytes");
 
 namespace pet {
 // ---- calibration knobs (per real hour unless noted) ----
