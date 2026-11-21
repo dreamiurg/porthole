@@ -4,7 +4,11 @@
 namespace racing {
 static_assert(BOOST_CAP * V_MAX * DT * 2 < CAR_REACH, "a boosted car could step over an obstacle's hit window");
 static_assert(sizeof LEVEL_SHIFT == TRACKS && sizeof LEVEL_FLOOR / sizeof LEVEL_FLOOR[0] == TRACKS, "one per track");
+static_assert(KIT_TOP[0] == 1 && 1 / KIT_ACCEL_S[0] == ACCEL && KIT_STEER[0] == STEER_RATE && KIT_ICE_TAU[0] == ICE_TAU &&
+              KIT_ICE_RESPONSE[0] == ICE_RESPONSE && KIT_OFFROAD[0] == OFFROAD_CAP && KIT_SLOW[0] == SLOW_CAP &&
+              KIT_BOOST_MS[0] == BOOST_MS, "tier 0 is the stock car");
 namespace {
+const Handling STOCK{};
 float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
 uint32_t down(uint32_t v) { return v > STEP_MS ? v - STEP_MS : 0; }
 uint32_t rnd(uint32_t& s) { s = s * 1664525u + 1013904223u; return s >> 8; }
@@ -31,27 +35,29 @@ void impact(Race& r, int i, float factor) {
   if (i == PLAYER) r.impacts++;
   puff(r, c.dist, c.x);
 }
+const Handling& of(const Race& r, const Car& c) { return &c == &r.car[PLAYER] ? r.kit : STOCK; }
 float capFor(const Race& r, const Car& c, bool* ice) {
-  float cap = c.boostMs ? BOOST_CAP : c.top;
+  float cap = c.boostMs ? BOOST_CAP : c.top * of(r, c).top;
   *ice = false;
   if (!airborne(c)) {
-    const float terrain = terrainCap(*r.track, r.rung, c.dist, c.x, ice);
+    const float terrain = tuned(terrainCap(*r.track, r.rung, c.dist, c.x, ice), of(r, c));
     if (terrain < 1 && terrain < cap) cap = terrain;   // terrain wins over Boost; never multiplied
   }
   return cap;
 }
-void throttle(Car& c, float cap) {
-  const float accel = ACCEL * (c.boostMs ? 2 : 1) * DT;
+void throttle(Car& c, float cap, const Handling& h) {
+  const float accel = h.accel * (c.boostMs ? 2 : 1) * DT;
   if (c.speed < cap) c.speed = c.speed + accel > cap ? cap : c.speed + accel;
   else c.speed = c.speed - DECEL * DT < cap ? cap : c.speed - DECEL * DT;
 }
 void slide(const Race& r, Car& c, float steer, bool ice) {
+  const Handling& h = of(r, c);
   const float bend = curve(*r.track, c.dist);
-  float response = STEER_RATE * (0.4f + 0.6f * fminf(c.speed, 1));
-  if (ice) response *= ICE_RESPONSE;
+  float response = h.steer * (0.4f + 0.6f * fminf(c.speed, 1));
+  if (ice) response *= h.iceResponse;
   if (airborne(c)) response *= 0.5f;
   const float target = clampf(steer, -1, 1) * response - bend * DRIFT * c.speed * c.speed;
-  const float tau = ice ? ICE_TAU : GRIP_TAU;
+  const float tau = ice ? h.iceTau : GRIP_TAU;
   c.vx += (target - c.vx) * fminf(1, DT / tau);
   c.x += c.vx * DT;
   if (fabsf(c.x) > RAIL) { c.x = copysignf(RAIL, c.x); c.vx = 0; }
@@ -164,7 +170,7 @@ void drive(Race& r, int i, float steer) {
   Car& c = r.car[i];
   const float prev = c.dist;
   bool ice = false;
-  throttle(c, capFor(r, c, &ice));
+  throttle(c, capFor(r, c, &ice), of(r, c));
   c.dist += c.speed * V_MAX * DT;
   slide(r, c, steer, ice);
   obstacles(r, i);
@@ -251,7 +257,7 @@ void rivalBoosts(Race& r) {
 }
 void actions(Race& r, const Controls& in) {
   Car& p = r.car[PLAYER];
-  if (in.boost && r.inventory[BOOST] && !p.boostMs) { r.inventory[BOOST]--; p.boostMs = BOOST_MS; }
+  if (in.boost && r.inventory[BOOST] && !p.boostMs) { r.inventory[BOOST]--; p.boostMs = r.kit.boostMs; }
   if (in.rocket && r.inventory[ROCKET] && !r.cooldownMs) fire(r);
 }
 void laps(Race& r) {
@@ -310,6 +316,18 @@ float hitSpeed(float before, float factor) {
 }
 bool airborne(const Car& c) { return c.airMs > 0; }
 
+Handling handling(const uint8_t tier[PARTS]) {
+  Handling h;
+  if (!tier) return h;
+  auto at = [&](int part) { return tier[part] < TIERS ? tier[part] : TIERS; };
+  h.top = KIT_TOP[at(ENGINE)];
+  h.accel = 1 / KIT_ACCEL_S[at(TURBO)];
+  h.steer = KIT_STEER[at(TIRES)]; h.iceTau = KIT_ICE_TAU[at(TIRES)]; h.iceResponse = KIT_ICE_RESPONSE[at(TIRES)];
+  h.offroad = KIT_OFFROAD[at(SUSPENSION)]; h.slow = KIT_SLOW[at(SUSPENSION)];
+  h.boostMs = KIT_BOOST_MS[at(NITRO)];
+  return h;
+}
+
 float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce) {
   float cap = fabsf(x) > 1 ? OFFROAD_CAP : 1;
   for (int f = 0; f < t.nFeatures; f++) {
@@ -340,9 +358,11 @@ int clampLevel(int level, int track) {   // past the track's top the ladder has 
   return level < LEVEL_MIN ? LEVEL_MIN : level > top ? top : level;
 }
 
-void start(Race& r, const Track& t, uint32_t seed, int level) {
+void start(Race& r, const Track& t, uint32_t seed, int level, const uint8_t tier[PARTS]) {
   r = Race{};
   r.track = &t;
+  if (tier) for (int i = 0; i < PARTS; i++) r.tier[i] = tier[i] < TIERS ? tier[i] : TIERS;
+  r.kit = handling(r.tier);
   r.seed = seed ? seed : 1;
   const int track = (int)(&t - TRACK);
   r.level = (int8_t)clampLevel(level, track);

@@ -10,8 +10,8 @@ each asset's description; the shared preamble is in apps/porthole/docs/racing/ar
 
 Each output cell takes the most common 4-bit-per-channel color bucket among its source pixels and
 the integer mean of the pixels in that bucket; a cell that is mostly key is transparent. Integer math
-only, so --check is byte-identical on every machine. Rivals are the player's car with the body hue
-turned. Needs Pillow.
+only, so --check is byte-identical on every machine. Rivals and the garage's paints are the player's car
+with the body hue turned; the garage's stripes are bit masks over its body. Needs Pillow.
   python3 games/racing/tools/pictures.py           regenerate the headers
   python3 games/racing/tools/pictures.py --check   fail if any header is stale
 """
@@ -50,6 +50,19 @@ SPRITES = (
 BACKDROPS = (("BG0", "bg_desert.png"), ("BG1", "bg_industrial.png"), ("BG2", "bg_snow.png"), ("BG3", "bg_night.png"))  # skyline<N>.h
 BACKDROP_W = 320  # 640 panel px at 2x; the game mirrors it to tile
 RIVAL_HUES = (0.60, 0.13, 0.33)  # blue, gold, green
+# The kid's paints (garage.h PAINT_NAME order; Red is CAR0): the same body recolor as the rivals, by
+# (hue, saturation scale, lightness scale, lightness lift). Blue and Gold are the rivals' own hues (that rival then
+# drives stock red).
+PAINTS = (
+    ("BLUE", (0.60, 1.0, 1.0, 0.0)),
+    ("LIME", (0.24, 1.0, 1.0, 0.06)),
+    ("PURPLE", (0.78, 0.9, 1.0, 0.0)),
+    ("PINK", (0.92, 0.9, 1.0, 0.12)),
+    ("WHITE", (0.60, 0.05, 0.35, 0.62)),
+    ("BLACK", (0.65, 0.12, 0.45, 0.0)),
+    ("GOLD", (0.13, 1.0, 1.0, 0.0)),
+    ("CHROME", (0.56, 0.35, 1.5, 0.02)),
+)
 
 
 def keyed(p, key):
@@ -127,14 +140,51 @@ def body(p):  # the car's red paint, not its tail lights, glass or tires
     return (hue < 0.04 or hue > 0.94) and sat > 0.35 and 0.18 < light < 0.62
 
 
-def recolor(rows, hue):
+def recolor(rows, hue, sat_k=1.0, light_k=1.0, lift=0.0):
     def turn(p):
         if p is None or not body(p):
             return p
         _, light, sat = colorsys.rgb_to_hls(*(v / 255 for v in p))
-        return tuple(round(v * 255) for v in colorsys.hls_to_rgb(hue, light, sat))
+        light = min(0.95, light * light_k + lift)
+        return tuple(round(v * 255) for v in colorsys.hls_to_rgb(hue, light, min(1.0, sat * sat_k)))
 
     return [[turn(p) for p in row] for row in rows]
+
+
+# Stripes (garage.h STRIPE_NAME order from 1): a bit per car pixel, row-major, set only on the body's paint, so a stripe
+# never covers glass, lights or tires. render.cpp colors the set pixels by the paint under them.
+def racing_stripe(x, y, w, h):
+    return abs(x * 2 + 1 - w) in range(3, 8)
+
+
+FLAME_REACH = (3, 7, 10, 5, 9, 12, 6, 10, 7, 4, 2)  # rows 12..22, the lower body: tongues from both sides inward
+
+
+def flames(x, y, w, h):
+    side = min(x, w - 1 - x)
+    return 12 <= y < 12 + len(FLAME_REACH) and side < FLAME_REACH[y - 12]
+
+
+BOLT = (10, 9, 8, 7, 6, 10, 9, 8, 7, 6, 5)  # rows 12..22: a zigzag bolt on each flank
+
+
+def lightning(x, y, w, h):
+    side = min(x, w - 1 - x)
+    return 12 <= y < 12 + len(BOLT) and BOLT[y - 12] - 2 <= side <= BOLT[y - 12]
+
+
+STRIPES = (("RACING", racing_stripe), ("FLAMES", flames), ("LIGHTNING", lightning))
+
+
+def mask(rows, shape):
+    h, w = len(rows), len(rows[0])
+    bits = [1 if rows[y][x] is not None and body(rows[y][x]) and shape(x, y, w, h) else 0 for y in range(h) for x in range(w)]
+    data = [sum(bits[i + k] << k for k in range(8) if i + k < len(bits)) for i in range(0, len(bits), 8)]
+    return data
+
+
+def emit_mask(name, data):
+    return [f"inline constexpr uint8_t {name}[] = {{{','.join(f'0x{b:02X}' for b in data)}}};"]
 
 
 def emit(name, rows):
@@ -173,6 +223,16 @@ def header():
         lines += emit(name, rows)
     for i, hue in enumerate(RIVAL_HUES):
         lines += emit(f"CAR{i + 1}", recolor(car, hue))
+    for name, look in PAINTS:
+        lines += emit(f"PAINT_{name}", recolor(car, *look))
+    for name, shape in STRIPES:
+        lines += emit_mask(f"STRIPE_{name}", mask(car, shape))
+    paints = ", ".join(f"&PAINT_{n}" for n, _ in PAINTS)
+    stripes = ", ".join(f"STRIPE_{n}" for n, _ in STRIPES)
+    lines += [
+        f"inline constexpr const Pic* PAINT[{len(PAINTS) + 1}] = {{&CAR0, {paints}}};",
+        f"inline constexpr const uint8_t* STRIPE[{len(STRIPES) + 1}] = {{nullptr, {stripes}}};  // a bit per CAR0 pixel",
+    ]
     lines += [
         "inline constexpr const Pic* CAR[4] = {&CAR0, &CAR1, &CAR2, &CAR3};",
         "inline constexpr const Pic* PICKUP[2] = {&BOOST, &ROCKET};",

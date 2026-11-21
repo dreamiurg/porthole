@@ -10,11 +10,11 @@ wait 600
 expect-screen race_tracks
 expect mode=Auto
 # Sam taps the chip once: Easy
-tap 102 130
+tap 120 122
 wait 600
 expect mode=Easy
 # Home, the launcher's home button, then Zoe
-tap 54 130
+tap 37 122
 wait 900
 expect-screen launcher
 tap 80 13
@@ -27,11 +27,11 @@ expect-screen race_tracks
 expect mode=Auto
 ui-check race_tracks-zoe
 # Zoe cycles to Hard
-tap 102 130
+tap 120 122
 wait 600
-tap 102 130
+tap 120 122
 wait 600
-tap 102 130
+tap 120 122
 wait 600
 expect mode=Hard
 # the shell writes a game's save at most every 5 s: give it the time, a reboot is a power cut

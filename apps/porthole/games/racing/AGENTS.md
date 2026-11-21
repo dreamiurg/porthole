@@ -9,7 +9,7 @@ tracks, platform contract, and the two approved reference boards the look follow
 ## Player contract
 
 - Every launcher entry starts at the four track cards (Desert Canyon, Industrial Ruins, Snow Track, Night Run), all
-  open, with Home, Times and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
+  open, with Home, Times, Car (the garage, below) and the difficulty chip under them ("Rivals" over Auto / Easy / Normal / Hard, a user request of
   2026-10-31; a tap cycles it and checkpoints it at once (`saveUrgent`), per kid, Auto by default; a quick double tap
   skips a setting, by design: it cycles). Easy races at level -8, Normal at level 0 on every track (each track's
   `LEVEL_SHIFT` sets how strong that is: a competent driver wins 45-73%), Hard at `HARD_LEVEL` (by track: 3 on Desert
@@ -53,7 +53,10 @@ tracks, platform contract, and the two approved reference boards the look follow
   gold (a user decision of 2026-10-31: no medals, no ghost mode). The same board opens without a race from Times on
   the track cards (a user request of 2026-11-01): "Best times", the track between two arrows that go round all four
   (starting on the last one picked), the fastest race and the fastest lap across every kid in green, then the rows;
-  "No times yet" on a track nobody has finished; Back to the cards. Looking saves nothing. Laps run line to line, the first from the flying
+  "No times yet" on a track nobody has finished; Back to the cards. Looking saves nothing. Two boards (the garage,
+  2026-11-21): Tuned, every time with the Power it was set with ("1 Zoe 1:29.8  P7"), and Stock, races run with Power 0
+  only; chips switch them on Times, and Results shows the class just raced. Rows carry no lap (it would not fit with
+  the badge); the Tuned board names the fastest lap on top. Laps run line to line, the first from the flying
   crossing just after GO. The grip page shows the time to beat ("To beat: Zoe 1:31.2", or "Your record ..."). Fourth
   place is a finish like any other. Replay starts a fresh race on the same track and grip.
 - In Auto, rivals adapt to each kid on each track, never shown (a user decision of 2026-10-31): a hidden `level`
@@ -109,6 +112,31 @@ tracks, platform contract, and the two approved reference boards the look follow
   slower two often swap, and the middle rival beats the pace-setter in about 5-15% of races on Desert Canyon and Snow
   Track, 35-60% on Industrial Ruins and Night Run (`tune.h` `RIVAL_*`, `variety` in `host/test_racing_rules.cpp`).
 - No sounds. The only network is Together (below). Leaving and coming back starts at the cards.
+
+## Garage
+
+A user decision of 2026-11-21 (design: `docs/superpowers/specs/porthole-racing/garage.md`): stars buy the kid's own car.
+- Car on the track cards opens Garage: the star balance, the car on a podium, Power N with a 15-step bar, the Stock
+  switch, Looks and Power. A gold dot on Car when something is affordable now. English only; never the word "Level".
+- Power: Engine, Turbo, Tires, Suspension, Nitro tank, three tiers each bought in order at 10 / 25 / 50 stars, +1 Power
+  a tier (0-15). Tier 2 needs the rank Racer, tier 3 Champion. Effects are `tune.h` `KIT_*`, the kid's car only:
+  rivals, boost strength, rocket damage and the post-hit floor never change, and the race stays a pure function of the
+  inputs and the five tiers. Engine, Turbo and Nitro are the brief's steps times `KIT_SCALE` (4.25%, `fairKit` below).
+- Looks: paint (Red free; Blue, Lime, Purple 5; Pink, White, Black 10; Gold 20; Chrome 30), recolored from the stock
+  car like the rivals, and stripes (Racing stripe 10, Flames 15, Lightning 15) as one-bit masks. A rival whose color a
+  paint looks like (Blue, Lime, Gold: `RIVAL_LOOKALIKE`) drives stock red that race. A look is worn when bought; Equip
+  puts an owned one back on.
+- Buying: the item page's Buy opens a question page ("Buy Blue?", what the kid has and will have), whose Buy sits clear
+  of every button the item page shows under the finger. Undo (beside the action) refunds in full until the kid leaves
+  the garage (memory only); nothing is ever sold. Too few stars: a gold hint "Stars come from / races & other games"
+  for 2 s, no red, no sound, nothing taken. A locked tier says "Racer: 3 / 5 races".
+- Stock switch: every part off for racing; looks stay. Together ignores parts and looks: both cars race stock and red.
+- Ranks: Rookie, Racer at 5 finishes, Champion at 15; any finish counts, any place or mode, together too. Shown as
+  "3 / 5" progress and an orange banner on Results the race a rank is reached ("Racer! New parts in Garage").
+- Stars: every balance, spend and refund and the pay rule are in `purse.h`, the one place to rewire. A solo finish
+  pays 1 star for the first 5 a day, a finish together `together::STARS` for the first `STAR_RACES`; both pay through
+  the skills engine (`skills::earnForPlay`, `AppEnter::book`), which stops play stars at `skills::PLAY_DAY` a day across
+  every game that teaches nothing.
 
 ## Together
 
@@ -172,14 +200,22 @@ names are the player names, the name and avatar go over the home network only, n
   (a user decision of 2026-10-31).
 - `assets.h`: generated by `tools/art.py`: each track's road colors.
 - `save.h`: the Save (below), `seal`, `loadBlob`, `record`. Header-only.
+- `garage.h`: the garage's catalog, prices, ranks, item states, buy, wear and Undo (`Visit`). Header-only.
+- `purse.h`: every star Rally touches (balance, spend, refund) and its pay rule. Header-only.
 
 ## Save layout
 
-`Save` (`save.h`), 52 bytes, NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
+`Save` (`save.h`), 64 bytes (v3), NVS namespace `"racing"` (never renamed once shipped), key `s<profile id>`, written by
 the shell. Magic `0x594C4C52` ("RLLY"), `version` 2, `size`, then `best[4]` by track index (`TRACK[]` order, never
 reordered): `{raceMs, lapMs}`, 0 = not driven, each kept only when a finish beats it; v2 adds `int8_t level[4]`, the
 adaptive level by track, then `uint8_t mode` (`Mode`: 0 Auto, 1 Easy, 2 Normal, 3 Hard; never renumbered; a value past Hard loads as Auto) and 3
-pad bytes; a v1 44-byte blob loads with every level 0 and Auto. A 48-byte blob from the unshipped first v2 is rejected. `crc` last. A finish that moves the level, or a
+pad bytes; a v1 44-byte blob loads with every level 0 and Auto. v3 (the garage) has to stay at 64 bytes, four NVS
+entries (the `test_nvs_budget` ratchet), so it reuses v2's three pad bytes (always zero; zeroed again when a v1 or v2
+blob loads): `uint8_t finishes` (saturating), `uint16_t stock[4]` (the Stock board's race times in tenths of a second,
+0 none; a v1/v2 blob's times are copied in, since they were all run stock), `uint16_t power` (the Power each `best`
+time was set with, a nibble a track), then two bit-packed words: `tiers:10` (two bits a `Part`), `paint:4`,
+`stripe:2`; `looks:11` (owned looks, `paintBit`/`stripeBit`, numbering only appended), 4 spare bits, `stockOn:1`.
+Zero is stock everywhere; a paint or stripe out of range or not owned loads as 0. A 48-byte blob from the unshipped first v2 is rejected. `crc` last. A finish that moves the level, or a
 tap on the chip, is saved even without a new best. Append-only: a new
 field goes right before `crc` with a version bump, and `loadBlob` must keep loading every older size. A blob with a
 wrong magic, size, version or crc is ignored (no times shown for that kid), never half-loaded. On entry the game reads
@@ -191,18 +227,25 @@ idle one last at every level, the level rules, rival boosts, the `competent` dri
 bends at 70%, a wobbly line), the competent-driver `staircase`, `modeBands`, `proHazards` (on from their rung only)
 and `proNoEasier` (each Pro rung no easier than the one below for each driver), `neighbourLevels`, `variety`) and `host/test_racing.cpp` (wheel,
 pages, touch rules, pause/resume, grip loss, frame-rate invariance, replay, text and targets on the glass, save and
-levels, `obstaclesHitWhereDrawn`, `carsTouchWhereDrawn`, `proHazardsDrawn` and `firstTapAfterEntry`). Playtests:
+levels, `obstaclesHitWhereDrawn`, `carsTouchWhereDrawn`, `proHazardsDrawn` and `firstTapAfterEntry`, and the garage:
+`garageSave` (v2 load, out-of-range values, round trip), `partRules`/`lookRules`/`garageRules` (tiers in order, rank
+gating, short stars, Undo refunds, Equip, Stock), `garageFlow` (the pages end to end), `pay` and `payCap` (the
+engine's daily cap)). `test_racing_rules.cpp` `fairKit`: Power 15 against stock on every track (the competent driver
+at most 1% quicker and at most 24/40 Hard wins; the kid driver at least 4 more Hard wins than stock and at most 24/40;
+Auto still settles). Playtests:
 `tests/playtests/a0_racing_flow.txt`, `a1_racing_monkey.txt`, `a4_racing_board.txt`, `a5_racing_level.txt`,
 `a6_racing_mode_kids.txt`, `a7_racing_times.txt`, `a8_racing_field_variety.txt`, `a9_racing_times_fingers.txt`,
-`a10_racing_top_losses.txt`, `a11_racing_short_top_losses.txt`; the black-box playthroughs
+`a10_racing_top_losses.txt`, `a11_racing_short_top_losses.txt`, `a12_racing_garage.txt`; the black-box playthroughs
 are `docs/racing/adaptive-playtest/` and `docs/racing/pro-playtest/`.
 
 ## Screens and test hooks
 
 Screens: `race_tracks`, `race_howto`, `race_calibrate`, `race_countdown`, `race_play`, `race_pause`, `race_confirm`,
-`race_results`, and Together's `race_lobby`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
+`race_results`, the garage's `race_garage`, `race_shop`, `race_buy`, and Together's `race_lobby`. `debug` prints `screen track phase lap place boost rocket speed x dist`, then `race_ms finished
 finish_ms cars_done jumps pickups fired hits impacts`, then `best_race best_lap new_best kids level mode race_level` (this track; `level` the stored adaptive
-level, `race_level` the one the next race runs at), then `steer grip_lost resume ready calibration neutral`.
+level, `race_level` the one the next race runs at), then `stars power race_power finishes rank paint stripe tiers stock looks item undo board_stock earned` (the
+garage: `tiers` one digit a part, `item` group:index with 0 paint, 1 stripe, 2 part), then `steer grip_lost resume
+ready calibration neutral`. `dbg stars N` sets the wallet and `dbg finishes N` the rank's count (fixtures).
 `dbg level N` sets this kid's adaptive level on the current track (clamped to the track's range) and saves it; on a track the
 kid has never finished, the next entry or finish derives it again (one below the best elsewhere).
 `dbg track N|tracks|calibrate|go|lastlap|lastplace`: `go` starts a race past the countdown from the current grip,

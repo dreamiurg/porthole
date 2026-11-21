@@ -408,9 +408,11 @@ bool linedUp(const Race& r) {
   return false;
 }
 uint32_t next(uint32_t& s) { s = s * 1664525u + 1013904223u; return s >> 8; }
-int competent(int track, uint32_t seed, int level, bool* ran = nullptr, int* raced = nullptr) {
+const uint8_t FULL_KIT[PARTS] = {TIERS, TIERS, TIERS, TIERS, TIERS};   // Power 15
+struct Drove { bool ran = false; int raced = 0; uint32_t ms = 0; };   // a runaway, the level clamped, the time
+int competent(int track, uint32_t seed, int level, Drove* out = nullptr, const uint8_t* kit = nullptr) {
   Race r;
-  start(r, TRACK[track], seed, level);
+  start(r, TRACK[track], seed, level, kit);
   uint32_t s = seed * 2654435761u + 7;
   int wait = -1;
   const float lane = ((int)(next(s) % 61) - 30) / 100.0f;   // each driver's favourite line
@@ -425,16 +427,15 @@ int competent(int track, uint32_t seed, int level, bool* ran = nullptr, int* rac
     step(r, c);
   }
   assert(r.phase == Phase::Finished);
-  if (ran) *ran = runaway(r);
-  if (raced) *raced = r.level;   // the level the race clamped it to, as the game stores
+  if (out) *out = {runaway(r), r.level, r.car[PLAYER].finishMs};   // r.level: as the game stores it
   return r.place;
 }
 
 // A kid driver: sees the road 300 ms late, judges a bend at 70% of what it needs, looks 30 m ahead and wobbles its
 // line; boosts and fires like the competent driver.
-int kid(int track, uint32_t seed, int level) {
+int kid(int track, uint32_t seed, int level, const uint8_t* kit = nullptr) {
   Race r;
-  start(r, TRACK[track], seed, level);
+  start(r, TRACK[track], seed, level, kit);
   uint32_t s = seed * 2654435761u + 7;
   int wait = -1;
   const float lane = ((int)(next(s) % 61) - 30) / 100.0f;
@@ -499,22 +500,55 @@ void neighbourLevels() {
     printf("\n");
   }
 }
+int climb(int t, const uint8_t* kit, int* wins, int* level) {   // 80 Auto races from level 0: wins in the last 40
+  int settled = 0;
+  *wins = 0; *level = 0;
+  for (int k = 0; k < 80; k++) {
+    Drove d;
+    const int place = competent(t, 5000 + k * 104729u, *level, &d, kit);
+    *wins += place == 1;
+    settled += k >= 40 && place == 1;
+    *level = clampLevel(nextLevel(d.raced, t, place, d.ran), t);
+  }
+  return settled;
+}
 // The rule the levels exist for: a competent driver climbing from level 0 keeps winning some races and losing others
 // on every track once the level has settled (the last 40 of 80 races: 55-75% wins; today 55-70%, so a track's base
 // strength can move a race or two either way before this fails).
 void staircase() {
   for (int t = 0; t < TRACKS; t++) {
-    int level = 0, wins = 0, settled = 0;
-    for (int k = 0; k < 80; k++) {
-      bool ran = false;
-      int raced = level;
-      const int place = competent(t, 5000 + k * 104729u, level, &ran, &raced);
-      wins += place == 1;
-      settled += k >= 40 && place == 1;
-      level = clampLevel(nextLevel(raced, t, place, ran), t);
-    }
+    int wins, level;
+    const int settled = climb(t, nullptr, &wins, &level);
     printf("%-16s competent driver from level 0: %d/80 wins, %d of the last 40, level %+d\n", TRACK[t].name, wins, settled, level);
     assert(settled >= 22 && settled <= 30);
+  }
+}
+// The garage buys a little, never the race (tune.h KIT_*): on every track a full kit (Power 15) makes a competent
+// driver at most 1% quicker over a race (today 0.3-0.5%) and keeps its Hard wins at most 24/40 (today 18-24); a kid
+// driver wins Hard at least 4 more races in 40 than stock (today +6 to +12) and still at most 24 (today 18-23); Auto
+// still settles the competent driver into winning some and losing some (a few levels higher).
+void fairKit() {
+  for (int t = 0; t < TRACKS; t++) {
+    double stock = 0, tuned = 0;
+    int hard = 0, kidStock = 0, kidTuned = 0;
+    for (int k = 0; k < 40; k++) {
+      const uint32_t seed = 9000 + k * 7919u;
+      Drove a, b;
+      competent(t, seed, 0, &a);
+      competent(t, seed, 0, &b, FULL_KIT);
+      stock += a.ms; tuned += b.ms;
+      hard += competent(t, seed, HARD_LEVEL[t], nullptr, FULL_KIT) == 1;
+      kidStock += kid(t, seed, HARD_LEVEL[t]) == 1;
+      kidTuned += kid(t, seed, HARD_LEVEL[t], FULL_KIT) == 1;
+    }
+    int wins, level;
+    const int settled = climb(t, FULL_KIT, &wins, &level);
+    const double gain = stock / tuned - 1;
+    printf("%-16s Power 15: %.2f%% quicker, Hard %d/40; kid Hard %d -> %d/40; Auto %d/80 wins, %d of the last 40, level %+d\n",
+           TRACK[t].name, gain * 100, hard, kidStock, kidTuned, wins, settled, level);
+    assert(gain > 0 && gain <= 0.01 && hard <= 24);
+    assert(kidTuned >= kidStock + 4 && kidTuned <= 24);
+    assert(settled >= 18 && settled <= 32);
   }
 }
 // The fixed settings stay what the chip promises on every track: Normal (level 0) is a race a competent driver wins
@@ -555,6 +589,7 @@ int main() {
   everyTrackFinishes();
   staircase();
   modeBands();
+  fairKit();
   neighbourLevels();
   proNoEasier();
   puts("test_racing_rules: ok");

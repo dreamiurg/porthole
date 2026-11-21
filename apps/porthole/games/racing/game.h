@@ -2,6 +2,8 @@
 #pragma once
 #include "app.h"
 #include "controls.h"
+#include "garage.h"
+#include "purse.h"
 #include "race.h"
 #include "render.h"
 #include "save.h"
@@ -50,13 +52,20 @@ class Game : public App {
   bool home_ = false, daylight_ = false, seenHowTo_ = false, recenter_ = false, gripLost_ = false, gripSet_ = false;
   bool boost_ = false, rocket_ = false;   // fresh presses waiting for the next simulation step
   // The leaderboard: every profile's best times (their saves, read on entry), this kid's own among them.
-  struct Kid { char name[12]; Best best[TRACKS]; bool me; };
+  struct Kid { char name[12]; Best best[TRACKS]; uint16_t stock[TRACKS], power; bool me; };   // as in Save
   Kid kids_[MAX_PROFILES] = {};
   int nKids_ = 0, me_ = -1;
   Save save_{};
   bool dirty_ = false, recorded_ = false, urgent_ = false;   // urgent_: a setting change, checkpointed at once
   uint8_t newBest_ = 0;            // BEST_RACE / BEST_LAP bits from this finish
   uint32_t prevBestMs_ = 0;        // the kid's best race here before this finish (0: first time)
+  // The garage (garage.h): the page's item, this visit's purchases for Undo, the not-enough-stars hint's timer.
+  garage::Item item_{};
+  garage::Visit visit_{};
+  uint32_t hintMs_ = 0, resultsMs_ = 0;
+  int8_t rankUp_ = -1;             // the rank this finish reached, for the Results banner (-1: none)
+  bool boardStock_ = false;        // Times: the Stock board (parts off) rather than Tuned (every time)
+  purse::Day pay_;                 // today's paid finishes (purse.h)
 
   tilt::Grav gravity() const { return {in_.gx, in_.gy, in_.gz}; }
   bool gripReady() const { return gripSet_ && controls::upright(gravity()); }   // a steady grip, still held like a wheel
@@ -70,6 +79,13 @@ class Game : public App {
   void updateConfirm();
   void updateResults();
   void updateBoard();
+  void updateGarage();
+  void updateShop();
+  void updateBuy();
+  void shopStep(int by);
+  void dirtyNow() { dirty_ = urgent_ = true; }   // a purchase or a switch: checkpointed at once, with the stars
+  bool raceStock() const { return garage::racePower(save_) == 0; }   // the class the next race counts in
+  void countFinish();
   bool gripOk(uint32_t dt);
   void simulate(uint32_t dt);
   void debugFixture(const char* cmd);
@@ -77,7 +93,7 @@ class Game : public App {
   void recordFinish();
   void seedLevels();
   int raceLevel() const;   // the level this kid's next race on this track runs at
-  int board(paint::Row out[MAX_PROFILES]) const;
+  int board(paint::Row out[MAX_PROFILES], bool stock) const;
   int levelOn(int track) const;   // the level this kid's next race on `track` runs at
   void fresh();                   // a new run's timers and flags, then the race page
 
@@ -86,9 +102,10 @@ class Game : public App {
   together::Wire wire_{}, peer_{};   // what this device says; the other kid's last word (kept after they go)
   bool duo_ = false, host_ = false, gripDone_ = false, raced_ = false, gone_ = false, peerPaused_ = false;
   bool ready_ = false;   // this kid tapped Race! on the track cards
-  uint8_t raceId_ = 0, applied_[CARS] = {}, pausesLeft_ = 0, starsGot_ = 0, jointToday_ = 0;
-  uint32_t lastGen_ = 0, noticeMs_ = 0, starDay_ = 0;
+  uint8_t raceId_ = 0, applied_[CARS] = {}, pausesLeft_ = 0, starsGot_ = 0;
+  uint32_t lastGen_ = 0, noticeMs_ = 0;
   uint32_t* wallet_ = nullptr;
+  skills::Book* book_ = nullptr;   // the engine that caps play stars a day (purse.h)
   char notice_[32] = {};
   const gfx::Sprite* avatars_ = nullptr;
   int nAvatars_ = 0;

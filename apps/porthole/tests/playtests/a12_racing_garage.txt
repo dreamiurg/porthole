@@ -1,0 +1,199 @@
+# Rally's garage, black box: Car from the cards; a paint bought on its question page and undone for every star; a
+# stripe; a price out of reach (a gold hint, nothing taken); a Power part and its locked next tier; a tuned race and
+# a Stock one, each on its own board, a star each, and the fifth finish's Racer banner. Fixtures, marked below: the
+# kid's stars, the finish count and the results skip.
+reset
+tilt 0 1000 0
+profile Mia 8
+wait 600
+tap 96 135
+wait 600
+tap 36 104
+wait 600
+expect-screen race_tracks
+# fixture: 40 stars to spend
+dbg stars 40
+wait 600
+snap rg00_tracks
+tap 91 122
+wait 600
+expect-screen race_garage
+ui-check race_garage
+snap rg01_garage
+tap 53 108
+wait 600
+expect-screen race_shop
+expect item=0:0
+snap rg02_paint_red
+tap 142 75
+wait 600
+expect item=0:1
+snap rg03_paint_blue
+tap 80 130
+wait 600
+expect-screen race_buy
+ui-check race_buy
+snap rg04_confirm
+# No first: back to the item, nothing spent
+tap 104 96
+wait 600
+expect-screen race_shop
+expect stars=40
+tap 80 130
+wait 600
+tap 56 96
+wait 600
+expect-screen race_shop
+expect stars=35
+expect paint=1
+expect undo=1
+ui-check race_shop-undo
+snap rg05_blue_bought
+tap 56 130
+wait 600
+expect stars=40
+expect paint=0
+expect undo=0
+snap rg06_undone
+# Stripes: Racing stripe, 10
+tap 80 42
+wait 600
+expect item=1:0
+tap 142 75
+wait 600
+tap 80 130
+wait 600
+tap 56 96
+wait 600
+expect stars=30
+expect stripe=1
+snap rg07_stripe
+# Paint again: Chrome, 30 stars, is 30: buy it; then Gold, 20, is out of reach
+tap 80 42
+wait 600
+tap 18 75
+wait 600
+expect item=0:8
+tap 80 130
+wait 600
+tap 56 96
+wait 600
+expect stars=0
+expect paint=8
+tap 18 75
+wait 600
+expect item=0:7
+tap 80 130
+wait 200
+expect-screen race_shop
+expect stars=0
+snap rg08_short_hint
+wait 2400
+# Power: the Engine's first tier, then its second, locked for a Rookie
+tap 80 17
+wait 600
+expect-screen race_garage
+tap 107 108
+wait 600
+expect item=2:0
+snap rg09_engine_short
+# fixture: 20 more stars
+dbg stars 20
+wait 600
+tap 80 130
+wait 600
+expect-screen race_buy
+snap rg10_engine_confirm
+tap 56 96
+wait 600
+expect stars=10
+expect tiers=10000
+expect power=1
+snap rg11_engine_locked
+tap 104 130
+wait 600
+expect-screen race_shop
+expect stars=10
+expect tiers=10000
+tap 142 75
+wait 600
+tap 80 130
+wait 600
+tap 56 96
+wait 600
+expect stars=0
+expect tiers=11000
+tap 80 17
+wait 600
+snap rg12_garage_power2
+tap 80 138
+wait 600
+expect-screen race_tracks
+# A tuned race (Power 2)
+tap 53 53
+wait 600
+tap 106 124
+wait 600
+tap 106 124
+wait 200
+expect-screen race_countdown
+wait 3000
+expect-screen race_play
+expect race_power=2
+snap rg13_race_tuned
+# fixture: skip to the last metres
+dbg lastplace
+wait 3600
+wait 1500
+expect-screen race_results
+expect stars=1
+ui-check race_results-tuned
+snap rg14_results_tuned
+wait 1500
+tap 108 112
+wait 900
+expect-screen race_tracks
+# The Stock switch: parts off, looks stay
+tap 91 122
+wait 600
+tap 140 77
+wait 600
+expect stock=1
+expect race_power=0
+snap rg15_garage_stock
+tap 80 138
+wait 600
+# fixture: four finishes, so this one makes a Racer
+dbg finishes 4
+tap 53 53
+wait 600
+tap 106 124
+wait 600
+tap 106 124
+wait 3200
+expect race_power=0
+dbg lastplace
+wait 3600
+wait 1500
+expect-screen race_results
+expect stars=2
+expect rank=Racer
+ui-check race_results-stock
+snap rg16_results_stock_racer
+wait 1500
+tap 108 112
+wait 900
+tap 64 122
+wait 700
+expect-screen race_board
+expect board_stock=0
+snap rg17_board_tuned
+tap 97 61
+wait 600
+expect board_stock=1
+ui-check race_board-stock
+snap rg18_board_stock
+tap 80 140
+wait 700
+expect-screen race_tracks
+sheet garage

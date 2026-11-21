@@ -1,5 +1,5 @@
 # Rally's Times button under imprecise fingers (independent playtest, docs/racing/times-playtest/): a tap in the
-# 2 px gaps between Home, Times and Rivals does nothing, a finger dragged off Times or an arrow cancels, a quick
+# 2 px gaps between Home, Times and Car does nothing, a finger dragged off Times or an arrow cancels, a quick
 # double tap on Times opens the board once (the second tap must not hit Back, stacked under it), and four kids with
 # the widest names fit the board. The finishes use the `lastlap` fixture, marked below.
 reset
@@ -23,42 +23,42 @@ tap 108 112
 wait 900
 expect-screen race_tracks
 # the gaps either side of Times: no button
-tap 61 129
+tap 50 122
 wait 600
 expect-screen race_tracks
-tap 95 129
+tap 78 122
 wait 600
 expect-screen race_tracks
 # just above the row: nothing
-tap 78 115
+tap 64 109
 wait 600
 expect-screen race_tracks
 # drag off Times before letting go: cancelled
-down 78 129
-move 78 110
-move 78 90
+down 64 122
+move 64 100
+move 64 90
 up
 wait 600
 expect-screen race_tracks
 # a quick double tap opens the board and stays there
-tap 78 129
+tap 64 122
 wait 100
-tap 78 129
+tap 64 122
 wait 700
 expect-screen race_board
 expect track=0
 # drag off the next arrow: still Desert Canyon
-down 125 44
-move 125 70
-move 125 90
+down 122 36
+move 122 62
+move 122 90
 up
 wait 600
 expect track=0
 # just outside the arrow: nothing
-tap 140 44
+tap 140 36
 wait 600
 expect track=0
-tap 80 132
+tap 80 140
 wait 700
 expect-screen race_tracks
 # three more kids with wide names finish Desert Canyon
@@ -107,7 +107,7 @@ wait 7000
 expect-screen race_results
 tap 108 112
 wait 900
-tap 78 129
+tap 64 122
 wait 700
 expect-screen race_board
 expect kids=4
