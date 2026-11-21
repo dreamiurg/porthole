@@ -88,59 +88,69 @@ static bool covered(const font::Font& f, const char* s) {
   return true;
 }
 
-// Every word's questions, and every line of them as ukrainian.cpp draws it (physical px: 480 wide, a logical px is 3).
+// A syllables question: its tiles in the font, a miss's line, the slots and the tiles in the circle.
+static void tileChecks(int i, const Question& q) {
+  const Word& w = WORDS[i];
+  CHECK(q.tileCount == parts(w) + 1 && q.tileCount <= MAX_TILES);
+  int mine = 0, tw[MAX_TILES];
+  for (int t = 0; t < q.tileCount; t++) {
+    char s[16]; syllable(WORDS[q.tiles[t].word], q.tiles[t].part, s, sizeof s);
+    mine += q.tiles[t].word == i;
+    CHECK(covered(ukfont::FONT48, s));
+    char miss[80], first[16];   // a miss names the syllable wanted and the one tapped
+    syllable(w, 0, first, sizeof first);
+    snprintf(miss, sizeof miss, "After %s comes %s, not %s.", first, first, s);
+    CHECK(font::textWidth(ukfont::FONT24, miss) <= 420);
+    tw[t] = (font::textWidth(ukfont::FONT48, s) + 2) / 3 + 8;   // ukrainian.cpp partW (at least 26)
+    tw[t] = tw[t] < 26 ? 26 : tw[t];
+  }
+  CHECK(mine == parts(w));
+  int widest = 0;   // the slots, all as wide as the widest syllable, in a row at y 66 to 88
+  for (int t = 0; t < q.tileCount; t++) if (q.tiles[t].word == i) widest = tw[t] > widest ? tw[t] : widest;
+  CHECK(parts(w) * widest + (parts(w) - 1) * 4 <= 150);
+  // inside the circle: three in a row (y 100 to 122), four as two rows of two (the lower one y 118 to 140)
+  if (q.tileCount < 4) CHECK(tw[0] + tw[1] + tw[2] + 8 <= 134);
+  else CHECK(tw[0] + tw[1] + 4 <= 130 && tw[2] + tw[3] + 4 <= 104);
+}
+
+// One word's own lines, measured where ukrainian.cpp draws them (physical px: 480 wide, a logical px is 3).
+static void wordLines(const Word& w) {
+  CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl) && covered(ukfont::FONT24, w.en));
+  CHECK(font::textWidth(ukfont::FONT48, w.uk) <= 400);   // the big word falls back to 48 and still fits
+  char line[64];   // the answer shown: Andika 48, or 24 when that is too wide (ukrainian.cpp lineFont)
+  snprintf(line, sizeof line, "%s = %s", w.syl, w.en);
+  CHECK(font::textWidth(ukfont::FONT48, line) <= 420 || font::textWidth(ukfont::FONT24, line) <= 420);
+  snprintf(line, sizeof line, "Yes! It means %s.", w.en);   // a meaning's lines, one each (ukrainian.cpp drawUkMeaningText)
+  CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
+  snprintf(line, sizeof line, "%s is %s.", w.en, w.uk);
+  CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
+}
+
+// A meaning or lookalike question: the right word among three different ones, each fitting its button.
+static void optionChecks(Kind k, int i, const Question& q) {
+  constexpr int OPTION_W = 84 * 3 - 8;
+  CHECK(q.options[q.right] == i);
+  for (int a = 0; a < OPTIONS; a++)
+    for (int b = a + 1; b < OPTIONS; b++) CHECK(q.options[a] != q.options[b] && strcmp(WORDS[q.options[a]].en, WORDS[q.options[b]].en));
+  if (k == MEANING) {
+    for (int a = 0; a < OPTIONS; a++) CHECK(strlen(WORDS[q.options[a]].en) * 6 <= 80);   // the 8x8 font in the button
+    return;
+  }
+  for (int a = 0; a < OPTIONS; a++) CHECK(font::textWidth(ukfont::FONT48, WORDS[q.options[a]].uk) <= OPTION_W);
+  CHECK(covered(ukfont::FONT24, hint(q)) && font::textHeight(ukfont::FONT24, hint(q), 330, 0) <= 2 * ukfont::FONT24.lineHeight);
+}
+
+// Every word's questions, and every line of them.
 static void questions() {
-  constexpr int OPTION_W = 84 * 3 - 8, BIG_W = 400;
   uint32_t rng = 12345;
   int tiles = 0, looks = 0;
   for (int i = 0; i < WORD_COUNT; i++) {
-    const Word& w = WORDS[i];
-    CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl) && covered(ukfont::FONT24, w.en));
-    CHECK(font::textWidth(ukfont::FONT48, w.uk) <= BIG_W);   // the big word falls back to 48 and still fits
-    char line[64];   // the answer shown: Andika 48, or 24 when that is too wide (ukrainian.cpp lineFont)
-    snprintf(line, sizeof line, "%s = %s", w.syl, w.en);
-    CHECK(font::textWidth(ukfont::FONT48, line) <= 420 || font::textWidth(ukfont::FONT24, line) <= 420);
-    snprintf(line, sizeof line, "Yes! It means %s.", w.en);   // a meaning's lines, one each (ukrainian.cpp drawUkText)
-    CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
-    snprintf(line, sizeof line, "%s is %s.", w.en, w.uk);
-    CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
+    wordLines(WORDS[i]);
     for (int k = 0; k < KIND_COUNT; k++) {
-      if (!fits(w, (Kind)k)) continue;
+      if (!fits(WORDS[i], (Kind)k)) continue;
       const Question q = build((Kind)k, i, rng);
-      if (k == SYLLABLES) {
-        tiles++;
-        CHECK(q.tileCount == parts(w) + 1 && q.tileCount <= MAX_TILES);
-        int mine = 0, tw[MAX_TILES];
-        for (int t = 0; t < q.tileCount; t++) {
-          char s[16]; syllable(WORDS[q.tiles[t].word], q.tiles[t].part, s, sizeof s);
-          mine += q.tiles[t].word == i;
-          CHECK(covered(ukfont::FONT48, s));
-          char miss[80], first[16];   // a miss names the syllable wanted and the one tapped
-          syllable(w, 0, first, sizeof first);
-          snprintf(miss, sizeof miss, "After %s comes %s, not %s.", first, first, s);
-          CHECK(font::textWidth(ukfont::FONT24, miss) <= 420);
-          tw[t] = (font::textWidth(ukfont::FONT48, s) + 2) / 3 + 8;   // ukrainian.cpp partW (at least 26)
-          tw[t] = tw[t] < 26 ? 26 : tw[t];
-        }
-        CHECK(mine == parts(w));
-        int widest = 0;   // the slots, all as wide as the widest syllable, in a row at y 66 to 88
-        for (int t = 0; t < q.tileCount; t++) if (q.tiles[t].word == i) widest = tw[t] > widest ? tw[t] : widest;
-        CHECK(parts(w) * widest + (parts(w) - 1) * 4 <= 150);
-        // inside the circle: three in a row (y 100 to 122), four as two rows of two (the lower one y 118 to 140)
-        if (q.tileCount < 4) CHECK(tw[0] + tw[1] + tw[2] + 8 <= 134);
-        else CHECK(tw[0] + tw[1] + 4 <= 130 && tw[2] + tw[3] + 4 <= 104);
-        continue;
-      }
-      CHECK(q.options[q.right] == i);
-      for (int a = 0; a < OPTIONS; a++)
-        for (int b = a + 1; b < OPTIONS; b++) CHECK(q.options[a] != q.options[b] && strcmp(WORDS[q.options[a]].en, WORDS[q.options[b]].en));
-      if (k == MEANING) {
-        for (int a = 0; a < OPTIONS; a++) CHECK(strlen(WORDS[q.options[a]].en) * 6 <= 80);   // the 8x8 font in the button
-        continue;
-      }
-      looks++;
-      for (int a = 0; a < OPTIONS; a++) CHECK(font::textWidth(ukfont::FONT48, WORDS[q.options[a]].uk) <= OPTION_W);
-      CHECK(covered(ukfont::FONT24, hint(q)) && font::textHeight(ukfont::FONT24, hint(q), 330, 0) <= 2 * ukfont::FONT24.lineHeight);
+      if (k == SYLLABLES) { tiles++; tileChecks(i, q); }
+      else { looks += k == LOOKALIKE; optionChecks((Kind)k, i, q); }
     }
   }
   CHECK(tiles >= 60 && looks >= 60);

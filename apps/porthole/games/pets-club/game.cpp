@@ -178,7 +178,7 @@ void Game::debugPrint() {
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
          save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask);
   if (screen_ == SC_PUZZLE) printf("strand=%d level=%d asked=%d right=%d answered=%d answer=%d reviewing=%d\n", strand_, level_, asked_, right_, answered_, puzzle().right, asked_ == reviewAt_);
-  if (screen_ == SC_UK) ukDebug();
+  ukDebug();
   if (screen_ == SC_LITTLE || screen_ == SC_LITTLE_ASK)
     printf("little=%d read_asked=%d read_right=%d read_answered=%d read_answer=%d read_ay=%d page=%d pages=%d\n", little_, asked_, right_, answered_, learn::READS[little_].right, readAnswerTop(), page_, readPages());
   if (screen_ == SC_FETCH) printf("fetch score=%d left=%d\n", fetchScore_, fetchDone_ ? 0 : (int)((fetchEndMs_ - ms_) / 1000));

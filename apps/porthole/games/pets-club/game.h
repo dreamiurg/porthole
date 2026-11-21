@@ -191,7 +191,8 @@ class Game : public App {
   void updateLittle(); void drawLittle();
   void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
   void startUk(); void nextUk(); void ukAnswer(bool right); bool ukRight() const;
-  void updateUk(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkText(); void ukDebug() const; bool ukDebugCmd(const char* cmd);
+  void updateUk(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w, bool done); void drawUkChoices(const learn::uk::Word& w);
+  void drawUkAnswerText(const learn::uk::Word& w, const uint16_t* pal); void drawUkMeaningText(const learn::uk::Word& w, bool right, const uint16_t* pal); void ukDebug() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

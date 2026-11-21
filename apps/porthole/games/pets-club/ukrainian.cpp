@@ -180,29 +180,37 @@ void Game::drawUk() {
   clear(right ? C_MINT : C_WALL);   // green behind a right answer, as the puzzles
   char b[48], s[96];
   snprintf(b, sizeof b, "Ukrainian %d of %d", asked_ + 1, uk::ROUND); textCentered(80, 30, b, C_DKGRAY);
-  if (ukQ_.kind == uk::MEANING) textCentered(80, 40, "What does it mean?", C_PLUM);
-  else if (!done) {   // after an answer, drawUkText's line says it with the word
-    textCentered(80, 40, ukQ_.kind == uk::LOOKALIKE ? "Which word means" : "Build the word for", C_PLUM);
-    snprintf(b, sizeof b, "\"%s\"", w.en);
-    const int scale = textWidth(b, 2) <= 120 ? 2 : 1;
-    textCentered(80, scale == 2 ? 50 : 53, b, C_NAVY, scale);
-  }
+  drawUkPrompt(w, done);
   if (done) {   // what it was (drawUkText), then a cheer, the star's cheer or a nudge, and Next
     fillNames(right ? learn::CHEERS[asked_ % uk::ROUND] : learn::NUDGES[asked_ % uk::ROUND], s, sizeof s);
     if (right) learn::lines(104, s, C_DKBROWN, 2);   // a miss's own lines take its place
     ui::button(in_, {UK_NEXT, "Next", nullptr, C_GREEN});
-  } else if (ukQ_.kind == uk::SYLLABLES) {
-    for (int i = 0; i < uk::parts(w); i++) ui::panel(slotBox(ukQ_, i), C_CREAM, C_DKBROWN);
-    for (int i = 0; i < ukQ_.tileCount; i++) {
-      const ui::Box t = tileBox(ukQ_, i);
-      if ((ukUsed_ >> i) & 1) rect(t.x + 2, t.y + 2, t.w - 4, t.h - 4, C_PEACH);   // its place, now empty
-      else ui::button(in_, {t, nullptr, nullptr, OPTION_COLS[i % uk::OPTIONS]});
-    }
-  } else {
+  } else drawUkChoices(w);
+  drawBackButton();
+}
+// The question's line under the title; after an answer, drawUkText's line says it with the word.
+void Game::drawUkPrompt(const uk::Word& w, bool done) {
+  if (ukQ_.kind == uk::MEANING) { textCentered(80, 40, "What does it mean?", C_PLUM); return; }
+  if (done) return;
+  char b[48];
+  textCentered(80, 40, ukQ_.kind == uk::LOOKALIKE ? "Which word means" : "Build the word for", C_PLUM);
+  snprintf(b, sizeof b, "\"%s\"", w.en);
+  const int scale = textWidth(b, 2) <= 120 ? 2 : 1;
+  textCentered(80, scale == 2 ? 50 : 53, b, C_NAVY, scale);
+}
+// The buttons before an answer: the syllables' slots and tiles, or the three options.
+void Game::drawUkChoices(const uk::Word& w) {
+  if (ukQ_.kind != uk::SYLLABLES) {
     for (int i = 0; i < uk::OPTIONS; i++)
       ui::button(in_, {optionBox(i), ukQ_.kind == uk::MEANING ? uk::WORDS[ukQ_.options[i]].en : nullptr, nullptr, OPTION_COLS[i]});
+    return;
   }
-  drawBackButton();
+  for (int i = 0; i < uk::parts(w); i++) ui::panel(slotBox(ukQ_, i), C_CREAM, C_DKBROWN);
+  for (int i = 0; i < ukQ_.tileCount; i++) {
+    const ui::Box t = tileBox(ukQ_, i);
+    if ((ukUsed_ >> i) & 1) rect(t.x + 2, t.y + 2, t.w - 4, t.h - 4, C_PEACH);   // its place, now empty
+    else ui::button(in_, {t, nullptr, nullptr, OPTION_COLS[i % uk::OPTIONS]});
+  }
 }
 // The round's end, as the puzzles': how it went and the stars; the first round says the kid's level was found.
 void Game::drawUkDone() {
@@ -226,34 +234,7 @@ void Game::drawUkText() {
   if (asked_ >= uk::ROUND) return;
   const uk::Word& w = uk::WORDS[ukQ_.word];
   char s[80];
-  if (answered_ >= 0) {   // the word and what it means; after a lookalike missed, the one picked and what that means
-    const bool right = ukRight(), picked = !right && ukQ_.kind == uk::LOOKALIKE;
-    if (ukQ_.kind == uk::MEANING) {   // the word stays; under it what it means and, after a miss, the one picked
-      const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
-      ukCentered(bigFont(w.uk), 80, 56, w.uk, pal[C_DKBROWN]);
-      snprintf(s, sizeof s, right ? "Yes! It means %s." : "It means %s.", w.en);
-      ukCentered(ukfont::FONT24, 80, right ? 90 : 86, s, pal[C_NAVY]);
-      snprintf(s, sizeof s, "%s is %s.", other.en, other.uk);
-      if (!right) ukCentered(ukfont::FONT24, 80, 97, s, pal[C_DKBROWN]);
-      return;
-    }
-    snprintf(s, sizeof s, "%s = %s", ukQ_.kind == uk::SYLLABLES && !right ? w.syl : w.uk, w.en);
-    ukCentered(lineFont(s), 80, picked ? 70 : 80, s, pal[C_NAVY]);
-    if (!picked) {
-      if (right) return;
-      char want[16], got[16], prev[16];   // which syllable it wanted, and the one tapped
-      uk::syllable(w, ukBuilt_, want, sizeof want); syl(ukQ_.tiles[answered_], got);
-      if (ukBuilt_) { uk::syllable(w, ukBuilt_ - 1, prev, sizeof prev); snprintf(s, sizeof s, "After %s comes %s, not %s.", prev, want, got); }
-      else snprintf(s, sizeof s, "It starts with %s, not %s.", want, got);
-      ukCentered(ukfont::FONT24, 80, 95, s, pal[C_DKBROWN]);
-      return;
-    }
-    const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
-    snprintf(s, sizeof s, "%s = %s", other.uk, other.en);
-    ukCentered(lineFont(s), 80, 86, s, pal[C_DKBROWN]);
-    font::textBox({&ukfont::FONT24, 330, 0, 0, font::Align::CENTER}, uk::hint(ukQ_), 75, 288, pal[C_SLATE]);
-    return;
-  }
+  if (answered_ >= 0) { drawUkAnswerText(w, pal); return; }   // the word and what it means
   if (ukQ_.kind == uk::MEANING) { ukCentered(bigFont(w.uk), 80, 56, w.uk, pal[C_DKBROWN]); return; }   // a descender clears the options
   if (ukQ_.kind == uk::LOOKALIKE) {
     for (int i = 0; i < uk::OPTIONS; i++) {
@@ -270,9 +251,42 @@ void Game::drawUkText() {
   }
 }
 
+// After an answer: the word and what it means; after a lookalike missed, the one picked and what that means.
+void Game::drawUkAnswerText(const uk::Word& w, const uint16_t* pal) {
+  char s[80];
+  const bool right = ukRight(), picked = !right && ukQ_.kind == uk::LOOKALIKE;
+  if (ukQ_.kind == uk::MEANING) { drawUkMeaningText(w, right, pal); return; }   // the word stays; under it what it means
+  snprintf(s, sizeof s, "%s = %s", ukQ_.kind == uk::SYLLABLES && !right ? w.syl : w.uk, w.en);
+  ukCentered(lineFont(s), 80, picked ? 70 : 80, s, pal[C_NAVY]);
+  if (!picked) {
+    if (right) return;
+    char want[16], got[16], prev[16];   // which syllable it wanted, and the one tapped
+    uk::syllable(w, ukBuilt_, want, sizeof want); syl(ukQ_.tiles[answered_], got);
+    if (ukBuilt_) { uk::syllable(w, ukBuilt_ - 1, prev, sizeof prev); snprintf(s, sizeof s, "After %s comes %s, not %s.", prev, want, got); }
+    else snprintf(s, sizeof s, "It starts with %s, not %s.", want, got);
+    ukCentered(ukfont::FONT24, 80, 95, s, pal[C_DKBROWN]);
+    return;
+  }
+  const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
+  snprintf(s, sizeof s, "%s = %s", other.uk, other.en);
+  ukCentered(lineFont(s), 80, 86, s, pal[C_DKBROWN]);
+  font::textBox({&ukfont::FONT24, 330, 0, 0, font::Align::CENTER}, uk::hint(ukQ_), 75, 288, pal[C_SLATE]);
+}
+// A meaning answered: the word stays; under it what it means and, after a miss, the one picked.
+void Game::drawUkMeaningText(const uk::Word& w, bool right, const uint16_t* pal) {
+  char s[80];
+  const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
+  ukCentered(bigFont(w.uk), 80, 56, w.uk, pal[C_DKBROWN]);
+  snprintf(s, sizeof s, right ? "Yes! It means %s." : "It means %s.", w.en);
+  ukCentered(ukfont::FONT24, 80, right ? 90 : 86, s, pal[C_NAVY]);
+  snprintf(s, sizeof s, "%s is %s.", other.en, other.uk);
+  if (!right) ukCentered(ukfont::FONT24, 80, 97, s, pal[C_DKBROWN]);
+}
+
 // For `debug` and the playtest's answer-uk: the question, the level, and where to tap for the right answer (uk_taps,
 // in order) and for a wrong one (uk_wrong).
 void Game::ukDebug() const {
+  if (screen_ != SC_UK) return;
   const skills::State k = skills::get(*book_, skills::WORDS_UK);
   printf("uk_kind=%s uk_word=\"%s\" uk_step=%d asked=%d right=%d answered=%d uk_rating=%d uk_calibrating=%d uk_answers=%d",
          KIND_NAMES[ukQ_.kind], uk::WORDS[ukQ_.word].en, uk::WORDS[ukQ_.word].step, asked_, right_, answered_,
