@@ -1122,7 +1122,7 @@ void Game::bookDone(bool right) {
   if (right && roundStars_) snprintf(b, sizeof b, "%s loved that story! +%d stars", save_.petName, roundStars_);
   else if (right) snprintf(b, sizeof b, "%s loved that story!", save_.petName);
   else if (lang_ == books::EN) snprintf(b, sizeof b, "It was: %s", bk.answers[bk.correct]);
-  else snprintf(b, sizeof b, "%s loved it anyway!", save_.petName);   // the answer is Ukrainian: the 8x8 font has no Cyrillic
+  else snprintf(b, sizeof b, "%s loved it anyway!", save_.petName);   // a Ukrainian answer in UTF-8 can outgrow the card's 48 bytes
   refreshShelf();   // back to the shelf, the next book on it first
   celebrate("The End!", b, right ? (roundStars_ ? 2 : 0) : 3, SC_BOOKS);
 }
