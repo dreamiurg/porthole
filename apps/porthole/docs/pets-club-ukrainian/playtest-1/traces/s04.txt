@@ -1,0 +1,5 @@
+newgame Mila Pup
+wait 2500
+tap 66 129
+wait 800
+snap play

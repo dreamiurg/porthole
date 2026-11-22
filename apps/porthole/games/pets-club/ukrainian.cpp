@@ -255,7 +255,7 @@ void Game::drawUkChoices(const uk::Word& w) {
     else ui::drawButton(b, false);
   }
 }
-// The round's end: its five dots and the stars it paid, drawn as stars; the arrow plays another round.
+// The round's end: its five dots and the stars it paid, drawn as stars (a heart when none); the arrow plays another round.
 void Game::drawUkDone() {
   clear(C_WALL);
   drawUkDots(40);
@@ -267,6 +267,7 @@ void Game::drawUkDone() {
     for (int i = 0; i < k; i++) blitScaled(SPR_STAR, 80 - (k * step - 4) / 2 + i * step, y, scale);
     done += k;
   }
+  if (!n) blitScaled(SPR_HEART, 80 - 7 * 3 / 2 - 1, 62 - 7 * 3 / 2, 3);   // no stars this time: the pup's heart, not a blank
   ui::button(in_, {UK_MORE, nullptr, nullptr, C_GREEN});
   blitTint(SPR_ARROW, UK_MORE.x + UK_MORE.w / 2 - 3, UK_MORE.y + UK_MORE.h / 2 - 4 + (ui::pressing(in_, UK_MORE) ? 1 : 0), C_DKBROWN);
   drawBackButton();
