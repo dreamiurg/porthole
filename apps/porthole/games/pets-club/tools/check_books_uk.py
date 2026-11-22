@@ -30,14 +30,34 @@ ASCII = {chr(c) for c in range(32, 127)}
 NOT_LEVEL1 = set("яюєїЯЮЄЇʼ’'")
 RUSSIAN = set("ыэъёЫЭЪЁ")
 # Russian words and surzhyk that look Ukrainian enough to slip through (lowercase, whole words).
-NOT_UKRAINIAN = {"тоже", "ладно", "сейчас", "вообще", "кот", "конечно", "щас", "пожалуста", "спасибо", "смотри",
-                 "всьо", "канєшно", "получилось", "звонить", "кушать", "нету", "єслі", "шо", "чьо", "ніхто-ніхто"}
+NOT_UKRAINIAN = {
+    "тоже",
+    "ладно",
+    "сейчас",
+    "вообще",
+    "кот",
+    "конечно",
+    "щас",
+    "пожалуста",
+    "спасибо",
+    "смотри",
+    "всьо",
+    "канєшно",
+    "получилось",
+    "звонить",
+    "кушать",
+    "нету",
+    "єслі",
+    "шо",
+    "чьо",
+    "ніхто-ніхто",
+}
 
 
 def font_widths(size):
     src = Path("os/uk_fonts.h").read_text(encoding="utf-8")
     extras = [int(x, 16) for x in re.findall(r"0x([0-9A-F]+)", re.search(r"EXTRAS\[\] = \{([^}]*)\}", src).group(1))]
-    body = re.search(r"FONT%d_GLYPHS\[\] = \{(.*?)\};" % size, src, re.S).group(1)
+    body = re.search(rf"FONT{size}_GLYPHS\[\] = \{{(.*?)\}};", src, re.S).group(1)
     glyphs = re.findall(r"\{\s*(\d+),\s*(\d+),", body)
     adv = [int(a) for _, a in glyphs]
     cps = [None] + list(range(32, 127)) + extras
@@ -74,8 +94,7 @@ def fits(t, size, box):
 
 
 def strings_in(block):
-    return [m.encode("utf-8").decode("unicode_escape").encode("latin-1").decode("utf-8")
-            for m in re.findall(r'"((?:[^"\\]|\\.)*)"', block)]
+    return [m.encode("utf-8").decode("unicode_escape").encode("latin-1").decode("utf-8") for m in re.findall(r'"((?:[^"\\]|\\.)*)"', block)]
 
 
 def words_of(t):
@@ -85,8 +104,10 @@ def words_of(t):
 def main():
     errors, titles = [], {}
     text = FILE.read_text(encoding="utf-8")
-    book_re = (r'\{"((?:[^"\\]|\\.)*)",\s*C_\w+,\s*(\d+),\s*(\d+),\s*\{(.*?)nullptr\},'
-               r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)\}')
+    book_re = (
+        r'\{"((?:[^"\\]|\\.)*)",\s*C_\w+,\s*(\d+),\s*(\d+),\s*\{(.*?)nullptr\},'
+        r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)\}'
+    )
     for m in re.finditer(book_re, text, re.S):
         title, icon, level, pages, question, answers, correct = m.groups()
         level = int(level)

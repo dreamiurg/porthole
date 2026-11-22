@@ -12,8 +12,7 @@ import sys
 from pathlib import Path
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # every path below is relative to the Porthole app, wherever this runs from
-FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_books_en.h",
-         "games/pets-club/content_level3_words.h"]
+FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_books_en.h", "games/pets-club/content_level3_words.h"]
 # English book levels (books.h): the little reads' scale (content_reads.h, 1-5) carried on to 8; words per book.
 EN_WORDS = {2: (30, 60), 3: (45, 80), 4: (65, 110), 5: (75, 120), 6: (75, 120), 7: (150, 230), 8: (240, 360)}
 # Boxes the game actually draws into (logical px, lines). Widths follow games/pets-club/game.cpp.
