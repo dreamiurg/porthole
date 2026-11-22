@@ -2,7 +2,7 @@
 # These automated fixtures supplement the inspected final-build pass in docs/family-controls.
 newgame Sam Rex
 wait 2400
-expect books=0/3
+expect books=0
 dbg bedtime
 wait 1500
 expect-screen rest
@@ -204,7 +204,7 @@ expect play=0
 app pets-club
 wait 2400
 expect-screen home
-expect books=0/3
+expect books=0
 tap 80 12
 wait 450
 tap 80 32

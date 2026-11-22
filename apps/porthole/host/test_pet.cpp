@@ -14,7 +14,7 @@ static const uint32_t day0 = 1790000000u - (1790000000u % 86400u) + 10 * 3600;  
 static void decayAndGrowth(Save& s) {
   pet::adopt(s, day0, "Sam", "Biscuit");
   assert(pet::valid(s));
-  assert(s.food == 70 && s.booksUnlocked == pet::STARTER_BOOKS && s.streak == 1);
+  assert(s.food == 70 && s.streak == 1);
 
   // 3 hours online awake: food -12, fun -9, energy -15
   uint32_t ev = pet::simulate(s, day0 + 3 * 3600, true);
@@ -63,12 +63,12 @@ static void bondAndTricks(Save& s, uint32_t t) {
 }
 
 static void giftsStreakReading(Save& s, uint32_t t) {
-  // Gifts: one per calendar day; books first, hat on every third
+  // Gifts: one per calendar day; treats, a hat on every third (books are all on the shelf, none comes as a gift)
   uint32_t g0 = t + 86400; s.lastGiftDay = (uint16_t)pet::dayIndex(g0) - 1;
   assert(pet::giftReady(s, g0));
-  pet::Gift g = pet::openGift(s, g0); assert(g.kind == pet::GIFT_BOOK && s.booksUnlocked == pet::STARTER_BOOKS + 1);
+  pet::Gift g = pet::openGift(s, g0); assert(g.kind == pet::GIFT_TREATS);
   assert(!pet::giftReady(s, g0));
-  g = pet::openGift(s, g0 + 86400); assert(g.kind == pet::GIFT_BOOK);
+  g = pet::openGift(s, g0 + 86400); assert(g.kind == pet::GIFT_TREATS);
   g = pet::openGift(s, g0 + 2 * 86400); assert(g.kind == pet::GIFT_HAT && (s.hatsMask & (1u << g.index)));
 
   // Streak: consecutive days increment, a gap resets
@@ -78,8 +78,8 @@ static void giftsStreakReading(Save& s, uint32_t t) {
   pet::touchDay(s, t + 4 * 86400); assert(s.streak == 1);
 
   // Reading
-  int before = s.booksRead; pet::bookFinished(s, t, 0, true); pet::bookFinished(s, t, 0, false);
-  assert(s.booksRead == before + 1 && (s.booksDoneMask & 1u) && (s.stickersMask & (1u << ST_FIRST_STORY)));
+  int before = s.booksRead; pet::bookFinished(s, t, true, true); pet::bookFinished(s, t, false, false);
+  assert(s.booksRead == before + 1 && (s.stickersMask & (1u << ST_FIRST_STORY)));
 
   // Save integrity
   pet::seal(s); assert(pet::valid(s)); s.food ^= 1; assert(!pet::valid(s)); s.food ^= 1; pet::seal(s);
@@ -130,9 +130,23 @@ static void saveV3Migrates(Save s) {
   assert(!m.puzzleLevels[0] && !m.puzzleReviewCount && !m.readLevel && !m.readsRight && !m.puzzlesRight && !m.puzzleReviews[0].due);
   v3[30] ^= 1; assert(!pet::loadBlob(v3, sizeof v3, m));          // corrupted v3 rejected
   oldBlob(v3, s, sizeof v3, 2); assert(!pet::loadBlob(v3, sizeof v3, m));   // a v3 size must say v3
-  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v4 bytes are made safe once, on load
+  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v5 bytes are made safe once, on load
   bad.readLevel = 77; bad.readStreak = 9; bad.puzzleReviewCount = 200; pet::seal(bad);
   assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
+}
+
+// v4 blob (288 bytes, before the two bookshelves) migrates: every field keeps its value, the old 32-bit mask of
+// English books read becomes the first bits of booksEn (same indices), no Ukrainian book is read.
+static void saveV4Migrates(Save s) {
+  s.booksDoneMask = 0x80000005u; s.readLevel = 3; s.puzzleReviewCount = 1; s.puzzleReviews[0].due = 77;
+  uint8_t v4[SAVE_V4_SIZE]; oldBlob(v4, s, sizeof v4, 4);
+  Save m; assert(pet::loadBlob(v4, sizeof v4, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save) && m.readLevel == 3 && m.puzzleReviews[0].due == 77);
+  assert(m.booksEn[0] == 0x05 && m.booksEn[1] == 0 && m.booksEn[2] == 0 && m.booksEn[3] == 0x80 && !m.booksEn[4]);
+  for (uint8_t b : m.booksUk) assert(!b);
+  for (uint8_t b : m.reserved4) assert(!b);
+  v4[30] ^= 1; assert(!pet::loadBlob(v4, sizeof v4, m));          // corrupted v4 rejected
+  oldBlob(v4, s, sizeof v4, 3); assert(!pet::loadBlob(v4, sizeof v4, m));   // a v4 size must say v4
 }
 
 // The shop lives in bytes that were reserved in v4 and always zero: an older v4 save has nothing bought and wears the
@@ -323,12 +337,9 @@ static void wordsForEveryAge() {
 }
 
 static void levels(const Save& s) {
-  // reading levels by age
-  { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
-    pet::wordLenRange(6, lo, hi); assert(lo == 3 && hi == 4); pet::wordLenRange(9, lo, hi); assert(lo == 6 && hi == 8); }
-  // story lists by age: a 6 year old only sees level 1, an 8 year old never sees level 1
-  { uint8_t list[32]; Save r = s; r.kidAge = 6; int n6 = pet::bookListFor(r, list); assert(n6 >= 6); for (int i = 0; i < n6; i++) assert(BOOKS[list[i]].level == 1);
-    r.kidAge = 8; int n8 = pet::bookListFor(r, list); assert(n8 >= 6); for (int i = 0; i < n8; i++) assert(BOOKS[list[i]].level >= 2); }
+  // spelling word lengths by age (stories follow the reading rating now: host/test_pets_books.cpp)
+  { int lo, hi; pet::wordLenRange(6, lo, hi); assert(lo == 3 && hi == 4); pet::wordLenRange(9, lo, hi); assert(lo == 6 && hi == 8); }
+  (void)s;
 }
 
 // 22:00 in the game: Auto (AppEnter::daylight false) is night; a sun picked on the launcher is day, with no stars.
@@ -642,6 +653,7 @@ int main() {
   saveV1(s);
   saveV2Migrates(s);
   saveV3Migrates(s);
+  saveV4Migrates(s);
   shopFieldsStartEmpty(s);
   collarTable();
   learningPaysStars();

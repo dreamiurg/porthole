@@ -12,6 +12,7 @@
 #include <string.h>
 #include "font.h"
 #include "game.h"
+#include "books.h"
 #include "gfx565.h"
 #include "palette.h"
 #include "sprites.h"
@@ -350,4 +351,35 @@ bool Game::ukDebugCmd(const char* cmd) {
     return false;
   }
   return false;
+}
+
+// A Ukrainian book's text (books.h) in Andika at native size over the expanded frame: render() calls this last on the
+// cover picker and the reader for a Ukrainian book. The boxes are game.cpp's, in logical px times three, and
+// books::ukbox's widths (which tools/check_books_uk.py holds every story to).
+void Game::drawBookText() {
+  namespace bx = books::ukbox;
+  const uint16_t* pal = palette565(tint());
+  gfx565::expandIndexed3(gfx::fb, pal);
+  const Book& bk = curBook();
+  auto centered = [](const font::Font& f, int w, int y, const char* s, uint16_t fg) {
+    font::textBox({&f, (int16_t)w, 0, 0, font::Align::CENTER}, s, 241 - w / 2, y, fg);   // on the screen's middle
+  };
+  if (screen_ == SC_BOOKS) {
+    centered(ukfont::FONT24, bx::COVER_W, 91 * 3, bk.title, pal[C_WHITE]);   // on drawBooks' plate
+    return;
+  }
+  const int npages = books::pages(bk);
+  centered(ukfont::FONT24, bx::TITLE_W, 24 * 3 - 4, bk.title, pal[C_PLUM]);
+  if (page_ < npages) {
+    font::textBox({&bx::pageFont(bk), bx::PAGE_W, 0, 0, font::Align::LEFT}, bk.pages[page_], 19 * 3, 38 * 3, pal[C_DKBROWN]);
+    return;
+  }
+  centered(ukfont::FONT24, bx::QUESTION_W, 36 * 3 - 2, bk.question, pal[C_DKBROWN]);
+  const int ay = bookAnswerTop(bk);
+  for (int i = 0; i < books::answers(bk); i++) {
+    const ui::Box b = {26, ay + i * 24, 108, 22};   // game.cpp's ANSWER_STEP and answer box
+    const uint8_t col = answerPick_ < 0 ? C_BLUE : i == bk.correct ? C_GREEN : i == answerPick_ ? C_RED : C_LTGRAY;
+    const int h = bx::lines(ukfont::FONT24, bk.answers[i], bx::ANSWER_W) * ukfont::FONT24.lineHeight;
+    centered(ukfont::FONT24, bx::ANSWER_W, b.y * 3 + (b.h * 3 - h) / 2 + (ui::pressing(in_, b) ? 3 : 0), bk.answers[i], pal[ui::inkOn(col)]);
+  }
 }

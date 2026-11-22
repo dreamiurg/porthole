@@ -2,7 +2,6 @@
 #include "content.h"
 #include "os/save.h"   // not "save.h": a game may have its own
 
-static_assert(NUM_BOOKS <= 32, "booksDoneMask is 32 bits: split or widen before adding more stories");
 
 namespace pet {
 uint32_t crc32(const void* d, size_t n) { return os::crc32(d, n); }
@@ -15,10 +14,11 @@ bool valid(const Save& s) {
 static bool loadOld(const uint8_t* p, size_t n, Save& out) {
   uint32_t crc; memcpy(&crc, p + n - 4, 4);
   uint16_t ver; memcpy(&ver, p + 4, 2);
-  if (ver != (n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : 3) || crc != crc32(p, n - 4)) return false;
+  if (ver != (n == SAVE_V1_SIZE ? 1 : n == SAVE_V2_SIZE ? 2 : n == SAVE_V3_SIZE ? 3 : 4) || crc != crc32(p, n - 4)) return false;
   memset(&out, 0, sizeof out);
   memcpy(&out, p, n - 4);
-  if (n != SAVE_V3_SIZE) out.hasDog = 1;   // every save before the farm has its dog
+  if (n < SAVE_V3_SIZE) out.hasDog = 1;   // every save before the farm has its dog
+  for (int i = 0; i < 32; i++) if (out.booksDoneMask >> i & 1) out.booksEn[i / 8] |= (uint8_t)(1u << i % 8);   // same indices
   return true;
 }
 // Made safe once, here, so every reader can index the art and the wall with them: a bad byte is the Golden pup.
@@ -36,26 +36,14 @@ static void makeSafe(Save& out) {
 }
 bool loadBlob(const void* d, size_t n, Save& out) {
   if (n == sizeof(Save)) { memcpy(&out, d, n); if (!valid(out)) return false; }
-  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE || n == SAVE_V3_SIZE) { if (!loadOld((const uint8_t*)d, n, out)) return false; }
+  else if (n == SAVE_V1_SIZE || n == SAVE_V2_SIZE || n == SAVE_V3_SIZE || n == SAVE_V4_SIZE) { if (!loadOld((const uint8_t*)d, n, out)) return false; }
   else return false;
   makeSafe(out);
   seal(out);
   return true;
 }
-void levelRange(int age, int& lo, int& hi) {
-  if (age <= 6) { lo = 1; hi = 1; } else if (age == 7) { lo = 1; hi = 2; } else if (age == 8) { lo = 2; hi = 3; } else { lo = 3; hi = 3; }
-}
 void wordLenRange(int age, int& lo, int& hi) {
   if (age <= 6) { lo = 3; hi = 4; } else if (age == 7) { lo = 4; hi = 5; } else if (age == 8) { lo = 5; hi = 7; } else { lo = 6; hi = 8; }
-}
-int bookListFor(const Save& s, uint8_t* out) {
-  int lo, hi; levelRange(s.kidAge ? s.kidAge : 7, lo, hi);
-  for (;;) {
-    int n = 0;
-    for (int i = 0; i < NUM_BOOKS; i++) if (BOOKS[i].level >= lo && BOOKS[i].level <= hi) { if (out) out[n] = (uint8_t)i; n++; }
-    if (n >= STARTER_BOOKS + 3 || lo <= 1) return n;
-    lo--;  // not enough stories at this level yet: offer the tier below as well
-  }
 }
 void seal(Save& s) { os::save::seal(&s, sizeof s, SAVE_MAGIC, SAVE_VERSION); }
 
@@ -80,7 +68,6 @@ void adopt(Save& s, uint32_t now, const char* kid, const char* pet) {
   memset(&s, 0, sizeof s);
   strncpy(s.kidName, kid, sizeof s.kidName - 1);
   freshDog(s, now, pet); s.hasDog = 1;
-  s.booksUnlocked = STARTER_BOOKS;
   s.streak = 1; s.lastPlayDay = (uint16_t)dayIndex(now); s.lastGiftDay = (uint16_t)dayIndex(now);  // first gift tomorrow
   s.seed = now ^ 0xC0FFEEu;
   seal(s);
@@ -265,9 +252,7 @@ void wordsResult(Save& s, uint32_t now, int correct) {
   addBond(s, now, 6 + correct * 2);
   if (s.wordsSpelled >= 25) earnSticker(s, ST_SPELLER);
 }
-void bookFinished(Save& s, uint32_t now, int bookIndex, bool right) {
-  bool first = !(s.booksDoneMask & (1u << bookIndex));
-  s.booksDoneMask |= (1u << bookIndex);
+void bookFinished(Save& s, uint32_t now, bool first, bool right) {
   if (first) s.booksRead++;
   s.fun = clamp100(s.fun + 15);
   addBond(s, now, (first ? 15 : 4) + (right ? 5 : 0));
@@ -331,8 +316,6 @@ Gift openGift(Save& s, uint32_t now) {
       addBond(s, now, 10); return g;
     }
   }
-  uint8_t list[32]; int nb = bookListFor(s, list);
-  if (s.booksUnlocked < nb) { g.kind = GIFT_BOOK; g.index = list[s.booksUnlocked++]; addBond(s, now, 10); return g; }
   s.fun = clamp100(s.fun + 10); s.food = clamp100(s.food + 10); addBond(s, now, 10);
   return g;
 }

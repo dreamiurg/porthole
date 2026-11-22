@@ -198,26 +198,26 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 * **Adopt.** A parcel arrives and a puppy pops out. The kid names the pup and picks the house
   colors.
 * **Home.** One cosy room: a window with day, night, rain and a visiting squirrel, a bookshelf that
-  fills up with unlocked books, a lamp to tuck the dog in, a food bowl, a toy ball. Four big
+  fills up with the books your kid has read, a lamp to tuck the dog in, a food bowl, a toy ball. Four big
   buttons: **feed · play · read · tricks**. Tap the dog to pet it; hold for a belly rub.
 * **Needs, gently.** Food, fun, sleep and clean decay slowly and **stop at a floor: the dog never
   dies, runs away or resets.** Poop shows up a few hours after meals (one tap cleans it); muddy
   paws after playing mean a bath you give by rubbing the mud off.
-* **Read.** A library of 30 original short stories in three reading levels, 5 to 11 pages each.
+* **Read.** A library of original short stories on two shelves: 45 in English (levels 2 to 7) and 10 in
+  Ukrainian (levels 1 and 2). Each shelf picks books at your kid's level in that language, from how they answer.
   The dog sits and listens, and each story ends with one comprehension question. Reading is the
   biggest source of bond hearts.
 * **Play.** *Fetch*: slide to catch falling bones and dodge the bee. *Word Fetch*: read a clue,
   tap letter tiles to spell the word.
 * **Tricks.** Eight tricks (sit, shake, speak, spin, roll over, play dead, beg, dance) unlock
   with bond hearts, each learned in three Simon-says lessons on three different days.
-* **Day after day.** The real-time clock drives it all: a gift every new calendar day (a book, a
+* **Day after day.** The real-time clock drives it all: a gift every new calendar day (treats, a
   hat, a party on day 7), a day streak, growing from puppy to dog to grown dog, sixteen stickers,
   bedtime at 8 pm. Time away counts for at most 12 hours and nights are slept through, so a
   weekend off never punishes anyone.
 * **Paw Street.** The front door opens onto the neighbourhood: a house for every profile on the
   board, with that kid's pup at the door. Only your own house opens.
-* **Reading level by age.** Stories and spelling words scale with the profile's age: level 1 at
-  5-6 up to level 3 from 9.
+* **Reading level.** Stories follow how your kid reads; spelling words scale with the profile's age.
 * **Quiet by design.** The buzzer is harsh, so it only sounds for rare moments (growing up, a
   new trick, a gift, a sticker). Grown-ups can turn it off in the Admin menu.
 

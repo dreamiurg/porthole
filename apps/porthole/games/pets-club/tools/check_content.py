@@ -12,7 +12,10 @@ import sys
 from pathlib import Path
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # every path below is relative to the Porthole app, wherever this runs from
-FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_level3_words.h"]
+FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_books_en.h",
+         "games/pets-club/content_level3_words.h"]
+# English book levels (books.h): the little reads' scale (content_reads.h, 1-5) carried on to 8; words per book.
+EN_WORDS = {2: (30, 60), 3: (45, 80), 4: (65, 110), 5: (75, 120), 6: (75, 120), 7: (150, 230), 8: (240, 360)}
 # Boxes the game actually draws into (logical px, lines). Widths follow games/pets-club/game.cpp.
 BOXES = dict(page=(122, 7), title=(108, 2), question=(116, 2), answer=(102, 2), clue=(118, 2))
 
@@ -95,9 +98,14 @@ def main():
                 errors.append(f"{where}: {why}")
             if not (0 <= int(icon) <= 7):
                 errors.append(f"{where}: icon {icon} out of range")
-            if not (1 <= int(level) <= 3):
-                errors.append(f"{where}: level {level} out of range")
             pg = strings_in(pages)
+            if int(level) not in EN_WORDS:
+                errors.append(f"{where}: level {level} out of range (2..8)")
+            else:
+                lo, hi = EN_WORDS[int(level)]
+                nw = sum(len(p.split()) for p in pg)
+                if not (lo <= nw <= hi):
+                    errors.append(f"{where}: {nw} words, level {level} wants {lo}..{hi}")
             if not (3 <= len(pg) <= 11):
                 errors.append(f"{where}: {len(pg)} pages (want 3..11)")
             # the reader gives pages 8 lines under a one-line title, 7 under a two-line title
