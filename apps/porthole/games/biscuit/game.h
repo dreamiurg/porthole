@@ -61,7 +61,7 @@ class Game : public App {
   bool claimed_ = false, stickerNews_ = false;   // today's sticker as last seen; just earned, not yet told at home
   int page_ = 0;                              // Tricks, Library, Discoveries, Topics, Stickers: the list page
   int trick_ = 0, step_ = 0; bool watching_ = true;   // Training
-  char nameBuf_[ui::NAME_LEN + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
+  char nameBuf_[NAME_LIMIT + 1] = {0}; int nameLen_ = 0; uint8_t namePage_ = 0;   // naming
   // Reading (a story up to its choice, an ending, a discovery): its pages filled and joined into read_, flowed onto
   // total_ screens (layout.h, PAGE). at_ is the screen shown; a discovery also has its cover (-1) and its wonder
   // page (total_).

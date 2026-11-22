@@ -122,7 +122,7 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the speech line and activity timers (a line 4 s, a room one-shot 800 ms), needs ticking
   every 30 s with a save checkpoint every 5 min or at a new day, screen dispatch.
   `surface()` is `SURFACE_RGB565` everywhere except the two naming screens, which reuse the
-  shell's indexed `ui::keyboard` (8 letters). `store()` is `"biscuit"`, never renamed.
+  shell's indexed `ui::keyboard` (8 letters, or 6 Ukrainian: `petName` is 12 bytes of UTF-8). `store()` is `"biscuit"`, never renamed.
   `soundOn()` is always false: Biscuit has no buzzer sounds (shared app brief constraint 3).
   `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00, or always day when
   `AppEnter::daylight` (a kid picked a sun on the launcher). Screen

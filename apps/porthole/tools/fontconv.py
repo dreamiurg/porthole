@@ -5,16 +5,16 @@
 
 Run from apps/porthole. Each game's font, its output and its inputs (GAMES below):
 
-Biscuit (the default): the fonts of Biscuit's LVGL firmware (tag biscuit-v0.1.0).
+Biscuit (the default): Montserrat Regular as Biscuit's LVGL firmware had it (tag biscuit-v0.1.0, its
+apps/biscuit/assets/fonts/ and the flags of its apps/biscuit/firmware/tools/export-fonts.mjs), plus the Ukrainian
+alphabet for pup names; the line heights stay ASCII's (lines below), so no text moved:
 
-    for n in 16 20 24 28; do git show biscuit-v0.1.0:apps/biscuit/firmware/generated/font$n.c > build/font$n.c; done
-    python3 tools/fontconv.py build/font{16,20,24,28}.c
-
-To add a glyph, first regenerate them from Montserrat-Regular.ttf (same tag, apps/biscuit/assets/fonts/) with the same
-converter and flags (that tag's apps/biscuit/firmware/tools/export-fonts.mjs):
-
-    npx lv_font_conv@1.5.3 --font Montserrat-Regular.ttf --range 0x20-0x7e,0xb7,0xe9,0xf6 --size N --bpp 4
-        --format lvgl --no-compress --lv-include lvgl.h --lv-font-name biscuit_font_N --output fontN.c
+    git show biscuit-v0.1.0:apps/biscuit/assets/fonts/Montserrat-Regular.ttf > build/fc/Montserrat-Regular.ttf
+    for n in 16 20 24 28; do npx lv_font_conv@1.5.3 --font build/fc/Montserrat-Regular.ttf --range 0x20-0x7e,0xb7,0xe9,
+        0xf6,0x404,0x406-0x407,0x410-0x429,0x42c,0x42e-0x449,0x44c,0x44e-0x44f,0x454,0x456-0x457,0x490-0x491 --size $n
+        --bpp 4 --format lvgl --no-compress --lv-include lvgl.h --lv-font-name biscuit_font_$n --output build/fc/font$n.c
+    done
+    python3 tools/fontconv.py build/fc/font{16,20,24,28}.c
 
 Tilt FC: Rubik Mono One (games/tilt-fc/fonts/, from github.com/google/fonts ofl/rubikmonoone), only the glyphs it
 draws (KEEP): every other ASCII glyph keeps its advance but has no bitmap.
@@ -74,6 +74,7 @@ class Game(NamedTuple):
     credit: str
     license: str
     keep: str | None  # the only glyphs with bitmaps, or None for all
+    lines: dict[int, int] | None = None  # line height per size, kept as ASCII had it: Й Ї Ґ would grow it, moving text
 
 
 GAMES = {
@@ -84,6 +85,7 @@ GAMES = {
         "Copyright 2024 The Montserrat.Git Project Authors (https://github.com/JulietaUla/Montserrat.git).",
         "see OFL.txt next to this file",
         None,
+        {16: 17, 20: 22, 24: 26, 28: 29},
     ),
     "tiltfc": Game(
         "games/tilt-fc/generated/fonts.h",
@@ -220,10 +222,11 @@ def convert(path: Path, game: Game) -> tuple[int, str, list[int], bool]:
     left, right, values, rcnt = kerning(src, len(glyphs))
     glyphs, bitmap = keep_only(glyphs, array(src, "glyph_bitmap"), game.keep, extras)
     n = f"FONT{size}"
+    line = (game.lines or {}).get(size, field(src, "line_height"))
     glyph_rows = ",\n".join("  {" + ", ".join(g) + "}" for g in glyphs)
     extras_ref = "EXTRAS" if extras else "nullptr"
     body = f"""
-// {game.name} {size} px: line height {field(src, "line_height")}, baseline {field(src, "base_line")} px from the bottom.
+// {game.name} {size} px: line height {line}, baseline {field(src, "base_line")} px from the bottom.
 inline constexpr uint8_t {n}_BITMAP[] = {{
 {rows([int(v) for v in bitmap], 32)}
 }};
@@ -240,7 +243,7 @@ inline constexpr int8_t {n}_KERN[] = {{
 {rows(values)}
 }};
 inline constexpr font::Font {n} = {{{n}_BITMAP, {n}_GLYPHS, {extras_ref}, {len(extras)}, {n}_KERN_LEFT, {n}_KERN_RIGHT, {n}_KERN, {rcnt}, \
-{field(src, "line_height")}, {field(src, "base_line")}}};
+{line}, {field(src, "base_line")}}};
 """
     return size, body, extras, rcnt > 1 or any(values)
 

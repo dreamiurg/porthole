@@ -11,6 +11,8 @@
 #include "font.h"
 #include "gfx.h"
 #include "gfx565.h"
+#include "ui.h"
+#include "utf8.h"
 
 using namespace gfx565;
 static uint16_t g_fb[W * H];
@@ -300,9 +302,47 @@ static void indexedFont() {
   assert(os::crc32(gfx::fb, sizeof gfx::fb) == 0x686e30ebu);
 }
 
+// Names in Ukrainian: the 8x8 font draws the alphabet, the keyboard types it as UTF-8 within the save's bytes, and
+// nothing cuts a letter in half.
+static Input tapAt(int x, int y) { Input in; in.tap = in.released = true; in.x = in.downX = x; in.y = in.downY = y; return in; }
+static void typeKey(char* buf, int& len, uint8_t& page, size_t cap, int i) {   // key i of the 4x4 grid
+  ui::keyboard(tapAt(29 + (i % 4) * 26 + 12, 42 + (i / 4) * 24 + 11), buf, len, page, cap);
+}
+static void ukrainianNames() {
+  auto ink = [](const char* t) { memset(gfx::fb, 0, sizeof gfx::fb); gfx::text(0, 0, t, 7); return os::crc32(gfx::fb, sizeof gfx::fb); };
+  assert(ink("\xd0\x91") != ink("?") && ink("\xd2\x91") != ink("?") && ink("\xd0\x91") != ink("\xd2\x91"));   // Б, ґ
+  assert(gfx::textWidth("\xc3\xa9") == gfx::textWidth("?") && gfx::textWidth("A\x80") == gfx::textWidth("A"));
+  assert(utf8::count("\xd0\x91\xd1\x96\xd0\xbc") == 3 && utf8::ukrainian(0x491) && !utf8::ukrainian(0x42B));
+  char caps[] = "\xd1\x97\xd0\xb6\xd0\xb0\xd0\xba \xd2\x91\xd1\x8f\xd1\x94x";   // їжак ґяєx -> ЇЖАК ҐЯЄX
+  utf8::upper(caps); assert(!strcmp(caps, "\xd0\x87\xd0\x96\xd0\x90\xd0\x9a \xd2\x90\xd0\xaf\xd0\x84X"));
+  char cut[6]; utf8::copy(cut, sizeof cut, "\xd0\x91\xd1\x96\xd0\xbc");   // 6 bytes into 5: two letters, not 2.5
+  assert(!strcmp(cut, "\xd0\x91\xd1\x96"));
+  char buf[12] = {}; int len = 0; uint8_t page = 0;
+  ui::keyboard(tapAt(80, 147), buf, len, page, sizeof buf); assert(page == 2);   // the UA key
+  typeKey(buf, len, page, sizeof buf, 1); typeKey(buf, len, page, sizeof buf, 11);   // Б, then і (small after the first)
+  assert(!strcmp(buf, "\xd0\x91\xd1\x96") && len == 4);
+  for (int i = 0; i < 6; i++) typeKey(buf, len, page, sizeof buf, 0);   // а until the 11 bytes are full
+  assert(utf8::count(buf) == 5 && len == 10 && strlen(buf) == 10);
+  ui::keyboard(tapAt(29 + 2 * 26 + 12, 42 + 3 * 24 + 11), buf, len, page, sizeof buf);   // backspace: one whole letter
+  assert(len == 8 && utf8::count(buf) == 4);
+  typeKey(buf, len, page, sizeof buf, 12); assert(utf8::count(buf) == 5);   // ї on the last row
+  ui::keyboard(tapAt(80, 147), buf, len, page, sizeof buf); assert(page == 0);   // back to English: a fits one byte
+  typeKey(buf, len, page, sizeof buf, 0); assert(len == 11 && !strcmp(buf + 10, "a"));
+  char ap[12] = {}; int al = 0; uint8_t pg = 4;   // Ц Ч Ш Щ Ь Ю Я ': an apostrophe joins two letters, once
+  typeKey(ap, al, pg, sizeof ap, 7); typeKey(ap, al, pg, sizeof ap, 0); typeKey(ap, al, pg, sizeof ap, 7);
+  typeKey(ap, al, pg, sizeof ap, 7); assert(!strcmp(ap, "\xd0\xa6'"));
+  assert(!ui::keyboard(tapAt(29 + 3 * 26 + 12, 42 + 3 * 24 + 11), ap, al, pg, sizeof ap));   // OK waits for a letter
+  typeKey(ap, al, pg, sizeof ap, 6);
+  assert(ui::keyboard(tapAt(29 + 3 * 26 + 12, 42 + 3 * 24 + 11), ap, al, pg, sizeof ap));
+  char en[12] = {}; int n = 0; uint8_t p = 0;
+  for (int i = 0; i < 10; i++) typeKey(en, n, p, sizeof en, 0);   // English stops at ui::NAME_LEN letters
+  assert(!strcmp(en, "Aaaaaaaa"));
+}
+
 int main() {
   widths();
   indexedFont();
+  ukrainianNames();
   pages();
   drawing();
   clipped();

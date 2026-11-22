@@ -10,6 +10,8 @@
 #include "canvas.h"
 #include "telemetry.h"
 #include "timezone.h"
+#include "uk_fonts.h"
+#include "utf8.h"
 
 using namespace gfx;
 using namespace shell;
@@ -37,10 +39,15 @@ static void sround(int x, int y, int w, int h, uint8_t c) { gfx565::roundRect({x
 static void spanel(const ui::Box& b, uint8_t fill, uint8_t border) {
   sround(b.x, b.y, b.w, b.h, border); sround(b.x + 1, b.y + 1, b.w - 2, b.h - 2, fill);
 }
-static int stextW(const char* s) { return (font::textWidth(adult::FONT24, s) + 2) / 3; }
-static void stext(int x, int y, const char* s, uint8_t c) { font::text(adult::FONT24, s, x * 3, y * 3, scol(c)); }
+// Atkinson has no Cyrillic, so a kid's Ukrainian name is drawn in the Ukrainian font (Andika) instead.
+static const font::Font& sfont(const char* s) {
+  for (; *s; s++) if ((uint8_t)*s >= 0x80) return ukfont::FONT24;
+  return adult::FONT24;
+}
+static int stextW(const char* s) { return (font::textWidth(sfont(s), s) + 2) / 3; }
+static void stext(int x, int y, const char* s, uint8_t c) { font::text(sfont(s), s, x * 3, y * 3, scol(c)); }
 static void stextC(int cx, int y, const char* s, uint8_t c) {
-  font::text(adult::FONT24, s, cx * 3 - font::textWidth(adult::FONT24, s) / 2, y * 3, scol(c));
+  font::text(sfont(s), s, cx * 3 - font::textWidth(sfont(s), s) / 2, y * 3, scol(c));
 }
 static void shead(int cx, int y, const char* s, uint8_t c) {
   font::text(adult::FONT28, s, cx * 3 - font::textWidth(adult::FONT28, s) / 2, y * 3, scol(c));
@@ -54,8 +61,8 @@ static void sback() {   // ui::drawBack at native size: every grown-up screen go
 static void fit(char* out, size_t n, const char* s, int room) {
   snprintf(out, n, "%s", s);
   for (int k = (int)strlen(out); k > 0 && stextW(out) > room;) {
-    out[--k] = 0;
-    if (k > 2) out[k - 1] = out[k - 2] = '.';
+    utf8::popLetter(out, k);   // whole letters: a Ukrainian letter is two bytes
+    if (k > 2) { utf8::popLetter(out, k); utf8::popLetter(out, k); out[k++] = '.'; out[k++] = '.'; out[k] = 0; }
   }
 }
 static bool down(const Input& in, const ui::Box& b) { return ui::pressing(in, b); }   // a press begun on it

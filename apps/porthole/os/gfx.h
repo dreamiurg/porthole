@@ -23,7 +23,7 @@ void blit(const Sprite& s, int x, int y, bool flipx = false, bool flipy = false)
 void blitTint(const Sprite& s, int x, int y, uint8_t col, bool flipx = false);
 void blitScaled(const Sprite& s, int x, int y, int scale, bool flipx = false);
 
-// Proportional 8px font (glyphs trimmed to their ink width). scale 1 or 2.
+// Proportional 8px font (glyphs trimmed to their ink width), UTF-8: ASCII and the Ukrainian alphabet. scale 1 or 2.
 int  glyphWidth(char ch);
 int  textWidth(const char* s, int scale = 1);
 int  text(int x, int y, const char* s, uint8_t c, int scale = 1);       // returns end x
