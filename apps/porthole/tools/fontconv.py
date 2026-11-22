@@ -51,10 +51,10 @@ Plane Radar: B612 Mono Bold (games/plane-radar/fonts/, from github.com/google/fo
 Ukrainian text in any game (os/fonts/README.md): Andika Bold, ASCII plus the Ukrainian alphabet and its apostrophes.
 
     R=0x20-0x7e,0x2bc,0x404,0x406-0x407,0x410-0x429,0x42c,0x42e-0x449,0x44c,0x44e-0x44f,0x454,0x456-0x457,0x490-0x491,0x2019
-    for n in 24 48 88; do npx lv_font_conv@1.5.3 --font os/fonts/Andika-Bold.ttf --range $R --size $n --bpp 4
+    for n in 24 36 48 88; do npx lv_font_conv@1.5.3 --font os/fonts/Andika-Bold.ttf --range $R --size $n --bpp 4
         --format lvgl --no-compress --force-fast-kern-format --lv-include lvgl.h --lv-font-name uk_font_$n
         --output build/uk$n.c; done
-    python3 tools/fontconv.py --game uk build/uk{24,48,88}.c
+    python3 tools/fontconv.py --game uk build/uk{24,36,48,88}.c
 
 The converter's layout is checked, not assumed: 4 bpp plain bitmaps, class kerning at kern_scale 16 (or none, for a
 monospace font), ASCII 32..126 as glyphs 1..95 and, if any, runs or sparse lists of extra code points after it, in order. Anything

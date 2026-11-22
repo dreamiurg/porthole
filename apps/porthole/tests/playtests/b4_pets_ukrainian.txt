@@ -78,16 +78,16 @@ tap 80 12
 wait 450
 expect-screen puzzles
 sheet stars
-# The widest each exercise gets: four syllable tiles in two rows, a long word, a long lookalike's hint, two long
+# The widest each exercise gets: five syllable tiles (two decoys from step 4) as three over two, a long word, a long lookalike's hint, two long
 # meanings after a miss.
 dbg uksyl butterfly
 wait 1600
-ui-check uk-four-tiles
-snap 10_four_tiles
+ui-check uk-five-tiles
+snap 10_five_tiles
 answer-uk right
 wait 450
-ui-check uk-four-tiles-right
-snap 11_four_tiles_right
+ui-check uk-five-tiles-right
+snap 11_five_tiles_right
 dbg uksyl nine
 wait 1600
 answer-uk wrong
