@@ -115,6 +115,13 @@ tap 59 57
 tap 139 97
 wait 100
 snap 09_typed
+# Show (under the keyboard) types the password out in full, Hide masks it again; neither types into it
+tap 80 139
+wait 100
+ui-check sys_pass-shown
+snap 09a_shown
+tap 80 139
+wait 100
 tap 124 117
 wait 450
 expect-screen sys_join

@@ -34,7 +34,7 @@ bool home(const Input& in);
 // 8 letters, first one capital.
 constexpr int NAME_LEN = 8;
 bool keyboard(const Input& in, char* buf, int& len, uint8_t& page);   // true when OK is tapped with at least one letter
-void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, uint32_t ms);   // hint shows while empty
+void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint);   // hint shows while empty
 
 // A press on a logical circle: the finger went down in it and is still in it.
 bool pressing(const Input& in, int cx, int cy, int r);
