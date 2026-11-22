@@ -61,24 +61,36 @@ inline int target(skills::Book& b, const Save& s, Lang l) {
 // How hard a book is for this kid, as paws on its cover: 1 easy, 2 just right, 3 a stretch.
 inline int paws(int level, int t) { return level < t ? 1 : level == t ? 2 : 3; }
 
+namespace detail {
+inline bool has(const uint8_t* out, int n, int i) { for (int k = 0; k < n; k++) if (out[k] == i) return true; return false; }
+// The first unread book at level, not on the shelf yet; -1 when there is none.
+inline int firstUnread(const Save& s, Lang l, int level, const uint8_t* out, int n) {
+  for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !read(s, l, i) && !has(out, n, i)) return i;
+  return -1;
+}
+// Books already read, from one level above t to two below, the newest first, until the shelf is full.
+inline int addRereads(const Save& s, Lang l, int t, uint8_t* out, int n) {
+  for (int level = t + 1; level >= t - 2 && n < SHELF_MAX; level--)
+    for (int i = count(l) - 1; i >= 0 && n < SHELF_MAX; i--)
+      if (at(l, i).level == level && read(s, l, i) && !has(out, n, i)) out[n++] = (uint8_t)i;
+  return n;
+}
+}  // namespace detail
+
 // The shelf for level t: the next unread book just right (or the nearest unread level, above first), one unread a
 // stretch above it and one unread easier, then books already read from two below to one above, to read again.
 // Returns how many indices went into out (up to SHELF_MAX), the new ones first.
 inline int shelf(const Save& s, Lang l, int t, uint8_t* out) {
   int n = 0;
-  auto has = [&](int i) { for (int k = 0; k < n; k++) if (out[k] == i) return true; return false; };
-  auto firstUnread = [&](int level) {
-    for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !read(s, l, i) && !has(i)) return i;
-    return -1;
-  };
-  int right = firstUnread(t);
-  for (int d = 1; right < 0 && d < LEVELS[l]; d++) { right = firstUnread(t + d); if (right < 0) right = firstUnread(t - d); }
+  int right = detail::firstUnread(s, l, t, out, n);
+  for (int d = 1; right < 0 && d < LEVELS[l]; d++) {
+    right = detail::firstUnread(s, l, t + d, out, n);
+    if (right < 0) right = detail::firstUnread(s, l, t - d, out, n);
+  }
   if (right >= 0) out[n++] = (uint8_t)right;
   const int lv = right >= 0 ? at(l, right).level : t;
-  for (int level : {lv + 1, lv - 1}) { const int i = firstUnread(level); if (i >= 0) out[n++] = (uint8_t)i; }
-  for (int level = t + 1; level >= t - 2 && n < SHELF_MAX; level--)
-    for (int i = count(l) - 1; i >= 0 && n < SHELF_MAX; i--)   // the newest read first
-      if (at(l, i).level == level && read(s, l, i) && !has(i)) out[n++] = (uint8_t)i;
+  for (int level : {lv + 1, lv - 1}) { const int i = detail::firstUnread(s, l, level, out, n); if (i >= 0) out[n++] = (uint8_t)i; }
+  n = detail::addRereads(s, l, t, out, n);
   for (int i = count(l) - 1; i >= 0 && n < 1; i--) if (read(s, l, i)) out[n++] = (uint8_t)i;   // never an empty shelf
   return n;
 }

@@ -101,6 +101,58 @@ def words_of(t):
     return re.findall(r"[^\W\d_]+(?:[ʼ’'][^\W\d_]+)*", t)
 
 
+def string_problems(s, level):
+    """What is wrong with one string of a book: letters the font or the level lacks, Russian or Latin, the apostrophe."""
+    out = []
+    bad = {c for c in s if c not in UK and c not in ASCII}
+    if bad:
+        out.append(f"characters the font lacks: {''.join(sorted(bad))}")
+    if RUSSIAN & set(s):
+        out.append(f"Russian letters in: {s}")
+    if re.search(r"[A-Za-z]", s):
+        out.append(f"Latin letters in: {s}")
+    if "'" in s:
+        out.append(f"use the apostrophe ʼ (U+02BC), not ': {s}")
+    out += [f"not Ukrainian: {w}" for w in words_of(s.lower()) if w in NOT_UKRAINIAN]
+    if level == 1 and NOT_LEVEL1 & set(s):
+        out.append(f"level 1 has no я ю є ї or apostrophe: {s}")
+    return out
+
+
+def size_problems(title, level, pg, question, ans):
+    """Words for the level, pages and answers counted, and every string in its box."""
+    out = []
+    nw = sum(len(words_of(p)) for p in pg)
+    lo, hi = WORDS[level]
+    if not (lo <= nw <= hi):
+        out.append(f"{nw} words, level {level} wants {lo}..{hi}")
+    if not (3 <= len(pg) <= 11):
+        out.append(f"{len(pg)} pages (want 3..11)")
+    size = 48 if level in BIG else 24
+    out += [f"page {n}: {why}" for n, p in enumerate(pg, 1) if (why := fits(p, size, (PAGE_W[size], PAGE_LINES[size])))]
+    boxes = (("title", title, TITLE), ("cover title", title, COVER_TITLE), ("question", question, QUESTION))
+    out += [f"{what}: {why}" for what, t, box in boxes if (why := fits(t, 24, box))]
+    if not (2 <= len(ans) <= 3):
+        out.append(f"{len(ans)} answers (want 2..3)")
+    out += [f"answer '{a}': {why}" for a in ans if (why := fits(a, 24, ANSWER))]
+    return out
+
+
+def book_problems(groups):
+    title, icon, level, pages, question, answers, correct = groups
+    level = int(level)
+    pg, ans = strings_in(pages), strings_in(answers)
+    out = [e for s in [title, question] + pg + ans for e in string_problems(s, level)]
+    if level not in WORDS:
+        return out + [f"level {level} out of range (1..5)"]
+    if not (0 <= int(icon) <= 7):
+        out.append(f"icon {icon} out of range")
+    out += size_problems(title, level, pg, question, ans)
+    if not (0 <= int(correct) < len(ans)):
+        out.append(f"correct index {correct} out of range")
+    return out
+
+
 def main():
     errors, titles = [], {}
     text = FILE.read_text(encoding="utf-8")
@@ -109,55 +161,12 @@ def main():
         r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)\}'
     )
     for m in re.finditer(book_re, text, re.S):
-        title, icon, level, pages, question, answers, correct = m.groups()
-        level = int(level)
-        line = text.count("\n", 0, m.start()) + 1
-        where = f"{FILE}:{line} [{title}]"
+        title = m.group(1)
+        where = f"{FILE}:{text.count(chr(10), 0, m.start()) + 1} [{title}]"
         if title in titles:
             errors.append(f"{where}: duplicate title (also {titles[title]})")
         titles[title] = where
-        pg, ans = strings_in(pages), strings_in(answers)
-        everything = [title, question] + pg + ans
-        for s in everything:
-            bad = {c for c in s if c not in UK and c not in ASCII}
-            if bad:
-                errors.append(f"{where}: characters the font lacks: {''.join(sorted(bad))}")
-            if RUSSIAN & set(s):
-                errors.append(f"{where}: Russian letters in: {s}")
-            if re.search(r"[A-Za-z]", s):
-                errors.append(f"{where}: Latin letters in: {s}")
-            if "'" in s:
-                errors.append(f"{where}: use the apostrophe ʼ (U+02BC), not ': {s}")
-            for w in words_of(s.lower()):
-                if w in NOT_UKRAINIAN:
-                    errors.append(f"{where}: not Ukrainian: {w}")
-            if level == 1 and NOT_LEVEL1 & set(s):
-                errors.append(f"{where}: level 1 has no я ю є ї or apostrophe: {s}")
-        if level not in WORDS:
-            errors.append(f"{where}: level {level} out of range (1..5)")
-            continue
-        if not (0 <= int(icon) <= 7):
-            errors.append(f"{where}: icon {icon} out of range")
-        nw = sum(len(words_of(p)) for p in pg)
-        lo, hi = WORDS[level]
-        if not (lo <= nw <= hi):
-            errors.append(f"{where}: {nw} words, level {level} wants {lo}..{hi}")
-        if not (3 <= len(pg) <= 11):
-            errors.append(f"{where}: {len(pg)} pages (want 3..11)")
-        size = 48 if level in BIG else 24
-        for n, p in enumerate(pg, 1):
-            if why := fits(p, size, (PAGE_W[size], PAGE_LINES[size])):
-                errors.append(f"{where}: page {n}: {why}")
-        for what, t, box in (("title", title, TITLE), ("cover title", title, COVER_TITLE), ("question", question, QUESTION)):
-            if why := fits(t, 24, box):
-                errors.append(f"{where}: {what}: {why}")
-        if not (2 <= len(ans) <= 3):
-            errors.append(f"{where}: {len(ans)} answers (want 2..3)")
-        for a in ans:
-            if why := fits(a, 24, ANSWER):
-                errors.append(f"{where}: answer '{a}': {why}")
-        if not (0 <= int(correct) < len(ans)):
-            errors.append(f"{where}: correct index {correct} out of range")
+        errors += [f"{where}: {e}" for e in book_problems(m.groups())]
     print(f"ukrainian books: {len(titles)} stories, {len(errors)} problems")
     for e in errors:
         print("  " + e)

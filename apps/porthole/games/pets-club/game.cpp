@@ -139,14 +139,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "poop")) { save_.poop = 1; save_.poopSince = now_; }
   else if (!strcmp(cmd, "hungry")) { save_.food = 20; save_.fun = 25; save_.energy = 22; }
   else if (!strcmp(cmd, "hearts")) save_.bond = 700;
-  else if (!strcmp(cmd, "books")) { memset(save_.booksEn, 0, sizeof save_.booksEn); for (int i = 0; i < 6; i++) books::markRead(save_, books::EN, i); save_.booksRead = 6; }
-  else if (!strncmp(cmd, "read ", 5) || !strncmp(cmd, "readlevel ", 10)) {   // "read en|uk N": book N marked read; "readlevel en|uk N": the rating at level N
-    const bool lvl = cmd[4] != ' '; const char* a = cmd + (lvl ? 10 : 5);
-    const books::Lang l = !strncmp(a, "uk", 2) ? books::UK : books::EN; const int n = atoi(a + 2);   // "uk5" or "uk 5": the sim passes one argument
-    if (!lvl && n >= 0 && n < books::count(l)) books::markRead(save_, l, n);
-    if (lvl) { skills::State k = skills::get(*book_, books::skill(l)); k.started = true; k.calibrating = false; k.theta = k.peak = n * skills::LEVEL; skills::put(*book_, books::skill(l), k); }
-    if (screen_ == SC_BOOKS) openShelf(lang_);
-  }
+  else if (debugBooks(cmd)) {}
   else if (!strcmp(cmd, "tricks")) { for (int i = 0; i < 4; i++) save_.trickProgress[i] = 3; }
   else if (!strcmp(cmd, "hats")) save_.hatsMask = 0xFE;
   else if (!strcmp(cmd, "collars")) save_.collarsOwned = 0xFE;
@@ -156,6 +149,23 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
   else debugAge(cmd);
   markDirty();
+}
+// "books": six English books read; "read en|uk N": book N marked read; "readlevel en|uk N": the rating at level N.
+bool Game::debugBooks(const char* cmd) {
+  if (!strcmp(cmd, "books")) {
+    memset(save_.booksEn, 0, sizeof save_.booksEn);
+    for (int i = 0; i < 6; i++) books::markRead(save_, books::EN, i);
+    save_.booksRead = 6;
+    return true;
+  }
+  const bool lvl = !strncmp(cmd, "readlevel ", 10);
+  if (!lvl && strncmp(cmd, "read ", 5)) return false;
+  const char* a = cmd + (lvl ? 10 : 5);
+  const books::Lang l = !strncmp(a, "uk", 2) ? books::UK : books::EN; const int n = atoi(a + 2);   // "uk5" or "uk 5": the sim passes one argument
+  if (lvl) { skills::State k = skills::get(*book_, books::skill(l)); k.started = true; k.calibrating = false; k.theta = k.peak = n * skills::LEVEL; skills::put(*book_, books::skill(l), k); }
+  else if (n >= 0 && n < books::count(l)) books::markRead(save_, l, n);
+  if (screen_ == SC_BOOKS) openShelf(lang_);
+  return true;
 }
 void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, the kid's age
   if (!strcmp(cmd, "grown")) save_.adoptedAt -= 10 * 86400;
@@ -722,17 +732,20 @@ void Game::drawThought() {
   switch (w) { case WANT_PLAY: ic = &SPR_BALL; break; case WANT_SLEEP: ic = &SPR_MOON; break; case WANT_BATH: ic = &SPR_TUB; break; case WANT_POOP: ic = &SPR_POOP; break; case WANT_STORY: ic = &SPR_BOOK; break; default: break; }
   blit(*ic, bx + (18 - ic->w) / 2, by + (14 - ic->h) / 2);
 }
-void Game::drawHomeButtons() {
+void Game::drawHomeIcon(int i, bool pr) {
   static const Sprite* BTN_ICONS[4] = {&SPR_BOWL, &SPR_BALL, &SPR_BOOK, &SPR_PAW};
+  static const char* const BTN_NEWS[4] = {nullptr, "puzzles", "books", nullptr};   // Puzzles is in Play; the Ukrainian shelf
+  const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
+  if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
+  else blitScaled(ic, ix, iy, 2);
+  if (BTN_NEWS[i] && news_ && news_->isNew(BTN_NEWS[i])) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});
+}
+void Game::drawHomeButtons() {
   static const uint8_t BTN_COLS[4] = {C_ORANGE, C_GREEN, C_BLUE, C_PLUM};
   for (int i = 0; i < 4; i++) {
     bool pr = ui::pressing(in_, {BTN_X[i], BTN_Y, BTN_W, BTN_H + 2});   // the drawn button and its shadow, 2 px apart
     ui::drawButton({{BTN_X[i], BTN_Y, BTN_W, BTN_H}, nullptr, nullptr, BTN_COLS[i]}, pr);
-    const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
-    if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
-    else blitScaled(ic, ix, iy, 2);
-    if (i == 1 && news_ && news_->isNew("puzzles")) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});   // Puzzles is in Play
-    if (i == 2 && news_ && news_->isNew("books")) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});   // the Ukrainian shelf
+    drawHomeIcon(i, pr);
     if (!in_.tapIn(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2)) continue;
     if (i == 0) { go(SC_FEED); feedAnimFood_ = -1; } else if (i == 1) go(SC_PLAYMENU); else if (i == 2) go(SC_LIBRARY); else go(SC_TRICKS);
   }
@@ -1031,7 +1044,8 @@ void Game::openBook() { page_ = 0; answerPick_ = -1; bookOpenMs_ = bookAskMs_ = 
 void Game::drawPaws(int cx, int y, int n) {
   for (int i = 0; i < 3; i++) blitTint(SPR_PAW, cx - 14 + i * 10, y, i < n ? C_YELLOW : C_DKBROWN);
 }
-void Game::drawCover(int x, int y, int w, int h, const Book& bk, bool ribbon) {
+void Game::drawCover(int x, int y, int w, int h, const Book& bk) {
+  const bool ribbon = &bk >= UK_BOOKS && &bk < UK_BOOKS + NUM_UK_BOOKS;
   rect(x + 2, y + 2, w, h, C_DKBROWN);
   rect(x, y, w, h, bk.cover); frame(x, y, w, h, C_DKBROWN);
   rect(x + 3, y, 2, h, C_CREAM); rect(x + 8, y + 5, w - 12, h - 10, C_CREAM); frame(x + 8, y + 5, w - 12, h - 10, C_DKBROWN);
@@ -1048,7 +1062,7 @@ void Game::drawBooks() {
   clear(C_DKWOOD);
   for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKBROWN);
   const Book& bk = curBook();
-  drawCover(56, 33, 48, 54, bk, lang_ == books::UK);
+  drawCover(56, 33, 48, 54, bk);
   const bool done = books::read(save_, L(lang_), shelf_[bookSel_]);
   if (!done) { blit(SPR_SPARKLE, 108, 30 + (int)((ms_ / 400) % 2)); textCentered(122, 40, "NEW!", C_YELLOW); }
   else blitTint(SPR_CHECK, 96, 78, C_GREEN);

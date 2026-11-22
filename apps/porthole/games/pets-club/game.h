@@ -128,13 +128,14 @@ class Game : public App {
   // down when results or a quiz appear in place, or held from just after a screen change, never answers on its lift.
   bool pressedAfter(uint32_t ms) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
   void setNameBuf(const char* name);   // the pet-name keyboard's text, cut to ui::NAME_LEN
+  bool debugBooks(const char* cmd);
   void debugAge(const char* cmd);
   int dogSize() const;
   const gfx::Sprite& dogFrame(int pose) const;
   void drawDog(int x, int y, int pose, bool flip, int scale = 1);
   void drawHat(int x, int y, int pose, bool flip, int scale);
   int wornHat() const;
-  void drawCover(int x, int y, int w, int h, const struct Book& bk, bool ribbon = false);
+  void drawCover(int x, int y, int w, int h, const struct Book& bk);
   void drawBackButton();
   bool backButton();
   bool homeButton();
@@ -148,7 +149,7 @@ class Game : public App {
   int  idlePose();
   int  trickPose(bool& flip);
   void drawThought();
-  void drawHomeButtons();
+  void drawHomeButtons(); void drawHomeIcon(int i, bool pr);
   void tick();
   void startTrickShow(int trick);
   void checkStickers();
