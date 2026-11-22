@@ -88,12 +88,13 @@ static void drawKey(const Input& in, const Box& b, const char* label, uint8_t co
   roundRect(b.x + 1, b.y + 1 + dy, b.w - 2, b.h - 2, dy ? (uint8_t)C_YELLOW : col);
   textCentered(b.x + b.w / 2, b.y + 7 + dy, label, C_DKBROWN);
 }
-void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, uint32_t ms) {
+void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint) {
   page &= 1;
   panel({42, 23, 74, 12}, C_WHITE, C_DKBROWN);
-  bool cursor = (int)strlen(buf) < NAME_LEN && (ms / 400) % 2;   // no cursor once the name is full
-  char shown[NAME_LEN + 2]; snprintf(shown, sizeof shown, "%s%s", buf, cursor ? "_" : "");
-  if (buf[0]) textCentered(79, 25, shown, C_NAVY); else textCentered(79, 25, hint, C_DKGRAY);
+  // Terminal style: the name left-aligned and a solid block after it, so nothing moves while it waits for a letter.
+  // The hint fills the field alone (70 px of 72), so it shows centered, with no block, until the first letter.
+  if (!buf[0]) textCentered(79, 25, hint, C_DKGRAY);
+  else if (const int x = text(45, 25, buf, C_NAVY); (int)strlen(buf) < NAME_LEN) rect(x + 1, 25, 5, 8, C_NAVY);
   for (int i = 0; i < 13; i++) { char l[2] = {PAGES[page][i], 0}; drawKey(in, key(i), l, C_WHITE); }
   drawKey(in, key(K_FLIP), FLIP[page], C_SKY);
   drawKey(in, key(K_DEL), "<", C_LTGRAY);

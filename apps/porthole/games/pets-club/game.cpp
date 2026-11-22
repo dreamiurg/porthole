@@ -425,7 +425,7 @@ void Game::updateNamePet() {
 }
 void Game::drawNamePet() {
   clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name");
   circle(123, 29, 9, C_DKBROWN); circle(123, 28, 8, C_PINK); textCentered(123, 25, "?", C_DKBROWN);
   if (haveSave_ && !save_.hasDog) drawBackButton(); else ui::drawHome();
 }

@@ -115,6 +115,7 @@ class Shell {
   shell::Network nets_[shell::MAX_NETWORKS] = {}; int nNets_ = 0;   // the last scan; -1 while it runs
   bool scanRefused_ = false; uint8_t netPage_ = 0;
   shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
+  bool passShown_ = false;                         // Show on the password screen: typed in full, not masked
   shell::TextEntry addr_{}; shell::Home found_{}; int8_t look_ = 0;    // the address being looked up (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
   uint8_t written_[shell::BLOB_MAX];               // the open game's save as last written (or loaded)

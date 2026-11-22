@@ -71,6 +71,23 @@ static void sbutton(const ui::Box& b, const char* label, uint8_t col, bool press
   stextC(b.x + b.w / 2, b.y + dy + (b.h - 8) / 2, label, ui::inkOn(fill));
 }
 
+// A text field, terminal style: s left-aligned (its tail after a gray "<" when long) and a solid block after it, so nothing moves while
+// it waits for a key; while empty, the hint in gray after the block. No block once t is full.
+static void sfield(const char* s, const TextEntry& t, const char* hint) {
+  spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
+  const bool cursor = t.len < TEXT_MAX;
+  const int room = cursor ? 93 : 98, lead = stextW("<") + 1;
+  int x = 31;
+  if (stextW(s) > room) {   // a gray "<" says the start is cut off
+    stext(x, 27, "<", C_DKGRAY); x += lead;
+    while (stextW(s) > room - lead) s++;
+  }
+  stext(x, 27, s, C_NAVY);
+  x += stextW(s);
+  if (cursor) { srect(x + 1, 27, 4, 8, C_NAVY); x += 6; }
+  if (!t.len) stext(x, 27, hint, C_DKGRAY);
+}
+
 // ---------------------------------------------------------------- Info: label | value rows on navy
 static const int ROW = 9, COL = 76;   // labels end at COL, values start 5 px after it
 // Widest a value starting at x may be on the row at y, inside a 78 px circle (the audit clips at 79).
@@ -588,9 +605,7 @@ void Shell::updateSysZoneSearch() {
   if (typeInto(in_, zoneSearch_)) { zoneQuery_ = zoneSearch_; zonePage_ = 0; go(SH_SYS_ZONE); }
 }
 void Shell::drawSysZoneSearch() {
-  sclear(C_NAVY); spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
-  const char* tail = zoneSearch_.buf; while (stextW(tail) > 98) tail++;
-  stextC(80, 27, *tail ? tail : "City or IANA zone", *tail ? (uint8_t)C_NAVY : (uint8_t)C_DKGRAY);
+  sclear(C_NAVY); sfield(zoneSearch_.buf, zoneSearch_, "City or IANA zone");
   drawKeys(zoneSearch_); sback();
 }
 
@@ -673,7 +688,7 @@ void Shell::updateSysWifi() {
     const int k = netPage_ * NET_ROWS + i;
     if (k >= nNets_ || !tapped(in_, netRow(i))) continue;
     pick_ = nets_[k];
-    pass_ = TextEntry{};
+    pass_ = TextEntry{}; passShown_ = false;
     if (pick_.secured) go(SH_SYS_PASS); else join();
     return;
   }
@@ -768,8 +783,10 @@ static bool typeInto(const Input& in, TextEntry& t) {
   const int k = textKeyAt(in.x, in.y);
   return k >= 0 && textKey(t, k);   // an empty slot types nothing; OK needs something typed
 }
+static const ui::Box SHOW_BTN = {55, 130, 50, 18};   // under the keyboard, where no tap reaches a key
 void Shell::updateSysPass() {
   if (ui::back(in_)) { pass_ = TextEntry{}; go(SH_SYS_WIFI); return; }
+  if (tapped(in_, SHOW_BTN)) passShown_ = !passShown_;
   if (typeInto(in_, pass_)) join();
 }
 // The keys, and the one under the finger big above it (a finger hides the key it presses).
@@ -792,22 +809,13 @@ void Shell::drawKeys(const TextEntry& t) {
   spanel({previewCenter - 12, b.y - 27, 24, 24}, C_WHITE, C_DKBROWN);
   font::text(adult::FONT32, c, previewCenter * 3 - font::textWidth(adult::FONT32, c) / 2, (b.y - 22) * 3, scol(C_NAVY));
 }
-// What was typed, every letter but the last as '*' (a password is never shown whole), its tail when it is long.
-static void masked(char* out, size_t n, const TextEntry& t, bool cursor) {
-  int k = 0;
-  for (int i = 0; i < t.len && k + 2 < (int)n; i++) out[k++] = i + 1 < t.len ? '*' : t.buf[i];
-  if (cursor && k + 1 < (int)n) out[k++] = '_';
-  out[k] = 0;
-  const char* s = out;
-  while (stextW(s) > 98) s++;
-  memmove(out, s, strlen(s) + 1);
-}
 void Shell::drawSysPass() {
   sclear(C_NAVY);
-  spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
-  char shown[TEXT_MAX + 2]; masked(shown, sizeof shown, pass_, pass_.len < TEXT_MAX && (ms_ / 400) % 2);
-  if (pass_.len) stextC(80, 27, shown, C_NAVY); else stextC(80, 27, "Password", C_DKGRAY);
+  char shown[TEXT_MAX + 1]; snprintf(shown, sizeof shown, "%s", pass_.buf);
+  if (!passShown_) for (int i = 0; i + 1 < pass_.len; i++) shown[i] = '*';   // masked, but the last letter typed
+  sfield(shown, pass_, "Password");
   drawKeys(pass_);
+  sbutton(SHOW_BTN, passShown_ ? "Hide" : "Show", C_LTGRAY, down(in_, SHOW_BTN));
   sback();
 }
 
@@ -914,12 +922,7 @@ void Shell::updateSysAddr() {
 }
 void Shell::drawSysAddr() {
   sclear(C_NAVY);
-  spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
-  char shown[TEXT_MAX + 2];   // its tail, as much as fits, and a cursor
-  snprintf(shown, sizeof shown, "%s%s", addr_.buf, addr_.len < TEXT_MAX && (ms_ / 400) % 2 ? "_" : "");
-  const char* tail = shown;
-  while (stextW(tail) > 98) tail++;
-  if (addr_.len) stextC(80, 27, tail, C_NAVY); else stextC(80, 27, "Street, city", C_DKGRAY);
+  sfield(addr_.buf, addr_, "Street, city");
   drawKeys(addr_);
   sback();
 }

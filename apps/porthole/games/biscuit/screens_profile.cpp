@@ -34,7 +34,7 @@ void Game::updateSetupPet() {
 }
 void Game::drawSetupPet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name");
   ui::drawHome();
 }
 void Game::updateRenamePet() {   // a rename keeps everything but the name
@@ -45,7 +45,7 @@ void Game::updateRenamePet() {   // a rename keeps everything but the name
 }
 void Game::drawRenamePet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name", ms_);
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name");
   ui::drawBack();
 }
 
