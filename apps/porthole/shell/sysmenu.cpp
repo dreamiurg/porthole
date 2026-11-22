@@ -411,11 +411,11 @@ static int limitStep(const Input& in, const ui::Box& box, int value, int delta) 
 static int stepped(const Input& in, int row, int value) {
   return limitStep(in, timeStep(row, true), limitStep(in, timeStep(row, false), value, -1), 1);
 }
-// The session never passes the daily total: its + stops there, and a daily total lowered under it takes the session down.
+// The session never passes the daily total: its + stops there (grayed: no toast, it would cover the row), and a daily
+// total lowered under it takes the session down.
 void Shell::stepLimits() {
   const int session = stepped(in_, 0, limits_.sessionMinutes), daily = stepped(in_, 1, limits_.dailyMinutes);
   const shell::Limits next{(uint16_t)(session < daily ? session : daily), (uint16_t)daily};
-  if (session > daily && daily == limits_.dailyMinutes) toast("Session stops at daily total");
   if (next.sessionMinutes == limits_.sessionMinutes && next.dailyMinutes == limits_.dailyMinutes) return;
   if (!saveLimits(*st_, next)) { toast("Could not save limit"); return; }
   limits_ = next;
