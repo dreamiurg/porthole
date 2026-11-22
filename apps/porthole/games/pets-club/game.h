@@ -137,6 +137,7 @@ class Game : public App {
   void drawCover(int x, int y, int w, int h, const struct Book& bk);
   void drawBackButton();
   bool backButton();
+  bool homeButton();
   bool backClicked();   // the back button on release, however long it was held
   void drawToast();
   void drawHearts(int cx, int y, int hearts);

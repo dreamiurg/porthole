@@ -20,11 +20,14 @@ bool button(const Input& in, const Button& b);   // draws it (sunk while a press
 // Round button of radius 11 with a one-color icon mask drawn in white; the hit circle is 4 px wider.
 bool iconButton(const Input& in, int cx, int cy, const gfx::Sprite& icon, uint8_t col);
 void toast(const char* text);   // a one-line note in a white panel across the middle of the glass
-// The orange home button at the top of the glass: every screen's way back. HOME_GLYPH is its house (a mask), for a
-// game that draws the same button on another surface.
-extern const gfx::Sprite HOME_GLYPH;
+// The orange button at the top of the glass: every screen's way back. It shows a back arrow (drawBack/back) when it goes
+// to an earlier screen and a house (drawHome/home) only when it leaves for the launcher, so a kid can tell the two
+// apart. The glyphs are masks, for a game that draws the same button on another surface.
+extern const gfx::Sprite HOME_GLYPH, BACK_GLYPH;
 void drawBack();
 bool back(const Input& in);
+void drawHome();
+bool home(const Input& in);
 
 // Name keyboard: a field on top, then two pages of letters (A-M, N-Z) as a 4x4 grid of 24x22 keys with the page
 // switch, backspace and OK on the last row. `page` is the caller's (0 or 1; reset it with the name). Names are up to

@@ -93,7 +93,7 @@ void roundButton(const Input& in, const Box& b, const char* label) {
 }
 
 bool homeTapped(const Input& in) { return in.tapInCircle(HOME_CX, HOME_CY, HOME_HIT_R); }
-void home(const Input& in) {   // ui::drawBack at 3x: a dark rim, the orange disc (sunk while pressed), the white house
+void home(const Input& in) {   // ui::drawHome at 3x: a dark rim, the orange disc (sunk while pressed), the white house
   const int dx = in.x - HOME_CX, dh = in.y - HOME_CY;   // pressed exactly where homeTapped() hits
   const int dy = in.down && dx * dx + dh * dh <= HOME_HIT_R * HOME_HIT_R ? 3 : 0;
   const uint16_t orange = rgb(PALETTE_RGB[C_ORANGE]);

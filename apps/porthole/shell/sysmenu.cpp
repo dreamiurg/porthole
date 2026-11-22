@@ -45,10 +45,10 @@ static void stextC(int cx, int y, const char* s, uint8_t c) {
 static void shead(int cx, int y, const char* s, uint8_t c) {
   font::text(adult::FONT28, s, cx * 3 - font::textWidth(adult::FONT28, s) / 2, y * 3, scol(c));
 }
-static void sback() {
+static void sback() {   // ui::drawBack at native size: every grown-up screen goes back to an earlier one
   scircle(80, 12, 11, C_DKBROWN); scircle(80, 11, 10, C_ORANGE);
-  const int roof[] = {225, 31, 240, 17, 255, 31}; canvas::poly(roof, 3, scol(C_WHITE));
-  gfx565::rect(229, 30, 22, 15, scol(C_WHITE)); gfx565::rect(237, 36, 7, 9, scol(C_ORANGE));
+  const int head[] = {226, 33, 240, 19, 240, 47}; canvas::poly(head, 3, scol(C_WHITE));
+  gfx565::rect(238, 29, 17, 9, scol(C_WHITE));
 }
 // s cut to room px, its last two letters ".." when cut: "HomeNe..".
 static void fit(char* out, size_t n, const char* s, int room) {

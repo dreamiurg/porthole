@@ -340,7 +340,7 @@ void Game::drawButtons(Seen& s) {
   drawHome(homeDown);
   drawModes(modeDown);
 }
-// ui::drawBack at 3x (as Biscuit draws it), sunk while pressed.
+// ui::drawHome at 3x (as Biscuit draws it), sunk while pressed.
 void Game::drawHome(bool homeDown) const {
   const int dy = homeDown ? 3 : 0;
   const uint16_t orange = rgb(PALETTE_RGB[C_ORANGE]);
