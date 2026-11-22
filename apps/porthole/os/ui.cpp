@@ -88,12 +88,15 @@ static const Box LANG = {68, 138, 24, 22};   // a key under the grid, 2 px below
 enum { K_FLIP = 13, K_DEL, K_OK };
 static bool tapped(const Input& in, const Box& b) { return in.tapIn(b.x, b.y, b.w, b.h); }
 
+// An apostrophe only joins two letters: never first, never twice ("Мар'яна").
+static bool typable(uint16_t c, const char* buf, int len) {
+  return c && utf8::count(buf) < NAME_LEN && (c != '\'' || (len && buf[len - 1] != '\''));
+}
 bool keyboard(const Input& in, char* buf, int& len, uint8_t& page, size_t cap) {
   if (page > 4) page = 0;
   for (int i = 0; i < 13; i++) {
     const uint16_t c = PAGES[page][i];
-    // an apostrophe only joins two letters: never first, never twice ("Мар'яна")
-    if (!c || !tapped(in, key(i)) || utf8::count(buf) >= NAME_LEN || (c == '\'' && (!len || buf[len - 1] == '\''))) continue;
+    if (!typable(c, buf, len) || !tapped(in, key(i))) continue;
     utf8::append(buf, len, cap, len ? lower(c) : c);   // a letter that would not fit the save is not typed
   }
   if (tapped(in, key(K_FLIP))) page = (uint8_t)nextPage(page);

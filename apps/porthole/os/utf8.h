@@ -27,9 +27,11 @@ inline bool append(char* buf, int& len, size_t cap, uint16_t cp) {
 }
 // The Ukrainian alphabet, both cases, as the UA keyboard types it (the apostrophe is ASCII ').
 inline bool ukrainian(uint16_t cp) {
-  return (cp >= 0x410 && cp <= 0x44F && cp != 0x42A && cp != 0x42B && cp != 0x42D && cp != 0x44A && cp != 0x44B &&
-          cp != 0x44D) || cp == 0x404 || cp == 0x406 || cp == 0x407 || cp == 0x454 || cp == 0x456 || cp == 0x457 ||
-         cp == 0x490 || cp == 0x491;
+  static constexpr uint16_t MORE[] = {0x404, 0x406, 0x407, 0x454, 0x456, 0x457, 0x490, 0x491};   // Є І Ї є і ї Ґ ґ
+  const uint16_t cap = cp >= 0x430 ? (uint16_t)(cp - 0x20) : cp;   // А..я, but not Ъ Ы Э (or ъ ы э)
+  if (cp >= 0x410 && cp <= 0x44F) return cap != 0x42A && cap != 0x42B && cap != 0x42D;
+  for (uint16_t m : MORE) if (cp == m) return true;
+  return false;
 }
 // s's first letter if it is a 2-byte UTF-8 one, else 0.
 inline uint16_t letter2(const char* s) {
