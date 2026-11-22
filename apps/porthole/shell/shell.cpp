@@ -566,7 +566,7 @@ void Shell::setLight(shell::Light l) {
   light_ = l; const uint8_t v = l; st_->save("sys", "lite", &v, 1);
 }
 void Shell::updateLight() {
-  if (ui::back(in_)) { go(SH_LAUNCHER); return; }
+  if (ui::home(in_)) { go(SH_LAUNCHER); return; }
   for (int l = 0; l < shell::LIGHT_COUNT; l++) {
     const ui::Box b = lightBox(l);
     if (in_.tapIn(b.x, b.y, b.w, b.h)) { setLight((shell::Light)l); go(SH_LAUNCHER); return; }
@@ -585,7 +585,7 @@ void Shell::drawLight() {
     blit(sun, x, b.y + (b.h - sun.h) / 2 + dy);
     text(x + sun.w + 3, b.y + (b.h - 8) / 2 + dy, "Auto", C_DKBROWN);
   }
-  ui::drawBack();
+  ui::drawHome();
 }
 
 // ---------------------------------------------------------------- "New for Sam!": what updates brought since this kid last looked

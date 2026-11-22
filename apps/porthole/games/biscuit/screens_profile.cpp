@@ -26,7 +26,7 @@ void Game::startNaming(const char* current) {
 
 // First visit: name the pup. Back leaves for the launcher; nothing is saved until it has a name.
 void Game::updateSetupPet() {
-  if (ui::back(in_)) { wantsHome_ = true; return; }
+  if (ui::home(in_)) { wantsHome_ = true; return; }
   if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty(); lastTickSec_ = lastCheckpointSec_ = now_;
   go(SC_HOME);
@@ -35,7 +35,7 @@ void Game::updateSetupPet() {
 void Game::drawSetupPet() {
   gfx::clear(C_WALL);
   ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
-  ui::drawBack();
+  ui::drawHome();
 }
 void Game::updateRenamePet() {   // a rename keeps everything but the name
   if (ui::back(in_)) { go(SC_PROFILE); return; }

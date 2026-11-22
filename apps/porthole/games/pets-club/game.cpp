@@ -274,6 +274,7 @@ void Game::drawHat(int x, int top, int pose, bool flip, int scale) {
 static uint8_t inkOn(uint8_t fill) { return ui::inkOn(fill); }
 void Game::drawBackButton() { ui::drawBack(); }
 bool Game::backButton() { return ui::back(in_); }
+bool Game::homeButton() { return ui::home(in_); }   // the house: only where the button leaves for the launcher
 // The farm's and the shelter's buttons act on release however long they were held (ui::clicked): a 6-year-old who
 // presses long when a tap seems not to work must find No! and the way out working, not only the 2 s Yes.
 bool Game::backClicked() { ui::drawBack(); return ui::clicked(in_, 80, 12, 16); }   // ui::back's circle
@@ -383,7 +384,7 @@ void Game::drawSplash() {
 // ---------------------------------------------------------------- intro (adoption)
 void Game::updateIntro() {
   // phase encoded in dogAct_: 0 box wobbling, 1 opened
-  if (backButton()) { wantsHome_ = true; return; }
+  if (homeButton()) { wantsHome_ = true; return; }
   if (dogAct_ == 0 && in_.tap) { dogAct_ = 1; screenMs_ = ms_; spawn(80, 96, 1, 12); }
   else if (dogAct_ == 1 && ms_ - screenMs_ > 900 && in_.tap) { dogAct_ = 0; setNameBuf(""); namePage_ = 0; memset(&save_, 0, sizeof save_); go(SC_NAME_PET); }
 }
@@ -405,7 +406,7 @@ void Game::drawIntro() {
     textCentered(80, 52, "It needs a home.", C_NAVY);
     if (ms_ - screenMs_ > 900 && (ms_ / 500) % 2) textCentered(80, 136, "tap to adopt", C_NAVY);
   }
-  drawBackButton();
+  ui::drawHome();
 }
 
 // ---------------------------------------------------------------- pup name (the kid's name comes from the profile)
@@ -413,7 +414,7 @@ void Game::drawIntro() {
 void Game::setNameBuf(const char* name) { strncpy(nameBuf_, name, ui::NAME_LEN); nameBuf_[ui::NAME_LEN] = 0; nameLen_ = (int)strlen(nameBuf_); }
 void Game::updateNamePet() {
   const bool shelter = haveSave_ && !save_.hasDog;
-  if (backButton()) { if (shelter) go(SC_SHELTER); else wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
+  if (shelter ? backButton() : homeButton()) { if (shelter) go(SC_SHELTER); else wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
   if (in_.tapInCircle(123, 28, 12)) {                  // random name (hit circle ends 0.5 px inside the bezel)
     setNameBuf(PET_NAME_IDEAS[pet::rnd(save_) % 9]);
     return;
@@ -426,7 +427,7 @@ void Game::drawNamePet() {
   clear(C_WALL);
   ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
   circle(123, 29, 9, C_DKBROWN); circle(123, 28, 8, C_PINK); textCentered(123, 25, "?", C_DKBROWN);
-  drawBackButton();
+  if (haveSave_ && !save_.hasDog) drawBackButton(); else ui::drawHome();
 }
 
 // ---------------------------------------------------------------- home
@@ -547,7 +548,7 @@ void Game::dogBox(int& x, int& y, int& w, int& h) const {   // from 4 px above t
 // back). Bring back, with the newest farm dog's picture, sits where the farm's own Bring back is; the Shelter beside it.
 static const ui::Box SHELTER_BTN = {78, 90, 66, 24}, ROOM_BRING_BACK_BTN = {12, 90, 62, 26};
 void Game::updateHome() {
-  if (backButton()) { wantsHome_ = true; return; }
+  if (homeButton()) { wantsHome_ = true; return; }
   if (tapBox(in_, DOOR)) { go(SC_STREET); return; }   // the front door: the neighbours on Paw Street, from an empty room too
   if (save_.wallCount && ui::clicked(in_, WALL)) { go(SC_WALL); return; }   // the frames: Farm friends, however long pressed
   if (!save_.hasDog) {   // the empty room: the shelter, and the newest farm dog until a pup is adopted
@@ -653,7 +654,7 @@ void Game::drawHome() {
   if (!save_.hasDog) {   // no dog, no gift
     ui::button(in_, {SHELTER_BTN, "Shelter", nullptr, C_PLUM});
     if (pet::canBringBack(save_)) drawBringBack(ROOM_BRING_BACK_BTN, true);
-    drawBackButton(); return;
+    ui::drawHome(); return;
   }
   drawStatPips(PIPS_L, PIPS_Y, save_.food, SPR_BONE, C_ORANGE);
   drawStatPips(PIPS_L, PIPS_Y + 10, save_.fun, SPR_BALL, C_RED);
@@ -671,7 +672,7 @@ void Game::drawHome() {
   if (save_.asleep) { textCentered(dogX_ + 20, DOG_BASE_Y - 40 - (int)((ms_ / 400) % 4), "z", C_NAVY); textCentered(dogX_ + 26, DOG_BASE_Y - 46 - (int)((ms_ / 400) % 4), "Z", C_NAVY); }
   if (event_ == 1) blit((ms_ / 150) % 2 ? SPR_BUTTERFLY0 : SPR_BUTTERFLY1, eventX_, eventY_ + (int)((ms_ / 200) % 3));
   drawHomeButtons();
-  drawBackButton();
+  ui::drawHome();
 }
 int Game::trickPose(bool& flip) {
   uint32_t t = ms_ % 600;

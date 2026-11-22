@@ -37,9 +37,15 @@ bool down(const Input& in, const ui::Box& b) { return in.down && ui::pressing(in
 void centered(const font::Font& f, const char* s, int cx, int cy, uint16_t c) {
   font::text(f, s, cx - font::textWidth(f, s) / 2, cy - f.lineHeight / 2, c);
 }
-void house(bool pressed) {
+void house(bool pressed, bool back) {   // the deck leaves for the launcher (a house); every other page goes back to it
   const int cx = 240, cy = 38;
   canvas::disc(cx, cy, 30, pressed ? SHADOW : INK);
+  if (back) {
+    const int head[] = {cx - 16, cy, cx - 1, cy - 15, cx - 1, cy + 15};
+    canvas::poly(head, 3, WHITE);
+    canvas::roundBox({cx - 3, cy - 5, cx + 15, cy + 5}, 0, WHITE);
+    return;
+  }
   const int roof[] = {cx, cy - 15, cx + 15, cy - 1, cx - 15, cy - 1};
   canvas::poly(roof, 3, WHITE);
   canvas::roundBox({cx - 10, cy - 2, cx + 10, cy + 13}, 0, WHITE);
@@ -266,7 +272,7 @@ void Game::drawDone() const {
 
 void Game::draw() const {
   canvas::roundBox(canvas::FULL, 0, DESK);
-  house(down(in_, HOME));
+  house(down(in_, HOME), page_ != P_HOME);
   char s[24];
   if (page_ == P_HOME) { drawHome(save_, down(in_, GO)); return; }
   if (page_ == P_STATS) { drawStats(save_); return; }
