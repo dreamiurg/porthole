@@ -202,8 +202,8 @@ class Game : public App {
   void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
   void startUk(); void nextUk(); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); void ukFresh(); bool ukFlashing() const;
   bool ukOpen(int i) const; uint8_t ukFill(int i) const;
-  void updateUk(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
-  void ukDebug() const; bool ukDebugCmd(const char* cmd);
+  void updateUk(); void updateUkOptions(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
+  void ukDebug() const; void ukDebugTiles() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
   void finishAdoption();
   void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }

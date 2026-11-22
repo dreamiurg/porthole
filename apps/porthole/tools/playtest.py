@@ -248,6 +248,8 @@ def plan(d, seg, where, arg=""):
     if d == "answer-uk":  # Pets Club's Ukrainian: `answer-uk right` taps the answer (every syllable, in order), `wrong` a miss
         if kv.get("answered") != "-1" or "uk_taps" not in kv:
             raise Fail(f"{where}: no Ukrainian question waiting for an answer", seg)
+        if arg != "right" and "uk_wrong" not in kv:
+            raise Fail(f"{where}: no wrong answer left to tap", seg)
         taps = kv["uk_taps"].split(";") if arg == "right" else [kv["uk_wrong"]]
         return [line for t in taps for line in (f"tap {t.replace(',', ' ')}", "wait 300")]
     if d == "answer-read":  # Pets Club's little reads: `answer-read right` or `wrong`, the answer rows under the question
