@@ -8,8 +8,7 @@ layout, and the age-based content tables.
 ## Module map
 
 - `pet.h` / `pet.cpp`: the simulation. Owns the `Save` struct (below), stat decay and
-  floors, growth stages, gifts, stickers, trick progress, and `levelRange`/`wordLenRange`
-  (below). No rendering, no platform calls -- `host/test_pet.cpp` exercises it directly.
+  floors, growth stages, gifts, stickers, trick progress, and `wordLenRange` (below). No rendering, no platform calls -- `host/test_pet.cpp` exercises it directly.
 - `game.h` / `game.cpp`: the screens. One `Game` class (an `App`), a `Screen` enum, one
   `update`/`draw` pair per screen, input handling, toast/particle/sound selection, and save
   hand-off back to the shell via `takeSave()` (never an empty save: with no pup there is
@@ -18,11 +17,13 @@ layout, and the age-based content tables.
   current press began, and `pressedAfter(ms)` holds a tap to a press begun at least `ms`
   after `screenMs_`: a screen that changes in place (Fetch's and Word Fetch's results and each next word, the
   lesson's "Your turn!") resets `screenMs_`, so a finger already down never answers on its lift.
-- `content.h`, plus its level-3 extensions `content_level3_books.h` and
-  `content_level3_words.h`: story text (`Book`) and spelling words (`WordClue`). Plain
-  data, no logic. `content.h` pulls the level-3 files in via `#if __has_include(...)`; the
+- `content.h`, plus its extensions `content_level3_books.h`, `content_books_en.h` (English levels 2-4 and 8) and
+  `content_level3_words.h`: English story text (`Book`) and spelling words (`WordClue`); `content_books_uk.h`:
+  the Ukrainian books (`UK_BOOKS`, gate `tools/check_books_uk.py`). Plain data, no logic. `content.h` pulls the level-3 files in via `#if __has_include(...)`; the
   include-guard string in each extension file has to match its filename exactly -- a
   mismatch silently compiles the extension out, with no error and no warning at build time.
+- `books.h`: the two bookshelves, English and Ukrainian (below, "Books and reading levels"). Pure logic;
+  `host/test_pets_books.cpp` measures every Ukrainian string in Andika in the box the reader draws it in.
 - `learn.cpp`: Puzzles and Little reads, from the Play menu (moved from Biscuit on 2026-11-16; Biscuit keeps
   its stories and discoveries). Puzzles: three strands (plus and minus, times, words) at the kid's own level per strand
   (`puzzles.h`, design `docs/design/adaptive-practice.md`), five questions a round, a miss comes back on a later
@@ -81,8 +82,11 @@ layout, and the age-based content tables.
 `s<profile id>`, written by the shell. Magic `0x4F475243` ("CRGO"), `version`, `size`,
 fields, then `crc` last -- the append-only rule in the app brief applies exactly here.
 
-`SAVE_VERSION` is currently 4 (288 bytes, 9 NVS entries: the budget in `host/test_nvs_budget.cpp` has no room for a
-10th). The Shop took v4's reserved bytes, which were always zero, so it needed no new version: `collar` and
+`SAVE_VERSION` is currently 5 (320 bytes). v5 appended, before `crc`: `booksEn[8]` and `booksUk[8]` (a bit per book
+read, by its index in `BOOKS` / `UK_BOOKS`; a v4 blob's `booksDoneMask` is copied into `booksEn` on load and is no
+longer written; `booksUnlocked` is no longer read) and `reserved4[16]`, zero, kept for the Shop's room and toys. It
+took one more NVS entry: the profile budget in `host/test_nvs_budget.cpp` went from 78 to 79, which still fits four
+kids with 13 entries to spare; don't raise it again without a plan for where a fifth kid's save goes. The Shop took v4's reserved bytes, which were always zero, so it needed no new version: `collar` and
 `collarsOwned` (once `reserved0/1`: the collar worn, 0 = Red, and a bit per bought collar), `lastBuyDay` (once
 `reserved2`) and `lastBuyItem` (half of the old `reserved3`, for a later same-day Give back: hat i, or 0x80 | collar i).
 One reserved byte is left. v4 appended the kid's learning, before `crc`: `puzzleLevels[3],
@@ -104,7 +108,7 @@ wrong: here `hasDog = 1`, since every save before the farm has its dog. Zero the
 wall. `host/test_pet.cpp` builds each older blob with `oldBlob()` and has a case per
 version (`saveV1` ... `saveV3Migrates`): fields kept, new fields zero, a corrupt CRC and a
 wrong version both rejected. To add a field: put it immediately before `crc`, bump
-`SAVE_VERSION`, add a `SAVE_V4_SIZE = 288` beside the others, extend `loadBlob`, and copy
+`SAVE_VERSION`, add a `SAVE_V5_SIZE = 320` beside the others (`SAVE_V4_SIZE = 288` is the last one so far), extend `loadBlob`, and copy
 those test cases. Never touch an existing size constant or reorder/resize a field.
 
 ## Breeds
@@ -211,29 +215,43 @@ the kid's dog; `dbg breed N` sets the breed (past the table: the Golden pup, as 
 
 Since Porthole, the shell's profile owns the kid's name, age, secret code, mute and rest
 budget. `Save`'s own `kidName`/`kidAge` are copied in from the profile on every entry
-(`Game::enterHouse()`, `game.cpp:54`) -- `pet::bookListFor` and the word-fetch screen
+(`Game::enterHouse()`, `game.cpp:54`) -- the word-fetch screen
 (`game.cpp:731`) read `save_.kidAge` directly, so it has to be kept current, not treated as
 migration-only. `muted`, `pin`, `restUntil` and `playSec`, by contrast, are read exactly
 once, by the shell's migration (`shell/migrate.cpp`) converting an old Pets Club house into
 a profile; after that the profile is the source of truth for them and `game.cpp` doesn't
 touch them again. All of it stays in the struct because the layout is append-only.
 
-## Reading level and word length by age
+## Books and reading levels
 
-`pet::levelRange(age, lo, hi)` and `pet::wordLenRange(age, lo, hi)` (`pet.cpp`) drive both
-the story library (`pet::bookListFor`) and the spelling round:
+Two shelves in the library, English and Ukrainian, each with its own reading level from the shared skills engine
+(`os/skills.h`): `READ_EN` (Little reads move it too, and a new kid's starts where `readLevel` stands) and `READ_UK`
+(starts at level 1, calibrating). `books::shelf` (`books.h`) fills a shelf of up to 8 covers: the first unread book
+at the kid's level (or the nearest level with one, above first), one unread a level up, one a level down, then books
+already read from two below to one above, newest first; it is never empty. Paws on a cover: 1 easy, 2 just right,
+3 a stretch. The question at a book's end is one answer to the engine, weighted by the book's length (one per 50
+words, up to 6, `skills::Item::weight`); a book paged faster than 150 ms a word counts as read but rates and pays
+nothing. The first read of a book pays stars at the engine's rate. Telemetry: `book_finished`.
 
-| Age | Story levels | Spelling word length |
-| --- | --- | --- |
-| <= 6 | 1 only | 3-4 |
-| 7 | 1-2 | 4-5 |
-| 8 | 2-3 | 5-7 |
-| >= 9 | 3 only | 6-8 |
+| Shelf | Levels | Words per book | Page font |
+| --- | --- | --- | --- |
+| English | 2-8 (the first 30 books, once levels 1-3, are now 5-7; `content_books_en.h` adds 2-4 and 8) | `check_content.py` | 8x8, 122 px box |
+| Ukrainian | 1: 15-40, 2: 40-80, 3: 80-150, 4: 140-220, 5: 200-300 | `check_books_uk.py` | Andika 48 px for 1-2, 24 px for 3-5 |
 
-`bookListFor` widens down a level if the exact band doesn't have at least
-`STARTER_BOOKS + 3` stories yet, so a new level's content doesn't need to hit that count
-immediately -- but keep it in mind when deciding how many stories a new level needs
-before it stops falling back.
+Ukrainian level 1 has no я ю є ї or apostrophe; the font has no em dash or guillemets, so dialogue uses " - " and
+straight quotes, and the apostrophe is ʼ (U+02BC). Debug: `dbg read uk5` marks book 5 read, `dbg readlevel uk5`
+puts the rating at level 5 (`en` the same); `debug` prints `shelf= level= covers= book_level= answer_y=` on the
+cover picker and the reader. Playtest: `tests/playtests/05_read.txt`.
 
-See the `content` skill for how new `Book`/`WordClue` entries are written and checked
-against these bands.
+## Word length by age
+
+`pet::wordLenRange(age, lo, hi)` (`pet.cpp`) drives the spelling round:
+
+| Age | Spelling word length |
+| --- | --- |
+| <= 6 | 3-4 |
+| 7 | 4-5 |
+| 8 | 5-7 |
+| >= 9 | 6-8 |
+
+See the `content` skill for how new `Book`/`WordClue` entries are written and checked.

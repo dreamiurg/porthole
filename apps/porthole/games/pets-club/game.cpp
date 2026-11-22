@@ -1,5 +1,6 @@
 #include "launcher_icon.h"
 #include "game.h"
+#include "books.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +8,13 @@
 #include "content_reads.h"
 #include "sprites.h"
 #include "stars.h"
+#include "telemetry.h"
 #include "ticks.h"
 #include "utf8.h"
+
+static_assert(books::SHELF_MAX == 8, "Game::shelf_ holds books::SHELF_MAX");
+static const int ANSWER_STEP = 24;   // 22 px answer buttons, 2 px apart; the lowest ends by y 137, inside the chord
+static books::Lang L(uint8_t l) { return (books::Lang)l; }
 
 using namespace gfx;
 
@@ -61,7 +67,7 @@ void Game::enterHouse() {
   // the kid's name and age live in the profile; the copies in Save pick the reading level and show on the stats page
   memcpy(save_.kidName, kids_[self_].name, sizeof save_.kidName); save_.kidAge = kids_[self_].age;
   uint32_t ev = pet::simulate(save_, now_, false);
-  lastTickSec_ = now_; stickersSeen_ = save_.stickersMask; refreshBookList();
+  lastTickSec_ = now_; stickersSeen_ = save_.stickersMask;
   dogX_ = 60; dogX_ = dogTargetX_ = walkClamp(dogX_); dogAct_ = 0; event_ = 0; weather_ = 0; trickShow_ = -1;
   markDirty();
   go(SC_HOME);
@@ -80,7 +86,7 @@ void Game::finishAdoption() {
   char b[48]; snprintf(b, sizeof b, "%s and %s, best friends.", s.kidName, s.petName);
   celebrate("Welcome home!", b, 0, SC_HOME);
 }
-const Book& Game::curBook() const { return BOOKS[bookList_[bookSel_ < nBooks_ ? bookSel_ : 0]]; }
+const Book& Game::curBook() const { return books::at(L(lang_), shelf_[bookSel_ < nShelf_ ? bookSel_ : 0]); }
 
 void Game::go(Screen s) {   // a tap acts on one screen only
   if (s == SC_LITTLE_ASK) shownMs_ = ms_;
@@ -133,7 +139,7 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "poop")) { save_.poop = 1; save_.poopSince = now_; }
   else if (!strcmp(cmd, "hungry")) { save_.food = 20; save_.fun = 25; save_.energy = 22; }
   else if (!strcmp(cmd, "hearts")) save_.bond = 700;
-  else if (!strcmp(cmd, "books")) { save_.booksUnlocked = NUM_BOOKS; save_.booksDoneMask = 0x3F; save_.booksRead = 6; }
+  else if (debugBooks(cmd)) {}
   else if (!strcmp(cmd, "tricks")) { for (int i = 0; i < 4; i++) save_.trickProgress[i] = 3; }
   else if (!strcmp(cmd, "hats")) save_.hatsMask = 0xFE;
   else if (!strcmp(cmd, "collars")) save_.collarsOwned = 0xFE;
@@ -143,6 +149,23 @@ void Game::debugCmd(const char* cmd) {
   else if (!strcmp(cmd, "butterfly")) { event_ = 1; eventX_ = -10; eventY_ = 44; eventUntil_ = ms_ + 9000; }   // its box brushes the pips
   else debugAge(cmd);
   markDirty();
+}
+// "books": six English books read; "read en|uk N": book N marked read; "readlevel en|uk N": the rating at level N.
+bool Game::debugBooks(const char* cmd) {
+  if (!strcmp(cmd, "books")) {
+    memset(save_.booksEn, 0, sizeof save_.booksEn);
+    for (int i = 0; i < 6; i++) books::markRead(save_, books::EN, i);
+    save_.booksRead = 6;
+    return true;
+  }
+  const bool lvl = !strncmp(cmd, "readlevel ", 10);
+  if (!lvl && strncmp(cmd, "read ", 5)) return false;
+  const char* a = cmd + (lvl ? 10 : 5);
+  const books::Lang l = !strncmp(a, "uk", 2) ? books::UK : books::EN; const int n = atoi(a + 2);   // "uk5" or "uk 5": the sim passes one argument
+  if (lvl) { skills::State k = skills::get(*book_, books::skill(l)); k.started = true; k.calibrating = false; k.theta = k.peak = n * skills::LEVEL; skills::put(*book_, books::skill(l), k); }
+  else if (n >= 0 && n < books::count(l)) books::markRead(save_, l, n);
+  if (screen_ == SC_BOOKS) openShelf(lang_);
+  return true;
 }
 void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, the kid's age
   if (!strcmp(cmd, "grown")) save_.adoptedAt -= 10 * 86400;
@@ -156,26 +179,31 @@ void Game::debugAge(const char* cmd) {   // the dog's age and breed, the farm, t
     save_.wallCount = s.wallCount; save_.dogsRaised = s.dogsRaised;
   }
   else if (!strncmp(cmd, "breed ", 6)) { const int b = atoi(cmd + 6); save_.breed = (uint8_t)(b >= 0 && b < NUM_BREEDS ? b : 0); }   // as loadBlob: past the art is the Golden pup
-  else if (!strcmp(cmd, "younger")) { save_.kidAge = 6; refreshBookList(); }
-  else if (!strcmp(cmd, "older")) { save_.kidAge = 9; refreshBookList(); }
+  else if (!strcmp(cmd, "younger")) { save_.kidAge = 6; }
+  else if (!strcmp(cmd, "older")) { save_.kidAge = 9; }
 }
 const char* Game::screenName() const {
   static const char* const N[] = {"splash", "intro", "name_pet", "home", "feed", "playmenu", "fetch", "words", "pets_library", "read",
                             "tricks", "train", "bath", "stats", "stickers", "gift", "celebrate", "hats", "street", "theme",
-                            "confirm_farm", "farm", "shelter", "wall", "puzzles", "puzzle", "little", "little_ask", "shop", "collars", "ukrainian"};
+                            "confirm_farm", "farm", "shelter", "wall", "puzzles", "puzzle", "little", "little_ask", "shop", "collars", "ukrainian", "books"};
   static_assert(sizeof N / sizeof *N == SC_COUNT, "one name per screen");
   return N[screen_];
 }
 void Game::debugPrint() {
   if (screen_ == SC_TRAIN) printf("train: trick=%d phase=%d round=%d len=%d seq=%d%d%d%d%d%d input=%d\n", trickSel_, trainPhase_, trainRound_, seqLen_, seq_[0], seq_[1], seq_[2], seq_[3], seq_[4], seq_[5], seqInput_);
-  printf("[%s/%s age=%d] day=%d stage=%d food=%d fun=%d energy=%d clean=%d bond=%d hearts=%d streak=%d books=%d/%d asleep=%d poop=%d dirty=%d gift=%d screen=%d\n",
+  printf("[%s/%s age=%d] day=%d stage=%d food=%d fun=%d energy=%d clean=%d bond=%d hearts=%d streak=%d books=%d asleep=%d poop=%d dirty=%d gift=%d screen=%d\n",
          save_.kidName, save_.petName, save_.kidAge, pet::ageDays(save_, now_), save_.stage, save_.food, save_.fun, save_.energy, save_.clean,
-         save_.bond, pet::hearts(save_), save_.streak, save_.booksRead, save_.booksUnlocked, save_.asleep, save_.poop, save_.dirty,
+         save_.bond, pet::hearts(save_), save_.streak, save_.booksRead, save_.asleep, save_.poop, save_.dirty,
          pet::giftReady(save_, now_), (int)screen_);
   printf("screen=%s pet=%s breed=%d hasDog=%d bringback=%d wall=%d tricks=%d%d%d%d%d%d%d%d hat=%d stickers=%u\n", screenName(), save_.petName, save_.breed, save_.hasDog, pet::canBringBack(save_), save_.wallCount, save_.trickProgress[0], save_.trickProgress[1], save_.trickProgress[2], save_.trickProgress[3],
          save_.trickProgress[4], save_.trickProgress[5], save_.trickProgress[6], save_.trickProgress[7], save_.hat, (unsigned)save_.stickersMask);
   if (screen_ == SC_WORDS && !wordsDone_) printf("word=%s cols=%d typed=%d tiles=%.*s\n", WORDS[wordIdx_[wordRound_]].word, wordCols_, wordTyped_, wordCols_ * 3, tiles_);
-  if (screen_ == SC_LIBRARY || screen_ == SC_READ) { const Book& bk = curBook(); int np = 0; while (bk.pages[np]) np++; printf("book=%d title=\"%s\" pages=%d page=%d correct=%d\n", bookList_[bookSel_], bk.title, np, page_, bk.correct); }
+  if (screen_ == SC_BOOKS || screen_ == SC_READ) {
+    const Book& bk = curBook();
+    printf("shelf=%s level=%d covers=%d book=%d title=\"%s\" book_level=%d pages=%d page=%d correct=%d read=%d answer_y=%d answer_step=%d\n", lang_ == books::EN ? "en" : "uk",
+           shelfLevel_, nShelf_, shelf_[bookSel_], bk.title, bk.level, books::pages(bk), page_, bk.correct, books::read(save_, L(lang_), shelf_[bookSel_]),
+           bookAnswerTop(bk), ANSWER_STEP);
+  }
   printf("stars=%lu puzzles_right=%u levels=%d%d%d reviews=%d reads_right=%u read_level=%u read_streak=%u hats=%u collar=%u collars=%lu short=%d\n",
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
          save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask, save_.collar, (unsigned long)save_.collarsOwned, shortBy_);
@@ -303,7 +331,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Game::updateWear, &Game::updateStreet, &Game::updateTheme, &Game::updateConfirmFarm,
     &Game::updateFarm, &Game::updateShelter, &Game::updateWall,
     &Game::updatePuzzles, &Game::updatePuzzle, &Game::updateLittle, &Game::updateLittleAsk,
-    &Game::updateShop, &Game::updateWear, &Game::updateUk};
+    &Game::updateShop, &Game::updateWear, &Game::updateUk, &Game::updateBooks};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SC_COUNT, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in;
   gate_.filter(in_, ms_);
@@ -317,7 +345,7 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
   updateParticles();
   const ScreenFn fn = UPDATE[screen_];   // never (this->*TABLE[i])(): gcc 13.3/14.2 -fsanitize=bounds on aarch64 miscompiles it
   (this->*fn)();
-  if (screen_ == SC_HOME) checkStickers();
+  if (screen_ == SC_HOME || screen_ == SC_BOOKS) checkStickers();   // a sticker from a book shows on the way back to its shelf
 }
 void Game::tick() {
   uint32_t ev = pet::simulate(save_, now_, true);
@@ -337,13 +365,14 @@ void Game::render() {
     &Game::drawTrain, &Game::drawBath, &Game::drawStats, &Game::drawStickers, &Game::drawGift, &Game::drawCelebrate,
     &Game::drawWear, &Game::drawStreet, &Game::drawTheme, &Game::drawConfirmFarm, &Game::drawFarm,
     &Game::drawShelter, &Game::drawWall, &Game::drawPuzzles, &Game::drawPuzzle, &Game::drawLittle, &Game::drawLittleAsk,
-    &Game::drawShop, &Game::drawWear, &Game::drawUk};
+    &Game::drawShop, &Game::drawWear, &Game::drawUk, &Game::drawBooks};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SC_COUNT, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
   (this->*fn)();
   drawParticles();
   drawToast();
   if (screen_ == SC_UK) drawUkText();   // the frame goes RGB565 and the Ukrainian goes on top (ukrainian.cpp)
+  else if (ukBook()) drawBookText();
 }
 
 void Game::checkStickers() {
@@ -449,12 +478,17 @@ void Game::drawWindow(int x, int y, int w, int h) {
 }
 void Game::drawShelf(int x, int y) {
   rect(x, y, 36, 52, C_WOOD); frame(x, y, 36, 52, C_DKWOOD);
-  for (int s = 0; s < 3; s++) {
-    int sy = y + 4 + s * 16; rect(x + 2, sy + 12, 32, 2, C_DKWOOD);
-    for (int b = 0; b < 5; b++) {
-      int idx = s * 5 + b; if (idx >= save_.booksUnlocked || idx >= nBooks_) break;
-      uint8_t col = BOOKS[bookList_[idx]].cover; int h = 10 + (idx % 3);
-      rect(x + 3 + b * 6, sy + 12 - h, 5, h, col); pixel(x + 5 + b * 6, sy + 12 - h + 2, C_WHITE);
+  for (int s = 0; s < 3; s++) rect(x + 2, y + 16 + s * 16, 32, 2, C_DKWOOD);
+  // The top two boards are English, the bottom one Ukrainian (a blue-and-yellow ribbon): a spine per book read and one
+  // for the next, so a kid sees both piles grow.
+  for (int l = 0; l < 2; l++) {
+    const books::Lang lang = (books::Lang)l;
+    for (int i = 0, n = 0, next = 0; i < books::count(lang) && n < (l ? 5 : 10); i++) {
+      if (!books::read(save_, lang, i) && next++) continue;
+      const int board = l ? 2 : n / 5, h = 10 + i % 3, bx = x + 3 + (n % 5) * 6, top = y + 16 + board * 16 - h;
+      rect(bx, top, 5, h, books::at(lang, i).cover); pixel(bx + 2, top + 2, C_WHITE);
+      if (l) { pixel(bx + 2, top, C_BLUE); pixel(bx + 2, top + 1, C_YELLOW); }
+      n++;
     }
   }
   blit(SPR_HEART, x + 27, y + 2);  // a little decoration on top shelf
@@ -698,16 +732,20 @@ void Game::drawThought() {
   switch (w) { case WANT_PLAY: ic = &SPR_BALL; break; case WANT_SLEEP: ic = &SPR_MOON; break; case WANT_BATH: ic = &SPR_TUB; break; case WANT_POOP: ic = &SPR_POOP; break; case WANT_STORY: ic = &SPR_BOOK; break; default: break; }
   blit(*ic, bx + (18 - ic->w) / 2, by + (14 - ic->h) / 2);
 }
-void Game::drawHomeButtons() {
+void Game::drawHomeIcon(int i, bool pr) {
   static const Sprite* BTN_ICONS[4] = {&SPR_BOWL, &SPR_BALL, &SPR_BOOK, &SPR_PAW};
+  static const char* const BTN_NEWS[4] = {nullptr, "puzzles", "books", nullptr};   // Puzzles is in Play; the Ukrainian shelf
+  const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
+  if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
+  else blitScaled(ic, ix, iy, 2);
+  if (BTN_NEWS[i] && news_ && news_->isNew(BTN_NEWS[i])) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});
+}
+void Game::drawHomeButtons() {
   static const uint8_t BTN_COLS[4] = {C_ORANGE, C_GREEN, C_BLUE, C_PLUM};
   for (int i = 0; i < 4; i++) {
     bool pr = ui::pressing(in_, {BTN_X[i], BTN_Y, BTN_W, BTN_H + 2});   // the drawn button and its shadow, 2 px apart
     ui::drawButton({{BTN_X[i], BTN_Y, BTN_W, BTN_H}, nullptr, nullptr, BTN_COLS[i]}, pr);
-    const Sprite& ic = *BTN_ICONS[i]; int ix = BTN_X[i] + (BTN_W - ic.w * 2) / 2, iy = BTN_Y + (BTN_H - ic.h * 2) / 2 + (pr ? 1 : 0);
-    if (i == 3) { for (int sy = 0; sy < ic.h; sy++) for (int sx = 0; sx < ic.w; sx++) if (ic.px[sy * ic.w + sx] != C_T) rect(ix + sx * 2, iy + sy * 2, 2, 2, C_WHITE); }
-    else blitScaled(ic, ix, iy, 2);
-    if (i == 1 && news_ && news_->isNew("puzzles")) ui::newDot({BTN_X[i], BTN_Y + (pr ? 1 : 0), BTN_W, BTN_H});   // Puzzles is in Play
+    drawHomeIcon(i, pr);
     if (!in_.tapIn(BTN_X[i], BTN_Y, BTN_W, BTN_H + 2)) continue;
     if (i == 0) { go(SC_FEED); feedAnimFood_ = -1; } else if (i == 1) go(SC_PLAYMENU); else if (i == 2) go(SC_LIBRARY); else go(SC_TRICKS);
   }
@@ -956,18 +994,62 @@ static void drawArrows(const Input& in, int y) {   // sunk and darker while a pr
 }
 static int arrowTap(const Input& in, int y) { return in.tapInCircle(ARROW_LX, y, ARROW_R) ? -1 : in.tapInCircle(ARROW_RX, y, ARROW_R) ? 1 : 0; }
 static int arrowClick(const Input& in, int y) { return ui::clicked(in, ARROW_LX, y, ARROW_R) ? -1 : ui::clicked(in, ARROW_RX, y, ARROW_R) ? 1 : 0; }   // on release
+// ---------------------------------------------------------------- library: two shelves, English and Ukrainian
+// books.h picks each shelf for the kid's reading level in that language. A Ukrainian book's text is Andika, drawn over
+// the expanded frame by drawBookText (ukrainian.cpp); everything else here is the indexed frame's own art.
+static const ui::Box SHELVES[2] = {{30, 32, 100, 50}, {30, 88, 100, 50}};
+static const ui::Box READ_BTN = {36, 120, 88, 24};   // "Read to me!" with room; inside the round edge at y 144
+static const uint32_t ANSWER_PAUSE_MS = 1400;   // the picked answer shows green or red this long before The End
+void Game::refreshShelf() {
+  shelfLevel_ = books::target(*book_, save_, L(lang_));
+  nShelf_ = books::shelf(save_, L(lang_), shelfLevel_, shelf_);
+  bookSel_ = 0;
+}
+void Game::openShelf(int l) { lang_ = (uint8_t)l; refreshShelf(); if (nShelf_) go(SC_BOOKS); }
 void Game::updateLibrary() {
   if (backButton()) { go(SC_HOME); return; }
-  int n = save_.booksUnlocked < nBooks_ ? save_.booksUnlocked : nBooks_; if (n < 1) n = 1;
-  if (bookSel_ >= n) bookSel_ = 0;
-  if (const int d = arrowTap(in_, 70)) bookSel_ = (bookSel_ + n + d) % n;
-  if (in_.tapIn(44, 118, 72, 24)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
-  if (in_.tapIn(56, 33, 48, 61)) { page_ = 0; answerPick_ = -1; go(SC_READ); }
+  for (int l = 0; l < 2; l++) if (tapBox(in_, SHELVES[l])) { if (l == books::UK && news_) news_->seen("books"); openShelf((books::Lang)l); return; }
+}
+void Game::drawLibrary() {
+  clear(C_DKWOOD);
+  for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKBROWN);
+  static const char* const NAMES[2] = {"English", "Ukrainian"};
+  for (int l = 0; l < 2; l++) {
+    const ui::Box& b = SHELVES[l]; const books::Lang lang = (books::Lang)l;
+    const int dy = ui::pressing(in_, b) ? 1 : 0, tw = textWidth(NAMES[l]);
+    rect(b.x + 2, b.y + 2, b.w, b.h, C_DKBROWN); rect(b.x, b.y + dy, b.w, b.h, C_WOOD); frame(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
+    rect(80 - tw / 2 - 3, b.y + 3 + dy, tw + 6, 12, C_DKBROWN);   // a name plate: cream on the light wood is too faint
+    textCentered(80, b.y + 5 + dy, NAMES[l], C_CREAM);
+    uint8_t sh[books::SHELF_MAX]; const int n = books::shelf(save_, lang, books::target(*book_, save_, lang), sh);
+    const int x0 = 80 - n * 7 / 2, base = b.y + 42 + dy;
+    rect(b.x + 6, base, b.w - 12, 3, C_DKWOOD);
+    for (int i = 0; i < n; i++) {
+      const int h = 16 + sh[i] % 4, x = x0 + i * 7;
+      rect(x, base - h, 5, h, books::at(lang, sh[i]).cover); pixel(x + 2, base - h + 2, C_WHITE);
+      if (lang == books::UK) { pixel(x + 2, base - h, C_BLUE); pixel(x + 2, base - h + 1, C_YELLOW); }
+    }
+    if (lang == books::UK && news_ && news_->isNew("books")) ui::newDot({b.x, b.y + dy, b.w, b.h});
+    if (n && !books::read(save_, lang, sh[0])) blit(SPR_SPARKLE, b.x + b.w - 14, b.y + 3 + dy + (int)((ms_ / 400) % 2));   // a new book waits
+  }
+  drawBackButton();
+}
+// The cover picker: one shelf's books, the new ones first. Paws say how hard a book is for this kid.
+void Game::updateBooks() {
+  if (backButton()) { go(SC_LIBRARY); return; }
+  if (bookSel_ >= nShelf_) bookSel_ = 0;
+  if (const int d = arrowTap(in_, 60)) bookSel_ = (bookSel_ + nShelf_ + d) % nShelf_;
+  if (in_.tapIn(READ_BTN.x, READ_BTN.y, READ_BTN.w, READ_BTN.h) || in_.tapIn(56, 33, 48, 55)) openBook();
+}
+void Game::openBook() { page_ = 0; answerPick_ = -1; bookOpenMs_ = bookAskMs_ = ms_; go(SC_READ); }
+void Game::drawPaws(int cx, int y, int n) {
+  for (int i = 0; i < 3; i++) blitTint(SPR_PAW, cx - 14 + i * 10, y, i < n ? C_YELLOW : C_DKBROWN);
 }
 void Game::drawCover(int x, int y, int w, int h, const Book& bk) {
+  const bool ribbon = &bk >= UK_BOOKS && &bk < UK_BOOKS + NUM_UK_BOOKS;
   rect(x + 2, y + 2, w, h, C_DKBROWN);
   rect(x, y, w, h, bk.cover); frame(x, y, w, h, C_DKBROWN);
   rect(x + 3, y, 2, h, C_CREAM); rect(x + 8, y + 5, w - 12, h - 10, C_CREAM); frame(x + 8, y + 5, w - 12, h - 10, C_DKBROWN);
+  if (ribbon) { rect(x + w - 8, y, 4, 7, C_BLUE); rect(x + w - 8, y + 7, 4, 6, C_YELLOW); }   // a Ukrainian book's bookmark
   int cx = x + 8 + (w - 12) / 2, cy = y + h / 2;
   const Sprite* ic = &SPR_HEART;
   switch (bk.icon) { case 0: ic = nullptr; break; case 1: ic = &SPR_MOON; break; case 2: ic = &SPR_STAR; break; case 3: ic = &SPR_HEART; break;
@@ -976,68 +1058,106 @@ void Game::drawCover(int x, int y, int w, int h, const Book& bk) {
   else if (bk.icon == 7) blitTint(*ic, cx - ic->w / 2, cy - ic->h / 2, C_DKBROWN);
   else blit(*ic, cx - ic->w / 2, cy - ic->h / 2);
 }
-void Game::drawLibrary() {
+void Game::drawBooks() {
   clear(C_DKWOOD);
   for (int y = 0; y < 160; y += 16) hline(0, y, 160, C_DKBROWN);
   const Book& bk = curBook();
-  drawCover(56, 33, 48, 60, bk);   // 1 px under "book N of M"
-  bool done = save_.booksDoneMask & (1u << bookList_[bookSel_]);
+  drawCover(56, 33, 48, 54, bk);
+  const bool done = books::read(save_, L(lang_), shelf_[bookSel_]);
   if (!done) { blit(SPR_SPARKLE, 108, 30 + (int)((ms_ / 400) % 2)); textCentered(122, 40, "NEW!", C_YELLOW); }
-  else blitTint(SPR_CHECK, 96, 84, C_GREEN);
-  char lines[2][40]; int nl = wrap(bk.title, 110, lines, 2);
-  for (int i = 0; i < nl; i++) textCenteredShadow(80, 96 + i * 9, lines[i], C_WHITE, C_DKBROWN);
-  drawArrows(in_, 70);
-  ui::button(in_, {{44, 118, 72, 24}, done ? "Read again" : "Read to me!", nullptr, C_GREEN});
-  int shown = save_.booksUnlocked < nBooks_ ? save_.booksUnlocked : nBooks_;
-  char b[32]; snprintf(b, sizeof b, "book %d of %d", bookSel_ + 1, shown); textCentered(80, 24, b, C_CREAM);
+  else blitTint(SPR_CHECK, 96, 78, C_GREEN);
+  char lines[2][40]; const int nl = lang_ == books::EN ? wrap(bk.title, 110, lines, 2) : 1;
+  rect(22, 89, 116, nl * 9 + 3, C_DKBROWN);   // the title's plate; a Ukrainian title (one line) is Andika, over the frame (drawBookText)
+  if (lang_ == books::EN) for (int i = 0; i < nl; i++) textCentered(80, 91 + i * 9, lines[i], C_WHITE);
+  drawPaws(80, 110, books::paws(bk.level, shelfLevel_));
+  drawArrows(in_, 60);
+  ui::button(in_, {READ_BTN, done ? "Read again" : "Read to me!", nullptr, C_GREEN});
+  char b[32]; snprintf(b, sizeof b, "%s %d of %d", lang_ == books::EN ? "English" : "Ukrainian", bookSel_ + 1, nShelf_);
+  textCentered(80, 24, b, C_CREAM);
   drawBackButton();
 }
-static const int ANSWER_STEP = 24;   // 22 px answer buttons, 2 px apart; the lowest ends by y 137, inside the chord
+// The reader's layout (logical px), the same for a tap and a draw. English is the 8x8 font; Ukrainian Andika, whose
+// title is one line (the gate's) and whose 24 px lines are 29 physical px.
+int Game::bookTitleLines(const Book& bk) const {
+  if (lang_ == books::UK) return 1;
+  char tl[2][40]; return wrap(bk.title, 108, tl, 2);
+}
+int Game::bookAnswerTop(const Book& bk) const {
+  const int qTop = bookTitleLines(bk) == 2 ? 44 : 36;
+  if (lang_ == books::UK) {
+    const int qn = books::ukbox::lines(ukfont::FONT24, bk.question, books::ukbox::QUESTION_W);
+    return qTop + (qn * ukfont::FONT24.lineHeight + 2) / 3 + 4;
+  }
+  char ql[3][40]; return qTop + wrap(bk.question, 116, ql, 3) * 9 + 4;
+}
 void Game::updateRead() {
   const Book& bk = curBook();
-  int npages = 0; while (bk.pages[npages]) npages++;
-  if (backButton()) { go(SC_LIBRARY); return; }
+  const int npages = books::pages(bk);
+  if (backButton()) { go(SC_BOOKS); return; }
   if (page_ < npages) {
     if (in_.tap && in_.y > 26) {
-      if (in_.x >= 64) { page_++; if (page_ == npages) { spawn(40, 120, 0, 3); } }
+      if (in_.x >= 64) { page_++; if (page_ == npages) { bookAskMs_ = ms_; spawn(40, 120, 0, 3); } }
       else if (page_ > 0) { page_--; }
     }
     return;
   }
   // question page
-  if (answerPick_ >= 0) {
-    if (ms_ >= answerUntil_) {
-      bool right = answerPick_ == bk.correct;
-      pet::bookFinished(save_, now_, bookList_[bookSel_], right); markDirty();
-      char t[24], b[48]; snprintf(t, sizeof t, "The End!");
-      if (right) snprintf(b, sizeof b, "%s loved that story!", save_.petName); else snprintf(b, sizeof b, "It was: %s", bk.answers[bk.correct]);
-      celebrate(t, b, right ? 0 : 3, SC_HOME);
-    }
-    return;
-  }
-  int na = 0; while (na < 3 && bk.answers[na]) na++;
-  char tl[2][40]; int tn = wrap(bk.title, 108, tl, 2); char ql[3][40]; int qn = wrap(bk.question, 116, ql, 3);
-  int ay = (tn == 2 ? 44 : 36) + qn * 9 + 4;
+  if (answerPick_ >= 0) { if (ms_ >= answerUntil_) bookDone(answerPick_ == bk.correct); return; }
+  const int na = books::answers(bk), ay = bookAnswerTop(bk);
   for (int i = 0; i < na; i++) if (in_.tapIn(26, ay + i * ANSWER_STEP, 108, 22)) {
-    answerPick_ = i; answerUntil_ = ms_ + 1400;
+    answerPick_ = i; answerUntil_ = ms_ + ANSWER_PAUSE_MS;
     if (i == bk.correct) spawn(80, ay + i * ANSWER_STEP + 11, 1, 8);
   }
 }
+// The question answered: the book is read. Its first read is one answer to the engine, unless it was paged through
+// faster than anyone reads (books::skimmed): then it is read all the same, and rates and pays nothing.
+void Game::bookDone(bool right) {
+  const Book& bk = curBook(); const int i = shelf_[bookSel_];
+  const bool first = !books::read(save_, L(lang_), i);
+  const uint32_t pagesMs = bookAskMs_ - bookOpenMs_, tookMs = answerUntil_ - ANSWER_PAUSE_MS - bookOpenMs_;
+  const bool counted = first && !books::skimmed(bk, pagesMs);
+  const int paws = books::paws(bk.level, shelfLevel_);
+  books::markRead(save_, L(lang_), i);
+  pet::bookFinished(save_, now_, first, right);
+  roundStars_ = 0;
+  if (counted) {
+    pay_ = skills::start(*book_, now_);
+    skills::answer(*book_, pay_, books::item(L(lang_), i), right, tookMs);
+    payRound();
+    if (lang_ == books::EN) save_.readLevel = readLevelNow();   // Little reads follow the same rating
+  }
+  using telemetry::P;
+  telemetry::emit("book_finished", {P("lang", lang_ == books::EN ? "en" : "uk"), P("level", (long)bk.level),
+                                    P("paws", (long)paws), P("pages", (long)books::pages(bk)), P("secs", (long)(pagesMs / 1000)),
+                                    P("right", (long)right), P("first", (long)first), P("counted", (long)counted),
+                                    P("rating", (long)skills::get(*book_, books::skill(L(lang_))).theta)});
+  markDirty();
+  char b[48];
+  if (right && roundStars_) snprintf(b, sizeof b, "%s loved that story! +%d stars", save_.petName, roundStars_);
+  else if (right) snprintf(b, sizeof b, "%s loved that story!", save_.petName);
+  else if (lang_ == books::EN) snprintf(b, sizeof b, "It was: %s", bk.answers[bk.correct]);
+  else snprintf(b, sizeof b, "%s loved it anyway!", save_.petName);   // a Ukrainian answer in UTF-8 can outgrow the card's 48 bytes
+  refreshShelf();   // back to the shelf, the next book on it first
+  celebrate("The End!", b, right ? (roundStars_ ? 2 : 0) : 3, SC_BOOKS);
+}
 void Game::drawRead() {
   const Book& bk = curBook();
-  int npages = 0; while (bk.pages[npages]) npages++;
+  const int npages = books::pages(bk), tn = bookTitleLines(bk), top = tn == 2 ? 46 : 38;
   clear(C_CREAM);
-  char tl[2][40]; int tn = wrap(bk.title, 108, tl, 2);           // long titles take two lines
-  int top = tn == 2 ? 46 : 38;
-  for (int y = top + 2; y < 160; y += 10) hline(24, y, 112, C_PEACH);  // ruled paper
-  for (int i = 0; i < tn; i++) textCentered(80, (tn == 2 ? 16 : 24) + i * 9, tl[i], C_PLUM);
+  if (lang_ == books::EN) {   // Ukrainian: no ruling, its lines are Andika's (drawBookText)
+    char tl[2][40]; wrap(bk.title, 108, tl, 2);
+    for (int y = top + 2; y < 160; y += 10) hline(24, y, 112, C_PEACH);  // ruled paper
+    for (int i = 0; i < tn; i++) textCentered(80, (tn == 2 ? 16 : 24) + i * 9, tl[i], C_PLUM);
+  }
   hline(30, top - 5, 100, C_PLUM);
   if (page_ < npages) drawReadPage(top, npages); else drawReadQuestion(tn == 2 ? 44 : 36);
   drawBackButton();
 }
 void Game::drawReadPage(int top, int npages) {
-  char lines[8][40]; int nl = wrap(curBook().pages[page_], 122, lines, top == 46 ? 7 : 8);
-  for (int i = 0; i < nl; i++) text(19, top + i * 10, lines[i], C_DKBROWN);
+  if (lang_ == books::EN) {
+    char lines[8][40]; int nl = wrap(curBook().pages[page_], 122, lines, top == 46 ? 7 : 8);
+    for (int i = 0; i < nl; i++) text(19, top + i * 10, lines[i], C_DKBROWN);
+  }
   for (int i = 0; i < npages; i++) circle(80 - npages * 3 + i * 6, 130, i == page_ ? 2 : 1, i == page_ ? C_PLUM : C_LTGRAY);
   blitTint(SPR_ARROW, 118, 124, C_ORANGE);
   if (page_ > 0) blitTint(SPR_ARROW, 36, 124, C_ORANGE, true);
@@ -1048,15 +1168,17 @@ void Game::drawReadPage(int top, int npages) {
 }
 void Game::drawReadQuestion(int qTop) {
   const Book& bk = curBook();
-  char lines[3][40]; int nl = wrap(bk.question, 116, lines, 3);
-  for (int i = 0; i < nl; i++) textCentered(80, qTop + i * 9, lines[i], C_DKBROWN);
-  int ay = qTop + nl * 9 + 4;
-  int na = 0; while (na < 3 && bk.answers[na]) na++;
+  if (lang_ == books::EN) {
+    char lines[3][40]; int nl = wrap(bk.question, 116, lines, 3);
+    for (int i = 0; i < nl; i++) textCentered(80, qTop + i * 9, lines[i], C_DKBROWN);
+  }
+  const int ay = bookAnswerTop(bk), na = books::answers(bk);
   for (int i = 0; i < na; i++) {
     uint8_t col = answerPick_ < 0 ? C_BLUE : i == bk.correct ? C_GREEN : i == answerPick_ ? C_RED : C_LTGRAY;
     bool pr = ui::pressing(in_, {26, ay + i * ANSWER_STEP, 108, 22});
     int by = ay + i * ANSWER_STEP + (pr ? 1 : 0);
     ui::drawButton({{26, ay + i * ANSWER_STEP, 108, 22}, nullptr, nullptr, col}, pr);
+    if (lang_ == books::UK) continue;
     char al[2][40]; int an = wrap(bk.answers[i], 102, al, 2);
     for (int k = 0; k < an; k++) textCentered(80, by + (an == 2 ? 3 + k * 9 : 7), al[k], inkOn(col));
   }
@@ -1580,8 +1702,6 @@ void Game::drawGift() {
     if ((ms_ / 500) % 2) textCentered(80, 108, "tap to open", C_DKGRAY);
   } else {
     switch (gift_.kind) {
-      case pet::GIFT_BOOK: textCentered(80, 36, "A new book!", C_PLUM); drawCover(64, 48, 32, 40, BOOKS[gift_.index]);
-        { char lines[2][40]; int nl = wrap(BOOKS[gift_.index].title, 110, lines, 2); for (int i = 0; i < nl; i++) textCentered(80, 94 + i * 9, lines[i], C_DKBROWN); } break;
       case pet::GIFT_HAT: textCentered(80, 36, "A new hat!", C_PLUM); blitScaled(SPR_HATS[gift_.index], 80 - SPR_HATS[gift_.index].w, 52, 2);
         textCentered(80, 94, HAT_NAMES[gift_.index], C_DKBROWN); textCentered(80, 104, "Find it in the Shop", C_DKGRAY); break;
       case pet::GIFT_TREATS: textCentered(80, 36, "Treats!", C_PLUM); blitScaled(SPR_COOKIE, 56, 56, 2); blitScaled(SPR_BONE, 84, 60, 2);

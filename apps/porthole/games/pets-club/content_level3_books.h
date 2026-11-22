@@ -1,5 +1,5 @@
 // Level 3 stories (ages 8-10). Spliced into BOOKS[] by content.h. Limits: see tools/check_content.py.
-  {"Library at Night", C_PLUM, 6, 3, {
+  {"Library at Night", C_PLUM, 6, 7, {
     "Scout was a curious little dog who lived at the town library with his owner, Mr. Finn, the librarian.",
     "Every single night, Mr. Finn walked through each quiet room, locked the heavy doors, and switched off the lights.",
     "One evening, Scout smelled something peculiar near the squeaky book cart and stopped to sniff it closely.",
@@ -11,7 +11,7 @@
     "Feeling much braver now, Scout explored the story time corner and curled up there until he fell fast asleep.",
     "In the morning, Mr. Finn unlocked the doors and laughed in surprise, saying, \"How did you get locked in here all night?\"",
     nullptr}, "Why did Scout stop being scared?", {"Just a small mouse", "Mr. Finn found him", "The sun came up"}, 0},
-  {"The Lighthouse", C_NAVY, 4, 3, {
+  {"The Lighthouse", C_NAVY, 4, 7, {
     "Ranger lived in a tall, windswept lighthouse with his owner, a patient keeper named Ana, right beside the churning sea.",
     "Ranger's favorite job of the entire day was standing watch over the wide, restless sea from the very top window.",
     "One evening, dark clouds rolled in with surprising speed, and the wind began to howl fiercely against the old stone walls.",
@@ -24,7 +24,7 @@
     "The ship's worried captain spotted the small light just in time and steered his vessel safely around the jagged rocks.",
     "By morning the terrible storm had finally passed, and Ana proudly called Ranger her bravest, soggiest little hero.",
     nullptr}, "Why did Ranger lead Ana to the storage room?", {"He wanted a snack", "To find a lantern", "He smelled fish"}, 1},
-  {"Stage Fright", C_ROSE, 2, 3, {
+  {"Stage Fright", C_ROSE, 2, 7, {
     "Basil had proudly been chosen to play the friendly town dog in the school's big spring play this year.",
     "His owner, a girl named Mia, had earned the biggest part of all: playing the brave and clever queen.",
     "Mia practiced her lines out loud every single night, but on the big day she suddenly felt peculiar and shaky.",
@@ -36,7 +36,7 @@
     "Mia finally took a deep breath, walked out onto the stage, and her lines came rushing back one by one.",
     "Afterward, Mia hugged Basil very tightly and said the whole play had been better because he was in it.",
     nullptr}, "Why was Mia able to remember her lines?", {"She read a card", "Someone told her", "Basil's bark"}, 2},
-  {"The Night Train", C_GOLD, 7, 3, {
+  {"The Night Train", C_GOLD, 7, 7, {
     "Willow the little dog was riding the night train with her owner, a young boy named Sam, to visit family far away.",
     "Sam was traveling all the way to visit his Grandma, and he held his backpack tightly on his lap the whole time.",
     "The train rocked gently back and forth in the darkness, and soon Sam fell into a deep, peaceful sleep.",
@@ -49,7 +49,7 @@
     "Sam explained the funny mix-up kindly, and the traveler laughed and happily swapped the two backpacks right back.",
     "They reached Grandma's stop just in time, and Sam proudly called Willow the most determined dog on the whole train.",
     nullptr}, "Why did Willow wake Sam up on the train?", {"His bag was taken", "She wanted a walk", "The train stopped"}, 0},
-  {"The Bread Thief", C_PINK, 5, 3, {
+  {"The Bread Thief", C_PINK, 5, 7, {
     "Ember lived at Rosa's cozy little bakery, where the smell of warm bread filled the air every single morning.",
     "Lately, a few soft rolls had mysteriously kept disappearing from the cooling rack before the shop even opened.",
     "Rosa felt puzzled and a little worried, wondering if some sneaky thief was somehow sneaking inside at night.",
@@ -62,7 +62,7 @@
     "Rosa laughed with great relief and had the little crack fixed carefully that very same sunny afternoon.",
     "From then on, Ember happily earned a fresh roll every morning for solving such a peculiar, tasty mystery.",
     nullptr}, "What was really taking the rolls from the bakery?", {"A hungry cat", "Tiny sparrows", "Ember herself"}, 1},
-  {"Museum Mystery", C_LAVENDER, 1, 3, {
+  {"Museum Mystery", C_LAVENDER, 1, 7, {
     "Marbles worked as the friendly guard dog at the town's big history museum, right in the middle of downtown.",
     "He loved napping peacefully beneath the tall, ancient dinosaur skeleton that stood proudly in the main hall.",
     "One evening, Marbles napped so deeply and quietly that every single guard forgot he was still inside.",
@@ -73,7 +73,7 @@
     "Marbles felt rather silly, then curious, and spent the rest of the quiet night exploring every exhibit hall.",
     "In the morning, the guards were completely astonished to find him waiting proudly and calmly by the door.",
     nullptr}, "What was making the mysterious creaking sound?", {"A ghost", "Another guard dog", "A banging window"}, 2},
-  {"Snowed In", C_SKY, 0, 3, {
+  {"Snowed In", C_SKY, 0, 7, {
     "Sunny was a big, fluffy dog who lived with a girl named Priya and her dad high up in the snowy mountains.",
     "It was a peculiar little joke around town that a dog named Sunny loved snow far more than warm sunshine.",
     "One weekend, an enormous, howling blizzard trapped the whole family inside their small wooden cabin.",
@@ -85,7 +85,7 @@
     "Soon a warm fire crackled cheerfully in the fireplace, and the whole cabin slowly felt cozy again.",
     "Priya laughed and said that Sunny had finally, truly earned her sunny name after all that cold snow.",
     nullptr}, "How did Sunny help her family stay warm?", {"Found the firewood", "She lit a match", "She hugged them"}, 0},
-  {"Grandma's Attic", C_ORANGE, 6, 3, {
+  {"Grandma's Attic", C_ORANGE, 6, 7, {
     "On a rainy afternoon, Leo and his dog Bramble climbed the creaky wooden stairs to Grandma's dusty attic.",
     "Boxes of old, curious-looking books were stacked everywhere, smelling faintly of paper and forgotten time.",
     "Bramble sniffed curiously at an ancient wooden trunk pushed into a peculiar, shadowy corner of the room.",
@@ -97,7 +97,7 @@
     "Grandma explained warmly that the puppy in the old photo was actually her own dog from long, long ago.",
     "She smiled and said that old dog had loved books just as much as Bramble clearly and obviously did.",
     nullptr}, "How did Leo and Bramble open the old trunk?", {"Grandma gave a key", "Found a hidden key", "They broke the lid"}, 1},
-  {"The Camp Project", C_GREEN, 2, 3, {
+  {"The Camp Project", C_GREEN, 2, 7, {
     "Pretzel was the friendly camp dog who happily lived at Camp Pinewood every single summer of the year.",
     "Maya was busy building a volcano for the camp's big science fair, which was happening on Friday morning.",
     "She carefully mixed bright red-dyed vinegar and baking soda into a small cardboard mountain shape.",
@@ -110,7 +110,7 @@
     "When the volcano erupted again, right on cue, the judges clapped and cheered the loudest of the entire day.",
     "Maya did not win the first prize, but she won the special award for the very best explanation of all.",
     nullptr}, "What helped Maya win the award?", {"A bigger volcano", "A funny dog trick", "Explaining it well"}, 2},
-  {"The Lost Locket", C_LEAF, 3, 3, {
+  {"The Lost Locket", C_LEAF, 3, 7, {
     "Domino was a stray dog who wandered the busy town alone, always searching for scraps of food to eat.",
     "One chilly morning, he found something shiny and half-buried under an old wooden park bench nearby.",
     "It was a small silver locket, shaped like a heart, with a tiny old photograph tucked inside of it.",

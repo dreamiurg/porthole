@@ -1,14 +1,19 @@
-# Reading: library -> a story page by page (back works, not before page 1) -> question -> answer -> The End -> home.
+# Reading: library -> the English shelf -> a cover -> a story page by page (back works, not before page 1) -> question -> answer -> The End -> home.
 newgame Sam Biscuit
 wait 2400
-expect books=0/3
+expect books=0
 # book button, bottom row third
 tap 92 129
 wait 450
 expect-screen pets_library
-expect page=0
 snap 01_library
-tap 80 130
+# the English shelf, top
+tap 80 57
+wait 450
+expect-screen books
+expect shelf=en
+snap 01b_shelf
+tap 80 132
 wait 450
 expect-screen read
 expect page=0
@@ -25,10 +30,9 @@ expect page=1
 tap 120 80
 tap 120 80
 tap 120 80
-tap 120 80
 wait 450
 expect-screen read
-expect page=5
+expect page=4
 snap 03_question
 answer-book
 wait 450
@@ -43,14 +47,14 @@ snap 05_the_end
 wait 800
 tap 80 80
 wait 450
-# first story ever: the First Story sticker
+# first story ever: the First Story sticker, on the way back to the shelf
 expect-screen celebrate
 wait 800
 tap 80 80
 wait 450
-expect-screen home
+# back to the shelf, the next book on it first
+expect-screen books
 expect books=1
-expect books=1/3
 # first read +15 bond, right answer +5
 expect bond=20
 expect stickers=2
@@ -67,8 +71,55 @@ newgame Sam Biscuit
 wait 2400
 tap 92 129
 wait 450
-tap 80 130
-tap 80 130
+tap 80 57
+wait 450
+tap 80 132
+tap 80 132
 wait 450
 expect-screen read
 expect page=0
+# the Ukrainian shelf: a level-1 book in the big Andika, then a level-2 one (a reader at the top level; 3-5 follow)
+newgame Sam Biscuit
+wait 2400
+tap 92 129
+wait 450
+tap 80 113
+wait 450
+expect-screen books
+expect shelf=uk
+expect book_level=1
+snap 06_uk_shelf
+tap 80 132
+wait 450
+expect-screen read
+snap 07_uk_page
+turn-pages
+wait 450
+snap 08_uk_question
+answer-book
+wait 450
+snap 09_uk_answered
+wait 1400
+expect-screen celebrate
+expect books=1
+wait 800
+tap 80 80
+wait 450
+wait 800
+tap 80 80
+wait 450
+expect-screen books
+# a kid who reads Ukrainian well: the shelf moves up, to the highest level there is
+dbg readlevel uk5
+wait 450
+expect shelf=uk
+expect book_level=2
+snap 10_uk_shelf_top
+tap 80 132
+wait 450
+expect-screen read
+snap 11_uk_page_top
+turn-pages
+wait 450
+snap 12_uk_question_top
+sheet read_uk

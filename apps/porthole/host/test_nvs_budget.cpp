@@ -130,6 +130,8 @@ int main() {
   // structs whole, a profile cost 110 entries and four needed 616 of the 504, so two kids fit (the audit's PLAT-1,
   // SHELL-5, BUILD-1, LIFE-11). A new save, or one that grows, has to fit in what is left to spare.
   assert(need <= USABLE);
-  assert(profile <= 78);   // a ratchet: lower it when a save shrinks, never raise it
+  // A ratchet: lower it when a save shrinks. Raised once, 78 -> 79, for Pets Club's v5 (the two bookshelves' read
+  // marks and the Shop's room and toys), on the approved design of 2026-11-22; any later growth needs the same.
+  assert(profile <= 79);
   puts("nvs budget: ok");
 }

@@ -85,7 +85,7 @@ ui-check
 snap 11_home
 expect profile=0/1
 expect age=8
-expect books=0/3
+expect books=0
 expect food=70
 expect fun=80
 expect energy=90

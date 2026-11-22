@@ -154,7 +154,7 @@ inline int level(const Book& b, Skill k) { return get(b, k).theta / LEVEL; }
 
 struct Round {
   int32_t points = 0;     // this round's, before the day's rules
-  uint32_t ms = 0;        // time spent answering (each answer counts at most 30 s)
+  uint32_t ms = 0;        // time spent answering (each answer counts at most 30 s, times its weight)
   int answers = 0;
   bool newBest = false;   // a skill reached a level it never had
   // finish() fills these, for the round's end page:
@@ -182,8 +182,9 @@ inline void forgetRepeats() { for (detail::Seen& x : detail::seen) x = {}; detai
 enum Speed : int8_t { QUICK = 0, SLOW = 1 };
 // The item a kid answered. beta: its difficulty; options: the answers it offered; readMs: no one reads the item and its
 // answers faster, so a right pick sooner is a guess (pays nothing, counts as wrong) and a wrong one sooner costs half a
-// base in the round; key: which item, for repeats (the game's own numbering).
-struct Item { Skill skill; int beta, options; uint32_t readMs; uint16_t key; Speed speed = QUICK; };
+// base in the round; key: which item, for repeats (the game's own numbering); weight: how many items' worth of work
+// this one answer stands for (a whole book is several paragraphs): it pays that many times and counts that much time.
+struct Item { Skill skill; int beta, options; uint32_t readMs; uint16_t key; Speed speed = QUICK; uint8_t weight = 1; };
 
 namespace detail {
 // After an answer: the rating in range, the answer counted, the peak, and a new best level (a milestone, unless it is
@@ -202,7 +203,7 @@ inline int32_t pay(const State& s, const Item& it, int times) {
   const int payTheta = s.peak - PEAK_DROP > s.theta ? s.peak - PEAK_DROP : s.theta;
   float w = s.calibrating ? 1.f : (1 - expect(payTheta, it.beta, it.options)) / (1 - TARGET);
   w = w < 0.25f ? 0.25f : w > 2.5f ? 2.5f : w;
-  return (int32_t)lroundf(BASE[it.skill] * w) >> times;
+  return (int32_t)lroundf(BASE[it.skill] * w * (it.weight ? it.weight : 1)) >> times;
 }
 // Calibration: right jumps up and doubles the jump (to 4 levels); a miss steps back half and halves it. Two misses
 // with the jump at one level, or CALIB_ANSWERS answers, end it.
@@ -240,7 +241,8 @@ inline void answer(Book& b, Round& r, const Item& it, bool right, uint32_t ms) {
   const int times = detail::repeats(b, it.skill, it.key);
   if (right && !rushed) r.points += detail::pay(s, it, times);
   else if (!right && rushed) r.points = r.points > BASE[it.skill] / 2 ? r.points - BASE[it.skill] / 2 : 0;
-  r.ms += ms > 30000 ? 30000 : ms;
+  const uint32_t most = 30000u * (it.weight ? it.weight : 1);
+  r.ms += ms > most ? most : ms;
   r.answers++;
   if (s.calibrating) detail::calibrate(s, score > 0);
   else detail::rate(s, score, expect(s.theta, it.beta, it.options));
