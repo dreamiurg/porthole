@@ -176,7 +176,7 @@ void Shell::drawSysAdmin() {
   }
   stextC(80, 46, adminPin_ ? "Menu code: on" : "Menu code: off", C_LTGRAY);
   sbutton(ADMIN_CODE, adminPin_ ? "Change code" : "Set admin code", C_SKY, down(in_, ADMIN_CODE));
-  sbutton(ADMIN_RESET, "Screen time", C_SKY, down(in_, ADMIN_RESET));
+  sbutton(ADMIN_RESET, limitsOn_ ? "Screen time" : "Screen time: off", C_SKY, down(in_, ADMIN_RESET));
   if (adminPin_) sbutton(ADMIN_REMOVE, "Remove code", C_LTGRAY, down(in_, ADMIN_REMOVE));
   sbutton(ADMIN_PLAYERS, "Player PINs", C_SKY, down(in_, ADMIN_PLAYERS));
   sback();
@@ -393,70 +393,75 @@ void Shell::drawSysGames() {
 static bool typeInto(const Input& in, TextEntry& t);
 
 // ---------------------------------------------------------------- Screen time: one home for limits, play hours and deliberate exceptions
-static const ui::Box TIME_ROWS[3] = {{30, 42, 100, 22}, {30, 67, 100, 22}, {30, 92, 100, 22}};
-static const ui::Box TIME_RESET = {26, 119, 52, 20}, TIME_ALLOW = {82, 119, 52, 20};
+// Everything on one screen: the master switch, session and daily total stepped in place (saved at once), the play window.
+static const ui::Box TIME_SWITCH = {42, 38, 76, 18}, TIME_WINDOW = {30, 101, 100, 18};
+static const ui::Box TIME_RESET = {27, 122, 52, 18}, TIME_ALLOW = {81, 122, 52, 18};
+static ui::Box timeStep(int row, bool plus) { return {plus ? 108 : 28, 59 + row * 21, 24, 18}; }
 static void friendlyTime(char* out, size_t n, int minute) {
   const int hour = minute / 60;
   if (minute % 60) snprintf(out, n, "%d:%02d %s", hour % 12 ? hour % 12 : 12, minute % 60, hour < 12 ? "AM" : "PM");
   else snprintf(out, n, "%d %s", hour % 12 ? hour % 12 : 12, hour < 12 ? "AM" : "PM");
 }
-static void settingRow(const ui::Box& b, const char* label, const char* value, bool pressed) {
-  sbutton(b, "", C_SKY, pressed);
-  const int dy = pressed ? 1 : 0;
-  stextC(80, b.y + 3 + dy, label, C_DKBROWN); stextC(80, b.y + 12 + dy, value, C_DKBROWN);
-}
-void Shell::updateSysTime() {
-  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
-  for (int i = 0; i < 2; i++) if (tapped(in_, TIME_ROWS[i])) {
-    limitEditor_ = (uint8_t)i; limitsDraft_ = limits_; go(SH_SYS_LIMITS); return;
-  }
-  if (tapped(in_, TIME_ROWS[2])) { windowDraft_ = window_; go(SH_SYS_WINDOW); return; }
-  if (tapped(in_, TIME_RESET)) { go(SH_SYS_RESET); return; }
-  if (!tapped(in_, TIME_ALLOW)) return;
-  if (allowance_.active(ms_)) { allowance_.stop(); toast("Extra time ended"); }
-  else go(SH_SYS_ALLOW);
-}
-void Shell::drawSysTime() {
-  sclear(C_NAVY); shead(80, 28, "Screen time", C_WHITE);
-  char value[40]; snprintf(value, sizeof value, "%u min", (unsigned)limits_.sessionMinutes);
-  settingRow(TIME_ROWS[0], "Session", value, down(in_, TIME_ROWS[0]));
-  snprintf(value, sizeof value, "%u min", (unsigned)limits_.dailyMinutes);
-  settingRow(TIME_ROWS[1], "Daily total", value, down(in_, TIME_ROWS[1]));
-  if (window_.enabled) {
-    char start[16], end[16]; friendlyTime(start, sizeof start, window_.startMinute); friendlyTime(end, sizeof end, window_.endMinute);
-    snprintf(value, sizeof value, "%s to %s", start, end);
-  } else snprintf(value, sizeof value, "Any time");
-  settingRow(TIME_ROWS[2], "Play window", value, down(in_, TIME_ROWS[2]));
-  sbutton(TIME_RESET, "Reset usage", C_SKY, down(in_, TIME_RESET));
-  if (allowance_.active(ms_)) snprintf(value, sizeof value, "End %lu min", (unsigned long)allowance_.minutesLeft(ms_));
-  else snprintf(value, sizeof value, "Allow 30 min");
-  sbutton(TIME_ALLOW, value, C_GREEN, down(in_, TIME_ALLOW)); sback();
-}
-static const ui::Box EDIT_MINUS = {26, 68, 24, 24}, EDIT_PLUS = {110, 68, 24, 24};
-static const ui::Box EDIT_CANCEL = {26, 110, 52, 22}, EDIT_SAVE = {82, 110, 52, 22};
 static int limitStep(const Input& in, const ui::Box& box, int value, int delta) {
   const bool tap = tapped(in, box) && !in.longTap, held = in.longPress && in.hit(box.x, box.y, box.w, box.h);   // the hold's +10 alone
   if (!tap && !held) return value;
   int next = value + delta * (held ? 10 : 1);
   return next < 1 ? 1 : next > 1440 ? 1440 : next;
 }
-void Shell::updateSysLimits() {
-  if (ui::back(in_) || tapped(in_, EDIT_CANCEL)) { go(SH_SYS_TIME); return; }
-  uint16_t& value = limitEditor_ ? limitsDraft_.dailyMinutes : limitsDraft_.sessionMinutes;
-  value = (uint16_t)limitStep(in_, EDIT_MINUS, value, -1);
-  value = (uint16_t)limitStep(in_, EDIT_PLUS, value, 1);
-  if (!tapped(in_, EDIT_SAVE)) return;
-  if (!saveLimits(*st_, limitsDraft_)) { toast("Could not save limit"); return; }
-  limits_ = limitsDraft_; go(SH_SYS_TIME); toast("Limit saved");
+static int stepped(const Input& in, int row, int value) {
+  return limitStep(in, timeStep(row, true), limitStep(in, timeStep(row, false), value, -1), 1);
 }
-void Shell::drawSysLimits() {
-  sclear(C_NAVY); shead(80, 32, limitEditor_ ? "Daily total" : "Session limit", C_WHITE);
-  stextC(80, 49, limitEditor_ ? "Minutes per day" : "Minutes per session", C_LTGRAY);
-  sbutton(EDIT_MINUS, "-", C_SKY, down(in_, EDIT_MINUS)); sbutton(EDIT_PLUS, "+", C_SKY, down(in_, EDIT_PLUS));
-  char value[16]; snprintf(value, sizeof value, "%u min", (unsigned)(limitEditor_ ? limitsDraft_.dailyMinutes : limitsDraft_.sessionMinutes));
-  shead(80, 76, value, C_WHITE);
-  sbutton(EDIT_CANCEL, "Cancel", C_LTGRAY, down(in_, EDIT_CANCEL)); sbutton(EDIT_SAVE, "Save", C_GREEN, down(in_, EDIT_SAVE));
-  stextC(80, 141, "Hold +/- for 10", C_LTGRAY); sback();
+// The session never passes the daily total: its + stops there, and a daily total lowered under it takes the session down.
+void Shell::stepLimits() {
+  const int session = stepped(in_, 0, limits_.sessionMinutes), daily = stepped(in_, 1, limits_.dailyMinutes);
+  const shell::Limits next{(uint16_t)(session < daily ? session : daily), (uint16_t)daily};
+  if (session > daily && daily == limits_.dailyMinutes) toast("Session stops at daily total");
+  if (next.sessionMinutes == limits_.sessionMinutes && next.dailyMinutes == limits_.dailyMinutes) return;
+  if (!saveLimits(*st_, next)) { toast("Could not save limit"); return; }
+  limits_ = next;
+}
+bool Shell::timeButtons() {
+  if (tapped(in_, TIME_WINDOW)) { windowDraft_ = window_; go(SH_SYS_WINDOW); return true; }
+  if (tapped(in_, TIME_RESET)) { go(SH_SYS_RESET); return true; }
+  if (!tapped(in_, TIME_ALLOW)) return false;
+  if (allowance_.active(ms_)) { allowance_.stop(); toast("Extra time ended"); }
+  else go(SH_SYS_ALLOW);
+  return true;
+}
+void Shell::updateSysTime() {
+  if (ui::back(in_)) { go(SH_SYS_ADMIN); return; }
+  if (tapped(in_, TIME_SWITCH)) {   // a failed write leaves the switch as it was
+    if (saveLimitsOn(*st_, !limitsOn_)) limitsOn_ = !limitsOn_;
+    else toast("Could not save");
+    return;
+  }
+  if (limitsOn_ && !timeButtons()) stepLimits();
+}
+static void stepper(const Input& in, int row, const char* label, unsigned minutes, bool canAdd) {
+  const ui::Box minus = timeStep(row, false), plus = timeStep(row, true);
+  sbutton(minus, "-", C_SKY, down(in, minus));
+  sbutton(plus, "+", canAdd ? (uint8_t)C_SKY : (uint8_t)C_DKGRAY, down(in, plus));
+  char value[16]; snprintf(value, sizeof value, "%u min", minutes);
+  stextC(80, minus.y, label, C_LTGRAY); stextC(80, minus.y + 9, value, C_WHITE);
+}
+void Shell::drawSysTime() {
+  sclear(C_NAVY); shead(80, 27, "Screen time", C_WHITE);
+  sbutton(TIME_SWITCH, limitsOn_ ? "Limits: on" : "Limits: off", limitsOn_ ? C_SKY : C_LTGRAY, down(in_, TIME_SWITCH));
+  if (!limitsOn_) {
+    stextC(80, 68, "No session, daily or", C_LTGRAY); stextC(80, 79, "play window limits.", C_LTGRAY);
+    stextC(80, 96, "Your settings are kept.", C_LTGRAY); sback(); return;
+  }
+  stepper(in_, 0, "Session", limits_.sessionMinutes, limits_.sessionMinutes < limits_.dailyMinutes);
+  stepper(in_, 1, "Daily total", limits_.dailyMinutes, limits_.dailyMinutes < 1440);
+  char value[40], start[16], end[16];
+  friendlyTime(start, sizeof start, window_.startMinute); friendlyTime(end, sizeof end, window_.endMinute);
+  if (window_.enabled) snprintf(value, sizeof value, "Play %s to %s", start, end);
+  else snprintf(value, sizeof value, "Play any time");
+  sbutton(TIME_WINDOW, value, C_SKY, down(in_, TIME_WINDOW));
+  sbutton(TIME_RESET, "Reset usage", C_SKY, down(in_, TIME_RESET));
+  if (allowance_.active(ms_)) snprintf(value, sizeof value, "End %lu min", (unsigned long)allowance_.minutesLeft(ms_));
+  else snprintf(value, sizeof value, "Allow 30 min");
+  sbutton(TIME_ALLOW, value, C_GREEN, down(in_, TIME_ALLOW)); sback();
 }
 static const ui::Box WINDOW_TOGGLE = {42, 40, 76, 18}, WINDOW_CANCEL = {37, 125, 40, 20}, WINDOW_SAVE = {83, 125, 40, 20};
 static ui::Box windowStep(int row, bool plus) { return {plus ? 110 : 26, 70 + row * 32, 24, 20}; }

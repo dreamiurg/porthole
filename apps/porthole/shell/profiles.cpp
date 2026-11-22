@@ -9,10 +9,21 @@ static bool validLimits(const Limits& l) {
 }
 Limits loadLimits(Store& st) {
   Limits l{};
-  return st.load("sys", "limits", &l, sizeof l) == sizeof l && validLimits(l) ? l : Limits{};
+  if (st.load("sys", "limits", &l, sizeof l) != sizeof l || !validLimits(l)) return Limits{};
+  if (l.sessionMinutes > l.dailyMinutes) l.sessionMinutes = l.dailyMinutes;   // saved before the session was capped
+  return l;
 }
 bool saveLimits(Store& st, const Limits& l) {
-  return validLimits(l) && st.save("sys", "limits", &l, sizeof l);
+  return validLimits(l) && l.sessionMinutes <= l.dailyMinutes && st.save("sys", "limits", &l, sizeof l);
+}
+bool loadLimitsOn(Store& st) {
+  uint8_t on = 1;
+  return st.load("sys", "stime", &on, 1) != 1 || on != 0;
+}
+bool saveLimitsOn(Store& st, bool on) {
+  const uint8_t v = on ? 1 : 0; uint8_t saved = 2;
+  st.save("sys", "stime", &v, 1);
+  return st.load("sys", "stime", &saved, 1) == 1 && saved == v;
 }
 static bool validWindow(const PlayWindow& w) {
   return w.version == 1 && w.enabled <= 1 && !w.reserved && w.startMinute < 1440 && w.endMinute < 1440 && w.startMinute != w.endMinute;

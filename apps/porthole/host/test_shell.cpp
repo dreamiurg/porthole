@@ -1359,9 +1359,9 @@ static void slowPresses() {
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
   slow({30, 66, 100, 28}, 1500); assert(on(sh, "picker") && sh.profileCount() == 1);   // No, keep!
   holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
-  slow({110, 68, 24, 24}, 1000);   // + held: 15 -> 25, not 26
-  tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 25);
+  assert(on(sh, "sys_time"));
+  slow({108, 59, 24, 18}, 1000);   // the session's + held: 15 -> 25, not 26, saved at once
+  assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 25);
 }
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
@@ -1374,9 +1374,9 @@ static void adminChangesAndReset() {
   uint16_t pin = 1235; st.save("sys", "admin", &pin, sizeof pin);
   bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234");
   tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_time"));
-  tapAt(sh, ms, {26, 119, 52, 20}); assert(on(sh, "sys_reset"));
+  tapAt(sh, ms, {27, 122, 52, 18}); assert(on(sh, "sys_reset"));
   int w = st.writes; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_time") && st.writes == w);
-  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, {27, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
   tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_admin"));
   shell::loadAll(st, p); assert(!p.rec[0].restUntil && !p.rec[0].playSec && !p.rec[1].dayPlaySec && p.rec[0].pin == 1112);
   tapAt(sh, ms, CODE_SET); typeAdminCode(sh, ms, "0000");
@@ -1413,41 +1413,61 @@ static void resetSelectedPlayerPin() {
   bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, {24, 68, 112, 24}); assert(on(sh, "launcher"));
 }
 
+// Session and daily total step on Screen time itself, each tap saved at once; the session never passes the daily total.
+static const ui::Box SESSION_MINUS = {28, 59, 24, 18}, SESSION_PLUS = {108, 59, 24, 18}, DAILY_MINUS = {28, 80, 24, 18};
+static const ui::Box LIMITS_SWITCH = {42, 38, 76, 18};
 static void limitSettingsFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
-  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
-  tapAt(sh, ms, {110, 68, 24, 24}); tapAt(sh, ms, ADMIN_HOME);
-  assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 15);
-  tapAt(sh, ms, {30, 42, 100, 22}); tapAt(sh, ms, {110, 68, 24, 24});
-  st.budget = st.writes; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_limits"));
-  assert(shell::loadLimits(st).sessionMinutes == 15);
-  st.budget = -1; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time"));
-  assert(shell::loadLimits(st).sessionMinutes == 16 && shell::loadLimits(st).dailyMinutes == 30);
-  tapAt(sh, ms, {30, 67, 100, 22}); tapAt(sh, ms, {26, 68, 24, 24}); tapAt(sh, ms, {82, 110, 52, 22});
-  assert(shell::loadLimits(st).dailyMinutes == 29 && shell::loadLimits(st).sessionMinutes == 16);
-  bootWithoutHours(sh, st, nullptr, 0, &sys); assert(shell::loadLimits(st).sessionMinutes == 16);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, SESSION_PLUS); assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 16);
+  st.budget = st.writes; tapAt(sh, ms, SESSION_PLUS); assert(shell::loadLimits(st).sessionMinutes == 16);   // did not land
+  st.budget = -1;
+  for (int i = 0; i < 20; i++) tapAt(sh, ms, SESSION_PLUS);   // stops at the daily total
+  assert(shell::loadLimits(st).sessionMinutes == 30 && shell::loadLimits(st).dailyMinutes == 30);
+  tapAt(sh, ms, DAILY_MINUS);   // a lower daily total takes the session with it
+  assert(shell::loadLimits(st).dailyMinutes == 29 && shell::loadLimits(st).sessionMinutes == 29);
+  tapAt(sh, ms, SESSION_MINUS); assert(shell::loadLimits(st).sessionMinutes == 28);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); assert(shell::loadLimits(st).sessionMinutes == 28);
+  assert(!shell::saveLimits(st, {31, 30}));
+  const shell::Limits older{35, 30}; st.save("sys", "limits", &older, sizeof older);   // saved before the cap
+  assert(shell::loadLimits(st).sessionMinutes == 30 && shell::loadLimits(st).dailyMinutes == 30);
+}
+// The master switch: off means no session, daily or window limit; the limits stay saved for when it is back on.
+static void limitsSwitch() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  assert(shell::loadLimitsOn(st));
+  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "");
+  shell::Profiles p; shell::loadAll(st, p);
+  p.rec[0].playDay = NOW / shell::DAY_SEC; p.rec[0].dayPlaySec = shell::DAILY_SEC; shell::saveRecord(st, p, 0);
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest"));
+  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  st.budget = st.writes; tapAt(sh, ms, LIMITS_SWITCH); assert(shell::loadLimitsOn(st));   // a failed write: still on
+  st.budget = -1; tapAt(sh, ms, LIMITS_SWITCH); assert(!shell::loadLimitsOn(st) && on(sh, "sys_time"));
+  const int w = st.writes; tapAt(sh, ms, SESSION_PLUS); assert(st.writes == w);   // no steppers while off
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // capped, window shut
+  assert(shell::loadLimits(st).dailyMinutes == 30);
+  assert(shell::saveLimitsOn(st, true)); sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest"));
 }
 static void windowSettingsFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); sh.begin(st, nullptr, 0, &sys);
   holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {30, 92, 100, 22}); assert(on(sh, "sys_window"));
+  tapAt(sh, ms, {30, 101, 100, 18}); assert(on(sh, "sys_window"));
   tapAt(sh, ms, {110, 70, 24, 20}); tapAt(sh, ms, {37, 125, 40, 20});
   assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 840);
-  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {110, 70, 24, 20});
+  tapAt(sh, ms, {30, 101, 100, 18}); tapAt(sh, ms, {110, 70, 24, 20});
   st.budget = st.writes; tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_window"));
   assert(shell::loadPlayWindow(st).startMinute == 840); st.budget = -1;
   tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 855);
-  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {42, 40, 76, 18}); tapAt(sh, ms, {83, 125, 40, 20});
+  tapAt(sh, ms, {30, 101, 100, 18}); tapAt(sh, ms, {42, 40, 76, 18}); tapAt(sh, ms, {83, 125, 40, 20});
   assert(!shell::loadPlayWindow(st).enabled);
   const auto before = shell::loadPlayWindow(st);
-  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, {27, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
   const auto after = shell::loadPlayWindow(st); assert(!memcmp(&before, &after, sizeof before));
-  tapAt(sh, ms, {82, 119, 52, 20}); assert(on(sh, "sys_allow")); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20});   // end early
+  tapAt(sh, ms, {81, 122, 52, 18}); assert(on(sh, "sys_allow")); tapAt(sh, ms, LIMIT_RESET);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {81, 122, 52, 18});   // end early
   sh.begin(st, nullptr, 0, &sys); assert(!shell::loadPlayWindow(st).enabled);
 }
 
@@ -1472,11 +1492,11 @@ static void familyAllowanceFlow() {
   p.rec[0].playDay = NOW / shell::DAY_SEC; p.rec[0].dayPlaySec = shell::DAILY_SEC;
   p.rec[0].restUntil = NOW + 600; p.rec[0].playSec = shell::SESSION_SEC; shell::saveRecord(st, p, 0);
   sh.begin(st, apps, 1, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, LIMIT_RESET);   // cancel does not grant an allowance
+  tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, LIMIT_RESET);   // cancel does not grant an allowance
   tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest")); tapAt(sh, ms, {50, 120, 60, 24});
   holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); const uint32_t started = ms;
+  tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); const uint32_t started = ms;
   tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher") && sh.openApp("One")); app.saving = true;
   Input active{}; active.down = true;
@@ -1719,7 +1739,7 @@ int main() {
   combinedRestPrompts();
   playWindowRules();
   temporaryAllowance();
-  limitSettingsFlow();
+  limitSettingsFlow(); limitsSwitch();
   monotonicPlayDuration();
   configurableLimits();
   resetSelectedPlayerPin();
