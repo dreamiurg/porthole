@@ -70,6 +70,13 @@ text = "Ukrainian pup names!"
 [[news]]
 date = "2026-11-22"
 game = "pets-club"
+size = "game"
+text = "Ukrainian sentences!"
+spot = "puzzles"
+
+[[news]]
+date = "2026-11-22"
+game = "pets-club"
 size = "big"
 spot = "books"
 text = "Books in Ukrainian!"

@@ -34,7 +34,7 @@ class Game : public App {
   const char* screenName() const override;
   Surface surface() const override { return screen_ == SC_UK || ukBook() ? SURFACE_RGB565 : SURFACE_INDEXED; }   // Andika over the frame
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich" "ukmeaning|uklook|uksyl MEANING" "read en|uk N" "readlevel en|uk N" (or "uk5": the sim passes one argument)
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich" "ukmeaning|uklook|uksyl MEANING" "uksent N" "read en|uk N" "readlevel en|uk N" (or "uk5": the sim passes one argument)
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
@@ -110,11 +110,15 @@ class Game : public App {
   // Ukrainian words (ukrainian.cpp); asked_, right_, answered_ and roundStars_ are the puzzles'
   learn::uk::Question ukQ_{}; uint32_t ukSeed_ = 0; uint16_t ukAsked_[learn::uk::ROUND] = {};
   uint16_t ukRecent_[16] = {}; uint8_t ukRecentN_ = 0;   // words asked lately (this visit), so the next rounds vary
-  int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0, ukUsed_ = 0;
+  int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0; uint16_t ukUsed_ = 0;
   // A miss leaves the question up: the options (or tiles) missed stay red and off (ukMissed_), a tile that is only out
   // of order flashes (ukFlash_). Only the first answer rates; ukDots_ is each question's: 0 not yet answered, 1 right
   // the first time, 2 found later. ukSeen_: the exercises whose line was shown this visit, which only the first one gets.
-  uint8_t ukMissed_ = 0, ukSeen_ = 0, ukDots_[learn::uk::ROUND] = {}; int8_t ukFlash_ = -1;
+  uint16_t ukMissed_ = 0; uint8_t ukSeen_ = 0, ukDots_[learn::uk::ROUND] = {}; int8_t ukFlash_ = -1;
+  // A sentence (ukQ_.kind SENTENCE, sentences_uk.h): which one, the round's places for them (bits), its tiles and where
+  // they are, the tiles tapped into the translation in order (ukBuilt_ of them), the misses, and when it was put up.
+  int8_t ukSent_ = -1; uint8_t ukSentAt_ = 0, ukMisses_ = 0, ukSeq_[learn::uk::MAX_BANK] = {};
+  learn::uk::Bank ukBank_{}; ui::Box ukTileBox_[learn::uk::MAX_BANK] = {}; uint32_t ukStartMs_ = 0;
 
   // ---- helpers
   void go(Screen s);
@@ -207,10 +211,10 @@ class Game : public App {
   void startReads(); void nextRead(); int readPages() const; int readAnswerTop() const;
   void updateLittle(); void drawLittle();
   void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
-  void startUk(); void nextUk(); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); void ukFresh(); bool ukFlashing() const;
+  void startUk(); void nextUk(); bool nextUkSentence(); void layUkBank(); void ukBuiltTexts(char (*out)[learn::uk::TILE_CHARS]) const; void ukSentenceDone(int last); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); void ukFresh(); bool ukFlashing() const;
   bool ukOpen(int i) const; uint8_t ukFill(int i) const;
-  void updateUk(); void updateUkOptions(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
-  void ukDebug() const; void ukDebugTiles() const; bool ukDebugCmd(const char* cmd);
+  void updateUk(); void updateUkOptions(); void updateUkTiles(); void updateUkSentence(); void drawUk(); void drawUkSentence(); void drawUkSentenceText(const uint16_t* pal); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
+  void ukDebug() const; void ukDebugTiles() const; void ukDebugSentence() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
   void finishAdoption();
   int tileX(int i) const { return (wordCols_ == 3 ? 41 : 28) + (i % wordCols_) * 26; }

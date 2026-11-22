@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "font.h"
+#include "games/pets-club/sentence_layout.h"
 #include "games/pets-club/ukrainian.h"
 #include "uk_fonts.h"
 
@@ -50,7 +51,7 @@ static void variety() {
   uint32_t rng = 99;
   uint16_t ring[16]; int n = 0, lowest = STEPS;
   for (int q = 0; q < 30; q++) {
-    for (int k = 0; k < KIND_COUNT; k++) {
+    for (int k = 0; k < WORD_KINDS; k++) {
       const int w = pick((Kind)k, STEPS * skills::LEVEL, rng, ring, n);
       CHECK(w >= 0);
       lowest = WORDS[w].step < lowest ? WORDS[w].step : lowest;
@@ -93,10 +94,11 @@ static bool covered(const font::Font& f, const char* s) {
   return true;
 }
 
+static void tileRows(int i, const Question& q, const int* tw);
 // A syllables question: its tiles in the font, the slots and the tiles in the circle.
 static void tileChecks(int i, const Question& q) {
   const Word& w = WORDS[i];
-  CHECK(q.tileCount == parts(w) + 1 && q.tileCount <= MAX_TILES);
+  CHECK(q.tileCount == parts(w) + (w.step >= DECOY_STEP ? 2 : 1) && q.tileCount <= MAX_TILES);
   int mine = 0, tw[MAX_TILES];
   for (int t = 0; t < q.tileCount; t++) {
     char s[16]; syllable(WORDS[q.tiles[t].word], q.tiles[t].part, s, sizeof s);
@@ -109,9 +111,19 @@ static void tileChecks(int i, const Question& q) {
   int widest = 0;   // the slots, all as wide as the widest syllable, in a row at y 66 to 88
   for (int t = 0; t < q.tileCount; t++) if (q.tiles[t].word == i) widest = tw[t] > widest ? tw[t] : widest;
   CHECK(parts(w) * widest + (parts(w) - 1) * 4 <= 150);
-  // inside the circle: three in a row (y 100 to 122), four as two rows of two (the lower one y 118 to 140)
+  tileRows(i, q, tw);
+}
+// The tiles inside the circle (three in a row, y 100 to 122; four as two rows of two; five as three and two, the lower
+// row y 118 to 140), and no two tiles read the same.
+static void tileRows(int i, const Question& q, const int* tw) {
   if (q.tileCount < 4) CHECK(tw[0] + tw[1] + tw[2] + 8 <= 134);
-  else CHECK(tw[0] + tw[1] + 4 <= 130 && tw[2] + tw[3] + 4 <= 104);
+  else if (q.tileCount == 4) CHECK(tw[0] + tw[1] + 4 <= 130 && tw[2] + tw[3] + 4 <= 104);
+  else CHECK(tw[0] + tw[1] + tw[2] + 8 <= 130 && tw[3] + tw[4] + 4 <= 104);
+  for (int a = 0; a < q.tileCount; a++)
+    for (int b = a + 1; b < q.tileCount; b++) {
+      char x[16], y[16]; syllable(WORDS[q.tiles[a].word], q.tiles[a].part, x, sizeof x); syllable(WORDS[q.tiles[b].word], q.tiles[b].part, y, sizeof y);
+      CHECK(q.tiles[a].word == i || q.tiles[b].word == i || strcmp(x, y));
+    }
 }
 
 // One word's own lines, measured where ukrainian.cpp draws them (physical px: 480 wide, a logical px is 3).
@@ -140,7 +152,7 @@ static void questions() {
   int tiles = 0, looks = 0;
   for (int i = 0; i < WORD_COUNT; i++) {
     wordLines(WORDS[i]);
-    for (int k = 0; k < KIND_COUNT; k++) {
+    for (int k = 0; k < WORD_KINDS; k++) {
       if (!fits(WORDS[i], (Kind)k)) continue;
       const Question q = build((Kind)k, i, rng);
       if (k == SYLLABLES) { tiles++; tileChecks(i, q); }
@@ -150,13 +162,96 @@ static void questions() {
   CHECK(tiles >= 60 && looks >= 60);
   // Every exercise has a word at every target a kid can have, none twice in a round.
   for (int t = 0; t <= STEPS * skills::LEVEL; t += 50)
-    for (int k = 0; k < KIND_COUNT; k++) {
+    for (int k = 0; k < WORD_KINDS; k++) {
       uint16_t asked[ROUND];
       for (int n = 0; n < ROUND; n++) { const int w = pick((Kind)k, t, rng, asked, n); CHECK(w >= 0 && fits(WORDS[w], (Kind)k)); asked[n] = (uint16_t)w; }
     }
 }
 
+// ---------------------------------------------------------------- sentences (sentences_uk.h)
+namespace lay = learn::uk::layout;
+using lay::laysOut;
+static Bank widestFirst(int i) { uint32_t rng = 1; Bank b = bank(i, rng); lay::widestFirst(SENTENCES[i], b); return b; }
+// Builds sentence i along order o, tile by tile, as the game checks a tap: each next tile fits, nothing else does
+// that the order would not take, and a decoy never fits.
+static void buildAlong(int i, int o) {
+  const Sentence& s = SENTENCES[i];
+  char built[MAX_BANK][TILE_CHARS], t[TILE_CHARS];
+  const int n = answerTiles(s);
+  for (int p = 0; p < n; p++) {
+    CHECK(orderTile(s, o, p, t));
+    CHECK(fitsNext(s, built, p, t));
+    for (int d = 0; d < count(s.decoys); d++) { listItem(s.decoys, d, t); CHECK(!fitsNext(s, built, p, t) && !inAnswer(s, t)); }
+    orderTile(s, o, p, built[p]);
+  }
+  char out[160]; int starts[4];
+  joined(built, n, true, out, sizeof out);
+  CHECK(lay::wrap(out, lay::ANSWER_Y, lay::DONE_LINES, starts) > 0);   // built, it fits its two lines
+  CHECK(memcmp(out, built[0], 2) != 0 || (out[0] >= 'A' && out[0] <= 'Z'));   // a capital first letter (2 bytes: Cyrillic)
+}
+static void sentenceContent(int i) {
+  const Sentence& s = SENTENCES[i];
+  const int n = answerTiles(s), d = count(s.decoys);
+  CHECK(s.step >= 1 && s.step <= SENTENCE_STEPS && s.toUk == (s.step >= 4));
+  CHECK(n >= 2 && d >= 1 && n + d <= MAX_BANK);
+  CHECK(covered(lay::textFont(), s.uk) && covered(lay::textFont(), s.en) && covered(lay::textFont(), s.tiles) && covered(lay::textFont(), s.decoys));
+  int starts[4];
+  CHECK(lay::wrap(s.toUk ? s.en : s.uk, lay::PROMPT_Y, lay::PROMPT_LINES, starts) > 0);   // the sentence in two lines
+  for (int a = 0; a < count(s.alt); a++) {   // an other order: every tile once
+    char seq[MAX_BANK + 1]; listItem(s.alt, a, seq, sizeof seq);
+    int seen = 0;
+    CHECK((int)strlen(seq) == n);
+    for (const char* c = seq; *c; c++) { CHECK(*c >= '0' && *c - '0' < n); seen |= 1 << (*c - '0'); }
+    CHECK(seen == (1 << n) - 1);
+  }
+  for (int o = 0; o <= count(s.alt); o++) buildAlong(i, o);
+  lay::Rect r[MAX_BANK];
+  CHECK(laysOut(s, widestFirst(i), r));
+  for (int t = 0; t < widestFirst(i).n; t++)   // every tile inside the circle
+    CHECK(r[t].w <= lay::chord(r[t].y, r[t].y + r[t].h) && r[t].y + r[t].h <= 80 + lay::R);
+}
+static void sentenceRules();
+static void sentences() {
+  int perStep[SENTENCE_STEPS + 1] = {}, fitted = 0, tries = 0;
+  for (int i = 0; i < SENTENCE_COUNT; i++) {
+    sentenceContent(i); perStep[SENTENCES[i].step]++;
+    uint32_t rng = (uint32_t)i * 7 + 1;
+    for (int k = 0; k < 20; k++) { lay::Rect r[MAX_BANK]; fitted += laysOut(SENTENCES[i], bank(i, rng), r); tries++; }
+  }
+  for (int st = 1; st <= SENTENCE_STEPS; st++) CHECK(perStep[st] >= 10);
+  CHECK(fitted * 10 >= tries * 9);   // a shuffle almost always fits; the game reshuffles, then goes widest first
+  sentenceRules();
+}
+// What the game does with a sentence: its capital and tail, picking, places and rating.
+static void sentenceRules() {
+  // The capital letters the game makes: Latin, Cyrillic both halves, and і.
+  const char words[4][TILE_CHARS] = {"today", "сьогодні", "у", "із"};
+  const char* const want[4] = {"Today.", "Сьогодні.", "У.", "Із."};
+  for (int k = 0; k < 4; k++) { char out[40]; joined(&words[k], 1, true, out, sizeof out); CHECK(!strcmp(out, want[k])); }
+  // A long built line shows its end after "...", inside the circle.
+  char out[160]; lay::tail("today dad and I will go to school and then home again", out, sizeof out);
+  CHECK(!strncmp(out, "...", 3) && strstr(out, "again") && lay::textW(out) <= lay::textRoom(lay::ANSWER_Y));
+  // Picking: near the target, none asked lately; places: two, never the review's.
+  uint32_t rng = 5; uint16_t asked[ROUND];
+  for (int t = 0; t <= (SENTENCE_STEPS - 1) * skills::LEVEL; t += skills::LEVEL)
+    for (int n = 0; n < ROUND; n++) {
+      const int i = pickSentence(t, rng, asked, n);
+      CHECK(i >= 0 && abs(sentenceBeta(i) - t) <= skills::LEVEL / 2);
+      for (int m = 0; m < n; m++) CHECK(asked[m] != (SENTENCE_KEY | i));
+      asked[n] = (uint16_t)(SENTENCE_KEY | i);
+    }
+  for (int k = 0; k < 50; k++) { const uint8_t at = sentencePlaces(rng, 2); CHECK(__builtin_popcount(at) == SENTENCE_PLACES && !(at & 4)); }
+  // Rating: no miss is a full answer, one a slow one, more a wrong one.
+  CHECK(sentenceRight(0) && sentenceRight(1) && !sentenceRight(2));
+  CHECK(sentenceItem(0, 9000, 0).speed == skills::QUICK && sentenceItem(0, 9000, 1).speed == skills::SLOW);
+  CHECK(sentenceItem(0, 0, 0).skill == skills::READ_UK && sentenceItem(0, 0, 0).options == 1);
+  skills::Book b{};
+  CHECK(!sentencesOn(b));
+  skills::seed(b, skills::WORDS_UK, SENTENCE_FROM - 1, true);
+  CHECK(sentencesOn(b));
+}
+
 int main() {
-  calibration(); variety(); reviews(); questions();
-  printf("test_pets_uk: all checks passed (%d checks, %d words, %d lookalike sets)\n", checks, WORD_COUNT, LOOK_COUNT);
+  calibration(); variety(); reviews(); questions(); sentences();
+  printf("test_pets_uk: all checks passed (%d checks, %d words, %d lookalike sets, %d sentences)\n", checks, WORD_COUNT, LOOK_COUNT, SENTENCE_COUNT);
 }

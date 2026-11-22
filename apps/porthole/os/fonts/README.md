@@ -19,10 +19,10 @@ with Node and Python installed:
 ```sh
 mkdir -p build
 R=0x20-0x7e,0x2bc,0x404,0x406-0x407,0x410-0x429,0x42c,0x42e-0x449,0x44c,0x44e-0x44f,0x454,0x456-0x457,0x490-0x491,0x2019
-for n in 24 48 88; do
+for n in 24 36 48 88; do
   npx --yes lv_font_conv@1.5.3 --font os/fonts/Andika-Bold.ttf --range "$R" --size "$n" --bpp 4 \
     --format lvgl --no-compress --force-fast-kern-format --lv-include lvgl.h \
     --lv-font-name "uk_font_$n" --output "build/uk$n.c"
 done
-python3 tools/fontconv.py --game uk build/uk24.c build/uk48.c build/uk88.c
+python3 tools/fontconv.py --game uk build/uk24.c build/uk36.c build/uk48.c build/uk88.c
 ```
