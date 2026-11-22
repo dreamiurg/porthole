@@ -99,7 +99,6 @@ GROWN_UPS = {
     "sys_remove",
     "sys_players",
     "sys_player_pin",
-    "sys_limits",
     "sys_clock",
     "sys_time",
     "sys_window",

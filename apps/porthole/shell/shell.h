@@ -68,7 +68,7 @@ class Shell {
                          SH_NEWS, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
-                         SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
+                         SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
                          SH_SYS_GAMES, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
@@ -89,10 +89,10 @@ class Shell {
   bool sound_ = true;                              // the buzzer, device-wide: "sys"/"sound" (one byte, 0 = off; missing = on)
   uint8_t adminPage_ = 0;
   Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
-  shell::Limits limits_{}, limitsDraft_{};
+  shell::Limits limits_{};
+  bool limitsOn_ = true;                           // screen time's master switch, "sys"/"stime" (off: no limits at all)
   shell::PlayWindow window_{}, windowDraft_{};
   shell::Allowance allowance_{};
-  uint8_t limitEditor_ = 0;   // session or daily
   shell::TextEntry zoneQuery_{}, zoneSearch_{}; int zonePage_ = 0;
   int page_ = 0;                                   // the launcher's page: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
@@ -125,6 +125,7 @@ class Shell {
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;
+  bool unlimited() const { return !limitsOn_ || allowance_.active(ms_); }   // screen time off, or a grown-up's 30 minutes
   void enforceCurrentBudget();
   bool guardScreenTime();
   void go(Screen s);
@@ -190,9 +191,8 @@ class Shell {
   void updateSysConfirm(); void drawSysConfirm();   // reset all limits, or remove the admin code
   void updateSysPlayers(); void drawSysPlayers();   // select whose profile PIN to remove
   void updateSysPlayerPin(); void drawSysPlayerPin();
-  void updateSysLimits(); void drawSysLimits();
   void updateSysClock(); void drawSysClock();
-  void updateSysTime(); void drawSysTime();
+  void updateSysTime(); void drawSysTime(); void stepLimits(); bool timeButtons();
   void updateSysWindow(); void drawSysWindow();
   void updateSysAllowance(); void drawSysAllowance();
   void updateSysZone(); void drawSysZone();

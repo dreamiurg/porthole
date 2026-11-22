@@ -17,7 +17,7 @@ void Shell::begin(shell::Store& st, App* const* apps, int nApps, shell::System* 
   for (int k = 0; k < nApps_; k++) ids_[k] = ids ? ids[k] : (uint8_t)(k + 1);
   gamesOff_ = shell::loadGamesOff(st);
   shell::loadAll(st, prof_);
-  limits_ = shell::loadLimits(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
+  limits_ = shell::loadLimits(st); limitsOn_ = shell::loadLimitsOn(st); window_ = shell::loadPlayWindow(st); allowance_.stop(); adminPage_ = 0;
   uint8_t l = shell::LIGHT_AUTO; st.load("sys", "lite", &l, 1);   // nothing saved yet (or a stray value): Auto
   light_ = l < shell::LIGHT_COUNT ? (shell::Light)l : shell::LIGHT_AUTO;
   if (st.load("sys", "admin", &adminPin_, sizeof adminPin_) != sizeof adminPin_) adminPin_ = 0;   // a stray size is no code
@@ -50,7 +50,7 @@ void Shell::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     &Shell::updateNews, &Shell::updateSysInfo, &Shell::updateSysUpd, &Shell::updateSysWifi, &Shell::updateSysPass,
     &Shell::updateSysJoin, &Shell::updateSysHome, &Shell::updateSysAddr, &Shell::updateSysFind, &Shell::updateLight, &Shell::updateSysAdmin, &Shell::updateSysPin, &Shell::updateSysPin,
     &Shell::updateSysPin, &Shell::updateSysConfirm, &Shell::updateSysConfirm, &Shell::updateSysPlayers, &Shell::updateSysPlayerPin,
-    &Shell::updateSysLimits, &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
+    &Shell::updateSysClock, &Shell::updateSysTime, &Shell::updateSysWindow, &Shell::updateSysAllowance,
     &Shell::updateSysZone, &Shell::updateSysZoneSearch, &Shell::updateSysGames, &Shell::updateApp};
   static_assert(sizeof UPDATE / sizeof UPDATE[0] == SH_APP + 1, "one update per screen, in Screen order");
   now_ = nowSec; ms_ = ms; in_ = in; allowance_.tick(ms_);
@@ -69,7 +69,7 @@ void Shell::render() {
     &Shell::drawNews, &Shell::drawSysInfo, &Shell::drawSysUpd, &Shell::drawSysWifi, &Shell::drawSysPass,
     &Shell::drawSysJoin, &Shell::drawSysHome, &Shell::drawSysAddr, &Shell::drawSysFind, &Shell::drawLight, &Shell::drawSysAdmin, &Shell::drawSysPin, &Shell::drawSysPin,
     &Shell::drawSysPin, &Shell::drawSysConfirm, &Shell::drawSysConfirm, &Shell::drawSysPlayers, &Shell::drawSysPlayerPin,
-    &Shell::drawSysLimits, &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
+    &Shell::drawSysClock, &Shell::drawSysTime, &Shell::drawSysWindow, &Shell::drawSysAllowance,
     &Shell::drawSysZone, &Shell::drawSysZoneSearch, &Shell::drawSysGames, &Shell::drawApp};
   static_assert(sizeof DRAW / sizeof DRAW[0] == SH_APP + 1, "one draw per screen, in Screen order");
   const ScreenFn fn = DRAW[screen_];     // see update()
@@ -108,10 +108,10 @@ void Shell::authorized() {
   holdTop_ = in_.y >= 80; go(SH_DELETE);   // the finger (long press or the code's last digit) is where "No" is safe
 }
 bool Shell::restingNow() const {
-  return !allowance_.active(ms_) && (!shell::windowAllows(window_, now_) || shell::restLeft(prof_.rec[active_], now_, limits_) > 0);
+  return !unlimited() && (!shell::windowAllows(window_, now_) || shell::restLeft(prof_.rec[active_], now_, limits_) > 0);
 }
 void Shell::enforceCurrentBudget() {
-  if (allowance_.active(ms_)) return;
+  if (unlimited()) return;
   const uint32_t before = rec().restUntil;
   shell::enforceBudget(rec(), now_, limits_);
   if (rec().restUntil != before) shell::saveRecord(*st_, prof_, active_);
@@ -230,7 +230,7 @@ void Shell::closeApp(const char* why) {
 void Shell::budgetTick() {   // per profile, across every game
   uint32_t dt = (ms_ - playTickMs_) / 1000; playTickMs_ += dt * 1000; lastTick_ = now_;
   const bool idle = activity_.idleMs(ms_) >= shell::IDLE_MS;
-  if (allowance_.active(ms_)) shell::playUnrestricted(rec(), now_, dt, idle);
+  if (unlimited()) shell::playUnrestricted(rec(), now_, dt, idle);
   else if (shell::play(rec(), now_, dt, idle, limits_)) { closeApp("time_up"); go(SH_REST); return; }
   if (rec().stars != savedStars_) flushApp(true);   // what they bought or earned them is in the game's save: it goes first
   if (now_ - lastRecordSave_ >= 60 || rec().stars != savedStars_) {   // checkpoint; stars a game changed go right away
@@ -689,7 +689,7 @@ bool Shell::clearPin(int id) {
 const char* Shell::screenName() const {
   static const char* const N[] = {"picker", "new_name", "new_avatar", "age", "pin_set", "pin_again", "pin", "delete", "no_delete", "launcher", "rest", "news", "sys_info", "sys_updates",
                               "sys_wifi", "sys_pass", "sys_join", "sys_home", "sys_addr", "sys_find", "light", "sys_admin", "sys_pin", "sys_pin_set", "sys_pin_again",
-                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_limits", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search",
+                              "sys_reset", "sys_remove", "sys_players", "sys_player_pin", "sys_clock", "sys_time", "sys_window", "sys_allow", "sys_zone", "sys_zone_search",
                               "sys_games"};
   static_assert(sizeof N / sizeof N[0] == SH_APP, "one name per shell screen, in Screen order");
   return screen_ == SH_APP ? app_->screenName() : N[screen_];
@@ -706,7 +706,7 @@ void Shell::debugPrint() {
          r ? r->age : 0, sound_ ? 1 : 0, (unsigned long)(r ? r->playSec : 0),
          (unsigned long)(r && r->playDay == now_ / shell::DAY_SEC ? r->dayPlaySec : 0),
          (unsigned long)(r ? shell::restLeft(*r, now_, limits_) : 0), TINTS[tint()], LIGHTS[light_], (unsigned)backlight());
-  printf("[limits session_min=%u daily_min=%u]\n", (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
+  printf("[limits limits_on=%u session_min=%u daily_min=%u]\n", (unsigned)limitsOn_, (unsigned)limits_.sessionMinutes, (unsigned)limits_.dailyMinutes);
   printf("[hours window_on=%u window_start=%u window_end=%u allow_min=%lu]\n", (unsigned)window_.enabled, (unsigned)window_.startMinute, (unsigned)window_.endMinute, (unsigned long)allowance_.minutesLeft(ms_));
   printf("[codes pin_wait=%lu admin_wait=%lu]\n", (unsigned long)(target_ >= 0 ? pinWait(target_) : 0),
          (unsigned long)pinWait(shell::ADMIN_LOCK));

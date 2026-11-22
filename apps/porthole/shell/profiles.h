@@ -19,7 +19,8 @@ constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
 // wall-clock seconds, so a day is os::dayOf(now) and it ends at local midnight; a clock that jumps: os/day.h.
 constexpr uint32_t DAY_SEC = os::DAY_SEC, DAILY_SEC = 30 * 60;
 // Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
-// Independent of profile/game records: changing a limit never resets usage or moves a save.
+// Independent of profile/game records: changing a limit never resets usage or moves a save. The session never exceeds
+// the daily total: saveLimits refuses it, and loadLimits brings an older saved session down to the daily total.
 struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };
 static_assert(sizeof(Limits) == 4, "sys/limits is two uint16 minute counts");
 // No touch and no move of the board (ActivityTracker, os/input.h) for this long is not play (counts toward neither
@@ -39,6 +40,10 @@ class Store {
 };
 Limits loadLimits(Store& st);
 bool saveLimits(Store& st, const Limits& limits);   // validates and verifies persistence; caller updates RAM only on success
+// The master switch, "sys"/"stime": one byte, 0 = screen time off (no session, daily or play-window limit); missing = on.
+// Its own key, so "sys"/"limits" keeps its four bytes; the limits and the window stay saved for when it is back on.
+bool loadLimitsOn(Store& st);
+bool saveLimitsOn(Store& st, bool on);   // read back: false if it did not land
 
 // Separate, versioned device schedule. Local play is allowed [startMinute, endMinute); an overnight
 // interval is valid. Equal endpoints are rejected instead of hiding an ambiguous all-day/no-play setting.
