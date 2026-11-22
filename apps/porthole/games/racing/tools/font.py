@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Rally's text: Russo One (SIL OFL 1.1, art/fonts/) rasterized to the runtime's 4 bpp font format (os/font.h).
 
-Four sizes, ASCII 32..126 plus the Ukrainian alphabet (EXTRAS: a kid may name a profile in Ukrainian), no kerning. FreeType's output can change between Pillow releases, so the header records
-the font file's SHA-256 and the Pillow it was made with: --check always fails on a changed font file, and also
-re-renders and compares byte for byte when this Pillow is that one.
+Four sizes, ASCII 32..126 plus the Ukrainian alphabet (EXTRAS: a kid may name a profile in Ukrainian), no kerning.
+FreeType's output can change between Pillow releases, so the header records the font file's SHA-256 and the Pillow
+it was made with: --check always fails on a changed font file, and also re-renders and compares byte for byte when this Pillow is that one.
   python3 games/racing/tools/font.py           regenerate fonts.h (with the pinned Pillow)
   python3 games/racing/tools/font.py --check   fail if fonts.h is stale
 """
