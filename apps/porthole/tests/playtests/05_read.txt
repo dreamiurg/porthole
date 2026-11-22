@@ -78,7 +78,7 @@ tap 80 132
 wait 450
 expect-screen read
 expect page=0
-# the Ukrainian shelf: a level-1 book in the big Andika, then a level-2 one (a reader at the top level; 3-5 follow)
+# the Ukrainian shelf: a level-1 book in the big Andika, then a level-5 one in the small
 newgame Sam Biscuit
 wait 2400
 tap 92 129
@@ -109,11 +109,11 @@ wait 800
 tap 80 80
 wait 450
 expect-screen books
-# a kid who reads Ukrainian well: the shelf moves up, to the highest level there is
+# a kid who reads Ukrainian well: the shelf moves up to level 5
 dbg readlevel uk5
 wait 450
 expect shelf=uk
-expect book_level=2
+expect book_level=5
 snap 10_uk_shelf_top
 tap 80 132
 wait 450
