@@ -1,0 +1,41 @@
+newgame Mila Pup
+wait 2500
+tap 66 129
+wait 800
+tap 80 99
+wait 800
+tap 80 137
+wait 800
+tap 80 89
+wait 600
+tap 80 137
+wait 600
+tap 80 113
+wait 2500
+tap 122 112
+wait 600
+tap 46 112
+wait 600
+tap 88 112
+wait 400
+tap 122 112
+wait 2500
+tap 80 137
+wait 150
+tap 80 89
+wait 2500
+tap 80 113
+wait 600
+tap 80 137
+wait 700
+snap f1
+wait 100
+snap f2
+wait 100
+snap f3
+wait 100
+snap f4
+wait 100
+snap f5
+wait 2000
+snap f6

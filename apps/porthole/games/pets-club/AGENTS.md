@@ -35,8 +35,12 @@ layout, and the age-based content tables.
   `tests/playtests/0a_puzzles_reads.txt`. `debugCmd rich` adds 50 stars.
 - `ukrainian.cpp` / `ukrainian.h`: Ukrainian words, the Puzzles screen's fourth button (design page approved
   2026-11-21). Rounds of five; three exercises take turns: a word's meaning (three English choices), a lookalike
-  (the English, three Ukrainian words a letter apart: кіт / кит / кут, with a hint after a miss) and syllables tapped
-  in order with one decoy (со-ба-ка). The rating, the calibration and the stars are the shared engine's
+  (the English, three Ukrainian words a letter apart: кіт / кит / кут) and syllables tapped in order with one decoy
+  (со-ба-ка). Colors, not sentences, say how it went (redesign approved 2026-11-22): a right answer turns green and the
+  next question comes after a second; a miss turns the screen pink a moment, the option stays dark red and off, the
+  right one is not shown, and the kid tries again. Only the first answer rates the word. Five dots stand for the round
+  (green first try, orange found later); an exercise's line ("Which word means") shows the first time it comes in a
+  visit; the round's end is its stars drawn as stars and an arrow for another round. The rating, the calibration and the stars are the shared engine's
   (`os/skills.h`, skill `WORDS_UK`, through `AppEnter::book`): a word's step s (1..7) is level s - 1, plus
   `KIND_OFFSET` per exercise; `READ_MS` tells a guess, `SLOW_MS` a slow read. Words asked lately are kept out of the
   next picks (a RAM ring of 16), and a missed word comes back as a meaning on a later day (on the puzzles' review queue,

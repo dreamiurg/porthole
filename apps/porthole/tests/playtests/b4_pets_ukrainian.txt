@@ -1,8 +1,9 @@
 # Ukrainian words, the fourth Puzzles button: rounds of five, the three exercises (a meaning, a lookalike, syllables
 # tapped in order) taking turns, at the kid's level in the shared skills engine (os/skills.h, WORDS_UK): a new kid
-# calibrates, up while the answers are right and back after a miss. A miss shows the right word and what was picked;
-# the round's stars come at its end. An answer faster than a read (under 0.7 s) counts as a guess, so every answer here
-# waits first.
+# calibrates, up while the answers are right and back after a miss. A right answer turns green and the next question
+# comes by itself after a second; a miss turns red and stays, the right one is not shown, and the kid tries again (only
+# the first answer rates). Five dots stand for the round; its stars come at its end, as stars. An answer faster than a
+# read (under 0.7 s) counts as a guess, so every first answer here waits first.
 # The Ukrainian is Andika over the RGB565 frame (games/pets-club/ukrainian.cpp).
 newgame Sam Biscuit
 wait 2400
@@ -25,30 +26,32 @@ answer-uk right
 wait 450
 ui-check uk-right
 snap 03_right
-tap 80 133
-wait 450
+wait 700
+expect answered=-1
+expect asked=1
 snap 04_second
 wait 1600
 answer-uk right
 wait 450
 snap 05_second_right
-tap 80 133
-wait 450
+wait 700
 snap 06_third
 wait 1600
 answer-uk wrong
-wait 450
 ui-check uk-wrong
 snap 07_wrong
-sheet first-round
-tap 80 133
+wait 800
+expect answered=-1
+snap 07b_try_again
+answer-uk right
 wait 450
+snap 07c_found
+sheet first-round
+wait 700
 repeat 2
 wait 1600
 answer-uk right
-wait 450
-tap 80 133
-wait 450
+wait 1150
 end
 # the round's end: 4 right. The calibration went up a level, two, back one after the miss, then two and two: after a
 # miss the jump no longer doubles (level 5);

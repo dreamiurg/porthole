@@ -93,7 +93,7 @@ static bool covered(const font::Font& f, const char* s) {
   return true;
 }
 
-// A syllables question: its tiles in the font, a miss's line, the slots and the tiles in the circle.
+// A syllables question: its tiles in the font, the slots and the tiles in the circle.
 static void tileChecks(int i, const Question& q) {
   const Word& w = WORDS[i];
   CHECK(q.tileCount == parts(w) + 1 && q.tileCount <= MAX_TILES);
@@ -102,10 +102,6 @@ static void tileChecks(int i, const Question& q) {
     char s[16]; syllable(WORDS[q.tiles[t].word], q.tiles[t].part, s, sizeof s);
     mine += q.tiles[t].word == i;
     CHECK(covered(ukfont::FONT48, s));
-    char miss[80], first[16];   // a miss names the syllable wanted and the one tapped
-    syllable(w, 0, first, sizeof first);
-    snprintf(miss, sizeof miss, "After %s comes %s, not %s.", first, first, s);
-    CHECK(font::textWidth(ukfont::FONT24, miss) <= 420);
     tw[t] = (font::textWidth(ukfont::FONT48, s) + 2) / 3 + 8;   // ukrainian.cpp partW (at least 26)
     tw[t] = tw[t] < 26 ? 26 : tw[t];
   }
@@ -120,15 +116,8 @@ static void tileChecks(int i, const Question& q) {
 
 // One word's own lines, measured where ukrainian.cpp draws them (physical px: 480 wide, a logical px is 3).
 static void wordLines(const Word& w) {
-  CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl) && covered(ukfont::FONT24, w.en));
+  CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl));
   CHECK(font::textWidth(ukfont::FONT48, w.uk) <= 400);   // the big word falls back to 48 and still fits
-  char line[64];   // the answer shown: Andika 48, or 24 when that is too wide (ukrainian.cpp lineFont)
-  snprintf(line, sizeof line, "%s = %s", w.syl, w.en);
-  CHECK(font::textWidth(ukfont::FONT48, line) <= 420 || font::textWidth(ukfont::FONT24, line) <= 420);
-  snprintf(line, sizeof line, "Yes! It means %s.", w.en);   // a meaning's lines, one each (ukrainian.cpp drawUkMeaningText)
-  CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
-  snprintf(line, sizeof line, "%s is %s.", w.en, w.uk);
-  CHECK(font::textWidth(ukfont::FONT24, line) <= 420);
 }
 
 // A meaning or lookalike question: the right word among three different ones, each fitting its button.

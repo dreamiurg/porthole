@@ -2,6 +2,9 @@
 // five questions, the three exercises taking turns (ukrainian.h), at the kid's own level in the shared skills engine
 // (os/skills.h, WORDS_UK), which calibrates a new kid from the easiest word up and pays the round's stars at its end. A
 // missed word comes back as a meaning on a later day. No timer on screen: the time only tells a guess and a slow read.
+// Colors say how it went, not words (the redesign of 2026-11-22): a right answer turns green and the next question
+// comes by itself; a miss turns red and stays, the right one is not shown, and the kid tries again. Only the first
+// answer rates the word. Five dots stand for the round, and the stars at its end are stars.
 // The frame, the buttons and the English are Pets Club's own 8x8 art on the indexed frame; this screen is RGB565 so
 // the Ukrainian can be Andika (os/uk_fonts.h) drawn over it at native size. Telemetry (os/telemetry.h) gets
 // every answer, so the steps and the calibration can be tuned (docs/superpowers/specs/2026-11-21-ukrainian-telemetry.md).
@@ -20,11 +23,13 @@ namespace uk = learn::uk;
 namespace puzzles = learn::puzzles;
 
 namespace {
-constexpr uint32_t UK_SUMMARY_MS = 1000;   // as the puzzles': a slow second tap on the last Next must not skip the end
+constexpr uint32_t UK_SUMMARY_MS = 1000;   // a tap just after the last green pause must not start the next round
 constexpr uint32_t UK_TAP_GUARD_MS = 300;  // a double tap's second half lands on the next screen: it answers nothing
+constexpr uint32_t UK_NEXT_MS = 1000;      // a right answer stays green this long, then the next question comes by itself
+constexpr uint32_t UK_FLASH_MS = 500;      // a miss turns the screen pink this long; the option missed stays red
 const uint8_t OPTION_COLS[uk::OPTIONS] = {C_GREEN, C_ORANGE, C_BLUE};
 const char* const KIND_NAMES[uk::KIND_COUNT] = {"meaning", "lookalike", "syllables"};
-const ui::Box UK_NEXT = {56, 122, 48, 22}, UK_MORE = {50, 118, 60, 22};
+const ui::Box UK_MORE = {50, 118, 60, 22};
 ui::Box optionBox(int i) { return {38, 78 + i * 24, 84, 22}; }   // the lowest inside the circle
 constexpr int SLOT_Y = 66, TILE_Y = 92, TILE_H = 22, TILE_GAP = 4;
 // A word asked into the ring of the last N, the oldest going.
@@ -76,18 +81,24 @@ const uint16_t* palette565(Tint t) {
   }
   return pal[t < TINT_COUNT ? t : TINT_DAY];
 }
-// A line of Ukrainian as big as it fits: Andika 48, or 24 for a long one.
-const font::Font& lineFont(const char* s) { return font::textWidth(ukfont::FONT48, s) <= 420 ? ukfont::FONT48 : ukfont::FONT24; }
+// An answer's mark on an option's right edge, half over it: a check on the right one, a cross on a miss.
+void mark(const ui::Box& b, bool right) {
+  const int cx = b.x + b.w - 1, cy = b.y + b.h / 2;
+  circle(cx, cy, 6, C_DKBROWN); circle(cx, cy, 5, C_WHITE);
+  if (right) blitTint(SPR_CHECK, cx - 4, cy - 3, C_DKGREEN); else blitTint(SPR_CROSS, cx - 3, cy - 3, C_RED);
+}
 // The word as big as it fits: Andika 88, or 48 for a long one.
 const font::Font& bigFont(const char* s) { return font::textWidth(ukfont::FONT88, s) <= 400 ? ukfont::FONT88 : ukfont::FONT48; }
 }  // namespace
 
 // ---------------------------------------------------------------- the round
 void Game::startUk() {
+  if (screen_ != SC_UK) ukSeen_ = 0;   // a new visit shows each exercise's line again, once
   if (!rng_) rng_ = pet::rnd(save_);
   skills::seed(*book_, skills::WORDS_UK, 0, false);   // a new kid calibrates from the easiest words
   pay_ = skills::start(*book_, now_);
-  ukSeed_ = puzzles::next(rng_); asked_ = right_ = roundStars_ = 0; ukFound_ = false;
+  ukSeed_ = puzzles::next(rng_); asked_ = right_ = roundStars_ = 0;
+  memset(ukDots_, 0, sizeof ukDots_);
   const int due = uk::due(save_, (uint16_t)pet::dayIndex(now_));   // a missed word takes one place, as a meaning
   ukReview_ = (int16_t)due;
   if (due >= 0) remember(ukRecent_, ukRecentN_, (uint16_t)due);   // not picked fresh as well
@@ -105,9 +116,12 @@ void Game::nextUk() {
   ukAsked_[asked_] = (uint16_t)word;
   remember(ukRecent_, ukRecentN_, (uint16_t)word);
   ukQ_ = uk::build(k, word, rng_);
-  ukBuilt_ = ukUsed_ = 0; answered_ = -1; screenMs_ = ms_;   // the time counts from here; a finger still down answers nothing
+  ukFresh();
 }
-// An answer: the engine's rating and the round's points, the review queue, and the telemetry event that tunes them.
+// A question just put up: nothing built, missed or answered, and the time counts from here (a finger still down
+// answers nothing).
+void Game::ukFresh() { ukBuilt_ = ukUsed_ = ukMissed_ = 0; ukFlash_ = -1; answered_ = -1; screenMs_ = ms_; }
+// The first answer: the engine's rating and the round's points, the review queue, and the telemetry event that tunes them.
 void Game::ukAnswer(bool right) {
   const uint32_t took = ms_ - screenMs_;
   const uk::Word& w = uk::WORDS[ukQ_.word];
@@ -115,115 +129,147 @@ void Game::ukAnswer(bool right) {
   skills::answer(*book_, pay_, uk::item(ukQ_.kind, ukQ_.word, took), right, took);
   const skills::State after = skills::get(*book_, skills::WORDS_UK);
   if (!right || took >= uk::READ_MS[ukQ_.kind]) uk::answered(save_, ukQ_.word, right, (uint16_t)pet::dayIndex(now_));   // a guess takes nothing off
-  right_ += right; screenMs_ = ms_;
+  right_ += right;
   pet::puzzleAnswered(save_, now_, right); markDirty();   // the counters and the bond; the stars are the engine's
-  if (right) { sound(SND_YIP); spawn(80, 96, 1, 4); }
   using telemetry::P;
   telemetry::emit("uk_answer", {P("kind", KIND_NAMES[ukQ_.kind]), P("word", w.en), P("step", (long)w.step),
                                 P("rating", (long)after.theta), P("correct", (long)right), P("ms", (long)took)});
   if (!before.calibrating || after.calibrating) return;
-  ukFound_ = true;
   telemetry::emit("uk_calibrated", {P("rating", (long)after.theta), P("answers", (long)before.n + 1)});
+}
+// A tap on option or tile i: the first one rates the word; a right one settles the question, a wrong one only says so.
+void Game::ukTried(int i, bool right) {
+  if (!ukDots_[asked_]) { ukDots_[asked_] = right ? 1 : 2; ukAnswer(right); }
+  screenMs_ = ms_;
+  if (right) { answered_ = i; ukFlash_ = -1; sound(SND_YIP); spawn(80, 96, 1, 4); return; }
+  ukFlash_ = (int8_t)i;
+}
+// The question was green long enough: the next one, or the round's end.
+void Game::ukAdvance() {
+  ukSeen_ |= (uint8_t)(1u << ukQ_.kind);
+  if (++asked_ < uk::ROUND) { nextUk(); return; }
+  pet::learnRoundDone(save_); payRound(); markDirty();
+  roundEndMs_ = screenMs_ = ms_; sound(SND_HAPPY); spawn(80, 60, 4, 10);
+  const skills::State k = skills::get(*book_, skills::WORDS_UK);
+  using telemetry::P;
+  telemetry::emit("level_finished", {P("game", name()), P("what", "ukrainian"), P("right", (long)right_),
+                                     P("asked", (long)uk::ROUND), P("rating", (long)k.theta),
+                                     P("calibrating", (long)k.calibrating)});
 }
 
 void Game::updateUk() {
-  if (backButton()) { go(SC_PUZZLES); return; }   // what was answered is kept; only the round's end is lost
-  if (ms_ - screenMs_ < UK_TAP_GUARD_MS) return;
+  if (backButton()) {   // what was answered is kept; a fifth right answer still in its green pause pays the round
+    if (answered_ >= 0 && asked_ == uk::ROUND - 1) ukAdvance();
+    go(SC_PUZZLES); return;
+  }
+  if (ukFlash_ < 0 && ms_ - screenMs_ < UK_TAP_GUARD_MS) return;   // after a miss the next try counts at once
   if (asked_ >= uk::ROUND) {
     if (ms_ - roundEndMs_ >= UK_SUMMARY_MS && tapBox(in_, UK_MORE) && pressedAfter(0)) startUk();
     return;
   }
-  if (answered_ >= 0) {
-    if (!tapBox(in_, UK_NEXT) || !pressedAfter(0)) return;
-    if (++asked_ < uk::ROUND) { nextUk(); return; }
-    pet::learnRoundDone(save_); payRound(); markDirty();
-    roundEndMs_ = screenMs_ = ms_; sound(SND_HAPPY); spawn(80, 60, 4, 10);
-    const skills::State k = skills::get(*book_, skills::WORDS_UK);
-    using telemetry::P;
-    telemetry::emit("level_finished", {P("game", name()), P("what", "ukrainian"), P("right", (long)right_),
-                                       P("asked", (long)uk::ROUND), P("rating", (long)k.theta),
-                                       P("calibrating", (long)k.calibrating)});
-    return;
-  }
-  if (ukQ_.kind == uk::SYLLABLES) { updateUkTiles(); return; }
+  if (answered_ >= 0) { if (ms_ - screenMs_ >= UK_NEXT_MS) ukAdvance(); return; }
+  if (ukQ_.kind == uk::SYLLABLES) updateUkTiles(); else updateUkOptions();
+}
+// Meaning and lookalike: a wrong option stays red and off; the right one settles the question.
+void Game::updateUkOptions() {
   for (int i = 0; i < uk::OPTIONS; i++) {
-    if (!tapBox(in_, optionBox(i)) || !pressedAfter(0)) continue;
-    answered_ = i;
-    ukAnswer(i == ukQ_.right);
+    if (!ukOpen(i) || !tapBox(in_, optionBox(i)) || !pressedAfter(0)) continue;
+    if (i != ukQ_.right) ukMissed_ |= (uint8_t)(1u << i);
+    ukTried(i, i == ukQ_.right);
     return;
   }
 }
-// Syllables, tapped in order: a tile that reads as the next syllable goes into its slot (two the same are the same);
-// any other ends the question as a miss.
+// Syllables, tapped in order: a tile that reads as the next syllable goes into its slot (two the same are the same).
+// Any other is a miss: one the word needs later only flashes; one it never needs stays red and off.
 void Game::updateUkTiles() {
   const uk::Word& w = uk::WORDS[ukQ_.word];
   for (int i = 0; i < ukQ_.tileCount; i++) {
-    if ((ukUsed_ >> i) & 1 || !tapBox(in_, tileBox(ukQ_, i)) || !pressedAfter(0)) continue;
+    if ((ukUsed_ >> i) & 1 || !ukOpen(i) || !tapBox(in_, tileBox(ukQ_, i)) || !pressedAfter(0)) continue;
     char want[16], got[16]; uk::syllable(w, ukBuilt_, want, sizeof want); syl(ukQ_.tiles[i], got);
-    if (strcmp(want, got)) { answered_ = i; ukAnswer(false); return; }
-    ukUsed_ |= (uint8_t)(1u << i); ukBuilt_++;
-    if (ukBuilt_ == uk::parts(w)) { answered_ = i; ukAnswer(true); }
+    if (strcmp(want, got)) {
+      bool later = false;
+      for (int p = ukBuilt_ + 1; p < uk::parts(w) && !later; p++) { uk::syllable(w, p, want, sizeof want); later = !strcmp(want, got); }
+      if (!later) ukMissed_ |= (uint8_t)(1u << i);
+      ukTried(i, false);
+      return;
+    }
+    ukUsed_ |= (uint8_t)(1u << i); ukBuilt_++; ukFlash_ = -1;
+    if (ukBuilt_ == uk::parts(w)) ukTried(i, true);
     return;
   }
 }
 
 // ---------------------------------------------------------------- drawing: the indexed frame, then the Ukrainian
-bool Game::ukRight() const {
-  if (ukQ_.kind == uk::SYLLABLES) return ukBuilt_ == uk::parts(uk::WORDS[ukQ_.word]);
-  return answered_ == ukQ_.right;
+bool Game::ukFlashing() const { return ukFlash_ >= 0 && ms_ - screenMs_ < UK_FLASH_MS; }   // a miss's tap set screenMs_
+// An option or tile still to tap: not missed, and the question not settled.
+bool Game::ukOpen(int i) const { return answered_ < 0 && !((ukMissed_ >> i) & 1); }
+// An option's or tile's fill: dark red once missed (a tile only out of order for a moment); once settled the right
+// one green and the rest gray.
+uint8_t Game::ukFill(int i) const {
+  if ((ukMissed_ >> i) & 1 || (ukFlashing() && ukFlash_ == i)) return C_PLUM;
+  if (answered_ >= 0) return i == answered_ ? C_GREEN : C_LTGRAY;
+  return OPTION_COLS[i % uk::OPTIONS];
 }
 void Game::drawUk() {
   if (asked_ >= uk::ROUND) { drawUkDone(); return; }
   const uk::Word& w = uk::WORDS[ukQ_.word];
-  const bool done = answered_ >= 0, right = done && ukRight();
-  clear(right ? C_MINT : C_WALL);   // green behind a right answer, as the puzzles
-  char b[48], s[96];
-  snprintf(b, sizeof b, "Ukrainian %d of %d", asked_ + 1, uk::ROUND); textCentered(80, 30, b, C_DKGRAY);
-  drawUkPrompt(w, done);
-  if (done) {   // what it was (drawUkText), then a cheer, the star's cheer or a nudge, and Next
-    fillNames(right ? learn::CHEERS[asked_ % uk::ROUND] : learn::NUDGES[asked_ % uk::ROUND], s, sizeof s);
-    if (right) learn::lines(104, s, C_DKBROWN, 2);   // a miss's own lines take its place
-    ui::button(in_, {UK_NEXT, "Next", nullptr, C_GREEN});
-  } else drawUkChoices(w);
+  clear(answered_ >= 0 ? C_MINT : ukFlashing() ? C_PINK : C_WALL);   // green once right, pink a moment on a miss
+  drawUkDots(30);
+  drawUkPrompt(w);
+  drawUkChoices(w);
   drawBackButton();
 }
-// The question's line under the title; after an answer, drawUkText's line says it with the word.
-void Game::drawUkPrompt(const uk::Word& w, bool done) {
-  if (ukQ_.kind == uk::MEANING) { textCentered(80, 40, "What does it mean?", C_PLUM); return; }
-  if (done) return;
-  char b[48];
-  textCentered(80, 40, ukQ_.kind == uk::LOOKALIKE ? "Which word means" : "Build the word for", C_PLUM);
-  snprintf(b, sizeof b, "\"%s\"", w.en);
-  const int scale = textWidth(b, 2) <= 120 ? 2 : 1;
-  textCentered(80, scale == 2 ? 50 : 53, b, C_NAVY, scale);
+// The round as five dots: green right the first time, orange found later, blue the one asked, cream to come.
+void Game::drawUkDots(int y) {
+  for (int i = 0; i < uk::ROUND; i++) {
+    const uint8_t c = ukDots_[i] == 1 ? C_GREEN : ukDots_[i] ? C_ORANGE : i == asked_ ? C_BLUE : C_CREAM;
+    circle(60 + i * 10, y, 3, C_DKBROWN); circle(60 + i * 10, y, 2, c);
+  }
 }
-// The buttons before an answer: the syllables' slots and tiles, or the three options.
+// The exercise's line, only the first time it comes this visit; under it the English to find (a meaning has none).
+void Game::drawUkPrompt(const uk::Word& w) {
+  static const char* const LINES[uk::KIND_COUNT] = {"What does it mean?", "Which word means", "Build the word for"};
+  if (!((ukSeen_ >> ukQ_.kind) & 1)) textCentered(80, 40, LINES[ukQ_.kind], C_DKBROWN);
+  if (ukQ_.kind == uk::MEANING) return;
+  const int scale = textWidth(w.en, 2) <= 120 ? 2 : 1;
+  textCentered(80, scale == 2 ? 50 : 53, w.en, C_NAVY, scale);
+}
+// The options with their marks, or the syllables' slots (green once the word is built) and tiles. One missed, or
+// any once the question is settled, takes no tap.
 void Game::drawUkChoices(const uk::Word& w) {
+  const bool done = answered_ >= 0;
   if (ukQ_.kind != uk::SYLLABLES) {
-    for (int i = 0; i < uk::OPTIONS; i++)
-      ui::button(in_, {optionBox(i), ukQ_.kind == uk::MEANING ? uk::WORDS[ukQ_.options[i]].en : nullptr, nullptr, OPTION_COLS[i]});
+    for (int i = 0; i < uk::OPTIONS; i++) {
+      const bool missed = (ukMissed_ >> i) & 1;
+      const ui::Button b = {optionBox(i), ukQ_.kind == uk::MEANING ? uk::WORDS[ukQ_.options[i]].en : nullptr, nullptr, ukFill(i)};
+      if (ukOpen(i)) ui::button(in_, b); else ui::drawButton(b, false);
+      if (missed || i == answered_) mark(b.box, !missed);
+    }
     return;
   }
-  for (int i = 0; i < uk::parts(w); i++) ui::panel(slotBox(ukQ_, i), C_CREAM, C_DKBROWN);
+  for (int i = 0; i < uk::parts(w); i++) ui::panel(slotBox(ukQ_, i), done ? C_GREEN : C_CREAM, C_DKBROWN);
   for (int i = 0; i < ukQ_.tileCount; i++) {
-    const ui::Box t = tileBox(ukQ_, i);
-    if ((ukUsed_ >> i) & 1) rect(t.x + 2, t.y + 2, t.w - 4, t.h - 4, C_PEACH);   // its place, now empty
-    else ui::button(in_, {t, nullptr, nullptr, OPTION_COLS[i % uk::OPTIONS]});
+    const ui::Button b = {tileBox(ukQ_, i), nullptr, nullptr, ukFill(i)};
+    if ((ukUsed_ >> i) & 1) rect(b.box.x + 2, b.box.y + 2, b.box.w - 4, b.box.h - 4, C_PEACH);   // its place, now empty
+    else if (ukOpen(i)) ui::button(in_, b);
+    else ui::drawButton(b, false);
   }
 }
-// The round's end, as the puzzles': how it went and the stars; the first round says the kid's level was found.
+// The round's end: its five dots and the stars it paid, drawn as stars (a heart when none); the arrow plays another round.
 void Game::drawUkDone() {
   clear(C_WALL);
-  ui::panel({18, 30, 124, 84}, C_CREAM, C_DKBROWN);
-  char b[64], s[64];
-  snprintf(b, sizeof b, "%d right this time!", right_); textCentered(80, 36, b, C_PLUM);
-  if (roundStars_) snprintf(b, sizeof b, "+%d star%s!", roundStars_, roundStars_ > 1 ? "s" : "");
-  else snprintf(b, sizeof b, "Almost a star!");
-  int y = learn::lines(50, b, C_NAVY, 2, 112);
-  fillNames(ukFound_ ? "Next time: words just right for you!" : "{pet} is so proud of you.", s, sizeof s);
-  learn::lines(y + 2, s, C_DKBROWN, 2, 112);
-  if (roundStars_) blit(SPR_STAR, 112, 50);
-  ui::button(in_, {UK_MORE, "More", nullptr, C_GREEN});
+  drawUkDots(40);
+  // shortcut: at most 12, two rows of 6; a round pays its stars, the same again as the day's first bonus, and 5 for a
+  // new best, so more would need a third row (or a number)
+  const int n = roundStars_ < 12 ? roundStars_ : 12, scale = n > 3 ? 2 : 3, step = 7 * scale + 4, rows = n > 6 ? 2 : 1;
+  for (int r = 0, done = 0; r < rows; r++) {
+    const int k = (n - done + rows - r - 1) / (rows - r), y = 62 - 7 * scale / 2 + (rows == 2 ? r * 22 - 7 : 0);
+    for (int i = 0; i < k; i++) blitScaled(SPR_STAR, 80 - (k * step - 4) / 2 + i * step, y, scale);
+    done += k;
+  }
+  if (!n) blitScaled(SPR_HEART, 80 - 7 * 3 / 2 - 1, 62 - 7 * 3 / 2, 3);   // no stars this time: the pup's heart, not a blank
+  ui::button(in_, {UK_MORE, nullptr, nullptr, C_GREEN});
+  blitTint(SPR_ARROW, UK_MORE.x + UK_MORE.w / 2 - 3, UK_MORE.y + UK_MORE.h / 2 - 4 + (ui::pressing(in_, UK_MORE) ? 1 : 0), C_DKBROWN);
   drawBackButton();
 }
 // The Ukrainian, at native size over the expanded frame: render() calls this last on SC_UK.
@@ -232,13 +278,12 @@ void Game::drawUkText() {
   gfx565::expandIndexed3(gfx::fb, pal);
   if (asked_ >= uk::ROUND) return;
   const uk::Word& w = uk::WORDS[ukQ_.word];
-  char s[80];
-  if (answered_ >= 0) { drawUkAnswerText(w, pal); return; }   // the word and what it means
+  char s[16];
   if (ukQ_.kind == uk::MEANING) { ukCentered(bigFont(w.uk), 80, 56, w.uk, pal[C_DKBROWN]); return; }   // a descender clears the options
   if (ukQ_.kind == uk::LOOKALIKE) {
     for (int i = 0; i < uk::OPTIONS; i++) {
       const ui::Box o = optionBox(i);
-      ukInBox(ukfont::FONT48, o, ui::pressing(in_, o), uk::WORDS[ukQ_.options[i]].uk, pal[ui::inkOn(OPTION_COLS[i])]);
+      ukInBox(ukfont::FONT48, o, ukOpen(i) && ui::pressing(in_, o), uk::WORDS[ukQ_.options[i]].uk, pal[ui::inkOn(ukFill(i))]);
     }
     return;
   }
@@ -246,67 +291,49 @@ void Game::drawUkText() {
   for (int i = 0; i < ukQ_.tileCount; i++) {
     if ((ukUsed_ >> i) & 1) continue;
     const ui::Box t = tileBox(ukQ_, i);
-    syl(ukQ_.tiles[i], s); ukInBox(ukfont::FONT48, t, ui::pressing(in_, t), s, pal[ui::inkOn(OPTION_COLS[i % uk::OPTIONS])]);
+    syl(ukQ_.tiles[i], s); ukInBox(ukfont::FONT48, t, ukOpen(i) && ui::pressing(in_, t), s, pal[ui::inkOn(ukFill(i))]);
   }
-}
-
-// After an answer: the word and what it means; after a lookalike missed, the one picked and what that means.
-void Game::drawUkAnswerText(const uk::Word& w, const uint16_t* pal) {
-  char s[80];
-  const bool right = ukRight(), picked = !right && ukQ_.kind == uk::LOOKALIKE;
-  if (ukQ_.kind == uk::MEANING) { drawUkMeaningText(w, right, pal); return; }   // the word stays; under it what it means
-  snprintf(s, sizeof s, "%s = %s", ukQ_.kind == uk::SYLLABLES && !right ? w.syl : w.uk, w.en);
-  ukCentered(lineFont(s), 80, picked ? 70 : 80, s, pal[C_NAVY]);
-  if (!picked) {
-    if (right) return;
-    char want[16], got[16], prev[16];   // which syllable it wanted, and the one tapped
-    uk::syllable(w, ukBuilt_, want, sizeof want); syl(ukQ_.tiles[answered_], got);
-    if (ukBuilt_) { uk::syllable(w, ukBuilt_ - 1, prev, sizeof prev); snprintf(s, sizeof s, "After %s comes %s, not %s.", prev, want, got); }
-    else snprintf(s, sizeof s, "It starts with %s, not %s.", want, got);
-    ukCentered(ukfont::FONT24, 80, 95, s, pal[C_DKBROWN]);
-    return;
-  }
-  const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
-  snprintf(s, sizeof s, "%s = %s", other.uk, other.en);
-  ukCentered(lineFont(s), 80, 86, s, pal[C_DKBROWN]);
-  font::textBox({&ukfont::FONT24, 330, 0, 0, font::Align::CENTER}, uk::hint(ukQ_), 75, 288, pal[C_SLATE]);
-}
-// A meaning answered: the word stays; under it what it means and, after a miss, the one picked.
-void Game::drawUkMeaningText(const uk::Word& w, bool right, const uint16_t* pal) {
-  char s[80];
-  const uk::Word& other = uk::WORDS[ukQ_.options[answered_]];
-  ukCentered(bigFont(w.uk), 80, 56, w.uk, pal[C_DKBROWN]);
-  snprintf(s, sizeof s, right ? "Yes! It means %s." : "It means %s.", w.en);
-  ukCentered(ukfont::FONT24, 80, right ? 90 : 86, s, pal[C_NAVY]);
-  snprintf(s, sizeof s, "%s is %s.", other.en, other.uk);
-  if (!right) ukCentered(ukfont::FONT24, 80, 97, s, pal[C_DKBROWN]);
 }
 
 // For `debug` and the playtest's answer-uk: the question, the level, and where to tap for the right answer (uk_taps,
-// in order) and for a wrong one (uk_wrong).
+// in order, from the syllables already built) and for a wrong one not yet missed (uk_wrong).
 void Game::ukDebug() const {
   if (screen_ != SC_UK) return;
   const skills::State k = skills::get(*book_, skills::WORDS_UK);
-  printf("uk_kind=%s uk_word=\"%s\" uk_step=%d asked=%d right=%d answered=%d uk_rating=%d uk_calibrating=%d uk_answers=%d",
-         KIND_NAMES[ukQ_.kind], uk::WORDS[ukQ_.word].en, uk::WORDS[ukQ_.word].step, asked_, right_, answered_,
+  printf("uk_kind=%s uk_word=\"%s\" uk_step=%d asked=%d right=%d answered=%d missed=%d uk_rating=%d uk_calibrating=%d uk_answers=%d",
+         KIND_NAMES[ukQ_.kind], uk::WORDS[ukQ_.word].en, uk::WORDS[ukQ_.word].step, asked_, right_, answered_, ukMissed_,
          k.theta, k.calibrating, k.n);
   auto mid = [](const ui::Box& b) { printf("%d,%d", b.x + b.w / 2, b.y + b.h / 2); };
   printf(" uk_taps=");
-  if (ukQ_.kind != uk::SYLLABLES) { mid(optionBox(ukQ_.right)); printf(" uk_wrong="); mid(optionBox((ukQ_.right + 1) % uk::OPTIONS)); puts(""); return; }
+  if (ukQ_.kind != uk::SYLLABLES) {
+    const int a = (ukQ_.right + 1) % uk::OPTIONS, b = (ukQ_.right + 2) % uk::OPTIONS;
+    mid(optionBox(ukQ_.right));
+    if (ukOpen(a) || ukOpen(b)) { printf(" uk_wrong="); mid(optionBox(ukOpen(a) ? a : b)); }   // none once both are missed
+    puts(""); return;
+  }
+  ukDebugTiles();
+}
+// The syllables' taps: the tiles in the word's order from the next slot, and a tile that is not next.
+void Game::ukDebugTiles() const {
+  auto mid = [](const ui::Box& b) { printf("%d,%d", b.x + b.w / 2, b.y + b.h / 2); };
   const uk::Word& w = uk::WORDS[ukQ_.word];
-  uint8_t used = 0; int wrong = -1;
-  for (int p = 0; p < uk::parts(w); p++) {
+  uint8_t used = ukUsed_; int wrong = -1;
+  for (int p = ukBuilt_; p < uk::parts(w); p++) {
     char want[16], got[16]; uk::syllable(w, p, want, sizeof want);
     for (int i = 0; i < ukQ_.tileCount; i++) {
       if ((used >> i) & 1) continue;
       syl(ukQ_.tiles[i], got);
       if (strcmp(want, got)) continue;
-      used |= (uint8_t)(1u << i); printf(p ? ";" : ""); mid(tileBox(ukQ_, i)); break;
+      used |= (uint8_t)(1u << i); printf(p > ukBuilt_ ? ";" : ""); mid(tileBox(ukQ_, i)); break;
     }
   }
-  char first[16], got[16]; uk::syllable(w, 0, first, sizeof first);
-  for (int i = 0; i < ukQ_.tileCount && wrong < 0; i++) { syl(ukQ_.tiles[i], got); if (strcmp(first, got)) wrong = i; }
-  printf(" uk_wrong="); mid(tileBox(ukQ_, wrong < 0 ? 0 : wrong)); puts("");
+  char next[16], got[16]; uk::syllable(w, ukBuilt_, next, sizeof next);
+  for (int i = 0; i < ukQ_.tileCount && wrong < 0; i++) {
+    syl(ukQ_.tiles[i], got);
+    if (!((ukUsed_ >> i) & 1) && ukOpen(i) && strcmp(next, got)) wrong = i;
+  }
+  if (wrong >= 0) { printf(" uk_wrong="); mid(tileBox(ukQ_, wrong)); }
+  puts("");
 }
 // Test hook: "ukmeaning X", "uklook X" or "uksyl X" puts the word that means X on screen as that exercise (Ukrainian).
 bool Game::ukDebugCmd(const char* cmd) {
@@ -317,7 +344,7 @@ bool Game::ukDebugCmd(const char* cmd) {
     for (int i = 0; i < uk::WORD_COUNT; i++) {
       if (strcmp(uk::WORDS[i].en, cmd + n) || !uk::fits(uk::WORDS[i], (uk::Kind)k)) continue;
       if (screen_ != SC_UK) startUk();
-      ukQ_ = uk::build((uk::Kind)k, i, rng_); ukBuilt_ = ukUsed_ = 0; answered_ = -1; screenMs_ = ms_;
+      ukQ_ = uk::build((uk::Kind)k, i, rng_); ukDots_[asked_] = 0; ukFresh();
       return true;
     }
     return false;
