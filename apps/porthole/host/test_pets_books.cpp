@@ -49,17 +49,15 @@ static void ukrainianBook(const Book& b) {
   }
 }
 
-// No level from lo up to the highest one with books is empty, so a shelf reaches for the nearest one (the top
-// levels, Ukrainian 3-5 and English 8, are still being written).
-static void noGaps(Lang l, int lo) {
-  int top = 0; for (int i = 0; i < count(l); i++) top = at(l, i).level > top ? at(l, i).level : top;
-  for (int lv = lo; lv <= top; lv++) { int n = 0; for (int i = 0; i < count(l); i++) n += at(l, i).level == lv; CHECK(n >= 1); }
+// Every level from lo to the language's top has books, so a shelf never waits for one.
+static void everyLevel(Lang l, int lo) {
+  for (int lv = lo; lv <= LEVELS[l]; lv++) { int n = 0; for (int i = 0; i < count(l); i++) n += at(l, i).level == lv; CHECK(n >= 1); }
 }
 
 static void ukrainianFits() {
   CHECK(NUM_UK_BOOKS >= 10);
   for (int i = 0; i < NUM_UK_BOOKS; i++) ukrainianBook(UK_BOOKS[i]);
-  noGaps(UK, 1); noGaps(EN, 2);
+  everyLevel(UK, 1); everyLevel(EN, 2);
 }
 
 // A fresh kid at every level: an unread book just right first, no book twice.
@@ -102,7 +100,7 @@ static int expectedWeight(const Book& b) {
 static void bookItem() {
   int longest = 0; for (int i = 1; i < NUM_UK_BOOKS; i++) if (words(UK_BOOKS[i]) > words(UK_BOOKS[longest])) longest = i;
   const Book& b = UK_BOOKS[longest];
-  CHECK(words(b) >= 40 && skimmed(b, 1000) && !skimmed(b, words(b) * MS_PER_WORD));
+  CHECK(words(b) >= 200 && skimmed(b, 1000) && !skimmed(b, words(b) * MS_PER_WORD));
   const skills::Item it = item(UK, longest);
   CHECK(it.skill == skills::READ_UK && it.beta == (b.level - 1) * skills::LEVEL && it.weight == expectedWeight(b));
   CHECK(item(UK, 0).weight == 1 && item(UK, 0).key == (1 << 8 | 0) && item(EN, 3).key == 3);

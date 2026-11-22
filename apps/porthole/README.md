@@ -203,8 +203,8 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 * **Needs, gently.** Food, fun, sleep and clean decay slowly and **stop at a floor: the dog never
   dies, runs away or resets.** Poop shows up a few hours after meals (one tap cleans it); muddy
   paws after playing mean a bath you give by rubbing the mud off.
-* **Read.** A library of original short stories on two shelves: 45 in English (levels 2 to 7) and 10 in
-  Ukrainian (levels 1 and 2). Each shelf picks books at your kid's level in that language, from how they answer.
+* **Read.** A library of original short stories on two shelves: 50 in English (levels 2 to 8) and 25 in
+  Ukrainian (levels 1 to 5). Each shelf picks books at your kid's level in that language, from how they answer.
   The dog sits and listens, and each story ends with one comprehension question. Reading is the
   biggest source of bond hearts.
 * **Play.** *Fetch*: slide to catch falling bones and dodge the bee. *Word Fetch*: read a clue,
