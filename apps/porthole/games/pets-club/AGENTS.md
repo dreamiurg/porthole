@@ -36,7 +36,13 @@ layout, and the age-based content tables.
 - `ukrainian.cpp` / `ukrainian.h`: Ukrainian words, the Puzzles screen's fourth button (design page approved
   2026-11-21). Rounds of five; three exercises take turns: a word's meaning (three English choices), a lookalike
   (the English, three Ukrainian words a letter apart: кіт / кит / кут) and syllables tapped in order with one decoy
-  (со-ба-ка). Colors, not sentences, say how it went (redesign approved 2026-11-22): a right answer turns green and the
+  (со-ба-ка; two from step 4, `DECOY_STEP`). Sentences ("Sentence builder" page approved 2026-11-22): once a kid
+  reads words at step 3 (`SENTENCE_FROM`), two of the round's five places are a sentence whose translation is built
+  from tiles tapped in order among decoys; a tile that can come next in any right order (`alt`) goes into the line
+  under it, one needed later flashes, a decoy goes dark red and off. Steps 1-3 build English, 4-5 Ukrainian among
+  wrong forms of the same words. Rated by its own skill `READ_UK` (no miss right, one miss slow, more wrong). The 60
+  sentences are hand-written in `sentences_uk.h`; `sentence_layout.h` places them in the circle (Andika 36, tiles
+  24x22, up to three rows) and the test checks every one fits. Colors, not sentences, say how it went (redesign approved 2026-11-22): a right answer turns green and the
   next question comes after a second; a miss turns the screen pink a moment, the option stays dark red and off, the
   right one is not shown, and the kid tries again. Only the first answer rates the word. Five dots stand for the round
   (green first try, orange found later); an exercise's line ("Which word means") shows the first time it comes in a
@@ -46,12 +52,12 @@ layout, and the age-based content tables.
   next picks (a RAM ring of 16), and a missed word comes back as a meaning on a later day (on the puzzles' review queue,
   `review.h`, as strand `REVIEW_STRAND`, so the save needs no new bytes). The screen is RGB565
   (`surface()`): the frame and English are the indexed art, expanded, then the Ukrainian is Andika Bold
-  (`os/uk_fonts.h`, OFL, 24/48/88 px, from `tools/fontconv.py --game uk`) drawn on top. Content `content_uk.h` is
+  (`os/uk_fonts.h`, OFL, 24/36/48/88 px, from `tools/fontconv.py --game uk`) drawn on top. Content `content_uk.h` is
   written by `tools/uk_words.py` (the word list, each word's step, the lookalike sets; `--check` in lint). Events
-  `uk_answer`, `uk_calibrated` and `level_finished` go out behind Usage stats; what tunes what:
+  `uk_answer`, `uk_sentence`, `uk_calibrated` and `level_finished` go out behind Usage stats; what tunes what:
   `docs/superpowers/specs/2026-11-21-ukrainian-telemetry.md`. Tested in `host/test_pets_uk.cpp`; playtest
-  `tests/playtests/b4_pets_ukrainian.txt` (`answer-uk right|wrong`); `debugCmd ukmeaning|uklook|uksyl X` shows the
-  word meaning X as that exercise.
+  `tests/playtests/b4_pets_ukrainian.txt` and `b5_pets_uk_sentences.txt` (`answer-uk right|wrong`);
+  `debugCmd ukmeaning|uklook|uksyl X` shows the word meaning X as that exercise, `uksent N` sentence N.
 - The Shop (Stats > Shop, `SC_SHOP`): a hub with a tile a shelf, Hats (`SC_HATS`) and Collars (`SC_COLLARS`), one
   page for both (`updateWear`/`drawWear`): arrows flip the shelf while the sitting dog tries each thing on, a tap
   wears what the kid owns, and buying is a 1 s hold on Buy that fills it plum (the farm's Yes pattern, shorter; a

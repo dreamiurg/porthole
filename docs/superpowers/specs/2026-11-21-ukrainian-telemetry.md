@@ -13,6 +13,7 @@ hashed player id, never a name, and the word only as its English meaning.
 | Event | When | Properties |
 |-------|------|-----------|
 | `uk_answer` | every answer | `kind` (`meaning`, `lookalike`, `syllables`), `word` (the English meaning, unique per word), `step` (1..7, the word's), `rating` (the engine's theta after the answer; step s is about 100 × (s − 1)), `correct` (1/0), `ms` (from the question shown to the answer) |
+| `uk_sentence` | a sentence built (from 2026-11-22) | `sentence` (its English; the same sentence can be at two steps, so read it with `step` and `dir`), `step` (1..5), `dir` (`uk_en` or `en_uk`), `misses` (wrong taps before it was built), `ms` (from the sentence shown to the last tile), `rating` (READ_UK's theta after it), `correct` (1 with at most one miss) |
 | `uk_calibrated` | the engine's calibration ends | `rating` (theta), `answers` (how many it took) |
 | `level_finished` | a round of five ends | `game` = `Pets Club`, `what` = `ukrainian`, `right`, `asked`, `rating`, `calibrating` |
 
@@ -26,6 +27,7 @@ change there goes to the stars thread's owner with the numbers, not into this ga
 | A word's step (`step()` in uk_words.py: syllables, letters, і ї є ґ щ ь ʼ, clusters, band, Russian-like, false friend; capped at 7) | formula | Per word, right rate against the kid's rating: a word answered right far more (or less) often than its step predicts is mis-stepped. Fit the formula's weights on all words once there are a few hundred answers; fix single words by hand before that. |
 | `KIND_OFFSET` (meaning 0, lookalike +100, syllables +50) | 0 / 100 / 50 | Right rate per kind at the same rating minus beta. |
 | `READ_MS` / `SLOW_MS` | 700 / 900 / 1500, 10 s / 10 s / 15 s | The `ms` distribution of right answers per kind: guesses are the fast hump; slow is the long tail. |
+| Sentences: `SENTENCE_FROM` (3), `SENTENCE_PLACES` (2 of 5), one miss = slow | 3 / 2 / 0.7 | `uk_sentence`: misses and right rate per step and `dir` against READ_UK's rating; a step most kids build with no miss is too easy. |
 | The ladder's words | 40 42 57 36 32 13 5 a step | Steps with few words repeat: a kid whose rating sits there sees the same words round after round. |
 
 The calibration should take 6–10 answers (`uk_calibrated.answers`) and the first rounds after it run near 80% right.

@@ -1,0 +1,55 @@
+# Ukrainian sentences (games/pets-club/sentences_uk.h): a sentence on top, its translation built from tiles tapped in
+# order. A tile that can come next goes into the line under the sentence; one the translation needs later flashes pink;
+# a decoy turns red and goes off. Built, the screen turns green with the whole translation over a check, and the next
+# question comes by itself. Steps 1-3 build English, steps 4-5 Ukrainian among wrong forms of the same words. Two of a
+# round's five are sentences once the kid reads words at step 3; here `dbg uksent N` puts each one up.
+newgame Sam Biscuit
+wait 2400
+tap 66 129
+wait 450
+tap 80 99
+wait 450
+tap 80 135
+wait 450
+expect-screen ukrainian
+dbg uksent 0
+wait 2600
+expect uk_kind=sentence
+ui-check uk-sentence-short
+snap 01_short
+answer-uk right
+wait 450
+expect misses=0
+ui-check uk-sentence-short-built
+snap 02_short_built
+# The most tiles a bank has: eight words and a decoy, in three rows.
+dbg uksent 24
+wait 2600
+ui-check uk-sentence-nine-tiles
+snap 03_nine_tiles
+answer-uk wrong
+wait 200
+expect misses=1
+ui-check uk-sentence-miss
+snap 04_miss
+wait 600
+answer-uk right
+wait 450
+ui-check uk-sentence-long-built
+snap 05_long_built
+# English to Ukrainian, the longest: the built line runs out of room and shows its tail after "...".
+dbg uksent 48
+wait 2600
+ui-check uk-sentence-en-uk
+snap 06_en_uk
+answer-uk wrong
+wait 600
+answer-uk wrong
+wait 600
+expect misses=2
+snap 07_en_uk_misses
+answer-uk right
+wait 450
+ui-check uk-sentence-en-uk-built
+snap 08_en_uk_built
+sheet sentences
