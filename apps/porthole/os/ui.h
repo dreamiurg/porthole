@@ -1,6 +1,7 @@
 // Shared widgets: the look every Porthole screen shares (shell and games). Stateless: each call draws and/or
 // hit-tests against the Input it is given, so the UI audit sees every region through Input::hit/tapIn.
 #pragma once
+#include <stddef.h>
 #include <stdint.h>
 #include "gfx.h"
 #include "input.h"
@@ -29,12 +30,14 @@ bool back(const Input& in);
 void drawHome();
 bool home(const Input& in);
 
-// Name keyboard: a field on top, then two pages of letters (A-M, N-Z) as a 4x4 grid of 24x22 keys with the page
-// switch, backspace and OK on the last row. `page` is the caller's (0 or 1; reset it with the name). Names are up to
-// 8 letters, first one capital.
+// Name keyboard: a field on top, then pages of letters as a 4x4 grid of 24x22 keys with the page switch, backspace and
+// OK on the last row, and an EN/UA key under it: English (A-M, N-Z) or the Ukrainian alphabet (three pages). `page` is
+// the caller's (0..4; reset it to 0 with the name). Names are up to 8 letters, first one capital, UTF-8 in `buf`, whose
+// `cap` bytes (with the terminator) are the save's: a Ukrainian letter takes 2, so a name may stop short of 8. `len` is
+// in bytes.
 constexpr int NAME_LEN = 8;
-bool keyboard(const Input& in, char* buf, int& len, uint8_t& page);   // true when OK is tapped with at least one letter
-void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint);   // hint shows while empty
+bool keyboard(const Input& in, char* buf, int& len, uint8_t& page, size_t cap);   // true on OK with at least one letter
+void drawKeyboard(const Input& in, const char* buf, uint8_t page, const char* hint, size_t cap);   // hint while empty
 
 // A press on a logical circle: the finger went down in it and is still in it.
 bool pressing(const Input& in, int cx, int cy, int r);

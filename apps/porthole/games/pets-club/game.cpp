@@ -8,6 +8,7 @@
 #include "sprites.h"
 #include "stars.h"
 #include "ticks.h"
+#include "utf8.h"
 
 using namespace gfx;
 
@@ -411,7 +412,7 @@ void Game::drawIntro() {
 
 // ---------------------------------------------------------------- pup name (the kid's name comes from the profile)
 // The same keyboard names a shelter pup (a save with no dog: prefilled with its shelter name, back to the kennels).
-void Game::setNameBuf(const char* name) { strncpy(nameBuf_, name, ui::NAME_LEN); nameBuf_[ui::NAME_LEN] = 0; nameLen_ = (int)strlen(nameBuf_); }
+void Game::setNameBuf(const char* name) { utf8::copy(nameBuf_, sizeof nameBuf_, name, ui::NAME_LEN); nameLen_ = (int)strlen(nameBuf_); }
 void Game::updateNamePet() {
   const bool shelter = haveSave_ && !save_.hasDog;
   if (shelter ? backButton() : homeButton()) { if (shelter) go(SC_SHELTER); else wantsHome_ = true; return; }   // not adopted yet: back out to the launcher
@@ -419,13 +420,13 @@ void Game::updateNamePet() {
     setNameBuf(PET_NAME_IDEAS[pet::rnd(save_) % 9]);
     return;
   }
-  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_)) return;
+  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_, sizeof nameBuf_)) return;
   if (shelter) adoptShelterPup();   // the house keeps its colors: no theme step
   else { strncpy(save_.petName, nameBuf_, sizeof save_.petName - 1); go(SC_THEME); }
 }
 void Game::drawNamePet() {
   clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name");
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", sizeof nameBuf_);
   circle(123, 29, 9, C_DKBROWN); circle(123, 28, 8, C_PINK); textCentered(123, 25, "?", C_DKBROWN);
   if (haveSave_ && !save_.hasDog) drawBackButton(); else ui::drawHome();
 }
@@ -463,8 +464,8 @@ static void wallpaper(const Theme& th, int h) {   // the room's wall color and i
   for (int y = 6; y < h; y += 12) for (int x = (y / 12) % 2 ? 6 : 0; x < 160; x += 12) pixel(x, y, th.dots);
 }
 static void fitName(const char* name, char* out, int maxW) {   // cut to fit a name plate; a house is known by its pup too
-  int n = 0; out[0] = 0;
-  while (name[n] && n < 11) { out[n] = name[n]; out[n + 1] = 0; if (textWidth(out) > maxW) { out[n] = 0; break; } n++; }
+  utf8::copy(out, 12, name);   // out is a name buffer; drop whole letters until it fits
+  for (int n = (int)strlen(out); n && textWidth(out) > maxW;) utf8::popLetter(out, n);
 }
 // The memory wall: each dog on the farm, oldest first, as a gold-edged picture of its pup sitting on the grass. Frames
 // fill a 2x2 grid; one or two share a middle row and a lone last one centers, so slot() counts in half cells.

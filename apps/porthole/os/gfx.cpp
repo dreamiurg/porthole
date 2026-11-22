@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "font8x8_basic.h"
+#include "font8x8_uk.h"
 
 #ifdef ESP_PLATFORM
 #pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
@@ -10,14 +11,17 @@
 namespace gfx {
 uint8_t fb[W * H];
 
+// Glyphs 0..127 are ASCII (font8x8_basic), 128.. the Ukrainian letters (font8x8_uk.h).
+constexpr int GLYPHS = 128 + UK_GLYPHS;
+static constexpr const unsigned char* rowsOf(int g) { return g < 128 ? font8x8_basic[g] : UK_FONT[g - 128]; }
 // Each glyph's ink bounds (inclusive columns), worked out of the font table at compile time: flash, not internal RAM.
-struct Ink { uint8_t left[128], right[128]; };
+struct Ink { uint8_t left[GLYPHS], right[GLYPHS]; };
 static constexpr Ink inkBounds() {
   Ink k{};
-  for (int ch = 0; ch < 128; ch++) {
+  for (int ch = 0; ch < GLYPHS; ch++) {
     int l = 8, r = -1;
     for (int row = 0; row < 8; row++) {
-      const uint8_t bits = font8x8_basic[ch][row];
+      const uint8_t bits = rowsOf(ch)[row];
       for (int x = 0; x < 8; x++) if (bits & (1 << x)) { if (x < l) l = x; if (x > r) r = x; }
     }
     if (r < 0) { l = 0; r = 2; }  // space & blanks: 3px wide
@@ -104,9 +108,22 @@ int glyphWidth(char ch) {
   unsigned char u = (unsigned char)ch; if (u >= 128) u = '?';
   return INK.right[u] - INK.left[u] + 1;
 }
+// Reads one UTF-8 character from s (moving s past it): its glyph, '?' for a letter the font lacks, -1 for a broken
+// sequence (a stray or missing continuation byte), which takes no room.
+static int nextGlyph(const char*& s) {
+  const uint8_t c = (uint8_t)*s++;
+  if (c < 0x80) return c;
+  int more = c >= 0xF8 ? 0 : c >= 0xF0 ? 3 : c >= 0xE0 ? 2 : c >= 0xC0 ? 1 : 0;
+  if (!more) return -1;
+  uint32_t cp = c & (0x3F >> more);
+  for (; more && ((uint8_t)*s & 0xC0) == 0x80; more--) cp = cp << 6 | ((uint8_t)*s++ & 0x3F);
+  if (more) return -1;
+  for (int i = 0; i < UK_GLYPHS; i++) if (UK_CODES[i] == cp) return 128 + i;
+  return '?';
+}
 int textWidth(const char* s, int scale) {
   int w = 0;
-  for (; *s; s++) w += (glyphWidth(*s) + 1) * scale;
+  while (*s) if (const int g = nextGlyph(s); g >= 0) w += (INK.right[g] - INK.left[g] + 2) * scale;
   return w > 0 ? w - scale : 0;
 }
 TextBox textLog[TEXT_LOG_MAX]; int textLogCount = 0; bool textLogEnabled = false;
@@ -120,12 +137,13 @@ void logText(int x, int y, int w, int h, uint8_t c) {
 }
 int text(int x, int y, const char* s, uint8_t c, int scale) {
   if (*s) logText(x, y, textWidth(s, scale), 8 * scale, c);
-  for (; *s; s++) {
-    unsigned char u = (unsigned char)*s; if (u >= 128) u = '?';
-    int l = INK.left[u], r = INK.right[u];
+  while (*s) {
+    const int g = nextGlyph(s);
+    if (g < 0) continue;
+    const unsigned char* bits = rowsOf(g);
+    int l = INK.left[g], r = INK.right[g];
     for (int row = 0; row < 8; row++) {
-      uint8_t bits = (uint8_t)font8x8_basic[u][row];
-      for (int gx = l; gx <= r; gx++) if (bits & (1 << gx)) {
+      for (int gx = l; gx <= r; gx++) if (bits[row] & (1 << gx)) {
         if (scale == 1) pixel(x + gx - l, y + row, c);
         else rect(x + (gx - l) * scale, y + row * scale, scale, scale, c);
       }

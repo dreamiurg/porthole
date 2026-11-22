@@ -92,7 +92,7 @@ uint32_t Game::homeLook() const {
 }
 void Game::drawHomeTop() {
   char name[NAME_LIMIT + 1], mood[48];
-  for (size_t i = 0; i < sizeof name; i++) name[i] = (char)toupper((unsigned char)save_.petName[i]);
+  memcpy(name, save_.petName, sizeof name); utf8::upper(name);
   if (save_.sleeping) snprintf(mood, sizeof mood, "dreaming of stories");
   else snprintf(mood, sizeof mood, "Day %u%s%s", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)]);
   if (!save_.sleeping) mood[strlen(mood) - strlen(STAGES[(int)stage(save_)])] = (char)tolower(STAGES[(int)stage(save_)][0]);

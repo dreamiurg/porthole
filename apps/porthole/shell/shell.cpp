@@ -280,9 +280,9 @@ void Shell::drawPick() {
 // ---------------------------------------------------------------- new profile: name -> face -> age -> code
 void Shell::updateName() {
   if (ui::back(in_)) { go(SH_PICK); return; }
-  if (ui::keyboard(in_, name_, nameLen_, namePage_)) { snprintf(draft_.name, sizeof draft_.name, "%s", name_); go(SH_AVATAR); }
+  if (ui::keyboard(in_, name_, nameLen_, namePage_, sizeof name_)) { snprintf(draft_.name, sizeof draft_.name, "%s", name_); go(SH_AVATAR); }
 }
-void Shell::drawName() { clear(C_WALL); ui::drawKeyboard(in_, name_, namePage_, "Your name?"); ui::drawBack(); }
+void Shell::drawName() { clear(C_WALL); ui::drawKeyboard(in_, name_, namePage_, "Your name?", sizeof name_); ui::drawBack(); }
 
 static ui::Box avatarCell(int i) { return {20 + (i % 4) * 30, 42 + (i / 4) * 32, 28, 30}; }
 void Shell::updateAvatar() {

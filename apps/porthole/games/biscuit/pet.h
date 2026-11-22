@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "os/save.h"   // not "save.h": a game may have its own
+#include "os/utf8.h"
 #include "day.h"
 
 namespace biscuit {
@@ -89,6 +90,10 @@ inline bool normalizeName(const char* in, char (&out)[NAME_LIMIT + 1]) {
   bool letter = false;
   for (size_t i = first; i < last; i++) {
     const char c = in[i];
+    if (utf8::ukrainian(utf8::letter2(in + i))) {   // a Ukrainian letter, two bytes; NAME_LIMIT counts bytes
+      if (n + 2 > NAME_LIMIT) { letter = false; break; }
+      out[n++] = c; out[n++] = in[++i]; letter = true; continue;
+    }
     if (isLetter(c)) letter = true;
     else if (c == ' ' && out[n - 1] == ' ') continue;   // n > 0: in[first] is not a space
     else if (isJoiner(c) && letter) letter = false;

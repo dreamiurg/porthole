@@ -60,3 +60,9 @@ date = "2026-11-21"
 game = "pets-club"
 size = "new"
 text = "Ukrainian words!"
+
+[[news]]
+date = "2026-11-22"
+game = "pets-club"
+size = "big"
+text = "Ukrainian pup names!"

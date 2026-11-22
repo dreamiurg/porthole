@@ -11,6 +11,7 @@
 #include "palette.h"
 #include "pictures.h"
 #include "save.h"
+#include "utf8.h"
 
 #ifdef ESP_PLATFORM
 #pragma GCC optimize("O2")   // the board builds -Os; this draws every frame
@@ -542,8 +543,8 @@ void raceButton(const View& v) {
   plate(b, flash ? GREEN : PLATE_HI, d.ready ? GOLD : GREEN);
   if (d.inviteFace) pic(*d.inviteFace, b.x * 3 + 10, b.y * 3 + 13, 2);
   const int x = b.x * 3 + 58;
-  char name[9];
-  snprintf(name, sizeof name, "%s", d.inviteName);
+  char name[12];
+  utf8::copy(name, sizeof name, d.inviteName, 8);
   text(x, b.y * 3 + 9, name, 2, flash ? INK : CREAM);
   text(x, b.y * 3 + 35, d.ready ? "Waiting" : "Race!", 2, flash ? INK : d.ready ? GOLD : GREEN);
   if (d.isNew) ui::newDot565(b);
@@ -581,11 +582,13 @@ void face(const pic::Pic* f, const char* name, int cx, bool gold) {
   centered(cx, 156, name, 2, gold ? GOLD : CREAM);
 }
 // The guest, until the host is on its grip page: two faces and the host's track.
+// A kid's name on a line: 8 letters at most, as the keyboard types (a longer legacy name is cut between letters).
+struct Name8 { char s[12]; explicit Name8(const char* n) { utf8::copy(s, sizeof s, n, 8); } };
 void lobbyPage(const View& v) {
   gfx565::clear(rgb888_to_565(INK));
   const Duo& d = v.duo;
   char line[40];
-  if (d.paired) snprintf(line, sizeof line, "Waiting for %.8s...", d.peerName);
+  if (d.paired) snprintf(line, sizeof line, "Waiting for %s...", Name8(d.peerName).s);
   else snprintf(line, sizeof line, "Joining...");
   heading(46, line, 2, ORANGE);
   face(d.face, "You", 180, true);
@@ -673,8 +676,8 @@ void boardRows(const View& v, int y) {
     clock(t, sizeof t, v.board[i].raceMs);
     // No lap a row: with four kids and long names a lap and the Power badge do not both fit the glass, and the Stock
     // board keeps races only (save.h); the Tuned board names the fastest lap on top.
-    if (v.board[i].power == NO_POWER) snprintf(line, sizeof line, "%d %.8s %s", i + 1, v.board[i].name, t);
-    else snprintf(line, sizeof line, "%d %.8s %s  P%u", i + 1, v.board[i].name, t, v.board[i].power);
+    if (v.board[i].power == NO_POWER) snprintf(line, sizeof line, "%d %s %s", i + 1, Name8(v.board[i].name).s, t);
+    else snprintf(line, sizeof line, "%d %s %s  P%u", i + 1, Name8(v.board[i].name).s, t, v.board[i].power);
     centered(240, y + i * 24, line, 2, v.board[i].me ? GOLD : CREAM);
   }
 }
@@ -695,7 +698,7 @@ void boardPage(const View& v) {
   if (!v.boardRows) heading(270, v.boardStock ? "No Stock times yet" : "No times yet", 2, DIM);
   if (fast >= 0) {   // row 1 is the fastest race already (times playtest, finding 3)
     lapTime(t, sizeof t, v.board[fast].lapMs);
-    snprintf(line, sizeof line, "Fastest lap %.8s %s", v.board[fast].name, t);
+    snprintf(line, sizeof line, "Fastest lap %s %s", Name8(v.board[fast].name).s, t);
     heading(226, line, 2, GREEN);
   }
   boardRows(v, 254);
@@ -707,8 +710,8 @@ void kidRow(const Kid& k, int y, bool gold) {
   if (k.face) pic(*k.face, 100, y - 8, 2);
   char t[16], line[48];
   if (k.home) clock(t, sizeof t, k.ms);
-  if (k.place && k.home) snprintf(line, sizeof line, "%s %.8s %s", ordinal(k.place), k.name, t);
-  else snprintf(line, sizeof line, "%.8s %s", k.name, k.home ? t : "racing...");
+  if (k.place && k.home) snprintf(line, sizeof line, "%s %s %s", ordinal(k.place), Name8(k.name).s, t);
+  else snprintf(line, sizeof line, "%s %s", Name8(k.name).s, k.home ? t : "racing...");
   text(152, y, line, 2, gold ? GOLD : CREAM);
 }
 void jointResults(const View& v) {
@@ -725,8 +728,8 @@ void jointResults(const View& v) {
   if (d.stars) snprintf(line, sizeof line, "+%d stars  Races together today: %d", d.stars, d.races);
   else snprintf(line, sizeof line, "Races together today: %d", d.races);
   heading(206, line, 2, GREEN);
-  if (d.peerAgain) { snprintf(line, sizeof line, "%s wants again!", d.peerName); heading(250, line, 2, GOLD); }
-  else if (d.gone && !d.noWinner) { snprintf(line, sizeof line, "%s left", d.peerName); heading(250, line, 2, DIM); }
+  if (d.peerAgain) { snprintf(line, sizeof line, "%s wants again!", Name8(d.peerName).s); heading(250, line, 2, GOLD); }
+  else if (d.gone && !d.noWinner) { snprintf(line, sizeof line, "%s left", Name8(d.peerName).s); heading(250, line, 2, DIM); }
   button(REPLAY, d.gone ? "Replay" : "Again", true);
   button(RESULT_TRACKS, "Tracks", true);
   button(RESULT_HOME, "Home", true);

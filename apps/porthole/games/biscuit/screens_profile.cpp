@@ -8,6 +8,7 @@
 #include "gfx565.h"
 #include "personalize.h"
 #include "ui565.h"
+#include "utf8.h"
 
 namespace biscuit {
 using namespace ui565;
@@ -19,7 +20,7 @@ constexpr int STICKER_PAGES = (NUM_STICKERS + STICKER_ROWS - 1) / STICKER_ROWS;
 // The keyboard types up to ui::NAME_LEN letters: a longer name (from before Porthole) starts the field empty.
 void Game::startNaming(const char* current) {
   const size_t n = strlen(current);
-  nameLen_ = n <= (size_t)ui::NAME_LEN ? (int)n : 0;
+  nameLen_ = utf8::count(current) <= ui::NAME_LEN && n < sizeof nameBuf_ ? (int)n : 0;
   memcpy(nameBuf_, current, (size_t)nameLen_); nameBuf_[nameLen_] = 0;
   namePage_ = 0;
 }
@@ -27,25 +28,25 @@ void Game::startNaming(const char* current) {
 // First visit: name the pup. Back leaves for the launcher; nothing is saved until it has a name.
 void Game::updateSetupPet() {
   if (ui::home(in_)) { wantsHome_ = true; return; }
-  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
+  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_, sizeof nameBuf_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty(); lastTickSec_ = lastCheckpointSec_ = now_;
   go(SC_HOME);
   say(SAY_HELLO, SCENE_IDLE);
 }
 void Game::drawSetupPet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name");
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", sizeof nameBuf_);
   ui::drawHome();
 }
 void Game::updateRenamePet() {   // a rename keeps everything but the name
   if (ui::back(in_)) { go(SC_PROFILE); return; }
-  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
+  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_, sizeof nameBuf_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty();
   go(SC_PROFILE);
 }
 void Game::drawRenamePet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name");
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name", sizeof nameBuf_);
   ui::drawBack();
 }
 

@@ -46,7 +46,10 @@ static void nameRules() {
   assert(normalized("  PiP   Ann  ", "PiP Ann") && normalized("  PiP  ", "PiP"));
   assert(normalized("Mary-Jane", "Mary-Jane") && normalized("D'Arcy", "D'Arcy") && normalized("Abcdefghijkl", "Abcdefghijkl"));
   static const char* const BAD[] = {"", "   ", "Abcdefghijklm", "-Pip", "Pip-", "A--B", "A -B", "A''B", "A\tB", "Pip\n",
-                                    "Pip2", "Pip\xc3\xa9", "<Pip>", "Ab2c"};
+                                    "Pip2", "Pip\xc3\xa9", "<Pip>", "Ab2c", "\xd0\x91\xd0\x91\xd0\x91\xd0\x91\xd0\x91\xd0\x91\xd0\x91",
+                                    "\xd0\xab", "\xd0"};   // 7 Ukrainian letters are 14 bytes; Ы is Russian; half a letter
+  assert(normalized("\xd0\x91\xd1\x96\xd0\xbc-\xd2\x91", "\xd0\x91\xd1\x96\xd0\xbc-\xd2\x91"));   // Бім-ґ
+  assert(normalized("\xd0\x87\xd0\xb6\xd0\xb0\xd0\xba\xd1\x96\xd1\x97", "\xd0\x87\xd0\xb6\xd0\xb0\xd0\xba\xd1\x96\xd1\x97"));
   for (const char* bad : BAD) {
     assert(normalized(bad, ""));
     assert(!biscuit::setPetName(p, bad, Now) && !p.named && !p.petName[0]);
