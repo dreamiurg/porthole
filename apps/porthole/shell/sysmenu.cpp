@@ -71,14 +71,19 @@ static void sbutton(const ui::Box& b, const char* label, uint8_t col, bool press
   stextC(b.x + b.w / 2, b.y + dy + (b.h - 8) / 2, label, ui::inkOn(fill));
 }
 
-// A text field, terminal style: s left-aligned (its tail when long) and a solid block after it, so nothing moves while
+// A text field, terminal style: s left-aligned (its tail after a gray "<" when long) and a solid block after it, so nothing moves while
 // it waits for a key; while empty, the hint in gray after the block. No block once t is full.
 static void sfield(const char* s, const TextEntry& t, const char* hint) {
   spanel({28, 25, 104, 11}, C_WHITE, C_DKBROWN);
   const bool cursor = t.len < TEXT_MAX;
-  while (stextW(s) > (cursor ? 93 : 98)) s++;
-  int x = 31 + stextW(s);
-  stext(31, 27, s, C_NAVY);
+  const int room = cursor ? 93 : 98, lead = stextW("<") + 1;
+  int x = 31;
+  if (stextW(s) > room) {   // a gray "<" says the start is cut off
+    stext(x, 27, "<", C_DKGRAY); x += lead;
+    while (stextW(s) > room - lead) s++;
+  }
+  stext(x, 27, s, C_NAVY);
+  x += stextW(s);
   if (cursor) { srect(x + 1, 27, 4, 8, C_NAVY); x += 6; }
   if (!t.len) stext(x, 27, hint, C_DKGRAY);
 }
