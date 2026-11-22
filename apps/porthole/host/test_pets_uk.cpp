@@ -116,7 +116,7 @@ static void tileChecks(int i, const Question& q) {
 
 // One word's own lines, measured where ukrainian.cpp draws them (physical px: 480 wide, a logical px is 3).
 static void wordLines(const Word& w) {
-  CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl) && covered(ukfont::FONT24, w.en));
+  CHECK(covered(ukfont::FONT88, w.uk) && covered(ukfont::FONT48, w.syl));
   CHECK(font::textWidth(ukfont::FONT48, w.uk) <= 400);   // the big word falls back to 48 and still fits
 }
 

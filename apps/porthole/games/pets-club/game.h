@@ -112,10 +112,9 @@ class Game : public App {
   uint16_t ukRecent_[16] = {}; uint8_t ukRecentN_ = 0;   // words asked lately (this visit), so the next rounds vary
   int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0, ukUsed_ = 0;
   // A miss leaves the question up: the options (or tiles) missed stay red and off (ukMissed_), a tile that is only out
-  // of order flashes (ukFlash_ since ukMissMs_). Only the first answer rates; ukDots_ is each question's: 1 first try,
-  // 2 found later. ukSeen_: the exercises whose line was shown this visit, which only the first one gets.
-  uint8_t ukMissed_ = 0, ukSeen_ = 0, ukDots_[learn::uk::ROUND] = {}; int8_t ukFlash_ = -1; bool ukRated_ = false;
-  uint32_t ukMissMs_ = 0;
+  // of order flashes (ukFlash_). Only the first answer rates; ukDots_ is each question's: 0 not yet answered, 1 right
+  // the first time, 2 found later. ukSeen_: the exercises whose line was shown this visit, which only the first one gets.
+  uint8_t ukMissed_ = 0, ukSeen_ = 0, ukDots_[learn::uk::ROUND] = {}; int8_t ukFlash_ = -1;
 
   // ---- helpers
   void go(Screen s);
@@ -201,8 +200,8 @@ class Game : public App {
   void startReads(); void nextRead(); int readPages() const; int readAnswerTop() const;
   void updateLittle(); void drawLittle();
   void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
-  void startUk(); void nextUk(); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); bool ukFlashing() const;
-  uint8_t ukOptionCol(int i) const; uint8_t ukTileCol(int i) const;
+  void startUk(); void nextUk(); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); void ukFresh(); bool ukFlashing() const;
+  bool ukOpen(int i) const; uint8_t ukFill(int i) const;
   void updateUk(); void updateUkTiles(); void drawUk(); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
   void ukDebug() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
