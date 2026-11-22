@@ -150,3 +150,49 @@ At the **end of round 1** (s13_g6). After five questions of "tap, wrong, tap aga
 - Iteration 1 (this report): no game fixes yet.
 - Brief notes for the next pass: add "play round 1 as a guesser and judge the end screen", "leave and resume mid-round with a power cycle", and "look for ї/є/ґ glyphs" (both untested here). Give the next pass a way to reach a later session without `skip`, so it can check whether prompts come back.
 - Judgment: **needs another pass.** M1 should be fixed and replayed by an independent agent before this is called done. m1-m6 should be fixed or explicitly deferred with the player impact stated above.
+
+## Retest on 25ae40e
+
+- Build: revision `25ae40e`; `apps/porthole/build/host/snap` sha256 `c698b071f13a140e1d682cc0878f35571fdb7cf3f109318f9c22102bee96854f` (`make snap`: up to date). Same persona and source-free rules: only taps and waits, decided from the frames. The playtester is the same agent as in iteration 1, so this is not a fresh first-time comprehension claim.
+- Change under test (as the coordinator described it): a round that pays no stars ends on a heart instead of a blank screen.
+- What I replayed:
+  1. The guesser round 1 from iteration 1, wrong first on every question (`traces/retest-t01.txt`).
+  2. One more round played as the child would (`traces/retest-t03.txt`, `retest-t05.txt`). Two questions were wrong on the first tap and right on the very next tap; three were right first try. Round 2's words differ from the earlier build (e.g. сон and nose), so I chose each tap from the frame.
+  3. A wrong tap followed by an immediate retry: вона, then вода 120 ms later.
+  4. Home right after the last answer, 250 ms after the right tap (`traces/retest-t06.txt`).
+
+### What the child saw
+
+- **All-orange round end** (`playtest-1/retest-t01_R1end2.png`): five orange dots, a big red pixel heart under them, a short confetti puff, and the green ▶ button.
+  - It is no longer empty. The child now reads "I got a heart, that's nice" rather than "it broke / I got nothing", so the sting is mostly gone.
+  - It doesn't clearly read as the pup being happy, though. The pup isn't on the screen, and there is no motion or words. In Pets Club the child already knows hearts as something counted and spent (the shelf heart, "♥1" on tricks). So the persona's first guess was "I won a heart", and they would look for it at home.
+  - Suggestion (not a blocker): show the pup with the heart (wagging or licking) so it reads as the pup loving them, not as currency.
+- **Mixed round end** (3 of 5 first try): **4 stars** (`playtest-1/retest-t05_R2end2.png`), and Puzzles shows 4 stars. The stars still aren't visually tied to the green dots, but a mixed round now pays something proportionate, and it no longer feels arbitrary in this one sample.
+- **Wrong, then retry at once** (`playtest-1/retest-t03_q2w.png` → `playtest-1/retest-t03_q2r.png`): pink flash and ✕ on вона; the tap on вода 120 ms later registers, and the ✓ celebration follows. This is unchanged and works.
+- **Home right after the last answer** (`playtest-1/retest-t06_back2.png`): lands on Puzzles, and the round's 4 stars were added, but the child never saw the star or heart screen. This is unchanged.
+
+### Verdict per finding
+
+| Finding | Status on 25ae40e |
+| --- | --- |
+| M1 round end says nothing / blank on 0 stars | **Fixed for the blank screen.** The leftover is downgraded to Minor: the heart is ambiguous (a reward vs the pup being happy), and the dots-to-stars link is unexplained. |
+| m1 puzzles hard to find | Still open (not changed) |
+| m2 instruction line only on first appearance | Still open (not rechecked in depth; round 2 again showed bare words) |
+| m3 guessing free and fast | Still open (a retry counts 120 ms after a wrong tap) |
+| m4 "your" → ваша | Not rechecked (the word didn't come up) |
+| m5 leaving after the last answer skips the reward screen | Still open (stars are kept) |
+| m6 home goes up one level | Still open |
+| n1-n5 | Not rechecked |
+
+Judgment: no Major remains from this report. The heart fix lets this child finish a bad round without feeling empty-handed. The lesser findings above still need fixing or an explicit deferral. A fresh agent should confirm that the heart is understood on a true first play.
+
+## Coordinator resolutions (Claude)
+
+- **M1, the blank round end:** fixed in 25ae40e, so a round with no stars now ends on the pup's heart. The retest marks it Minor: it no longer reads as "nothing", but the heart doesn't clearly mean "the pup is happy". Deferred: showing the pup itself on the end screen is a bigger art change for a follow-up.
+- **The tap swallowed after a miss** (found in code review, 38779aa): fixed. The retest saw a second try 120 ms after a miss count.
+- **Guessing costs nothing visible (m1):** kept as is. Дмитро asked that a kid keeps trying until the answer is right and that the answer is never given away (2026-11-22). Only the first answer rates the word and pays the stars.
+- **Instructions shown only the first time (m2):** kept as is. The redesign exists to cut text, and the big word and the choices carry the question. Revisit if the board shows kids stuck on the second round.
+- **Puzzles hidden in the play menu (m3), the word "your" (m4), and leaving mid-round dropping the round (m6):** these predate this change and are left for their own tasks.
+- **Back after the last answer skips the star screen (m5):** the stars are paid (fixed in 38779aa). Skipping the screen is what Back asks for.
+
+No Blocker or Major finding remains. Scope: emulator roleplay only, not tried on a board or with a child.
