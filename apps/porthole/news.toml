@@ -80,3 +80,10 @@ game = "pets-club"
 size = "big"
 spot = "books"
 text = "Books in Ukrainian!"
+
+[[news]]
+date = "2026-11-24"
+game = "pets-club"
+size = "game"
+spot = "books"
+text = "Old books are back!"

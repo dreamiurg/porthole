@@ -12,7 +12,7 @@
 #include "ticks.h"
 #include "utf8.h"
 
-static_assert(books::SHELF_MAX == 8, "Game::shelf_ holds books::SHELF_MAX");
+static_assert(books::SHELF_MAX == 64, "Game::shelf_ holds books::SHELF_MAX");
 static const int ANSWER_STEP = 24;   // 22 px answer buttons, 2 px apart; the lowest ends by y 137, inside the chord
 static books::Lang L(uint8_t l) { return (books::Lang)l; }
 
@@ -1020,7 +1020,8 @@ void Game::drawLibrary() {
     rect(b.x + 2, b.y + 2, b.w, b.h, C_DKBROWN); rect(b.x, b.y + dy, b.w, b.h, C_WOOD); frame(b.x, b.y + dy, b.w, b.h, C_DKBROWN);
     rect(80 - tw / 2 - 3, b.y + 3 + dy, tw + 6, 12, C_DKBROWN);   // a name plate: cream on the light wood is too faint
     textCentered(80, b.y + 5 + dy, NAMES[l], C_CREAM);
-    uint8_t sh[books::SHELF_MAX]; const int n = books::shelf(save_, lang, books::target(*book_, save_, lang), sh);
+    uint8_t sh[books::SHELF_MAX]; const int nAll = books::shelf(save_, lang, books::target(*book_, save_, lang), sh);
+    const int n = nAll < 8 ? nAll : 8;   // the first eight spines, the new ones first: the box holds no more
     const int x0 = 80 - n * 7 / 2, base = b.y + 42 + dy;
     rect(b.x + 6, base, b.w - 12, 3, C_DKWOOD);
     for (int i = 0; i < n; i++) {
