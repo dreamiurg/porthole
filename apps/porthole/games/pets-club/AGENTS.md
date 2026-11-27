@@ -228,9 +228,10 @@ touch them again. All of it stays in the struct because the layout is append-onl
 
 Two shelves in the library, English and Ukrainian, each with its own reading level from the shared skills engine
 (`os/skills.h`): `READ_EN` (Little reads move it too, and a new kid's starts where `readLevel` stands) and `READ_UK`
-(starts at level 1, calibrating). `books::shelf` (`books.h`) fills a shelf of up to 8 covers: the first unread book
+(starts at level 1, calibrating). `books::shelf` (`books.h`) puts every book of the language on its shelf: the first unread book
 at the kid's level (or the nearest level with one, above first), one unread a level up, one a level down, then books
-already read from two below to one above, newest first; it is never empty. Paws on a cover: 1 easy, 2 just right,
+already read from two below to one above, newest first, then every other book (the rest read, then the rest unread,
+nearest the level first), so no book ever leaves the shelf; the library's preview draws the first eight spines. Paws on a cover: 1 easy, 2 just right,
 3 a stretch. The question at a book's end is one answer to the engine, weighted by the book's length (one per 50
 words, up to 6, `skills::Item::weight`); a book paged faster than 150 ms a word counts as read but rates and pays
 nothing. The first read of a book pays stars at the engine's rate. Telemetry: `book_finished`.

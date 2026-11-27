@@ -19,7 +19,7 @@ static_assert(NUM_BOOKS <= 128 && NUM_UK_BOOKS <= 64, "Save::booksEn+booksEnMore
 
 namespace books {
 enum Lang : uint8_t { EN = 0, UK = 1 };
-constexpr int SHELF_MAX = 8;            // covers on one shelf
+constexpr int SHELF_MAX = 128;          // covers on one shelf: every book of the language (Save keeps 128 English marks)
 constexpr int LEVELS[2] = {10, 5};      // English 1..10 (Little reads are 1..5), Ukrainian 1..5
 constexpr uint32_t MS_PER_WORD = 150;   // 400 words a minute: paging faster is not reading
 constexpr int WORDS_PER_ITEM = 50;      // a book's answer pays one Little read's worth per 50 words, up to MAX_WEIGHT
@@ -72,11 +72,23 @@ inline int addRereads(const Save& s, Lang l, int t, uint8_t* out, int n) {
       if (at(l, i).level == level && read(s, l, i) && !has(out, n, i)) out[n++] = (uint8_t)i;
   return n;
 }
+// Every book not on the shelf yet: the read ones, newest first, then the unread ones, nearest level t first.
+inline int addRest(const Save& s, Lang l, int t, uint8_t* out, int n) {
+  for (int i = count(l) - 1; i >= 0; i--) if (read(s, l, i) && !has(out, n, i)) out[n++] = (uint8_t)i;
+  for (int d = 0; d < LEVELS[l]; d++)
+    for (int level : {t - d, t + d}) {
+      if (d == 0 && level != t) continue;
+      for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !has(out, n, i)) out[n++] = (uint8_t)i;
+    }
+  return n;
+}
 }  // namespace detail
 
 // The shelf for level t: the next unread book just right (or the nearest unread level, above first), one unread a
-// stretch above it and one unread easier, then books already read from two below to one above, to read again.
-// Returns how many indices went into out (up to SHELF_MAX), the new ones first.
+// stretch above it and one unread easier, then books already read from two below to one above, to read again, then
+// every other book, so no book ever leaves the shelf (Дмитро, 2026-11-24: a kid's old favorites must stay): the rest
+// already read, newest first, then the rest unread, nearest the level first. Returns how many indices went into out,
+// the new ones first: every book of the language.
 inline int shelf(const Save& s, Lang l, int t, uint8_t* out) {
   int n = 0;
   int right = detail::firstUnread(s, l, t, out, n);
@@ -88,8 +100,7 @@ inline int shelf(const Save& s, Lang l, int t, uint8_t* out) {
   const int lv = right >= 0 ? at(l, right).level : t;
   for (int level : {lv + 1, lv - 1}) { const int i = detail::firstUnread(s, l, level, out, n); if (i >= 0) out[n++] = (uint8_t)i; }
   n = detail::addRereads(s, l, t, out, n);
-  for (int i = count(l) - 1; i >= 0 && n < 1; i--) if (read(s, l, i)) out[n++] = (uint8_t)i;   // never an empty shelf
-  return n;
+  return detail::addRest(s, l, t, out, n);
 }
 
 // Paged through in ms (from its first page to its question): fast enough that it was not read.

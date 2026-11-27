@@ -74,7 +74,7 @@ class Game : public App {
   int wordIdx_[5] = {0}; int wordRound_ = 0, wordTyped_ = 0, wordCorrect_ = 0; char tiles_[12] = {0}; bool tileUsed_[12] = {false};
   int wordWrongTile_ = -1; uint32_t wordWrongUntil_ = 0; uint32_t wordSolvedUntil_ = 0; bool wordsDone_ = false;
   // library (the two shelves), the cover picker (SC_BOOKS) and the reader; books.h picks the shelf
-  uint8_t lang_ = 0, shelf_[8] = {}; int nShelf_ = 0, shelfLevel_ = 1;   // books::Lang, books::SHELF_MAX (game.cpp asserts)
+  uint8_t lang_ = 0, shelf_[128] = {}; int nShelf_ = 0, shelfLevel_ = 1;   // books::Lang, books::SHELF_MAX (game.cpp asserts)
   int bookSel_ = 0, page_ = 0, answerPick_ = -1; uint32_t answerUntil_ = 0, bookOpenMs_ = 0, bookAskMs_ = 0;
   // tricks / training
   int trickSel_ = 0; uint8_t seq_[6] = {0}; int seqLen_ = 2, seqShow_ = -1, seqInput_ = 0, trainRound_ = 0; uint32_t seqStepMs_ = 0;
