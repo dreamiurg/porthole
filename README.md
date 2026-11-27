@@ -57,6 +57,20 @@ screws. No soldering.
 put together. It is still a work in progress:
 [hardware/grip](hardware/grip). The [project page](https://porthole.dreamiurg.net/#case) shows it in 3D.
 
+**Twist-lock wheel.** Assemble the [R2 lower lid](hardware/case/stl/twist-lock/r2/side-groove-lid-r2.stl)
+with the [v1.4 bezel](hardware/case/stl/v1.4/puck_bezel.stl) and [v1.4 plate](hardware/case/stl/v1.4/puck_plate.stl).
+Keep the v1.4 power slider. For a new case, choose the best-fitting of the four
+[slider sizes](hardware/case/stl/v1.4/slider_test.stl). To mount the puck, align any pair of entry
+marks, insert it and turn it 30° clockwise until it clicks.
+
+- **Upgrade a printed v8 kid wheel.** Remove the center cover and steel ring, dry-fit the
+  [R2 hub](hardware/case/stl/twist-lock/r2/wheel-hub-r2.stl) in the recess with the index pointing up, then glue it in place.
+- **Print the wheel with the catches built in.** Print the [v9 front](hardware/grip/stl/grip_v9_kid_bayonet_front.stl).
+  It uses the [v8 kid back](hardware/grip/stl/grip_v8_kid_back.stl) and four [v7 pins](hardware/grip/stl/grip_v7_pin.stl).
+
+To check the fit with your printer and filament first, print the [lid ring](hardware/case/stl/twist-lock/r2/fit-test/lid-gauge.stl)
+and [hub ring](hardware/case/stl/twist-lock/r2/fit-test/hub-gauge.stl).
+
 <p align="center"><img src="site/images/grip.webp" width="600" alt="Renders of the steering-wheel grip holding the puck"></p>
 
 ## Contributing

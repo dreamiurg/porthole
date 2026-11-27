@@ -20,6 +20,7 @@ the face.
 
 import math
 import os
+import sys
 
 import bmesh
 import bpy
@@ -116,12 +117,16 @@ def pin_spots(m):
     return spots
 
 
-def subtract(ob, tool):
+def boolean(ob, tool, operation):
     select_only(ob)
     mod = ob.modifiers.new("b", "BOOLEAN")
-    mod.operation, mod.object, mod.solver = "DIFFERENCE", tool, "MANIFOLD"
+    mod.operation, mod.object, mod.solver = operation, tool, "MANIFOLD"
     bpy.ops.object.modifier_apply(modifier="b")
     bpy.data.objects.remove(tool, do_unlink=True)
+
+
+def subtract(ob, tool):
+    boolean(ob, tool, "DIFFERENCE")
 
 
 def cylinder(r, z0, z1, x=0.0, y=0.0, vertices=256):
@@ -242,5 +247,62 @@ def build(tag, width, pocket, extras):
     print("RESULT", tag, result)
 
 
-for i, (tag, width, pocket) in enumerate(VARIANTS):
-    build(tag, width, pocket, extras=i == 0)
+def socket_foot(cx, cy, datum, segments=256):
+    """Solid floor and flared root under the R2 socket. First layer on the split plane."""
+    floor = datum - 1.05
+    profile = [(46.7, 0), (48.6, 1.9)]
+    # Ease into the R2 hoop, ending just inside its outer surface.
+    for i in range(25):
+        t = i / 24
+        profile.append((48.6 - 3.4 * t * t * (3 - 2 * t), 1.95 + 7.1 * t))
+    profile += [(44.7, 9.05), (42.1, floor - 0.10), (19.5, floor - 0.10), (19.4, floor), (18.9, floor)]
+    points = [(cx + r * math.cos(math.tau * i / segments), cy + r * math.sin(math.tau * i / segments), z) for r, z in profile for i in range(segments)]
+    faces = [tuple(reversed(range(segments)))]
+    for band in range(len(profile) - 1):
+        lo, hi = segments * band, segments * (band + 1)
+        for i in range(segments):
+            j = (i + 1) % segments
+            faces.append((lo + i, lo + j, hi + j, hi + i))
+    faces.append(tuple(range(len(points) - segments, len(points))))
+    mesh = bpy.data.meshes.new("Socket footing")
+    mesh.from_pydata(points, [], faces)
+    mesh.update()
+    foot = bpy.data.objects.new("Socket footing", mesh)
+    SC.collection.objects.link(foot)
+    return foot
+
+
+def build_bayonet():
+    """V9 front: blender -b --factory-startup --python hardware/grip/split_meshy_blender.py -- --bayonet
+
+    Reuses the printed v8 back and four v7 pins. The production R2 STL supplies
+    the entire working bore, marks, bearing pads and three lugs at actual size.
+    The v8 mating plane is z=0. The seated puck bottom is at z=4.85.
+    """
+    for ob in list(SC.objects):
+        bpy.data.objects.remove(ob, do_unlink=True)
+    cx, cy, datum = 0.12, 0.75, 5.05
+    stls = os.path.join(HERE, "stl")
+    bpy.ops.wm.stl_import(filepath=os.path.join(stls, "grip_v8_kid_front.stl"))
+    front = bpy.context.active_object
+    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "../case/stl/twist-lock/r2/wheel-hub-r2.stl"))
+    socket = bpy.context.active_object
+    socket.location = (cx, cy, datum)
+    # Remove the old badge seat and any spoke material in the new insertion envelope.
+    subtract(front, cylinder(45.15, datum - 1.55, 30, cx, cy))
+    # Crop off the glue flange and pilot before fusing the working surfaces.
+    subtract(socket, box(100, 100, -20, datum - 1.45, cx, cy))
+    foot = socket_foot(cx, cy, datum)
+    boolean(foot, socket, "UNION")
+    boolean(front, foot, "UNION")
+    front.name = "grip_v9_kid_bayonet_front"
+    print("RESULT", front.name, report(front))
+    select_only(front)
+    bpy.ops.wm.stl_export(filepath=os.path.join(stls, front.name + ".stl"), export_selected_objects=True)
+
+
+if "--bayonet" in sys.argv:
+    build_bayonet()
+else:
+    for i, (tag, width, pocket) in enumerate(VARIANTS):
+        build(tag, width, pocket, extras=i == 0)
