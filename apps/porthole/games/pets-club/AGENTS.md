@@ -235,7 +235,7 @@ nothing. The first read of a book pays stars at the engine's rate. Telemetry: `b
 
 | Shelf | Levels | Words per book | Page font |
 | --- | --- | --- | --- |
-| English | 2-8 (the first 30 books, once levels 1-3, are now 5-7; `content_books_en.h` adds 2-4 and 8) | `check_content.py` | 8x8, 122 px box |
+| English | 2-10 (the first 30 books, once levels 1-3, are now 5-7; `content_books_en.h` adds 2-4, 8, and 9-10 retold from public-domain classics: denser words and an inference question, the length capped by the screen like 8) | `check_content.py` | 8x8, 122 px box |
 | Ukrainian | 1: 15-40, 2: 40-80, 3: 80-150, 4: 140-220, 5: 200-300 | `check_books_uk.py` | Andika 48 px for 1-2, 24 px for 3-5 |
 
 Ukrainian level 1 has no я ю є ї or apostrophe; the font has no em dash or guillemets, so dialogue uses " - " and

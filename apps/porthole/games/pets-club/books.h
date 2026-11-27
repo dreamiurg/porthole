@@ -1,5 +1,5 @@
 // Pets Club's two bookshelves (the design page "Книжная полка на двух языках", approved 2026-11-22): English books
-// (content.h BOOKS, levels 2..8) and Ukrainian ones (content_books_uk.h UK_BOOKS, levels 1..5), each language's own
+// (content.h BOOKS, levels 2..10) and Ukrainian ones (content_books_uk.h UK_BOOKS, levels 1..5), each language's own
 // shelf picked for the kid's reading level in the shared skills engine (os/skills.h: READ_EN, which Little reads also
 // move, and READ_UK). The question at a book's end is one answer to the engine, weighted by the book's length; a book
 // paged through faster than anyone reads counts as read but rates nothing. Pure logic, no rendering;
@@ -20,7 +20,7 @@ static_assert(NUM_BOOKS <= 64 && NUM_UK_BOOKS <= 64, "Save::booksEn/booksUk are 
 namespace books {
 enum Lang : uint8_t { EN = 0, UK = 1 };
 constexpr int SHELF_MAX = 8;            // covers on one shelf
-constexpr int LEVELS[2] = {8, 5};       // English 1..8 (Little reads are 1..5), Ukrainian 1..5
+constexpr int LEVELS[2] = {10, 5};      // English 1..10 (Little reads are 1..5), Ukrainian 1..5
 constexpr uint32_t MS_PER_WORD = 150;   // 400 words a minute: paging faster is not reading
 constexpr int WORDS_PER_ITEM = 50;      // a book's answer pays one Little read's worth per 50 words, up to MAX_WEIGHT
 constexpr int MAX_WEIGHT = 6;
