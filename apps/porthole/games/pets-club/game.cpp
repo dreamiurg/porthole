@@ -12,7 +12,7 @@
 #include "ticks.h"
 #include "utf8.h"
 
-static_assert(books::SHELF_MAX == 64, "Game::shelf_ holds books::SHELF_MAX");
+static_assert(books::SHELF_MAX == 128, "Game::shelf_ holds books::SHELF_MAX");
 static const int ANSWER_STEP = 24;   // 22 px answer buttons, 2 px apart; the lowest ends by y 137, inside the chord
 static books::Lang L(uint8_t l) { return (books::Lang)l; }
 
@@ -153,7 +153,7 @@ void Game::debugCmd(const char* cmd) {
 // "books": six English books read; "read en|uk N": book N marked read; "readlevel en|uk N": the rating at level N.
 bool Game::debugBooks(const char* cmd) {
   if (!strcmp(cmd, "books")) {
-    memset(save_.booksEn, 0, sizeof save_.booksEn);
+    memset(save_.booksEn, 0, sizeof save_.booksEn); memset(save_.booksEnMore, 0, sizeof save_.booksEnMore);
     for (int i = 0; i < 6; i++) books::markRead(save_, books::EN, i);
     save_.booksRead = 6;
     return true;
@@ -1469,6 +1469,7 @@ void Game::wearIt(bool collars, int sel) {
 }
 void Game::buyIt(bool collars, int sel, int price, const char* name) {
   if (!stars::spend(wallet_, price)) return;
+  telemetry::emit("bought", {telemetry::P("game", this->name()), telemetry::P("item", name), telemetry::P("cost", (long)price)});
   if (collars) { save_.collarsOwned |= (uint8_t)(1u << sel); save_.collar = (uint8_t)sel; }
   else { pet::gotHat(save_, sel); save_.hat = (uint8_t)sel; }
   save_.lastBuyDay = (uint16_t)pet::dayIndex(now_); save_.lastBuyItem = (uint8_t)(collars ? 0x80 | sel : sel);   // for a later Give back

@@ -7,15 +7,15 @@ struct Book {
   const char* title;
   uint8_t cover;            // palette color of the cover
   uint8_t icon;             // 0 dog 1 moon 2 star 3 heart 4 leaf 5 bone 6 book 7 paw
-  uint8_t level;            // reading level: English 2..8, Ukrainian 1..5 (books.h)
+  uint8_t level;            // reading level: English 2..10, Ukrainian 1..5 (books.h)
   const char* pages[12];    // nullptr-terminated list, max 11 pages
   const char* question;
   const char* answers[3];   // up to 3, nullptr-terminated
   uint8_t correct;
 };
 
-// English books. level: 2..8 on the reading scale Little reads start (1..5) and books.h continues; the first twenty
-// were levels 1-2 and are 5-6 now, content_level3_books.h is 7. Append only: a book's index is persisted (Save::booksEn).
+// English books. level: 2..10 on the reading scale Little reads start (1..5) and books.h continues; the first twenty
+// were levels 1-2 and are 5-6 now, content_level3_books.h is 7. Append only: a book's index is persisted (Save::booksEn, then booksEnMore).
 inline constexpr Book BOOKS[] = {
   {"The Lost Ball", C_RED, 0, 5, {
     "Pip was a small brown dog with one white ear. Pip loved one thing more than treats. Pip loved his red ball.",
@@ -161,7 +161,7 @@ inline constexpr Book BOOKS[] = {
 #include "content_level3_books.h"
 #endif
 #if __has_include("content_books_en.h")
-#include "content_books_en.h"   // levels 2-4 and 8 (books.h): appended, so every older book keeps its index
+#include "content_books_en.h"   // levels 2-4 and 8-10 (books.h): appended, so every older book keeps its index
 #endif
 };
 static const int NUM_BOOKS = (int)(sizeof(BOOKS) / sizeof(BOOKS[0]));

@@ -23,7 +23,8 @@ namespace learn::uk {
 enum Kind : uint8_t { MEANING, LOOKALIKE, SYLLABLES, SENTENCE, KIND_COUNT };
 constexpr int WORD_KINDS = SENTENCE;   // the round's word exercises take turns; sentences have their own places
 constexpr int ROUND = 5, OPTIONS = 3, MAX_TILES = 5, STEPS = 7;
-constexpr int KIND_OFFSET[KIND_COUNT] = {0, 100, 50, 0};   // the same word, harder to find among lookalikes or to build
+constexpr int KIND_OFFSET[KIND_COUNT] = {0, 175, 50, 0};   // the same word, harder to find among lookalikes or to build
+// (lookalike 100 -> 175 on 2026-11-27: 96 answers right 64% where 100 predicted 77%; the likelihood fit peaks near 180)
 // Faster than this is a guess, not a read (the engine counts it wrong); slower is right but not yet fluent.
 constexpr uint32_t READ_MS[KIND_COUNT] = {700, 900, 1500, 2500};
 constexpr uint32_t SLOW_MS[KIND_COUNT] = {10000, 10000, 15000, 60000};

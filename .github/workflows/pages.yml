@@ -45,7 +45,7 @@ jobs:
           cp -r docs/games site/games
           cp docs/updates.png site/images/updates.png
           mkdir -p site/case
-          cp hardware/case/stl/v1.1/puck_bezel.stl hardware/case/stl/v1.1/puck_plate.stl hardware/case/stl/v1.2/puck_lid.stl site/case/
+          cp hardware/case/stl/v1.2/{puck_bezel,puck_plate,puck_lid}.stl site/case/
       - name: Copy the stable and the beta firmware for the install button
         env:
           GH_TOKEN: ${{ github.token }}

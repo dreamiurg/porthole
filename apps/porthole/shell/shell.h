@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "game_telemetry.h"
 #include "news.h"
 #include "pinlock.h"
 #include "profiles.h"
@@ -104,7 +105,8 @@ class Shell {
   uint32_t pinCalmUntil_ = 0, pinNudgeUntil_ = 0;   // the kids' wait: keys hidden until the finger rests; a tap wiggles it
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   uint32_t savedStars_ = 0;   // the open game's kid's stars as last saved: a change is saved at the next tick
-  uint32_t openedMs_ = 0, openedStars_ = 0;        // telemetry's game_closed: how long, and the stars earned
+  uint32_t openedStars_ = 0;                       // telemetry's game_closed: the stars earned
+  shell::GameTelemetry played_;                    // the open game's session, screens and heartbeat (telemetry)
   uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;

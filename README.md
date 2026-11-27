@@ -48,14 +48,25 @@ a 2.1-inch round 480x480 touchscreen with an ESP32-S3, a motion sensor, a clock,
 About $35 from Waveshare or $45 on [Amazon](https://www.amazon.com/dp/B0DDPQSKJD). Get the flat 2.1-inch
 model; the other sizes and the curved 2.1B are not supported. Specs and pins: [docs/hardware.md](docs/hardware.md).
 
-**The case** is a round puck that holds the board and a battery. Print the bezel and plate from
-[v1.1](hardware/case/stl/v1.1) and the lid from [v1.2](hardware/case/stl/v1.2) in PETG, add a protected 3.7 V
-LiPo (2000 mAh or more, 1.25 mm plug; check its polarity first, many ship reversed) and close it with M2
-screws. No soldering.
+**The case** holds the board and a protected 3.7 V LiPo (2000 mAh or more, 1.25 mm plug).
+Check the plug polarity first, as many batteries ship reversed. The [v1.2 puck folder](hardware/case/stl/v1.2)
+contains the bezel, plate and lid for the snap-on wheel. Print them in PETG and close the case with M2 screws.
 
-**The steering wheel** is a two-handed grip the puck sits in, for Rally and the tilt games: two printed halves
-put together. It is still a work in progress:
-[hardware/grip](hardware/grip). The [project page](https://porthole.dreamiurg.net/#case) shows it in 3D.
+**Twist-lock wheel.** Pick a wheel folder and a puck folder below. Each contains its own printable parts,
+including the pieces shared with earlier revisions. The [project page](https://porthole.dreamiurg.net/#case) shows the hardware in 3D.
+
+| What you want to print | Complete print folder |
+| --- | --- |
+| Kid wheel, 172 mm | [V9 kid wheel](hardware/grip/stl/v9-kid) |
+| Adult wheel, 215 mm | [V9 adult wheel](hardware/grip/stl/v9-adult) |
+| Puck for either twist-lock wheel | [R2 puck case](hardware/case/stl/twist-lock/r2) |
+
+For either V9 wheel, print one front, one back and the four-pin set once. If you already have the matching
+back and pins, just print the front. To mount the puck, align any pair of entry marks, insert it and turn it 30° clockwise.
+
+To retrofit a printed V8 kid wheel, remove the center cover and steel ring, dry-fit the [R2 hub](hardware/case/stl/twist-lock/r2/retrofit/wheel-hub-r2.stl)
+with its index pointing up, then glue it in place. For a quick fit test, use the [lid and hub gauges](hardware/case/stl/twist-lock/r2/fit-test).
+Browse the [wheel versions](hardware/grip) and [puck versions](hardware/case/stl) for earlier builds.
 
 <p align="center"><img src="site/images/grip.webp" width="600" alt="Renders of the steering-wheel grip holding the puck"></p>
 

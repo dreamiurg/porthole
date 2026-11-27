@@ -3,10 +3,8 @@
 Headless:
   Blender -b --factory-startup --python-expr "p='hardware/grip/split_meshy_blender.py'; exec(open(p).read(), {'__file__': p})"
 Input:  source/meshy_yoke_v3.glb (Meshy "Kids Game Yoke Grip CAD Ready", task 2a61e941)
-Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed,
-        stl/grip_v7_cover.stl, the lid over the steel ring, and stl/grip_v7_pin.stl, one alignment pin on its side;
-        stl/grip_v8_kid_front.stl and stl/grip_v8_kid_back.stl, the same grip at 80% (ring, cover and pins unscaled)
-        with a puck pocket sunk into its centre
+Output: stl/v7-adult and stl/v8-kid each hold a front, back, cover and set of four pins.
+        -- --bayonet builds stl/v9-kid; -- --bayonet-adult builds stl/v9-adult.
 
 The mesh is scaled to each variant's width and otherwise left alone, cut at half its depth so each half prints as a dome
 without support. Square printed pins go into blind square holes at the ends of both handles to line the
@@ -20,6 +18,8 @@ the face.
 
 import math
 import os
+import shutil
+import sys
 
 import bmesh
 import bpy
@@ -29,7 +29,7 @@ from mathutils.bvhtree import BVHTree
 HERE = os.path.dirname(os.path.abspath(__file__))
 # name, overall width, puck pocket depth: v7 matches v5/v6 (adult hands); v8 is v7 at 80% for kids, its centre
 # sunk POCKET deep over the puck's whole footprint (wider than the scaled hub) so the puck sits lower
-VARIANTS = (("grip_v7", 215.0, 0.0), ("grip_v8_kid", 172.0, 3.0))
+VARIANTS = (("v7-adult", 215.0, 0.0), ("v8-kid", 172.0, 3.0))
 PUCK_D, PUCK_FIT = 84.0, 0.3  # puck case v1.3 outer diameter; radial clearance in the pocket
 TRIS = 200_000  # whole grip before the cut, so each STL stays under 12 MB
 PIN_HOLE = 4.0  # square hole side; printed holes come out ~0.1 mm small
@@ -116,12 +116,16 @@ def pin_spots(m):
     return spots
 
 
-def subtract(ob, tool):
+def boolean(ob, tool, operation):
     select_only(ob)
     mod = ob.modifiers.new("b", "BOOLEAN")
-    mod.operation, mod.object, mod.solver = "DIFFERENCE", tool, "MANIFOLD"
+    mod.operation, mod.object, mod.solver = operation, tool, "MANIFOLD"
     bpy.ops.object.modifier_apply(modifier="b")
     bpy.data.objects.remove(tool, do_unlink=True)
+
+
+def subtract(ob, tool):
+    boolean(ob, tool, "DIFFERENCE")
 
 
 def cylinder(r, z0, z1, x=0.0, y=0.0, vertices=256):
@@ -222,7 +226,21 @@ def report(ob):
     return {"cm3": round(vol, 1), "size_mm": [round(d, 1) for d in ob.dimensions], "overhang_mm2": round(overhang)}
 
 
-def build(tag, width, pocket, extras):
+def export_pins(folder):
+    """Lay four copies of the alignment pin flat with clearance between them."""
+    pin = box(2 * PIN_DEPTH - 0.6, PIN_SIDE, 0, PIN_SIDE)
+    select_only(pin)
+    if os.path.basename(folder) == "v7-adult":
+        bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "source", "alignment-pin.stl"), export_selected_objects=True)
+    for i in range(1, 4):
+        other = pin.copy()
+        other.location.y += i * 8
+        SC.collection.objects.link(other)
+        other.select_set(True)
+    bpy.ops.wm.stl_export(filepath=os.path.join(folder, "pins-4.stl"), export_selected_objects=True)
+
+
+def build(tag, width, pocket):
     for o in list(SC.objects):
         bpy.data.objects.remove(o, do_unlink=True)
     yoke = import_yoke(os.path.join(HERE, "source", "meshy_yoke_v3.glb"), width)
@@ -232,15 +250,78 @@ def build(tag, width, pocket, extras):
     assert seat[2] - pocket - RING_T - COVER > 3, f"{tag}: the pocket leaves too little under the ring"
     result = {"size_mm": [round(d, 1) for d in yoke.dimensions], "pins": pins, "ring_centre_and_face": seat}
     parts = {name: half(yoke, name, top, pins, seat, pocket) for name, top in (("front", True), ("back", False))}
-    if extras:  # cover and pin do not scale: the v7 files serve every variant
-        parts["cover"] = cylinder(RING_OD / 2, 0, COVER)
-        parts["pin"] = box(2 * PIN_DEPTH - 0.6, PIN_SIDE, 0, PIN_SIDE)  # lying on a side
+    parts["cover"] = cylinder(RING_OD / 2, 0, COVER)
+    folder = os.path.join(HERE, "stl", tag)
+    os.makedirs(folder, exist_ok=True)
     for name, ob in parts.items():
         result[name] = report(ob)
         select_only(ob)
-        bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"{tag}_{name}.stl"), export_selected_objects=True)
+        bpy.ops.wm.stl_export(filepath=os.path.join(folder, name + ".stl"), export_selected_objects=True)
+    export_pins(folder)
     print("RESULT", tag, result)
 
 
-for i, (tag, width, pocket) in enumerate(VARIANTS):
-    build(tag, width, pocket, extras=i == 0)
+def socket_foot(cx, cy, datum, segments=256):
+    """Solid floor and flared root under the R2 socket. First layer on the split plane."""
+    floor = datum - 1.05
+    profile = [(46.7, 0), (48.6, 1.9)]
+    # Ease into the R2 hoop, ending just inside its outer surface.
+    for i in range(25):
+        t = i / 24
+        profile.append((48.6 - 3.4 * t * t * (3 - 2 * t), 1.95 + 7.1 * t))
+    profile += [(44.7, 9.05), (42.1, floor - 0.10), (19.5, floor - 0.10), (19.4, floor), (18.9, floor)]
+    points = [(cx + r * math.cos(math.tau * i / segments), cy + r * math.sin(math.tau * i / segments), z) for r, z in profile for i in range(segments)]
+    faces = [tuple(reversed(range(segments)))]
+    for band in range(len(profile) - 1):
+        lo, hi = segments * band, segments * (band + 1)
+        for i in range(segments):
+            j = (i + 1) % segments
+            faces.append((lo + i, lo + j, hi + j, hi + i))
+    faces.append(tuple(range(len(points) - segments, len(points))))
+    mesh = bpy.data.meshes.new("Socket footing")
+    mesh.from_pydata(points, [], faces)
+    mesh.update()
+    foot = bpy.data.objects.new("Socket footing", mesh)
+    SC.collection.objects.link(foot)
+    return foot
+
+
+def build_bayonet(base_kit, kit, cx, cy):
+    """Build a v9 front from the matching stock front and its measured badge center.
+
+    Run with -- --bayonet for the kid wheel or -- --bayonet-adult for the adult wheel.
+    Both use the R2 bore, marks, bearing pads and lugs at actual size. The
+    original back mates at z=0 and the puck seats at z=4.85 in either front.
+    """
+    for ob in list(SC.objects):
+        bpy.data.objects.remove(ob, do_unlink=True)
+    datum = 5.05
+    stls = os.path.join(HERE, "stl")
+    bpy.ops.wm.stl_import(filepath=os.path.join(stls, base_kit, "front.stl"))
+    front = bpy.context.active_object
+    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "../case/stl/twist-lock/r2/retrofit/wheel-hub-r2.stl"))
+    socket = bpy.context.active_object
+    socket.location = (cx, cy, datum)
+    # Remove the old badge seat and any spoke material in the new insertion envelope.
+    subtract(front, cylinder(45.15, datum - 1.55, 30, cx, cy))
+    # Crop off the glue flange and pilot before fusing the working surfaces.
+    subtract(socket, box(100, 100, -20, datum - 1.45, cx, cy))
+    foot = socket_foot(cx, cy, datum)
+    boolean(foot, socket, "UNION")
+    boolean(front, foot, "UNION")
+    output = os.path.join(stls, kit)
+    os.makedirs(output, exist_ok=True)
+    print("RESULT", kit, report(front))
+    select_only(front)
+    bpy.ops.wm.stl_export(filepath=os.path.join(output, "front.stl"), export_selected_objects=True)
+    for part in ("back.stl", "pins-4.stl"):
+        shutil.copyfile(os.path.join(stls, base_kit, part), os.path.join(output, part))
+
+
+if "--bayonet" in sys.argv:
+    build_bayonet("v8-kid", "v9-kid", 0.12, 0.75)
+elif "--bayonet-adult" in sys.argv:
+    build_bayonet("v7-adult", "v9-adult", 0.0, 1.0)
+else:
+    for variant in VARIANTS:
+        build(*variant)

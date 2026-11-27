@@ -1,0 +1,50 @@
+# The classics at the top of the English shelf (levels 9-10): a strong reader's shelf offers one, it reads page by page
+# at a real reading pace (not skimmed), its inference question is answered, and the shelf comes back.
+newgame Sam Biscuit
+wait 2400
+tap 92 129
+wait 450
+expect-screen pets_library
+tap 80 57
+wait 450
+expect shelf=en
+dbg readlevel en10
+wait 450
+expect book_level=10
+snap 01_shelf_classics
+tap 80 132
+wait 450
+expect-screen read
+expect page=0
+snap 02_classic_page1
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 450
+snap 03_classic_page3
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+tap 120 80
+wait 4000
+turn-pages
+wait 450
+snap 04_classic_question
+answer-book
+wait 450
+snap 05_classic_answered
+wait 1400
+expect-screen celebrate
+snap 06_classic_the_end
+sheet read_classics

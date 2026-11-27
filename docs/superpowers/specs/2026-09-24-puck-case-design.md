@@ -58,7 +58,7 @@ the back, so every control lives in the back part, which goes on after the board
 
 Overall: 83.2 mm across, 24.8 mm thick. Source of truth: `hardware/case/puck_case_fusion.py`
 (rebuilds the Fusion document, checks part/board/cell interference, both slider travel ends and
-the assembly path); exports in `hardware/case/stl/`; Fusion project "Porthole".
+the assembly path); v2 print files in `hardware/case/stl/v2/`, later Fusion exports in `hardware/case/stl/v3/`; Fusion project "Porthole".
 
 ## Openings
 

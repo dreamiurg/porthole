@@ -1,5 +1,5 @@
 // Self-check for Pets Club's Ukrainian words (games/pets-club/ukrainian.h, content_uk.h): the engine's calibration
-// finding every reader's step through these words, variety at the top, the review queue, every question each word can make, every letter in the
+// finding every reader's step through these words, a week's play settling near 80% right, variety at the top, the review queue, every question each word can make, every letter in the
 // font (os/uk_fonts.h), and every line measured where ukrainian.cpp draws it.
 // Run: make test
 #include "host/check.h"
@@ -60,6 +60,39 @@ static void variety() {
     }
   }
   CHECK(lowest < STEPS);
+}
+
+// A week of play shaped like 2026-11-27's telemetry (PostHog, one kid, 96 lookalike answers): meaning sat on the model,
+// lookalikes were right 64% where the model said 77%; the fit put lookalikes 175 above a word's step. A kid that good
+// (rating 280) playing rounds of the three kinds settles near their rating, and every kind lands near the 80% target.
+static uint32_t lcg(uint32_t& x) { x = x * 1664525u + 1013904223u; return x >> 8; }
+static void settles() {
+  constexpr int TRUE_OFFSET[WORD_KINDS] = {0, 175, 50};   // what the kid's answers say, per kind
+  constexpr int KID = 280, WARM = 100, PLAY = 600;
+  skills::Book b{}; skills::forgetRepeats();
+  skills::seed(b, skills::WORDS_UK, 0, false);
+  skills::Round r = skills::start(b, 20000 * 86400u);
+  uint32_t rng = 11, dice = 5;
+  uint16_t ring[16]; int ringN = 0, asked[WORD_KINDS] = {}, right[WORD_KINDS] = {}, lo = 1 << 30, hi = 0;
+  long sum = 0;
+  for (int i = 0; i < WARM + PLAY; i++) {
+    const Kind k = kindAt(i % ROUND, (uint32_t)(i / ROUND) * 7u);
+    const int w = pick(k, target(b, k), rng, ring, ringN);
+    const float p = skills::expect(KID, skills::LEVEL * (WORDS[w].step - 1) + TRUE_OFFSET[k], choices(k));
+    const bool ok = (float)(lcg(dice) % 10000) < p * 10000;
+    skills::answer(b, r, item(k, w, 3000), ok, 3000);
+    if (ringN == 16) memmove(ring, ring + 1, sizeof ring - sizeof *ring); else ringN++;
+    ring[ringN - 1] = (uint16_t)w;
+    if (i < WARM) continue;
+    const int theta = skills::get(b, skills::WORDS_UK).theta;
+    asked[k]++; right[k] += ok; sum += theta; lo = theta < lo ? theta : lo; hi = theta > hi ? theta : hi;
+  }
+  for (int k = 0; k < WORD_KINDS; k++) {
+    const float rate = (float)right[k] / asked[k];
+    CHECK(rate > 0.72f && rate < 0.88f);   // 2026-11-27's numbers made lookalikes 72% here, and meaning 69% with the
+                                           // new offset alone (the streak rule in skills.h kept the rating too high)
+  }
+  CHECK(labs(sum / PLAY - KID) <= 30 && lo > 0 && hi - lo <= 300);   // before: mean 289, 102..434
 }
 
 // Missed words ride the puzzles' review queue (review.h) as their own strand: due the next day, off when answered
@@ -252,6 +285,6 @@ static void sentenceRules() {
 }
 
 int main() {
-  calibration(); variety(); reviews(); questions(); sentences();
+  calibration(); settles(); variety(); reviews(); questions(); sentences();
   printf("test_pets_uk: all checks passed (%d checks, %d words, %d lookalike sets, %d sentences)\n", checks, WORD_COUNT, LOOK_COUNT, SENTENCE_COUNT);
 }

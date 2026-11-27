@@ -1,5 +1,6 @@
-// English books beyond the first 30 (books.h): levels 2-4 for early readers and 8 for strong ones. Spliced into
-// BOOKS[] by content.h after content_level3_books.h. Append only: a book's index in BOOKS is persisted (Save::booksEn).
+// English books beyond the first 30 (books.h): levels 2-4 for early readers, 8 for strong ones, and 9-10 retold
+// from public-domain classics (each entry names its source). Spliced into
+// BOOKS[] by content.h after content_level3_books.h. Append only: a book's index in BOOKS is persisted (Save::booksEn, then booksEnMore).
   // ---- level 2
   {"The Big Splash", C_SKY, 0, 2, {
     "Chip is a dog. He has a red ball. He drops it in the pond. Splash!",
@@ -178,6 +179,171 @@
     "The big screen showed Waffles with the ball, and the crowd roared. This time Waffles did not hide. He wagged his tail.",
     "At home, Ethan put the ball on his shelf. Waffles slept with his head on the ball, as if he knew he had been very brave.",
     nullptr}, "How did Waffles change?", {"He was braver", "He was scared", "He was hungry"}, 0},
+  // ---- level 9: adapted from public-domain classics, harder words and a question to infer
+  // Rudyard Kipling, Just So Stories (1902)
+  {"The Wild Cat", C_PLUM, 7, 9, {
+    "Long ago, when all the animals were wild, the Woman lived in a cave with the Man. She lit a fire to keep them warm.",
+    "Out in the Wet Wild Woods, the animals smelled roast meat and wondered. The Cat only said, \"I walk by myself, and all places are alike to me.\"",
+    "The Wild Dog trotted to the cave first. The Woman threw him a bone. \"Help my Man hunt by day,\" she said, \"and guard the cave by night.\"",
+    "So the Wild Dog became First Friend and slept by the fire. Then the Horse became First Servant, and the Cow gave warm milk.",
+    "The Cat watched it all from the trees. He wanted the fire and the milk, too, but he did not want to obey anyone at all.",
+    "So he made a bargain with the Woman. \"If you ever praise me three times, I may sit by the fire and drink milk forever.\" She laughed.",
+    "Soon a Baby was born, and it cried and cried. The Cat patted its cheek and purred until it laughed. That was the first praise.",
+    "Then the Cat sang the Baby to sleep, and the Woman praised him again. When he caught a mouse in the cave, she praised him a third time.",
+    "So the Cat sat by the fire and lapped the milk. But he made no bargain with the Man or the Dog, so they chase him still.",
+    "That is why the Cat still purrs for babies and catches mice, but he walks by himself in the Wet Wild Woods whenever he likes.",
+    nullptr}, "How did the Cat win a place by the fire?", {"He obeyed the Man", "He earned praise", "He fought the Dog"}, 1},
+  // Rudyard Kipling, Just So Stories (1902)
+  {"The Long Nose", C_TAN, 4, 9, {
+    "Long ago, the Elephant had no trunk. He had only a bulgy nose, as big as a boot, that could wiggle but could not pick anything up.",
+    "One Elephant's Child was full of curiosity. He asked questions about everything, which made his tall aunts and uncles very cross.",
+    "One morning he asked a new question: \"What does the Crocodile have for dinner?\" Everyone said \"Hush!\" and nobody would tell him.",
+    "So the Kolokolo Bird told him to go to the great grey-green Limpopo River. He packed bananas and sugar cane and set off.",
+    "At the river he met a log that winked at him. \"I am the Crocodile,\" said the log. \"I will whisper the answer. Come closer.\"",
+    "The Elephant's Child leaned in, and the Crocodile caught his little nose in his teeth. \"Today,\" he said, \"I think I will have elephant.\"",
+    "The Elephant's Child sat back on his heels and pulled, and pulled, and pulled. His nose began to stretch, longer and longer.",
+    "At last the Crocodile let go with a splash. The Elephant's Child sat down hard. His nose was now a trunk, nearly five feet long.",
+    "He waited for it to shrink, but it never did. Then a fly bit his shoulder, and without thinking he swatted it with his trunk.",
+    "He picked grass with it and sprayed cool water on his head. Soon every elephant went to the river to get a trunk of their own.",
+    nullptr}, "Why did the elephants want long trunks?", {"They scared birds", "They looked silly", "They were useful"}, 2},
+  // Hans Christian Andersen (1843)
+  {"Ugly Duckling", C_SKY, 2, 9, {
+    "By a quiet pond, a mother duck sat on her nest until the eggs cracked one by one. Out tumbled fluffy yellow ducklings.",
+    "The biggest egg hatched last. Out came a large gray chick. \"What an ugly duckling,\" said an old duck. \"He is not like the rest.\"",
+    "The hens pecked him, the turkey puffed up and gobbled at him, and even his own brothers teased him. He hid among the reeds.",
+    "At last he ran away across the marsh. He tried to make friends with geese, a cat, and a hen, but nobody wanted such a strange bird.",
+    "One autumn evening, he saw a flock of magnificent white birds flying south. Their necks were long and graceful, and he loved them.",
+    "Winter came, bitter and cold. The pond froze around him, and a farmer had to break the ice to free him. It was a lonely winter.",
+    "When spring came, the sun warmed the reeds and the larks sang. The duckling spread his wings. They were strong and wide.",
+    "He flew to a lake where three of the white birds were swimming. \"They may chase me away,\" he thought, \"but I must go to them.\"",
+    "He bowed his head and saw his reflection in the water. He was no longer a clumsy gray bird. He was a swan, white and graceful.",
+    "The other swans swam around him and stroked him gently with their beaks. Children on the bank cried, \"Look, a new swan!\"",
+    nullptr}, "Why did the others call him ugly?", {"He was not a duck", "He was very rude", "He could not swim"}, 0},
+  // Margery Williams (1922)
+  {"Velveteen Rabbit", C_PINK, 3, 9, {
+    "On Christmas morning, a boy found a velveteen rabbit in his stocking. It was soft and spotted, with pink satin inside its ears.",
+    "The Boy loved it for two whole hours. Then the fancy wind-up toys arrived, and the Rabbit was pushed into the toy cupboard.",
+    "The oldest toy there was the Skin Horse, wise and a little bald. \"What is Real?\" the Rabbit asked him. \"Is it having a key?\"",
+    "\"Real isn't how you are made,\" said the Skin Horse. \"When a child loves you for a long, long time, then you become Real.\"",
+    "One night the Boy could not find his china dog, so Nana gave him the Rabbit instead. From then on, they slept together every night.",
+    "They played in the garden and had picnics on the grass. The Rabbit grew shabby, and the pink wore off his nose from kisses.",
+    "Then the Boy fell ill with scarlet fever. The Rabbit stayed close beside him under the blankets for many long days and nights.",
+    "When the Boy got better, the doctor said the old toys from the sickroom must go. So the Rabbit was put in a sack by the garden.",
+    "That night the Rabbit was so sad that a real tear fell from his eye. Where it landed, a flower grew, and out stepped a fairy.",
+    "\"You were Real to the Boy because he loved you,\" she said. \"Now you will be Real to everyone.\" She set him down in the woods.",
+    "The Rabbit kicked his legs and found he could leap. In spring, the Boy saw a wild rabbit with a familiar spotted coat.",
+    nullptr}, "What does the Skin Horse say makes a toy Real?", {"A wind-up key", "Being loved long", "Being brand new"}, 1},
+  // Aesop's fable, Androcles and the Lion
+  {"The Lion's Thorn", C_GOLD, 5, 9, {
+    "Long ago in Rome, a servant named Androcles was treated cruelly by his master. One night he slipped away and ran into the forest.",
+    "Tired and hungry, he crept into a cave to rest. Suddenly he heard a terrible roar, and a huge lion limped in through the entrance.",
+    "Androcles was sure the lion would eat him. But the lion only groaned and held up one front paw, which was swollen and sore.",
+    "A long thorn was stuck deep in the paw. His hands shook, but Androcles gently pulled it out and wrapped the paw in cloth.",
+    "The grateful lion licked his hand like a dog. After that it brought him food every day, and they lived in the cave as friends.",
+    "One day soldiers caught Androcles and took him back to the city. As punishment for running away, he would face a lion in the arena.",
+    "On the big day the stands were packed. Androcles stood alone on the sand. A gate opened, and a lion rushed out, roaring.",
+    "The lion ran straight at him, then stopped. It sniffed him, rubbed its huge head against his legs, and lay down at his feet.",
+    "It was the very lion from the cave, who had been caught too. The crowd gasped. The emperor called Androcles over and asked why.",
+    "When he heard the story, the emperor set them both free. \"Even a lion remembers a kindness,\" he said, and they left together.",
+    nullptr}, "Why did the lion in the arena not hurt Androcles?", {"It knew him", "It was not hungry", "The emperor said no"}, 0},
+  // The Brothers Grimm (1819)
+  {"Four Musicians", C_LEAF, 6, 9, {
+    "A donkey had worked for many years, but now he was old and his master did not want him. So he set off for the town of Bremen.",
+    "\"I will be a town musician,\" he said. On the road he met a tired old dog who had been sent away for being too slow to hunt.",
+    "\"Come with me,\" said the donkey. \"You can play the drum.\" Soon they met a gloomy cat who could no longer catch mice. She came, too.",
+    "Then they passed a farm where a rooster crowed with all his might. He had heard the cook wanted him for soup, so he joined them.",
+    "Bremen was too far for one day. At nightfall they found a little house in the woods. Inside, robbers were feasting.",
+    "The hungry animals made a plan. The dog climbed on the donkey's back, the cat on the dog, and the rooster flew up onto the cat.",
+    "Then they made music all at once: the donkey brayed, the dog barked, the cat meowed, and the rooster crowed.",
+    "They crashed through the window, and the robbers fled into the forest. The friends ate everything on the table.",
+    "Later, one robber crept back. In the dark the cat scratched his face, the dog nipped his leg, and the donkey gave him a kick.",
+    "He ran back and cried, \"A witch clawed me, a goblin bit me, a giant hit me with a club, and a judge on the roof yelled at me!\"",
+    "The robbers never came back. The friends loved the little house so much that they never went to Bremen at all.",
+    nullptr}, "What did the robber think had attacked him?", {"Four old animals", "A band of monsters", "The other robbers"}, 1},
+  // ---- level 10: adapted from public-domain classics, harder words and a question to infer
+  // Rudyard Kipling, The Jungle Book (1894)
+  {"Rikki-tikki-tavi", C_GREEN, 0, 10, {
+    "Rikki-tikki-tavi was a mongoose, rather like a little cat in his fur and tail, but quite like a weasel in his head and habits.",
+    "A summer flood swept him from his burrow, and a family found him half-drowned in their garden. Teddy, their son, warmed him up.",
+    "The motto of every mongoose is \"Run and find out,\" and Rikki was a true mongoose. He explored every room and slept on Teddy's pillow.",
+    "In the garden, Darzee the tailorbird was weeping. \"Nag the cobra has stolen a baby from our nest,\" she sobbed. \"Nobody is safe.\"",
+    "Then from the thick grass rose Nag himself, five feet of cold black cobra, his hood spread wide. \"Be afraid,\" he hissed. Rikki did not run.",
+    "That night Nag and his wife Nagaina whispered a cruel plan. \"Once the family leaves this house, the mongoose will go too.\"",
+    "Later Rikki heard a soft scraping by the bathroom drain. Nag was sliding indoors to lie in wait. Rikki crept closer, heart pounding.",
+    "There was a tremendous battle in the dark. The noise woke the father, who rushed in with a stick, and Nag fled the house forever.",
+    "Nagaina was furious. At breakfast she slid onto the porch and coiled beside Teddy's bare leg, swaying, ready to strike.",
+    "Rikki dashed up with her last egg in his teeth. \"Is this what you want?\" Nagaina whirled around, and Teddy was pulled to safety.",
+    "Nagaina snatched the egg and fled deep into the jungle. From then on, no snake ever dared to come inside the garden walls.",
+    nullptr}, "Why did Rikki show Nagaina her egg?", {"To trade for food", "To give it back", "To lure her away"}, 2},
+  // L. Frank Baum, The Wonderful Wizard of Oz (1900)
+  {"The Cyclone", C_NAVY, 4, 10, {
+    "Dorothy lived in the middle of the great Kansas prairies with Uncle Henry and Aunt Em, in one small room above a dark cellar.",
+    "Everything around them was gray: the flat land, the dry grass, even the house. Only Toto, her little black dog, was not gray.",
+    "One afternoon a low wail of wind came from the north, and the grass bowed in waves. \"A cyclone is coming!\" Uncle Henry shouted.",
+    "Aunt Em flung open the trap door in the floor and scrambled down the ladder. \"Quick, Dorothy!\" she screamed. \"Run for the cellar!\"",
+    "But Toto was scared. He leaped from Dorothy's arms and hid under the bed. She was pulling him out when the house shook.",
+    "Then a strange thing happened. The house whirled around two or three times and rose slowly through the air, like a balloon.",
+    "The cyclone had lifted the house to its very center. There the air was oddly calm, but the wind roared all around them for miles.",
+    "Once Toto came too close to the open trap door and fell in. But his ears were sticking up through the hole. The wind was holding him!",
+    "Dorothy crawled over, caught Toto by the ear, and dragged him back. Then she shut the trap door so no more accidents could happen.",
+    "Hours passed. Slowly Dorothy stopped being afraid and grew lonely instead. She crept to her bed, and Toto curled up beside her.",
+    "Even as the house swayed and the wind wailed, Dorothy closed her eyes and fell fast asleep. She had no idea where they would land.",
+    nullptr}, "Why didn't Dorothy reach the cellar?", {"She went after Toto", "The door was locked", "Aunt Em forgot her"}, 0},
+  // Lewis Carroll, Alice's Adventures in Wonderland (1865)
+  {"The Rabbit Hole", C_LAVENDER, 2, 10, {
+    "Alice was tired of sitting by her sister on the riverbank. Her sister's book had no pictures or talking, and what is the use of that?",
+    "Suddenly a White Rabbit with pink eyes ran past. Then it took a watch out of its waistcoat pocket, and Alice jumped up in astonishment.",
+    "\"Oh dear! I shall be late!\" it muttered, and it popped down a large rabbit hole under the hedge. Alice dove in after it.",
+    "The hole dropped like a very deep well. Either it was deep, or she fell very slowly, for she had plenty of time to look around.",
+    "At last she landed, thump, on a heap of dry leaves, not hurt a bit. She was in a long hall lined with doors, and every one was locked.",
+    "On a glass table lay a tiny golden key. It opened a little door, and behind it was the loveliest garden. But Alice was far too big.",
+    "Back on the table stood a bottle labeled DRINK ME. Alice checked that it did not say poison, then tasted it. It was delicious.",
+    "\"What a curious feeling!\" said Alice. She was shutting up like a telescope, until she was just the right size for the little door.",
+    "But the golden key was still up on the table, and now she could not reach it. She tried to climb the slippery glass leg, but slid down.",
+    "Poor Alice sat down and cried. Then she spied a little glass box under the table. Inside was a tiny cake, marked EAT ME in currants.",
+    "\"If it makes me bigger, I can reach the key,\" said Alice. \"If it makes me smaller, I can creep under the door. Either way, I win!\"",
+    nullptr}, "What went wrong after Alice shrank?", {"The garden vanished", "She left the key", "The Rabbit hid it"}, 1},
+  // Kenneth Grahame, The Wind in the Willows (1908)
+  {"Toad's Motor Car", C_ORANGE, 1, 10, {
+    "Toad of Toad Hall was rich, kind, and terribly boastful. He was always falling in love with a new craze and dropping the old one.",
+    "This summer it was a canary-yellow caravan. \"The open road!\" he cried to his friends Rat and Mole. \"Travel! Change! Excitement!\"",
+    "So they set off, with an old gray horse named Albert pulling the caravan. Mole and Rat loved the quiet lanes, but Albert grumbled.",
+    "On the second day, a faint hum came up behind them. In an instant, a huge motor car roared past in a cloud of dust. \"Poop-poop!\"",
+    "Albert reared in fright, and the caravan tipped into the ditch with a terrible crash. Its yellow wheels were broken to pieces.",
+    "Rat hopped up and down in fury, shaking his fist at the vanishing car. But Toad simply sat in the dusty road, staring after it.",
+    "\"Glorious, stirring sight!\" Toad murmured dreamily. \"That is the real way to travel!\" He did not even glance at the wreck.",
+    "\"What are we to do with him?\" asked Mole. \"Nothing,\" sighed Rat. \"I know him of old. He has a new craze, and it will last for days.\"",
+    "They led Albert to the nearest town and caught the train home, half carrying Toad, who said nothing but \"Poop-poop\" all the way.",
+    "The very next morning, Rat heard surprising news. Toad had gone to town early and ordered a large, expensive motor car.",
+    nullptr}, "Why didn't Toad care about his caravan?", {"It was too old", "He was badly hurt", "He wanted a car"}, 2},
+  // Anna Sewell, Black Beauty (1877)
+  {"Black Beauty", C_RED, 7, 10, {
+    "My name is Black Beauty. I am a horse, and I belonged to a kind master. One autumn day he had to make a long journey on business.",
+    "John, our groom, harnessed me to the cart. It had rained for days, and as we crossed the wooden bridge, the river was very high.",
+    "The master's business took a long time, and we did not start home until late. By then the wind had risen to a howling gale.",
+    "In the woods, a great oak tore up by its roots and crashed across the road just in front of us. I stopped, trembling all over.",
+    "We had to turn back and go the long way home, by the wooden bridge. By the time we reached it, it was nearly dark and pouring rain.",
+    "The moment my front feet touched the bridge, I felt sure something was wrong. I stopped dead. \"Go on, Beauty,\" said my master.",
+    "John got down and tried to lead me forward. I trusted him, but I could not explain. I dug in my hooves and would not take a step.",
+    "Just then, a man ran out on the far side, waving a torch. \"Stop! Stop!\" he shouted. \"The bridge is broken in the middle!\"",
+    "My master was silent for a long moment. If I had gone on, the bridge would have given way, and we would all have fallen in.",
+    "When we reached home, the mistress ran out to meet us, pale with worry. That night John gave me extra corn and a deep bed of straw.",
+    "\"Beauty knew something we did not,\" my master said gently, stroking my neck. \"He saved all of us tonight.\"",
+    nullptr}, "Why did Beauty stop on the bridge?", {"He was too tired", "He sensed danger", "John told him to"}, 1},
+  // Frances Hodgson Burnett, The Secret Garden (1911)
+  {"The Robin's Key", C_MINT, 6, 10, {
+    "When Mary Lennox came to live at Misselthwaite Manor, she was a thin, sour little girl who had never made a single friend.",
+    "The huge old house had a hundred rooms, nearly all locked. Her uncle was away and nobody had time for her, so Mary wandered alone.",
+    "Martha, the cheerful maid, told her about a secret garden. \"The master locked it ten years ago,\" she said, \"and buried the key.\"",
+    "Mary could not stop thinking about it. She walked along the high ivy-covered walls, but she could not find a door anywhere.",
+    "Her only company was a robin with a bright red breast. He hopped beside her, cocked his head, and whistled as if he had a secret.",
+    "Old Ben, the gardener, chuckled. \"He likes you.\" Mary felt warm inside. She had never been anyone's friend before.",
+    "One morning the robin was hopping on a patch of freshly dug earth, tugging at a worm. Mary looked down and saw something rusty.",
+    "It was an old brass key. Mary turned it over in her fingers. \"Perhaps it has been buried for ten years,\" she whispered.",
+    "The next day the robin flew to the top of the wall and sang. A gust of wind swung the ivy aside, and Mary saw the knob of a hidden door.",
+    "Her heart thumped. She put the key in the lock and turned it with both hands. It was stiff, but it turned, and she slipped inside.",
+    "Everything was gray and tangled, but green shoots poked through the earth. \"It isn't dead,\" Mary said. \"I'll make it live.\"",
+    nullptr}, "How did the robin help Mary?", {"Led her to the key", "Sang her to sleep", "Opened the door"}, 0},
   // ---- the first level 8 stories, kept beside the newer ones (appended: indices are persisted)
   {"Two Dinners", C_PLUM, 1, 8, {
     "For a week, Hugo's bowl was licked clean every morning, and every morning Hugo looked at Nell as if he were starving.",

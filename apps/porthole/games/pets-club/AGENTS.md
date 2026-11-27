@@ -84,7 +84,9 @@ fields, then `crc` last -- the append-only rule in the app brief applies exactly
 
 `SAVE_VERSION` is currently 5 (320 bytes). v5 appended, before `crc`: `booksEn[8]` and `booksUk[8]` (a bit per book
 read, by its index in `BOOKS` / `UK_BOOKS`; a v4 blob's `booksDoneMask` is copied into `booksEn` on load and is no
-longer written; `booksUnlocked` is no longer read) and `reserved4[16]`, zero, kept for the Shop's room and toys. It
+longer written; `booksUnlocked` is no longer read) and `reserved4[16]`, zero, kept for the Shop's room and toys; its first
+half became `booksEnMore[8]` (English books 64..127, 2026-11-27), always zero before, so no new version, and
+`reserved4[8]` is left for the Shop. It
 took one more NVS entry: the profile budget in `host/test_nvs_budget.cpp` went from 78 to 79, which still fits four
 kids with 13 entries to spare; don't raise it again without a plan for where a fifth kid's save goes. The Shop took v4's reserved bytes, which were always zero, so it needed no new version: `collar` and
 `collarsOwned` (once `reserved0/1`: the collar worn, 0 = Red, and a bit per bought collar), `lastBuyDay` (once
@@ -236,7 +238,7 @@ nothing. The first read of a book pays stars at the engine's rate. Telemetry: `b
 
 | Shelf | Levels | Words per book | Page font |
 | --- | --- | --- | --- |
-| English | 2-8 (the first 30 books, once levels 1-3, are now 5-7; `content_books_en.h` adds 2-4 and 8) | `check_content.py` | 8x8, 122 px box |
+| English | 2-10 (the first 30 books, once levels 1-3, are now 5-7; `content_books_en.h` adds 2-4, 8, and 9-10 retold from public-domain classics: denser words and an inference question, the length capped by the screen like 8) | `check_content.py` | 8x8, 122 px box |
 | Ukrainian | 1: 15-40, 2: 40-80, 3: 80-150, 4: 140-220, 5: 200-300 | `check_books_uk.py` | Andika 48 px for 1-2, 24 px for 3-5 |
 
 Ukrainian level 1 has no я ю є ї or apostrophe; the font has no em dash or guillemets, so dialogue uses " - " and

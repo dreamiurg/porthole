@@ -840,12 +840,25 @@ static void telemetryEvents() {
   tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
   assert(q.size() == 1);   // player_selected
   assert(sh.openApp("One")); stars::award(app.stars, 3); frame(sh, ms, Input{}); home(sh, ms, app);
-  assert(q.size() == 3);
+  assert(q.size() == 4);   // and game_opened, the screen it was on, game_closed
   static char body[8192]; int taken = 0;
   q.batch(body, sizeof body, &taken);
   char sam[17]; q.playerId(0, "Sam", sam);
-  assert(taken == 3 && strstr(body, "\"event\":\"player_selected\"") && strstr(body, sam) && strstr(body, "\"age\":8"));
-  assert(strstr(body, "\"event\":\"game_opened\"") && strstr(body, "\"game\":\"One\",\"seconds\":1,\"stars\":3,\"exit\":\"home\""));
+  assert(taken == 4 && strstr(body, "\"event\":\"player_selected\"") && strstr(body, sam) && strstr(body, "\"age\":8"));
+  assert(strstr(body, "\"event\":\"game_opened\"") && strstr(body, "\"game\":\"One\",\"screen\":\"stub\",\"secs\":1"));
+  assert(strstr(body, "\"game\":\"One\",\"seconds\":1,\"stars\":3,\"exit\":\"home\",\"active_s\":1,\"where\":\"stub\""));
+  q.drop(taken);
+  // A minute and a half with no touch: a heartbeat at the minute, and the idle stretch is not active time.
+  assert(sh.openApp("One"));
+  for (int i = 0; i < 130; i++) frame(sh, ms, Input{});
+  home(sh, ms, app);
+  q.batch(body, sizeof body, &taken);
+  const char* beat = strstr(body, "\"event\":\"game_heartbeat\"");
+  const char* closed = strstr(body, "\"seconds\":91,");
+  int active = -1;
+  assert(beat && strstr(beat, "\"game\":\"One\",\"active_s\":") && closed && sscanf(strstr(closed, "active_s"), "active_s\":%d", &active) == 1);
+  assert(active >= 55 && active <= 61);   // idle from the last tap, a few frames before
+  q.drop(taken);
   assert(!strstr(body, "Sam"));   // the name stays on the board
   char kai[17], again[17]; q.playerId(1, "Kai", kai); q.playerId(0, "Sam", again);
   assert(strcmp(sam, kai) && !strcmp(sam, again));

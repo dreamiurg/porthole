@@ -47,7 +47,7 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    Admin 2/2 (one switch, 2026-11-20) is on by default since 2026-11-21 (opt-out); a grown-up's Off is kept. It sends what was played
    to the Porthole PostHog project, whose public ingest key is built in, with a random board id and a random player id
    per kid. Never a name. An SD file or the serial line can point it at another backend (PostHog or any OpenTelemetry
-   collector) or pick the anonymous level.
+   collector) or pick the anonymous level. What it sends: `apps/porthole/docs/telemetry-events.md`.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for
    anything user-visible. Every gameplay or UI change also requires a black-box

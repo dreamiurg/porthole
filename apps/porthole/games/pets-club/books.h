@@ -1,5 +1,5 @@
 // Pets Club's two bookshelves (the design page "Книжная полка на двух языках", approved 2026-11-22): English books
-// (content.h BOOKS, levels 2..8) and Ukrainian ones (content_books_uk.h UK_BOOKS, levels 1..5), each language's own
+// (content.h BOOKS, levels 2..10) and Ukrainian ones (content_books_uk.h UK_BOOKS, levels 1..5), each language's own
 // shelf picked for the kid's reading level in the shared skills engine (os/skills.h: READ_EN, which Little reads also
 // move, and READ_UK). The question at a book's end is one answer to the engine, weighted by the book's length; a book
 // paged through faster than anyone reads counts as read but rates nothing. Pure logic, no rendering;
@@ -15,12 +15,12 @@
 #include "uk_fonts.h"
 
 static const int NUM_UK_BOOKS = (int)(sizeof(UK_BOOKS) / sizeof(UK_BOOKS[0]));
-static_assert(NUM_BOOKS <= 64 && NUM_UK_BOOKS <= 64, "Save::booksEn/booksUk are 64 bits: widen before adding more books");
+static_assert(NUM_BOOKS <= 128 && NUM_UK_BOOKS <= 64, "Save::booksEn+booksEnMore are 128 bits, booksUk 64: widen before adding more books");
 
 namespace books {
 enum Lang : uint8_t { EN = 0, UK = 1 };
-constexpr int SHELF_MAX = 64;           // covers on one shelf: every book of the language (Save keeps 64 bits)
-constexpr int LEVELS[2] = {8, 5};       // English 1..8 (Little reads are 1..5), Ukrainian 1..5
+constexpr int SHELF_MAX = 128;          // covers on one shelf: every book of the language (Save keeps 128 English marks)
+constexpr int LEVELS[2] = {10, 5};      // English 1..10 (Little reads are 1..5), Ukrainian 1..5
 constexpr uint32_t MS_PER_WORD = 150;   // 400 words a minute: paging faster is not reading
 constexpr int WORDS_PER_ITEM = 50;      // a book's answer pays one Little read's worth per 50 words, up to MAX_WEIGHT
 constexpr int MAX_WEIGHT = 6;
@@ -28,13 +28,10 @@ constexpr int MAX_WEIGHT = 6;
 inline int count(Lang l) { return l == EN ? NUM_BOOKS : NUM_UK_BOOKS; }
 inline const Book& at(Lang l, int i) { return l == EN ? BOOKS[i] : UK_BOOKS[i]; }
 inline skills::Skill skill(Lang l) { return l == EN ? skills::READ_EN : skills::READ_UK; }
-inline const uint8_t* bits(const Save& s, Lang l) { return l == EN ? s.booksEn : s.booksUk; }
-inline bool read(const Save& s, Lang l, int i) { return bits(s, l)[i / 8] >> (i % 8) & 1; }
-inline void markRead(Save& s, Lang l, int i) {
-  uint8_t* m = l == EN ? s.booksEn : s.booksUk;
-  const unsigned u = (unsigned)i;
-  m[u >> 3] = (uint8_t)(m[u >> 3] | 1u << (u & 7));
-}
+// Book i's read marks: English 0..63 in booksEn, 64..127 in booksEnMore (bit i & 63); Ukrainian in booksUk.
+inline uint8_t* marks(Save& s, Lang l, int i) { return l == UK ? s.booksUk : i < 64 ? s.booksEn : s.booksEnMore; }
+inline bool read(const Save& s, Lang l, int i) { return marks(const_cast<Save&>(s), l, i)[(i & 63) >> 3] >> (i & 7) & 1; }
+inline void markRead(Save& s, Lang l, int i) { uint8_t& m = marks(s, l, i)[(i & 63) >> 3]; m = (uint8_t)(m | 1u << (i & 7)); }
 inline int pages(const Book& b) { int n = 0; while (n < 11 && b.pages[n]) n++; return n; }
 inline int answers(const Book& b) { int n = 0; while (n < 3 && b.answers[n]) n++; return n; }
 // Words: runs of non-space bytes holding a letter (any byte >= 0x80 is part of a Ukrainian letter).

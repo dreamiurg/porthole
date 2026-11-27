@@ -49,10 +49,11 @@ struct Prop { const char* key; const char* str; int32_t num; };
 inline Prop P(const char* k, const char* s) { return {k, s ? s : "", 0}; }
 inline Prop P(const char* k, long n) { return {k, nullptr, (int32_t)n}; }
 
-constexpr int MAX_PROPS = 6, TEXT = 24, ID = 17;   // ID: 16 hex digits and the NUL
+constexpr int MAX_PROPS = 10, TEXT = 24, ID = 17;   // ID: 16 hex digits and the NUL; book_finished sends 9 props
 struct Event {
   const char* name;    // a literal
   uint32_t utc;
+  uint32_t seq;        // this boot's count: with the boot's random number, the event's uuid (a resent batch counts once)
   char player[ID];     // "" = nobody picked
   uint8_t n;
   struct { const char* key; bool text; int32_t num; char str[TEXT]; } p[MAX_PROPS];
@@ -63,7 +64,7 @@ struct Event {
 class Queue {
  public:
   static constexpr int CAP = 1024;
-  void begin(uint32_t (*utcNow)(), const char* version);
+  void begin(uint32_t (*utcNow)(), const char* version, uint32_t boot = 0);   // boot: random, per power-on
   void configure(const Config& c);
   const Config& config() const { return cfg_; }
   bool on() const { return cfg_.level != OFF; }
@@ -89,6 +90,7 @@ class Queue {
   void distinctId(const Event& e, char out[ID]) const;
   uint32_t (*utc_)() = nullptr;
   const char* version_ = "dev";
+  uint32_t boot_ = 0, seq_ = 0;
   Config cfg_;
   char player_[ID] = {0};
   Event q_[CAP];
@@ -102,5 +104,13 @@ inline bool active() { return slot() && slot()->on(); }
 inline void player(const char* id) { if (slot()) slot()->player(id); }
 inline void emit(const char* name, std::initializer_list<Prop> p = {}) {
   if (active()) slot()->record(name, p.begin(), (int)p.size());
+}
+// The one event every game sends when a round, race, match or level ends, in one shape so the weekly review can
+// compare games (docs/telemetry-events.md). result: "won", "lost" or "done" (no winner); level: how hard it was;
+// score: the game's own (a place, points, a stage reached); extra: one more of the game's own, or none.
+struct Round { const char* game; long level; const char* result; long secs; long score; Prop extra = {nullptr, nullptr, 0}; };
+inline void roundFinished(const Round& r) {
+  const Prop p[] = {P("game", r.game), P("level", r.level), P("result", r.result), P("secs", r.secs), P("score", r.score), r.extra};
+  if (active()) slot()->record("round_finished", p, r.extra.key ? 6 : 5);
 }
 }  // namespace telemetry

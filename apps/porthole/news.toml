@@ -82,7 +82,14 @@ spot = "books"
 text = "Books in Ukrainian!"
 
 [[news]]
-date = "2026-11-24"
+date = "2026-11-27"
+game = "pets-club"
+size = "new"
+spot = "books"
+text = "Harder books!"
+
+[[news]]
+date = "2026-11-27"
 game = "pets-club"
 size = "game"
 spot = "books"

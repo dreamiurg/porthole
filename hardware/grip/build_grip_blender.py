@@ -4,10 +4,10 @@ Run inside Blender (e.g. through the Blender MCP: exec(open(path).read(), {"__fi
   Blender -b --factory-startup --python-expr "p='hardware/grip/build_grip_blender.py'; exec(open(p).read(), {'__file__': p})"
 Inputs, next to this file:
   source/meshy_yoke_v2.glb   Meshy multi-image-to-3D of the "Yoke Pro" concept with a simplified centre
-  stl/snap_test.stl          the snap cradle from grip_v1.py (fingers, key rib, ledge, root ring)
-Outputs in stl/, each lying in its print orientation (cut face on the bed):
-  grip_v6_front.stl, grip_v6_back.stl            the grip
-  grip_v6_test_front.stl, grip_v6_test_back.stl  the right horn above the spoke, cut the same way
+  stl/prototypes/snap_test.stl          the snap cradle from grip_v1.py (fingers, key rib, ledge, root ring)
+Outputs, each lying in its print orientation (cut face on the bed):
+  stl/v6/{front,back}.stl            the grip
+  stl/prototypes/v6/{front,back}.stl  the right horn above the spoke, cut the same way
 
 Frame as in puck_v1.py: origin = puck centre, +Z out of the screen, +Y = top of the screen, mm.
 Meshy supplies only the handles and the bottom bar; the centre (cradle, two spokes, a pad to the bar)
@@ -224,7 +224,7 @@ def build_grip():
     # the snap cradle: clear its space (radii offset from its own faces so no faces coincide), then merge it
     boolean(m, cylinder(46.5, ROOT_Z - 0.5, 40), "DIFFERENCE")
     boolean(m, cylinder(34.5, BACK_Z - 5, ROOT_Z), "DIFFERENCE")
-    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "stl", "snap_test.stl"))
+    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "stl", "prototypes", "snap_test.stl"))
     boolean(m, bpy.context.selected_objects[0], "UNION")
     floor = extrude("floor", [(-400, -400), (400, -400), (400, 400), (-400, 400)], BACK_Z - 100, BACK_Z + 0.01)
     boolean(m, floor, "DIFFERENCE")
@@ -330,5 +330,7 @@ for name, ob in {"front": front, "back": back, **test}.items():
     lay_flat(ob, flip=name.endswith("back"))
     result[name] = {"cm3": check(ob), "size_mm": [round(d, 1) for d in ob.dimensions], "specks": (specks, dropped)}
     select_only(ob)
-    bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"grip_v6_{name}.stl"), export_selected_objects=True)
+    folder = os.path.join(HERE, "stl", "prototypes", "v6") if name.startswith("test_") else os.path.join(HERE, "stl", "v6")
+    os.makedirs(folder, exist_ok=True)
+    bpy.ops.wm.stl_export(filepath=os.path.join(folder, name.removeprefix("test_") + ".stl"), export_selected_objects=True)
 print("RESULT", result)

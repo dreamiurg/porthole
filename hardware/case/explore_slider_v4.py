@@ -77,7 +77,7 @@ _NAMES = (
     rt_box,
 ) = (getattr(pc, k) for k in _NAMES)
 
-OUT = os.path.join(os.path.dirname(__file__), "stl", "proto")
+OUT = os.path.join(os.path.dirname(__file__), "stl", "v4-slider-prototype")
 R_LEVER = math.hypot(LEVER[0], LEVER_YC)  # arc radius the fork follows
 
 BAND = (38.6, 40.3)  # pocket radial band: 0.8 inner wall, 1.3 outer wall
@@ -151,13 +151,15 @@ def run(context):
             if v > 1e-3:
                 bad.append(f"slider@{off:+.1f} x {k}: {v:.3f} mm3")
     print("interference:", "none" if not bad else bad)
-    os.makedirs(OUT, exist_ok=True)
+    variants = os.path.join(OUT, "variants")
+    os.makedirs(variants, exist_ok=True)
     for name, body in (("Block", block), ("Slider", make_slider()), ("Slider_sym", make_slider(head=TAIL)), ("Lid", lid)):
         b = place(root, name, body)
-        export_stl(des, b, os.path.join(OUT, f"v4_{name.lower()}.stl"))
+        export_stl(des, b, os.path.join(variants if name == "Slider_sym" else OUT, f"v4_{name.lower()}.stl"))
         b.isLightBulbOn = name != "Slider_sym"
 
-    os.makedirs(OUT, exist_ok=True)
+    previews = os.path.join(OUT, "previews")
+    os.makedirs(previews, exist_ok=True)
     vp = app.activeViewport
 
     def snap(name, eye, hide=()):
@@ -174,11 +176,11 @@ def run(context):
         vp.camera = cam
         vp.refresh()
         adsk.doEvents()
-        vp.saveAsImageFile(os.path.join(OUT, name), 1400, 900)
+        vp.saveAsImageFile(os.path.join(previews, name), 1400, 900)
 
     snap("v4_outside.png", (30, -8, 10))
     snap("v4_inside.png", (-30, 4, 8), hide=("Lid",))
     snap("v4_top.png", (-4, 2, 30), hide=("Lid",))
     for b in root.bRepBodies:
         b.isLightBulbOn = b.name != "Slider_sym"
-    print("images in", OUT)
+    print("images in", previews)
