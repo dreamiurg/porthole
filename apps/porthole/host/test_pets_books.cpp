@@ -92,10 +92,15 @@ static void shelves() {
     for (int j = 0; j < m; j++) { first |= out[j] == 0; second |= out[j] == 1; }
     CHECK(m == NUM_BOOKS && first && second); }
   CHECK(read(s, UK, 0) && !read(s, EN, 0));   // the languages keep their own marks
+  CHECK(paws(2, 3) == 1 && paws(3, 3) == 2 && paws(4, 3) == 3);
+}
+
+// English books 64..127 keep their marks in booksEnMore, so the first 64 bytes' meaning never changes.
+static void marksPastSixtyFour() {
+  Save s{};
   markRead(s, EN, 63); CHECK(s.booksEn[7] == 0x80);
   markRead(s, EN, 64); markRead(s, EN, 127); CHECK(s.booksEnMore[0] == 0x01 && s.booksEnMore[7] == 0x80);
   CHECK(read(s, EN, 64) && read(s, EN, 127) && !read(s, EN, 65) && !s.reserved4[0]);
-  CHECK(paws(2, 3) == 1 && paws(3, 3) == 2 && paws(4, 3) == 3);
 }
 
 static int expectedWeight(const Book& b) {
@@ -148,6 +153,7 @@ static void answers() {
 int main() {
   ukrainianFits();
   shelves();
+  marksPastSixtyFour();
   answers();
   readingPace();
   printf("pets books: %d English, %d Ukrainian; %d checks\n", NUM_BOOKS, NUM_UK_BOOKS, checks);
