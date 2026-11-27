@@ -1,6 +1,6 @@
 // English books beyond the first 30 (books.h): levels 2-4 for early readers, 8 for strong ones, and 9-10 retold
 // from public-domain classics (each entry names its source). Spliced into
-// BOOKS[] by content.h after content_level3_books.h. Append only: a book's index in BOOKS is persisted (Save::booksEn).
+// BOOKS[] by content.h after content_level3_books.h. Append only: a book's index in BOOKS is persisted (Save::booksEn, then booksEnMore).
   // ---- level 2
   {"The Big Splash", C_SKY, 0, 2, {
     "Chip is a dog. He has a red ball. He drops it in the pond. Splash!",

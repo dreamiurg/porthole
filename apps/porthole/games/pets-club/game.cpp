@@ -153,7 +153,7 @@ void Game::debugCmd(const char* cmd) {
 // "books": six English books read; "read en|uk N": book N marked read; "readlevel en|uk N": the rating at level N.
 bool Game::debugBooks(const char* cmd) {
   if (!strcmp(cmd, "books")) {
-    memset(save_.booksEn, 0, sizeof save_.booksEn);
+    memset(save_.booksEn, 0, sizeof save_.booksEn); memset(save_.booksEnMore, 0, sizeof save_.booksEnMore);
     for (int i = 0; i < 6; i++) books::markRead(save_, books::EN, i);
     save_.booksRead = 6;
     return true;
