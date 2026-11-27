@@ -272,18 +272,18 @@ def socket_foot(cx, cy, datum, segments=256):
     return foot
 
 
-def build_bayonet():
-    """V9 front: blender -b --factory-startup --python hardware/grip/split_meshy_blender.py -- --bayonet
+def build_bayonet(source, name, cx, cy):
+    """Build a v9 front from the matching stock front and its measured badge center.
 
-    Reuses the printed v8 back and four v7 pins. The production R2 STL supplies
-    the entire working bore, marks, bearing pads and three lugs at actual size.
-    The v8 mating plane is z=0. The seated puck bottom is at z=4.85.
+    Run with -- --bayonet for the kid wheel or -- --bayonet-adult for the adult wheel.
+    Both use the R2 bore, marks, bearing pads and lugs at actual size. The
+    original back mates at z=0 and the puck seats at z=4.85 in either front.
     """
     for ob in list(SC.objects):
         bpy.data.objects.remove(ob, do_unlink=True)
-    cx, cy, datum = 0.12, 0.75, 5.05
+    datum = 5.05
     stls = os.path.join(HERE, "stl")
-    bpy.ops.wm.stl_import(filepath=os.path.join(stls, "grip_v8_kid_front.stl"))
+    bpy.ops.wm.stl_import(filepath=os.path.join(stls, source + ".stl"))
     front = bpy.context.active_object
     bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "../case/stl/twist-lock/r2/wheel-hub-r2.stl"))
     socket = bpy.context.active_object
@@ -295,14 +295,16 @@ def build_bayonet():
     foot = socket_foot(cx, cy, datum)
     boolean(foot, socket, "UNION")
     boolean(front, foot, "UNION")
-    front.name = "grip_v9_kid_bayonet_front"
+    front.name = name
     print("RESULT", front.name, report(front))
     select_only(front)
     bpy.ops.wm.stl_export(filepath=os.path.join(stls, front.name + ".stl"), export_selected_objects=True)
 
 
 if "--bayonet" in sys.argv:
-    build_bayonet()
+    build_bayonet("grip_v8_kid_front", "grip_v9_kid_bayonet_front", 0.12, 0.75)
+elif "--bayonet-adult" in sys.argv:
+    build_bayonet("grip_v7_front", "grip_v9_adult_bayonet_front", 0.0, 1.0)
 else:
     for i, (tag, width, pocket) in enumerate(VARIANTS):
         build(tag, width, pocket, extras=i == 0)
