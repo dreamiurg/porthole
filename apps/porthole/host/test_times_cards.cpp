@@ -306,8 +306,8 @@ static void division() {
 
 // The fast round: known facts with a 6, 8 or 9 in them whose last answer was slow; offered once three are, and dealt
 // eight at a time, the slow ones first. It grades as any round, puts nothing back, and keeps the best time.
-static void fastRounds() {
-  Save s;
+// A deck offers a fast round once three known facts of 6x, 8x and 9x are slow and there are eight to deal.
+static void fastOffer(Save& s) {
   setUp(s, 7, H);   // 1x to 6x known, never answered: nothing slow yet
   CHECK(!offersFast(s) && fastPool(s, cardOf(3, 8)) && fastPool(s, cardOf(6, 2)) && !fastPool(s, cardOf(3, 4)));
   CHECK(!fastPool(s, cardOf(7, 8)) && !fastPool(s, divOf(6, 3)));   // not known yet; a division
@@ -328,14 +328,22 @@ static void fastRounds() {
   const int hard[] = {6, 8, 9};
   for (int n : hard) grade(few, cardOf(1, n), HARD, H);
   CHECK(!offersFast(few));
+}
 
-  Round r;
+// Its eight cards, the slow ones first, none twice.
+static void fastDeal(Save& s, Round& r) {
   buildFast(r, s, 12345);
   CHECK(r.fast && r.n == FAST_ROUND && r.base == FAST_ROUND && r.number() == 1);
   for (int i = 0; i < r.n; i++) {
     CHECK(fastPool(s, r.card[i]) && slowFact(s, r.card[i]) == (i < 3));   // the three slow ones first
     for (int k = 0; k < i; k++) CHECK(r.card[k] != r.card[i]);
   }
+}
+
+static void fastSlower(const Save& s);
+static void fastRounds() {
+  Save s; fastOffer(s);
+  Round r; fastDeal(s, r);
   const int slow0 = r.card[0];
   // The next half, the slow ones are due: fast answers move them up, as in any round. A miss is not put back.
   answer(r, s, true, FAST, H + 1);
@@ -344,7 +352,12 @@ static void fastRounds() {
   for (int i = 2; i < FAST_ROUND; i++) answer(r, s, true, 3000, H + 1);
   CHECK(r.done() && r.n == FAST_ROUND && r.wrong == 1 && r.took == 2 * FAST + 6 * 3000);
   CHECK(r.newBest && !r.was && s.bestFast == (2 * FAST + 6 * 3000) / 100);   // the first: a best
-  Save again = s;   // slower: no best
+  fastSlower(s);
+}
+
+// A slower round sets no best; noteFast keeps the best in tenths of a second.
+static void fastSlower(const Save& s) {
+  Save again = s; Round r;
   buildFast(r, again, 7);
   while (!r.done()) answer(r, again, true, 4000, H + 1);
   CHECK(!r.newBest && again.bestFast == s.bestFast && r.was == s.bestFast);

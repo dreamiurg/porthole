@@ -609,13 +609,19 @@ inline void putBack(Round& r, int c, Grade g) {
 }
 // The kid's answer to the round's current card, picked `ms` after it showed: graded by the deck (gradeOf), counted,
 // put back if missed or slow, and the next card dealt; a fast round's last answer keeps its time. Returns the grade.
-inline Grade answer(Round& r, Save& s, bool right, uint32_t ms, int32_t now) {
-  const int c = r.current();
-  const bool redo = r.redo[r.at], probe = !redo && c == probeCard(s);
-  const Grade g = gradeOf(s, c, right, ms);
+// What an answer to card c tells the deck before it is graded: a probe's miss, the kid's step, right share and time.
+// Returns whether c was the probe.
+inline bool noteAnswer(Save& s, int c, Grade g, bool redo, uint32_t ms) {
+  const bool probe = !redo && c == probeCard(s);
   if (probe && g != EASY) s.probeMiss |= (uint16_t)(1u << tableOf(c));
   if (!redo && (s.boxOf(c) || probe)) { noteStep(s, g); noteRight(s, g); }   // a first sight or a second look says little
   if (!redo && g != WRONG && s.boxOf(c) >= MASTER_BOX) noteTime(s, c, ms);
+  return probe;
+}
+inline Grade answer(Round& r, Save& s, bool right, uint32_t ms, int32_t now) {
+  const int c = r.current();
+  const Grade g = gradeOf(s, c, right, ms);
+  const bool probe = noteAnswer(s, c, g, r.redo[r.at], ms);
   if (grade(s, c, g, now)) r.leveledUp = true;
   if (probe && g == EASY && jump(s, c, now)) { r.jumped = true; r.leveledUp |= newLevel(s); }
   putBack(r, c, g);
