@@ -231,7 +231,7 @@ Two shelves in the library, English and Ukrainian, each with its own reading lev
 (starts at level 1, calibrating). `books::shelf` (`books.h`) puts every book of the language on its shelf: the first unread book
 at the kid's level (or the nearest level with one, above first), one unread a level up, one a level down, then books
 already read from two below to one above, newest first, then every other book (the rest read, then the rest unread,
-nearest the level first), so no book ever leaves the shelf; the library's preview draws the first eight spines. Paws on a cover: 1 easy, 2 just right,
+nearest the level first), so no book ever leaves the shelf; a chapter book (`Book::part` 1..n, its chapters in a row with one title, 2026-11-27) shows only chapter 1 until it is read, then each next chapter, which goes first on the shelf (`books::nextChapter`) with "Part k" under its title; the library's preview draws the first eight spines. Paws on a cover: 1 easy, 2 just right,
 3 a stretch. The question at a book's end is one answer to the engine, weighted by the book's length (one per 50
 words, up to 6, `skills::Item::weight`). Reading pace (`books::skimMs`): half the kid's own careful pace in ms a word
 (`readPace`, learned a quarter of the way from each first read answered right, within half to four times a guess by

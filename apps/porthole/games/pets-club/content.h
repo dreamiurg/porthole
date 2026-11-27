@@ -12,6 +12,7 @@ struct Book {
   const char* question;
   const char* answers[3];   // up to 3, nullptr-terminated
   uint8_t correct;
+  uint8_t part = 0;         // 0: a book of its own; k: chapter k of a chapter book, whose chapters stand in a row (books.h)
 };
 
 // English books. level: 2..10 on the reading scale Little reads start (1..5) and books.h continues; the first twenty
