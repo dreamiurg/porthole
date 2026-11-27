@@ -1023,7 +1023,7 @@ void Updater::begin(uint32_t (*utcNow)()) {
   }
   g_sd = board::mountSd();
   Serial.printf("[net] version %s, SD card %s\n", PORTHOLE_VERSION, g_sd ? "mounted" : "not found");
-  g_tq.begin(g_now, PORTHOLE_VERSION);
+  g_tq.begin(g_now, PORTHOLE_VERSION, esp_random());
   g_tbody = (char*)heap_caps_malloc(TELEM_BODY, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   telemetry::Config tc;
   if (loadTelemetry(tc)) g_tq.configure(tc);

@@ -66,7 +66,8 @@ static void personal() {
   const size_t n = q.batch(body, sizeof body, &taken);
   CHECK(n == strlen(body) && taken == 2);
   CHECK(has(body, "{\"api_key\":\"phc_key\",\"batch\":[{\"event\":\"device_started\",\"distinct_id\":\"0102030405060708\""));
-  CHECK(has(body, "\"timestamp\":\"2026-11-16T08:30:00Z\""));
+  CHECK(has(body, "\"timestamp\":\"2026-11-16T08:30:00Z\",\"uuid\":\"01020304-0506-0708-0000-000000000000\""));
+  CHECK(has(body, "\"uuid\":\"01020304-0506-0708-0000-000000000001\""));   // the next event: its own uuid
   CHECK(has(body, "\"$process_person_profile\":false,\"reset\":\"power-on\"}}"));   // the device's own event: no person
   CHECK(has(body, "\"distinct_id\":\"00aa11bb22cc33dd\""));                         // the kid's: their random id
   CHECK(has(body, "\"player\":\"00aa11bb22cc33dd\",\"$set\":{\"device\":\"0102030405060708\"},\"fact\":\"7x8\",\"correct\":1,\"ms\":2400,\"note\":\"say \\\"hi\\\"\\\\\"}}]}"));
@@ -84,6 +85,18 @@ static void personal() {
   CHECK(q.batch(body, sizeof body, &taken) && taken == 1 && has(body, "times_cards_answer"));
   q.drop(5);
   CHECK(q.size() == 0 && q.batch(body, sizeof body, &taken) == 0);
+  // book_finished's nine props all go out (the last three were cut off when an event held six)
+  telemetry::emit("book_finished", {P("a", 1L), P("b", 2L), P("c", 3L), P("d", 4L), P("e", 5L), P("f", 6L), P("g", 7L), P("h", 8L), P("rating", 9L)});
+  q.batch(body, sizeof body, &taken);
+  CHECK(taken == 1 && has(body, "\"h\":8,\"rating\":9}"));
+  q.drop(1);
+  // a round in the one shape every game uses, with and without the game's own extra
+  telemetry::roundFinished({"Rally", 2, "won", 61, 1, P("track", 3L)});
+  telemetry::roundFinished({"Spooky", 0, "lost", 12, 2});
+  q.batch(body, sizeof body, &taken);
+  CHECK(taken == 2 && has(body, "\"game\":\"Rally\",\"level\":2,\"result\":\"won\",\"secs\":61,\"score\":1,\"track\":3}"));
+  CHECK(has(body, "\"game\":\"Spooky\",\"level\":0,\"result\":\"lost\",\"secs\":12,\"score\":2}"));
+  q.drop(2);
   telemetry::install(nullptr);
   telemetry::emit("game_opened");   // nothing installed: a no-op
   CHECK(q.size() == 0);

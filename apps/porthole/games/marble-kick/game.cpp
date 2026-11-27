@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gfx565.h"
+#include "telemetry.h"
 
 namespace marble {
 namespace {
@@ -126,6 +127,7 @@ void Game::updatePlay(uint32_t dt) {
   if (save_.level < level_ + 1) { save_.level = (uint8_t)(level_ + 1); dirty_ = true; }
   const uint8_t got = (uint8_t)starCount(ball_.stars);
   if (save_.stars[level_] < got) { save_.stars[level_] = got; dirty_ = true; }
+  telemetry::roundFinished({name(), level_ + 1, "won", (long)(ball_.ms / 1000), got});   // score: the level's stars
   go(SC_GOAL);
 }
 void Game::updateGoal() {

@@ -1468,6 +1468,7 @@ void Game::wearIt(bool collars, int sel) {
 }
 void Game::buyIt(bool collars, int sel, int price, const char* name) {
   if (!stars::spend(wallet_, price)) return;
+  telemetry::emit("bought", {telemetry::P("game", this->name()), telemetry::P("item", name), telemetry::P("cost", (long)price)});
   if (collars) { save_.collarsOwned |= (uint8_t)(1u << sel); save_.collar = (uint8_t)sel; }
   else { pet::gotHat(save_, sel); save_.hat = (uint8_t)sel; }
   save_.lastBuyDay = (uint16_t)pet::dayIndex(now_); save_.lastBuyItem = (uint8_t)(collars ? 0x80 | sel : sel);   // for a later Give back

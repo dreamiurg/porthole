@@ -120,7 +120,7 @@ const char* host(const Config& c, char* out, size_t cap) {
   return out;
 }
 
-void Queue::begin(uint32_t (*utcNow)(), const char* version) { utc_ = utcNow; version_ = version; }
+void Queue::begin(uint32_t (*utcNow)(), const char* version, uint32_t boot) { utc_ = utcNow; version_ = version; boot_ = boot; }
 void Queue::configure(const Config& c) {
   if (c.level != cfg_.level) { head_ = n_ = 0; }   // what was kept under one level never goes out under another
   cfg_ = c;
@@ -133,7 +133,7 @@ void Queue::record(const char* name, const Prop* p, int n) {
   if (!keep(name)) return;
   if (n_ == CAP) { head_ = (head_ + 1) % CAP; n_--; }   // full: the oldest goes
   Event& e = q_[(head_ + n_++) % CAP];
-  e.name = name; e.utc = utc_ ? utc_() : 0; e.n = 0;
+  e.name = name; e.utc = utc_ ? utc_() : 0; e.seq = seq_++; e.n = 0;
   const bool personal = cfg_.level == PERSONAL;
   snprintf(e.player, sizeof e.player, "%s", personal ? player_ : "");
   for (int i = 0; i < n && e.n < MAX_PROPS; i++) {
@@ -183,11 +183,16 @@ size_t Queue::batch(char* out, size_t cap, int* taken) const {
 }
 
 namespace {
-void posthogEvent(Out& o, const Event& e, const char* device, const char* version) {
-  char ts[32]; iso(e.utc, ts);
+void posthogEvent(Out& o, const Event& e, const char* device, const char* version, uint32_t boot) {
+  // The event's uuid, from the board's id, this boot and the event's count: a batch sent again after its reply was
+  // lost is the same events to PostHog, not new ones.
+  char ts[32], uuid[40]; iso(e.utc, ts);
+  snprintf(uuid, sizeof uuid, "%.8s-%.4s-%.4s-%04lx-%04lx%08lx", device, device + 8, device + 12, (unsigned long)(boot >> 16),
+           (unsigned long)(boot & 0xffff), (unsigned long)e.seq);
   o.put("{\"event\":"); o.str(e.name);
   o.put(",\"distinct_id\":"); o.str(e.player[0] ? e.player : device);
   o.put(",\"timestamp\":"); o.str(ts);
+  o.put(",\"uuid\":"); o.str(uuid);
   o.put(",\"properties\":{\"$lib\":\"porthole\",\"app_version\":"); o.str(version);
   o.put(",\"device\":"); o.str(device);
   if (e.player[0]) {   // the kid is a person in PostHog, tied to the board
@@ -229,7 +234,7 @@ size_t Queue::posthog(char* out, size_t cap, int* taken) const {
     const size_t mark = o.n;
     char device[ID]; distinctId(q_[(head_ + i) % CAP], device);
     if (i) o.put(",");
-    posthogEvent(o, q_[(head_ + i) % CAP], device, version_);
+    posthogEvent(o, q_[(head_ + i) % CAP], device, version_, boot_);
     if (!o.ok) { o.n = mark; out[mark] = 0; break; }
     *taken = i + 1;
   }

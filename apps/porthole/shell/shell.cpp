@@ -195,8 +195,8 @@ void Shell::openIdx(int k) {
   }
   memcpy(written_, blobs_[who], saves[who].len); writtenLen_ = saves[who].len; writtenOk_ = true;   // on flash already
   app_->enter({&all[who], all, saves, n, now_, ms_, light_ != shell::LIGHT_AUTO, &rec().stars, SPR_AVATARS, NUM_AVATARS, &rec().book, &news_});
-  savedStars_ = openedStars_ = rec().stars; openedMs_ = ms_;
-  telemetry::emit("game_opened", {telemetry::P("game", app_->name())});
+  savedStars_ = openedStars_ = rec().stars;
+  played_.open(app_->name(), ms_, app_->screenName());
   lastTick_ = lastRecordSave_ = now_; lastSaveMs_ = playTickMs_ = ms_; saveFails_ = 0;
   go(SH_APP);
 }
@@ -221,8 +221,7 @@ void Shell::flushApp(bool allowed) {
   lastSaveMs_ = ms_;
 }
 void Shell::closeApp(const char* why) {
-  telemetry::emit("game_closed", {telemetry::P("game", app_->name()), telemetry::P("seconds", (long)((ms_ - openedMs_) / 1000)),
-                                  telemetry::P("stars", (long)(rec().stars - openedStars_)), telemetry::P("exit", why)});
+  played_.close(ms_, (long)(rec().stars - openedStars_), why);
   app_->leave();
   flushApp(true);
   shell::saveRecord(*st_, prof_, active_);
@@ -667,6 +666,7 @@ void Shell::drawRest() {
 // ---------------------------------------------------------------- a game is open
 void Shell::updateApp() {
   app_->update(now_, ms_, in_);
+  played_.tick(ms_, activity_.idleMs(ms_) >= shell::IDLE_MS, app_->screenName());
   if (app_->wantsHome()) { closeApp("home"); go(SH_LAUNCHER); return; }
   if (now_ != lastTick_ || ms_ - playTickMs_ >= 1000) budgetTick();
   const uint32_t sinceSave = ms_ - lastSaveMs_;   // an urgent checkpoint still waits a second: one flash write per tap at most

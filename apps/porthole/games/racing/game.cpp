@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "telemetry.h"
 
 namespace racing {
 namespace {
@@ -90,6 +91,8 @@ void Game::countFinish() {
   const int before = garage::rank(save_.finishes);
   if (save_.finishes < 255) { save_.finishes++; dirty_ = true; }
   rankUp_ = (int8_t)(garage::rank(save_.finishes) > before ? garage::rank(save_.finishes) : -1);
+  telemetry::roundFinished({name(), race_.level, race_.place == 1 ? "won" : "done", (long)(race_.car[PLAYER].finishMs / 1000),
+                            race_.place, telemetry::P("track", (long)track_)});
 }
 
 // Once per finish: the kid's own record for this track, kept only when it improves, and the rivals' next level. A
@@ -240,7 +243,12 @@ void Game::updateShop() {
 }
 void Game::updateBuy() {
   if (ui::clicked(in_, paint::BUY_YES)) {
-    if (garage::buy(save_, wallet_, item_, visit_)) dirtyNow();
+    const uint32_t had = purse::balance(wallet_);
+    if (garage::buy(save_, wallet_, item_, visit_)) {
+      dirtyNow();
+      telemetry::emit("bought", {telemetry::P("game", name()), telemetry::P("item", garage::name(item_)),
+                                 telemetry::P("cost", (long)(had - purse::balance(wallet_)))});
+    }
     go(Screen::Shop);
   } else if (ui::clicked(in_, paint::BUY_NO)) go(Screen::Shop);
 }
