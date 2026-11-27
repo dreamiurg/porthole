@@ -25,7 +25,7 @@ change there goes to the stars thread's owner with the numbers, not into this ga
 | Knob (ukrainian.h / uk_words.py) | Now | Data that moves it |
 |---|---|---|
 | A word's step (`step()` in uk_words.py: syllables, letters, і ї є ґ щ ь ʼ, clusters, band, Russian-like, false friend; capped at 7) | formula | Per word, right rate against the kid's rating: a word answered right far more (or less) often than its step predicts is mis-stepped. Fit the formula's weights on all words once there are a few hundred answers; fix single words by hand before that. |
-| `KIND_OFFSET` (meaning 0, lookalike +100, syllables +50) | 0 / 100 / 50 | Right rate per kind at the same rating minus beta. |
+| `KIND_OFFSET` (meaning 0, lookalike +175, syllables +50; lookalike was +100 until 2026-11-27) | 0 / 175 / 50 | Right rate per kind at the same rating minus beta. |
 | `READ_MS` / `SLOW_MS` | 700 / 900 / 1500, 10 s / 10 s / 15 s | The `ms` distribution of right answers per kind: guesses are the fast hump; slow is the long tail. |
 | Sentences: `SENTENCE_FROM` (3), `SENTENCE_PLACES` (2 of 5), one miss = slow | 3 / 2 / 0.7 | `uk_sentence`: misses and right rate per step and `dir` against READ_UK's rating; a step most kids build with no miss is too easy. |
 | The ladder's words | 40 42 57 36 32 13 5 a step | Steps with few words repeat: a kid whose rating sits there sees the same words round after round. |
