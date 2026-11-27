@@ -3,10 +3,8 @@
 Headless:
   Blender -b --factory-startup --python-expr "p='hardware/grip/split_meshy_blender.py'; exec(open(p).read(), {'__file__': p})"
 Input:  source/meshy_yoke_v3.glb (Meshy "Kids Game Yoke Grip CAD Ready", task 2a61e941)
-Output: stl/grip_v7_front.stl, stl/grip_v7_back.stl, each with its cut face on the bed,
-        stl/grip_v7_cover.stl, the lid over the steel ring, and stl/grip_v7_pin.stl, one alignment pin on its side;
-        stl/grip_v8_kid_front.stl and stl/grip_v8_kid_back.stl, the same grip at 80% (ring, cover and pins unscaled)
-        with a puck pocket sunk into its centre
+Output: stl/v7-adult and stl/v8-kid each hold a front, back, cover and set of four pins.
+        -- --bayonet builds stl/v9-kid; -- --bayonet-adult builds stl/v9-adult.
 
 The mesh is scaled to each variant's width and otherwise left alone, cut at half its depth so each half prints as a dome
 without support. Square printed pins go into blind square holes at the ends of both handles to line the
@@ -20,6 +18,7 @@ the face.
 
 import math
 import os
+import shutil
 import sys
 
 import bmesh
@@ -30,7 +29,7 @@ from mathutils.bvhtree import BVHTree
 HERE = os.path.dirname(os.path.abspath(__file__))
 # name, overall width, puck pocket depth: v7 matches v5/v6 (adult hands); v8 is v7 at 80% for kids, its centre
 # sunk POCKET deep over the puck's whole footprint (wider than the scaled hub) so the puck sits lower
-VARIANTS = (("grip_v7", 215.0, 0.0), ("grip_v8_kid", 172.0, 3.0))
+VARIANTS = (("v7-adult", 215.0, 0.0), ("v8-kid", 172.0, 3.0))
 PUCK_D, PUCK_FIT = 84.0, 0.3  # puck case v1.3 outer diameter; radial clearance in the pocket
 TRIS = 200_000  # whole grip before the cut, so each STL stays under 12 MB
 PIN_HOLE = 4.0  # square hole side; printed holes come out ~0.1 mm small
@@ -227,7 +226,21 @@ def report(ob):
     return {"cm3": round(vol, 1), "size_mm": [round(d, 1) for d in ob.dimensions], "overhang_mm2": round(overhang)}
 
 
-def build(tag, width, pocket, extras):
+def export_pins(folder):
+    """Lay four copies of the alignment pin flat with clearance between them."""
+    pin = box(2 * PIN_DEPTH - 0.6, PIN_SIDE, 0, PIN_SIDE)
+    select_only(pin)
+    if os.path.basename(folder) == "v7-adult":
+        bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "source", "alignment-pin.stl"), export_selected_objects=True)
+    for i in range(1, 4):
+        other = pin.copy()
+        other.location.y += i * 8
+        SC.collection.objects.link(other)
+        other.select_set(True)
+    bpy.ops.wm.stl_export(filepath=os.path.join(folder, "pins-4.stl"), export_selected_objects=True)
+
+
+def build(tag, width, pocket):
     for o in list(SC.objects):
         bpy.data.objects.remove(o, do_unlink=True)
     yoke = import_yoke(os.path.join(HERE, "source", "meshy_yoke_v3.glb"), width)
@@ -237,13 +250,14 @@ def build(tag, width, pocket, extras):
     assert seat[2] - pocket - RING_T - COVER > 3, f"{tag}: the pocket leaves too little under the ring"
     result = {"size_mm": [round(d, 1) for d in yoke.dimensions], "pins": pins, "ring_centre_and_face": seat}
     parts = {name: half(yoke, name, top, pins, seat, pocket) for name, top in (("front", True), ("back", False))}
-    if extras:  # cover and pin do not scale: the v7 files serve every variant
-        parts["cover"] = cylinder(RING_OD / 2, 0, COVER)
-        parts["pin"] = box(2 * PIN_DEPTH - 0.6, PIN_SIDE, 0, PIN_SIDE)  # lying on a side
+    parts["cover"] = cylinder(RING_OD / 2, 0, COVER)
+    folder = os.path.join(HERE, "stl", tag)
+    os.makedirs(folder, exist_ok=True)
     for name, ob in parts.items():
         result[name] = report(ob)
         select_only(ob)
-        bpy.ops.wm.stl_export(filepath=os.path.join(HERE, "stl", f"{tag}_{name}.stl"), export_selected_objects=True)
+        bpy.ops.wm.stl_export(filepath=os.path.join(folder, name + ".stl"), export_selected_objects=True)
+    export_pins(folder)
     print("RESULT", tag, result)
 
 
@@ -272,7 +286,7 @@ def socket_foot(cx, cy, datum, segments=256):
     return foot
 
 
-def build_bayonet(source, name, cx, cy):
+def build_bayonet(base_kit, kit, cx, cy):
     """Build a v9 front from the matching stock front and its measured badge center.
 
     Run with -- --bayonet for the kid wheel or -- --bayonet-adult for the adult wheel.
@@ -283,9 +297,9 @@ def build_bayonet(source, name, cx, cy):
         bpy.data.objects.remove(ob, do_unlink=True)
     datum = 5.05
     stls = os.path.join(HERE, "stl")
-    bpy.ops.wm.stl_import(filepath=os.path.join(stls, source + ".stl"))
+    bpy.ops.wm.stl_import(filepath=os.path.join(stls, base_kit, "front.stl"))
     front = bpy.context.active_object
-    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "../case/stl/twist-lock/r2/wheel-hub-r2.stl"))
+    bpy.ops.wm.stl_import(filepath=os.path.join(HERE, "../case/stl/twist-lock/r2/retrofit/wheel-hub-r2.stl"))
     socket = bpy.context.active_object
     socket.location = (cx, cy, datum)
     # Remove the old badge seat and any spoke material in the new insertion envelope.
@@ -295,16 +309,19 @@ def build_bayonet(source, name, cx, cy):
     foot = socket_foot(cx, cy, datum)
     boolean(foot, socket, "UNION")
     boolean(front, foot, "UNION")
-    front.name = name
-    print("RESULT", front.name, report(front))
+    output = os.path.join(stls, kit)
+    os.makedirs(output, exist_ok=True)
+    print("RESULT", kit, report(front))
     select_only(front)
-    bpy.ops.wm.stl_export(filepath=os.path.join(stls, front.name + ".stl"), export_selected_objects=True)
+    bpy.ops.wm.stl_export(filepath=os.path.join(output, "front.stl"), export_selected_objects=True)
+    for part in ("back.stl", "pins-4.stl"):
+        shutil.copyfile(os.path.join(stls, base_kit, part), os.path.join(output, part))
 
 
 if "--bayonet" in sys.argv:
-    build_bayonet("grip_v8_kid_front", "grip_v9_kid_bayonet_front", 0.12, 0.75)
+    build_bayonet("v8-kid", "v9-kid", 0.12, 0.75)
 elif "--bayonet-adult" in sys.argv:
-    build_bayonet("grip_v7_front", "grip_v9_adult_bayonet_front", 0.0, 1.0)
+    build_bayonet("v7-adult", "v9-adult", 0.0, 1.0)
 else:
-    for i, (tag, width, pocket) in enumerate(VARIANTS):
-        build(tag, width, pocket, extras=i == 0)
+    for variant in VARIANTS:
+        build(*variant)
