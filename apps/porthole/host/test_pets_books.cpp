@@ -88,6 +88,8 @@ static void shelves() {
   n = shelf(s, UK, 3, out); CHECK(n >= 1 && read(s, UK, out[0]));
   CHECK(read(s, UK, 0) && !read(s, EN, 0));   // the languages keep their own marks
   markRead(s, EN, 63); CHECK(s.booksEn[7] == 0x80);
+  markRead(s, EN, 64); markRead(s, EN, 127); CHECK(s.booksEnMore[0] == 0x01 && s.booksEnMore[7] == 0x80);
+  CHECK(read(s, EN, 64) && read(s, EN, 127) && !read(s, EN, 65) && !s.reserved4[0]);
   CHECK(paws(2, 3) == 1 && paws(3, 3) == 2 && paws(4, 3) == 3);
 }
 
