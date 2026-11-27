@@ -189,6 +189,15 @@ const char* Game::screenName() const {
   static_assert(sizeof N / sizeof *N == SC_COUNT, "one name per screen");
   return N[screen_];
 }
+void Game::debugBookPrint() {
+  const Book& bk = curBook();
+  uint32_t gate = 0;   // the longest a page of this book waits before it turns (0: read already, it never waits)
+  if (!books::read(save_, L(lang_), shelf_[bookSel_]))
+    for (int p = 0; p < books::pages(bk); p++) { const uint32_t g = (uint32_t)books::pageWords(bk.pages[p]) * books::skimMs(save_, L(lang_)); gate = g > gate ? g : gate; }
+  printf("shelf=%s level=%d covers=%d book=%d title=\"%s\" book_level=%d pages=%d page=%d correct=%d read=%d answer_y=%d answer_step=%d page_gate=%lu pace=%lu\n", lang_ == books::EN ? "en" : "uk",
+         shelfLevel_, nShelf_, shelf_[bookSel_], bk.title, bk.level, books::pages(bk), page_, bk.correct, books::read(save_, L(lang_), shelf_[bookSel_]),
+         bookAnswerTop(bk), ANSWER_STEP, (unsigned long)gate, (unsigned long)books::carefulMs(save_, L(lang_)));
+}
 void Game::debugPrint() {
   if (screen_ == SC_TRAIN) printf("train: trick=%d phase=%d round=%d len=%d seq=%d%d%d%d%d%d input=%d\n", trickSel_, trainPhase_, trainRound_, seqLen_, seq_[0], seq_[1], seq_[2], seq_[3], seq_[4], seq_[5], seqInput_);
   printf("[%s/%s age=%d] day=%d stage=%d food=%d fun=%d energy=%d clean=%d bond=%d hearts=%d streak=%d books=%d asleep=%d poop=%d dirty=%d gift=%d screen=%d\n",
@@ -198,15 +207,7 @@ void Game::debugPrint() {
   printf("screen=%s pet=%s breed=%d hasDog=%d bringback=%d wall=%d tricks=%d%d%d%d%d%d%d%d hat=%d stickers=%u\n", screenName(), save_.petName, save_.breed, save_.hasDog, pet::canBringBack(save_), save_.wallCount, save_.trickProgress[0], save_.trickProgress[1], save_.trickProgress[2], save_.trickProgress[3],
          save_.trickProgress[4], save_.trickProgress[5], save_.trickProgress[6], save_.trickProgress[7], save_.hat, (unsigned)save_.stickersMask);
   if (screen_ == SC_WORDS && !wordsDone_) printf("word=%s cols=%d typed=%d tiles=%.*s\n", WORDS[wordIdx_[wordRound_]].word, wordCols_, wordTyped_, wordCols_ * 3, tiles_);
-  if (screen_ == SC_BOOKS || screen_ == SC_READ) {
-    const Book& bk = curBook();
-    uint32_t gate = 0;   // the longest a page of this book waits before it turns (0: read already, it never waits)
-    if (!books::read(save_, L(lang_), shelf_[bookSel_]))
-      for (int p = 0; p < books::pages(bk); p++) { const uint32_t g = (uint32_t)books::pageWords(bk.pages[p]) * books::skimMs(save_, L(lang_)); gate = g > gate ? g : gate; }
-    printf("shelf=%s level=%d covers=%d book=%d title=\"%s\" book_level=%d pages=%d page=%d correct=%d read=%d answer_y=%d answer_step=%d page_gate=%lu pace=%lu\n", lang_ == books::EN ? "en" : "uk",
-           shelfLevel_, nShelf_, shelf_[bookSel_], bk.title, bk.level, books::pages(bk), page_, bk.correct, books::read(save_, L(lang_), shelf_[bookSel_]),
-           bookAnswerTop(bk), ANSWER_STEP, (unsigned long)gate, (unsigned long)books::carefulMs(save_, L(lang_)));
-  }
+  if (screen_ == SC_BOOKS || screen_ == SC_READ) debugBookPrint();
   printf("stars=%lu puzzles_right=%u levels=%d%d%d reviews=%d reads_right=%u read_level=%u read_streak=%u hats=%u collar=%u collars=%lu short=%d\n",
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
          save_.puzzleReviewCount, save_.readsRight, save_.readLevel, save_.readStreak, (unsigned)save_.hatsMask, save_.collar, (unsigned long)save_.collarsOwned, shortBy_);

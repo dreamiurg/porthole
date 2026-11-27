@@ -33,6 +33,7 @@ class Game : public App {
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
   Surface surface() const override { return screen_ == SC_UK || ukBook() ? SURFACE_RGB565 : SURFACE_INDEXED; }   // Andika over the frame
+  void debugBookPrint();   // the shelf and the open book, for debugPrint
   void debugPrint() override;
   void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich" "ukmeaning|uklook|uksyl MEANING" "uksent N" "read en|uk N" "readlevel en|uk N" (or "uk5": the sim passes one argument)
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
