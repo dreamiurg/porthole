@@ -65,8 +65,9 @@ marks, insert it and turn it 30° clockwise until it clicks.
 
 - **Upgrade a printed v8 kid wheel.** Remove the center cover and steel ring, dry-fit the
   [R2 hub](hardware/case/stl/twist-lock/r2/wheel-hub-r2.stl) in the recess with the index pointing up, then glue it in place.
-- **Print the wheel with the catches built in.** Print the [v9 front](hardware/grip/stl/grip_v9_kid_bayonet_front.stl).
-  It uses the [v8 kid back](hardware/grip/stl/grip_v8_kid_back.stl) and four [v7 pins](hardware/grip/stl/grip_v7_pin.stl).
+- **Print a wheel with built-in catches.** Both sizes use the same R2 puck and four [v7 pins](hardware/grip/stl/grip_v7_pin.stl).
+  For the 172 mm kid wheel, pair the [v9 kid front](hardware/grip/stl/grip_v9_kid_bayonet_front.stl) with the [v8 kid back](hardware/grip/stl/grip_v8_kid_back.stl).
+  For the 215 mm adult wheel, pair the [v9 adult front](hardware/grip/stl/grip_v9_adult_bayonet_front.stl) with the [v7 adult back](hardware/grip/stl/grip_v7_back.stl).
 
 To check the fit with your printer and filament first, print the [lid ring](hardware/case/stl/twist-lock/r2/fit-test/lid-gauge.stl)
 and [hub ring](hardware/case/stl/twist-lock/r2/fit-test/hub-gauge.stl).
