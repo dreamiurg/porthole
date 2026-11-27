@@ -31,8 +31,16 @@ wall outside, with a ledge under the switch body and a fin 3 mm proud. The groov
 import math
 
 import build123d as bd
-from cadgen import model
-from cadgen.geometry import overlap_volume
+
+try:
+    from cad import model
+except ModuleNotFoundError as err:  # The original v1.4 generator runs on cadgen 0.8.4.
+    if err.name != "cad":
+        raise
+    from cadgen import model
+    from cadgen.geometry import overlap_volume
+else:
+    from cad.build123d import overlap_volume
 
 # ---- parameters (mm) ------------------------------------------------------------------------
 GLASS_R = 37.5  # board / touch glass radius
@@ -150,10 +158,10 @@ def ring_groove():
     return cyl(RING_OD / 2 + RING_FIT, FLOOR_TOP - RING_T - 0.1, FLOOR_TOP + 5) - cyl(RING_ID / 2 - RING_FIT, FLOOR_TOP - 6, FLOOR_TOP + 6)
 
 
-def lid_buzzer_holes():
+def lid_buzzer_holes(pitch=2.2):
     deg = math.degrees(math.atan2(BUZZER[1], BUZZER[0]))
     cx, cy = polar(LID_BUZZER_R, deg)
-    holes = [(cx + dx, cy + dy) for dx, dy in BUZZER_HOLES]
+    holes = [(cx + dx * pitch / 2.2, cy + dy * pitch / 2.2) for dx, dy in BUZZER_HOLES]
     for x, y in holes:  # 0.8 mm of floor between every hole and the ring groove
         assert math.hypot(x, y) - 0.75 >= RING_OD / 2 + RING_FIT + 0.8, (x, y)
     return holes
@@ -263,7 +271,7 @@ def plate_body():
     return p
 
 
-def lid_body():
+def lid_body(*, magnet=True, vent_pitch=2.2):
     lid = cyl(R_OUT, BOT_Z, SPLIT_Z) - cyl(R_IN, FLOOR_TOP, SPLIT_Z + 1)
     fence = box(0.0, CELL_Y0, FLOOR_TOP + 2.0, CELL[0] + 2.4, CELL[1] + 2.4, 4.0) - box(0.0, CELL_Y0, FLOOR_TOP + 2.0, CELL[0], CELL[1], 5.0)
     for sx in (-1, 1):  # finger gaps in the fence so the cell lifts out
@@ -271,12 +279,13 @@ def lid_body():
     lid += fence
     for deg in POST_ANGLES:  # bosses under the plate posts carry the screw heads
         lid += radial_box(POST_RC, deg, (FLOOR_TOP + BOSS_TOP) / 2, PLATE_R - POST_R0 + 0.4, POST_W, BOSS_TOP - FLOOR_TOP + 0.1) & cyl(R_IN + 0.1, FLOOR_TOP - 0.1, BOSS_TOP)
-    lid -= ring_groove()  # also gaps the cell fence where the ring passes under it, so the ring drops in
+    if magnet:
+        lid -= ring_groove()  # also gaps the cell fence where the ring passes under it, so the ring drops in
     for deg in POST_ANGLES:  # M2 clearance + flat seat from below
         x, y = polar(POST_RC, deg)
         lid -= cyl(CLEAR_D / 2, BOT_Z - 1, BOSS_TOP + 1, x, y)
         lid -= cyl(SEAT_D / 2, BOT_Z - 1, BOT_Z + SEAT_H, x, y)
-    for x, y in lid_buzzer_holes():
+    for x, y in lid_buzzer_holes(vent_pitch):
         lid -= cyl(0.75, BOT_Z - 1, FLOOR_TOP + 1, x, y)
     lid = fillet_rim(lid, R_OUT, BOT_Z, EDGE_FILLET_BOT)
     lid.label, lid.color = "lid", "#e8e4dc"
