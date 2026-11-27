@@ -29,10 +29,10 @@ tap anywhere, so a thumb must reach the glass while both hands are on the grips.
 
 ## Test plan
 
-1. Print `hardware/case/stl/v1.2/puck_lid.stl` and `hardware/grip/stl/snap_test.stl` (the cradle alone).
+1. Print `hardware/case/stl/v1.2/puck_lid.stl` and `hardware/grip/stl/prototypes/snap_test.stl` (the cradle alone).
    Check the click, the hold when shaken, and push-out through the thumb hole.
 2. Adjust BUMP / FINGER_T / FIT in `grip_v1.py` if it is too loose or too stiff, then print
-   `hardware/grip/stl/grip_v1.stl`.
+   `hardware/grip/stl/v1/wheel.stl`.
 3. Hand it to a kid: thumb reach to the glass, grip size, weight.
 
 ## Unverified
@@ -49,6 +49,6 @@ the snap cradle from `grip_v1.py`, two rounded spokes, and a pad to the bar. 215
 The puck is taken out to charge, so the grip has no USB access.
 
 Prototypes before the full print (about 3.5 h at standard settings):
-- Fit: `hardware/case/stl/v1.2/puck_lid.stl` + `hardware/grip/stl/snap_test.stl`.
-- Ergonomics: `hardware/grip/stl/ergo_gauge.stl`, the real right handle plus a 2.6 mm outline of the rest
+- Fit: `hardware/case/stl/v1.2/puck_lid.stl` + `hardware/grip/stl/prototypes/snap_test.stl`.
+- Ergonomics: `hardware/grip/stl/prototypes/ergo_gauge.stl`, the real right handle plus a 2.6 mm outline of the rest
   with a ring the puck drops into: span, thumb reach to the screen, handle girth.

@@ -417,12 +417,13 @@ def run(context):
     for name, body in (("Board (reference)", board), ("Cell (reference)", cell)):
         place(root, name, body)
     placed = {n: place(root, n.capitalize(), b) for n, b in parts.items()}
-    out = os.path.join(os.path.dirname(__file__), "stl")
+    out = os.path.join(os.path.dirname(__file__), "stl", "v3")
+    os.makedirs(out, exist_ok=True)
     for n, b in placed.items():
         export_stl(des, b, os.path.join(out, f"puck_{n}.stl"))
-    os.makedirs(os.path.join(out, "proto"), exist_ok=True)
+    os.makedirs(os.path.join(out, "fit-test"), exist_ok=True)
     for n, body in protos.items():
         b = place(root, n, body)
-        export_stl(des, b, os.path.join(out, "proto", f"{n}.stl"))
+        export_stl(des, b, os.path.join(out, "fit-test", f"{n}.stl"))
         b.isLightBulbOn = False
     print(f"overall: dia {2 * R_OUT:.1f} mm, thickness {TOP_Z - BOT_Z:.1f} mm; STLs in {out}")

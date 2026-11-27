@@ -3,7 +3,7 @@ copies of the grip halves for the site's 3D viewer.
 
 Headless, from the repo root, with Blender 4.2+ or the bpy module (`pip install bpy`), Pillow alongside:
   python3 hardware/grip/render_grip_blender.py
-Input:  stl/<GRIP>_front.stl and stl/<GRIP>_back.stl (each printed cut face down; reassembled here),
+Input:  stl/v8-kid/front.stl and stl/v8-kid/back.stl (each printed cut face down; reassembled here),
         the puck case STLs the site shows, and site/images/screen.png on the board's screen
 Output: site/images/grip.webp (two views side by side), site/grip/front.stl and site/grip/back.stl (decimated)
 """
@@ -15,9 +15,8 @@ import bpy
 from mathutils import Matrix, Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-GRIP = "grip_v8_kid"
 POCKET = 3.0  # puck pocket depth in the grip's front face (split_meshy_blender.py)
-PUCK = ("hardware/case/stl/v1.1/puck_bezel.stl", "hardware/case/stl/v1.1/puck_plate.stl", "hardware/case/stl/v1.2/puck_lid.stl")
+PUCK = ("hardware/case/stl/v1.2/puck_bezel.stl", "hardware/case/stl/v1.2/puck_plate.stl", "hardware/case/stl/v1.2/puck_lid.stl")
 WEB_TRIS = 30_000  # per half in the site's viewer: about 1.5 MB each
 SC = None  # the scene, set once main() has reset Blender
 
@@ -81,8 +80,8 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     SC = bpy.context.scene
     black = material("wheel", (0.018, 0.018, 0.02), 0.45)
-    front = stl(f"hardware/grip/stl/{GRIP}_front.stl", black)
-    back = stl(f"hardware/grip/stl/{GRIP}_back.stl", black)
+    front = stl("hardware/grip/stl/v8-kid/front.stl", black)
+    back = stl("hardware/grip/stl/v8-kid/back.stl", black)
     back.data.transform(Matrix.Rotation(math.pi, 4, "X"))  # undo the print flip: halves meet at z = 0
     hub = max(v.co.z for v in front.data.vertices if math.hypot(v.co.x, v.co.y) < 45)
     lift = hub - POCKET + 20.2  # the lid's underside (z -20.2 in the case frame) on the pocket floor

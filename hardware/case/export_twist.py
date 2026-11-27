@@ -1,19 +1,22 @@
-"""Regenerate the five R2 print meshes with text-to-cad 0.11.18.
+"""Regenerate the complete R2 print kit with text-to-cad 0.11.18.
 
 From the repository root: cad run hardware/case/export_twist.py
 """
 
 import struct
 from pathlib import Path
+from shutil import copyfile
 from tempfile import TemporaryDirectory
 
 from puck_twist import twist_lid, wheel_hub
 from puck_twist_gauges import hub_gauge, lid_gauge, single_catch
 
 OUTPUT = Path(__file__).resolve().parent / "stl/twist-lock/r2"
+STOCK = Path(__file__).resolve().parent / "stl/v1.4"
+STOCK_FILES = ("puck_bezel.stl", "puck_plate.stl", "puck_slider.stl", "fit-test/slider_test.stl", "fit-test/switch_section.stl")
 PARTS = (
     (twist_lid, "side-groove-lid-r2.stl"),
-    (wheel_hub, "wheel-hub-r2.stl"),
+    (wheel_hub, "retrofit/wheel-hub-r2.stl"),
     (lid_gauge, "fit-test/lid-gauge.stl"),
     (hub_gauge, "fit-test/hub-gauge.stl"),
     (single_catch, "fit-test/single-catch-r2.stl"),
@@ -46,6 +49,8 @@ def export_parts(output):
             part().export(stl, tolerance=0.025)
             remove_collapsed_facets(stl)
             stl.replace(path)
+    for name in STOCK_FILES:
+        copyfile(STOCK / name, output / name)
 
 
 if __name__ == "__main__":
