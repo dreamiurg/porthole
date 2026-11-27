@@ -238,7 +238,10 @@ def plan(d, seg, where, arg=""):
     if d == "turn-pages":  # Pets Club: page through the open book to its question
         if "pages" not in kv or "page" not in kv:
             raise Fail(f"{where}: no book open", seg)
-        return ["tap 120 80"] * max(0, int(kv["pages"]) - int(kv["page"]))
+        # a book not read yet turns a page only after its words at the kid's pace: wait out the longest page each time
+        gate = int(kv.get("page_gate", 0))
+        step = [f"wait {gate + 50}", "tap 120 80"] if gate else ["tap 120 80"]
+        return step * max(0, int(kv["pages"]) - int(kv["page"]))
     if d == "answer-book":
         if "correct" not in kv:
             raise Fail(f"{where}: no book open", seg)
