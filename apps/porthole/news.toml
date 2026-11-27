@@ -104,6 +104,13 @@ text = "Read slowly for stars!"
 
 [[news]]
 date = "2026-11-27"
+game = "pets-club"
+size = "game"
+spot = "books"
+text = "Books in chapters!"
+
+[[news]]
+date = "2026-11-27"
 game = "times-cards"
 size = "big"
 spot = "fast"

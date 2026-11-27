@@ -60,6 +60,12 @@ static void ukrainianFits() {
   everyLevel(UK, 1); everyLevel(EN, 2);
 }
 
+// How many books a kid's shelf shows: all of them but the chapters still waiting for the one before.
+static int shown(const Save& s, Lang l) {
+  int n = 0; for (int i = 0; i < count(l); i++) n += !waiting(s, l, i);
+  return n;
+}
+
 // A fresh kid at every level: an unread book just right first, no book twice.
 static void shelfPerLevel() {
   Save s{};
@@ -70,7 +76,7 @@ static void shelfPerLevel() {
       bool any = false; for (int i = 0; i < count(l); i++) any |= at(l, i).level == t;
       if (any) CHECK(at(l, out[0]).level == t);   // just right is the level itself when it has an unread book
       for (int k = 0; k < n; k++) for (int j = k + 1; j < n; j++) CHECK(out[k] != out[j]);
-      CHECK(n == count(l));   // every book stays on the shelf: a kid's old favorites never leave it
+      CHECK(n == shown(s, l));   // every book stays on the shelf: a kid's old favorites never leave it
     }
   }
 }
@@ -90,7 +96,7 @@ static void shelves() {
   // A kid far above the first books still finds them, read or not: here a level 8 English reader.
   { Save k{}; markRead(k, EN, 0); const int m = shelf(k, EN, 8, out); bool first = false, second = false;
     for (int j = 0; j < m; j++) { first |= out[j] == 0; second |= out[j] == 1; }
-    CHECK(m == NUM_BOOKS && first && second); }
+    CHECK(m == shown(k, EN) && first && second); }
   CHECK(read(s, UK, 0) && !read(s, EN, 0));   // the languages keep their own marks
   CHECK(paws(2, 3) == 1 && paws(3, 3) == 2 && paws(4, 3) == 3);
 }
@@ -101,6 +107,19 @@ static void marksPastSixtyFour() {
   markRead(s, EN, 63); CHECK(s.booksEn[7] == 0x80);
   markRead(s, EN, 64); markRead(s, EN, 127); CHECK(s.booksEnMore[0] == 0x01 && s.booksEnMore[7] == 0x80);
   CHECK(read(s, EN, 64) && read(s, EN, 127) && !read(s, EN, 65) && !s.reserved4[0]);
+}
+
+// A chapter book: chapter k waits off the shelf until chapter k-1 is read, then comes first.
+static void chapters() {
+  int c1 = -1; for (int i = 0; i < NUM_BOOKS && c1 < 0; i++) if (BOOKS[i].part == 1) c1 = i;
+  CHECK(c1 >= 0 && parts(EN, c1) >= 2 && BOOKS[c1 + 1].part == 2 && !strcmp(BOOKS[c1].title, BOOKS[c1 + 1].title));
+  Save s{}; uint8_t out[SHELF_MAX];
+  int n = shelf(s, EN, BOOKS[c1].level, out);
+  for (int k = 0; k < n; k++) CHECK(BOOKS[out[k]].part <= 1);   // no later chapter before the first is read
+  markRead(s, EN, c1);
+  n = shelf(s, EN, 2, out);   // even a kid at another level gets the book's next chapter first
+  CHECK(out[0] == c1 + 1);
+  for (int k = 0; k < n; k++) CHECK(out[k] != c1 + 2);
 }
 
 static int expectedWeight(const Book& b) {
@@ -154,6 +173,7 @@ int main() {
   ukrainianFits();
   shelves();
   marksPastSixtyFour();
+  chapters();
   answers();
   readingPace();
   printf("pets books: %d English, %d Ukrainian; %d checks\n", NUM_BOOKS, NUM_UK_BOOKS, checks);

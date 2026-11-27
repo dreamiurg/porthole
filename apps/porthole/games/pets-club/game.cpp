@@ -1078,7 +1078,11 @@ void Game::drawBooks() {
   if (!done) { blit(SPR_SPARKLE, 108, 30 + (int)((ms_ / 400) % 2)); textCentered(122, 40, "NEW!", C_YELLOW); }
   else blitTint(SPR_CHECK, 96, 78, C_GREEN);
   char lines[2][40]; const int nl = lang_ == books::EN ? wrap(bk.title, 110, lines, 2) : 1;
-  rect(22, 89, 116, nl * 9 + 3, C_DKBROWN);   // the title's plate; a Ukrainian title (one line) is Andika, over the frame (drawBookText)
+  rect(22, 89, 116, (nl + (bk.part ? 1 : 0)) * 9 + 3, C_DKBROWN);
+  if (bk.part) {   // a chapter book (one-line title, check_content): which part, under its title on the plate
+    char pt[12]; snprintf(pt, sizeof pt, "Part %d", bk.part);
+    textCentered(80, 91 + nl * 9, pt, C_YELLOW);
+  }   // the title's plate; a Ukrainian title (one line) is Andika, over the frame (drawBookText)
   if (lang_ == books::EN) for (int i = 0; i < nl; i++) textCentered(80, 91 + i * 9, lines[i], C_WHITE);
   drawPaws(80, 110, books::paws(bk.level, shelfLevel_));
   drawArrows(in_, 60);

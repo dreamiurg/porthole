@@ -76,11 +76,20 @@ inline int target(skills::Book& b, const Save& s, Lang l) {
 // How hard a book is for this kid, as paws on its cover: 1 easy, 2 just right, 3 a stretch.
 inline int paws(int level, int t) { return level < t ? 1 : level == t ? 2 : 3; }
 
+// A chapter book is its chapters in a row, part 1, 2, 3...: chapter k waits off the shelf until chapter k-1, the entry
+// just before it, is read. parts: how many chapters the book of chapter i has (0 for a book of its own).
+inline bool waiting(const Save& s, Lang l, int i) { return at(l, i).part > 1 && !read(s, l, i - 1); }
+inline int parts(Lang l, int i) {
+  if (!at(l, i).part) return 0;
+  int last = i; while (last + 1 < count(l) && at(l, last + 1).part == at(l, last).part + 1) last++;
+  return at(l, last).part;
+}
+
 namespace detail {
 inline bool has(const uint8_t* out, int n, int i) { for (int k = 0; k < n; k++) if (out[k] == i) return true; return false; }
 // The first unread book at level, not on the shelf yet; -1 when there is none.
 inline int firstUnread(const Save& s, Lang l, int level, const uint8_t* out, int n) {
-  for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !read(s, l, i) && !has(out, n, i)) return i;
+  for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !read(s, l, i) && !waiting(s, l, i) && !has(out, n, i)) return i;
   return -1;
 }
 // Books already read, from one level above t to two below, the newest first, until the shelf is full.
@@ -96,9 +105,14 @@ inline int addRest(const Save& s, Lang l, int t, uint8_t* out, int n) {
   for (int d = 0; d < LEVELS[l]; d++)
     for (int level : {t - d, t + d}) {
       if (d == 0 && level != t) continue;
-      for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !has(out, n, i)) out[n++] = (uint8_t)i;
+      for (int i = 0; i < count(l); i++) if (at(l, i).level == level && !waiting(s, l, i) && !has(out, n, i)) out[n++] = (uint8_t)i;
     }
   return n;
+}
+// The next chapter of a chapter book the kid has begun (its chapter before read, this one not), or -1.
+inline int nextChapter(const Save& s, Lang l) {
+  for (int i = 0; i < count(l); i++) if (at(l, i).part > 1 && !read(s, l, i) && read(s, l, i - 1)) return i;
+  return -1;
 }
 }  // namespace detail
 
@@ -106,9 +120,11 @@ inline int addRest(const Save& s, Lang l, int t, uint8_t* out, int n) {
 // stretch above it and one unread easier, then books already read from two below to one above, to read again, then
 // every other book, so no book ever leaves the shelf (Дмитро, 2026-11-24: a kid's old favorites must stay): the rest
 // already read, newest first, then the rest unread, nearest the level first. Returns how many indices went into out,
-// the new ones first: every book of the language.
+// the new ones first: every book of the language but the chapters still waiting for the one before (waiting).
 inline int shelf(const Save& s, Lang l, int t, uint8_t* out) {
   int n = 0;
+  const int next = detail::nextChapter(s, l);   // a chapter book under way: its next chapter comes first
+  if (next >= 0) out[n++] = (uint8_t)next;
   int right = detail::firstUnread(s, l, t, out, n);
   for (int d = 1; right < 0 && d < LEVELS[l]; d++) {
     right = detail::firstUnread(s, l, t + d, out, n);

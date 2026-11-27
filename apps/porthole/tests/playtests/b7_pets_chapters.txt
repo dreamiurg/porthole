@@ -1,0 +1,20 @@
+# A chapter book (Book::part): a strong reader's shelf has chapter 1 of each, never a later chapter; once chapter 1 is
+# read, chapter 2 comes first on the shelf with "Part 2" beside its cover, and chapter 3 still waits.
+newgame Sam Biscuit
+wait 2400
+tap 92 129
+wait 450
+expect-screen pets_library
+tap 80 57
+wait 450
+expect shelf=en
+dbg readlevel en9
+wait 450
+expect book_level=9
+dbg read en67
+wait 450
+expect book=68
+expect title=Pinocchio
+expect read=0
+snap 01_next_chapter
+sheet chapters

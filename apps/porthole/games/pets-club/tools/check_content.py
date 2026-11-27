@@ -81,18 +81,24 @@ def main():
                 line = text.count("\n", 0, i) + 1
                 errors.append(f"{path}:{line}: non-ASCII character {ch!r}")
                 break
-        # books: {"Title", COLOR, icon, level, { pages..., nullptr}, "Question", {answers}, correct},
+        # books: {"Title", COLOR, icon, level, { pages..., nullptr}, "Question", {answers}, correct[, part]},
         book_re = (
             r'\{"((?:[^"\\]|\\.)*)",\s*C_\w+,\s*(\d+),\s*(\d+),\s*\{(.*?)nullptr\},'
-            r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)\}'
+            r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)(?:,\s*(\d+))?\}'
         )
+        prev = None  # (title, part) of the book before, for a chapter book's chapters standing in a row
         for m in re.finditer(book_re, text, re.S):
-            title, icon, level, pages, question, answers, correct = m.groups()
+            title, icon, level, pages, question, answers, correct, part = m.groups()
+            part = int(part or 0)
             line = text.count("\n", 0, m.start()) + 1
-            where = f"{path}:{line} [{title}]"
-            if title in titles:
-                errors.append(f"{where}: duplicate title (also {titles[title]})")
-            titles[title] = where
+            where = f"{path}:{line} [{title}{f' part {part}' if part else ''}]"
+            if part > 1 and prev != (title, part - 1):
+                errors.append(f"{where}: chapter {part} must follow chapter {part - 1} of the same book")
+            prev = (title, part)
+            key = (title, part)
+            if key in titles:
+                errors.append(f"{where}: duplicate title (also {titles[key]})")
+            titles[key] = where
             if why := fits("title", title):
                 errors.append(f"{where}: {why}")
             if not (0 <= int(icon) <= 7):
