@@ -84,7 +84,9 @@ fields, then `crc` last -- the append-only rule in the app brief applies exactly
 
 `SAVE_VERSION` is currently 5 (320 bytes). v5 appended, before `crc`: `booksEn[8]` and `booksUk[8]` (a bit per book
 read, by its index in `BOOKS` / `UK_BOOKS`; a v4 blob's `booksDoneMask` is copied into `booksEn` on load and is no
-longer written; `booksUnlocked` is no longer read) and `reserved4[16]`, zero, kept for the Shop's room and toys. It
+longer written; `booksUnlocked` is no longer read) and `reserved4[16]`, zero, kept for the Shop's room and toys; its first
+half became `booksEnMore[8]` (English books 64..127, 2026-11-27), always zero before, so no new version, and
+`reserved4[8]` is left for the Shop. It
 took one more NVS entry: the profile budget in `host/test_nvs_budget.cpp` went from 78 to 79, which still fits four
 kids with 13 entries to spare; don't raise it again without a plan for where a fifth kid's save goes. The Shop took v4's reserved bytes, which were always zero, so it needed no new version: `collar` and
 `collarsOwned` (once `reserved0/1`: the collar worn, 0 = Red, and a bit per bought collar), `lastBuyDay` (once
@@ -226,9 +228,10 @@ touch them again. All of it stays in the struct because the layout is append-onl
 
 Two shelves in the library, English and Ukrainian, each with its own reading level from the shared skills engine
 (`os/skills.h`): `READ_EN` (Little reads move it too, and a new kid's starts where `readLevel` stands) and `READ_UK`
-(starts at level 1, calibrating). `books::shelf` (`books.h`) fills a shelf of up to 8 covers: the first unread book
+(starts at level 1, calibrating). `books::shelf` (`books.h`) puts every book of the language on its shelf: the first unread book
 at the kid's level (or the nearest level with one, above first), one unread a level up, one a level down, then books
-already read from two below to one above, newest first; it is never empty. Paws on a cover: 1 easy, 2 just right,
+already read from two below to one above, newest first, then every other book (the rest read, then the rest unread,
+nearest the level first), so no book ever leaves the shelf; the library's preview draws the first eight spines. Paws on a cover: 1 easy, 2 just right,
 3 a stretch. The question at a book's end is one answer to the engine, weighted by the book's length (one per 50
 words, up to 6, `skills::Item::weight`); a book paged faster than 150 ms a word counts as read but rates and pays
 nothing. The first read of a book pays stars at the engine's rate. Telemetry: `book_finished`.

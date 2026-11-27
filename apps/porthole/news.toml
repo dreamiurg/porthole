@@ -90,6 +90,13 @@ text = "Harder books!"
 
 [[news]]
 date = "2026-11-27"
+game = "pets-club"
+size = "game"
+spot = "books"
+text = "Old books are back!"
+
+[[news]]
+date = "2026-11-27"
 game = "times-cards"
 size = "big"
 spot = "fast"

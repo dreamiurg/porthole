@@ -15,7 +15,7 @@ struct Book {
 };
 
 // English books. level: 2..10 on the reading scale Little reads start (1..5) and books.h continues; the first twenty
-// were levels 1-2 and are 5-6 now, content_level3_books.h is 7. Append only: a book's index is persisted (Save::booksEn).
+// were levels 1-2 and are 5-6 now, content_level3_books.h is 7. Append only: a book's index is persisted (Save::booksEn, then booksEnMore).
 inline constexpr Book BOOKS[] = {
   {"The Lost Ball", C_RED, 0, 5, {
     "Pip was a small brown dog with one white ear. Pip loved one thing more than treats. Pip loved his red ball.",

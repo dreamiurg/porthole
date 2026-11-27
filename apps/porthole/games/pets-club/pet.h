@@ -72,7 +72,8 @@ struct Save {
   // booksDoneMask is copied into booksEn on load and no longer written; booksUnlocked is no longer read (every book is
   // on the shelf now, no gift unlocks one).
   uint8_t booksEn[8], booksUk[8];
-  uint8_t reserved4[16];                         // kept for the Shop's room and toys, so they need no v6
+  uint8_t booksEnMore[8];                        // English books 64..127 (once reserved4's first half): no v6 needed
+  uint8_t reserved4[8];                          // kept for the Shop's room and toys, so they need no v6
   uint32_t crc;
 };
 static_assert(sizeof(Save) == 320, "Save is append-only: v5 is 320 bytes");

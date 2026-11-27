@@ -16,6 +16,7 @@ constexpr NewsEntry NEWS[] = {
     {20779, shell::NEWS_GAME, false, "crago", "puzzles", "Ukrainian sentences!"},   // 2026-11-22 pets-club
     {20779, shell::NEWS_BIG, false, "crago", "books", "Books in Ukrainian!"},   // 2026-11-22 pets-club
     {20784, shell::NEWS_NEW, false, "crago", "books", "Harder books!"},   // 2026-11-27 pets-club
+    {20784, shell::NEWS_GAME, false, "crago", "books", "Old books are back!"},   // 2026-11-27 pets-club
     {20784, shell::NEWS_BIG, false, "timescards", "fast", "Fast rounds!"},   // 2026-11-27 times-cards
 };
 constexpr int NEWS_COUNT = sizeof NEWS / sizeof NEWS[0];

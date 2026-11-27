@@ -70,6 +70,7 @@ static void shelfPerLevel() {
       bool any = false; for (int i = 0; i < count(l); i++) any |= at(l, i).level == t;
       if (any) CHECK(at(l, out[0]).level == t);   // just right is the level itself when it has an unread book
       for (int k = 0; k < n; k++) for (int j = k + 1; j < n; j++) CHECK(out[k] != out[j]);
+      CHECK(n == count(l));   // every book stays on the shelf: a kid's old favorites never leave it
     }
   }
 }
@@ -86,9 +87,20 @@ static void shelves() {
   // Everything read: still a shelf, of books to read again.
   for (int i = 0; i < NUM_UK_BOOKS; i++) markRead(s, UK, i);
   n = shelf(s, UK, 3, out); CHECK(n >= 1 && read(s, UK, out[0]));
+  // A kid far above the first books still finds them, read or not: here a level 8 English reader.
+  { Save k{}; markRead(k, EN, 0); const int m = shelf(k, EN, 8, out); bool first = false, second = false;
+    for (int j = 0; j < m; j++) { first |= out[j] == 0; second |= out[j] == 1; }
+    CHECK(m == NUM_BOOKS && first && second); }
   CHECK(read(s, UK, 0) && !read(s, EN, 0));   // the languages keep their own marks
-  markRead(s, EN, 63); CHECK(s.booksEn[7] == 0x80);
   CHECK(paws(2, 3) == 1 && paws(3, 3) == 2 && paws(4, 3) == 3);
+}
+
+// English books 64..127 keep their marks in booksEnMore, so the first 64 bytes' meaning never changes.
+static void marksPastSixtyFour() {
+  Save s{};
+  markRead(s, EN, 63); CHECK(s.booksEn[7] == 0x80);
+  markRead(s, EN, 64); markRead(s, EN, 127); CHECK(s.booksEnMore[0] == 0x01 && s.booksEnMore[7] == 0x80);
+  CHECK(read(s, EN, 64) && read(s, EN, 127) && !read(s, EN, 65) && !s.reserved4[0]);
 }
 
 static int expectedWeight(const Book& b) {
@@ -125,6 +137,7 @@ static void answers() {
 int main() {
   ukrainianFits();
   shelves();
+  marksPastSixtyFour();
   answers();
   printf("pets books: %d English, %d Ukrainian; %d checks\n", NUM_BOOKS, NUM_UK_BOOKS, checks);
   return 0;
