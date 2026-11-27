@@ -35,17 +35,35 @@ inline void markRead(Save& s, Lang l, int i) { uint8_t& m = marks(s, l, i)[(i & 
 inline int pages(const Book& b) { int n = 0; while (n < 11 && b.pages[n]) n++; return n; }
 inline int answers(const Book& b) { int n = 0; while (n < 3 && b.answers[n]) n++; return n; }
 // Words: runs of non-space bytes holding a letter (any byte >= 0x80 is part of a Ukrainian letter).
-inline int words(const Book& b) {
-  int n = 0;
-  for (int p = 0; p < pages(b); p++) {
-    bool in = false, letter = false;
-    for (const char* c = b.pages[p];; c++) {
-      if (!*c || *c == ' ') { n += in && letter; in = letter = false; if (!*c) break; continue; }
-      in = true;
-      letter |= (*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z') || (uint8_t)*c >= 0x80;
-    }
+inline int pageWords(const char* c) {
+  int n = 0; bool in = false, letter = false;
+  for (;; c++) {
+    if (!*c || *c == ' ') { n += in && letter; in = letter = false; if (!*c) break; continue; }
+    in = true;
+    letter |= (*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z') || (uint8_t)*c >= 0x80;
   }
   return n;
+}
+inline int words(const Book& b) { int n = 0; for (int p = 0; p < pages(b); p++) n += pageWords(b.pages[p]); return n; }
+
+// Reading pace, in ms a word. A kid's careful pace is their own (Save::readPace, learned from first reads answered
+// right), until then a guess by age, twice as slow in Ukrainian. Paging faster than half of it is not reading: a page
+// of a book not read yet turns only after its words at that pace (the reader's next arrow waits), and a book paged
+// through faster rates and pays nothing. Never under MS_PER_WORD (400 words a minute), the line for every kid before.
+inline uint32_t pacePrior(int age, Lang l) {
+  const uint32_t en = age && age <= 6 ? 600 : age == 7 || !age ? 400 : age == 8 ? 300 : 240;   // 100, 150, 200, 250 wpm
+  return l == UK ? en * 2 : en;
+}
+inline uint32_t carefulMs(const Save& s, Lang l) { return s.readPace[l] ? s.readPace[l] : pacePrior(s.kidAge, l); }
+inline uint32_t skimMs(const Save& s, Lang l) { const uint32_t m = carefulMs(s, l) / 2; return m < MS_PER_WORD ? MS_PER_WORD : m; }
+// A first read answered right moves the kid's pace a quarter of the way to this book's, kept within a half to four
+// times the guess by age, so one slow or quick book can't run away with it.
+inline void learnPace(Save& s, Lang l, const Book& b, uint32_t pagesMs) {
+  const int w = words(b); if (w <= 0) return;
+  const uint32_t prior = pacePrior(s.kidAge, l), lo = prior / 2, hi = prior * 4;
+  uint32_t m = pagesMs / (uint32_t)w; m = m < lo ? lo : m > hi ? hi : m;
+  const uint32_t was = s.readPace[l] ? s.readPace[l] : prior;
+  s.readPace[l] = (uint16_t)((was * 3 + m) / 4);
 }
 
 // The engine's reading level for this kid in l, 1..LEVELS[l]: about TARGET of the questions at it come out right.
@@ -103,8 +121,10 @@ inline int shelf(const Save& s, Lang l, int t, uint8_t* out) {
   return detail::addRest(s, l, t, out, n);
 }
 
-// Paged through in ms (from its first page to its question): fast enough that it was not read.
-inline bool skimmed(const Book& b, uint32_t ms) { return ms < (uint32_t)words(b) * MS_PER_WORD; }
+// Paged through in ms (from its first page to its question): fast enough, at perWord (skimMs), that it was not read.
+inline bool skimmed(const Book& b, uint32_t ms, uint32_t perWord = MS_PER_WORD) { return ms < (uint32_t)words(b) * perWord; }
+// A page of a book not read yet, open for ms: too soon to turn (its words at skimMs).
+inline bool pageTooSoon(const Save& s, Lang l, const char* page, uint32_t ms) { return ms < (uint32_t)pageWords(page) * skimMs(s, l); }
 // The question's answer, for skills::answer: the book's level, its answers to guess from, its length as weight; the
 // skim check is the reader's, so no read time here. key: which book (a reread the same day pays less).
 inline skills::Item item(Lang l, int i) {

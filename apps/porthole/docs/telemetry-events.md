@@ -47,7 +47,7 @@ A shop sends `bought` {game, item, cost} (Pets Club's hats and collars, Rally's 
 - `times_cards_answer` {fact, grade, correct, ms, box, retry}
 - `uk_answer` {kind, word, step, rating, correct, ms}, `uk_sentence` {sentence, step, dir, misses, ms, rating,
   correct}, `uk_calibrated` {rating, answers}
-- `book_finished` {lang, level, paws, pages, secs, right, first, counted, rating}
+- `book_finished` {lang, level, paws, pages, secs, right, first, counted, rating, pace} (pace: the kid's careful ms a word, books.h)
 
 Before this page (when an event held 6 properties) `uk_sentence` lost `correct` and `book_finished` lost `first`,
 `counted` and `rating`.

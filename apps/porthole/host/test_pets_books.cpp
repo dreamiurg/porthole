@@ -108,6 +108,22 @@ static int expectedWeight(const Book& b) {
   return w > MAX_WEIGHT ? MAX_WEIGHT : w < 1 ? 1 : w;
 }
 
+// Reading pace: a guess by age until the kid's own, half of it is the skim line (never under MS_PER_WORD), a page
+// waits for its words at that line, and a first read answered right moves the pace a quarter of the way.
+static void readingPace() {
+  Save s{}; s.kidAge = 6;
+  CHECK(carefulMs(s, EN) == 600 && skimMs(s, EN) == 300 && carefulMs(s, UK) == 1200);
+  s.kidAge = 9; CHECK(skimMs(s, EN) == 150);   // 240 / 2 is under the old line: the old line holds
+  s.kidAge = 6;
+  const Book& b = BOOKS[0]; const char* p = b.pages[0]; const uint32_t w = (uint32_t)pageWords(p);
+  CHECK(w > 0 && pageTooSoon(s, EN, p, w * 300 - 1) && !pageTooSoon(s, EN, p, w * 300));
+  const uint32_t all = (uint32_t)words(b);
+  CHECK(skimmed(b, all * 300 - 1, skimMs(s, EN)) && !skimmed(b, all * 300, skimMs(s, EN)));
+  learnPace(s, EN, b, all * 1000); CHECK(s.readPace[EN] == (600 * 3 + 1000) / 4 && s.readPace[UK] == 0);
+  learnPace(s, EN, b, all * 100000); CHECK(s.readPace[EN] == (700 * 3 + 2400) / 4);   // clipped to four times the guess
+  learnPace(s, EN, b, 0); CHECK(s.readPace[EN] == (1125 * 3 + 300) / 4);              // and to half of it
+}
+
 // The longest Ukrainian book: the skim check and its answer's item.
 static void bookItem() {
   int longest = 0; for (int i = 1; i < NUM_UK_BOOKS; i++) if (words(UK_BOOKS[i]) > words(UK_BOOKS[longest])) longest = i;
@@ -139,6 +155,7 @@ int main() {
   shelves();
   marksPastSixtyFour();
   answers();
+  readingPace();
   printf("pets books: %d English, %d Ukrainian; %d checks\n", NUM_BOOKS, NUM_UK_BOOKS, checks);
   return 0;
 }

@@ -49,7 +49,7 @@ struct Prop { const char* key; const char* str; int32_t num; };
 inline Prop P(const char* k, const char* s) { return {k, s ? s : "", 0}; }
 inline Prop P(const char* k, long n) { return {k, nullptr, (int32_t)n}; }
 
-constexpr int MAX_PROPS = 10, TEXT = 24, ID = 17;   // ID: 16 hex digits and the NUL; book_finished sends 9 props
+constexpr int MAX_PROPS = 10, TEXT = 24, ID = 17;   // ID: 16 hex digits and the NUL; book_finished sends 10 props
 struct Event {
   const char* name;    // a literal
   uint32_t utc;
