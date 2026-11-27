@@ -200,9 +200,12 @@ void Game::debugPrint() {
   if (screen_ == SC_WORDS && !wordsDone_) printf("word=%s cols=%d typed=%d tiles=%.*s\n", WORDS[wordIdx_[wordRound_]].word, wordCols_, wordTyped_, wordCols_ * 3, tiles_);
   if (screen_ == SC_BOOKS || screen_ == SC_READ) {
     const Book& bk = curBook();
-    printf("shelf=%s level=%d covers=%d book=%d title=\"%s\" book_level=%d pages=%d page=%d correct=%d read=%d answer_y=%d answer_step=%d\n", lang_ == books::EN ? "en" : "uk",
+    uint32_t gate = 0;   // the longest a page of this book waits before it turns (0: read already, it never waits)
+    if (!books::read(save_, L(lang_), shelf_[bookSel_]))
+      for (int p = 0; p < books::pages(bk); p++) { const uint32_t g = (uint32_t)books::pageWords(bk.pages[p]) * books::skimMs(save_, L(lang_)); gate = g > gate ? g : gate; }
+    printf("shelf=%s level=%d covers=%d book=%d title=\"%s\" book_level=%d pages=%d page=%d correct=%d read=%d answer_y=%d answer_step=%d page_gate=%lu pace=%lu\n", lang_ == books::EN ? "en" : "uk",
            shelfLevel_, nShelf_, shelf_[bookSel_], bk.title, bk.level, books::pages(bk), page_, bk.correct, books::read(save_, L(lang_), shelf_[bookSel_]),
-           bookAnswerTop(bk), ANSWER_STEP);
+           bookAnswerTop(bk), ANSWER_STEP, (unsigned long)gate, (unsigned long)books::carefulMs(save_, L(lang_)));
   }
   printf("stars=%lu puzzles_right=%u levels=%d%d%d reviews=%d reads_right=%u read_level=%u read_streak=%u hats=%u collar=%u collars=%lu short=%d\n",
          (unsigned long)stars::balance(wallet_), save_.puzzlesRight, save_.puzzleLevels[0], save_.puzzleLevels[1], save_.puzzleLevels[2],
@@ -1041,7 +1044,13 @@ void Game::updateBooks() {
   if (const int d = arrowTap(in_, 60)) bookSel_ = (bookSel_ + nShelf_ + d) % nShelf_;
   if (in_.tapIn(READ_BTN.x, READ_BTN.y, READ_BTN.w, READ_BTN.h) || in_.tapIn(56, 33, 48, 55)) openBook();
 }
-void Game::openBook() { page_ = 0; answerPick_ = -1; bookOpenMs_ = bookAskMs_ = ms_; go(SC_READ); }
+void Game::openBook() { page_ = 0; answerPick_ = -1; bookOpenMs_ = bookAskMs_ = pageAtMs_ = ms_; go(SC_READ); }
+// A book not read yet turns a page only once its words had time at the kid's pace (books::pageTooSoon).
+bool Game::pageWaits() const {
+  const int i = shelf_[bookSel_];
+  return !books::read(save_, L(lang_), i) && page_ < books::pages(curBook()) &&
+         books::pageTooSoon(save_, L(lang_), curBook().pages[page_], ms_ - pageAtMs_);
+}
 void Game::drawPaws(int cx, int y, int n) {
   for (int i = 0; i < 3; i++) blitTint(SPR_PAW, cx - 14 + i * 10, y, i < n ? C_YELLOW : C_DKBROWN);
 }
@@ -1097,8 +1106,8 @@ void Game::updateRead() {
   if (backButton()) { go(SC_BOOKS); return; }
   if (page_ < npages) {
     if (in_.tap && in_.y > 26) {
-      if (in_.x >= 64) { page_++; if (page_ == npages) { bookAskMs_ = ms_; spawn(40, 120, 0, 3); } }
-      else if (page_ > 0) { page_--; }
+      if (in_.x >= 64) { if (pageWaits()) return; page_++; pageAtMs_ = ms_; if (page_ == npages) { bookAskMs_ = ms_; spawn(40, 120, 0, 3); } }
+      else if (page_ > 0) { page_--; pageAtMs_ = ms_; }
     }
     return;
   }
@@ -1111,12 +1120,14 @@ void Game::updateRead() {
   }
 }
 // The question answered: the book is read. Its first read is one answer to the engine, unless it was paged through
-// faster than anyone reads (books::skimmed): then it is read all the same, and rates and pays nothing.
+// faster than this kid reads with care (books::skimmed at books::skimMs): then it is read all the same, and rates and
+// pays nothing. A counted first read answered right teaches the kid's pace (books::learnPace).
 void Game::bookDone(bool right) {
   const Book& bk = curBook(); const int i = shelf_[bookSel_];
   const bool first = !books::read(save_, L(lang_), i);
   const uint32_t pagesMs = bookAskMs_ - bookOpenMs_, tookMs = answerUntil_ - ANSWER_PAUSE_MS - bookOpenMs_;
-  const bool counted = first && !books::skimmed(bk, pagesMs);
+  const bool counted = first && !books::skimmed(bk, pagesMs, books::skimMs(save_, L(lang_)));
+  if (counted && right) books::learnPace(save_, L(lang_), bk, pagesMs);
   const int paws = books::paws(bk.level, shelfLevel_);
   books::markRead(save_, L(lang_), i);
   pet::bookFinished(save_, now_, first, right);
@@ -1131,6 +1142,7 @@ void Game::bookDone(bool right) {
   telemetry::emit("book_finished", {P("lang", lang_ == books::EN ? "en" : "uk"), P("level", (long)bk.level),
                                     P("paws", (long)paws), P("pages", (long)books::pages(bk)), P("secs", (long)(pagesMs / 1000)),
                                     P("right", (long)right), P("first", (long)first), P("counted", (long)counted),
+                                    P("pace", (long)books::carefulMs(save_, L(lang_))),
                                     P("rating", (long)skills::get(*book_, books::skill(L(lang_))).theta)});
   markDirty();
   char b[48];
@@ -1160,7 +1172,7 @@ void Game::drawReadPage(int top, int npages) {
     for (int i = 0; i < nl; i++) text(19, top + i * 10, lines[i], C_DKBROWN);
   }
   for (int i = 0; i < npages; i++) circle(80 - npages * 3 + i * 6, 130, i == page_ ? 2 : 1, i == page_ ? C_PLUM : C_LTGRAY);
-  blitTint(SPR_ARROW, 118, 124, C_ORANGE);
+  blitTint(SPR_ARROW, 118, 124, pageWaits() ? (uint8_t)C_LTGRAY : (uint8_t)C_ORANGE);   // grey: still reading
   if (page_ > 0) blitTint(SPR_ARROW, 36, 124, C_ORANGE, true);
   // listening dog
   int pose = (ms_ / 700) % 5 == 0 ? P_LISTEN : P_SIT;

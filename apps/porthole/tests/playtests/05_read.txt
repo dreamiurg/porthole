@@ -1,4 +1,4 @@
-# Reading: library -> the English shelf -> a cover -> a story page by page (back works, not before page 1) -> question -> answer -> The End -> home.
+# Reading: library -> the English shelf -> a cover -> a story page by page (back works, not before page 1; a new page waits for its words) -> question -> answer -> The End -> home.
 newgame Sam Biscuit
 wait 2400
 expect books=0
@@ -21,14 +21,22 @@ snap 02_page
 # the left half on the first page does nothing
 tap 40 80
 expect page=0
+# a new book's page turns only once its words had time at the kid's pace: too soon, the page stays
 tap 120 80
+expect page=0
+wait 9000
+tap 120 80
+wait 9000
 tap 120 80
 expect page=2
 # the left half turns back
 tap 40 80
 expect page=1
+wait 9000
 tap 120 80
+wait 9000
 tap 120 80
+wait 9000
 tap 120 80
 wait 450
 expect-screen read

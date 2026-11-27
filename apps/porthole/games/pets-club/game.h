@@ -75,7 +75,7 @@ class Game : public App {
   int wordWrongTile_ = -1; uint32_t wordWrongUntil_ = 0; uint32_t wordSolvedUntil_ = 0; bool wordsDone_ = false;
   // library (the two shelves), the cover picker (SC_BOOKS) and the reader; books.h picks the shelf
   uint8_t lang_ = 0, shelf_[128] = {}; int nShelf_ = 0, shelfLevel_ = 1;   // books::Lang, books::SHELF_MAX (game.cpp asserts)
-  int bookSel_ = 0, page_ = 0, answerPick_ = -1; uint32_t answerUntil_ = 0, bookOpenMs_ = 0, bookAskMs_ = 0;
+  int bookSel_ = 0, page_ = 0, answerPick_ = -1; uint32_t answerUntil_ = 0, bookOpenMs_ = 0, bookAskMs_ = 0, pageAtMs_ = 0;
   // tricks / training
   int trickSel_ = 0; uint8_t seq_[6] = {0}; int seqLen_ = 2, seqShow_ = -1, seqInput_ = 0, trainRound_ = 0; uint32_t seqStepMs_ = 0;
   uint8_t trainPhase_ = 0;  // 0 intro 1 showing 2 input 3 round ok 4 fail 5 passed
@@ -172,7 +172,7 @@ class Game : public App {
   void startWords(); void nextWord(); void updateWords(); void drawWords(); void drawWordsDone(); void drawWordTiles();
   void updateLibrary(); void drawLibrary();
   void updateBooks(); void drawBooks(); void drawPaws(int cx, int y, int paws);
-  void refreshShelf(); void openShelf(int lang); void openBook(); void bookDone(bool right);
+  void refreshShelf(); void openShelf(int lang); void openBook(); bool pageWaits() const; void bookDone(bool right);
   int bookTitleLines(const struct Book& bk) const; int bookAnswerTop(const struct Book& bk) const;
   void updateRead(); void drawRead(); void drawReadPage(int top, int npages); void drawReadQuestion(int qTop);
   bool ukBook() const { return lang_ == 1 && (screen_ == SC_BOOKS || screen_ == SC_READ); }
