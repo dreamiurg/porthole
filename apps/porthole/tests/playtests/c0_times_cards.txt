@@ -47,7 +47,11 @@ expect wrong=1
 expect step=-1
 expect-screen cards_answer
 snap t04_missed
+# the first card is a 1x fact, so the miss shows it as groups of dots, for 3.5 s (the waits also set the order of
+# the next card's answers, which the double tap below lands on: the right one)
 wait 2500
+expect-screen cards_answer
+wait 1540
 expect-screen cards_ask
 expect at=1
 # a double tap on an answer picks once

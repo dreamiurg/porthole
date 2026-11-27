@@ -87,3 +87,10 @@ game = "pets-club"
 size = "new"
 spot = "books"
 text = "Harder books!"
+
+[[news]]
+date = "2026-11-27"
+game = "times-cards"
+size = "big"
+spot = "fast"
+text = "Fast rounds!"

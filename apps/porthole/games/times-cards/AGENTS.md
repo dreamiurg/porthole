@@ -16,26 +16,36 @@ Every page has the house at the top: from a card it goes back to the deck, from 
 
 - `cards_home`, the deck: the table the kid is on, big on an index card, a dot for each of its ten facts (green known,
   amber learning, pale new), "Say it, then tap the card" (or "Every table known!") and **Go!**; a tap on the card deals
-  too.
-- `cards_ask`: "k of n" (or "One more try" on a missed card's second look) and the card, "a × b" or "n ÷ d", with "Say
+  too. When the deck offers a fast round (Rules, "The fast round"), Go! moves left and **Fast!** (amber) stands
+  beside it; its news dot (`spot` "fast") stays until it is tapped.
+- `cards_ask`: "k of n" (or "One more try" on a missed card's second look; in a fast round "k of 8" and its running
+  time in whole seconds, "3 of 8   12 s") and the card, "a × b" or "n ÷ d", with "Say
   it out loud, then tap!". The card sinks under a finger; a tap turns it. The time counts from here.
 - `cards_answer`: "a × b =" (or "n ÷ d =") on a smaller card and four answers in a 2 × 2 grid. A tap picks one: the
-  right answer turns green (and a wrong pick red, the others grey). The next card follows 0.6 s after a right pick and
-  2 s after a wrong one, so the right answer is seen. Taps between the answers, on the card or after a pick do nothing.
+  right answer turns green (and a wrong pick red, the others pale). The next card follows 0.6 s after a right pick and
+  2 s after a wrong one, so the right answer is seen. A missed 1 × n or n × 1 (`showsOnes`; not a division) shows
+  what it means instead of the answers, for 3.5 s: "1 × 4 = 4" and "1 group of 4" over one box of four dots, or "4 × 1
+  = 4" and "4 groups of 1" over four boxes of one dot (a × b is a groups of b), five to a row. Taps between the
+  answers, on the card or after a pick do nothing.
 - `cards_done`: "Perfect round!" (nothing missed), "Great job!", "Nice try!" (more than half missed), or "Next up: N
   ×!" when the round reached a new table; "+2 stars", two discs ("Right" green, "Missed" red), the table's dots and
-  **Again**, which deals the next round.
+  **Again**, which deals the next round. After a fast round the title is "New best!" when its time beat the kid's
+  best (or is the first), and the table's dots give way to the time: "Time: 41.2 s" the first time, "38.5 s, was
+  41.2 s" on a new best, "44.0 s, best 38.5 s" otherwise; Again deals another fast round while the deck offers one.
 - `cards_stats`, for a grown-up: hold the "Times Cards" title on the deck for 2 s (not a kid target, not in the
   audit). "How it's going", the step and how many jumps, then four rows: right answers of all tries on met cards,
   the usual time, the "fast" line for a mid-size fact (3 × 4) and how many facts are being learned. The house goes
   back to the deck.
 
-Every finished round pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent on
+Every finished round, a fast round too, pays `ROUND_STARS` (2) into the kid's shared stars (`os/stars.h`, `AppEnter::stars`, spent on
 Pets Club's hats), whatever was missed. A round left half-way pays none. The shell keeps and saves the balance; this
 game never stores it.
 
-No sound (`soundOn` is always false), no countdown shown, nothing lost: a missed card only comes back sooner. The
-time is measured, never displayed: a slow right answer is still right.
+No sound (`soundOn` is always false), no countdown shown in a normal round, nothing lost: a missed card only comes
+back sooner. In a normal round the time is measured, never displayed: a slow right answer is still right. The one
+exception is the fast round the kid picks (a user decision of 2026-11-27, for the 6, 8 and 9 tables an 8-year-old
+still works out at 7 to 10 s a fact): it shows its running time and the best, but a slow answer is still right and
+nothing is lost; it pays as any round.
 
 ## Rules (`deck.h`, header-only, checked by `host/test_times_cards.cpp`)
 
@@ -85,12 +95,20 @@ time is measured, never displayed: a slow right answer is still right.
   from box 1 while the level stays.
 - **Start:** from the profile's age, `startTable(age) = clamp(age - 4, 1, 4)`. The tables below start in box 5, spread
   over the next two weeks, so a few come back for review each day.
+- **The fast round** (`offersFast`, `buildFast`, `noteFast`): for the known facts (box ≥ `MASTER_BOX`) with a 6, 8
+  or 9 in them, either order (6 × 7 and 7 × 6 are two cards), that are still slow: the last answer on them was right
+  but Hard, which leaves a known card due the very half after it was seen (`slowFact`; no per-card time is stored). The
+  deck offers one once `FAST_FROM` (3) of them are slow and at least `FAST_ROUND` (8) are known. It deals exactly
+  eight, the slow ones first, then other known ones, each in an order drawn at random; nothing is put back, so every
+  fast round is the same length and its times compare. Its answers grade and schedule as in any round (a due slow
+  fact answered fast moves up and stops being slow). Its time is the sum of each card's, from showing to the pick (the
+  pauses after a pick do not count); a time under the kid's `bestFast` is a new best.
 - Days are Porthole's local wall clock (`now / 43200` halves). Being away punishes nothing: an overdue card is simply
   due. A clock set back is clamped so no card waits longer than its box says.
 
 ## Telemetry
 
-While Usage stats is on (`os/telemetry.h`, on by default), each pick sends `times_cards_answer` (`fact` "7x8" or "56:7", `grade`, `correct`, `ms` from the card showing to the pick, `box`, `retry`) and a finished round sends `level_finished` (`easy`, `hard`, `wrong`, `level_up`). Nothing changes in play or in the save.
+While Usage stats is on (`os/telemetry.h`, on by default), each pick sends `times_cards_answer` (`fact` "7x8" or "56:7", `grade`, `correct`, `ms` from the card showing to the pick, `box`, `retry`) and a finished round sends `level_finished` (`what` "round", or "fast_round" for a fast round; `easy`, `hard`, `wrong`, `level_up`). Nothing changes in play or in the save.
 
 ## Save
 
@@ -98,11 +116,13 @@ One blob per kid (`timescards/s<id>`, written by the shell, at most every 5 s). 
 (1020 bytes): magic, version, size, level, start table, answers ever, the old pace (0 since version 5), box, due half
 and last-seen half per multiplication card, then (version 2) the same three per division card, a spare zero, then
 (version 6, where version 3's grading check was) the timing (`logMu` in 1/1024, `logVar` in 1/4096, 0 = no answer
-yet), the step, the streak, jumps, tries and rights, the tables whose probe was missed, spare zeros, crc.
+yet), the step, the streak, jumps, tries and rights, the tables whose probe was missed, (version 7) the best fast
+round in tenths of a second (`bestFast`, 0 = none yet), spare zeros, crc.
 
 Versions: 1 to 3 stored the struct whole in days (520, 972, 1020 bytes); 4 bit-packed in days; 5 the struct whole in
 halves (only if a deck could ever not be packed); 6 bit-packed in halves (`pack` / `packDeck`, on `os/bits.h`): about
-160 bytes new, 330 four months in, under 400 over half a year. The whole version is numbered below the packed one on
+160 bytes new, 330 four months in, under 400 over half a year; 7 is 6 with `bestFast` (one bit while it is 0). A
+version 6 deck loads with no best yet and is stored anew as 7 when opened (`fastBestSaved` in the tests). The whole version is numbered below the packed one on
 purpose, so the shell's "newer version" check never refuses it. Every older version loads: its days become halves
 (`toHalves`), the old pace and grading counters are dropped, and the timing starts from the first guess. `takeSave`
 hands the packed blob only after reading it back as byte for byte the deck in memory. `host/fixtures/
@@ -124,11 +144,13 @@ fresh deck replaces it only once the kid answers a card on it, never just becaus
 - `game.h` / `game.cpp` (`class Game`, `namespace cards`): pages, input and drawing on the RGB565 surface. Repaints
   only when what the page shows changes. `debugCmd("level<N>")` starts a fresh deck on table N;
   `debugCmd("card<N>")` deals a round of card N alone (screenshots); `debugCmd("right")` / `("wrong")` pick the right
-  answer or a wrong one on the answer page, as a tap would (playtests). A card too wide for the index card (100 ÷ 10)
+  answer or a wrong one on the answer page, as a tap would (playtests); `debugCmd("slow")` marks every known fact of
+  6×, 8× and 9× answered slowly last half, so the deck offers a fast round. A card too wide for the index card (100 ÷ 10)
   drops the spaces round its sign.
 - `art/launcher.png` -> `launcher_icon.h` (`tools/launcher_icons.py`).
 - In `games/apps.h` (id 12). That fills `MAX_APPS` (12): the next game needs it raised.
 - Playtests: `tests/playtests/c0_times_cards.txt` (a first week of a fast 6-year-old: a miss and its colours, a double
   tap, the house mid-round, leaving and coming back, jumps over the tables they know, "Every table known!", the
   grown-up page, and an 8-year-old's own deck answered slowly, so no jump) and `c1_times_cards_monkey.txt` (the last
-  table to "Every table known!", then random input under the sanitizers).
+  table to "Every table known!", then random input under the sanitizers) and `c3_times_cards_fast.txt` (a fast round
+  offered, its running time, a first best and a slower second round, and a missed 1 × 4 and 4 × 1 drawn as dots).

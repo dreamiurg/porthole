@@ -38,7 +38,8 @@ A game with rounds, races, matches or levels calls `telemetry::roundFinished()` 
 | Spooky | 0 | candies | |
 | Marble Kick | level number | the level's stars | |
 
-Times Cards and Pets Club's Ukrainian send the older `level_finished` {game, what, ...} instead; count both.
+Times Cards and Pets Club's Ukrainian send the older `level_finished` {game, what, ...} instead; count both. Times Cards'
+`what` is `round`, or `fast_round` for its fast round of 6, 8 and 9 facts.
 
 A shop sends `bought` {game, item, cost} (Pets Club's hats and collars, Rally's garage).
 

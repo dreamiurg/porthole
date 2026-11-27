@@ -304,6 +304,59 @@ static void division() {
   CHECK(newCard(r, s) == cardOf(4, 3));
 }
 
+// The fast round: known facts with a 6, 8 or 9 in them whose last answer was slow; offered once three are, and dealt
+// eight at a time, the slow ones first. It grades as any round, puts nothing back, and keeps the best time.
+static void fastRounds() {
+  Save s;
+  setUp(s, 7, H);   // 1x to 6x known, never answered: nothing slow yet
+  CHECK(!offersFast(s) && fastPool(s, cardOf(3, 8)) && fastPool(s, cardOf(6, 2)) && !fastPool(s, cardOf(3, 4)));
+  CHECK(!fastPool(s, cardOf(7, 8)) && !fastPool(s, divOf(6, 3)));   // not known yet; a division
+  grade(s, cardOf(3, 4), HARD, H);   // slow, but no 6, 8 or 9 in it
+  grade(s, cardOf(2, 3), HARD, H);
+  grade(s, cardOf(6, 7), HARD, H);   // slow
+  grade(s, cardOf(4, 9), HARD, H);
+  grade(s, cardOf(5, 6), EASY, H);   // due and fast: not slow
+  CHECK(slowFact(s, cardOf(6, 7)) && slowFact(s, cardOf(4, 9)) && !slowFact(s, cardOf(3, 4)) && !slowFact(s, cardOf(5, 6)));
+  CHECK(!slowFact(s, cardOf(1, 8)) && !offersFast(s));   // known from the start, never answered; two slow are not enough
+  grade(s, cardOf(8, 1), WRONG, H);   // missed: learning again, not in the pool
+  CHECK(!fastPool(s, cardOf(8, 1)) && !offersFast(s));
+  grade(s, cardOf(9, 2), HARD, H);   // 9 x 2: not known yet
+  grade(s, cardOf(2, 8), HARD, H);
+  CHECK(offersFast(s));
+  Save few;   // three slow, but too few known facts of 6x, 8x and 9x for a round of eight
+  setUp(few, 2, H);
+  const int hard[] = {6, 8, 9};
+  for (int n : hard) grade(few, cardOf(1, n), HARD, H);
+  CHECK(!offersFast(few));
+
+  Round r;
+  buildFast(r, s, 12345);
+  CHECK(r.fast && r.n == FAST_ROUND && r.base == FAST_ROUND && r.number() == 1);
+  for (int i = 0; i < r.n; i++) {
+    CHECK(fastPool(s, r.card[i]) && slowFact(s, r.card[i]) == (i < 3));   // the three slow ones first
+    for (int k = 0; k < i; k++) CHECK(r.card[k] != r.card[i]);
+  }
+  const int slow0 = r.card[0];
+  // The next half, the slow ones are due: fast answers move them up, as in any round. A miss is not put back.
+  answer(r, s, true, FAST, H + 1);
+  CHECK(s.boxOf(slow0) == KNOWN_BOX + 1 && !slowFact(s, slow0));
+  answer(r, s, false, FAST, H + 1);
+  for (int i = 2; i < FAST_ROUND; i++) answer(r, s, true, 3000, H + 1);
+  CHECK(r.done() && r.n == FAST_ROUND && r.wrong == 1 && r.took == 2 * FAST + 6 * 3000);
+  CHECK(r.newBest && !r.was && s.bestFast == (2 * FAST + 6 * 3000) / 100);   // the first: a best
+  Save again = s;   // slower: no best
+  buildFast(r, again, 7);
+  while (!r.done()) answer(r, again, true, 4000, H + 1);
+  CHECK(!r.newBest && again.bestFast == s.bestFast && r.was == s.bestFast);
+  CHECK(noteFast(again, 20949) && again.bestFast == 209 && !noteFast(again, 20950) && noteFast(again, 1) && again.bestFast == 1);
+}
+// A missed 1 x n or n x 1 shows its groups of dots; a right pick, any other fact or a division does not.
+static void onesPicture() {
+  CHECK(showsOnes(cardOf(1, 4), false) && showsOnes(cardOf(4, 1), false) && showsOnes(cardOf(1, 1), false));
+  CHECK(!showsOnes(cardOf(1, 4), true) && !showsOnes(cardOf(2, 4), false) && !showsOnes(divOf(4, 1), false));
+  CHECK(!showsOnes(divOf(2, 1), false));
+}
+
 // ---- the save
 static size_t g_most = 0;   // the largest packed deck seen
 // Packs s and reads it back: true if that is byte for byte the deck that went in, and packing left it alone.
@@ -398,7 +451,7 @@ static void holdTitle(Game& g) {
 }
 
 // The real decks in the field: a version 3 one (whole) and the same deck as version 4 (packed) load as the same
-// version 6 deck in half-days, and the game stores it anew, packed, as soon as it is opened.
+// deck in half-days (this version), and the game stores it anew, packed, as soon as it is opened.
 static void fieldDecksMove() {
   Save raw;
   memcpy(&raw, TIMES_CARDS_SAVE_V3, sizeof raw);
@@ -412,7 +465,7 @@ static void fieldDecksMove() {
   CHECK(packsExactly(three, &n) && n < 420);
   Save fresh; setUp(fresh, 4, H); size_t small = 0;
   CHECK(packsExactly(fresh, &small) && small < 200);
-  printf("times cards save: version 3 1020 bytes, version 4 %u; version 6 %u new, %u four months in\n",
+  printf("times cards save: version 3 1020 bytes, version 4 %u; version 7 %u new, %u four months in\n",
          (unsigned)sizeof TIMES_CARDS_SAVE_V4, (unsigned)small, (unsigned)n);
 
   Game g;
@@ -431,6 +484,31 @@ static void fieldDecksMove() {
   slot = {stored, len};   // opened again on the packed deck: the same deck, and nothing to write
   g.enter(e);
   CHECK(!g.takeSave(&data, &len, true) && g.save().answers == 1995 && !memcmp(g.save().box, back.box, sizeof back.box));
+}
+// A version 6 deck (before the fast round) loads with no best time yet, and the game stores it anew as version 7;
+// version 7 keeps the best time.
+static void fastBestSaved() {
+  Save s, back;
+  setUp(s, 7, H);
+  grade(s, cardOf(6, 7), HARD, H); noteTime(s, cardOf(3, 4), 3000); s.bestFast = 412;
+  seal(s);
+  uint8_t blob[sizeof(Save)];
+  size_t n = pack(s, blob, sizeof blob, SAVE_V6);
+  CHECK(n && storedVersion(blob, n) == SAVE_V6 && loadBlob(blob, n, back) && back.bestFast == 0);
+  Save six = s; six.bestFast = 0; seal(six);
+  CHECK(!memcmp(&back, &six, sizeof six));   // everything else as it was
+  CHECK(packsExactly(s, &n) && loadBlob(blob, pack(s, blob, sizeof blob), back) && back.bestFast == 412);
+  uint8_t v6[sizeof(Save)];
+  const size_t n6 = pack(six, v6, sizeof v6, SAVE_V6);
+  Game g;
+  Profile kid = {1, "Kid", 0, 8, 0};
+  SaveSlot slot = {v6, n6};
+  AppEnter e = {&kid, &kid, &slot, 1, (uint32_t)H * 43200u, ms, true};
+  uint32_t wallet = 0;
+  e.stars = &wallet;
+  g.enter(e);
+  const void* data; size_t len;
+  CHECK(g.takeSave(&data, &len, true) && storedVersion(data, len) == SAVE_VERSION && g.save().bestFast == 0);
 }
 // One bit wrong anywhere, or a byte short or long: not read.
 static void damagedPacked() {
@@ -480,6 +558,7 @@ static void anyDeckPacks() {
     s.step = (int8_t)((int)(nextRand(r) % 5) + STEP_MIN); s.streak = (uint8_t)nextRand(r);
     s.jumps = (uint16_t)nextRand(r); s.tries = (uint16_t)nextRand(r); s.rights = (uint16_t)nextRand(r);
     s.spare = t % 3 ? 0 : (uint16_t)nextRand(r);
+    s.bestFast = t % 4 ? (uint16_t)nextRand(r) : 0;
     CHECK(packsExactly(s));
   }
 }
@@ -576,7 +655,7 @@ static void pages() {
   CHECK(on(g, "cards_answer"));
   for (int i = 0; i < 6; i++) tapBox(g, 52, 74);   // taps while it shows do nothing
   CHECK(g.save().answers == 1);
-  settle(g, 40);
+  settle(g, 60);   // the first card is an easy win, a 1x fact: its miss shows as groups of dots for 3.5 s
   CHECK(on(g, "cards_ask"));
   for (int i = 1; i < ROUND + 1; i++) answerRight(g);   // the rest, and the missed card's second look
   CHECK(on(g, "cards_done") && g.save().answers == ROUND + 1 && g.save().step >= 1);
@@ -610,6 +689,58 @@ static void pages() {
   g.debugPrint();
 }
 
+// The pages of a fast round: offered beside Go! once facts are slow, its running time, the done page's time, and a
+// missed 1x fact held long enough to see its dots.
+static void fastPages() {
+  Game g;
+  Profile kid = {1, "Kid", 0, 8, 0};
+  SaveSlot none = {nullptr, 0};
+  AppEnter e = {&kid, &kid, &none, 1, NOW, ms, true};
+  uint32_t wallet = 0;
+  e.stars = &wallet;
+  g.enter(e);
+  g.debugCmd("level7");
+  settle(g);
+  tapBox(g, 103, 131);   // where Fast! would be: Go!'s right half, a normal round
+  CHECK(on(g, "cards_ask"));
+  tapBox(g, 80, 12);
+  g.debugCmd("slow");
+  CHECK(offersFast(g.save()));
+  settle(g);
+  tapBox(g, 103, 131);   // Fast!
+  CHECK(on(g, "cards_ask"));
+  for (int i = 0; i < FAST_ROUND; i++) answerRight(g);
+  CHECK(on(g, "cards_done") && g.save().bestFast > 0 && wallet > 0);
+  uint32_t paid = wallet;
+  settle(g);
+  tapBox(g, 80, 133);   // Again: another fast round while it is offered
+  CHECK(on(g, "cards_ask"));
+  for (int i = 0; i < FAST_ROUND; i++) answerRight(g);
+  CHECK(on(g, "cards_done") && wallet > paid);
+  // A missed 1x fact: still showing its dots after the usual 2 s, gone after 3.5 s
+  const int ones[] = {cardOf(1, 4), cardOf(4, 1)};
+  for (int c : ones) {
+    char cmd[16];
+    snprintf(cmd, sizeof cmd, "card%d", c);
+    g.debugCmd(cmd);
+    settle(g);
+    tapBox(g, 80, 70);
+    settle(g, 5);
+    g.debugCmd("wrong");
+    settle(g, 60);
+    CHECK(on(g, "cards_answer"));
+    settle(g, 30);
+    CHECK(on(g, "cards_ask"));   // its second look
+  }
+  g.debugCmd("card13");   // 2 x 4 missed: the usual two seconds
+  settle(g);
+  tapBox(g, 80, 70);
+  settle(g, 5);
+  g.debugCmd("wrong");
+  settle(g, 55);
+  CHECK(on(g, "cards_ask"));
+}
+
 int main() {
   start();
   facts();
@@ -626,13 +757,17 @@ int main() {
   noJump();
   putBack();
   division();
+  fastRounds();
+  onesPicture();
   saves();
+  fastBestSaved();
   fieldDecksMove();
   damagedPacked();
   anyDeckPacks();
   playedDecksPack();
   unreadableDeckKept();
   pages();
+  fastPages();
   printf("test_times_cards: %d checks ok\n", checks);
   return 0;
 }

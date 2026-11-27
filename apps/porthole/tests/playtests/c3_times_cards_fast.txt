@@ -1,0 +1,86 @@
+# Times Cards: a fast round, and a missed 1x fact drawn as dots. An 8-year-old knows 1x to 6x but still works out the
+# facts with a 6, 8 or 9 in them slowly; once three of those are slow, the deck offers Fast! beside Go!: eight of
+# them, slow ones first, with the round's time running at the top, and on the done page that time against the kid's
+# best. Nothing else changes: the answers grade and schedule as in any round, a miss shows the right answer, and the
+# round pays its stars. A 1 x n or n x 1 missed shows as one group of n dots or n groups of one, for 3.5 s.
+profile Sam 8
+app timescards
+wait 600
+dbg level7
+wait 100
+expect offers=0
+ui-check cards_home
+dbg slow
+wait 600
+expect offers=1
+expect-screen cards_home
+ui-check cards_home-fast
+snap f01_home_fast
+# Fast! deals the fast round: eight cards, the time running
+tap 103 131
+wait 600
+expect-screen cards_ask
+expect fastround=1
+expect base=8
+wait 2400
+ui-check cards_ask-fast
+snap f02_ask_timer
+tap 80 70
+wait 600
+expect-screen cards_answer
+snap f03_answer_timer
+dbg wrong
+wait 100
+ui-check cards_answer-missed
+snap f04_missed
+wait 2400
+expect-screen cards_ask
+repeat 7
+tap 80 70
+wait 600
+dbg right
+wait 1100
+end
+expect-screen cards_done
+expect wrong=1
+expect stars>=2
+expect newbest=1
+ui-check cards_done-fast
+snap f05_done_first_best
+# Again: another fast round, answered slower: no new best, the best still shown
+tap 80 133
+wait 600
+expect-screen cards_ask
+expect fastround=1
+repeat 8
+tap 80 70
+wait 1200
+dbg right
+wait 1100
+end
+expect-screen cards_done
+expect newbest=0
+ui-check cards_done-fast-slower
+snap f06_done_best
+# A missed 1 x 4: one group of four dots; 4 x 1: four groups of one
+dbg card3
+wait 600
+tap 80 70
+wait 600
+dbg wrong
+wait 300
+expect-screen cards_answer
+ui-check cards_answer-ones
+snap f07_one_group
+wait 2400
+expect-screen cards_answer
+wait 1200
+expect-screen cards_ask
+dbg card30
+wait 600
+tap 80 70
+wait 600
+dbg wrong
+wait 300
+snap f08_groups_of_one
+sheet fast
