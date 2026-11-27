@@ -7,7 +7,10 @@
 // - An item has a difficulty beta on the same scale. The chance of a right answer is an Elo curve with the guess rate
 //   of its answers (expect). A game asks for the level to serve next (target): about 80% right.
 // - Every answer moves theta by K (s - p): s 1 right, 0.7 right but slow, 0 wrong or a guess faster than reading.
-//   K = max(40, 160 / (1 + n/5)), doubled while three answers in a row miss the expectation the same way.
+//   K = max(40, 160 / (1 + n/5)), doubled while three answers in a row surprise the same way (right where the kid was
+//   likelier to miss, or wrong where likelier right). At the 80% target three rights in a row are the usual case, so
+//   counting every answer above its expectation doubled K for rights and almost never for misses: the rating drifted
+//   up and swung (2026-11-27 tuning, Pets Club's Ukrainian words).
 // - A new skill calibrates: from a starting level it jumps up 1, 2, 4 levels on right answers and halves the jump on a
 //   miss (after a miss a right answer keeps the jump: the search only narrows), until the jump is one level and two
 //   answers were wrong (or 15 answers). It pays a flat rate meanwhile.
@@ -50,7 +53,7 @@ constexpr int CALIB_ANSWERS = 15;           // a calibration ends here at the la
 // (host/test_nvs_budget.cpp). get() and put() unpack it.
 //   word: theta (11 bits) | best level + 1 (4 bits, 0: none yet) | spare bit
 //   peak: the highest the rating has been (cooling PEAK_COOL a day), in eighths, rounded up
-//   meta: 0 never used. Calibrated: 0x80 | trend + 3 (3 bits, answers in a row above + or below - expectation) << 4 |
+//   meta: 0 never used. Calibrated: 0x80 | trend + 3 (3 bits, surprises in a row, + right or - wrong) << 4 |
 //         answers counted (4 bits, saturating at 15). Calibrating: an error so far 0x40 | jump code (1: 1 level,
 //         2: 2, 3: 4) << 4 | answers (4 bits).
 struct Stored { uint16_t word; uint8_t peak, meta; };
@@ -220,10 +223,11 @@ inline void calibrate(State& s, bool counted) {
   if (s.n + 1 >= CALIB_ANSWERS) s.calibrating = false;
   if (!s.calibrating) { s.n = 0; s.trend = 0; }
 }
-// The rating: theta += K (score - expected); K shrinks with answers, doubles while three in a row miss one way.
+// The rating: theta += K (score - expected); K shrinks with answers, doubles while three in a row surprise one way.
 inline void rate(State& s, float score, float p) {
   const float d = score - p;
-  s.trend = d > 0 ? (s.trend > 0 ? s.trend + 1 : 1) : (s.trend < 0 ? s.trend - 1 : -1);
+  const int way = d > 0.5f ? 1 : d < -0.5f ? -1 : 0;   // a surprise: off by more than half; an expected answer ends a run
+  s.trend = way > 0 ? (s.trend > 0 ? s.trend + 1 : 1) : way < 0 ? (s.trend < 0 ? s.trend - 1 : -1) : 0;
   s.trend = s.trend > 3 ? 3 : s.trend < -3 ? -3 : s.trend;
   int kk = 160 / (1 + s.n / 5);
   kk = kk < 40 ? 40 : kk;
