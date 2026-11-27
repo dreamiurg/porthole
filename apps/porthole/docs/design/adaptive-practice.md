@@ -104,6 +104,7 @@ between sessions. What changed, and why (the rules in full are in `games/times-c
 | The usual time is a weighted mean and spread of log time (weight 0.1), each answer clipped to 2.5 spreads; Easy under mean + one spread, 3 to 8 s | Response times are lognormal; one distracted answer must not move the norm; kids get quicker | van der Linden 2006 |
 | Larger facts get more time (× 1, × 2, × 5, × 10, squares 0.8; 6..9 × 6..9 and divisions 1.25) | The problem-size effect | Zbrodoff, Logan 2005 |
 | No countdown shown, nothing taken for being slow | Time pressure changes children's strategy choice | Caviola et al. 2017 |
+| Except the fast round (2026-11-27): a kid's own pick, only on known facts of 6, 8 and 9 that are still slow; its time and best shown, nothing taken for being slow | The telemetry showed an 8-year-old at 7 to 10 s on those tables and fast on the rest; Dmytro chose a timed round to build fluency. Kept to facts already known, so the counting strategies a clock pushes out are not the ones being learned | Dmytro's call; Caviola et al. 2017 is why it stays opt-in |
 | Half-day steps: box 1 waits a half, box 2 a day; known only after a later day | Kids play once or twice a day; consolidation needs sleep (principle 6) | Leitner; Dunlosky et al. 2013 |
 | A miss comes back 3 cards later, a slow answer 5 later | Harder items return sooner | ARTS |
 | A step −2..+2 moves card by card: two fast right up, a miss down | About 85% right, inside the session | Levitt 1971; Wilson et al. 2019 |

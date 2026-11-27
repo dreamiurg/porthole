@@ -42,9 +42,9 @@
 // Save: one blob per kid (timescards/s<id>, written by the shell). The Save struct below is how the game holds a deck
 // and was what versions 1 to 3 stored, whole (1020 bytes by version 3). Version 4 stores the same deck bit-packed
 // (pack, a few hundred bytes): the board's NVS holds 20 KB for the whole household, and four kids' decks did not fit.
-// Version 6 (this one) counts in half-days and keeps the timing and the step where version 3's grading check was;
-// version 5 is the same struct whole, if a deck ever cannot be packed. Every older version still loads: its days
-// become half-days. The struct stays the same size: a new field takes room from spare (its zero must be a sensible
+// Version 6 counts in half-days and keeps the timing and the step where version 3's grading check was; version 7 (this
+// one) adds the best fast-round time; version 5 is the same struct whole, if a deck ever cannot be packed. Every
+// older version still loads: its days become half-days. The struct stays the same size: a new field takes room from spare (its zero must be a sensible
 // default), joins packDeck, and SAVE_VERSION goes up; nothing is reordered or resized.
 #pragma once
 #include <math.h>
@@ -61,7 +61,8 @@ constexpr uint32_t SAVE_MAGIC = 0x53445243;   // "CRDS"
 // bit-packed. All four count days.
 constexpr uint16_t SAVE_V3 = 3, SAVE_V4 = 4;
 constexpr uint16_t SAVE_WHOLE = 5;     // the struct whole, in half-days: only if a deck cannot be packed
-constexpr uint16_t SAVE_VERSION = 6;   // what is stored now: half-days and timed answers, bit-packed
+constexpr uint16_t SAVE_V6 = 6;        // half-days and timed answers, bit-packed
+constexpr uint16_t SAVE_VERSION = 7;   // what is stored now: version 6 and the best fast-round time
 
 // ---- tuning knobs
 constexpr int TABLES = 10, FACTS = 10, CARDS = TABLES * FACTS;   // 1x1 .. 10x10: cards 0..CARDS-1
@@ -93,6 +94,8 @@ constexpr float TIME_SPREAD = 0.35f;     // the spread of log time assumed befor
 constexpr float TIME_CLIP = 2.5f;        // an answer counts at most this many spreads from the usual time
 constexpr uint16_t RECENT = 200;         // the right-answer share counts about the last 100 to 200 answers
 constexpr uint32_t READ_MS = 700;      // no one reads a card and its four answers faster: a right pick sooner is a guess
+constexpr int FAST_ROUND = 8;            // cards in a fast round, always this many, so its times compare
+constexpr int FAST_FROM = 3;             // slow known facts of 6x, 8x and 9x it takes for the deck to offer one
 
 // The table a kid starts on, from the age on their profile: 6 starts on 2x, 8 on 4x (lower tables count as known).
 inline int startTable(int age) { const int t = age - 4; return t < 1 ? 1 : t > 4 ? 4 : t; }
@@ -130,7 +133,8 @@ struct Save {
   uint16_t jumps;           // tables marked known by a jump
   uint16_t tries, rights;   // recent answers on cards already met, and the right ones (both halved at RECENT)
   uint16_t probeMiss;       // a bit a table (1 << t): one of its probes was missed or slow, so it is never jumped
-  uint8_t spare6[34];       // 0
+  uint16_t bestFast;        // v7: the best fast round, in tenths of a second; 0: none yet
+  uint8_t spare6[32];       // 0
   uint32_t crc;
   // Any card, multiplication or division.
   uint8_t& boxOf(int c) { return c < CARDS ? box[c] : divBox[c - CARDS]; }
@@ -158,7 +162,7 @@ inline void toHalves(Save& s) {
   memset(&s.logMu, 0, offsetof(Save, crc) - offsetof(Save, logMu));
 }
 
-// ---- versions 4 and 6: the deck, bit-packed. Stored: magic, version, total bytes (the struct's first eight bytes, so
+// ---- versions 4, 6 and 7: the deck, bit-packed. Stored: magic, version, total bytes (the struct's first eight bytes, so
 // the version reads the same way in every version), the fields below, crc of all before it. One description writes
 // and reads (os::Bits::io), so the two cannot drift apart; writing leaves the deck as it was.
 // A day, or 0: one bit, then its distance from the deck's earliest day in `w` bits.
@@ -205,15 +209,17 @@ inline void packDeck(os::Bits& b, Save& s, uint16_t version = SAVE_VERSION) {
   for (int c = 0; c < ALL; c++) packCard(b, s, c, d);
   s.spare = (uint16_t)b.sparse(s.spare, 16);
   if (v4) skipCheck(b); else packTiming(b, s);
+  if (version >= 7) s.bestFast = (uint16_t)b.sparse(s.bestFast, 16);   // version 6: none yet
 }
 // The deck as a packed blob in out (at most cap bytes). 0 if it cannot be packed (a box past MAX_BOX, a step out of
 // range, or days so scattered it would not fit): the caller then stores the struct whole, as version 5.
-inline size_t pack(Save& s, uint8_t* out, size_t cap) {
+// `version` is SAVE_VERSION but in the tests, which make an older one to load.
+inline size_t pack(Save& s, uint8_t* out, size_t cap, uint16_t version = SAVE_VERSION) {
   if (cap < 12) return 0;
   memset(out, 0, cap);
   os::Bits b = os::Bits::writer(out, cap - 4);
-  b.io(SAVE_MAGIC, 32); b.io(SAVE_VERSION, 16); b.io(0, 16);
-  packDeck(b, s);
+  b.io(SAVE_MAGIC, 32); b.io(version, 16); b.io(0, 16);
+  packDeck(b, s, version);
   for (uint8_t x : s.spare6) b.bad |= x != 0;   // not stored: a deck with any of it set is stored whole
   if (!b.ok()) return 0;
   const uint16_t bytes = (uint16_t)(b.bytes() + 4);
@@ -228,7 +234,7 @@ inline bool unpack(const uint8_t* data, size_t n, Save& zeroed) {
   os::Bits b = os::Bits::reader(data, n - sizeof crc);
   const bool magic = b.io(0, 32) == SAVE_MAGIC;
   const uint16_t version = (uint16_t)b.io(0, 16);
-  if (!magic || (version != SAVE_V4 && version != SAVE_VERSION) || b.io(0, 16) != n) return false;
+  if (!magic || (version != SAVE_V4 && version != SAVE_V6 && version != SAVE_VERSION) || b.io(0, 16) != n) return false;
   if (crc != os::crc32(data, n - sizeof crc)) return false;
   packDeck(b, zeroed, version);
   if (!b.ok() || b.bytes() != n - sizeof crc || zeroed.level > TABLES || zeroed.step > STEP_MAX) return false;
@@ -242,7 +248,7 @@ inline uint16_t storedVersion(const void* data, size_t n) {
   if (data && n >= 12) memcpy(&version, (const uint8_t*)data + offsetof(Save, version), sizeof version);
   return version;
 }
-// A blob is valid packed (version 4 or 6), or whole at exactly its version's size (1, 2, 3 or 5; the newer fields
+// A blob is valid packed (version 4, 6 or 7), or whole at exactly its version's size (1, 2, 3 or 5; the newer fields
 // zero: no division met, nothing timed yet); anything else (damaged, a newer firmware's) is not a deck this build reads.
 inline uint16_t wholeVersion(size_t n, uint16_t stored) {   // a whole struct's version from its size; 0: none
   const bool whole = stored == SAVE_V3 || stored == SAVE_WHOLE;
@@ -266,7 +272,7 @@ inline bool loadWhole(const void* data, size_t n, uint16_t stored, Save& s) {
 inline bool loadBlob(const void* data, size_t n, Save& out) {
   Save s{};
   const uint16_t stored = storedVersion(data, n);
-  const bool packed = stored == SAVE_V4 || stored == SAVE_VERSION;
+  const bool packed = stored == SAVE_V4 || stored == SAVE_V6 || stored == SAVE_VERSION;
   if (!(packed ? unpack((const uint8_t*)data, n, s) : loadWhole(data, n, stored, s))) return false;
   out = s;
   return true;
@@ -455,6 +461,10 @@ struct Round {
   int dealt = 0, dues = 0, news = 0;   // of base: dealt so far, and how many of them were due or new
   int easy = 0, hard = 0, wrong = 0;
   bool leveledUp = false, jumped = false;
+  bool fast = false;           // a fast round (buildFast): its cards fixed, none put back, its time kept
+  bool newBest = false;        // a fast round that beat the kid's best time (or set the first)
+  uint16_t was = 0;            // the best before it, in tenths of a second (0: none)
+  uint32_t took = 0;           // the round's time: each card's, from showing to the pick
   bool done() const { return at >= n; }
   int current() const { return card[at]; }
   int number() const { int k = 0; for (int i = 0; i <= at && i < n; i++) k += !redo[i]; return k; }   // k of base
@@ -551,27 +561,74 @@ inline void build(Round& r, const Save& s, int32_t now) {
   next(r, s, now);
 }
 
+// ---- the fast round: known facts with a 6, 8 or 9 in them (either order) that the kid still works out slowly
+inline bool hardTable(int x) { return x == 6 || x == 8 || x == 9; }
+inline bool fastPool(const Save& s, int c) {   // a known multiplication fact of 6x, 8x or 9x
+  return !isDiv(c) && (hardTable(tableOf(c)) || hardTable(factorOf(c))) && s.boxOf(c) >= MASTER_BOX;
+}
+// Slow: its last answer was right but Hard, which leaves a known card due the very half after it was seen (grade).
+inline bool slowFact(const Save& s, int c) {
+  return fastPool(s, c) && s.seenOf(c) && s.dueOf(c) == (uint16_t)(s.seenOf(c) + 1);
+}
+// The deck page offers a fast round once FAST_FROM such facts are slow and FAST_ROUND of them are known.
+inline bool offersFast(const Save& s) {
+  int pool = 0, slow = 0;
+  for (int c = 0; c < CARDS; c++) { pool += fastPool(s, c); slow += slowFact(s, c); }
+  return slow >= FAST_FROM && pool >= FAST_ROUND;
+}
+// FAST_ROUND cards: the slow facts first, then other known ones, each kind in an order drawn from seed.
+inline void buildFast(Round& r, const Save& s, uint32_t seed) {
+  r = Round{};
+  r.fast = true; r.was = s.bestFast;
+  uint32_t key[CARDS], x = seed | 1;
+  for (int c = 0; c < CARDS; c++) key[c] = (slowFact(s, c) ? 0 : 1u << 31) | nextRand(x) >> 1;
+  while (r.n < FAST_ROUND) {
+    const int c = best(r, [&](int a, int b) { return fastPool(s, a) && (b < 0 || key[a] < key[b]); });
+    if (c < 0) break;
+    r.used[c] = true; r.card[r.n++] = (uint8_t)c;
+  }
+  r.base = r.dealt = r.n;
+}
+// A finished fast round's time, against the kid's best: true when it is a new best (or the first).
+inline bool noteFast(Save& s, uint32_t ms) {
+  const uint32_t t = (ms + 50) / 100;
+  const uint16_t tenths = (uint16_t)(t < 1 ? 1 : t > 0xFFFF ? 0xFFFF : t);
+  if (s.bestFast && tenths >= s.bestFast) return false;
+  s.bestFast = tenths;
+  return true;
+}
+// A missed 1 x n or n x 1: the answer page shows it as groups of dots (n groups of 1, or 1 group of n).
+inline bool showsOnes(int card, bool right) { return !right && !isDiv(card) && (tableOf(card) == 1 || factorOf(card) == 1); }
+
 // Counts the grade, and puts a missed or slow card back a few cards on (once, while the round has room).
 inline void putBack(Round& r, int c, Grade g) {
   (g == EASY ? r.easy : g == HARD ? r.hard : r.wrong)++;
-  if (g == EASY || r.again[c] >= AGAIN_MAX || r.puts >= AGAIN_ROOM) return;
+  if (g == EASY || r.fast || r.again[c] >= AGAIN_MAX || r.puts >= AGAIN_ROOM) return;
   r.again[c]++; r.puts++;
   r.back[r.backs] = (uint8_t)c; r.backAt[r.backs++] = (uint8_t)(r.at + 1 + (g == WRONG ? AGAIN_AFTER : SLOW_AFTER));
 }
 // The kid's answer to the round's current card, picked `ms` after it showed: graded by the deck (gradeOf), counted,
-// put back if missed or slow, and the next card dealt. Returns the grade.
-inline Grade answer(Round& r, Save& s, bool right, uint32_t ms, int32_t now) {
-  const int c = r.current();
-  const bool redo = r.redo[r.at], probe = !redo && c == probeCard(s);
-  const Grade g = gradeOf(s, c, right, ms);
+// put back if missed or slow, and the next card dealt; a fast round's last answer keeps its time. Returns the grade.
+// What an answer to card c tells the deck before it is graded: a probe's miss, the kid's step, right share and time.
+// Returns whether c was the probe.
+inline bool noteAnswer(Save& s, int c, Grade g, bool redo, uint32_t ms) {
+  const bool probe = !redo && c == probeCard(s);
   if (probe && g != EASY) s.probeMiss |= (uint16_t)(1u << tableOf(c));
   if (!redo && (s.boxOf(c) || probe)) { noteStep(s, g); noteRight(s, g); }   // a first sight or a second look says little
   if (!redo && g != WRONG && s.boxOf(c) >= MASTER_BOX) noteTime(s, c, ms);
+  return probe;
+}
+inline Grade answer(Round& r, Save& s, bool right, uint32_t ms, int32_t now) {
+  const int c = r.current();
+  const Grade g = gradeOf(s, c, right, ms);
+  const bool probe = noteAnswer(s, c, g, r.redo[r.at], ms);
   if (grade(s, c, g, now)) r.leveledUp = true;
   if (probe && g == EASY && jump(s, c, now)) { r.jumped = true; r.leveledUp |= newLevel(s); }
   putBack(r, c, g);
+  r.took += ms;
   r.at++;
   next(r, s, now);
+  if (r.fast && r.done()) r.newBest = noteFast(s, r.took);
   return g;
 }
 }  // namespace cards
