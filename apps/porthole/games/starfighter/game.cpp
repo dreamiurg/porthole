@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "render.h"
+#include "telemetry.h"
 
 namespace starfighter {
 namespace {
@@ -74,6 +75,9 @@ void Game::updateFlight(uint32_t dt) {
     if (taps_) --taps_;
     if (run_.stage != before) { transition(); break; }
   }
+  if (playing(before) && !playing(run_.stage))   // stage: how far the run got before it ended
+    telemetry::roundFinished({name(), 0, run_.stage == Stage::Victory ? "won" : "lost", (long)(run_.ms / 1000), (long)run_.score,
+                              telemetry::P("stage", stageName(before))});
 }
 void Game::render() {
   tilt::Grav neutral{};
