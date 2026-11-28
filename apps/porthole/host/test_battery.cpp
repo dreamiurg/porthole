@@ -63,11 +63,24 @@ static void timeLeft() {
   CHECK(flat.now().minutesLeft == -1);   // no fall, no guess
 }
 
+static void clockMoves() {
+  Gauge g;   // a fall measured, then the clock set back an hour: the window starts over, no garbage
+  uint32_t t = run(g, 1000000, 30 * 60, 4000, -1);
+  CHECK(g.now().minutesLeft > 0);
+  run(g, t - 3600, 60, 3970, 0);
+  CHECK(g.now().minutesLeft == -1 && !g.now().charging);
+  Gauge h;   // synced weeks ahead
+  t = run(h, 1000000, 30 * 60, 4000, -1);
+  run(h, t + 30 * 86400, 60, 3970, 0);
+  CHECK(h.now().minutesLeft == -1);
+}
+
 int main() {
   curve();
   plugAndUnplug();
   slowTrends();
   timeLeft();
+  clockMoves();
   printf("test_battery: all %d checks passed\n", checks);
   return 0;
 }

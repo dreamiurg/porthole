@@ -231,7 +231,8 @@ static void batteryTick(uint32_t ms) {
   if (os::before(ms, next)) return;
   next = ms + BATTERY_MS;
   const battery::Reading r = readBattery();
-  if (!os::before(ms, tell)) { tell = ms + BATTERY_TELL_MS; tellBattery(r, "awake"); }
+  // Lit only: a board kept awake in the dark (a computer on USB) would fill the queue with nothing new.
+  if (g_backlight && !os::before(ms, tell)) { tell = ms + BATTERY_TELL_MS; tellBattery(r, "awake"); }
 }
 static void printBattery(const char* line, const battery::Reading& r) {
   Serial.printf("%s battery_mv=%u battery_pct=%u charging=%d left_min=%d\n", line, r.mv, r.pct, r.charging, r.minutesLeft);

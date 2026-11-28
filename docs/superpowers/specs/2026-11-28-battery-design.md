@@ -24,7 +24,8 @@ From the Waveshare schematic and demo (`local/waveshare/`):
 - **A board with no battery** reads whatever the charger leaves on `BAT`. On USB that is likely close to 4.2 V, which
   looks like "full, charging". Not measured; such a board may show a battery it does not have.
 - The ADC reads the voltage under load, which sits below the battery's open-circuit voltage. The percentage therefore
-  reads a little low while the screen is lit. It is an estimate, and the screen says so with "~" and rounding.
+  reads a little low while the screen is lit. It is an estimate: the picker rounds it to 5 %, and Admin marks the
+  time left with "~".
 
 ## Goals
 
@@ -79,7 +80,7 @@ Non-goals:
 - `board::batteryMv()`: 16 reads of GPIO4 averaged, times 3 / 0.992857 (the vendor's calibration).
 - `main.cpp`:
   - samples every 10 s into the gauge;
-  - hands the reading to the shell (`Shell::setBattery`);
+  - hands the reading to the shell through `shell::System::battery()`, as the clock and telemetry status go;
   - sends the telemetry below;
   - adds `battery_mv= battery_pct= charging= left_min=` to `S` and to the `sleep` / `woke` serial lines.
 
@@ -108,7 +109,7 @@ One event, `battery` {mv, pct, charging, backlight, at, slept_s}:
 
 | `at` | When | Extra |
 | --- | --- | --- |
-| `awake` | every 5 min while the chip is awake (lit, dimmed or dark-before-sleep) | `backlight` (0-100) |
+| `awake` | every 5 min while the screen is lit (dimmed included) | `backlight` (0-100) |
 | `sleep` | right before light sleep, backlight 0, radio idle | |
 | `wake` | right after the wake, same load as `sleep` | `slept_s` (RTC seconds) |
 
@@ -123,8 +124,8 @@ One event, `battery` {mv, pct, charging, backlight, at, slept_s}:
 
 ### Sim and tests
 
-- The sim hands the shell a canned reading (80 %, discharging, 5 h). The `sys battery MV [charging]` script command
-  sets it for screenshots.
+- The sim's `System` returns a canned reading: 3990 mV, discharging, 4 minutes left per percent; none in the web
+  player. The script commands `sys battery MV`, `sys charging MV` and `sys nobattery` set it for screenshots.
 - Host test `host/test_battery.cpp` covers:
   - the percent curve's ends and monotonicity;
   - plug in, unplug and slow-charge detection;

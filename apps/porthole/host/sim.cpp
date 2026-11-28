@@ -283,12 +283,14 @@ struct SimSystem : shell::System {
     snprintf(clock.zone, sizeof clock.zone, "%s", zoneSettings.zone);
     clock.automaticZone = zoneSettings.automatic != 0;
   }
+  bool setFixture(const char* what, const char* arg) {
+    if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return true; }   // host-only saved-network race fixture
+    if (strcmp(what, "telemetry")) return false;
+    telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c);
+    return true;
+  }
   void set(const char* what, const char* arg) {
-    if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return; }   // host-only saved-network race fixture
-    if (!strcmp(what, "telemetry")) {
-      telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c); return;
-    }
-    if (setZone(what, arg) || setClock(what, arg) || setWifi(what) || setBattery(what, arg)) return;
+    if (setFixture(what, arg) || setZone(what, arg) || setClock(what, arg) || setWifi(what) || setBattery(what, arg)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }

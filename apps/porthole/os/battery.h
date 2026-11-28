@@ -38,8 +38,10 @@ class Gauge {
   static constexpr int LEFT_MIN = 20;         // minutes of steady fall before a time left
   static constexpr int POINTS = 60;           // one a minute: the last hour
 
+  static constexpr uint32_t JUMP_S = 86400;   // the clock moved further than any sleep (set, or synced): start over
   void sample(uint32_t utc, uint16_t mv) {
-    if (last_ && utc - lastUtc_ < GAP_S) {
+    if (last_ && (utc < lastUtc_ || utc - lastUtc_ > JUMP_S)) { n_ = head_ = 0; since_ = 0; }   // points would mix two clocks
+    if (last_ && utc >= lastUtc_ && utc - lastUtc_ < GAP_S) {
       if (mv >= last_ + JUMP_MV) setCharging(true, utc);
       else if (mv + JUMP_MV <= last_) setCharging(false, utc);
     }
