@@ -80,6 +80,12 @@ repos:
         language: system
         pass_filenames: false
         files: ^tools/((release|test_release)\.py|fail-on-warning\.sh)$
+      - id: safe-flash
+        name: safe_flash self-test
+        entry: "tools/fail-on-warning.sh '[A-Za-z]+Warning: ' python3 -W error tools/test_safe_flash.py"
+        language: system
+        pass_filenames: false
+        files: ^tools/((safe_flash|test_safe_flash)\.py|fail-on-warning\.sh)$
 
       # Per-app gates: each runs only when that app's files change. language: python gives them the same
       # Python packages CI installs (Pillow for the golden screenshots and art checks, gcovr for coverage),

@@ -166,6 +166,16 @@ static void markValid() {
   Serial.println("[porthole] new firmware started; marked valid");
 }
 
+// "sys"/"ran": the release running here, as text (written on a change only). tools/safe_flash.py reads it with "tried" and
+// refuses to USB-flash a build from before it. A local build leaves it: "dev" says nothing about the saves' age.
+static void recordRelease() {
+  int v[3];
+  if (!shell::parseVersion(PORTHOLE_VERSION, v)) return;
+  char ran[16] = {0};
+  board::loadBlob("sys", "ran", ran, sizeof ran - 1);
+  if (strcmp(ran, PORTHOLE_VERSION)) board::saveBlob("sys", "ran", PORTHOLE_VERSION, strlen(PORTHOLE_VERSION));
+}
+
 void setup() {
   Serial.begin(115200);
   delay(50);
@@ -177,6 +187,7 @@ void setup() {
   board::presentHires();   // the first frame: the panel path works
   // Valid before anything can write a save: a rollback to an older firmware would reject a newer save and lose it.
   markValid();
+  recordRelease();
   feedLoopWDT();
   for (int t = 0; t < TINT_COUNT; t++) {
     uint32_t rgb[C_COUNT]; palette_build((Tint)t, rgb);

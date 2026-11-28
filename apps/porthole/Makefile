@@ -273,8 +273,9 @@ flash-report: firmware
 factory:
 	../../tools/fail-on-warning.sh '^Warning!' pio run -e firmware -t factory
 
+# safe_flash backs up the saves and refuses a build older than the board, then runs the upload (tools/safe_flash.py).
 flash:
-	pio run -e firmware -t upload $(if $(PORT),--upload-port $(PORT))
+	$(PY) ../../tools/safe_flash.py --port "$(PORT)" -- pio run -e firmware -t upload
 
 monitor:
 	pio device monitor -b 115200 $(if $(PORT),-p $(PORT))

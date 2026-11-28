@@ -38,7 +38,7 @@ namespace {
 // NVS namespace "sys" (new with wireless updates; never reuse a shipped one). Keys: "ssid", "pass" (raw bytes, no
 // NUL; no "pass" = open network), "chan" (one byte, shell::Channel), "last" (uint32 local epoch of the last attempt:
 // its day is the once-a-day gate), "home" (Radar's center: shell::Home's 112 bytes as they are), "tried" (the version
-// the last finished download put in the spare slot, as text: shell::rolledBack). "lite" is the shell's ("ran" was, until Kid news).
+// the last finished download put in the spare slot, as text: shell::rolledBack). "lite" is the shell's. "ran" is firmware/main.cpp's recordRelease (the shell's, until Kid news).
 const char* const NS = "sys";
 #define RELEASES "https://github.com/dreamiurg/porthole/releases/"
 // Each channel's newest version as plain "X.Y.Z". Stable: GitHub's Latest release (pre-releases never are). Beta: the
