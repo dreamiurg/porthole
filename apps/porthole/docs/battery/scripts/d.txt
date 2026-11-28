@@ -1,0 +1,43 @@
+reset
+profile Ann 6
+profile Bob 7
+profile Cat 6
+profile Dan 7
+wait 600
+tap 80 12
+wait 800
+echo T1-tap-icon
+tap 66 10
+wait 300
+screen
+snap bat_d_after_tap_icon
+echo T2-tap-percent
+tap 88 9
+wait 300
+screen
+echo T3-double-tap
+tap 70 10
+wait 100
+tap 70 10
+wait 300
+screen
+echo T4-hold-1s
+hold 68 10
+wait 300
+screen
+echo T5-hold-3s
+down 68 10
+wait 1500
+snap bat_d_hold_1500
+wait 1500
+up
+wait 300
+screen
+snap bat_d_after_hold3
+echo T6-pick-right-after
+tap 68 10
+wait 150
+tap 70 40
+wait 600
+screen
+snap bat_d_picked_ann
