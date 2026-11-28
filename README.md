@@ -10,7 +10,7 @@ case and a steering wheel. I built it for my kids, and hope yours will enjoy it,
 built for the web. The [project page](https://porthole.dreamiurg.net/) has the same demo, a 3D hardware viewer
 and an install guide. I write about this and other projects on my [blog](https://dreamiurg.net/).
 
-<p align="center"><img src="site/images/puck.webp" width="420" alt="The board in its 3D-printed case, showing the Porthole menu"></p>
+<p align="center"><img src="site/images/puck.webp" width="420" alt="The board in its 3D-printed case, with its orange pinstripe and the Porthole menu"></p>
 
 ## Games
 
@@ -49,8 +49,7 @@ About $35 from Waveshare or $45 on [Amazon](https://www.amazon.com/dp/B0DDPQSKJD
 model; the other sizes and the curved 2.1B are not supported. Specs and pins: [docs/hardware.md](docs/hardware.md).
 
 **The case** holds the board and a protected 3.7 V LiPo (2000 mAh or more, 1.25 mm plug).
-Check the plug polarity first, as many batteries ship reversed. The [v1.2 puck folder](hardware/case/stl/v1.2)
-contains the bezel, plate and lid for the snap-on wheel. Print them in PETG and close the case with M2 screws.
+Check the plug polarity first, as many batteries ship reversed. The [P014 pinstripe case](hardware/case/stl/twist-lock/r3-pinstripe) has a Deep Midnight bezel with a thin Hot Orange ring and a twist-lock lid that fits the wheel. [Rotate or take apart the case in 3D](https://porthole.dreamiurg.net/#case).
 
 ### V13 kid steering wheel
 
@@ -58,11 +57,11 @@ contains the bezel, plate and lid for the snap-on wheel. Print them in PETG and 
 
 The 172 mm wheel has ribbed Hot Orange grips on a Deep Midnight blue body. Drop the puck into the recessed hub and turn it 30° clockwise to lock. The screen sits about 4 mm above the grips so small thumbs have a shorter reach to Rally’s buttons.
 
-[Open the complete V13 print kit](hardware/grip/stl/v13-kid) · [Rotate the assembled wheel in 3D](https://porthole.dreamiurg.net/#wheel)
+[Download the complete wheel on one H2D plate](https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/V13-wheel-H2D.3mf) · [Rotate the assembled wheel in 3D](https://porthole.dreamiurg.net/#wheel)
 
 <p align="center"><img src="site/images/kid-wheel-v13-exploded.webp" width="640" alt="V13 wheel halves separated to show the open front and three bayonet catches in the rear cup"></p>
 
-Print the [P017 front](hardware/grip/stl/v13-kid/bambu/P017-front.3mf) and the [P016 back with four alignment pins](hardware/grip/stl/v13-kid/bambu/P016-back.3mf). The Bambu Studio projects assign both PLA colors. If you already have a P016 back, print just the new front. The render shows a pinstripe bezel. The standard [R2 twist-lock case](hardware/case/stl/twist-lock/r2) fits this wheel and the [215 mm adult wheel](hardware/grip/stl/v9-adult).
+The single-plate project includes both halves and four pins. For replacement parts, use the [P017 front](hardware/grip/stl/v13-kid/bambu/P017-front.3mf) and the [P016 back with four alignment pins](hardware/grip/stl/v13-kid/bambu/P016-back.3mf). The Bambu Studio projects assign both PLA colors. If you already have a P016 back, print just the new front. Both the pictured pinstripe case and the [standard R2 case](hardware/case/stl/twist-lock/r2) also fit the [215 mm adult wheel](hardware/grip/stl/v9-adult).
 
 To retrofit a printed V8 kid wheel, remove the center cover and steel ring, dry-fit the [R2 hub](hardware/case/stl/twist-lock/r2/retrofit/wheel-hub-r2.stl)
 with its index pointing up, then glue it in place. For a quick fit test, use the [lid and hub gauges](hardware/case/stl/twist-lock/r2/fit-test).

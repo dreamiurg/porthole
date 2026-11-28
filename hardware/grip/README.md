@@ -17,7 +17,7 @@ Choose one wheel kit. The wheel and puck enclosure print separately.
 
 ## V13 kid wheel
 
-Open the two Bambu Studio projects and print each once. The front contains the two upper spokes that follow the cylindrical socket wall. The rear contains the three bayonet catches, their seating pads and four loose alignment pins on the same plate. If you already have a P016 rear and pins, print only the P017 front. [P017 front plate](stl/v13-kid/bambu/P017-front.3mf) · [P016 rear and pins plate](stl/v13-kid/bambu/P016-back.3mf)
+Open the [complete H2D project](stl/v13-kid/bambu/V13-wheel-H2D.3mf) to print both halves and four pins on one plate. Individual plates are also available for replacements. The front contains the two upper spokes that follow the cylindrical socket wall. The rear contains the three bayonet catches, their seating pads and four loose alignment pins on the same plate. If you already have a P016 rear and pins, print only the P017 front. [P017 front plate](stl/v13-kid/bambu/P017-front.3mf) · [P016 rear and pins plate](stl/v13-kid/bambu/P016-back.3mf)
 
 Both projects use a Bambu Lab H2D with two 0.4 mm nozzles and 0.20 mm layers. The front slices without support material. The rear uses supports from the build plate. Each half prints as one object with a Deep Midnight PLA body (`#09182C`) and two Hot Orange PLA grip accents (`#FF7900`). To slice on another printer, import the three STLs for each half together as parts of one object and keep their relative positions. The separate four-pin STL duplicates the pins on the rear plate. [Aligned components](stl/v13-kid/components/) · [Four pins](stl/v13-kid/pins-4.stl)
 
