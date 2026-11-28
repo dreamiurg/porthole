@@ -4,6 +4,7 @@ Download the parts from a single **Kit** folder. Print one of each part listed i
 
 | Kit | Parts for one puck | Switch and mounting |
 | --- | --- | --- |
+| [R8 · M3 insert case](twist-lock/r8-insert-plate/) | P023 middle plate, P024 lower lid, P014 bezel and slider | Three M3 machine screws secure the lid to brass inserts. [Print the replacement plate and lid together](twist-lock/r8-insert-plate/bambu/P023-P024-H2D.3mf). |
 | [R7 · P022 simple-entry trial](twist-lock/r7-simple-entry/) | Lower lid, P021 battery-access plate, bezel and slider | One angled guide and a vertical lip entrance. [H2D replacement lid](twist-lock/r7-simple-entry/bambu/P022-lid.3mf). |
 | [R6 · P021 battery access](twist-lock/r6-battery-access/) | Board plate with an extended battery lead opening, pinstripe bezel, slider and P020 lid | [Print just the middle plate](twist-lock/r6-battery-access/bambu/P021-plate.3mf) for an existing puck. |
 | [R5 · P020 comfort trial](twist-lock/r5-comfort/) | P020 lower lid, two-color bezel, board plate and slider | Rounded finger-contact edges around the three bayonet entrances. [Replacement lid for H2D](twist-lock/r5-comfort/bambu/P020-lid.3mf). |
