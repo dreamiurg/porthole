@@ -45,14 +45,19 @@ def shelf_air():
 def p004_track():
     mouth_profile = bd.Plane.YZ * bd.Polygon((-10.7, -1), (10.7, -1), (6.9, 2.8), (6.9, 9), (-6.9, 9), (-6.9, 2.8), align=None)
     mouth = bd.Pos(33, 0, 0) * bd.extrude(mouth_profile, amount=12, dir=(1, 0, 0))
+    return track_with_mouth(mouth)
+
+
+def track_with_mouth(mouth):
     roof = swept([(34, -1), (44, -1), (44, 8.05), (42.15, 8.05), (40.7, 6.60), (34, 6.60)], -17, TURN + STOP_ALLOWANCE)
     return (roof & (shelf_air() + mouth)) - cyl(ROOT_R, -2, 12)
 
 
-def production_lid(part_id="P019"):
+def production_lid(part_id="P019", track=None):
     stock = bd.Pos(0, 0, -BOT_Z) * lid_body(magnet=False, vent_pitch=2.4)
     lid = stock
-    track = p004_track()
+    if track is None:
+        track = p004_track()
     for stop in LUGS:
         entry = stop - TURN
         lid -= bd.Rot(0, 0, entry) * track
