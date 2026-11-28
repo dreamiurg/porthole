@@ -127,6 +127,7 @@ void Game::joinInvite() {
 
 void Game::endTogether() {
   if (link_.paired()) link_.leave(wire_);
+  if (raced_) notice_[0] = 0;   // "keep racing" belongs to the race we just left
   duo_ = host_ = raced_ = ready_ = false;
   wire_.stage = (uint8_t)Stage::Idle;
 }
