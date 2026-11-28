@@ -311,7 +311,7 @@
         </div>
       </div>
       <p>Turn it on, pick your profile, and choose a game. Up to four people can play on the same handheld, each with their own saved progress. Once connected to Wi-Fi, Porthole updates itself when I publish a new version.</p>
-      <p><a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r3-pinstripe">Print the case</a></p>
+      <p><a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r4-p004">Print the case</a></p>
     </section>
 
     <section id="games">
@@ -467,7 +467,7 @@
   zoom.addEventListener("click", () => zoom.close());
 </script>
 <script type="module">
-  // The handheld and mounted wheel share the same P014 bezel and R2 lid.
+  // The handheld and mounted wheel share the same P014 bezel and P019 lid.
   let puckShell;
   async function loadPuck(THREE, screenImage) {
     if (!puckShell) puckShell = (async () => {
@@ -481,7 +481,7 @@
         ["components/P014-bezel-body.stl", midnight, 0, 0, 4.6, Math.PI],
         ["components/P014-bezel-pinstripe.stl", orange, 0, 0, 4.6, Math.PI],
         ["puck_plate.stl", midnight, 0, 0, 0, 0],
-        ["side-groove-lid-r2.stl", midnight, 0, 0, -21, 0],
+        ["P019-lid.stl", midnight, 0, 0, -21, 0],
         ["puck_slider.stl", orange, 35.5, -7.3, -5.6, 0],
       ].map(async ([path, material, x, y, z, rotation]) => {
         const mesh = new THREE.Mesh(await loader.loadAsync(`case/${path}`), material);
