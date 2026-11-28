@@ -15,7 +15,7 @@
   <meta property="og:image" content="https://porthole.dreamiurg.net/images/og.png?v=p014">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="The game launcher on the Deep Midnight P014 handheld with its Hot Orange face ring and power switch">
+  <meta property="og:image:alt" content="The game menu on a midnight-blue Porthole with a bright orange ring">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">
   {
@@ -106,14 +106,6 @@
     .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
-    .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
-    .wheel-media { margin-top: 12px; overflow: hidden; border-radius: 18px; background: var(--stage); }
-    .wheel-media img { display: block; width: 100%; height: auto; }
-    .wheel-media [hidden] { display: none; }
-    .wheel-media .stage { width: 100%; aspect-ratio: 4 / 3; height: auto; max-height: 440px; background: #e7ece7; }
-    .stage#stage { background: #e7ece7; }
-    .wheel-media .stage .hint, .wheel-media .stage .msg, #stage .hint, #stage .msg { color: #344253; }
-    .wheel-downloads { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; }
 
     /* Two columns with a floating contents box only when both fit; narrower, the box sits above the text. */
     .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; padding-bottom: 64px; }
@@ -166,19 +158,21 @@
     .buy { display: flex; flex-wrap: wrap; gap: 10px; }
     .buy a { padding: 10px 18px; border-radius: 999px; background: var(--soft); font-weight: 800; text-decoration: none; }
 
-    .stage { position: relative; height: 440px; border-radius: 18px; background: var(--stage); overflow: hidden; }
-    .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    .stage .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #c9bfd0; }
-    .stage .hint { position: absolute; left: 16px; bottom: 12px; font-size: 14px; color: #c9bfd0; pointer-events: none; }
+    .stage { position: relative; width: 100%; aspect-ratio: 8 / 5; max-height: 460px; overflow: hidden; border-radius: 18px; background: #e7ece7; }
+    .stage .poster, .stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .stage .poster { object-fit: contain; }
+    .stage canvas { visibility: hidden; touch-action: none; cursor: grab; }
+    .stage canvas:active { cursor: grabbing; }
+    .stage.live-model canvas { visibility: visible; }
+    .stage.live-model .poster { opacity: 0; pointer-events: none; }
+    .stage .hint { display: none; }
+    .stage.live-model .hint { display: block; position: absolute; z-index: 1; left: 14px; bottom: 9px; color: #344253; font-size: 14px; pointer-events: none; }
     .parts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .parts button { font: inherit; font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
     .parts button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
     .parts button:disabled { opacity: 0.45; cursor: default; }
     .channel { margin: 0 0 12px; }
     .play-channel { justify-content: center; margin: 10px 0 0; }
-    .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
-    .cards3 strong { display: block; margin-bottom: 4px; }
-    .cards3 div { font-size: 15px; color: var(--body); }
 
     footer { border-top: 1px solid var(--line); }
     footer .wrap { padding-top: 24px; padding-bottom: 24px; font-size: 15px; color: var(--muted); }
@@ -194,7 +188,7 @@
       .game { padding: 12px; }
       .game img { width: 96px; height: 96px; }
       .game h3 { font-size: 16px; }
-      .stage { height: 320px; }
+      .stage { aspect-ratio: 4 / 3; }
       .photos { gap: 6px; }
     }
     /* Any picture opens bigger in a dialog on click. */
@@ -279,7 +273,7 @@
   <div class="text">
     <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
     <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
-    <p><span lang="en">I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl">puck case</a> and the <a href="#wheel">steering wheel</a>. If you have the same board, this page shows how to <a href="#install">put the games on it</a>.</span><span lang="uk">Ділюся ним як є. У <a href="https://github.com/dreamiurg/porthole">репозиторії на GitHub</a> є вихідний код і 3D-моделі <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl">корпусу-шайби</a> та <a href="#wheel">керма</a>. Якщо у вас така сама плата, ця сторінка показує, як <a href="#install">записати на неї ігри</a>.</span></p>
+    <p><span lang="en">I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="#case">puck case</a> and the <a href="#wheel">steering wheel</a>. If you have the same board, this page shows how to <a href="#install">put the games on it</a>.</span><span lang="uk">Ділюся ним як є. У <a href="https://github.com/dreamiurg/porthole">репозиторії на GitHub</a> є вихідний код і 3D-моделі <a href="#case">корпусу-шайби</a> та <a href="#wheel">керма</a>. Якщо у вас така сама плата, ця сторінка показує, як <a href="#install">записати на неї ігри</a>.</span></p>
     <p><span lang="en">You can play it right here, no board needed: the screen on this page is the same firmware, built for the web. Pick Stable or Beta under it.</span><span lang="uk">Можна грати просто тут, без плати: екран на цій сторінці &mdash; та сама прошивка, зібрана для вебу. Під ним можна вибрати Stable або Beta.</span></p>
   </div>
   <div class="shot">
@@ -317,8 +311,7 @@
       <li><a href="#install"><span lang="en">Put it on a board</span><span lang="uk">Як записати</span></a></li>
       <li><a href="#updates"><span lang="en">Updates and settings</span><span lang="uk">Оновлення й налаштування</span></a></li>
       <li><a href="#board"><span lang="en">The board</span><span lang="uk">Плата</span></a></li>
-      <li><a href="#wheel"><span lang="en">Kid steering wheel</span><span lang="uk">Дитяче кермо</span></a></li>
-      <li><a href="#case"><span lang="en">3D-printed case</span><span lang="uk">Корпус на 3D-принтері</span></a></li>
+      <li><a href="#wheel"><span lang="en">Accessories</span><span lang="uk">Аксесуари</span></a></li>
       <li><a href="#build"><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></a></li>
       <li><a href="#story"><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></a></li>
     </ol>
@@ -328,9 +321,15 @@
   <main>
     <section id="what">
       <h2><span lang="en">What it is</span><span lang="uk">Що це</span></h2>
-      <p><span lang="en">You plug the board into USB power and a &ldquo;Who&rsquo;s playing?&rdquo; screen comes up. Up to four people can have a profile there. Each picks theirs, then a game from the menu. Every game keeps its progress per player, and none of them punishes you for not playing for a while.</span><span lang="uk">Під&rsquo;єднуєте плату до живлення USB, і з&rsquo;являється екран &laquo;Who&rsquo;s playing?&raquo;. Там може бути до чотирьох профілів. Кожен вибирає свій, а потім гру з меню. Кожна гра зберігає прогрес окремо для кожного гравця, і жодна не карає за те, що ви якийсь час не грали.</span></p>
-      <p><span lang="en">In a 3D-printed case with a small battery, the board becomes a round handheld you can carry around. Once it knows your Wi-Fi, it updates itself when I publish a new version.</span><span lang="uk">У надрукованому на 3D-принтері корпусі з невеликим акумулятором плата стає круглою кишеньковою консоллю. Коли вона знає ваш Wi-Fi, то сама оновлюється, щойно я публікую нову версію.</span></p>
-      <img class="what-img" src="images/puck.webp" alt="P014 handheld in Deep Midnight with a Hot Orange ring and power slider, showing the Guest game launcher" data-uk-alt="Темно-синя консоль P014 з яскраво-помаранчевим кільцем і повзунком живлення; на екрані відкрите меню ігор для гостя" width="1000" height="814" loading="lazy">
+      <p><span lang="en">Porthole is a round handheld we made for our kids. A 3D-printed case holds the touchscreen and a small rechargeable battery.</span><span lang="uk">Porthole — кругла кишенькова консоль, яку ми зробили для своїх дітей. У надрукованому на 3D-принтері корпусі містяться сенсорний екран і невеликий акумулятор.</span></p>
+      <div id="case">
+        <div class="stage" id="stage">
+          <img class="poster" src="images/puck.webp" alt="A round midnight-blue handheld with an orange ring around the game menu" data-uk-alt="Кругла темно-синя консоль із помаранчевим кільцем навколо меню ігор" loading="lazy">
+          <div class="hint"><span lang="en">Drag to turn.</span><span lang="uk">Потягніть, щоб повернути.</span></div>
+        </div>
+      </div>
+      <p><span lang="en">Turn it on, pick your profile, and choose a game. Up to four people can play on the same handheld, each with their own saved progress. Once connected to Wi-Fi, Porthole updates itself when I publish a new version.</span><span lang="uk">Увімкніть консоль, виберіть свій профіль, а потім гру. На одній консолі можуть грати до чотирьох людей, і кожен має власні збереження. Коли я публікую нову версію, Porthole оновлюється через Wi-Fi.</span></p>
+      <p><a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r3-pinstripe"><span lang="en">Print the case</span><span lang="uk">Надрукувати корпус</span></a></p>
     </section>
 
     <section id="games">
@@ -428,51 +427,14 @@
     </section>
 
     <section id="wheel">
-      <h2><span lang="en">V13 kid steering wheel</span><span lang="uk">Дитяче кермо V13</span></h2>
-      <p><span lang="en">Tilt this 172 mm wheel to steer in Rally. The grips print in Hot Orange and the body in Deep Midnight blue. Lower the R2 puck into the center and twist clockwise until it stops. Three catches hold it in the rear socket. Twist it back to lift it out.</span><span lang="uk">Нахиляйте це кермо завширшки 172 мм, щоб керувати в Rally. Колір накладок — яскраво-помаранчевий Hot Orange, а корпусу — темно-синій Deep Midnight. Опустіть шайбу R2 в центр і поверніть за годинниковою стрілкою до упору. Три виступи в задній половині втримують шайбу. Щоб вийняти її, поверніть у зворотний бік.</span></p>
-      <div class="parts" role="group" id="wheel-views" aria-label="Wheel views" data-uk-label="Режими перегляду керма">
-        <button type="button" data-wheel="mounted" aria-controls="wheel-mounted" aria-pressed="true"><span lang="en">Puck installed</span><span lang="uk">Із шайбою</span></button>
-        <button type="button" data-wheel="exploded" aria-controls="wheel-exploded" aria-pressed="false"><span lang="en">Exploded view</span><span lang="uk">У розборі</span></button>
-        <button type="button" data-wheel="model" aria-controls="wheel-model" aria-pressed="false"><span lang="en">Rotate the empty wheel</span><span lang="uk">Покрутити кермо без шайби</span></button>
+      <h2><span lang="en">Accessories</span><span lang="uk">Аксесуари</span></h2>
+      <h3><span lang="en">Steering wheel</span><span lang="uk">Кермо</span></h3>
+      <p><span lang="en">We made a steering wheel for kids’ hands. Drop Porthole into the center and give it a twist to lock it in. You’re ready to race.</span><span lang="uk">Ми зробили кермо для дитячих рук. Вставте Porthole у центр і трохи поверніть, щоб зафіксувати консоль. Можна починати перегони.</span></p>
+      <div class="stage" id="wheel-model">
+        <img class="poster" src="images/kid-wheel-v13.webp" alt="A midnight-blue steering wheel with orange grips and Rally on the round screen" data-uk-alt="Темно-синє кермо з помаранчевими накладками й грою Rally на круглому екрані" loading="lazy">
+        <div class="hint"><span lang="en">Drag to turn.</span><span lang="uk">Потягніть, щоб повернути.</span></div>
       </div>
-      <div class="wheel-media">
-        <img id="wheel-mounted" width="1440" height="900" src="images/kid-wheel-v13.webp" alt="Deep Midnight blue V13 wheel with Hot Orange grips and a mounted puck with a matching pinstripe" data-uk-alt="Темно-синє кермо V13 з яскраво-помаранчевими накладками та встановленою шайбою з тонкою смужкою того самого кольору" loading="lazy">
-        <img id="wheel-exploded" width="1680" height="610" src="images/kid-wheel-v13-exploded.webp" alt="V13 parts laid out side by side: rear socket, front half with orange grips, and the puck" data-uk-alt="Деталі V13 поруч: задня половина з гніздом, передня половина з помаранчевими накладками та шайба" loading="lazy" hidden>
-        <div class="stage" id="wheel-model" hidden>
-          <div class="msg" role="status"><span lang="en">Loading the wheel&hellip;</span><span lang="uk">Завантажується кермо&hellip;</span></div>
-          <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Потягніть, щоб повернути. Прокрутіть або розведіть пальці, щоб наблизити.</span></div>
-        </div>
-      </div>
-      <p style="margin-top: 16px"><span lang="en">The H2D project places both halves and all four alignment pins on one plate. Print it once in two PLA colors, dry-fit the halves, then glue them together. If you already have a P016 rear, print just the P017 front.</span><span lang="uk">У проєкті для H2D обидві половини керма та чотири штифти розміщено на одному столі. Надрукуйте комплект двома кольорами PLA, приміряйте половини та склейте їх. Якщо у вас уже є задня половина P016, достатньо надрукувати передню P017.</span></p>
-      <div class="wheel-downloads">
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/V13-wheel-H2D.3mf"><strong lang="en">Complete wheel · one H2D plate</strong><strong lang="uk">Кермо в зборі · один стіл H2D</strong></a>
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/P017-front.3mf"><span lang="en">Front 3MF</span><span lang="uk">Передня половина · 3MF</span></a>
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/P016-back.3mf"><span lang="en">Rear and pins 3MF</span><span lang="uk">Задня половина та штифти · 3MF</span></a>
-        <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip/stl/v13-kid"><span lang="en">Wheel STL files</span><span lang="uk">Файли STL керма</span></a>
-        <a href="#case"><span lang="en">Matching P014 handheld</span><span lang="uk">Сумісна консоль P014</span></a>
-      </div>
-    </section>
-
-    <section id="case">
-      <h2><span lang="en">P014 handheld case</span><span lang="uk">Корпус портативної консолі P014</span></h2>
-      <p><span lang="en">The P014 handheld holds the round display board and its battery. A thin Hot Orange ring runs around the Deep Midnight bezel. The orange side slider operates the power switch. The grooved R2 lid locks into the V13 wheel with a 30° turn.</span><span lang="uk">У корпусі P014 розміщуються плата з круглим дисплеєм та акумулятор. Тонке яскраво-помаранчеве кільце обводить темно-синій обідок, а помаранчевий повзунок збоку вмикає живлення. Нижня кришка R2 з пазами фіксується в кермі V13 поворотом на 30°.</span></p>
-      <div class="stage" id="stage">
-        <div class="msg" id="stage-msg"><span lang="en">Loading the 3D model&hellip;</span><span lang="uk">Завантажується 3D-модель&hellip;</span></div>
-        <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Тягніть, щоб повернути, прокрутка чи щипок &mdash; масштаб.</span></div>
-      </div>
-      <div class="parts" role="group" aria-label="Puck views" data-uk-label="Режими перегляду шайби">
-        <button type="button" data-view="assembled" aria-pressed="true"><span lang="en">Assembled</span><span lang="uk">Зібраний</span></button>
-        <button type="button" data-view="exploded" aria-pressed="false"><span lang="en">Exploded</span><span lang="uk">Розібраний</span></button>
-        <button type="button" data-view="bezel" aria-pressed="false"><span lang="en">Bezel</span><span lang="uk">Обідок</span></button>
-        <button type="button" data-view="plate" aria-pressed="false"><span lang="en">Plate</span><span lang="uk">Пластина</span></button>
-        <button type="button" data-view="lid" aria-pressed="false"><span lang="en">Lid</span><span lang="uk">Кришка</span></button>
-        <button type="button" data-view="slider" aria-pressed="false"><span lang="en">Power slider</span><span lang="uk">Повзунок живлення</span></button>
-      </div>
-      <div class="cards3">
-        <div class="card"><strong><span lang="en">What you print</span><span lang="uk">Що друкувати</span></strong><span lang="en">84 mm case. Co-print the bezel and pinstripe in two PLA colors. Print one board plate, one power slider and one R2 lid.</span><span lang="uk">Корпус діаметром 84 мм. Надрукуйте обідок разом зі смужкою з PLA двох кольорів. Окремо надрукуйте пластину плати, повзунок живлення та кришку R2.</span></div>
-        <div class="card"><strong><span lang="en">What you buy</span><span lang="uk">Що купити</span></strong><span lang="en">A protected 3.7 V LiPo, 2000 mAh or more, with a 1.25 mm plug. Check its polarity with a meter first: many ship reversed. M2 screws.</span><span lang="uk">Захищений LiPo 3,7 В на 2000 мА&middot;год або більше з роз&rsquo;ємом 1,25 мм. Спершу перевірте полярність мультиметром: багато продаються навпаки. Гвинти M2.</span></div>
-        <div class="card"><strong><span lang="en">Downloads</span><span lang="uk">Файли</span></strong><a href="case/bambu/P014-Pinstripe.3mf"><span lang="en">Two-color bezel · 3MF</span><span lang="uk">Двоколірний обідок · 3MF</span></a> &middot; <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r3-pinstripe"><span lang="en">Complete print kit</span><span lang="uk">Усі файли для друку</span></a></div>
-      </div>
+      <p><a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/V13-wheel-H2D.3mf"><span lang="en">Print the steering wheel</span><span lang="uk">Надрукувати кермо</span></a></p>
     </section>
 
     <section id="build">
@@ -537,7 +499,7 @@
   document.querySelectorAll("main section").forEach((s) => seen.observe(s));
   // Click or Enter on a picture opens it bigger. A click anywhere, Esc or the button closes it.
   const zoom = document.getElementById("zoom"), zoomImg = zoom.querySelector("img"), zoomText = zoom.querySelector("p");
-  document.querySelectorAll("main img").forEach((img) => {
+  document.querySelectorAll("main img:not(.poster)").forEach((img) => {
     img.classList.add("zoomable");
     img.tabIndex = 0;
     img.setAttribute("role", "button");
@@ -548,148 +510,113 @@
   zoom.addEventListener("click", () => zoom.close());
 </script>
 <script type="module">
-  // The case viewer loads three.js and the STLs only when the case section comes near.
-  const stage = document.getElementById("stage"), msg = document.getElementById("stage-msg");
-  let view = "assembled", apply = () => {};   // a pick made while loading shows once the model is in
-  document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => {
-    view = b.dataset.view;
-    document.querySelectorAll("[data-view]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-    apply();
-  }));
-  const near = new IntersectionObserver(async (entries) => {
-    if (!entries.some((e) => e.isIntersecting)) return;
-    near.disconnect();
-    try { await start(); } catch (e) {
-      msg.innerHTML = '<span lang="en">The 3D model could not load here. The STL files are on GitHub.</span><span lang="uk">3D-модель тут не завантажилася. Файли STL є на GitHub.</span>';
-    }
-  }, { rootMargin: "400px" });
-  near.observe(stage);
-
-  // The Waveshare board, simplified the way hardware/case/puck_v1.py's board_ref() draws it, in the
-  // same frame: a 37.5 mm glass disc (z 1.2 to 3.4) over the 35.5 mm module (z -2.1 to 1.2) and four
-  // M2 standoffs down to z -6.1. The screen shows a real frame of the game menu.
-  async function board(THREE) {
-    const g = new THREE.Group(), dark = new THREE.MeshStandardMaterial({ color: 0x18161c, roughness: 0.35 });
-    const disc = (r, z0, z1, m) => {
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, z1 - z0, 96), m);
-      c.rotation.x = Math.PI / 2; c.position.z = (z0 + z1) / 2; g.add(c); return c;
-    };
-    disc(37.5, 1.2, 3.4, dark);
-    disc(35.5, -2.1, 1.2, new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.7 }));
-    for (const [x, y] of [[29.5, 13.6], [-29.5, 13.6], [18, -27.05], [-18, -27.05]]) disc(1.75, -6.1, -2.1, dark).position.set(x, y, -4.1);
-    const map = await new THREE.TextureLoader().loadAsync("images/play-home.webp");
+  // The handheld and mounted wheel share the same P014 bezel and R2 lid.
+  let puckShell;
+  async function loadPuck(THREE, screenImage) {
+    if (!puckShell) puckShell = (async () => {
+      const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
+      const loader = new STLLoader();
+      const midnight = new THREE.MeshStandardMaterial({ color: 0x09182c, roughness: 0.55 });
+      const orange = new THREE.MeshStandardMaterial({ color: 0xff7900, roughness: 0.5 });
+      const shell = new THREE.Group();
+      // The bezel is printed lip-down. These positions put the print files back in the board frame (mm).
+      await Promise.all([
+        ["components/P014-bezel-body.stl", midnight, 0, 0, 4.6, Math.PI],
+        ["components/P014-bezel-pinstripe.stl", orange, 0, 0, 4.6, Math.PI],
+        ["puck_plate.stl", midnight, 0, 0, 0, 0],
+        ["side-groove-lid-r2.stl", midnight, 0, 0, -21, 0],
+        ["puck_slider.stl", orange, 35.5, -7.3, -5.6, 0],
+      ].map(async ([path, material, x, y, z, rotation]) => {
+        const mesh = new THREE.Mesh(await loader.loadAsync(`case/${path}`), material);
+        mesh.position.set(x, y, z); mesh.rotation.x = rotation; shell.add(mesh);
+      }));
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(37.5, 37.5, 2.2, 128), new THREE.MeshStandardMaterial({ color: 0x18161c, roughness: 0.35 }));
+      glass.rotation.x = Math.PI / 2; glass.position.z = 2.3; shell.add(glass);
+      return shell;
+    })();
+    const [template, map] = await Promise.all([puckShell, new THREE.TextureLoader().loadAsync(screenImage)]);
     map.colorSpace = THREE.SRGBColorSpace;
-    const screen = new THREE.Mesh(new THREE.CircleGeometry(26.7, 96), new THREE.MeshBasicMaterial({ map }));
-    screen.position.z = 3.42; g.add(screen);
-    return g;
+    const puck = template.clone();
+    const screen = new THREE.Mesh(new THREE.CircleGeometry(26.7, 128), new THREE.MeshBasicMaterial({ map }));
+    screen.position.z = 3.42; puck.add(screen);
+    return puck;
   }
 
-  async function start() {
-    const THREE = await import("three");
-    const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
-    const { scene, camera, controls, render } = await viewer(THREE, stage);
-
-    const dark = new THREE.MeshStandardMaterial({ color: 0x09182c, roughness: 0.55 });
-    const orange = new THREE.MeshStandardMaterial({ color: 0xff7900, roughness: 0.5 });
-    const group = () => new THREE.Group();
-    const parts = { bezel: group(), board: await board(THREE), plate: group(), lid: group(), slider: group() };
-    const loader = new STLLoader();
-    // Print STLs to board coordinates, in millimetres. Both bezel volumes print lip down.
-    const meshes = [
-      ["bezel", "components/P014-bezel-body.stl", dark, 0, 0, 4.6],
-      ["bezel", "components/P014-bezel-pinstripe.stl", orange, 0, 0, 4.6],
-      ["plate", "puck_plate.stl", dark, 0, 0, 0],
-      ["lid", "side-groove-lid-r2.stl", dark, 0, 0, -21],
-      ["slider", "puck_slider.stl", orange, 35.5, -7.3, -5.6],
-    ];
-    await Promise.all(meshes.map(async ([key, file, material, x, y, z]) => {
-      const geometry = await loader.loadAsync(`case/${file}`);
-      const mesh = new THREE.Mesh(geometry, material);
-      if (key === "bezel") mesh.rotation.x = Math.PI;
-      mesh.position.set(x, y, z); parts[key].add(mesh);
-    }));
-    scene.add(...Object.values(parts)); msg.remove();
-
-    const fill = new THREE.DirectionalLight(0xdce7ff, 1.3);
-    fill.position.set(-60, 80, 40); scene.add(fill);
-    const underside = new THREE.DirectionalLight(0xffffff, 1.8);
-    underside.position.set(60, -40, -85); scene.add(underside);
-    const spread = { bezel: [0, 0, 68], board: [0, 0, 20], plate: [0, 0, -12], lid: [0, 0, -52], slider: [28, 0, 30] };
-    let previous = view;
-    apply = () => {
-      const bounds = new THREE.Box3();
-      for (const [key, part] of Object.entries(parts)) {
-        part.visible = view === "assembled" || view === "exploded" || view === key;
-        part.position.set(...(view === "exploded" ? spread[key] : [0, 0, 0]));
-        if (part.visible) bounds.expandByObject(part);
-      }
-      const sphere = bounds.getBoundingSphere(new THREE.Sphere());
-      const halfAngle = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, camera.aspect));
-      const direction = camera.position.clone().sub(controls.target).normalize();
-      // Show the bayonet side when the lid is first isolated.
-      if (view === "lid" && previous !== "lid") direction.z = -Math.abs(direction.z);
-      if (view !== "lid" && previous === "lid") direction.z = Math.abs(direction.z);
-      previous = view;
-      controls.target.copy(sphere.center);
-      camera.position.copy(sphere.center).addScaledVector(direction, 1.06 * sphere.radius / Math.sin(halfAngle));
-      controls.update(); render();
-    };
-    apply();
+  async function loadMountedWheel(THREE) {
+    const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+    const [wheel, puck] = await Promise.all([
+      new GLTFLoader().loadAsync("grip/P017-assembled.glb"), loadPuck(THREE, "images/rally-display.png")
+    ]);
+    // Convert the wheel from Y-up metres to Z-up millimetres, then seat the puck at its locked datum.
+    wheel.scene.rotation.x = Math.PI / 2; wheel.scene.scale.setScalar(1000);
+    puck.position.set(0.12, 0.75, 9.85);
+    const assembly = new THREE.Group(); assembly.add(wheel.scene, puck);
+    return assembly;
   }
 
-  async function viewer(THREE, container) {
-    const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
+  async function viewer(stage) {
+    const [THREE, { OrbitControls }] = await Promise.all([import("three"), import("three/addons/controls/OrbitControls.js")]);
+    const wheel = stage.id === "wheel-model";
+    const model = await (wheel ? loadMountedWheel(THREE) : loadPuck(THREE, "images/play-home.webp"));
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    container.prepend(renderer.domElement);
-    const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x302838, 1.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(60, -80, 120); scene.add(sun);
-    const camera = new THREE.PerspectiveCamera(35, 1, 1, 2000);
-    camera.up.set(0, 0, 1); camera.position.set(80, -125, 95);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, -8);
-
-    const render = () => renderer.render(scene, camera);
-    controls.addEventListener("change", render);
-    function resize() {
-      const w = container.clientWidth, h = container.clientHeight;
-      if (!w || !h) return;
-      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+    const scene = new THREE.Scene(); scene.add(model);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x403944, 1.6));
+    for (const [x, y, z, intensity] of [[60, -80, 120, 2.2], [-60, 80, 45, 1.1], [30, 40, -90, 1.3]]) {
+      const light = new THREE.DirectionalLight(0xffffff, intensity); light.position.set(x, y, z); scene.add(light);
     }
-    new ResizeObserver(resize).observe(container); resize();
-    return { scene, camera, controls, render };
-  }
-
-  async function loadWheel(container) {
-    const THREE = await import("three");
-    const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
-    const [{ scene, camera, controls, render }, gltf] = await Promise.all([
-      viewer(THREE, container), new GLTFLoader().loadAsync("grip/P017-assembled.glb")
-    ]);
-    // The GLB is Y-up in meters. The rest of the viewer uses Z-up and millimeters.
-    gltf.scene.rotation.x = Math.PI / 2;
-    gltf.scene.scale.setScalar(1000);
-    scene.add(gltf.scene);
-    camera.position.set(0, -95, 255); controls.target.set(0, 0, 0); controls.update(); render();
-    container.querySelector(".msg").remove();
-  }
-
-  let wheelLoading;
-  const wheelModel = document.getElementById("wheel-model");
-  const wheelButtons = document.querySelectorAll("[data-wheel]");
-  wheelButtons.forEach((button) => button.addEventListener("click", () => {
-    wheelButtons.forEach((item) => {
-      const selected = item === button;
-      item.setAttribute("aria-pressed", String(selected));
-      document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
+    const bounds = new THREE.Box3().setFromObject(model);
+    const center = bounds.getCenter(new THREE.Vector3());
+    // Use the farthest vertex so even a diagonal view fits the short side of the stage.
+    const point = new THREE.Vector3();
+    let radiusSq = 0;
+    model.traverse((part) => {
+      if (!part.isMesh) return;
+      const positions = part.geometry.getAttribute("position");
+      for (let i = 0; i < positions.count; i++) {
+        point.fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld);
+        radiusSq = Math.max(radiusSq, point.distanceToSquared(center));
+      }
     });
-    if (button.dataset.wheel === "model" && !wheelLoading) {
-      wheelLoading = loadWheel(wheelModel).catch(() => {
-        wheelModel.querySelector(".msg").innerHTML = '<span lang="en">The interactive view could not load. <a href="grip/P017-assembled.glb">Download the 3D model</a></span><span lang="uk">Не вдалося завантажити інтерактивний перегляд. <a href="grip/P017-assembled.glb">Завантажити 3D-модель</a></span>';
-      });
+    const radius = Math.sqrt(radiusSq) * 1.06;
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1200);
+    // Keep the screen upright in the initial three-quarter view.
+    camera.up.set(0, 1, 0);
+    camera.position.set(wheel ? 0.27 : 0.48, -0.63, 1.8).normalize().multiplyScalar(350).add(center);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(center); controls.enablePan = false;
+    controls.minZoom = 0.6; controls.maxZoom = 2.5;
+    controls.update();
+    const draw = () => renderer.render(scene, camera);
+    controls.addEventListener("change", draw);
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      const aspect = w / h, halfHeight = radius / Math.min(aspect, 1);
+      camera.top = halfHeight; camera.bottom = -halfHeight;
+      camera.right = halfHeight * aspect; camera.left = -camera.right;
+      camera.updateProjectionMatrix(); renderer.setSize(w, h, false); draw();
     }
-  }));
+    resize();
+    renderer.domElement.setAttribute("aria-hidden", "true");
+    stage.append(renderer.domElement);
+    stage.classList.add("live-model");
+    new ResizeObserver(resize).observe(stage);
+    renderer.domElement.addEventListener("webglcontextlost", () => stage.classList.remove("live-model"));
+    renderer.domElement.addEventListener("webglcontextrestored", () => {
+      resize(); stage.classList.add("live-model");
+    });
+  }
+
+  const near = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      near.unobserve(entry.target);
+      // Keep the actual product photograph/render visible if WebGL or a model asset is unavailable.
+      viewer(entry.target).catch(() => {});
+    }
+  }, { rootMargin: "200px" });
+  for (const stage of document.querySelectorAll("#stage, #wheel-model")) near.observe(stage);
 </script>
 <script>
 // The player: the firmware (play/porthole.{js,wasm}, about 4 MB) loads only on a tap. On a phone that tap also opens
