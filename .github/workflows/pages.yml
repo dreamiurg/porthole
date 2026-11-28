@@ -12,7 +12,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, apps/porthole/**, .github/workflows/pages.yml]
+    paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, hardware/grip/source/P017-assembled.glb, apps/porthole/**, .github/workflows/pages.yml]
   workflow_run:
     workflows: [Release, Promote, Yank]
     types: [completed]
