@@ -3,13 +3,14 @@
 
 Run by `make flash` as: safe_flash.py [--port P] -- <upload command...>; the resolved port is appended as
 `--upload-port P`. Before the upload it
-  1. copies the board's nvs partition (every profile and save) to ~/porthole-nvs-backup/<mac>/nvs-<time>.bin, and stops
+  1. copies the board's nvs partition (every profile and save) to local/nvs/<mac>/nvs-<time>.bin in the main checkout
+     (gitignored), and stops
      if it cannot: no backup, no flash;
   2. reads "sys"/"ran" (the release last booted, firmware/main.cpp) and "sys"/"tried" (the last one downloaded over
      the air) from that copy, and stops unless the newer one's tag is in HEAD. A build from a branch cut before it is older firmware than the board's: in 2026-11 one
      ran over 0.43.9 and hid three of four profiles until a newer build went back on. ALLOW_OLDER=1 skips the check.
 Restore a copy with: pio pkg exec -p tool-esptoolpy -- esptool.py -p PORT write_flash 0x9000 <copy>
-The copies hold the kids' names and progress: they stay on this computer, never in the repo.
+The copies hold the kids' names and progress: local/ is gitignored, so they stay on this computer and out of git.
 """
 
 import json
@@ -24,7 +25,11 @@ from pathlib import Path
 NVS_OFFSET, NVS_SIZE = 0x9000, 0x5000  # apps/porthole/partitions.csv
 PAGE, ENTRIES = 4096, 126
 BOARD_VIDS = ("VID:PID=1A86:", "VID:PID=303A:")  # the CH343 bridge, the ESP32-S3's own USB
-BACKUPS = Path.home() / "porthole-nvs-backup"
+# The main checkout's local/, never a worktree's: removing a worktree would delete the copies with it.
+_common = subprocess.run(
+    ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], capture_output=True, text=True, cwd=Path(__file__).parent, check=True
+).stdout.strip()
+BACKUPS = Path(_common).parent / "local" / "nvs"
 
 
 def esptool(port: str, *args: str) -> str:
@@ -90,7 +95,7 @@ def main() -> None:
     sep = args.index("--")
     port = args[1] if args[0] == "--port" and sep == 2 and args[1] else find_port()  # make passes "" for none
     upload = args[sep + 1 :]
-    BACKUPS.mkdir(exist_ok=True)
+    BACKUPS.mkdir(parents=True, exist_ok=True)
     read = BACKUPS / "reading.bin"
     # watchdog_reset: the board boots its firmware again, even if the checks below stop here (an RTS reset can leave
     # it in download mode, a black screen).

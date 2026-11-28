@@ -21,7 +21,7 @@ opens it in a window (needs SDL2). [apps/porthole/README.md](../apps/porthole/RE
 
 Connect the board over USB-C. PlatformIO finds the port when you connect one board.
 
-`make flash` first copies the board's saves to `~/porthole-nvs-backup/<mac>/`. It then stops if your checkout is older than
+`make flash` first copies the board's saves to `local/nvs/<mac>/` (gitignored). It then stops if your checkout is older than
 the release the board last ran or downloaded, because older firmware cannot read newer saves. Rebase on `main`, or
 set `ALLOW_OLDER=1` if the board holds nothing you need.
 
