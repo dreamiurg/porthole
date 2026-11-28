@@ -1,7 +1,7 @@
 name: Pages
 
-# Publishes site/ (the project page) to https://porthole.dreamiurg.net. The game pictures, updates
-# strip and case STLs are copied from where the README and the CAD keep them. The custom domain is set in the repo's
+# Publishes site/ (the project page) to https://porthole.dreamiurg.net. The game pictures and updates strip
+# are copied from docs; the hardware links resolve to the printable models. The custom domain is set in the repo's
 # Pages settings, not by a CNAME file: an Actions-deployed site ignores that file.
 # The home page's player is the firmware itself in the browser: apps/porthole's sim built with Emscripten (make web),
 # twice. Beta is this commit, the newest code, into site/play/beta/; stable is the stable release's own code, into
@@ -12,7 +12,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, apps/porthole/**, .github/workflows/pages.yml]
+    paths: [site/**, docs/games/**, docs/updates.png, hardware/case/stl/**, hardware/grip/source/P017-assembled.glb, apps/porthole/**, .github/workflows/pages.yml]
   workflow_run:
     workflows: [Release, Promote, Yank]
     types: [completed]
@@ -40,12 +40,10 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Copy the game pictures, the updates strip and the case STLs the page shows
+      - name: Copy the game pictures and updates strip
         run: |
           cp -r docs/games site/games
           cp docs/updates.png site/images/updates.png
-          mkdir -p site/case
-          cp hardware/case/stl/v1.2/{puck_bezel,puck_plate,puck_lid}.stl site/case/
       - name: Copy the stable and the beta firmware for the install button
         env:
           GH_TOKEN: ${{ github.token }}
