@@ -49,7 +49,7 @@ About $35 from Waveshare or $45 on [Amazon](https://www.amazon.com/dp/B0DDPQSKJD
 model; the other sizes and the curved 2.1B are not supported. Specs and pins: [docs/hardware.md](docs/hardware.md).
 
 **The case** holds the board and a protected 3.7 V LiPo (2000 mAh or more, 1.25 mm plug).
-Check the plug polarity first, as many batteries ship reversed. The [P014 pinstripe case](hardware/case/stl/twist-lock/r3-pinstripe) has a Deep Midnight bezel with a thin Hot Orange ring and a twist-lock lid that fits the wheel. [Rotate the handheld in 3D](https://porthole.dreamiurg.net/#case).
+Check the plug polarity first, as many batteries ship reversed. The [pinstripe case](hardware/case/stl/twist-lock/r4-p004) has a Deep Midnight bezel with a thin Hot Orange ring and a lid that locks into the wheel with a 40° turn. [Rotate the handheld in 3D](https://porthole.dreamiurg.net/#case).
 
 ### V13 kid steering wheel
 
