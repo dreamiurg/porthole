@@ -292,6 +292,46 @@ void changedMind() {
   assert(p.sam.g.screen() == Game::Screen::Tracks && p.zoe.g.screen() == Game::Screen::Tracks && !p.zoe.g.duo().on);
 }
 
+// Even the widest legal profile names stay inside the invitation, clear of its first-visit dot.
+void inviteNamesFit() {
+  std::vector<uint16_t> fb(480 * 480);
+  gfx565::target(fb.data());
+  paint::View v{};
+  gfx::textLogEnabled = true;
+  for (const char* name : {"WWWWWWWW", "WWWШШШ", "Zoe"}) for (bool fresh : {false, true}) {
+    v.duo.inviteName = name; v.duo.isNew = fresh;
+    gfx::textLogReset();
+    paint::draw(v);
+    assert(gfx::textLogCount >= 2);
+    const gfx::TextBox& label = gfx::textLog[0];   // name above Race!
+    const int middle = paint::TOGETHER.y + paint::TOGETHER.h / 2;
+    const gfx::TextBox& action = gfx::textLog[1];
+    assert(label.w > 0 && label.y + label.h / 2 < middle && action.y + action.h / 2 >= middle);
+    assert(label.x + label.w <= paint::TOGETHER.x + paint::TOGETHER.w - (fresh ? 9 : 2));
+  }
+  gfx::textLogEnabled = false;
+}
+
+// The notice after backing out must fit the narrowing arc below the track buttons.
+void departureFits() {
+  paint::View v{};
+  v.notice = "WWWWWWWWWWW left";   // all eleven profile bytes occupied
+  std::vector<uint16_t> fb(480 * 480);
+  gfx565::target(fb.data());
+  gfx::textLogEnabled = true;
+  gfx::textLogReset();
+  paint::draw(v);
+  gfx::textLogEnabled = false;
+  bool sawNotice = false;
+  for (int i = 0; i < gfx::textLogCount; i++) {
+    const gfx::TextBox& t = gfx::textLog[i];
+    if (t.y < paint::HOME.y + paint::HOME.h) continue;
+    sawNotice = true;
+    for (int k = 0; k < 4; k++) assert(gfx::inCircle(t.x + (k & 1) * t.w, t.y + (k >> 1) * t.h, 1));
+  }
+  assert(sawNotice);
+}
+
 // The Together targets keep the house rules: whole targets on the glass, apart from their neighbors.
 void geometry() {
   using namespace paint;
@@ -308,6 +348,8 @@ int main() {
   AVATAR_PX[0] = C_T;
   link();
   geometry();
+  inviteNamesFit();
+  departureFits();
   raceTogether();
   dropped();
   leftEarly();

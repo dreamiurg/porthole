@@ -543,8 +543,13 @@ void raceButton(const View& v) {
   plate(b, flash ? GREEN : PLATE_HI, d.ready ? GOLD : GREEN);
   if (d.inviteFace) pic(*d.inviteFace, b.x * 3 + 10, b.y * 3 + 13, 2);
   const int x = b.x * 3 + 58;
-  char name[12];
-  utf8::copy(name, sizeof name, d.inviteName, 8);
+  const int room = (b.x + b.w) * 3 - x - (d.isNew ? 30 : 8);   // clear the news dot or the right rim
+  char name[14];   // the 12-byte profile name, plus room for the two dots
+  utf8::copy(name, sizeof name - 2, d.inviteName, 8);
+  for (int n = (int)strlen(name); n && textWidth(name, 2) > room;) {
+    utf8::popLetter(name, n);
+    strcpy(name + n, "..");
+  }
   text(x, b.y * 3 + 9, name, 2, flash ? INK : CREAM);
   text(x, b.y * 3 + 35, d.ready ? "Waiting" : "Race!", 2, flash ? INK : d.ready ? GOLD : GREEN);
   if (d.isNew) ui::newDot565(b);
@@ -575,7 +580,8 @@ void tracksPage(const View& v) {
   const int cx = MODE_CHIP.x * 3 + MODE_CHIP.w * 3 / 2;
   centered(cx, MODE_CHIP.y * 3 + 12, "Rivals", 2, DIM);
   centered(cx, MODE_CHIP.y * 3 + 40, MODE_NAME[mode], 2, GOLD);
-  if (v.notice) { fill(130, 432, 220, 30, INK); centered(240, 436, v.notice, 2, GOLD); }
+  // The first line fits below the buttons. A long name can have "left" beneath it at the narrower rim.
+  if (v.notice) font::textBox({&fonts::SMALL, 256, 56, 0, font::Align::CENTER}, v.notice, 112, 405, rgb888_to_565(GOLD));
 }
 void face(const pic::Pic* f, const char* name, int cx, bool gold) {
   if (f) pic(*f, cx - 30, 84, 3);
