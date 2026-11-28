@@ -49,7 +49,7 @@ def p004_track():
     return (roof & (shelf_air() + mouth)) - cyl(ROOT_R, -2, 12)
 
 
-def production_lid():
+def production_lid(part_id="P019"):
     stock = bd.Pos(0, 0, -BOT_Z) * lid_body(magnet=False, vent_pitch=2.4)
     lid = stock
     track = p004_track()
@@ -59,10 +59,10 @@ def production_lid():
         lid -= sector(41.55, 44, entry - 1.1, entry + 1.1, 7.80, 9.1)
     lid += detent() & stock
     # Recess the ID in the interior floor beside the battery fence, clear of the lock and the five buzzer holes.
-    label = bd.Text("P019", font_size=4.5, font_path=str(FONT), align=(bd.Align.CENTER, bd.Align.CENTER))
+    label = bd.Text(part_id, font_size=4.5, font_path=str(FONT), align=(bd.Align.CENTER, bd.Align.CENTER))
     lid -= bd.Pos(25.5, 8, FLOOR_T - 0.4) * bd.Rot(0, 0, 90) * bd.extrude(label, amount=0.5)
     assert lid.is_valid and len(lid.solids()) == 1
-    lid.label = "P019 – P004 production lid"
+    lid.label = f"{part_id} – P004 production lid"
     return lid
 
 

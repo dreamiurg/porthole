@@ -4,6 +4,7 @@ Download the parts from a single **Kit** folder. Print one of each part listed i
 
 | Kit | Parts for one puck | Switch and mounting |
 | --- | --- | --- |
+| [R5 · P020 comfort trial](twist-lock/r5-comfort/) | P020 lower lid, two-color bezel, board plate and slider | Rounded finger-contact edges around the three bayonet entrances. [Replacement lid for H2D](twist-lock/r5-comfort/bambu/P020-lid.3mf). |
 | [R4 · P019 lid and P014 pinstripe bezel](twist-lock/r4-p004/) | Two-color bezel, board plate, straight power slider and P019 lid | Full P004 lock with three tapered entries and a 40° clockwise turn. [Print only the replacement lid](twist-lock/r4-p004/bambu/P019-lid.3mf) to upgrade a P014 case. |
 | [R3 Pinstripe · P014](twist-lock/r3-pinstripe/) | Two-color bezel, board plate, straight power slider and R2 lid | 84 mm handheld with a Hot Orange face ring. Locks into the V13 wheel. |
 | [v1](v1/) | Bezel, plate, lid | Original 79.6 mm case with an opening for the board switch. |
