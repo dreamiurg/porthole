@@ -31,23 +31,23 @@ app racing
 wait 600
 expect-screen race_tracks
 ui-check race_tracks
-tap 78 129
+tap 64 122
 wait 700
 expect-screen race_board
 ui-check race_board
 expect kids=2
 snap rt00_board
-tap 125 44
+tap 122 36
 wait 700
 expect-screen race_board
 ui-check race_board-empty
 snap rt01_empty
-tap 35 44
+tap 38 36
 wait 700
-tap 35 44
+tap 38 36
 wait 700
 expect track=3
-tap 80 132
+tap 80 140
 wait 700
 expect-screen race_tracks
 tap 53 53

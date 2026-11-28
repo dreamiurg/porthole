@@ -3,6 +3,7 @@
 // as activity for the idle rule, the launcher's layout for every number of games, version order for wireless updates,
 // the "something new" card and the hidden system menu's way in.
 // Run: make test
+#include "telemetry.h"
 #include "host/check.h"
 #include <stdio.h>
 #include <string.h>
@@ -14,9 +15,11 @@
 #include "gfx565.h"
 #include "timezone.h"
 #include "launcher.h"
+#include "news_entries.h"
 #include "profiles.h"
 #include "save.h"
 #include "shell.h"
+#include "stars.h"
 
 // In-memory stand-in for NVS: (namespace, key) -> bytes. `budget` >= 0 is power loss: after that many writes
 // (saves and erases) every further write is dropped. `last` is the most recent write that landed. `refuse` ("ns/key")
@@ -429,7 +432,9 @@ static void biscuitPlayedSinceKept() {
   uint8_t blob[shell::BLOB_MAX]; biscuit::Save s;                     // a day's play on the moved pup
   size_t n = st.load(biscuit::STORE, "s2", blob, sizeof blob);
   assert(biscuit::loadBlob(blob, n, s));
-  s.friendship = 45; biscuit::seal(s); st.save(biscuit::STORE, "s2", &s, sizeof s);
+  // played on a firmware whose Biscuit saved v4, the longest it ever wrote: the migration reads that one too
+  s.friendship = 45; uint8_t v4[biscuit::SAVE_V4_SIZE] = {}; memcpy(v4, &s, sizeof s - 4);
+  os::save::seal(v4, sizeof v4, biscuit::SAVE_MAGIC, 4); st.save(biscuit::STORE, "s2", v4, sizeof v4);
   st.refuse = nullptr;
   shell::Profiles again; boot(st, again);
   assert(biscuitIn(st, 2, "Biscuit", 45) && st.has(shell::NS, "mb") && st.has(OLD_NS, "pet1"));
@@ -535,6 +540,20 @@ static void restBudget() {
   shell::recharge(c, t); assert(c.playSec == 100);
 }
 
+// A v3 record (before the skills book) loads with its stars and every skill new; v4 keeps the book.
+static void recordV3() {
+  shell::Record r = draft("Sam", 8, 1234); r.stars = 9;
+  skills::seed(r.book, skills::ADD_SUB, 3, true); shell::seal(r);
+  uint8_t v3[shell::REC_V3_SIZE]; memcpy(v3, &r, sizeof v3 - 4);
+  uint16_t ver = 3, size = (uint16_t)shell::REC_V3_SIZE; memcpy(v3 + 4, &ver, 2); memcpy(v3 + 6, &size, 2);
+  uint32_t crc = os::crc32(v3, sizeof v3 - 4); memcpy(v3 + sizeof v3 - 4, &crc, 4);
+  shell::Record out;
+  assert(shell::loadRecord(v3, sizeof v3, out) && out.stars == 9 && !skills::started(out.book, skills::ADD_SUB));
+  assert(out.version == shell::REC_VERSION && out.size == sizeof(shell::Record));
+  assert(shell::loadRecord(&r, sizeof r, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);
+}
+
+static void recordV2V3(shell::Record r);
 // Daily cap, v2 record fields: a v1 record (44 bytes) still loads, with nothing played today.
 static void recordV1() {
   shell::Record r = draft("Sam", 8, 1234); r.playSec = 42; shell::seal(r);
@@ -550,13 +569,26 @@ static void recordV1() {
   uint8_t wrong[sizeof r]; memcpy(wrong, &r, sizeof r); memcpy(wrong + 4, &ver, 2);
   crc = os::crc32(wrong, sizeof wrong - 4); memcpy(wrong + sizeof wrong - 4, &crc, 4);
   assert(!shell::loadRecord(wrong, sizeof wrong, out));   // a v1 header on a v2-sized blob is not a record
-  // a v2 record (before the stars): it loads with none
-  r.stars = 9; shell::seal(r);
-  uint8_t v2[shell::REC_V2_SIZE]; memcpy(v2, &r, sizeof v2 - 4);
-  ver = 2; size = (uint16_t)shell::REC_V2_SIZE; memcpy(v2 + 4, &ver, 2); memcpy(v2 + 6, &size, 2);
-  crc = os::crc32(v2, sizeof v2 - 4); memcpy(v2 + sizeof v2 - 4, &crc, 4);
-  assert(shell::loadRecord(v2, sizeof v2, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
-  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9);
+  recordV2V3(r);
+  recordV3();
+}
+// r as an older version would have stored it: its first `size` bytes, then a crc
+static void oldRecord(const shell::Record& r, uint16_t ver, size_t size, uint8_t* blob) {
+  const uint16_t n = (uint16_t)size; memcpy(blob, &r, size - 4); memcpy(blob + 4, &ver, 2); memcpy(blob + 6, &n, 2);
+  const uint32_t crc = os::crc32(blob, size - 4); memcpy(blob + size - 4, &crc, 4);
+}
+// a v2 record (before the stars) loads with none; a v4 one (before Kid news) keeps its book, with nothing seen
+static void recordV2V3(shell::Record r) {
+  shell::Record out; uint8_t blob[sizeof r];
+  r.stars = 9; r.newsSeen = 3; r.newsFrom = 4; skills::seed(r.book, skills::ADD_SUB, 3, true); shell::seal(r);
+  oldRecord(r, 2, shell::REC_V2_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V2_SIZE, out) && out.stars == 0 && out.dayPlaySec == 600 && out.version == shell::REC_VERSION);
+  oldRecord(r, 3, shell::REC_V3_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V3_SIZE, out) && out.stars == 9 && out.newsSeen == 0 && out.newsFrom == 0);
+  oldRecord(r, 4, shell::REC_V4_SIZE, blob);
+  assert(shell::loadRecord(blob, shell::REC_V4_SIZE, out) && skills::get(out.book, skills::ADD_SUB).theta == 300);
+  assert(out.newsSeen == 0 && out.newsFrom == 0 && out.version == shell::REC_VERSION);
+  assert(shell::loadRecord(&r, sizeof r, out) && out.stars == 9 && out.newsSeen == 3 && out.newsFrom == 4);
 }
 
 // 25 min a day per profile, alone or not; used up means resting until local midnight, then a fresh budget.
@@ -793,6 +825,47 @@ static bool on(const Shell& sh, const char* screen) { return !strcmp(sh.screenNa
 static void home(Shell& sh, uint32_t& ms, StubApp& a) { a.home = true; frame(sh, ms, Input{}); assert(on(sh, "launcher")); }
 // Paging through a Shell with eight stub games (6 + 2): the arrows, a game's page kept after it, page 0 for a new pick.
 static const ui::Box FIRST_ROW = {24, 55, 112, 24};   // the picker's first row
+// Telemetry from the shell: a kid's player id comes from their name and the device's secret, so it is the same on
+// every pick and nothing is stored for it; then the game's open and close with how long, the stars and the way out.
+static uint32_t telemetryClock() { return testNow; }
+static void telemetryEvents() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  StubApp app("One"); App* const apps[1] = {&app};
+  bootWithoutHours(sh, st, apps, 1); frame(sh, ms, Input{});
+  sh.createProfile("Sam", 8, "");
+  static telemetry::Queue q; q.begin(telemetryClock, "1.0.0");
+  telemetry::Config c; assert(telemetry::parseConfig("posthog https://h.example phc_k", c));
+  c.salt[0] = 9;
+  q.configure(c); telemetry::install(&q);
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));
+  assert(q.size() == 1);   // player_selected
+  assert(sh.openApp("One")); stars::award(app.stars, 3); frame(sh, ms, Input{}); home(sh, ms, app);
+  assert(q.size() == 4);   // and game_opened, the screen it was on, game_closed
+  static char body[8192]; int taken = 0;
+  q.batch(body, sizeof body, &taken);
+  char sam[17]; q.playerId(0, "Sam", sam);
+  assert(taken == 4 && strstr(body, "\"event\":\"player_selected\"") && strstr(body, sam) && strstr(body, "\"age\":8"));
+  assert(strstr(body, "\"event\":\"game_opened\"") && strstr(body, "\"game\":\"One\",\"screen\":\"stub\",\"secs\":1"));
+  assert(strstr(body, "\"game\":\"One\",\"seconds\":1,\"stars\":3,\"exit\":\"home\",\"active_s\":1,\"where\":\"stub\""));
+  q.drop(taken);
+  // A minute and a half with no touch: a heartbeat at the minute, and the idle stretch is not active time.
+  assert(sh.openApp("One"));
+  for (int i = 0; i < 130; i++) frame(sh, ms, Input{});
+  home(sh, ms, app);
+  q.batch(body, sizeof body, &taken);
+  const char* beat = strstr(body, "\"event\":\"game_heartbeat\"");
+  const char* closed = strstr(body, "\"seconds\":91,");
+  int active = -1;
+  assert(beat && strstr(beat, "\"game\":\"One\",\"active_s\":") && closed && sscanf(strstr(closed, "active_s"), "active_s\":%d", &active) == 1);
+  assert(active >= 55 && active <= 61);   // idle from the last tap, a few frames before
+  q.drop(taken);
+  assert(!strstr(body, "Sam"));   // the name stays on the board
+  char kai[17], again[17]; q.playerId(1, "Kai", kai); q.playerId(0, "Sam", again);
+  assert(strcmp(sam, kai) && !strcmp(sam, again));
+  c.salt[0] = 10; q.configure(c); q.playerId(0, "Sam", again);
+  assert(strcmp(sam, again));     // turned off and on: a new secret, new ids
+  telemetry::install(nullptr);
+}
 static void launcherPaging() {
   MemStore st; static Shell sh; uint32_t ms = 0;
   StubApp a[8] = {StubApp("One"), StubApp("Two"), StubApp("Three"), StubApp("Four"), StubApp("Five"), StubApp("Six"),
@@ -817,7 +890,8 @@ static void launcherPaging() {
   tapAt(sh, ms, first); assert(a[0].entered == 3 && a[7].entered == 2);
 }
 // The device's games ("sys"/"games"): versioned, crc'd, read back; anything else loads as all on. Ids are unique and
-// 1..32. A profile's create and delete still erase porthole/f<id>, the favorites older firmware wrote.
+// 1..32. A profile's create and delete still erase porthole/f<id>, the favorites older firmware wrote, and so does
+// loading an older record.
 static void gamesOffBlob() {
   MemStore st;
   assert(shell::loadGamesOff(st) == 0 && shell::saveGamesOff(st, 0x5) && shell::loadGamesOff(st) == 0x5);
@@ -830,6 +904,10 @@ static void gamesOffBlob() {
   const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2);
   assert(st.save(shell::NS, "f0", old, sizeof old)); shell::removeProfile(st, p, id, STORES, 2); assert(!st.has(shell::NS, "f0"));
   assert(st.save(shell::NS, "f0", old, sizeof old)); shell::create(st, p, draft("Kai", 6, 0), STORES, 2); assert(!st.has(shell::NS, "f0"));
+  // a record from before Kid news (v4) frees its favorites as it loads; a current one leaves the key alone
+  uint8_t v4[shell::REC_V4_SIZE]; oldRecord(p.rec[0], 4, shell::REC_V4_SIZE, v4);
+  assert(st.save(shell::NS, "p0", v4, sizeof v4) && st.save(shell::NS, "f0", old, sizeof old));
+  shell::loadAll(st, p); assert(p.used[0] && !strcmp(p.rec[0].name, "Kai") && !st.has(shell::NS, "f0"));
 }
 // An older firmware's favorites (porthole/f<id>) are left alone: the launcher shows every game switched on.
 static void oldFavoritesIgnored() {
@@ -905,19 +983,6 @@ static void versions() {
   assert(!shell::rolledBack("0.30.1", "0.30.0", true) && !shell::rolledBack("0.29.5", "0.30.0", true));
   assert(!shell::rolledBack("0.30.0", "0.30.0", false));   // it started fine, or a USB flash cleared the mark
   assert(!shell::rolledBack("0.30.0", "", true) && !shell::rolledBack("0.30.0", nullptr, true));   // nothing on record
-}
-
-// The card shows once per new version, never for a dev build, and a boot with nothing new writes nothing.
-static void somethingNew() {
-  MemStore st;
-  assert(shell::newRun(st, "0.15.0"));   // no "sys"/"ran" yet: this firmware is new here
-  int w = st.writes;
-  assert(!shell::newRun(st, "0.15.0") && st.writes == w);
-  assert(shell::newRun(st, "0.16.0") && !shell::newRun(st, "0.16.0"));
-  assert(!shell::newRun(st, "dev") && !shell::newRun(st, "dev"));
-  assert(shell::newRun(st, "0.16.0"));   // a release over a dev build replaced it: news again
-  const char* longer = "0.16.0-beta.12345";   // past the 15 bytes kept: still news only once
-  assert(shell::newRun(st, longer) && !shell::newRun(st, longer));
 }
 
 // A scan list keeps one entry per name at its strongest, strongest first, no hidden ones, and drops the weakest when full.
@@ -1313,9 +1378,9 @@ static void slowPresses() {
   typeAdminCode(sh, ms, "1234"); assert(on(sh, "delete"));
   slow({30, 66, 100, 28}, 1500); assert(on(sh, "picker") && sh.profileCount() == 1);   // No, keep!
   holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234"); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
-  slow({110, 68, 24, 24}, 1000);   // + held: 15 -> 25, not 26
-  tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 25);
+  assert(on(sh, "sys_time"));
+  slow({108, 59, 24, 18}, 1000);   // the session's + held: 15 -> 25, not 26, saved at once
+  assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 25);
 }
 // Cancel and failed writes preserve the old protection; successful removal persists, without changing profile PINs.
 static void adminChangesAndReset() {
@@ -1328,9 +1393,9 @@ static void adminChangesAndReset() {
   uint16_t pin = 1235; st.save("sys", "admin", &pin, sizeof pin);
   bootWithoutHours(sh, st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); typeAdminCode(sh, ms, "1234");
   tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_time"));
-  tapAt(sh, ms, {26, 119, 52, 20}); assert(on(sh, "sys_reset"));
+  tapAt(sh, ms, {27, 122, 52, 18}); assert(on(sh, "sys_reset"));
   int w = st.writes; tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_time") && st.writes == w);
-  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, {27, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
   tapAt(sh, ms, ADMIN_HOME); assert(on(sh, "sys_admin"));
   shell::loadAll(st, p); assert(!p.rec[0].restUntil && !p.rec[0].playSec && !p.rec[1].dayPlaySec && p.rec[0].pin == 1112);
   tapAt(sh, ms, CODE_SET); typeAdminCode(sh, ms, "0000");
@@ -1367,41 +1432,61 @@ static void resetSelectedPlayerPin() {
   bootWithoutHours(sh, st, nullptr, 0, &sys); tapAt(sh, ms, {24, 68, 112, 24}); assert(on(sh, "launcher"));
 }
 
+// Session and daily total step on Screen time itself, each tap saved at once; the session never passes the daily total.
+static const ui::Box SESSION_MINUS = {28, 59, 24, 18}, SESSION_PLUS = {108, 59, 24, 18}, DAILY_MINUS = {28, 80, 24, 18};
+static const ui::Box LIMITS_SWITCH = {42, 38, 76, 18};
 static void limitSettingsFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   bootWithoutHours(sh, st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); bootWithoutHours(sh, st, nullptr, 0, &sys);
-  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {30, 42, 100, 22}); assert(on(sh, "sys_limits"));
-  tapAt(sh, ms, {110, 68, 24, 24}); tapAt(sh, ms, ADMIN_HOME);
-  assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 15);
-  tapAt(sh, ms, {30, 42, 100, 22}); tapAt(sh, ms, {110, 68, 24, 24});
-  st.budget = st.writes; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_limits"));
-  assert(shell::loadLimits(st).sessionMinutes == 15);
-  st.budget = -1; tapAt(sh, ms, {82, 110, 52, 22}); assert(on(sh, "sys_time"));
-  assert(shell::loadLimits(st).sessionMinutes == 16 && shell::loadLimits(st).dailyMinutes == 30);
-  tapAt(sh, ms, {30, 67, 100, 22}); tapAt(sh, ms, {26, 68, 24, 24}); tapAt(sh, ms, {82, 110, 52, 22});
-  assert(shell::loadLimits(st).dailyMinutes == 29 && shell::loadLimits(st).sessionMinutes == 16);
-  bootWithoutHours(sh, st, nullptr, 0, &sys); assert(shell::loadLimits(st).sessionMinutes == 16);
+  holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, SESSION_PLUS); assert(on(sh, "sys_time") && shell::loadLimits(st).sessionMinutes == 16);
+  st.budget = st.writes; tapAt(sh, ms, SESSION_PLUS); assert(shell::loadLimits(st).sessionMinutes == 16);   // did not land
+  st.budget = -1;
+  for (int i = 0; i < 20; i++) tapAt(sh, ms, SESSION_PLUS);   // stops at the daily total
+  assert(shell::loadLimits(st).sessionMinutes == 30 && shell::loadLimits(st).dailyMinutes == 30);
+  tapAt(sh, ms, DAILY_MINUS);   // a lower daily total takes the session with it
+  assert(shell::loadLimits(st).dailyMinutes == 29 && shell::loadLimits(st).sessionMinutes == 29);
+  tapAt(sh, ms, SESSION_MINUS); assert(shell::loadLimits(st).sessionMinutes == 28);
+  bootWithoutHours(sh, st, nullptr, 0, &sys); assert(shell::loadLimits(st).sessionMinutes == 28);
+  assert(!shell::saveLimits(st, {31, 30}));
+  const shell::Limits older{35, 30}; st.save("sys", "limits", &older, sizeof older);   // saved before the cap
+  assert(shell::loadLimits(st).sessionMinutes == 30 && shell::loadLimits(st).dailyMinutes == 30);
+}
+// The master switch: off means no session, daily or window limit; the limits stay saved for when it is back on.
+static void limitsSwitch() {
+  MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
+  assert(shell::loadLimitsOn(st));
+  sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, "");
+  shell::Profiles p; shell::loadAll(st, p);
+  p.rec[0].playDay = NOW / shell::DAY_SEC; p.rec[0].dayPlaySec = shell::DAILY_SEC; shell::saveRecord(st, p, 0);
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest"));
+  sh.begin(st, nullptr, 0, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
+  st.budget = st.writes; tapAt(sh, ms, LIMITS_SWITCH); assert(shell::loadLimitsOn(st));   // a failed write: still on
+  st.budget = -1; tapAt(sh, ms, LIMITS_SWITCH); assert(!shell::loadLimitsOn(st) && on(sh, "sys_time"));
+  const int w = st.writes; tapAt(sh, ms, SESSION_PLUS); assert(st.writes == w);   // no steppers while off
+  sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher"));   // capped, window shut
+  assert(shell::loadLimits(st).dailyMinutes == 30);
+  assert(shell::saveLimitsOn(st, true)); sh.begin(st, nullptr, 0, &sys); tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest"));
 }
 static void windowSettingsFlow() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; sys.version = "dev";
   sh.begin(st, nullptr, 0, &sys); sh.createProfile("Sam", 8, ""); sh.begin(st, nullptr, 0, &sys);
   holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {30, 92, 100, 22}); assert(on(sh, "sys_window"));
+  tapAt(sh, ms, {30, 101, 100, 18}); assert(on(sh, "sys_window"));
   tapAt(sh, ms, {110, 70, 24, 20}); tapAt(sh, ms, {37, 125, 40, 20});
   assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 840);
-  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {110, 70, 24, 20});
+  tapAt(sh, ms, {30, 101, 100, 18}); tapAt(sh, ms, {110, 70, 24, 20});
   st.budget = st.writes; tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_window"));
   assert(shell::loadPlayWindow(st).startMinute == 840); st.budget = -1;
   tapAt(sh, ms, {83, 125, 40, 20}); assert(on(sh, "sys_time") && shell::loadPlayWindow(st).startMinute == 855);
-  tapAt(sh, ms, {30, 92, 100, 22}); tapAt(sh, ms, {42, 40, 76, 18}); tapAt(sh, ms, {83, 125, 40, 20});
+  tapAt(sh, ms, {30, 101, 100, 18}); tapAt(sh, ms, {42, 40, 76, 18}); tapAt(sh, ms, {83, 125, 40, 20});
   assert(!shell::loadPlayWindow(st).enabled);
   const auto before = shell::loadPlayWindow(st);
-  tapAt(sh, ms, {26, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
+  tapAt(sh, ms, {27, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); assert(on(sh, "sys_time"));
   const auto after = shell::loadPlayWindow(st); assert(!memcmp(&before, &after, sizeof before));
-  tapAt(sh, ms, {82, 119, 52, 20}); assert(on(sh, "sys_allow")); tapAt(sh, ms, LIMIT_RESET);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE);
-  assert(on(sh, "sys_time")); tapAt(sh, ms, {82, 119, 52, 20});   // end early
+  tapAt(sh, ms, {81, 122, 52, 18}); assert(on(sh, "sys_allow")); tapAt(sh, ms, LIMIT_RESET);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE);
+  assert(on(sh, "sys_time")); tapAt(sh, ms, {81, 122, 52, 18});   // end early
   sh.begin(st, nullptr, 0, &sys); assert(!shell::loadPlayWindow(st).enabled);
 }
 
@@ -1426,11 +1511,11 @@ static void familyAllowanceFlow() {
   p.rec[0].playDay = NOW / shell::DAY_SEC; p.rec[0].dayPlaySec = shell::DAILY_SEC;
   p.rec[0].restUntil = NOW + 600; p.rec[0].playSec = shell::SESSION_SEC; shell::saveRecord(st, p, 0);
   sh.begin(st, apps, 1, &sys); holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, LIMIT_RESET);   // cancel does not grant an allowance
+  tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, LIMIT_RESET);   // cancel does not grant an allowance
   tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "rest")); tapAt(sh, ms, {50, 120, 60, 24});
   holdTitle(sh, ms, 5000); tapAt(sh, ms, ADMIN_OPEN); tapAt(sh, ms, LIMIT_RESET);
-  tapAt(sh, ms, {82, 119, 52, 20}); tapAt(sh, ms, CODE_REMOVE); const uint32_t started = ms;
+  tapAt(sh, ms, {81, 122, 52, 18}); tapAt(sh, ms, CODE_REMOVE); const uint32_t started = ms;
   tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME); tapAt(sh, ms, ADMIN_HOME);
   tapAt(sh, ms, {24, 55, 112, 24}); assert(on(sh, "launcher") && sh.openApp("One")); app.saving = true;
   Input active{}; active.down = true;
@@ -1493,6 +1578,11 @@ static void starBalance() {
   assert(stars::spend(app.stars, 1));
   ms += 1000; sh.update(NOW, ms, Input{});
   assert(st.has("stub", "s1") && st.writes == before + 2 && !strcmp(st.last, "porthole/p1"));
+  // the balance stops at MAX, and no balance (nullptr) changes nothing
+  uint32_t full = stars::MAX - 2;
+  stars::award(&full, 5); assert(full == stars::MAX);
+  stars::award(&full, 1); assert(full == stars::MAX);
+  assert(stars::balance(nullptr) == 0 && !stars::spend(nullptr, 0) && stars::spend(&full, stars::MAX) && full == 0);
 }
 // An older build flashed over a newer one meets saves it cannot read. The game starts over, but what it then hands
 // the shell never replaces its own save from the newer firmware, a game cannot erase a save at all, and the kid's
@@ -1539,12 +1629,73 @@ static void newerSaveKept() {
     home(sh, ms, app);
   }
 }
-// The card comes before the landing screen (a fresh device's first name), once; the menu is a 5 s hold on the
-// picker's title, and only on a device with a System.
+// Kid news (shell/news.h): one line per game, a new game before a new thing to do before new things to find, newest
+// first; gone, expired and unseen-game entries never show, and a clock that was never set expires nothing.
+static void newsLinesOrder() {
+  using shell::NewsEntry;
+  const uint16_t day = NOW / 86400;
+  const NewsEntry e[] = {
+    {day, shell::NEWS_NEW, false, "a", "", "a new"}, {day, shell::NEWS_BIG, false, "a", "", "a big"},
+    {day, shell::NEWS_GAME, false, "b", "", "b game"}, {day, shell::NEWS_NEW, false, "c", "", "c new"},
+    {day, shell::NEWS_BIG, true, "d", "", "d gone"}, {day, shell::NEWS_NEW, false, "", "", "launcher"},
+    {(uint16_t)(day - 61), shell::NEWS_GAME, false, "e", "", "e old"}, {day, shell::NEWS_NEW, false, "a", "", "a newer"},
+  };
+  bool ok[8]; for (bool& b : ok) b = true;
+  int out[5];
+  assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 5) == 4);
+  assert(out[0] == 2 && out[1] == 1 && out[2] == 5 && out[3] == 3);   // b, a's big (not its newer small one), launcher, c
+  assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 2) == 2 && out[0] == 2 && out[1] == 1);
+  assert(shell::newsLines(e, 8, {2, NOW, ok}, out, 5) == 4 && out[1] == 7);   // seen up to entry 2: a's newer one is a's line, newest of the small
+  ok[2] = false; assert(shell::newsLines(e, 8, {0, NOW, ok}, out, 5) == 3 && out[0] == 1);   // b switched off or not here
+  assert(shell::newsLines(e, 8, {0, 1000, ok}, out, 5) == 4 && out[0] == 6);   // no clock: the 61-day-old game is news
+  assert(shell::newsLines(e, 8, {8, NOW, ok}, out, 5) == 0);
+}
+// What a kid has seen is theirs and on flash: a new kid has nothing new; a kid from before has all of it; a tile's dot
+// goes once its game opens, a spot's once it is tapped; nothing new to clear writes nothing.
+static void kidNewsRecord() {
+  MemStore st; shell::Profiles p; shell::loadAll(st, p); shell::KidNews k; const uint32_t now = shell::NEWS[0].day * 86400u;
+  const int id = shell::create(st, p, draft("Sam", 8, 0), STORES, 2); shell::create(st, p, draft("Kai", 6, 0), STORES, 2);
+  k.load(st, p, id); k.fresh(); assert(k.seen() == shell::NEWS_COUNT);
+  for (const shell::NewsEntry& e : shell::NEWS) assert(!k.tileDot(e.store, now));
+  k.forget(); assert(k.seen() == 0 && k.tileDot("racing", now) && k.tileDot("sandjar", now));
+  assert(!k.tileDot("racing", now + 200 * 86400u));   // long past its 60 days
+  k.open("racing", now); assert(k.isNew("together") && !k.isNew("rivals"));
+  shell::Profiles again; shell::loadAll(st, again); k.load(st, again, id);   // kept on flash
+  assert(!k.tileDot("racing", now) && k.tileDot("sandjar", now));
+  k.open("racing", now); k.seen("together"); assert(!k.isNew("together"));
+  int w = st.writes; k.seen("together"); k.open("racing", now); assert(st.writes == w);
+  shell::loadAll(st, again); k.load(st, again, id); k.open("racing", now); assert(!k.isNew("together"));
+  k.showed(); assert(k.seen() == shell::NEWS_COUNT);
+  k.load(st, again, 1 - id); assert(k.seen() == 0 && k.tileDot("racing", now));   // another kid's is their own
+}
+struct NewsApp : StubApp {   // a stub with a real game's store, so its news.toml entries count
+  const char* ns; NewSpots* spots = nullptr;
+  NewsApp(const char* n, const char* store) : StubApp(n), ns(store) {}
+  const char* store() const override { return ns; }
+  void enter(const AppEnter& e) override { StubApp::enter(e); spots = e.news; }
+};
+static bool dotAt(const ui::Box& b) { return gfx::fb[(b.y + 4) * 160 + b.x + b.w - 4] == C_RED; }
+// The flow: a kid from before Kid news picks themselves and sees "New for" (Rally's big news, Sand Jar's game) once;
+// the tiles keep their dots until opened; Rally gets its spot through AppEnter; a new kid sees none of it.
+static void newsFlow() {
+  MemStore st; static Shell sh; uint32_t ms = 0;
+  NewsApp rally("Rally", "racing"), sand("Sand Jar", "sandjar"); App* const list[2] = {&rally, &sand};
+  bootWithoutHours(sh, st, list, 2); sh.createProfile("Sam", 8, "");
+  frame(sh, ms, Input{}); assert(on(sh, "launcher") && !dotAt(launcher::tile(0, 2)));   // new: nothing is news to Sam
+  sh.debugCmd("news");
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "news"));
+  tapAt(sh, ms, {45, 116, 70, 26}); assert(on(sh, "launcher") && dotAt(launcher::tile(0, 2)) && dotAt(launcher::tile(1, 2)));
+  tapAt(sh, ms, launcher::HEADER); tapAt(sh, ms, FIRST_ROW); assert(on(sh, "launcher"));   // seen: not again
+  tapAt(sh, ms, launcher::tile(0, 2)); assert(on(sh, "stub") || rally.entered == 1);
+  assert(rally.spots && rally.spots->isNew("together"));
+  rally.spots->seen("together"); assert(!rally.spots->isNew("together"));
+  home(sh, ms, rally); assert(!dotAt(launcher::tile(0, 2)) && dotAt(launcher::tile(1, 2)));
+  sh.createProfile("Ava", 7, ""); frame(sh, ms, Input{}); assert(on(sh, "launcher") && !dotAt(launcher::tile(1, 2)));
+}
+// The menu is a 5 s hold on the picker's title, and only on a device with a System.
 static void systemMenuWayIn() {
   MemStore st; static Shell sh; uint32_t ms = 0; StubSys sys; StubApp a("One"); App* const list[1] = {&a};
-  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "sys_new"));
-  tapAt(sh, ms, {45, 112, 70, 26}); assert(on(sh, "new_name"));
+  bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "new_name"));   // an update shows no card: news is each kid's
   sh.createProfile("Sam", 8, "");
   bootWithoutHours(sh, st, list, 1, &sys); assert(on(sh, "picker"));
   holdTitle(sh, ms, 4900); assert(on(sh, "picker"));
@@ -1597,7 +1748,7 @@ static void failingSavesToldToGrownUp() {
 }
 
 int main() {
-  gfx565::target(nativePixels);
+  gfx565::target(nativePixels); telemetryEvents();
   systemDefaults();
   failingSavesToldToGrownUp();
   scheduleClosesGame();
@@ -1607,7 +1758,7 @@ int main() {
   combinedRestPrompts();
   playWindowRules();
   temporaryAllowance();
-  limitSettingsFlow();
+  limitSettingsFlow(); limitsSwitch();
   monotonicPlayDuration();
   configurableLimits();
   resetSelectedPlayerPin();
@@ -1617,8 +1768,8 @@ int main() {
   adminChangesAndReset();
   resetAllLimits();
   versions();
-  somethingNew();
   systemMenuWayIn();
+  newsLinesOrder(); kidNewsRecord(); newsFlow();
   scanList();
   textEntry();
   records();

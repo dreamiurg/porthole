@@ -330,13 +330,24 @@ static void homeCommand() {   // L<lat>,<lon>: decimal degrees; the name says wh
   if (!comma || *end || !g_sys.saveHome(h)) { Serial.println("[porthole] usage: L<lat>,<lon> (decimal degrees)"); return; }
   Serial.println("[porthole] home saved");
 }
-static void motionCommand(int c) {   // A, G, M, W, U, L: split out of serialCommand for the complexity gate
+// Y<the telemetry.txt text on one line>: "Y posthog https://us.i.posthog.com phc_..." or "Y off". The key is never echoed.
+static void telemetryCommand() {
+  String arg = Serial.readStringUntil('\n'); arg.trim();
+  if (!g_sys.setTelemetry(arg.c_str())) {
+    Serial.println("[porthole] usage: Y posthog <https://host> <project key> [anonymous] | Y otlp <https://url> [token] | Y off");
+    return;
+  }
+  const shell::TelemetryStatus t = g_sys.telemetryStatus();
+  Serial.printf("[porthole] telemetry %s%s\n", t.level ? "on: " : "off", t.host);
+}
+static void motionCommand(int c) {   // A, G, M, W, U, L, Y: split out of serialCommand for the complexity gate
   if (c == 'A') accelCommand();
   else if (c == 'G') gravityCommand();
   else if (c == 'M') printMetrics();
   else if (c == 'W') wifiCommand();
   else if (c == 'U') updateCommand();
   else if (c == 'L') homeCommand();
+  else if (c == 'Y') telemetryCommand();
 }
 static void printSystem() {   // the tail of "S": version, slot and where the update stands
   shell::UpdStatus u = g_sys.status();

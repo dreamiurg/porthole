@@ -9,6 +9,7 @@ Design-only package for a short arcade racer on the round 480×480 Porthole. Tur
 | [Platform and acceptance](implementation-contract.md) | Verified repository constraints, integration dependencies, completion checks |
 | [Original artwork and provenance](assets/README.md) | Two actual PNGs, checksums, selected panels, source inventory |
 | [Codex task](CODEX-TASK.md) | Self-contained implementation handoff |
+| [Garage](garage.md) | Stars buy Power parts and looks; ranks, Tuned and Stock boards (2026-11-21) |
 
 ## Visual direction
 

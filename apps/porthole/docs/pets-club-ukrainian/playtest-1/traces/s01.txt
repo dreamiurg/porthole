@@ -1,0 +1,3 @@
+newgame Mila Pup
+wait 2500
+snap home0

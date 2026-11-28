@@ -8,6 +8,7 @@
 #include "gfx565.h"
 #include "personalize.h"
 #include "ui565.h"
+#include "utf8.h"
 
 namespace biscuit {
 using namespace ui565;
@@ -19,33 +20,33 @@ constexpr int STICKER_PAGES = (NUM_STICKERS + STICKER_ROWS - 1) / STICKER_ROWS;
 // The keyboard types up to ui::NAME_LEN letters: a longer name (from before Porthole) starts the field empty.
 void Game::startNaming(const char* current) {
   const size_t n = strlen(current);
-  nameLen_ = n <= (size_t)ui::NAME_LEN ? (int)n : 0;
+  nameLen_ = utf8::count(current) <= ui::NAME_LEN && n < sizeof nameBuf_ ? (int)n : 0;
   memcpy(nameBuf_, current, (size_t)nameLen_); nameBuf_[nameLen_] = 0;
   namePage_ = 0;
 }
 
 // First visit: name the pup. Back leaves for the launcher; nothing is saved until it has a name.
 void Game::updateSetupPet() {
-  if (ui::back(in_)) { wantsHome_ = true; return; }
-  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
+  if (ui::home(in_)) { wantsHome_ = true; return; }
+  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_, sizeof nameBuf_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty(); lastTickSec_ = lastCheckpointSec_ = now_;
   go(SC_HOME);
   say(SAY_HELLO, SCENE_IDLE);
 }
 void Game::drawSetupPet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", ms_);
-  ui::drawBack();
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "Pup's name", sizeof nameBuf_);
+  ui::drawHome();
 }
 void Game::updateRenamePet() {   // a rename keeps everything but the name
   if (ui::back(in_)) { go(SC_PROFILE); return; }
-  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_) || !setPetName(save_, nameBuf_, now_)) return;
+  if (!ui::keyboard(in_, nameBuf_, nameLen_, namePage_, sizeof nameBuf_) || !setPetName(save_, nameBuf_, now_)) return;
   markDirty();
   go(SC_PROFILE);
 }
 void Game::drawRenamePet() {
   gfx::clear(C_WALL);
-  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name", ms_);
+  ui::drawKeyboard(in_, nameBuf_, namePage_, "New name", sizeof nameBuf_);
   ui::drawBack();
 }
 
@@ -61,16 +62,14 @@ void Game::updateProfile() {
 }
 void Game::drawProfile() {
   gfx565::clear(PAPER);
-  top(in_, "Our scrapbook", starCount());
+  top(in_, "Our scrapbook", storyStars(save_));
   char s[96];
   const bool bookworm = storyStars(save_) >= 6;   // two stories or more
   snprintf(s, sizeof s, "%s - %s", STAGES[(int)stage(save_)], bookworm ? "Bookworm" : "Cuddlebug");
   text(BOOK_BADGE, s, INK);
   char lines[128];   // the numbers first: personalize() then fills the names (letters only, never a %)
-  const int got = earnedStars(save_);   // every star ever earned, spent or not
-  snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d star%s, %u puzzle%s",
-           (unsigned)save_.daysTogether, (unsigned)save_.friendship, got, got == 1 ? "" : "s", (unsigned)save_.puzzles,
-           save_.puzzles == 1 ? "" : "s");
+  snprintf(s, sizeof s, "{name} & {pet}\nDay %u together\n%u friendship\n%d story stars", (unsigned)save_.daysTogether,
+           (unsigned)save_.friendship, storyStars(save_));
   personalize(s, who_.name, save_.petName, lines, sizeof lines);
   text(BOOK_LINES, lines, INK);
   button(in_, ALBUM);
@@ -85,7 +84,7 @@ void Game::updateStickers() {
 }
 void Game::drawStickers() {
   gfx565::clear(PAPER);
-  top(in_, "Our sticker album", starCount());
+  top(in_, "Our sticker album", storyStars(save_));
   for (int row = 0; row < STICKER_ROWS; row++) {
     const int i = page_ * STICKER_ROWS + row;
     Label l = STICKER;

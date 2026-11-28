@@ -1,0 +1,79 @@
+# The Shop (Stats > Shop): a hub with Hats and Collars. Collars recolor the band every dog wears, the puppy too. A tap
+# on Buy short of stars shows how many more; a one-second hold buys; a locked collar waits for its sticker; what you
+# own is worn with a tap.
+newgame Sam Biscuit
+wait 2400
+expect collar=0
+tap 40 27
+wait 450
+tap 114 123
+wait 450
+expect-screen shop
+ui-check shop
+snap 01_shop
+tap 110 78
+wait 450
+expect-screen collars
+ui-check collars
+snap 02_red
+# Blue: no stars yet
+tap 134 80
+wait 450
+tap 80 134
+wait 450
+expect short=15
+snap 03_short
+tap 80 80
+wait 450
+expect short=0
+dbg rich
+tap 80 134
+wait 450
+expect collars=0
+# held: bought and worn
+down 80 134
+wait 500
+snap 04_holding
+wait 700
+up
+wait 800
+expect-screen celebrate
+expect collar=1
+expect collars=2
+expect stars=35
+snap 05_new_collar
+tap 80 80
+wait 450
+expect-screen collars
+# Gold is locked until a dog grows up
+tap 26 80
+wait 450
+tap 26 80
+wait 450
+down 80 134
+wait 1200
+up
+wait 450
+expect collars=2
+expect stars=35
+snap 06_locked
+# Red is everyone's: worn with a tap
+tap 134 80
+wait 450
+tap 80 134
+wait 450
+expect collar=0
+tap 134 80
+wait 450
+tap 80 134
+wait 450
+expect collar=1
+tap 80 12
+wait 450
+expect-screen shop
+tap 80 12
+wait 450
+tap 80 12
+wait 450
+expect-screen home
+snap 07_home_blue

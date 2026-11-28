@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "telemetry.h"
 
 namespace racing {
 namespace {
@@ -19,12 +20,13 @@ bool holding(const Input& in, const ui::Box& b) {
 void Game::enter(const AppEnter& e) {
   now_ = e.nowSec; rawMs_ = e.ms; ms_ = runs_ = 0;
   seed_ = (e.ms ^ e.nowSec * 2654435761u) | 1;   // the clock too: after a power cycle the boot's ms repeats
-  daylight_ = e.daylight; home_ = seenHowTo_ = recenter_ = gripLost_ = false; in_ = {};
+  daylight_ = e.daylight; news_ = e.news; home_ = seenHowTo_ = recenter_ = gripLost_ = false; in_ = {};
   neutral_ = {0, 1000, 0};
   track_ = 0;
   loadKids(e);
   start(race_, TRACK[track_], seed_, raceLevel());
-  duo_ = host_ = raced_ = gone_ = ready_ = false; wire_ = {}; peer_ = {}; notice_[0] = 0; wallet_ = e.stars;
+  duo_ = host_ = raced_ = gone_ = ready_ = false; wire_ = {}; peer_ = {}; notice_[0] = 0; wallet_ = e.stars; book_ = e.book;
+  visit_ = {}; item_ = {}; rankUp_ = -1; starsGot_ = 0;
   avatars_ = e.avatars; nAvatars_ = e.avatarCount;
   if (e.who) { snprintf(wire_.name, sizeof wire_.name, "%s", e.who->name); wire_.avatar = e.who->avatar; }
   link_.begin(lan::radio());   // on the track cards, says this kid is here (Together)
@@ -44,7 +46,11 @@ void Game::loadKids(const AppEnter& e) {
     k = {};
     snprintf(k.name, sizeof k.name, "%s", e.all[i].name);
     Save s{};
-    if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) memcpy(k.best, s.best, sizeof k.best);
+    if (e.saves && e.saves[i].len && loadBlob(e.saves[i].data, e.saves[i].len, s)) {
+      memcpy(k.best, s.best, sizeof k.best);
+      memcpy(k.stock, s.stock, sizeof k.stock);   // tenths
+      k.power = s.power;
+    }
     k.me = e.who && e.all[i].id == e.who->id;
     if (k.me) {   // a level saved under an older top races, reads and is saved again at today's top
       me_ = nKids_; save_ = s;
@@ -79,29 +85,53 @@ int Game::levelOn(int track) const {
   }
 }
 
-// Once per finish: the kid's own record for this track, kept only when it improves, and the rivals' next level.
+// Every finish, any place, any mode, together too, counts toward the kid's rank (garage.h); the Results banner says when
+// it reaches the next one.
+void Game::countFinish() {
+  const int before = garage::rank(save_.finishes);
+  if (save_.finishes < 255) { save_.finishes++; dirty_ = true; }
+  rankUp_ = (int8_t)(garage::rank(save_.finishes) > before ? garage::rank(save_.finishes) : -1);
+  telemetry::roundFinished({name(), race_.level, race_.place == 1 ? "won" : "done", (long)(race_.car[PLAYER].finishMs / 1000),
+                            race_.place, telemetry::P("track", (long)track_)});
+}
+
+// Once per finish: the kid's own record for this track, kept only when it improves, and the rivals' next level. A
+// race with parts counts on the Tuned board (every time, with its Power); one with Power 0 on both boards. "New best"
+// is said of the board of the class just raced.
 // TODO: leaving a race (Restart/Tracks/Home) never counts, so quitting one being lost never lowers the level;
 // deliberate for now, revisit if kids learn to quit instead of finishing.
 void Game::recordFinish() {
-  prevBestMs_ = save_.best[track_].raceMs;
-  newBest_ = record(save_.best[track_], race_.car[PLAYER].finishMs, bestLap(race_));
-  dirty_ = dirty_ || newBest_;
+  countFinish();
+  starsGot_ = (uint8_t)purse::payFinish(book_, wallet_, pay_, now_, false);
+  int power = 0;
+  for (uint8_t t : race_.tier) power += t;
+  const uint32_t ms = race_.car[PLAYER].finishMs, lap = bestLap(race_);
+  uint16_t& stock = save_.stock[track_];
+  prevBestMs_ = power ? save_.best[track_].raceMs : stock * 100u;
+  const uint8_t all = record(save_.best[track_], ms, lap);
+  if (all & BEST_RACE) save_.power = (uint16_t)((save_.power & ~(15u << 4 * track_)) | (unsigned)power << 4 * track_);
+  const bool stockBest = !power && (!stock || tenths(ms) < stock);   // the Stock board keeps races, not laps
+  if (stockBest) stock = tenths(ms);
+  newBest_ = power ? all : stockBest ? BEST_RACE : 0;
+  dirty_ = dirty_ || all || newBest_;
   if (save_.mode == AUTO) {   // a fixed setting races at its own level and leaves the adaptive ones alone
     const int8_t level = (int8_t)clampLevel(nextLevel(race_.level, track_, race_.place, runaway(race_)), track_);
     dirty_ = dirty_ || level != save_.level[track_];
     save_.level[track_] = level;
   }
   seedLevels();
-  if (me_ >= 0) kids_[me_].best[track_] = save_.best[track_];
+  if (me_ >= 0) { Kid& k = kids_[me_]; k.best[track_] = save_.best[track_]; k.stock[track_] = save_.stock[track_]; k.power = save_.power; }
 }
 
 // This track's leaderboard: every kid with a time, fastest race first (ties: the faster lap, then profile order).
-int Game::board(paint::Row out[MAX_PROFILES]) const {
+// stock: the Stock board (races run with Power 0); otherwise Tuned, every time with the Power it was set with.
+int Game::board(paint::Row out[MAX_PROFILES], bool stock) const {
   int n = 0;
   for (int i = 0; i < nKids_; i++) {
-    const Best& b = kids_[i].best[track_];
+    const Best b = stock ? Best{kids_[i].stock[track_] * 100u, 0} : kids_[i].best[track_];
     if (!b.raceMs) continue;
-    paint::Row row = {kids_[i].name, b.raceMs, b.lapMs, kids_[i].me};
+    const uint8_t power = stock ? paint::NO_POWER : (uint8_t)(kids_[i].power >> 4 * track_ & 15);
+    paint::Row row = {kids_[i].name, b.raceMs, b.lapMs, kids_[i].me, power};
     int j = n++;
     for (; j > 0 && (out[j - 1].raceMs > row.raceMs || (out[j - 1].raceMs == row.raceMs && out[j - 1].lapMs > row.lapMs)); j--) out[j] = out[j - 1];
     out[j] = row;
@@ -124,11 +154,15 @@ void Game::go(Screen s) {
   gate_.shown(ms_); hold_ = {};
   boost_ = rocket_ = gripDone_ = false;
   if (s != Screen::Tracks) ready_ = false;   // Race! is only ever asked on the cards
+  if (s == Screen::Results) resultsMs_ = ms_;
+  hintMs_ = 0;
   badGripMs_ = 0;
 }
 
 void Game::startRace() {
-  start(race_, TRACK[track_], seed_ + ++runs_, raceLevel());   // every run is fresh: inventory, timers and rivals reset
+  uint8_t kit[PARTS];
+  garage::kit(save_, kit);
+  start(race_, TRACK[track_], seed_ + ++runs_, raceLevel(), kit);   // every run is fresh: inventory, timers and rivals reset
   fresh();
 }
 void Game::fresh() {
@@ -152,6 +186,9 @@ void Game::update(uint32_t nowSec, uint32_t ms, const Input& in) {
     case Screen::Results: updateResults(); break;
     case Screen::Board: updateBoard(); break;
     case Screen::Lobby: updateLobby(); break;
+    case Screen::Garage: updateGarage(); break;
+    case Screen::Shop: updateShop(); break;
+    case Screen::Buy: updateBuy(); break;
   }
 }
 
@@ -165,12 +202,62 @@ void Game::updateTracks() {
   for (int i = 0; i < TRACKS; i++)
     if (ui::clicked(in_, paint::CARD[i])) { track_ = i; go(seenHowTo_ ? Screen::Calibrate : Screen::HowTo); return; }
   if (ui::clicked(in_, paint::TIMES)) go(Screen::Board);
+  else if (ui::clicked(in_, paint::CAR_BTN)) { visit_ = garage::begin(save_); go(Screen::Garage); }
   else if (ui::clicked(in_, paint::HOME)) home_ = true;
+}
+
+// The garage: the kid's car, its Power and the Stock switch; Looks and Power open the item pages. Leaving it keeps
+// this visit's purchases for good (no more Undo).
+void Game::updateGarage() {
+  using garage::Item;
+  if (ui::clicked(in_, paint::STOCK_SW)) { save_.stockOn = !save_.stockOn; dirtyNow(); }
+  else if (ui::clicked(in_, paint::LOOKS_BTN)) { item_ = Item{garage::PAINT, (uint8_t)save_.paint}; go(Screen::Shop); }
+  else if (ui::clicked(in_, paint::POWER_BTN)) { item_ = Item{garage::PART, 0}; go(Screen::Shop); }
+  else if (ui::clicked(in_, paint::GARAGE_BACK)) { visit_ = {}; go(Screen::Tracks); }
+}
+void Game::shopStep(int by) {
+  const int n = garage::count(item_.group);
+  item_.index = (uint8_t)((item_.index + n + by) % n);
+  hintMs_ = 0;
+}
+// One item at a time: < > browse its group, the chip turns Paint and Stripes over; Buy asks on its own page, Undo
+// takes back what this visit bought, Equip puts an owned look on. Too few stars: a gold hint for a moment, no sound.
+void Game::updateShop() {
+  using garage::State;
+  const State st = garage::state(save_, purse::balance(wallet_), item_);
+  const bool undo = garage::canUndo(save_, item_, visit_);
+  if (ui::clicked(in_, paint::SHOP_BACK)) { go(Screen::Garage); return; }
+  if (item_.group != garage::PART && ui::clicked(in_, paint::GROUP_CHIP)) {
+    item_.group = item_.group == garage::PAINT ? garage::STRIPE : garage::PAINT;
+    item_.index = item_.group == garage::PAINT ? save_.paint : save_.stripe;
+    hintMs_ = 0;
+    return;
+  }
+  if (ui::clicked(in_, paint::PREV_ITEM)) { shopStep(-1); return; }
+  if (ui::clicked(in_, paint::NEXT_ITEM)) { shopStep(1); return; }
+  if (undo && ui::clicked(in_, paint::SPLIT_UNDO)) { garage::undo(save_, wallet_, item_, visit_); dirtyNow(); return; }
+  if (!ui::clicked(in_, undo ? paint::SPLIT_MAIN : paint::MAIN)) return;
+  if (st == State::Buy) go(Screen::Buy);
+  else if (st == State::Short) hintMs_ = ms_ + paint::HINT_MS;
+  else if (st == State::Equip) { garage::wear(save_, item_); dirtyNow(); }
+}
+void Game::updateBuy() {
+  if (ui::clicked(in_, paint::BUY_YES)) {
+    const uint32_t had = purse::balance(wallet_);
+    if (garage::buy(save_, wallet_, item_, visit_)) {
+      dirtyNow();
+      telemetry::emit("bought", {telemetry::P("game", name()), telemetry::P("item", garage::name(item_)),
+                                 telemetry::P("cost", (long)(had - purse::balance(wallet_)))});
+    }
+    go(Screen::Shop);
+  } else if (ui::clicked(in_, paint::BUY_NO)) go(Screen::Shop);
 }
 
 // Every kid's best times, one track at a time from the last one picked; the arrows go round all four.
 void Game::updateBoard() {
-  if (ui::clicked(in_, paint::PREV_TRACK)) track_ = (track_ + TRACKS - 1) % TRACKS;
+  if (ui::clicked(in_, paint::TUNED_CHIP)) boardStock_ = false;
+  else if (ui::clicked(in_, paint::STOCK_CHIP)) boardStock_ = true;
+  else if (ui::clicked(in_, paint::PREV_TRACK)) track_ = (track_ + TRACKS - 1) % TRACKS;
   else if (ui::clicked(in_, paint::NEXT_TRACK)) track_ = (track_ + 1) % TRACKS;
   else if (ui::clicked(in_, paint::BOARD_BACK)) go(Screen::Tracks);
 }
@@ -289,7 +376,15 @@ void Game::render() {
   v.gripReady = gripReady(); v.gripUpright = controls::upright(gravity()); v.gripHeld = controls::held(gravity());
   v.gripLost = gripLost_; v.leave = leave_;
   paint::Row rows[MAX_PROFILES];
-  v.board = rows; v.boardRows = board(rows); v.newBest = newBest_; v.prevBestMs = prevBestMs_; v.mode = save_.mode % MODES;
+  int power = 0;
+  for (uint8_t t : race_.tier) power += t;
+  const bool stock = screen_ == Screen::Board ? boardStock_ : screen_ == Screen::Calibrate ? raceStock() : power == 0;
+  v.board = rows; v.boardRows = board(rows, stock); v.boardStock = stock;
+  v.paint = duo_ ? 0 : save_.paint; v.stripe = duo_ ? 0 : save_.stripe;   // together, both cars race stock
+  v.shop = {&save_, purse::balance(wallet_), item_, &visit_, hintMs_ && (int32_t)(hintMs_ - ms_) > 0,
+            garage::anyToBuy(save_, purse::balance(wallet_))};
+  v.earned = starsGot_;
+  v.rankUp = rankUp_ >= 0 && ms_ - resultsMs_ < paint::BANNER_MS ? rankUp_ : -1; v.newBest = newBest_; v.prevBestMs = prevBestMs_; v.mode = save_.mode % MODES;
   duoView(v.duo);
   if (notice_[0] && (int32_t)(noticeMs_ - ms_) > 0) v.notice = notice_;
   paint::draw(v);
@@ -297,7 +392,7 @@ void Game::render() {
 
 const char* Game::screenName() const {
   static const char* const N[] = {"race_tracks", "race_howto", "race_calibrate", "race_play", "race_pause", "race_confirm",
-                            "race_results", "race_board", "race_lobby"};
+                            "race_results", "race_board", "race_lobby", "race_garage", "race_shop", "race_buy"};
   if (screen_ == Screen::Race && race_.phase == Phase::Countdown) return "race_countdown";
   return N[(int)screen_];
 }
@@ -314,6 +409,13 @@ void Game::debugPrint() {
   const Best& b = save_.best[track_];
   printf("best_race=%u best_lap=%u new_best=%d kids=%d level=%d mode=%s race_level=%d\n", (unsigned)b.raceMs,
          (unsigned)b.lapMs, newBest_, nKids_, (int)save_.level[track_], paint::MODE_NAME[save_.mode % MODES], raceLevel());
+  int t[PARTS];
+  for (int i = 0; i < PARTS; i++) t[i] = garage::tier(save_, i);
+  printf("stars=%u power=%d race_power=%d finishes=%u rank=%s paint=%u stripe=%u tiers=%d%d%d%d%d stock=%u looks=%u "
+         "item=%u:%u undo=%d board_stock=%d earned=%u\n", (unsigned)purse::balance(wallet_), garage::power(save_),
+         garage::racePower(save_), save_.finishes, garage::RANK_NAME[garage::rank(save_.finishes)], (unsigned)save_.paint,
+         (unsigned)save_.stripe, t[0], t[1], t[2], t[3], t[4], (unsigned)save_.stockOn, (unsigned)save_.looks, item_.group,
+         item_.index, garage::canUndo(save_, item_, visit_), boardStock_, starsGot_);
   printf("steer=%d grip_lost=%d resume=%u ready=%d calibration=%u neutral=%d,%d,%d\n", (int)lroundf(steer_ * 1000),
          gripLost_, (unsigned)resumeMs_, calibration_.get(&n), calibration_.progress(), neutral_.x, neutral_.y, neutral_.z);
 }
@@ -341,6 +443,8 @@ void Game::debugCmd(const char* cmd) {
     dirty_ = true;   // kept even when the next finish leaves it where it is
     return;
   }
+  if (!strncmp(cmd, "stars ", 6)) { purse::fixture(wallet_, (uint32_t)atoi(cmd + 6)); return; }
+  if (!strncmp(cmd, "finishes ", 9)) { const int n = atoi(cmd + 9); save_.finishes = (uint8_t)(n < 0 ? 0 : n > 255 ? 255 : n); dirty_ = true; return; }
   if (!strcmp(cmd, "tracks")) { go(Screen::Tracks); return; }
   if (!strcmp(cmd, "calibrate")) { go(Screen::Calibrate); return; }
   if (!strcmp(cmd, "go") || !strcmp(cmd, "lastlap") || !strcmp(cmd, "lastplace")) debugFixture(cmd);

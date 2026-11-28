@@ -23,6 +23,13 @@ struct Car {
 };
 struct Rocket { float dist = 0, x = 0; uint32_t ageMs = 0; bool live = false; };
 struct Puff { float dist = 0, x = 0; uint32_t ms = 0; };
+// The kid's car as the garage tuned it (tune.h KIT_*): stock is all tier 0, and every rival drives stock.
+struct Handling {
+  float top = 1, accel = ACCEL, steer = STEER_RATE, iceTau = ICE_TAU, iceResponse = ICE_RESPONSE;
+  float offroad = OFFROAD_CAP, slow = SLOW_CAP;
+  uint32_t boostMs = BOOST_MS;
+};
+Handling handling(const uint8_t tier[PARTS]);   // nullptr: stock; a tier past TIERS counts as TIERS
 struct Controls { float steer = 0; bool boost = false, rocket = false; };   // steer -1..1; presses are fresh edges
 struct Race {
   const Track* track = nullptr;
@@ -45,11 +52,13 @@ struct Race {
   uint16_t rocketsFired = 0, rocketHits = 0, pickups = 0, jumps = 0, impacts = 0;
   uint8_t struck[CARS] = {};        // the player's rocket hits on each rival (a race together sends them to the host)
   bool keepField = false;           // a race together: the rivals keep driving after the player's finish
+  uint8_t tier[PARTS] = {};         // the kid's parts this race (0: stock), and what they make of the car
+  Handling kit;
 };
 
 // level: how hard the rivals push (tune.h; clampLevel'd; 0 = Normal, the track's LEVEL_SHIFT rungs up). The race is
-// a pure function of the track (one of TRACK[]), seed, level and inputs.
-void start(Race& r, const Track& t, uint32_t seed, int level);
+// a pure function of the track (one of TRACK[]), seed, level, the kid's part tiers (nullptr: stock) and inputs.
+void start(Race& r, const Track& t, uint32_t seed, int level, const uint8_t tier[PARTS] = nullptr);
 int clampLevel(int level, int track);   // LEVEL_MIN..the track's top (LEVEL_MAX less its LEVEL_SHIFT)
 int rungOf(int level, int track);       // the ladder rung a level puts the rivals on (tune.h LEVEL_SHIFT)
 // After a finished race (tune.h): a win steps up one, two after a runaway; a loss at 0 or below steps down two, from
@@ -66,6 +75,10 @@ uint32_t bestLap(const Race& r);       // the player's fastest finished lap, 0 i
 float hitSpeed(float before, float factor);    // the impact rule: min(before, max(HIT_FLOOR, before * factor))
 bool airborne(const Car& c);
 // What is under a grounded car at (dist, x) on a race at ladder `rung` (Race::rung: it switches Pro patches on): the
-// strongest speed cap (1 = none) and whether it is on ice.
+// strongest speed cap (1 = none, the car's own slow and off-road caps) and whether it is on ice.
 float terrainCap(const Track& t, int rung, float dist, float x, bool* onIce);
+// A stock terrain cap as a car with these parts feels it: Suspension lifts both caps, and off-road stays the lower one.
+static_assert(KIT_OFFROAD[0] < KIT_SLOW[0] && KIT_OFFROAD[1] < KIT_SLOW[1] && KIT_OFFROAD[2] < KIT_SLOW[2] && KIT_OFFROAD[3] < KIT_SLOW[3],
+              "a tuned cap keeps the stock cap's order");
+inline float tuned(float cap, const Handling& h) { return cap == OFFROAD_CAP ? h.offroad : cap == SLOW_CAP ? h.slow : cap; }
 }  // namespace racing

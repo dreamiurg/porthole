@@ -12,22 +12,18 @@ wait 450
 expect-screen biscuit_library
 ui-check biscuit_library
 snap s01_library
-# page 3: The Sleepy Seed opens on day 2, its row does nothing today (Little reads come first on the shelf)
+# page 2: The Sleepy Seed opens on day 2, its row does nothing today
 tap 108 132
 wait 450
-tap 108 132
-wait 450
-expect page=2
-tap 80 84
+expect page=1
+tap 80 108
 wait 450
 expect-screen biscuit_library
 snap s02_locked
 tap 52 132
 wait 450
-tap 52 132
-wait 450
 # The Moon Biscuit
-tap 80 108
+tap 80 84
 wait 450
 expect-screen biscuit_story
 expect story=0
@@ -100,7 +96,7 @@ tap 94 129
 wait 450
 ui-check biscuit_library-read
 snap s08_read
-tap 80 108
+tap 80 84
 wait 450
 repeat 12
 tap 108 132
@@ -123,9 +119,7 @@ expect stories=1
 # Back from a story page and from the Library
 tap 94 129
 wait 450
-tap 108 132
-wait 450
-tap 80 84
+tap 80 108
 wait 450
 expect story=1
 tap 108 132

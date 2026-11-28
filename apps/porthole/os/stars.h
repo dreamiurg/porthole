@@ -1,5 +1,5 @@
-// A kid's stars: one balance per profile, earned in any game (Biscuit's stories and puzzles, a flashcard round) and
-// spent in any game (Biscuit's doghouse). The shell keeps it in the profile's record and saves it when it changes; a
+// A kid's stars: one balance per profile, earned in any game (Pets Club's puzzles and little reads, a flashcard round)
+// and spent in any game (Pets Club's hats). The shell keeps it in the profile's record and saves it when it changes; a
 // game gets the playing kid's balance as AppEnter::stars and changes it only through these. nullptr (a test, or a
 // shell that keeps none) makes them no-ops. Header-only.
 #pragma once

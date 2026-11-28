@@ -82,15 +82,16 @@ Design and state contract: [game brief](games/sand-jar/AGENTS.md)
 ## Times Cards: the times tables, a few minutes a day
 
 Open **Times Cards** and tap **Go!**: a card shows a fact like **3 × 5**. Say the answer out loud,
-tap the card to turn it, then tap **Easy**, **Hard** or **Wrong**. Each kid has their own deck.
-Spaced repetition decides when each card comes back: a Wrong card returns a few cards later and
-tomorrow, an easy one waits longer each time. New facts come in a few at a time, at each kid's own
-pace: the next table starts once about half of the current one is known (Easy on two separate days),
-and a kid who is struggling gets no new facts and some easy ones mixed in until things settle.
+tap the card, then tap the answer among four. Each kid has their own deck. The game grades each
+answer itself, from right or wrong and how fast it came compared with that kid's usual time, which
+follows the kid as they get quicker. Spaced repetition decides when each card comes back: a missed
+card returns a few cards later and again soon, a fast one waits longer each time. Within a round the
+difficulty moves card by card: fast right answers bring new facts sooner, then a quick test of the
+next table (three fast right answers on its hardest facts and the kid skips it); a miss brings easy wins.
 From 4× on, each known fact also brings its two divisions (6 × 7 known: 42 ÷ 6 and 42 ÷ 7).
-A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished
-round earns 2 stars, however it went, to spend in Biscuit's doghouse. No timer, no sounds.
-For a grown-up: hold the Times Cards title for 2 seconds to see how honestly the kid grades.
+A 6-year-old starts on 2×, an 8-year-old on 4×. Every finished round earns 2 stars, however it
+went, to spend on hats in Pets Club. No countdown, no sounds.
+For a grown-up: hold the Times Cards title for 2 seconds to see how it's going.
 
 Design and state contract: [game brief](games/times-cards/AGENTS.md)
 
@@ -197,26 +198,26 @@ Everything is drawn at 160×160 in a 32-color retro palette and scaled up 3× to
 * **Adopt.** A parcel arrives and a puppy pops out. The kid names the pup and picks the house
   colors.
 * **Home.** One cosy room: a window with day, night, rain and a visiting squirrel, a bookshelf that
-  fills up with unlocked books, a lamp to tuck the dog in, a food bowl, a toy ball. Four big
+  fills up with the books your kid has read, a lamp to tuck the dog in, a food bowl, a toy ball. Four big
   buttons: **feed · play · read · tricks**. Tap the dog to pet it; hold for a belly rub.
 * **Needs, gently.** Food, fun, sleep and clean decay slowly and **stop at a floor: the dog never
   dies, runs away or resets.** Poop shows up a few hours after meals (one tap cleans it); muddy
   paws after playing mean a bath you give by rubbing the mud off.
-* **Read.** A library of 30 original short stories in three reading levels, 5 to 11 pages each.
+* **Read.** A library of original short stories on two shelves: 50 in English (levels 2 to 8) and 25 in
+  Ukrainian (levels 1 to 5). Each shelf picks books at your kid's level in that language, from how they answer.
   The dog sits and listens, and each story ends with one comprehension question. Reading is the
   biggest source of bond hearts.
 * **Play.** *Fetch*: slide to catch falling bones and dodge the bee. *Word Fetch*: read a clue,
   tap letter tiles to spell the word.
 * **Tricks.** Eight tricks (sit, shake, speak, spin, roll over, play dead, beg, dance) unlock
   with bond hearts, each learned in three Simon-says lessons on three different days.
-* **Day after day.** The real-time clock drives it all: a gift every new calendar day (a book, a
+* **Day after day.** The real-time clock drives it all: a gift every new calendar day (treats, a
   hat, a party on day 7), a day streak, growing from puppy to dog to grown dog, sixteen stickers,
   bedtime at 8 pm. Time away counts for at most 12 hours and nights are slept through, so a
   weekend off never punishes anyone.
 * **Paw Street.** The front door opens onto the neighbourhood: a house for every profile on the
   board, with that kid's pup at the door. Only your own house opens.
-* **Reading level by age.** Stories and spelling words scale with the profile's age: level 1 at
-  5-6 up to level 3 from 9.
+* **Reading level.** Stories follow how your kid reads; spelling words scale with the profile's age.
 * **Quiet by design.** The buzzer is harsh, so it only sounds for rare moments (growing up, a
   new trick, a gift, a sticker). Grown-ups can turn it off in the Admin menu.
 

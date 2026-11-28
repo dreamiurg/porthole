@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="385" viewBox="0 0 740 385" role="img" aria-labelledby="title desc">
+<title id="title">M3 screw through the lower lid into the middle plate</title>
+<desc id="desc">Schematic cross section of one post with a flush three-millimetre brass insert and an eight-millimetre countersunk screw. A six-millimetre screw head is illustrated.</desc>
+<rect width="740" height="385" rx="14" fill="#162438"/>
+<g font-family="sans-serif" fill="#f2f7fc">
+<text x="24" y="38" font-size="22" font-weight="bold">One of the three lid fasteners</text>
+<text x="24" y="64" font-size="15" fill="#bbccda">Section through the screw axis · example with a Ø6 mm head</text>
+</g>
+<!-- 24 drawing units per millimetre. Outside face y=336. Insert face y=216. -->
+<path d="M104 85H308V216H255.2V120H156.8V216H104Z" fill="#3cafa4"/>
+<path d="M70 216H165.2V292.8L122 336H70ZM246.8 216H342V336H290L246.8 292.8Z" fill="#d98148"/>
+<path d="M152 144H170V216H152ZM242 144H260V216H242Z" fill="#f6c56e"/>
+<path d="M170 132H242V288L278 324H134L170 288Z" fill="#b9c4d1" stroke="#465b70" stroke-width="1.5"/>
+<path d="M188 324V315H224V324" fill="#58697a"/>
+<g stroke="#dce6ef" fill="none" stroke-width="1.3">
+<path d="M280 105H365"/><path d="M255 165H365"/><path d="M282 250H365"/><path d="M247 304H365"/>
+</g>
+<g font-family="sans-serif" fill="#f2f7fc" font-size="17">
+<text x="381" y="112">P023 middle plate</text>
+<text x="381" y="171">M3 × 3 mm heat-set insert</text>
+<text x="381" y="196" font-size="14" fill="#bbccda">Ø4.1 mm bore, 4.0 mm deep</text>
+<text x="381" y="257">P024 lower lid</text>
+<text x="381" y="310">M3 × 8 mm countersunk screw</text>
+<text x="381" y="334" font-size="14" fill="#bbccda">90° seat · Ø7.0 mm opening</text>
+<text x="24" y="367" font-size="14" fill="#bbccda">The insert is installed from the lid side before assembly. Threads omitted for clarity.</text>
+</g></svg>

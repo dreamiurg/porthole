@@ -4,10 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "day.h"
 #include "game.h"
 #include "palette.h"
-#include "stars.h"
 
 namespace racing {
 using together::Stage;
@@ -129,6 +127,7 @@ void Game::joinInvite() {
 
 void Game::endTogether() {
   if (link_.paired()) link_.leave(wire_);
+  if (raced_) notice_[0] = 0;   // "keep racing" belongs to the race we just left
   duo_ = host_ = raced_ = ready_ = false;
   wire_.stage = (uint8_t)Stage::Idle;
 }
@@ -148,7 +147,7 @@ bool Game::tracksTogether() {
     go(Screen::Calibrate);
     return true;
   }
-  if (there && ui::clicked(in_, paint::TOGETHER)) { ready_ = !ready_; return true; }
+  if (there && ui::clicked(in_, paint::TOGETHER)) { ready_ = !ready_; if (news_) news_->seen("together"); return true; }
   if (ready_ && link_.invite().in && link_.self() > link_.inviter()) { joinInvite(); return true; }
   return false;
 }
@@ -193,13 +192,9 @@ void Game::startJointRace() {
 }
 
 void Game::jointFinish() {
+  countFinish();   // a rank counts every finish, together too
   if (gone_ && !(sameRace() && peer_.finished)) return;   // stars are for a race finished together
-  const uint32_t day = os::dayOf(now_);   // shortcut: a UTC day, and a reboot forgets the count; fine for a daily cap
-  if (os::newDay(day, starDay_)) { starDay_ = day; jointToday_ = 0; }
-  if (jointToday_ < 255) jointToday_++;
-  if (jointToday_ > together::STAR_RACES) return;
-  stars::award(wallet_, together::STARS);
-  starsGot_ = together::STARS;
+  starsGot_ = (uint8_t)purse::payFinish(book_, wallet_, pay_, now_, true);
 }
 
 bool Game::peerHold() {
@@ -265,11 +260,12 @@ void Game::duoView(paint::Duo& d) {
   d.gone = gone_; d.noWinner = raced_ && gone_ && !d.peerFinished; d.holdOff = duo_ && raced_ && !pausesLeft_;
   d.wind = clamp01((race_.car[PLAYER].top - 1) / together::TAILWIND);
   places(&d.place, &d.peerPlace);
-  d.races = jointToday_; d.stars = starsGot_;
+  d.races = pay_.joint; d.stars = starsGot_;
   if (screen_ == Screen::Tracks && link_.invited(ms_)) {
     d.inviteName = link_.invite().name;
     d.inviteFace = face(2, link_.invite().avatar);
     d.ready = ready_; d.peerReady = link_.invite().in;
+    d.isNew = news_ && news_->isNew("together");
   }
 }
 }  // namespace racing

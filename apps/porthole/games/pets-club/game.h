@@ -3,10 +3,16 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "skills.h"
 #include "gfx.h"
 #include "input.h"
 #include "pet.h"
+#include "content_reads.h"
+#include "puzzles.h"
+#include "ukrainian.h"
 #include "ui.h"
+
+namespace learn { int lines(int y, const char* s, uint8_t col, int maxLines = 3, int width = 124); }   // learn.cpp
 
 enum Sound : uint8_t { SND_NONE = 0, SND_TAP, SND_YIP, SND_HAPPY, SND_SAD, SND_CHIME, SND_BARK, SND_FANFARE };
 
@@ -26,14 +32,17 @@ class Game : public App {
   bool wantsHome() override { bool w = wantsHome_; wantsHome_ = false; return w; }
   void leave() override { if (haveSave_) markDirty(); sound_ = SND_NONE; }
   const char* screenName() const override;
+  Surface surface() const override { return screen_ == SC_UK || ukBook() ? SURFACE_RGB565 : SURFACE_INDEXED; }   // Andika over the frame
+  void debugBookPrint();   // the shelf and the open book, for debugPrint
   void debugPrint() override;
-  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N"
+  void debugCmd(const char* cmd) override;  // test hook: "dirty" "poop" "hungry" "hearts" "books" "tricks" "hats" "grown" "dog" "old" "wall5" "sleepy" "younger" "older" "breed N" "rich" "ukmeaning|uklook|uksyl MEANING" "uksent N" "read en|uk N" "readlevel en|uk N" (or "uk5": the sim passes one argument)
   bool nightSky() const;                    // stars in the window and over Paw Street (public for host/test_pet.cpp)
 
  private:
   enum Screen : uint8_t { SC_SPLASH, SC_INTRO, SC_NAME_PET, SC_HOME, SC_FEED, SC_PLAYMENU, SC_FETCH, SC_WORDS,
                           SC_LIBRARY, SC_READ, SC_TRICKS, SC_TRAIN, SC_BATH, SC_STATS, SC_STICKERS, SC_GIFT, SC_CELEBRATE, SC_HATS,
-                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL };
+                          SC_STREET, SC_THEME, SC_CONFIRM_FARM, SC_FARM, SC_SHELTER, SC_WALL,
+                          SC_PUZZLES, SC_PUZZLE, SC_LITTLE, SC_LITTLE_ASK, SC_SHOP, SC_COLLARS, SC_UK, SC_BOOKS, SC_COUNT };
   struct Particle { int16_t x, y; int8_t vx, vy; uint8_t kind, life; };
 
   // ---- state
@@ -43,7 +52,6 @@ class Game : public App {
   Profile kids_[MAX_PROFILES] = {}; Save kidSaves_[MAX_PROFILES]; bool kidHas_[MAX_PROFILES] = {}; int nKids_ = 0, self_ = 0;
   bool dirty_ = false, urgent_ = false, haveSave_ = false, wantsHome_ = false;
   ui::FreshGate gate_;   // every screen change ignores touches for a moment (os/ui.h)
-  uint8_t bookList_[32]; int nBooks_ = 0;          // stories this kid may read, by age
   int wordCols_ = 3;
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, pressMs_ = 0, lastTickSec_ = 0;   // pressMs_: when the current (or last) press began
   bool daylight_ = false;   // AppEnter::daylight: the launcher's brightness overrides the clock's night
@@ -66,8 +74,9 @@ class Game : public App {
   // words minigame
   int wordIdx_[5] = {0}; int wordRound_ = 0, wordTyped_ = 0, wordCorrect_ = 0; char tiles_[12] = {0}; bool tileUsed_[12] = {false};
   int wordWrongTile_ = -1; uint32_t wordWrongUntil_ = 0; uint32_t wordSolvedUntil_ = 0; bool wordsDone_ = false;
-  // library / reading
-  int bookSel_ = 0, page_ = 0, answerPick_ = -1; uint32_t answerUntil_ = 0;
+  // library (the two shelves), the cover picker (SC_BOOKS) and the reader; books.h picks the shelf
+  uint8_t lang_ = 0, shelf_[128] = {}; int nShelf_ = 0, shelfLevel_ = 1;   // books::Lang, books::SHELF_MAX (game.cpp asserts)
+  int bookSel_ = 0, page_ = 0, answerPick_ = -1; uint32_t answerUntil_ = 0, bookOpenMs_ = 0, bookAskMs_ = 0, pageAtMs_ = 0;
   // tricks / training
   int trickSel_ = 0; uint8_t seq_[6] = {0}; int seqLen_ = 2, seqShow_ = -1, seqInput_ = 0, trainRound_ = 0; uint32_t seqStepMs_ = 0;
   uint8_t trainPhase_ = 0;  // 0 intro 1 showing 2 input 3 round ok 4 fail 5 passed
@@ -76,12 +85,41 @@ class Game : public App {
   // gift / celebrate
   pet::Gift gift_{}; bool giftOpened_ = false; char celebTitle_[24] = {0}, celebText_[48] = {0}; int celebIcon_ = 0;
   uint16_t stickersSeen_ = 0;
-  int statsPage_ = 0; int hatSel_ = 0;
+  int statsPage_ = 0; int hatSel_ = 0, collarSel_ = 0;
+  ui::Hold buyHold_;          // the Shop's Buy, held BUY_HOLD_MS (go() resets it)
+  int shortBy_ = 0;           // the Shop's "N more" panel: stars still missing, 0 = closed (go() closes it)
   uint8_t shelterSel_ = 0;   // the kennel on show, one of NUM_BREEDS
   uint8_t farmSlot_ = 0; bool farmVisit_ = false;   // the wall slot the farm shows; a visit from Farm friends goes back there
   ui::Hold yesHold_;          // the farm's Yes, held (go() resets it)
   uint32_t bounceUntil_ = 0;  // a screen's short reaction: a confirm's hint wiggles, the farm dog jumps (go() ends it)
   bool celebAnyRelease_ = false;        // the shelter's welcome card ends on any release, however long the press
+  // puzzles and little reads (learn.cpp)
+  uint32_t* wallet_ = nullptr;            // the kid's stars (os/stars.h), kept and saved by the shell
+  NewSpots* news_ = nullptr;              // the red dot on Play and Puzzles (Kid news)
+  uint32_t rng_ = 0, questionSeed_ = 0, seen_ = 0, roundEndMs_ = 0;
+  learn::puzzles::Item question_{}, review_{};
+  uint8_t strand_ = 0, level_ = 0, little_ = 0, readLevelWas_ = 0, pageLines_ = 8; int8_t easyAt_ = 0, reviewAt_ = -1;
+  bool levelUp_ = false; int asked_ = 0, right_ = 0, answered_ = -1, roundStars_ = 0;
+  skills::Book* book_ = nullptr;   // the kid's skill ratings (AppEnter::book), or own_ when the shell gives none
+  skills::Book own_{};
+  skills::Round pay_{};   // this round's points toward stars (os/skills.h)
+  uint32_t shownMs_ = 0;   // when the current question showed: an answer's time counts from here
+  uint8_t readLevelNow() const;   // the Little reads level (1..READ_LEVELS) the engine's reading rating serves
+  uint8_t roundLevel_ = 0;   // the strand's level when the round began: a higher one at its end is a level up
+  uint64_t readsSeen_ = 0;
+  char readLines_[learn::READ_LINES][40] = {}; int readLineCount_ = 0;
+  // Ukrainian words (ukrainian.cpp); asked_, right_, answered_ and roundStars_ are the puzzles'
+  learn::uk::Question ukQ_{}; uint32_t ukSeed_ = 0; uint16_t ukAsked_[learn::uk::ROUND] = {};
+  uint16_t ukRecent_[16] = {}; uint8_t ukRecentN_ = 0;   // words asked lately (this visit), so the next rounds vary
+  int16_t ukReview_ = -1; int8_t ukReviewAt_ = -1; uint8_t ukBuilt_ = 0; uint16_t ukUsed_ = 0;
+  // A miss leaves the question up: the options (or tiles) missed stay red and off (ukMissed_), a tile that is only out
+  // of order flashes (ukFlash_). Only the first answer rates; ukDots_ is each question's: 0 not yet answered, 1 right
+  // the first time, 2 found later. ukSeen_: the exercises whose line was shown this visit, which only the first one gets.
+  uint16_t ukMissed_ = 0; uint8_t ukSeen_ = 0, ukDots_[learn::uk::ROUND] = {}; int8_t ukFlash_ = -1;
+  // A sentence (ukQ_.kind SENTENCE, sentences_uk.h): which one, the round's places for them (bits), its tiles and where
+  // they are, the tiles tapped into the translation in order (ukBuilt_ of them), the misses, and when it was put up.
+  int8_t ukSent_ = -1; uint8_t ukSentAt_ = 0, ukMisses_ = 0, ukSeq_[learn::uk::MAX_BANK] = {};
+  learn::uk::Bank ukBank_{}; ui::Box ukTileBox_[learn::uk::MAX_BANK] = {}; uint32_t ukStartMs_ = 0;
 
   // ---- helpers
   void go(Screen s);
@@ -95,6 +133,7 @@ class Game : public App {
   // down when results or a quiz appear in place, or held from just after a screen change, never answers on its lift.
   bool pressedAfter(uint32_t ms) const { return (int32_t)(pressMs_ - screenMs_) >= (int32_t)ms; }
   void setNameBuf(const char* name);   // the pet-name keyboard's text, cut to ui::NAME_LEN
+  bool debugBooks(const char* cmd);
   void debugAge(const char* cmd);
   int dogSize() const;
   const gfx::Sprite& dogFrame(int pose) const;
@@ -104,6 +143,7 @@ class Game : public App {
   void drawCover(int x, int y, int w, int h, const struct Book& bk);
   void drawBackButton();
   bool backButton();
+  bool homeButton();
   bool backClicked();   // the back button on release, however long it was held
   void drawToast();
   void drawHearts(int cx, int y, int hearts);
@@ -114,7 +154,7 @@ class Game : public App {
   int  idlePose();
   int  trickPose(bool& flip);
   void drawThought();
-  void drawHomeButtons();
+  void drawHomeButtons(); void drawHomeIcon(int i, bool pr);
   void tick();
   void startTrickShow(int trick);
   void checkStickers();
@@ -132,7 +172,12 @@ class Game : public App {
   void startFetch(); void updateFetch(); void drawFetch(); void drawFetchHud();
   void startWords(); void nextWord(); void updateWords(); void drawWords(); void drawWordsDone(); void drawWordTiles();
   void updateLibrary(); void drawLibrary();
+  void updateBooks(); void drawBooks(); void drawPaws(int cx, int y, int paws);
+  void refreshShelf(); void openShelf(int lang); void openBook(); bool pageWaits() const; void bookDone(bool right);
+  int bookTitleLines(const struct Book& bk) const; int bookAnswerTop(const struct Book& bk) const;
   void updateRead(); void drawRead(); void drawReadPage(int top, int npages); void drawReadQuestion(int qTop);
+  bool ukBook() const { return lang_ == 1 && (screen_ == SC_BOOKS || screen_ == SC_READ); }
+  void drawBookText();   // a Ukrainian book's Andika over the expanded frame (ukrainian.cpp)
   void updateTricks(); void drawTricks();
   void startTrain(); void updateTrain(); void drawTrain();
   void trainZones(int zx[3], int zy[3], int& scale, int& dx, int& dy) const;
@@ -142,7 +187,10 @@ class Game : public App {
   void updateStickers(); void drawStickers();
   void updateGift(); void drawGift();
   void updateCelebrate(); void drawCelebrate();
-  void updateHats(); void drawHats();
+  void updateShop(); void drawShop();
+  void updateWear(); void drawWear();   // Hats and Collars: flip, try on, wear; buy with a hold
+  void wearIt(bool collars, int sel); void buyIt(bool collars, int sel, int price, const char* name);
+  void drawBuyButton(int price); void drawShortPanel();
   void updateStreet(); void drawStreet(); void drawStreetHouse(int i, bool night);
   void updateTheme(); void drawTheme();
   void updateConfirmFarm(); void drawConfirmFarm();
@@ -152,9 +200,24 @@ class Game : public App {
   void bringDogBack(); void drawBringBack(const ui::Box& b, bool picture);
   void updateShelter(); void drawShelter(); void adoptShelterPup();
   void updateWall(); void drawWall();
+  void fillNames(const char* src, char* out, size_t cap) const;
+  void payRound();   // the round's points into stars, at its end (os/skills.h)
+  skills::Skill puzzleSkill() const;
+  void drawStarCount(int y) const;
+  void updatePuzzles(); void drawPuzzles();
+  uint8_t puzzleLevel(int strand) const; void startPuzzles(int strand); void nextPuzzle();
+  learn::puzzles::Puzzle puzzle() const;
+  void updatePuzzle(); void drawPuzzle(); void drawPuzzleDone();
+  void drawPuzzleAnswers(const learn::puzzles::Puzzle& p); void drawPuzzleFeedback(const learn::puzzles::Puzzle& p, bool right);
+  void startReads(); void nextRead(); int readPages() const; int readAnswerTop() const;
+  void updateLittle(); void drawLittle();
+  void updateLittleAsk(); void updateLittleNext(); void drawLittleAsk(); void drawLittleDone();
+  void startUk(); void nextUk(); bool nextUkSentence(); void layUkBank(); void ukBuiltTexts(char (*out)[learn::uk::TILE_CHARS]) const; void ukSentenceDone(int last); void ukAnswer(bool right); void ukTried(int i, bool right); void ukAdvance(); void ukFresh(); bool ukFlashing() const;
+  bool ukOpen(int i) const; uint8_t ukFill(int i) const;
+  void updateUk(); void updateUkOptions(); void updateUkTiles(); void updateUkSentence(); void drawUk(); void drawUkSentence(); void drawUkSentenceText(const uint16_t* pal); void drawUkDone(); void drawUkDots(int y); void drawUkText(); void drawUkPrompt(const learn::uk::Word& w); void drawUkChoices(const learn::uk::Word& w);
+  void ukDebug() const; void ukDebugTiles() const; void ukDebugSentence() const; bool ukDebugCmd(const char* cmd);
   void enterHouse();
   void finishAdoption();
-  void refreshBookList() { nBooks_ = pet::bookListFor(save_, bookList_); }
   int tileX(int i) const { return (wordCols_ == 3 ? 41 : 28) + (i % wordCols_) * 26; }
   int tileY(int i) const { return (wordCols_ == 3 ? 66 : 60) + (i / wordCols_) * 26; }
   const struct Book& curBook() const;

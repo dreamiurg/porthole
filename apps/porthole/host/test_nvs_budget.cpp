@@ -28,6 +28,7 @@
 #include "shell/pinlock.h"
 #include "shell/profiles.h"
 #include "shell/system.h"
+#include "os/telemetry.h"
 #include "os/timezone.h"
 
 constexpr int blob(size_t bytes) { return (int)((bytes + 31) / 32) + 2; }
@@ -75,11 +76,11 @@ static size_t kingdomFull() {
 static size_t cardsFull() {
   using namespace cards;
   cards::Save s{};
-  s.level = TABLES; s.start = 4; s.pace = 1000; s.answers = 100000;
+  s.level = TABLES; s.start = 4; s.answers = 100000;
   for (int c = 0; c < ALL; c++) {
     s.boxOf(c) = MAX_BOX; s.seenOf(c) = (uint16_t)(20000 + c * 4000 / (ALL - 1)); s.dueOf(c) = (uint16_t)(s.seenOf(c) + 2);
   }
-  s.thinkMs = 0xFFFFFFFFu; s.checkFrom = 20000;
+  s.logMu = -1; s.logVar = 0xFFFF; s.step = STEP_MAX; s.streak = 0xFF; s.jumps = s.tries = s.rights = s.probeMiss = 0xFFFF;
   uint8_t blob[sizeof(cards::Save)], shipped[sizeof(cards::Save)];
   const size_t full = pack(s, blob, sizeof blob);
   cards::Save real;   // the same sanity check: the real four-month deck in the fixture is well inside the bound
@@ -91,15 +92,16 @@ static size_t cardsFull() {
   return full;
 }
 
-// One per profile, kept by the shell: porthole/p<id>, and porthole/f<id> (24 B), the favorites an older firmware
-// wrote: nothing reads it now, but an updated device keeps it until the profile is deleted.
-constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}, {"f", 24}};
+// One per profile, kept by the shell: porthole/p<id>. The favorites an older firmware wrote (porthole/f<id>, 24 B) are
+// erased when a record from before Kid news loads (shell/profiles.cpp loadRecords).
+constexpr Kept SHELL[] = {{"p", sizeof(shell::Record)}};
 // One per device. "sys": the shell's and firmware/net.cpp's keys at their largest; "porthole": the migration marks.
 constexpr Kept DEVICE[] = {
   {"admin", 2}, {"games", sizeof(shell::GamesOff)}, {"limits", sizeof(shell::Limits)}, {"lite", 1},
   {"pinlock", sizeof(shell::PinLocks)}, {"ran", 15}, {"rtc_clock", sizeof(timezones::RtcJournal)}, {"sound", 1},
   {"utc_off", 2}, {"window", sizeof(shell::PlayWindow)}, {"chan", 1}, {"home", sizeof(shell::Home)}, {"last", 4},
-  {"pass", 64}, {"ssid", 32}, {"tried", 15}, {"tz", sizeof(timezones::Settings)}, {"m", 1}, {"mb", 1},
+  {"pass", 64}, {"ssid", 32}, {"tried", 15}, {"tz", sizeof(timezones::Settings)}, {"telem", sizeof(telemetry::Config)},
+  {"m", 1}, {"mb", 1},
 };
 constexpr int NAMESPACES = 14 + 1;   // "sys", "porthole", one per game in the image (a load creates it), the radio's "phy"
 constexpr int RADIO = blob(1904) + blob(6) + 1;   // ESP-IDF's wifi calibration, written to "phy" on the first join
@@ -128,6 +130,8 @@ int main() {
   // structs whole, a profile cost 110 entries and four needed 616 of the 504, so two kids fit (the audit's PLAT-1,
   // SHELL-5, BUILD-1, LIFE-11). A new save, or one that grows, has to fit in what is left to spare.
   assert(need <= USABLE);
-  assert(profile <= 80);   // a ratchet: lower it when a save shrinks, never raise it
+  // A ratchet: lower it when a save shrinks. Raised once, 78 -> 79, for Pets Club's v5 (the two bookshelves' read
+  // marks and the Shop's room and toys), on the approved design of 2026-11-22; any later growth needs the same.
+  assert(profile <= 79);
   puts("nvs budget: ok");
 }

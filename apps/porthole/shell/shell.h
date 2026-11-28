@@ -3,6 +3,8 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "game_telemetry.h"
+#include "news.h"
 #include "pinlock.h"
 #include "profiles.h"
 #include "system.h"
@@ -12,10 +14,6 @@
 constexpr int MAX_APPS = 12;
 
 namespace shell {
-// "sys"/"ran" holds the version that booted last (its bytes, no NUL). True when version is not "dev" and differs from
-// it: an update (or a USB flash) since the last boot, so the "something new" card shows once. Stores version if new.
-bool newRun(Store& st, const char* version);
-
 // The system menu's text entry (a wifi password): any printable ASCII, up to TEXT_MAX bytes. Keys 0..TK_CHARS-1 type
 // the page's characters (letters, a-z or A-Z with the shift lock; digits and symbols; more symbols), then shift, the
 // page switch, space, backspace and OK.
@@ -67,14 +65,14 @@ class Shell {
   const char* screenName() const;
   bool savesFailing() const { return saveFailing_; }   // the last game save did not land (Info says so)
   void debugPrint();
-  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "light" (the next level), then the open game
+  void debugCmd(const char* cmd);     // "tired" "bedtime" "rested" "younger" "older" "news" "light" (the next level), then the open game
 
  private:
   enum Screen : uint8_t { SH_PICK, SH_NAME, SH_AVATAR, SH_AGE, SH_PIN_SET, SH_PIN_AGAIN, SH_PIN, SH_DELETE, SH_NO_DELETE, SH_LAUNCHER, SH_REST,
-                         SH_SYS_NEW, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
+                         SH_NEWS, SH_SYS_INFO, SH_SYS_UPD, SH_SYS_WIFI, SH_SYS_PASS, SH_SYS_JOIN, SH_SYS_HOME, SH_SYS_ADDR, SH_SYS_FIND, SH_LIGHT,
                          SH_SYS_ADMIN, SH_SYS_PIN, SH_SYS_PIN_SET, SH_SYS_PIN_AGAIN, SH_SYS_RESET, SH_SYS_REMOVE,
                          SH_SYS_PLAYERS, SH_SYS_PLAYER_PIN,
-                         SH_SYS_LIMITS, SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
+                         SH_SYS_CLOCK, SH_SYS_TIME, SH_SYS_WINDOW, SH_SYS_ALLOW, SH_SYS_ZONE, SH_SYS_ZONE_SEARCH,
                          SH_SYS_GAMES, SH_APP };   // SH_APP last: the tables in shell.cpp
 
   shell::Store* st_ = nullptr;
@@ -87,16 +85,18 @@ class Shell {
   bool opened_[MAX_APPS] = {};                     // games entered since boot: debugPrint shows their pets
   shell::Profiles prof_{};
   int active_ = -1;                                // the profile on the launcher / in a game
+  shell::KidNews news_{};                          // what the active kid has seen of Kid news (shell/news.h)
+  int newsLines_[5] = {}; int newsCount_ = 0, newsPage_ = 0;   // the "New for" screen: entry indexes, best first
   shell::Light light_ = shell::LIGHT_AUTO;         // the device's brightness ("sys"/"lite")
   uint16_t adminPin_ = 0;                          // optional device-wide code, "sys"/"admin" (pinCode, 0 = off)
   shell::PinLocks locks_{};                        // wrong tries per code, "sys"/"pinlock" (pinlock.h)
   bool sound_ = true;                              // the buzzer, device-wide: "sys"/"sound" (one byte, 0 = off; missing = on)
   uint8_t adminPage_ = 0;
   Screen afterAdmin_ = SH_SYS_INFO;                // where the admin code leads
-  shell::Limits limits_{}, limitsDraft_{};
+  shell::Limits limits_{};
+  bool limitsOn_ = true;                           // screen time's master switch, "sys"/"stime" (off: no limits at all)
   shell::PlayWindow window_{}, windowDraft_{};
   shell::Allowance allowance_{};
-  uint8_t limitEditor_ = 0;   // session or daily
   shell::TextEntry zoneQuery_{}, zoneSearch_{}; int zonePage_ = 0;
   int page_ = 0;                                   // the launcher's page: 0 for a new kid, else the last game's
   int target_ = -1; bool deleting_ = false;        // the picker row a PIN or a delete is about
@@ -108,6 +108,8 @@ class Shell {
   uint32_t pinCalmUntil_ = 0, pinNudgeUntil_ = 0;   // the kids' wait: keys hidden until the finger rests; a tap wiggles it
   uint32_t now_ = 0, ms_ = 0, screenMs_ = 0, lastTick_ = 0, lastSaveMs_ = 0, lastRecordSave_ = 0;
   uint32_t savedStars_ = 0;   // the open game's kid's stars as last saved: a change is saved at the next tick
+  uint32_t openedStars_ = 0;                       // telemetry's game_closed: the stars earned
+  shell::GameTelemetry played_;                    // the open game's session, screens and heartbeat (telemetry)
   uint32_t playTickMs_ = 0;                        // monotonic duration: network clock corrections are not extra play
   ActivityTracker activity_;                       // idle (shell::IDLE_MS without a touch or a move) is not play time
   Screen screen_ = SH_PICK;
@@ -118,6 +120,7 @@ class Shell {
   shell::Network nets_[shell::MAX_NETWORKS] = {}; int nNets_ = 0;   // the last scan; -1 while it runs
   bool scanRefused_ = false; uint8_t netPage_ = 0;
   shell::Network pick_{}; shell::TextEntry pass_{}; int8_t join_ = 0;   // the network being joined (sysmenu.cpp)
+  bool passShown_ = false;                         // Show on the password screen: typed in full, not masked
   shell::TextEntry addr_{}; shell::Home found_{}; int8_t look_ = 0;    // the address being looked up (sysmenu.cpp)
   uint8_t blobs_[MAX_PROFILES][shell::BLOB_MAX];   // every profile's save for the game being opened
   uint8_t written_[shell::BLOB_MAX];               // the open game's save as last written (or loaded)
@@ -128,6 +131,7 @@ class Shell {
 
   shell::Record& rec() { return prof_.rec[active_]; }
   bool restingNow() const;
+  bool unlimited() const { return !limitsOn_ || allowance_.active(ms_); }   // screen time off, or a grown-up's 30 minutes
   void enforceCurrentBudget();
   bool guardScreenTime();
   void go(Screen s);
@@ -146,7 +150,10 @@ class Shell {
   int appStores(const char** out) const;   // every app's save namespace, for delete and create
   void finishCreate(uint16_t pin);
   void openIdx(int k);
-  void closeApp();
+  void closeApp(const char* why);   // why: telemetry's exit, "home", "rest" or "time_up"
+  void tellPlayer();   // telemetry: who plays now, by the kid's player id
+  void telemetryTap();
+  void drawTelemetry();                // telemetry: the kid's random player id, made the first time it is needed
   void flushApp(bool allowed);
   void budgetTick();
   void submitPin();
@@ -175,8 +182,11 @@ class Shell {
   void setLight(shell::Light l);
   void updateLight(); void drawLight();
   void updateRest(); void drawRest();
+  bool newsDue();   // fills newsLines_: true when the active kid has news to see
+  bool tileDot(int k) { return news_.tileDot(apps_[k]->store(), now_); }
+  void updateNews(); void drawNews(); void drawNewsCard(int y, int line);
   void updateApp(); void drawApp();
-  // sysmenu.cpp: the "something new" card and the hidden system menu (hold the picker's title)
+  // sysmenu.cpp: the hidden system menu (hold the picker's title)
   bool titleHeld();
   void enterSystem();
   void askAdmin(Screen next); void adminPassed();   // next: SH_SYS_INFO, SH_NAME (New) or SH_DELETE
@@ -187,15 +197,13 @@ class Shell {
   void updateSysConfirm(); void drawSysConfirm();   // reset all limits, or remove the admin code
   void updateSysPlayers(); void drawSysPlayers();   // select whose profile PIN to remove
   void updateSysPlayerPin(); void drawSysPlayerPin();
-  void updateSysLimits(); void drawSysLimits();
   void updateSysClock(); void drawSysClock();
-  void updateSysTime(); void drawSysTime();
+  void updateSysTime(); void drawSysTime(); void stepLimits(); bool timeButtons();
   void updateSysWindow(); void drawSysWindow();
   void updateSysAllowance(); void drawSysAllowance();
   void updateSysZone(); void drawSysZone();
   void updateSysZoneSearch(); void drawSysZoneSearch();
   void updateSysGames(); void drawSysGames(); void toggleGame(int k);
-  void updateSysNew(); void drawSysNew();
   void debugHome() const;   // debugPrint's [home] line
   void updateSysInfo(); void drawSysInfo();
   void updateSysUpd(); void drawSysUpd(); void drawSysAction();

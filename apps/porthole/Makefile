@@ -36,8 +36,11 @@ SRC := $(wildcard os/*.cpp) $(wildcard shell/*.cpp) $(wildcard games/*/*.cpp)
 TESTS := $(notdir $(basename $(wildcard host/test_*.cpp)))
 test_toytown_SRC :=
 test_toytown_ui_SRC := $(wildcard os/*.cpp) $(wildcard games/toy-town-life/*.cpp)
-test_pet_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp games/pets-club/game.cpp
-test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp games/pets-club/pet.cpp
+test_pet_SRC := $(wildcard os/*.cpp) $(wildcard games/pets-club/*.cpp)
+test_pets_learn_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
+test_pets_uk_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
+test_pets_books_SRC := $(wildcard os/*.cpp) games/pets-club/pet.cpp
+test_shell_SRC := $(wildcard os/*.cpp) shell/shell.cpp shell/sysmenu.cpp shell/profiles.cpp shell/migrate.cpp shell/news.cpp games/pets-club/pet.cpp
 # games/biscuit/pet.h is header-only: test_biscuit links nothing else
 test_biscuit_SRC :=
 test_update_gate_SRC :=
@@ -62,6 +65,7 @@ test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
 test_nvs_budget_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_crc32_SRC :=
+test_skills_SRC :=
 test_pumpkin_SRC := $(wildcard os/*.cpp) $(wildcard games/pumpkin-hide-seek/*.cpp)
 test_radar_SRC := $(wildcard os/*.cpp) $(wildcard games/plane-radar/*.cpp)
 test_starfighter_SRC := $(wildcard os/*.cpp) $(wildcard games/starfighter/*.cpp)
@@ -73,6 +77,7 @@ test_kingdom_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content
 test_tiltfc_SRC := $(wildcard os/*.cpp) $(wildcard games/tilt-fc/*.cpp)
 test_sand_jar_SRC := $(wildcard os/*.cpp) $(wildcard games/sand-jar/*.cpp)
 test_times_cards_SRC := $(wildcard os/*.cpp) $(wildcard games/times-cards/*.cpp)
+test_telemetry_SRC := os/telemetry.cpp
 test_saves_SRC := $(SRC)
 SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
 SDL_LIBS := $(shell sdl2-config --libs 2>/dev/null)
@@ -158,6 +163,7 @@ lint: snap
 	$(PY) games/living-kingdom/tools/font.py --check
 	$(PY) tools/check_rgb_driver.py
 	$(PY) tools/timezones.py --check
+	$(PY) tools/news.py --check
 	$(PY) games/starfighter/tools/art.py --check
 	$(PY) games/racing/tools/art.py --check
 	$(PY) games/racing/tools/pictures.py --check
@@ -166,6 +172,9 @@ lint: snap
 	$(PY) tools/pumpkin_goldens.py
 	$(PY) games/pumpkin-hide-seek/tools/gpt_art.py --check
 	$(PY) games/pets-club/tools/check_content.py
+	$(PY) games/pets-club/tools/check_books_uk.py
+	$(PY) games/pets-club/tools/check_learn.py
+	$(PY) games/pets-club/tools/uk_words.py --check
 	$(PY) games/pets-club/tools/art.py --check
 	$(PY) tools/shell_art.py --check
 	$(PY) games/biscuit/tools/check_content.py

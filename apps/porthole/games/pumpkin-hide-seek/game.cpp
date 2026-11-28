@@ -1,5 +1,6 @@
 #include "game.h"
 #include <stdio.h>
+#include "telemetry.h"
 
 namespace pumpkin {
 namespace {
@@ -74,6 +75,8 @@ void Game::play(uint32_t dt) {
     ghostPending_ = false;
     stepMs_ -= STEP_MS;
   }
+  if (round_.caught || round_.won)   // score: the candies picked up
+    telemetry::roundFinished({name(), 0, round_.won ? "won" : "lost", (long)(round_.elapsed / 1000), round_.got});
   if (round_.caught) go(Page::Catch);
   else if (round_.won) go(Page::Won);
 }

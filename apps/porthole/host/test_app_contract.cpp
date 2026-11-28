@@ -6,6 +6,7 @@
 #include <string.h>
 #include "games/apps.h"
 #include "gfx565.h"
+#include "news_entries.h"
 #include "profiles.h"
 
 static const uint16_t UNKNOWN = 0xF81F;   // the sim's magenta: a pixel no render() has written
@@ -76,6 +77,13 @@ int main() {
     }
     play(app, {&kid, &kid, &kept, 1, 1790000100u, 20000, false, &stars}, 200);   // back in, with what it saved
   }
-  printf("test_app_contract: %d games hold the App contract\n", N_APPS);
+  // Kid news (news.toml): each entry names a game in the image (or the launcher, "") and fits its card's two lines.
+  for (const shell::NewsEntry& e : shell::NEWS) {
+    bool found = !e.store[0];
+    for (int i = 0; i < N_APPS; i++) found |= !strcmp(APPS[i]->store(), e.store);
+    char lines[3][40];
+    assert((found || e.gone) && gfx::wrap(e.text, 76, lines, 3) <= 2);   // too long: shorter words, as AGENTS.md says
+  }
+  printf("test_app_contract: %d games hold the App contract, %d news entries fit\n", N_APPS, shell::NEWS_COUNT);
   return 0;
 }

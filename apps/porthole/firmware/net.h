@@ -60,6 +60,10 @@ class Updater final : public shell::System {
   bool saveHome(const shell::Home& h) override;   // also serial L
   bool startLookup(const char* address) override;
   int lookupResult(shell::Home& out) override;
+  // Telemetry (os/telemetry.h): the menu sets the level; serial Y takes the SD file's text ("off" turns it off).
+  shell::TelemetryStatus telemetryStatus() override;
+  bool setTelemetryLevel(uint8_t level) override;
+  bool setTelemetry(const char* text);
  private:
   bool checkDue();
   void applyZoneResult();

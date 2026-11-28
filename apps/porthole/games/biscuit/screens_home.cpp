@@ -92,7 +92,7 @@ uint32_t Game::homeLook() const {
 }
 void Game::drawHomeTop() {
   char name[NAME_LIMIT + 1], mood[48];
-  for (size_t i = 0; i < sizeof name; i++) name[i] = (char)toupper((unsigned char)save_.petName[i]);
+  memcpy(name, save_.petName, sizeof name); utf8::upper(name);
   if (save_.sleeping) snprintf(mood, sizeof mood, "dreaming of stories");
   else snprintf(mood, sizeof mood, "Day %u%s%s", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)]);
   if (!save_.sleeping) mood[strlen(mood) - strlen(STAGES[(int)stage(save_)])] = (char)tolower(STAGES[(int)stage(save_)][0]);
@@ -131,9 +131,6 @@ void Game::drawHomeWhole() {
 
 // ---------------------------------------------------------------- World
 constexpr int WORLD_TILES = 4;
-// not while the pup naps
-static Button puzzlesButton(const Save& p) { return {WORLD_PUZZLES, "Puzzles", &FONT20, SAGE, awake(p)}; }
-static Button houseButton(const Save& p) { return {WORLD_HOUSE, "Doghouse", &FONT20, PEACH, awake(p)}; }
 static Tile worldTile(int i, const Save& p) {
   static char tricks[24];
   snprintf(tricks, sizeof tricks, "%d of 6 mastered", mastered(p));
@@ -145,8 +142,6 @@ static Tile worldTile(int i, const Save& p) {
 void Game::updateWorld() {
   const Box& back = WORLD_BACK;
   if (in_.tapIn(back.x, back.y, back.w, back.h)) { go(SC_HOME); return; }
-  if (tapped(in_, puzzlesButton(save_))) { go(SC_PUZZLES); return; }
-  if (tapped(in_, houseButton(save_))) { go(SC_DOGHOUSE); return; }
   for (int i = 0; i < WORLD_TILES; i++) {
     const Box& b = worldTile(i, save_).box;
     if (!in_.tapIn(b.x, b.y, b.w, b.h)) continue;
@@ -162,11 +157,9 @@ void Game::drawWorld() {
   char s[80];
   personalize("{pet} & {name}", who_.name, save_.petName, s, sizeof s);
   text(WORLD_NAMES, font::textWidth(*WORLD_NAMES.box.font, s) > WORLD_NAMES.box.w ? save_.petName : s, INK);
-  snprintf(s, sizeof s, "Day %u%s%s%s%d star%s", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, starCount(),
-           starCount() == 1 ? "" : "s");
+  snprintf(s, sizeof s, "Day %u%s%s%s%d star%s", (unsigned)save_.daysTogether, DOT, STAGES[(int)stage(save_)], DOT, storyStars(save_),
+           storyStars(save_) == 1 ? "" : "s");
   text(WORLD_LINE, s, INK);
   for (int i = 0; i < WORLD_TILES; i++) tile(in_, worldTile(i, save_));
-  button(in_, puzzlesButton(save_));
-  button(in_, houseButton(save_));
 }
 }  // namespace biscuit

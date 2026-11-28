@@ -22,3 +22,21 @@ jobs:
       - env:
           TITLE: ${{ github.event.pull_request.title }}
         run: python3 tools/release.py title "$TITLE"
+
+  # Kid news (apps/porthole/AGENTS.md): news.toml stays append-only, and a feat PR that changes the firmware adds an
+  # entry or says "none" under "## Kid news". Also a warning, not a required check.
+  kid-news:
+    name: Kid news
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 2
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          git show HEAD^1:apps/porthole/news.toml > "$RUNNER_TEMP/base.toml" 2>/dev/null || : > "$RUNNER_TEMP/base.toml"
+          mapfile -t changed < <(git diff --name-only HEAD^1 HEAD)
+          python3 apps/porthole/tools/news.py pr --title "$TITLE" --body "$BODY" --base "$RUNNER_TEMP/base.toml" --changed "${changed[@]}"

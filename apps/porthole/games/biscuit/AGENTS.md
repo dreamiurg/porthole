@@ -57,17 +57,17 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the shell's migration can use it without a second `.o` colliding with Pets Club's in the
   coverage build. `namespace biscuit` throughout -- Pets Club owns the global `Save` and
   `namespace pet`.
-  - Save: 184 bytes (`SAVE_VERSION = 4`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
-    puzzles` and a v1 blob loads with `booksDay = daysTogether`; v3 appended `starsPaid, decor, reserved3` and a v2
-    blob loads with nothing paid in or bought; v4 appended `puzzleLevels[3], puzzleReviewCount, puzzleReviews[8]` and
-    a v3 blob loads with every strand never played and nothing to review), NVS namespace
+  - Save: 116 bytes (`SAVE_VERSION = 5`, magic `0x54435342` "BSCT"; v2 appended `moreStories, booksDay,
+    puzzles` and a v1 blob loads with `booksDay = daysTogether`; v3 and v4 added the puzzles, Little reads and
+    doghouse, which moved to Pets Club on 2026-11-16: v5 is v3's size, and a v2, v3 or v4 blob loads with those
+    fields ignored, so no pup is lost; `SAVE_V4_SIZE` (184) stays because the shell's migration buffer must hold the
+    longest blob Biscuit ever wrote), NVS namespace
     `"biscuit"` (`STORE`, never renamed once it ships), key `s<profile id>`. Fields:
     `magic, version, size` header; `createdAt, updatedAt, lastVisitDay,
     fullness/happiness/energy, friendship, daysTogether, careCounts[3], discoveries[3],
     stickers, stories, tricks[6], dailyCompleted, dailyClaimed, sleeping, petName[13],
-    named, readLevel, readStreak, moreStories, booksDay, puzzles, starsPaid, decor, readsRight, puzzleLevels[3],
-    puzzleReviewCount, puzzleReviews[8]{strand, level, a, b, c, misses, due}` (`readLevel, readStreak, readsRight`
-    were v3's reserved bytes, so zero in every older blob); `crc` last -- append-only like every other game (shared app brief
+    named, readLevel, readStreak, moreStories, booksDay, puzzles, starsPaid, decor, readsRight`
+    (`readLevel, readStreak, puzzles, starsPaid, decor, readsRight` are unused, kept so older blobs line up); `crc` last -- append-only like every other game (shared app brief
     constraint 4). The child's name and the daily play budget live in the shell's profile,
     not here. `named` gates everything: nothing decays, no visit counts, no progress until
     the pup has a name.
@@ -90,25 +90,17 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
 - Content: `content_stories.h` (15 branching stories, `Story{id, title, subtitle,
   unlockDay, pages[10], prompt, choices[2]{label, ending[4]}}`; the first 7 keep their bits in `stories`, the
   rest in `moreStories`, and those open at `storyDay`: their content day, but no sooner than `NEW_BOOK_GAP` (2) days
-  apart from `booksDay`, so a pup already past day 22 gets them one at a time), `content_puzzles.h` (the spelling
-  words and their clues, short and long, the times stories' things, the strands' labels; the review queue keeps a
-  word or a story by its place in its list, so append), `content_discoveries.h`
+  apart from `booksDay`, so a pup already past day 22 gets them one at a time), `content_discoveries.h`
   (96 `Discovery{id, topic, title, pages[2], wonder, sourceName, sourceUrl}` across 12
   topics), `content_daily.h` (7 daily adventures, 6 trick names, 12 sticker names; which
   activities a day asks for, the trick lessons and unlock days are rules, in `pet.h`) -- `namespace biscuit`, `inline constexpr`, converted once from
   the legacy JS with ids and array order unchanged. See the `content` skill for the full
   authoring workflow and its gate.
-- `content_reads.h`: Little reads, `Read{id, level, title, text, question, answers[3], right, why}`, at least 8 per
-  level 1 to 5 (first grade's short-vowel words up to third grade's inference; the header says what each level
-  allows). Not persisted by index. `check_content.py` holds levels 1 and 2 to their letter patterns and sight words,
-  every level to its word count and each right index to at least two per level; the pixel gate holds a passage to
-  no more screens than its level at short names.
 - `personalize.h` / `personalize.cpp`: fills the `{name}`/`{pet}` tokens (see Product
   contract above) into a caller-supplied buffer.
 - Generated art, never hand-edited: `generated/scenes.h` (`SCENES[stage][time][activity]
   [frame]`, lossless zlib RGB565), `generated/discovery_art.h` (`enum DiscoveryId` plus 96
-  `packed565::Image`, losslessly encoded), `generated/doghouse_art.h` (the doghouse's three rooms and its
-  things), byte arrays in `generated/art_data_*.inc`
+  `packed565::Image`, losslessly encoded), byte arrays in `generated/art_data_*.inc`
   indexed by `art_data.inc`, and
   `generated/manifest.json` (a SHA-256 per scene/picture, all matching the legacy
   firmware's). Shared `os/packed_image.*` streams rows through one fixed decoder
@@ -130,31 +122,19 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
   the speech line and activity timers (a line 4 s, a room one-shot 800 ms), needs ticking
   every 30 s with a save checkpoint every 5 min or at a new day, screen dispatch.
   `surface()` is `SURFACE_RGB565` everywhere except the two naming screens, which reuse the
-  shell's indexed `ui::keyboard` (8 letters). `store()` is `"biscuit"`, never renamed.
+  shell's indexed `ui::keyboard` (8 letters, or 6 Ukrainian: `petName` is 12 bytes of UTF-8). `store()` is `"biscuit"`, never renamed.
   `soundOn()` is always false: Biscuit has no buzzer sounds (shared app brief constraint 3).
   `tint()` follows the scenes' light: evening from 17:00, night from 20:00 to 6:00, or always day when
   `AppEnter::daylight` (a kid picked a sun on the launcher). Screen
   names are prefixed `biscuit_` (the playtest runner fails on a name two games share).
-  `debugCmd`: `hungry unlock young grown tricks practiced read books rich` (`read`: every story finished and every
-  discovery kept; `books`: day 30 with the newer books' clock from day 1, so all of them are open; `rich`: the kid's
-  balance to `stars::MAX`).
+  `debugCmd`: `hungry unlock young grown tricks practiced read books` (`read`: every story finished and every
+  discovery kept; `books`: day 30 with the newer books' clock from day 1, so all of them are open).
 - Screens, split by file to stay under the complexity gate: `screens_home.cpp` (Home:
   scene frames every 250 ms, name and day, needs, speech bubble, hotspots for the shelf
   (the pup pulls out a book, and 800 ms later the Library opens; any other tap first
   cancels it), window (nap), fern and the pup (a tap pets it), Feed/Play/Read/More, fetch,
   and the orange home button to the launcher; World: Learn tricks, Cozy nap, Our
-  scrapbook, Today's adventure, then Puzzles and Doghouse along the bottom), `screens_train.cpp` (Tricks, Training
-  watch/do), `screens_puzzles.cpp` (Puzzles: three strands, plus and minus, times and words, each at the kid's own level
-  (`puzzles.h`, design `docs/design/adaptive-practice.md`): a strand never played starts from the profile's age, a
-  round of five right moves it up a level and two or fewer down, one question of every round is from the level
-  below, and the level is saved as level + 1 in `puzzleLevels`; a miss goes on the review queue (`review.h`,
-  `puzzleReviews`), due the next day, and a round in its strand on or after that day asks one due item in place of a
-  question, right taking it off; after a miss the feedback shows how to solve it (`puzzles::how`) in place of the
-  pup's nudge; a round of five; the round's end says
-  the stars it earned (or how many right answers the next one needs) and the trick it taught, and Show me has the pup
-  do it at home and name it), `screens_doghouse.cpp` (the Doghouse room, its Shop and a
-  thing's page), `screens_reads.cpp` (Little reads: a round of three passages in the reader, each with its question,
-  three answers and, after a miss, the right one with the line that holds it (`why`)),
+  scrapbook, Today's adventure), `screens_train.cpp` (Tricks, Training watch/do),
   `screens_read.cpp` (Library: Discoveries, Notebook and the fifteen stories, two a page,
   "Tomorrow: <title>" (the next one) or "Soon: <title>" until they open, "<title> *" once read; Story, Choice, Ending; and the
   page reader the discoveries share), `screens_learn.cpp` (Discoveries: today's three,
@@ -175,23 +155,6 @@ Everything lives under `namespace biscuit` -- Pets Club owns the global `Game` c
     page, then Keep (`discover`: today's reading, and the notebook) opens the notebook on
     its page; Source shows the name and address as text. Every reader turn waits for the
     fresh-screen pause, since Next's meaning changes at the ends.
-  - Stars: the kid's balance is the shell's (`os/stars.h`, `AppEnter::stars`, kept in the profile record), so other
-    games can award stars and Biscuit spends them. Biscuit still counts what the pup earned (`earnedStars`: 3 a
-    story, 1 per `PUZZLES_PER_STAR` right puzzles) and `payStars` moves what is new into the balance, keeping
-    `starsPaid` (a v2 pup's stars arrive on its first visit). Every header shows the balance; the scrapbook shows
-    `earnedStars`. `shortcut:` the balance and `starsPaid` are saved in two stores, so a power cut between the two
-    can pay a few stars twice or lose a purchase; fine for a kid's game, one store would fix it.
-  - Doghouse: the room is `DOGHOUSE_ROOMS[stage]` on the whole glass, each thing bought (`Save::decor` bits,
-    `buyDecor`) drawn over it from `DECOR_ART`; names and prices in `content_doghouse.h` (append only, in
-    `DecorId` order). The art is `tools/art/doghouse-art.js`: each thing is its box of the room with the thing in
-    it, and export-assets fails if a thing draws outside its box, two boxes overlap or the pup reaches one.
-  - Little reads: the Library's first row ("Little reads: level N"). `answerRead` keeps a level per pup, from the
-    profile's age the first time (6: 1, 8: 3), then three right in a row up one and a miss down one, never more than one below the age's start (a 3-up/1-down
-    staircase: about 79% right, `docs/design/learning-principles.md` principle 2); the next passage comes from the
-    level as it stands, so it moves within a round. Any answer is today's reading; every `READS_PER_STAR` (3) right
-    ones are a star (`earnedStars`); a miss costs nothing.
-  - Tricks from puzzles: every `PUZZLES_PER_LESSON` (4) right answers are a lesson of the first trick not
-    mastered (`answerPuzzle` returns it), and a trick with a lesson is open before its day (`trickOpen`).
   - Today: the day's adventure (`ADVENTURES[day % 7]`), its three activities (from
     `dailyMask`) as buttons that go and do them (a snack, fetch, a cuddle, the Library,
     the tricks, a nap), marked `* ` once done, and A lovely word. The third earns the

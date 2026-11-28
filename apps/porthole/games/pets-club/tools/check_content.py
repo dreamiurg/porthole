@@ -12,7 +12,9 @@ import sys
 from pathlib import Path
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../../..")  # every path below is relative to the Porthole app, wherever this runs from
-FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_level3_words.h"]
+FILES = ["games/pets-club/content.h", "games/pets-club/content_level3_books.h", "games/pets-club/content_books_en.h", "games/pets-club/content_level3_words.h"]
+# English book levels (books.h): the little reads' scale (content_reads.h, 1-5) carried on to 10; words per book.
+EN_WORDS = {2: (30, 60), 3: (45, 80), 4: (65, 110), 5: (75, 120), 6: (75, 120), 7: (150, 230), 8: (240, 360), 9: (230, 360), 10: (230, 360)}
 # Boxes the game actually draws into (logical px, lines). Widths follow games/pets-club/game.cpp.
 BOXES = dict(page=(122, 7), title=(108, 2), question=(116, 2), answer=(102, 2), clue=(118, 2))
 
@@ -79,25 +81,36 @@ def main():
                 line = text.count("\n", 0, i) + 1
                 errors.append(f"{path}:{line}: non-ASCII character {ch!r}")
                 break
-        # books: {"Title", COLOR, icon, level, { pages..., nullptr}, "Question", {answers}, correct},
+        # books: {"Title", COLOR, icon, level, { pages..., nullptr}, "Question", {answers}, correct[, part]},
         book_re = (
             r'\{"((?:[^"\\]|\\.)*)",\s*C_\w+,\s*(\d+),\s*(\d+),\s*\{(.*?)nullptr\},'
-            r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)\}'
+            r'\s*"((?:[^"\\]|\\.)*)",\s*\{(.*?)\},\s*(\d+)(?:,\s*(\d+))?\}'
         )
+        prev = None  # (title, part) of the book before, for a chapter book's chapters standing in a row
         for m in re.finditer(book_re, text, re.S):
-            title, icon, level, pages, question, answers, correct = m.groups()
+            title, icon, level, pages, question, answers, correct, part = m.groups()
+            part = int(part or 0)
             line = text.count("\n", 0, m.start()) + 1
-            where = f"{path}:{line} [{title}]"
-            if title in titles:
-                errors.append(f"{where}: duplicate title (also {titles[title]})")
-            titles[title] = where
+            where = f"{path}:{line} [{title}{f' part {part}' if part else ''}]"
+            if part > 1 and prev != (title, part - 1):
+                errors.append(f"{where}: chapter {part} must follow chapter {part - 1} of the same book")
+            prev = (title, part)
+            key = (title, part)
+            if key in titles:
+                errors.append(f"{where}: duplicate title (also {titles[key]})")
+            titles[key] = where
             if why := fits("title", title):
                 errors.append(f"{where}: {why}")
             if not (0 <= int(icon) <= 7):
                 errors.append(f"{where}: icon {icon} out of range")
-            if not (1 <= int(level) <= 3):
-                errors.append(f"{where}: level {level} out of range")
             pg = strings_in(pages)
+            if int(level) not in EN_WORDS:
+                errors.append(f"{where}: level {level} out of range (2..10)")
+            else:
+                lo, hi = EN_WORDS[int(level)]
+                nw = sum(len(p.split()) for p in pg)
+                if not (lo <= nw <= hi):
+                    errors.append(f"{where}: {nw} words, level {level} wants {lo}..{hi}")
             if not (3 <= len(pg) <= 11):
                 errors.append(f"{where}: {len(pg)} pages (want 3..11)")
             # the reader gives pages 8 lines under a one-line title, 7 under a two-line title

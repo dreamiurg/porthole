@@ -8,7 +8,7 @@ PLAYTEST_SNAP and PLAYTEST_OUT override the non-monkey sim binary and the report
 multiplies every scenario's time limit (make coverage sets all three: its -O0 sim is slower).
 
 A scenario is a sim script (host/sim.cpp) plus runner directives; docs/playtesting.md has the syntax and the rules.
-Directives that need live state (follow-glow, solve-word, answer-book, answer-puzzle, wait-until) run the script so far, read the
+Directives that need live state (follow-glow, solve-word, turn-pages, answer-book, answer-puzzle, answer-read, answer-uk, wait-until) run the script so far, read the
 answer and append the taps or waits: the sim is deterministic, so every run replays the same game. Report: build/playtest/report.md.
 """
 
@@ -81,7 +81,7 @@ def _screens() -> set:
 SCREENS = _screens()
 TAP_ANYWHERE = {"splash", "celebrate", "intro", "gift"}  # screens where the whole glass is the button
 # The hidden system menu is for grown-ups (a user decision of 2026-10-18): 18 px (6 mm) targets pass there without the
-# kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; "sys_new" is the kids' card and is not in it.
+# kids' 24x22 WARN. The 18 px FAIL and every other rule still hold; the kids' "news" screen is not in it.
 GROWN_UPS = {
     "sys_info",
     "sys_updates",
@@ -99,7 +99,6 @@ GROWN_UPS = {
     "sys_remove",
     "sys_players",
     "sys_player_pin",
-    "sys_limits",
     "sys_clock",
     "sys_time",
     "sys_window",
@@ -236,15 +235,34 @@ def plan(d, seg, where, arg=""):
             raise Fail(f"{where}: no glow in 6 s", seg)
         return [c for x, y in glows for c in (f"tap {x} {y}", "wait 250")]
     kv = pairs(seg)
+    if d == "turn-pages":  # Pets Club: page through the open book to its question
+        if "pages" not in kv or "page" not in kv:
+            raise Fail(f"{where}: no book open", seg)
+        # a book not read yet turns a page only after its words at the kid's pace: wait out the longest page each time
+        gate = int(kv.get("page_gate", 0))
+        step = [f"wait {gate + 50}", "tap 120 80"] if gate else ["tap 120 80"]
+        return step * max(0, int(kv["pages"]) - int(kv["page"]))
     if d == "answer-book":
         if "correct" not in kv:
             raise Fail(f"{where}: no book open", seg)
-        return [f"tap 80 {74 + int(kv['correct']) * 22 + 9}"]
-    if d == "answer-puzzle":  # Biscuit: `answer-puzzle right` or `wrong` taps that answer of the question shown
+        return [f"tap 80 {int(kv.get('answer_y', 74)) + int(kv['correct']) * int(kv.get('answer_step', 22)) + 9}"]
+    if d == "answer-puzzle":  # Pets Club: `answer-puzzle right` or `wrong` taps that answer of the question shown
         if kv.get("answered") != "-1" or "answer" not in kv:
             raise Fail(f"{where}: no puzzle waiting for an answer", seg)
         pick = int(kv["answer"]) if arg == "right" else (int(kv["answer"]) + 1) % 3
-        return [f"tap {(44, 80, 115)[pick]} 97"]
+        return [f"tap {(41, 80, 119)[pick]} 105"]
+    if d == "answer-uk":  # Pets Club's Ukrainian: `answer-uk right` taps the answer (every syllable, in order), `wrong` a miss
+        if kv.get("answered") != "-1" or "uk_taps" not in kv:
+            raise Fail(f"{where}: no Ukrainian question waiting for an answer", seg)
+        if arg != "right" and "uk_wrong" not in kv:
+            raise Fail(f"{where}: no wrong answer left to tap", seg)
+        taps = kv["uk_taps"].split(";") if arg == "right" else [kv["uk_wrong"]]
+        return [line for t in taps for line in (f"tap {t.replace(',', ' ')}", "wait 300")]
+    if d == "answer-read":  # Pets Club's little reads: `answer-read right` or `wrong`, the answer rows under the question
+        if kv.get("read_answered") != "-1" or "read_answer" not in kv:
+            raise Fail(f"{where}: no little read waiting for an answer", seg)
+        pick = int(kv["read_answer"]) if arg == "right" else (int(kv["read_answer"]) + 1) % 3
+        return [f"tap 80 {int(kv['read_ay']) + pick * 24 + 11}"]
     if "word" not in kv:
         raise Fail(f"{where}: no word on screen", seg)
     word, cols, tiles = kv["word"], int(kv["cols"]), kv["tiles"]
@@ -460,7 +478,7 @@ def play(path, cwd, res, start):
             query("debug", where, d, m.groups())
         elif d in ("expect-screen", "ui-check", "sheet"):
             query({"expect-screen": "screen", "ui-check": "ui", "sheet": None}[d], where, d, arg)
-        elif d in ("follow-glow", "solve-word", "answer-book", "answer-puzzle"):
+        elif d in ("follow-glow", "solve-word", "turn-pages", "answer-book", "answer-puzzle", "answer-read", "answer-uk"):
             qid = query("watch 6000" if d == "follow-glow" else "debug", where, "info")
             lines.extend(plan(d, segments(run()).get(qid, []), where, arg))
         elif d == "wait-until":

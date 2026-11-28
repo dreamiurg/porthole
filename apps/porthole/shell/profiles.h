@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "app.h"
 #include "day.h"
+#include "skills.h"
 
 namespace shell {
 constexpr const char* NS = "porthole";   // never rename: it orphans every profile on a device
@@ -18,7 +19,8 @@ constexpr uint32_t SESSION_SEC = 15 * 60, REST_SEC = 10 * 60;
 // wall-clock seconds, so a day is os::dayOf(now) and it ends at local midnight; a clock that jumps: os/day.h.
 constexpr uint32_t DAY_SEC = os::DAY_SEC, DAILY_SEC = 30 * 60;
 // Device-wide parent settings in "sys"/"limits". Minutes, 1..1440; absent/invalid blobs use the shipped defaults.
-// Independent of profile/game records: changing a limit never resets usage or moves a save.
+// Independent of profile/game records: changing a limit never resets usage or moves a save. The session never exceeds
+// the daily total: saveLimits refuses it, and loadLimits brings an older saved session down to the daily total.
 struct Limits { uint16_t sessionMinutes = SESSION_SEC / 60, dailyMinutes = DAILY_SEC / 60; };
 static_assert(sizeof(Limits) == 4, "sys/limits is two uint16 minute counts");
 // No touch and no move of the board (ActivityTracker, os/input.h) for this long is not play (counts toward neither
@@ -38,6 +40,10 @@ class Store {
 };
 Limits loadLimits(Store& st);
 bool saveLimits(Store& st, const Limits& limits);   // validates and verifies persistence; caller updates RAM only on success
+// The master switch, "sys"/"stime": one byte, 0 = screen time off (no session, daily or play-window limit); missing = on.
+// Its own key, so "sys"/"limits" keeps its four bytes; the limits and the window stay saved for when it is back on.
+bool loadLimitsOn(Store& st);
+bool saveLimitsOn(Store& st, bool on);   // read back: false if it did not land
 
 // Separate, versioned device schedule. Local play is allowed [startMinute, endMinute); an overnight
 // interval is valid. Equal endpoints are rejected instead of hiding an ambiguous all-day/no-play setting.
@@ -63,9 +69,11 @@ struct Allowance {
 // Persisted as a raw blob, append-only like Pets Club's Save: new fields go right before crc, bump the version,
 // and teach loadRecord the older size. Never reorder or resize a field.
 constexpr uint32_t REC_MAGIC = 0x50525450;   // "PTRP"
-constexpr uint16_t REC_VERSION = 3;
+constexpr uint16_t REC_VERSION = 5;
 constexpr size_t REC_V1_SIZE = 44;           // v1: no daily cap fields; loads with them zeroed
 constexpr size_t REC_V2_SIZE = 52;           // v2: no stars; loads with none
+constexpr size_t REC_V3_SIZE = 56;           // v3: no skills book; loads with every skill new (games seed them)
+constexpr size_t REC_V4_SIZE = 96;           // v4: no Kid news seen; loads as a kid from before it (all of it is news)
 struct Record {
   uint32_t magic;
   uint16_t version, size;
@@ -75,10 +83,17 @@ struct Record {
   uint32_t restUntil, playSec, lastPlayed; // rest budget; lastPlayed also restores the clock when the RTC is lost
   uint32_t dayPlaySec, playDay;            // v2: play counted on local day playDay (now / DAY_SEC)
   uint32_t stars;                          // v3: the kid's star balance, earned and spent in any game (os/stars.h)
+  skills::Book book;                       // v4: the kid's skill ratings and today's star counters (os/skills.h)
+  // v5: the Kid news this kid has seen (shell/news.h), in news.toml entry numbers: the newest the "New for" screen
+  // showed, and the red dots cleared, a bit each for entries newsFrom.. newsFrom + 15 (tiles opened, spots tapped);
+  // an entry before newsFrom is done. In the record, not a key of its own: 8 more bytes cost no NVS entry.
+  uint16_t newsSeen, newsFrom, newsTiles, newsSpots;
   uint32_t crc;
 };
-static_assert(sizeof(Record) == 56, "Record is persisted: append before crc, never resize");
+static_assert(sizeof(Record) == 104, "Record is persisted: append before crc, never resize");
 static_assert(offsetof(Record, dayPlaySec) == REC_V1_SIZE - sizeof(uint32_t), "v2 fields start where v1's crc was");
+static_assert(offsetof(Record, book) == REC_V3_SIZE - sizeof(uint32_t), "v3 ends where the book starts");
+static_assert(offsetof(Record, newsSeen) == REC_V4_SIZE - sizeof(uint32_t), "v4 ends where Kid news starts");
 static_assert(offsetof(Record, stars) == REC_V2_SIZE - sizeof(uint32_t), "v3's stars start where v2's crc was");
 
 struct Profiles {   // indexed by stable id (a migrated house keeps its slot number); a deleted id is reused

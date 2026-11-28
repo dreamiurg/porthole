@@ -8,17 +8,12 @@
 #include "crc32.h"
 #include "games/biscuit/content_daily.h"
 #include "games/biscuit/content_discoveries.h"
-#include "games/biscuit/content_doghouse.h"
-#include "games/biscuit/content_puzzles.h"
-#include "games/biscuit/content_reads.h"
 #include "games/biscuit/content_stories.h"
 #include "games/biscuit/generated/discovery_art.h"
-#include "games/biscuit/generated/doghouse_art.h"
 #include "games/biscuit/generated/scenes.h"
 #include "games/biscuit/layout.h"
 #include "games/biscuit/personalize.h"
 #include "games/biscuit/pet.h"
-#include "games/biscuit/puzzles.h"
 #include "gfx565.h"
 #include "packed_image.h"
 
@@ -312,8 +307,7 @@ static void dailyGate() {
 // The pup's own lines and the screens' status text, at the widest names and the biggest counts a save allows.
 static void homeGate() {
   char text[160];
-  // World shows the kid's balance; the scrapbook every star the pup's stories and puzzles ever earned
-  const unsigned big = MAX_COUNT, stars = ::stars::MAX, earned = NUM_STORIES * 3 + MAX_COUNT / PUZZLES_PER_STAR;
+  const unsigned big = MAX_COUNT, stars = NUM_STORIES * 3;
   for (int i = 0; i < SAY_COUNT; i++) { snprintf(text, sizeof text, "SAY[%d]", i); fits(BUBBLE, text, filled(SAY[i])); }
   for (const char* stage : STAGES) {
     snprintf(text, sizeof text, "Day %u \xC2\xB7 %s", big, stage);             // Home's mood (a lowercase first letter)
@@ -328,7 +322,7 @@ static void homeGate() {
   for (int i = 0; i < 4; i++)
     for (const char* s : ACTION_LABELS[i]) if (s) fits(actionLabel(ACTIONS[i], &FONT20), "action", s);
   fits(WORLD_NAMES, "pet alone", PET);   // World shows "{pet} & {name}" only when it fits, else the pup's name
-  snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u stars, %u puzzles", big, big, earned, big);
+  snprintf(text, sizeof text, "{name} & {pet}\nDay %u together\n%u friendship\n%u story stars", big, big, stars);
   fits(BOOK_LINES, "scrapbook", filled(text));
 }
 // The words the new screens compose around the content: titles, button labels, counters, World's tiles.
@@ -346,7 +340,7 @@ static void screensGate() {
   for (const char* t : TITLES) fits(HEADER, "title", t);
   static const char* const PAIRS[] = {"Discoveries", "Notebook", "Topics", "Today's three"};
   for (const char* t : PAIRS) fits(PAIR_LABEL, "pair", t);
-  static const char* const NAVS[] = {"Previous", "Next", "Choose", "The end", "Question", "Source", "Keep", "Our stickers", "Rename pup"};
+  static const char* const NAVS[] = {"Previous", "Next", "Choose", "The end", "Source", "Keep", "Our stickers", "Rename pup"};
   for (const char* t : NAVS) { fits(buttonLabel(PREV, &FONT20), "prev", t); fits(buttonLabel(NEXT, &FONT20), "next", t); }
   static const char* const WIDES[] = {"Let's find out", "Back to our book", "Back to today", "My turn", "Peek again"};
   for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "wide", t);
@@ -373,149 +367,6 @@ static void screensGate() {
       if (tileDetails[i][j]) fits(inTile(TILE_DETAIL, tiles[i]), "tile", tileDetails[i][j]);
     }
 }
-// After a miss, the answer and how to solve it, for questions of every level.
-static void howGate() {
-  char line[160];
-  uint32_t rng = 5;
-  for (int strand = 0; strand < puzzles::WORDS; strand++)
-    for (uint8_t level = 0; level < puzzles::LEVELS[strand]; level++)
-      for (int n = 0; n < 300; n++) {
-        const puzzles::Puzzle q = puzzles::build(puzzles::pick((puzzles::Strand)strand, level, rng), rng);
-        char how[48];
-        puzzles::how(q.item, how);
-        snprintf(line, sizeof line, "It's %s\n%s", q.solved, how);
-        fits(FEEDBACK, "how", line);
-      }
-}
-// Puzzles: the strands, every clue and times story, the widest questions, answers and what the pup does after one.
-static void puzzleGate() {
-  for (const char* t : STRAND_LABELS) fits(STRAND_LABEL, "strand", t);
-  static const char* const TITLES[] = {"Puzzles", "All done!", "Puzzle 5 of 5"};
-  for (const char* t : TITLES) fits(HEADER, "puzzle title", t);
-  static const char* const WIDES[] = {"Puzzles", "Next", "More puzzles"};
-  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "puzzle wide", t);
-  static const char* const ANSWERS[] = {"999", "88", "w", "m"};
-  for (int i = 0; i < 3; i++) for (const char* t : ANSWERS) fits(buttonLabel(ANSWER[i], &FONT28), "answer", t);
-  static const char* const ASKS[] = {"88 + 11 = ?", "99 - 88 = ?", GROUP_ASK, SHARE_ASK};
-  for (const char* t : ASKS) fits(ASK, "ask", t);
-  char ask[24], line[160];
-  const SpellWord* lists[2] = {SHORT_WORDS, LONG_WORDS};
-  const int counts[2] = {SHORT_WORD_COUNT, LONG_WORD_COUNT};
-  for (int l = 0; l < 2; l++)
-    for (int i = 0; i < counts[l]; i++) {
-      const SpellWord& w = lists[l][i];
-      fits(CLUE, w.word, w.clue);
-      for (int gap = 0; w.word[gap]; gap++) {   // "f r _ e n d", the gap anywhere
-        puzzles::detail::spaced(w.word, gap, ask);
-        fits(ASK, w.word, ask);
-      }
-      static const char* const VERDICTS[] = {"Yes!", "It's"};
-      for (const char* t : VERDICTS) {
-        snprintf(line, sizeof line, "%s %s\n{pet} thinks that one was tricky.", t, w.word);
-        fits(FEEDBACK, w.word, filled(line));
-      }
-    }
-  const char* const* const AFTER[] = {CHEERS, NUDGES};
-  for (const char* const* after : AFTER)
-    for (int i = 0; i < 5; i++) {
-      snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", after[i]);
-      fits(FEEDBACK, "feedback", filled(line));
-    }
-  for (const GroupThing& t : GROUP_THINGS) {   // the widest stories: two-digit numbers where they can be
-    snprintf(line, sizeof line, "5 %s, 10 %s in each.", t.groups, t.things); fits(CLUE, t.things, line);
-    snprintf(line, sizeof line, "81 %s shared by 9 pups.", t.things); fits(CLUE, t.things, line);
-  }
-  fits(FEEDBACK, "groups", filled("It's 5 x 10 = 50\n{pet} thinks that one was tricky."));
-  howGate();
-  snprintf(line, sizeof line, "It's 88 + 11 = 99\n%s", STAR_CHEER);
-  fits(FEEDBACK, "star", filled(line));
-  fits(PUZZLE_DONE, "done", filled("5 right this time!\n5 more right for a star.\n{pet} is so proud of you."));
-  snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} is so proud of you.\n%s", LEVEL_UP);
-  fits(PUZZLE_DONE, "level up", filled(line));
-}
-// The doghouse: World's two buttons, the balance at its widest, the shop's rows, a thing's page, and a round's end
-// that taught a trick. Every thing's picture decodes, fills at least 2x on its page, and sits in the room.
-static void doghouseGate() {
-  char line[160];
-  fits(buttonLabel(WORLD_PUZZLES, &FONT20), "world", "Puzzles");
-  fits(buttonLabel(WORLD_HOUSE, &FONT20), "world", "Doghouse");
-  snprintf(line, sizeof line, "%u stars", (unsigned)::stars::MAX);
-  fits(HOUSE_STARS, "balance", line);
-  fits(STARS, "balance", line);
-  static const char* const WIDES[] = {"Shop", "Buy", "See it"};
-  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "doghouse wide", t);
-  fits(HEADER, "shop", "Shop");
-  fits(ITEM_PRICE, "owned", "It's in the doghouse!");
-  for (const DecorItem& d : DECOR) {
-    fits(HEADER, d.name, d.name);
-    snprintf(line, sizeof line, "%s - %u stars", d.name, (unsigned)d.price); fits(ROW_LABEL, d.name, line);
-    snprintf(line, sizeof line, "%s - at home", d.name); fits(ROW_LABEL, d.name, line);
-    snprintf(line, sizeof line, "%u stars\n%u more to go!", (unsigned)d.price, (unsigned)d.price); fits(ITEM_PRICE, d.name, line);
-  }
-  for (const DecorArt& a : DECOR_ART) {
-    gfx565::target(g_fb);
-    assert(packed565::draw(a.image, a.x * 3, a.y * 3, 3));
-    assert(ITEM_PICTURE_W / a.image.width >= 2 && ITEM_PICTURE_H / a.image.height >= 2);
-    assert(a.x >= 0 && a.y >= 0 && a.x + a.image.width <= 160 && a.y + a.image.height <= 160);
-  }
-  for (const packed565::Image& room : DOGHOUSE_ROOMS) assert(room.width == 160 && room.height == 160 && packed565::draw(room, 0, 0, 3));
-  fits(buttonLabel(PUZZLE_MORE, &FONT20), "puzzle end", "More");
-  fits(buttonLabel(PUZZLE_SHOW, &FONT20), "puzzle end", "Show me");
-  for (const Trick& t : TRICKS) {
-    snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} learned %s: 2 of 3.", t.name);
-    fits(PUZZLE_DONE, t.id, filled(line));
-    snprintf(line, sizeof line, "5 right this time!\n+2 stars!\n{pet} can do %s now!", t.name); fits(PUZZLE_DONE, t.id, filled(line));
-    snprintf(line, sizeof line, "5 right this time!\n5 more right for a star.\n{pet} learned %s: 2 of 3.\n%s", t.name, LEVEL_UP);
-    fits(PUZZLE_DONE, t.id, filled(line));
-    snprintf(line, sizeof line, "Watch me try %s! Lesson 2 of 3 done.", t.name); fits(BUBBLE, t.id, filled(line));
-    snprintf(line, sizeof line, "Watch me! I can do %s now!", t.name); fits(BUBBLE, t.id, filled(line));
-  }
-}
-// Little reads: the Library's row, every passage (no more screens than its level at short names, so a first grader's
-// is one screen, and within the reader at the widest), its question, answers and what the pup says after one, and a
-// round's end.
-static int screensAt(const char* text, const char* name, const char* pet) {
-  static char buf[4 * READ_BYTES];
-  personalize(text, name, pet, buf, sizeof buf);
-  const char* screens[READ_SCREENS];
-  return font::pageBreaks(PAGE.box, buf, screens, READ_SCREENS, MIN_LAST_WORDS);
-}
-static void readsGate() {
-  char line[320], answer[128], where[64];
-  snprintf(line, sizeof line, "Little reads: level %d", READ_LEVELS);
-  fits(STORY_BUTTON, "little reads", line);
-  static const char* const WIDES[] = {"Next", "More reads"};
-  for (const char* t : WIDES) fits(buttonLabel(WIDE, &FONT20), "reads wide", t);
-  fits(HEADER, "reads end", "All done!");
-  static const char* const LAST[] = {"Next time: longer reads!", "{pet} loves reading with you."};
-  for (const char* t : LAST) {
-    snprintf(line, sizeof line, "3 of 3 right!\n3 more right for a star.\n%s", t);
-    fits(READ_AFTER, "reads end", filled(line));
-  }
-  int levels[READ_LEVELS + 1] = {0};
-  for (const Read& r : READS) {
-    assert(r.level >= 1 && r.level <= READ_LEVELS && r.right < READ_ANSWERS);
-    levels[r.level]++;
-    fits(HEADER, r.id, r.title);
-    stream(r.id, &r.text, 1);
-    const int n = screensAt(r.text, "Sam", "Pip");
-    if (n > r.level) { printf("content gate: %s takes %d screens at short names, level %d takes %d\n", r.id, n, r.level, r.level); failures++; }
-    snprintf(where, sizeof where, "%s question", r.id);
-    fits(READ_QUESTION, where, filled(r.question));
-    for (int i = 0; i < READ_ANSWERS; i++) {
-      snprintf(where, sizeof where, "%s answer %d", r.id, i);
-      snprintf(answer, sizeof answer, "%s", filled(r.answers[i]));
-      fits(READ_ANSWER_LABEL, where, answer);
-    }
-    snprintf(answer, sizeof answer, "%s", filled(r.answers[r.right]));
-    snprintf(line, sizeof line, "Oops! The answer: %s.\n%s", answer, r.why);
-    fits(READ_AFTER, r.id, filled(line));
-    for (const char* cheer : CHEERS) { snprintf(line, sizeof line, "Yes! %s.\n%s", answer, cheer); fits(READ_AFTER, r.id, filled(line)); }
-    snprintf(line, sizeof line, "Yes! %s.\n%s", answer, STAR_CHEER);
-    fits(READ_AFTER, r.id, filled(line));
-  }
-  for (int l = 1; l <= READ_LEVELS; l++) assert(levels[l] >= 3);   // a round of three never repeats a passage
-}
 static void pixelGate() {
   const font::Font* F[4] = {&FONT16, &FONT20, &FONT24, &FONT28};
   for (const font::Font* f : F)
@@ -530,9 +381,6 @@ static void pixelGate() {
   dailyGate();
   homeGate();
   screensGate();
-  puzzleGate();
-  doghouseGate();
-  readsGate();
   if (failures) printf("content gate: %d strings do not fit (widest names: {name} %s, {pet} %s)\n", failures, NAME, PET);
   assert(failures == 0);
 }
@@ -545,7 +393,7 @@ int main() {
   pixelGate();
   // The rules and the content count the same things (and share one namespace without clashing).
   static_assert(NUM_STORIES == STORY_COUNT && NUM_DISCOVERIES == DISCOVERY_COUNT && NUM_TRICKS == TRICK_COUNT &&
-                NUM_STICKERS == STICKER_COUNT && NUM_DECOR == DECOR_COUNT, "pet.h and the content agree");
+                NUM_STICKERS == STICKER_COUNT, "pet.h and the content agree");
   assert(STORY_COUNT == 15 && TOPIC_COUNT == 12 && ADVENTURE_COUNT == 7 && TRICK_COUNT == 6 && STICKER_COUNT == 12);
   printf("biscuit content: all checks passed\n");
   return 0;

@@ -2,17 +2,19 @@
 // One pup's life, in order: each step starts from the state the previous one left.
 #include "host/check.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "games/pets-club/pet.h"
 #include "games/pets-club/content.h"
 #include "games/pets-club/game.h"
+#include "games/pets-club/puzzles.h"
 
 static const uint32_t day0 = 1790000000u - (1790000000u % 86400u) + 10 * 3600;  // 10:00
 
 static void decayAndGrowth(Save& s) {
   pet::adopt(s, day0, "Sam", "Biscuit");
   assert(pet::valid(s));
-  assert(s.food == 70 && s.booksUnlocked == pet::STARTER_BOOKS && s.streak == 1);
+  assert(s.food == 70 && s.streak == 1);
 
   // 3 hours online awake: food -12, fun -9, energy -15
   uint32_t ev = pet::simulate(s, day0 + 3 * 3600, true);
@@ -61,12 +63,12 @@ static void bondAndTricks(Save& s, uint32_t t) {
 }
 
 static void giftsStreakReading(Save& s, uint32_t t) {
-  // Gifts: one per calendar day; books first, hat on every third
+  // Gifts: one per calendar day; treats, a hat on every third (books are all on the shelf, none comes as a gift)
   uint32_t g0 = t + 86400; s.lastGiftDay = (uint16_t)pet::dayIndex(g0) - 1;
   assert(pet::giftReady(s, g0));
-  pet::Gift g = pet::openGift(s, g0); assert(g.kind == pet::GIFT_BOOK && s.booksUnlocked == pet::STARTER_BOOKS + 1);
+  pet::Gift g = pet::openGift(s, g0); assert(g.kind == pet::GIFT_TREATS);
   assert(!pet::giftReady(s, g0));
-  g = pet::openGift(s, g0 + 86400); assert(g.kind == pet::GIFT_BOOK);
+  g = pet::openGift(s, g0 + 86400); assert(g.kind == pet::GIFT_TREATS);
   g = pet::openGift(s, g0 + 2 * 86400); assert(g.kind == pet::GIFT_HAT && (s.hatsMask & (1u << g.index)));
 
   // Streak: consecutive days increment, a gap resets
@@ -76,8 +78,8 @@ static void giftsStreakReading(Save& s, uint32_t t) {
   pet::touchDay(s, t + 4 * 86400); assert(s.streak == 1);
 
   // Reading
-  int before = s.booksRead; pet::bookFinished(s, t, 0, true); pet::bookFinished(s, t, 0, false);
-  assert(s.booksRead == before + 1 && (s.booksDoneMask & 1u) && (s.stickersMask & (1u << ST_FIRST_STORY)));
+  int before = s.booksRead; pet::bookFinished(s, t, true, true); pet::bookFinished(s, t, false, false);
+  assert(s.booksRead == before + 1 && (s.stickersMask & (1u << ST_FIRST_STORY)));
 
   // Save integrity
   pet::seal(s); assert(pet::valid(s)); s.food ^= 1; assert(!pet::valid(s)); s.food ^= 1; pet::seal(s);
@@ -115,6 +117,54 @@ static void saveV2Migrates(const Save& s) {
   assert(!strcmp(m.petName, s.petName) && m.kidAge == s.kidAge && m.playSec == s.playSec);
   v2[20] ^= 1; assert(!pet::loadBlob(v2, sizeof v2, m));          // corrupted v2 rejected
   oldBlob(v2, s, sizeof v2, 3); assert(!pet::loadBlob(v2, sizeof v2, m));   // a v2 size must say v2, even with a good CRC
+}
+
+// v3 blob (212 bytes, before puzzles and little reads) migrates: the farm's own fields stay as they were (an empty
+// room stays empty), puzzles and reads start from the kid's age with nothing to review.
+static void saveV3Migrates(Save s) {
+  s.hasDog = 0; s.wallCount = 2; s.breed = 4;
+  uint8_t v3[SAVE_V3_SIZE]; oldBlob(v3, s, sizeof v3, 3);
+  Save m; assert(pet::loadBlob(v3, sizeof v3, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save));
+  assert(m.hasDog == 0 && m.wallCount == 2 && m.breed == 4 && !strcmp(m.petName, s.petName) && m.hatsMask == s.hatsMask);
+  assert(!m.puzzleLevels[0] && !m.puzzleReviewCount && !m.readLevel && !m.readsRight && !m.puzzlesRight && !m.puzzleReviews[0].due);
+  v3[30] ^= 1; assert(!pet::loadBlob(v3, sizeof v3, m));          // corrupted v3 rejected
+  oldBlob(v3, s, sizeof v3, 2); assert(!pet::loadBlob(v3, sizeof v3, m));   // a v3 size must say v3
+  Save bad = s; bad.hasDog = 1; pet::seal(bad);                    // damaged v5 bytes are made safe once, on load
+  bad.readLevel = 77; bad.readStreak = 9; bad.puzzleReviewCount = 200; pet::seal(bad);
+  assert(pet::loadBlob(&bad, sizeof bad, m) && m.readLevel == pet::READ_LEVELS && m.readStreak == 0 && m.puzzleReviewCount == PUZZLE_REVIEWS);
+}
+
+// v4 blob (288 bytes, before the two bookshelves) migrates: every field keeps its value, the old 32-bit mask of
+// English books read becomes the first bits of booksEn (same indices), no Ukrainian book is read.
+static void saveV4Migrates(Save s) {
+  s.booksDoneMask = 0x80000005u; s.readLevel = 3; s.puzzleReviewCount = 1; s.puzzleReviews[0].due = 77;
+  uint8_t v4[SAVE_V4_SIZE]; oldBlob(v4, s, sizeof v4, 4);
+  Save m; assert(pet::loadBlob(v4, sizeof v4, m));
+  assert(pet::valid(m) && m.version == SAVE_VERSION && m.size == sizeof(Save) && m.readLevel == 3 && m.puzzleReviews[0].due == 77);
+  assert(m.booksEn[0] == 0x05 && m.booksEn[1] == 0 && m.booksEn[2] == 0 && m.booksEn[3] == 0x80 && !m.booksEn[4]);
+  for (uint8_t b : m.booksUk) assert(!b);
+  for (uint8_t b : m.reserved4) assert(!b);
+  v4[30] ^= 1; assert(!pet::loadBlob(v4, sizeof v4, m));          // corrupted v4 rejected
+  oldBlob(v4, s, sizeof v4, 3); assert(!pet::loadBlob(v4, sizeof v4, m));   // a v4 size must say v4
+}
+
+// The shop lives in bytes that were reserved in v4 and always zero: an older v4 save has nothing bought and wears the
+// Red Collar; a collar past COLLARS loads as the Red one.
+static void shopFieldsStartEmpty(Save s) {
+  assert(!s.collar && !s.collarsOwned && !s.lastBuyDay && !s.lastBuyItem);
+  Save m, bad = s; bad.collar = 200; pet::seal(bad);
+  assert(pet::loadBlob(&bad, sizeof bad, m) && m.collar == 0);
+}
+
+// Every collar is a real recolor with a name and a price; the Red one is free and the locked ones name real stickers.
+static void collarTable() {
+  assert(COLLARS[0].price == 0 && COLLARS[0].band == C_RED && COLLARS[0].tag == C_GOLD && COLLARS[0].needs < 0);
+  for (int i = 1; i < NUM_COLLARS; i++) {
+    assert(COLLARS[i].name && COLLARS[i].price > 0 && shopPrice(COLLARS[i].price) >= 1 && COLLARS[i].needs < NUM_STICKERS);
+    assert(COLLARS[i].band != C_RED || COLLARS[i].band2 != C_RED);   // each looks different from the free one
+  }
+  assert(shopPrice(0) == 0 && shopPrice(3) >= 1);
 }
 
 static void shelterPupStartsFresh(Save& s, uint32_t now) {
@@ -287,12 +337,9 @@ static void wordsForEveryAge() {
 }
 
 static void levels(const Save& s) {
-  // reading levels by age
-  { int lo, hi; pet::levelRange(6, lo, hi); assert(lo == 1 && hi == 1); pet::levelRange(8, lo, hi); assert(lo == 2 && hi == 3); pet::levelRange(10, lo, hi); assert(lo == 3 && hi == 3);
-    pet::wordLenRange(6, lo, hi); assert(lo == 3 && hi == 4); pet::wordLenRange(9, lo, hi); assert(lo == 6 && hi == 8); }
-  // story lists by age: a 6 year old only sees level 1, an 8 year old never sees level 1
-  { uint8_t list[32]; Save r = s; r.kidAge = 6; int n6 = pet::bookListFor(r, list); assert(n6 >= 6); for (int i = 0; i < n6; i++) assert(BOOKS[list[i]].level == 1);
-    r.kidAge = 8; int n8 = pet::bookListFor(r, list); assert(n8 >= 6); for (int i = 0; i < n8; i++) assert(BOOKS[list[i]].level >= 2); }
+  // spelling word lengths by age (stories follow the reading rating now: host/test_pets_books.cpp)
+  { int lo, hi; pet::wordLenRange(6, lo, hi); assert(lo == 3 && hi == 4); pet::wordLenRange(9, lo, hi); assert(lo == 6 && hi == 8); }
+  (void)s;
 }
 
 // 22:00 in the game: Auto (AppEnter::daylight false) is night; a sun picked on the launcher is day, with no stars.
@@ -442,7 +489,7 @@ static void tileCenter(const WordRound& w, char ch, int& x, int& y) {
 }
 static void wordsUpToSecond(Game& g, Finger& f, const Save& s, uint32_t t) {   // the first word spelled, its pause begun
   enterAt(g, s, t); f.draw = true;
-  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 108); assert(!strcmp(g.screenName(), "words"));
+  f.hold(false, 0, 0, 500); f.tap(66, 129); f.tap(80, 75); assert(!strcmp(g.screenName(), "words"));
   WordRound w = wordRound(g);
   for (const char* c = w.word; *c; c++) {   // a used tile is blanked so a repeated letter takes its next tile
     int x, y; tileCenter(w, *c, x, y); w.tiles[strchr(w.tiles, *c) - w.tiles] = '.';
@@ -520,6 +567,80 @@ static void homeOverTheUptimeWrap() {
   }
 }
 
+// A number the live `debug` line prints (key=value), or -1: the test reads what the kid sees.
+static int dbg(Game& g, const char* key) {
+  fflush(stdout); FILE* tmp = tmpfile(); const int out = dup(1); dup2(fileno(tmp), 1);
+  g.debugPrint(); fflush(stdout); dup2(out, 1); close(out); rewind(tmp);
+  char line[512], pat[40]; snprintf(pat, sizeof pat, " %s=", key); int v = -1;
+  while (fgets(line, sizeof line, tmp)) {
+    char padded[520]; snprintf(padded, sizeof padded, " %s", line);
+    if (const char* at = strstr(padded, pat)) v = atoi(at + strlen(pat));
+  }
+  fclose(tmp);
+  return v;
+}
+// Answers every question of the round on screen right: puzzles tap the answer button, reads page to the question first.
+static void rightPuzzles(Finger& f, Game& g) {
+  for (int n = 0; n < learn::puzzles::ROUND; n++) {
+    assert(dbg(g, "asked") == n && dbg(g, "answered") == -1);
+    f.hold(false, 0, 0, 3000);   // a kid's time to read it: an answer faster is a guess (os/skills.h)
+    f.tap(41 + 39 * dbg(g, "answer"), 105); assert(dbg(g, "answered") >= 0);
+    f.tap(80, 133);
+  }
+}
+static void rightReads(Finger& f, Game& g) {
+  for (int n = 0; n < 3; n++) {
+    while (!strcmp(g.screenName(), "little")) f.tap(120, 80);
+    assert(!strcmp(g.screenName(), "little_ask") && dbg(g, "read_asked") == n);
+    f.hold(false, 0, 0, 3000);
+    f.tap(80, dbg(g, "read_ay") + dbg(g, "read_answer") * 24 + 11); assert(dbg(g, "read_answered") >= 0);
+    f.tap(80, 133);
+  }
+}
+// Puzzles and little reads from the Play menu: a round of five right puzzles moves the strand's level up and pays the
+// kid's wallet at its end, three right reads too (os/skills.h); the Hats page sells a hat not found yet for stars.
+static void learningPaysStars() {
+  static Game g;
+  const uint32_t t = day0 + 5 * 86400;
+  Save s; pet::adopt(s, t, "Sam", "Rex"); s.kidAge = 8; s.energy = 90; s.hatsMask = 0; pet::seal(s);
+  static const Profile kid = {0, "Sam", 0, 8, 0}; const SaveSlot slot = {&s, sizeof s};
+  uint32_t wallet = 0;
+  g.enter({&kid, &kid, &slot, 1, t, 0, false, &wallet}); g.update(t, 2000, Input{});
+  Finger f{g, t}; f.draw = true;
+  f.hold(false, 0, 0, 2500); f.tap(66, 129); assert(!strcmp(g.screenName(), "playmenu"));
+  f.tap(80, 99); assert(!strcmp(g.screenName(), "puzzles"));
+  f.tap(80, 68); assert(!strcmp(g.screenName(), "puzzle") && dbg(g, "strand") == 0);
+  rightPuzzles(f, g);
+  Save got = taken(g);
+  // A new kid calibrates: five right jump the level up 1, 2, 4... (os/skills.h), at a flat 40 points each: 200 points,
+  // 2 stars, and the day's first stars count twice.
+  assert(dbg(g, "right") == 5 && wallet == 4 && got.puzzlesRight == 5 && got.puzzleLevels[0] == learn::puzzles::LEVELS[0] && !got.puzzleReviewCount);
+  f.hold(false, 0, 0, 1000); f.tap(80, 129); assert(!strcmp(g.screenName(), "puzzles"));
+  f.tap(80, 12); assert(!strcmp(g.screenName(), "playmenu"));
+  f.tap(80, 123); assert(!strcmp(g.screenName(), "little") && dbg(g, "pages") >= 1);
+  rightReads(f, g);
+  got = taken(g);
+  // three right reads at the kid's level: about 300 points, 2 stars, both still fresh (x2); the reading rating moves up
+  // but not yet a whole level
+  assert(wallet == 8 && got.readsRight == 3 && got.readLevel == pet::ageReadLevel(8));
+  wallet = 2;
+  // the hats (Stats > Shop > Hats): Red Bow (3 stars) is not found yet; two stars buy nothing and say "1 more"; with
+  // five a tap still buys nothing, a one-second hold does
+  f.tap(80, 12); f.tap(80, 12); assert(!strcmp(g.screenName(), "home"));
+  f.tap(40, 27); assert(!strcmp(g.screenName(), "stats"));
+  f.tap(114, 123); assert(!strcmp(g.screenName(), "shop"));
+  f.tap(50, 78); assert(!strcmp(g.screenName(), "hats"));
+  f.tap(134, 80); f.tap(80, 134); assert(dbg(g, "short") == 1);
+  g.leave(); assert(wallet == 2 && !(taken(g).hatsMask & 2));   // leave() marks the save to hand over
+  f.tap(80, 80); assert(dbg(g, "short") == 0);                    // any tap closes the panel
+  wallet = 5; f.tap(80, 134);
+  g.leave(); assert(wallet == 5 && !(taken(g).hatsMask & 2));
+  f.hold(true, 80, 134, 1100); f.hold(false, 80, 134, 100);
+  assert(!strcmp(g.screenName(), "celebrate"));
+  got = taken(g);
+  assert(wallet == 2 && (got.hatsMask & 2) && got.hat == 1);
+}
+
 int main() {
   Save s;
   decayCarryStaysWithTheVisit();
@@ -531,6 +652,11 @@ int main() {
   giftsStreakReading(s, t);
   saveV1(s);
   saveV2Migrates(s);
+  saveV3Migrates(s);
+  saveV4Migrates(s);
+  shopFieldsStartEmpty(s);
+  collarTable();
+  learningPaysStars();
   retireKeepsKidProgress();
   giftAfterClockSetBack();
   wallRollsAtFour();

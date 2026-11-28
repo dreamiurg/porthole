@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Rally's text: Russo One (SIL OFL 1.1, art/fonts/) rasterized to the runtime's 4 bpp font format (os/font.h).
 
-Four sizes, ASCII 32..126, no kerning. FreeType's output can change between Pillow releases, so the header records
-the font file's SHA-256 and the Pillow it was made with: --check always fails on a changed font file, and also
-re-renders and compares byte for byte when this Pillow is that one.
+Four sizes, ASCII 32..126 plus the Ukrainian alphabet (EXTRAS: a kid may name a profile in Ukrainian), no kerning.
+FreeType's output can change between Pillow releases, so the header records the font file's SHA-256 and the Pillow
+it was made with: --check always fails on a changed font file, and also re-renders and compares byte for byte when this Pillow is that one.
   python3 games/racing/tools/font.py           regenerate fonts.h (with the pinned Pillow)
   python3 games/racing/tools/font.py --check   fail if fonts.h is stale
 """
@@ -20,6 +20,8 @@ GAME = Path(__file__).resolve().parents[1]
 TTF = GAME / "art/fonts/RussoOne-Regular.ttf"
 OUT = GAME / "fonts.h"
 PINNED = "12.3.0"
+# The Ukrainian alphabet, ascending (os/font.h looks extras up in order): profile names reach the boards and the join card.
+EXTRAS = (0x404, 0x406, 0x407, *range(0x410, 0x42A), 0x42C, *range(0x42E, 0x44A), 0x44C, 0x44E, 0x44F, 0x454, 0x456, 0x457, 0x490, 0x491)
 SIZES = (("SMALL", 22), ("LABEL", 28), ("BIG", 44), ("GIANT", 64))  # px: body text, buttons, HUD numbers, countdown
 
 
@@ -41,7 +43,7 @@ def face_lines(name, size):
     face = ImageFont.truetype(str(TTF), size, layout_engine=ImageFont.Layout.BASIC)
     ascent, descent = face.getmetrics()
     bitmap, glyphs = [], [(0, 0, 0, 0, 0, 0)]
-    for code in range(32, 127):
+    for code in (*range(32, 127), *EXTRAS):
         mask, offset = face.getmask2(chr(code), mode="L", anchor="ls")
         image = Image.frombytes("L", mask.size, bytes(mask))
         box = image.getbbox()
@@ -56,7 +58,7 @@ def face_lines(name, size):
         bitmap.extend(pack4([(v * 15 + 127) // 255 for v in image.tobytes()]))
     out = rows("uint8_t", f"{name}_BITMAP", bitmap) + [f"static const font::Glyph {name}_GLYPHS[] = {{"]
     out += ["  {" + ",".join(map(str, g)) + "}," for g in glyphs]
-    out += ["};", f"inline const font::Font {name} = {{{name}_BITMAP,{name}_GLYPHS,nullptr,0,NO_CLASS,NO_CLASS,NO_KERN,0,{ascent + descent},{descent}}};"]
+    out += ["};", f"inline const font::Font {name} = {{{name}_BITMAP,{name}_GLYPHS,EXTRAS,{len(EXTRAS)},NO_CLASS,NO_CLASS,NO_KERN,0,{ascent + descent},{descent}}};"]
     return out
 
 
@@ -68,7 +70,8 @@ def header():
         "#pragma once",
         '#include "font.h"',
         "namespace racing::fonts {",
-        *rows("uint8_t", "NO_CLASS", [0] * 96),
+        *rows("uint8_t", "NO_CLASS", [0] * (96 + len(EXTRAS))),
+        *rows("uint16_t", "EXTRAS", list(EXTRAS)),
         "static const int8_t NO_KERN[] = {0};",
     ]
     for name, size in SIZES:

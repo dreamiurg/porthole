@@ -15,6 +15,7 @@
 // scan (the running scan ends with canned networks) | scanempty (with none) | joinok | joinfail (the running test join
 // ends so) | savefail (the next saveWifi fails) | timeok [UTCepoch] | timefail (complete a clock sync). `debug` adds its sys_ver/sys_chan/sys_state/sys_checks/sys_restarts/
 // sys_last and sys_ssid/sys_pass/sys_scans/sys_nets/sys_tests/sys_tried/sys_tested. A reboot keeps lastCheck and the saved network (both in NVS).
+// `sys telemetry` sets telemetry up as an owner's SD file would (personal, PostHog); the sim keeps the events, sends none.
 // feed sets Plane Radar's stub feed (SimFeed below): live (canned planes, the default) | empty (live, none in range) |
 // nospot | nowifi | joining | lost | off. Home comes from the stub system (`sys nohome|found|notfound|homefail`).
 // `debug` adds feed_state/feed_on/feed_km/feed_starts and sys_home/sys_lat/sys_lon/sys_lookups/sys_addr.
@@ -35,6 +36,7 @@
 #include "netclock.h"
 #include "timezone.h"
 #include "lan.h"
+#include "telemetry.h"
 #ifndef __EMSCRIPTEN__
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -162,6 +164,27 @@ struct SimSystem : shell::System {
     clock.zoneState = zoneBusy ? shell::ZONE_LOOKING : shell::ZONE_IDLE;
     return true;
   }
+  // Telemetry: `sys telemetry` sets it up as the SD file would (personal, PostHog); the sim keeps events and sends none.
+  bool setTelemetryLevel(uint8_t level) override {
+    telemetry::Config c = telemetry::withLevel(telem().config(), level);
+    if (c.level) c.device[0] = c.salt[0] = 1;
+    telem().configure(c); return true;
+  }
+  shell::TelemetryStatus telemetryStatus() override {
+    shell::TelemetryStatus s;
+    s.level = telem().config().level; s.queued = telem().size();
+    if (s.level) { telemetry::host(telem().config(), s.host, sizeof s.host); telem().deviceId(s.device); }
+    return s;
+  }
+  static telemetry::Queue& telem() {
+    static telemetry::Queue* q = nullptr;
+    if (!q) {   // a fresh board: Usage stats on by default (opt-out, 2026-11-21)
+      q = new telemetry::Queue(); q->begin(utcNow, "dev"); telemetry::install(q);
+      telemetry::Config c = telemetry::withLevel(telemetry::Config{}, telemetry::PERSONAL);
+      c.device[0] = c.salt[0] = 1; q->configure(c);
+    }
+    return *q;
+  }
   bool detectTimeZone() override {
     if (!clock.automaticZone || !radioFree()) return false;
     if (zoneSettings.reserved[0] && !storeZone(clock.zone, true, false)) return false;
@@ -248,6 +271,9 @@ struct SimSystem : shell::System {
   }
   void set(const char* what, const char* arg) {
     if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return; }   // host-only saved-network race fixture
+    if (!strcmp(what, "telemetry")) {
+      telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c); return;
+    }
     if (setZone(what, arg) || setClock(what, arg) || setWifi(what)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);

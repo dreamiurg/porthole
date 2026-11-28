@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gfx565.h"
+#include "telemetry.h"
 
 namespace fc {
 namespace {
@@ -76,6 +77,8 @@ void Game::newMatch() {
 // leaving then keeps it. A win counts and makes the next match a little harder; a loss by two or more a little easier.
 void Game::decide() {
   const int teal = match_.score[TEAL], coral = match_.score[CORAL];
+  telemetry::roundFinished({name(), match_.level, teal > coral ? "won" : teal < coral ? "lost" : "done", (long)(match_.ms / 1000),
+                            teal, telemetry::P("against", (long)coral)});
   if (teal > coral) { save_.wins++; if (save_.level + 1 < LEVELS) save_.level++; }
   else if (coral - teal >= 2 && save_.level > 0) save_.level--;
   dirty_ = true;
