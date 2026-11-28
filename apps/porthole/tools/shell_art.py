@@ -224,6 +224,17 @@ kkk.kkk
 kkk.kkk
 kkkkkkk
 """,
+    # The picker's charging mark, after the battery's percentage.
+    "BOLT": """
+...kk
+..kk.
+.kk..
+kkkkk
+..kk.
+.kk..
+.k...
+k....
+""",
 }
 
 # The brightness levels (shell::Light), in full color for gfx::blit: a sun for each level, smaller as the light gets

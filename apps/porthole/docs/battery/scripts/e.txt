@@ -1,0 +1,38 @@
+reset
+profile Ann 6
+profile Bob 7
+profile Cat 6
+profile Dan 7
+wait 600
+tap 80 12
+wait 800
+echo E1-drag-icon-to-row
+down 66 10
+move 66 20
+move 67 30
+move 68 40
+up
+wait 400
+screen
+echo E2-drag-row-to-icon
+down 70 40
+move 70 30
+move 70 20
+move 68 10
+up
+wait 400
+screen
+echo E3-hold-4800
+down 66 10
+wait 4800
+snap bat_e_hold4800
+up
+wait 400
+screen
+echo E4-hold-5500
+down 66 10
+wait 5500
+up
+wait 600
+screen
+snap bat_e_hold5500

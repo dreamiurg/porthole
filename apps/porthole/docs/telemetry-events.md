@@ -23,6 +23,15 @@ as its `screenName()` names its screens (it must anyway: the sim and the playtes
 
 The shell also sends `player_selected` {avatar, age}; the firmware `device_started` {reset, channel} and `crashed`.
 
+## The battery (the firmware)
+
+`battery` {mv, pct, charging, backlight, at, slept_s}: the battery as `os/battery.h` reads it from its voltage (the
+only reading the board has). `mv` the voltage under load, `pct` the estimate from it, `charging` 1 or 0 (inferred:
+a jump or a steady rise), `backlight` 0-100. `at` is `awake` (every 5 min while the screen is lit), `sleep` (right
+before a light sleep, dark and the radio idle) or `wake` (right after it, at the same load, with `slept_s` from the
+RTC). Drain in sleep is a `sleep` and the next `wake`; drain in use the `awake` series beside `game_heartbeat`.
+Nothing about the kid; personal level only. Design: `docs/superpowers/specs/2026-11-28-battery-design.md`.
+
 ## One line per game: rounds
 
 A game with rounds, races, matches or levels calls `telemetry::roundFinished()` when one ends:

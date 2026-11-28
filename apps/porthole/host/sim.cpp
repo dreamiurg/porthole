@@ -254,7 +254,21 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING || st.state == shell::UP_READY) return;
     st.state = shell::UP_IDLE; st.available[0] = 0;
   }
+  // The battery the board would read (os/battery.h): "sys battery MV" discharging, about 4 min left a percent;
+  // "sys charging MV"; "sys nobattery". A boot starts at 3990 mV, discharging (none in the web player).
+  battery::Reading bat;
+  battery::Reading battery() override { return bat; }
+  bool setBattery(const char* what, const char* arg) {
+    if (!strcmp(what, "nobattery")) { bat = {}; return true; }
+    if (strcmp(what, "battery") && strcmp(what, "charging")) return false;
+    bat.mv = (uint16_t)atoi(arg); bat.pct = battery::percent(bat.mv); bat.charging = what[0] == 'c';
+    bat.minutesLeft = bat.charging ? -1 : (int16_t)(bat.pct * 4);
+    return true;
+  }
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
+#ifndef __EMSCRIPTEN__
+    setBattery("battery", "3990");
+#endif
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
     st = {}; st.lastCheck = last; nNets = tested = looked = 0;
@@ -269,12 +283,14 @@ struct SimSystem : shell::System {
     snprintf(clock.zone, sizeof clock.zone, "%s", zoneSettings.zone);
     clock.automaticZone = zoneSettings.automatic != 0;
   }
+  bool setFixture(const char* what, const char* arg) {
+    if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return true; }   // host-only saved-network race fixture
+    if (strcmp(what, "telemetry")) return false;
+    telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c);
+    return true;
+  }
   void set(const char* what, const char* arg) {
-    if (!strcmp(what, "wifi")) { saveWifi(arg, ""); return; }   // host-only saved-network race fixture
-    if (!strcmp(what, "telemetry")) {
-      telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c); return;
-    }
-    if (setZone(what, arg) || setClock(what, arg) || setWifi(what)) return;
+    if (setFixture(what, arg) || setZone(what, arg) || setClock(what, arg) || setWifi(what) || setBattery(what, arg)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }

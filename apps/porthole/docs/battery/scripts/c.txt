@@ -1,0 +1,15 @@
+reset
+profile Ann 6
+wait 600
+tap 80 12
+wait 800
+sys charging 4200
+wait 200
+snap bat_c_chg4200
+ui
+sys charging 4190
+wait 200
+snap bat_c_chg4190
+sys charging 4170
+wait 200
+snap bat_c_chg4170

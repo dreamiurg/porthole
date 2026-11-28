@@ -186,13 +186,23 @@ void Shell::updateSysAdmin() {
   if (tapped(in_, ADMIN_PLAYERS)) { target_ = -1; go(SH_SYS_PLAYERS); return; }
   if (adminPin_ && tapped(in_, ADMIN_REMOVE)) go(SH_SYS_REMOVE);
 }
+// Admin 2/2's top line: the battery (os/battery.h) in volts, the estimate and a time left once one is known.
+void Shell::batteryLine(char* out, size_t n) {
+  const battery::Reading b = sys_->battery();
+  if (!b.present()) { snprintf(out, n, "Device settings"); return; }
+  const unsigned cv = (b.mv + 5) / 10;   // 3.92 V
+  const int k = snprintf(out, n, "Battery %u%%, %s%u.%02u V", b.pct, b.charging ? "charging, " : "", cv / 100, cv % 100);
+  if (b.minutesLeft >= 90) snprintf(out + k, n - k, ", ~%d h left", (b.minutesLeft + 30) / 60);
+  else if (b.minutesLeft >= 0) snprintf(out + k, n - k, ", ~%d min left", b.minutesLeft);
+}
 void Shell::drawSysAdmin() {
   sclear(C_NAVY);
   shead(80, 33, adminPage_ ? "Admin 2/2" : "Admin 1/2", C_WHITE);
   const ui::Box arrow = adminPageArrow(!adminPage_);
   sbutton(arrow, adminPage_ ? "<" : ">", C_SKY, down(in_, arrow));
   if (adminPage_) {
-    stextC(80, 46, "Device settings", C_LTGRAY);
+    char bat[48]; batteryLine(bat, sizeof bat);
+    stextC(80, 46, bat, C_LTGRAY);
     sbutton(ADMIN_CODE, "Clock", C_SKY, down(in_, ADMIN_CODE));
     sbutton(ADMIN_RESET, sound_ ? "Sound: on" : "Sound: off", sound_ ? C_SKY : C_LTGRAY, down(in_, ADMIN_RESET));
     drawTelemetry();

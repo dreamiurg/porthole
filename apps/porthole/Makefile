@@ -63,6 +63,8 @@ test_marble_SRC := $(wildcard os/*.cpp) $(wildcard games/marble-kick/*.cpp)
 test_timezone_SRC := os/timezone.cpp
 test_clock_SRC := os/timezone.cpp
 test_tilt_SRC :=
+# os/battery.h is header-only
+test_battery_SRC :=
 test_nvs_budget_SRC := games/living-kingdom/engine.cpp games/living-kingdom/content.cpp
 test_crc32_SRC :=
 test_skills_SRC :=

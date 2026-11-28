@@ -43,6 +43,9 @@ bool settlePanel();
 // Light sleep with the panel asleep and its scan stopped, until a touch; then the panel scans again, still dark (the
 // caller lights it through settlePanel()). Takes back the ST7701's SPI pins from the SD card, which is unusable after.
 void sleepUntilTouch();
+// The battery's voltage in mV (GPIO4 behind a 1:3 divider on the cell's side of the power switch), 16 reads averaged.
+// The only battery reading the board has: os/battery.h infers the rest.
+uint16_t batteryMv();
 bool usbHost();   // a computer on the ESP32-S3's own USB port (its SOFs); the CH343 port can't be seen from here
 void buzzer(bool on);
 

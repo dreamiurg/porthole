@@ -254,8 +254,24 @@ void Shell::updatePick() {
     if (screen_ != SH_PICK) return;
   }
 }
+// The battery, above the title, where the glass is about 60 px wide: an outline filled to the charge, the percentage
+// rounded to 5 (an estimate from the voltage, os/battery.h), and a bolt while charging. Display only: it lies inside
+// the title's Admin hold. Nothing without a reading.
+void Shell::drawBattery() {
+  const battery::Reading b = sys_ ? sys_->battery() : battery::Reading{};
+  if (!b.present()) return;
+  const int shown = (b.pct + 2) / 5 * 5, edge = shown <= 20 ? C_ORANGE : C_NAVY;   // low: an orange outline too
+  char pct[8]; snprintf(pct, sizeof pct, "%d%%", shown);
+  const int body = 12, w = body + 4 + textWidth(pct) + (b.charging ? 2 + SPR_BOLT.w : 0), y = 7;   // "100%" and the bolt clear the glass
+  int x = 80 - w / 2;
+  frame(x, y + 1, body, 7, edge); rect(x + body, y + 3, 2, 3, edge);
+  rect(x + 1, y + 2, (body - 2) * shown / 100, 5, shown <= 20 ? C_ORANGE : C_DKGREEN);
+  x = text(x + body + 4, y, pct, C_NAVY);
+  if (b.charging) blitTint(SPR_BOLT, x + 2, y, C_NAVY);
+}
 void Shell::drawPick() {
   clear(C_SKY);
+  drawBattery();
   textCentered(80, 18, "Who's playing?", C_NAVY);
   int n = prof_.count(), rows = prof_.firstFree() < 0 ? n : n + 1;
   for (int i = 0; i < rows; i++) {

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "battery.h"
 
 namespace shell {
 
@@ -135,6 +136,8 @@ class System {
   virtual bool detectTimeZone() { return false; }
 
   // The menu's "Usage stats" switch sets the level (telemetry::Level); another backend is set up off the screen.
+  // The battery as the board last read it (os/battery.h); none (mv 0) where there is no reading.
+  virtual battery::Reading battery() { return {}; }
   virtual TelemetryStatus telemetryStatus() { return {}; }
   virtual bool setTelemetryLevel(uint8_t level) { (void)level; return false; }   // persisted; false if not saved
 

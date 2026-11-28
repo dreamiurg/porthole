@@ -167,7 +167,7 @@ class Shell {
   void pinStrike(int lock);   // a wrong code; saved
   void pinClear(int lock);    // the right code; saved only if there were strikes
   // screens
-  void updatePick(); void drawPick();
+  void updatePick(); void drawPick(); void drawBattery(); void batteryLine(char* out, size_t n);
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();

@@ -1,0 +1,40 @@
+reset
+profile Ann 6
+wait 600
+tap 80 12
+wait 800
+down 80 12
+wait 5500
+up
+wait 600
+ui
+tap 107 130
+wait 600
+screen
+snap bat_f_admin1
+ui
+tap 124 35
+wait 600
+screen
+snap bat_f_admin2_3990
+ui
+sys battery 4200
+wait 300
+snap bat_f_admin2_4200
+sys battery 3720
+wait 300
+snap bat_f_admin2_3720
+ui
+sys battery 3300
+wait 300
+snap bat_f_admin2_3300
+sys charging 4120
+wait 300
+snap bat_f_admin2_chg4120
+sys charging 4200
+wait 300
+snap bat_f_admin2_chg4200
+sys nobattery
+wait 300
+snap bat_f_admin2_none
+ui

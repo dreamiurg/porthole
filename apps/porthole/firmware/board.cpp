@@ -314,6 +314,11 @@ void sleepUntilTouch() {
   lcdSleep(false);
   feedLoopWDT();
 }
+uint16_t batteryMv() {
+  uint32_t mv = 0;
+  for (int i = 0; i < 16; i++) mv += analogReadMilliVolts(4);
+  return (uint16_t)(mv * 3 / 16 * 1000 / 992.857f);   // the Waveshare demo's calibration of the divider
+}
 bool usbHost() { return usb_serial_jtag_is_connected(); }
 void buzzer(bool on) { static int last = -1; if ((int)on == last) return; last = on; expSet(EX_BUZZER, on); }
 

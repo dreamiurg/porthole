@@ -1,0 +1,42 @@
+# A kid's fingers on the picker's battery icon (inside the title's 5 s Admin hold): a tap, a double tap, a 3 s
+# hold and a drag onto a row all leave the picker as it was; a row tapped right after still opens that kid.
+# The widest charging label (100% and the bolt) stays inside the glass.
+reset
+profile Sam 8
+profile Kai 6
+profile Ava 7
+profile Mia 9
+reboot
+expect-screen picker
+sys charging 4200
+wait 200
+ui-check picker-battery-charging-full
+snap 01_charging_full
+tap 66 10
+wait 300
+expect-screen picker
+tap 88 9
+wait 100
+tap 88 9
+wait 300
+expect-screen picker
+down 68 10
+wait 3000
+up
+wait 300
+expect-screen picker
+down 66 10
+move 66 20
+move 67 30
+move 68 40
+up
+wait 400
+expect-screen picker
+snap 02_after_taps
+tap 68 10
+wait 150
+tap 70 40
+wait 600
+expect-screen launcher
+expect profile=0
+sheet taps

@@ -1,0 +1,29 @@
+reset
+profile Ann 6
+profile Bob 7
+wait 600
+tap 80 12
+wait 800
+snap bat_b_p2_3990
+sys battery 4200
+wait 200
+snap bat_b_p2_4200
+sys battery 3720
+wait 200
+snap bat_b_p2_3720
+sys battery 3500
+wait 200
+snap bat_b_p2_3500
+sys battery 3300
+wait 200
+snap bat_b_p2_3300
+sys charging 4120
+wait 200
+snap bat_b_p2_chg4120
+sys charging 3800
+wait 200
+snap bat_b_p2_chg3800
+sys nobattery
+wait 200
+snap bat_b_p2_none
+ui
