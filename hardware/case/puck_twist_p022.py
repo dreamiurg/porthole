@@ -36,7 +36,7 @@ def exposed_entry_edges(lid):
     return edges
 
 
-def simple_entry_lid():
+def simple_entry_lid(part_id="P022"):
     bottom, top = -1.0, 9.0
     opening = bd.Plane.YZ * bd.Polygon(
         (GUIDE_AT_FLOOR + GUIDE_SLOPE * bottom, bottom),
@@ -46,10 +46,10 @@ def simple_entry_lid():
         align=None,
     )
     mouth = bd.Pos(33, 0, 0) * bd.extrude(opening, amount=12, dir=(1, 0, 0))
-    lid = production_lid("P022", track_with_mouth(mouth))
+    lid = production_lid(part_id, track_with_mouth(mouth))
     lid = bd.fillet(exposed_entry_edges(lid), EDGE_RADIUS)
     assert lid.is_valid and len(lid.solids()) == 1
-    lid.label = "P022 simple-entry lid"
+    lid.label = f"{part_id} simple-entry lid"
     return lid
 
 

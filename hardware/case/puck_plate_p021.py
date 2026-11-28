@@ -49,14 +49,14 @@ def access_tool():
     return bd.Pos(0, 0, PLATE_BOT - 1) * bd.extrude(bd.Face(profile.wire()), amount=4, dir=(0, 0, 1))
 
 
-def access_plate():
+def access_plate(part_id="P021"):
     plate = stock_plate() - access_tool()
     # Read from the battery side, outside the pouch and screw-contact areas.
     face = bd.Plane(origin=(-26, 1, PLATE_BOT - 0.05), x_dir=(0, 1, 0), z_dir=(0, 0, -1))
-    label = bd.Text("P021", font_size=4.5, font_path=str(FONT))
+    label = bd.Text(part_id, font_size=4.5, font_path=str(FONT))
     plate -= face * bd.extrude(label, amount=-0.37)
     assert plate.is_valid and len(plate.solids()) == 1
-    plate.label = "P021 battery access plate"
+    plate.label = f"{part_id} battery access plate"
     return plate
 
 
