@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,7 +15,7 @@
   <meta property="og:image" content="https://porthole.dreamiurg.net/images/og.png?v=p014">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="The game launcher on the Deep Midnight P014 handheld with its Hot Orange face ring and power switch">
+  <meta property="og:image:alt" content="The game menu on a midnight-blue Porthole with a bright orange ring">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">
   {
@@ -34,8 +34,6 @@
   <style>
     @font-face { font-family: "Nunito"; src: url("assets/fonts/Nunito-latin.woff2") format("woff2"); font-weight: 400 800; font-display: swap;
       unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-    @font-face { font-family: "Nunito"; src: url("assets/fonts/Nunito-cyrillic.woff2") format("woff2"); font-weight: 400 800; font-display: swap;
-      unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
     :root {
       --bg: #fbf7f0; --card: #ffffff; --ink: #2b2230; --body: #4d4252; --muted: #6b5f70; --line: #e8dfd3;
       --accent: #7a4fb3; --soft: #f3ecfb; --stage: #241d2b;
@@ -50,7 +48,6 @@
     body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; }
     a { color: var(--accent); text-underline-offset: 3px; }
     :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
-    html[data-lang="en"] [lang="uk"]:not(html), html[data-lang="uk"] [lang="en"]:not(html) { display: none !important; }
     code { font-size: 0.92em; background: var(--soft); padding: 1px 5px; border-radius: 5px; }
     .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 
@@ -61,14 +58,6 @@
     header nav a { color: var(--muted); text-decoration: none; }
     header nav a:hover { color: var(--accent); }
     .gh { width: 1em; height: 1em; vertical-align: -0.125em; margin-right: 0.3em; }
-    .lang { position: relative; font-size: 15px; }
-    .lang summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
-    .lang summary::-webkit-details-marker { display: none; }
-    .lang summary > span { display: flex; align-items: center; gap: 6px; }
-    .lang svg { display: block; border-radius: 2px; }
-    .lang .menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 10; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; min-width: 150px; box-shadow: 0 6px 20px rgba(43, 34, 48, 0.12); }
-    .lang .menu button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px; background: none; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
-    .lang .menu button[aria-pressed="true"] { background: var(--soft); font-weight: 700; }
 
     .hero { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
     .hero .text { flex: 999 1 480px; min-width: 0; }
@@ -106,14 +95,6 @@
     .player.full .live { --s: min(92vw, 92vh); --s: min(92vw, 92dvh); }
     html.locked, html.locked body { overflow: hidden; }
     .live-note { max-width: 420px; margin: 12px 0 0 !important; font-size: 15px !important; color: var(--muted) !important; text-align: center; }
-    .what-img { display: block; width: min(420px, 100%); height: auto; margin: 8px auto 0; }
-    .wheel-media { margin-top: 12px; overflow: hidden; border-radius: 18px; background: var(--stage); }
-    .wheel-media img { display: block; width: 100%; height: auto; }
-    .wheel-media [hidden] { display: none; }
-    .wheel-media .stage { width: 100%; aspect-ratio: 4 / 3; height: auto; max-height: 440px; background: #e7ece7; }
-    .stage#stage { background: #e7ece7; }
-    .wheel-media .stage .hint, .wheel-media .stage .msg, #stage .hint, #stage .msg { color: #344253; }
-    .wheel-downloads { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; }
 
     /* Two columns with a floating contents box only when both fit; narrower, the box sits above the text. */
     .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; padding-bottom: 64px; }
@@ -166,19 +147,21 @@
     .buy { display: flex; flex-wrap: wrap; gap: 10px; }
     .buy a { padding: 10px 18px; border-radius: 999px; background: var(--soft); font-weight: 800; text-decoration: none; }
 
-    .stage { position: relative; height: 440px; border-radius: 18px; background: var(--stage); overflow: hidden; }
-    .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    .stage .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #c9bfd0; }
-    .stage .hint { position: absolute; left: 16px; bottom: 12px; font-size: 14px; color: #c9bfd0; pointer-events: none; }
+    .stage { position: relative; width: 100%; aspect-ratio: 8 / 5; max-height: 460px; overflow: hidden; border-radius: 18px; background: #e7ece7; }
+    .stage .poster, .stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .stage .poster { object-fit: contain; }
+    .stage canvas { visibility: hidden; touch-action: none; cursor: grab; }
+    .stage canvas:active { cursor: grabbing; }
+    .stage.live-model canvas { visibility: visible; }
+    .stage.live-model .poster { opacity: 0; pointer-events: none; }
+    .stage .hint { display: none; }
+    .stage.live-model .hint { display: block; position: absolute; z-index: 1; left: 14px; bottom: 9px; color: #344253; font-size: 14px; pointer-events: none; }
     .parts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .parts button { font: inherit; font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
     .parts button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
     .parts button:disabled { opacity: 0.45; cursor: default; }
     .channel { margin: 0 0 12px; }
     .play-channel { justify-content: center; margin: 10px 0 0; }
-    .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
-    .cards3 strong { display: block; margin-bottom: 4px; }
-    .cards3 div { font-size: 15px; color: var(--body); }
 
     footer { border-top: 1px solid var(--line); }
     footer .wrap { padding-top: 24px; padding-bottom: 24px; font-size: 15px; color: var(--muted); }
@@ -194,7 +177,7 @@
       .game { padding: 12px; }
       .game img { width: 96px; height: 96px; }
       .game h3 { font-size: 16px; }
-      .stage { height: 320px; }
+      .stage { aspect-ratio: 4 / 3; }
       .photos { gap: 6px; }
     }
     /* Any picture opens bigger in a dialog on click. */
@@ -262,32 +245,25 @@
     <a class="brand" href="./">porthole</a>
     <nav aria-label="Site">
       <a href="https://github.com/dreamiurg/porthole"><svg class="gh" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
-      <a class="wide-only" href="https://dreamiurg.net/"><span lang="en">Blog</span><span lang="uk">Блог</span></a>
-      <a class="wide-only" href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a>
+      <a class="wide-only" href="https://dreamiurg.net/">Blog</a>
+      <a class="wide-only" href="https://dreamiurg.net/projects/">More projects</a>
     </nav>
-    <details class="lang">
-      <summary aria-label="Language"><span lang="en"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg> EN</span><span lang="uk"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg> УК</span></summary>
-      <div class="menu">
-        <button type="button" data-set-lang="en" aria-pressed="true"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><rect width="30" height="2.86" fill="#b22234"/><rect y="5.71" width="30" height="2.86" fill="#b22234"/><rect y="11.43" width="30" height="2.86" fill="#b22234"/><rect y="17.14" width="30" height="2.86" fill="#b22234"/><rect width="13" height="11.43" fill="#3c3b6e"/></svg> English</button>
-        <button type="button" data-set-lang="uk" aria-pressed="false"><svg width="18" height="12" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" fill="#0057b7"/><rect y="10" width="30" height="10" fill="#ffd700"/></svg> Українська</button>
-      </div>
-    </details>
   </div>
 </header>
 
 <div class="wrap hero">
   <div class="text">
-    <h1><span lang="en">Porthole: games my kids and I made for a round touchscreen</span><span lang="uk">Porthole: ігри, які ми з дітьми зробили для круглого сенсорного екрана</span></h1>
-    <p><span lang="en">Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</span><span lang="uk">Porthole &mdash; домашній проєкт: прошивка для однієї невеликої плати, Waveshare ESP32-S3-Touch-LCD-2.1. Це круглий сенсорний екран 2,1 дюйма з маленьким комп&rsquo;ютером позаду, близько $35. З Porthole плата показує меню з десяти ігор, які ми зробили разом: піксельне цуценя, ігри з нахилом, перегони, живий радар літаків і ще кілька.</span></p>
-    <p><span lang="en">I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl">puck case</a> and the <a href="#wheel">steering wheel</a>. If you have the same board, this page shows how to <a href="#install">put the games on it</a>.</span><span lang="uk">Ділюся ним як є. У <a href="https://github.com/dreamiurg/porthole">репозиторії на GitHub</a> є вихідний код і 3D-моделі <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl">корпусу-шайби</a> та <a href="#wheel">керма</a>. Якщо у вас така сама плата, ця сторінка показує, як <a href="#install">записати на неї ігри</a>.</span></p>
-    <p><span lang="en">You can play it right here, no board needed: the screen on this page is the same firmware, built for the web. Pick Stable or Beta under it.</span><span lang="uk">Можна грати просто тут, без плати: екран на цій сторінці &mdash; та сама прошивка, зібрана для вебу. Під ним можна вибрати Stable або Beta.</span></p>
+    <h1>Porthole: games my kids and I made for a round touchscreen</h1>
+    <p>Porthole is a home project: firmware for one small board, the Waveshare ESP32-S3-Touch-LCD-2.1. It is a round 2.1-inch touchscreen with a little computer behind it, about $35. With Porthole on it, the board shows a menu of ten games we made together: a pixel puppy, tilt games, a racer, a live plane radar and a few more.</p>
+    <p>I am sharing it as it is. The <a href="https://github.com/dreamiurg/porthole">GitHub repo</a> has the source code and the 3D models for the <a href="#case">puck case</a> and the <a href="#wheel">steering wheel</a>. If you have the same board, this page shows how to <a href="#install">put the games on it</a>.</p>
+    <p>You can play it right here, no board needed: the screen on this page is the same firmware, built for the web. Pick Stable or Beta under it.</p>
   </div>
   <div class="shot">
     <div class="player" id="play" tabindex="-1">
       <div class="live" id="live">
         <button type="button" class="poster" id="play-here">
           <img src="images/play-home.webp" alt="The Porthole menu on the round screen" width="480" height="480">
-          <span class="go">&#9654; <span lang="en">Play here</span><span lang="uk">Грати тут</span></span>
+          <span class="go">&#9654; Play here</span>
         </button>
         <canvas id="screen" width="480" height="480" aria-label="Porthole screen" hidden></canvas>
         <span class="dot" id="dot" hidden></span>
@@ -299,7 +275,7 @@
         <button type="button" class="corner br" id="motion" hidden aria-label="Tilt with this phone" title="Tilt with this phone"></button>
       </div>
     </div>
-    <p class="live-note"><span lang="en">The real firmware, right on this page. Tap the screen like the glass. To tilt, press the dark rim, use the arrow keys or, on a phone, tilt the phone.</span><span lang="uk">Справжня прошивка просто на цій сторінці. Торкайтеся екрана, як скла. Щоб нахилити, натискайте на темний обідок, стрілки або, на телефоні, нахиляйте сам телефон.</span></p>
+    <p class="live-note">The real firmware, right on this page. Tap the screen like the glass. To tilt, press the dark rim, use the arrow keys or, on a phone, tilt the phone.</p>
     <div class="parts channel play-channel" role="group" aria-label="Version to play">
       <button type="button" data-play="stable" aria-pressed="false">Stable</button>
       <button type="button" data-play="beta" aria-pressed="false">Beta</button>
@@ -309,103 +285,108 @@
 
 <div class="wrap layout">
   <details class="toc" id="toc" open>
-    <summary><span lang="en">On this page</span><span lang="uk">На сторінці</span></summary>
+    <summary>On this page</summary>
     <nav aria-label="On this page">
     <ol>
-      <li><a href="#what"><span lang="en">What it is</span><span lang="uk">Що це</span></a></li>
-      <li><a href="#games"><span lang="en">Games</span><span lang="uk">Ігри</span></a></li>
-      <li><a href="#install"><span lang="en">Put it on a board</span><span lang="uk">Як записати</span></a></li>
-      <li><a href="#updates"><span lang="en">Updates and settings</span><span lang="uk">Оновлення й налаштування</span></a></li>
-      <li><a href="#board"><span lang="en">The board</span><span lang="uk">Плата</span></a></li>
-      <li><a href="#wheel"><span lang="en">Kid steering wheel</span><span lang="uk">Дитяче кермо</span></a></li>
-      <li><a href="#case"><span lang="en">3D-printed case</span><span lang="uk">Корпус на 3D-принтері</span></a></li>
-      <li><a href="#build"><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></a></li>
-      <li><a href="#story"><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></a></li>
+      <li><a href="#what">What it is</a></li>
+      <li><a href="#games">Games</a></li>
+      <li><a href="#install">Put it on a board</a></li>
+      <li><a href="#updates">Updates and settings</a></li>
+      <li><a href="#board">The board</a></li>
+      <li><a href="#wheel">Accessories</a></li>
+      <li><a href="#build">Make your own</a></li>
+      <li><a href="#story">How this started</a></li>
     </ol>
     </nav>
   </details>
 
   <main>
     <section id="what">
-      <h2><span lang="en">What it is</span><span lang="uk">Що це</span></h2>
-      <p><span lang="en">You plug the board into USB power and a &ldquo;Who&rsquo;s playing?&rdquo; screen comes up. Up to four people can have a profile there. Each picks theirs, then a game from the menu. Every game keeps its progress per player, and none of them punishes you for not playing for a while.</span><span lang="uk">Під&rsquo;єднуєте плату до живлення USB, і з&rsquo;являється екран &laquo;Who&rsquo;s playing?&raquo;. Там може бути до чотирьох профілів. Кожен вибирає свій, а потім гру з меню. Кожна гра зберігає прогрес окремо для кожного гравця, і жодна не карає за те, що ви якийсь час не грали.</span></p>
-      <p><span lang="en">In a 3D-printed case with a small battery, the board becomes a round handheld you can carry around. Once it knows your Wi-Fi, it updates itself when I publish a new version.</span><span lang="uk">У надрукованому на 3D-принтері корпусі з невеликим акумулятором плата стає круглою кишеньковою консоллю. Коли вона знає ваш Wi-Fi, то сама оновлюється, щойно я публікую нову версію.</span></p>
-      <img class="what-img" src="images/puck.webp" alt="P014 handheld in Deep Midnight with a Hot Orange ring and power slider, showing the Guest game launcher" data-uk-alt="Темно-синя консоль P014 з яскраво-помаранчевим кільцем і повзунком живлення; на екрані відкрите меню ігор для гостя" width="1000" height="814" loading="lazy">
+      <h2>What it is</h2>
+      <p>Porthole is a round handheld we made for our kids. A 3D-printed case holds the touchscreen and a small rechargeable battery.</p>
+      <div id="case">
+        <div class="stage" id="stage">
+          <img class="poster" src="images/puck.webp" alt="A round midnight-blue handheld with an orange ring around the game menu" loading="lazy">
+          <div class="hint">Drag to turn.</div>
+        </div>
+      </div>
+      <p>Turn it on, pick your profile, and choose a game. Up to four people can play on the same handheld, each with their own saved progress. Once connected to Wi-Fi, Porthole updates itself when I publish a new version.</p>
+      <p><a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r3-pinstripe">Print the case</a></p>
     </section>
 
     <section id="games">
-      <h2><span lang="en">Games</span><span lang="uk">Ігри</span></h2>
-      <p><span lang="en">All ten come in one file. Each player picks a profile, then a game.</span><span lang="uk">Усі десять в одному файлі. Кожен гравець вибирає профіль, а потім гру.</span></p>
+      <h2>Games</h2>
+      <p>All ten come in one file. Each player picks a profile, then a game.</p>
       <div class="games">
         <article class="card game"><img src="games/pets-club.png" alt="Pets Club" width="160" height="160" loading="lazy"><h3>Pets Club</h3>
-          <p><span lang="en">A pixel puppy that grows over real days and loves stories.</span><span lang="uk">Піксельне цуценя, яке росте з кожним днем і любить історії.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">It learns eight tricks and listens to 30 stories at three reading levels. Each player gets their own pup and a house on Paw Street.</span><span lang="uk">Вчить вісім трюків і слухає 30 історій трьох рівнів. У кожного гравця своє цуценя і будиночок на Paw Street.</span></p></details></article>
+          <p>A pixel puppy that grows over real days and loves stories.</p>
+          <details><summary>More</summary><p>It learns eight tricks and listens to 30 stories at three reading levels. Each player gets their own pup and a house on Paw Street.</p></details></article>
         <article class="card game"><img src="games/biscuit.png" alt="Biscuit" width="160" height="160" loading="lazy"><h3>Biscuit</h3>
-          <p><span lang="en">A pup with a bookshelf: stories and 96 discoveries.</span><span lang="uk">Песик із книжковою поличкою: історії та 96 відкриттів.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Branching stories, 96 illustrated discoveries, tricks and a small adventure each day. For readers who are already fluent.</span><span lang="uk">Розгалужені історії, 96 ілюстрованих відкриттів, трюки й маленька пригода щодня. Для тих, хто вже добре читає.</span></p></details></article>
+          <p>A pup with a bookshelf: stories and 96 discoveries.</p>
+          <details><summary>More</summary><p>Branching stories, 96 illustrated discoveries, tricks and a small adventure each day. For readers who are already fluent.</p></details></article>
         <article class="card game"><img src="games/marble-kick.png" alt="Marble Kick" width="160" height="160" loading="lazy"><h3>Marble Kick</h3>
-          <p><span lang="en">Tilt a marble through 12 wooden mazes.</span><span lang="uk">Котіть кульку нахилом через 12 дерев&rsquo;яних лабіринтів.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Walls, holes, moving defenders, a keeper and a goal that swings. No timer and no score.</span><span lang="uk">Стіни, лунки, рухомі захисники, воротар і ворота, що гойдаються. Без таймера й рахунку.</span></p></details></article>
+          <p>Tilt a marble through 12 wooden mazes.</p>
+          <details><summary>More</summary><p>Walls, holes, moving defenders, a keeper and a goal that swings. No timer and no score.</p></details></article>
         <article class="card game"><img src="games/tilt-fc.png" alt="Tilt FC" width="160" height="160" loading="lazy"><h3>Tilt FC</h3>
-          <p><span lang="en">Street football. Tilt to run, tap to pass.</span><span lang="uk">Вуличний футбол. Нахил &mdash; біг, дотик &mdash; пас.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Two a side plus keepers, first to three goals or three minutes. Lose by two and the next match gets easier.</span><span lang="uk">Двоє на двоє плюс воротарі, до трьох голів або три хвилини. Програли з різницею у два &mdash; наступний матч легший.</span></p></details></article>
+          <p>Street football. Tilt to run, tap to pass.</p>
+          <details><summary>More</summary><p>Two a side plus keepers, first to three goals or three minutes. Lose by two and the next match gets easier.</p></details></article>
         <article class="card game"><img src="games/pumpkin-hide-seek.png" alt="Pumpkin Hide &amp; Seek" width="160" height="160" loading="lazy"><h3>Pumpkin Hide &amp; Seek</h3>
-          <p><span lang="en">Grab three candies before Grandma finds you.</span><span lang="uk">Зберіть три цукерки, поки бабуся вас не знайшла.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A cozy Halloween hide-and-seek. Slip out the door while Grandma searches with a flashlight. Get found and you just try again.</span><span lang="uk">Затишні хелловінські хованки. Вислизніть за двері, поки бабуся шукає з ліхтариком. Знайшли &mdash; просто пробуєте ще раз.</span></p></details></article>
+          <p>Grab three candies before Grandma finds you.</p>
+          <details><summary>More</summary><p>A cozy Halloween hide-and-seek. Slip out the door while Grandma searches with a flashlight. Get found and you just try again.</p></details></article>
         <article class="card game"><img src="games/radar.png" alt="Radar" width="160" height="160" loading="lazy"><h3>Radar</h3>
-          <p><span lang="en">Real planes over your home, live.</span><span lang="uk">Справжні літаки над вашим домом, наживо.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Callsign, route and height on a radar scope. You set home once by typing an address. Needs Wi-Fi.</span><span lang="uk">Позивний, маршрут і висота на екрані радара. Дім задаєте один раз, ввівши адресу. Потрібен Wi-Fi.</span></p></details></article>
+          <p>Real planes over your home, live.</p>
+          <details><summary>More</summary><p>Callsign, route and height on a radar scope. You set home once by typing an address. Needs Wi-Fi.</p></details></article>
         <article class="card game"><img src="games/starfighter.png" alt="Starfighter" width="160" height="160" loading="lazy"><h3>Starfighter</h3>
-          <p><span lang="en">Bank to steer, tap to fire, fly the trench.</span><span lang="uk">Нахил &mdash; кермо, дотик &mdash; постріл, політ траншеєю.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A retro space shooter: clear a squadron, then fly down the trench for one last shot.</span><span lang="uk">Ретро-стрілялка: розбийте ескадрилью, а потім летіть траншеєю до останнього пострілу.</span></p></details></article>
+          <p>Bank to steer, tap to fire, fly the trench.</p>
+          <details><summary>More</summary><p>A retro space shooter: clear a squadron, then fly down the trench for one last shot.</p></details></article>
         <article class="card game"><img src="games/kingdom.png" alt="Kingdom" width="160" height="160" loading="lazy"><h3>Kingdom</h3>
-          <p><span lang="en">A 40-scene story where choices matter later.</span><span lang="uk">Історія на 40 сцен, де вибір має наслідки.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">A story adventure for readers in Willowbrook. Choices, items and skills change what happens later.</span><span lang="uk">Пригода-історія у Віллоубруку для тих, хто читає. Вибір, речі й уміння змінюють те, що станеться далі.</span></p></details></article>
+          <p>A 40-scene story where choices matter later.</p>
+          <details><summary>More</summary><p>A story adventure for readers in Willowbrook. Choices, items and skills change what happens later.</p></details></article>
         <article class="card game"><img src="games/toy-town.png" alt="Toy Town" width="160" height="160" loading="lazy"><h3>Toy Town</h3>
-          <p><span lang="en">Dress a doll, go to school, the caf&eacute; and the park.</span><span lang="uk">Одягніть ляльку й прогуляйтеся до школи, кафе й парку.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Make art at school, buy lunch with coins at the caf&eacute; and solve a small mystery in the park.</span><span lang="uk">Малюйте в школі, купуйте обід за монетки в кафе й розгадуйте маленьку загадку в парку.</span></p></details></article>
+          <p>Dress a doll, go to school, the caf&eacute; and the park.</p>
+          <details><summary>More</summary><p>Make art at school, buy lunch with coins at the caf&eacute; and solve a small mystery in the park.</p></details></article>
         <article class="card game"><img src="games/rally.png" alt="Rally" width="160" height="160" loading="lazy"><h3>Rally</h3>
-          <p><span lang="en">Hold it like a wheel and race on four tracks.</span><span lang="uk">Тримайте як кермо й мчіть чотирма трасами.</span></p>
-          <details><summary><span lang="en">More</span><span lang="uk">Більше</span></summary><p><span lang="en">Three laps against three rivals, with boosts and rockets. Best times go on a leaderboard.</span><span lang="uk">Три кола проти трьох суперників, з прискоренням і ракетами. Найкращий час потрапляє в таблицю.</span></p></details></article>
+          <p>Hold it like a wheel and race on four tracks.</p>
+          <details><summary>More</summary><p>Three laps against three rivals, with boosts and rockets. Best times go on a leaderboard.</p></details></article>
       </div>
     </section>
 
     <section id="install">
-      <h2><span lang="en">Put it on a board</span><span lang="uk">Як записати на плату</span></h2>
-      <p><span lang="en">You need the board, a USB-C cable and Chrome or Edge on a computer. Plug the board in, press Install and pick the board in the list. It takes about a minute, and the board restarts with the games.</span><span lang="uk">Потрібні плата, кабель USB-C і Chrome або Edge на комп&rsquo;ютері. Під&rsquo;єднайте плату, натисніть Install і виберіть її у списку. Це займає близько хвилини, і плата перезапуститься вже з іграми.</span></p>
+      <h2>Put it on a board</h2>
+      <p>You need the board, a USB-C cable and Chrome or Edge on a computer. Plug the board in, press Install and pick the board in the list. It takes about a minute, and the board restarts with the games.</p>
       <div class="parts channel" role="group" aria-label="Version to install">
         <button type="button" data-flash="stable" aria-pressed="true">Stable __STABLE__</button>
         <button type="button" data-flash="beta" aria-pressed="false">Beta __BETA__</button>
       </div>
-      <p class="note" id="beta-note" hidden><span lang="en">Beta gets new games and fixes a few days before stable, and may still have bugs. Updates over Wi-Fi follow the board&rsquo;s own setting, Stable unless you pick Beta in the settings menu.</span><span lang="uk">Бета отримує нові ігри й виправлення на кілька днів раніше за стабільну, але в ній ще можуть бути помилки. Оновлення через Wi-Fi йдуть за налаштуванням самої плати: Stable, якщо не вибрати Beta в меню налаштувань.</span></p>
+      <p class="note" id="beta-note" hidden>Beta gets new games and fixes a few days before stable, and may still have bugs. Updates over Wi-Fi follow the board&rsquo;s own setting, Stable unless you pick Beta in the settings menu.</p>
       <esp-web-install-button class="flash" manifest="flash/stable.json">
         <button slot="activate" type="button">Install</button>
-        <p slot="unsupported" class="note"><span lang="en">This browser can&rsquo;t talk to the board over USB. Open this page in Chrome or Edge on a computer.</span><span lang="uk">Цей браузер не вміє працювати з платою через USB. Відкрийте цю сторінку в Chrome або Edge на комп&rsquo;ютері.</span></p>
-        <p slot="not-allowed" class="note"><span lang="en">Installing works only on the live page, <a href="https://porthole.dreamiurg.net/#install">porthole.dreamiurg.net</a>.</span><span lang="uk">Записати можна лише зі справжньої сторінки, <a href="https://porthole.dreamiurg.net/#install">porthole.dreamiurg.net</a>.</span></p>
+        <p slot="unsupported" class="note">This browser can&rsquo;t talk to the board over USB. Open this page in Chrome or Edge on a computer.</p>
+        <p slot="not-allowed" class="note">Installing works only on the live page, <a href="https://porthole.dreamiurg.net/#install">porthole.dreamiurg.net</a>.</p>
       </esp-web-install-button>
-      <div class="note"><span lang="en">This erases saved progress on the board. You only do it once: after that, updates arrive over Wi-Fi and keep the saves.</span><span lang="uk">Такий запис стирає збережений прогрес. Робити це треба лише раз: далі оновлення приходять через Wi-Fi і прогрес зберігається.</span></div>
+      <div class="note">This erases saved progress on the board. You only do it once: after that, updates arrive over Wi-Fi and keep the saves.</div>
       <details class="help">
-        <summary><span lang="en">If something goes wrong</span><span lang="uk">Якщо щось пішло не так</span></summary>
-        <p><span lang="en"><strong>The board is not in the list:</strong> try another USB-C cable, some only charge, or the board&rsquo;s other USB-C port. Close any other program or tab that might use the board.</span><span lang="uk"><strong>Плати немає у списку:</strong> спробуйте інший кабель USB-C, деякі лише заряджають, або інший порт USB-C на платі. Закрийте інші програми чи вкладки, що можуть використовувати плату.</span></p>
-        <p><span lang="en"><strong>It can&rsquo;t connect:</strong> if your board has a BOOT button, hold it while you plug in the cable, then press Install again.</span><span lang="uk"><strong>Не вдається під&rsquo;єднатися:</strong> якщо на платі є кнопка BOOT, утримуйте її, поки вставляєте кабель, і знову натисніть Install.</span></p>
-        <p><span lang="en"><strong>The install stopped halfway, or the screen stays dark:</strong> unplug the board, plug it back in and press Install again. Nothing on the board can break; it just gets written again.</span><span lang="uk"><strong>Запис зупинився на півдорозі або екран темний:</strong> перепід&rsquo;єднайте плату й знову натисніть Install. Зламати плату неможливо, просто запишеться знову.</span></p>
-        <p><span lang="en"><strong>By hand:</strong> download <code>porthole-&lt;version&gt;-factory.bin</code> from the newest <a href="https://github.com/dreamiurg/porthole/releases">release</a> and write it at address <code>0x0</code> with <a href="https://espressif.github.io/esptool-js/">esptool-js</a>.</span><span lang="uk"><strong>Вручну:</strong> завантажте <code>porthole-&lt;version&gt;-factory.bin</code> із найновішого <a href="https://github.com/dreamiurg/porthole/releases">релізу</a> й запишіть його за адресою <code>0x0</code> через <a href="https://espressif.github.io/esptool-js/">esptool-js</a>.</span></p>
+        <summary>If something goes wrong</summary>
+        <p><strong>The board is not in the list:</strong> try another USB-C cable, some only charge, or the board&rsquo;s other USB-C port. Close any other program or tab that might use the board.</p>
+        <p><strong>It can&rsquo;t connect:</strong> if your board has a BOOT button, hold it while you plug in the cable, then press Install again.</p>
+        <p><strong>The install stopped halfway, or the screen stays dark:</strong> unplug the board, plug it back in and press Install again. Nothing on the board can break; it just gets written again.</p>
+        <p><strong>By hand:</strong> download <code>porthole-&lt;version&gt;-factory.bin</code> from the newest <a href="https://github.com/dreamiurg/porthole/releases">release</a> and write it at address <code>0x0</code> with <a href="https://espressif.github.io/esptool-js/">esptool-js</a>.</p>
       </details>
     </section>
 
     <section id="updates">
-      <h2><span lang="en">Updates and settings</span><span lang="uk">Оновлення й налаштування</span></h2>
-      <p><span lang="en">On &ldquo;Who&rsquo;s playing?&rdquo;, hold the title for five seconds. This opens the settings menu. Tap <strong>Wifi</strong>, pick your network and type its password. The board keeps it only if it connects.</span><span lang="uk">На екрані &laquo;Who&rsquo;s playing?&raquo; утримуйте заголовок п&rsquo;ять секунд. Відкриється меню налаштувань. Натисніть <strong>Wifi</strong>, виберіть мережу й введіть пароль. Плата збереже її, лише якщо підключиться.</span></p>
+      <h2>Updates and settings</h2>
+      <p>On &ldquo;Who&rsquo;s playing?&rdquo;, hold the title for five seconds. This opens the settings menu. Tap <strong>Wifi</strong>, pick your network and type its password. The board keeps it only if it connects.</p>
       <ul>
-        <li><span lang="en">Once a day, while the screen is dark, the board downloads a new version. It starts the next time the board is switched on. Saves and profiles stay.</span><span lang="uk">Раз на день, коли екран темний, плата завантажує нову версію. Вона запуститься, коли плату ввімкнуть наступного разу. Прогрес і профілі зберігаються.</span></li>
-        <li><span lang="en"><strong>Stable</strong> (the default) gets a version after it has gone two days without a fix. <strong>Beta</strong> gets each new version right away.</span><span lang="uk"><strong>Stable</strong> (за замовчуванням) отримує версію, яка два дні обійшлася без виправлень. <strong>Beta</strong> отримує кожну нову версію одразу.</span></li>
-        <li><span lang="en">The same menu sets screen time, a play window and a code that locks the settings.</span><span lang="uk">Там само налаштовуються час біля екрана, години для гри й код, що закриває налаштування.</span></li>
+        <li>Once a day, while the screen is dark, the board downloads a new version. It starts the next time the board is switched on. Saves and profiles stay.</li>
+        <li><strong>Stable</strong> (the default) gets a version after it has gone two days without a fix. <strong>Beta</strong> gets each new version right away.</li>
+        <li>The same menu sets screen time, a play window and a code that locks the settings.</li>
       </ul>
       <img class="updates-img" src="images/updates.png" alt="The version on Who's playing, the Info screen, the Wi-Fi list, an update ready to start, and the something new card" width="1680" height="320" loading="lazy">
     </section>
 
     <section id="board">
-      <h2><span lang="en">The board</span><span lang="uk">Плата</span></h2>
+      <h2>The board</h2>
       <div class="row">
         <div>
           <div class="photos">
@@ -413,86 +394,47 @@
             <img src="images/board-back.jpg" alt="The back of the board" width="800" height="800" loading="lazy">
             <img src="images/board-angle.jpg" alt="The board from an angle" width="800" height="800" loading="lazy">
           </div>
-          <p class="small" style="margin-top: 6px"><span lang="en">Photos:</span><span lang="uk">Фото:</span> <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a></p>
+          <p class="small" style="margin-top: 6px">Photos: <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare</a></p>
         </div>
         <div>
           <dl class="specs">
-            <dt><span lang="en">Screen</span><span lang="uk">Екран</span></dt><dd><span lang="en">2.1&Prime; round, 480&times;480, touch</span><span lang="uk">круглий 2,1&Prime;, 480&times;480, сенсорний</span></dd>
-            <dt><span lang="en">Chip</span><span lang="uk">Чип</span></dt><dd><span lang="en">ESP32-S3, Wi-Fi and Bluetooth</span><span lang="uk">ESP32-S3, Wi-Fi і Bluetooth</span></dd>
-            <dt><span lang="en">Extras</span><span lang="uk">Ще</span></dt><dd><span lang="en">tilt sensor, clock, buzzer, microSD, battery plug</span><span lang="uk">датчик нахилу, годинник, пищалка, microSD, роз&rsquo;єм акумулятора</span></dd>
+            <dt>Screen</dt><dd>2.1&Prime; round, 480&times;480, touch</dd>
+            <dt>Chip</dt><dd>ESP32-S3, Wi-Fi and Bluetooth</dd>
+            <dt>Extras</dt><dd>tilt sensor, clock, buzzer, microSD, battery plug</dd>
           </dl>
-          <div class="buy"><a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare, <span lang="en">about</span><span lang="uk">близько</span> $35</a><a href="https://www.amazon.com/dp/B0DDPQSKJD">Amazon, <span lang="en">about</span><span lang="uk">близько</span> $45</a></div>
-          <p class="small" style="margin-top: 12px"><span lang="en">The games are built for the flat 2.1-inch model only. I did not make them work on Waveshare&rsquo;s other round boards (1.28, 1.85 and 2.8-inch) or the curved 2.1B. If you want one of those, fork the repo and add support. Send me a pull request and I&rsquo;ll be happy to review and merge it.</span><span lang="uk">Ігри зроблені лише для пласкої моделі 2,1 дюйма. Я не адаптував їх для інших круглих плат Waveshare (1,28, 1,85 і 2,8 дюйма) чи вигнутої 2.1B. Якщо хочете одну з них, форкніть репозиторій і додайте підтримку. Надішліть pull request, і я радо його перегляну й змерджу.</span></p>
+          <div class="buy"><a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.1.htm">Waveshare, about $35</a><a href="https://www.amazon.com/dp/B0DDPQSKJD">Amazon, about $45</a></div>
+          <p class="small" style="margin-top: 12px">The games are built for the flat 2.1-inch model only. I did not make them work on Waveshare&rsquo;s other round boards (1.28, 1.85 and 2.8-inch) or the curved 2.1B. If you want one of those, fork the repo and add support. Send me a pull request and I&rsquo;ll be happy to review and merge it.</p>
         </div>
       </div>
     </section>
 
     <section id="wheel">
-      <h2><span lang="en">V13 kid steering wheel</span><span lang="uk">Дитяче кермо V13</span></h2>
-      <p><span lang="en">Tilt this 172 mm wheel to steer in Rally. The grips print in Hot Orange and the body in Deep Midnight blue. Lower the R2 puck into the center and twist clockwise until it stops. Three catches hold it in the rear socket. Twist it back to lift it out.</span><span lang="uk">Нахиляйте це кермо завширшки 172 мм, щоб керувати в Rally. Колір накладок — яскраво-помаранчевий Hot Orange, а корпусу — темно-синій Deep Midnight. Опустіть шайбу R2 в центр і поверніть за годинниковою стрілкою до упору. Три виступи в задній половині втримують шайбу. Щоб вийняти її, поверніть у зворотний бік.</span></p>
-      <div class="parts" role="group" id="wheel-views" aria-label="Wheel views" data-uk-label="Режими перегляду керма">
-        <button type="button" data-wheel="mounted" aria-controls="wheel-mounted" aria-pressed="true"><span lang="en">Puck installed</span><span lang="uk">Із шайбою</span></button>
-        <button type="button" data-wheel="exploded" aria-controls="wheel-exploded" aria-pressed="false"><span lang="en">Exploded view</span><span lang="uk">У розборі</span></button>
-        <button type="button" data-wheel="model" aria-controls="wheel-model" aria-pressed="false"><span lang="en">Rotate the empty wheel</span><span lang="uk">Покрутити кермо без шайби</span></button>
+      <h2>Accessories</h2>
+      <h3>Steering wheel</h3>
+      <p>We made a steering wheel for kids’ hands. Drop Porthole into the center and give it a twist to lock it in. You’re ready to race.</p>
+      <div class="stage" id="wheel-model">
+        <img class="poster" src="images/kid-wheel-v13.webp" alt="A midnight-blue steering wheel with orange grips and Rally on the round screen" loading="lazy">
+        <div class="hint">Drag to turn.</div>
       </div>
-      <div class="wheel-media">
-        <img id="wheel-mounted" width="1440" height="900" src="images/kid-wheel-v13.webp" alt="Deep Midnight blue V13 wheel with Hot Orange grips and a mounted puck with a matching pinstripe" data-uk-alt="Темно-синє кермо V13 з яскраво-помаранчевими накладками та встановленою шайбою з тонкою смужкою того самого кольору" loading="lazy">
-        <img id="wheel-exploded" width="1680" height="610" src="images/kid-wheel-v13-exploded.webp" alt="V13 parts laid out side by side: rear socket, front half with orange grips, and the puck" data-uk-alt="Деталі V13 поруч: задня половина з гніздом, передня половина з помаранчевими накладками та шайба" loading="lazy" hidden>
-        <div class="stage" id="wheel-model" hidden>
-          <div class="msg" role="status"><span lang="en">Loading the wheel&hellip;</span><span lang="uk">Завантажується кермо&hellip;</span></div>
-          <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Потягніть, щоб повернути. Прокрутіть або розведіть пальці, щоб наблизити.</span></div>
-        </div>
-      </div>
-      <p style="margin-top: 16px"><span lang="en">The H2D project places both halves and all four alignment pins on one plate. Print it once in two PLA colors, dry-fit the halves, then glue them together. If you already have a P016 rear, print just the P017 front.</span><span lang="uk">У проєкті для H2D обидві половини керма та чотири штифти розміщено на одному столі. Надрукуйте комплект двома кольорами PLA, приміряйте половини та склейте їх. Якщо у вас уже є задня половина P016, достатньо надрукувати передню P017.</span></p>
-      <div class="wheel-downloads">
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/V13-wheel-H2D.3mf"><strong lang="en">Complete wheel · one H2D plate</strong><strong lang="uk">Кермо в зборі · один стіл H2D</strong></a>
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/P017-front.3mf"><span lang="en">Front 3MF</span><span lang="uk">Передня половина · 3MF</span></a>
-        <a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/P016-back.3mf"><span lang="en">Rear and pins 3MF</span><span lang="uk">Задня половина та штифти · 3MF</span></a>
-        <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/grip/stl/v13-kid"><span lang="en">Wheel STL files</span><span lang="uk">Файли STL керма</span></a>
-        <a href="#case"><span lang="en">Matching P014 handheld</span><span lang="uk">Сумісна консоль P014</span></a>
-      </div>
-    </section>
-
-    <section id="case">
-      <h2><span lang="en">P014 handheld case</span><span lang="uk">Корпус портативної консолі P014</span></h2>
-      <p><span lang="en">The P014 handheld holds the round display board and its battery. A thin Hot Orange ring runs around the Deep Midnight bezel. The orange side slider operates the power switch. The grooved R2 lid locks into the V13 wheel with a 30° turn.</span><span lang="uk">У корпусі P014 розміщуються плата з круглим дисплеєм та акумулятор. Тонке яскраво-помаранчеве кільце обводить темно-синій обідок, а помаранчевий повзунок збоку вмикає живлення. Нижня кришка R2 з пазами фіксується в кермі V13 поворотом на 30°.</span></p>
-      <div class="stage" id="stage">
-        <div class="msg" id="stage-msg"><span lang="en">Loading the 3D model&hellip;</span><span lang="uk">Завантажується 3D-модель&hellip;</span></div>
-        <div class="hint"><span lang="en">Drag to turn, scroll or pinch to zoom.</span><span lang="uk">Тягніть, щоб повернути, прокрутка чи щипок &mdash; масштаб.</span></div>
-      </div>
-      <div class="parts" role="group" aria-label="Puck views" data-uk-label="Режими перегляду шайби">
-        <button type="button" data-view="assembled" aria-pressed="true"><span lang="en">Assembled</span><span lang="uk">Зібраний</span></button>
-        <button type="button" data-view="exploded" aria-pressed="false"><span lang="en">Exploded</span><span lang="uk">Розібраний</span></button>
-        <button type="button" data-view="bezel" aria-pressed="false"><span lang="en">Bezel</span><span lang="uk">Обідок</span></button>
-        <button type="button" data-view="plate" aria-pressed="false"><span lang="en">Plate</span><span lang="uk">Пластина</span></button>
-        <button type="button" data-view="lid" aria-pressed="false"><span lang="en">Lid</span><span lang="uk">Кришка</span></button>
-        <button type="button" data-view="slider" aria-pressed="false"><span lang="en">Power slider</span><span lang="uk">Повзунок живлення</span></button>
-      </div>
-      <div class="cards3">
-        <div class="card"><strong><span lang="en">What you print</span><span lang="uk">Що друкувати</span></strong><span lang="en">84 mm case. Co-print the bezel and pinstripe in two PLA colors. Print one board plate, one power slider and one R2 lid.</span><span lang="uk">Корпус діаметром 84 мм. Надрукуйте обідок разом зі смужкою з PLA двох кольорів. Окремо надрукуйте пластину плати, повзунок живлення та кришку R2.</span></div>
-        <div class="card"><strong><span lang="en">What you buy</span><span lang="uk">Що купити</span></strong><span lang="en">A protected 3.7 V LiPo, 2000 mAh or more, with a 1.25 mm plug. Check its polarity with a meter first: many ship reversed. M2 screws.</span><span lang="uk">Захищений LiPo 3,7 В на 2000 мА&middot;год або більше з роз&rsquo;ємом 1,25 мм. Спершу перевірте полярність мультиметром: багато продаються навпаки. Гвинти M2.</span></div>
-        <div class="card"><strong><span lang="en">Downloads</span><span lang="uk">Файли</span></strong><a href="case/bambu/P014-Pinstripe.3mf"><span lang="en">Two-color bezel · 3MF</span><span lang="uk">Двоколірний обідок · 3MF</span></a> &middot; <a href="https://github.com/dreamiurg/porthole/tree/main/hardware/case/stl/twist-lock/r3-pinstripe"><span lang="en">Complete print kit</span><span lang="uk">Усі файли для друку</span></a></div>
-      </div>
+      <p><a href="https://github.com/dreamiurg/porthole/raw/refs/heads/main/hardware/grip/stl/v13-kid/bambu/V13-wheel-H2D.3mf">Print the steering wheel</a></p>
     </section>
 
     <section id="build">
-      <h2><span lang="en">Make your own</span><span lang="uk">Зробіть своє</span></h2>
-      <p><span lang="en">The repo is set up so anyone can add the next game: a simulator that runs on a computer, an emulator in the browser, automatic tests and releases. Point Claude Code or Codex at it and describe the game you want.</span><span lang="uk">Репозиторій налаштований так, щоб будь-хто міг додати наступну гру: симулятор на комп&rsquo;ютері, емулятор у браузері, автоматичні тести й релізи. Попросіть Claude Code чи Codex і опишіть гру, яку хочете.</span></p>
-      <p><a href="https://github.com/dreamiurg/porthole"><strong>dreamiurg/porthole</strong></a> <span lang="en">on GitHub, MIT license.</span><span lang="uk">на GitHub, ліцензія MIT.</span></p>
+      <h2>Make your own</h2>
+      <p>The repo is set up so anyone can add the next game: a simulator that runs on a computer, an emulator in the browser, automatic tests and releases. Point Claude Code or Codex at it and describe the game you want.</p>
+      <p><a href="https://github.com/dreamiurg/porthole"><strong>dreamiurg/porthole</strong></a> on GitHub, MIT license.</p>
     </section>
 
     <section id="story">
-      <h2><span lang="en">How this started</span><span lang="uk">Як усе почалося</span></h2>
-      <p lang="en">It started with a small project on MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo. A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar. I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on the little screen. I loved that.</p>
-      <p lang="uk">Усе почалося з невеликого проєкту на MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> від MatixYo. Крихітна плата ESP32 з круглим екраном 1,28 дюйма бере з інтернету дані про польоти й малює літаки над головою на маленькому радарі. Я зібрав такий із дітьми, а потім показав їм, як змінювати його за допомогою Claude Code. Вони просили зміни й дивилися, як ті з&rsquo;являються на екрані. Мені це дуже сподобалося.</p>
-      <p lang="en">So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had a couple of games running on it. Since then it has grown to ten games, a case and updates over Wi-Fi.</p>
-      <p lang="uk">Тож ми пішли далі й купили більший круглий екран, цю плату Waveshare. За один підхід із Claude і Codex на ній уже працювали кілька ігор. Відтоді їх стало десять, з&rsquo;явилися корпус і оновлення через Wi-Fi.</p>
+      <h2>How this started</h2>
+      <p>It started with a small project on MakerWorld, <a href="https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display">ESP32 Plane Radar</a> by MatixYo. A tiny ESP32 board and a 1.28-inch round screen pull live flight data from the internet and draw the planes overhead on a little radar. I built one with my kids, and then I showed them how to change it with Claude Code. They asked for changes and watched them show up on the little screen. I loved that.</p>
+      <p>So we went one step further and bought a bigger round screen, this Waveshare board. In one sitting with Claude and Codex we had a couple of games running on it. Since then it has grown to ten games, a case and updates over Wi-Fi.</p>
     </section>
   </main>
 </div>
 
 <footer>
-  <div class="wrap"><span lang="en">Made by Dmytro Gaivoronsky:</span><span lang="uk">Зробив Дмитро Гайворонський:</span> <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://dreamiurg.net/projects/"><span lang="en">More projects</span><span lang="uk">Інші проєкти</span></a> &middot; <a href="https://github.com/dreamiurg/porthole"><span lang="en">Source on GitHub</span><span lang="uk">Код на GitHub</span></a> &middot; <span lang="en">Font: Nunito (SIL Open Font License).</span><span lang="uk">Шрифт: Nunito (SIL Open Font License).</span></div>
+  <div class="wrap">Made by Dmytro Gaivoronsky: <a href="https://dreamiurg.net/">dreamiurg.net</a> &middot; <a href="https://dreamiurg.net/projects/">More projects</a> &middot; <a href="https://github.com/dreamiurg/porthole">Source on GitHub</a> &middot; Font: Nunito (SIL Open Font License).</div>
 </footer>
 
 <dialog class="zoom" id="zoom" aria-label="Picture">
@@ -502,29 +444,6 @@
 </dialog>
 
 <script>
-  const TITLES = { en: document.title, uk: "porthole: ігри для круглого сенсорного екрана" };
-  const translatedLabels = [...document.querySelectorAll("[data-uk-alt], [data-uk-label]")].map((el) => {
-    const attribute = el.hasAttribute("data-uk-alt") ? "alt" : "aria-label";
-    return { el, attribute, en: el.getAttribute(attribute), uk: el.dataset.ukAlt || el.dataset.ukLabel };
-  });
-  function setLang(lang, remember) {
-    document.documentElement.dataset.lang = lang;
-    document.documentElement.lang = lang;
-    document.title = TITLES[lang];
-    for (const label of translatedLabels) label.el.setAttribute(label.attribute, label[lang]);
-    document.querySelectorAll("[data-set-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
-    if (remember) { try { localStorage.setItem("porthole.lang", lang); } catch (e) {} }
-  }
-  let saved = null;
-  try { saved = localStorage.getItem("porthole.lang"); } catch (e) {}
-  const asked = new URLSearchParams(location.search).get("lang");
-  setLang([asked, saved].find((l) => l === "en" || l === "uk") || ((navigator.language || "").toLowerCase().startsWith("uk") ? "uk" : "en"), false);
-  document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => {
-    setLang(b.dataset.setLang, true);
-    b.closest("details").open = false;
-  }));
-  const lang = document.querySelector(".lang");
-  document.addEventListener("click", (e) => { if (!lang.contains(e.target)) lang.open = false; });
   const toc = document.getElementById("toc"), phone = matchMedia("(max-width: 899px)");
   if (phone.matches) toc.open = false;
   toc.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => { if (phone.matches) toc.open = false; }));
@@ -537,7 +456,7 @@
   document.querySelectorAll("main section").forEach((s) => seen.observe(s));
   // Click or Enter on a picture opens it bigger. A click anywhere, Esc or the button closes it.
   const zoom = document.getElementById("zoom"), zoomImg = zoom.querySelector("img"), zoomText = zoom.querySelector("p");
-  document.querySelectorAll("main img").forEach((img) => {
+  document.querySelectorAll("main img:not(.poster)").forEach((img) => {
     img.classList.add("zoomable");
     img.tabIndex = 0;
     img.setAttribute("role", "button");
@@ -548,148 +467,113 @@
   zoom.addEventListener("click", () => zoom.close());
 </script>
 <script type="module">
-  // The case viewer loads three.js and the STLs only when the case section comes near.
-  const stage = document.getElementById("stage"), msg = document.getElementById("stage-msg");
-  let view = "assembled", apply = () => {};   // a pick made while loading shows once the model is in
-  document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => {
-    view = b.dataset.view;
-    document.querySelectorAll("[data-view]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-    apply();
-  }));
-  const near = new IntersectionObserver(async (entries) => {
-    if (!entries.some((e) => e.isIntersecting)) return;
-    near.disconnect();
-    try { await start(); } catch (e) {
-      msg.innerHTML = '<span lang="en">The 3D model could not load here. The STL files are on GitHub.</span><span lang="uk">3D-модель тут не завантажилася. Файли STL є на GitHub.</span>';
-    }
-  }, { rootMargin: "400px" });
-  near.observe(stage);
-
-  // The Waveshare board, simplified the way hardware/case/puck_v1.py's board_ref() draws it, in the
-  // same frame: a 37.5 mm glass disc (z 1.2 to 3.4) over the 35.5 mm module (z -2.1 to 1.2) and four
-  // M2 standoffs down to z -6.1. The screen shows a real frame of the game menu.
-  async function board(THREE) {
-    const g = new THREE.Group(), dark = new THREE.MeshStandardMaterial({ color: 0x18161c, roughness: 0.35 });
-    const disc = (r, z0, z1, m) => {
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, z1 - z0, 96), m);
-      c.rotation.x = Math.PI / 2; c.position.z = (z0 + z1) / 2; g.add(c); return c;
-    };
-    disc(37.5, 1.2, 3.4, dark);
-    disc(35.5, -2.1, 1.2, new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.7 }));
-    for (const [x, y] of [[29.5, 13.6], [-29.5, 13.6], [18, -27.05], [-18, -27.05]]) disc(1.75, -6.1, -2.1, dark).position.set(x, y, -4.1);
-    const map = await new THREE.TextureLoader().loadAsync("images/play-home.webp");
+  // The handheld and mounted wheel share the same P014 bezel and R2 lid.
+  let puckShell;
+  async function loadPuck(THREE, screenImage) {
+    if (!puckShell) puckShell = (async () => {
+      const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
+      const loader = new STLLoader();
+      const midnight = new THREE.MeshStandardMaterial({ color: 0x09182c, roughness: 0.55 });
+      const orange = new THREE.MeshStandardMaterial({ color: 0xff7900, roughness: 0.5 });
+      const shell = new THREE.Group();
+      // The bezel is printed lip-down. These positions put the print files back in the board frame (mm).
+      await Promise.all([
+        ["components/P014-bezel-body.stl", midnight, 0, 0, 4.6, Math.PI],
+        ["components/P014-bezel-pinstripe.stl", orange, 0, 0, 4.6, Math.PI],
+        ["puck_plate.stl", midnight, 0, 0, 0, 0],
+        ["side-groove-lid-r2.stl", midnight, 0, 0, -21, 0],
+        ["puck_slider.stl", orange, 35.5, -7.3, -5.6, 0],
+      ].map(async ([path, material, x, y, z, rotation]) => {
+        const mesh = new THREE.Mesh(await loader.loadAsync(`case/${path}`), material);
+        mesh.position.set(x, y, z); mesh.rotation.x = rotation; shell.add(mesh);
+      }));
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(37.5, 37.5, 2.2, 128), new THREE.MeshStandardMaterial({ color: 0x18161c, roughness: 0.35 }));
+      glass.rotation.x = Math.PI / 2; glass.position.z = 2.3; shell.add(glass);
+      return shell;
+    })();
+    const [template, map] = await Promise.all([puckShell, new THREE.TextureLoader().loadAsync(screenImage)]);
     map.colorSpace = THREE.SRGBColorSpace;
-    const screen = new THREE.Mesh(new THREE.CircleGeometry(26.7, 96), new THREE.MeshBasicMaterial({ map }));
-    screen.position.z = 3.42; g.add(screen);
-    return g;
+    const puck = template.clone();
+    const screen = new THREE.Mesh(new THREE.CircleGeometry(26.7, 128), new THREE.MeshBasicMaterial({ map }));
+    screen.position.z = 3.42; puck.add(screen);
+    return puck;
   }
 
-  async function start() {
-    const THREE = await import("three");
-    const { STLLoader } = await import("three/addons/loaders/STLLoader.js");
-    const { scene, camera, controls, render } = await viewer(THREE, stage);
-
-    const dark = new THREE.MeshStandardMaterial({ color: 0x09182c, roughness: 0.55 });
-    const orange = new THREE.MeshStandardMaterial({ color: 0xff7900, roughness: 0.5 });
-    const group = () => new THREE.Group();
-    const parts = { bezel: group(), board: await board(THREE), plate: group(), lid: group(), slider: group() };
-    const loader = new STLLoader();
-    // Print STLs to board coordinates, in millimetres. Both bezel volumes print lip down.
-    const meshes = [
-      ["bezel", "components/P014-bezel-body.stl", dark, 0, 0, 4.6],
-      ["bezel", "components/P014-bezel-pinstripe.stl", orange, 0, 0, 4.6],
-      ["plate", "puck_plate.stl", dark, 0, 0, 0],
-      ["lid", "side-groove-lid-r2.stl", dark, 0, 0, -21],
-      ["slider", "puck_slider.stl", orange, 35.5, -7.3, -5.6],
-    ];
-    await Promise.all(meshes.map(async ([key, file, material, x, y, z]) => {
-      const geometry = await loader.loadAsync(`case/${file}`);
-      const mesh = new THREE.Mesh(geometry, material);
-      if (key === "bezel") mesh.rotation.x = Math.PI;
-      mesh.position.set(x, y, z); parts[key].add(mesh);
-    }));
-    scene.add(...Object.values(parts)); msg.remove();
-
-    const fill = new THREE.DirectionalLight(0xdce7ff, 1.3);
-    fill.position.set(-60, 80, 40); scene.add(fill);
-    const underside = new THREE.DirectionalLight(0xffffff, 1.8);
-    underside.position.set(60, -40, -85); scene.add(underside);
-    const spread = { bezel: [0, 0, 68], board: [0, 0, 20], plate: [0, 0, -12], lid: [0, 0, -52], slider: [28, 0, 30] };
-    let previous = view;
-    apply = () => {
-      const bounds = new THREE.Box3();
-      for (const [key, part] of Object.entries(parts)) {
-        part.visible = view === "assembled" || view === "exploded" || view === key;
-        part.position.set(...(view === "exploded" ? spread[key] : [0, 0, 0]));
-        if (part.visible) bounds.expandByObject(part);
-      }
-      const sphere = bounds.getBoundingSphere(new THREE.Sphere());
-      const halfAngle = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, camera.aspect));
-      const direction = camera.position.clone().sub(controls.target).normalize();
-      // Show the bayonet side when the lid is first isolated.
-      if (view === "lid" && previous !== "lid") direction.z = -Math.abs(direction.z);
-      if (view !== "lid" && previous === "lid") direction.z = Math.abs(direction.z);
-      previous = view;
-      controls.target.copy(sphere.center);
-      camera.position.copy(sphere.center).addScaledVector(direction, 1.06 * sphere.radius / Math.sin(halfAngle));
-      controls.update(); render();
-    };
-    apply();
+  async function loadMountedWheel(THREE) {
+    const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+    const [wheel, puck] = await Promise.all([
+      new GLTFLoader().loadAsync("grip/P017-assembled.glb"), loadPuck(THREE, "images/rally-display.png")
+    ]);
+    // Convert the wheel from Y-up metres to Z-up millimetres, then seat the puck at its locked datum.
+    wheel.scene.rotation.x = Math.PI / 2; wheel.scene.scale.setScalar(1000);
+    puck.position.set(0.12, 0.75, 9.85);
+    const assembly = new THREE.Group(); assembly.add(wheel.scene, puck);
+    return assembly;
   }
 
-  async function viewer(THREE, container) {
-    const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
+  async function viewer(stage) {
+    const [THREE, { OrbitControls }] = await Promise.all([import("three"), import("three/addons/controls/OrbitControls.js")]);
+    const wheel = stage.id === "wheel-model";
+    const model = await (wheel ? loadMountedWheel(THREE) : loadPuck(THREE, "images/play-home.webp"));
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    container.prepend(renderer.domElement);
-    const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x302838, 1.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(60, -80, 120); scene.add(sun);
-    const camera = new THREE.PerspectiveCamera(35, 1, 1, 2000);
-    camera.up.set(0, 0, 1); camera.position.set(80, -125, 95);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, -8);
-
-    const render = () => renderer.render(scene, camera);
-    controls.addEventListener("change", render);
-    function resize() {
-      const w = container.clientWidth, h = container.clientHeight;
-      if (!w || !h) return;
-      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+    const scene = new THREE.Scene(); scene.add(model);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x403944, 1.6));
+    for (const [x, y, z, intensity] of [[60, -80, 120, 2.2], [-60, 80, 45, 1.1], [30, 40, -90, 1.3]]) {
+      const light = new THREE.DirectionalLight(0xffffff, intensity); light.position.set(x, y, z); scene.add(light);
     }
-    new ResizeObserver(resize).observe(container); resize();
-    return { scene, camera, controls, render };
-  }
-
-  async function loadWheel(container) {
-    const THREE = await import("three");
-    const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
-    const [{ scene, camera, controls, render }, gltf] = await Promise.all([
-      viewer(THREE, container), new GLTFLoader().loadAsync("grip/P017-assembled.glb")
-    ]);
-    // The GLB is Y-up in meters. The rest of the viewer uses Z-up and millimeters.
-    gltf.scene.rotation.x = Math.PI / 2;
-    gltf.scene.scale.setScalar(1000);
-    scene.add(gltf.scene);
-    camera.position.set(0, -95, 255); controls.target.set(0, 0, 0); controls.update(); render();
-    container.querySelector(".msg").remove();
-  }
-
-  let wheelLoading;
-  const wheelModel = document.getElementById("wheel-model");
-  const wheelButtons = document.querySelectorAll("[data-wheel]");
-  wheelButtons.forEach((button) => button.addEventListener("click", () => {
-    wheelButtons.forEach((item) => {
-      const selected = item === button;
-      item.setAttribute("aria-pressed", String(selected));
-      document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
+    const bounds = new THREE.Box3().setFromObject(model);
+    const center = bounds.getCenter(new THREE.Vector3());
+    // Use the farthest vertex so even a diagonal view fits the short side of the stage.
+    const point = new THREE.Vector3();
+    let radiusSq = 0;
+    model.traverse((part) => {
+      if (!part.isMesh) return;
+      const positions = part.geometry.getAttribute("position");
+      for (let i = 0; i < positions.count; i++) {
+        point.fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld);
+        radiusSq = Math.max(radiusSq, point.distanceToSquared(center));
+      }
     });
-    if (button.dataset.wheel === "model" && !wheelLoading) {
-      wheelLoading = loadWheel(wheelModel).catch(() => {
-        wheelModel.querySelector(".msg").innerHTML = '<span lang="en">The interactive view could not load. <a href="grip/P017-assembled.glb">Download the 3D model</a></span><span lang="uk">Не вдалося завантажити інтерактивний перегляд. <a href="grip/P017-assembled.glb">Завантажити 3D-модель</a></span>';
-      });
+    const radius = Math.sqrt(radiusSq) * 1.06;
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1200);
+    // Keep the screen upright in the initial three-quarter view.
+    camera.up.set(0, 1, 0);
+    camera.position.set(wheel ? 0.27 : 0.48, -0.63, 1.8).normalize().multiplyScalar(350).add(center);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(center); controls.enablePan = false;
+    controls.minZoom = 0.6; controls.maxZoom = 2.5;
+    controls.update();
+    const draw = () => renderer.render(scene, camera);
+    controls.addEventListener("change", draw);
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      const aspect = w / h, halfHeight = radius / Math.min(aspect, 1);
+      camera.top = halfHeight; camera.bottom = -halfHeight;
+      camera.right = halfHeight * aspect; camera.left = -camera.right;
+      camera.updateProjectionMatrix(); renderer.setSize(w, h, false); draw();
     }
-  }));
+    resize();
+    renderer.domElement.setAttribute("aria-hidden", "true");
+    stage.append(renderer.domElement);
+    stage.classList.add("live-model");
+    new ResizeObserver(resize).observe(stage);
+    renderer.domElement.addEventListener("webglcontextlost", () => stage.classList.remove("live-model"));
+    renderer.domElement.addEventListener("webglcontextrestored", () => {
+      resize(); stage.classList.add("live-model");
+    });
+  }
+
+  const near = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      near.unobserve(entry.target);
+      // Keep the actual product photograph/render visible if WebGL or a model asset is unavailable.
+      viewer(entry.target).catch(() => {});
+    }
+  }, { rootMargin: "200px" });
+  for (const stage of document.querySelectorAll("#stage, #wheel-model")) near.observe(stage);
 </script>
 <script>
 // The player: the firmware (play/porthole.{js,wasm}, about 4 MB) loads only on a tap. On a phone that tap also opens
@@ -700,7 +584,6 @@
   // release has no web build. Pages caches files for 10 minutes, so each build is asked for by its version: a fresh
   // page never runs the last deploy's.
   const BUILD = "__BUILD__", STABLE_PLAY = "__STABLE_PLAY__";
-  const t = (en, uk) => [["en", en], ["uk", uk]].map(([lang, text]) => Object.assign(document.createElement("span"), { lang, textContent: text }));
   const $ = (id) => document.getElementById(id);
   const player = $("play"), live = $("live"), canvas = $("screen"), statusEl = $("p-status"), toastEl = $("toast"), dot = $("dot");
   const TOUCH = matchMedia("(pointer: coarse)").matches;
@@ -714,7 +597,7 @@
   const ICON = { full: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5", exit: "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5",
     phone: "M8 3h8v18H8zM11 18h2", center: "M12 3v4M12 17v4M3 12h4M17 12h4M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6" };
   function toast(words) {
-    toastEl.replaceChildren(...words); toastEl.hidden = false;
+    toastEl.textContent = words; toastEl.hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.hidden = true; }, 5000);
   }
 
@@ -724,7 +607,7 @@
     $("play-here").remove();
     canvas.hidden = false; dot.hidden = false; live.classList.add("on");
     for (const id of ["shake", "full", "reset"]) $(id).hidden = false;
-    statusEl.hidden = false; statusEl.replaceChildren(...t("Loading…", "Завантаження…"));
+    statusEl.hidden = false; statusEl.textContent = "Loading…";
     if (TOUCH) {
       setFull(true);
       if ("DeviceMotionEvent" in window) { motion.hidden = false; if (gesture) motionOn(); }
@@ -743,7 +626,7 @@
       }
       requestAnimationFrame(loop);
     };
-    const broke = () => { statusEl.hidden = false; statusEl.replaceChildren(...t("Something broke. Reload the page.", "Щось зламалося. Оновіть сторінку.")); };
+    const broke = () => { statusEl.hidden = false; statusEl.textContent = "Something broke. Reload the page."; };
     window.Module = {
       print() {},   // the --serve protocol's "ok" replies
       printErr: (m) => console.warn(m),
@@ -754,7 +637,7 @@
         statusEl.hidden = true;
         sendTilt(true);
         requestAnimationFrame(loop);
-        if (!TOUCH) toast(t("Tap the screen. To tilt, press the dark rim or use the arrow keys.", "Торкайтеся екрана. Щоб нахилити, натисніть на темний обідок або стрілки."));
+        if (!TOUCH) toast("Tap the screen. To tilt, press the dark rim or use the arrow keys.");
       }],
     };
     const script = document.createElement("script");
@@ -875,11 +758,9 @@
   const G = 9.81;
 function deviceGravity(a, s) { return { x: -s * a.x / G, y: -s * a.y / G, z: -s * a.z / G }; }   // y up
 function onGlass(d, angle) {   // phone axes (y up) to the glass as the page shows it (y down)
-  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t);
   return { x: d.x * c - d.y * n, y: -(d.x * n + d.y * c), z: d.z };
 }
 function fromGlass(v, angle) {   // the way back, for Center
-  const t = angle * Math.PI / 180, c = Math.cos(t), n = Math.sin(t), up = -v.y;
   return { x: v.x * c + up * n, y: -v.x * n + up * c, z: v.z };
 }
 function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as a function
@@ -923,11 +804,11 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
     const label = on ? "Center: the way you hold it now is the middle" : "Tilt with this phone";
     motion.setAttribute("aria-label", label); motion.title = label;
     if (words) toast(words);
-    else if (on) toast(t("Tilt the phone. The corner button makes the way you hold it the middle.", "Нахиляйте телефон. Кнопка в куті робить серединою те, як ви тримаєте зараз."));
+    else if (on) toast("Tilt the phone. The corner button makes the way you hold it the middle.");
     if (on) {
       onSince = performance.now(); heard = false; settled = false;
       window.addEventListener("devicemotion", onMotion);
-      setTimeout(() => { if (useMotion && !heard) setMotion(false, t("This phone sent no motion readings. Press the dark rim to tilt instead.", "Телефон не надіслав даних руху. Натискайте на темний обідок, щоб нахиляти.")); }, 2000);
+      setTimeout(() => { if (useMotion && !heard) setMotion(false, "This phone sent no motion readings. Press the dark rim to tilt instead."); }, 2000);
     } else {
       window.removeEventListener("devicemotion", onMotion);
     }
@@ -937,8 +818,7 @@ function turnTo(a, b) {   // the shortest turn that takes direction a onto b, as
       let answer = "denied";
       try { answer = await DeviceMotionEvent.requestPermission(); } catch { /* treated as a no */ }
       if (answer !== "granted") {
-        setMotion(false, t("Motion access was not allowed. Press the dark rim to tilt, or close and reopen Safari to be asked again.",
-          "Доступ до руху не дозволено. Натискайте на темний обідок, щоб нахиляти, або закрийте й знову відкрийте Safari."));
+        setMotion(false, "Motion access was not allowed. Press the dark rim to tilt, or close and reopen Safari to be asked again.");
         return;
       }
     }
