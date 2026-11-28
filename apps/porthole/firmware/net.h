@@ -36,6 +36,8 @@ class Updater final : public shell::System {
   bool committing();
   // Consume a worker sample on the main core only; includes time elapsed since it was received.
   bool takeClock(uint32_t& utcEpoch);
+  battery::Reading batteryNow{};   // main.cpp's last reading (os/battery.h), for the shell
+  battery::Reading battery() override { return batteryNow; }
   shell::ClockStatus clockStatus() override;
   bool syncClock() override;
   bool setUtcOffset(int16_t minutes) override;

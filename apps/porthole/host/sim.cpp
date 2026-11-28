@@ -254,7 +254,21 @@ struct SimSystem : shell::System {
     if (st.state == shell::UP_CHECKING || st.state == shell::UP_DOWNLOADING || st.state == shell::UP_READY) return;
     st.state = shell::UP_IDLE; st.available[0] = 0;
   }
+  // The battery the board would read (os/battery.h): "sys battery MV" discharging, about 4 min left a percent;
+  // "sys charging MV"; "sys nobattery". A boot starts at 3990 mV, discharging (none in the web player).
+  battery::Reading bat;
+  battery::Reading battery() override { return bat; }
+  bool setBattery(const char* what, const char* arg) {
+    if (!strcmp(what, "nobattery")) { bat = {}; return true; }
+    if (strcmp(what, "battery") && strcmp(what, "charging")) return false;
+    bat.mv = (uint16_t)atoi(arg); bat.pct = battery::percent(bat.mv); bat.charging = what[0] == 'c';
+    bat.minutesLeft = bat.charging ? -1 : (int16_t)(bat.pct * 4);
+    return true;
+  }
   void powerOn() {   // a READY image starts in the other slot; the status is RAM: idle again, but lastCheck is in NVS
+#ifndef __EMSCRIPTEN__
+    setBattery("battery", "3990");
+#endif
     if (st.state == shell::UP_READY) { snprintf(version, sizeof version, "%s", st.available); slot ^= 1; }
     const uint32_t last = st.lastCheck;
     st = {}; st.lastCheck = last; nNets = tested = looked = 0;
@@ -274,7 +288,7 @@ struct SimSystem : shell::System {
     if (!strcmp(what, "telemetry")) {
       telemetry::Config c; telemetry::parseConfig("posthog https://us.i.posthog.com phc_sim", c); c.device[0] = c.salt[0] = 1; telem().configure(c); return;
     }
-    if (setZone(what, arg) || setClock(what, arg) || setWifi(what)) return;
+    if (setZone(what, arg) || setClock(what, arg) || setWifi(what) || setBattery(what, arg)) return;
     if (!strcmp(what, "version")) snprintf(version, sizeof version, "%s", arg);
     else if (!strcmp(what, "newest")) snprintf(st.available, sizeof st.available, "%s", arg);
     else if (!strcmp(what, "nowifi")) { ssid[0] = pass[0] = 0; st.state = shell::UP_NO_WIFI; }
@@ -432,7 +446,6 @@ static void wipe() {   // every namespace, every key: all the .sav files
   }
   closedir(d);
 }
-static bool simBattery(const char* what, const char* arg);
 static void boot(bool seedClock = true) {
   const int n = N_APPS;
   for (int k = 0; k < n; k++) {   // every game's name fits the launcher's press caption; every picture fits its tile
@@ -445,9 +458,6 @@ static void boot(bool seedClock = true) {
   lan::setRadio(&g_lan);
 #endif
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
-#ifndef __EMSCRIPTEN__
-  simBattery("battery", "3990");
-#endif
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
 // The browser demo (make web) starts on a guest's launcher, not on making a profile; a board always asks.
@@ -553,22 +563,9 @@ static void writePPM() {
   fflush(stdout);
 }
 
-// The battery the board would read (os/battery.h): "sys battery MV" discharging, with about 4 min left a percent;
-// "sys charging MV"; "sys nobattery". A boot starts at 3990 mV, discharging (none in the web player).
-static bool simBattery(const char* what, const char* arg) {
-  battery::Reading r;
-  if (!strcmp(what, "battery") || !strcmp(what, "charging")) {
-    r.mv = (uint16_t)atoi(arg); r.pct = battery::percent(r.mv); r.charging = what[0] == 'c';
-    r.minutesLeft = r.charging ? -1 : (int16_t)(r.pct * 4);
-  } else if (strcmp(what, "nobattery")) return false;
-  g_shell.setBattery(r);
-  return true;
-}
-static void simSys(const char* a, const char* b) { if (!simBattery(a, b)) g_sys.set(a, b); }
-
 static bool serveExtra(const char* cmd, const char* a, const char* b) {
   if (!strcmp(cmd, "perf")) { perf(); return false; }
-  if (!strcmp(cmd, "sys")) { simSys(a, b); puts("ok"); return true; }
+  if (!strcmp(cmd, "sys")) { g_sys.set(a, b); puts("ok"); return true; }
   puts("ok"); return false;
 }
 
@@ -708,7 +705,7 @@ static const Named COMMANDS[] = {
   {"shake", [](Finger& f, const char*, const char*, const char*) { g_shakeFrames = 6; while (g_shakeFrames) step(f.down, f.x, f.y); }},
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
   {"reboot", [](Finger& f, const char*, const char*, const char*) { boot(); f.down = false; }},
-  {"sys", [](Finger&, const char* a, const char* b, const char*) { simSys(a, b); }},
+  {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
   {"feed", [](Finger&, const char* a, const char* b, const char*) { g_feed.set(a, b); }},
 };
 static void scriptLine(const char* line) {

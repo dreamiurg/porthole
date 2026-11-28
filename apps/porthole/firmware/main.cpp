@@ -217,21 +217,21 @@ static const uint32_t BATTERY_MS = 10000, BATTERY_TELL_MS = 5 * 60000u;
 static battery::Reading readBattery() {
   g_battery.sample(utcNow(), board::batteryMv());
   const battery::Reading r = g_battery.now();
-  g_shell.setBattery(r);
+  g_sys.batteryNow = r;
   return r;
 }
-static void tellBattery(const battery::Reading& r, const char* at, long sleptS = -1) {
+static void tellBattery(const battery::Reading& r, const char* at, long sleptS = -1) {   // slept_s only on a wake
   using telemetry::P;
-  if (!r.present()) return;
-  if (sleptS < 0) telemetry::emit("battery", {P("mv", r.mv), P("pct", r.pct), P("charging", r.charging ? 1 : 0), P("backlight", g_backlight), P("at", at)});
-  else telemetry::emit("battery", {P("mv", r.mv), P("pct", r.pct), P("charging", r.charging ? 1 : 0), P("backlight", g_backlight), P("at", at), P("slept_s", sleptS)});
+  const telemetry::Prop p[] = {P("mv", r.mv), P("pct", r.pct), P("charging", r.charging ? 1 : 0), P("backlight", g_backlight),
+                               P("at", at), P("slept_s", sleptS)};
+  if (r.present() && telemetry::active()) telemetry::slot()->record("battery", p, sleptS < 0 ? 5 : 6);
 }
 static void batteryTick(uint32_t ms) {
   static uint32_t next = 0, tell = 0;
-  if ((int32_t)(ms - next) < 0) return;
+  if (os::before(ms, next)) return;
   next = ms + BATTERY_MS;
   const battery::Reading r = readBattery();
-  if ((int32_t)(ms - tell) >= 0) { tell = ms + BATTERY_TELL_MS; tellBattery(r, "awake"); }
+  if (!os::before(ms, tell)) { tell = ms + BATTERY_TELL_MS; tellBattery(r, "awake"); }
 }
 static void printBattery(const char* line, const battery::Reading& r) {
   Serial.printf("%s battery_mv=%u battery_pct=%u charging=%d left_min=%d\n", line, r.mv, r.pct, r.charging, r.minutesLeft);
@@ -252,8 +252,8 @@ static void sleepWhenIdle(bool progress, uint32_t ms) {
   if (g_rtcUtcReady && board::rtcValid()) { g_bootUtcEpoch = board::rtcNow(); g_bootMillis = millis(); }
   const battery::Reading w = readBattery();
   tellBattery(w, "wake", (long)(utcNow() - before));
-  Serial.printf("[porthole] woke after %lu s", (unsigned long)((millis() - ms) / 1000));
-  printBattery("", w);
+  char line[40]; snprintf(line, sizeof line, "[porthole] woke after %lu s", (unsigned long)((millis() - ms) / 1000));
+  printBattery(line, w);
 }
 
 static bool updateDisplay(const Input& in) {

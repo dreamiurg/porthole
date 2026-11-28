@@ -187,14 +187,16 @@ void Shell::updateSysAdmin() {
   if (adminPin_ && tapped(in_, ADMIN_REMOVE)) go(SH_SYS_REMOVE);
 }
 // Admin 2/2's top line: the battery (os/battery.h) in volts, the estimate and a time left once one is known.
-void Shell::batteryLine(char* out, size_t n) const {
-  const battery::Reading& b = battery_;
-  const unsigned v = b.mv / 1000, cv = (b.mv % 1000 + 5) / 10;   // 3.92 V
-  if (!b.present()) snprintf(out, n, "Device settings");
-  else if (b.charging) snprintf(out, n, "Battery charging, %u.%02u V", v + cv / 100, cv % 100);
-  else if (b.minutesLeft < 0) snprintf(out, n, "Battery %u%%, %u.%02u V", b.pct, v + cv / 100, cv % 100);
-  else if (b.minutesLeft < 90) snprintf(out, n, "Battery %u%%, %u.%02u V, ~%d min left", b.pct, v + cv / 100, cv % 100, b.minutesLeft);
-  else snprintf(out, n, "Battery %u%%, %u.%02u V, ~%d h left", b.pct, v + cv / 100, cv % 100, (b.minutesLeft + 30) / 60);
+void Shell::batteryLine(char* out, size_t n) {
+  const battery::Reading b = sys_->battery();
+  if (!b.present()) { snprintf(out, n, "Device settings"); return; }
+  char head[16];
+  if (b.charging) snprintf(head, sizeof head, "charging");
+  else snprintf(head, sizeof head, "%u%%", b.pct);
+  const unsigned cv = (b.mv + 5) / 10;   // 3.92 V
+  const int k = snprintf(out, n, "Battery %s, %u.%02u V", head, cv / 100, cv % 100);
+  if (b.minutesLeft >= 90) snprintf(out + k, n - k, ", ~%d h left", (b.minutesLeft + 30) / 60);
+  else if (b.minutesLeft >= 0) snprintf(out + k, n - k, ", ~%d min left", b.minutesLeft);
 }
 void Shell::drawSysAdmin() {
   sclear(C_NAVY);

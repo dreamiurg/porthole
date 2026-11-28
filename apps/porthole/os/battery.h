@@ -76,18 +76,18 @@ class Gauge {
   }
   // Minutes to 0 % from a least-squares fit of percent over time, on the points since charging last ended.
   int16_t left() const {
-    double sx = 0, sy = 0, sxx = 0, sxy = 0; int m = 0; uint32_t first = 0;
+    float sx = 0, sy = 0, sxx = 0, sxy = 0; int m = 0; uint32_t first = 0;   // float: the S3 has no double FPU
     for (int k = 0; k < n_; k++) {
       int i = (head_ + k) % POINTS;
       if (since_ && at_[i] < since_) continue;
       if (!m) first = at_[i];
-      double x = (at_[i] - first) / 60.0, y = percent(mv_[i]);
+      float x = (at_[i] - first) / 60.0f, y = percent(mv_[i]);
       sx += x; sy += y; sxx += x * x; sxy += x * y; m++;
     }
     if (m < 2 || (lastUtc_ - first) < (uint32_t)LEFT_MIN * 60) return -1;
-    double rate = -(m * sxy - sx * sy) / (m * sxx - sx * sx);   // percent a minute, falling
+    float rate = -(m * sxy - sx * sy) / (m * sxx - sx * sx);   // percent a minute, falling
     if (rate <= 0) return -1;
-    double mins = percent(last_) / rate;
+    float mins = percent(last_) / rate;
     return (int16_t)(mins > 30000 ? 30000 : mins < 1 ? 1 : mins);
   }
 
