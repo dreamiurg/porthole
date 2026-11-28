@@ -46,7 +46,7 @@ symlink (`ln -s AGENTS.md CLAUDE.md`).
    The second exception, a user decision of 2026-11-16: telemetry (`apps/porthole/os/telemetry.h`). "Usage stats" on
    Admin 2/2 (one switch, 2026-11-20) is on by default since 2026-11-21 (opt-out); a grown-up's Off is kept. It sends what was played
    to the Porthole PostHog project, whose public ingest key is built in, with a random board id and a random player id
-   per kid. Never a name. An SD file or the serial line can point it at another backend (PostHog or any OpenTelemetry
+   per kid, and (a user decision of 2026-11-28) the battery's voltage and charge every few minutes and around each sleep. Never a name. An SD file or the serial line can point it at another backend (PostHog or any OpenTelemetry
    collector) or pick the anonymous level. What it sends: `apps/porthole/docs/telemetry-events.md`.
 5. **Verify on the host.** The board is often unplugged. That does not exempt a
    change from verification: run the app's `make check`, and `make ci` for

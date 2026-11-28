@@ -432,6 +432,7 @@ static void wipe() {   // every namespace, every key: all the .sav files
   }
   closedir(d);
 }
+static bool simBattery(const char* what, const char* arg);
 static void boot(bool seedClock = true) {
   const int n = N_APPS;
   for (int k = 0; k < n; k++) {   // every game's name fits the launcher's press caption; every picture fits its tile
@@ -444,6 +445,9 @@ static void boot(bool seedClock = true) {
   lan::setRadio(&g_lan);
 #endif
   g_shell.begin(g_store, APPS, n, &g_sys, APP_IDS);
+#ifndef __EMSCRIPTEN__
+  simBattery("battery", "3990");
+#endif
   if (seedClock) g_shell.update(now(), g_ms, Input{});   // fixture creation must see the current local play window
 }
 // The browser demo (make web) starts on a guest's launcher, not on making a profile; a board always asks.
@@ -549,9 +553,22 @@ static void writePPM() {
   fflush(stdout);
 }
 
+// The battery the board would read (os/battery.h): "sys battery MV" discharging, with about 4 min left a percent;
+// "sys charging MV"; "sys nobattery". A boot starts at 3990 mV, discharging (none in the web player).
+static bool simBattery(const char* what, const char* arg) {
+  battery::Reading r;
+  if (!strcmp(what, "battery") || !strcmp(what, "charging")) {
+    r.mv = (uint16_t)atoi(arg); r.pct = battery::percent(r.mv); r.charging = what[0] == 'c';
+    r.minutesLeft = r.charging ? -1 : (int16_t)(r.pct * 4);
+  } else if (strcmp(what, "nobattery")) return false;
+  g_shell.setBattery(r);
+  return true;
+}
+static void simSys(const char* a, const char* b) { if (!simBattery(a, b)) g_sys.set(a, b); }
+
 static bool serveExtra(const char* cmd, const char* a, const char* b) {
   if (!strcmp(cmd, "perf")) { perf(); return false; }
-  if (!strcmp(cmd, "sys")) { g_sys.set(a, b); puts("ok"); return true; }
+  if (!strcmp(cmd, "sys")) { simSys(a, b); puts("ok"); return true; }
   puts("ok"); return false;
 }
 
@@ -691,7 +708,7 @@ static const Named COMMANDS[] = {
   {"shake", [](Finger& f, const char*, const char*, const char*) { g_shakeFrames = 6; while (g_shakeFrames) step(f.down, f.x, f.y); }},
   {"perf", [](Finger&, const char*, const char*, const char*) { perf(); }},
   {"reboot", [](Finger& f, const char*, const char*, const char*) { boot(); f.down = false; }},
-  {"sys", [](Finger&, const char* a, const char* b, const char*) { g_sys.set(a, b); }},
+  {"sys", [](Finger&, const char* a, const char* b, const char*) { simSys(a, b); }},
   {"feed", [](Finger&, const char* a, const char* b, const char*) { g_feed.set(a, b); }},
 };
 static void scriptLine(const char* line) {

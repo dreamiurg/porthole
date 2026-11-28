@@ -1,6 +1,7 @@
 // Porthole firmware entry point: the shell (profiles, launcher) hosting the games in APPS.
 #include <Arduino.h>
 #include <Preferences.h>
+#include "battery.h"
 #include "board.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
@@ -10,6 +11,7 @@
 #include "net.h"
 #include "nvs.h"
 #include "shell.h"
+#include "telemetry.h"
 #include "timezone.h"
 #include "update_picture.h"
 
@@ -208,17 +210,50 @@ static void dimWhenIdle(uint8_t want, bool progress) {
   }
 }
 
+// The battery (os/battery.h): a reading every 10 s for the picker's icon and Admin's line; for PostHog, one every 5 min
+// while awake and one each side of a light sleep, at the same load (dark, radio idle): docs/telemetry-events.md.
+static battery::Gauge& g_battery = psram::make<battery::Gauge>();
+static const uint32_t BATTERY_MS = 10000, BATTERY_TELL_MS = 5 * 60000u;
+static battery::Reading readBattery() {
+  g_battery.sample(utcNow(), board::batteryMv());
+  const battery::Reading r = g_battery.now();
+  g_shell.setBattery(r);
+  return r;
+}
+static void tellBattery(const battery::Reading& r, const char* at, long sleptS = -1) {
+  using telemetry::P;
+  if (!r.present()) return;
+  if (sleptS < 0) telemetry::emit("battery", {P("mv", r.mv), P("pct", r.pct), P("charging", r.charging ? 1 : 0), P("backlight", g_backlight), P("at", at)});
+  else telemetry::emit("battery", {P("mv", r.mv), P("pct", r.pct), P("charging", r.charging ? 1 : 0), P("backlight", g_backlight), P("at", at), P("slept_s", sleptS)});
+}
+static void batteryTick(uint32_t ms) {
+  static uint32_t next = 0, tell = 0;
+  if ((int32_t)(ms - next) < 0) return;
+  next = ms + BATTERY_MS;
+  const battery::Reading r = readBattery();
+  if ((int32_t)(ms - tell) >= 0) { tell = ms + BATTERY_TELL_MS; tellBattery(r, "awake"); }
+}
+static void printBattery(const char* line, const battery::Reading& r) {
+  Serial.printf("%s battery_mv=%u battery_pct=%u charging=%d left_min=%d\n", line, r.mv, r.pct, r.charging, r.minutesLeft);
+}
+
 // Light sleep a while into the dark (shell::sleepFor), until a tap: never during an update, while the radio has work
 // (the daily check runs only in the dark) or with a computer on USB (the serial harness would lose the board).
 static void sleepWhenIdle(bool progress, uint32_t ms) {
   if (progress || g_backlight || !shell::sleepFor(g_shell.asleep(), g_activity.idleMs(ms)) || g_sys.busy() || board::usbHost()) return;
-  Serial.println("[porthole] sleep"); Serial.flush();
+  const uint32_t before = utcNow();
+  const battery::Reading r = readBattery();
+  tellBattery(r, "sleep");
+  printBattery("[porthole] sleep", r); Serial.flush();
   board::sleepUntilTouch();
   Input now{}; now.gx = g_grav[0]; now.gy = g_grav[1]; now.gz = g_grav[2];
   g_activity.step(now, true, millis());   // lit even if the finger is gone; the touch itself is swallowed (g_backlight 0)
   // millis() counts the sleep on the RC slow clock, which drifts: hours of it are worth the RTC's word.
   if (g_rtcUtcReady && board::rtcValid()) { g_bootUtcEpoch = board::rtcNow(); g_bootMillis = millis(); }
-  Serial.printf("[porthole] woke after %lu s\n", (unsigned long)((millis() - ms) / 1000));
+  const battery::Reading w = readBattery();
+  tellBattery(w, "wake", (long)(utcNow() - before));
+  Serial.printf("[porthole] woke after %lu s", (unsigned long)((millis() - ms) / 1000));
+  printBattery("", w);
 }
 
 static bool updateDisplay(const Input& in) {
@@ -379,7 +414,7 @@ static void serialCommand(int c) {
     if (!arg.length() || !isDigit(arg[0])) { Serial.println("[porthole] usage: P<n>"); return; }
     int n = arg.toInt(); g_shell.clearPin(n); Serial.printf("[porthole] profile %d code cleared\n", n);
   }
-  else if (c == 'S') { g_shell.debugPrint(); printSystem(); }
+  else if (c == 'S') { g_shell.debugPrint(); printSystem(); printBattery("[battery]", g_battery.now()); }
   else if (c == 'X') {  // X<x>,<y>,<ms>: press at logical (x, y) for ms (the harness's tap/hold)
     int x = Serial.parseInt(), y = Serial.parseInt(), dur = Serial.parseInt();
     g_fake = {true, x, y, millis() + (uint32_t)(dur > 0 ? dur : 80)};
@@ -461,5 +496,6 @@ void loop() {
   dimWhenIdle(light, progress);
   g_sys.tick(ms);
   while (Serial.available()) serialCommand(Serial.read());
+  batteryTick(ms);
   sleepWhenIdle(progress, ms);
 }

@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include "app.h"
+#include "battery.h"
 #include "game_telemetry.h"
 #include "news.h"
 #include "pinlock.h"
@@ -57,6 +58,7 @@ class Shell {
   bool soundOn(uint32_t ms);          // the active game's buzzer, silenced by the profile's mute
   uint32_t lastSeen() const;          // newest play time on the device: restores the clock when the RTC lost it
   int profileCount() const { return prof_.count(); }
+  void setBattery(const battery::Reading& r) { battery_ = r; }   // the picker's icon and Admin's line; none until set
   // serial and sim hooks
   void clockRestored() { shell::liftCaps(*st_, prof_); }   // the RTC was lost and the clock guessed: no cap holds
   bool clearPin(int id);              // parent escape hatch (serial "P<n>" and Admin); false if save fails
@@ -116,6 +118,7 @@ class Shell {
   Input in_{};
   ui::FreshGate gate_;                             // every screen change ignores touches for a moment (os/ui.h)
   char toast_[40] = {0}; uint32_t toastUntil_ = 0;
+  battery::Reading battery_{};                     // the last reading the firmware handed in (setBattery)
   shell::SysInfo info_{}; shell::UpdStatus upd_{};   // the system menu's view of sys_, read when a menu screen opens
   shell::Network nets_[shell::MAX_NETWORKS] = {}; int nNets_ = 0;   // the last scan; -1 while it runs
   bool scanRefused_ = false; uint8_t netPage_ = 0;
@@ -167,7 +170,7 @@ class Shell {
   void pinStrike(int lock);   // a wrong code; saved
   void pinClear(int lock);    // the right code; saved only if there were strikes
   // screens
-  void updatePick(); void drawPick();
+  void updatePick(); void drawPick(); void drawBattery(); void batteryLine(char* out, size_t n) const;
   void updateName(); void drawName();
   void updateAvatar(); void drawAvatar();
   void updateAge(); void drawAge();

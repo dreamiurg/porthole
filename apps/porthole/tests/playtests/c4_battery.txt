@@ -1,0 +1,49 @@
+# The battery (os/battery.h) the sim hands the shell: on the picker, an outline filled to the charge, the percentage
+# rounded to 5 and a bolt while charging, above the title and inside the glass; on Admin 2/2, the volts, the estimate
+# and a time left. No reading, no icon.
+reset
+profile Sam 8
+profile Kai 6
+profile Ava 7
+profile Mia 9
+reboot
+expect-screen picker
+ui-check picker-battery
+snap 01_battery
+sys battery 4200
+wait 200
+ui-check picker-battery-full
+snap 02_battery_full
+sys charging 4120
+wait 200
+ui-check picker-battery-charging
+snap 03_battery_charging
+sys battery 3720
+wait 200
+ui-check picker-battery-low
+snap 04_battery_low
+sys nobattery
+wait 200
+ui-check picker-no-battery
+snap 05_no_battery
+sys battery 3990
+down 80 16
+wait 5000
+up
+wait 450
+expect-screen sys_info
+tap 106 132
+wait 450
+expect-screen sys_admin
+tap 124 35
+wait 450
+ui-check sys_admin-battery
+snap 06_admin_battery
+sys charging 4185
+wait 200
+ui-check sys_admin-battery-charging
+snap 07_admin_charging
+sys battery 3740
+wait 200
+ui-check sys_admin-battery-minutes
+snap 08_admin_minutes
