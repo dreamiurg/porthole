@@ -10,3 +10,5 @@ output/
 .playwright-cli/
 coverage.xml
 lcov.info
+# This computer only: board save copies (kids' names), vendor downloads. tools/safe_flash.py writes here.
+local/
